@@ -20,7 +20,9 @@ const button = css({
 
 The current prototype supports literal style objects, typed tokens, responsive conditions, and light/dark palette values. Custom themes, a universal core, and native output are planned, not implemented.
 
-The proposed theming API gives each theme shared tokens and complete light and dark color schemes. Web themes use CSS custom properties and `color-scheme`; native targets select precompiled scheme values.
+The proposed `Theme.define(tokens)` returns an inferred `css()` function. Colors accept a string or `{ light, dark }`, with shared and property-specific token groups. Styles compile to compact CSS with readable class names.
+
+The standalone CLI compiles modules and CSS with `typestyle src --out-dir dist`. Watch mode and minification are planned, using the same compiler as build integrations.
 
 ## Development
 

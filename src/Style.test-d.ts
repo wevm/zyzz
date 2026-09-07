@@ -1,24 +1,24 @@
 import { Style } from 'typestyle'
 import { expectTypeOf } from 'vite-plus/test'
-import { components } from '../fixtures/components.js'
+import { components } from '../test/fixtures/components.js'
 
 const definition = Style.define(components)
 expectTypeOf(definition.styles[0]!.name).toEqualTypeOf<
-  'card' | 'label' | 'hidden'
+  'card' | 'hidden' | 'label'
 >()
 expectTypeOf(definition).toEqualTypeOf<
-  Style.Definition<'card' | 'label' | 'hidden'>
+  Style.Definition<'card' | 'hidden' | 'label'>
 >()
 Style.define({
   valid: {
-    padding: 0,
-    margin: '-2rem',
     color: '#fff',
-    lineHeight: 1.5,
     display: 'inherit',
+    lineHeight: 1.5,
+    margin: '-2rem',
+    padding: 0,
   },
 })
-const typo = { card: { padding: '1rem', colour: '#fff' } } as const
+const typo = { card: { colour: '#fff', padding: '1rem' } } as const
 // @ts-expect-error Excess properties must also fail through aliased input.
 Style.define(typo)
 // @ts-expect-error Unknown CSS properties are rejected.
@@ -36,7 +36,7 @@ Style.define({ card: () => ({ color: '#fff' }) })
 // @ts-expect-error Undefined is not an authored CSS value.
 Style.define({ card: { padding: undefined } })
 // @ts-expect-error Data cannot be mutated after validation.
-definition.styles.push({ name: 'card', declarations: [] })
+definition.styles.push({ declarations: [], name: 'card' })
 // @ts-expect-error Declaration values are readonly.
 definition.styles[0]!.declarations[0]!.value = '2px'
 // @ts-expect-error Percentages are not border-width values.

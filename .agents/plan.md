@@ -63,8 +63,8 @@ Merge in dependency order. Each PR includes real integration scenarios, consumer
 
 ### PR 1.1 — Typed Style Definitions
 
-- [x] Replace the greeting export and unit test with `Style.define`, public types, integration scenarios under `test/integration/`, and compiled consumer fixtures under `test/types/`. Wire both into existing test/type-check commands; retain the repository tooling.
-- [x] Establish `bench/*.bench.ts` using `bench` from `vite-plus/test`. Record the first real public authoring/validation baseline with `pnpm exec vp test bench --run --outputJson <file>`; reuse integration inputs and do not benchmark the greeting or fake downstream stages.
+- [x] Replace the greeting export and unit test with `Style.define`, public types, colocated `Style.test.ts` integration scenarios and `Style.test-d.ts` consumer type fixtures. Wire both into existing test/type-check commands; retain the repository tooling.
+- [x] Establish colocated `Style.bench.ts` using `bench` from `vite-plus/test`. Record the first real public authoring/validation baseline with `pnpm exec vp test bench --run --outputJson <file>`; reuse integration inputs and do not benchmark the greeting or fake downstream stages.
 - [x] Define immutable, ordered declaration data and structured diagnostics independently of parsers and emitters. Keep source locations optional so in-memory callers need no source files.
 - [x] Establish a documented literal declaration subset covering layout, spacing, sizing, colors, borders, and typography. Check property names and value domains without a permissive index signature; accept literal lengths, valid unitless numbers, and CSS zero.
 - [x] Keep the root token-free and target-independent. Reserve the domain-owned token-reference boundary for Phase 2 without introducing theme data, token resolution, callbacks, selectors, or queries in this PR.

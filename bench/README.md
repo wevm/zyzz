@@ -1,6 +1,6 @@
 # Authoring Benchmarks
 
-Run `node bench/run.ts`. Reports and host metadata are written to ignored `bench/results/`. Keep benchmark definitions and fixture inputs in Git; generated results belong in CI artifacts. Record useful summaries and measurement limitations in PR descriptions.
+Definitions live in `src/Style.bench.ts` beside `Style.ts`. Run `node bench/run.ts`. Reports and host metadata are written to ignored `bench/results/`. Keep benchmark definitions and fixture inputs in Git; generated results belong in CI artifacts. Record useful summaries and measurement limitations in PR descriptions.
 
 The verification workflow uploads a `benchmarks` artifact for each run, including the measured commit and host metadata. It downloads the latest available main-branch artifact as a comparison baseline. Until main has produced an artifact, it records results without a comparison. Artifacts expire after 30 days.
 

@@ -12,7 +12,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Keep modules small and extensible through explicit data and narrow functions. Avoid global registration, mandatory providers, component wrappers, custom JSX runtimes, and general plugin frameworks.
 - Prefer CSS properties, values, selectors, at-rules, custom properties, inheritance, and cascade patterns. Preserve authored ordering; convenience syntax must expand predictably.
 - Compile styles ahead of time. Runtime adapters may select static alternatives but must not generate or compile styles.
-- Keep root `css` token-free. Put Geist and Tailwind design tokens in the opt-in `typestyle/themes/default` entrypoint, exporting bound `css`, the full `theme`, and raw `tokens`. Core imports must not include bundled theme data.
+- Keep root `css` and `variants` token-free. Put Geist and Tailwind design tokens in the opt-in `typestyle/themes/default` entrypoint, exporting bound `css` and `variants`, the full `theme`, and raw `tokens`. Core imports must not include bundled theme data.
 
 ## TypeScript Conventions
 
@@ -154,7 +154,8 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 - The repository has the generated zile greeting stub and Vite Plus tooling; styling implementation starts from scratch.
 - Add flat PascalCase modules under `src/`; keep integration scenarios, consumer type fixtures, and benchmarks under `test/` and `bench/` as implementation phases land.
-- The proposed `css` leaf helper is exported directly; conceptual modules use namespace exports.
+- Export the `css` and `variants` leaf functions directly and bind both on themes; conceptual modules use namespace exports. Infer variant props with standard `Parameters`, without a variant namespace.
+- Keep `c` first in authoring callbacks. A typed second parameter on `css` declares dynamic input; transformed functions bind values to precompiled slots, never generate rules. Static calls return class strings; dynamic web calls return explicit class/style bindings.
 - Core semantics must be deterministic and independent of environments and tools; target emitters and host adapters have separate entrypoints.
 - Expose platform APIs as named namespace exports: `Css` from `typestyle/web` and `StyleSheet` from `typestyle/react-native`. Keep shared `Style` definitions in the root entrypoint, independently of target namespaces.
 - Add examples for web, native, and standalone distribution as their capabilities land.

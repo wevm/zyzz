@@ -2,7 +2,7 @@
 
 ## Goal
 
-A minimal, type-safe styling system with an environment-independent core, shared web/native authoring, modular extensions, and optional integration adapters. Styles compile ahead of time. Core `css` has no tokens; bundled themes are opt-in through `typestyle/themes/default`. Color tokens accept shared values or light/dark pairs.
+A minimal, type-safe styling system with an environment-independent core, shared web/native authoring, modular extensions, and optional integration adapters. Styles compile ahead of time. Core `css` and `variants` have no tokens; bundled themes are opt-in through `typestyle/themes/default`. Color tokens accept shared values or light/dark pairs.
 
 Web correctness leads the MVP, with a working native subset included before the MVP is complete.
 
@@ -19,25 +19,27 @@ Web correctness leads the MVP, with a working native subset included before the 
 
 The proposed signatures, examples, type rules, and emitted theme CSS are specified in [API and architecture](architecture.md). They are implementation targets, not claims about the existing package.
 
-| API                                  | Contract                                                                        |
-| ------------------------------------ | ------------------------------------------------------------------------------- |
-| `css(style)` from `typestyle`        | Token-free web authoring with standard CSS values; emits classes and static CSS |
-| `typestyle/themes/default`           | Exports bound `css`, full `theme`, and raw `tokens` for opt-in bundled styling  |
-| `Style.define(styles)`               | Defines named, target-independent styles with typed token references            |
-| `Theme.define(tokens)`               | Defines token groups; each color is a string or complete light/dark pair        |
-| `Theme.extend(theme, overrides)`     | Creates a compatible theme with typed overrides and the same token contract     |
-| `Css.compile(options)`               | Emits CSS, named classes, and theme scope classes from in-memory definitions    |
-| `StyleSheet.compile(options)`        | Emits static style tables for each supplied theme and color scheme              |
-| `StyleSheet.select(styles, options)` | Selects an existing theme/scheme table without compiling or merging             |
-| `theme.css(style)`                   | Infers property-specific tokens and compiles directly to readable class strings |
-| `theme.className`                    | Optional scope for inherited theme overrides                                    |
-| `typestyle <src> --out-dir <dist>`   | Standalone module rewriting and stylesheet emission; planned watch/minify flags |
+| API                                                   | Contract                                                                                      |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `css(style)` from `typestyle`                         | Token-free web authoring with standard CSS values; emits classes and static CSS               |
+| `typestyle/themes/default`                            | Exports bound `css` and `variants`, full `theme`, and raw `tokens` for opt-in bundled styling |
+| `Style.define(styles)`                                | Defines named, target-independent styles with typed token references                          |
+| `Theme.define(tokens)`                                | Defines token groups; each color is a string or complete light/dark pair                      |
+| `Theme.extend(theme, overrides)`                      | Creates a compatible theme with typed overrides and the same token contract                   |
+| `Css.compile(options)`                                | Emits CSS, named classes, and theme scope classes from in-memory definitions                  |
+| `StyleSheet.compile(options)`                         | Emits static style tables for each supplied theme and color scheme                            |
+| `StyleSheet.select(styles, options)`                  | Selects an existing theme/scheme table without compiling or merging                           |
+| `theme.css(style)`                                    | Infers property-specific tokens and compiles directly to readable class strings               |
+| `css((c, values: Props) => style)`                    | Compiles static rules and returns a typed callable web class/style binding                    |
+| `variants(definition)` / `theme.variants(definition)` | Defines token-free or theme-bound recipes with inferred selection props                       |
+| `theme.className`                                     | Optional scope for inherited theme overrides                                                  |
+| `typestyle <src> --out-dir <dist>`                    | Standalone module rewriting and stylesheet emission; planned watch/minify flags               |
 
-Additional agreed APIs are `css(callback)`, `cx(...)`, `Vars.define`/`Vars.set`, `Variant.define(theme, definition)`, `Variant.Props`, optional `ClassName<Properties>` contracts, and `Css.global`/`Css.keyframes`/`Css.fontFace`. Keep `css` as the authoring name; `Vars` defines a set of variables, while `Variant` is singular and receives the full theme first.
+Additional agreed APIs are static `css(c => style)`, `cx(...)`, `Vars.define`/`Vars.set`, optional `ClassName<Properties>` contracts, and `Css.global`/`Css.keyframes`/`Css.fontFace`. Export `css` and `variants` directly and bind both on themes. Extract recipe props with `NonNullable<Parameters<typeof button>[0]>`; no variant namespace or props helper is needed.
 
 Import platform APIs as named namespaces: `Css` from `typestyle/web` and `StyleSheet` from `typestyle/react-native`. Shared style definitions remain under `Style` from `typestyle`; the root has no dependency on either target namespace.
 
-Value context callbacks use a single `c` parameter. Helpers are accessed through `c`, portable token references through `c.tokens`, and inferred web CSS variable references through `c.vars`. Root `css` has empty token and variable trees; theme functions infer both from their theme.
+The first callback parameter is always the value context `c`. A static callback takes only `c`; dynamic `css` takes a typed second parameter and returns a function accepting that value. Its web result is `{ className, style }`, while static `css` remains a class string. Helpers are accessed through `c`, portable token references through `c.tokens`, and inferred web CSS variable references through `c.vars`. Root `css` has empty token and variable trees; theme functions infer both from their theme.
 
 ## Starting point
 
@@ -80,7 +82,7 @@ Acceptance: in-memory definitions produce usable CSS and matching class names wi
 
 ### PR 1.3 — Static Source Extraction
 
-- [ ] Add the token-free `css` authoring signature for literal objects. An untransformed call fails with an actionable missing-transform error; it never generates styles at runtime. Value context callbacks remain in Phase 2.
+- [ ] Add the token-free `css` authoring signature for literal objects. An untransformed call fails with an actionable missing-transform error; it never generates styles at runtime. Value context and dynamic binding callbacks remain in Phase 2.
 - [ ] Implement parser-owned binding analysis over supplied source text. Recognize direct and renamed imports from `typestyle`, and distinguish shadowed bindings and unrelated functions named `css`.
 - [ ] Extract direct literal calls wherever they occur, including inline markup and exported constants, into the same ordered data consumed by `Css.compile`. Require host-supplied portable module identity instead of reading the environment.
 - [ ] Diagnose dynamic values, spreads, unsupported callbacks, and unresolved definitions with source spans. Run real extraction-to-compilation scenarios proving extraction never executes application code, and benchmark that pipeline. Imported style definitions, theme bindings, and broader static evaluation remain in Phase 2.
@@ -112,8 +114,8 @@ Gate: identical public-pipeline results across real server, browser, worker, and
 Status: planned.
 
 - [ ] Implement the `Theme.define` and `Theme.extend` contracts before widening authoring syntax.
-- [ ] Add `typestyle/themes/default` with named `css`, `theme`, and raw `tokens` exports. Bundle colors, typography, spacing, radii, and related scales using the ordinary theme contract; keep light/dark values within the theme.
-- [ ] Preserve inference and extraction for bundled `css` aliases and re-exports. Verify parity with `theme.css`, explicit token composition, and use of the exported theme with variants and target compilers.
+- [ ] Add `typestyle/themes/default` with named `css`, `theme`, and raw `tokens` exports; add bound `variants` when recipe compilation lands in Phase 3. Bundle colors, typography, spacing, radii, and related scales using the ordinary theme contract; keep light/dark values within the theme.
+- [ ] Preserve inference and extraction for bundled `css` aliases and re-exports. Verify parity with `theme.css`, explicit token composition, and use of the exported theme with target compilers. Apply the same alias contract to `variants` in Phase 3.
 - [ ] Accept token groups directly with no metadata or scheme container. Each color leaf is `string | { light: string; dark: string }`; require both fields for pairs.
 - [ ] Infer `theme.css` arguments from shared `color` and property-specific `backgroundColor`, `textColor`, and `borderColor` groups, with documented fallback and override rules. Reject wrong domains, unknown tokens, partial pairs, and incompatible extensions.
 - [ ] Derive internal theme identities without caller metadata; extensions retain base token identities independently of values. Switching theme scopes must not require recompiling component classes.
@@ -125,6 +127,9 @@ Status: planned.
 - [ ] Define numeric token/literal behavior, keyword precedence, ordered fallbacks, expression references, and explicit literal escapes. Verify that root calls accept standard lengths, unitless values, and CSS zero while rejecting undeclared named/numeric tokens, even when a theme is imported elsewhere.
 - [ ] Implement optional branded `ClassName<Properties>` types across exports, conditions, and shorthand expansion.
 - [ ] Implement `Vars.define`/`Vars.set` with typed web bindings and explicit native support; separate runtime value assignment from style generation.
+- [ ] Implement dynamic `css((c, values: Props) => style)` with an inferred context, explicitly typed scalar/record input, and callable web `{ className, style }` output. Keep object and single-context calls as static strings; share binding slots with `Vars`.
+- [ ] Extract dynamic scalar positions without executing callbacks. Emit fixed CSS-variable rules and small binding functions; reject dynamic rule structure, token lookup, optional/null leaves, arbitrary calls, and unsupported expressions. Specify primitive validation, private variable isolation, static fallback restrictions, and explicit binding composition.
+- [ ] Add real source-to-browser integration scenarios for callback values, pseudo/query rules, nested instances, theme changes, server rendering/hydration, and packed callable exports. Prove stable classes/rule count after repeated updates and removal of authoring callbacks/context. Check static/dynamic inference through consumer fixtures and benchmark binding time, CSS/JavaScript bytes, and browser recalculation.
 - [ ] Recognize imported and destructured theme functions with full inference and static extraction.
 - [ ] Support static `css` calls inline, outside markup, and in exported/imported style constants equally; extraction must not depend on a `className` attribute.
 - [ ] Implement scoped pseudo-classes/elements, explicit `&` selectors, and nested `@media`, `@container`, and `@supports` with theme inference at every depth.
@@ -138,7 +143,7 @@ Status: planned.
 - [ ] Preserve standard declaration order, selectors, at-rules, inheritance, and cascade semantics. Specify literal escapes and retain authored condition order.
 - [ ] Support same-module immutable definitions and spreads through static binding analysis; add imported definitions only with explicit resolution and cycle errors.
 
-Gate: two compatible themes each work in both schemes. Switching a scope changes colors and shared tokens through CSS alone. Nested themes and explicit schemes behave as specified. Inline and exported styles retain inference. Nested selectors and raw/aliased queries preserve CSS semantics; invalid definitions fail without evaluating application code.
+Gate: two compatible themes each work in both schemes. Switching a scope changes colors and shared tokens through CSS alone. Nested themes and explicit schemes behave as specified. Inline and exported styles retain inference. Dynamic callbacks bind typed values to fixed rules with stable classes, and static calls remain strings; browser integration and binding benchmarks verify both. Nested selectors and raw/aliased queries preserve CSS semantics; invalid definitions fail without evaluating application code.
 
 ## Phase 3 — Composition, variants, and target output
 
@@ -146,7 +151,7 @@ Status: planned.
 
 - [ ] Prefer native/ARIA state attributes and custom data attributes; retain `cx` for explicit last-wins composition within matching contexts.
 - [ ] Prove static and dynamic composition metadata across package boundaries, partial shorthand overrides, conditions, fallback groups, and external-class limitations without runtime rule generation or global registration.
-- [ ] Implement `Variant.define(theme, definition)` and `Variant.Props` with theme-first inference, base/variants/compounds/defaults, boolean selections, array compound matches, and value context callbacks.
+- [ ] Implement token-free `variants(definition)` and bound `theme.variants(definition)` with direct/default-theme exports, destructured/imported alias parity, inferred selection types through `Parameters`, base/variants/compounds/defaults, boolean selections, array compound matches, and value context callbacks.
 - [ ] Compile web recipes to stable classes and scoped data-attribute selectors; dynamic calls serialize selections only. Validate attribute ownership, null/default behavior, and ordered precedence.
 - [ ] Implement shared native recipe selection with the same inferred props and precedence; avoid unbounded variant/theme Cartesian products.
 - [ ] Extend the pure `Css.compile` introduced in PR 1.2 for composition and variants, preserving the theme and conditional semantics established in Phase 2. Retain the named `Css` export from `typestyle/web`; theme maps name outputs without adding definition metadata.
@@ -158,6 +163,7 @@ Status: planned.
 - [ ] Prove the same named style definitions with shared tokens on web and native before expanding coverage.
 - [ ] Specify native unit conversion and font handling; require explicit configuration where no portable default exists.
 - [ ] Document target support for selectors, queries, custom properties, CSS functions, text inheritance, units, and state. Unsupported semantics must fail rather than disappear silently.
+- [ ] Bind dynamic callback slots through the native adapter using the same explicit property/unit capabilities as `Vars`. Exercise real native updates and rejected web-only expressions without CSS parsing or rule generation.
 - [ ] Keep scheme-specific output and runtime selection outside the core; do not emulate a browser CSS engine on native.
 
 Gate: shared definitions render on web and both mobile platforms. Theme/scheme selection agrees with the documented conversions. No runtime style generation is needed, and target-aware types reject unsupported declarations.
@@ -210,9 +216,9 @@ Gate: a small documented API, tested compatibility matrix, reproducible measurem
 | CSS output     | Readable stable names, collision safety, small measured artifacts, and unchanged cascade behavior             |
 | Authoring      | Inline, module-level, and exported/imported styles share inference and compilation                            |
 | Queries        | Correct alias completion, raw query support, static thresholds, containment, nesting, and precedence          |
-| Variants       | Inferred theme-first definitions, attribute output, defaults, compounds, and native parity                    |
+| Variants       | Direct/theme-bound definitions, inferred props, attribute output, defaults, compounds, and native parity      |
 | Composition    | Documented last-wins resolution with metadata, partial overrides, and no rule generation                      |
-| Variables      | Typed runtime assignments and explicit native binding capabilities                                            |
+| Variables      | Typed dynamic callbacks and explicit variables, fixed rules, and native binding capabilities                  |
 
 ## Scope
 

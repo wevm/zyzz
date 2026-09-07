@@ -84,7 +84,7 @@ const panel = theme.css({
 })
 ```
 
-Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `typestyle/themes/default` entrypoint exports bundled `css`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
+Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `typestyle/themes/default` entrypoint exports bundled `css`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
 
 ### Tailwind
 
@@ -230,13 +230,13 @@ export const panel = style({
 
 ### typestyle
 
-`Variant.define(theme, definition)` infers choices, defaults, and compound rules. Its callable result supplies a class and data attributes, encouraging explicit state attributes. `Variant.Props` extracts the consumer contract.
+`theme.variants(definition)` infers tokens, choices, defaults, and compound rules. The direct `variants` import is token-free. Its callable result supplies a class and data attributes, encouraging explicit state attributes. Standard `Parameters` extracts the consumer contract.
 
 ```tsx
-import { Theme, Variant } from 'typestyle'
+import { Theme } from 'typestyle'
 
 const theme = Theme.define({ spacing: { sm: '0.5rem', md: '1rem' } })
-const button = Variant.define(theme, {
+const button = theme.variants({
   base: { display: 'inline-flex' },
   variants: {
     size: { sm: { padding: 'sm' }, md: { padding: 'md' } },
@@ -244,7 +244,7 @@ const button = Variant.define(theme, {
   defaultVariants: { size: 'md' },
 })
 
-type ButtonProps = Variant.Props<typeof button>
+type ButtonProps = NonNullable<Parameters<typeof button>[0]>
 
 export function Button(props: ButtonProps) {
   return <button {...button(props)}>Continue</button>
@@ -310,18 +310,19 @@ export type ButtonProps = RecipeVariants<typeof button>
 
 ### typestyle
 
-`Vars.define` declares typed bindings; `Vars.set` returns inline assignments. The stylesheet remains static. Theme references are separately available through `c.vars` for CSS expressions and `c.tokens` for portable token references.
+A two-parameter `css` callback produces a callable binding: `c` supplies compile-time helpers, and the typed second parameter supplies runtime values. Calling the result returns `{ className, style }` with fixed classes and inline CSS variables. Object and single-context definitions remain static class strings.
 
 ```tsx
-import { Vars, css } from 'typestyle'
+import { css } from 'typestyle'
 
-const progress = Vars.define({ amount: 'percentage' })
-const bar = css({ width: progress.amount })
+const bar = css((c, width: `${number}%`) => ({ width }))
 
 export function Bar() {
-  return <div className={bar} style={Vars.set(progress, { amount: '50%' })} />
+  return <div {...bar('50%')} />
 }
 ```
+
+`Vars.define` and `Vars.set` remain available for shared explicit variable contracts. Theme references use `c.vars` for CSS expressions and `c.tokens` for portable references. Dynamic callbacks bind values without generating rules.
 
 ### Tailwind
 

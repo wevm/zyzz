@@ -3,6 +3,7 @@
 A type-safe styling library for agents. Familiar CSS, inferred design tokens, and small APIs make styles straightforward to generate, inspect, and change.
 
 - [**Typed Styles**](#typed-styles): typed CSS properties, values, selectors, and queries.
+- [**Dynamic Styles**](#dynamic-styles): callable styles with typed runtime values and static CSS.
 - [**Themes**](#themes): bundled or custom tokens with light and dark color schemes.
 - [**Variants**](#variants): component choices with inferred props and data attributes.
 - [**Value Context**](#value-context): fallbacks, importance, expressions, and theme CSS variables.
@@ -54,9 +55,23 @@ const button = css({
 <button className={button}>Continue</button>
 ```
 
+### Dynamic Styles
+
+Add a typed second callback parameter to create callable styles. `c` supplies the same value helpers as static callbacks. The result contains a class name and inline variable assignments; CSS rules stay static.
+
+```tsx
+import { css } from 'typestyle'
+
+const bar = css((c, width: `${number}%`) => ({ width }))
+
+export function Bar() {
+  return <div {...bar('50%')} />
+}
+```
+
 ### Themes
 
-Import a bundled theme's `css` for inferred design tokens. `typestyle/themes/default` also exports the full `theme` and raw `tokens` for extension and reuse.
+Import a bundled theme's `css` for inferred design tokens. `typestyle/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
 
 ```ts
 import { css } from 'typestyle/themes/default'
@@ -86,12 +101,10 @@ Use `Theme.extend(theme, overrides)` to create an alternate theme, and apply its
 
 ### Variants
 
-Describe component choices with inferred props, defaults, and compound rules. Web variants select styles through data attributes.
+Describe component choices with inferred props, defaults, and compound rules. Use `theme.variants` for theme tokens or import token-free `variants` from `typestyle`. Web variants select styles through data attributes.
 
 ```tsx
-import { Variant } from 'typestyle'
-
-const button = Variant.define(theme, {
+const button = theme.variants({
   base: { display: 'inline-flex' },
   variants: {
     size: {
@@ -102,7 +115,7 @@ const button = Variant.define(theme, {
   defaultVariants: { size: 'md' },
 })
 
-type ButtonProps = Variant.Props<typeof button>
+type ButtonProps = NonNullable<Parameters<typeof button>[0]>
 ;<button {...button({ size: 'sm' })}>Continue</button>
 ```
 

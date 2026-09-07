@@ -2,7 +2,7 @@
 
 ## Status and boundaries
 
-This document specifies the target API. The prototype implements literal `css()` calls, a build integration, and a standalone library CLI. Custom themes, inferred theme functions, atomic output, and the expanded CLI below are planned.
+This document specifies the target API. The prototype implements literal `css()` calls, a build integration, and a standalone library CLI. Custom themes, variants, variables, helper callbacks, atomic output, and the expanded CLI below are planned. The MVP prioritizes web correctness and includes a working native subset.
 
 The core owns typed ordered declarations, token resolution, validation, and deterministic identity. It has no filesystem, browser, device, parser, framework, or build-tool dependencies. Source adapters extract definitions; target emitters generate artifacts; host adapters deliver them.
 
@@ -106,7 +106,134 @@ The custom and default functions share extraction and emission. Neither function
 
 Token references such as `theme.tokens.backgroundColor.surface` preserve domain information for named, portable definitions. `Style.define(styles)` remains the in-memory API for named style data; target compilers produce distinct web and native outputs.
 
-For standard CSS strings outside token unions, the MVP retains an explicit bracket escape, for example `color: '[oklch(60% 0.2 250)]'`. Its contents emit as CSS, subject to target validation. Do not widen every property to arbitrary `string`, which would hide misspelled tokens. A later typed literal helper requires demonstrated need.
+## Value helpers and type contracts
+
+Keep `css` and `theme.css`; the authoring function is not renamed to `class`. Both accept a style object or an expression-bodied helper callback:
+
+```ts
+const panel = theme.css(({ important, fallback, literal, value, tokens }) => ({
+  color: important('brand'),
+  display: fallback('block', 'grid'),
+  backgroundColor: literal('oklch(60% 0.2 250)'),
+  width: value`calc(100% - ${tokens.spacing.md})`,
+}))
+```
+
+The callback is recognized static syntax. The compiler resolves supplied helpers, constants, and token references without executing arbitrary application functions. Helpers need no separate imports. Literal and expression validation is target-specific; untyped callers also receive compiler diagnostics.
+
+| Form                          | Meaning                                                          |
+| ----------------------------- | ---------------------------------------------------------------- |
+| Numeric spacing/sizing value  | Matching numeric token; missing tokens are errors                |
+| Number on a unitless property | Literal number, such as `opacity: 0.5`                           |
+| CSS length string             | Literal length, such as `padding: '4px'`                         |
+| Token name                    | Inferred token for that property                                 |
+| CSS keyword                   | Standard keyword, taking precedence over an ambiguous token name |
+| Explicit token reference      | Resolves token/keyword collisions                                |
+| `literal(text)`               | Explicit static CSS escape                                       |
+| `value` tagged template       | Static CSS expression with typed token/variable references       |
+| `fallback(...values)`         | Ordered declarations; later supported values win                 |
+| `important(value)`            | Important declaration on web                                     |
+
+These replace the prototype's bracket escape when implemented. Preserve fallback order, including through composition and atomic optimization. Define numeric behavior per property; never infer a token-to-pixel fallback. Tokens inside shorthand expressions must be validated for their position where practical; arbitrary literal expressions are an explicit escape from token checking.
+
+Compiled style values remain assignable to strings but carry optional property information:
+
+```ts
+import type { ClassName } from 'typestyle'
+
+type ButtonProps = {
+  className?: ClassName<'color' | 'backgroundColor'>
+}
+```
+
+A plain `string` prop remains unrestricted. `ClassName` contracts account for nested conditions, shorthand expansion, and composed declarations. Arbitrary external strings cannot satisfy a restricted branded contract without an explicit escape. Type fixtures must cover exports, unions, and composition; property information is not runtime data by itself.
+
+## Attributes and composition
+
+Prefer platform state attributes and custom data attributes over conditional class concatenation:
+
+```tsx
+const button = theme.css({
+  ':disabled': { opacity: 0.5 },
+  '&[aria-expanded="true"]': { backgroundColor: 'brand' },
+  '&[data-loading="true"]': { cursor: 'progress' },
+})
+
+<button className={button} disabled={disabled}
+  aria-expanded={expanded} data-loading={loading} />
+```
+
+Native/ARIA attributes must reflect actual behavior and accessibility semantics. Visual variants use data attributes. A data attribute alone does not disable a control or supply accessibility state.
+
+`cx(base, override)` is the explicit composition API, with later arguments winning for conflicting generated declarations in the same selector/condition context. It accepts class references and conditional false/null/undefined entries. Static compositions compile away; dynamic compositions use an optional resolver over compiler-produced metadata and precompiled rules, never a CSS generator.
+
+Plain concatenation retains CSS cascade semantics. External class strings pass through `cx` without a last-wins guarantee. Matching condition contexts compose; different overlapping conditions retain their declared CSS precedence. Importance still follows CSS semantics. Define shorthand/longhand partial overrides, fallback groups, logical/physical interactions, and conditional cancellation in fixtures before claiming reliable composition.
+
+String output does not itself supply conflict metadata. The implementation gate must prove how imported generated classes carry or explicitly supply metadata to the transformed resolver across package boundaries, without a global registry. If required metadata is unavailable, emit a diagnostic rather than silently concatenate with a false guarantee. Static atom normalization must make partial overrides possible without generating new runtime rules.
+
+## Typed runtime variables
+
+```tsx
+import { Var, css } from 'typestyle'
+
+const progress = Var.define({ amount: 'percentage' })
+const bar = css({ width: progress.amount })
+
+<div className={bar}
+  style={Var.set(progress, { amount: `${percent}%` })} />
+```
+
+`Var.define(schema)` declares typed references and compiles to target bindings. The initial schema supports `number`, `length`, `percentage`, and `color`, with target validation. `Var.set(definition, values)` returns ordinary inline custom-property assignments on web; unknown keys or incompatible values are type errors. Unassigned variables follow normal CSS behavior unless the authored rule specifies a fallback.
+
+Dynamic assignment is allowed; dynamic rule generation is not. The core never reads device/browser state. Native adapters bind values to preidentified supported properties with explicit conversions; they do not parse CSS. Unsupported variable types or expressions fail compilation. This binding path is distinct from `Native.select`, which preserves static lookup identity.
+
+## Variants
+
+The namespace is singular `Variant`. The first argument is the full theme object, including `css`; the second is the recipe definition. Keep the authoring function named `css`.
+
+```tsx
+import { Variant } from 'typestyle'
+
+const button = Variant.define(theme, {
+  base: { display: 'inline-flex' },
+  variants: {
+    intent: {
+      primary: { backgroundColor: 'brand' },
+      ghost: { backgroundColor: 'transparent' },
+    },
+    size: {
+      sm: { padding: 'sm' },
+      md: { padding: 'md' },
+    },
+    loading: {
+      true: { opacity: 0.5 },
+      false: {},
+    },
+  },
+  compoundVariants: [
+    {
+      when: { intent: 'primary', size: ['sm', 'md'] },
+      style: { fontWeight: 600 },
+    },
+  ],
+  defaultVariants: { intent: 'primary', size: 'md', loading: false },
+})
+
+type ButtonVariants = Variant.Props<typeof button>
+const element = <button {...button({ intent: 'ghost', size: 'sm', loading })} />
+```
+
+`Variant.define` also accepts a helper callback as its second argument, with the same helper/token context as `theme.css`. Infer variant names, string values, booleans, defaults, compound keys, and style tokens. `Variant.Props` exposes optional selection props; callers can make selected properties required using ordinary type utilities.
+
+The web callable returns a stable recipe `className` and normalized attributes such as `data-intent="ghost"`, `data-size="sm"`, and `data-loading="true"`. Defaults are materialized in the output. Omitted/undefined selections use defaults; null suppresses that variant and its default, omitting its attribute. False serializes as `"false"`. Reject unknown selections from untyped callers.
+
+Compile rules as `.button-k3m9:where([data-intent="ghost"])`, scoped to the recipe identity. Variant names must map unambiguously to valid data-attribute names; reject collisions after normalization. One recipe owns each emitted attribute on an element; combining recipes with conflicting attribute ownership needs explicit future composition support.
+
+Precedence is base, then variant axes in declaration order, then matching compounds in array order, for otherwise matching contexts and importance. Compound arrays mean any listed value for that axis; different axes combine with AND. Compound rules apply styles and do not prohibit other combinations. Attribute selectors use zero added specificity so compilation controls recipe precedence.
+
+Static calls compile to constants. Dynamic calls only resolve selections/defaults and serialize attributes, not concatenate variant classes. Avoid generating the Cartesian product of web variants: emit axis rules and authored compound rules. Keep optional `cx` overrides separate; recipe conditional rules must participate in the same documented conflict contract if composed.
+
+The native target consumes the same recipe definition and selection types, emitting static alternatives with matching defaults and precedence. Its adapter returns platform styles without DOM attributes. Measure combination growth; deduplicate shared declarations and use precompiled ordered references where supported instead of generating CSS or unbounded tables. Browser-only selectors in a shared recipe produce target errors.
 
 ## Selectors and conditional rules
 
@@ -136,7 +263,7 @@ const control = theme.css({
 
 CSS property names and value types follow standard CSS, augmented by domain-specific tokens. Selector and raw condition strings remain flexible and receive compiler syntax validation; TypeScript does not prove that arbitrary selector/query text is valid. Do not add a general string index signature that hides misspelled properties.
 
-The initial conditional syntax supports `@media`, `@container`, and `@supports`. Other at-rules require explicit capability support and diagnostics. Stylesheet-level rules such as global selectors, `@keyframes`, and `@font-face` belong in a separate future stylesheet API, not inside an element's declaration object. Its exact API is deferred.
+The initial conditional syntax supports `@media`, `@container`, and `@supports`. Other at-rules require explicit capability support and diagnostics. Stylesheet-level rules use the optional `Css` APIs below, outside element declaration objects.
 
 ## Inferred query thresholds
 
@@ -177,13 +304,66 @@ Threshold names are flat identifiers. Values are finite, nonnegative CSS lengths
 
 Alias keys are exact shorthand forms. Raw media queries use explicit condition syntax, for example `@media (width >= 48rem)` or `@media screen and (width >= 48rem)`. Bare `all`, `screen`, and `print` remain reserved standard media types and cannot be breakpoint names. Reject unknown bare aliases instead of treating them as arbitrary query text.
 
-`card` in `@container card` names a threshold, not a CSS container. The emitted unnamed query selects the nearest eligible ancestor for the queried feature. Applications establish size containment using standard `containerType`; a container cannot size-query itself. Named containers use raw syntax such as `@container sidebar (width >= 24rem)` with an ancestor's `containerName: 'sidebar'`.
+`card` in `@container card` names a threshold, not a CSS container. The emitted unnamed query selects the nearest eligible ancestor for the queried feature. Applications establish size containment using standard `containerType`; a container cannot size-query itself. Named containers also support raw syntax such as `@container sidebar (width >= 24rem)` with an ancestor's `containerName: 'sidebar'`.
 
 Thresholds resolve to literal conditions at compile time, never to CSS custom properties. Changing a theme scope or color scheme cannot alter existing query thresholds. `Theme.extend` may override existing thresholds for styles authored through the extended theme's `css`; it does not change queries already authored through the base function. Definition edits trigger dependent recompilation.
 
 Rule identity and deduplication include resolved conditions. Different threshold values must not share an atom solely because their aliases have the same name. Do not sort breakpoints numerically or flatten overlapping conditions in ways that change authored precedence.
 
 These are web capabilities. Native compilation rejects unsupported selectors and queries, including threshold aliases, until an explicit target contract exists. It must not silently turn browser queries into device listeners.
+
+Additional inferred query keys support comparisons and ranges:
+
+| Key                         | Meaning                                                     |
+| --------------------------- | ----------------------------------------------------------- |
+| `@media >=tablet`           | Width at least tablet; equivalent to `@media tablet`        |
+| `@media <desktop`           | Width below desktop                                         |
+| `@media tablet..desktop`    | Inclusive tablet lower bound, exclusive desktop upper bound |
+| `@container >=card`         | Nearest eligible container at least card width              |
+| `@container sidebar >=card` | Named sidebar container at least card width                 |
+
+`containerNames: ['sidebar', 'content']` in the theme infers names for both `containerName` declarations and named alias queries. Raw CSS names remain available through explicit literal/raw forms. Validate unknown names, malformed ranges, and reversed comparable bounds. Mixed-unit ranges retain CSS semantics; do not guess a pixel conversion or numerically sort them.
+
+## Stylesheet APIs and layers
+
+```ts
+import * as Css from 'typestyle/css'
+
+const fadeIn = Css.keyframes({
+  from: { opacity: 0 },
+  to: { opacity: 1 },
+})
+Css.global({
+  'html, body': { margin: 0 },
+  body: { fontFamily: 'system-ui' },
+})
+Css.fontFace({
+  fontFamily: 'App Sans',
+  src: 'url("/fonts/app.woff2") format("woff2")',
+  fontWeight: '100 900',
+  fontDisplay: 'swap',
+})
+const animated = theme.css({
+  animationName: fadeIn,
+  animationDuration: '200ms',
+})
+```
+
+These authoring calls compile away into explicit stylesheet contributions. Preserve global/font-face side effects through tree shaking; emit reachable keyframes with stable references. Pure in-memory compilation receives extracted contributions as data and never relies on module registration. Native rejects these web-only operations; fonts are loaded through platform mechanisms.
+
+```ts
+Css.compile({
+  styles,
+  layers: {
+    order: ['reset', 'base', 'components', 'utilities'],
+    styles: 'components',
+  },
+})
+```
+
+Layer configuration is optional; omission preserves unlayered output. When supplied, emit the declared order and place generated element styles in the selected layer. Global rules belong to the base layer when declared, otherwise remain unlayered. Applications own the shared layer order across independently compiled libraries; conflicting declarations receive diagnostics when visible in one input graph. Normal and important declarations retain standard layer semantics.
+
+The reset is opt-in via `import 'typestyle/reset.css'` and declares a reset layer. Merely importing the core changes no global styles. Test coexistence with ordinary stylesheets, global rules, and independently packaged libraries in multiple load orders. Layer ordering does not turn arbitrary class concatenation into last-wins composition.
 
 ## Theme scopes and extension
 
@@ -240,7 +420,7 @@ Browser fixtures must cover fallback values, explicit variables, nested themes, 
 
 ```ts
 import { Style } from 'typestyle'
-import * as Web from 'typestyle/web'
+import * as Css from 'typestyle/css'
 
 const styles = Style.define({
   card: {
@@ -249,13 +429,13 @@ const styles = Style.define({
   },
 })
 
-const web = Web.compile({ styles, themes: { base: theme, alternate } })
+const web = Css.compile({ styles, themes: { base: theme, alternate } })
 web.css // Stylesheet string.
 web.classes.card // Class-name string.
 web.themes.alternate // Scope class-name string.
 ```
 
-Theme map keys label outputs only; they do not define token identity or belong inside theme definitions. `Web.compile` returns `{ css, classes, themes }` and throws `Web.CompileError` with structured diagnostics. Direct in-memory calls need no parser or file access; source adapters additionally produce rewritten modules and source maps.
+Theme map keys label outputs only; they do not define token identity or belong inside theme definitions. `Css.compile` returns `{ css, classes, themes }` and throws `Css.CompileError` with structured diagnostics. Direct in-memory calls need no parser or file access; source adapters additionally produce rewritten modules and source maps.
 
 ```ts
 import * as Native from 'typestyle/native'
@@ -274,7 +454,7 @@ selected.card // Precompiled native style object.
 
 `Native.compile` returns `{ styles }` indexed by supplied theme label, scheme, and style name. It throws `Native.CompileError` for unsupported semantics. `Native.select` performs an identity-preserving lookup with inferred labels and `light | dark`; invalid untyped selections throw `Native.SelectionError`.
 
-Native styles share token data and portable declarations. Web selectors and class strings are not native capabilities. Unit conversion is explicit, including `units.rem` when required; unavailable conversions and font mappings fail compilation. No runtime CSS parser, style merger, or compiler is introduced.
+Native styles and variants share token data and portable declarations. Web selectors and class strings are not native capabilities. Unit conversion is explicit, including `units.rem` when required; unavailable conversions and font mappings fail compilation. No runtime CSS parser or compiler is introduced. Optional variable binding and recipe selection use explicit platform adapters; static theme lookup remains unchanged.
 
 ## CLI
 
@@ -325,6 +505,14 @@ Measure raw and compressed CSS, generated class-string bytes, total transferred 
 
 ## Extraction and acceptance
 
-Source adapters recognize literals, immutable bindings, spreads, imports, theme-bound calls, and destructured aliases without executing application code. Dynamic definitions, unresolved imports, and cycles fail with diagnostics. Generated exports contain constants and artifacts, not authoring closures.
+Source adapters recognize literals, immutable bindings, spreads, imports, theme-bound calls, and destructured aliases without executing application code. Dynamic definitions, unresolved imports, and cycles fail with diagnostics. Generated exports contain constants/artifacts and only the optional selection, binding, or composition operations actually used; no authoring closures or rule generation remain.
 
 The existing 29 tests cover the web baseline. Add type fixtures for per-property tokens, palette paths, complete pairs, bound-function aliases, extension keys, and inferred query aliases. Reject unknown/cross-group thresholds and invalid length values. Verify inference inside nested selectors and queries. Behavioral gates cover zero-setup themes, inherited overrides, CLI parity and recovery, native selection, deterministic readable names, collision handling, and cascade equivalence. Cover inline/exported/imported style parity, pseudo-elements, named/unnamed containment, nested media/supports rules, threshold recompilation, and immutable thresholds under scope switching. See [the plan](plan.md).
+
+## MVP gates
+
+Web correctness leads the MVP; native is included, not deferred beyond it. Demonstrate shared layout, spacing, colors, typography, light/dark selection, and conditional variants on both mobile platforms. Publish explicit property/unit capabilities and fail unsupported web semantics.
+
+Require actionable source diagnostics with valid alternatives, CSS-to-source tracing, refresh behavior, missing-transform errors, deterministic server output, and library stylesheet delivery. CLI and build adapters share options and useful defaults without a mandatory config file. Failed rebuilds preserve the previous complete output.
+
+Compare grouped and atomic emission on repeated and unique styles. Measure compressed CSS, JavaScript, class strings, rule counts, cold/incremental builds, browser recalculation, native table growth, and optional runtime costs separately. Do not claim globally zero runtime when composition, variable assignment, or dynamic variants are used; all CSS rules remain compiled ahead of time.

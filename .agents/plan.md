@@ -4,6 +4,8 @@
 
 A minimal, type-safe styling system with an environment-independent core, shared web/native authoring, modular extensions, and optional integration adapters. Styles compile ahead of time. Built-in design tokens are an optional preset, and color tokens accept shared values or light/dark pairs.
 
+Web correctness leads the MVP, with a working native subset included before the MVP is complete.
+
 ## Principles
 
 - **Agnostic:** core operates on plain data with no environment, framework, parser, or build-tool dependencies.
@@ -11,7 +13,7 @@ A minimal, type-safe styling system with an environment-independent core, shared
 - **Modular:** presets, source extraction, core semantics, target emission, and host integration have narrow boundaries.
 - **Minimal:** ordinary objects and small functions; no mandatory providers, component wrappers, global registries, or plugin framework.
 - **Standards first:** prefer CSS properties, values, selectors, at-rules, custom properties, inheritance, and cascade behavior.
-- **Compile time:** extract styles without executing application code; runtime logic only selects precompiled alternatives.
+- **Compile time:** extract styles without executing application code; runtime logic only selects precompiled alternatives, binds typed values, serializes attributes, or resolves explicitly requested composition; it never generates rules.
 
 ## API contract
 
@@ -23,12 +25,14 @@ The proposed signatures, examples, type rules, and emitted theme CSS are specifi
 | `Style.define(styles)`             | Defines named, target-independent styles with typed token references            |
 | `Theme.define(tokens)`             | Defines token groups; each color is a string or complete light/dark pair        |
 | `Theme.extend(theme, overrides)`   | Creates a compatible theme with typed overrides and the same token contract     |
-| `Web.compile(options)`             | Emits CSS, named classes, and theme scope classes from in-memory definitions    |
+| `Css.compile(options)`             | Emits CSS, named classes, and theme scope classes from in-memory definitions    |
 | `Native.compile(options)`          | Emits static style tables for each supplied theme and color scheme              |
 | `Native.select(styles, options)`   | Selects an existing theme/scheme table without compiling or merging             |
 | `theme.css(style)`                 | Infers property-specific tokens and compiles directly to readable class strings |
 | `theme.className`                  | Optional scope for inherited theme overrides                                    |
 | `typestyle <src> --out-dir <dist>` | Standalone module rewriting and stylesheet emission; planned watch/minify flags |
+
+Additional agreed APIs are `css(callback)`, `cx(...)`, `Var.define`/`Var.set`, `Variant.define(theme, definition)`, `Variant.Props`, optional `ClassName<Properties>` contracts, and `Css.global`/`Css.keyframes`/`Css.fontFace`. Keep `css` as the authoring name; `Variant` is singular and receives the full theme first.
 
 ## Current baseline — complete
 
@@ -58,13 +62,18 @@ Status: planned.
 - [ ] Infer `theme.css` arguments from shared `color` and property-specific `backgroundColor`, `textColor`, and `borderColor` groups, with documented fallback and override rules. Reject wrong domains, unknown tokens, partial pairs, and incompatible extensions.
 - [ ] Derive internal theme identities without caller metadata; extensions retain base token identities independently of values. Switching theme scopes must not require recompiling component classes.
 - [ ] Make bound styles work without a root scope using custom-property fallbacks; expose `theme.className` for inherited overrides and retain the directly imported default `css`.
+- [ ] Implement expression-bodied helper callbacks supplying `important`, `fallback`, `literal`, `value`, and inferred `tokens`, without arbitrary code execution.
+- [ ] Define numeric token/literal behavior, keyword precedence, ordered fallbacks, expression references, and migration from the bracket escape.
+- [ ] Implement optional branded `ClassName<Properties>` types across exports, conditions, and shorthand expansion.
+- [ ] Implement `Var.define`/`Var.set` with typed web bindings and explicit native support; separate runtime value assignment from style generation.
 - [ ] Recognize imported and destructured theme functions with full inference and static extraction.
 - [ ] Support static `css` calls inline, outside markup, and in exported/imported style constants equally; extraction must not depend on a `className` attribute.
 - [ ] Implement scoped pseudo-classes/elements, explicit `&` selectors, and nested `@media`, `@container`, and `@supports` with theme inference at every depth.
 - [ ] Add `breakpoints` and `containers` groups with inferred `@media <name>` and `@container <name>` aliases that expand into inclusive minimum-width conditions.
+- [ ] Extend query inference with `>=`, `<`, inclusive/exclusive ranges, and `containerNames` for named queries and declarations.
 - [ ] Reject unknown/cross-group aliases, reserved-name collisions, and invalid threshold lengths without weakening property checking or raw CSS condition support.
 - [ ] Resolve query thresholds statically; specify extension overrides, dependent recompilation, and unchanged thresholds when switching runtime theme scopes.
-- [ ] Document nearest eligible container selection, explicit containment, named raw queries, and stylesheet-level rule boundaries. Defer the exact global/keyframe/font-face API.
+- [ ] Document nearest eligible container selection, explicit containment, named raw queries, and stylesheet-level rule boundaries. Implement stylesheet contributions through `Css.global`, `Css.keyframes`, and `Css.fontFace`, with optional reset and layer configuration.
 - [ ] Emit scoped custom properties and `light-dark()` values. Support `color-scheme: light`, `dark`, and `light dark`, independently of theme identity.
 - [ ] Specify nested scope inheritance, complete overrides, independently forced schemes, deterministic server output, and undeclared-theme failures.
 - [ ] Preserve standard declaration order, selectors, at-rules, inheritance, and cascade semantics. Revisit the prototype's escapes and implicit condition sorting.
@@ -72,11 +81,16 @@ Status: planned.
 
 Gate: two compatible themes each work in both schemes. Switching a scope changes colors and shared tokens through CSS alone. Nested themes and explicit schemes behave as specified. Inline and exported styles retain inference. Nested selectors and raw/aliased queries preserve CSS semantics; invalid definitions fail without evaluating application code.
 
-## Phase 3 — Web and native output
+## Phase 3 — Composition, variants, and target output
 
 Status: planned.
 
-- [ ] Implement `Web.compile` as a pure emitter returning CSS, named classes, and theme scope classes. Theme maps name outputs without adding definition metadata.
+- [ ] Prefer native/ARIA state attributes and custom data attributes; retain `cx` for explicit last-wins composition within matching contexts.
+- [ ] Prove static and dynamic composition metadata across package boundaries, partial shorthand overrides, conditions, fallback groups, and external-class limitations without runtime rule generation or global registration.
+- [ ] Implement `Variant.define(theme, definition)` and `Variant.Props` with theme-first inference, base/variants/compounds/defaults, boolean selections, array compound matches, and helper callbacks.
+- [ ] Compile web recipes to stable classes and scoped data-attribute selectors; dynamic calls serialize selections only. Validate attribute ownership, null/default behavior, and ordered precedence.
+- [ ] Implement shared native recipe selection with the same inferred props and precedence; avoid unbounded variant/theme Cartesian products.
+- [ ] Implement `Css.compile` as a pure emitter returning CSS, named classes, and theme scope classes. Theme maps name outputs without adding definition metadata.
 - [ ] Emit deduplicated atoms with readable property/token/condition names and deterministic collision suffixes, retaining names in production.
 - [ ] Preserve ordered groups for conflicting declarations and conditions; verify cascade equivalence before deduplication. Include resolved query thresholds in identity and retain authored condition order.
 - [ ] Prune unreachable rules and unused variables while retaining complete live token sets in theme scopes.
@@ -100,10 +114,11 @@ Status: planned.
 - [ ] Support framework source boundaries in source adapters without leaking template syntax into core semantics.
 - [ ] Compile from in-memory definitions and from source adapters using the same target emitters.
 - [ ] Distribute web modules, declarations, and CSS; distribute native modules, declarations, and static theme tables. Consumers do not need compiler integrations.
-- [ ] Verify server rendering, hydration identity, refresh behavior, source maps, and add/edit/remove/rename recovery.
+- [ ] Verify server rendering, hydration identity, state-preserving refresh where supported, CSS-to-source tracing, actionable missing-transform diagnostics, and add/edit/remove/rename recovery.
+- [ ] Verify optional reset, global/font contributions, layer ordering, and independently packaged CSS in different loading orders.
 - [ ] Test independent packed consumers and ensure unused targets, parsers, and tools stay out of runtime dependencies.
 
-Gate: all integration paths use the same contracts and agree on identity. Theme classes and tables survive packaging. Web output has no styling runtime; native output includes only any explicitly selected lookup adapter.
+Gate: all integration paths use the same contracts and agree on identity. Theme classes and tables survive packaging. Static web styles compile away; optional runtime composition, value binding, and variant selection have measured isolated costs. No target generates rules at runtime.
 
 ## Phase 5 — Simplify and measure
 
@@ -112,7 +127,7 @@ Status: planned.
 - [ ] Review every API and dependency against the principles; remove abstractions that duplicate platform behavior.
 - [ ] Measure compilation, incremental updates, type-check cost, raw/compressed CSS, class-string bytes, total transfer, browser style recalculation, and native adapter cost independently.
 - [ ] Measure theme multiplication and generated-table size; deduplicate without changing observable theme or cascade semantics.
-- [ ] Compare atomic and grouped output on repeated and unique styles; optimize the smaller safe representation. Add variants or recipes only when concrete usage justifies them.
+- [ ] Compare atomic and grouped output on repeated and unique styles; optimize the smaller safe representation. Measure the agreed variant API; defer additional recipe abstractions and slot systems until concrete usage justifies them.
 - [ ] Keep the repository and package private until publication is requested.
 
 Gate: a small documented API, tested compatibility matrix, reproducible measurements, and working independent web/native consumers.
@@ -133,6 +148,9 @@ Gate: a small documented API, tested compatibility matrix, reproducible measurem
 | CSS output     | Readable stable names, collision safety, small measured artifacts, and unchanged cascade behavior        |
 | Authoring      | Inline, module-level, and exported/imported styles share inference and compilation                       |
 | Queries        | Correct alias completion, raw query support, static thresholds, containment, nesting, and precedence     |
+| Variants       | Inferred theme-first definitions, attribute output, defaults, compounds, and native parity               |
+| Composition    | Documented last-wins resolution with metadata, partial overrides, and no rule generation                 |
+| Variables      | Typed runtime assignments and explicit native binding capabilities                                       |
 
 ## Scope
 

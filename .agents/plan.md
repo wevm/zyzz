@@ -248,6 +248,14 @@ The API and phases above are proposed. Implementation begins at Phase 1 with no 
 
 ## Benchmark Expansion
 
+Performance target: Zyzz leads every applicable workload against every enabled compiler in build time and combined CSS/required-JavaScript transfer (raw, gzip, and Brotli). Report individual CSS and JavaScript measurements as well. A feature or optimization phase is not performance-complete while known losses remain. Confirm timing advantages in repeated, sequential, matched runs; a noisy single-run ranking is insufficient.
+
+Current open size gaps, measured after shared Lightning CSS processing in [benchmark run 34145064696](https://github.com/wevm/zyzz/actions/runs/34145064696): reused palette totals 1,165 gzip bytes against Tailwind's 1,039; mixed components total 1,038 against vanilla-extract's 919. Build time leads all eight current workloads. These are tracked losses, not completed optimization work.
+
+- [ ] Close the palette and mixed-component transfer gaps while retaining readable class names, shorthand/longhand behavior, and A/B/A override order. Verify all eight workloads after each candidate, including raw/gzip/Brotli regressions outside the target case.
+- [ ] Evaluate composition-aware declaration sharing with real generated props and conflict metadata as those APIs land. Do not merge repeated conflicting rules in the current ordered emitter or compare reduced-semantics output as a replacement for it.
+- [ ] Extend transfer regression gates to every workload once matched results establish the target. Keep all competitors and workloads visible while gaps remain; do not loosen existing gates or optimize benchmark-only serialization.
+
 Status: eight literal workloads and five real compiler adapters are implemented on PR 1.2. Panda CSS joins the existing adapters. Tamagui has been removed from the PR matrix due to extraction cost; no additional styling libraries are authorized. Browser equivalence covers every workload. Existing size gates remain; discovery cases expose further optimization targets.
 
 - [ ] PR 1.3–1.5: add cold-process source builds, warm builds, unchanged edits, new styles, removed styles, and imported-dependency edits. Include parsing, scanning, rewriting, and output writing explicitly. In-memory emission must remain a separate measurement.

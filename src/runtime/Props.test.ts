@@ -2,6 +2,7 @@ import * as Esbuild from 'esbuild'
 import * as Path from 'node:path'
 import { expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
+import { Props } from 'zyzz/runtime'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 
@@ -22,7 +23,8 @@ export const text = '🎉';`
   const consumer = await import(
     `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0]!.text).toString('base64')}`
   )
-  const style = { color: '#000', paddingLeft: '2px' }
+  const bind = Props.create({ className: Object.values(result.classes)[0]! })
+  const style = { color: '#000', paddingLeft: '2px' } as const
   const invalid = [
     null,
     [],
@@ -35,7 +37,7 @@ export const text = '🎉';`
     defaults: consumer.button(),
     errors: invalid.map((value) => {
       try {
-        consumer.button(value)
+        Reflect.apply(bind, undefined, [value])
         return 'accepted'
       } catch (error) {
         return (error as Error).message
@@ -46,6 +48,9 @@ export const text = '🎉';`
       /oxc|compiler|web\/Css/.test(name),
     ),
     overrides: consumer.button({ className: 'external', style }),
+    runtimeParity:
+      JSON.stringify(consumer.button({ className: 'external', style })) ===
+      JSON.stringify(bind({ className: 'external', style })),
     same:
       JSON.stringify(result) ===
       JSON.stringify(
@@ -77,6 +82,7 @@ export const text = '🎉';`
           "paddingLeft": "2px",
         },
       },
+      "runtimeParity": true,
       "same": true,
       "style": {
         "color": "#000",

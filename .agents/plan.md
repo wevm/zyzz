@@ -108,7 +108,7 @@ Acceptance: supported source calls and equivalent in-memory definitions produce 
 
 ### PR 1.4 — Module Rewriting and Maps
 
-Status: implemented on `feat/module-rewriting` from main `b538b6b`; validation is in progress.
+Status: implemented in [PR #7](https://github.com/wevm/zyzz/pull/7) from main `b538b6b`. Build, checks, browser integration, packed consumption, and benchmarks pass in CI.
 
 - [x] Replace extracted definitions with callable props binders; fold fully static applications to `{ className }` props objects when safe and return transformed source, stylesheet artifacts, and source maps from an adapter operating on strings and plain data.
 - [x] Preserve surrounding application code, exports, and source semantics. Remove authoring imports only when their bindings are no longer needed; leave no styling authoring closures or runtime CSS generation; surviving static callables only merge props.
@@ -118,7 +118,7 @@ Status: implemented on `feat/module-rewriting` from main `b538b6b`; validation i
 
 Acceptance: transformed modules run without invoking the missing-transform stub, their classes match emitted CSS, and source maps locate the original styles. No filesystem or build-tool integration is required to use this adapter.
 
-Implementation: `Transform.compile` returns rewritten modules, ordered module-scoped CSS, and standard JavaScript/CSS maps. Direct no-argument applications fold; escaping definitions use the isolated `zyzz/runtime` props binder. Integration scenarios cover source maps, directives, imports, runtime validation, separately compiled browser modules, and packed exports. Browser validation is required in CI before acceptance. Full-transform and props-binding benchmarks are separate from the existing compiler comparison matrix; emitted sizes include the required runtime.
+Implementation: `Transform.compile` returns rewritten modules, ordered module-scoped CSS, and standard JavaScript/CSS maps. Direct no-argument applications fold; escaping definitions use the isolated `zyzz/runtime` props binder. Integration scenarios cover source maps, directives, imports, runtime validation, separately compiled browser modules, and packed exports. Browser validation passed in [verification run 34164344672](https://github.com/wevm/zyzz/actions/runs/34164344672). Full-transform and props-binding benchmarks are separate from the existing compiler comparison matrix; emitted sizes include the required runtime.
 
 ### PR 1.5 — Host Adapters and Portability
 

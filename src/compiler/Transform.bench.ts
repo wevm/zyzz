@@ -16,9 +16,6 @@ for (const count of [10, 100, 1000]) {
       },
       {
         iterations: 3,
-        time: 100,
-        warmupIterations: 1,
-        warmupTime: 50,
         setup: async () => {
           const output = Transform.compile({
             moduleId: 'example/cards.ts',
@@ -75,6 +72,9 @@ for (const count of [10, 100, 1000]) {
             javascriptText,
           )
         },
+        time: 100,
+        warmupIterations: 1,
+        warmupTime: 50,
       },
     )
   })

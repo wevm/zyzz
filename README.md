@@ -1,46 +1,147 @@
 # typestyle
 
-Type-safe styling with familiar CSS properties, inferred design tokens, and styles compiled ahead of time.
+A type-safe styling library for agents. Familiar CSS, inferred design tokens, and small APIs make styles straightforward to generate, inspect, and change.
 
 ## Philosophy
 
-- Agnostic core, independent of frameworks, build tools, and environments.
-- Shared authoring across web and native, with explicit platform capabilities.
-- Small, modular APIs and optional integrations.
-- Standard CSS properties, selectors, queries, and cascade behavior.
-- Compact compiled styles with readable class names.
+- **Typed.** Properties, tokens, and variants carry their constraints into every call.
+- **Standard.** Styles use familiar CSS properties, selectors, queries, and cascade behavior.
+- **Agnostic.** The core is independent of frameworks, build tools, and environments.
+- **Universal.** Shared definitions target web and native with explicit platform capabilities.
+- **Minimal.** Small, composable APIs keep configuration and dependencies optional.
+- **Compiled.** Rules compile ahead of time into compact output with readable class names on web.
 
-## Usage
+## APIs
+
+### Styles
+
+Use `css` with built-in tokens, inline or as an exported class string. Nest selectors and queries alongside declarations.
 
 ```tsx
-import { Theme } from 'typestyle'
-
-const { css } = Theme.define({
-  color: { text: { light: '#111', dark: '#eee' } },
-  backgroundColor: { surface: { light: '#fff', dark: '#111' } },
-  spacing: { md: '1rem' },
-})
+import { css } from 'typestyle'
 
 const button = css({
-  color: 'text',
-  backgroundColor: 'surface',
-  padding: 'md',
+  color: 'blue.700',
+  padding: 4,
   ':hover': { opacity: 0.8 },
 })
 
 <button className={button}>Continue</button>
 ```
 
-Use `import { css } from 'typestyle'` for built-in tokens. Styles can be inline, named, or exported.
+### Themes
 
-## APIs
+Define tokens once and get a `css` function that infers them. Colors accept a shared value or a light/dark pair; query aliases infer from theme thresholds.
 
-- `css(styles)` — typed styles, selectors, and queries; callbacks supply value helpers.
-- `Theme.define(tokens)` / `Theme.extend(theme, overrides)` — inferred themes and scoped overrides.
-- `Variant.define(theme, definition)` / `Variant.Props` — typed variants, defaults, and compound rules.
-- `Var.define(schema)` / `Var.set(vars, values)` — typed runtime values for compiled styles.
-- `cx(...classes)` — explicit style composition.
-- `Style.define(styles)` — named, portable style definitions.
-- `Css` — stylesheet compilation, global rules, keyframes, and fonts.
-- `Native` — native compilation and style selection.
-- `typestyle src --out-dir dist` — standalone compilation; `--watch` and `--minify` control delivery.
+```ts
+import { Theme } from 'typestyle'
+
+const theme = Theme.define({
+  color: { text: { light: '#111', dark: '#eee' }, brand: '#06c' },
+  spacing: { sm: '0.5rem', md: '1rem' },
+  breakpoints: { tablet: '48rem' },
+})
+
+const card = theme.css({
+  color: 'text',
+  padding: 'sm',
+  '@media tablet': { padding: 'md' },
+})
+```
+
+Use `Theme.extend(theme, overrides)` to create an alternate theme, and apply its `className` to a subtree for inherited token overrides.
+
+### Variants
+
+Describe component choices with inferred props, defaults, and compound rules. Web variants select styles through data attributes.
+
+```tsx
+import { Variant } from 'typestyle'
+
+const button = Variant.define(theme, {
+  base: { display: 'inline-flex' },
+  variants: {
+    size: {
+      sm: { padding: 'sm' },
+      md: { padding: 'md' },
+    },
+  },
+  defaultVariants: { size: 'md' },
+})
+
+type ButtonProps = Variant.Props<typeof button>
+;<button {...button({ size: 'sm' })}>Continue</button>
+```
+
+### Value helpers
+
+Callbacks supply helpers for literal values, fallback declarations, importance, and expressions using theme tokens.
+
+```ts
+const panel = theme.css(({ fallback, important, value, tokens }) => ({
+  display: fallback('block', 'grid'),
+  color: important('brand'),
+  width: value`calc(100% - ${tokens.spacing.md})`,
+}))
+```
+
+### Variables
+
+Bind runtime values to typed variables while keeping the CSS rules static.
+
+```tsx
+import { Var, css } from 'typestyle'
+
+const progress = Var.define({ amount: 'percentage' })
+const bar = css({ width: progress.amount })
+
+<div className={bar} style={Var.set(progress, { amount: '50%' })} />
+```
+
+### Composition
+
+Prefer state attributes for conditional styling. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
+
+```tsx
+import { css, cx } from 'typestyle'
+
+const base = css({ padding: 2 })
+const roomy = css({ padding: 4 })
+
+<button className={cx(base, roomy)}>Continue</button>
+```
+
+### Stylesheets and compilation
+
+`Css` provides global rules, keyframes, fonts, and in-memory CSS compilation. Named `Style` definitions also feed the native compiler.
+
+```ts
+import { Style } from 'typestyle'
+import * as Css from 'typestyle/css'
+
+Css.global({ body: { margin: 0 } })
+
+const styles = Style.define({
+  card: { display: 'flex' },
+})
+const output = Css.compile({ styles })
+```
+
+```ts
+import * as Native from 'typestyle/native'
+
+const output = Native.compile({ styles, themes: { base: theme } })
+const selected = Native.select(output.styles, {
+  theme: 'base',
+  colorScheme: 'dark',
+})
+```
+
+### CLI
+
+Compile source modules and styles independently of a build integration. Watch mode updates output as definitions change.
+
+```sh
+typestyle src --out-dir dist --watch
+typestyle src --out-dir dist --minify
+```

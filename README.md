@@ -2,8 +2,8 @@
 
 A type-safe styling library for agents. Familiar CSS, inferred design tokens, and small APIs make styles straightforward to generate, inspect, and change.
 
-- [**Typed Styles**](#typed-styles): typed CSS properties, built-in tokens, selectors, and queries.
-- [**Themes**](#themes): inferred tokens with light and dark color schemes.
+- [**Typed Styles**](#typed-styles): typed CSS properties, values, selectors, and queries.
+- [**Themes**](#themes): bundled or custom tokens with light and dark color schemes.
 - [**Variants**](#variants): component choices with inferred props and data attributes.
 - [**Value Context**](#value-context): fallbacks, importance, expressions, and theme CSS variables.
 - [**Variables**](#variables): typed runtime values bound to static rules.
@@ -22,14 +22,16 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 
 ## Overview
 
-Pass a style object to `css` and use the result as a class name. Properties and tokens are inferred; styles compile into CSS ahead of time.
+Pass standard CSS properties and values to `css` and use the result as a class name. The core has no built-in tokens; styles compile into CSS ahead of time.
 
 ```tsx
 import { css } from 'typestyle'
 
 export function Button() {
   return (
-    <button className={css({ color: 'blue.700', padding: 4 })}>Continue</button>
+    <button className={css({ color: '#06c', padding: '1rem' })}>
+      Continue
+    </button>
   )
 }
 ```
@@ -38,14 +40,14 @@ export function Button() {
 
 ### Typed Styles
 
-Use `css` with built-in tokens, inline or as an exported class string. Nest selectors and queries alongside declarations.
+Use `css` inline or as an exported class string. Nest selectors and queries alongside typed declarations.
 
 ```tsx
 import { css } from 'typestyle'
 
 const button = css({
-  color: 'blue.700',
-  padding: 4,
+  color: '#06c',
+  padding: '1rem',
   ':hover': { opacity: 0.8 },
 })
 
@@ -53,6 +55,14 @@ const button = css({
 ```
 
 ### Themes
+
+Import a bundled theme's `css` for inferred design tokens. `typestyle/themes/default` also exports the full `theme` and raw `tokens` for extension and reuse.
+
+```ts
+import { css } from 'typestyle/themes/default'
+
+const button = css({ color: 'blue.700', padding: 4 })
+```
 
 Define tokens once and get a `css` function that infers them. Colors accept a shared value or a light/dark pair; query aliases infer from theme thresholds.
 
@@ -129,8 +139,8 @@ Prefer state attributes for conditional styling. Use `cx` for explicit overrides
 ```tsx
 import { css, cx } from 'typestyle'
 
-const base = css({ padding: 2 })
-const roomy = css({ padding: 4 })
+const base = css({ padding: '0.5rem' })
+const roomy = css({ padding: '1rem' })
 
 <button className={cx(base, roomy)}>Continue</button>
 ```

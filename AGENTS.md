@@ -12,7 +12,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Keep modules small and extensible through explicit data and narrow functions. Avoid global registration, mandatory providers, component wrappers, custom JSX runtimes, and general plugin frameworks.
 - Prefer CSS properties, values, selectors, at-rules, custom properties, inheritance, and cascade patterns. Preserve authored ordering; convenience syntax must expand predictably.
 - Compile styles ahead of time. Runtime adapters may select static alternatives but must not generate or compile styles.
-- Treat Geist and Tailwind tokens as a default preset, not dependencies of core semantics.
+- Keep root `css` token-free. Put Geist and Tailwind design tokens in the opt-in `typestyle/themes/default` entrypoint, exporting bound `css`, the full `theme`, and raw `tokens`. Core imports must not include bundled theme data.
 
 ## TypeScript Conventions
 

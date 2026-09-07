@@ -8,6 +8,22 @@ The core owns typed ordered declarations, token resolution, validation, and dete
 
 Use small modules and subpath exports. All compilation paths share core semantics. Frameworks consume ordinary class strings or native style objects, without required providers, wrappers, or environment detection.
 
+## Entry Points
+
+`css` from `typestyle` authors standard CSS with an empty token contract. The root entrypoint neither imports nor re-exports bundled themes or their token data. Importing a theme does not alter the root function or register global state.
+
+Bundled themes use independent `typestyle/themes/<name>` entrypoints. The MVP provides `typestyle/themes/default` with named exports:
+
+| Export   | Contract                                                             |
+| -------- | -------------------------------------------------------------------- |
+| `css`    | The bound `theme.css` function with the theme's inferred tokens      |
+| `theme`  | The full theme for variants, scopes, extension, and target compilers |
+| `tokens` | Raw token definitions for explicit composition with `Theme.define`   |
+
+The default theme bundles colors, typography, spacing, radii, and related design scales. Light and dark are color schemes within the theme. Additional themes follow the same entrypoint contract; consuming one theme must not include another theme's data or CSS.
+
+The exported `css` is an alias of `theme.css`, with identical inference, token identities, and output. `tokens` contains authored definitions; `theme.tokens` contains portable token references. Source adapters recognize these bindings through package exports and re-exports without executing theme modules.
+
 ## Theme definition
 
 `Theme.define(tokens)` accepts only token definitions. No name, identifier, contract metadata, or scheme container is required.
@@ -50,7 +66,7 @@ Token names infer from literal definitions. A scheme pair is a leaf, never a pal
 
 Property-specific color groups augment the shared `color` group and win when a key exists in both. A `textColor.primary` token is available to `color: 'primary'`, but not `backgroundColor: 'primary'`. `textColor` is a token category; authored styles keep the standard CSS property `color`.
 
-`Theme.define` uses exactly the supplied token groups, with no implicit preset merge. The default preset is separately available as plain `tokens` from `typestyle`; object spreads can opt into its groups. Token values must be statically resolvable and valid for their target.
+`Theme.define` uses exactly the supplied token groups, with no implicit preset merge. Bundled definitions are available as `tokens` from `typestyle/themes/default`; object spreads can opt into its groups. Token values must be statically resolvable and valid for their target.
 
 ## Consuming styles
 
@@ -90,19 +106,27 @@ function Button() {
 }
 ```
 
-Inline calls, module-level constants, and exported styles use the same inference and compilation rules. Extraction recognizes the authoring binding wherever a static call occurs; it does not depend on a `className` attribute. Imported compiled styles are ordinary strings. The direct default `css` import supports the same forms.
+Inline calls, module-level constants, and exported styles use the same inference and compilation rules. Extraction recognizes the authoring binding wherever a static call occurs; it does not depend on a `className` attribute. Imported compiled styles are ordinary strings. Root and bundled-theme `css` imports support the same forms.
 
 `theme.css(style)` compiles to a class-name string containing one or more readable classes. Theme tokens autocomplete within their matching properties. Missing tokens and wrong domains fail type checking and compilation. CSS keywords remain supported; ambiguous literal values use the explicit escape described below.
 
-Applications without a custom theme use the default preset directly:
+Applications can author CSS without a theme:
 
 ```tsx
 import { css } from 'typestyle'
 
+const button = <button className={css({ padding: '1rem', color: '#06c' })} />
+```
+
+Applications opt into bundled tokens through the theme entrypoint:
+
+```tsx
+import { css } from 'typestyle/themes/default'
+
 const button = <button className={css({ padding: 4, color: 'blue.700' })} />
 ```
 
-The custom and default functions share extraction and emission. Neither function generates styles in production. Untransformed authoring calls fail clearly; importing a function alone does not enable runtime compilation.
+Root, custom-theme, and bundled-theme functions share extraction and emission. None generates styles in production. Untransformed authoring calls fail clearly; importing a function alone does not enable runtime compilation.
 
 Token references such as `theme.tokens.backgroundColor.surface` preserve domain information for named, portable definitions. `Style.define(styles)` remains the in-memory API for named style data; target compilers produce distinct web and native outputs.
 
@@ -122,7 +146,7 @@ const panel = theme.css((c) => ({
 
 The callback is recognized static syntax. The compiler resolves supplied helpers, constants, and token references without executing arbitrary application functions. Helpers need no separate imports. Literal and expression validation is target-specific; untyped callers also receive compiler diagnostics.
 
-`c.tokens` exposes the theme's portable token references. On web, `c.vars` exposes a readonly, inferred tree of CSS variable references for scalar declaration tokens. The direct `css` import uses the default preset for both trees; `theme.css` infers them from its theme.
+`c.tokens` exposes portable token references. On web, `c.vars` exposes a readonly, inferred tree of CSS variable references for scalar declaration tokens. Both trees are empty for `css` from `typestyle`; custom and bundled theme functions infer them from their theme. Value helpers remain available without a theme.
 
 `c.vars.spacing.md` emits a CSS `var()` reference with the defining value as fallback. These string-compatible references retain token domains for property checking and work directly in declarations or within `c.value` templates. They reuse the theme contract's variable identities.
 
@@ -130,22 +154,25 @@ Variable references follow inherited theme overrides and color schemes. Color-pa
 
 Query thresholds, container names, and composite typography presets are excluded from `c.vars`; query aliases still resolve to literal conditions. Unknown paths and incompatible property domains fail type checking and compilation. Native contexts retain portable `c.tokens` and reject web-only `c.vars` references.
 
-| Form                          | Meaning                                                          |
-| ----------------------------- | ---------------------------------------------------------------- |
-| Numeric spacing/sizing value  | Matching numeric token; missing tokens are errors                |
-| Number on a unitless property | Literal number, such as `opacity: 0.5`                           |
-| CSS length string             | Literal length, such as `padding: '4px'`                         |
-| Token name                    | Inferred token for that property                                 |
-| CSS keyword                   | Standard keyword, taking precedence over an ambiguous token name |
-| Explicit token reference      | Resolves token/keyword collisions                                |
-| `c.tokens.<group>.<token>`    | Portable reference retaining the token's domain                  |
-| `c.vars.<group>.<token>`      | Web CSS variable reference with an inferred token domain         |
-| `c.literal(text)`             | Explicit static CSS escape                                       |
-| `c.value` tagged template     | Static CSS expression with typed token/variable references       |
-| `c.fallback(...values)`       | Ordered declarations; later supported values win                 |
-| `c.important(value)`          | Important declaration on web                                     |
+| Form                                 | Meaning                                                            |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| Nonzero numeric spacing/sizing value | Matching numeric theme token; missing tokens are errors            |
+| Zero on a length property            | Standard CSS zero; use an explicit reference for a token named `0` |
+| Number on a unitless property        | Literal number, such as `opacity: 0.5`                             |
+| CSS length string                    | Literal length, such as `padding: '4px'`                           |
+| Token name                           | Inferred token for that property                                   |
+| CSS keyword                          | Standard keyword, taking precedence over an ambiguous token name   |
+| Explicit token reference             | Resolves token/keyword collisions                                  |
+| `c.tokens.<group>.<token>`           | Portable reference retaining the token's domain                    |
+| `c.vars.<group>.<token>`             | Web CSS variable reference with an inferred token domain           |
+| `c.literal(text)`                    | Explicit static CSS escape                                         |
+| `c.value` tagged template            | Static CSS expression with typed token/variable references         |
+| `c.fallback(...values)`              | Ordered declarations; later supported values win                   |
+| `c.important(value)`                 | Important declaration on web                                       |
 
 These helpers define the literal and fallback authoring contract. Preserve fallback order, including through composition and atomic optimization. Define numeric behavior per property; never infer a token-to-pixel fallback. Tokens inside shorthand expressions must be validated for their position where practical; arbitrary literal expressions are an explicit escape from token checking.
+
+Root `css` accepts literal lengths, CSS keywords, unitless property numbers, and zero where CSS permits it. Token names such as `'blue.700'` and numeric spacing values such as `padding: 4` require a theme defining those tokens. Importing a bundled theme elsewhere does not make them valid in root calls.
 
 Compiled style values remain assignable to strings but carry optional property information:
 

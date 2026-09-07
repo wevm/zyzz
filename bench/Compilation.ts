@@ -77,7 +77,16 @@ export async function create(workload: Corpus.Case): Promise<Fixture> {
       ${styles
         .map(
           (style, index) =>
-            `const Card${index} = () => <View ${Object.entries(style)
+            `const Card${index} = () => <View ${Object.entries({
+              alignItems: 'normal',
+              boxSizing: 'content-box',
+              display: 'block',
+              flexDirection: 'row',
+              flexShrink: 1,
+              minHeight: 'auto',
+              minWidth: 'auto',
+              ...style,
+            })
               .map(
                 ([property, value]) =>
                   `${property}={${JSON.stringify(property === 'lineHeight' && typeof value === 'number' ? String(value) : value)}}`,

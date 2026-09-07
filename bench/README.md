@@ -44,7 +44,7 @@ Every compiler renders against browser-interpreted literal CSS, rather than anot
 
 Panda CSS uses `@pandacss/node` config loading, code generation, source extraction, and CSS emission, followed by the common esbuild browser bundler. The base utility preset is enabled, the design-token preset and preflight are disabled, and required generated helpers and base CSS are retained. Generated `.mjs` modules use normal esbuild resolution.
 
-Tamagui uses `@tamagui/static` on literal `View` JSX, requires every component to flatten, and bundles the emitted JSX with the real production React JSX runtime. Class references come from the resulting React elements; retained helpers are counted. Unitless line-height is authored as a CSS string because native numeric lengths have different semantics.
+Tamagui uses `@tamagui/static` on literal `View` JSX, requires every component to flatten, and bundles the emitted JSX with the real production React JSX runtime. Class references come from the resulting React elements; retained helpers and config `getCSS()` output are counted. View defaults are explicitly reset to ordinary div semantics before applying corpus declarations, so native flex defaults cannot distort the comparison. Unitless line-height is authored as a CSS string because native numeric lengths have different semantics.
 
 Tamagui's evaluation hooks run in a bounded child process to isolate them from the benchmark runner. Its timing includes process startup and config evaluation, unlike the warm in-process adapters. Do not interpret these timings as a matched core-emitter speed ranking. Its generated CSS and client artifacts are still measured with the same minifier and compression settings. Generated config caches are ignored.
 

@@ -24,7 +24,13 @@ try {
     throw new Error(
       'Tamagui did not statically flatten every fixture component.',
     )
-  await Fs.writeFile(Path.join(directory, 'tamagui.css'), result.styles)
+  const base = extractor.getTamagui()?.getCSS()
+  if (base === undefined)
+    throw new Error('Tamagui config did not expose its base CSS.')
+  await Fs.writeFile(
+    Path.join(directory, 'tamagui.css'),
+    `${base}\n${result.styles}`,
+  )
   await Fs.writeFile(Path.join(directory, 'tamagui-output.tsx'), result.js)
 } finally {
   extractor.cleanupBeforeExit()

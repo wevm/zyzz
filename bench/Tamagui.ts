@@ -22,7 +22,7 @@ try {
   })
   if (!result?.styles || result.stats.flattened !== Number(process.argv[3]))
     throw new Error(
-      'Tamagui did not statically flatten every fixture component.',
+      `Tamagui did not statically flatten every fixture component: ${JSON.stringify(result?.stats)}`,
     )
   const base = extractor.getTamagui()?.getCSS()
   if (base === undefined)

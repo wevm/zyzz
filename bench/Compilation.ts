@@ -73,20 +73,22 @@ export async function create(workload: Corpus.Case): Promise<Fixture> {
         )
         .join(' '),
     ),
-    tamagui: `import { View } from '@tamagui/core';
+    tamagui: `import { Text, View } from '@tamagui/core';
       ${styles
         .map(
           (style, index) =>
-            `const Card${index} = () => <View ${Object.entries({
-              alignItems: 'normal',
-              boxSizing: 'content-box',
-              display: 'block',
-              flexDirection: 'row',
-              flexShrink: 1,
-              minHeight: 'auto',
-              minWidth: 'auto',
-              ...style,
-            })
+            `const Card${index} = () => <${style.fontSize !== undefined || style.fontWeight !== undefined || style.lineHeight !== undefined ? 'Text' : 'View'} ${Object.entries(
+              {
+                alignItems: 'normal',
+                boxSizing: 'content-box',
+                display: 'block',
+                flexDirection: 'row',
+                flexShrink: 1,
+                minHeight: 'auto',
+                minWidth: 'auto',
+                ...style,
+              },
+            )
               .map(
                 ([property, value]) =>
                   `${property}={${JSON.stringify(property === 'lineHeight' && typeof value === 'number' ? String(value) : value)}}`,

@@ -2,13 +2,13 @@
 
 A type-safe styling library for agents. Familiar CSS, inferred design tokens, and small APIs make styles straightforward to generate, inspect, and change.
 
-- [**Styles**](#styles): typed CSS properties, built-in tokens, selectors, and queries.
+- [**Typed Styles**](#typed-styles): typed CSS properties, built-in tokens, selectors, and queries.
 - [**Themes**](#themes): inferred tokens with light and dark color schemes.
 - [**Variants**](#variants): component choices with inferred props and data attributes.
-- [**Value helpers**](#value-helpers): fallbacks, importance, and token expressions.
+- [**Value Context**](#value-context): fallbacks, importance, expressions, and theme CSS variables.
 - [**Variables**](#variables): typed runtime values bound to static rules.
 - [**Composition**](#composition): explicit overrides between generated styles.
-- [**Stylesheets and compilation**](#stylesheets-and-compilation): global rules, animations, fonts, and web/native output.
+- [**Stylesheets and Compilation**](#stylesheets-and-compilation): global rules, animations, fonts, and web/native output.
 - [**CLI**](#cli): standalone compilation with watch mode.
 
 ## Philosophy
@@ -36,7 +36,7 @@ export function Button() {
 
 ## Features
 
-### Styles
+### Typed Styles
 
 Use `css` with built-in tokens, inline or as an exported class string. Nest selectors and queries alongside declarations.
 
@@ -96,15 +96,16 @@ type ButtonProps = Variant.Props<typeof button>
 ;<button {...button({ size: 'sm' })}>Continue</button>
 ```
 
-### Value helpers
+### Value Context
 
-Callbacks supply helpers for literal values, fallback declarations, importance, and expressions using theme tokens.
+The context `c` supplies value helpers and inferred theme references. Use `c.vars` for CSS `var(...)` references, directly in properties or within expressions; they follow inherited theme overrides and color schemes.
 
 ```ts
-const panel = theme.css(({ fallback, important, value, tokens }) => ({
-  display: fallback('block', 'grid'),
-  color: important('brand'),
-  width: value`calc(100% - ${tokens.spacing.md})`,
+const panel = theme.css((c) => ({
+  display: c.fallback('block', 'grid'),
+  color: c.important('brand'),
+  borderColor: c.vars.color.brand,
+  width: c.value`calc(100% - ${c.vars.spacing.md})`,
 }))
 ```
 
@@ -134,7 +135,7 @@ const roomy = css({ padding: 4 })
 <button className={cx(base, roomy)}>Continue</button>
 ```
 
-### Stylesheets and compilation
+### Stylesheets and Compilation
 
 `Css` provides global rules, keyframes, fonts, and in-memory CSS compilation. Named `Style` definitions also feed the native compiler.
 

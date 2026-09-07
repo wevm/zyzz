@@ -34,6 +34,8 @@ The proposed signatures, examples, type rules, and emitted theme CSS are specifi
 
 Additional agreed APIs are `css(callback)`, `cx(...)`, `Var.define`/`Var.set`, `Variant.define(theme, definition)`, `Variant.Props`, optional `ClassName<Properties>` contracts, and `Css.global`/`Css.keyframes`/`Css.fontFace`. Keep `css` as the authoring name; `Variant` is singular and receives the full theme first.
 
+Value context callbacks use a single `c` parameter. Helpers are accessed through `c`, portable token references through `c.tokens`, and inferred web CSS variable references through `c.vars`.
+
 ## Starting point
 
 Implementation starts from scratch. The repository contains the design, agent guidelines, and a zile-generated stub with Vite Plus tooling. The generated greeting and its test exercise scaffolding only. No styling implementation, examples, or styling compiler/CLI exist. All API contracts are targets to build and validate; no phase is complete.
@@ -62,7 +64,9 @@ Status: planned.
 - [ ] Infer `theme.css` arguments from shared `color` and property-specific `backgroundColor`, `textColor`, and `borderColor` groups, with documented fallback and override rules. Reject wrong domains, unknown tokens, partial pairs, and incompatible extensions.
 - [ ] Derive internal theme identities without caller metadata; extensions retain base token identities independently of values. Switching theme scopes must not require recompiling component classes.
 - [ ] Make bound styles work without a root scope using custom-property fallbacks; expose `theme.className` for inherited overrides and retain the directly imported default `css`.
-- [ ] Implement expression-bodied helper callbacks supplying `important`, `fallback`, `literal`, `value`, and inferred `tokens`, without arbitrary code execution.
+- [ ] Implement expression-bodied value context callbacks using `c.important`, `c.fallback`, `c.literal`, `c.value`, and inferred `c.tokens`, without arbitrary code execution.
+- [ ] Expose inferred `c.vars` references for scalar declaration tokens on web. Emit CSS `var()` values with defining fallbacks and shared theme identities; preserve domain checking in direct properties and expression templates. Exclude query metadata and composite presets, and reject these references on native.
+- [ ] Verify `c.vars` inference, unknown paths, incompatible domains, default/custom themes, inherited overrides, light/dark fallbacks, variable liveness, and removal of callback contexts from generated modules.
 - [ ] Define numeric token/literal behavior, keyword precedence, ordered fallbacks, expression references, and explicit literal escapes.
 - [ ] Implement optional branded `ClassName<Properties>` types across exports, conditions, and shorthand expansion.
 - [ ] Implement `Var.define`/`Var.set` with typed web bindings and explicit native support; separate runtime value assignment from style generation.
@@ -87,7 +91,7 @@ Status: planned.
 
 - [ ] Prefer native/ARIA state attributes and custom data attributes; retain `cx` for explicit last-wins composition within matching contexts.
 - [ ] Prove static and dynamic composition metadata across package boundaries, partial shorthand overrides, conditions, fallback groups, and external-class limitations without runtime rule generation or global registration.
-- [ ] Implement `Variant.define(theme, definition)` and `Variant.Props` with theme-first inference, base/variants/compounds/defaults, boolean selections, array compound matches, and helper callbacks.
+- [ ] Implement `Variant.define(theme, definition)` and `Variant.Props` with theme-first inference, base/variants/compounds/defaults, boolean selections, array compound matches, and value context callbacks.
 - [ ] Compile web recipes to stable classes and scoped data-attribute selectors; dynamic calls serialize selections only. Validate attribute ownership, null/default behavior, and ordered precedence.
 - [ ] Implement shared native recipe selection with the same inferred props and precedence; avoid unbounded variant/theme Cartesian products.
 - [ ] Implement `Css.compile` as a pure emitter returning CSS, named classes, and theme scope classes. Theme maps name outputs without adding definition metadata.

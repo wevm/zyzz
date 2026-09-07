@@ -106,20 +106,29 @@ The custom and default functions share extraction and emission. Neither function
 
 Token references such as `theme.tokens.backgroundColor.surface` preserve domain information for named, portable definitions. `Style.define(styles)` remains the in-memory API for named style data; target compilers produce distinct web and native outputs.
 
-## Value helpers and type contracts
+## Value Context
 
-Keep `css` and `theme.css`; the authoring function is not renamed to `class`. Both accept a style object or an expression-bodied helper callback:
+Both `css` and `theme.css` accept a style object or an expression-bodied callback. A single context parameter, `c`, supplies value helpers and inferred theme references:
 
 ```ts
-const panel = theme.css(({ important, fallback, literal, value, tokens }) => ({
-  color: important('brand'),
-  display: fallback('block', 'grid'),
-  backgroundColor: literal('oklch(60% 0.2 250)'),
-  width: value`calc(100% - ${tokens.spacing.md})`,
+const panel = theme.css((c) => ({
+  color: c.important('brand'),
+  display: c.fallback('block', 'grid'),
+  backgroundColor: c.literal('oklch(60% 0.2 250)'),
+  borderColor: c.vars.color.brand,
+  width: c.value`calc(100% - ${c.vars.spacing.md})`,
 }))
 ```
 
 The callback is recognized static syntax. The compiler resolves supplied helpers, constants, and token references without executing arbitrary application functions. Helpers need no separate imports. Literal and expression validation is target-specific; untyped callers also receive compiler diagnostics.
+
+`c.tokens` exposes the theme's portable token references. On web, `c.vars` exposes a readonly, inferred tree of CSS variable references for scalar declaration tokens. The direct `css` import uses the default preset for both trees; `theme.css` infers them from its theme.
+
+`c.vars.spacing.md` emits a CSS `var()` reference with the defining value as fallback. These string-compatible references retain token domains for property checking and work directly in declarations or within `c.value` templates. They reuse the theme contract's variable identities.
+
+Variable references follow inherited theme overrides and color schemes. Color-pair fallbacks use `light-dark()` under the same color-scheme contract as ordinary theme declarations. Referenced variables count as live for emission and pruning. Access is resolved statically; no context object or theme lookup remains at runtime.
+
+Query thresholds, container names, and composite typography presets are excluded from `c.vars`; query aliases still resolve to literal conditions. Unknown paths and incompatible property domains fail type checking and compilation. Native contexts retain portable `c.tokens` and reject web-only `c.vars` references.
 
 | Form                          | Meaning                                                          |
 | ----------------------------- | ---------------------------------------------------------------- |
@@ -129,10 +138,12 @@ The callback is recognized static syntax. The compiler resolves supplied helpers
 | Token name                    | Inferred token for that property                                 |
 | CSS keyword                   | Standard keyword, taking precedence over an ambiguous token name |
 | Explicit token reference      | Resolves token/keyword collisions                                |
-| `literal(text)`               | Explicit static CSS escape                                       |
-| `value` tagged template       | Static CSS expression with typed token/variable references       |
-| `fallback(...values)`         | Ordered declarations; later supported values win                 |
-| `important(value)`            | Important declaration on web                                     |
+| `c.tokens.<group>.<token>`    | Portable reference retaining the token's domain                  |
+| `c.vars.<group>.<token>`      | Web CSS variable reference with an inferred token domain         |
+| `c.literal(text)`             | Explicit static CSS escape                                       |
+| `c.value` tagged template     | Static CSS expression with typed token/variable references       |
+| `c.fallback(...values)`       | Ordered declarations; later supported values win                 |
+| `c.important(value)`          | Important declaration on web                                     |
 
 These helpers define the literal and fallback authoring contract. Preserve fallback order, including through composition and atomic optimization. Define numeric behavior per property; never infer a token-to-pixel fallback. Tokens inside shorthand expressions must be validated for their position where practical; arbitrary literal expressions are an explicit escape from token checking.
 
@@ -223,7 +234,7 @@ type ButtonVariants = Variant.Props<typeof button>
 const element = <button {...button({ intent: 'ghost', size: 'sm', loading })} />
 ```
 
-`Variant.define` also accepts a helper callback as its second argument, with the same helper/token context as `theme.css`. Infer variant names, string values, booleans, defaults, compound keys, and style tokens. `Variant.Props` exposes optional selection props; callers can make selected properties required using ordinary type utilities.
+`Variant.define` also accepts a value context callback as its second argument, with the same `c` context as `theme.css`. Infer variant names, string values, booleans, defaults, compound keys, and style tokens. `Variant.Props` exposes optional selection props; callers can make selected properties required using ordinary type utilities.
 
 The web callable returns a stable recipe `className` and normalized attributes such as `data-intent="ghost"`, `data-size="sm"`, and `data-loading="true"`. Defaults are materialized in the output. Omitted/undefined selections use defaults; null suppresses that variant and its default, omitting its attribute. False serializes as `"false"`. Reject unknown selections from untyped callers.
 

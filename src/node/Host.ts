@@ -1,0 +1,349 @@
+import * as Crypto from 'node:crypto'
+import * as NativeFs from 'node:fs'
+import * as Fs from 'node:fs/promises'
+import * as Path from 'node:path'
+import * as Transform from '../compiler/Transform.js'
+
+/** A successful publication; paths are relative to the output directory. */
+export type Build = {
+  /** Written or removed artifacts, excluding the ownership manifest. */
+  readonly changed: readonly string[]
+  /** Complete live artifact list, excluding the ownership manifest. */
+  readonly files: readonly string[]
+}
+
+/**
+ * Opens an exclusively owned output lifecycle around the literal source transform.
+ * Source modules remain TypeScript/JSX; transpilation and CSS loading belong to the consumer.
+ * @param options - Source directory, separate output directory, and portable package identity.
+ * @returns Explicit build, watch, and close operations. Close releases the output lock.
+ */
+export async function create(options: create.Options): Promise<Runtime> {
+  const outDir = Path.resolve(options.outDir)
+  const root = await Fs.realpath(options.root)
+
+  if (inside(outDir, root))
+    throw new Error('Output must not contain the source directory.')
+  Transform.compile({
+    moduleId: `${options.packageId}/identity.ts`,
+    source: '',
+  })
+
+  await Fs.mkdir(outDir, { recursive: true })
+  if ((await Fs.realpath(outDir)) !== outDir)
+    throw new Error('Output paths must not contain symbolic links.')
+
+  const lockPath = Path.join(outDir, '.zyzz-lock')
+  const lock = await Fs.open(lockPath, 'wx')
+  const manifestPath = Path.join(outDir, '.zyzz.json')
+
+  type Cached = { output: Transform.compile.ReturnType; source: string }
+  const cache = new Map<string, Cached>()
+  let closed = false
+  let closing: Promise<void> | undefined
+  let tail: Promise<void> = Promise.resolve()
+  let watcher: NativeFs.FSWatcher | undefined
+
+  async function perform(): Promise<Build> {
+    const inputs: string[] = []
+
+    async function scan(directory: string) {
+      for (const entry of await Fs.readdir(directory, {
+        withFileTypes: true,
+      })) {
+        const path = Path.join(directory, entry.name)
+        if (
+          inside(outDir, path) ||
+          entry.name === '.git' ||
+          entry.name === 'node_modules'
+        )
+          continue
+        if (entry.isDirectory()) await scan(path)
+        else if (
+          entry.isFile() &&
+          /\.[cm]?[jt]sx?$/.test(entry.name) &&
+          !/\.(?:d|test|test-d|bench)\.[cm]?[jt]sx?$/.test(entry.name)
+        )
+          inputs.push(path)
+      }
+    }
+
+    await scan(root)
+    inputs.sort()
+
+    const artifacts = new Map<string, string>()
+    const live = new Set<string>()
+    for (const input of inputs) {
+      const name = Path.relative(root, input).split(Path.sep).join('/')
+      const source = await Fs.readFile(input, 'utf8')
+      const previous = cache.get(name)
+      const output =
+        previous?.source === source
+          ? previous.output
+          : Transform.compile({
+              moduleId: `${options.packageId}/${name}`,
+              source,
+            })
+      cache.set(name, { output, source })
+      live.add(name)
+
+      artifacts.set(name, output.code)
+      artifacts.set(`${name}.map`, JSON.stringify(output.map))
+      artifacts.set(`${name}.css`, output.css)
+      artifacts.set(`${name}.css.map`, JSON.stringify(output.cssMap))
+    }
+
+    await regular(manifestPath, outDir)
+    const previous = await read(manifestPath)
+    const owned =
+      previous === undefined ? {} : manifest(previous, options.packageId)
+    const hashes: Record<string, string> = Object.create(null)
+    const before = new Map<string, string | undefined>()
+    const changed: string[] = []
+
+    for (const name of new Set([...Object.keys(owned), ...artifacts.keys()])) {
+      const path = Path.join(outDir, name)
+      await regular(path, outDir)
+      const content = await read(path)
+      const expected = owned[name]
+      if (
+        content !== undefined &&
+        (expected === undefined || hash(content) !== expected)
+      )
+        throw new Error(
+          `Refusing to replace an unowned or modified output: ${name}`,
+        )
+
+      const next = artifacts.get(name)
+      if (next !== undefined) hashes[name] = hash(next)
+      if (content !== next) {
+        before.set(name, content)
+        changed.push(name)
+      }
+    }
+
+    const nextManifest = JSON.stringify({
+      files: hashes,
+      packageId: options.packageId,
+      version: 1,
+    })
+    if (nextManifest !== previous) before.set('.zyzz.json', previous)
+
+    // Compile and verify ownership before publishing. Restore applied writes if publication fails.
+    const applied: string[] = []
+    try {
+      for (const [name] of before) {
+        const content =
+          name === '.zyzz.json' ? nextManifest : artifacts.get(name)
+        const path = Path.join(outDir, name)
+        applied.push(name)
+        if (content === undefined) await Fs.rm(path, { force: true })
+        else await write(path, content)
+      }
+    } catch (error) {
+      for (const name of applied.reverse()) {
+        const content = before.get(name)
+        const path = Path.join(outDir, name)
+        if (content === undefined) await Fs.rm(path, { force: true })
+        else await write(path, content)
+      }
+      throw error
+    }
+
+    for (const name of cache.keys()) if (!live.has(name)) cache.delete(name)
+
+    return { changed: changed.sort(), files: [...artifacts.keys()].sort() }
+  }
+
+  function build(): Promise<Build> {
+    if (closed) return Promise.reject(new Error('Host is closed.'))
+
+    const pending = tail.then(perform)
+    tail = pending.then(
+      () => {},
+      () => {},
+    )
+
+    return pending
+  }
+
+  function close(): Promise<void> {
+    if (closing) return closing
+    closed = true
+    watcher?.close()
+
+    closing = (async () => {
+      await tail
+      await lock.close()
+      await Fs.rm(lockPath)
+    })()
+
+    return closing
+  }
+
+  function watch(watchOptions: watch.Options) {
+    if (closed) throw new Error('Host is closed.')
+    if (watcher) throw new Error('Host is already watching.')
+
+    let dirty = false
+    let running = false
+
+    async function flush() {
+      if (running) return
+      running = true
+      try {
+        while (dirty && !closed) {
+          dirty = false
+          const event: Event = await build().then(
+            (result) => ({ result }),
+            (error: unknown) => ({ error }),
+          )
+          if (!closed) watchOptions.onResult(event)
+        }
+      } finally {
+        running = false
+      }
+    }
+
+    watcher = NativeFs.watch(root, { recursive: true }, (_event, filename) => {
+      if (filename && inside(outDir, Path.resolve(root, filename))) return
+      dirty = true
+      void flush()
+    })
+
+    watcher.on('error', (error) => watchOptions.onResult({ error }))
+    dirty = true
+    void flush()
+  }
+
+  return { build, close, watch }
+}
+
+/** File host creation contracts. */
+export declare namespace create {
+  /** Explicit filesystem and module-identity boundaries. */
+  type Options = {
+    /** Output directory exclusively locked until close; may be nested under root. */
+    readonly outDir: string
+    /** Stable package identity prepended to relative source module IDs. */
+    readonly packageId: string
+    /** Directory scanned for supported JavaScript/TypeScript source files. */
+    readonly root: string
+  }
+}
+
+/** Watch builds report failures without discarding the last successful output. */
+export type Event = { readonly error: unknown } | { readonly result: Build }
+
+/** An explicitly disposed file host. */
+export type Runtime = {
+  /** Serializes a complete scan, compile, and publication; failures reject. */
+  readonly build: () => Promise<Build>
+  /** Stops watching, drains builds, and releases ownership. Idempotent. */
+  readonly close: () => Promise<void>
+  /** Starts recursive filesystem watching and an initial build. */
+  readonly watch: (options: watch.Options) => void
+}
+
+/** Watch notification contracts. */
+export declare namespace watch {
+  /** Callback ownership remains with the host consumer. */
+  type Options = {
+    /** Receives successful builds and failures; must not throw. */
+    readonly onResult: (event: Event) => void
+  }
+}
+
+function hash(content: string) {
+  return Crypto.createHash('sha256').update(content).digest('hex')
+}
+
+function inside(parent: string, child: string) {
+  const relative = Path.relative(parent, child)
+  return (
+    !relative ||
+    (!relative.startsWith(`..${Path.sep}`) &&
+      relative !== '..' &&
+      !Path.isAbsolute(relative))
+  )
+}
+
+function manifest(source: string, packageId: string): Record<string, string> {
+  const value: unknown = JSON.parse(source)
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    !('packageId' in value) ||
+    value.packageId !== packageId ||
+    !('version' in value) ||
+    value.version !== 1 ||
+    !('files' in value) ||
+    !value.files ||
+    typeof value.files !== 'object' ||
+    Array.isArray(value.files)
+  )
+    throw new Error('Invalid output ownership manifest.')
+
+  for (const [path, digest] of Object.entries(value.files))
+    if (
+      !path ||
+      path.includes('\\') ||
+      path.includes(':') ||
+      path.split('/').some((part) => !part || part === '.' || part === '..') ||
+      typeof digest !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(digest) ||
+      path.startsWith('.zyzz')
+    )
+      throw new Error('Invalid owned output path or digest.')
+
+  return value.files as Record<string, string>
+}
+
+async function read(path: string): Promise<string | undefined> {
+  try {
+    return await Fs.readFile(path, 'utf8')
+  } catch (error) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'ENOENT'
+    )
+      return undefined
+    throw error
+  }
+}
+
+async function regular(path: string, root: string) {
+  for (let current = path; current !== root; current = Path.dirname(current)) {
+    try {
+      const entry = await Fs.lstat(current)
+      if (
+        entry.isSymbolicLink() ||
+        (current === path ? !entry.isFile() : !entry.isDirectory())
+      )
+        throw new Error('Output paths must be regular files and directories.')
+    } catch (error) {
+      if (
+        !(
+          error &&
+          typeof error === 'object' &&
+          'code' in error &&
+          error.code === 'ENOENT'
+        )
+      )
+        throw error
+    }
+  }
+}
+
+async function write(path: string, content: string) {
+  await Fs.mkdir(Path.dirname(path), { recursive: true })
+  const temporary = `${path}.${Crypto.randomUUID()}.tmp`
+  try {
+    await Fs.writeFile(temporary, content, { flag: 'wx' })
+    await Fs.rename(temporary, path)
+  } finally {
+    await Fs.rm(temporary, { force: true })
+  }
+}

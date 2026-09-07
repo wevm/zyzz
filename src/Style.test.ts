@@ -1,6 +1,11 @@
+import * as Esbuild from 'esbuild'
+import * as Path from 'node:path'
 import * as Vm from 'node:vm'
-import { Style } from 'zyzz'
+import * as Worker from 'node:worker_threads'
+import { chromium } from 'playwright'
+import { getQuickJS } from 'quickjs-emscripten'
 import { describe, expect, test } from 'vite-plus/test'
+import { Style } from 'zyzz'
 import { components } from '../test/fixtures/components.js'
 
 function diagnose(input: unknown, options: Style.define.Options = {}) {
@@ -803,4 +808,137 @@ test('accepts cross-realm records while rejecting class instances without readin
       ],
     }
   `)
+})
+
+const portableSource = `import { Style } from 'zyzz'; import { Css } from 'zyzz/web';
+export const result = Css.compile({ styles: Style.define({ button: { color: '#f00', padding: 0 } }) });`
+
+async function portableBundle() {
+  const bundle = await Esbuild.build({
+    bundle: true,
+    conditions: ['src'],
+    format: 'iife',
+    globalName: 'fixture',
+    metafile: true,
+    platform: 'browser',
+    stdin: {
+      contents: portableSource,
+      resolveDir: Path.resolve(import.meta.dirname, '..'),
+    },
+    target: 'es2022',
+    write: false,
+  })
+
+  expect(
+    Object.keys(bundle.metafile.inputs).filter((path) =>
+      /oxc|compiler|node:|themes/.test(path),
+    ),
+  ).toMatchInlineSnapshot('[]')
+  return bundle.outputFiles[0]!.text
+}
+
+test('the pure compilation pipeline agrees in Node, a worker, and QuickJS', async () => {
+  const code = await portableBundle()
+  const server = Vm.runInNewContext(`${code}; JSON.stringify(fixture.result)`)
+  expect(JSON.parse(server)).toMatchInlineSnapshot(`
+    {
+      "classes": {
+        "button": "z_base0",
+      },
+      "css": ".z_base0{color:#f00;padding:0;}",
+      "themes": {},
+    }
+  `)
+
+  const worker = new Worker.Worker(
+    `${code}; require('node:worker_threads').parentPort.postMessage(JSON.stringify(fixture.result));`,
+    { eval: true },
+  )
+  try {
+    const result = await new Promise<string>((resolve, reject) => {
+      worker.once('error', reject)
+      worker.once('message', resolve)
+    })
+    expect(JSON.parse(result)).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "button": "z_base0",
+        },
+        "css": ".z_base0{color:#f00;padding:0;}",
+        "themes": {},
+      }
+    `)
+  } finally {
+    await worker.terminate()
+  }
+
+  const engine = await getQuickJS()
+  const context = engine.newContext()
+  try {
+    const result = context.unwrapResult(
+      context.evalCode(`${code}; JSON.stringify(fixture.result)`),
+    )
+    try {
+      expect(JSON.parse(context.getString(result))).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "button": "z_base0",
+        },
+        "css": ".z_base0{color:#f00;padding:0;}",
+        "themes": {},
+      }
+    `)
+    } finally {
+      result.dispose()
+    }
+  } finally {
+    context.dispose()
+  }
+})
+
+test('the pure compilation pipeline runs in Chromium and a browser worker', async () => {
+  const code = await portableBundle()
+  const browser = await chromium.launch()
+  try {
+    const page = await browser.newPage()
+    await page.addScriptTag({ content: code })
+    expect(await page.evaluate('fixture.result')).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "button": "z_base0",
+        },
+        "css": ".z_base0{color:#f00;padding:0;}",
+        "themes": {},
+      }
+    `)
+
+    const result = await page.evaluate(async (code) => {
+      const url = URL.createObjectURL(
+        new Blob([code + '; postMessage(fixture.result);'], {
+          type: 'text/javascript',
+        }),
+      )
+      const worker = new globalThis.Worker(url)
+      try {
+        return await new Promise((resolve, reject) => {
+          worker.onmessage = (event) => resolve(event.data)
+          worker.onerror = (event) => reject(new Error(event.message))
+        })
+      } finally {
+        worker.terminate()
+        URL.revokeObjectURL(url)
+      }
+    }, code)
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "button": "z_base0",
+        },
+        "css": ".z_base0{color:#f00;padding:0;}",
+        "themes": {},
+      }
+    `)
+  } finally {
+    await browser.close()
+  }
 })

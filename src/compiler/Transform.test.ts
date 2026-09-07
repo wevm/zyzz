@@ -263,6 +263,25 @@ test('compiled library exports run against the packed runtime without a styling 
       write: false,
     })
 
+    const platforms = await run(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `import { Style } from 'zyzz'; import { Css } from 'zyzz/web'; console.log(JSON.stringify(Css.compile({ styles: Style.define({ button: { padding: 0 } }) })));`,
+      ],
+      { cwd: directory },
+    )
+    expect(JSON.parse(platforms.stdout)).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "button": "z_base0",
+        },
+        "css": ".z_base0{padding:0;}",
+        "themes": {},
+      }
+    `)
+
     const listing = await run('tar', ['-tzf', Path.join(directory, archive)])
 
     expect(

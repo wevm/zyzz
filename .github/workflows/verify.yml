@@ -1,41 +1,4 @@
-name: Verify
-on:
-  workflow_call:
-  workflow_dispatch:
-
 jobs:
-  checks:
-    name: Checks
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        uses: ./.github/actions/install-dependencies
-
-      - name: Check code
-        run: pnpm check
-
-      - name: Check types
-        run: pnpm check:types
-
-  test:
-    name: Test Runtime
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        uses: ./.github/actions/install-dependencies
-
-      - name: Run tests
-        run: pnpm run test run --bail=1
-        env:
-          CI: true
-
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -46,3 +9,54 @@ jobs:
         uses: ./.github/actions/install-dependencies
       - name: Build package
         run: pnpm build
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Check code
+        run: pnpm check
+      - name: Check types
+        run: pnpm check:types
+  test:
+    name: Test Runtime and Benchmarks
+    permissions:
+      actions: read
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - env:
+          CI: true
+        name: Run tests
+        run: pnpm run test run --bail=1
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        name: Download main benchmark baseline
+        run: |
+          baseline_run=$(gh api "repos/${{ github.repository }}/actions/artifacts?name=benchmarks&per_page=100" --jq '[.artifacts[] | select(.expired == false and .workflow_run.head_branch == "main")] | first | .workflow_run.id // empty')
+          if [ -n "$baseline_run" ]; then
+            gh run download "$baseline_run" --name benchmarks --dir bench/results/main
+          fi
+      - name: Run benchmarks
+        run: node bench/run.ts
+      - if: ${{ !cancelled() }}
+        name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: ignore
+          name: benchmarks
+          path: |
+            bench/results/define.json
+            bench/results/metadata.json
+          retention-days: 30
+name: Verify
+on:
+  workflow_call:
+  workflow_dispatch:

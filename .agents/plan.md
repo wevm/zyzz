@@ -71,7 +71,7 @@ Merge in dependency order. Each PR includes real integration scenarios, consumer
 
 Acceptance: public consumer scenarios prove inference, ordered immutable data, and actionable validation errors through real modules. Consumer type fixtures run in CI and a reproducible authoring/validation benchmark is recorded. The root dependency graph contains no themes, target emitters, parsers, filesystem access, or framework runtimes.
 
-Evidence: [PR #1](https://github.com/wevm/typestyle/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all seven integration scenarios pass. The packed consumer is independently type-checked and executed. [Benchmark results](../bench/results/define.json), [measurement conditions](../bench/results/define.metadata.json), and [literal contract](../docs/literal-styles.md) are recorded. Browser rendering and CSS-output benchmarks start with PR 1.2.
+Evidence: [PR #1](https://github.com/wevm/typestyle/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all seven integration scenarios pass. The packed consumer is independently type-checked and executed. Benchmark reports and host metadata are uploaded as CI artifacts; [reproduction instructions](../bench/README.md) and the [literal contract](../docs/literal-styles.md) are tracked. Browser rendering and CSS-output benchmarks start with PR 1.2.
 
 ### PR 1.2 — Literal CSS Compilation
 

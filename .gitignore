@@ -1,6 +1,7 @@
-node_modules/
-dist/
-coverage/
 *.tgz
-.fixture-*/
 *.tsbuildinfo
+.fixture-*/
+bench/results/
+coverage/
+dist/
+node_modules/

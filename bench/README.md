@@ -1,11 +1,11 @@
-# Authoring Baseline
+# Authoring Benchmarks
 
-Run `pnpm exec vp test bench --run --outputJson bench/results/define.json`. Compare a later run with `pnpm exec vp test bench --run --compare bench/results/define.json`. Run baseline and candidate on the same machine without competing benchmark jobs; do not compare timings from unrelated CI runners.
+Run `node bench/run.ts`. Reports and host metadata are written to ignored `bench/results/`. Keep benchmark definitions and fixture inputs in Git; generated results belong in CI artifacts. Record useful summaries and measurement limitations in PR descriptions.
 
-The [report](results/define.json) records means in milliseconds, sample counts, variance, and relative error. [Metadata](results/define.metadata.json) records the measured commit, source hashes, versions, exposed hardware, fixture sizes, cache state, and runner defaults. Only the report path was normalized; measurements are unchanged.
+The verification workflow uploads a `benchmarks` artifact for each run, including the measured commit and host metadata. It downloads the latest available main-branch artifact as a comparison baseline. Until main has produced an artifact, it records results without a comparison. Artifacts expire after 30 days.
 
-Inputs reuse the integration component fixture. Timing includes public validation, copying, and freezing. Input construction happens before timing. This is warm in-process authoring work; it is not a cold-build, emission, browser, or native benchmark. Those measurements require later phases.
+For a local comparison, download a main run's artifact with `gh run download <run-id> --name benchmarks --dir bench/results/main`, then run `node bench/run.ts`. The runner passes the baseline to Vitest's `--compare`. Different CI hosts introduce scheduling and hardware noise; artifact comparisons are informational, not performance gates. Confirm suspected regressions by running both revisions on the same machine.
 
-The saved run measured roughly 6.1 µs for three components, 3.58 ms for 1,000 repeated cards, and 3.38 ms for 1,000 mostly unique cards. Relative error ranges from 1.75% to 8.16%; shared-host scheduling and GC noise are visible. This establishes a baseline, not a performance budget or comparison with other libraries.
+Inputs reuse integration fixtures: three components with 20 declarations, and 1,000 repeated or mostly unique cards with 13,000 declarations each. Timing includes validation, copying, and freezing; input creation occurs before timing. Runner defaults use 100 ms/five-iteration warmup and at least 500 ms/ten measured iterations. Reports include variance and sample counts; the lockfile pins the runner versions.
 
-No CSS, generated component JavaScript, or rendering artifacts exist at this boundary. Their bundle sizes and performance are unmeasured, not zero. Record those artifacts and raw/gzip/Brotli transfer sizes when emission and source transforms land.
+This measures warm authoring work. CSS emission, generated component JavaScript, browser rendering, and native measurements begin when those phases exist; their cost is unmeasured, not zero. Record raw/gzip/Brotli sizes when emitted artifacts exist.

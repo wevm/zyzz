@@ -27,7 +27,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Use static imports. Reserve dynamic imports for a real runtime or bundle boundary, not dependency-cycle workarounds.
 - Use `import type` and `export type` where an import or export is type-only.
 - Use functions and plain data for normal APIs. Classes are limited to errors and framework-required entrypoints such as Durable Objects.
-- Keep error classes in the module that throws them, below the public functions and types. Set custom error `name` values to the namespaced form, such as `Config.InvalidError`.
+- Keep error classes in the module that throws them, ordered alphabetically with its public exports. Set custom error `name` values to the namespaced form, such as `Config.InvalidError`.
 - Use unions or `as const` objects instead of enums.
 - Prefer `camelCase` constants. Preserve uppercase names only when they mirror an external protocol or established neighboring code.
 - Use `const` generic parameters when callers should retain literal or tuple types.
@@ -48,6 +48,13 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Avoid new `any`. Use a precise boundary type, validation, narrowing, or the smallest justified assertion.
 - Do not use section-divider comments. Use exports, TSDoc, and whitespace to express module structure.
 - Comment invariants and non-obvious reasons, not line-by-line mechanics. Keep comments independent of plans, task IDs, and prior versions.
+
+## Alphabetical Ordering
+
+- Alphabetize imports, named import/export specifiers, public exports, type/interface properties, object properties, enum/union members, unordered lists, configuration maps, scripts, and dependencies. Use case-insensitive lexical order consistently.
+- Keep attached documentation with the declaration or property it describes. Keep function overloads and their namespace together. Order local declarations alphabetically within dependency-compatible groups; do not introduce use-before-initialization or reorder execution.
+- Preserve order with observable semantics: authored CSS declarations, fallbacks, cascade layers, variant/compound precedence, tuples, workflow steps, and regression fixtures testing those orders. Mark intentional exceptions in nearby documentation or comments. The compiler must never sort consumer styles.
+- Preserve the scaffold package.json group order around `[!start-pkg]`; alphabetize entries within each group. Do not alphabetize prose sections or sequential implementation phases mechanically.
 
 ## Module and Instance Conventions
 
@@ -123,6 +130,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - Measure cold and warm compilation, incremental edits, throughput, memory, browser style recalculation, and native table selection separately. Use real browser/host timing for workloads outside the benchmark runner's execution model; do not substitute a function microbenchmark for end-to-end performance.
 - Record emitted CSS, generated JavaScript, class-name/markup bytes, and required runtime helpers separately, plus actual combined transfer. Report raw, gzip, and Brotli sizes without double-counting class strings already included in JavaScript or markup. Package download size is a separate metric.
 - Use repeated and mostly unique styles, small and large projects, theme/scheme changes, variants, and library boundaries. Validate equivalent behavior before comparing configurations or libraries; include each library's required helpers and delivery artifacts.
+- Keep generated benchmark reports and machine metadata under ignored `bench/results/`; never commit them. CI uploads artifacts, main artifacts provide informational baselines, and PR descriptions record relevant summaries. Keep definitions and reproduction instructions in Git.
 - Save reproducible results with `--outputJson`; compare a baseline using `--compare`. Record commit, tool versions, fixture size, hardware, cache state, warmup, sample count, variance, and measurement boundaries. Run baseline and candidate on the same machine without competing benchmark jobs.
 - Changes to compilation, emitted artifacts, or runtime helpers include relevant benchmark deltas. Establish size budgets and timing tolerances from measured baselines; confirm regressions across repeated samples instead of enforcing noisy single-run timing gates. Do not claim speed or size advantages without matched evidence.
 

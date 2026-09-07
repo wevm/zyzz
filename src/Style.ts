@@ -1,18 +1,8 @@
 import * as Literal from './internal/Literal.js'
-
-/** Supported literal declarations. Unknown properties and undefined values are rejected. */
-export type Properties = Literal.Properties
-
-/** A source span optionally attached to a diagnostic by a caller. */
-export type SourceLocation = {
-  /** Path from the style map root to the associated input. */
-  readonly path: readonly string[]
-  /** Caller-owned source identifier, independent of filesystem paths. */
-  readonly source: string
-  /** Inclusive source offset. */
-  readonly start: number
-  /** Exclusive source offset. */
-  readonly end: number
+type Exact<styles extends Record<string, unknown>> = {
+  [name in keyof styles]: styles[name] extends (...args: never[]) => unknown
+    ? never
+    : Properties & Record<Exclude<keyof styles[name], keyof Properties>, never>
 }
 
 /** A validated declaration; order is significant for future cascade processing. */
@@ -20,39 +10,7 @@ export type Declaration = {
   /** Supported CSS property in camelCase. */
   readonly property: keyof Properties
   /** Validated primitive, retaining its authored spelling and units. */
-  readonly value: string | number
-}
-
-/** A named group of ordered declarations. */
-export type NamedStyle<name extends string = string> = {
-  /** Authored style name, without generated target identifiers. */
-  readonly name: name
-  /** Declarations in own enumerable property order. */
-  readonly declarations: readonly Declaration[]
-}
-
-/** Immutable data passed from authoring to later target compilation. */
-export type Definition<name extends string = string> = {
-  /** Named styles in own enumerable property order. */
-  readonly styles: readonly NamedStyle<name>[]
-}
-
-/** A caller-visible validation failure at an exact input path. */
-export type Diagnostic = {
-  /** Stable machine-readable category. */
-  readonly code: 'invalid_structure' | 'unsupported_property' | 'invalid_value'
-  /** Path components, without ambiguous dot concatenation. */
-  readonly path: readonly string[]
-  /** Explanation of the supported input contract. */
-  readonly message: string
-  /** Source span when a caller supplied an exact matching path. */
-  readonly location?: SourceLocation | undefined
-}
-
-type Exact<styles extends Record<string, unknown>> = {
-  [name in keyof styles]: styles[name] extends (...args: never[]) => unknown
-    ? never
-    : Properties & Record<Exclude<keyof styles[name], keyof Properties>, never>
+  readonly value: number | string
 }
 
 /**
@@ -147,11 +105,11 @@ export function define<const styles extends Record<string, unknown>>(
       if (message) report('invalid_value', [name, property], message)
       else
         declarations.push(
-          Object.freeze({ property: key, value: value as string | number }),
+          Object.freeze({ property: key, value: value as number | string }),
         )
     }
     output.push(
-      Object.freeze({ name, declarations: Object.freeze(declarations) }),
+      Object.freeze({ declarations: Object.freeze(declarations), name }),
     )
   }
   if (diagnostics.length) throw new InvalidError(diagnostics)
@@ -170,12 +128,26 @@ export declare namespace define {
   }
 }
 
+/** Immutable data passed from authoring to later target compilation. */
+export type Definition<name extends string = string> = {
+  /** Named styles in own enumerable property order. */
+  readonly styles: readonly NamedStyle<name>[]
+}
+
+/** A caller-visible validation failure at an exact input path. */
+export type Diagnostic = {
+  /** Stable machine-readable category. */
+  readonly code: 'invalid_structure' | 'invalid_value' | 'unsupported_property'
+  /** Source span when a caller supplied an exact matching path. */
+  readonly location?: SourceLocation | undefined
+  /** Explanation of the supported input contract. */
+  readonly message: string
+  /** Path components, without ambiguous dot concatenation. */
+  readonly path: readonly string[]
+}
+
 /** Validation error containing all failures in deterministic input order. */
 export class InvalidError extends Error {
-  /** Stable namespaced error identifier. */
-  override name = 'Style.InvalidError'
-  /** Frozen diagnostics, ordered by style and declaration traversal. */
-  readonly diagnostics: readonly Diagnostic[]
   /** Creates an error from caller-visible validation diagnostics. */
   constructor(diagnostics: readonly Diagnostic[]) {
     super(
@@ -185,4 +157,31 @@ export class InvalidError extends Error {
     )
     this.diagnostics = Object.freeze([...diagnostics])
   }
+  /** Frozen diagnostics, ordered by style and declaration traversal. */
+  readonly diagnostics: readonly Diagnostic[]
+  /** Stable namespaced error identifier. */
+  override name = 'Style.InvalidError'
+}
+
+/** A named group of ordered declarations. */
+export type NamedStyle<name extends string = string> = {
+  /** Declarations in own enumerable property order. */
+  readonly declarations: readonly Declaration[]
+  /** Authored style name, without generated target identifiers. */
+  readonly name: name
+}
+
+/** Supported literal declarations. Unknown properties and undefined values are rejected. */
+export type Properties = Literal.Properties
+
+/** A source span optionally attached to a diagnostic by a caller. */
+export type SourceLocation = {
+  /** Exclusive source offset. */
+  readonly end: number
+  /** Path from the style map root to the associated input. */
+  readonly path: readonly string[]
+  /** Caller-owned source identifier, independent of filesystem paths. */
+  readonly source: string
+  /** Inclusive source offset. */
+  readonly start: number
 }

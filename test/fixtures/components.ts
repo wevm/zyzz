@@ -1,6 +1,6 @@
 import type { Style } from 'typestyle'
 
-/** Shared public consumer input used by integration scenarios and benchmarks. */
+/** Shared consumer input. Authored order is intentional: integration scenarios verify declaration and style order. */
 export const components = {
   card: {
     display: 'flex',

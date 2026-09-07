@@ -1,4 +1,4 @@
-/** Geist sRGB palette snapshot. Provenance and retrieval hash are recorded in NOTICE.md. */
+/** Geist sRGB palette snapshot from https://vercel.com/geist/colors. */
 export const colors = {
   /** background.100 in light and dark color schemes. */
   'background.100': 'light-dark(#fff, #000)',

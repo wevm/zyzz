@@ -14,8 +14,7 @@
   ],
   "files": [
     "dist",
-    "README.md",
-    "NOTICE.md"
+    "README.md"
   ],
   "exports": {
     ".": {

@@ -2,6 +2,8 @@
 
 A proof of concept for typed style props that compile to static CSS. Geist colors and typography, Tailwind design tokens, one authoring function.
 
+The roadmap defines an environment-independent, modular core shared by web and React Native, with optional framework and build-tool adapters and standard CSS patterns wherever supported. The current implementation is the web baseline; native support and core extraction are planned.
+
 ```ts
 import { css } from 'typestyle'
 
@@ -151,4 +153,4 @@ pnpm build:example
 pnpm build:library
 ```
 
-[Implementation phases](.agents/plan.md) · [Architecture](.agents/architecture.md) · [Token provenance](NOTICE.md) · [Agent conventions](AGENTS.md)
+[Implementation phases](.agents/plan.md) · [Architecture](.agents/architecture.md) · [Agent conventions](AGENTS.md)

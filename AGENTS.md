@@ -1,15 +1,18 @@
 # Adapted from wevm/monoshot
 
 Source: https://github.com/wevm/monoshot/blob/main/AGENTS.md
-Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. General conventions are retained; UI, layout, commands, and motion paths are adapted for typestyle.
+Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. General coding conventions are retained; project principles, UI, layout, and commands are adapted for typestyle.
 
 # Agent Guidelines
 
-## Friction Logging
+## Project Principles
 
-- Log papercuts and friction (tooling, docs, APIs, tests, conventions) as you hit them with `pnpx frog log`.
-- Do not add global, system, or internal friction.
-- Run `pnpx frog list` first to see what is already known.
+- Keep core functions pure and environment-independent. Node built-ins, filesystem, DOM, device APIs, parsers, frameworks, and build tools belong in adapters.
+- Share typed authoring across web and React Native while making target capabilities and output types explicit. Unsupported target semantics must produce errors.
+- Keep modules small and extensible through explicit data and narrow functions. Avoid global registration, mandatory providers, component wrappers, custom JSX runtimes, and general plugin frameworks.
+- Prefer CSS properties, values, selectors, at-rules, custom properties, inheritance, and cascade patterns. Preserve authored ordering; convenience syntax must expand predictably.
+- Compile styles ahead of time. Runtime adapters may select static alternatives but must not generate or compile styles.
+- Treat Geist and Tailwind tokens as a default preset, not dependencies of core semantics.
 
 ## TypeScript Conventions
 
@@ -116,7 +119,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - Use the smallest repository script that covers the changed behavior. Run focused tests while iterating.
 - Run `pnpm check:types` after TypeScript changes.
 - Run `pnpm test <paths>` for focused tests and `pnpm test` when the change warrants the full suite.
-- Treat `pnpm check` as mutating because it applies fixes. Inspect and keep only task-related changes.
+- `pnpm check` is read-only; `pnpm format` applies formatting. Inspect and keep only task-related changes.
 - Run `git diff --check` and inspect the final diff before reporting completion.
 
 ## Git Conventions
@@ -130,17 +133,16 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 ## UI Conventions
 
-- Build interactive components on Base UI (`@base-ui/react`). Do not hand-roll focus management, dismissal, positioning, roving focus, or ARIA wiring, and do not reimplement behavior with React state that a Base UI primitive already owns.
-- Style Base UI parts with typestyle through their `data-*` state attributes. Static selectors belong in style declarations.
-- Native elements are correct when the platform already provides the whole behavior (`input`, `select`, `button`); reach for Base UI as soon as a component needs a popup, a group, or coordinated state.
-- Color comes from Geist tokens in `src/Tokens.ts`. Never write a scheme-specific override at a use site.
-- `.stylex.ts` files hold only `defineVars`/`defineConsts` named exports, and must be imported relatively: the StyleX compiler resolves them itself and does not understand the `#/*` subpath imports used everywhere else.
+- Core and public style contracts do not depend on a UI framework or component library.
+- Examples use the platform's normal class/style APIs and accessible native controls. Use an appropriate accessible primitive when an example needs coordinated behavior.
+- Keep interaction, theme, viewport, and accessibility state in target or example adapters. Do not encode DOM selectors as universal native capabilities.
+- Fonts and motion use the platform's normal mechanisms; examples must respect reduced-motion preferences.
 
 ## Repository Layout
 
 - The root package is `typestyle`: flat PascalCase modules in `src/` with colocated tests.
 - `src/index.ts` exports the `css` compile-time leaf helper and types. Compiler, Vite, and library adapters have separate entrypoints.
-- The compiler core is deterministic and independent of filesystem and Vite. Build and dev adapters own their lifecycle state.
+- The target core is deterministic and independent of environments and tools. The current web compiler still needs the separation described in `.agents/plan.md`.
 - `examples/vite/` exercises dev and production integration. `examples/library/` exercises standalone publication.
 - `.agents/plan.md` tracks implementation phases and acceptance gates.
 - The `css` leaf helper is exported directly for concise call sites; conceptual modules keep namespace imports internally.
@@ -152,14 +154,3 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - `pnpm test` runs unit and adapter integration tests with Vitest.
 - `pnpm build` emits ESM and declarations; `pnpm dev` starts the Vite example.
 - `pnpm build:example` exercises production extraction; `pnpm build:library` emits the standalone example.
-
-## Motion Conventions
-
-- Every interactive element acknowledges the pointer. A control with no press state reads as a picture of a control.
-- Press feedback is `transform: scale(0.97)` on `:active`, 140ms, on the element itself. It fires on press, not on release.
-- Hover growth is `scale(1.14)` for swatch-sized targets and stays behind `@media (hover: hover) and (pointer: fine)`; touch reports a hover on tap.
-- Animate `transform` and `opacity`. `height` is allowed where there is no transform equivalent (a collapsing panel), and `filter` only where the blur is the effect being asked for.
-- Curves and durations come from `src/Tokens.ts`, never hand-rolled per component.
-- Springs belong to surfaces the user can interrupt or that carry momentum (a panel opening, a value rolling). Fixed curves belong to hover and press.
-- A selection that moves between siblings uses one shared element with Motion's `layoutId` so it slides, rather than one indicator per sibling blinking on and off.
-- Reduced motion is part of the implementation, not a follow-up: wrap Motion trees in `MotionConfig reducedMotion="user"` and keep opacity while dropping movement.

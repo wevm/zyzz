@@ -75,6 +75,23 @@ const button = (
 )
 ```
 
+Styles can also be defined outside markup, exported, and imported into another module:
+
+```tsx
+const { css } = theme
+
+export const buttonClass = css({
+  backgroundColor: 'surface',
+  color: 'primary',
+})
+
+function Button() {
+  return <button className={buttonClass}>Continue</button>
+}
+```
+
+Inline calls, module-level constants, and exported styles use the same inference and compilation rules. Extraction recognizes the authoring binding wherever a static call occurs; it does not depend on a `className` attribute. Imported compiled styles are ordinary strings. The direct default `css` import supports the same forms.
+
 `theme.css(style)` compiles to a class-name string containing one or more readable classes. Theme tokens autocomplete within their matching properties. Missing tokens and wrong domains fail type checking and compilation. CSS keywords remain supported; ambiguous literal values use the explicit escape described below.
 
 Applications without a custom theme use the default preset directly:
@@ -90,6 +107,83 @@ The custom and default functions share extraction and emission. Neither function
 Token references such as `theme.tokens.backgroundColor.surface` preserve domain information for named, portable definitions. `Style.define(styles)` remains the in-memory API for named style data; target compilers produce distinct web and native outputs.
 
 For standard CSS strings outside token unions, the MVP retains an explicit bracket escape, for example `color: '[oklch(60% 0.2 250)]'`. Its contents emit as CSS, subject to target validation. Do not widen every property to arbitrary `string`, which would hide misspelled tokens. A later typed literal helper requires demonstrated need.
+
+## Selectors and conditional rules
+
+Style objects accept standard CSS properties, scoped selectors, and conditional at-rules. Nested declarations retain the same property types and theme-token inference at every depth.
+
+```ts
+const control = theme.css({
+  display: 'inline-flex',
+  color: 'primary',
+  ':hover': { backgroundColor: 'brand' },
+  ':focus-visible': { outlineStyle: 'solid' },
+  ':disabled': { opacity: 0.5 },
+  '&::before': { content: '"→"' },
+  '& > svg': { width: '1em' },
+  '&[aria-expanded="true"]': { backgroundColor: 'brand' },
+  '@media (width >= 48rem)': {
+    padding: 'md',
+    ':hover': { color: 'brand' },
+  },
+  '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+  '@container (width >= 30rem)': { flexDirection: 'row' },
+  '@supports (display: grid)': { display: 'grid' },
+})
+```
+
+`&` refers to the current scoped selector. A leading pseudo-class or pseudo-element inserts `&`, so `:hover` means `&:hover`. Descendant, child, attribute, and compound selectors use explicit `&`. Nested selectors and conditions preserve their authored order, specificity, and conjunction; flattening must not change these semantics.
+
+CSS property names and value types follow standard CSS, augmented by domain-specific tokens. Selector and raw condition strings remain flexible and receive compiler syntax validation; TypeScript does not prove that arbitrary selector/query text is valid. Do not add a general string index signature that hides misspelled properties.
+
+The initial conditional syntax supports `@media`, `@container`, and `@supports`. Other at-rules require explicit capability support and diagnostics. Stylesheet-level rules such as global selectors, `@keyframes`, and `@font-face` belong in a separate future stylesheet API, not inside an element's declaration object. Its exact API is deferred.
+
+## Inferred query thresholds
+
+Themes can define dedicated size thresholds separately from spacing and general sizing tokens:
+
+```tsx
+const { css } = Theme.define({
+  spacing: { sm: '0.5rem', md: '1rem' },
+  breakpoints: { tablet: '48rem', desktop: '64rem' },
+  containers: { card: '24rem', panel: '40rem' },
+})
+
+export const layout = css({
+  padding: 'sm',
+  '@media tablet': {
+    padding: 'md',
+    ':hover': { opacity: 0.9 },
+  },
+  '@container card': { display: 'grid' },
+})
+
+const region = css({ containerType: 'inline-size' })
+const example = (
+  <section className={region}>
+    <div className={layout} />
+  </section>
+)
+```
+
+| Theme group   | Inferred key      | Emitted rule                  |
+| ------------- | ----------------- | ----------------------------- |
+| `breakpoints` | `@media tablet`   | `@media (width >= 48rem)`     |
+| `containers`  | `@container card` | `@container (width >= 24rem)` |
+
+Alias keys autocomplete from the corresponding theme group and reject unknown names. `@media card` does not use `containers.card`, and `spacing.md` is not a query threshold. Nested conditions retain both alias inference and declaration inference. A theme without a threshold group offers no aliases for that group.
+
+Threshold names are flat identifiers. Values are finite, nonnegative CSS lengths expressed as strings, such as `48rem` or `768px`; the compiler validates supported length units. Unitless numbers, percentages, runtime custom properties, and light/dark pairs are rejected. Keep standard unit semantics; do not convert relative thresholds to pixels implicitly.
+
+Alias keys are exact shorthand forms. Raw media queries use explicit condition syntax, for example `@media (width >= 48rem)` or `@media screen and (width >= 48rem)`. Bare `all`, `screen`, and `print` remain reserved standard media types and cannot be breakpoint names. Reject unknown bare aliases instead of treating them as arbitrary query text.
+
+`card` in `@container card` names a threshold, not a CSS container. The emitted unnamed query selects the nearest eligible ancestor for the queried feature. Applications establish size containment using standard `containerType`; a container cannot size-query itself. Named containers use raw syntax such as `@container sidebar (width >= 24rem)` with an ancestor's `containerName: 'sidebar'`.
+
+Thresholds resolve to literal conditions at compile time, never to CSS custom properties. Changing a theme scope or color scheme cannot alter existing query thresholds. `Theme.extend` may override existing thresholds for styles authored through the extended theme's `css`; it does not change queries already authored through the base function. Definition edits trigger dependent recompilation.
+
+Rule identity and deduplication include resolved conditions. Different threshold values must not share an atom solely because their aliases have the same name. Do not sort breakpoints numerically or flatten overlapping conditions in ways that change authored precedence.
+
+These are web capabilities. Native compilation rejects unsupported selectors and queries, including threshold aliases, until an explicit target contract exists. It must not silently turn browser queries into device listeners.
 
 ## Theme scopes and extension
 
@@ -233,4 +327,4 @@ Measure raw and compressed CSS, generated class-string bytes, total transferred 
 
 Source adapters recognize literals, immutable bindings, spreads, imports, theme-bound calls, and destructured aliases without executing application code. Dynamic definitions, unresolved imports, and cycles fail with diagnostics. Generated exports contain constants and artifacts, not authoring closures.
 
-The existing 29 tests cover the web baseline. Add type fixtures for per-property tokens, palette paths, complete pairs, bound-function aliases, and extension keys. Behavioral gates cover zero-setup themes, inherited overrides, CLI parity and recovery, native selection, deterministic readable names, collision handling, and cascade equivalence. See [the plan](plan.md).
+The existing 29 tests cover the web baseline. Add type fixtures for per-property tokens, palette paths, complete pairs, bound-function aliases, extension keys, and inferred query aliases. Reject unknown/cross-group thresholds and invalid length values. Verify inference inside nested selectors and queries. Behavioral gates cover zero-setup themes, inherited overrides, CLI parity and recovery, native selection, deterministic readable names, collision handling, and cascade equivalence. Cover inline/exported/imported style parity, pseudo-elements, named/unnamed containment, nested media/supports rules, threshold recompilation, and immutable thresholds under scope switching. See [the plan](plan.md).

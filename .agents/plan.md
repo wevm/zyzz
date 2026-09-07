@@ -59,12 +59,18 @@ Status: planned.
 - [ ] Derive internal theme identities without caller metadata; extensions retain base token identities independently of values. Switching theme scopes must not require recompiling component classes.
 - [ ] Make bound styles work without a root scope using custom-property fallbacks; expose `theme.className` for inherited overrides and retain the directly imported default `css`.
 - [ ] Recognize imported and destructured theme functions with full inference and static extraction.
+- [ ] Support static `css` calls inline, outside markup, and in exported/imported style constants equally; extraction must not depend on a `className` attribute.
+- [ ] Implement scoped pseudo-classes/elements, explicit `&` selectors, and nested `@media`, `@container`, and `@supports` with theme inference at every depth.
+- [ ] Add `breakpoints` and `containers` groups with inferred `@media <name>` and `@container <name>` aliases that expand into inclusive minimum-width conditions.
+- [ ] Reject unknown/cross-group aliases, reserved-name collisions, and invalid threshold lengths without weakening property checking or raw CSS condition support.
+- [ ] Resolve query thresholds statically; specify extension overrides, dependent recompilation, and unchanged thresholds when switching runtime theme scopes.
+- [ ] Document nearest eligible container selection, explicit containment, named raw queries, and stylesheet-level rule boundaries. Defer the exact global/keyframe/font-face API.
 - [ ] Emit scoped custom properties and `light-dark()` values. Support `color-scheme: light`, `dark`, and `light dark`, independently of theme identity.
 - [ ] Specify nested scope inheritance, complete overrides, independently forced schemes, deterministic server output, and undeclared-theme failures.
 - [ ] Preserve standard declaration order, selectors, at-rules, inheritance, and cascade semantics. Revisit the prototype's escapes and implicit condition sorting.
 - [ ] Support same-module immutable definitions and spreads through static binding analysis; add imported definitions only with explicit resolution and cycle errors.
 
-Gate: two compatible themes each work in both schemes. Switching a scope changes colors and shared tokens through CSS alone. Nested themes and explicit schemes behave as specified. Invalid definitions fail without evaluating application code.
+Gate: two compatible themes each work in both schemes. Switching a scope changes colors and shared tokens through CSS alone. Nested themes and explicit schemes behave as specified. Inline and exported styles retain inference. Nested selectors and raw/aliased queries preserve CSS semantics; invalid definitions fail without evaluating application code.
 
 ## Phase 3 — Web and native output
 
@@ -72,7 +78,7 @@ Status: planned.
 
 - [ ] Implement `Web.compile` as a pure emitter returning CSS, named classes, and theme scope classes. Theme maps name outputs without adding definition metadata.
 - [ ] Emit deduplicated atoms with readable property/token/condition names and deterministic collision suffixes, retaining names in production.
-- [ ] Preserve ordered groups for conflicting declarations and conditions; verify cascade equivalence before deduplication.
+- [ ] Preserve ordered groups for conflicting declarations and conditions; verify cascade equivalence before deduplication. Include resolved query thresholds in identity and retain authored condition order.
 - [ ] Prune unreachable rules and unused variables while retaining complete live token sets in theme scopes.
 - [ ] Implement `Native.compile` as a pure emitter returning complete static tables for every requested theme/scheme pair.
 - [ ] Implement `Native.select` as a lookup only. System scheme, interaction, viewport, and accessibility inputs belong to application or host adapters.
@@ -89,7 +95,7 @@ Status: planned.
 
 - [ ] Verify plain document, component, template, and native consumers through their normal class/style APIs.
 - [ ] Expand the existing CLI with `--css`, `--watch`, and `--minify`; rewrite modules alongside CSS and declarations, requiring no styling plugin in consumers.
-- [ ] Verify CLI/build/in-memory parity, dependency watching, output exclusion, diagnostics, failure preservation, and owned-output cleanup.
+- [ ] Verify CLI/build/in-memory parity, dependency watching, output exclusion, diagnostics, failure preservation, and owned-output cleanup. Include imported style constants and threshold edits in dependency recovery fixtures.
 - [ ] Keep build integrations optional and thin; implement only those needed by concrete fixtures.
 - [ ] Support framework source boundaries in source adapters without leaking template syntax into core semantics.
 - [ ] Compile from in-memory definitions and from source adapters using the same target emitters.
@@ -125,6 +131,8 @@ Gate: a small documented API, tested compatibility matrix, reproducible measurem
 | Minimalism     | No required providers, wrappers, global setup, platform detection, or runtime compilation                |
 | CLI            | Standalone compilation rewrites calls, emits CSS, and matches other adapters; watch recovers from errors |
 | CSS output     | Readable stable names, collision safety, small measured artifacts, and unchanged cascade behavior        |
+| Authoring      | Inline, module-level, and exported/imported styles share inference and compilation                       |
+| Queries        | Correct alias completion, raw query support, static thresholds, containment, nesting, and precedence     |
 
 ## Scope
 

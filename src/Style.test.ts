@@ -1,3 +1,4 @@
+import * as Vm from 'node:vm'
 import { Style } from 'typestyle'
 import { describe, expect, test } from 'vite-plus/test'
 import { components } from '../test/fixtures/components.js'
@@ -646,4 +647,160 @@ describe('consumer authoring through immutable definitions', () => {
       }
     `)
   })
+})
+
+test('preserves numeric names through public authoring', () => {
+  expect(Style.define({ 0: { color: '#fff' }, 1.5: { padding: 0 } }))
+    .toMatchInlineSnapshot(`
+    {
+      "styles": [
+        {
+          "declarations": [
+            {
+              "property": "color",
+              "value": "#fff",
+            },
+          ],
+          "name": "0",
+        },
+        {
+          "declarations": [
+            {
+              "property": "padding",
+              "value": 0,
+            },
+          ],
+          "name": "1.5",
+        },
+      ],
+    }
+  `)
+})
+
+test('accepts cross-realm records while rejecting class instances without reading getters', () => {
+  const foreign: unknown = Vm.runInNewContext(`({
+    card: { color: '#fff', padding: 0 },
+  })`)
+  const nested: unknown = { card: Vm.runInNewContext("({ color: '#fff' })") }
+  const instances: readonly unknown[] = Vm.runInNewContext(`[
+    new (class Card { color = '#fff' })(),
+    new Date(),
+    Object.create({ color: '#fff' }),
+    new (class Card extends null { constructor() {
+      return Object.create(new.target.prototype)
+    } })(),
+  ]`)
+  let reads = 0
+  const prototype = Object.create(null) as object
+  Object.defineProperty(prototype, 'constructor', {
+    get() {
+      reads++
+      return Object
+    },
+  })
+  const rejected = [...instances, Object.create(prototype)].map((card) =>
+    diagnose({ card }),
+  )
+  expect({
+    foreign: diagnose(foreign),
+    nested: diagnose(nested),
+    reads,
+    rejected,
+  }).toMatchInlineSnapshot(`
+    {
+      "foreign": {
+        "styles": [
+          {
+            "declarations": [
+              {
+                "property": "color",
+                "value": "#fff",
+              },
+              {
+                "property": "padding",
+                "value": 0,
+              },
+            ],
+            "name": "card",
+          },
+        ],
+      },
+      "nested": {
+        "styles": [
+          {
+            "declarations": [
+              {
+                "property": "color",
+                "value": "#fff",
+              },
+            ],
+            "name": "card",
+          },
+        ],
+      },
+      "reads": 0,
+      "rejected": [
+        {
+          "diagnostics": [
+            {
+              "code": "invalid_structure",
+              "message": "Expected a plain object with enumerable data properties.",
+              "path": [
+                "card",
+              ],
+            },
+          ],
+          "name": "Style.InvalidError",
+        },
+        {
+          "diagnostics": [
+            {
+              "code": "invalid_structure",
+              "message": "Expected a plain object with enumerable data properties.",
+              "path": [
+                "card",
+              ],
+            },
+          ],
+          "name": "Style.InvalidError",
+        },
+        {
+          "diagnostics": [
+            {
+              "code": "invalid_structure",
+              "message": "Expected a plain object with enumerable data properties.",
+              "path": [
+                "card",
+              ],
+            },
+          ],
+          "name": "Style.InvalidError",
+        },
+        {
+          "diagnostics": [
+            {
+              "code": "invalid_structure",
+              "message": "Expected a plain object with enumerable data properties.",
+              "path": [
+                "card",
+              ],
+            },
+          ],
+          "name": "Style.InvalidError",
+        },
+        {
+          "diagnostics": [
+            {
+              "code": "invalid_structure",
+              "message": "Expected a plain object with enumerable data properties.",
+              "path": [
+                "card",
+              ],
+            },
+          ],
+          "name": "Style.InvalidError",
+        },
+      ],
+    }
+  `)
 })

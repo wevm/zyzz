@@ -41,3 +41,20 @@ definition.styles.push({ declarations: [], name: 'card' })
 definition.styles[0]!.declarations[0]!.value = '2px'
 // @ts-expect-error Percentages are not border-width values.
 Style.define({ card: { borderWidth: '10%' } })
+
+const numeric = Style.define({ 0: { color: '#fff' }, 1.5: { padding: 0 } })
+expectTypeOf(numeric).toEqualTypeOf<Style.Definition<'0' | '1.5'>>()
+
+declare const invalidUnion: { color: '#fff' } | { colour: '#fff' }
+// @ts-expect-error Every possible union branch must have supported keys.
+Style.define({ card: invalidUnion })
+declare const overlappingUnion: { padding: 0 } | { colour: '#fff'; padding: 0 }
+// @ts-expect-error Shared valid properties must not hide a branch's typo.
+Style.define({ card: overlappingUnion })
+declare const callbackUnion: (() => { color: '#fff' }) | { color: '#fff' }
+// @ts-expect-error A union with an executable branch is not literal data.
+Style.define({ card: callbackUnion })
+declare const validUnion: { color: '#fff' } | { padding: 0 }
+expectTypeOf(Style.define({ card: validUnion })).toEqualTypeOf<
+  Style.Definition<'card'>
+>()

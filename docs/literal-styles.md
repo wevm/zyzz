@@ -47,3 +47,5 @@ Plain and null-prototype objects are accepted. Accessors, symbols, non-enumerabl
 `Style.define(input, { locations })` can attach caller-owned `{ path, source, start, end }` spans to errors at exactly matching paths. Source offsets are metadata supplied by a caller; this API does not parse source text. Locations are copied so input mutations do not alter emitted diagnostics.
 
 The root imports only pure local style modules. There are no runtime dependencies, themes, target emitters, parsers, filesystem calls, or framework imports. Compiler reference types will extend this boundary in the theme phase; arbitrary objects are not accepted as future tokens today.
+
+Numeric style keys are returned and inferred as strings, matching JavaScript property enumeration. Plain data from other realms is accepted; class instances and accessor properties remain invalid. Every branch of a union-typed style must contain only supported properties.

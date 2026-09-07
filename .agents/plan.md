@@ -71,13 +71,14 @@ Merge in dependency order. Each PR includes real integration scenarios, consumer
 
 Acceptance: public consumer scenarios prove inference, ordered immutable data, and actionable validation errors through real modules. Consumer type fixtures run in CI and a reproducible authoring/validation benchmark is recorded. The root dependency graph contains no themes, target emitters, parsers, filesystem access, or framework runtimes.
 
-Evidence: [PR #1](https://github.com/wevm/typestyle/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all seven integration scenarios pass. The packed consumer is independently type-checked and executed. Benchmark reports and host metadata are uploaded as CI artifacts; [reproduction instructions](../bench/README.md) and the [literal contract](../docs/literal-styles.md) are tracked. Browser rendering and CSS-output benchmarks start with PR 1.2.
+Evidence: [PR #1](https://github.com/wevm/typestyle/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all integration scenarios pass. The separate Benchmarks workflow uploads reports and host metadata as CI artifacts; [reproduction instructions](../bench/README.md) and the [literal contract](../docs/literal-styles.md) are tracked. Browser rendering and CSS-output benchmarks start with PR 1.2.
 
 ### PR 1.2 — Literal CSS Compilation
 
 - [ ] Add the named `Css` namespace at `typestyle/web` and implement pure `Css.compile({ styles })` for the literal subset. Return the architecture's `{ css, classes, themes }` shape with an empty theme map and structured `Css.CompileError` diagnostics.
 - [ ] Serialize valid CSS values and property names, retaining authored declaration order. Start with grouped rules; atomic optimization remains in Phase 3.
 - [ ] Generate readable deterministic class names with collision handling. Keep identity independent of machine paths, traversal order, clocks, and global mutable state; repeated isolated calls must agree.
+- [ ] Add the real typestyle compiler to the shared Tailwind, StyleX, and vanilla-extract compilation corpus in `bench/Compilation.ts`. Measure minified emitted CSS and required browser JavaScript separately in raw, gzip, and Brotli bytes; retain the same literal workloads and verify equivalent computed styles before reporting deltas. Do not compare `Style.define` validation with compilation.
 - [ ] Add integration fixtures from public definitions through the real compiler and browser for deterministic output, escaping, unit handling, collisions, and order-sensitive shorthand/longhand declarations. Verify computed styles and establish compilation-time and emitted-byte baselines on the same corpus.
 
 Acceptance: in-memory definitions produce usable CSS and matching class names without source parsing or file access. Unsupported features fail explicitly. Root imports do not pull in the web compiler.

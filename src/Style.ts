@@ -1,9 +1,13 @@
 import * as Literal from './internal/Literal.js'
 type Exact<styles extends Record<string, unknown>> = {
-  [name in keyof styles]: styles[name] extends (...args: never[]) => unknown
-    ? never
-    : Properties & Record<Exclude<keyof styles[name], keyof Properties>, never>
+  [name in keyof styles]: Extract<
+    styles[name],
+    (...args: never[]) => unknown
+  > extends never
+    ? Properties & Record<Exclude<Keys<styles[name]>, keyof Properties>, never>
+    : never
 }
+type Keys<value> = value extends unknown ? keyof value : never
 
 /** A validated declaration; order is significant for future cascade processing. */
 export type Declaration = {
@@ -26,7 +30,7 @@ export type Declaration = {
 export function define<const styles extends Record<string, unknown>>(
   styles: styles & NoInfer<Exact<styles>>,
   options: define.Options = {},
-): Definition<Extract<keyof styles, string>> {
+): Definition<`${Extract<keyof styles, number | string>}`> {
   const diagnostics: Diagnostic[] = []
   const output: NamedStyle[] = []
   function report(
@@ -45,8 +49,8 @@ export function define<const styles extends Record<string, unknown>>(
     diagnostics.push(
       Object.freeze({
         code,
-        path: Object.freeze([...path]),
         message,
+        path: Object.freeze([...path]),
         ...(location ? { location } : {}),
       }),
     )
@@ -55,11 +59,25 @@ export function define<const styles extends Record<string, unknown>>(
     value: unknown,
     path: readonly string[],
   ): readonly (readonly [string, unknown])[] {
+    const prototype: object | null | undefined =
+      typeof value === 'object' && value !== null
+        ? Object.getPrototypeOf(value)
+        : undefined
+    // Compare the native Object constructor across realms without reading getters.
+    const constructor: unknown =
+      prototype &&
+      prototype !== Object.prototype &&
+      Object.getOwnPropertyDescriptor(prototype, 'constructor')?.value
     if (
       typeof value !== 'object' ||
       value === null ||
-      (Object.getPrototypeOf(value) !== Object.prototype &&
-        Object.getPrototypeOf(value) !== null)
+      (prototype !== null &&
+        prototype !== Object.prototype &&
+        (prototype === undefined ||
+          Object.getPrototypeOf(prototype) !== null ||
+          typeof constructor !== 'function' ||
+          Function.prototype.toString.call(constructor) !==
+            Function.prototype.toString.call(Object)))
     ) {
       report(
         'invalid_structure',
@@ -114,9 +132,9 @@ export function define<const styles extends Record<string, unknown>>(
   }
   if (diagnostics.length) throw new InvalidError(diagnostics)
   // Validated names are precisely the input's enumerable string keys.
-  return Object.freeze({ styles: Object.freeze(output) }) as Definition<
-    Extract<keyof styles, string>
-  >
+  return Object.freeze({
+    styles: Object.freeze(output),
+  }) as Definition<`${Extract<keyof styles, number | string>}`>
 }
 
 /** Options for defining styles. */

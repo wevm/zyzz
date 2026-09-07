@@ -1,12 +1,12 @@
 {
   "scripts": {
     "build": "zile",
+    "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
+    "changeset:version": "changeset version",
     "check": "vp check --fix",
     "check:types": "tsc",
     "dev": "zile dev",
-    "test": "vp test",
-    "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
-    "changeset:version": "changeset version"
+    "test": "vp test"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.2",

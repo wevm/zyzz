@@ -152,7 +152,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - Prettier is banned. Use Vite Plus with oxfmt for formatting and oxlint for linting, configured in `vite.config.ts`.
 - Use zile for library builds and development linking. Vite Plus is repository tooling, not a dependency of the styling core.
 - Keep namespace exports, strict TypeScript settings, and source-first package entrypoints aligned with the zile scaffold.
-- Put scripts, devDependencies, and packageManager before `[!start-pkg]` in package.json. Package metadata and runtime dependencies follow it. Do not sort package.json keys.
+- Put scripts, devDependencies, and packageManager before `[!start-pkg]` in package.json. Package metadata and runtime dependencies follow it. Preserve top-level package.json key order; alphabetize the entries within scripts.
 - Use the single scaffold tsconfig.json. Zile derives build inputs from package entrypoints; do not add a separate build tsconfig.
 
 ## Commands

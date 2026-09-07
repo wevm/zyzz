@@ -108,14 +108,14 @@ type ButtonProps = Variant.Props<typeof button>
 
 ### Value Context
 
-The context `c` supplies value helpers and inferred theme references. Use `c.vars` for CSS `var(...)` references, directly in properties or within expressions; they follow inherited theme overrides and color schemes.
+The context `c` supplies value helpers and inferred theme references. Use `c.vars` for CSS `var(...)` references, directly in properties or ordinary template literals; they follow inherited theme overrides and color schemes.
 
 ```ts
 const panel = theme.css((c) => ({
   display: c.fallback('block', 'grid'),
   color: c.important('brand'),
   borderColor: c.vars.color.brand,
-  width: c.value`calc(100% - ${c.vars.spacing.md})`,
+  width: `calc(100% - ${c.vars.spacing.md})`,
 }))
 ```
 

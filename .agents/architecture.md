@@ -140,15 +140,19 @@ const panel = theme.css((c) => ({
   display: c.fallback('block', 'grid'),
   backgroundColor: c.literal('oklch(60% 0.2 250)'),
   borderColor: c.vars.color.brand,
-  width: c.value`calc(100% - ${c.vars.spacing.md})`,
+  width: `calc(100% - ${c.vars.spacing.md})`,
 }))
 ```
 
 The callback is recognized static syntax. The compiler resolves supplied helpers, constants, and token references without executing arbitrary application functions. Helpers need no separate imports. Literal and expression validation is target-specific; untyped callers also receive compiler diagnostics.
 
+CSS expressions use ordinary strings, such as `'calc(100% - 1rem)'`, or untagged template literals. Source adapters fold static primitive interpolations and recognize variable references while preserving their identities and fallbacks. Unknown object coercions, unresolved runtime values, and arbitrary function calls produce diagnostics.
+
+TypeScript checks reference paths and direct property domains. Full CSS expression syntax and supported domain checks belong to the compiler; a string's type alone does not prove its CSS semantics. Runtime values enter static rules through `Vars.set`.
+
 `c.tokens` exposes portable token references. On web, `c.vars` exposes a readonly, inferred tree of CSS variable references for scalar declaration tokens. Both trees are empty for `css` from `typestyle`; custom and bundled theme functions infer them from their theme. Value helpers remain available without a theme.
 
-`c.vars.spacing.md` emits a CSS `var()` reference with the defining value as fallback. These string-compatible references retain token domains for property checking and work directly in declarations or within `c.value` templates. They reuse the theme contract's variable identities.
+`c.vars.spacing.md` emits a CSS `var()` reference with the defining value as fallback. These string-compatible references retain token domains for direct property checking and work in ordinary template literals. Source analysis retains reference metadata during interpolation. They reuse the theme contract's variable identities.
 
 Variable references follow inherited theme overrides and color schemes. Color-pair fallbacks use `light-dark()` under the same color-scheme contract as ordinary theme declarations. Referenced variables count as live for emission and pruning. Access is resolved statically; no context object or theme lookup remains at runtime.
 
@@ -166,7 +170,7 @@ Query thresholds, container names, and composite typography presets are excluded
 | `c.tokens.<group>.<token>`           | Portable reference retaining the token's domain                    |
 | `c.vars.<group>.<token>`             | Web CSS variable reference with an inferred token domain           |
 | `c.literal(text)`                    | Explicit static CSS escape                                         |
-| `c.value` tagged template            | Static CSS expression with typed token/variable references         |
+| String or untagged template literal  | Static CSS expression with recognized variable interpolation       |
 | `c.fallback(...values)`              | Ordered declarations; later supported values win                   |
 | `c.important(value)`                 | Important declaration on web                                       |
 

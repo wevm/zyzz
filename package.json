@@ -7,10 +7,24 @@
   "type": "module",
   "packageManager": "pnpm@11.19.0",
   "scripts": {
-    "check": "prettier --check .",
-    "format": "prettier --write ."
+    "build": "zile --project tsconfig.build.json",
+    "check": "vp check",
+    "check:types": "tsc --noEmit",
+    "dev": "zile dev --project tsconfig.build.json",
+    "format": "vp fmt",
+    "lint": "vp lint",
+    "test": "vp test"
   },
   "devDependencies": {
-    "prettier": "^3.9.6"
-  }
+    "@types/node": "^24.10.1",
+    "typescript": "5.9.3",
+    "vite-plus": "0.2.2",
+    "zile": "0.0.30"
+  },
+  "main": "./src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false
 }

@@ -117,8 +117,8 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 ## Workflow Conventions
 
 - Use the smallest repository script that covers the changed behavior. Run focused tests while iterating.
-- Add `pnpm check:types` with the first TypeScript implementation and run it after TypeScript changes.
-- Add a test script with the first implementation; run focused tests while iterating and the full suite when warranted.
+- Run `pnpm check:types` after TypeScript changes.
+- Use `pnpm test` for Vite Plus tests. Add behavioral tests with implementation; the empty scaffold has no test suite yet.
 - `pnpm check` is read-only; `pnpm format` applies formatting. Inspect and keep only task-related changes.
 - Run `git diff --check` and inspect the final diff before reporting completion.
 
@@ -140,14 +140,23 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 ## Repository Layout
 
-- The repository currently contains planning documents and formatting tooling only; implementation starts from scratch.
+- The repository has an empty zile-generated source entrypoint and Vite Plus tooling; styling implementation starts from scratch.
 - Add flat PascalCase modules under `src/` with colocated tests as implementation phases land.
 - The proposed `css` leaf helper is exported directly; conceptual modules use namespace exports.
 - Core semantics must be deterministic and independent of environments and tools; target emitters and host adapters have separate entrypoints.
 - Add examples for web, native, and standalone distribution as their capabilities land.
 - `.agents/plan.md` tracks phases and acceptance gates; `.agents/architecture.md` defines the target API.
 
+## Tooling
+
+- Prettier is banned. Use Vite Plus with oxfmt for formatting and oxlint for linting, configured in `vite.config.ts`.
+- Use zile for library builds and development linking. Vite Plus is repository tooling, not a dependency of the styling core.
+- Keep namespace exports, strict TypeScript settings, and source-first package entrypoints aligned with the zile scaffold.
+- Preserve private package status; do not add release automation until publication is requested.
+
 ## Commands
 
-- `pnpm check` checks formatting; `pnpm format` applies formatting.
-- Build, type-check, test, development, and example commands must be added with their implementations. Do not claim these capabilities exist before their gates pass.
+- `pnpm check` runs read-only format, lint, and type checks through `vp check`.
+- `pnpm format` runs `vp fmt`; `pnpm lint` runs `vp lint`.
+- `pnpm check:types` runs TypeScript checking; `pnpm test` runs `vp test`.
+- `pnpm build` runs zile; `pnpm dev` runs `zile dev`.

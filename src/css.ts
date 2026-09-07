@@ -38,7 +38,9 @@ export declare namespace css {
     readonly style?: Style.Properties | undefined
   }
   /** Callable definition; source rewriting supplies its implementation. */
-  type ReturnType = (options?: Options) => Props
+  type ReturnType = <const options extends Options = Options>(
+    options?: options & Record<Exclude<Keys<options>, keyof Options>, never>,
+  ) => Props
 }
 
 /** Executed authoring source has not been rewritten. */

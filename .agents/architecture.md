@@ -681,4 +681,16 @@ Only direct object literals with explicit keys and string/number values are acce
 
 Style names combine a deterministic module-identity digest with the call offset; identical input repeats exactly, and source edits may change call identities. Call-site names are extraction metadata, not a guarantee that independently emitted stylesheets can be combined. Hosts must aggregate graphs or supply the stable stylesheet namespaces required by later library work. No absolute machine path participates in naming.
 
-The root `css` signature accepts token-free literal properties and describes a callable returning web styling props with only className/style overrides. Untransformed definitions throw `css.MissingTransformError`. The callable implementation, static application folding, and maps arrive with source rewriting in PR 1.4; extraction alone is not an executable transform.
+The root `css` signature accepts token-free literal properties and describes a callable returning web styling props with only className/style overrides. Untransformed definitions throw `css.MissingTransformError`. The source transform implements static callables and direct no-argument application folding; extraction alone is not an executable transform.
+
+### Literal Module Rewriting
+
+`Transform.compile({ moduleId, source })` from `zyzz/compiler` returns `{ classes, code, css, cssMap, map }`. It operates on supplied text without filesystem access, application evaluation, or framework configuration. TypeScript/JSX lowering and final CSS processing remain host responsibilities. Both maps use the standard version-three format and include original source content.
+
+The transform uses ordered CSS compilation. Conflicting classes already carry module identity; shared classes receive the same module namespace so independently distributed stylesheets cannot reuse local base identities. A module ID must include a stable package identity and relative path. Different source versions with the same ID replace one another rather than coexist. Hash-derived identities are deterministic, not a mathematical collision-free naming guarantee.
+
+Direct `css({ ... })()` calls become fresh `{ className }` expressions. Definitions that escape through exports, parameters, or other expressions become `Props.create({ className })` calls from the small `zyzz/runtime` entrypoint. This runtime has no parser, compiler, theme data, stylesheet generation, or global registry. It validates styling override keys, appends external classes, and copies supplied inline styles. Empty overrides preserve generated classes; unrelated props and invalid override shapes throw TypeError. Type contracts reject extra keys through variables as well as literal objects.
+
+Import removal is conservative: retain imports with remaining references, including type queries and shadowed names. Preserve directives, hashbangs, unrelated imports, and surrounding source. Generated runtime imports use a locally unbound name. Rewriting does not fold arbitrary named-function applications or execute authoring callbacks.
+
+JavaScript replacements map to the authored definition or direct application. CSS selectors map to their representative definition and declarations to authored property locations. Factored shared rules map to the first contributing definition; the class map retains every definition's output. Host adapters compose these maps with later transforms and choose map URLs and stylesheet loading explicitly.

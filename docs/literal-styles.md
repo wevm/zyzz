@@ -49,3 +49,23 @@ Plain and null-prototype objects are accepted. Accessors, symbols, non-enumerabl
 The root imports only pure local style modules. There are no runtime dependencies, themes, target emitters, parsers, filesystem calls, or framework imports. Compiler reference types will extend this boundary in the theme phase; arbitrary objects are not accepted as future tokens today.
 
 Numeric style keys are returned and inferred as strings, matching JavaScript property enumeration. Plain data from other realms is accepted; class instances and accessor properties remain invalid. Every branch of a union-typed style must contain only supported properties.
+
+## Web Compilation
+
+```ts
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const styles = Style.define({
+  card: { padding: '1rem', paddingLeft: 0 },
+})
+const { classes, css, themes } = Css.compile({ styles })
+// Write css to a stylesheet; apply classes.card to the element.
+// themes is empty at the literal boundary.
+```
+
+Compilation is pure and emits grouped rules in authored order. CamelCase properties become kebab-case; literal units remain unchanged and numeric values stay unitless. Empty styles retain a class but emit no rule. Output maps and the result are frozen. Only the web entrypoint imports the compiler.
+
+Class names use `zyzz-<encoded-name>-<content-hash>`. Non-ASCII and punctuation code units, including underscores, use unambiguous hexadecimal escapes; names cannot inject CSS or split the class attribute. Ordered declarations determine the deterministic hash. Machine paths, traversal order, and other styles do not affect a class. Hashes are identifiers, not a cryptographic integrity mechanism.
+
+`Css.CompileError` aggregates invalid declarations and empty or duplicate names; no partial stylesheet is returned. Compiler input is the ordered data contract returned by `Style.define`, not arbitrary untrusted objects. Themes, nested conditions, callbacks, and source parsing remain outside this literal API. Declaration and rule ordering follow CSS cascade semantics; class-attribute order does not control overrides.

@@ -49,6 +49,11 @@
       "src": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./web": {
+      "src": "./src/web/index.ts",
+      "types": "./dist/web/index.d.ts",
+      "default": "./dist/web/index.js"
     }
   }
 }

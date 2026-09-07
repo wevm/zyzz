@@ -14,6 +14,7 @@ for (const [name, count, unique] of [
       ['stylex', Compilation.stylex],
       ['tailwind', Compilation.tailwind],
       ['vanilla-extract', Compilation.vanillaExtract],
+      ['zyzz', Compilation.zyzz],
     ] as const) {
       let fixture: Compilation.Fixture
       bench(
@@ -59,7 +60,6 @@ for (const [name, count, unique] of [
                       gzip: css.gzip + javascript.gzip,
                       raw: css.raw + javascript.raw,
                     },
-                    zyzz: 'Unavailable: CSS compilation is not implemented.',
                   },
                   null,
                   2,

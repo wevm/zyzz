@@ -43,13 +43,13 @@ Every `css` definition is callable. Static calls accept optional styling overrid
 
 ## Starting point
 
-PR 1.1 implements the literal definition boundary on its review branch. It replaces the greeting with `Style.define`, integration/type scenarios, and an authoring/validation benchmark. CSS emission, source rewriting, component APIs, themes, variants, and native output remain unimplemented. Later PRs start from this validated boundary.
+PR 1.1 is merged and implements `Style.define`, integration/type scenarios, and external compiler benchmarks. PR 1.2 adds literal CSS emission and Zyzz compiler comparisons. Source rewriting, component APIs, themes, variants, and native output remain unimplemented.
 
-Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration tests. Existing CI checks consumer type fixtures, runs integration scenarios including isolated packed consumption, and builds the package. Tooling remains outside the core dependency graph.
+Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration tests. Existing CI checks consumer type fixtures, runs integration scenarios and builds the package. Tooling remains outside the core dependency graph.
 
 ## Phase 1 — Build the core
 
-Status: in progress. [PR 1.1](https://github.com/wevm/typestyle/pull/1) is implemented and awaiting review/merge; PRs 1.2–1.5 are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
+Status: in progress. [PR 1.1](https://github.com/wevm/typestyle/pull/1) is merged; PR 1.2 is in progress from latest main; PRs 1.3–1.5 are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
 
 Merge in dependency order. Each PR includes real integration scenarios, consumer type fixtures, relevant benchmark evidence, and public TSDoc. No unit tests, mocks, or stubs. Keep CI green and record the actual PR link and completion evidence beside each item as work lands.
 
@@ -75,11 +75,11 @@ Evidence: [PR #1](https://github.com/wevm/typestyle/pull/1); `pnpm check`, `pnpm
 
 ### PR 1.2 — Literal CSS Compilation
 
-- [ ] Add the named `Css` namespace at `zyzz/web` and implement pure `Css.compile({ styles })` for the literal subset. Return the architecture's `{ css, classes, themes }` shape with an empty theme map and structured `Css.CompileError` diagnostics.
-- [ ] Serialize valid CSS values and property names, retaining authored declaration order. Start with grouped rules; atomic optimization remains in Phase 3.
-- [ ] Generate readable deterministic class names with collision handling. Keep identity independent of machine paths, traversal order, clocks, and global mutable state; repeated isolated calls must agree.
-- [ ] Add the real Zyzz compiler to the shared Tailwind, StyleX, and vanilla-extract compilation corpus in `bench/Compilation.ts`. Measure minified emitted CSS and required browser JavaScript separately in raw, gzip, and Brotli bytes; retain the same literal workloads and verify equivalent computed styles before reporting deltas. Do not compare `Style.define` validation with compilation.
-- [ ] Add integration fixtures from public definitions through the real compiler and browser for deterministic output, escaping, unit handling, collisions, and order-sensitive shorthand/longhand declarations. Verify computed styles and establish compilation-time and emitted-byte baselines on the same corpus.
+- [x] Add the named `Css` namespace at `zyzz/web` and implement pure `Css.compile({ styles })` for the literal subset. Return the architecture's `{ css, classes, themes }` shape with an empty theme map and structured `Css.CompileError` diagnostics.
+- [x] Serialize valid CSS values and property names, retaining authored declaration order. Start with grouped rules; atomic optimization remains in Phase 3.
+- [x] Generate readable deterministic class names with collision handling. Keep identity independent of machine paths, traversal order, clocks, and global mutable state; repeated isolated calls must agree.
+- [x] Add the real Zyzz compiler to the shared Tailwind, StyleX, and vanilla-extract compilation corpus in `bench/Compilation.ts`. Measure minified emitted CSS and required browser JavaScript separately in raw, gzip, and Brotli bytes; retain the same literal workloads and verify equivalent computed styles before reporting deltas. Do not compare `Style.define` validation with compilation.
+- [x] Add integration fixtures from public definitions through the real compiler and browser for deterministic output, escaping, unit handling, collisions, and order-sensitive shorthand/longhand declarations. Verify computed styles and establish compilation-time and emitted-byte baselines on the same corpus.
 
 Acceptance: in-memory definitions produce usable CSS and matching class names without source parsing or file access. Unsupported features fail explicitly. Root imports do not pull in the web compiler.
 

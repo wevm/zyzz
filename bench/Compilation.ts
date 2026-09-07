@@ -8,6 +8,8 @@ import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Tailwind from 'tailwindcss'
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
 
 /** CSS and the browser bundle that supplies every component's class names. */
 export type Bundle = {
@@ -20,16 +22,20 @@ export type Bundle = {
 /** Writes real compiler inputs for the same eight-declaration component corpus. */
 export async function create(count: number, unique: boolean): Promise<Fixture> {
   const directory = await Fs.mkdtemp(Path.resolve('.fixture-compilation-'))
-  const styles = Array.from({ length: count }, (_, index) => ({
-    backgroundColor: '#fff',
-    borderColor: '#000',
-    borderStyle: 'solid',
-    borderWidth: '1px',
-    boxSizing: 'border-box',
-    color: '#000',
-    display: 'block',
-    padding: unique ? `${index}px` : '12px',
-  }))
+  const styles = Array.from(
+    { length: count },
+    (_, index) =>
+      ({
+        backgroundColor: '#fff',
+        borderColor: '#000',
+        borderStyle: 'solid',
+        borderWidth: '1px',
+        boxSizing: 'border-box',
+        color: '#000',
+        display: 'block',
+        padding: unique ? (`${index}px` as const) : '12px',
+      }) as const,
+  )
   const names = styles.map((_, index) => `card${index}`)
   await Fs.writeFile(
     Path.join(directory, 'styles.css.ts'),
@@ -55,6 +61,9 @@ export async function create(count: number, unique: boolean): Promise<Fixture> {
         .join(' '),
     ),
     unique,
+    zyzz: Style.define(
+      Object.fromEntries(styles.map((style, index) => [names[index]!, style])),
+    ),
   }
 }
 
@@ -70,6 +79,8 @@ export type Fixture = {
   tailwind: readonly string[]
   /** Whether each component has a distinct padding value. */
   unique: boolean
+  /** Validated literal data; definition preparation is outside compilation timing. */
+  zyzz: Style.Definition
 }
 
 async function javascript(source: string): Promise<string> {
@@ -154,4 +165,15 @@ export async function vanillaExtract(fixture: Fixture): Promise<Bundle> {
   if (!css || !javascript)
     throw new Error('vanilla-extract did not emit CSS and JavaScript.')
   return { css: await minify(css), javascript }
+}
+
+/** Emits grouped CSS from prepared definitions and bundles static class exports. */
+export async function zyzz(fixture: Fixture): Promise<Bundle> {
+  const output = Css.compile({ styles: fixture.zyzz })
+  return {
+    css: await minify(output.css),
+    javascript: await javascript(
+      `export const classes = ${JSON.stringify(fixture.zyzz.styles.map(({ name }) => output.classes[name]))};`,
+    ),
+  }
 }

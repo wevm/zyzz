@@ -17,6 +17,7 @@ test('all compilation pipelines render the equivalent repeated and unique corpus
           Compilation.stylex,
           Compilation.tailwind,
           Compilation.vanillaExtract,
+          Compilation.zyzz,
         ]) {
           const bundle = await compile(fixture)
           const page = await browser.newPage()

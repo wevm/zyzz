@@ -642,3 +642,7 @@ Web correctness leads the MVP; native is included, not deferred beyond it. Demon
 Require actionable source diagnostics with valid alternatives, CSS-to-source tracing, refresh behavior, missing-transform errors, deterministic server output, and library stylesheet delivery. CLI and build adapters share options and useful defaults without a mandatory config file. Failed rebuilds preserve the previous complete output.
 
 Compare grouped and atomic emission on repeated and unique styles. Measure compressed CSS, JavaScript, class strings, rule counts, cold/incremental builds, browser recalculation, native table growth, and optional runtime costs separately. Do not claim globally zero runtime when composition, variable assignment, or dynamic variants are used; all CSS rules remain compiled ahead of time.
+
+## Literal Compiler Boundary
+
+`Css.compile({ styles })` from `zyzz/web` implements the literal subset documented in `docs/literal-styles.md`. It returns frozen `{ classes, css, themes }` artifacts, with an empty theme map. Grouped rules preserve authored ordering, and class identities depend on encoded names and ordered literal content. Themes, source extraction, and atomic optimization belong to subsequent boundaries.

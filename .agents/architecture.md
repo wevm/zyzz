@@ -611,7 +611,7 @@ The default target is web. A later `--target native` emits static tables through
 
 ## Small CSS and readable classes
 
-The initial optimization strategy is atomic emission for independent declarations, with shared rules deduplicated across the compilation graph. Preserve grouped rules where splitting would change declaration order or cascade behavior. Correctness is a release gate, not a tradeoff for fewer bytes.
+The compiler emits well-structured standard CSS with sensible rule grouping and safe deduplication. Preserve authored cascade semantics and keep compatible rules together only where safety is established. Delegate general CSS optimization and minification to the build adapter or consuming build. Correctness is a release gate, not a tradeoff for fewer bytes.
 
 Readable names contain a property or documented abbreviation, a token/value label, and any condition label. Illustrative names are `p-md-k3m9`, `bg-surface-a7c2`, and `hover-bg-brand-b4d8`. A short deterministic suffix distinguishes theme contracts, values, conditions, and ordering contexts; names never consist solely of a hash.
 
@@ -626,6 +626,28 @@ Conflicting shorthand/longhand declarations, overlapping logical/physical proper
 Emit only reachable rules and used token variables. Explicit theme scopes retain complete values for every live contract key. Independently compiled libraries remain correct without whole-application deduplication; cross-library deduplication is an optional consumer optimization.
 
 Measure raw and compressed CSS, generated class-string bytes, total transferred bytes, rule count, compilation time, incremental updates, and representative browser style recalculation. Compare atomic and grouped output on repeated and mostly unique styles. Keep the smaller safe strategy without introducing a runtime or changing readable names.
+
+### Compiler and Minifier Responsibilities
+
+Core owns typed style semantics, theme and variant lowering, composition, class references, CSS-variable bindings, and deterministic standard CSS output. Source analysis identifies reachable definitions; generated JavaScript and required runtime helpers remain the compiler's responsibility. Keep existing safe grouping and deduplication, but do not implement a general CSS minifier or graph-search optimizer for the MVP.
+
+The CLI/build adapter uses Lightning CSS for final CSS minification and browser-target processing, or delegates final processing to the consuming build. Core imports do not include the minifier, browser-target databases, compression libraries, filesystem APIs, or environment detection. Standalone compilation remains usable without minification. Native emission remains separate from web post-processing.
+
+The minifier owns value shortening, shorthand generation, compatible adjacent-rule merging, prefix handling, and syntax lowering for configured browser targets. Supply known-unused symbols when available; the minifier cannot infer application reachability from CSS alone. Keep CSS identifiers aligned with generated JavaScript and preserve readable names; minification must not silently rename classes independently of their references.
+
+Use one final CSS processing stage. When the consumer owns minification, emit standard CSS and source maps without an additional mandatory minifier pass. When the adapter owns it, apply explicit browser targets and reproducible options, compose source maps, and preserve the same class identities across development and production. Syntax formatting may differ between these modes.
+
+Emit compatible rules and condition blocks contiguously when their ordering is already safe. Never reorder conflicting declarations simply to enable a minifier merge. Arbitrary classes may coexist; shorthand/longhand interactions and repeated A/B/A overrides retain their semantics. Variant metadata may inform code generation, but does not justify a general selector solver.
+
+### Measurement and Deferred Research
+
+First establish a shared final-minification baseline across every benchmark library using the same Lightning CSS version, targets, and options. Keep required library artifacts and existing compiler workflows intact. Record pipeline differences, including unavoidable upstream minification; do not attribute source extraction or minifier time to the pure emitter. Measure raw/gzip/Brotli CSS and required JavaScript separately and as complete transfer, without double-counting class strings.
+
+Validate final processed CSS through real browser integration scenarios against independently interpreted authored declarations. Preserve current cascade and size gates; investigate any changed results rather than weakening gates automatically when changing the minifier. Compare baseline and candidate sequentially on the same host with unchanged workloads and report losses as well as wins.
+
+Custom conflict graphs, biclique discovery, beam search, solver experiments, equality saturation, dictionary extraction, and compression-based candidate selection are deferred research, not dependencies of source extraction or the MVP. Revisit only after a reproducible, material gap remains after standard minification and cannot be addressed with simpler code generation. Any proposal must account for added compile time, dependencies, correctness proofs, and full delivery cost. No benchmark-only pooling, fixture-specific branches, or runtime stylesheet decoder.
+
+Research references retained for later investigation: [CSS graph refactoring](https://anthonywlin.github.io/papers/toplas19.pdf), [equality saturation](https://arxiv.org/abs/2004.03082), and [Re-Pair compression](https://arxiv.org/html/1704.08558v1). These do not establish gains for this project. [Lightning CSS minification](https://lightningcss.dev/minification.html) documents the delegated transformations and the adjacent-rule merging boundary.
 
 ## Extraction and acceptance
 

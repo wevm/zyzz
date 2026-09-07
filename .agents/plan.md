@@ -83,7 +83,17 @@ Evidence: [PR #1](https://github.com/wevm/zyzz/pull/1); `pnpm check`, `pnpm chec
 
 Acceptance: in-memory definitions produce usable CSS and matching class names without source parsing or file access. Unsupported features fail explicitly. Root imports do not pull in the web compiler.
 
-Evidence: [PR #3](https://github.com/wevm/zyzz/pull/3), based on main `a5905ad`. Local formatting/lint, types, build, ten non-browser integration scenarios, and twelve compiler benchmarks pass. Chromium rendering is checked by CI. After literal factoring, total CSS plus client JavaScript gzip sizes are 468 bytes (small), 559 bytes (repeated), and 8,106 bytes (unique), versus StyleX at 558, 846, and 14,013 bytes. The integration corpus gates raw, gzip, and Brotli combined sizes below StyleX while checking browser equivalence. These are literal-pipeline baselines, not source-extraction or whole-application comparisons.
+Evidence: [PR #3](https://github.com/wevm/zyzz/pull/3) merged as `2a366cd`. Build, checks, browser integration tests, and all 40 benchmarks passed. Eight workloads compare five compiler adapters. Small, repeated, unique-padding, and partial-sharing workloads gate total raw/gzip/Brotli delivery below every comparison library. Other workloads retain measured gaps. These are literal-pipeline results, not source-extraction or whole-application comparisons.
+
+### PR 1.2a — Shared Minification Baseline
+
+Status: planned after PR 1.2; custom optimizer work is deferred.
+
+- [ ] Route every benchmark adapter's final CSS through the same Lightning CSS version, browser targets, and minification settings. Preserve real compiler APIs, required artifacts, unchanged workloads, and disclosure of upstream processing.
+- [ ] Run browser equivalence checks on the final processed output, including combined classes, shorthand/longhand order, and A/B/A overrides. Preserve existing size gates; investigate changes before modifying any budgets.
+- [ ] Record raw/gzip/Brotli CSS, required client JavaScript, total transfer, and compilation timings. Compare sequential matched runs; identify residual gaps after standard minification before proposing additional compiler optimization.
+
+Acceptance: all libraries share final CSS processing and retain equivalent browser behavior. A baseline documents remaining gaps; no custom graph optimizer or minifier enters core.
 
 ### PR 1.3 — Static Source Extraction
 
@@ -248,8 +258,19 @@ Status: eight literal workloads and five real compiler adapters are implemented 
 
 The benchmark implementation and reproduction notes record prior-art attribution. Later workloads must use actual supported APIs, without mocks, replacement compilers, or placeholder zero results.
 
+### Minification Follow-Through
+
+- [ ] PR 1.4–1.5: preserve deterministic identifiers, source maps, efficient class references, and sensible safe grouping through source emission. Avoid benchmark-only module serialization optimizations.
+- [ ] Phase 4: add Lightning CSS at the CLI/build adapter boundary with explicit targets and source-map composition. Allow the consuming build to own final processing without a mandatory second pass; core compilation remains usable without minification.
+- [ ] Phase 4: namespace independently emitted graphs and verify packed-library consumption through final CSS processing. Preserve class/reference alignment and readable development/production identities.
+- [ ] After the shared baseline: improve simple code generation only where complete delivery measurements justify it. Keep CSS-only size, total size, compile time, and browser performance distinct.
+
+### Deferred Optimizer Research
+
+Custom conflict graphs, shared-subset/biclique search, bounded beam search, MaxSAT experiments, equality saturation, dictionary sharing, and compression-based candidate selection are not scheduled MVP work. Revisit only for a reproducible material gap after standard minification, with evidence that simpler code generation is insufficient and that added compile time and complexity are justified.
+
 ### Optimization Acceptance
 
-- [ ] Beat each comparison library across all eight workloads in CSS and total raw/gzip/Brotli sizes; retain existing gates while individual targets remain open. Prioritize palette and component reuse, sparse factoring overhead, and independent-value compression. Preserve shorthand and A/B/A cascade semantics.
-- [ ] Confirm timing improvements in repeated matched runs, then set tolerances from measured variance. Do not assert fastest from a noisy CI sample or hide the differing source-pipeline boundaries.
-- [ ] Measure compact emitted module serialization through the production source adapter when it lands; do not add benchmark-only pooling or special cases.
+- [ ] Target smaller complete delivery across the unchanged corpus while retaining existing gates and reporting every raw/gzip/Brotli result, including losses. No universal minimum or fastest-compiler claim follows from a single benchmark run.
+- [ ] Verify supported CSS semantics through real browser integration tests before accepting size improvements. Keep core agnostic and minification in adapters or consuming builds.
+- [ ] Confirm timing improvements across repeated matched runs and retain variance. Do not use noisy strict winner assertions or hide differing source-pipeline boundaries.

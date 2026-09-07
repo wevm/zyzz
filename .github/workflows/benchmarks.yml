@@ -1,0 +1,82 @@
+name: Benchmarks
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+jobs:
+  benchmarks:
+    name: Benchmarks
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Record benchmark environment
+        run: |
+          mkdir -p bench/results
+          git rev-parse HEAD > bench/results/commit.txt
+          sha256sum pnpm-lock.yaml > bench/results/lockfile.txt
+          lscpu > bench/results/cpu.txt
+          free -b > bench/results/memory.txt
+          node --version > bench/results/node.txt
+          pnpm --version > bench/results/pnpm.txt
+          uname -a > bench/results/platform.txt
+      - name: Run benchmarks
+        run: pnpm exec vp test bench --run --outputJson bench/results/timings.json
+      - name: Summarize benchmarks
+        run: |
+          printf '## Benchmarks\n\n[Workflow run](%s/%s/actions/runs/%s)\n\nTypestyle joins the compiler and CSS-size comparisons in **PR 1.2 — Literal CSS Compilation**.\n\n## Compiler Comparisons\n\nSizes are bytes. Total gzip includes CSS + required client JavaScript.\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > bench/results/report.md
+          for workload in small repeated unique; do
+            case "$workload" in
+              small) title='3 Components' ;;
+              repeated) title='1,000 Components — Repeated Styles' ;;
+              unique) title='1,000 Components — Unique Styles' ;;
+            esac
+            printf '\n### %s\n\n| Library | Build (ms) | CSS gzip | Total gzip |\n| --- | ---: | ---: | ---: |\n' "$title" >> bench/results/report.md
+            jq -rs --arg workload "$workload" --slurpfile timings bench/results/timings.json '
+              sort_by(.library)[] as $size |
+              $timings[0].files[].groups[] | select(.fullName | endswith(" / " + $workload)) |
+              .benchmarks[] | select(.name == $size.library) |
+              [({"stylex":"StyleX","tailwind":"Tailwind","vanilla-extract":"vanilla-extract"}[.name]),
+               ((.mean * 1000 | round) / 1000), $size.css.gzip, $size.total.gzip] |
+              "| " + (map(tostring) | join(" | ")) + " |"
+            ' bench/results/"$workload"/*.json >> bench/results/report.md
+            printf '\n<details>\n<summary>Full Measurements</summary>\n\n| Library | Error (±%%) | Samples | CSS raw | CSS Brotli | JS gzip |\n| --- | ---: | ---: | ---: | ---: | ---: |\n' >> bench/results/report.md
+            jq -rs --arg workload "$workload" --slurpfile timings bench/results/timings.json '
+              sort_by(.library)[] as $size |
+              $timings[0].files[].groups[] | select(.fullName | endswith(" / " + $workload)) |
+              .benchmarks[] | select(.name == $size.library) |
+              [({"stylex":"StyleX","tailwind":"Tailwind","vanilla-extract":"vanilla-extract"}[.name]),
+               ((.rme * 100 | round) / 100), .sampleCount, $size.css.raw, $size.css.brotli, $size.javascript.gzip] |
+              "| " + (map(tostring) | join(" | ")) + " |"
+            ' bench/results/"$workload"/*.json >> bench/results/report.md
+            printf '\n</details>\n' >> bench/results/report.md
+          done
+          printf '\nBuild timings use warm host processes and fresh compiler state. Compiler workflows have different scopes; see bench/README.md in the repository for measurement boundaries.\n' >> bench/results/report.md
+          cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
+      - if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        name: Comment benchmark results
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: benchmarks
+          path: bench/results/report.md
+      - if: ${{ !cancelled() }}
+        name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: benchmarks
+          path: bench/results/
+          retention-days: 30
+    timeout-minutes: 5
+permissions:
+  contents: read

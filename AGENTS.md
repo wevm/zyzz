@@ -27,7 +27,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Use static imports. Reserve dynamic imports for a real runtime or bundle boundary, not dependency-cycle workarounds.
 - Use `import type` and `export type` where an import or export is type-only.
 - Use functions and plain data for normal APIs. Classes are limited to errors and framework-required entrypoints such as Durable Objects.
-- Keep error classes in the module that throws them, below the public functions and types. Set custom error `name` values to the namespaced form, such as `Config.InvalidError`.
+- Keep error classes in the module that throws them, ordered alphabetically with its public exports. Set custom error `name` values to the namespaced form, such as `Config.InvalidError`.
 - Use unions or `as const` objects instead of enums.
 - Prefer `camelCase` constants. Preserve uppercase names only when they mirror an external protocol or established neighboring code.
 - Use `const` generic parameters when callers should retain literal or tuple types.
@@ -48,6 +48,13 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Avoid new `any`. Use a precise boundary type, validation, narrowing, or the smallest justified assertion.
 - Do not use section-divider comments. Use exports, TSDoc, and whitespace to express module structure.
 - Comment invariants and non-obvious reasons, not line-by-line mechanics. Keep comments independent of plans, task IDs, and prior versions.
+
+## Alphabetical Ordering
+
+- Alphabetize imports, named import/export specifiers, public exports, type/interface properties, object properties, enum/union members, unordered lists, configuration maps, scripts, and dependencies. Use case-insensitive lexical order consistently.
+- Keep attached documentation with the declaration or property it describes. Keep function overloads and their namespace together. Order local declarations alphabetically within dependency-compatible groups; do not introduce use-before-initialization or reorder execution.
+- Preserve order with observable semantics: authored CSS declarations, fallbacks, cascade layers, variant/compound precedence, tuples, package file inclusions followed by exclusions, workflow steps, and regression fixtures testing those orders. Mark intentional exceptions in nearby documentation or comments. The compiler must never sort consumer styles.
+- Keep `name` and `on` first in GitHub workflows; alphabetize the remaining top-level keys. Preserve the scaffold package.json group order around `[!start-pkg]`; alphabetize entries within each group. Do not alphabetize prose sections or sequential implementation phases mechanically.
 
 ## Module and Instance Conventions
 
@@ -75,7 +82,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Preserve literal inputs through public helpers when those literals affect the output type.
 - Keep generic types flowing from inputs through callbacks and return values. Do not erase them to `any` at an internal seam.
 - Prevent public callbacks, options, and return values from leaking `any`.
-- Add consumer `.test-d.ts` fixtures under `test/types/` with `expectTypeOf` and expected compiler errors when public inference or narrowing changes. Import public entrypoints; ensure the fixtures are actually checked by TypeScript.
+- Add consumer `.test-d.ts` fixtures beside their owning module (for example, `src/Style.test-d.ts`) with `expectTypeOf` and expected compiler errors when public inference or narrowing changes. Import public entrypoints; ensure the fixtures are actually checked by TypeScript.
 - Revisit inference after changing an API. Prefer a narrower useful contract over a broad type that merely compiles.
 
 ## Abstraction Conventions
@@ -107,22 +114,25 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 ## Testing Conventions
 
 - Runtime coverage is integration-only. Do not write unit tests, private-helper tests, or per-function suites disguised as integration tests.
-- Organize scenarios under `test/integration/` and reusable input projects under `test/fixtures/`. Import public entrypoints and exercise real collaborating modules: authoring and validation, compilation and output, or host and consumer behavior.
+- Colocate integration suites, benchmarks, and consumer type fixtures with their owning module: `Style.test.ts`, `Style.bench.ts`, and `Style.test-d.ts` beside `Style.ts`. Keep reusable input projects under `test/fixtures/`. Import public entrypoints and exercise real collaborating modules: authoring and validation, compilation and output, or host and consumer behavior.
 - No mocking, stubbing, fake implementations, module replacements, fake timers, or stubbed globals. Use real compilers, temporary directories, processes, watchers, and browser/native engines. Fixture source and deterministic input data are allowed; replacement implementations are not.
 - Verify web CSS through computed styles in a real browser, including cascade order, theme scopes, schemes, selectors, and queries. Do not use a simulated DOM as proof of browser behavior. Native checks use a real native engine and renderer when rendering is under test.
 - Cover complete supported flows as they land: source to transformed module and CSS, packed-library consumption, watch recovery, and static native theme selection. Before a later stage exists, test the real available public boundary; do not fabricate a downstream stage.
+- Exclude colocated tests, benchmarks, and type fixtures from published files and build outputs.
 - Keep consumer type-contract fixtures alongside integration coverage. They validate inference and rejected inputs through public imports and do not replace runtime integration coverage.
-- Assert observable results and public diagnostics; use focused snapshots only for stable artifacts. Never derive expected output from the implementation under test or treat a CSS snapshot alone as rendering proof.
+- Assert observable runtime results and public diagnostics with inline snapshots (`toMatchInlineSnapshot` or `toThrowErrorMatchingInlineSnapshot`), not external snapshots or other assertion styles. Pass property matchers as the first argument to `toMatchInlineSnapshot` for genuinely nondeterministic fields, such as `expect.any(String)` or `expect.stringMatching(...)` for temporary paths. Keep deterministic values exact; never mask meaningful output. Review generated snapshots before accepting them. Compile-time `expectTypeOf` assertions and expected compiler errors remain in `.test-d.ts` fixtures. Never derive expected output from the implementation under test or treat a CSS snapshot alone as rendering proof.
+- Report V8 coverage for production `src/` files from the existing integration run. Exclude tests and benchmarks; retain unimported source files. Publish an updating PR coverage comment and CI artifact. Coverage is diagnostic, not a reason to introduce unit tests or mock implementations.
 - Add an integration regression scenario for every bug fix. Track coverage of consumer workflows and error paths rather than targeting a unit-test count or percentage.
 - Use bounded waits for observable conditions, isolate real resources, and clean them up after success or failure. Do not hide flakes with arbitrary sleeps or retries.
 
 ## Benchmark Conventions
 
-- Use the installed Vite Plus/Vitest benchmark runner: import `bench` and `describe` from `vite-plus/test` in `bench/*.bench.ts`, and run `pnpm exec vp test bench --run`. Keep benchmark APIs aligned with the lockfile.
-- Benchmark real public workflows using the integration fixture corpus. No mocks, stubs, synthetic replacement compilers, or greeting benchmarks. Add the first real authoring/validation baseline in PR 1.1, then extend it with compilation, extraction, rewriting, and watch workloads as those stages land.
+- Use the installed Vite Plus/Vitest benchmark runner: import `bench` and `describe` from `vite-plus/test` in colocated `*.bench.ts` files, and run `pnpm exec vp test bench --run`. Keep benchmark APIs aligned with the lockfile.
+- Benchmark real public workflows using the integration fixture corpus. No mocks, stubs, synthetic replacement compilers, or greeting benchmarks. Benchmark compilation, extraction, rewriting, and watch workloads as those stages land. Typestyle joins compiler comparisons when its real CSS emitter exists; do not benchmark authoring alone.
 - Measure cold and warm compilation, incremental edits, throughput, memory, browser style recalculation, and native table selection separately. Use real browser/host timing for workloads outside the benchmark runner's execution model; do not substitute a function microbenchmark for end-to-end performance.
 - Record emitted CSS, generated JavaScript, class-name/markup bytes, and required runtime helpers separately, plus actual combined transfer. Report raw, gzip, and Brotli sizes without double-counting class strings already included in JavaScript or markup. Package download size is a separate metric.
 - Use repeated and mostly unique styles, small and large projects, theme/scheme changes, variants, and library boundaries. Validate equivalent behavior before comparing configurations or libraries; include each library's required helpers and delivery artifacts.
+- Keep generated benchmark reports and machine metadata under ignored `bench/results/`; never commit them. A separate benchmark workflow calls Vite Plus directly and uploads artifacts; PR descriptions record relevant summaries. Never compare results from different CI runners. Keep definitions and reproduction instructions in Git.
 - Save reproducible results with `--outputJson`; compare a baseline using `--compare`. Record commit, tool versions, fixture size, hardware, cache state, warmup, sample count, variance, and measurement boundaries. Run baseline and candidate on the same machine without competing benchmark jobs.
 - Changes to compilation, emitted artifacts, or runtime helpers include relevant benchmark deltas. Establish size budgets and timing tolerances from measured baselines; confirm regressions across repeated samples instead of enforcing noisy single-run timing gates. Do not claim speed or size advantages without matched evidence.
 
@@ -130,7 +140,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 - Use the smallest repository script that covers the changed behavior. Run focused tests while iterating.
 - Run `pnpm check:types` after TypeScript changes.
-- Use `pnpm test` for Vite Plus integration tests. Replace the generated greeting and its unit test in PR 1.1 with real consumer scenarios and a benchmark baseline; do not extend the scaffold test.
+- Use `pnpm test` for Vite Plus integration tests. Add compiler and renderer workflows only as those boundaries exist.
 - `pnpm check` runs formatting, lint, and type checks with fixes. Inspect and keep only task-related changes.
 - Run `git diff --check` and inspect the final diff before reporting completion.
 
@@ -152,8 +162,8 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 ## Repository Layout
 
-- The repository has the generated zile greeting stub and Vite Plus tooling; styling implementation starts from scratch.
-- Add flat PascalCase modules under `src/`; keep integration scenarios, consumer type fixtures, and benchmarks under `test/` and `bench/` as implementation phases land.
+- The repository implements the literal `Style.define` boundary with Vite Plus/zile tooling, integration/type coverage, and external compiler benchmarks. Later phases add compilation, source transforms, and component APIs.
+- Add flat PascalCase modules under `src/`; colocate integration scenarios, consumer type fixtures, and benchmarks beside their owning modules. Keep reusable fixtures under `test/fixtures/` and benchmark instructions under `bench/`.
 - Export the `css` and `variants` leaf functions directly and bind both on themes; conceptual modules use namespace exports. Infer variant props with standard `Parameters`, without a variant namespace.
 - Every `css` definition is callable and returns props when applied. Callbacks receive only typed runtime values; no context helpers. Use trailing `!` for importance, arrays for fallbacks, and `theme.tokens`/`theme.vars` for references. Calls consume declared values and merge only styling overrides (`className`/`style` on web). Other component props stay on the component; unknown inputs are errors. Dynamic variant choices take typed callbacks and scoped payload selections; compound matches use choice names, while values bind to precompiled slots. Spread applied props; `cx` preserves bindings and recipe attributes. Generated functions never create CSS rules.
 - Core semantics must be deterministic and independent of environments and tools; target emitters and host adapters have separate entrypoints.

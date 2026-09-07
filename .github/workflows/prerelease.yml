@@ -1,18 +1,19 @@
 name: Prerelease
-on: [push, pull_request]
-
+on:
+  workflow_dispatch:
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
-
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
-
+      - name: Build package
+        run: pnpm build
       - name: Prerelease
-        run: |
-          pnpm run build
-          pnpx pkg-pr-new publish --pnpm
+        run: pnpm exec pkg-pr-new publish --pnpm
+    timeout-minutes: 5

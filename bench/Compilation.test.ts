@@ -95,21 +95,27 @@ for (const workload of Corpus.cases) {
           await page.close()
         }
       }
-      // Preserve established gates. New stress cases report gaps before budgets are accepted.
-      if (['repeated', 'small', 'unique'].includes(workload.name)) {
-        const stylex = sizes.get('stylex')!
+      // Extend established transfer gates only where every measured competitor loses.
+      // Remaining workloads retain browser parity and publish their size gaps.
+      if (['partial', 'repeated', 'small', 'unique'].includes(workload.name)) {
         const zyzz = sizes.get('zyzz')!
-        expect({
-          brotli: zyzz.brotli < stylex.brotli,
-          gzip: zyzz.gzip < stylex.gzip,
-          raw: zyzz.raw < stylex.raw,
-        }).toMatchInlineSnapshot(`
-          {
-            "brotli": true,
-            "gzip": true,
-            "raw": true,
-          }
-        `)
+        for (const [library, size] of sizes) {
+          if (library === 'zyzz') continue
+          expect(
+            {
+              brotli: zyzz.brotli < size.brotli,
+              gzip: zyzz.gzip < size.gzip,
+              raw: zyzz.raw < size.raw,
+            },
+            `${library} / ${workload.name} transfer`,
+          ).toMatchInlineSnapshot(`
+            {
+              "brotli": true,
+              "gzip": true,
+              "raw": true,
+            }
+          `)
+        }
       }
     } finally {
       await browser.close()

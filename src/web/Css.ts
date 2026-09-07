@@ -13,16 +13,45 @@ import type * as Style from '../Style.js'
 export function compile<const name extends string>(
   options: compile.Options<name>,
 ): compile.ReturnType<name> {
+  type Cached = {
+    declaration: string
+    domain: string
+    message: string | undefined
+  }
+  const cache = new Map<string, Map<number | string, Cached>>()
   const classes = Object.create(null) as Record<name, string>
   const diagnostics: Diagnostic[] = []
-  const groups = new Map<string, Set<string>>()
+  const groups = new Map<string, false | string>()
   const prepared = options.styles.styles.map((style) => {
     const declarations: string[] = []
     const domains = new Map<string, string[]>()
     for (const { property, value } of style.declarations) {
-      const message = Object.hasOwn(Literal.rules, property)
-        ? Literal.validate(property, value)
-        : 'Unsupported literal property.'
+      let values = cache.get(property)
+      if (!values) {
+        values = new Map()
+        cache.set(property, values)
+      }
+      let entry = values.get(value)
+      if (!entry) {
+        const message = Object.hasOwn(Literal.rules, property)
+          ? Literal.validate(property, value)
+          : 'Unsupported literal property.'
+        entry = {
+          declaration: message
+            ? ''
+            : `${property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value};`,
+          domain: property.startsWith('margin')
+            ? 'margin'
+            : property.startsWith('padding')
+              ? 'padding'
+              : ['columnGap', 'gap', 'rowGap'].includes(property)
+                ? 'gap'
+                : property,
+          message,
+        }
+        values.set(value, entry)
+      }
+      const { declaration, domain, message } = entry
       if (message) {
         diagnostics.push({
           code: 'invalid_declaration',
@@ -31,31 +60,26 @@ export function compile<const name extends string>(
         })
         continue
       }
-      const declaration = `${property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value};`
       declarations.push(declaration)
-      const domain = property.startsWith('margin')
-        ? 'margin'
-        : property.startsWith('padding')
-          ? 'padding'
-          : ['columnGap', 'gap', 'rowGap'].includes(property)
-            ? 'gap'
-            : property
       const sequence = domains.get(domain) ?? []
       sequence.push(declaration)
       domains.set(domain, sequence)
     }
     for (const [domain, sequence] of domains) {
-      const signatures = groups.get(domain) ?? new Set<string>()
-      signatures.add(sequence.join(''))
-      groups.set(domain, signatures)
+      const previous = groups.get(domain)
+      if (previous === false) continue
+      const signature = sequence.join('')
+      groups.set(
+        domain,
+        previous === undefined || previous === signature ? signature : false,
+      )
     }
     return { declarations, domains, name: style.name }
   })
-  const counts = new Map<string, number>()
   const factored = prepared.map((style) => {
     const common = new Set<string>()
     for (const [domain, sequence] of style.domains)
-      if (groups.get(domain)?.size === 1)
+      if (groups.get(domain) !== false)
         for (const declaration of sequence) common.add(declaration)
     const ordered = style.declarations
       .filter((declaration) => !common.has(declaration))
@@ -63,9 +87,16 @@ export function compile<const name extends string>(
     const shared = style.declarations
       .filter((declaration) => common.has(declaration))
       .join('')
-    counts.set(ordered, (counts.get(ordered) ?? 0) + 1)
     return { name: style.name, ordered, shared }
   })
+  // Sort identities only, never authored declarations or cascade order. Separate
+  // prefixes keep generated base identities disjoint from encoded authored names.
+  const bases = new Map(
+    [...new Set(factored.map((style) => style.shared))]
+      .filter(Boolean)
+      .sort()
+      .map((body, index) => [body, `z_base${index}`]),
+  )
   const rules = new Map<string, string>()
   for (const style of factored) {
     if (!style.name || Object.hasOwn(classes, style.name)) {
@@ -85,9 +116,7 @@ export function compile<const name extends string>(
       [ordered, false],
     ] as const) {
       if (!body) continue
-      const identity = sharedRule
-        ? `z-base-${hash(body)}`
-        : `z-${counts.get(body) === 1 ? '' : `${encode(style.name)}-`}${encode(body.slice(0, -1))}`
+      const identity = sharedRule ? bases.get(body)! : `z-${encode(style.name)}`
       const previous = rules.get(identity)
       if (previous !== undefined && previous !== body)
         diagnostics.push({
@@ -169,16 +198,4 @@ function encode(value: string): string {
     /[^a-zA-Z0-9-]/g,
     (character) => `_${character.charCodeAt(0).toString(16)}_`,
   )
-}
-
-// Two independently seeded 32-bit streams; no platform crypto or shared state.
-function hash(value: string): string {
-  let first = 2166136261
-  let second = 2246822507
-  for (let index = 0; index < value.length; index++) {
-    const code = value.charCodeAt(index)
-    first = Math.imul(first ^ code, 16777619)
-    second = Math.imul(second ^ code, 3266489909)
-  }
-  return `${(first >>> 0).toString(36)}${(second >>> 0).toString(36)}`
 }

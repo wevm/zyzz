@@ -615,6 +615,8 @@ The initial optimization strategy is atomic emission for independent declaration
 
 Readable names contain a property or documented abbreviation, a token/value label, and any condition label. Illustrative names are `p-md-k3m9`, `bg-surface-a7c2`, and `hover-bg-brand-b4d8`. A short deterministic suffix distinguishes theme contracts, values, conditions, and ordering contexts; names never consist solely of a hash.
 
+The current literal emitter uses encoded authored names for ordered rules and sorted, compact `z_base` identifiers for shared rules. These identities belong to one complete compilation graph. Source and packed-library adapters must introduce stable module/graph namespaces before supporting independently emitted stylesheets; independent bundles must not reuse these unscoped identifiers.
+
 Use the same names in development and production. Minification compresses CSS syntax without renaming classes. Bound label length, escape valid identifiers, and check collisions with deterministic disambiguation. Do not embed source paths or require callers to write generated class strings.
 
 Deduplication identity includes the full declaration value or variable fallback, theme contract, selector, at-rule stack, cascade layer, and any ordering constraints. Never merge identical-looking token labels from incompatible themes or change precedence through global sorting.

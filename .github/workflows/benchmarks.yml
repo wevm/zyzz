@@ -51,7 +51,7 @@ jobs:
               sort_by(.library)[] as $size |
               $timings[0].files[].groups[] | select(.fullName | endswith(" / " + $workload)) |
               .benchmarks[] | select(.name == $size.library) |
-              [({"panda":"Panda CSS","stylex":"StyleX","tailwind":"Tailwind","tamagui":"Tamagui","vanilla-extract":"vanilla-extract","zyzz":"Zyzz"}[.name]),
+              [({"panda":"Panda CSS","stylex":"StyleX","tailwind":"Tailwind","vanilla-extract":"vanilla-extract","zyzz":"Zyzz"}[.name]),
                ((.mean * 1000 | round) / 1000), $size.css.gzip, $size.total.gzip] |
               "| " + (map(tostring) | join(" | ")) + " |"
             ' bench/results/"$workload"/*.json >> bench/results/report.md
@@ -60,7 +60,7 @@ jobs:
               sort_by(.library)[] as $size |
               $timings[0].files[].groups[] | select(.fullName | endswith(" / " + $workload)) |
               .benchmarks[] | select(.name == $size.library) |
-              [({"panda":"Panda CSS","stylex":"StyleX","tailwind":"Tailwind","tamagui":"Tamagui","vanilla-extract":"vanilla-extract","zyzz":"Zyzz"}[.name]),
+              [({"panda":"Panda CSS","stylex":"StyleX","tailwind":"Tailwind","vanilla-extract":"vanilla-extract","zyzz":"Zyzz"}[.name]),
                ((.rme * 100 | round) / 100), .sampleCount, $size.css.raw, $size.css.brotli, $size.javascript.gzip] |
               "| " + (map(tostring) | join(" | ")) + " |"
             ' bench/results/"$workload"/*.json >> bench/results/report.md

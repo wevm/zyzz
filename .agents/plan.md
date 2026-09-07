@@ -236,7 +236,7 @@ The API and phases above are proposed. Implementation begins at Phase 1 with no 
 
 ## Benchmark Expansion
 
-Status: eight literal workloads and six real compiler adapters are implemented on PR 1.2. New adapters are Panda CSS and Tamagui; no additional styling libraries are authorized in this expansion. Browser equivalence covers every workload. Existing size gates remain; discovery cases expose further optimization targets.
+Status: eight literal workloads and five real compiler adapters are implemented on PR 1.2. Panda CSS joins the existing adapters. Tamagui has been removed from the PR matrix due to extraction cost; no additional styling libraries are authorized. Browser equivalence covers every workload. Existing size gates remain; discovery cases expose further optimization targets.
 
 - [ ] PR 1.3–1.5: add cold-process source builds, warm builds, unchanged edits, new styles, removed styles, and imported-dependency edits. Include parsing, scanning, rewriting, and output writing explicitly. In-memory emission must remain a separate measurement.
 - [ ] PR 1.5: add opt-in 10/100/1,000/10,000-style sweeps and independently vary rendered instance count. Keep expensive runs outside the short PR matrix.
@@ -244,6 +244,12 @@ Status: eight literal workloads and six real compiler adapters are implemented o
 - [ ] Phase 3: add default/compound variants, variant changes, consumed-value updates, unchanged parent rerenders, and override-heavy composition. Verify comparable cascade semantics before comparing shorthand and A/B/A composition across libraries.
 - [ ] Phase 3–4: adapt deep/wide component trees and dynamic triangle workloads using real production framework runtimes. Separate mount, cached rerender, changed props, CSSOM writes, layout, paint, and interaction latency. Do not substitute raw DOM timing for framework runtime cost.
 - [ ] Phase 4: add SSR throughput and full HTML/CSS/JavaScript delivery, hydration, route splitting, dead-style removal, and packed-library boundaries. Keep framework baseline and incremental styling cost visible without double-counting assets.
-- [ ] Phase 5: optimize discovery workload size gaps against StyleX and promote measured cases to regression gates. Record all raw/gzip/Brotli results, including losses; do not change fixtures to manufacture wins.
+- [ ] PR 1.2 onward: optimize every workload against Panda CSS, StyleX, Tailwind, and vanilla-extract and promote measured cases to regression gates. Record all raw/gzip/Brotli results, including losses; do not change fixtures to manufacture wins.
 
 The benchmark implementation and reproduction notes record prior-art attribution. Later workloads must use actual supported APIs, without mocks, replacement compilers, or placeholder zero results.
+
+### Optimization Acceptance
+
+- [ ] Beat each comparison library across all eight workloads in CSS and total raw/gzip/Brotli sizes; retain existing gates while individual targets remain open. Prioritize palette and component reuse, sparse factoring overhead, and independent-value compression. Preserve shorthand and A/B/A cascade semantics.
+- [ ] Confirm timing improvements in repeated matched runs, then set tolerances from measured variance. Do not assert fastest from a noisy CI sample or hide the differing source-pipeline boundaries.
+- [ ] Measure compact emitted module serialization through the production source adapter when it lands; do not add benchmark-only pooling or special cases.

@@ -17,16 +17,16 @@ test('definitions compile to stable classes and ordered literal CSS', () => {
   expect(result).toMatchInlineSnapshot(`
     {
       "classes": {
-        " ": "z-base-1abu38z19bto6x",
-        "1 space:💪": "z-base-fiztp2mr0h1o",
-        "_20_": "z-base-1abu38z19bto6x",
-        "__proto__": "z-base-1abu38z19bto6x",
-        "card": "z-base-1g83dj9f4y1q9",
+        " ": "z_base0",
+        "1 space:💪": "z_base1",
+        "_20_": "z_base0",
+        "__proto__": "z_base0",
+        "card": "z_base2",
         "empty": "",
       },
-      "css": ".z-base-1g83dj9f4y1q9{padding:1rem;padding-left:0;opacity:0.5;}
-    .z-base-fiztp2mr0h1o{margin-top:-2px;color:#fff;}
-    .z-base-1abu38z19bto6x{display:block;}",
+      "css": ".z_base2{padding:1rem;padding-left:0;opacity:0.5;}
+    .z_base1{margin-top:-2px;color:#fff;}
+    .z_base0{display:block;}",
       "themes": {},
     }
   `)
@@ -74,6 +74,10 @@ test('compiler diagnostics reject invalid ordered declarations without emitting 
         declarations: [{ property: 'opacity', value: Infinity }],
         name: 'numeric',
       },
+      {
+        declarations: [{ property: 'opacity', value: Infinity }],
+        name: 'numericAgain',
+      },
       ...valid.styles,
     ],
   }
@@ -84,35 +88,43 @@ test('compiler diagnostics reject invalid ordered declarations without emitting 
     if (!(error instanceof Css.CompileError)) throw error
     expect({ diagnostics: error.diagnostics, name: error.name })
       .toMatchInlineSnapshot(`
-      {
-        "diagnostics": [
-          {
-            "code": "invalid_declaration",
-            "message": "Expected a nonnegative literal length or numeric zero.",
-            "path": [
-              "injection",
-              "padding",
-            ],
-          },
-          {
-            "code": "invalid_declaration",
-            "message": "Expected a finite number from 0 to 1.",
-            "path": [
-              "numeric",
-              "opacity",
-            ],
-          },
-          {
-            "code": "invalid_name",
-            "message": "Style names must be nonempty and unique.",
-            "path": [
-              "card",
-            ],
-          },
-        ],
-        "name": "Css.CompileError",
-      }
-    `)
+        {
+          "diagnostics": [
+            {
+              "code": "invalid_declaration",
+              "message": "Expected a nonnegative literal length or numeric zero.",
+              "path": [
+                "injection",
+                "padding",
+              ],
+            },
+            {
+              "code": "invalid_declaration",
+              "message": "Expected a finite number from 0 to 1.",
+              "path": [
+                "numeric",
+                "opacity",
+              ],
+            },
+            {
+              "code": "invalid_declaration",
+              "message": "Expected a finite number from 0 to 1.",
+              "path": [
+                "numericAgain",
+                "opacity",
+              ],
+            },
+            {
+              "code": "invalid_name",
+              "message": "Style names must be nonempty and unique.",
+              "path": [
+                "card",
+              ],
+            },
+          ],
+          "name": "Css.CompileError",
+        }
+      `)
   }
 })
 

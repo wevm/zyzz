@@ -1,7 +1,6 @@
 *.tgz
 *.tsbuildinfo
 .fixture-*/
-.tamagui/
 bench/results/
 coverage/
 dist/

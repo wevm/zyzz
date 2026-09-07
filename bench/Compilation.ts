@@ -6,9 +6,7 @@ import StylexPlugin, {
 } from '@stylexjs/babel-plugin'
 import { vanillaExtractPlugin } from '@vanilla-extract/esbuild-plugin'
 import * as Esbuild from 'esbuild'
-import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
-import { promisify } from 'node:util'
 import * as Path from 'node:path'
 import * as Tailwind from 'tailwindcss'
 import { Style } from 'zyzz'
@@ -28,7 +26,6 @@ export const compilers = {
   panda,
   stylex,
   tailwind,
-  tamagui,
   'vanilla-extract': vanillaExtract,
   zyzz,
 }
@@ -55,10 +52,6 @@ export async function create(workload: Corpus.Case): Promise<Fixture> {
     Path.join(directory, 'panda.ts'),
     `import { css } from './styled-system/css'; export const classes = [${styles.map((style) => `css(${JSON.stringify(style)})`).join(',')}];`,
   )
-  await Fs.writeFile(
-    Path.join(directory, 'tamagui.config.ts'),
-    `import { createTamagui } from '@tamagui/core'; export default createTamagui({ tokens: {color:{},radius:{},size:{true:0},space:{true:0},zIndex:{}}, themes: {light:{}}, fonts:{} });`,
-  )
   return {
     count: workload.count,
     directory,
@@ -73,30 +66,6 @@ export async function create(workload: Corpus.Case): Promise<Fixture> {
         )
         .join(' '),
     ),
-    tamagui: `import { Text, View } from '@tamagui/core';
-      ${styles
-        .map(
-          (style, index) =>
-            `const Card${index} = () => <${style.fontSize !== undefined || style.fontWeight !== undefined || style.lineHeight !== undefined ? 'Text' : 'View'} ${Object.entries(
-              {
-                alignItems: 'normal',
-                boxSizing: 'content-box',
-                display: 'block',
-                flexDirection: 'row',
-                flexShrink: 1,
-                minHeight: 'auto',
-                minWidth: 'auto',
-                ...style,
-              },
-            )
-              .map(
-                ([property, value]) =>
-                  `${property}={${JSON.stringify(property === 'lineHeight' && typeof value === 'number' ? String(value) : value)}}`,
-              )
-              .join(' ')} />;`,
-        )
-        .join('\n')}
-      export const classes = [${styles.map((_, index) => `Card${index}().props.className`).join(',')}];`,
     workload,
     zyzz: Style.define(
       Object.fromEntries(styles.map((style, index) => [names[index]!, style])),
@@ -114,8 +83,6 @@ export type Fixture = {
   stylex: string
   /** Tailwind candidates, including repeated uses. */
   tailwind: readonly string[]
-  /** Literal JSX source for Tamagui's real static extractor. */
-  tamagui: string
   /** Workload metadata and the browser reference input. */
   workload: Corpus.Case
   /** Validated literal data; definition preparation is outside compilation timing. */
@@ -198,37 +165,6 @@ export async function tailwind(fixture: Fixture): Promise<Bundle> {
     ),
     javascript: await javascript(
       `export const classes = ${JSON.stringify(fixture.tailwind)};`,
-    ),
-  }
-}
-
-/** Runs Tamagui's JSX extractor and bundles its actual compiled class references. */
-export async function tamagui(fixture: Fixture): Promise<Bundle> {
-  await Fs.writeFile(
-    Path.join(fixture.directory, 'tamagui.tsx'),
-    fixture.tamagui,
-  )
-  await promisify(ChildProcess.execFile)(
-    process.execPath,
-    [
-      Path.resolve('bench/Tamagui.ts'),
-      fixture.directory,
-      String(fixture.count),
-    ],
-    {
-      env: { ...process.env, NODE_ENV: 'production' },
-      timeout: 60_000,
-    },
-  )
-  return {
-    css: await minify(
-      await Fs.readFile(Path.join(fixture.directory, 'tamagui.css'), 'utf8'),
-    ),
-    javascript: await javascript(
-      await Fs.readFile(
-        Path.join(fixture.directory, 'tamagui-output.tsx'),
-        'utf8',
-      ),
     ),
   }
 }

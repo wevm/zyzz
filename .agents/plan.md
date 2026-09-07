@@ -21,7 +21,7 @@ The proposed signatures, examples, type rules, and emitted theme CSS are specifi
 
 | API                                | Contract                                                                        |
 | ---------------------------------- | ------------------------------------------------------------------------------- |
-| `css(style)`                       | Existing web shorthand; emits a class string and static CSS                     |
+| `css(style)`                       | Planned web authoring function; emits a class string and static CSS             |
 | `Style.define(styles)`             | Defines named, target-independent styles with typed token references            |
 | `Theme.define(tokens)`             | Defines token groups; each color is a string or complete light/dark pair        |
 | `Theme.extend(theme, overrides)`   | Creates a compatible theme with typed overrides and the same token contract     |
@@ -34,24 +34,22 @@ The proposed signatures, examples, type rules, and emitted theme CSS are specifi
 
 Additional agreed APIs are `css(callback)`, `cx(...)`, `Var.define`/`Var.set`, `Variant.define(theme, definition)`, `Variant.Props`, optional `ClassName<Properties>` contracts, and `Css.global`/`Css.keyframes`/`Css.fontFace`. Keep `css` as the authoring name; `Variant` is singular and receives the full theme first.
 
-## Current baseline — complete
+## Starting point
 
-The prototype compiles typed literal `css()` calls into deterministic scoped CSS. It includes built-in palette and layout tokens, a development integration, a standalone library compiler, examples, and 29 behavioral tests plus type fixtures.
+Implementation starts from scratch. The repository contains the design, agent guidelines, and formatting tooling only. No source implementation, examples, compiler, CLI, or implementation tests exist. All API contracts are targets to build and validate; no phase is complete.
 
-Source extraction, CSS emission, and an environment-specific hash implementation are still coupled. Token values contain web-specific strings. Custom themes and native output do not exist yet. Existing results are recorded in `validation.md` and establish only the web baseline.
-
-## Phase 1 — Extract the core
+## Phase 1 — Build the core
 
 Status: next.
 
-- [ ] Separate ordered style data, token references, validation, diagnostics, and deterministic identity from parsing and emission.
+- [ ] Define ordered style data, token references, validation, diagnostics, and deterministic identity independently of parsing and emission.
 - [ ] Implement `Style.define` and the pure in-memory compilation boundary specified in the architecture.
-- [ ] Remove environment-specific imports from the core dependency graph; specify portable identities and collision handling.
-- [ ] Move binding analysis, source rewriting, maps, file access, and watching into adapters.
+- [ ] Keep environment-specific imports out of the core dependency graph; implement portable identities and collision handling.
+- [ ] Build binding analysis, source rewriting, maps, file access, and watching in adapters.
 - [ ] Make the default preset explicit; support empty and custom presets without global configuration.
-- [ ] Preserve the existing web shorthand and examples while extracting these boundaries.
+- [ ] Implement the minimal literal `css()` path and establish its first behavioral and type fixtures.
 
-Gate: identical core results across server, browser, worker, and native-engine fixtures. Core imports do not pull in parsers, frameworks, rendering targets, or file access. The current web regression suite still passes.
+Gate: identical core results across server, browser, worker, and native-engine fixtures. Core imports do not pull in parsers, frameworks, rendering targets, or file access. New core and literal-authoring behavioral/type fixtures pass.
 
 ## Phase 2 — Standard authoring and themes
 
@@ -63,7 +61,7 @@ Status: planned.
 - [ ] Derive internal theme identities without caller metadata; extensions retain base token identities independently of values. Switching theme scopes must not require recompiling component classes.
 - [ ] Make bound styles work without a root scope using custom-property fallbacks; expose `theme.className` for inherited overrides and retain the directly imported default `css`.
 - [ ] Implement expression-bodied helper callbacks supplying `important`, `fallback`, `literal`, `value`, and inferred `tokens`, without arbitrary code execution.
-- [ ] Define numeric token/literal behavior, keyword precedence, ordered fallbacks, expression references, and migration from the bracket escape.
+- [ ] Define numeric token/literal behavior, keyword precedence, ordered fallbacks, expression references, and explicit literal escapes.
 - [ ] Implement optional branded `ClassName<Properties>` types across exports, conditions, and shorthand expansion.
 - [ ] Implement `Var.define`/`Var.set` with typed web bindings and explicit native support; separate runtime value assignment from style generation.
 - [ ] Recognize imported and destructured theme functions with full inference and static extraction.
@@ -76,7 +74,7 @@ Status: planned.
 - [ ] Document nearest eligible container selection, explicit containment, named raw queries, and stylesheet-level rule boundaries. Implement stylesheet contributions through `Css.global`, `Css.keyframes`, and `Css.fontFace`, with optional reset and layer configuration.
 - [ ] Emit scoped custom properties and `light-dark()` values. Support `color-scheme: light`, `dark`, and `light dark`, independently of theme identity.
 - [ ] Specify nested scope inheritance, complete overrides, independently forced schemes, deterministic server output, and undeclared-theme failures.
-- [ ] Preserve standard declaration order, selectors, at-rules, inheritance, and cascade semantics. Revisit the prototype's escapes and implicit condition sorting.
+- [ ] Preserve standard declaration order, selectors, at-rules, inheritance, and cascade semantics. Specify literal escapes and retain authored condition order.
 - [ ] Support same-module immutable definitions and spreads through static binding analysis; add imported definitions only with explicit resolution and cycle errors.
 
 Gate: two compatible themes each work in both schemes. Switching a scope changes colors and shared tokens through CSS alone. Nested themes and explicit schemes behave as specified. Inline and exported styles retain inference. Nested selectors and raw/aliased queries preserve CSS semantics; invalid definitions fail without evaluating application code.
@@ -108,7 +106,7 @@ Gate: shared definitions render on web and both mobile platforms. Theme/scheme s
 Status: planned.
 
 - [ ] Verify plain document, component, template, and native consumers through their normal class/style APIs.
-- [ ] Expand the existing CLI with `--css`, `--watch`, and `--minify`; rewrite modules alongside CSS and declarations, requiring no styling plugin in consumers.
+- [ ] Build the CLI with `--css`, `--watch`, and `--minify`; rewrite modules alongside CSS and declarations, requiring no styling plugin in consumers.
 - [ ] Verify CLI/build/in-memory parity, dependency watching, output exclusion, diagnostics, failure preservation, and owned-output cleanup. Include imported style constants and threshold edits in dependency recovery fixtures.
 - [ ] Keep build integrations optional and thin; implement only those needed by concrete fixtures.
 - [ ] Support framework source boundaries in source adapters without leaking template syntax into core semantics.
@@ -154,4 +152,4 @@ Gate: a small documented API, tested compatibility matrix, reproducible measurem
 
 ## Scope
 
-The API and phases above are proposed. This revision updates documentation only; it does not implement custom themes, portable-core extraction, or native output. The web baseline remains usable while these phases land.
+The API and phases above are proposed. Implementation begins at Phase 1 with no retained code baseline. Build each capability and its acceptance fixtures before marking its phase complete.

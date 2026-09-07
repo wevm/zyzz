@@ -117,8 +117,8 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 ## Workflow Conventions
 
 - Use the smallest repository script that covers the changed behavior. Run focused tests while iterating.
-- Run `pnpm check:types` after TypeScript changes.
-- Run `pnpm test <paths>` for focused tests and `pnpm test` when the change warrants the full suite.
+- Add `pnpm check:types` with the first TypeScript implementation and run it after TypeScript changes.
+- Add a test script with the first implementation; run focused tests while iterating and the full suite when warranted.
 - `pnpm check` is read-only; `pnpm format` applies formatting. Inspect and keep only task-related changes.
 - Run `git diff --check` and inspect the final diff before reporting completion.
 
@@ -140,17 +140,14 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 ## Repository Layout
 
-- The root package is `typestyle`: flat PascalCase modules in `src/` with colocated tests.
-- `src/index.ts` exports the `css` compile-time leaf helper and types. Compiler, Vite, and library adapters have separate entrypoints.
-- The target core is deterministic and independent of environments and tools. The current web compiler still needs the separation described in `.agents/plan.md`.
-- `examples/vite/` exercises dev and production integration. `examples/library/` exercises standalone publication.
-- `.agents/plan.md` tracks implementation phases and acceptance gates.
-- The `css` leaf helper is exported directly for concise call sites; conceptual modules keep namespace imports internally.
+- The repository currently contains planning documents and formatting tooling only; implementation starts from scratch.
+- Add flat PascalCase modules under `src/` with colocated tests as implementation phases land.
+- The proposed `css` leaf helper is exported directly; conceptual modules use namespace exports.
+- Core semantics must be deterministic and independent of environments and tools; target emitters and host adapters have separate entrypoints.
+- Add examples for web, native, and standalone distribution as their capabilities land.
+- `.agents/plan.md` tracks phases and acceptance gates; `.agents/architecture.md` defines the target API.
 
 ## Commands
 
 - `pnpm check` checks formatting; `pnpm format` applies formatting.
-- `pnpm check:types` type-checks all authored TypeScript and type fixtures.
-- `pnpm test` runs unit and adapter integration tests with Vitest.
-- `pnpm build` emits ESM and declarations; `pnpm dev` starts the Vite example.
-- `pnpm build:example` exercises production extraction; `pnpm build:library` emits the standalone example.
+- Build, type-check, test, development, and example commands must be added with their implementations. Do not claim these capabilities exist before their gates pass.

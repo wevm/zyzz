@@ -2,7 +2,7 @@
 
 ## Status and boundaries
 
-This document specifies the target API. The prototype implements literal `css()` calls, a build integration, and a standalone library CLI. Custom themes, variants, variables, helper callbacks, atomic output, and the expanded CLI below are planned. The MVP prioritizes web correctness and includes a working native subset.
+This document specifies the target API for a new implementation. No source implementation, compiler, CLI, examples, or behavioral tests are present. All examples describe planned APIs. The MVP prioritizes web correctness and includes a working native subset.
 
 The core owns typed ordered declarations, token resolution, validation, and deterministic identity. It has no filesystem, browser, device, parser, framework, or build-tool dependencies. Source adapters extract definitions; target emitters generate artifacts; host adapters deliver them.
 
@@ -134,7 +134,7 @@ The callback is recognized static syntax. The compiler resolves supplied helpers
 | `fallback(...values)`         | Ordered declarations; later supported values win                 |
 | `important(value)`            | Important declaration on web                                     |
 
-These replace the prototype's bracket escape when implemented. Preserve fallback order, including through composition and atomic optimization. Define numeric behavior per property; never infer a token-to-pixel fallback. Tokens inside shorthand expressions must be validated for their position where practical; arbitrary literal expressions are an explicit escape from token checking.
+These helpers define the literal and fallback authoring contract. Preserve fallback order, including through composition and atomic optimization. Define numeric behavior per property; never infer a token-to-pixel fallback. Tokens inside shorthand expressions must be validated for their position where practical; arbitrary literal expressions are an explicit escape from token checking.
 
 Compiled style values remain assignable to strings but carry optional property information:
 
@@ -460,13 +460,13 @@ Native styles and variants share token data and portable declarations. Web selec
 
 The CLI is a first-class compilation path alongside build integrations and in-memory APIs. It owns filesystem and watch behavior, keeping the core environment-independent.
 
-Existing prototype command:
+Planned default command:
 
 ```sh
 typestyle src --out-dir dist
 ```
 
-Proposed expanded commands:
+Planned watch and production commands:
 
 ```sh
 # Compile authored modules and extract a stylesheet.
@@ -507,7 +507,7 @@ Measure raw and compressed CSS, generated class-string bytes, total transferred 
 
 Source adapters recognize literals, immutable bindings, spreads, imports, theme-bound calls, and destructured aliases without executing application code. Dynamic definitions, unresolved imports, and cycles fail with diagnostics. Generated exports contain constants/artifacts and only the optional selection, binding, or composition operations actually used; no authoring closures or rule generation remain.
 
-The existing 29 tests cover the web baseline. Add type fixtures for per-property tokens, palette paths, complete pairs, bound-function aliases, extension keys, and inferred query aliases. Reject unknown/cross-group thresholds and invalid length values. Verify inference inside nested selectors and queries. Behavioral gates cover zero-setup themes, inherited overrides, CLI parity and recovery, native selection, deterministic readable names, collision handling, and cascade equivalence. Cover inline/exported/imported style parity, pseudo-elements, named/unnamed containment, nested media/supports rules, threshold recompilation, and immutable thresholds under scope switching. See [the plan](plan.md).
+Build behavioral and type coverage from scratch. Add type fixtures for per-property tokens, palette paths, complete pairs, bound-function aliases, extension keys, and inferred query aliases. Reject unknown/cross-group thresholds and invalid length values. Verify inference inside nested selectors and queries. Behavioral gates cover zero-setup themes, inherited overrides, CLI parity and recovery, native selection, deterministic readable names, collision handling, and cascade equivalence. Cover inline/exported/imported style parity, pseudo-elements, named/unnamed containment, nested media/supports rules, threshold recompilation, and immutable thresholds under scope switching. See [the plan](plan.md).
 
 ## MVP gates
 

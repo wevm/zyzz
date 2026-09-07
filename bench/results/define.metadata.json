@@ -1,0 +1,50 @@
+{
+  "measuredCommit": "025440ae4ee81da72a4ce6f6ff4544e117ca9205",
+  "recordedAt": "2026-09-07T11:54:07.185Z",
+  "command": "pnpm exec vp test bench --run --outputJson bench/results/define.json",
+  "runtime": "v24.19.0",
+  "typescript": "5.9.3",
+  "vitePlus": "0.2.2",
+  "vitest": "4.1.9",
+  "tinybench": "2.9.0",
+  "host": {
+    "platform": "linux",
+    "arch": "x64",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logicalCpus": 9,
+    "availableParallelism": 8,
+    "memoryBytes": 23109910528
+  },
+  "conditions": {
+    "cache": "Warm in-process JavaScript; inputs constructed outside timing; cold build not measured.",
+    "warmupTimeMs": 100,
+    "warmupIterations": 5,
+    "timeMs": 500,
+    "minIterations": 10,
+    "concurrency": "Sequential benchmarks; no competing task-owned benchmark jobs.",
+    "environment": "Shared virtualized host; scheduling and GC noise included."
+  },
+  "workloads": {
+    "componentSet": {
+      "styles": 3,
+      "declarations": 20
+    },
+    "repeated": {
+      "styles": 1000,
+      "declarations": 13000
+    },
+    "unique": {
+      "styles": 1000,
+      "declarations": 13000
+    }
+  },
+  "boundaries": "Style.define validation, copying, and freezing only. No CSS emitter, bundler, browser, or native renderer exists in this phase. Their sizes and timings are not measured.",
+  "sourceSha256": {
+    "src/Style.ts": "9b33608efe1d9a957d423820065b674e977fe20d1c88cd0335105c2d62cf630a",
+    "src/internal/Literal.ts": "d20c8fcfa8b09946efee61f5f3bab3d9f5bc8d41ed81e3f272e30bd79f288130",
+    "src/index.ts": "edd739b1f78270e5f1fc19176ece2221d3a79fe0c437b716307c287dcf618560",
+    "bench/define.bench.ts": "4c627223c1434f14a02b297cc106fb3b51714dab02414dd3c7106c8d7a933c36",
+    "test/fixtures/components.ts": "fbf6088894e1c2c93a75ca01510bc9afea14b8f61799119262f8011e429c77e4"
+  },
+  "normalization": "Only report filepath converted to repository-relative form. Timings, variance, and sample counts are unchanged."
+}

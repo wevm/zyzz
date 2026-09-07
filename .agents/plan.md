@@ -43,13 +43,13 @@ Every `css` definition is callable. Static calls accept optional styling overrid
 
 ## Starting point
 
-Implementation starts from scratch. The repository contains the design, agent guidelines, and a zile-generated stub with Vite Plus tooling. The generated greeting and its test exercise scaffolding only. No styling implementation, examples, or styling compiler/CLI exist. All API contracts are targets to build and validate; no phase is complete.
+PR 1.1 implements the literal definition boundary on its review branch. It replaces the greeting with `Style.define`, integration/type scenarios, and an authoring/validation benchmark. CSS emission, source rewriting, component APIs, themes, variants, and native output remain unimplemented. Later PRs start from this validated boundary.
 
-Repository tooling is established: zile builds and links the library; Vite Plus runs oxfmt, oxlint, and tests. The generated source and test are placeholders; main and pull-request workflows verify tooling. These tools do not constrain the environment-independent core or mark a feature phase complete.
+Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration tests. Existing CI checks consumer type fixtures, runs integration scenarios including isolated packed consumption, and builds the package. Tooling remains outside the core dependency graph.
 
 ## Phase 1 — Build the core
 
-Status: next. Start with PR 1.1; all five PRs are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
+Status: in progress. [PR 1.1](https://github.com/wevm/typestyle/pull/1) is implemented and awaiting review/merge; PRs 1.2–1.5 are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
 
 Merge in dependency order. Each PR includes real integration scenarios, consumer type fixtures, relevant benchmark evidence, and public TSDoc. No unit tests, mocks, or stubs. Keep CI green and record the actual PR link and completion evidence beside each item as work lands.
 
@@ -63,13 +63,15 @@ Merge in dependency order. Each PR includes real integration scenarios, consumer
 
 ### PR 1.1 — Typed Style Definitions
 
-- [ ] Replace the greeting export and unit test with `Style.define`, public types, integration scenarios under `test/integration/`, and compiled consumer fixtures under `test/types/`. Wire both into existing test/type-check commands; retain the repository tooling.
-- [ ] Establish `bench/*.bench.ts` using `bench` from `vite-plus/test`. Record the first real public authoring/validation baseline with `pnpm exec vp test bench --run --outputJson <file>`; reuse integration inputs and do not benchmark the greeting or fake downstream stages.
-- [ ] Define immutable, ordered declaration data and structured diagnostics independently of parsers and emitters. Keep source locations optional so in-memory callers need no source files.
-- [ ] Establish a documented literal declaration subset covering layout, spacing, sizing, colors, borders, and typography. Check property names and value domains without a permissive index signature; accept literal lengths, valid unitless numbers, and CSS zero.
-- [ ] Keep the root token-free and target-independent. Reserve the domain-owned token-reference boundary for Phase 2 without introducing theme data, token resolution, callbacks, selectors, or queries in this PR.
+- [x] Replace the greeting export and unit test with `Style.define`, public types, integration scenarios under `test/integration/`, and compiled consumer fixtures under `test/types/`. Wire both into existing test/type-check commands; retain the repository tooling.
+- [x] Establish `bench/*.bench.ts` using `bench` from `vite-plus/test`. Record the first real public authoring/validation baseline with `pnpm exec vp test bench --run --outputJson <file>`; reuse integration inputs and do not benchmark the greeting or fake downstream stages.
+- [x] Define immutable, ordered declaration data and structured diagnostics independently of parsers and emitters. Keep source locations optional so in-memory callers need no source files.
+- [x] Establish a documented literal declaration subset covering layout, spacing, sizing, colors, borders, and typography. Check property names and value domains without a permissive index signature; accept literal lengths, valid unitless numbers, and CSS zero.
+- [x] Keep the root token-free and target-independent. Reserve the domain-owned token-reference boundary for Phase 2 without introducing theme data, token resolution, callbacks, selectors, or queries in this PR.
 
 Acceptance: public consumer scenarios prove inference, ordered immutable data, and actionable validation errors through real modules. Consumer type fixtures run in CI and a reproducible authoring/validation benchmark is recorded. The root dependency graph contains no themes, target emitters, parsers, filesystem access, or framework runtimes.
+
+Evidence: [PR #1](https://github.com/wevm/typestyle/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all seven integration scenarios pass. The packed consumer is independently type-checked and executed. [Benchmark results](../bench/results/define.json), [measurement conditions](../bench/results/define.metadata.json), and [literal contract](../docs/literal-styles.md) are recorded. Browser rendering and CSS-output benchmarks start with PR 1.2.
 
 ### PR 1.2 — Literal CSS Compilation
 

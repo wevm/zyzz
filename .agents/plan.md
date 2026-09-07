@@ -49,7 +49,7 @@ Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration
 
 ## Phase 1 — Build the core
 
-Status: in progress. [PR 1.1](https://github.com/wevm/typestyle/pull/1) is merged; PR 1.2 is in progress from latest main; PRs 1.3–1.5 are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
+Status: in progress. [PR 1.1](https://github.com/wevm/typestyle/pull/1) is merged; [PR 1.2](https://github.com/wevm/typestyle/pull/3) is implemented and awaiting CI/review; PRs 1.3–1.5 are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
 
 Merge in dependency order. Each PR includes real integration scenarios, consumer type fixtures, relevant benchmark evidence, and public TSDoc. No unit tests, mocks, or stubs. Keep CI green and record the actual PR link and completion evidence beside each item as work lands.
 
@@ -82,6 +82,8 @@ Evidence: [PR #1](https://github.com/wevm/typestyle/pull/1); `pnpm check`, `pnpm
 - [x] Add integration fixtures from public definitions through the real compiler and browser for deterministic output, escaping, unit handling, collisions, and order-sensitive shorthand/longhand declarations. Verify computed styles and establish compilation-time and emitted-byte baselines on the same corpus.
 
 Acceptance: in-memory definitions produce usable CSS and matching class names without source parsing or file access. Unsupported features fail explicitly. Root imports do not pull in the web compiler.
+
+Evidence: [PR #3](https://github.com/wevm/typestyle/pull/3), based on main `a5905ad`. Local formatting/lint, types, build, ten non-browser integration scenarios, and twelve compiler benchmarks pass. Chromium rendering is checked by CI. Initial Zyzz CSS gzip sizes are 146 bytes (small), 2,559 bytes (repeated), and 16,231 bytes (unique); corresponding client JavaScript gzip sizes are 344, 2,811, and 12,396 bytes. These are literal-pipeline baselines, not source-extraction or whole-application comparisons.
 
 ### PR 1.3 — Static Source Extraction
 

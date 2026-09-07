@@ -47,9 +47,9 @@ Repository tooling is established: zile builds and links the library; Vite Plus 
 
 ## Phase 1 — Build the core
 
-Status: next. Start with PR 1.1; all five PRs are unstarted.
+Status: next. Start with PR 1.1; all five PRs are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
 
-Merge in dependency order. Each PR includes its own behavioral/type fixtures and public TSDoc, keeps CI green, and leaves a usable increment. Record the actual PR link and completion evidence beside each item as work lands.
+Merge in dependency order. Each PR includes real integration scenarios, consumer type fixtures, relevant benchmark evidence, and public TSDoc. No unit tests, mocks, or stubs. Keep CI green and record the actual PR link and completion evidence beside each item as work lands.
 
 | PR  | Scope                         | Depends on | Deliverable                                             |
 | --- | ----------------------------- | ---------- | ------------------------------------------------------- |
@@ -61,19 +61,20 @@ Merge in dependency order. Each PR includes its own behavioral/type fixtures and
 
 ### PR 1.1 — Typed Style Definitions
 
-- [ ] Replace the greeting export and test with `Style.define`, public types, and colocated behavioral/type tests; retain the existing repository tooling.
+- [ ] Replace the greeting export and unit test with `Style.define`, public types, integration scenarios under `test/integration/`, and compiled consumer fixtures under `test/types/`. Wire both into existing test/type-check commands; retain the repository tooling.
+- [ ] Establish `bench/*.bench.ts` using `bench` from `vite-plus/test`. Record the first real public authoring/validation baseline with `pnpm exec vp test bench --run --outputJson <file>`; reuse integration inputs and do not benchmark the greeting or fake downstream stages.
 - [ ] Define immutable, ordered declaration data and structured diagnostics independently of parsers and emitters. Keep source locations optional so in-memory callers need no source files.
 - [ ] Establish a documented literal declaration subset covering layout, spacing, sizing, colors, borders, and typography. Check property names and value domains without a permissive index signature; accept literal lengths, valid unitless numbers, and CSS zero.
 - [ ] Keep the root token-free and target-independent. Reserve the domain-owned token-reference boundary for Phase 2 without introducing theme data, token resolution, callbacks, selectors, or queries in this PR.
 
-Acceptance: named style keys retain inference, declaration order is preserved, inputs are not mutated, and invalid or unsupported input produces actionable diagnostics. The root dependency graph contains no themes, target emitters, parsers, filesystem access, or framework runtimes.
+Acceptance: public consumer scenarios prove inference, ordered immutable data, and actionable validation errors through real modules. Consumer type fixtures run in CI and a reproducible authoring/validation benchmark is recorded. The root dependency graph contains no themes, target emitters, parsers, filesystem access, or framework runtimes.
 
 ### PR 1.2 — Literal CSS Compilation
 
 - [ ] Add the named `Css` namespace at `typestyle/web` and implement pure `Css.compile({ styles })` for the literal subset. Return the architecture's `{ css, classes, themes }` shape with an empty theme map and structured `Css.CompileError` diagnostics.
 - [ ] Serialize valid CSS values and property names, retaining authored declaration order. Start with grouped rules; atomic optimization remains in Phase 3.
 - [ ] Generate readable deterministic class names with collision handling. Keep identity independent of machine paths, traversal order, clocks, and global mutable state; repeated isolated calls must agree.
-- [ ] Add fixtures for deterministic output, escaping, unit handling, collisions, and order-sensitive shorthand/longhand declarations. Verify computed styles for representative emitted rules in a browser.
+- [ ] Add integration fixtures from public definitions through the real compiler and browser for deterministic output, escaping, unit handling, collisions, and order-sensitive shorthand/longhand declarations. Verify computed styles and establish compilation-time and emitted-byte baselines on the same corpus.
 
 Acceptance: in-memory definitions produce usable CSS and matching class names without source parsing or file access. Unsupported features fail explicitly. Root imports do not pull in the web compiler.
 
@@ -82,7 +83,7 @@ Acceptance: in-memory definitions produce usable CSS and matching class names wi
 - [ ] Add the token-free `css` authoring signature for literal objects. An untransformed call fails with an actionable missing-transform error; it never generates styles at runtime. Value context callbacks remain in Phase 2.
 - [ ] Implement parser-owned binding analysis over supplied source text. Recognize direct and renamed imports from `typestyle`, and distinguish shadowed bindings and unrelated functions named `css`.
 - [ ] Extract direct literal calls wherever they occur, including inline markup and exported constants, into the same ordered data consumed by `Css.compile`. Require host-supplied portable module identity instead of reading the environment.
-- [ ] Diagnose dynamic values, spreads, unsupported callbacks, and unresolved definitions with source spans. Add fixtures proving extraction never executes application code. Imported style definitions, theme bindings, and broader static evaluation remain in Phase 2.
+- [ ] Diagnose dynamic values, spreads, unsupported callbacks, and unresolved definitions with source spans. Run real extraction-to-compilation scenarios proving extraction never executes application code, and benchmark that pipeline. Imported style definitions, theme bindings, and broader static evaluation remain in Phase 2.
 
 Acceptance: supported source calls and equivalent in-memory definitions produce equivalent compiler input and CSS. Token names and numeric spacing tokens fail in root calls; unrelated bindings remain untouched. Parsers stay outside core and target entrypoints.
 
@@ -91,7 +92,7 @@ Acceptance: supported source calls and equivalent in-memory definitions produce 
 - [ ] Replace extracted calls with static class strings and return transformed source, stylesheet artifacts, and source maps from an adapter operating on strings and plain data.
 - [ ] Preserve surrounding application code, exports, and source semantics. Remove authoring imports only when their bindings are no longer needed; leave no styling authoring closures or runtime CSS generation in transformed calls.
 - [ ] Connect generated classes, declarations, and diagnostics to authored locations. Keep identities and output stable across repeated transforms with the same inputs.
-- [ ] Add an end-to-end fixture that transforms source, loads the resulting module and CSS, and verifies rendered styles. Cover inline calls, exported class constants, and consumption of those compiled exports by another module.
+- [ ] Add an end-to-end fixture that transforms source, loads the resulting module and CSS, and verifies rendered styles in a real browser. Cover inline calls, exported class constants, and consumption of those compiled exports by another module. Measure full-transform latency and generated JavaScript/CSS sizes.
 
 Acceptance: transformed modules run without invoking the missing-transform stub, their classes match emitted CSS, and source maps locate the original styles. No filesystem or build-tool integration is required to use this adapter.
 
@@ -100,11 +101,11 @@ Acceptance: transformed modules run without invoking the missing-transform stub,
 - [ ] Add a minimal file host and fixture driver around the source adapter for reads, output writes, and watch invalidation. Keep the public CLI and build-tool integrations in Phase 4; do not add another compiler path or general plugin system.
 - [ ] Handle source additions, edits, removals, and renames for the supported literal subset. Exclude output directories, preserve the previous successful output on failure, and clean up only host-owned artifacts.
 - [ ] Run identical pure-data fixtures across server, browser, worker, and a native JavaScript engine. Verify matching results and imports without environment shims; native stylesheet emission remains in Phase 3.
-- [ ] Verify packed root/web entrypoints, source-first declarations, and dependency isolation. Add recovery and disposal fixtures for the host, and document how the literal pipeline is exercised with existing repository commands.
+- [ ] Verify packed root/web entrypoints, source-first declarations, and dependency isolation. Use real temporary files, processes, and watchers for recovery/disposal scenarios; measure cold builds and edit-to-artifact latency separately. Document how integration tests and benchmarks run with existing tooling.
 
 Acceptance: source edits update both modules and CSS, failed rebuilds preserve working artifacts, and deletion removes stale owned output. Portability checks demonstrate the core is independent of the host. No public CLI, theme, or native styling capability is claimed complete.
 
-Gate: identical core results across server, browser, worker, and native-engine fixtures. Core imports do not pull in bundled themes, parsers, frameworks, rendering targets, or file access. New core and literal-authoring behavioral/type fixtures pass.
+Gate: identical public-pipeline results across real server, browser, worker, and native-engine fixtures. Core imports do not pull in bundled themes, parsers, frameworks, rendering targets, or file access. Integration and consumer type fixtures pass without mocks or stubs, and relevant benchmark baselines are recorded.
 
 ## Phase 2 — Standard authoring and themes
 
@@ -187,6 +188,8 @@ Status: planned.
 - [ ] Measure theme multiplication and generated-table size; deduplicate without changing observable theme or cascade semantics.
 - [ ] Compare atomic and grouped output on repeated and unique styles; optimize the smaller safe representation. Measure the agreed variant API; defer additional recipe abstractions and slot systems until concrete usage justifies them.
 - [ ] Verify package metadata and the standard changeset/release workflow.
+
+Benchmarks begin in PR 1.1 and grow with each real pipeline; this phase consolidates the evidence. Follow `AGENTS.md`: save machine-readable baselines, record measurement conditions and variability, validate equivalent behavior, and report CSS, JavaScript, markup/class bytes, compression, and runtime helpers without double-counting. Use real browser/native measurements for rendering and selection workloads.
 
 Gate: a small documented API, tested compatibility matrix, reproducible measurements, and working independent web/native consumers.
 

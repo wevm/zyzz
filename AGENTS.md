@@ -75,7 +75,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Preserve literal inputs through public helpers when those literals affect the output type.
 - Keep generic types flowing from inputs through callbacks and return values. Do not erase them to `any` at an internal seam.
 - Prevent public callbacks, options, and return values from leaking `any`.
-- Add colocated `.test-d.ts` coverage with `expectTypeOf` when public inference or narrowing changes.
+- Add consumer `.test-d.ts` fixtures under `test/types/` with `expectTypeOf` and expected compiler errors when public inference or narrowing changes. Import public entrypoints; ensure the fixtures are actually checked by TypeScript.
 - Revisit inference after changing an API. Prefer a narrower useful contract over a broad type that merely compiles.
 
 ## Abstraction Conventions
@@ -106,19 +106,31 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 ## Testing Conventions
 
-- Colocate unit and type tests with the module they cover.
-- Give each exported function under test its own `describe('functionName', ...)` block.
-- Prefer inline snapshots for stable structured values and thrown errors. Remove nondeterministic fields before snapshotting the remaining object.
-- Test observable behavior, meaningful edge cases, and public errors. Do not derive expected values from the implementation under test.
-- Exercise pure functions directly and composed behavior through the real adapter boundary. Avoid mocks when a real local implementation or narrow in-memory adapter is practical.
-- Add deterministic regression coverage for every bug fix.
-- Write behavioral and type tests alongside the implementation rather than after the module is complete.
+- Runtime coverage is integration-only. Do not write unit tests, private-helper tests, or per-function suites disguised as integration tests.
+- Organize scenarios under `test/integration/` and reusable input projects under `test/fixtures/`. Import public entrypoints and exercise real collaborating modules: authoring and validation, compilation and output, or host and consumer behavior.
+- No mocking, stubbing, fake implementations, module replacements, fake timers, or stubbed globals. Use real compilers, temporary directories, processes, watchers, and browser/native engines. Fixture source and deterministic input data are allowed; replacement implementations are not.
+- Verify web CSS through computed styles in a real browser, including cascade order, theme scopes, schemes, selectors, and queries. Do not use a simulated DOM as proof of browser behavior. Native checks use a real native engine and renderer when rendering is under test.
+- Cover complete supported flows as they land: source to transformed module and CSS, packed-library consumption, watch recovery, and static native theme selection. Before a later stage exists, test the real available public boundary; do not fabricate a downstream stage.
+- Keep consumer type-contract fixtures alongside integration coverage. They validate inference and rejected inputs through public imports and do not replace runtime integration coverage.
+- Assert observable results and public diagnostics; use focused snapshots only for stable artifacts. Never derive expected output from the implementation under test or treat a CSS snapshot alone as rendering proof.
+- Add an integration regression scenario for every bug fix. Track coverage of consumer workflows and error paths rather than targeting a unit-test count or percentage.
+- Use bounded waits for observable conditions, isolate real resources, and clean them up after success or failure. Do not hide flakes with arbitrary sleeps or retries.
+
+## Benchmark Conventions
+
+- Use the installed Vite Plus/Vitest benchmark runner: import `bench` and `describe` from `vite-plus/test` in `bench/*.bench.ts`, and run `pnpm exec vp test bench --run`. Keep benchmark APIs aligned with the lockfile.
+- Benchmark real public workflows using the integration fixture corpus. No mocks, stubs, synthetic replacement compilers, or greeting benchmarks. Add the first real authoring/validation baseline in PR 1.1, then extend it with compilation, extraction, rewriting, and watch workloads as those stages land.
+- Measure cold and warm compilation, incremental edits, throughput, memory, browser style recalculation, and native table selection separately. Use real browser/host timing for workloads outside the benchmark runner's execution model; do not substitute a function microbenchmark for end-to-end performance.
+- Record emitted CSS, generated JavaScript, class-name/markup bytes, and required runtime helpers separately, plus actual combined transfer. Report raw, gzip, and Brotli sizes without double-counting class strings already included in JavaScript or markup. Package download size is a separate metric.
+- Use repeated and mostly unique styles, small and large projects, theme/scheme changes, variants, and library boundaries. Validate equivalent behavior before comparing configurations or libraries; include each library's required helpers and delivery artifacts.
+- Save reproducible results with `--outputJson`; compare a baseline using `--compare`. Record commit, tool versions, fixture size, hardware, cache state, warmup, sample count, variance, and measurement boundaries. Run baseline and candidate on the same machine without competing benchmark jobs.
+- Changes to compilation, emitted artifacts, or runtime helpers include relevant benchmark deltas. Establish size budgets and timing tolerances from measured baselines; confirm regressions across repeated samples instead of enforcing noisy single-run timing gates. Do not claim speed or size advantages without matched evidence.
 
 ## Workflow Conventions
 
 - Use the smallest repository script that covers the changed behavior. Run focused tests while iterating.
 - Run `pnpm check:types` after TypeScript changes.
-- Use `pnpm test` for Vite Plus tests. The generated greeting test verifies the scaffold only; add styling tests with implementation.
+- Use `pnpm test` for Vite Plus integration tests. Replace the generated greeting and its unit test in PR 1.1 with real consumer scenarios and a benchmark baseline; do not extend the scaffold test.
 - `pnpm check` runs formatting, lint, and type checks with fixes. Inspect and keep only task-related changes.
 - Run `git diff --check` and inspect the final diff before reporting completion.
 
@@ -141,7 +153,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 ## Repository Layout
 
 - The repository has the generated zile greeting stub and Vite Plus tooling; styling implementation starts from scratch.
-- Add flat PascalCase modules under `src/` with colocated tests as implementation phases land.
+- Add flat PascalCase modules under `src/`; keep integration scenarios, consumer type fixtures, and benchmarks under `test/` and `bench/` as implementation phases land.
 - The proposed `css` leaf helper is exported directly; conceptual modules use namespace exports.
 - Core semantics must be deterministic and independent of environments and tools; target emitters and host adapters have separate entrypoints.
 - Expose platform APIs as named namespace exports: `Css` from `typestyle/web` and `StyleSheet` from `typestyle/react-native`. Keep shared `Style` definitions in the root entrypoint, independently of target namespaces.
@@ -160,4 +172,5 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 - `pnpm check` runs `vp check --fix`; use this single script for formatting, linting, and type checks.
 - `pnpm check:types` runs TypeScript checking; `pnpm test` runs `vp test`.
+- `pnpm exec vp test bench --run` runs benchmarks; append `--outputJson <file>` to save results or `--compare <file>` to compare a baseline.
 - `pnpm build` runs zile; `pnpm dev` runs `zile dev`.

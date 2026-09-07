@@ -558,7 +558,11 @@ Measure raw and compressed CSS, generated class-string bytes, total transferred 
 
 Source adapters recognize literals, immutable bindings, spreads, imports, theme-bound calls, and destructured aliases without executing application code. Dynamic definitions, unresolved imports, and cycles fail with diagnostics. Generated exports contain constants/artifacts and only the optional selection, binding, or composition operations actually used; no authoring closures or rule generation remain.
 
-Build behavioral and type coverage from scratch. Add type fixtures for per-property tokens, palette paths, complete pairs, bound-function aliases, extension keys, and inferred query aliases. Reject unknown/cross-group thresholds and invalid length values. Verify inference inside nested selectors and queries. Behavioral gates cover zero-setup themes, inherited overrides, CLI parity and recovery, native selection, deterministic readable names, collision handling, and cascade equivalence. Cover inline/exported/imported style parity, pseudo-elements, named/unnamed containment, nested media/supports rules, threshold recompilation, and immutable thresholds under scope switching. See [the plan](plan.md).
+Build integration and consumer type coverage from scratch. No unit tests, mocks, stubs, fake timers, or replacement implementations. Exercise real public pipelines and their available stages, with real browser computed styles, filesystem/watch behavior, packed consumers, and native execution. Type fixtures import public entrypoints and run through TypeScript.
+
+Cover per-property tokens, palette paths, complete pairs, bound aliases, extension keys, inferred queries, and invalid inputs. Integration gates cover theme inheritance, CLI recovery, native selection, deterministic names, collisions, and cascade equivalence. Include inline/exported/imported styles, containment, nested conditions, and immutable query thresholds under scope switching. See [the plan](plan.md).
+
+Use Vite Plus/Vitest benchmarks over the same real consumer corpus, beginning with PR 1.1. Record baselines and candidate deltas for each implemented stage; browser rendering and host edit latency require real environment measurements. Keep artifact-size measurements separate from timing. Follow the reproducibility and regression rules in `AGENTS.md`.
 
 ## MVP gates
 

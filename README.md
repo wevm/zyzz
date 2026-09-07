@@ -124,12 +124,12 @@ const panel = theme.css((c) => ({
 Bind runtime values to typed variables while keeping the CSS rules static.
 
 ```tsx
-import { Var, css } from 'typestyle'
+import { Vars, css } from 'typestyle'
 
-const progress = Var.define({ amount: 'percentage' })
+const progress = Vars.define({ amount: 'percentage' })
 const bar = css({ width: progress.amount })
 
-<div className={bar} style={Var.set(progress, { amount: '50%' })} />
+<div className={bar} style={Vars.set(progress, { amount: '50%' })} />
 ```
 
 ### Composition

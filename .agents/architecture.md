@@ -212,16 +212,16 @@ String output does not itself supply conflict metadata. The implementation gate 
 ## Typed runtime variables
 
 ```tsx
-import { Var, css } from 'typestyle'
+import { Vars, css } from 'typestyle'
 
-const progress = Var.define({ amount: 'percentage' })
+const progress = Vars.define({ amount: 'percentage' })
 const bar = css({ width: progress.amount })
 
 <div className={bar}
-  style={Var.set(progress, { amount: `${percent}%` })} />
+  style={Vars.set(progress, { amount: `${percent}%` })} />
 ```
 
-`Var.define(schema)` declares typed references and compiles to target bindings. The initial schema supports `number`, `length`, `percentage`, and `color`, with target validation. `Var.set(definition, values)` returns ordinary inline custom-property assignments on web; unknown keys or incompatible values are type errors. Unassigned variables follow normal CSS behavior unless the authored rule specifies a fallback.
+`Vars.define(schema)` declares a set of typed variable references and compiles to target bindings. The initial schema supports `number`, `length`, `percentage`, and `color`, with target validation. `Vars.set(definition, values)` returns ordinary inline custom-property assignments on web; unknown keys or incompatible values are type errors. Unassigned variables follow normal CSS behavior unless the authored rule specifies a fallback.
 
 Dynamic assignment is allowed; dynamic rule generation is not. The core never reads device/browser state. Native adapters bind values to preidentified supported properties with explicit conversions; they do not parse CSS. Unsupported variable types or expressions fail compilation. This binding path is distinct from `Native.select`, which preserves static lookup identity.
 

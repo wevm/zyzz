@@ -33,7 +33,7 @@ The proposed signatures, examples, type rules, and emitted theme CSS are specifi
 | `theme.className`                  | Optional scope for inherited theme overrides                                    |
 | `typestyle <src> --out-dir <dist>` | Standalone module rewriting and stylesheet emission; planned watch/minify flags |
 
-Additional agreed APIs are `css(callback)`, `cx(...)`, `Var.define`/`Var.set`, `Variant.define(theme, definition)`, `Variant.Props`, optional `ClassName<Properties>` contracts, and `Css.global`/`Css.keyframes`/`Css.fontFace`. Keep `css` as the authoring name; `Variant` is singular and receives the full theme first.
+Additional agreed APIs are `css(callback)`, `cx(...)`, `Vars.define`/`Vars.set`, `Variant.define(theme, definition)`, `Variant.Props`, optional `ClassName<Properties>` contracts, and `Css.global`/`Css.keyframes`/`Css.fontFace`. Keep `css` as the authoring name; `Vars` defines a set of variables, while `Variant` is singular and receives the full theme first.
 
 Value context callbacks use a single `c` parameter. Helpers are accessed through `c`, portable token references through `c.tokens`, and inferred web CSS variable references through `c.vars`. Root `css` has empty token and variable trees; theme functions infer both from their theme.
 
@@ -72,7 +72,7 @@ Status: planned.
 - [ ] Verify `c.vars` inference, unknown paths, incompatible domains, empty root contexts, bundled/custom themes, inherited overrides, light/dark fallbacks, variable liveness, and removal of callback contexts from generated modules.
 - [ ] Define numeric token/literal behavior, keyword precedence, ordered fallbacks, expression references, and explicit literal escapes. Verify that root calls accept standard lengths, unitless values, and CSS zero while rejecting undeclared named/numeric tokens, even when a theme is imported elsewhere.
 - [ ] Implement optional branded `ClassName<Properties>` types across exports, conditions, and shorthand expansion.
-- [ ] Implement `Var.define`/`Var.set` with typed web bindings and explicit native support; separate runtime value assignment from style generation.
+- [ ] Implement `Vars.define`/`Vars.set` with typed web bindings and explicit native support; separate runtime value assignment from style generation.
 - [ ] Recognize imported and destructured theme functions with full inference and static extraction.
 - [ ] Support static `css` calls inline, outside markup, and in exported/imported style constants equally; extraction must not depend on a `className` attribute.
 - [ ] Implement scoped pseudo-classes/elements, explicit `&` selectors, and nested `@media`, `@container`, and `@supports` with theme inference at every depth.

@@ -1,7 +1,7 @@
 # Adapted from wevm/monoshot
 
 Source: https://github.com/wevm/monoshot/blob/main/AGENTS.md
-Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. General coding conventions are retained; project principles, UI, layout, and commands are adapted for typestyle.
+Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. General coding conventions are retained; project principles, UI, layout, and commands are adapted for Zyzz.
 
 # Agent Guidelines
 
@@ -12,7 +12,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Keep modules small and extensible through explicit data and narrow functions. Avoid global registration, mandatory providers, component wrappers, custom JSX runtimes, and general plugin frameworks.
 - Prefer CSS properties, values, selectors, at-rules, custom properties, inheritance, and cascade patterns. Preserve authored ordering; convenience syntax must expand predictably.
 - Compile styles ahead of time. Runtime adapters may select static alternatives but must not generate or compile styles.
-- Keep root `css` and `variants` token-free. Put Geist and Tailwind design tokens in the opt-in `typestyle/themes/default` entrypoint, exporting bound `css` and `variants`, the full `theme`, and raw `tokens`. Core imports must not include bundled theme data.
+- Keep root `css` and `variants` token-free. Put Geist and Tailwind design tokens in the opt-in `zyzz/themes/default` entrypoint, exporting bound `css` and `variants`, the full `theme`, and raw `tokens`. Core imports must not include bundled theme data.
 
 ## TypeScript Conventions
 
@@ -128,7 +128,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 ## Benchmark Conventions
 
 - Use the installed Vite Plus/Vitest benchmark runner: import `bench` and `describe` from `vite-plus/test` in colocated `*.bench.ts` files, and run `pnpm exec vp test bench --run`. Keep benchmark APIs aligned with the lockfile.
-- Benchmark real public workflows using the integration fixture corpus. No mocks, stubs, synthetic replacement compilers, or greeting benchmarks. Benchmark compilation, extraction, rewriting, and watch workloads as those stages land. Typestyle joins compiler comparisons when its real CSS emitter exists; do not benchmark authoring alone.
+- Benchmark real public workflows using the integration fixture corpus. No mocks, stubs, synthetic replacement compilers, or greeting benchmarks. Benchmark compilation, extraction, rewriting, and watch workloads as those stages land. Zyzz joins compiler comparisons when its real CSS emitter exists; do not benchmark authoring alone.
 - Measure cold and warm compilation, incremental edits, throughput, memory, browser style recalculation, and native table selection separately. Use real browser/host timing for workloads outside the benchmark runner's execution model; do not substitute a function microbenchmark for end-to-end performance.
 - Record emitted CSS, generated JavaScript, class-name/markup bytes, and required runtime helpers separately, plus actual combined transfer. Report raw, gzip, and Brotli sizes without double-counting class strings already included in JavaScript or markup. Package download size is a separate metric.
 - Use repeated and mostly unique styles, small and large projects, theme/scheme changes, variants, and library boundaries. Validate equivalent behavior before comparing configurations or libraries; include each library's required helpers and delivery artifacts.
@@ -167,7 +167,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - Export the `css` and `variants` leaf functions directly and bind both on themes; conceptual modules use namespace exports. Infer variant props with standard `Parameters`, without a variant namespace.
 - Every `css` definition is callable and returns props when applied. Callbacks receive only typed runtime values; no context helpers. Use trailing `!` for importance, arrays for fallbacks, and `theme.tokens`/`theme.vars` for references. Calls consume declared values and merge only styling overrides (`className`/`style` on web). Other component props stay on the component; unknown inputs are errors. Dynamic variant choices take typed callbacks and scoped payload selections; compound matches use choice names, while values bind to precompiled slots. Spread applied props; `cx` preserves bindings and recipe attributes. Generated functions never create CSS rules.
 - Core semantics must be deterministic and independent of environments and tools; target emitters and host adapters have separate entrypoints.
-- Expose platform APIs as named namespace exports: `Css` from `typestyle/web` and `StyleSheet` from `typestyle/react-native`. Keep shared `Style` definitions in the root entrypoint, independently of target namespaces.
+- Expose platform APIs as named namespace exports: `Css` from `zyzz/web` and `StyleSheet` from `zyzz/react-native`. Keep shared `Style` definitions in the root entrypoint, independently of target namespaces.
 - Add examples for web, native, and standalone distribution as their capabilities land.
 - `.agents/plan.md` tracks phases and acceptance gates; `.agents/architecture.md` defines the target API.
 

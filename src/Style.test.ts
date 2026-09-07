@@ -1,5 +1,5 @@
 import * as Vm from 'node:vm'
-import { Style } from 'typestyle'
+import { Style } from 'zyzz'
 import { describe, expect, test } from 'vite-plus/test'
 import { components } from '../test/fixtures/components.js'
 

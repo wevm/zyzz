@@ -1,4 +1,4 @@
-import type { Style } from 'typestyle'
+import type { Style } from 'zyzz'
 
 /** Shared consumer input. Authored order is intentional: integration scenarios verify declaration and style order. */
 export const components = {

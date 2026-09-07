@@ -1,4 +1,4 @@
-import { Style } from 'typestyle'
+import { Style } from 'zyzz'
 import { expectTypeOf } from 'vite-plus/test'
 import { components } from '../test/fixtures/components.js'
 

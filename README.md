@@ -6,7 +6,7 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 - [**Dynamic Styles**](#dynamic-styles): callable styles with typed runtime values and static CSS.
 - [**Themes**](#themes): bundled or custom tokens with light and dark color schemes.
 - [**Variants**](#variants): component choices with inferred props and data attributes.
-- [**Value Context**](#value-context): fallbacks, importance, expressions, and theme CSS variables.
+- [**Value Syntax**](#value-syntax): fallbacks, importance, expressions, and theme CSS variables.
 - [**Variables**](#variables): typed runtime values bound to static rules.
 - [**Composition**](#composition): explicit overrides between generated styles.
 - [**Stylesheets and Compilation**](#stylesheets-and-compilation): global rules, animations, fonts, and web/native output.
@@ -23,17 +23,15 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 
 ## Overview
 
-Pass standard CSS properties and values to `css` and use the result as a class name. The core has no built-in tokens; styles compile into CSS ahead of time.
+Define styles with `css`, call them, and spread the resulting props onto a component. The core has no built-in tokens; styles compile into CSS ahead of time.
 
 ```tsx
 import { css } from 'typestyle'
 
+const button = css({ color: '#06c', padding: '1rem' })
+
 export function Button() {
-  return (
-    <button className={css({ color: '#06c', padding: '1rem' })}>
-      Continue
-    </button>
-  )
+  return <button {...button()}>Continue</button>
 }
 ```
 
@@ -41,7 +39,7 @@ export function Button() {
 
 ### Typed Styles
 
-Use `css` inline or as an exported class string. Nest selectors and queries alongside typed declarations.
+Use `css` inline or export a callable style definition. Nest selectors and queries alongside typed declarations.
 
 ```tsx
 import { css } from 'typestyle'
@@ -52,20 +50,26 @@ const button = css({
   ':hover': { opacity: 0.8 },
 })
 
-<button className={button}>Continue</button>
+<button {...button()}>Continue</button>
 ```
 
 ### Dynamic Styles
 
-Add a typed second callback parameter to create callable styles. `c` supplies the same value helpers as static callbacks. The result contains a class name and inline variable assignments; CSS rules stay static.
+A callback receives typed runtime values. Call the style with those values and optional component props; consumed values become CSS variable assignments, and other props are forwarded. CSS rules stay static.
 
 ```tsx
 import { css } from 'typestyle'
 
-const bar = css((c, width: `${number}%`) => ({ width }))
+const bar = css((values: { width: `${number}%` }) => ({
+  width: values.width,
+}))
 
 export function Bar() {
-  return <div {...bar('50%')} />
+  return (
+    <div
+      {...bar({ width: '50%', className: 'progress', 'aria-hidden': true })}
+    />
+  )
 }
 ```
 
@@ -119,17 +123,17 @@ type ButtonProps = NonNullable<Parameters<typeof button>[0]>
 ;<button {...button({ size: 'sm' })}>Continue</button>
 ```
 
-### Value Context
+### Value Syntax
 
-The context `c` supplies value helpers and inferred theme references. Use `c.vars` for CSS `var(...)` references, directly in properties or ordinary template literals; they follow inherited theme overrides and color schemes.
+Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
 
 ```ts
-const panel = theme.css((c) => ({
-  display: c.fallback('block', 'grid'),
-  color: c.important('brand'),
-  borderColor: c.vars.color.brand,
-  width: `calc(100% - ${c.vars.spacing.md})`,
-}))
+const panel = theme.css({
+  display: ['block', 'grid'],
+  color: 'brand!',
+  borderColor: theme.vars.color.brand,
+  width: `calc(100% - ${theme.vars.spacing.md})`,
+})
 ```
 
 ### Variables
@@ -142,12 +146,12 @@ import { Vars, css } from 'typestyle'
 const progress = Vars.define({ amount: 'percentage' })
 const bar = css({ width: progress.amount })
 
-<div className={bar} style={Vars.set(progress, { amount: '50%' })} />
+<div {...bar({ style: Vars.set(progress, { amount: '50%' }) })} />
 ```
 
 ### Composition
 
-Prefer state attributes for conditional styling. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
+Prefer state attributes for conditional styling. Calls accept `className`, `style`, and other component props. Classes are retained, inline styles merge, and ordinary props forward. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
 
 ```tsx
 import { css, cx } from 'typestyle'
@@ -155,7 +159,7 @@ import { css, cx } from 'typestyle'
 const base = css({ padding: '0.5rem' })
 const roomy = css({ padding: '1rem' })
 
-<button className={cx(base, roomy)}>Continue</button>
+<button {...cx(base(), roomy({ disabled: true }))}>Continue</button>
 ```
 
 ### Stylesheets and Compilation

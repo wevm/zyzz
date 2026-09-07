@@ -155,7 +155,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - The repository has the generated zile greeting stub and Vite Plus tooling; styling implementation starts from scratch.
 - Add flat PascalCase modules under `src/`; keep integration scenarios, consumer type fixtures, and benchmarks under `test/` and `bench/` as implementation phases land.
 - Export the `css` and `variants` leaf functions directly and bind both on themes; conceptual modules use namespace exports. Infer variant props with standard `Parameters`, without a variant namespace.
-- Keep `c` first in authoring callbacks. A typed second parameter on `css` declares dynamic input; transformed functions bind values to precompiled slots, never generate rules. Static calls return class strings; dynamic web calls return explicit class/style bindings.
+- Every `css` definition is callable and returns props when applied. Callbacks receive only typed runtime values; no context helpers. Use trailing `!` for importance, arrays for fallbacks, and `theme.tokens`/`theme.vars` for references. Calls consume declared values and merge forwarded component props. Spread applied props; `cx` preserves bindings and recipe attributes. Generated functions never create CSS rules.
 - Core semantics must be deterministic and independent of environments and tools; target emitters and host adapters have separate entrypoints.
 - Expose platform APIs as named namespace exports: `Css` from `typestyle/web` and `StyleSheet` from `typestyle/react-native`. Keep shared `Style` definitions in the root entrypoint, independently of target namespaces.
 - Add examples for web, native, and standalone distribution as their capabilities land.

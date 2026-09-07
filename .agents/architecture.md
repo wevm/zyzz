@@ -6,7 +6,7 @@ This document specifies the target API for a new implementation. The generated z
 
 The core owns typed ordered declarations, token resolution, validation, and deterministic identity. It has no filesystem, browser, device, parser, framework, or build-tool dependencies. Source adapters extract definitions; target emitters generate artifacts; host adapters deliver them.
 
-Use small modules and subpath exports. All compilation paths share core semantics. Frameworks consume ordinary class strings or native style objects, without required providers, wrappers, or environment detection.
+Use small modules and subpath exports. All compilation paths share core semantics. Frameworks consume ordinary props objects containing web classes/bindings or native styles, without required providers, wrappers, or environment detection.
 
 ## Entry Points
 
@@ -78,127 +78,83 @@ Property-specific color groups augment the shared `color` group and win when a k
 
 `Theme.define` uses exactly the supplied token groups, with no implicit preset merge. Bundled definitions are available as `tokens` from `typestyle/themes/default`; object spreads can opt into its groups. Token values must be statically resolvable and valid for their target.
 
-## Consuming styles
+## Consuming Styles
 
-The returned theme exposes bound `css` and `variants` authoring functions, typed token references, and an optional web scope class. Destructuring and imported aliases retain inference and are recognized by extraction.
-
-```tsx
-const { css } = theme
-
-const button = (
-  <button
-    className={css({
-      backgroundColor: 'surface',
-      color: 'primary',
-      borderColor: 'subtle',
-      padding: 'md',
-      borderRadius: 'md',
-      ':hover': { backgroundColor: 'brand' },
-    })}
-  >
-    Continue
-  </button>
-)
-```
-
-Styles can also be defined outside markup, exported, and imported into another module:
-
-```tsx
-const { css } = theme
-
-export const buttonClass = css({
-  backgroundColor: 'surface',
-  color: 'primary',
-})
-
-function Button() {
-  return <button className={buttonClass}>Continue</button>
-}
-```
-
-Inline calls, module-level constants, and exported styles use the same inference and compilation rules. Extraction recognizes the authoring binding wherever a static call occurs; it does not depend on a `className` attribute. Imported compiled static styles are ordinary strings; dynamic definitions export callable bindings as specified below. Root and bundled-theme `css` imports support the same forms.
-
-`theme.css(style)` and `theme.css(c => style)` compile to a class-name string containing one or more readable classes. `theme.css((c, values: Props) => style)` returns a callable binding, rather than a class string. Theme tokens autocomplete within their matching properties. Missing tokens and wrong domains fail type checking and compilation. CSS keywords remain supported; ambiguous literal values use the explicit escape described below.
-
-Applications can author CSS without a theme:
+Every `css` definition returns a callable. Calling it returns plain props to spread onto a component. Static styles use `button()`; dynamic styles use `button(values)`. There is no direct class-string or props-object overload for consuming an uncalled definition.
 
 ```tsx
 import { css } from 'typestyle'
 
-const button = <button className={css({ padding: '1rem', color: '#06c' })} />
+const button = css({ color: '#06c', padding: '1rem' })
+
+export function Button() {
+  return (
+    <button {...button({ className: 'checkout', disabled: false })}>
+      Continue
+    </button>
+  )
+}
 ```
 
-Applications opt into bundled tokens through the theme entrypoint:
+Theme-bound and bundled functions follow the same contract, with inferred tokens:
 
 ```tsx
 import { css } from 'typestyle/themes/default'
 
-const button = <button className={css({ padding: 4, color: 'blue.700' })} />
+const button = css({ padding: 4, color: 'blue.700' })
+const element = <button {...button()} />
 ```
 
-Root, custom-theme, and bundled-theme functions share extraction and emission. None generates styles in production. Untransformed authoring calls fail clearly; importing a function alone does not enable runtime compilation.
+`Theme.define` returns bound `css` and `variants`, portable `tokens`, web variable references through `vars`, and a scope `className`. Destructuring, aliases, and re-exports retain inference. Static and dynamic definitions may be inline, module-level, exported, or imported. Extraction recognizes the authoring binding independently of markup position.
 
-Token references such as `theme.tokens.backgroundColor.surface` preserve domain information for named, portable definitions. `Style.define(styles)` remains the in-memory API for named style data; target compilers produce distinct web and native outputs.
+```tsx
+const { css, variants } = theme
 
-## Value Context
+export const button = css({
+  backgroundColor: 'surface',
+  color: 'primary',
+  borderColor: 'subtle',
+  padding: 'md',
+  borderRadius: 'md',
+  ':hover': { backgroundColor: 'brand' },
+})
 
-Both `css` and `theme.css` accept a style object or an expression-bodied callback. The first parameter, `c`, always supplies value helpers and inferred theme references. A callback with only this parameter produces static styles:
+const element = <button {...button()}>Continue</button>
+```
+
+Inline usage is also valid: `<button {...css({ padding: '1rem' })()} />`. Extraction replaces definitions with small props-binding functions and can fold fully static applications into constants. No runtime style generation occurs. Untransformed authoring calls fail with an actionable missing-transform diagnostic.
+
+Token names autocomplete in their matching properties. CSS literals and keywords remain available; explicit `theme.tokens` references select tokens whose names collide with CSS values. `Style.define` remains the pure in-memory API for named definitions; low-level `Css.compile` still returns stylesheet text and class maps independently of the component authoring interface.
+
+## Value Syntax
+
+Importance uses a trailing `!` on a string. Fallbacks use a nonempty array of values, in declaration order. CSS expressions are ordinary strings or template literals. There is no helper context or helper callback.
 
 ```ts
-const panel = theme.css((c) => ({
-  color: c.important('brand'),
-  display: c.fallback('block', 'grid'),
-  backgroundColor: c.literal('oklch(60% 0.2 250)'),
-  borderColor: c.vars.color.brand,
-  width: `calc(100% - ${c.vars.spacing.md})`,
-}))
+const panel = theme.css({
+  display: ['block', 'grid'],
+  color: 'brand!',
+  backgroundColor: 'oklch(60% 0.2 250)',
+  borderColor: theme.vars.color.brand,
+  width: `calc(100% - ${theme.vars.spacing.md})`,
+})
 ```
 
-The callback is recognized static syntax. The compiler resolves supplied helpers, constants, and token references without executing arbitrary application functions. Helpers need no separate imports. Literal and expression validation is target-specific; untyped callers also receive compiler diagnostics.
+Parse a single final, unescaped `!` outside CSS strings, comments, and functions as declaration importance, before resolving a token or literal. Also accept standard trailing `!important`. Quoted content such as `content: '"Hello!"'` retains its punctuation. Reject malformed or repeated markers. An important numeric value uses a CSS string, for example `opacity: '0.5!'`; nonzero numeric spacing tokens retain their ordinary token rules.
 
-CSS expressions use ordinary strings, such as `'calc(100% - 1rem)'`, or untagged template literals. Source adapters fold static primitive interpolations and recognize variable references while preserving their identities and fallbacks. Unknown object coercions, unresolved runtime values, and arbitrary function calls produce diagnostics.
+Each fallback array entry is a separate declaration. Later supported entries win subject to ordinary CSS importance; `['block!', 'grid']` retains the important first declaration. Empty/nested arrays are errors. Comma-separated CSS lists remain strings, for example `fontFamily: 'Inter, sans-serif'`. Do not reorder or deduplicate away meaningful fallback sequences. Native rejects unsupported fallback/importance semantics rather than silently dropping them.
 
-TypeScript checks reference paths and direct property domains. Full CSS expression syntax and supported domain checks belong to the compiler; a string's type alone does not prove its CSS semantics. Runtime values enter static rules through dynamic `css` callbacks or explicit `Vars.set` bindings.
+The compiler only interprets importance and fallback structure visible in source. Runtime strings cannot inject importance or new declarations. A statically authored suffix such as `${values.width}!` may mark a supported dynamic scalar binding important; passing `'50%!'` as a runtime value does not change rule priority. Dynamic fallback groups remain outside the initial supported subset.
 
-`c.tokens` exposes portable token references. On web, `c.vars` exposes a readonly, inferred tree of CSS variable references for scalar declaration tokens. Both trees are empty for `css` from `typestyle`; custom and bundled theme functions infer them from their theme. Value helpers remain available without a theme.
+`theme.tokens` supplies portable references with property domains. `theme.vars` supplies a readonly inferred tree of web CSS `var()` references for scalar declaration tokens, with the defining value as fallback. Template interpolation retains reference identity and liveness. Theme references can be imported or destructured without executing theme modules; root imports have no implicit theme or token data.
 
-`c.vars.spacing.md` emits a CSS `var()` reference with the defining value as fallback. These string-compatible references retain token domains for direct property checking and work in ordinary template literals. Source analysis retains reference metadata during interpolation. They reuse the theme contract's variable identities.
+`theme.vars.spacing.md` follows inherited theme overrides. Color-pair values use `light-dark()` under the ordinary color-scheme contract. Query thresholds, container names, and composite typography presets are excluded from `theme.vars`; queries resolve to literal conditions. Native accepts portable `theme.tokens` and rejects web-only `theme.vars` references.
 
-Variable references follow inherited theme overrides and color schemes. Color-pair fallbacks use `light-dark()` under the same color-scheme contract as ordinary theme declarations. Referenced variables count as live for emission and pruning. Access is resolved statically; no context object or theme lookup remains at runtime.
+Root `css` accepts literal lengths, valid unitless numbers, and CSS zero. Named tokens and nonzero numeric spacing tokens require a theme. CSS literal/keyword precedence resolves ambiguous names; explicit token references select the token instead. Arbitrary CSS expressions use literal strings and receive compiler syntax validation; they do not implicitly interpolate token names.
 
-Query thresholds, container names, and composite typography presets are excluded from `c.vars`; query aliases still resolve to literal conditions. Unknown paths and incompatible property domains fail type checking and compilation. Native contexts retain portable `c.tokens` and reject web-only `c.vars` references.
+TypeScript checks token/reference paths and direct property domains, including fallback entries and important suffixes. Full CSS grammar validation belongs to the compiler for static expressions and to the browser for arbitrary runtime strings.
 
-| Form                                 | Meaning                                                            |
-| ------------------------------------ | ------------------------------------------------------------------ |
-| Nonzero numeric spacing/sizing value | Matching numeric theme token; missing tokens are errors            |
-| Zero on a length property            | Standard CSS zero; use an explicit reference for a token named `0` |
-| Number on a unitless property        | Literal number, such as `opacity: 0.5`                             |
-| CSS length string                    | Literal length, such as `padding: '4px'`                           |
-| Token name                           | Inferred token for that property                                   |
-| CSS keyword                          | Standard keyword, taking precedence over an ambiguous token name   |
-| Explicit token reference             | Resolves token/keyword collisions                                  |
-| `c.tokens.<group>.<token>`           | Portable reference retaining the token's domain                    |
-| `c.vars.<group>.<token>`             | Web CSS variable reference with an inferred token domain           |
-| `c.literal(text)`                    | Explicit static CSS escape                                         |
-| String or untagged template literal  | Static CSS expression with recognized variable interpolation       |
-| `c.fallback(...values)`              | Ordered declarations; later supported values win                   |
-| `c.important(value)`                 | Important declaration on web                                       |
-
-These helpers define the literal and fallback authoring contract. Preserve fallback order, including through composition and atomic optimization. Define numeric behavior per property; never infer a token-to-pixel fallback. Tokens inside shorthand expressions must be validated for their position where practical; arbitrary literal expressions are an explicit escape from token checking.
-
-Root `css` accepts literal lengths, CSS keywords, unitless property numbers, and zero where CSS permits it. Token names such as `'blue.700'` and numeric spacing values such as `padding: 4` require a theme defining those tokens. Importing a bundled theme elsewhere does not make them valid in root calls.
-
-Compiled style values remain assignable to strings but carry optional property information:
-
-```ts
-import type { ClassName } from 'typestyle'
-
-type ButtonProps = {
-  className?: ClassName<'color' | 'backgroundColor'>
-}
-```
-
-A plain `string` prop remains unrestricted. `ClassName` contracts account for nested conditions, shorthand expansion, and composed declarations. Arbitrary external strings cannot satisfy a restricted branded contract without an explicit escape. Type fixtures must cover exports, unions, and composition; property information is not runtime data by itself.
+Applied web props contain a readonly `className` and optional `style`, together with forwarded component props. The `className` field may retain an optional `ClassName<Properties>` brand for restricted component contracts; this describes a field, never the return type of the definition itself. Metadata is not enumerable component output.
 
 ## Attributes and composition
 
@@ -211,69 +167,85 @@ const button = theme.css({
   '&[data-loading="true"]': { cursor: 'progress' },
 })
 
-<button className={button} disabled={disabled}
+<button {...button()} disabled={disabled}
   aria-expanded={expanded} data-loading={loading} />
 ```
 
 Native/ARIA attributes must reflect actual behavior and accessibility semantics. Visual variants use data attributes. A data attribute alone does not disable a control or supply accessibility state.
 
-`cx(base, override)` is the explicit composition API, with later arguments winning for conflicting generated declarations in the same selector/condition context. It accepts class references and conditional false/null/undefined entries. Static compositions compile away; dynamic compositions use an optional resolver over compiler-produced metadata and precompiled rules, never a CSS generator.
+`cx(base(), override())` is the explicit composition API, with later arguments winning for conflicting generated declarations in the same selector/condition context. It accepts generated props objects and conditional false/null/undefined entries and returns one spreadable props object. Combine classes with the generated conflict metadata, merge owned custom-property bindings, and preserve recipe data attributes. For repeated variable keys, later bindings win; conflicting recipe attribute ownership remains an error. An external class can be supplied explicitly as `{ className: external }`, without a last-wins guarantee for its CSS. Static compositions compile away; dynamic compositions use an optional resolver over compiler-produced metadata and precompiled rules, never a CSS generator.
 
-Plain concatenation retains CSS cascade semantics. External class strings pass through `cx` without a last-wins guarantee. Matching condition contexts compose; different overlapping conditions retain their declared CSS precedence. Importance still follows CSS semantics. Define shorthand/longhand partial overrides, fallback groups, logical/physical interactions, and conditional cancellation in fixtures before claiming reliable composition.
+Plain concatenation retains CSS cascade semantics. External `className` fields pass through `cx` without a last-wins guarantee. Do not pass bare class strings or uncalled style definitions to `cx`. Multiple JSX spreads perform ordinary property replacement and are not style composition; use `<button {...cx(base(), override())} />` to preserve both classes and bindings. Matching condition contexts compose; different overlapping conditions retain their declared CSS precedence. Importance still follows CSS semantics. Define shorthand/longhand partial overrides, fallback groups, logical/physical interactions, and conditional cancellation in fixtures before claiming reliable composition.
 
-String output does not itself supply conflict metadata. The implementation gate must prove how imported generated classes carry or explicitly supply metadata to the transformed resolver across package boundaries, without a global registry. If required metadata is unavailable, emit a diagnostic rather than silently concatenate with a false guarantee. Static atom normalization must make partial overrides possible without generating new runtime rules.
+A props object containing a class string does not itself supply conflict metadata. Keep compiler metadata outside enumerable DOM props; never spread internal metadata onto components. The implementation gate must prove how imported generated classes carry or explicitly supply metadata to the transformed resolver across package boundaries, without a global registry. If required metadata is unavailable, emit a diagnostic rather than silently concatenate with a false guarantee. Static atom normalization must make partial overrides possible without generating new runtime rules.
 
-## Dynamic Styles
+## Dynamic Styles and Forwarded Props
 
-Object definitions and one-parameter value context callbacks produce static class strings. Adding a typed second parameter produces a callable definition. Keep the context first in both forms; do not infer callback meaning from parameter names or execute callbacks to discover their shape.
+An expression-bodied callback receives only the runtime values record. An annotated parameter defines the input contract; the callback returns an object with static property/selector/condition structure. `css` always returns a callable, regardless of whether its definition is an object or callback.
 
 ```tsx
 import { css } from 'typestyle'
 
 const track = css({ height: '0.5rem' })
-const bar = css((c, width: `${number}%`) => ({ width }))
+const bar = css((values: { width: `${number}%` }) => ({
+  width: values.width,
+}))
 
 export function Progress() {
   return (
-    <div className={track}>
-      <div {...bar('50%')} />
+    <div {...track()}>
+      <div {...bar({ width: '50%', className: 'progress' })} />
     </div>
   )
 }
 ```
 
-The callable accepts only the second parameter's value; callers never supply `c`. Use one scalar or a typed readonly record for multiple inputs. The context stays inferred from the root or theme, and is not destructured. Static callbacks can omit an unused context; dynamic callbacks declare exactly two parameters, with no defaults or rest parameters.
+Static applications accept an optional props object. Dynamic applications take one object combining required runtime values and forwarded component props. Consumed value keys are removed from the returned props; everything else is forwarded, except fields merged by the documented rules below. The callback's typed view contains its declared values, not the arbitrary forwarded props.
 
-```ts
+```tsx
 type PanelValues = { readonly width: `${number}px`; readonly opacity: number }
 
-const panel = theme.css((c, values: PanelValues) => ({
+const panel = theme.css((values: PanelValues) => ({
   width: values.width,
   opacity: values.opacity,
-  color: c.vars.color.brand,
+  color: theme.vars.color.brand,
   padding: 'md',
   ':hover': { opacity: values.opacity },
-  '@media (width >= 48rem)': { width: values.width },
 }))
 
-const binding = panel({ width: '320px', opacity: 0.8 })
-binding.className // Stable generated classes.
-binding.style // Ordinary CSS custom-property assignments.
+const element = (
+  <section
+    {...panel({
+      width: '320px',
+      opacity: 0.8,
+      className: 'checkout',
+      style: { marginTop: '1rem' },
+      'aria-label': 'Checkout',
+    })}
+  />
+)
 ```
 
-On web the result is a plain readonly `{ className, style }` binding, usable with React spread props or Vue class/style bindings. Static definitions remain directly usable in `className`. Dynamic results are not strings: discarding `style` discards their values. No provider, global registry, DOM mutation, stylesheet insertion, or string coercion installs bindings implicitly.
+The input accepts `className`, `style`, handlers, accessibility/data attributes, and other component props. Preserve forwarded values and callback/reference identities; never invoke handlers or mutate input objects. Keep forwarding framework-independent and preserve the caller's prop types. Applications validate forwarded props against their component's contract; the core does not pretend to know every framework's element attributes.
 
-The compiler emits all selectors, conditions, properties, importance, and declarations ahead of time. Dynamic scalar positions reference generated CSS variables; the generated function only validates primitive inputs and binds those variables. The original authoring callback and `c` do not remain at runtime. Different values retain the same classes and rule count, including across server rendering and hydration. Binding identities must survive exports and packed-library consumption.
+Reserve `className`, `class`, `style`, `key`, and `ref` from runtime-value and variant names. Values may otherwise overlap component attribute names, but their declared keys are consumed, not forwarded. Resolve the complete finite value-key set from the annotated input contract, including unused fields; do not strip only fields observed in the callback. Reject index signatures, unresolved key sets, and ambiguous contracts before emission. Library declarations and precompiled binding metadata preserve that key set.
 
-For the MVP, the callback body is an object literal. Parameters are simple identifiers; the second parameter has an explicit TypeScript type or JSDoc annotation. Support required string/finite-number scalar leaves and direct record reads, plus supported template interpolation into scalar values. Optional/null values, computed property access, dynamic object shape, spreads, arbitrary calls, branching, and runtime selector/query thresholds produce source diagnostics. Calculations happen at the call site or use supported CSS expressions.
+### Merge Rules
 
-Runtime inputs are literal CSS values, never implicit token keys or numeric spacing tokens. Resolve token references through the static context; use `variants` for finite choices. Type fixtures check compatible value domains, preserve literal/template types, and reject invalid argument shapes. Untyped calls validate primitive shape and finite numbers; arbitrary CSS string grammar remains subject to browser validation. Dynamic fallback groups and unresolved shorthand binding semantics are outside the initial supported subset and fail compilation.
+- **Classes.** Keep generated classes and append a supplied external `className`. External CSS follows the cascade; its position in the class string cannot guarantee an override. Generated-style last-wins composition uses `cx` and compiler metadata.
+- **Inline Styles.** Merge generated variable assignments first and caller `style` second. Caller inline properties follow browser cascade semantics, including importance. Compiler-owned variable keys are private and cannot be assigned by caller overrides; use the declared runtime values instead. Preserve public custom properties such as explicit `Vars.set` bindings.
+- **Other Props.** Forward them once without filtering by a React-specific allowlist. Variant selectors own their generated data attributes; override a selection through its variant key, rather than supply a conflicting owned data attribute.
+- **Composition.** `cx(base(), dynamic(values), variants(selection))` returns merged props with the same rules, later ordinary props winning. It preserves required variable bindings, rejects conflicting recipe attribute ownership, and never invokes or chains handlers. Repeated JSX spreads only replace fields and are not the style composition API.
 
-Each generated function owns its bindings. Compose a static class with `cx(base, binding.className)` and keep `binding.style`. Separate bindings may be combined only with explicit class resolution and style-object merging; no spread order can implicitly guarantee property overrides. Passing the whole object to `cx` is an error. Rules must isolate private variables across nesting so descendant bindings cannot accidentally reuse an ancestor's value.
+For static definitions, `button()` can compile to constant props. A surviving imported callable needs only the props merge path. For dynamic definitions the compiler emits all CSS ahead of time and lowers value reads to fixed binding slots; the generated callable consumes input fields, assigns variables, and merges forwarded props. The original authoring callback never runs in the application. Values changing across calls retain the same classes and rule count.
 
-Dynamic callbacks lower to target-independent binding slots, shared with `Vars`. Source adapters own callback syntax; the pure core consumes ordered data and slots without parsing or invoking functions. Web adapters produce class/style bindings. Native adapters bind supported slots to preidentified properties with explicit unit conversion, returning native styles; they reject CSS-variable expressions and other web-only semantics. `StyleSheet.select` remains a static lookup and does not compile callbacks.
+The MVP supports required string/finite-number fields, direct record reads, and supported template interpolation into scalar declarations. No optional/null input leaves, runtime selectors/queries, dynamic object shape, computed reads, spreads, branches, or arbitrary calls inside definitions. Calculations happen at the call site or in supported CSS expressions. Runtime inputs are literal CSS values, never implicit token keys or numeric spacing tokens; use `variants` for finite token choices.
 
-Integration gates cover real transformed modules, browser computed styles for repeated updates and nested instances, pseudo/query values, theme inheritance, server/hydration parity, and packed consumers. Prove no runtime rule growth and no retained authoring context. Benchmark call/binding cost, emitted JavaScript and CSS, and browser recalculation separately. Consumer type fixtures prove static strings, inferred dynamic arguments, and return-shape separation.
+Source adapters resolve typed contracts and binding syntax before type erasure without executing application code. The pure core consumes ordered declarations and target-independent slots, shared with `Vars`. Untyped application calls validate required consumed fields and primitive shape; forwarded extra keys remain component props, not unknown styling inputs. Compiler diagnostics cover unsupported definitions and property domains.
+
+React web output uses `className`/`style` props; Vue maps these at the class/style adapter boundary. Native output uses a native `style` prop, with caller overrides after generated styles and explicit unit conversion. Native does not parse CSS or emulate importance/fallbacks. `StyleSheet.select` remains static lookup. No provider, global registry, DOM mutation, or runtime stylesheet generation is introduced.
+
+Integration gates cover static and dynamic calls, repeated updates, nested instances, pseudo/query values, theme inheritance, server/hydration parity, packed consumers, consumed-key removal, reserved-key errors, and props forwarding/merging. Verify private variables cannot inherit stale values, caller handlers remain unchanged, no metadata leaks into DOM props, and rule counts stay fixed. Consumer fixtures prove callable inference and forwarded prop preservation. Benchmark static calls, dynamic binding, prop merging, emitted bytes, and browser recalculation separately.
 
 ## Typed runtime variables
 
@@ -283,8 +255,7 @@ import { Vars, css } from 'typestyle'
 const progress = Vars.define({ amount: 'percentage' })
 const bar = css({ width: progress.amount })
 
-<div className={bar}
-  style={Vars.set(progress, { amount: `${percent}%` })} />
+<div {...bar({ style: Vars.set(progress, { amount: `${percent}%` }) })} />
 ```
 
 Dynamic callbacks are the concise path for values local to one style. Keep `Vars` for explicit shared variable contracts and independent assignments. Both forms use the same compiler binding model.
@@ -327,7 +298,7 @@ type ButtonVariants = NonNullable<Parameters<typeof button>[0]>
 const element = <button {...button({ intent: 'ghost', size: 'sm', loading })} />
 ```
 
-`variants` and `theme.variants` also accept a one-parameter value context callback, `variants(c => definition)`, with the same inferred `c` as their corresponding `css`. Infer variant names, string values, booleans, defaults, compound keys, and style tokens. `NonNullable<Parameters<typeof button>[0]>` extracts selection props; callers can make selected properties required using ordinary type utilities. The selection argument is optional, so `button()` applies defaults. No custom props helper is required.
+`variants` and `theme.variants` take static recipe objects. Use `theme.tokens` and `theme.vars` for explicit references; no context callback is needed. Infer variant names, string values, booleans, defaults, compound keys, and style tokens. `NonNullable<Parameters<typeof button>[0]>` extracts selection props; callers can make selected properties required using ordinary type utilities. The selection argument is optional, so `button()` applies defaults. No custom props helper is required.
 
 ```ts
 import { variants } from 'typestyle'
@@ -338,9 +309,9 @@ const button = variants({
 })
 ```
 
-Destructured `theme.variants`, imported aliases, and re-exports preserve inference and extraction. Definitions remain static; continuous runtime values use dynamic `css` or `Vars` rather than callbacks inside variant choices.
+Destructured `theme.variants`, imported aliases, and re-exports preserve inference and extraction. Definitions remain static; continuous runtime values use dynamic `css` or `Vars` rather than callbacks inside variant choices. The selection input also accepts forwarded props under the same merge rules as `css`; declared variant axes are consumed and all other props are forwarded. Reject reserved axis names and conflicting owned data attributes.
 
-The web callable returns a stable recipe `className` and normalized attributes such as `data-intent="ghost"`, `data-size="sm"`, and `data-loading="true"`. Defaults are materialized in the output. Omitted/undefined selections use defaults; null suppresses that variant and its default, omitting its attribute. False serializes as `"false"`. Reject unknown selections from untyped callers.
+The web callable returns a stable recipe `className` and normalized attributes such as `data-intent="ghost"`, `data-size="sm"`, and `data-loading="true"`. Defaults are materialized in the output. Omitted/undefined selections use defaults; null suppresses that variant and its default, omitting its attribute. False serializes as `"false"`. Reject invalid values for declared selections from untyped callers; extra input keys are forwarded component props.
 
 Compile rules as `.button-k3m9:where([data-intent="ghost"])`, scoped to the recipe identity. Variant names must map unambiguously to valid data-attribute names; reject collisions after normalization. One recipe owns each emitted attribute on an element; combining recipes with conflicting attribute ownership needs explicit future composition support.
 
@@ -402,8 +373,8 @@ export const layout = css({
 
 const region = css({ containerType: 'inline-size' })
 const example = (
-  <section className={region}>
-    <div className={layout} />
+  <section {...region()}>
+    <div {...layout()} />
   </section>
 )
 ```
@@ -494,9 +465,7 @@ export const alternate = Theme.extend(theme, {
 
 const panel = (
   <section className={alternate.className}>
-    <button
-      className={theme.css({ backgroundColor: 'surface', color: 'brand' })}
-    >
+    <button {...theme.css({ backgroundColor: 'surface', color: 'brand' })()}>
       Continue
     </button>
   </section>
@@ -594,7 +563,7 @@ typestyle src --out-dir dist --css dist/styles.css --watch
 typestyle src --out-dir dist --css dist/styles.css --minify
 ```
 
-`--out-dir` contains rewritten modules and declarations; `--css` defaults to `<out-dir>/styles.css`. Modules contain static class strings in place of authoring calls. Applications import the stylesheet or load it through a standard stylesheet link. Libraries publish these artifacts directly.
+`--out-dir` contains rewritten modules and declarations; `--css` defaults to `<out-dir>/styles.css`. Modules contain generated props-binding functions in place of definitions, with fully static applications eligible for constant folding. Both reference precompiled classes; authoring callbacks do not remain in delivered code. Applications import the stylesheet or load it through a standard stylesheet link. Libraries publish these artifacts directly.
 
 CSS emission alone cannot make untouched `css()` calls executable. The standalone path must rewrite authoring modules; an application bundler can consume the rewritten tree without a styling plugin. A CSS-only mode is deferred until a concrete consumer can already provide matching compiled class references.
 

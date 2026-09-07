@@ -6,7 +6,7 @@ How typestyle, Tailwind, StyleX, and vanilla-extract approach typed styling, the
 
 ### typestyle
 
-`css` accepts standard CSS objects inline or outside a component. Property types, token domains, and variant choices provide compiler feedback. Readable generated classes help connect rendered output to authored styles. The root import has no built-in tokens.
+`css` accepts standard CSS objects inline or outside a component and returns a callable that produces spreadable props. Property types, token domains, and variant choices provide compiler feedback. Readable generated classes help connect rendered output to authored styles. The root import has no built-in tokens.
 
 ```tsx
 import { css } from 'typestyle'
@@ -14,7 +14,7 @@ import { css } from 'typestyle'
 const button = css({ color: '#06c', padding: '1rem' })
 
 export function Button() {
-  return <button className={button}>Continue</button>
+  return <button {...button()}>Continue</button>
 }
 ```
 
@@ -161,18 +161,18 @@ const theme = Theme.define({
   containers: { card: '24rem' },
 })
 
-const panel = theme.css((c) => ({
-  display: c.fallback('block', 'grid'),
+const panel = theme.css({
+  display: ['block', 'grid'],
   padding: 'sm',
   ':hover': { opacity: 0.8 },
   '&[data-loading="true"]': { cursor: 'wait' },
   '@media tablet': { padding: 'md' },
   '@container card': { gap: 'md' },
-  width: `calc(100% - ${c.vars.spacing.md})`,
-}))
+  width: `calc(100% - ${theme.vars.spacing.md})`,
+})
 ```
 
-`c.fallback` preserves declaration order: later supported values win. `c.important` expresses importance, `c.literal` disambiguates literals, and ordinary strings express CSS values. Raw media/container conditions and `@supports` remain available.
+Arrays preserve fallback declaration order: later supported values win, subject to importance. A trailing `!` marks importance, as in `color: 'brand!'`. Ordinary strings express CSS values; `theme.tokens` disambiguates token references. Raw media/container conditions and `@supports` remain available.
 
 ### Tailwind
 
@@ -251,7 +251,7 @@ export function Button(props: ButtonProps) {
 }
 ```
 
-`cx(base, override)` gives later generated declarations precedence in matching selector/condition contexts. Importance retains CSS semantics. External classes and overlapping, different conditions do not receive a blanket last-argument guarantee. Shorthand/longhand interactions must preserve unaffected declarations.
+`cx(base(), override())` combines applied props objects, preserving variable assignments, and gives later generated declarations precedence in matching selector/condition contexts. Importance retains CSS semantics. External classes and overlapping, different conditions do not receive a blanket last-argument guarantee. Shorthand/longhand interactions must preserve unaffected declarations.
 
 ### Tailwind
 
@@ -310,19 +310,21 @@ export type ButtonProps = RecipeVariants<typeof button>
 
 ### typestyle
 
-A two-parameter `css` callback produces a callable binding: `c` supplies compile-time helpers, and the typed second parameter supplies runtime values. Calling the result returns `{ className, style }` with fixed classes and inline CSS variables. Object and single-context definitions remain static class strings.
+`css(values => styles)` receives a typed input record. Every definition is callable: static calls return class props, and dynamic calls add inline CSS variables. Calls also accept `className`, `style`, and other component props; consumed inputs are removed and forwarded props are merged before spreading.
 
 ```tsx
 import { css } from 'typestyle'
 
-const bar = css((c, width: `${number}%`) => ({ width }))
+const bar = css((values: { width: `${number}%` }) => ({
+  width: values.width,
+}))
 
 export function Bar() {
-  return <div {...bar('50%')} />
+  return <div {...bar({ width: '50%', className: 'progress' })} />
 }
 ```
 
-`Vars.define` and `Vars.set` remain available for shared explicit variable contracts. Theme references use `c.vars` for CSS expressions and `c.tokens` for portable references. Dynamic callbacks bind values without generating rules.
+`Vars.define` and `Vars.set` remain available for shared explicit variable contracts. Theme references use `theme.vars` for CSS expressions and `theme.tokens` for portable references. Dynamic callbacks bind values without generating rules.
 
 ### Tailwind
 
@@ -408,7 +410,7 @@ Build integrations evaluate `.css.ts` modules and extract web CSS. Libraries can
 
 ### typestyle
 
-Static authoring calls compile away. Ordered rules allow deduplication where declaration identity and cascade order remain intact. Classes use readable names with collision suffixes. Dynamic selection, variable binding, and composition may retain small helpers or metadata; their cost belongs in the delivered bundle measurement.
+Static applications can fold into props constants; surviving callables perform props merging. Ordered rules allow deduplication where declaration identity and cascade order remain intact. Classes use readable names with collision suffixes. Dynamic selection, variable binding, and composition may retain small helpers or metadata; their cost belongs in the delivered bundle measurement.
 
 ### Tailwind
 

@@ -7,7 +7,6 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 - [**Themes**](#themes): bundled or custom tokens with light and dark color schemes.
 - [**Variants**](#variants): component choices with inferred props and data attributes.
 - [**Value Syntax**](#value-syntax): fallbacks, importance, expressions, and theme CSS variables.
-- [**Variables**](#variables): typed runtime values bound to static rules.
 - [**Composition**](#composition): explicit overrides between generated styles.
 - [**Stylesheets and Compilation**](#stylesheets-and-compilation): global rules, animations, fonts, and web/native output.
 - [**CLI**](#cli): standalone compilation with watch mode.
@@ -103,7 +102,7 @@ Use `Theme.extend(theme, overrides)` to create an alternate theme, and apply its
 
 ### Variants
 
-Describe component choices with inferred props, defaults, and compound rules. Use `theme.variants` for theme tokens or import token-free `variants` from `typestyle`. Static choices use names; dynamic choices carry scoped values. Web variants select styles through data attributes and bind dynamic values through CSS variables.
+Describe component choices with inferred props, defaults, and compound rules. Use `theme.variants` for theme tokens or import token-free `variants` from `typestyle`. Web variants select styles through data attributes.
 
 ```tsx
 const button = theme.variants({
@@ -112,18 +111,13 @@ const button = theme.variants({
     size: {
       sm: { padding: 'sm' },
       md: { padding: 'md' },
-      custom: (values: { padding: `${number}px` }) => ({
-        padding: values.padding,
-      }),
     },
   },
   defaultVariants: { size: 'md' },
 })
 
 type ButtonProps = NonNullable<Parameters<typeof button>[0]>
-;<button {...button({ size: { custom: { padding: '12px' } } })}>
-  Continue
-</button>
+;<button {...button({ size: 'sm' })}>Continue</button>
 ```
 
 ### Value Syntax
@@ -137,19 +131,6 @@ const panel = theme.css({
   borderColor: theme.vars.color.brand,
   width: `calc(100% - ${theme.vars.spacing.md})`,
 })
-```
-
-### Variables
-
-Bind runtime values to typed variables while keeping the CSS rules static.
-
-```tsx
-import { Vars, css } from 'typestyle'
-
-const progress = Vars.define({ amount: 'percentage' })
-const bar = css({ width: progress.amount })
-
-<div {...bar({ style: Vars.set(progress, { amount: '50%' }) })} />
 ```
 
 ### Composition

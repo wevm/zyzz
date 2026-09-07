@@ -47,14 +47,62 @@ Repository tooling is established: zile builds and links the library; Vite Plus 
 
 ## Phase 1 — Build the core
 
-Status: next.
+Status: next. Start with PR 1.1; all five PRs are unstarted.
 
-- [ ] Define ordered style data, token references, validation, diagnostics, and deterministic identity independently of parsing and emission.
-- [ ] Implement `Style.define` and the pure in-memory compilation boundary specified in the architecture.
-- [ ] Keep environment-specific imports out of the core dependency graph; implement portable identities and collision handling.
-- [ ] Build binding analysis, source rewriting, maps, file access, and watching in adapters.
-- [ ] Keep root `css` token-free with standard CSS values and empty context token/variable trees. Keep all bundled theme imports and exports outside the root dependency graph.
-- [ ] Implement the minimal literal `css()` path and establish its first behavioral and type fixtures.
+Merge in dependency order. Each PR includes its own behavioral/type fixtures and public TSDoc, keeps CI green, and leaves a usable increment. Record the actual PR link and completion evidence beside each item as work lands.
+
+| PR  | Scope                         | Depends on | Deliverable                                             |
+| --- | ----------------------------- | ---------- | ------------------------------------------------------- |
+| 1.1 | Typed style definitions       | Scaffold   | Validated, ordered style data through `Style.define`    |
+| 1.2 | Literal CSS compilation       | 1.1        | Pure `Css.compile` with readable, deterministic classes |
+| 1.3 | Static source extraction      | 1.2        | Literal `css()` calls resolved without executing code   |
+| 1.4 | Module rewriting and maps     | 1.3        | Executable modules, CSS, and source locations           |
+| 1.5 | Host adapters and portability | 1.4        | File/watch fixture and cross-environment core proof     |
+
+### PR 1.1 — Typed Style Definitions
+
+- [ ] Replace the greeting export and test with `Style.define`, public types, and colocated behavioral/type tests; retain the existing repository tooling.
+- [ ] Define immutable, ordered declaration data and structured diagnostics independently of parsers and emitters. Keep source locations optional so in-memory callers need no source files.
+- [ ] Establish a documented literal declaration subset covering layout, spacing, sizing, colors, borders, and typography. Check property names and value domains without a permissive index signature; accept literal lengths, valid unitless numbers, and CSS zero.
+- [ ] Keep the root token-free and target-independent. Reserve the domain-owned token-reference boundary for Phase 2 without introducing theme data, token resolution, callbacks, selectors, or queries in this PR.
+
+Acceptance: named style keys retain inference, declaration order is preserved, inputs are not mutated, and invalid or unsupported input produces actionable diagnostics. The root dependency graph contains no themes, target emitters, parsers, filesystem access, or framework runtimes.
+
+### PR 1.2 — Literal CSS Compilation
+
+- [ ] Add the named `Css` namespace at `typestyle/web` and implement pure `Css.compile({ styles })` for the literal subset. Return the architecture's `{ css, classes, themes }` shape with an empty theme map and structured `Css.CompileError` diagnostics.
+- [ ] Serialize valid CSS values and property names, retaining authored declaration order. Start with grouped rules; atomic optimization remains in Phase 3.
+- [ ] Generate readable deterministic class names with collision handling. Keep identity independent of machine paths, traversal order, clocks, and global mutable state; repeated isolated calls must agree.
+- [ ] Add fixtures for deterministic output, escaping, unit handling, collisions, and order-sensitive shorthand/longhand declarations. Verify computed styles for representative emitted rules in a browser.
+
+Acceptance: in-memory definitions produce usable CSS and matching class names without source parsing or file access. Unsupported features fail explicitly. Root imports do not pull in the web compiler.
+
+### PR 1.3 — Static Source Extraction
+
+- [ ] Add the token-free `css` authoring signature for literal objects. An untransformed call fails with an actionable missing-transform error; it never generates styles at runtime. Value context callbacks remain in Phase 2.
+- [ ] Implement parser-owned binding analysis over supplied source text. Recognize direct and renamed imports from `typestyle`, and distinguish shadowed bindings and unrelated functions named `css`.
+- [ ] Extract direct literal calls wherever they occur, including inline markup and exported constants, into the same ordered data consumed by `Css.compile`. Require host-supplied portable module identity instead of reading the environment.
+- [ ] Diagnose dynamic values, spreads, unsupported callbacks, and unresolved definitions with source spans. Add fixtures proving extraction never executes application code. Imported style definitions, theme bindings, and broader static evaluation remain in Phase 2.
+
+Acceptance: supported source calls and equivalent in-memory definitions produce equivalent compiler input and CSS. Token names and numeric spacing tokens fail in root calls; unrelated bindings remain untouched. Parsers stay outside core and target entrypoints.
+
+### PR 1.4 — Module Rewriting and Maps
+
+- [ ] Replace extracted calls with static class strings and return transformed source, stylesheet artifacts, and source maps from an adapter operating on strings and plain data.
+- [ ] Preserve surrounding application code, exports, and source semantics. Remove authoring imports only when their bindings are no longer needed; leave no styling authoring closures or runtime CSS generation in transformed calls.
+- [ ] Connect generated classes, declarations, and diagnostics to authored locations. Keep identities and output stable across repeated transforms with the same inputs.
+- [ ] Add an end-to-end fixture that transforms source, loads the resulting module and CSS, and verifies rendered styles. Cover inline calls, exported class constants, and consumption of those compiled exports by another module.
+
+Acceptance: transformed modules run without invoking the missing-transform stub, their classes match emitted CSS, and source maps locate the original styles. No filesystem or build-tool integration is required to use this adapter.
+
+### PR 1.5 — Host Adapters and Portability
+
+- [ ] Add a minimal file host and fixture driver around the source adapter for reads, output writes, and watch invalidation. Keep the public CLI and build-tool integrations in Phase 4; do not add another compiler path or general plugin system.
+- [ ] Handle source additions, edits, removals, and renames for the supported literal subset. Exclude output directories, preserve the previous successful output on failure, and clean up only host-owned artifacts.
+- [ ] Run identical pure-data fixtures across server, browser, worker, and a native JavaScript engine. Verify matching results and imports without environment shims; native stylesheet emission remains in Phase 3.
+- [ ] Verify packed root/web entrypoints, source-first declarations, and dependency isolation. Add recovery and disposal fixtures for the host, and document how the literal pipeline is exercised with existing repository commands.
+
+Acceptance: source edits update both modules and CSS, failed rebuilds preserve working artifacts, and deletion removes stale owned output. Portability checks demonstrate the core is independent of the host. No public CLI, theme, or native styling capability is claimed complete.
 
 Gate: identical core results across server, browser, worker, and native-engine fixtures. Core imports do not pull in bundled themes, parsers, frameworks, rendering targets, or file access. New core and literal-authoring behavioral/type fixtures pass.
 
@@ -100,7 +148,7 @@ Status: planned.
 - [ ] Implement `Variant.define(theme, definition)` and `Variant.Props` with theme-first inference, base/variants/compounds/defaults, boolean selections, array compound matches, and value context callbacks.
 - [ ] Compile web recipes to stable classes and scoped data-attribute selectors; dynamic calls serialize selections only. Validate attribute ownership, null/default behavior, and ordered precedence.
 - [ ] Implement shared native recipe selection with the same inferred props and precedence; avoid unbounded variant/theme Cartesian products.
-- [ ] Export `Css` as a named namespace from `typestyle/web`. Implement `Css.compile` as a pure emitter returning CSS, named classes, and theme scope classes. Theme maps name outputs without adding definition metadata.
+- [ ] Extend the pure `Css.compile` introduced in PR 1.2 for composition and variants, preserving the theme and conditional semantics established in Phase 2. Retain the named `Css` export from `typestyle/web`; theme maps name outputs without adding definition metadata.
 - [ ] Emit deduplicated atoms with readable property/token/condition names and deterministic collision suffixes, retaining names in production.
 - [ ] Preserve ordered groups for conflicting declarations and conditions; verify cascade equivalence before deduplication. Include resolved query thresholds in identity and retain authored condition order.
 - [ ] Prune unreachable rules and unused variables while retaining complete live token sets in theme scopes.

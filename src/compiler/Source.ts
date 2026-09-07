@@ -1,5 +1,8 @@
-import * as Babel from '@babel/core'
+import type * as Ast from '@oxc-project/types'
+import * as Parser from 'oxc-parser'
+import * as Walker from 'oxc-walker'
 import * as Style from '../Style.js'
+import * as Scope from './internal/Scope.js'
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
@@ -39,12 +42,12 @@ export type Diagnostic = {
 export function extract(options: extract.Options): extract.ReturnType {
   const calls: Call[] = []
   const diagnostics: Diagnostic[] = []
-  const pending: Babel.types.CallExpression[] = []
+  const pending: Ast.CallExpression[] = []
   const styles: Style.NamedStyle[] = []
   function report(
     code: Diagnostic['code'],
     message: string,
-    node?: Babel.types.Node,
+    node?: Pick<Ast.Node, 'end' | 'start'>,
   ) {
     diagnostics.push({
       code,
@@ -68,120 +71,141 @@ export function extract(options: extract.Options): extract.ReturnType {
     )
     throw new ExtractError(diagnostics)
   }
-  const plugin: Babel.PluginObj = {
-    visitor: {
-      ImportDeclaration(path) {
-        if (
-          path.node.source.value !== 'zyzz' ||
-          path.node.importKind === 'type'
-        )
-          return
-        for (const specifier of path.node.specifiers) {
-          if (Babel.types.isImportNamespaceSpecifier(specifier)) {
-            const binding = path.scope.getBinding(specifier.local.name)
-            for (const reference of binding?.referencePaths ?? []) {
-              const parent = reference.parentPath
-              if (
-                parent?.isMemberExpression() &&
-                parent.node.object === reference.node &&
-                ((Babel.types.isIdentifier(parent.node.property) &&
-                  !parent.node.computed &&
-                  parent.node.property.name === 'css') ||
-                  (Babel.types.isStringLiteral(parent.node.property) &&
-                    parent.node.property.value === 'css'))
-              )
-                report(
-                  'unsupported_syntax',
-                  'Import css by name; namespace authoring calls are not supported yet.',
-                  parent.node,
-                )
-            }
-          }
-          if (
-            !Babel.types.isImportSpecifier(specifier) ||
-            specifier.importKind === 'type'
-          )
-            continue
-          const imported = specifier.imported
-          if (
-            (Babel.types.isIdentifier(imported)
-              ? imported.name
-              : imported.value) !== 'css'
-          )
-            continue
-          const binding = path.scope.getBinding(specifier.local.name)
-          if (!binding) continue
-          for (const violation of binding.constantViolations)
-            report(
-              'unsupported_syntax',
-              'Imported css bindings cannot be reassigned.',
-              violation.node,
-            )
-          for (const reference of binding.referencePaths) {
-            if (reference.findParent((parent) => parent.isTSType())) continue
-            const parent = reference.parentPath
-            if (
-              parent?.isCallExpression() &&
-              parent.node.callee === reference.node
-            )
-              pending.push(parent.node)
-            else
-              report(
-                'unsupported_syntax',
-                'Use a direct css call; aliases, re-exports, and indirect references are not supported yet.',
-                reference.node,
-              )
-          }
-        }
-      },
-    },
-  }
-  try {
-    Babel.transformSync(options.source, {
-      ast: false,
-      babelrc: false,
-      code: false,
-      configFile: false,
-      filename: 'source.tsx',
-      parserOpts: { plugins: ['typescript', 'jsx'], sourceType: 'module' },
-      plugins: [plugin],
-    })
-  } catch (error) {
-    const position =
-      typeof error === 'object' &&
-      error !== null &&
-      'pos' in error &&
-      typeof error.pos === 'number'
-        ? error.pos
-        : 0
-    diagnostics.push({
-      code: 'syntax_error',
-      end: Math.min(position + 1, options.source.length),
-      message:
-        typeof error === 'object' &&
-        error !== null &&
-        'reasonCode' in error &&
-        typeof error.reasonCode === 'string'
-          ? `Unable to parse source: ${error.reasonCode}.`
-          : 'Unable to parse source.',
-      source: options.moduleId,
-      start: position,
-    })
+  const parsed = Parser.parseSync('source.tsx', options.source, {
+    preserveParens: false,
+    showSemanticErrors: true,
+    sourceType: 'module',
+  })
+  if (parsed.errors.length) {
+    for (const error of parsed.errors) {
+      const span = error.labels[0]
+      report('syntax_error', error.message, span)
+    }
     throw new ExtractError(diagnostics)
   }
+  const program = parsed.program
+  const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
+  Walker.walk(program, { scopeTracker })
+  scopeTracker.freeze()
+  const ancestors: Ast.Node[] = []
+  Walker.walk(program, {
+    enter(node, parent) {
+      ancestors.push(node)
+      if (
+        (node.type !== 'Identifier' && node.type !== 'JSXIdentifier') ||
+        !parent ||
+        !Walker.isReferenceIdentifier(node, parent)
+      )
+        return
+      // Both passes visit identical scopes; skipping type subtrees changes scope IDs.
+      if (
+        ancestors.some(
+          (ancestor) =>
+            ancestor.type === 'TSTypeAnnotation' ||
+            ancestor.type === 'TSTypeAliasDeclaration' ||
+            ancestor.type === 'TSInterfaceDeclaration' ||
+            ancestor.type === 'TSTypeQuery' ||
+            (ancestor.type === 'ExportNamedDeclaration' &&
+              (ancestor.source !== null || ancestor.exportKind === 'type')) ||
+            (ancestor.type === 'ExportSpecifier' &&
+              ancestor.exportKind === 'type'),
+        )
+      )
+        return
+      const binding = scopeTracker.getDeclaration(node.name)
+      if (
+        binding?.type !== 'Import' ||
+        binding.importNode.source.value !== 'zyzz' ||
+        binding.importNode.importKind === 'type'
+      )
+        return
+      const specifier = binding.node
+      if (specifier.type === 'ImportNamespaceSpecifier') {
+        if (
+          parent.type === 'MemberExpression' &&
+          parent.object === node &&
+          ((parent.property.type === 'Identifier' &&
+            !parent.computed &&
+            parent.property.name === 'css') ||
+            (parent.property.type === 'Literal' &&
+              parent.property.value === 'css'))
+        )
+          report(
+            'unsupported_syntax',
+            'Import css by name; namespace authoring calls are not supported yet.',
+            parent,
+          )
+        return
+      }
+      if (
+        specifier.type !== 'ImportSpecifier' ||
+        specifier.importKind === 'type' ||
+        (specifier.imported.type === 'Identifier'
+          ? specifier.imported.name
+          : specifier.imported.value) !== 'css'
+      )
+        return
+      // Follow only assignment targets; computed keys and default values are reads.
+      let target: Ast.Node = node
+      let write: Ast.Node | undefined
+      for (let index = ancestors.length - 2; index >= 0; index--) {
+        const ancestor = ancestors[index]!
+        if (
+          (ancestor.type === 'AssignmentExpression' &&
+            ancestor.left === target) ||
+          (ancestor.type === 'UpdateExpression' &&
+            ancestor.argument === target) ||
+          ((ancestor.type === 'ForInStatement' ||
+            ancestor.type === 'ForOfStatement') &&
+            ancestor.left === target)
+        ) {
+          write = ancestor
+          break
+        }
+        if (
+          (ancestor.type === 'Property' && ancestor.value === target) ||
+          ancestor.type === 'ObjectPattern' ||
+          ancestor.type === 'ArrayPattern' ||
+          (ancestor.type === 'RestElement' && ancestor.argument === target) ||
+          (ancestor.type === 'AssignmentPattern' && ancestor.left === target)
+        )
+          target = ancestor
+        else break
+      }
+      if (write)
+        report(
+          'unsupported_syntax',
+          'Imported css bindings cannot be reassigned.',
+          write,
+        )
+      else if (
+        parent.type === 'CallExpression' &&
+        parent.callee === node &&
+        !parent.optional
+      )
+        pending.push(parent)
+      else
+        report(
+          'unsupported_syntax',
+          'Use a direct css call; aliases, re-exports, and indirect references are not supported yet.',
+          node,
+        )
+    },
+    leave() {
+      ancestors.pop()
+    },
+    scopeTracker,
+  })
   // Imports and reference lists can have a different order from authored calls.
-  pending.sort((a, b) => a.start! - b.start!)
+  pending.sort((a, b) => a.start - b.start)
   for (const call of pending) {
     let argument = call.arguments[0]
     while (
-      Babel.types.isTSAsExpression(argument) ||
-      Babel.types.isTSSatisfiesExpression(argument)
+      argument?.type === 'TSAsExpression' ||
+      argument?.type === 'TSSatisfiesExpression'
     )
       argument = argument.expression
-    if (
-      call.arguments.length !== 1 ||
-      !Babel.types.isObjectExpression(argument)
-    ) {
+    if (call.arguments.length !== 1 || argument?.type !== 'ObjectExpression') {
       report(
         'unsupported_syntax',
         'Expected one direct literal object; callbacks, spreads, and referenced definitions are not supported yet.',
@@ -195,11 +219,14 @@ export function extract(options: extract.Options): extract.ReturnType {
     const locations: Style.SourceLocation[] = []
     for (const property of argument.properties) {
       if (
-        !Babel.types.isObjectProperty(property) ||
+        property.type !== 'Property' ||
+        property.kind !== 'init' ||
+        property.method ||
         property.computed ||
         property.shorthand ||
-        (!Babel.types.isIdentifier(property.key) &&
-          !Babel.types.isStringLiteral(property.key))
+        (property.key.type !== 'Identifier' &&
+          (property.key.type !== 'Literal' ||
+            typeof property.key.value !== 'string'))
       ) {
         report(
           'unsupported_syntax',
@@ -208,9 +235,10 @@ export function extract(options: extract.Options): extract.ReturnType {
         )
         continue
       }
-      const key = Babel.types.isIdentifier(property.key)
-        ? property.key.name
-        : property.key.value
+      const key =
+        property.key.type === 'Identifier'
+          ? property.key.name
+          : property.key.value
       if (Object.hasOwn(values, key)) {
         report(
           'unsupported_syntax',
@@ -221,14 +249,15 @@ export function extract(options: extract.Options): extract.ReturnType {
       }
       const value = property.value
       if (
-        Babel.types.isStringLiteral(value) ||
-        Babel.types.isNumericLiteral(value)
+        value.type === 'Literal' &&
+        (typeof value.value === 'string' || typeof value.value === 'number')
       )
         values[key] = value.value
       else if (
-        Babel.types.isUnaryExpression(value) &&
+        value.type === 'UnaryExpression' &&
         (value.operator === '-' || value.operator === '+') &&
-        Babel.types.isNumericLiteral(value.argument)
+        value.argument.type === 'Literal' &&
+        typeof value.argument.value === 'number'
       )
         values[key] =
           value.operator === '-' ? -value.argument.value : value.argument.value
@@ -241,10 +270,10 @@ export function extract(options: extract.Options): extract.ReturnType {
         continue
       }
       locations.push({
-        end: value.end!,
+        end: value.end,
         path: [name, key],
         source: options.moduleId,
-        start: value.start!,
+        start: value.start,
       })
     }
     if (diagnostics.length !== before) continue
@@ -254,16 +283,16 @@ export function extract(options: extract.Options): extract.ReturnType {
         { locations },
       )
       styles.push(...definition.styles)
-      calls.push({ end: call.end!, name, start: call.start! })
+      calls.push({ end: call.end, name, start: call.start })
     } catch (error) {
       if (!(error instanceof Style.InvalidError)) throw error
       for (const diagnostic of error.diagnostics)
         diagnostics.push({
           code: 'invalid_literal',
-          end: diagnostic.location?.end ?? call.end!,
+          end: diagnostic.location?.end ?? call.end,
           message: diagnostic.message,
           source: options.moduleId,
-          start: diagnostic.location?.start ?? call.start!,
+          start: diagnostic.location?.start ?? call.start,
         })
     }
   }

@@ -1,3 +1,4 @@
+import * as Esbuild from 'esbuild'
 import { expect, test } from 'vite-plus/test'
 import { css } from 'zyzz'
 import { Source } from 'zyzz/compiler'
@@ -18,7 +19,11 @@ test('public root bundles for browsers without the source parser', async () => {
   expect({
     browserBundle: result.outputFiles.length,
     parserIncluded: Object.keys(result.metafile.inputs).some(
-      (path) => path.includes('@babel') || path.includes('/compiler/'),
+      (path) =>
+        path.includes('@babel') ||
+        path.includes('oxc-parser') ||
+        path.includes('oxc-walker') ||
+        path.includes('/compiler/'),
     ),
   }).toMatchInlineSnapshot(`
     {
@@ -40,4 +45,3 @@ test('literal authoring extracts but cannot execute without source rewriting', (
     `[css.MissingTransformError: css requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.]`,
   )
 })
-import * as Esbuild from 'esbuild'

@@ -100,7 +100,7 @@ Acceptance: all libraries share final CSS processing and retain equivalent brows
 Status: implemented on the static-source-extraction branch; validation is in progress.
 
 - [x] Add the token-free `css` authoring signature for literal objects. An untransformed call fails with an actionable missing-transform error; it never generates styles at runtime. Dynamic binding callbacks and richer value syntax remain in Phase 2.
-- [x] Implement parser-owned binding analysis over supplied source text. Recognize direct and renamed imports from `zyzz`, and distinguish shadowed bindings and unrelated functions named `css`.
+- [x] Use standalone Oxc parsing and two-pass binding analysis over supplied source text. Recognize direct and renamed imports from `zyzz`, distinguish shadowed bindings and unrelated functions named `css`, and isolate function-body variables from parameter initializers. Keep the scope correction internal and cover it through extraction-to-CSS integration fixtures.
 - [x] Extract direct literal calls wherever they occur, including inline markup and exported constants, into the same ordered data consumed by `Css.compile`. Require host-supplied portable module identity instead of reading the environment.
 - [x] Diagnose dynamic values, spreads, unsupported callbacks, and unresolved definitions with source spans. Run real extraction-to-compilation scenarios proving extraction never executes application code, and benchmark that pipeline. Imported style definitions, theme bindings, and broader static evaluation remain in Phase 2.
 

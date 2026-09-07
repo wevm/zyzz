@@ -3,6 +3,107 @@ import { expect, test } from 'vite-plus/test'
 import { Source } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
+test('parameter initializers preserve imports across body hoisting and nested closures', () => {
+  const source = `import { css } from 'zyzz';
+const text = '🎉';
+function button(style = css({ color: '#f00' })) { var css; }
+function closure(style = () => css({ color: '#f00' })) { if (true) { var css; } }
+const arrow = (style = css({ color: '#f00' })) => { var css; };
+const named = function css(style = css({ color: unknown })) { var css; };
+function parameter(css, style = css({ color: unknown })) { var css; }
+function later(style = css({ color: unknown }), css) {}
+function destructured({ css }, style = css({ color: unknown })) {}
+function body() { css({ color: unknown }); if (true) { var css; } }
+function local() { css({ color: unknown }); const css = unknown; }
+type Signature = <T>(value: T) => T;
+export type { css };
+export { type css as StyleFunction };
+export { css as external } from 'another-package';
+function afterType(style = css({ color: '#f00' })) { var css; }
+`
+  const result = Source.extract({ moduleId: 'example/parameters.ts', source })
+  const output = Css.compile({ styles: result.styles })
+  expect({
+    calls: result.calls.map((call) => source.slice(call.start, call.end)),
+    css: output.css,
+  }).toMatchInlineSnapshot(`
+    {
+      "calls": [
+        "css({ color: '#f00' })",
+        "css({ color: '#f00' })",
+        "css({ color: '#f00' })",
+        "css({ color: '#f00' })",
+      ],
+      "css": ".z_base0{color:#f00;}",
+    }
+  `)
+})
+
+test('imported assignments and indirect references fail before CSS emission', () => {
+  const source = `import { css } from 'zyzz';
+import { css as Css } from 'zyzz';
+({ css } = values);
+[css] = values;
+css++;
+for (css of values) {}
+export { css };
+const object = { css };
+const element = <Css />;
+`
+  try {
+    const result = Source.extract({ moduleId: 'example/writes.ts', source })
+    Css.compile({ styles: result.styles })
+    throw new Error('Expected extraction failure')
+  } catch (error) {
+    if (!(error instanceof Source.ExtractError)) throw error
+    expect(
+      error.diagnostics.map((item) => ({
+        code: item.code,
+        message: item.message,
+        text: source.slice(item.start, item.end),
+      })),
+    ).toMatchInlineSnapshot(`
+      [
+        {
+          "code": "unsupported_syntax",
+          "message": "Imported css bindings cannot be reassigned.",
+          "text": "{ css } = values",
+        },
+        {
+          "code": "unsupported_syntax",
+          "message": "Imported css bindings cannot be reassigned.",
+          "text": "[css] = values",
+        },
+        {
+          "code": "unsupported_syntax",
+          "message": "Imported css bindings cannot be reassigned.",
+          "text": "css++",
+        },
+        {
+          "code": "unsupported_syntax",
+          "message": "Imported css bindings cannot be reassigned.",
+          "text": "for (css of values) {}",
+        },
+        {
+          "code": "unsupported_syntax",
+          "message": "Use a direct css call; aliases, re-exports, and indirect references are not supported yet.",
+          "text": "css",
+        },
+        {
+          "code": "unsupported_syntax",
+          "message": "Use a direct css call; aliases, re-exports, and indirect references are not supported yet.",
+          "text": "css",
+        },
+        {
+          "code": "unsupported_syntax",
+          "message": "Use a direct css call; aliases, re-exports, and indirect references are not supported yet.",
+          "text": "Css",
+        },
+      ]
+    `)
+  }
+})
+
 test('source bindings extract ordered literals without executing application code', () => {
   const source = `import { css as define } from 'zyzz';
 throw new Error('Application source must never execute');
@@ -360,7 +461,7 @@ test('syntax and module identity failures remain source owned', () => {
         {
           "code": "syntax_error",
           "end": 14,
-          "message": "Unable to parse source: UnexpectedToken.",
+          "message": "Unexpected token",
           "source": "example/broken.ts",
           "start": 13,
         },

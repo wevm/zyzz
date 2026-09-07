@@ -2,6 +2,15 @@
 
 A type-safe styling library for agents. Familiar CSS, inferred design tokens, and small APIs make styles straightforward to generate, inspect, and change.
 
+- [**Styles**](#styles): typed CSS properties, built-in tokens, selectors, and queries.
+- [**Themes**](#themes): inferred tokens with light and dark color schemes.
+- [**Variants**](#variants): component choices with inferred props and data attributes.
+- [**Value helpers**](#value-helpers): fallbacks, importance, and token expressions.
+- [**Variables**](#variables): typed runtime values bound to static rules.
+- [**Composition**](#composition): explicit overrides between generated styles.
+- [**Stylesheets and compilation**](#stylesheets-and-compilation): global rules, animations, fonts, and web/native output.
+- [**CLI**](#cli): standalone compilation with watch mode.
+
 ## Philosophy
 
 - **Typed.** Properties, tokens, and variants carry their constraints into every call.
@@ -11,7 +20,21 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 - **Minimal.** Small, composable APIs keep configuration and dependencies optional.
 - **Compiled.** Rules compile ahead of time into compact output with readable class names on web.
 
-## APIs
+## Overview
+
+Pass a style object to `css` and use the result as a class name. Properties and tokens are inferred; styles compile into CSS ahead of time.
+
+```tsx
+import { css } from 'typestyle'
+
+export function Button() {
+  return (
+    <button className={css({ color: 'blue.700', padding: 4 })}>Continue</button>
+  )
+}
+```
+
+## Features
 
 ### Styles
 

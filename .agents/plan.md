@@ -97,10 +97,12 @@ Acceptance: all libraries share final CSS processing and retain equivalent brows
 
 ### PR 1.3 — Static Source Extraction
 
-- [ ] Add the token-free `css` authoring signature for literal objects. An untransformed call fails with an actionable missing-transform error; it never generates styles at runtime. Dynamic binding callbacks and richer value syntax remain in Phase 2.
-- [ ] Implement parser-owned binding analysis over supplied source text. Recognize direct and renamed imports from `zyzz`, and distinguish shadowed bindings and unrelated functions named `css`.
-- [ ] Extract direct literal calls wherever they occur, including inline markup and exported constants, into the same ordered data consumed by `Css.compile`. Require host-supplied portable module identity instead of reading the environment.
-- [ ] Diagnose dynamic values, spreads, unsupported callbacks, and unresolved definitions with source spans. Run real extraction-to-compilation scenarios proving extraction never executes application code, and benchmark that pipeline. Imported style definitions, theme bindings, and broader static evaluation remain in Phase 2.
+Status: implemented on the static-source-extraction branch; validation is in progress.
+
+- [x] Add the token-free `css` authoring signature for literal objects. An untransformed call fails with an actionable missing-transform error; it never generates styles at runtime. Dynamic binding callbacks and richer value syntax remain in Phase 2.
+- [x] Implement parser-owned binding analysis over supplied source text. Recognize direct and renamed imports from `zyzz`, and distinguish shadowed bindings and unrelated functions named `css`.
+- [x] Extract direct literal calls wherever they occur, including inline markup and exported constants, into the same ordered data consumed by `Css.compile`. Require host-supplied portable module identity instead of reading the environment.
+- [x] Diagnose dynamic values, spreads, unsupported callbacks, and unresolved definitions with source spans. Run real extraction-to-compilation scenarios proving extraction never executes application code, and benchmark that pipeline. Imported style definitions, theme bindings, and broader static evaluation remain in Phase 2.
 
 Acceptance: supported source calls and equivalent in-memory definitions produce equivalent compiler input and CSS. Token names and numeric spacing tokens fail in root calls; unrelated bindings remain untouched. Parsers stay outside core and target entrypoints.
 

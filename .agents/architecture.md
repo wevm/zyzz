@@ -670,3 +670,15 @@ Compare grouped and atomic emission on repeated and unique styles. Measure compr
 ## Literal Compiler Boundary
 
 `Css.compile({ styles })` from `zyzz/web` implements the literal subset documented in `docs/literal-styles.md`. It returns frozen `{ classes, css, themes }` artifacts, with an empty theme map. Nonconflicting declaration domains are shared; conflicting rules preserve authored cascade order. Class maps contain space-separated identifiers scoped to the complete compilation input. Identical inputs produce identical artifacts; adding definitions can change factoring. Themes, source extraction, and general atomic optimization belong to subsequent boundaries. Literal factoring is implemented early to meet the bundle-size budget.
+
+## Static Source Extraction Boundary
+
+`Source.extract({ moduleId, source })` from `zyzz/compiler` accepts module text and a required portable package-relative identity. It returns frozen `{ calls, styles }`, where calls contain UTF-16 start/end offsets and names matching `Style.Definition`. Feed styles directly to `Css.compile`. This boundary does not rewrite or execute modules, load application imports, discover configuration, or read source files.
+
+The adapter uses Babel parsing and lexical binding analysis with configuration discovery and code generation disabled. Its dependency is reachable only through the compiler entrypoint; root and web bundles do not import it. Direct named imports of `css`, including renamed imports, are recognized throughout TypeScript/JSX. Shadowed bindings and unrelated local functions remain untouched. Type-only references do not create styles.
+
+Only direct object literals with explicit keys and string/number values are accepted. Object-level `as` and `satisfies` wrappers are transparent. Unary numeric signs are supported. Source-owned diagnostics reject callbacks, spreads, methods/accessors, computed/shorthand/duplicate properties, referenced definitions, imported binding reassignment, namespace authoring calls, and indirect imported references. `Source.ExtractError` contains immutable source spans; no partial artifacts are returned.
+
+Style names combine a deterministic module-identity digest with the call offset; identical input repeats exactly, and source edits may change call identities. Call-site names are extraction metadata, not a guarantee that independently emitted stylesheets can be combined. Hosts must aggregate graphs or supply the stable stylesheet namespaces required by later library work. No absolute machine path participates in naming.
+
+The root `css` signature accepts token-free literal properties and describes a callable returning web styling props with only className/style overrides. Untransformed definitions throw `css.MissingTransformError`. The callable implementation, static application folding, and maps arrive with source rewriting in PR 1.4; extraction alone is not an executable transform.

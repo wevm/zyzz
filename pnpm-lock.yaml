@@ -7,10 +7,11 @@ settings:
 importers:
 
   .:
-    devDependencies:
+    dependencies:
       '@babel/core':
         specifier: ^7.29.7
         version: 7.29.7(supports-color@7.2.0)
+    devDependencies:
       '@changesets/cli':
         specifier: ^3.0.2
         version: 3.0.2

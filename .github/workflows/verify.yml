@@ -27,6 +27,9 @@ jobs:
         run: pnpm check:types
   test:
     name: Test
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
@@ -38,4 +41,18 @@ jobs:
       - env:
           CI: true
         name: Run tests
-        run: pnpm run test run --bail=1
+        run: pnpm run test run --coverage
+      - if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
+        name: Report coverage
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          comment-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && 'pr' || 'none' }}
+          file-coverage-mode: all
+          name: Integration Tests
+      - if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
+        name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 30

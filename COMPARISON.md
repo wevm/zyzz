@@ -230,7 +230,7 @@ export const panel = style({
 
 ### typestyle
 
-`theme.variants(definition)` infers tokens, choices, defaults, and compound rules. The direct `variants` import is token-free. Its callable result supplies a class and data attributes, encouraging explicit state attributes. Standard `Parameters` extracts the consumer contract.
+`theme.variants(definition)` infers tokens, choices, defaults, and compound rules. The direct `variants` import is token-free. Its callable result supplies a class and data attributes, encouraging explicit state attributes. Standard `Parameters` extracts the consumer contract. Choices may also be typed callbacks, with values scoped to that choice.
 
 ```tsx
 import { Theme } from 'typestyle'
@@ -239,7 +239,13 @@ const theme = Theme.define({ spacing: { sm: '0.5rem', md: '1rem' } })
 const button = theme.variants({
   base: { display: 'inline-flex' },
   variants: {
-    size: { sm: { padding: 'sm' }, md: { padding: 'md' } },
+    size: {
+      sm: { padding: 'sm' },
+      md: { padding: 'md' },
+      custom: (values: { padding: `${number}px` }) => ({
+        padding: values.padding,
+      }),
+    },
   },
   defaultVariants: { size: 'md' },
 })
@@ -252,6 +258,8 @@ export function Button(props: ButtonProps) {
 ```
 
 `cx(base(), override())` combines applied props objects, preserving variable assignments, and gives later generated declarations precedence in matching selector/condition contexts. Importance retains CSS semantics. External classes and overlapping, different conditions do not receive a blanket last-argument guarantee. Shorthand/longhand interactions must preserve unaffected declarations.
+
+Select a dynamic choice with `button({ size: { custom: { padding: '12px' } } })`. The result includes `data-size="custom"` and CSS variable assignments. Compounds match the choice name; payload changes keep the CSS fixed.
 
 ### Tailwind
 
@@ -310,7 +318,7 @@ export type ButtonProps = RecipeVariants<typeof button>
 
 ### typestyle
 
-`css(values => styles)` receives a typed input record. Every definition is callable: static calls return class props, and dynamic calls add inline CSS variables. Calls also accept `className`, `style`, and other component props; consumed inputs are removed and forwarded props are merged before spreading.
+`css(values => styles)` receives a typed input record. Every definition is callable: static calls return class props, and dynamic calls add inline CSS variables. Calls accept `className` and `style` overrides; consumed values stay out of component props. Other props stay on the component.
 
 ```tsx
 import { css } from 'typestyle'

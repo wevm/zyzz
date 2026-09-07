@@ -39,7 +39,7 @@ Additional agreed APIs are callable static `css(style)`, `cx(...)`, `Vars.define
 
 Import platform APIs as named namespaces: `Css` from `typestyle/web` and `StyleSheet` from `typestyle/react-native`. Shared style definitions remain under `Style` from `typestyle`; the root has no dependency on either target namespace.
 
-Every `css` definition is callable. Static calls accept optional component props; dynamic callbacks receive a typed values record, and applications combine those values and forwarded props in one input. Calls return spreadable props. Consumed keys are stripped; classes, inline styles, and other props follow the architecture merge rules. Use trailing `!` and fallback arrays, with `theme.tokens` and `theme.vars` for explicit references. There is no context parameter.
+Every `css` definition is callable. Static calls accept optional styling overrides; dynamic callbacks receive a typed values record, and applications combine those values and `className`/`style` overrides in one input. Calls return spreadable props. Consumed keys are stripped; classes and inline styles follow the architecture merge rules. Use trailing `!` and fallback arrays, with `theme.tokens` and `theme.vars` for explicit references. Other component props remain on the component. There is no context parameter.
 
 ## Starting point
 
@@ -93,7 +93,7 @@ Acceptance: supported source calls and equivalent in-memory definitions produce 
 
 - [ ] Replace extracted definitions with callable props binders; fold fully static applications to `{ className }` props objects when safe and return transformed source, stylesheet artifacts, and source maps from an adapter operating on strings and plain data.
 - [ ] Preserve surrounding application code, exports, and source semantics. Remove authoring imports only when their bindings are no longer needed; leave no styling authoring closures or runtime CSS generation; surviving static callables only merge props.
-- [ ] Verify static callable props merging through real module/browser scenarios: preserve generated classes, merge caller styles, forward handlers unchanged, retain packed exports, and measure surviving callable cost.
+- [ ] Verify static callable props merging through real module/browser scenarios: preserve generated classes, merge caller styles, reject unrelated props and direct owned-attribute overrides, retain packed exports, and measure surviving callable cost.
 - [ ] Connect generated classes, declarations, and diagnostics to authored locations. Keep identities and output stable across repeated transforms with the same inputs.
 - [ ] Add an end-to-end fixture that transforms source, loads the resulting module and CSS, and verifies rendered styles in a real browser. Cover inline calls, exported props constants, and consumption of those compiled exports by another module. Measure full-transform latency and generated JavaScript/CSS sizes.
 
@@ -128,7 +128,7 @@ Status: planned.
 - [ ] Define numeric token/literal behavior, keyword precedence, ordered fallbacks, expression references, and explicit token references and CSS literals. Verify that root calls accept standard lengths, unitless values, and CSS zero while rejecting undeclared named/numeric tokens, even when a theme is imported elsewhere.
 - [ ] Implement optional branded `ClassName<Properties>` types across exports, conditions, and shorthand expansion.
 - [ ] Implement `Vars.define`/`Vars.set` with typed web bindings and explicit native support; separate runtime value assignment from style generation.
-- [ ] Implement dynamic `css((values: Values) => style)` with an explicitly typed values record and callable web props output. Object definitions are also callable. Accept runtime values and forwarded component props in one input, consume the full declared finite key set, reserve merge keys, and preserve unconsumed props and callback identities. Share binding slots with `Vars` and publish callable declarations across packed libraries.
+- [ ] Implement dynamic `css((values: Values) => style)` with an explicitly typed values record and callable web props output. Object definitions are also callable. Accept runtime values and styling overrides in one input, consume the full declared finite key set, reserve merge keys, and reject unknown inputs instead of forwarding props. Share binding slots with `Vars` and publish callable declarations across packed libraries.
 - [ ] Extract dynamic scalar positions without executing callbacks. Emit fixed CSS-variable rules and small binding functions; reject dynamic rule structure, token lookup, optional/null leaves, arbitrary calls, and unsupported expressions. Specify primitive validation, private variable isolation, static fallback restrictions, and explicit binding composition.
 - [ ] Add real source-to-browser integration scenarios for callback values, pseudo/query rules, nested instances, theme changes, server rendering/hydration, and packed callable exports. Prove stable classes/rule count after repeated updates and removal of authoring callbacks. Check input inference, callable static/dynamic props, consumed-key removal, override rules, reserved keys, and rejected className misuse through consumer fixtures and benchmark binding time, CSS/JavaScript bytes, and browser recalculation.
 - [ ] Recognize imported and destructured theme functions with full inference and static extraction.
@@ -144,7 +144,7 @@ Status: planned.
 - [ ] Preserve standard declaration order, selectors, at-rules, inheritance, and cascade semantics. Specify token/literal precedence and retain authored condition order.
 - [ ] Support same-module immutable definitions and spreads through static binding analysis; add imported definitions only with explicit resolution and cycle errors.
 
-Gate: two compatible themes each work in both schemes. Switching a scope changes colors and shared tokens through CSS alone. Nested themes and explicit schemes behave as specified. Inline and exported styles retain inference. Dynamic callbacks bind typed values to fixed rules with stable classes, and static definitions remain callable with optional forwarded props; browser integration and binding benchmarks verify both. Nested selectors and raw/aliased queries preserve CSS semantics; invalid definitions fail without evaluating application code.
+Gate: two compatible themes each work in both schemes. Switching a scope changes colors and shared tokens through CSS alone. Nested themes and explicit schemes behave as specified. Inline and exported styles retain inference. Dynamic callbacks bind typed values to fixed rules with stable classes, and static definitions remain callable with optional styling overrides; browser integration and binding benchmarks verify both. Nested selectors and raw/aliased queries preserve CSS semantics; invalid definitions fail without evaluating application code.
 
 ## Phase 3 — Composition, variants, and target output
 
@@ -152,8 +152,11 @@ Status: planned.
 
 - [ ] Prefer native/ARIA state attributes and custom data attributes; retain `cx` for explicit last-wins composition within matching contexts.
 - [ ] Make `cx` consume and return props objects, preserving bindings and recipe attributes. Prove static/dynamic composition across package boundaries, repeated variable-key precedence, equal-class/different-value calls, partial shorthand overrides, conditions, fallback groups, and external-class limitations. Verify discarded declarations cannot remove still-live variables and that metadata never leaks into DOM props; no runtime rule generation or global registration.
-- [ ] Implement token-free `variants(definition)` and bound `theme.variants(definition)` with direct/default-theme exports, destructured/imported alias parity, inferred selection types through `Parameters`, base/variants/compounds/defaults, boolean selections, array compound matches, and forwarded component props under the same merge contract as `css`.
-- [ ] Compile web recipes to stable classes and scoped data-attribute selectors; dynamic calls serialize selections only. Validate attribute ownership, null/default behavior, and ordered precedence.
+- [ ] Implement token-free `variants(definition)` and bound `theme.variants(definition)` with direct/default-theme exports, destructured/imported alias parity, inferred selection types through `Parameters`, base/variants/compounds/defaults, boolean selections, array compound matches, and styling overrides under the same merge contract as `css`.
+- [ ] Compile web recipes to stable classes and scoped data-attribute selectors; dynamic calls serialize selections and bind active payloads only. Validate attribute ownership, null/default behavior, and ordered precedence.
+- [ ] Add typed callbacks within variant choices and scoped payload selections such as `{ size: { custom: { padding: '12px' } } }`. Require exactly one dynamic choice and a valid payload; infer its discriminated union through `Parameters`. Defaults require complete static payloads; compounds match names, not values.
+- [ ] Share dynamic `css` binding slots and validation with variant callbacks. Scope variables per recipe/axis/choice, support scalar padding expansion with partial override correctness, and reject unsupported shorthands. Never generate rules per value.
+- [ ] Add real browser/native integration scenarios for choice transitions, removed bindings, defaults/null, compound matches, same-named inputs across axes, nested instances, schemes, overrides, and packed consumers. Include rejected payload/override type fixtures and selection/binding benchmarks with fixed rule/table counts.
 - [ ] Implement shared native recipe selection with the same inferred props and precedence; avoid unbounded variant/theme Cartesian products.
 - [ ] Extend the pure `Css.compile` introduced in PR 1.2 for composition and variants, preserving the theme and conditional semantics established in Phase 2. Retain the named `Css` export from `typestyle/web`; theme maps name outputs without adding definition metadata.
 - [ ] Emit deduplicated atoms with readable property/token/condition names and deterministic collision suffixes, retaining names in production.
@@ -202,24 +205,24 @@ Gate: a small documented API, tested compatibility matrix, reproducible measurem
 
 ## Acceptance matrix
 
-| Area           | Required proof                                                                                                |
-| -------------- | ------------------------------------------------------------------------------------------------------------- |
-| Core           | In-memory operation without environment, framework, parser, or build-tool dependencies                        |
-| Types          | Named styles and token domains infer precisely; invalid schemes and overrides fail                            |
-| Themes         | Colors accept shared strings or light/dark pairs; extensions share inferred token identities                  |
-| Entry points   | Root `css` is token-free; opt-in theme exports preserve inference and identity without implicit theme imports |
-| Web scopes     | Custom-property inheritance, nested themes, and explicit/system schemes work without a theme runtime          |
-| Native schemes | Every theme/scheme pair is precompiled; selection is a deterministic lookup                                   |
-| Standards      | CSS values, selectors, at-rules, declaration order, and cascade retain their semantics                        |
-| Integration    | Document, component, template, native, server, and library consumers share the same contracts                 |
-| Minimalism     | No required providers, wrappers, global setup, platform detection, or runtime compilation                     |
-| CLI            | Standalone compilation rewrites calls, emits CSS, and matches other adapters; watch recovers from errors      |
-| CSS output     | Readable stable names, collision safety, small measured artifacts, and unchanged cascade behavior             |
-| Authoring      | Inline, module-level, and exported/imported styles share inference and compilation                            |
-| Queries        | Correct alias completion, raw query support, static thresholds, containment, nesting, and precedence          |
-| Variants       | Direct/theme-bound definitions, inferred props, attribute output, defaults, compounds, and native parity      |
-| Composition    | Documented last-wins resolution with metadata, partial overrides, and no rule generation                      |
-| Variables      | Typed dynamic callbacks and explicit variables, fixed rules, and native binding capabilities                  |
+| Area           | Required proof                                                                                                                    |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Core           | In-memory operation without environment, framework, parser, or build-tool dependencies                                            |
+| Types          | Named styles and token domains infer precisely; invalid schemes and overrides fail                                                |
+| Themes         | Colors accept shared strings or light/dark pairs; extensions share inferred token identities                                      |
+| Entry points   | Root `css` is token-free; opt-in theme exports preserve inference and identity without implicit theme imports                     |
+| Web scopes     | Custom-property inheritance, nested themes, and explicit/system schemes work without a theme runtime                              |
+| Native schemes | Every theme/scheme pair is precompiled; selection is a deterministic lookup                                                       |
+| Standards      | CSS values, selectors, at-rules, declaration order, and cascade retain their semantics                                            |
+| Integration    | Document, component, template, native, server, and library consumers share the same contracts                                     |
+| Minimalism     | No required providers, wrappers, global setup, platform detection, or runtime compilation                                         |
+| CLI            | Standalone compilation rewrites calls, emits CSS, and matches other adapters; watch recovers from errors                          |
+| CSS output     | Readable stable names, collision safety, small measured artifacts, and unchanged cascade behavior                                 |
+| Authoring      | Inline, module-level, and exported/imported styles share inference and compilation                                                |
+| Queries        | Correct alias completion, raw query support, static thresholds, containment, nesting, and precedence                              |
+| Variants       | Direct/theme-bound definitions, inferred props, attribute output, scoped dynamic payloads, defaults, compounds, and native parity |
+| Composition    | Documented last-wins resolution with metadata, partial overrides, and no rule generation                                          |
+| Variables      | Typed dynamic callbacks and explicit variables, fixed rules, and native binding capabilities                                      |
 
 ## Scope
 

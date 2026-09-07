@@ -55,7 +55,7 @@ const button = css({
 
 ### Dynamic Styles
 
-A callback receives typed runtime values. Call the style with those values and optional component props; consumed values become CSS variable assignments, and other props are forwarded. CSS rules stay static.
+A callback receives typed runtime values. Call the style with those values and optional `className`/`style` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
 
 ```tsx
 import { css } from 'typestyle'
@@ -66,9 +66,7 @@ const bar = css((values: { width: `${number}%` }) => ({
 
 export function Bar() {
   return (
-    <div
-      {...bar({ width: '50%', className: 'progress', 'aria-hidden': true })}
-    />
+    <div {...bar({ width: '50%', className: 'progress' })} aria-hidden={true} />
   )
 }
 ```
@@ -105,7 +103,7 @@ Use `Theme.extend(theme, overrides)` to create an alternate theme, and apply its
 
 ### Variants
 
-Describe component choices with inferred props, defaults, and compound rules. Use `theme.variants` for theme tokens or import token-free `variants` from `typestyle`. Web variants select styles through data attributes.
+Describe component choices with inferred props, defaults, and compound rules. Use `theme.variants` for theme tokens or import token-free `variants` from `typestyle`. Static choices use names; dynamic choices carry scoped values. Web variants select styles through data attributes and bind dynamic values through CSS variables.
 
 ```tsx
 const button = theme.variants({
@@ -114,13 +112,18 @@ const button = theme.variants({
     size: {
       sm: { padding: 'sm' },
       md: { padding: 'md' },
+      custom: (values: { padding: `${number}px` }) => ({
+        padding: values.padding,
+      }),
     },
   },
   defaultVariants: { size: 'md' },
 })
 
 type ButtonProps = NonNullable<Parameters<typeof button>[0]>
-;<button {...button({ size: 'sm' })}>Continue</button>
+;<button {...button({ size: { custom: { padding: '12px' } } })}>
+  Continue
+</button>
 ```
 
 ### Value Syntax
@@ -151,7 +154,7 @@ const bar = css({ width: progress.amount })
 
 ### Composition
 
-Prefer state attributes for conditional styling. Calls accept `className`, `style`, and other component props. Classes are retained, inline styles merge, and ordinary props forward. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
+Prefer state attributes for conditional styling. Calls accept `className` and `style` overrides. Classes are retained and inline styles merge. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
 
 ```tsx
 import { css, cx } from 'typestyle'
@@ -159,7 +162,7 @@ import { css, cx } from 'typestyle'
 const base = css({ padding: '0.5rem' })
 const roomy = css({ padding: '1rem' })
 
-<button {...cx(base(), roomy({ disabled: true }))}>Continue</button>
+<button {...cx(base(), roomy())} disabled>Continue</button>
 ```
 
 ### Stylesheets and Compilation

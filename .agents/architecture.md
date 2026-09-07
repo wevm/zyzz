@@ -88,11 +88,7 @@ import { css } from 'typestyle'
 const button = css({ color: '#06c', padding: '1rem' })
 
 export function Button() {
-  return (
-    <button {...button({ className: 'checkout', disabled: false })}>
-      Continue
-    </button>
-  )
+  return <button {...button({ className: 'checkout' })}>Continue</button>
 }
 ```
 
@@ -154,7 +150,7 @@ Root `css` accepts literal lengths, valid unitless numbers, and CSS zero. Named 
 
 TypeScript checks token/reference paths and direct property domains, including fallback entries and important suffixes. Full CSS grammar validation belongs to the compiler for static expressions and to the browser for arbitrary runtime strings.
 
-Applied web props contain a readonly `className` and optional `style`, together with forwarded component props. The `className` field may retain an optional `ClassName<Properties>` brand for restricted component contracts; this describes a field, never the return type of the definition itself. Metadata is not enumerable component output.
+Applied web props contain a readonly `className` and optional `style`, plus validated recipe data attributes when applicable. The `className` field may retain an optional `ClassName<Properties>` brand for restricted component contracts; this describes a field, never the return type of the definition itself. Metadata is not enumerable component output.
 
 ## Attributes and composition
 
@@ -179,7 +175,7 @@ Plain concatenation retains CSS cascade semantics. External `className` fields p
 
 A props object containing a class string does not itself supply conflict metadata. Keep compiler metadata outside enumerable DOM props; never spread internal metadata onto components. The implementation gate must prove how imported generated classes carry or explicitly supply metadata to the transformed resolver across package boundaries, without a global registry. If required metadata is unavailable, emit a diagnostic rather than silently concatenate with a false guarantee. Static atom normalization must make partial overrides possible without generating new runtime rules.
 
-## Dynamic Styles and Forwarded Props
+## Dynamic Styles and Styling Overrides
 
 An expression-bodied callback receives only the runtime values record. An annotated parameter defines the input contract; the callback returns an object with static property/selector/condition structure. `css` always returns a callable, regardless of whether its definition is an object or callback.
 
@@ -200,7 +196,7 @@ export function Progress() {
 }
 ```
 
-Static applications accept an optional props object. Dynamic applications take one object combining required runtime values and forwarded component props. Consumed value keys are removed from the returned props; everything else is forwarded, except fields merged by the documented rules below. The callback's typed view contains its declared values, not the arbitrary forwarded props.
+Static applications accept optional styling overrides. Dynamic applications combine required runtime values with `className` and `style` overrides in one input. Consumed values never become component props. The callback sees only its declared values. Event handlers, children, refs, accessibility state, and other component props stay on the component.
 
 ```tsx
 type PanelValues = { readonly width: `${number}px`; readonly opacity: number }
@@ -220,32 +216,31 @@ const element = (
       opacity: 0.8,
       className: 'checkout',
       style: { marginTop: '1rem' },
-      'aria-label': 'Checkout',
     })}
   />
 )
 ```
 
-The input accepts `className`, `style`, handlers, accessibility/data attributes, and other component props. Preserve forwarded values and callback/reference identities; never invoke handlers or mutate input objects. Keep forwarding framework-independent and preserve the caller's prop types. Applications validate forwarded props against their component's contract; the core does not pretend to know every framework's element attributes.
+Web overrides accept only `className` and `style`; native overrides use the target's `style` shape. Variant data attributes derive from selection keys and cannot be supplied directly as overrides. Reject unknown input keys in consumer types and untyped calls. Never forward arbitrary props, merge handlers, or mutate input objects.
 
-Reserve `className`, `class`, `style`, `key`, and `ref` from runtime-value and variant names. Values may otherwise overlap component attribute names, but their declared keys are consumed, not forwarded. Resolve the complete finite value-key set from the annotated input contract, including unused fields; do not strip only fields observed in the callback. Reject index signatures, unresolved key sets, and ambiguous contracts before emission. Library declarations and precompiled binding metadata preserve that key set.
+Reserve `className`, `class`, `style`, `key`, and `ref` from runtime-value and variant names. Values may otherwise overlap component attribute names, but their declared keys are consumed; the component receives such attributes separately. Resolve the complete finite value-key set from the annotated input contract, including unused fields; do not strip only fields observed in the callback. Reject index signatures, unresolved key sets, and ambiguous contracts before emission. Library declarations and precompiled binding metadata preserve that key set.
 
 ### Merge Rules
 
 - **Classes.** Keep generated classes and append a supplied external `className`. External CSS follows the cascade; its position in the class string cannot guarantee an override. Generated-style last-wins composition uses `cx` and compiler metadata.
 - **Inline Styles.** Merge generated variable assignments first and caller `style` second. Caller inline properties follow browser cascade semantics, including importance. Compiler-owned variable keys are private and cannot be assigned by caller overrides; use the declared runtime values instead. Preserve public custom properties such as explicit `Vars.set` bindings.
-- **Other Props.** Forward them once without filtering by a React-specific allowlist. Variant selectors own their generated data attributes; override a selection through its variant key, rather than supply a conflicting owned data attribute.
-- **Composition.** `cx(base(), dynamic(values), variants(selection))` returns merged props with the same rules, later ordinary props winning. It preserves required variable bindings, rejects conflicting recipe attribute ownership, and never invokes or chains handlers. Repeated JSX spreads only replace fields and are not the style composition API.
+- **Variant Attributes.** Derive owned data attributes exclusively from validated selections. Change the selection key to override a choice. Keep unrelated attributes and all other component props outside the styling call.
+- **Composition.** `cx(base(), dynamic(values), variants(selection))` returns styling props with the same class/style merge rules. Reject unrelated props. It preserves required variable bindings, rejects conflicting recipe attribute ownership, and never invokes or chains handlers. Repeated JSX spreads only replace fields and are not the style composition API.
 
-For static definitions, `button()` can compile to constant props. A surviving imported callable needs only the props merge path. For dynamic definitions the compiler emits all CSS ahead of time and lowers value reads to fixed binding slots; the generated callable consumes input fields, assigns variables, and merges forwarded props. The original authoring callback never runs in the application. Values changing across calls retain the same classes and rule count.
+For static definitions, `button()` can compile to constant props. A surviving imported callable needs only the props merge path. For dynamic definitions the compiler emits all CSS ahead of time and lowers value reads to fixed binding slots; the generated callable consumes input fields, assigns variables, and merges styling overrides. The original authoring callback never runs in the application. Values changing across calls retain the same classes and rule count.
 
 The MVP supports required string/finite-number fields, direct record reads, and supported template interpolation into scalar declarations. No optional/null input leaves, runtime selectors/queries, dynamic object shape, computed reads, spreads, branches, or arbitrary calls inside definitions. Calculations happen at the call site or in supported CSS expressions. Runtime inputs are literal CSS values, never implicit token keys or numeric spacing tokens; use `variants` for finite token choices.
 
-Source adapters resolve typed contracts and binding syntax before type erasure without executing application code. The pure core consumes ordered declarations and target-independent slots, shared with `Vars`. Untyped application calls validate required consumed fields and primitive shape; forwarded extra keys remain component props, not unknown styling inputs. Compiler diagnostics cover unsupported definitions and property domains.
+Source adapters resolve typed contracts and binding syntax before type erasure without executing application code. The pure core consumes ordered declarations and target-independent slots, shared with `Vars`. Untyped application calls validate required consumed fields and primitive shape; unknown keys are rejected as invalid styling inputs. Compiler diagnostics cover unsupported definitions and property domains.
 
 React web output uses `className`/`style` props; Vue maps these at the class/style adapter boundary. Native output uses a native `style` prop, with caller overrides after generated styles and explicit unit conversion. Native does not parse CSS or emulate importance/fallbacks. `StyleSheet.select` remains static lookup. No provider, global registry, DOM mutation, or runtime stylesheet generation is introduced.
 
-Integration gates cover static and dynamic calls, repeated updates, nested instances, pseudo/query values, theme inheritance, server/hydration parity, packed consumers, consumed-key removal, reserved-key errors, and props forwarding/merging. Verify private variables cannot inherit stale values, caller handlers remain unchanged, no metadata leaks into DOM props, and rule counts stay fixed. Consumer fixtures prove callable inference and forwarded prop preservation. Benchmark static calls, dynamic binding, prop merging, emitted bytes, and browser recalculation separately.
+Integration gates cover static and dynamic calls, repeated updates, nested instances, pseudo/query values, theme inheritance, server/hydration parity, packed consumers, consumed-key removal, reserved-key errors, and styling override merging and unrelated-prop rejection. Verify private variables cannot inherit stale values, handlers stay on components, no metadata leaks into DOM props, and rule counts stay fixed. Consumer fixtures prove callable inference and strict override inputs. Benchmark static calls, dynamic binding, prop merging, emitted bytes, and browser recalculation separately.
 
 ## Typed runtime variables
 
@@ -309,17 +304,60 @@ const button = variants({
 })
 ```
 
-Destructured `theme.variants`, imported aliases, and re-exports preserve inference and extraction. Definitions remain static; continuous runtime values use dynamic `css` or `Vars` rather than callbacks inside variant choices. The selection input also accepts forwarded props under the same merge rules as `css`; declared variant axes are consumed and all other props are forwarded. Reject reserved axis names and conflicting owned data attributes.
+Destructured `theme.variants`, imported aliases, and re-exports preserve inference and extraction. Recipe structure remains static; individual choices may be value callbacks as specified below. The selection input accepts only declared variant axes and styling overrides under the same merge rules as `css`. Reject reserved axis names and conflicting owned data attributes.
 
-The web callable returns a stable recipe `className` and normalized attributes such as `data-intent="ghost"`, `data-size="sm"`, and `data-loading="true"`. Defaults are materialized in the output. Omitted/undefined selections use defaults; null suppresses that variant and its default, omitting its attribute. False serializes as `"false"`. Reject invalid values for declared selections from untyped callers; extra input keys are forwarded component props.
+The web callable returns a stable recipe `className` and normalized attributes such as `data-intent="ghost"`, `data-size="sm"`, and `data-loading="true"`. Defaults are materialized in the output. Omitted/undefined selections use defaults; null suppresses that variant and its default, omitting its attribute. False serializes as `"false"`. Reject invalid values for declared selections from untyped callers; unknown input keys are errors.
 
 Compile rules as `.button-k3m9:where([data-intent="ghost"])`, scoped to the recipe identity. Variant names must map unambiguously to valid data-attribute names; reject collisions after normalization. One recipe owns each emitted attribute on an element; combining recipes with conflicting attribute ownership needs explicit future composition support.
 
 Precedence is base, then variant axes in declaration order, then matching compounds in array order, for otherwise matching contexts and importance. Compound arrays mean any listed value for that axis; different axes combine with AND. Compound rules apply styles and do not prohibit other combinations. Attribute selectors use zero added specificity so compilation controls recipe precedence.
 
-Static calls compile to constants. Dynamic calls only resolve selections/defaults and serialize attributes, not concatenate variant classes. Avoid generating the Cartesian product of web variants: emit axis rules and authored compound rules. Keep optional `cx` overrides separate; recipe conditional rules must participate in the same documented conflict contract if composed.
+Static calls compile to constants. Dynamic calls resolve selections/defaults, serialize attributes, bind active choice values, and merge styling overrides. No new classes or rules are generated. Avoid generating the Cartesian product of web variants: emit axis rules and authored compound rules. Keep optional `cx` overrides separate; recipe conditional rules must participate in the same documented conflict contract if composed.
 
 The native target consumes the same recipe definition and selection types, emitting static alternatives with matching defaults and precedence. Its adapter returns platform styles without DOM attributes. Measure combination growth; deduplicate shared declarations and use precompiled ordered references where supported instead of generating CSS or unbounded tables. Browser-only selectors in a shared recipe produce target errors.
+
+### Dynamic Variant Choices
+
+Each choice accepts a static style object or a typed value callback. The callback follows the dynamic `css` contract and compiles to the same binding slots; runtime values remain local to that axis and choice.
+
+```tsx
+const button = theme.variants({
+  base: { display: 'inline-flex' },
+  variants: {
+    size: {
+      sm: { padding: 'sm' },
+      md: { padding: 'md' },
+      custom: (values: { padding: `${number}px` }) => ({
+        padding: values.padding,
+      }),
+    },
+  },
+  defaultVariants: { size: 'md' },
+  compoundVariants: [{ when: { size: 'custom' }, style: { fontWeight: 600 } }],
+})
+
+const element = (
+  <button
+    {...button({ size: { custom: { padding: '12px' } }, className, style })}
+    disabled={disabled}
+    onClick={onClick}
+  />
+)
+```
+
+Static choices use their ordinary string/boolean selection. Dynamic choices require a single-key object, such as `{ custom: { padding: '12px' } }`. Its key selects the choice; its payload must exactly satisfy that callback's values contract. Reject bare dynamic names, empty/multiple-choice objects, unknown choices, missing/extra fields, wrong domains, and payloads attached to static choices. Input types preserve this discriminated union through `Parameters`, theme aliases, and packed declarations.
+
+Defaults use the same selection shape. A dynamic default supplies a complete statically resolvable payload; a bare dynamic choice name is invalid. Omitted/undefined axes use the default; null suppresses the axis, its attribute, and its bindings. Boolean static choices keep their existing semantics. An object key for a dynamic boolean choice uses its normalized string name.
+
+The output for the example includes the stable recipe class, `data-size="custom"`, and inline assignments for the selected choice's generated variables. Never serialize payloads into data attributes. Variables are scoped by recipe, axis, choice, and binding identity, so two choices may both name a field `padding` without sharing assignments. Switching choices emits a fresh complete assignment object containing only active bindings; real renderer tests must prove obsolete assignments are removed.
+
+Compound conditions match normalized choice names, independently of payload values. `when: { size: 'custom' }` matches every valid custom padding; array matches retain their existing semantics. MVP base and compound style bodies remain static. Choice callback declarations may use supported pseudo/query conditions with fixed structure, just like dynamic `css`.
+
+The scalar `padding` example expands to four longhand bindings sharing one value, preserving partial overrides through `cx`. Reject unsupported shorthand bindings rather than guess how to split runtime CSS. Keep importance and fallback restrictions identical to dynamic `css`.
+
+Native binds active choice values to supported preidentified properties with explicit unit conversions and the same selection/default/compound behavior. Web-only semantics produce errors. Continuous payload values never create a Cartesian product or additional stylesheet rules.
+
+Integration coverage must include real source compilation and rendering, active-to-static/null/default transitions, stale-variable cleanup, same-named payload fields on separate axes, compounds, theme/scheme changes, styling overrides, nested instances, and packed consumers. Consumer fixtures verify every rejected shape and inferred payload. Benchmark selection plus binding, emitted CSS/JavaScript, and native selection without rule or table growth per runtime value.
 
 ## Selectors and conditional rules
 

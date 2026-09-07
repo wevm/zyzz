@@ -2,7 +2,7 @@
 
 ## Status and boundaries
 
-This document specifies the target API for a new implementation. The generated zile greeting stub provides the source entrypoint, with Vite Plus for formatting, linting, and tests. Only the scaffold greeting test exists; no styling implementation, compiler, CLI, or examples are present. All examples describe planned APIs. The MVP prioritizes web correctness and includes a working native subset.
+PR 1.1 implements the literal `Style.define` boundary, immutable ordered data, and structured diagnostics, with integration/type coverage and an authoring benchmark. The [literal subset](../docs/literal-styles.md) documents the implemented surface. CSS emission, component authoring functions, themes, variants, CLI, and native rendering below remain implementation targets. The MVP prioritizes web correctness and includes a working native subset.
 
 The core owns typed ordered declarations, token resolution, validation, and deterministic identity. It has no filesystem, browser, device, parser, framework, or build-tool dependencies. Source adapters extract definitions; target emitters generate artifacts; host adapters deliver them.
 

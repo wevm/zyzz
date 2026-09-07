@@ -130,7 +130,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 - Use the smallest repository script that covers the changed behavior. Run focused tests while iterating.
 - Run `pnpm check:types` after TypeScript changes.
-- Use `pnpm test` for Vite Plus integration tests. Replace the generated greeting and its unit test in PR 1.1 with real consumer scenarios and a benchmark baseline; do not extend the scaffold test.
+- Use `pnpm test` for Vite Plus integration tests. The literal-definition scenarios include real packed consumption; add compiler and renderer workflows only as those boundaries exist.
 - `pnpm check` runs formatting, lint, and type checks with fixes. Inspect and keep only task-related changes.
 - Run `git diff --check` and inspect the final diff before reporting completion.
 
@@ -152,7 +152,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 ## Repository Layout
 
-- The repository has the generated zile greeting stub and Vite Plus tooling; styling implementation starts from scratch.
+- The repository implements the literal `Style.define` boundary with Vite Plus/zile tooling, integration/type coverage, and an authoring benchmark. Later phases add compilation, source transforms, and component APIs.
 - Add flat PascalCase modules under `src/`; keep integration scenarios, consumer type fixtures, and benchmarks under `test/` and `bench/` as implementation phases land.
 - Export the `css` and `variants` leaf functions directly and bind both on themes; conceptual modules use namespace exports. Infer variant props with standard `Parameters`, without a variant namespace.
 - Every `css` definition is callable and returns props when applied. Callbacks receive only typed runtime values; no context helpers. Use trailing `!` for importance, arrays for fallbacks, and `theme.tokens`/`theme.vars` for references. Calls consume declared values and merge only styling overrides (`className`/`style` on web). Other component props stay on the component; unknown inputs are errors. Dynamic variant choices take typed callbacks and scoped payload selections; compound matches use choice names, while values bind to precompiled slots. Spread applied props; `cx` preserves bindings and recipe attributes. Generated functions never create CSS rules.

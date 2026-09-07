@@ -83,7 +83,30 @@ Evidence: [PR #1](https://github.com/wevm/zyzz/pull/1); `pnpm check`, `pnpm chec
 
 Acceptance: in-memory definitions produce usable CSS and matching class names without source parsing or file access. Unsupported features fail explicitly. Root imports do not pull in the web compiler.
 
-Evidence: [PR #3](https://github.com/wevm/zyzz/pull/3), based on main `a5905ad`. Local formatting/lint, types, build, ten non-browser integration scenarios, and twelve compiler benchmarks pass. Chromium rendering is checked by CI. After literal factoring, total CSS plus client JavaScript gzip sizes are 468 bytes (small), 559 bytes (repeated), and 8,106 bytes (unique), versus StyleX at 558, 846, and 14,013 bytes. The integration corpus gates raw, gzip, and Brotli combined sizes below StyleX while checking browser equivalence. These are literal-pipeline baselines, not source-extraction or whole-application comparisons.
+Evidence: [PR #3](https://github.com/wevm/zyzz/pull/3) merged as `2a366cd`. Build, checks, browser integration tests, and all 40 benchmarks passed. Eight workloads compare five compiler adapters. Small, repeated, unique-padding, and partial-sharing workloads gate total raw/gzip/Brotli delivery below every comparison library. Other workloads retain measured gaps. These are literal-pipeline results, not source-extraction or whole-application comparisons.
+
+### PR 1.2a — Conflict Graph and Safe Local Sharing
+
+Status: planned after PR 1.2; implementation does not require source extraction.
+
+- [ ] Retain declaration occurrence identities and construct precedence constraints for the supported literal subset. Treat arbitrary classes as potentially coexisting; preserve shorthand/longhand and A/B/A behavior.
+- [ ] Generate bounded shared-subset candidates using selector/declaration incidence indexes. Support whole-style and atomic candidates as alternatives; do not introduce declarations on unrelated selectors.
+- [ ] Select profitable local merges and schedule them without violating required edges. Add deterministic candidate limits and baseline fallback; keep core pure and dependency-free.
+- [ ] Add public browser integration scenarios for sharing before a later override, repeated conflicting values, overlapping candidates, and exhausted budgets. Keep snapshots inline and independently verify computed declarations.
+- [ ] Measure all eight unchanged workloads against all existing libraries. Record CSS, class references, client JavaScript, total raw/gzip/Brotli bytes, and compilation timing; retain existing gates and report remaining losses.
+
+Acceptance: safe local sharing is possible despite conflicting values elsewhere, with deterministic output and no change to cascade behavior. Improvements must be measured rather than inferred from fewer rules.
+
+### PR 1.2b — Bounded Search and Candidate Scoring
+
+Status: planned after PR 1.2a.
+
+- [ ] Add bounded lookahead or beam search over safe candidates, with deterministic tie-breaking and explicit limits on candidates, expansions, and memory. Do not let wall-clock timing change normal output.
+- [ ] Estimate complete delivery costs and recompute marginal savings for overlapping candidates. Keep the baseline and a bounded shortlist; do not expose a general plugin framework or premature public optimizer API.
+- [ ] Validate fallback behavior and alternate schedules through real public compiler/browser flows. Measure compile-time overhead and size deltas in sequential matched runs.
+- [ ] Run an isolated solver experiment on small real fixture families to assess missed opportunities. Keep solver dependencies outside production and never label a candidate-space optimum a global compressed optimum.
+
+Acceptance: search remains bounded and repeatable, preserves correctness and current gates, and demonstrates gains over the simpler greedy strategy or retains that strategy.
 
 ### PR 1.3 — Static Source Extraction
 
@@ -247,6 +270,14 @@ Status: eight literal workloads and five real compiler adapters are implemented 
 - [ ] PR 1.2 onward: optimize every workload against Panda CSS, StyleX, Tailwind, and vanilla-extract and promote measured cases to regression gates. Record all raw/gzip/Brotli results, including losses; do not change fixtures to manufacture wins.
 
 The benchmark implementation and reproduction notes record prior-art attribution. Later workloads must use actual supported APIs, without mocks, replacement compilers, or placeholder zero results.
+
+### Optimization Follow-Through
+
+- [ ] PR 1.4 onward: score the bounded shortlist using the actual source emitter, minifier, and separately compressed CSS/JavaScript. Start with total gzip and explicit raw/Brotli budgets. Keep compression in host adapters with reproducible settings and the same policy across development and production.
+- [ ] Phase 2: extend conflict proofs to supported conditions, theme scopes, importance, and fallback sequences before enabling associated transformations.
+- [ ] Phase 3: exploit proven exclusivity of variant attribute values on the same element; preserve conservative behavior for arbitrary class combinations and ancestor selectors.
+- [ ] Phase 4: namespace independently emitted graphs and verify packed-library composition. Evaluate repeated-sequence/dictionary optimization only through actual emitted modules, including reconstruction and runtime costs.
+- [ ] Phase 5: investigate equality saturation only if measured rewrite interactions warrant it. Require improvements over bounded graph search before adopting additional machinery.
 
 ### Optimization Acceptance
 

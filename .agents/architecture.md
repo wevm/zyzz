@@ -611,7 +611,7 @@ The default target is web. A later `--target native` emits static tables through
 
 ## Small CSS and readable classes
 
-The initial optimization strategy is atomic emission for independent declarations, with shared rules deduplicated across the compilation graph. Preserve grouped rules where splitting would change declaration order or cascade behavior. Correctness is a release gate, not a tradeoff for fewer bytes.
+Treat atomic rules, complete style rules, and shared declaration subsets as alternative representations of the same program. A dependency-aware graph optimizer chooses among safe representations within a deterministic work budget. Preserve grouped rules wherever splitting would change declaration order or cascade behavior. Correctness is a release gate, not a tradeoff for fewer bytes.
 
 Readable names contain a property or documented abbreviation, a token/value label, and any condition label. Illustrative names are `p-md-k3m9`, `bg-surface-a7c2`, and `hover-bg-brand-b4d8`. A short deterministic suffix distinguishes theme contracts, values, conditions, and ordering contexts; names never consist solely of a hash.
 
@@ -626,6 +626,38 @@ Conflicting shorthand/longhand declarations, overlapping logical/physical proper
 Emit only reachable rules and used token variables. Explicit theme scopes retain complete values for every live contract key. Independently compiled libraries remain correct without whole-application deduplication; cross-library deduplication is an optional consumer optimization.
 
 Measure raw and compressed CSS, generated class-string bytes, total transferred bytes, rule count, compilation time, incremental updates, and representative browser style recalculation. Compare atomic and grouped output on repeated and mostly unique styles. Keep the smaller safe strategy without introducing a runtime or changing readable names.
+
+### Dependency-Aware Graph Optimization
+
+This design is planned; the current emitter only factors globally nonconflicting domains. The optimizer must find safe local sharing even when a declaration domain has different values elsewhere in the graph.
+
+Represent selector-to-declaration occurrences as a weighted bipartite graph, retaining authored occurrence identity and required ordering edges. A candidate shared rule is a biclique: every selected selector receives every selected declaration. Never introduce an edge absent from the input semantics. Declaration sequences remain ordered; identical text alone does not establish interchangeable occurrences.
+
+Build a conflict graph before proposing transformations. Preserve relative precedence wherever selectors may match the same element and declarations can affect the same computed property. Account for shorthand/longhand interactions and, as supported syntax expands, logical properties, importance, layers, theme scopes, conditions, and fallbacks. Keep uncertain relationships constrained. Ordinary class selectors may coexist; component names do not prove exclusivity.
+
+For example, padding shared by two earlier rules may be extracted before a later padding override even though padding is not globally constant. A repeated A/B/A sequence still requires distinct ordering contexts when combining those classes can change the winning value. Safe topological scheduling may move unrelated occurrences, but must preserve all required edges and declaration ordering.
+
+Later variant analysis may prove that two exact values of the same data attribute on the same target element are mutually exclusive. Apply this proof only to the relevant selector scope; ancestor conditions and different attributes do not imply exclusivity.
+
+### Candidate Search and Cost
+
+Generate whole-style, atomic, and shared-subset candidates from the same validated input. Use declaration incidence indexes and bounded subset intersections to discover profitable bicliques without enumerating all possible subsets. Include selector bytes, repeated class references, declarations, and required delivery helpers in cost estimates. Recompute marginal savings after transformations; overlapping candidates cannot count the same saving twice.
+
+Begin with greedy profitable merges and add a small bounded beam of alternatives to avoid premature choices. Candidate count, search expansions, and memory have fixed limits with deterministic traversal and tie-breaking. Wall-clock cutoffs must not determine normal output. Preserve the existing emitter output as a candidate and return it when no accepted improvement exists. Do not add a solver, filesystem access, compression dependency, or environment detection to core.
+
+Raw size, gzip size, Brotli size, compilation time, and browser cost are separate objectives. A smaller raw representation can compress worse. The pure core uses byte estimates and returns a bounded candidate shortlist to an internal host boundary. Once the real source emitter exists, the build adapter may score complete minified CSS and JavaScript using actual separately compressed asset sizes. Start with total gzip as the primary transfer objective and explicit raw/Brotli regression budgets; record tradeoffs rather than claiming simultaneous minima.
+
+Compression settings, compiler versions, naming context, and search budgets must be explicit and reproducible. Equivalent dev, production, CLI, and library builds use the same naming and optimization policy. Do not add benchmark-only string pooling, fixture-specific branches, or a runtime stylesheet decoder. The host retains the baseline if shortlisted candidates fail the selected objective or budgets.
+
+### Validation and Later Algorithms
+
+Exercise optimization through public authoring-to-compilation-to-browser integration tests. Compare against independently interpreted authored declarations, including supported combinations of classes. Cover local sharing, A/B/A overrides, shorthand order, empty styles, conflicting subset candidates, and budget exhaustion. Add condition, theme, and variant cases when those APIs exist. Use inline snapshots for artifacts and diagnostics; retain deterministic identities and existing benchmark gates.
+
+Use a bounded MaxSAT or equivalent constraint-solver experiment outside the production dependency graph to assess small real fixture families. An optimum is relative to the encoded candidates and objective, not proof of globally minimal compressed CSS. This is research validation, not a mocked production compiler or a replacement for browser correctness tests.
+
+Defer equality saturation until competing rewrite sequences justify its implementation cost. Defer Re-Pair-inspired sequence discovery and dictionary sharing until the production source emitter can measure generated JavaScript, reconstruction operations, and runtime overhead together. Both must outperform simpler candidates before adoption.
+
+Research foundations: [CSS Minification via Constraint Solving](https://anthonywlin.github.io/papers/toplas19.pdf) develops order-constrained graph refactoring and MaxSAT-based merging; its model is not a complete treatment of modern CSS or compressed delivery. [Equality saturation](https://arxiv.org/abs/2004.03082) and [Re-Pair compression](https://arxiv.org/html/1704.08558v1) motivate later candidate representation and repeated-sequence discovery. The bounded search and host scoring above are project-specific design choices, not performance claims from those papers.
 
 ## Extraction and acceptance
 

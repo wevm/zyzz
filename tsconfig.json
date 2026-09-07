@@ -36,7 +36,5 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true
-  },
-  "include": ["src", "vite.config.ts"],
-  "exclude": ["dist", "node_modules"]
+  }
 }

@@ -36,9 +36,9 @@ Additional agreed APIs are `css(callback)`, `cx(...)`, `Var.define`/`Var.set`, `
 
 ## Starting point
 
-Implementation starts from scratch. The repository contains the design, agent guidelines, and an empty zile scaffold with Vite Plus tooling. No styling implementation, examples, styling compiler/CLI, or implementation tests exist. All API contracts are targets to build and validate; no phase is complete.
+Implementation starts from scratch. The repository contains the design, agent guidelines, and a zile-generated stub with Vite Plus tooling. The generated greeting and its test exercise scaffolding only. No styling implementation, examples, or styling compiler/CLI exist. All API contracts are targets to build and validate; no phase is complete.
 
-Repository tooling is established: zile builds and links the library; Vite Plus runs oxfmt, oxlint, and tests. The source entrypoint is empty. These tools do not constrain the environment-independent core or mark a feature phase complete.
+Repository tooling is established: zile builds and links the library; Vite Plus runs oxfmt, oxlint, and tests. The generated source and test are placeholders; main and pull-request workflows verify tooling. These tools do not constrain the environment-independent core or mark a feature phase complete.
 
 ## Phase 1 — Build the core
 

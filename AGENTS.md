@@ -118,7 +118,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 - Use the smallest repository script that covers the changed behavior. Run focused tests while iterating.
 - Run `pnpm check:types` after TypeScript changes.
-- Use `pnpm test` for Vite Plus tests. Add behavioral tests with implementation; the empty scaffold has no test suite yet.
+- Use `pnpm test` for Vite Plus tests. The generated greeting test verifies the scaffold only; add styling tests with implementation.
 - `pnpm check` is read-only; `pnpm format` applies formatting. Inspect and keep only task-related changes.
 - Run `git diff --check` and inspect the final diff before reporting completion.
 
@@ -140,7 +140,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 ## Repository Layout
 
-- The repository has an empty zile-generated source entrypoint and Vite Plus tooling; styling implementation starts from scratch.
+- The repository has the generated zile greeting stub and Vite Plus tooling; styling implementation starts from scratch.
 - Add flat PascalCase modules under `src/` with colocated tests as implementation phases land.
 - The proposed `css` leaf helper is exported directly; conceptual modules use namespace exports.
 - Core semantics must be deterministic and independent of environments and tools; target emitters and host adapters have separate entrypoints.
@@ -152,7 +152,9 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - Prettier is banned. Use Vite Plus with oxfmt for formatting and oxlint for linting, configured in `vite.config.ts`.
 - Use zile for library builds and development linking. Vite Plus is repository tooling, not a dependency of the styling core.
 - Keep namespace exports, strict TypeScript settings, and source-first package entrypoints aligned with the zile scaffold.
-- Preserve private package status; do not add release automation until publication is requested.
+- Put scripts, devDependencies, and packageManager before `[!start-pkg]` in package.json. Package metadata and runtime dependencies follow it; keep `private: true` after the marker so zile preserves it. Do not sort package.json keys.
+- Use the single scaffold tsconfig.json. Zile derives build inputs from package entrypoints; do not add a separate build tsconfig.
+- Preserve private package status; keep release and prerelease jobs disabled until publication is requested.
 
 ## Commands
 

@@ -1,30 +1,43 @@
 {
+  "scripts": {
+    "build": "zile",
+    "check": "vp check",
+    "check:types": "tsc",
+    "dev": "zile dev",
+    "format": "vp fmt",
+    "lint": "vp lint",
+    "test": "vp test",
+    "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
+    "changeset:version": "changeset version"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.2",
+    "@types/node": "^24.10.1",
+    "typescript": "5.9.3",
+    "vite-plus": "0.2.2",
+    "zile": "0.0.30"
+  },
+  "packageManager": "pnpm@11.19.0",
+  "[!start-pkg]": "",
   "name": "typestyle",
   "version": "0.0.0",
   "private": true,
   "license": "UNLICENSED",
   "description": "Type-safe style props compiled to static CSS.",
   "type": "module",
-  "packageManager": "pnpm@11.19.0",
-  "scripts": {
-    "build": "zile --project tsconfig.build.json",
-    "check": "vp check",
-    "check:types": "tsc --noEmit",
-    "dev": "zile dev --project tsconfig.build.json",
-    "format": "vp fmt",
-    "lint": "vp lint",
-    "test": "vp test"
-  },
-  "devDependencies": {
-    "@types/node": "^24.10.1",
-    "typescript": "5.9.3",
-    "vite-plus": "0.2.2",
-    "zile": "0.0.30"
-  },
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "files": [
     "dist",
     "src"
   ],
-  "sideEffects": false
+  "sideEffects": false,
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "src": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  }
 }

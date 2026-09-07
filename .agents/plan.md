@@ -43,13 +43,13 @@ Every `css` definition is callable. Static calls accept optional styling overrid
 
 ## Starting point
 
-PR 1.1 is merged and implements `Style.define`, integration/type scenarios, and external compiler benchmarks. PR 1.2 adds literal CSS emission and Zyzz compiler comparisons. Source rewriting, component APIs, themes, variants, and native output remain unimplemented.
+PRs 1.1–1.3 are merged: typed definitions, literal CSS emission, source extraction, and matched compiler benchmarks. PR 1.4 implements literal module rewriting and source maps. Host adapters, themes, variants, and native output remain subsequent work.
 
 Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration tests. Existing CI checks consumer type fixtures, runs integration scenarios and builds the package. Tooling remains outside the core dependency graph.
 
 ## Phase 1 — Build the core
 
-Status: in progress. [PR 1.1](https://github.com/wevm/zyzz/pull/1) is merged; [PR 1.2](https://github.com/wevm/zyzz/pull/3) is implemented and awaiting CI/review; PRs 1.3–1.5 are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
+Status: in progress. PRs 1.1–1.3 are merged; PR 1.4 is under implementation and validation. PR 1.5 is unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
 
 Merge in dependency order. Each PR includes real integration scenarios, consumer type fixtures, relevant benchmark evidence, and public TSDoc. No unit tests, mocks, or stubs. Keep CI green and record the actual PR link and completion evidence beside each item as work lands.
 
@@ -97,7 +97,7 @@ Acceptance: all libraries share final CSS processing and retain equivalent brows
 
 ### PR 1.3 — Static Source Extraction
 
-Status: implemented on the static-source-extraction branch; validation is in progress.
+Status: merged in [PR #6](https://github.com/wevm/zyzz/pull/6) as `b538b6b`. Build, checks, browser integration, and benchmarks passed.
 
 - [x] Add the token-free `css` authoring signature for literal objects. An untransformed call fails with an actionable missing-transform error; it never generates styles at runtime. Dynamic binding callbacks and richer value syntax remain in Phase 2.
 - [x] Use standalone Oxc parsing and two-pass binding analysis over supplied source text. Recognize direct and renamed imports from `zyzz`, distinguish shadowed bindings and unrelated functions named `css`, and isolate function-body variables from parameter initializers. Keep the scope correction internal and cover it through extraction-to-CSS integration fixtures.
@@ -108,13 +108,17 @@ Acceptance: supported source calls and equivalent in-memory definitions produce 
 
 ### PR 1.4 — Module Rewriting and Maps
 
-- [ ] Replace extracted definitions with callable props binders; fold fully static applications to `{ className }` props objects when safe and return transformed source, stylesheet artifacts, and source maps from an adapter operating on strings and plain data.
-- [ ] Preserve surrounding application code, exports, and source semantics. Remove authoring imports only when their bindings are no longer needed; leave no styling authoring closures or runtime CSS generation; surviving static callables only merge props.
-- [ ] Verify static callable props merging through real module/browser scenarios: preserve generated classes, merge caller styles, reject unrelated props and direct owned-attribute overrides, retain packed exports, and measure surviving callable cost.
-- [ ] Connect generated classes, declarations, and diagnostics to authored locations. Keep identities and output stable across repeated transforms with the same inputs.
-- [ ] Add an end-to-end fixture that transforms source, loads the resulting module and CSS, and verifies rendered styles in a real browser. Cover inline calls, exported props constants, and consumption of those compiled exports by another module. Measure full-transform latency and generated JavaScript/CSS sizes.
+Status: implemented on `feat/module-rewriting` from main `b538b6b`; validation is in progress.
+
+- [x] Replace extracted definitions with callable props binders; fold fully static applications to `{ className }` props objects when safe and return transformed source, stylesheet artifacts, and source maps from an adapter operating on strings and plain data.
+- [x] Preserve surrounding application code, exports, and source semantics. Remove authoring imports only when their bindings are no longer needed; leave no styling authoring closures or runtime CSS generation; surviving static callables only merge props.
+- [x] Verify static callable props merging through real module/browser scenarios: preserve generated classes, merge caller styles, reject unrelated props and direct owned-attribute overrides, retain packed exports, and measure surviving callable cost.
+- [x] Connect generated classes, declarations, and diagnostics to authored locations. Keep identities and output stable across repeated transforms with the same inputs.
+- [x] Add an end-to-end fixture that transforms source, loads the resulting module and CSS, and verifies rendered styles in a real browser. Cover inline calls, exported props constants, and consumption of those compiled exports by another module. Measure full-transform latency and generated JavaScript/CSS sizes.
 
 Acceptance: transformed modules run without invoking the missing-transform stub, their classes match emitted CSS, and source maps locate the original styles. No filesystem or build-tool integration is required to use this adapter.
+
+Implementation: `Transform.compile` returns rewritten modules, ordered module-scoped CSS, and standard JavaScript/CSS maps. Direct no-argument applications fold; escaping definitions use the isolated `zyzz/runtime` props binder. Integration scenarios cover source maps, directives, imports, runtime validation, separately compiled browser modules, and packed exports. Browser validation is required in CI before acceptance. Full-transform and props-binding benchmarks are separate from the existing compiler comparison matrix; emitted sizes include the required runtime.
 
 ### PR 1.5 — Host Adapters and Portability
 

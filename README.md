@@ -9,7 +9,7 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 - [**Value Syntax**](#value-syntax): fallbacks, importance, expressions, and theme CSS variables.
 - [**Composition**](#composition): explicit overrides between generated styles.
 - [**Stylesheets and Compilation**](#stylesheets-and-compilation): global rules, animations, fonts, and web/native output.
-- [**Source Extraction**](#source-extraction): literal source definitions and diagnostics without evaluation.
+- [**Source Compilation**](#source-compilation): executable modules, static CSS, and source maps.
 - [**CLI**](#cli): standalone compilation with watch mode.
 
 ## Philosophy
@@ -175,20 +175,19 @@ const selected = StyleSheet.select(output.styles, {
 })
 ```
 
-### Source Extraction
+### Source Compilation
 
-Extract literal definitions from source text and compile their CSS. Source extraction returns call spans and validated styles; executing authoring calls requires source rewriting.
+Compile literal definitions into executable modules and static CSS with source maps. Direct applications become props; exported definitions remain callable. The transform accepts source text without reading files or evaluating application code.
 
 ```ts
-import { Source } from 'zyzz/compiler'
-import { Css } from 'zyzz/web'
+import { Transform } from 'zyzz/compiler'
 
-const result = Source.extract({
+const output = Transform.compile({
   moduleId: 'app/button.tsx',
   source:
     "import { css } from 'zyzz'; export const button = css({ padding: 0 })",
 })
-const output = Css.compile({ styles: result.styles })
+// output.code, output.css, output.map, output.cssMap
 ```
 
 ### CLI

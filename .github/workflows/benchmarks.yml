@@ -73,6 +73,20 @@ jobs:
             [($group.fullName | split(" / ") | last), ((.mean * 1000 | round) / 1000), ((.rme * 100 | round) / 100), .sampleCount] |
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/timings.json >> bench/results/report.md
+          printf '\n## Module Transforms\n\nOrdered source compilation, rewriting, and maps. Final minification and browser bundling are outside timing; sizes include the bundled callable runtime.\n\n| Styles | Time (ms) | CSS gzip | JS gzip | Total gzip |\n| --- | ---: | ---: | ---: | ---: |\n' >> bench/results/report.md
+          jq -rs --slurpfile timings bench/results/timings.json '
+            sort_by(.count)[] as $size |
+            $timings[0].files[].groups[] | select(.fullName | endswith("module transform / " + ($size.count | tostring) + " styles")) |
+            .benchmarks[] |
+            [$size.count, ((.mean * 1000 | round) / 1000), $size.css.gzip, $size.javascript.gzip, $size.total.gzip] |
+            "| " + (map(tostring) | join(" | ")) + " |"
+          ' bench/results/transform/*.json >> bench/results/report.md
+          printf '\n## Static Props Binding\n\n| Application | Time (ns) | Error (±%%) | Samples |\n| --- | ---: | ---: | ---: |\n' >> bench/results/report.md
+          jq -r '
+            .files[].groups[] | select(.fullName | contains("static props binding")) | .benchmarks[] |
+            [.name, (.mean * 1000000 | round), ((.rme * 100 | round) / 100), .sampleCount] |
+            "| " + (map(tostring) | join(" | ")) + " |"
+          ' bench/results/timings.json >> bench/results/report.md
           printf '\nBuild timings use warm host processes and fresh compiler state. Compiler workflows have different scopes; see bench/README.md in the repository for measurement boundaries.\n' >> bench/results/report.md
           cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
       - if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}

@@ -11,6 +11,7 @@
   "devDependencies": {
     "@babel/core": "^7.29.7",
     "@changesets/cli": "^3.0.2",
+    "@jridgewell/trace-mapping": "^0.3.31",
     "@pandacss/node": "^1.12.1",
     "@stylexjs/babel-plugin": "^0.19.0",
     "@stylexjs/stylex": "^0.19.0",
@@ -57,6 +58,11 @@
       "types": "./dist/compiler/index.d.ts",
       "default": "./dist/compiler/index.js"
     },
+    "./runtime": {
+      "src": "./src/runtime/index.ts",
+      "types": "./dist/runtime/index.d.ts",
+      "default": "./dist/runtime/index.js"
+    },
     "./web": {
       "src": "./src/web/index.ts",
       "types": "./dist/web/index.d.ts",
@@ -64,7 +70,9 @@
     }
   },
   "dependencies": {
+    "@jridgewell/gen-mapping": "^0.3.13",
     "@oxc-project/types": "0.148.0",
+    "magic-string": "^1.2.3",
     "oxc-parser": "0.148.0",
     "oxc-walker": "1.1.1"
   }

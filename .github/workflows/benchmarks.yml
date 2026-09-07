@@ -34,7 +34,7 @@ jobs:
         run: pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json
       - name: Summarize benchmarks
         run: |
-          printf '## Benchmarks\n\n[Workflow run](%s/%s/actions/runs/%s)\n\nZyzz uses its in-memory literal compiler; source extraction is excluded.\n\n## Compiler Comparisons\n\nSizes are bytes. Total gzip includes CSS + required client JavaScript. All CSS uses shared Lightning CSS final processing (Chrome 120, Firefox 128, Safari 17); upstream compiler processing differs.\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > bench/results/report.md
+          printf '## Benchmarks\n\n[Workflow run](%s/%s/actions/runs/%s)\n\nZyzz uses its in-memory literal compiler with independent composition for these separate component applications; source extraction and runtime composition are excluded. Ordered class combinations are tested separately.\n\n## Compiler Comparisons\n\nSizes are bytes. Total gzip includes CSS + required client JavaScript. All CSS uses shared Lightning CSS final processing (Chrome 120, Firefox 128, Safari 17); upstream compiler processing differs.\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > bench/results/report.md
           for workload in small repeated unique partial palette independent sparse components; do
             case "$workload" in
               small) title='3 Components' ;;

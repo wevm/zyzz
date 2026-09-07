@@ -4,7 +4,8 @@ import type * as Style from '../Style.js'
 /**
  * Emits factored literal CSS without reading files or generating runtime code.
  * Shares only nonconflicting declaration domains; conflicting rules retain authored
- * order. Class lists are scoped to the complete compilation input. Empty styles
+ * order by default. Independent composition deduplicates complete applications.
+ * Class lists are scoped to the complete compilation input. Empty styles
  * return an empty class list and no rule.
  * @param options - Validated, ordered definitions from Style.define.
  * @returns Frozen class and theme maps alongside stylesheet text.
@@ -95,8 +96,12 @@ export function compile<const name extends string>(
     [...new Set(factored.map((style) => style.shared))]
       .filter(Boolean)
       .sort()
-      .map((body, index) => [body, `z_base${index}`]),
+      .map((body, index) => [
+        body,
+        `${options.composition === 'independent' ? 'base_' : 'z_base'}${index}`,
+      ]),
   )
+  const identical = new Map<string, string>()
   const rules = new Map<string, string>()
   for (const style of factored) {
     if (!style.name || Object.hasOwn(classes, style.name)) {
@@ -110,13 +115,27 @@ export function compile<const name extends string>(
     const { ordered, shared } = style
     const names: string[] = []
     // Shared domains have identical ordered declarations everywhere they occur.
-    // All conflicting domains retain a distinct rule per authored style.
+    // Ordered composition retains a distinct rule per authored style for conflicts.
     for (const [body, sharedRule] of [
       [shared, true],
       [ordered, false],
     ] as const) {
       if (!body) continue
-      const identity = sharedRule ? bases.get(body)! : `z-${encode(style.name)}`
+      const identity = sharedRule
+        ? bases.get(body)!
+        : options.composition === 'independent'
+          ? identifier(style.name)
+          : `z-${encode(style.name)}`
+      // Independent styles are already complete applications. Reusing a rule
+      // cannot affect another application, but would change raw A/B/A composition.
+      if (!sharedRule && options.composition === 'independent') {
+        const canonical = identical.get(body)
+        if (canonical) {
+          names.push(canonical)
+          continue
+        }
+        identical.set(body, identity)
+      }
       const previous = rules.get(identity)
       if (previous !== undefined && previous !== body)
         diagnostics.push({
@@ -144,6 +163,12 @@ export declare namespace compile {
 
   /** Environment-independent compiler input. */
   type Options<name extends string = string> = {
+    /**
+     * Defaults to ordered, preserving stylesheet precedence across combined class lists.
+     * Independent deduplicates complete applications; its class lists must not be
+     * combined with each other. Resolve composition before compiling in this mode.
+     */
+    readonly composition?: 'independent' | 'ordered' | undefined
     /** Ordered definitions; no themes or source adapter is required. */
     readonly styles: Style.Definition<name>
   }
@@ -196,6 +221,13 @@ export type Diagnostic = {
 function encode(value: string): string {
   return value.replace(
     /[^a-zA-Z0-9-]/g,
+    (character) => `_${character.charCodeAt(0).toString(16)}_`,
+  )
+}
+
+function identifier(value: string): string {
+  return encode(value).replace(
+    /^[0-9]|^-(?=[0-9]|$)/g,
     (character) => `_${character.charCodeAt(0).toString(16)}_`,
   )
 }

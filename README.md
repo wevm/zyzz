@@ -163,6 +163,8 @@ const styles = Style.define({
 const output = Css.compile({ styles })
 ```
 
+Use `composition: 'independent'` to deduplicate complete applications whose composition is resolved before compilation. Those generated class lists must remain separate. The default `ordered` mode preserves stylesheet precedence across combined class lists.
+
 ```ts
 import { StyleSheet } from 'zyzz/react-native'
 

@@ -3,6 +3,81 @@ import { expect, test } from 'vite-plus/test'
 import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
+test('independent applications share complete rules and retain valid class identifiers', async () => {
+  const styles = Style.define({
+    '1': { color: '#000', display: 'block', padding: '8px' },
+    '-1': { color: '#fff', display: 'block', padding: '3px' },
+    _31_: { color: '#333', display: 'block', padding: '4px' },
+    again: { color: '#000', display: 'block', padding: '8px' },
+    base_0: { color: '#555', display: 'block', padding: '5px' },
+    empty: {},
+  })
+  const output = Css.compile({ composition: 'independent', styles })
+  expect(output).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "-1": "base_0 _2d_1",
+          "1": "base_0 _31_",
+          "_31_": "base_0 _5f_31_5f_",
+          "again": "base_0 _31_",
+          "base_0": "base_0 base_5f_0",
+          "empty": "",
+        },
+        "css": ".base_0{display:block;}
+      ._31_{color:#000;padding:8px;}
+      ._2d_1{color:#fff;padding:3px;}
+      ._5f_31_5f_{color:#333;padding:4px;}
+      .base_5f_0{color:#555;padding:5px;}",
+        "themes": {},
+      }
+    `)
+  const browser = await chromium.launch()
+  try {
+    const page = await browser.newPage()
+    await page.setContent('<!doctype html><body></body>')
+    await page.addStyleTag({ content: output.css })
+    const rendered = await page.evaluate(
+      (classes) =>
+        Object.values(classes)
+          .filter(Boolean)
+          .map((className) => {
+            const element = document.createElement('div')
+            element.className = className
+            document.body.append(element)
+            const style = getComputedStyle(element)
+            return { color: style.color, padding: style.padding }
+          }),
+      output.classes,
+    )
+    expect(rendered).toMatchInlineSnapshot(`
+      [
+        {
+          "color": "rgb(0, 0, 0)",
+          "padding": "8px",
+        },
+        {
+          "color": "rgb(255, 255, 255)",
+          "padding": "3px",
+        },
+        {
+          "color": "rgb(51, 51, 51)",
+          "padding": "4px",
+        },
+        {
+          "color": "rgb(0, 0, 0)",
+          "padding": "8px",
+        },
+        {
+          "color": "rgb(85, 85, 85)",
+          "padding": "5px",
+        },
+      ]
+    `)
+  } finally {
+    await browser.close()
+  }
+})
+
 test('definitions compile to stable classes and ordered literal CSS', () => {
   // Declaration and style order intentionally exercise shorthand precedence.
   const styles = Style.define({

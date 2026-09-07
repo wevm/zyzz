@@ -1,108 +1,119 @@
-# typestyle implementation plan
+# Implementation plan
 
 ## Goal
 
-A minimal, type-safe styling system with an environment-independent core, a shared authoring model for web and React Native, and optional adapters for frameworks and build tools. Styles are compiled ahead of time. Geist colors and typography and Tailwind design tokens ship as an extensible preset.
+A minimal, type-safe styling system with an environment-independent core, shared web/native authoring, modular extensions, and optional integration adapters. Styles compile ahead of time. Built-in design tokens are an optional preset, and every theme contains light and dark color schemes.
 
 ## Principles
 
-- **Agnostic core.** Pure functions and plain data. No Node built-ins, filesystem, DOM, React, Vue, React Native, Vite, Metro, or compiler-tool APIs in the core dependency graph.
-- **Universal and isomorphic.** The same core runs in browsers, servers, workers, and native JavaScript environments. Shared declarations remain portable; target-specific capabilities are explicit and typed.
-- **Modular and extensible.** Separate style semantics, presets, source extraction, target emission, and host integration. Extensions are explicit data or small functions passed at the boundary. Start with modules and subpath exports; split packages only when necessary.
-- **Minimal and simplistic.** Keep the authoring surface small and use ordinary objects. No mandatory providers, component wrappers, custom JSX runtime, global registries, plugin framework, or configuration DSL.
-- **Standards first.** Prefer CSS property names, values, selectors, at-rules, custom properties, inheritance, and cascade behavior. Introduce new syntax only where type safety or a target boundary requires it.
-- **Compile-time styles.** Never execute application code during extraction. Web emits CSS and class references; native emits static style data. Runtime code may select precompiled styles for state or theme, but must not parse or generate new styles.
+- **Agnostic:** core operates on plain data with no environment, framework, parser, or build-tool dependencies.
+- **Universal:** shared style definitions work across rendering targets; target capabilities and output types are explicit.
+- **Modular:** presets, source extraction, core semantics, target emission, and host integration have narrow boundaries.
+- **Minimal:** ordinary objects and small functions; no mandatory providers, component wrappers, global registries, or plugin framework.
+- **Standards first:** prefer CSS properties, values, selectors, at-rules, custom properties, inheritance, and cascade behavior.
+- **Compile time:** extract styles without executing application code; runtime logic only selects precompiled alternatives.
+
+## API contract
+
+The proposed signatures, examples, type rules, and emitted theme CSS are specified in [API and architecture](architecture.md). They are implementation targets, not claims about the existing package.
+
+| API                              | Contract                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------- |
+| `css(style)`                     | Existing web shorthand; emits a class string and static CSS                  |
+| `Style.define(styles)`           | Defines named, target-independent styles with typed token references         |
+| `Theme.define(options)`          | Defines shared tokens and matching `light`/`dark` color token sets           |
+| `Theme.extend(theme, options)`   | Creates a compatible theme with typed overrides and the same token contract  |
+| `Web.compile(options)`           | Emits CSS, named classes, and theme scope classes from in-memory definitions |
+| `Native.compile(options)`        | Emits static style tables for each supplied theme and color scheme           |
+| `Native.select(styles, options)` | Selects an existing theme/scheme table without compiling or merging          |
 
 ## Current baseline — complete
 
-The private `wevm/typestyle` repository contains a working web POC: typed literal `css()` calls, Geist and Tailwind tokens, deterministic scoped CSS, a Vite adapter, a standalone library compiler, examples, and 29 behavioral tests plus type fixtures.
+The prototype compiles typed literal `css()` calls into deterministic scoped CSS. It includes built-in palette and layout tokens, a development integration, a standalone library compiler, examples, and 29 behavioral tests plus type fixtures.
 
-This is a web baseline, not yet the universal core. `Compiler.ts` couples source parsing and CSS emission and imports `node:crypto`. Tokens include web-specific CSS strings. The public helper returns a class string, and React Native is not implemented. Existing results are recorded in `validation.md`; they do not establish the future compatibility gates below.
+Source extraction, CSS emission, and an environment-specific hash implementation are still coupled. Token values contain web-specific strings. Custom themes and native output do not exist yet. Existing results are recorded in `validation.md` and establish only the web baseline.
 
-## Phase 1 — Extract the agnostic core
+## Phase 1 — Extract the core
 
-Status: next implementation phase.
+Status: next.
 
-- [ ] Separate declaration validation, ordered style data, token resolution, diagnostics, and deterministic identity from source parsing and target output.
-- [ ] Remove `node:crypto` and all environment-specific imports from the core. Choose a small deterministic identity implementation with the same results in every supported environment and an explicit collision strategy.
-- [ ] Move Babel binding analysis and source rewriting behind a source-extraction adapter. Keep parser nodes and tool-specific source maps outside core contracts.
-- [ ] Define a small pure compilation boundary: explicit inputs and options in, artifacts and structured diagnostics out. File discovery, resolution, reads, writes, watching, caches, and logging belong to host adapters.
-- [ ] Make Geist/Tailwind defaults an explicit preset selected at the public boundary; the core must also work with an empty or custom preset.
-- [ ] Keep Vite and the CLI as consumers of the same core API. Neither may define style semantics.
-- [ ] Retain the working web entrypoint during extraction. Avoid new public abstraction layers unless the web and native targets require them.
+- [ ] Separate ordered style data, token references, validation, diagnostics, and deterministic identity from parsing and emission.
+- [ ] Implement `Style.define` and the pure in-memory compilation boundary specified in the architecture.
+- [ ] Remove environment-specific imports from the core dependency graph; specify portable identities and collision handling.
+- [ ] Move binding analysis, source rewriting, maps, file access, and watching into adapters.
+- [ ] Make the default preset explicit; support empty and custom presets without global configuration.
+- [ ] Preserve the existing web shorthand and examples while extracting these boundaries.
 
-Exit gate: core imports and executes without Node or browser globals; equivalent inputs produce identical ordered data and identities in server, browser, worker, and native-engine fixtures. The existing web tests and output contracts still pass. Importing core or types does not pull in a parser, bundler, framework, or filesystem adapter.
+Gate: identical core results across server, browser, worker, and native-engine fixtures. Core imports do not pull in parsers, frameworks, rendering targets, or file access. The current web regression suite still passes.
 
-## Phase 2 — Establish standard authoring and extension contracts
-
-Status: planned; complete before expanding the API.
-
-- [ ] Use canonical CSS names with the normal camelCase object spelling. Preserve declaration order and document shorthand, longhand, inheritance, specificity, and source-order behavior.
-- [ ] Support typed CSS values and standard functions directly where practical. Revisit the POC's mandatory `[value]` escape; do not require a utility-class convention for ordinary CSS syntax.
-- [ ] Use standard selectors and at-rules as the underlying condition model. Breakpoint aliases and other conveniences belong to optional presets and expand to explicit standard conditions.
-- [ ] Preserve authored CSS precedence. Review the POC's automatic pseudo/breakpoint sorting; any preset ordering must be explicit rather than a hidden alternative cascade.
-- [ ] Define portable declarations separately from web-only and native-only declarations. Selecting a target constrains accepted properties, values, conditions, and output types.
-- [ ] Add custom tokens and preset composition without widening known token domains to arbitrary strings. Store semantic theme values independently of CSS serialization.
-- [ ] Support same-module immutable constants and spreads with binding analysis and cycle errors. Define an explicit resolver contract before supporting imported constants; never evaluate them as JavaScript.
-- [ ] Use ordinary composition and target-native precedence before adding helpers. A web class list must not claim that its string order overrides CSS rules.
-
-Exit gate: default, empty, and custom presets retain useful inference. Standard CSS values and conditions round-trip through the web target. Unsupported target capabilities fail with source-located diagnostics. Extension examples require no edits to core internals.
-
-## Phase 3 — Web and React Native targets
+## Phase 2 — Standard authoring and themes
 
 Status: planned.
 
-- [ ] Extract a web emitter producing static CSS and class references, usable without React or Vite. Preserve CSS custom properties, media queries, selectors, and the native cascade rather than emulating them in JavaScript.
-- [ ] Add a native emitter producing precompiled style objects or equivalent static data accepted by React Native's style APIs. Do not pass CSS class strings to native components.
-- [ ] Prove one shared tokenized style definition for a simple layout/text component on web and native before extending property coverage.
-- [ ] Specify conversion of spacing, radius, typography, colors, and units. Make the native base for rem-derived tokens explicit and configurable; do not assume a browser root font size exists.
-- [ ] Define theme, viewport, interaction, and reduced-motion inputs at target adapter boundaries. Any native runtime helper only selects among precompiled alternatives; core never reads device state.
-- [ ] Create a documented capability matrix for selectors, pseudo-classes, media/container queries, CSS variables/functions, text inheritance, units, and platform-specific values. Reject unsupported features rather than dropping or approximating them silently.
-- [ ] Keep the portable type surface useful while allowing explicit target extensions. Do not simulate the entire browser CSS engine on native.
+- [ ] Implement the `Theme.define` and `Theme.extend` contracts before widening authoring syntax.
+- [ ] Require both color schemes with exactly matching color keys and compatible value domains. Shared spacing, radius, typography, and other tokens live outside color schemes.
+- [ ] Infer opaque, domain-specific references from definitions; missing tokens, wrong domains, unknown schemes, and incompatible overrides fail type checking and compilation.
+- [ ] Give compatible themes stable token identities independent of their names and values. Switching theme scopes must not require recompiling component classes.
+- [ ] Emit scoped custom properties and `light-dark()` values. Support `color-scheme: light`, `dark`, and `light dark`, independently of theme identity.
+- [ ] Specify nested scope inheritance, complete overrides, independently forced schemes, deterministic server output, and undeclared-theme failures.
+- [ ] Preserve standard declaration order, selectors, at-rules, inheritance, and cascade semantics. Revisit the prototype's escapes and implicit condition sorting.
+- [ ] Support same-module immutable definitions and spreads through static binding analysis; add imported definitions only with explicit resolution and cycle errors.
 
-Exit gate: shared definitions render correctly in a browser and React Native on iOS and Android. Target-aware type fixtures reject unsupported features; common token values and documented conversions agree. Native theme/state changes select static output without runtime compilation.
+Gate: two compatible themes each work in both schemes. Switching a scope changes colors and shared tokens through CSS alone. Nested themes and explicit schemes behave as specified. Invalid definitions fail without evaluating application code.
 
-## Phase 4 — Thin integrations and library distribution
+## Phase 3 — Web and native output
 
 Status: planned.
 
-- [ ] Verify plain DOM, React, and Vue consumers of the same web output, plus React Native consumers of native output. No framework is required by the authoring core.
-- [ ] Keep Vite integration optional. Add only the minimal Metro/native integration needed for the native fixture; do not build adapters for every bundler in advance.
-- [ ] Handle TS/TSX and Vue SFC script boundaries through the relevant source adapter. Template syntax must not leak into core semantics.
-- [ ] Expose compilation from in-memory inputs independently of a filesystem CLI. Library authors can emit artifacts using their existing build tooling.
-- [ ] Publishable web output consists of ESM, declarations, and CSS; native output consists of ESM/static styles and declarations. Consumers need no typestyle compiler integration to use precompiled libraries.
-- [ ] Verify source maps, SSR/hydration identity, framework refresh/state retention, native fast refresh, and add/edit/remove/rename recovery. Watch state stays within each adapter instance.
-- [ ] Keep target entrypoints explicit and tree-shakeable; avoid implicit platform detection and global setup. Test packed artifacts in independent consumers.
+- [ ] Implement `Web.compile` as a pure emitter returning CSS, named classes, and theme scope classes.
+- [ ] Implement `Native.compile` as a pure emitter returning complete static tables for every requested theme/scheme pair.
+- [ ] Implement `Native.select` as a lookup only. System scheme, interaction, viewport, and accessibility inputs belong to application or host adapters.
+- [ ] Prove the same named style definitions with shared tokens on web and native before expanding coverage.
+- [ ] Specify native unit conversion and font handling; require explicit configuration where no portable default exists.
+- [ ] Document target support for selectors, queries, custom properties, CSS functions, text inheritance, units, and state. Unsupported semantics must fail rather than disappear silently.
+- [ ] Keep scheme-specific output and runtime selection outside the core; do not emulate a browser CSS engine on native.
 
-Exit gate: Vite, standalone/in-memory, React, Vue, and Metro integrations consume the same core contracts. Web dev/prod/SSR agree on output identity. Precompiled web and native packages work without the compiler, and imports do not drag unused targets or tools into consumers.
+Gate: shared definitions render on web and both mobile platforms. Theme/scheme selection agrees with the documented conversions. No runtime style generation is needed, and target-aware types reject unsupported declarations.
+
+## Phase 4 — Integrations and distribution
+
+Status: planned.
+
+- [ ] Verify plain document, component, template, and native consumers through their normal class/style APIs.
+- [ ] Keep build integrations optional and thin; implement only those needed by concrete fixtures.
+- [ ] Support framework source boundaries in source adapters without leaking template syntax into core semantics.
+- [ ] Compile from in-memory definitions and from source adapters using the same target emitters.
+- [ ] Distribute web modules, declarations, and CSS; distribute native modules, declarations, and static theme tables. Consumers do not need compiler integrations.
+- [ ] Verify server rendering, hydration identity, refresh behavior, source maps, and add/edit/remove/rename recovery.
+- [ ] Test independent packed consumers and ensure unused targets, parsers, and tools stay out of runtime dependencies.
+
+Gate: all integration paths use the same contracts and agree on identity. Theme classes and tables survive packaging. Web output has no styling runtime; native output includes only any explicitly selected lookup adapter.
 
 ## Phase 5 — Simplify and measure
 
 Status: planned.
 
-- [ ] Review each public API and dependency against the five design principles. Remove helpers that duplicate standard CSS or existing framework behavior.
-- [ ] Measure cold/warm compilation, incremental updates, declaration/type-check cost, artifact bytes, and runtime adapter bytes separately for web and native.
-- [ ] Benchmark realistic shared styles at 100, 1,000, and 10,000 declarations with reproducible environments; make no unmeasured performance claims.
-- [ ] Keep production web styling-runtime bytes at zero. Budget and document any native adapter code separately; do not label native state selection as runtime compilation.
-- [ ] Consider atomic deduplication, variants, or recipes only when real usage and measurements justify the additional API and precedence rules.
-- [ ] Keep the repository and package private until publication is explicitly requested.
+- [ ] Review every API and dependency against the principles; remove abstractions that duplicate platform behavior.
+- [ ] Measure compilation, incremental updates, type-check cost, artifact size, and native adapter cost independently.
+- [ ] Measure theme multiplication and generated-table size; deduplicate without changing observable theme or cascade semantics.
+- [ ] Add variants, recipes, or atomic deduplication only when concrete usage and measurements justify them.
+- [ ] Keep the repository and package private until publication is requested.
 
-Exit gate: a small documented API, a tested target/environment compatibility matrix, reproducible measurements, and working independent web/native consumers.
+Gate: a small documented API, tested compatibility matrix, reproducible measurements, and working independent web/native consumers.
 
 ## Acceptance matrix
 
-| Principle           | Required proof                                                                                  |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| Agnostic core       | No environment, parser, framework, or build-tool dependencies; callable on in-memory inputs     |
-| Isomorphic behavior | Identical core results across server, browser, worker, and native-engine fixtures               |
-| Universal authoring | A shared definition compiles for web and native; target-only features are explicitly typed      |
-| Standards           | Web values, selectors, at-rules, inheritance, and cascade preserve documented CSS semantics     |
-| Extensibility       | Empty/custom/default presets and an independently defined target extension preserve inference   |
-| Minimalism          | No providers, wrapped components, custom JSX runtime, global registry, or mandatory integration |
-| Compile-time output | Web CSS and native static styles are emitted ahead of time; no application-code evaluation      |
-| Integration         | DOM, React, Vue, React Native, SSR, and independent library fixtures use shared core contracts  |
-| Compatibility       | Unit, theme, state, and unsupported-feature behavior is documented and tested per target        |
+| Area           | Required proof                                                                                       |
+| -------------- | ---------------------------------------------------------------------------------------------------- |
+| Core           | In-memory operation without environment, framework, parser, or build-tool dependencies               |
+| Types          | Named styles and token domains infer precisely; invalid schemes and overrides fail                   |
+| Themes         | Each theme has light/dark colors; compatible themes share token identities                           |
+| Web scopes     | Custom-property inheritance, nested themes, and explicit/system schemes work without a theme runtime |
+| Native schemes | Every theme/scheme pair is precompiled; selection is a deterministic lookup                          |
+| Standards      | CSS values, selectors, at-rules, declaration order, and cascade retain their semantics               |
+| Integration    | Document, component, template, native, server, and library consumers share the same contracts        |
+| Minimalism     | No required providers, wrappers, global setup, platform detection, or runtime compilation            |
 
 ## Scope
 
-This revision changes the plan and repository conventions, not the implemented compiler architecture. React Native, the portable core, and the new extension contracts remain planned. The current web examples keep working while those phases are implemented. No CSS polyfill engine, component library, universal component wrapper, or general-purpose plugin framework is planned.
+The API and phases above are proposed. This revision updates documentation only; it does not implement custom themes, portable-core extraction, or native output. The web baseline remains usable while these phases land.

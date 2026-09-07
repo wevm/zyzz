@@ -1,62 +1,188 @@
-# Architecture
+# Architecture and API
 
-## Direction
+## Status
 
-Typestyle is a small, typed, standards-oriented styling system. Its core owns ordered declarations, token resolution, validation, diagnostics, and deterministic identity. It is independent of execution environment, source parser, rendering target, framework, and build tool.
-
-The architecture below is the target of the implementation plan. The existing POC remains a web compiler with Vite and filesystem adapters; this document does not claim native support is implemented.
+This is the proposed API contract for the implementation phases in [the plan](plan.md). Only the existing `css()` web shorthand is implemented. Theme definitions, named styles, target compilers, and native selection below are planned APIs.
 
 ## Boundaries
 
-| Part               | Responsibility                                                                         | Excluded dependencies                                                          |
-| ------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Core               | Pure operations on typed, ordered style data                                           | Node built-ins, filesystem, DOM, device globals, parsers, frameworks, bundlers |
-| Presets            | Geist/Tailwind defaults, typed custom tokens, optional aliases                         | Global registration or environment detection                                   |
-| Source adapters    | Static TS/TSX or framework-source extraction, bindings, source locations and rewriting | Target semantics and application-code execution                                |
-| Web target         | Standard CSS, class references, CSS-specific capability checks                         | Framework components and bundler lifecycle                                     |
-| Native target      | Static native style data, documented conversions, native capability checks             | CSS-engine emulation and runtime style generation                              |
-| Host adapters      | Vite, Metro, CLI, file resolution, watching, output delivery and lifecycle             | A second implementation of style semantics                                     |
-| Framework examples | Consume target output through normal class/style APIs                                  | Mandatory wrappers, providers or custom JSX runtimes                           |
+The core operates on typed, ordered style data. Validation, token contracts, and deterministic identity are pure operations with no filesystem, browser, device, parser, framework, or build-tool dependencies.
 
-Use modules and subpath exports first. Extensions are explicit data or functions passed through narrow boundaries. Separate packages and more general interfaces require a demonstrated need.
+| Module          | Responsibility                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| Core            | Style definitions, theme contracts, ordered declarations, validation, diagnostics                      |
+| Presets         | Optional colors, typography, spacing, radius, and condition aliases                                    |
+| Source adapters | Extract static definitions, resolve supplied imports, retain source locations, rewrite authoring calls |
+| Web target      | Emit CSS, class names, theme scopes, and web capability errors                                         |
+| Native target   | Emit static style tables and native capability errors                                                  |
+| Host adapters   | Read files, watch dependencies, deliver artifacts, integrate build lifecycles                          |
 
-## Data flow
+Use modules and subpath exports first. Extensions receive explicit data or narrow functions. Frameworks consume their platform's normal class or style API; providers and component wrappers are unnecessary.
 
-Source extraction produces ordered style data with source locations. The core validates declarations and resolves an explicitly supplied preset. A selected target emits artifacts and target-specific diagnostics. The host decides how to read source and deliver those artifacts.
+Source extraction produces the same data accepted directly by the in-memory compilers. Filesystem resolution, parsing, emission, and artifact delivery remain separate operations. The core never executes application source or detects its environment.
 
-The core also accepts in-memory style data directly. There is no requirement to install Vite, use a filesystem, parse TypeScript, or run a CLI to access its operations. Extraction, emission, and file delivery are separate contracts.
+## Authoring API
 
-## Shared authoring and target differences
+The existing web shorthand remains:
 
-Portable declarations and token names are shared; output types are target-specific. Web consumers receive class references and CSS. Native consumers receive static data compatible with their style APIs. Target-only declarations are explicitly typed, and unsupported semantics are compilation errors.
+```ts
+import { css } from 'typestyle'
 
-React Native accepts objects and arrays through its `style` prop and has differences from browser CSS; sharing an authoring model cannot mean treating a CSS class string as a native style. The native target must document unit conversion, precedence, supported properties, and theme/state selection. See the [React Native style contract](https://reactnative.dev/docs/style).
+const button = css({
+  paddingInline: 4,
+  borderRadius: 'md',
+  color: 'blue.700',
+})
+```
 
-Geist colors and typography and Tailwind spacing/radius values form a preset rather than a core dependency. Store semantic values independently of web strings such as `light-dark()` and `rem`; target emitters own serialization and conversion. Fonts are supplied by applications through their platform's normal loading mechanism.
+Its compiled result is a class-name string plus extracted CSS. The prototype accepts literal objects and its built-in tokens. Imported theme references and the following named-definition API require the planned extraction work.
 
-## Standards and precedence
+Named definitions preserve property names, style names, and token domains through inference:
 
-Use CSS properties and standard object spelling, CSS values/functions, selectors, at-rules, custom properties, inheritance, and cascade semantics wherever the target supports them. Preserve authored declaration order. Breakpoint conveniences are optional preset aliases with documented expansion; avoid hidden sorting that changes authored precedence.
+```ts
+import { Style, Theme } from 'typestyle'
 
-Web output follows the [CSS cascade and inheritance model](https://www.w3.org/TR/css-cascade-5/). Concatenating classes does not create a new override order. Native composition follows its documented target contract rather than pretending to implement the browser cascade.
+export const ocean = Theme.define({
+  contract: 'app',
+  name: 'ocean',
+  tokens: {
+    space: { sm: '0.5rem', md: '1rem' },
+    radius: { md: '0.5rem' },
+  },
+  colorSchemes: {
+    light: {
+      color: { surface: '#ffffff', text: '#171717', accent: '#0066cc' },
+    },
+    dark: {
+      color: { surface: '#111111', text: '#ededed', accent: '#66aaff' },
+    },
+  },
+})
 
-The POC's `[value]` escapes, limited condition keys, and fixed pseudo/breakpoint ordering are provisional. Phase 2 revisits them against the standards-first authoring contract without silently changing existing examples during this planning revision.
+export const styles = Style.define({
+  card: {
+    padding: ocean.tokens.space.md,
+    borderRadius: ocean.tokens.radius.md,
+    color: ocean.tokens.color.text,
+    backgroundColor: ocean.tokens.color.surface,
+  },
+})
+```
 
-## Compilation and runtime
+`Style.define(styles)` returns immutable named definition data, preserving literal names. It does not generate classes or mutate a global registry. Target compilers accept these definitions; source adapters replace their application references with generated target exports.
 
-All style definitions compile ahead of time. Extraction never evaluates application code. Web emits CSS and removes the authoring macro. Native emits static objects or equivalent data; a small target adapter may select precompiled alternatives for interaction, viewport, scheme, or accessibility inputs.
+Property and value types follow CSS spelling and syntax. Token references carry their domain and contract: a spacing reference cannot satisfy a color property. Target capability validation rejects unsupported properties, selectors, functions, and units with source locations when available.
 
-Runtime state is passed explicitly to the adapter that needs it. No core code reads `window`, `document`, `process`, or device APIs. Native adapters must not become a runtime CSS parser, arbitrary expression evaluator, or style compiler.
+## Theme API
 
-## Current implementation and migration
+| Call                           | Input                                                                                                   | Result                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `Theme.define(options)`        | Stable `contract`, theme `name`, shared `tokens`, complete `colorSchemes.light` and `colorSchemes.dark` | Immutable definition with inferred, opaque `tokens` references      |
+| `Theme.extend(theme, options)` | New `name`, optional partial shared tokens and partial scheme overrides                                 | Complete theme retaining the original contract and token references |
 
-| Current module                        | Next change                                                                                   |
-| ------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `Style.ts` / `internal/Properties.ts` | Separate portable declarations from target capability types                                   |
-| `Tokens.ts` / `internal/Geist.ts`     | Extract configurable preset data and separate target serialization                            |
-| `Compiler.ts`                         | Split Babel extraction, semantic processing, and CSS emission; remove `node:crypto` from core |
-| `Vite.ts`                             | Keep as an optional thin host adapter                                                         |
-| `Build.ts` / `cli.ts`                 | Separate in-memory artifact compilation from filesystem and declaration-emission concerns     |
-| `examples/`                           | Retain web baseline; add focused React, Vue, and native fixtures as the relevant phases land  |
+Every theme defines both schemes with exactly matching color keys. Scheme-dependent colors appear under `colorSchemes`; shared spacing, radius, and typography belong under `tokens`. `theme.tokens.color` exposes semantic references without choosing a scheme.
 
-The existing standalone builder's ownership manifest, preservation of previous output on compile errors, and ESM/declaration output remain useful host-adapter contracts. The existing 29 tests establish the web baseline only. New core isolation, native behavior, and interoperability gates are specified in `plan.md`.
+The contract identifier and domain/key paths determine token identity, independently of theme names and values. A contract identifier must have one schema within a compilation. Different contract identifiers remain isolated; compatible themes share references through `Theme.extend()`.
+
+```ts
+export const forest = Theme.extend(ocean, {
+  name: 'forest',
+  colorSchemes: {
+    light: { color: { accent: '#147d32' } },
+    dark: { color: { accent: '#65d982' } },
+  },
+})
+```
+
+Extension resolves missing overrides from the base at compile time. It cannot add token keys or change token domains. Each emitted theme contains the complete resolved token set, preventing values from an outer theme leaking into a nested theme.
+
+Unknown keys, missing scheme colors, mismatched domains, conflicting contract schemas, duplicate theme names, and unresolved theme references are errors. Literal inference provides authoring errors; compiler validation also protects data received from untyped callers.
+
+Theme values must be statically resolvable. Presets supply ordinary definition data using the same contract. Color literals are portable where supported by the target; target-specific CSS expressions remain web capabilities and produce native errors when conversion is unavailable.
+
+## Web compilation and color schemes
+
+```ts
+import * as Web from 'typestyle/web'
+
+const web = Web.compile({ styles, themes: [ocean, forest] })
+
+web.css // Complete stylesheet string.
+web.classes.card // Class-name string for this named style.
+web.themes.ocean // Theme scope class-name string.
+web.themes.forest // Compatible theme scope class-name string.
+```
+
+`Web.compile(options)` is a pure, in-memory build operation. It returns `{ css, classes, themes }` with inferred style and theme names. Invalid inputs throw `Web.CompileError` containing structured diagnostics. Host adapters decide filenames, imports, caching, and how to preserve previous artifacts on failure.
+
+Applications consume generated constants and CSS, without calling the compiler during rendering. Libraries distribute those artifacts and declarations directly; their consumers do not need source extraction.
+
+Theme scopes emit CSS custom properties. Scheme-dependent color values use the standard `light-dark()` function. Style classes reference those properties, so changing themes does not require regenerating component classes. Shared tokens emit ordinary custom properties.
+
+Theme selection and color-scheme selection are independent. A theme scope does not force a scheme. Use normal CSS to select the scheme on the root or any subtree:
+
+```css
+:root {
+  color-scheme: light dark;
+}
+
+.light {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+```
+
+`light dark` allows the browser to select a supported scheme using user preference. `light` and `dark` force that scheme for the scope. There is no third stored “system” scheme. Without an explicit supported scheme, standard browser behavior applies; the compiler does not install a preference listener.
+
+Generated theme classes define values without overriding inherited `color-scheme`. Nested theme scopes replace the full contract; nested scheme scopes change color selection while retaining the theme. Apply at most one theme class per contract on an element. Multiple independent contracts can coexist.
+
+The web target follows [CSS color-scheme](https://www.w3.org/TR/css-color-adjust-1/#color-scheme-prop) and [light-dark()](https://www.w3.org/TR/css-color-5/#light-dark). Browser acceptance tests must cover nested scopes, inherited custom properties, forced schemes, preference changes, and server-rendered markup before this output strategy is accepted.
+
+## Native compilation and selection
+
+```ts
+import * as Native from 'typestyle/native'
+
+const native = Native.compile({
+  styles,
+  themes: [ocean, forest],
+  units: { rem: 16 },
+})
+
+native.styles.ocean.light.card // Static platform style object.
+native.styles.ocean.dark.card // Another precompiled scheme.
+
+const selected = Native.select(native.styles, {
+  theme: 'forest',
+  colorScheme: 'dark',
+})
+
+selected.card // Reference to the precompiled object.
+```
+
+`Native.compile(options)` returns `{ styles }`, indexed by theme name, scheme, and style name. It throws `Native.CompileError` with diagnostics for unsupported semantics. Both schemes for every supplied theme are resolved ahead of time; no CSS custom-property resolution occurs on the device.
+
+Conversions are explicit: `units.rem` is required when definitions use `rem`. Font mappings are supplied by the target adapter when needed. Unsupported units or CSS-only behavior fail compilation; the target never silently approximates selectors, cascade, or inheritance.
+
+`Native.select(table, options)` is an optional pure lookup that preserves object identity. Its inferred inputs accept only compiled theme names and `light | dark`. Invalid untyped inputs throw `Native.SelectionError`. It does not merge styles, parse values, compile, or read device preferences.
+
+An application adapter resolves the device preference to `light` or `dark` and passes that value explicitly. Framework state can distribute this choice using normal platform patterns. Web class references and native style objects remain distinct output types.
+
+## Static extraction, ordering, and delivery
+
+Adapters recognize `css()`, `Style.define()`, `Theme.define()`, and `Theme.extend()` with literals and statically resolvable bindings. Import resolution is an injected source-adapter capability. Arbitrary function calls, runtime branches, and unresolved values produce actionable compile errors.
+
+Preserve authored declaration order and standard web cascade behavior. Class concatenation does not change stylesheet precedence. Native composition follows the platform contract. Optional condition aliases expand predictably without hidden ordering changes.
+
+Style identities depend on canonical ordered declarations and token references. Theme scope identities also include resolved theme content. Compiling identical inputs produces identical output across hosts; emitted token names remain stable when only a compatible theme's values change.
+
+Development adapters track style and theme dependencies, update affected artifacts, and report errors beside source. Production adapters invoke the same compiler. The standalone adapter writes compiled modules, CSS, and declarations for libraries. No host owns an alternative implementation of theme or style semantics.
+
+## Acceptance and migration
+
+The existing 29 tests establish the web prototype baseline. Refactor extraction and emission before adding target APIs. Implement theme inference and both color schemes before native selection and additional host integrations.
+
+API type fixtures must reject wrong token domains, incomplete schemes, unknown overrides, and invalid selection names. Behavioral fixtures must verify theme switching without component recompilation, nested scopes, deterministic artifacts, explicit native conversions, and lookup identity. The phased gates remain in [the plan](plan.md).

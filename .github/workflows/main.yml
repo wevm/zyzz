@@ -15,7 +15,6 @@ jobs:
 
   changesets:
     name: Changesets
-    if: ${{ vars.RELEASE_ENABLED == 'true' && !github.event.repository.private }}
     needs: verify
     permissions:
       contents: write

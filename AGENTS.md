@@ -119,7 +119,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - Use the smallest repository script that covers the changed behavior. Run focused tests while iterating.
 - Run `pnpm check:types` after TypeScript changes.
 - Use `pnpm test` for Vite Plus tests. The generated greeting test verifies the scaffold only; add styling tests with implementation.
-- `pnpm check` is read-only; `pnpm format` applies formatting. Inspect and keep only task-related changes.
+- `pnpm check` runs formatting, lint, and type checks with fixes. Inspect and keep only task-related changes.
 - Run `git diff --check` and inspect the final diff before reporting completion.
 
 ## Git Conventions
@@ -152,13 +152,11 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - Prettier is banned. Use Vite Plus with oxfmt for formatting and oxlint for linting, configured in `vite.config.ts`.
 - Use zile for library builds and development linking. Vite Plus is repository tooling, not a dependency of the styling core.
 - Keep namespace exports, strict TypeScript settings, and source-first package entrypoints aligned with the zile scaffold.
-- Put scripts, devDependencies, and packageManager before `[!start-pkg]` in package.json. Package metadata and runtime dependencies follow it; keep `private: true` after the marker so zile preserves it. Do not sort package.json keys.
+- Put scripts, devDependencies, and packageManager before `[!start-pkg]` in package.json. Package metadata and runtime dependencies follow it. Do not sort package.json keys.
 - Use the single scaffold tsconfig.json. Zile derives build inputs from package entrypoints; do not add a separate build tsconfig.
-- Preserve private package status; keep release and prerelease jobs disabled until publication is requested.
 
 ## Commands
 
-- `pnpm check` runs read-only format, lint, and type checks through `vp check`.
-- `pnpm format` runs `vp fmt`; `pnpm lint` runs `vp lint`.
+- `pnpm check` runs `vp check --fix`; use this single script for formatting, linting, and type checks.
 - `pnpm check:types` runs TypeScript checking; `pnpm test` runs `vp test`.
 - `pnpm build` runs zile; `pnpm dev` runs `zile dev`.

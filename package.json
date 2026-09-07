@@ -1,11 +1,9 @@
 {
   "scripts": {
     "build": "zile",
-    "check": "vp check",
+    "check": "vp check --fix",
     "check:types": "tsc",
     "dev": "zile dev",
-    "format": "vp fmt",
-    "lint": "vp lint",
     "test": "vp test",
     "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
     "changeset:version": "changeset version"
@@ -21,7 +19,6 @@
   "[!start-pkg]": "",
   "name": "typestyle",
   "version": "0.0.0",
-  "private": true,
   "license": "UNLICENSED",
   "description": "Type-safe style props compiled to static CSS.",
   "type": "module",

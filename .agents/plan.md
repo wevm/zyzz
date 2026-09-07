@@ -128,7 +128,7 @@ Status: planned.
 - [ ] Measure compilation, incremental updates, type-check cost, raw/compressed CSS, class-string bytes, total transfer, browser style recalculation, and native adapter cost independently.
 - [ ] Measure theme multiplication and generated-table size; deduplicate without changing observable theme or cascade semantics.
 - [ ] Compare atomic and grouped output on repeated and unique styles; optimize the smaller safe representation. Measure the agreed variant API; defer additional recipe abstractions and slot systems until concrete usage justifies them.
-- [ ] Keep the repository and package private until publication is requested.
+- [ ] Verify package metadata and the standard changeset/release workflow.
 
 Gate: a small documented API, tested compatibility matrix, reproducible measurements, and working independent web/native consumers.
 

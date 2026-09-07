@@ -3,7 +3,6 @@ on: [push, pull_request]
 
 jobs:
   build:
-    if: ${{ vars.RELEASE_ENABLED == 'true' && !github.event.repository.private }}
     runs-on: ubuntu-latest
 
     steps:

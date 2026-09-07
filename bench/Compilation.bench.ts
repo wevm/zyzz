@@ -46,6 +46,7 @@ for (const workload of Corpus.cases) {
                 Path.join(directory, `${library}.json`),
                 JSON.stringify(
                   {
+                    application: 'independent',
                     components: workload.count,
                     css,
                     declarations: fixture.zyzz.styles.reduce(

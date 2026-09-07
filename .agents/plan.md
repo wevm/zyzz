@@ -97,10 +97,12 @@ Acceptance: all libraries share final CSS processing and retain equivalent brows
 
 ### PR 1.3 — Static Source Extraction
 
-- [ ] Add the token-free `css` authoring signature for literal objects. An untransformed call fails with an actionable missing-transform error; it never generates styles at runtime. Dynamic binding callbacks and richer value syntax remain in Phase 2.
-- [ ] Implement parser-owned binding analysis over supplied source text. Recognize direct and renamed imports from `zyzz`, and distinguish shadowed bindings and unrelated functions named `css`.
-- [ ] Extract direct literal calls wherever they occur, including inline markup and exported constants, into the same ordered data consumed by `Css.compile`. Require host-supplied portable module identity instead of reading the environment.
-- [ ] Diagnose dynamic values, spreads, unsupported callbacks, and unresolved definitions with source spans. Run real extraction-to-compilation scenarios proving extraction never executes application code, and benchmark that pipeline. Imported style definitions, theme bindings, and broader static evaluation remain in Phase 2.
+Status: implemented on the static-source-extraction branch; validation is in progress.
+
+- [x] Add the token-free `css` authoring signature for literal objects. An untransformed call fails with an actionable missing-transform error; it never generates styles at runtime. Dynamic binding callbacks and richer value syntax remain in Phase 2.
+- [x] Use standalone Oxc parsing and two-pass binding analysis over supplied source text. Recognize direct and renamed imports from `zyzz`, distinguish shadowed bindings and unrelated functions named `css`, and isolate function-body variables from parameter initializers. Keep the scope correction internal and cover it through extraction-to-CSS integration fixtures.
+- [x] Extract direct literal calls wherever they occur, including inline markup and exported constants, into the same ordered data consumed by `Css.compile`. Require host-supplied portable module identity instead of reading the environment.
+- [x] Diagnose dynamic values, spreads, unsupported callbacks, and unresolved definitions with source spans. Run real extraction-to-compilation scenarios proving extraction never executes application code, and benchmark that pipeline. Imported style definitions, theme bindings, and broader static evaluation remain in Phase 2.
 
 Acceptance: supported source calls and equivalent in-memory definitions produce equivalent compiler input and CSS. Token names and numeric spacing tokens fail in root calls; unrelated bindings remain untouched. Parsers stay outside core and target entrypoints.
 
@@ -245,6 +247,14 @@ Gate: a small documented API, tested compatibility matrix, reproducible measurem
 The API and phases above are proposed. Implementation begins at Phase 1 with no retained code baseline. Build each capability and its acceptance fixtures before marking its phase complete.
 
 ## Benchmark Expansion
+
+Performance target: Zyzz leads every applicable workload against every enabled compiler in build time and combined CSS/required-JavaScript transfer (raw, gzip, and Brotli). Report individual CSS and JavaScript measurements as well. A feature or optimization phase is not performance-complete while known losses remain. Confirm timing advantages in repeated, sequential, matched runs; a noisy single-run ranking is insufficient.
+
+Baseline size gaps, measured after shared Lightning CSS processing in [benchmark run 34145064696](https://github.com/wevm/zyzz/actions/runs/34145064696): reused palette totals 1,165 gzip bytes against Tailwind's 1,039; mixed components total 1,038 against vanilla-extract's 919. Build time leads all eight current workloads. Independent composition now closes these gaps by deduplicating complete applications, without changing the default ordered emitter. The component matrix explicitly measures independent applications and gates all eight workloads; arbitrary raw class composition remains a distinct contract and is browser-tested in ordered mode.
+
+- [x] Close the palette and mixed-component transfer gaps for independent applications while retaining readable class names and the default ordered mode's shorthand/longhand behavior and A/B/A override order. Verify all eight workloads after each candidate, including raw/gzip/Brotli regressions outside the target case.
+- [ ] Evaluate composition-aware declaration sharing with real generated props and conflict metadata as those APIs land. Do not merge repeated conflicting rules in the current ordered emitter or compare reduced-semantics output as a replacement for it.
+- [x] Extend transfer regression gates to every independent-component workload once matched results establish the target. Keep all competitors and workloads visible while gaps remain; do not loosen existing gates or optimize benchmark-only serialization.
 
 Status: eight literal workloads and five real compiler adapters are implemented on PR 1.2. Panda CSS joins the existing adapters. Tamagui has been removed from the PR matrix due to extraction cost; no additional styling libraries are authorized. Browser equivalence covers every workload. Existing size gates remain; discovery cases expose further optimization targets.
 

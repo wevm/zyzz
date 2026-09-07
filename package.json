@@ -52,10 +52,20 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./compiler": {
+      "src": "./src/compiler/index.ts",
+      "types": "./dist/compiler/index.d.ts",
+      "default": "./dist/compiler/index.js"
+    },
     "./web": {
       "src": "./src/web/index.ts",
       "types": "./dist/web/index.d.ts",
       "default": "./dist/web/index.js"
     }
+  },
+  "dependencies": {
+    "@oxc-project/types": "0.148.0",
+    "oxc-parser": "0.148.0",
+    "oxc-walker": "1.1.1"
   }
 }

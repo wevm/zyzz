@@ -12,6 +12,7 @@
     "noUncheckedSideEffectImports": true,
     "paths": {
       "zyzz": ["./src/index.ts"],
+      "zyzz/compiler": ["./src/compiler/index.ts"],
       "zyzz/web": ["./src/web/index.ts"]
     },
     "skipLibCheck": true,

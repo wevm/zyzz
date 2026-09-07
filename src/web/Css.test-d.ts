@@ -12,3 +12,11 @@ expectTypeOf(result.classes.missing)
 result.classes.card = 'changed'
 // @ts-expect-error Theme compilation is not supported at the literal boundary.
 Css.compile({ styles: Style.define({}), themes: {} })
+
+const independent = Css.compile({
+  composition: 'independent',
+  styles: Style.define({ card: { padding: 0 } }),
+})
+expectTypeOf<keyof typeof independent.classes>().toEqualTypeOf<'card'>()
+// @ts-expect-error Compilation requires an explicit supported composition contract.
+Css.compile({ composition: 'automatic', styles: Style.define({}) })

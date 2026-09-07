@@ -9,6 +9,7 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 - [**Value Syntax**](#value-syntax): fallbacks, importance, expressions, and theme CSS variables.
 - [**Composition**](#composition): explicit overrides between generated styles.
 - [**Stylesheets and Compilation**](#stylesheets-and-compilation): global rules, animations, fonts, and web/native output.
+- [**Source Extraction**](#source-extraction): literal source definitions and diagnostics without evaluation.
 - [**CLI**](#cli): standalone compilation with watch mode.
 
 ## Philosophy
@@ -162,6 +163,8 @@ const styles = Style.define({
 const output = Css.compile({ styles })
 ```
 
+Use `composition: 'independent'` to deduplicate complete applications whose composition is resolved before compilation. Those generated class lists must remain separate. The default `ordered` mode preserves stylesheet precedence across combined class lists.
+
 ```ts
 import { StyleSheet } from 'zyzz/react-native'
 
@@ -170,6 +173,22 @@ const selected = StyleSheet.select(output.styles, {
   theme: 'base',
   colorScheme: 'dark',
 })
+```
+
+### Source Extraction
+
+Extract literal definitions from source text and compile their CSS. Source extraction returns call spans and validated styles; executing authoring calls requires source rewriting.
+
+```ts
+import { Source } from 'zyzz/compiler'
+import { Css } from 'zyzz/web'
+
+const result = Source.extract({
+  moduleId: 'app/button.tsx',
+  source:
+    "import { css } from 'zyzz'; export const button = css({ padding: 0 })",
+})
+const output = Css.compile({ styles: result.styles })
 ```
 
 ### CLI

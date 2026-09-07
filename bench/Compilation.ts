@@ -34,6 +34,15 @@ export const compilers = {
 /** Writes real compiler inputs from a shared deterministic literal workload. */
 export async function create(workload: Corpus.Case): Promise<Fixture> {
   const directory = await Fs.mkdtemp(Path.resolve('.fixture-compilation-'))
+  // Package-relative file identities must not depend on the random temporary root.
+  await Fs.writeFile(
+    Path.join(directory, 'package.json'),
+    JSON.stringify({
+      name: 'benchmark-fixture',
+      private: true,
+      type: 'module',
+    }),
+  )
   const styles = Corpus.styles(workload)
   const names = styles.map((_, index) => `card${index}`)
   await Fs.writeFile(
@@ -181,6 +190,7 @@ export async function tailwind(fixture: Fixture): Promise<Bundle> {
 /** Runs vanilla-extract's official esbuild integration with fresh compiler state. */
 export async function vanillaExtract(fixture: Fixture): Promise<Bundle> {
   const result = await Esbuild.build({
+    absWorkingDir: fixture.directory,
     bundle: true,
     entryPoints: [Path.join(fixture.directory, 'styles.css.ts')],
     format: 'iife',
@@ -202,9 +212,12 @@ export async function vanillaExtract(fixture: Fixture): Promise<Bundle> {
   return { css: minify(css), javascript }
 }
 
-/** Emits grouped CSS from prepared definitions and bundles static class exports. */
+/** Compiles independent component applications and bundles their static class exports. */
 export async function zyzz(fixture: Fixture): Promise<Bundle> {
-  const output = Css.compile({ styles: fixture.zyzz })
+  const output = Css.compile({
+    composition: 'independent',
+    styles: fixture.zyzz,
+  })
   return {
     css: minify(output.css),
     javascript: await javascript(

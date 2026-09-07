@@ -9,6 +9,25 @@ import * as Corpus from './Corpus.js'
 
 type Size = { brotli: number; gzip: number; raw: number }
 
+test('temporary fixture roots do not change vanilla-extract delivery artifacts', async () => {
+  const first = await Compilation.create(Corpus.cases[0])
+  const second = await Compilation.create(Corpus.cases[0])
+  try {
+    const a = await Compilation.vanillaExtract(first)
+    const b = await Compilation.vanillaExtract(second)
+    expect({ css: a.css === b.css, javascript: a.javascript === b.javascript })
+      .toMatchInlineSnapshot(`
+        {
+          "css": true,
+          "javascript": true,
+        }
+      `)
+  } finally {
+    await Fs.rm(first.directory, { force: true, recursive: true })
+    await Fs.rm(second.directory, { force: true, recursive: true })
+  }
+})
+
 for (const workload of Corpus.cases) {
   test(`compilers render equivalent CSS / ${workload.name}`, async () => {
     const fixture = await Compilation.create(workload)
@@ -97,9 +116,8 @@ for (const workload of Corpus.cases) {
           await page.close()
         }
       }
-      // Extend established transfer gates only where every measured competitor loses.
-      // Remaining workloads retain browser parity and publish their size gaps.
-      if (['partial', 'repeated', 'small', 'unique'].includes(workload.name)) {
+      // Every workload must beat every competitor in combined transfer.
+      {
         const zyzz = sizes.get('zyzz')!
         for (const [library, size] of sizes) {
           if (library === 'zyzz') continue

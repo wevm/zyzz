@@ -1,0 +1,354 @@
+import type * as Ast from '@oxc-project/types'
+import * as Parser from 'oxc-parser'
+import * as Walker from 'oxc-walker'
+import * as Style from '../Style.js'
+import * as Scope from './internal/Scope.js'
+
+/** A direct definition call available for a later source rewriter. */
+export type Call = {
+  /** Exclusive UTF-16 offset of the complete call. */
+  readonly end: number
+  /** Matching name in the extracted style definition. */
+  readonly name: string
+  /** Inclusive UTF-16 offset of the complete call. */
+  readonly start: number
+}
+
+/** A source-owned extraction failure. */
+export type Diagnostic = {
+  /** Stable failure category. */
+  readonly code:
+    | 'invalid_literal'
+    | 'invalid_module'
+    | 'syntax_error'
+    | 'unsupported_syntax'
+  /** Exclusive UTF-16 source offset. */
+  readonly end: number
+  /** Explanation of the supported input boundary. */
+  readonly message: string
+  /** Portable module identity supplied by the host. */
+  readonly source: string
+  /** Inclusive UTF-16 source offset. */
+  readonly start: number
+}
+
+/**
+ * Extracts direct literal calls bound to named css imports from zyzz.
+ * Parses TypeScript and JSX without reading files, loading config, or evaluating source.
+ * @param options - Source text and a portable package-relative module identity.
+ * @returns Frozen ordered definitions and call spans. Source text is not rewritten.
+ * @throws {ExtractError} For syntax errors, unsupported imported references, or invalid literals.
+ */
+export function extract(options: extract.Options): extract.ReturnType {
+  const calls: Call[] = []
+  const diagnostics: Diagnostic[] = []
+  const pending: Ast.CallExpression[] = []
+  const styles: Style.NamedStyle[] = []
+  function report(
+    code: Diagnostic['code'],
+    message: string,
+    node?: Pick<Ast.Node, 'end' | 'start'>,
+  ) {
+    diagnostics.push({
+      code,
+      end: node?.end ?? 0,
+      message,
+      source: options.moduleId,
+      start: node?.start ?? 0,
+    })
+  }
+  if (
+    !options.moduleId ||
+    options.moduleId.includes('\\') ||
+    options.moduleId.includes(':') ||
+    options.moduleId
+      .split('/')
+      .some((part) => !part || part === '.' || part === '..')
+  ) {
+    report(
+      'invalid_module',
+      'Expected a portable package-relative module ID without absolute paths, backslashes, or traversal segments.',
+    )
+    throw new ExtractError(diagnostics)
+  }
+  const parsed = Parser.parseSync('source.tsx', options.source, {
+    preserveParens: false,
+    showSemanticErrors: true,
+    sourceType: 'module',
+  })
+  if (parsed.errors.length) {
+    for (const error of parsed.errors) {
+      const span = error.labels[0]
+      report('syntax_error', error.message, span)
+    }
+    throw new ExtractError(diagnostics)
+  }
+  const program = parsed.program
+  const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
+  Walker.walk(program, { scopeTracker })
+  scopeTracker.freeze()
+  const ancestors: Ast.Node[] = []
+  Walker.walk(program, {
+    enter(node, parent) {
+      ancestors.push(node)
+      if (
+        (node.type !== 'Identifier' && node.type !== 'JSXIdentifier') ||
+        !parent ||
+        !Walker.isReferenceIdentifier(node, parent)
+      )
+        return
+      // Both passes visit identical scopes; skipping type subtrees changes scope IDs.
+      if (
+        ancestors.some(
+          (ancestor) =>
+            ancestor.type === 'TSTypeAnnotation' ||
+            ancestor.type === 'TSTypeAliasDeclaration' ||
+            ancestor.type === 'TSInterfaceDeclaration' ||
+            ancestor.type === 'TSTypeQuery' ||
+            (ancestor.type === 'ExportNamedDeclaration' &&
+              (ancestor.source !== null || ancestor.exportKind === 'type')) ||
+            (ancestor.type === 'ExportSpecifier' &&
+              ancestor.exportKind === 'type'),
+        )
+      )
+        return
+      const binding = scopeTracker.getDeclaration(node.name)
+      if (
+        binding?.type !== 'Import' ||
+        binding.importNode.source.value !== 'zyzz' ||
+        binding.importNode.importKind === 'type'
+      )
+        return
+      const specifier = binding.node
+      if (specifier.type === 'ImportNamespaceSpecifier') {
+        if (
+          parent.type === 'MemberExpression' &&
+          parent.object === node &&
+          ((parent.property.type === 'Identifier' &&
+            !parent.computed &&
+            parent.property.name === 'css') ||
+            (parent.property.type === 'Literal' &&
+              parent.property.value === 'css'))
+        )
+          report(
+            'unsupported_syntax',
+            'Import css by name; namespace authoring calls are not supported yet.',
+            parent,
+          )
+        return
+      }
+      if (
+        specifier.type !== 'ImportSpecifier' ||
+        specifier.importKind === 'type' ||
+        (specifier.imported.type === 'Identifier'
+          ? specifier.imported.name
+          : specifier.imported.value) !== 'css'
+      )
+        return
+      // Follow only assignment targets; computed keys and default values are reads.
+      let target: Ast.Node = node
+      let write: Ast.Node | undefined
+      for (let index = ancestors.length - 2; index >= 0; index--) {
+        const ancestor = ancestors[index]!
+        if (
+          (ancestor.type === 'AssignmentExpression' &&
+            ancestor.left === target) ||
+          (ancestor.type === 'UpdateExpression' &&
+            ancestor.argument === target) ||
+          ((ancestor.type === 'ForInStatement' ||
+            ancestor.type === 'ForOfStatement') &&
+            ancestor.left === target)
+        ) {
+          write = ancestor
+          break
+        }
+        if (
+          (ancestor.type === 'Property' && ancestor.value === target) ||
+          ancestor.type === 'ObjectPattern' ||
+          ancestor.type === 'ArrayPattern' ||
+          (ancestor.type === 'RestElement' && ancestor.argument === target) ||
+          (ancestor.type === 'AssignmentPattern' && ancestor.left === target)
+        )
+          target = ancestor
+        else break
+      }
+      if (write)
+        report(
+          'unsupported_syntax',
+          'Imported css bindings cannot be reassigned.',
+          write,
+        )
+      else if (
+        parent.type === 'CallExpression' &&
+        parent.callee === node &&
+        !parent.optional
+      )
+        pending.push(parent)
+      else
+        report(
+          'unsupported_syntax',
+          'Use a direct css call; aliases, re-exports, and indirect references are not supported yet.',
+          node,
+        )
+    },
+    leave() {
+      ancestors.pop()
+    },
+    scopeTracker,
+  })
+  // Imports and reference lists can have a different order from authored calls.
+  pending.sort((a, b) => a.start - b.start)
+  for (const call of pending) {
+    let argument = call.arguments[0]
+    while (
+      argument?.type === 'TSAsExpression' ||
+      argument?.type === 'TSSatisfiesExpression'
+    )
+      argument = argument.expression
+    if (call.arguments.length !== 1 || argument?.type !== 'ObjectExpression') {
+      report(
+        'unsupported_syntax',
+        'Expected one direct literal object; callbacks, spreads, and referenced definitions are not supported yet.',
+        call,
+      )
+      continue
+    }
+    const before = diagnostics.length
+    const name = `style-${identity(options.moduleId)}-${call.start}`
+    const values: Record<string, unknown> = Object.create(null)
+    const locations: Style.SourceLocation[] = []
+    for (const property of argument.properties) {
+      if (
+        property.type !== 'Property' ||
+        property.kind !== 'init' ||
+        property.method ||
+        property.computed ||
+        property.shorthand ||
+        (property.key.type !== 'Identifier' &&
+          (property.key.type !== 'Literal' ||
+            typeof property.key.value !== 'string'))
+      ) {
+        report(
+          'unsupported_syntax',
+          'Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.',
+          property,
+        )
+        continue
+      }
+      const key =
+        property.key.type === 'Identifier'
+          ? property.key.name
+          : property.key.value
+      if (Object.hasOwn(values, key)) {
+        report(
+          'unsupported_syntax',
+          'Duplicate properties are not supported in source definitions yet.',
+          property,
+        )
+        continue
+      }
+      const value = property.value
+      if (
+        value.type === 'Literal' &&
+        (typeof value.value === 'string' || typeof value.value === 'number')
+      )
+        values[key] = value.value
+      else if (
+        value.type === 'UnaryExpression' &&
+        (value.operator === '-' || value.operator === '+') &&
+        value.argument.type === 'Literal' &&
+        typeof value.argument.value === 'number'
+      )
+        values[key] =
+          value.operator === '-' ? -value.argument.value : value.argument.value
+      else {
+        report(
+          'unsupported_syntax',
+          'Expected a literal string or number; expressions are not evaluated.',
+          value,
+        )
+        continue
+      }
+      locations.push({
+        end: value.end,
+        path: [name, key],
+        source: options.moduleId,
+        start: value.start,
+      })
+    }
+    if (diagnostics.length !== before) continue
+    try {
+      const definition = Style.define(
+        { [name]: values as Style.Properties },
+        { locations },
+      )
+      styles.push(...definition.styles)
+      calls.push({ end: call.end, name, start: call.start })
+    } catch (error) {
+      if (!(error instanceof Style.InvalidError)) throw error
+      for (const diagnostic of error.diagnostics)
+        diagnostics.push({
+          code: 'invalid_literal',
+          end: diagnostic.location?.end ?? call.end,
+          message: diagnostic.message,
+          source: options.moduleId,
+          start: diagnostic.location?.start ?? call.start,
+        })
+    }
+  }
+  if (diagnostics.length) throw new ExtractError(diagnostics)
+  return Object.freeze({
+    calls: Object.freeze(calls.map((call) => Object.freeze(call))),
+    styles: Object.freeze({ styles: Object.freeze(styles) }),
+  })
+}
+
+/** Input and output of source extraction. */
+export declare namespace extract {
+  /** Structured source failure. */
+  type ErrorType = ExtractError
+  /** Source text supplied by an adapter. */
+  type Options = {
+    /** Portable identity including package and module path; no filesystem access occurs. */
+    readonly moduleId: string
+    /** Complete module text, parsed as TypeScript with JSX. */
+    readonly source: string
+  }
+  /** Ordered public compiler input and spans for later rewriting. */
+  type ReturnType = {
+    /** Direct calls in source order. */
+    readonly calls: readonly Call[]
+    /** Validated definitions accepted by Css.compile. */
+    readonly styles: Style.Definition
+  }
+}
+
+/** Aggregated source diagnostics; no partial result is returned. */
+export class ExtractError extends Error {
+  /** Freezes source diagnostics in source order. */
+  constructor(diagnostics: readonly Diagnostic[]) {
+    const ordered = [...diagnostics].sort((a, b) => a.start - b.start)
+    super(
+      ordered
+        .map((item) => `${item.source}:${item.start}: ${item.message}`)
+        .join('\n'),
+    )
+    this.diagnostics = Object.freeze(
+      ordered.map((item) => Object.freeze({ ...item })),
+    )
+  }
+  /** Immutable source failures. */
+  readonly diagnostics: readonly Diagnostic[]
+  /** Stable namespaced error identifier. */
+  override name = 'Source.ExtractError'
+}
+
+function identity(value: string): string {
+  let first = 2166136261
+  let second = 2246822507
+  for (let index = 0; index < value.length; index++) {
+    first = Math.imul(first ^ value.charCodeAt(index), 16777619)
+    second = Math.imul(second ^ value.charCodeAt(index), 3266489909)
+  }
+  return `${(first >>> 0).toString(36)}${(second >>> 0).toString(36)}`
+}

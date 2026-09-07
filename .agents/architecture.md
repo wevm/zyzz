@@ -611,7 +611,7 @@ The default target is web. A later `--target native` emits static tables through
 
 ## Small CSS and readable classes
 
-Treat atomic rules, complete style rules, and shared declaration subsets as alternative representations of the same program. A dependency-aware graph optimizer chooses among safe representations within a deterministic work budget. Preserve grouped rules wherever splitting would change declaration order or cascade behavior. Correctness is a release gate, not a tradeoff for fewer bytes.
+The compiler emits well-structured standard CSS with sensible rule grouping and safe deduplication. Preserve authored cascade semantics and keep compatible rules together only where safety is established. Delegate general CSS optimization and minification to the build adapter or consuming build. Correctness is a release gate, not a tradeoff for fewer bytes.
 
 Readable names contain a property or documented abbreviation, a token/value label, and any condition label. Illustrative names are `p-md-k3m9`, `bg-surface-a7c2`, and `hover-bg-brand-b4d8`. A short deterministic suffix distinguishes theme contracts, values, conditions, and ordering contexts; names never consist solely of a hash.
 
@@ -627,37 +627,27 @@ Emit only reachable rules and used token variables. Explicit theme scopes retain
 
 Measure raw and compressed CSS, generated class-string bytes, total transferred bytes, rule count, compilation time, incremental updates, and representative browser style recalculation. Compare atomic and grouped output on repeated and mostly unique styles. Keep the smaller safe strategy without introducing a runtime or changing readable names.
 
-### Dependency-Aware Graph Optimization
+### Compiler and Minifier Responsibilities
 
-This design is planned; the current emitter only factors globally nonconflicting domains. The optimizer must find safe local sharing even when a declaration domain has different values elsewhere in the graph.
+Core owns typed style semantics, theme and variant lowering, composition, class references, CSS-variable bindings, and deterministic standard CSS output. Source analysis identifies reachable definitions; generated JavaScript and required runtime helpers remain the compiler's responsibility. Keep existing safe grouping and deduplication, but do not implement a general CSS minifier or graph-search optimizer for the MVP.
 
-Represent selector-to-declaration occurrences as a weighted bipartite graph, retaining authored occurrence identity and required ordering edges. A candidate shared rule is a biclique: every selected selector receives every selected declaration. Never introduce an edge absent from the input semantics. Declaration sequences remain ordered; identical text alone does not establish interchangeable occurrences.
+The CLI/build adapter uses Lightning CSS for final CSS minification and browser-target processing, or delegates final processing to the consuming build. Core imports do not include the minifier, browser-target databases, compression libraries, filesystem APIs, or environment detection. Standalone compilation remains usable without minification. Native emission remains separate from web post-processing.
 
-Build a conflict graph before proposing transformations. Preserve relative precedence wherever selectors may match the same element and declarations can affect the same computed property. Account for shorthand/longhand interactions and, as supported syntax expands, logical properties, importance, layers, theme scopes, conditions, and fallbacks. Keep uncertain relationships constrained. Ordinary class selectors may coexist; component names do not prove exclusivity.
+The minifier owns value shortening, shorthand generation, compatible adjacent-rule merging, prefix handling, and syntax lowering for configured browser targets. Supply known-unused symbols when available; the minifier cannot infer application reachability from CSS alone. Keep CSS identifiers aligned with generated JavaScript and preserve readable names; minification must not silently rename classes independently of their references.
 
-For example, padding shared by two earlier rules may be extracted before a later padding override even though padding is not globally constant. A repeated A/B/A sequence still requires distinct ordering contexts when combining those classes can change the winning value. Safe topological scheduling may move unrelated occurrences, but must preserve all required edges and declaration ordering.
+Use one final CSS processing stage. When the consumer owns minification, emit standard CSS and source maps without an additional mandatory minifier pass. When the adapter owns it, apply explicit browser targets and reproducible options, compose source maps, and preserve the same class identities across development and production. Syntax formatting may differ between these modes.
 
-Later variant analysis may prove that two exact values of the same data attribute on the same target element are mutually exclusive. Apply this proof only to the relevant selector scope; ancestor conditions and different attributes do not imply exclusivity.
+Emit compatible rules and condition blocks contiguously when their ordering is already safe. Never reorder conflicting declarations simply to enable a minifier merge. Arbitrary classes may coexist; shorthand/longhand interactions and repeated A/B/A overrides retain their semantics. Variant metadata may inform code generation, but does not justify a general selector solver.
 
-### Candidate Search and Cost
+### Measurement and Deferred Research
 
-Generate whole-style, atomic, and shared-subset candidates from the same validated input. Use declaration incidence indexes and bounded subset intersections to discover profitable bicliques without enumerating all possible subsets. Include selector bytes, repeated class references, declarations, and required delivery helpers in cost estimates. Recompute marginal savings after transformations; overlapping candidates cannot count the same saving twice.
+First establish a shared final-minification baseline across every benchmark library using the same Lightning CSS version, targets, and options. Keep required library artifacts and existing compiler workflows intact. Record pipeline differences, including unavoidable upstream minification; do not attribute source extraction or minifier time to the pure emitter. Measure raw/gzip/Brotli CSS and required JavaScript separately and as complete transfer, without double-counting class strings.
 
-Begin with greedy profitable merges and add a small bounded beam of alternatives to avoid premature choices. Candidate count, search expansions, and memory have fixed limits with deterministic traversal and tie-breaking. Wall-clock cutoffs must not determine normal output. Preserve the existing emitter output as a candidate and return it when no accepted improvement exists. Do not add a solver, filesystem access, compression dependency, or environment detection to core.
+Validate final processed CSS through real browser integration scenarios against independently interpreted authored declarations. Preserve current cascade and size gates; investigate any changed results rather than weakening gates automatically when changing the minifier. Compare baseline and candidate sequentially on the same host with unchanged workloads and report losses as well as wins.
 
-Raw size, gzip size, Brotli size, compilation time, and browser cost are separate objectives. A smaller raw representation can compress worse. The pure core uses byte estimates and returns a bounded candidate shortlist to an internal host boundary. Once the real source emitter exists, the build adapter may score complete minified CSS and JavaScript using actual separately compressed asset sizes. Start with total gzip as the primary transfer objective and explicit raw/Brotli regression budgets; record tradeoffs rather than claiming simultaneous minima.
+Custom conflict graphs, biclique discovery, beam search, solver experiments, equality saturation, dictionary extraction, and compression-based candidate selection are deferred research, not dependencies of source extraction or the MVP. Revisit only after a reproducible, material gap remains after standard minification and cannot be addressed with simpler code generation. Any proposal must account for added compile time, dependencies, correctness proofs, and full delivery cost. No benchmark-only pooling, fixture-specific branches, or runtime stylesheet decoder.
 
-Compression settings, compiler versions, naming context, and search budgets must be explicit and reproducible. Equivalent dev, production, CLI, and library builds use the same naming and optimization policy. Do not add benchmark-only string pooling, fixture-specific branches, or a runtime stylesheet decoder. The host retains the baseline if shortlisted candidates fail the selected objective or budgets.
-
-### Validation and Later Algorithms
-
-Exercise optimization through public authoring-to-compilation-to-browser integration tests. Compare against independently interpreted authored declarations, including supported combinations of classes. Cover local sharing, A/B/A overrides, shorthand order, empty styles, conflicting subset candidates, and budget exhaustion. Add condition, theme, and variant cases when those APIs exist. Use inline snapshots for artifacts and diagnostics; retain deterministic identities and existing benchmark gates.
-
-Use a bounded MaxSAT or equivalent constraint-solver experiment outside the production dependency graph to assess small real fixture families. An optimum is relative to the encoded candidates and objective, not proof of globally minimal compressed CSS. This is research validation, not a mocked production compiler or a replacement for browser correctness tests.
-
-Defer equality saturation until competing rewrite sequences justify its implementation cost. Defer Re-Pair-inspired sequence discovery and dictionary sharing until the production source emitter can measure generated JavaScript, reconstruction operations, and runtime overhead together. Both must outperform simpler candidates before adoption.
-
-Research foundations: [CSS Minification via Constraint Solving](https://anthonywlin.github.io/papers/toplas19.pdf) develops order-constrained graph refactoring and MaxSAT-based merging; its model is not a complete treatment of modern CSS or compressed delivery. [Equality saturation](https://arxiv.org/abs/2004.03082) and [Re-Pair compression](https://arxiv.org/html/1704.08558v1) motivate later candidate representation and repeated-sequence discovery. The bounded search and host scoring above are project-specific design choices, not performance claims from those papers.
+Research references retained for later investigation: [CSS graph refactoring](https://anthonywlin.github.io/papers/toplas19.pdf), [equality saturation](https://arxiv.org/abs/2004.03082), and [Re-Pair compression](https://arxiv.org/html/1704.08558v1). These do not establish gains for this project. [Lightning CSS minification](https://lightningcss.dev/minification.html) documents the delegated transformations and the adjacent-rule merging boundary.
 
 ## Extraction and acceptance
 

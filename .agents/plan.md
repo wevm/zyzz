@@ -87,10 +87,10 @@ Evidence: [PR #3](https://github.com/wevm/zyzz/pull/3) merged as `2a366cd`. Buil
 
 ### PR 1.2a — Shared Minification Baseline
 
-Status: implemented on the shared-minification branch from main `768b700`; browser validation runs in CI. Custom optimizer work is deferred.
+Status: implemented in [PR #5](https://github.com/wevm/zyzz/pull/5) from main `768b700`. Build, checks, browser integration/size gates, and all 40 benchmarks pass in CI. Custom optimizer work is deferred.
 
 - [x] Route every benchmark adapter's final CSS through the same Lightning CSS version, browser targets, and minification settings. Preserve real compiler APIs, required artifacts, unchanged workloads, and disclosure of upstream processing.
-- [ ] Run browser equivalence checks on the final processed output, including combined classes, shorthand/longhand order, and A/B/A overrides. Preserve existing size gates; investigate changes before modifying any budgets.
+- [x] Run browser equivalence checks on the final processed output, including combined classes, shorthand/longhand order, and A/B/A overrides. Preserve existing size gates; investigate changes before modifying any budgets.
 - [x] Record raw/gzip/Brotli CSS, required client JavaScript, total transfer, and compilation timings. Compare sequential matched runs; identify residual gaps after standard minification before proposing additional compiler optimization.
 
 Acceptance: all libraries share final CSS processing and retain equivalent browser behavior. A baseline documents remaining gaps; no custom graph optimizer or minifier enters core.

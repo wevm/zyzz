@@ -2,6 +2,8 @@ import * as Fs from 'node:fs/promises'
 import * as Zlib from 'node:zlib'
 import { chromium } from 'playwright'
 import { expect, test } from 'vite-plus/test'
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
 import * as Compilation from './Compilation.js'
 import * as Corpus from './Corpus.js'
 
@@ -123,3 +125,53 @@ for (const workload of Corpus.cases) {
     }
   }, 180_000)
 }
+
+test('final minification preserves combined classes and authored overrides', async () => {
+  // Ordered A/B/A and opposing shorthand sequences are intentional fixtures.
+  const styles = Style.define({
+    first: { color: '#000', padding: '8px', paddingLeft: 0 },
+    middle: { color: '#fff', paddingLeft: '3px' },
+    last: { color: '#000', padding: '8px', paddingLeft: 0 },
+    reverse: { paddingLeft: 0, padding: '12px' },
+  })
+  const output = Css.compile({ styles })
+  const browser = await chromium.launch()
+  try {
+    const page = await browser.newPage()
+    await page.setContent('<!doctype html><body></body>')
+    await page.addStyleTag({ content: Compilation.minify(output.css) })
+    const result = await page.evaluate(
+      (classes) =>
+        [
+          `${classes.middle} ${classes.first}`,
+          `${classes.last} ${classes.middle}`,
+          classes.reverse,
+        ].map((className) => {
+          const element = document.createElement('div')
+          element.className = className
+          document.body.append(element)
+          const style = getComputedStyle(element)
+          return { color: style.color, padding: style.padding }
+        }),
+      output.classes,
+    )
+    expect(result).toMatchInlineSnapshot(`
+      [
+        {
+          "color": "rgb(255, 255, 255)",
+          "padding": "8px 8px 8px 3px",
+        },
+        {
+          "color": "rgb(0, 0, 0)",
+          "padding": "8px 8px 8px 0px",
+        },
+        {
+          "color": "rgb(0, 0, 0)",
+          "padding": "12px",
+        },
+      ]
+    `)
+  } finally {
+    await browser.close()
+  }
+})

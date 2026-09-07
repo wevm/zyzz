@@ -54,6 +54,7 @@ for (const workload of Corpus.cases) {
                     ),
                     javascript,
                     library,
+                    minification: Compilation.minification,
                     total: {
                       brotli: css.brotli + javascript.brotli,
                       gzip: css.gzip + javascript.gzip,

@@ -11,6 +11,7 @@
   "devDependencies": {
     "@babel/core": "^7.29.7",
     "@changesets/cli": "^3.0.2",
+    "@pandacss/node": "^1.12.1",
     "@stylexjs/babel-plugin": "^0.19.0",
     "@stylexjs/stylex": "^0.19.0",
     "@types/babel__core": "^7.20.5",
@@ -49,6 +50,11 @@
       "src": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./web": {
+      "src": "./src/web/index.ts",
+      "types": "./dist/web/index.d.ts",
+      "default": "./dist/web/index.js"
     }
   }
 }

@@ -3,18 +3,11 @@ import * as Path from 'node:path'
 import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import * as Compilation from './Compilation.js'
+import * as Corpus from './Corpus.js'
 
-for (const [name, count, unique] of [
-  ['small', 3, false],
-  ['repeated', 1000, false],
-  ['unique', 1000, true],
-] as const) {
-  describe(`fresh compilation / ${name}`, () => {
-    for (const [library, compile] of [
-      ['stylex', Compilation.stylex],
-      ['tailwind', Compilation.tailwind],
-      ['vanilla-extract', Compilation.vanillaExtract],
-    ] as const) {
+for (const workload of Corpus.cases) {
+  describe(`fresh compilation / ${workload.name}`, () => {
+    for (const [library, compile] of Object.entries(Compilation.compilers)) {
       let fixture: Compilation.Fixture
       bench(
         library,
@@ -22,12 +15,16 @@ for (const [name, count, unique] of [
           await compile(fixture)
         },
         {
+          iterations: 3,
+          time: 100,
+          warmupIterations: 1,
+          warmupTime: 50,
           // Tinybench setup/teardown run outside timing; Vitest suite hooks are not supported.
           setup: async () => {
-            fixture = await Compilation.create(count, unique)
+            fixture = await Compilation.create(workload)
             try {
               const bundle = await compile(fixture)
-              const directory = Path.resolve('bench/results', name)
+              const directory = Path.resolve('bench/results', workload.name)
               await Fs.mkdir(directory, { recursive: true })
               await Fs.writeFile(
                 Path.join(directory, `${library}.css`),
@@ -49,9 +46,12 @@ for (const [name, count, unique] of [
                 Path.join(directory, `${library}.json`),
                 JSON.stringify(
                   {
-                    components: count,
+                    components: workload.count,
                     css,
-                    declarationsPerComponent: 8,
+                    declarations: fixture.zyzz.styles.reduce(
+                      (total, style) => total + style.declarations.length,
+                      0,
+                    ),
                     javascript,
                     library,
                     total: {
@@ -59,7 +59,6 @@ for (const [name, count, unique] of [
                       gzip: css.gzip + javascript.gzip,
                       raw: css.raw + javascript.raw,
                     },
-                    zyzz: 'Unavailable: CSS compilation is not implemented.',
                   },
                   null,
                   2,

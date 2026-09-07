@@ -43,13 +43,13 @@ Every `css` definition is callable. Static calls accept optional styling overrid
 
 ## Starting point
 
-PR 1.1 implements the literal definition boundary on its review branch. It replaces the greeting with `Style.define`, integration/type scenarios, and an authoring/validation benchmark. CSS emission, source rewriting, component APIs, themes, variants, and native output remain unimplemented. Later PRs start from this validated boundary.
+PR 1.1 is merged and implements `Style.define`, integration/type scenarios, and external compiler benchmarks. PR 1.2 adds literal CSS emission and Zyzz compiler comparisons. Source rewriting, component APIs, themes, variants, and native output remain unimplemented.
 
-Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration tests. Existing CI checks consumer type fixtures, runs integration scenarios including isolated packed consumption, and builds the package. Tooling remains outside the core dependency graph.
+Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration tests. Existing CI checks consumer type fixtures, runs integration scenarios and builds the package. Tooling remains outside the core dependency graph.
 
 ## Phase 1 — Build the core
 
-Status: in progress. [PR 1.1](https://github.com/wevm/typestyle/pull/1) is implemented and awaiting review/merge; PRs 1.2–1.5 are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
+Status: in progress. [PR 1.1](https://github.com/wevm/zyzz/pull/1) is merged; [PR 1.2](https://github.com/wevm/zyzz/pull/3) is implemented and awaiting CI/review; PRs 1.3–1.5 are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
 
 Merge in dependency order. Each PR includes real integration scenarios, consumer type fixtures, relevant benchmark evidence, and public TSDoc. No unit tests, mocks, or stubs. Keep CI green and record the actual PR link and completion evidence beside each item as work lands.
 
@@ -71,17 +71,19 @@ Merge in dependency order. Each PR includes real integration scenarios, consumer
 
 Acceptance: public consumer scenarios prove inference, ordered immutable data, and actionable validation errors through real modules. Consumer type fixtures run in CI; compiler comparisons have reproducible fixtures and reports. The root dependency graph contains no themes, target emitters, parsers, filesystem access, or framework runtimes.
 
-Evidence: [PR #1](https://github.com/wevm/typestyle/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all integration scenarios pass. The separate Benchmarks workflow uploads reports and host metadata as CI artifacts; [reproduction instructions](../bench/README.md) and the [literal contract](../docs/literal-styles.md) are tracked. Zyzz browser rendering and CSS-output benchmarks start with PR 1.2.
+Evidence: [PR #1](https://github.com/wevm/zyzz/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all integration scenarios pass. The separate Benchmarks workflow uploads reports and host metadata as CI artifacts; [reproduction instructions](../bench/README.md) and the [literal contract](../docs/literal-styles.md) are tracked. Zyzz browser rendering and CSS-output benchmarks start with PR 1.2.
 
 ### PR 1.2 — Literal CSS Compilation
 
-- [ ] Add the named `Css` namespace at `zyzz/web` and implement pure `Css.compile({ styles })` for the literal subset. Return the architecture's `{ css, classes, themes }` shape with an empty theme map and structured `Css.CompileError` diagnostics.
-- [ ] Serialize valid CSS values and property names, retaining authored declaration order. Start with grouped rules; atomic optimization remains in Phase 3.
-- [ ] Generate readable deterministic class names with collision handling. Keep identity independent of machine paths, traversal order, clocks, and global mutable state; repeated isolated calls must agree.
-- [ ] Add the real Zyzz compiler to the shared Tailwind, StyleX, and vanilla-extract compilation corpus in `bench/Compilation.ts`. Measure minified emitted CSS and required browser JavaScript separately in raw, gzip, and Brotli bytes; retain the same literal workloads and verify equivalent computed styles before reporting deltas. Do not compare `Style.define` validation with compilation.
-- [ ] Add integration fixtures from public definitions through the real compiler and browser for deterministic output, escaping, unit handling, collisions, and order-sensitive shorthand/longhand declarations. Verify computed styles and establish compilation-time and emitted-byte baselines on the same corpus.
+- [x] Add the named `Css` namespace at `zyzz/web` and implement pure `Css.compile({ styles })` for the literal subset. Return the architecture's `{ css, classes, themes }` shape with an empty theme map and structured `Css.CompileError` diagnostics.
+- [x] Serialize valid CSS values and property names, retaining authored declaration order. Factor nonconflicting declaration domains and retain ordered conflicting rules; general atomic optimization remains in Phase 3.
+- [x] Generate readable deterministic class names with collision handling. Keep identity independent of machine paths, traversal order, clocks, and global mutable state; repeated isolated calls must agree.
+- [x] Add the real Zyzz compiler to the shared Tailwind, StyleX, and vanilla-extract compilation corpus in `bench/Compilation.ts`. Measure minified emitted CSS and required browser JavaScript separately in raw, gzip, and Brotli bytes; retain the same literal workloads and verify equivalent computed styles before reporting deltas. Do not compare `Style.define` validation with compilation.
+- [x] Add integration fixtures from public definitions through the real compiler and browser for deterministic output, escaping, unit handling, collisions, and order-sensitive shorthand/longhand declarations. Verify computed styles and establish compilation-time and emitted-byte baselines on the same corpus.
 
 Acceptance: in-memory definitions produce usable CSS and matching class names without source parsing or file access. Unsupported features fail explicitly. Root imports do not pull in the web compiler.
+
+Evidence: [PR #3](https://github.com/wevm/zyzz/pull/3), based on main `a5905ad`. Local formatting/lint, types, build, ten non-browser integration scenarios, and twelve compiler benchmarks pass. Chromium rendering is checked by CI. After literal factoring, total CSS plus client JavaScript gzip sizes are 468 bytes (small), 559 bytes (repeated), and 8,106 bytes (unique), versus StyleX at 558, 846, and 14,013 bytes. The integration corpus gates raw, gzip, and Brotli combined sizes below StyleX while checking browser equivalence. These are literal-pipeline baselines, not source-extraction or whole-application comparisons.
 
 ### PR 1.3 — Static Source Extraction
 
@@ -199,6 +201,7 @@ Status: planned.
 - [ ] Review every API and dependency against the principles; remove abstractions that duplicate platform behavior.
 - [ ] Measure compilation, incremental updates, type-check cost, raw/compressed CSS, callable/props-merging overhead, class-string bytes, total transfer, browser style recalculation, and native adapter cost independently.
 - [ ] Measure theme multiplication and generated-table size; deduplicate without changing observable theme or cascade semantics.
+- [ ] Require combined emitted CSS and client JavaScript to beat StyleX in matched raw/gzip/Brotli workloads as each capability lands. Expand the existing literal size gate to themes, variants, selectors, and library consumers; preserve CSS behavior and readable names.
 - [ ] Compare atomic and grouped output on repeated and unique styles; optimize the smaller safe representation. Measure the agreed variant API; defer additional recipe abstractions and slot systems until concrete usage justifies them.
 - [ ] Verify package metadata and the standard changeset/release workflow.
 
@@ -230,3 +233,23 @@ Gate: a small documented API, tested compatibility matrix, reproducible measurem
 ## Scope
 
 The API and phases above are proposed. Implementation begins at Phase 1 with no retained code baseline. Build each capability and its acceptance fixtures before marking its phase complete.
+
+## Benchmark Expansion
+
+Status: eight literal workloads and five real compiler adapters are implemented on PR 1.2. Panda CSS joins the existing adapters. Tamagui has been removed from the PR matrix due to extraction cost; no additional styling libraries are authorized. Browser equivalence covers every workload. Existing size gates remain; discovery cases expose further optimization targets.
+
+- [ ] PR 1.3–1.5: add cold-process source builds, warm builds, unchanged edits, new styles, removed styles, and imported-dependency edits. Include parsing, scanning, rewriting, and output writing explicitly. In-memory emission must remain a separate measurement.
+- [ ] PR 1.5: add opt-in 10/100/1,000/10,000-style sweeps and independently vary rendered instance count. Keep expensive runs outside the short PR matrix.
+- [ ] Phase 2: add basic/complex themes, nested scopes, forced/system schemes, query density, and independent dynamic values. Measure rule growth, CSS-variable assignment, and style recalculation in real browsers.
+- [ ] Phase 3: add default/compound variants, variant changes, consumed-value updates, unchanged parent rerenders, and override-heavy composition. Verify comparable cascade semantics before comparing shorthand and A/B/A composition across libraries.
+- [ ] Phase 3–4: adapt deep/wide component trees and dynamic triangle workloads using real production framework runtimes. Separate mount, cached rerender, changed props, CSSOM writes, layout, paint, and interaction latency. Do not substitute raw DOM timing for framework runtime cost.
+- [ ] Phase 4: add SSR throughput and full HTML/CSS/JavaScript delivery, hydration, route splitting, dead-style removal, and packed-library boundaries. Keep framework baseline and incremental styling cost visible without double-counting assets.
+- [ ] PR 1.2 onward: optimize every workload against Panda CSS, StyleX, Tailwind, and vanilla-extract and promote measured cases to regression gates. Record all raw/gzip/Brotli results, including losses; do not change fixtures to manufacture wins.
+
+The benchmark implementation and reproduction notes record prior-art attribution. Later workloads must use actual supported APIs, without mocks, replacement compilers, or placeholder zero results.
+
+### Optimization Acceptance
+
+- [ ] Beat each comparison library across all eight workloads in CSS and total raw/gzip/Brotli sizes; retain existing gates while individual targets remain open. Prioritize palette and component reuse, sparse factoring overhead, and independent-value compression. Preserve shorthand and A/B/A cascade semantics.
+- [ ] Confirm timing improvements in repeated matched runs, then set tolerances from measured variance. Do not assert fastest from a noisy CI sample or hide the differing source-pipeline boundaries.
+- [ ] Measure compact emitted module serialization through the production source adapter when it lands; do not add benchmark-only pooling or special cases.

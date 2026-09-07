@@ -34,19 +34,24 @@ jobs:
         run: pnpm exec vp test bench --run --outputJson bench/results/timings.json
       - name: Summarize benchmarks
         run: |
-          printf '## Benchmarks\n\n[Workflow run](%s/%s/actions/runs/%s)\n\nZyzz joins the compiler and CSS-size comparisons in **PR 1.2 — Literal CSS Compilation**.\n\n## Compiler Comparisons\n\nSizes are bytes. Total gzip includes CSS + required client JavaScript.\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > bench/results/report.md
-          for workload in small repeated unique; do
+          printf '## Benchmarks\n\n[Workflow run](%s/%s/actions/runs/%s)\n\nZyzz uses its in-memory literal compiler; source extraction is excluded.\n\n## Compiler Comparisons\n\nSizes are bytes. Total gzip includes CSS + required client JavaScript.\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > bench/results/report.md
+          for workload in small repeated unique partial palette independent sparse components; do
             case "$workload" in
               small) title='3 Components' ;;
               repeated) title='1,000 Components — Repeated Styles' ;;
-              unique) title='1,000 Components — Unique Styles' ;;
+              unique) title='1,000 Components — Unique Padding' ;;
+              partial) title='100 Components — Partial Sharing' ;;
+              palette) title='100 Components — Reused Palette' ;;
+              independent) title='100 Components — Independent Values' ;;
+              sparse) title='100 Components — Sparse Properties' ;;
+              components) title='60 Components — Mixed Shapes' ;;
             esac
             printf '\n### %s\n\n| Library | Build (ms) | CSS gzip | Total gzip |\n| --- | ---: | ---: | ---: |\n' "$title" >> bench/results/report.md
             jq -rs --arg workload "$workload" --slurpfile timings bench/results/timings.json '
               sort_by(.library)[] as $size |
               $timings[0].files[].groups[] | select(.fullName | endswith(" / " + $workload)) |
               .benchmarks[] | select(.name == $size.library) |
-              [({"stylex":"StyleX","tailwind":"Tailwind","vanilla-extract":"vanilla-extract"}[.name]),
+              [({"panda":"Panda CSS","stylex":"StyleX","tailwind":"Tailwind","vanilla-extract":"vanilla-extract","zyzz":"Zyzz"}[.name]),
                ((.mean * 1000 | round) / 1000), $size.css.gzip, $size.total.gzip] |
               "| " + (map(tostring) | join(" | ")) + " |"
             ' bench/results/"$workload"/*.json >> bench/results/report.md
@@ -55,7 +60,7 @@ jobs:
               sort_by(.library)[] as $size |
               $timings[0].files[].groups[] | select(.fullName | endswith(" / " + $workload)) |
               .benchmarks[] | select(.name == $size.library) |
-              [({"stylex":"StyleX","tailwind":"Tailwind","vanilla-extract":"vanilla-extract"}[.name]),
+              [({"panda":"Panda CSS","stylex":"StyleX","tailwind":"Tailwind","vanilla-extract":"vanilla-extract","zyzz":"Zyzz"}[.name]),
                ((.rme * 100 | round) / 100), .sampleCount, $size.css.raw, $size.css.brotli, $size.javascript.gzip] |
               "| " + (map(tostring) | join(" | ")) + " |"
             ' bench/results/"$workload"/*.json >> bench/results/report.md
@@ -77,6 +82,6 @@ jobs:
           name: benchmarks
           path: bench/results/
           retention-days: 30
-    timeout-minutes: 5
+    timeout-minutes: 15
 permissions:
   contents: read

@@ -1,4 +1,5 @@
 import * as Babel from '@babel/core'
+import * as Panda from '@pandacss/node'
 import StylexPlugin, {
   type Rule,
   type StyleXTransformObj,
@@ -8,6 +9,9 @@ import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Tailwind from 'tailwindcss'
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+import * as Corpus from './Corpus.js'
 
 /** CSS and the browser bundle that supplies every component's class names. */
 export type Bundle = {
@@ -17,19 +21,19 @@ export type Bundle = {
   javascript: string
 }
 
-/** Writes real compiler inputs for the same eight-declaration component corpus. */
-export async function create(count: number, unique: boolean): Promise<Fixture> {
+/** Ordered compiler adapters; no synthetic replacements or runtime injection lanes. */
+export const compilers = {
+  panda,
+  stylex,
+  tailwind,
+  'vanilla-extract': vanillaExtract,
+  zyzz,
+}
+
+/** Writes real compiler inputs from a shared deterministic literal workload. */
+export async function create(workload: Corpus.Case): Promise<Fixture> {
   const directory = await Fs.mkdtemp(Path.resolve('.fixture-compilation-'))
-  const styles = Array.from({ length: count }, (_, index) => ({
-    backgroundColor: '#fff',
-    borderColor: '#000',
-    borderStyle: 'solid',
-    borderWidth: '1px',
-    boxSizing: 'border-box',
-    color: '#000',
-    display: 'block',
-    padding: unique ? `${index}px` : '12px',
-  }))
+  const styles = Corpus.styles(workload)
   const names = styles.map((_, index) => `card${index}`)
   await Fs.writeFile(
     Path.join(directory, 'styles.css.ts'),
@@ -40,8 +44,16 @@ export async function create(count: number, unique: boolean): Promise<Fixture> {
       )
       .join('\n')}\nexport const classes = [${names.join(',')}];`,
   )
+  await Fs.writeFile(
+    Path.join(directory, 'panda.config.ts'),
+    `export default { include: ['./panda.ts'], outdir: 'styled-system', preflight: false, presets: ['@pandacss/preset-base'], theme: {} }`,
+  )
+  await Fs.writeFile(
+    Path.join(directory, 'panda.ts'),
+    `import { css } from './styled-system/css'; export const classes = [${styles.map((style) => `css(${JSON.stringify(style)})`).join(',')}];`,
+  )
   return {
-    count,
+    count: workload.count,
     directory,
     stylex: `import * as stylex from '@stylexjs/stylex';
       const styles = stylex.create(${JSON.stringify(Object.fromEntries(styles.map((style, index) => [names[index], style])))});
@@ -54,7 +66,10 @@ export async function create(count: number, unique: boolean): Promise<Fixture> {
         )
         .join(' '),
     ),
-    unique,
+    workload,
+    zyzz: Style.define(
+      Object.fromEntries(styles.map((style, index) => [names[index]!, style])),
+    ),
   }
 }
 
@@ -68,20 +83,26 @@ export type Fixture = {
   stylex: string
   /** Tailwind candidates, including repeated uses. */
   tailwind: readonly string[]
-  /** Whether each component has a distinct padding value. */
-  unique: boolean
+  /** Workload metadata and the browser reference input. */
+  workload: Corpus.Case
+  /** Validated literal data; definition preparation is outside compilation timing. */
+  zyzz: Style.Definition
 }
 
 async function javascript(source: string): Promise<string> {
   const result = await Esbuild.build({
     bundle: true,
+    define: { 'process.env.NODE_ENV': JSON.stringify('production') },
     format: 'iife',
     globalName: 'fixture',
+    jsx: 'automatic',
     legalComments: 'none',
     minify: true,
     platform: 'browser',
+    resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
     stdin: {
       contents: source,
+      loader: 'tsx',
       resolveDir: process.cwd(),
       sourcefile: 'fixture.ts',
     },
@@ -98,6 +119,22 @@ async function minify(css: string): Promise<string> {
       minify: true,
     })
   ).code
+}
+
+/** Runs Panda's config loading, code generation, extraction, and browser bundling. */
+export async function panda(fixture: Fixture): Promise<Bundle> {
+  const context = await Panda.loadConfigAndCreateContext({
+    cwd: fixture.directory,
+  })
+  await Panda.codegen(context)
+  const file = Path.join(fixture.directory, 'panda.css')
+  await Panda.cssgen(context, { cwd: fixture.directory, outfile: file })
+  return {
+    css: await minify(await Fs.readFile(file, 'utf8')),
+    javascript: await javascript(
+      `export { classes } from ${JSON.stringify(Path.join(fixture.directory, 'panda.ts'))};`,
+    ),
+  }
 }
 
 /** Runs Babel extraction, StyleX rule processing, and a real browser bundle. */
@@ -154,4 +191,15 @@ export async function vanillaExtract(fixture: Fixture): Promise<Bundle> {
   if (!css || !javascript)
     throw new Error('vanilla-extract did not emit CSS and JavaScript.')
   return { css: await minify(css), javascript }
+}
+
+/** Emits grouped CSS from prepared definitions and bundles static class exports. */
+export async function zyzz(fixture: Fixture): Promise<Bundle> {
+  const output = Css.compile({ styles: fixture.zyzz })
+  return {
+    css: await minify(output.css),
+    javascript: await javascript(
+      `export const classes = ${JSON.stringify(fixture.zyzz.styles.map(({ name }) => output.classes[name]))};`,
+    ),
+  }
 }

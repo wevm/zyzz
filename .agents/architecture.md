@@ -615,6 +615,8 @@ The initial optimization strategy is atomic emission for independent declaration
 
 Readable names contain a property or documented abbreviation, a token/value label, and any condition label. Illustrative names are `p-md-k3m9`, `bg-surface-a7c2`, and `hover-bg-brand-b4d8`. A short deterministic suffix distinguishes theme contracts, values, conditions, and ordering contexts; names never consist solely of a hash.
 
+The current literal emitter uses encoded authored names for ordered rules and sorted, compact `z_base` identifiers for shared rules. These identities belong to one complete compilation graph. Source and packed-library adapters must introduce stable module/graph namespaces before supporting independently emitted stylesheets; independent bundles must not reuse these unscoped identifiers.
+
 Use the same names in development and production. Minification compresses CSS syntax without renaming classes. Bound label length, escape valid identifiers, and check collisions with deterministic disambiguation. Do not embed source paths or require callers to write generated class strings.
 
 Deduplication identity includes the full declaration value or variable fallback, theme contract, selector, at-rule stack, cascade layer, and any ordering constraints. Never merge identical-looking token labels from incompatible themes or change precedence through global sorting.
@@ -642,3 +644,7 @@ Web correctness leads the MVP; native is included, not deferred beyond it. Demon
 Require actionable source diagnostics with valid alternatives, CSS-to-source tracing, refresh behavior, missing-transform errors, deterministic server output, and library stylesheet delivery. CLI and build adapters share options and useful defaults without a mandatory config file. Failed rebuilds preserve the previous complete output.
 
 Compare grouped and atomic emission on repeated and unique styles. Measure compressed CSS, JavaScript, class strings, rule counts, cold/incremental builds, browser recalculation, native table growth, and optional runtime costs separately. Do not claim globally zero runtime when composition, variable assignment, or dynamic variants are used; all CSS rules remain compiled ahead of time.
+
+## Literal Compiler Boundary
+
+`Css.compile({ styles })` from `zyzz/web` implements the literal subset documented in `docs/literal-styles.md`. It returns frozen `{ classes, css, themes }` artifacts, with an empty theme map. Nonconflicting declaration domains are shared; conflicting rules preserve authored cascade order. Class maps contain space-separated identifiers scoped to the complete compilation input. Identical inputs produce identical artifacts; adding definitions can change factoring. Themes, source extraction, and general atomic optimization belong to subsequent boundaries. Literal factoring is implemented early to meet the bundle-size budget.

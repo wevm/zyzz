@@ -11,7 +11,8 @@
     "noUncheckedIndexedAccess": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "zyzz": ["./src/index.ts"]
+      "zyzz": ["./src/index.ts"],
+      "zyzz/web": ["./src/web/index.ts"]
     },
     "skipLibCheck": true,
     "sourceMap": true,

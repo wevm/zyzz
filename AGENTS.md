@@ -128,7 +128,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 ## Benchmark Conventions
 
 - Use the installed Vite Plus/Vitest benchmark runner: import `bench` and `describe` from `vite-plus/test` in colocated `*.bench.ts` files, and run `pnpm exec vp test bench --run`. Keep benchmark APIs aligned with the lockfile.
-- Benchmark real public workflows using the integration fixture corpus. No mocks, stubs, synthetic replacement compilers, or greeting benchmarks. Add the first real authoring/validation baseline in PR 1.1, then extend it with compilation, extraction, rewriting, and watch workloads as those stages land.
+- Benchmark real public workflows using the integration fixture corpus. No mocks, stubs, synthetic replacement compilers, or greeting benchmarks. Benchmark compilation, extraction, rewriting, and watch workloads as those stages land. Typestyle joins compiler comparisons when its real CSS emitter exists; do not benchmark authoring alone.
 - Measure cold and warm compilation, incremental edits, throughput, memory, browser style recalculation, and native table selection separately. Use real browser/host timing for workloads outside the benchmark runner's execution model; do not substitute a function microbenchmark for end-to-end performance.
 - Record emitted CSS, generated JavaScript, class-name/markup bytes, and required runtime helpers separately, plus actual combined transfer. Report raw, gzip, and Brotli sizes without double-counting class strings already included in JavaScript or markup. Package download size is a separate metric.
 - Use repeated and mostly unique styles, small and large projects, theme/scheme changes, variants, and library boundaries. Validate equivalent behavior before comparing configurations or libraries; include each library's required helpers and delivery artifacts.
@@ -162,7 +162,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 ## Repository Layout
 
-- The repository implements the literal `Style.define` boundary with Vite Plus/zile tooling, integration/type coverage, and an authoring benchmark. Later phases add compilation, source transforms, and component APIs.
+- The repository implements the literal `Style.define` boundary with Vite Plus/zile tooling, integration/type coverage, and external compiler benchmarks. Later phases add compilation, source transforms, and component APIs.
 - Add flat PascalCase modules under `src/`; colocate integration scenarios, consumer type fixtures, and benchmarks beside their owning modules. Keep reusable fixtures under `test/fixtures/` and benchmark instructions under `bench/`.
 - Export the `css` and `variants` leaf functions directly and bind both on themes; conceptual modules use namespace exports. Infer variant props with standard `Parameters`, without a variant namespace.
 - Every `css` definition is callable and returns props when applied. Callbacks receive only typed runtime values; no context helpers. Use trailing `!` for importance, arrays for fallbacks, and `theme.tokens`/`theme.vars` for references. Calls consume declared values and merge only styling overrides (`className`/`style` on web). Other component props stay on the component; unknown inputs are errors. Dynamic variant choices take typed callbacks and scoped payload selections; compound matches use choice names, while values bind to precompiled slots. Spread applied props; `cx` preserves bindings and recipe attributes. Generated functions never create CSS rules.

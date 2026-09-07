@@ -1,14 +1,10 @@
-# Authoring Benchmarks
+# Compilation Benchmarks
 
-Definitions live in `src/Style.bench.ts` beside `Style.ts`. Run `pnpm exec vp test bench --run --outputJson bench/results/define.json`. Reports are ignored by Git.
+Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters. Run `pnpm exec vp test bench --run --outputJson bench/results/timings.json`. Reports are ignored by Git.
 
 The separate Benchmarks workflow runs the same command and uploads results, commit, lockfile hash, runtime versions, and host details as a 30-day artifact. It does not compare results from different runners.
 
 For a comparison, measure baseline and candidate sequentially on the same idle machine with the same fixture corpus. Save the baseline outside the checkout, then append `--compare <baseline.json>` when running the candidate. Record variance and measurement limitations with any reported delta.
-
-Inputs reuse integration fixtures: three components with 20 declarations, and 1,000 repeated or mostly unique cards with 13,000 declarations each. Timing includes validation, copying, and freezing; input creation occurs before timing. Runner defaults use 100 ms/five-iteration warmup and at least 500 ms/ten measured iterations. Reports include variance and sample counts; the lockfile pins the runner versions.
-
-This measures warm authoring work. CSS emission, generated component JavaScript, browser rendering, and native measurements begin when those phases exist; their cost is unmeasured, not zero. Record raw/gzip/Brotli sizes when emitted artifacts exist.
 
 ## Compilation and Bundle Size
 
@@ -20,6 +16,6 @@ Each timing includes a fresh compiler build and a minified browser bundle. Modul
 
 All CSS uses the same esbuild minifier with legal comments and source maps excluded. JSON reports under `bench/results/{small,repeated,unique}/` contain raw, gzip, and Brotli byte sizes for emitted CSS and client JavaScript, including required runtime helpers. Totals sum separately compressed delivery assets; class strings already in JavaScript are not counted again.
 
-The workflow uploads generated CSS, JavaScript, timing reports, size reports, and host metadata. Its summary and updating PR comment group compiler timings and sizes by workload, with variance and additional size metrics in expandable details. Typestyle authoring has a separate section until its compiler lands in PR 1.2. Fork PRs retain summaries and artifacts without requiring write access. `bench/Compilation.test.ts` checks equivalent computed declarations in real Chromium for repeated and unique inputs. Install the browser with `pnpm exec playwright install --only-shell chromium` before running tests locally.
+The workflow uploads generated CSS, JavaScript, timing reports, size reports, and host metadata. Its summary and updating PR comment group compiler timings and sizes by workload, with variance and additional size metrics in expandable details. Fork PRs retain summaries and artifacts without requiring write access. `bench/Compilation.test.ts` checks equivalent computed declarations in real Chromium for repeated and unique inputs. Install the browser with `pnpm exec playwright install --only-shell chromium` before running tests locally.
 
-Typestyle currently validates definitions but does not emit CSS. Its authoring benchmark is separate; compilation time and CSS size are explicitly unavailable, never reported as zero. PR 1.2 must add its real compiler to this corpus before drawing comparisons with typestyle. These fixtures do not establish whole-application or cross-library performance claims.
+Typestyle currently validates definitions but does not emit CSS. Its compilation time and CSS size are explicitly unavailable, never reported as zero. PR 1.2 must add its real compiler to this corpus before drawing comparisons with typestyle. These fixtures do not establish whole-application or cross-library performance claims.

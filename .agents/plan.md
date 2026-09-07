@@ -64,14 +64,14 @@ Merge in dependency order. Each PR includes real integration scenarios, consumer
 ### PR 1.1 — Typed Style Definitions
 
 - [x] Replace the greeting export and unit test with `Style.define`, public types, colocated `Style.test.ts` integration scenarios and `Style.test-d.ts` consumer type fixtures. Wire both into existing test/type-check commands; retain the repository tooling.
-- [x] Establish colocated `Style.bench.ts` using `bench` from `vite-plus/test`. Record the first real public authoring/validation baseline with `pnpm exec vp test bench --run --outputJson <file>`; reuse integration inputs and do not benchmark the greeting or fake downstream stages.
+- [x] Establish real compiler benchmarks for Tailwind, StyleX, and vanilla-extract with bundled CSS/JavaScript size reports. Add typestyle to the corpus in PR 1.2 when its CSS emitter exists.
 - [x] Define immutable, ordered declaration data and structured diagnostics independently of parsers and emitters. Keep source locations optional so in-memory callers need no source files.
 - [x] Establish a documented literal declaration subset covering layout, spacing, sizing, colors, borders, and typography. Check property names and value domains without a permissive index signature; accept literal lengths, valid unitless numbers, and CSS zero.
 - [x] Keep the root token-free and target-independent. Reserve the domain-owned token-reference boundary for Phase 2 without introducing theme data, token resolution, callbacks, selectors, or queries in this PR.
 
-Acceptance: public consumer scenarios prove inference, ordered immutable data, and actionable validation errors through real modules. Consumer type fixtures run in CI and a reproducible authoring/validation benchmark is recorded. The root dependency graph contains no themes, target emitters, parsers, filesystem access, or framework runtimes.
+Acceptance: public consumer scenarios prove inference, ordered immutable data, and actionable validation errors through real modules. Consumer type fixtures run in CI; compiler comparisons have reproducible fixtures and reports. The root dependency graph contains no themes, target emitters, parsers, filesystem access, or framework runtimes.
 
-Evidence: [PR #1](https://github.com/wevm/typestyle/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all integration scenarios pass. The separate Benchmarks workflow uploads reports and host metadata as CI artifacts; [reproduction instructions](../bench/README.md) and the [literal contract](../docs/literal-styles.md) are tracked. Browser rendering and CSS-output benchmarks start with PR 1.2.
+Evidence: [PR #1](https://github.com/wevm/typestyle/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all integration scenarios pass. The separate Benchmarks workflow uploads reports and host metadata as CI artifacts; [reproduction instructions](../bench/README.md) and the [literal contract](../docs/literal-styles.md) are tracked. Typestyle browser rendering and CSS-output benchmarks start with PR 1.2.
 
 ### PR 1.2 — Literal CSS Compilation
 

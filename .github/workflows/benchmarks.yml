@@ -34,7 +34,7 @@ jobs:
         run: pnpm exec vp test bench --run --outputJson bench/results/timings.json
       - name: Summarize benchmarks
         run: |
-          printf '## Benchmarks\n\n[Workflow run](%s/%s/actions/runs/%s)\n\nTypestyle currently measures authoring only. It joins the compiler and CSS-size comparisons in **PR 1.2 — Literal CSS Compilation**.\n\n## Compiler Comparisons\n\nSizes are bytes. Total gzip includes CSS + required client JavaScript.\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > bench/results/report.md
+          printf '## Benchmarks\n\n[Workflow run](%s/%s/actions/runs/%s)\n\nTypestyle joins the compiler and CSS-size comparisons in **PR 1.2 — Literal CSS Compilation**.\n\n## Compiler Comparisons\n\nSizes are bytes. Total gzip includes CSS + required client JavaScript.\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > bench/results/report.md
           for workload in small repeated unique; do
             case "$workload" in
               small) title='3 Components' ;;
@@ -61,8 +61,6 @@ jobs:
             ' bench/results/"$workload"/*.json >> bench/results/report.md
             printf '\n</details>\n' >> bench/results/report.md
           done
-          printf '\n## Typestyle Authoring\n\nValidation and immutable definitions only; these times exclude CSS compilation.\n\n| Workload | Mean (ms) | Error (±%%) | Samples |\n| --- | ---: | ---: | ---: |\n' >> bench/results/report.md
-          jq -r '.files[].groups[] | select(.fullName | endswith("public authoring and validation")) | .benchmarks[] | [.name, ((.mean * 1000 | round) / 1000), ((.rme * 100 | round) / 100), .sampleCount] | "| " + (map(tostring) | join(" | ")) + " |"' bench/results/timings.json >> bench/results/report.md
           printf '\nBuild timings use warm host processes and fresh compiler state. Compiler workflows have different scopes; see bench/README.md in the repository for measurement boundaries.\n' >> bench/results/report.md
           cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
       - if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}

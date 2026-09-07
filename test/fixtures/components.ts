@@ -27,16 +27,3 @@ export const components = {
   },
   hidden: { display: 'none' },
 } as const satisfies Record<string, Style.Properties>
-
-/** Creates repeated or mostly unique real definition inputs outside timed work. */
-export function project(
-  count: number,
-  unique: boolean,
-): Record<string, Style.Properties> {
-  return Object.fromEntries(
-    Array.from({ length: count }, (_, i) => [
-      `card${i}`,
-      { ...components.card, padding: unique ? `${i}px` : '1rem' },
-    ]),
-  )
-}

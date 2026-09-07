@@ -3,97 +3,100 @@ import * as Zlib from 'node:zlib'
 import { chromium } from 'playwright'
 import { expect, test } from 'vite-plus/test'
 import * as Compilation from './Compilation.js'
+import * as Corpus from './Corpus.js'
 
-test('all compilation pipelines render the equivalent repeated and unique corpus', async () => {
-  const browser = await chromium.launch()
-  try {
-    for (const [count, unique] of [
-      [3, false],
-      [1000, false],
-      [1000, true],
-    ] as const) {
-      const fixture = await Compilation.create(count, unique)
-      try {
-        const sizes = new Map<
-          string,
-          { brotli: number; gzip: number; raw: number }
-        >()
-        for (const compile of [
-          Compilation.stylex,
-          Compilation.tailwind,
-          Compilation.vanillaExtract,
-          Compilation.zyzz,
-        ]) {
-          const bundle = await compile(fixture)
-          if (compile === Compilation.stylex || compile === Compilation.zyzz) {
-            const values = [bundle.css, bundle.javascript]
-            sizes.set(compile === Compilation.stylex ? 'stylex' : 'zyzz', {
-              brotli: values.reduce(
-                (total, value) =>
-                  total + Zlib.brotliCompressSync(value).byteLength,
-                0,
-              ),
-              gzip: values.reduce(
-                (total, value) => total + Zlib.gzipSync(value).byteLength,
-                0,
-              ),
-              raw: values.reduce(
-                (total, value) => total + Buffer.byteLength(value),
-                0,
-              ),
-            })
-          }
-          const page = await browser.newPage()
-          try {
-            await page.setContent(
-              '<!doctype html><html><head></head><body></body></html>',
-            )
-            await page.addStyleTag({ content: bundle.css })
-            await page.addScriptTag({ content: bundle.javascript })
-            const result = await page.evaluate(() => {
-              const { classes } = (
-                window as unknown as { fixture: { classes: string[] } }
-              ).fixture
-              return classes.map((className) => {
-                const element = document.createElement('div')
-                element.className = className
-                document.body.append(element)
-                const style = getComputedStyle(element)
-                return {
-                  backgroundColor: style.backgroundColor,
-                  borderColor: style.borderColor,
-                  borderStyle: style.borderStyle,
-                  borderWidth: style.borderWidth,
-                  boxSizing: style.boxSizing,
-                  color: style.color,
-                  display: style.display,
-                  padding: style.padding,
-                }
-              })
-            })
-            expect({
-              countMatches: result.length === count,
-              declarationsMatch: result.every(
-                (value, index) =>
-                  value.backgroundColor === 'rgb(255, 255, 255)' &&
-                  value.borderColor === 'rgb(0, 0, 0)' &&
-                  value.borderStyle === 'solid' &&
-                  value.borderWidth === '1px' &&
-                  value.boxSizing === 'border-box' &&
-                  value.color === 'rgb(0, 0, 0)' &&
-                  value.display === 'block' &&
-                  value.padding === (unique ? `${index}px` : '12px'),
-              ),
-            }).toMatchInlineSnapshot(`
-              {
-                "countMatches": true,
-                "declarationsMatch": true,
+type Size = { brotli: number; gzip: number; raw: number }
+
+for (const workload of Corpus.cases) {
+  test(`compilers render equivalent CSS / ${workload.name}`, async () => {
+    const fixture = await Compilation.create(workload)
+    const browser = await chromium.launch()
+    try {
+      const sizes = new Map<string, Size>()
+      for (const [library, compile] of Object.entries(Compilation.compilers)) {
+        const bundle = await compile(fixture)
+        const values = [bundle.css, bundle.javascript]
+        sizes.set(library, {
+          brotli: values.reduce(
+            (total, value) => total + Zlib.brotliCompressSync(value).byteLength,
+            0,
+          ),
+          gzip: values.reduce(
+            (total, value) => total + Zlib.gzipSync(value).byteLength,
+            0,
+          ),
+          raw: values.reduce(
+            (total, value) => total + Buffer.byteLength(value),
+            0,
+          ),
+        })
+        const page = await browser.newPage()
+        try {
+          await page.setContent(
+            '<!doctype html><html><head></head><body></body></html>',
+          )
+          await page.addStyleTag({ content: bundle.css })
+          await page.addScriptTag({ content: bundle.javascript })
+          const result = await page.evaluate((styles) => {
+            const { classes } = (
+              window as unknown as { fixture: { classes: string[] } }
+            ).fixture
+            const properties = [
+              ...new Set(styles.flatMap((style) => Object.keys(style))),
+            ]
+            const differences: unknown[] = []
+            for (const [index, style] of styles.entries()) {
+              const actual = document.createElement('div')
+              const reference = document.createElement('div')
+              actual.className = classes[index] ?? ''
+              // The browser interprets the original literal CSS independently of every compiler.
+              for (const [property, value] of Object.entries(style))
+                reference.style.setProperty(
+                  property.replace(
+                    /[A-Z]/g,
+                    (letter) => `-${letter.toLowerCase()}`,
+                  ),
+                  String(value),
+                )
+              document.body.append(actual, reference)
+              const actualStyle = getComputedStyle(actual)
+              const referenceStyle = getComputedStyle(reference)
+              for (const property of properties) {
+                const key = property.replace(
+                  /[A-Z]/g,
+                  (letter) => `-${letter.toLowerCase()}`,
+                )
+                const actualValue = actualStyle.getPropertyValue(key)
+                const expectedValue = referenceStyle.getPropertyValue(key)
+                if (actualValue !== expectedValue && differences.length < 5)
+                  differences.push({
+                    actual: actualValue,
+                    expected: expectedValue,
+                    index,
+                    property,
+                  })
               }
-            `)
-          } finally {
-            await page.close()
-          }
+              actual.remove()
+              reference.remove()
+            }
+            return {
+              countMatches: classes.length === styles.length,
+              differences,
+            }
+          }, Corpus.styles(workload))
+          expect(result, `${library} / ${workload.name}`)
+            .toMatchInlineSnapshot(`
+            {
+              "countMatches": true,
+              "differences": [],
+            }
+          `)
+        } finally {
+          await page.close()
         }
+      }
+      // Preserve established gates. New stress cases report gaps before budgets are accepted.
+      if (['repeated', 'small', 'unique'].includes(workload.name)) {
         const stylex = sizes.get('stylex')!
         const zyzz = sizes.get('zyzz')!
         expect({
@@ -107,11 +110,10 @@ test('all compilation pipelines render the equivalent repeated and unique corpus
             "raw": true,
           }
         `)
-      } finally {
-        await Fs.rm(fixture.directory, { force: true, recursive: true })
       }
+    } finally {
+      await browser.close()
+      await Fs.rm(fixture.directory, { force: true, recursive: true })
     }
-  } finally {
-    await browser.close()
-  }
-}, 60_000)
+  }, 180_000)
+}

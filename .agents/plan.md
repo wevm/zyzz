@@ -233,3 +233,17 @@ Gate: a small documented API, tested compatibility matrix, reproducible measurem
 ## Scope
 
 The API and phases above are proposed. Implementation begins at Phase 1 with no retained code baseline. Build each capability and its acceptance fixtures before marking its phase complete.
+
+## Benchmark Expansion
+
+Status: eight literal workloads and six real compiler adapters are implemented on PR 1.2. New adapters are Panda CSS and Tamagui; no additional styling libraries are authorized in this expansion. Browser equivalence covers every workload. Existing size gates remain; discovery cases expose further optimization targets.
+
+- [ ] PR 1.3–1.5: add cold-process source builds, warm builds, unchanged edits, new styles, removed styles, and imported-dependency edits. Include parsing, scanning, rewriting, and output writing explicitly. In-memory emission must remain a separate measurement.
+- [ ] PR 1.5: add opt-in 10/100/1,000/10,000-style sweeps and independently vary rendered instance count. Keep expensive runs outside the short PR matrix.
+- [ ] Phase 2: add basic/complex themes, nested scopes, forced/system schemes, query density, and independent dynamic values. Measure rule growth, CSS-variable assignment, and style recalculation in real browsers.
+- [ ] Phase 3: add default/compound variants, variant changes, consumed-value updates, unchanged parent rerenders, and override-heavy composition. Verify comparable cascade semantics before comparing shorthand and A/B/A composition across libraries.
+- [ ] Phase 3–4: adapt deep/wide component trees and dynamic triangle workloads using real production framework runtimes. Separate mount, cached rerender, changed props, CSSOM writes, layout, paint, and interaction latency. Do not substitute raw DOM timing for framework runtime cost.
+- [ ] Phase 4: add SSR throughput and full HTML/CSS/JavaScript delivery, hydration, route splitting, dead-style removal, and packed-library boundaries. Keep framework baseline and incremental styling cost visible without double-counting assets.
+- [ ] Phase 5: optimize discovery workload size gaps against StyleX and promote measured cases to regression gates. Record all raw/gzip/Brotli results, including losses; do not change fixtures to manufacture wins.
+
+The benchmark implementation and reproduction notes record prior-art attribution. Later workloads must use actual supported APIs, without mocks, replacement compilers, or placeholder zero results.

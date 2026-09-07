@@ -46,6 +46,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Prefer short names whose meaning is clear from local context, such as `options`, `client`, `entry`, and `fn`.
 - Keep wire formats, ordered tuples, protocol fields, and other order-sensitive shapes explicit. Do not alphabetize data whose order has meaning.
 - Avoid new `any`. Use a precise boundary type, validation, narrowing, or the smallest justified assertion.
+- Separate logical steps with blank lines: setup, validation, transformation, emission, and return paths should form readable groups. Keep tightly related statements together; avoid both dense uninterrupted blocks and a blank line after every statement. Apply the same grouping to test setup, execution, and assertions.
 - Do not use section-divider comments. Use exports, TSDoc, and whitespace to express module structure.
 - Comment invariants and non-obvious reasons, not line-by-line mechanics. Keep comments independent of plans, task IDs, and prior versions.
 
@@ -120,6 +121,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - Cover complete supported flows as they land: source to transformed module and CSS, packed-library consumption, watch recovery, and static native theme selection. Before a later stage exists, test the real available public boundary; do not fabricate a downstream stage.
 - Exclude colocated tests, benchmarks, and type fixtures from published files and build outputs.
 - Keep consumer type-contract fixtures alongside integration coverage. They validate inference and rejected inputs through public imports and do not replace runtime integration coverage.
+- Snapshot values and results individually. Do not assemble unrelated values into an object or array solely to combine snapshot assertions. Snapshot an object or collection directly when it is the actual result under test; keep separate outputs and checks in separate assertions near the relevant operation.
 - Assert observable runtime results and public diagnostics with inline snapshots (`toMatchInlineSnapshot` or `toThrowErrorMatchingInlineSnapshot`), not external snapshots or other assertion styles. Pass property matchers as the first argument to `toMatchInlineSnapshot` for genuinely nondeterministic fields, such as `expect.any(String)` or `expect.stringMatching(...)` for temporary paths. Keep deterministic values exact; never mask meaningful output. Review generated snapshots before accepting them. Compile-time `expectTypeOf` assertions and expected compiler errors remain in `.test-d.ts` fixtures. Never derive expected output from the implementation under test or treat a CSS snapshot alone as rendering proof.
 - Report V8 coverage for production `src/` files from the existing integration run. Exclude tests and benchmarks; retain unimported source files. Publish an updating PR coverage comment and CI artifact. Coverage is diagnostic, not a reason to introduce unit tests or mock implementations.
 - Add an integration regression scenario for every bug fix. Track coverage of consumer workflows and error paths rather than targeting a unit-test count or percentage.

@@ -23,11 +23,13 @@ export function compile(options: compile.Options): compile.ReturnType {
     preserveParens: false,
     sourceType: 'module',
   }).program
+
   type Span = Pick<Ast.Node, 'end' | 'start'>
-  const calls = new Map(extracted.calls.map((call) => [call.start, call]))
   const applications = new Map<number, { end: number; folded: boolean }>()
+  const calls = new Map(extracted.calls.map((call) => [call.start, call]))
   const definitions = new Map<number, Ast.ObjectExpression>()
   const identifiers = new Map<string, Span[]>()
+
   Walker.walk(program, {
     enter(node, parent) {
       if (node.type === 'Identifier') {
@@ -35,9 +37,11 @@ export function compile(options: compile.Options): compile.ReturnType {
         references.push(node)
         identifiers.set(node.name, references)
       }
+
       if (node.type !== 'CallExpression') return
       const call = calls.get(node.start)
       if (!call || node.end !== call.end) return
+
       const folded =
         parent?.type === 'CallExpression' &&
         parent.callee === node &&
@@ -47,6 +51,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         end: folded ? parent.end : call.end,
         folded,
       })
+
       let argument = node.arguments[0]
       while (
         argument?.type === 'TSAsExpression' ||
@@ -57,8 +62,10 @@ export function compile(options: compile.Options): compile.ReturnType {
         definitions.set(call.start, argument)
     },
   })
+
   let runtime = '__zyzzProps'
   while (identifiers.has(runtime)) runtime += '_'
+
   const first = extracted.calls[0]
   const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
   const names = new Map<string, string>()
@@ -68,6 +75,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         name,
         name.startsWith('z_base') ? `z-${scope}-${name.slice(2)}` : name,
       )
+
   const classes = Object.freeze(
     Object.fromEntries(
       Object.entries(emitted.classes).map(([name, value]) => [
@@ -80,6 +88,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       ]),
     ),
   )
+
   let callable = false
   for (const call of extracted.calls) {
     const application = applications.get(call.start)!
@@ -91,6 +100,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     )
     if (!application.folded) callable = true
   }
+
   function replaced(reference: Span) {
     let low = 0
     let high = extracted.calls.length
@@ -99,11 +109,13 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (extracted.calls[middle]!.start <= reference.start) low = middle + 1
       else high = middle
     }
+
     const call = extracted.calls[low - 1]
     return (
       call !== undefined && reference.end <= applications.get(call.start)!.end
     )
   }
+
   for (const node of program.body) {
     if (node.type !== 'ImportDeclaration' || node.source.value !== 'zyzz')
       continue
@@ -118,6 +130,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           : specifier.imported.value) !== 'css'
       )
         continue
+
       // Conservative retention also protects type queries and shadowed references.
       const remaining = identifiers
         .get(specifier.local.name)
@@ -128,7 +141,9 @@ export function compile(options: compile.Options): compile.ReturnType {
         )
       if (!remaining) removed.add(specifier)
     }
+
     if (!removed.size) continue
+
     const retained = node.specifiers.filter(
       (specifier) => !removed.has(specifier),
     )
@@ -146,6 +161,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       for (let index = 0; index < node.specifiers.length; index++) {
         const specifier = node.specifiers[index]!
         if (!removed.has(specifier)) continue
+
         const next = node.specifiers[index + 1]
         const previous = node.specifiers[index - 1]
         if (next) module.remove(specifier.start, next.start)
@@ -153,6 +169,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       }
     }
   }
+
   if (callable) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
@@ -162,16 +179,20 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (node.type !== 'ExpressionStatement' || !node.directive) break
       offset = node.end
     }
+
     module.appendLeft(
       offset,
       `\nimport { Props as ${runtime} } from 'zyzz/runtime';\n`,
     )
   }
+
   const cssMap = new Mapping.GenMapping({ file: `${options.moduleId}.css` })
   Mapping.setSourceContent(cssMap, options.moduleId, options.source)
+
   const lines = [0]
   for (let index = 0; index < options.source.length; index++)
     if (options.source[index] === '\n') lines.push(index + 1)
+
   function position(offset: number) {
     let low = 0
     let high = lines.length
@@ -180,15 +201,19 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (lines[middle]! <= offset) low = middle
       else high = middle
     }
+
     return { column: offset - lines[low]!, line: low + 1 }
   }
+
   const owners = new Map<string, Source.Call>()
   for (const call of extracted.calls)
     for (const name of emitted.classes[call.name]!.split(' '))
       if (!owners.has(name)) owners.set(name, call)
+
   const styles = new Map(
     extracted.styles.styles.map((style) => [style.name, style]),
   )
+
   // The bounded literal emitter produces one single-line class rule per line.
   const css = (emitted.css ? emitted.css.split('\n') : [])
     .map((rule, index) => {
@@ -203,6 +228,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         original: position(call.start),
         source: options.moduleId,
       })
+
       const body = rule.slice(brace)
       const style = styles.get(call.name)!
       const properties = definitions.get(call.start)!.properties
@@ -216,6 +242,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${declaration.value};`
         const start = body.indexOf(text, cursor)
         if (start < 0) continue
+
         const property = properties[propertyIndex]!
         Mapping.addMapping(cssMap, {
           generated: { column: selector.length + start, line },
@@ -225,14 +252,17 @@ export function compile(options: compile.Options): compile.ReturnType {
         })
         cursor = start + text.length
       }
+
       return selector + body
     })
     .join('\n')
+
   const map = module.generateMap({
     hires: true,
     includeContent: true,
     source: options.moduleId,
   })
+
   return Object.freeze({
     classes,
     code: module.toString(),

@@ -1,6 +1,6 @@
 # Compilation Benchmarks
 
-Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, with shared workloads in `bench/Corpus.ts`. Run `pnpm exec vp test bench --run --outputJson bench/results/timings.json`. Reports are ignored by Git.
+Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, with shared workloads in `bench/Corpus.ts`. Run `pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json`. Reports are ignored by Git.
 
 The separate Benchmarks workflow runs the same command and uploads results, commit, lockfile hash, runtime versions, and host details as a 30-day artifact. It does not compare results from different runners.
 
@@ -63,3 +63,5 @@ Lightning CSS preserves license comments, which are counted in the emitted CSS s
 ## Source Extraction Pipeline
 
 `src/compiler/Source.bench.ts` measures real parsing, lexical binding analysis, literal validation, and CSS emission for 10, 100, and 1,000 source definitions. Source text preparation is outside timing. Module rewriting, final minification, and browser bundling are excluded. The PR report groups these measurements separately from compiler comparisons; they are not interchangeable speed rankings or full application bundle measurements.
+
+Benchmark files run sequentially so extraction measurements do not compete with the compiler comparison suite. Integration-test parallelism is unchanged.

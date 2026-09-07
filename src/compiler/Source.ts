@@ -158,7 +158,12 @@ export function extract(options: extract.Options): extract.ReturnType {
       code: 'syntax_error',
       end: Math.min(position + 1, options.source.length),
       message:
-        error instanceof Error ? error.message : 'Unable to parse source.',
+        typeof error === 'object' &&
+        error !== null &&
+        'reasonCode' in error &&
+        typeof error.reasonCode === 'string'
+          ? `Unable to parse source: ${error.reasonCode}.`
+          : 'Unable to parse source.',
       source: options.moduleId,
       start: position,
     })

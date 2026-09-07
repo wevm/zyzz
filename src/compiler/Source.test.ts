@@ -360,10 +360,7 @@ test('syntax and module identity failures remain source owned', () => {
         {
           "code": "syntax_error",
           "end": 14,
-          "message": "/workspace/scratch/81ddc4c17cf1/typestyle/source.tsx: Unexpected token (1:13)
-
-      > 1 | export const =
-          |              ^",
+          "message": "Unable to parse source: UnexpectedToken.",
           "source": "example/broken.ts",
           "start": 13,
         },

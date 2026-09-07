@@ -127,7 +127,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 ## Benchmark Conventions
 
-- Use the installed Vite Plus/Vitest benchmark runner: import `bench` and `describe` from `vite-plus/test` in colocated `*.bench.ts` files, and run `pnpm exec vp test bench --run`. Keep benchmark APIs aligned with the lockfile.
+- Use the installed Vite Plus/Vitest benchmark runner: import `bench` and `describe` from `vite-plus/test` in colocated `*.bench.ts` files, and run `pnpm exec vp test bench --run --no-file-parallelism`. Keep benchmark APIs aligned with the lockfile.
 - Benchmark real public workflows using the integration fixture corpus. No mocks, stubs, synthetic replacement compilers, or greeting benchmarks. Benchmark compilation, extraction, rewriting, and watch workloads as those stages land. Zyzz joins compiler comparisons when its real CSS emitter exists; do not benchmark authoring alone.
 - Measure cold and warm compilation, incremental edits, throughput, memory, browser style recalculation, and native table selection separately. Use real browser/host timing for workloads outside the benchmark runner's execution model; do not substitute a function microbenchmark for end-to-end performance.
 - Record emitted CSS, generated JavaScript, class-name/markup bytes, and required runtime helpers separately, plus actual combined transfer. Report raw, gzip, and Brotli sizes without double-counting class strings already included in JavaScript or markup. Package download size is a separate metric.
@@ -183,5 +183,5 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 - `pnpm check` runs `vp check --fix`; use this single script for formatting, linting, and type checks.
 - `pnpm check:types` runs TypeScript checking; `pnpm test` runs `vp test`.
-- `pnpm exec vp test bench --run` runs benchmarks; append `--outputJson <file>` to save results or `--compare <file>` to compare a baseline.
+- `pnpm exec vp test bench --run --no-file-parallelism` runs benchmarks; append `--outputJson <file>` to save results or `--compare <file>` to compare a baseline.
 - `pnpm build` runs zile; `pnpm dev` runs `zile dev`.

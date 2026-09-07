@@ -19,21 +19,23 @@ Web correctness leads the MVP, with a working native subset included before the 
 
 The proposed signatures, examples, type rules, and emitted theme CSS are specified in [API and architecture](architecture.md). They are implementation targets, not claims about the existing package.
 
-| API                                | Contract                                                                        |
-| ---------------------------------- | ------------------------------------------------------------------------------- |
-| `css(style)` from `typestyle`      | Token-free web authoring with standard CSS values; emits classes and static CSS |
-| `typestyle/themes/default`         | Exports bound `css`, full `theme`, and raw `tokens` for opt-in bundled styling  |
-| `Style.define(styles)`             | Defines named, target-independent styles with typed token references            |
-| `Theme.define(tokens)`             | Defines token groups; each color is a string or complete light/dark pair        |
-| `Theme.extend(theme, overrides)`   | Creates a compatible theme with typed overrides and the same token contract     |
-| `Css.compile(options)`             | Emits CSS, named classes, and theme scope classes from in-memory definitions    |
-| `Native.compile(options)`          | Emits static style tables for each supplied theme and color scheme              |
-| `Native.select(styles, options)`   | Selects an existing theme/scheme table without compiling or merging             |
-| `theme.css(style)`                 | Infers property-specific tokens and compiles directly to readable class strings |
-| `theme.className`                  | Optional scope for inherited theme overrides                                    |
-| `typestyle <src> --out-dir <dist>` | Standalone module rewriting and stylesheet emission; planned watch/minify flags |
+| API                                  | Contract                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------- |
+| `css(style)` from `typestyle`        | Token-free web authoring with standard CSS values; emits classes and static CSS |
+| `typestyle/themes/default`           | Exports bound `css`, full `theme`, and raw `tokens` for opt-in bundled styling  |
+| `Style.define(styles)`               | Defines named, target-independent styles with typed token references            |
+| `Theme.define(tokens)`               | Defines token groups; each color is a string or complete light/dark pair        |
+| `Theme.extend(theme, overrides)`     | Creates a compatible theme with typed overrides and the same token contract     |
+| `Css.compile(options)`               | Emits CSS, named classes, and theme scope classes from in-memory definitions    |
+| `StyleSheet.compile(options)`        | Emits static style tables for each supplied theme and color scheme              |
+| `StyleSheet.select(styles, options)` | Selects an existing theme/scheme table without compiling or merging             |
+| `theme.css(style)`                   | Infers property-specific tokens and compiles directly to readable class strings |
+| `theme.className`                    | Optional scope for inherited theme overrides                                    |
+| `typestyle <src> --out-dir <dist>`   | Standalone module rewriting and stylesheet emission; planned watch/minify flags |
 
 Additional agreed APIs are `css(callback)`, `cx(...)`, `Vars.define`/`Vars.set`, `Variant.define(theme, definition)`, `Variant.Props`, optional `ClassName<Properties>` contracts, and `Css.global`/`Css.keyframes`/`Css.fontFace`. Keep `css` as the authoring name; `Vars` defines a set of variables, while `Variant` is singular and receives the full theme first.
+
+Import platform APIs as named namespaces: `Css` from `typestyle/web` and `StyleSheet` from `typestyle/react-native`. Shared style definitions remain under `Style` from `typestyle`; the root has no dependency on either target namespace.
 
 Value context callbacks use a single `c` parameter. Helpers are accessed through `c`, portable token references through `c.tokens`, and inferred web CSS variable references through `c.vars`. Root `css` has empty token and variable trees; theme functions infer both from their theme.
 
@@ -98,12 +100,12 @@ Status: planned.
 - [ ] Implement `Variant.define(theme, definition)` and `Variant.Props` with theme-first inference, base/variants/compounds/defaults, boolean selections, array compound matches, and value context callbacks.
 - [ ] Compile web recipes to stable classes and scoped data-attribute selectors; dynamic calls serialize selections only. Validate attribute ownership, null/default behavior, and ordered precedence.
 - [ ] Implement shared native recipe selection with the same inferred props and precedence; avoid unbounded variant/theme Cartesian products.
-- [ ] Implement `Css.compile` as a pure emitter returning CSS, named classes, and theme scope classes. Theme maps name outputs without adding definition metadata.
+- [ ] Export `Css` as a named namespace from `typestyle/web`. Implement `Css.compile` as a pure emitter returning CSS, named classes, and theme scope classes. Theme maps name outputs without adding definition metadata.
 - [ ] Emit deduplicated atoms with readable property/token/condition names and deterministic collision suffixes, retaining names in production.
 - [ ] Preserve ordered groups for conflicting declarations and conditions; verify cascade equivalence before deduplication. Include resolved query thresholds in identity and retain authored condition order.
 - [ ] Prune unreachable rules and unused variables while retaining complete live token sets in theme scopes.
-- [ ] Implement `Native.compile` as a pure emitter returning complete static tables for every requested theme/scheme pair.
-- [ ] Implement `Native.select` as a lookup only. System scheme, interaction, viewport, and accessibility inputs belong to application or host adapters.
+- [ ] Export `StyleSheet` as a named namespace from `typestyle/react-native`. Implement `StyleSheet.compile` as a pure emitter returning complete static tables for every requested theme/scheme pair, with errors owned by the same namespace.
+- [ ] Implement `StyleSheet.select` as a lookup only. System scheme, interaction, viewport, and accessibility inputs belong to application or host adapters.
 - [ ] Prove the same named style definitions with shared tokens on web and native before expanding coverage.
 - [ ] Specify native unit conversion and font handling; require explicit configuration where no portable default exists.
 - [ ] Document target support for selectors, queries, custom properties, CSS functions, text inheritance, units, and state. Unsupported semantics must fail rather than disappear silently.
@@ -124,7 +126,7 @@ Status: planned.
 - [ ] Distribute web modules, declarations, and CSS; distribute native modules, declarations, and static theme tables. Consumers do not need compiler integrations.
 - [ ] Verify server rendering, hydration identity, state-preserving refresh where supported, CSS-to-source tracing, actionable missing-transform diagnostics, and add/edit/remove/rename recovery.
 - [ ] Verify optional reset, global/font contributions, layer ordering, and independently packaged CSS in different loading orders.
-- [ ] Test independent packed consumers for root and `themes/default` exports, including bundled aliases through CLI/build extraction. Ensure root imports exclude bundled token data and CSS, and unused themes, targets, parsers, and tools stay out of runtime dependencies.
+- [ ] Test independent packed consumers for root, `themes/default`, and named `Css`/`StyleSheet` exports from `web`/`react-native`. Include bundled aliases through CLI/build extraction. Ensure root imports exclude bundled token data and CSS, and unused themes, targets, parsers, and tools stay out of runtime dependencies.
 
 Gate: all integration paths use the same contracts and agree on identity. Theme classes and tables survive packaging. Static web styles compile away; optional runtime composition, value binding, and variant selection have measured isolated costs. No target generates rules at runtime.
 

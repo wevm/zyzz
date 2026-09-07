@@ -24,6 +24,15 @@ The default theme bundles colors, typography, spacing, radii, and related design
 
 The exported `css` is an alias of `theme.css`, with identical inference, token identities, and output. `tokens` contains authored definitions; `theme.tokens` contains portable token references. Source adapters recognize these bindings through package exports and re-exports without executing theme modules.
 
+Platform APIs are named namespace exports from dedicated entrypoints:
+
+```ts
+import { Css } from 'typestyle/web'
+import { StyleSheet } from 'typestyle/react-native'
+```
+
+`Css` owns web stylesheet authoring and compilation. `StyleSheet` owns React Native compilation and precompiled theme/scheme selection. Both consume shared `Style.define` data through pure in-memory APIs. The root entrypoint remains independent of these target namespaces and their platform adapters.
+
 ## Theme definition
 
 `Theme.define(tokens)` accepts only token definitions. No name, identifier, contract metadata, or scheme container is required.
@@ -227,7 +236,7 @@ const bar = css({ width: progress.amount })
 
 `Vars.define(schema)` declares a set of typed variable references and compiles to target bindings. The initial schema supports `number`, `length`, `percentage`, and `color`, with target validation. `Vars.set(definition, values)` returns ordinary inline custom-property assignments on web; unknown keys or incompatible values are type errors. Unassigned variables follow normal CSS behavior unless the authored rule specifies a fallback.
 
-Dynamic assignment is allowed; dynamic rule generation is not. The core never reads device/browser state. Native adapters bind values to preidentified supported properties with explicit conversions; they do not parse CSS. Unsupported variable types or expressions fail compilation. This binding path is distinct from `Native.select`, which preserves static lookup identity.
+Dynamic assignment is allowed; dynamic rule generation is not. The core never reads device/browser state. Native adapters bind values to preidentified supported properties with explicit conversions; they do not parse CSS. Unsupported variable types or expressions fail compilation. This binding path is distinct from `StyleSheet.select`, which preserves static lookup identity.
 
 ## Variants
 
@@ -369,7 +378,7 @@ Additional inferred query keys support comparisons and ranges:
 ## Stylesheet APIs and layers
 
 ```ts
-import * as Css from 'typestyle/css'
+import { Css } from 'typestyle/web'
 
 const fadeIn = Css.keyframes({
   from: { opacity: 0 },
@@ -462,7 +471,7 @@ Browser fixtures must cover fallback values, explicit variables, nested themes, 
 
 ```ts
 import { Style } from 'typestyle'
-import * as Css from 'typestyle/css'
+import { Css } from 'typestyle/web'
 
 const styles = Style.define({
   card: {
@@ -480,21 +489,21 @@ web.themes.alternate // Scope class-name string.
 Theme map keys label outputs only; they do not define token identity or belong inside theme definitions. `Css.compile` returns `{ css, classes, themes }` and throws `Css.CompileError` with structured diagnostics. Direct in-memory calls need no parser or file access; source adapters additionally produce rewritten modules and source maps.
 
 ```ts
-import * as Native from 'typestyle/native'
+import { StyleSheet } from 'typestyle/react-native'
 
-const native = Native.compile({
+const native = StyleSheet.compile({
   styles,
   themes: { base: theme, alternate },
   units: { rem: 16 },
 })
-const selected = Native.select(native.styles, {
+const selected = StyleSheet.select(native.styles, {
   theme: 'alternate',
   colorScheme: 'dark',
 })
 selected.card // Precompiled native style object.
 ```
 
-`Native.compile` returns `{ styles }` indexed by supplied theme label, scheme, and style name. It throws `Native.CompileError` for unsupported semantics. `Native.select` performs an identity-preserving lookup with inferred labels and `light | dark`; invalid untyped selections throw `Native.SelectionError`.
+`StyleSheet.compile` returns `{ styles }` indexed by supplied theme label, scheme, and style name. It throws `StyleSheet.CompileError` for unsupported semantics. `StyleSheet.select` performs an identity-preserving lookup with inferred labels and `light | dark`; invalid untyped selections throw `StyleSheet.SelectionError`.
 
 Native styles and variants share token data and portable declarations. Web selectors and class strings are not native capabilities. Unit conversion is explicit, including `units.rem` when required; unavailable conversions and font mappings fail compilation. No runtime CSS parser or compiler is introduced. Optional variable binding and recipe selection use explicit platform adapters; static theme lookup remains unchanged.
 

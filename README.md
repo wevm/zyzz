@@ -147,11 +147,11 @@ const roomy = css({ padding: '1rem' })
 
 ### Stylesheets and Compilation
 
-`Css` provides global rules, keyframes, fonts, and in-memory CSS compilation. Named `Style` definitions also feed the native compiler.
+`Css` provides global rules, keyframes, fonts, and in-memory CSS compilation. `StyleSheet` compiles shared `Style` definitions into React Native styles and selects precompiled theme values.
 
 ```ts
 import { Style } from 'typestyle'
-import * as Css from 'typestyle/css'
+import { Css } from 'typestyle/web'
 
 Css.global({ body: { margin: 0 } })
 
@@ -162,10 +162,10 @@ const output = Css.compile({ styles })
 ```
 
 ```ts
-import * as Native from 'typestyle/native'
+import { StyleSheet } from 'typestyle/react-native'
 
-const output = Native.compile({ styles, themes: { base: theme } })
-const selected = Native.select(output.styles, {
+const output = StyleSheet.compile({ styles, themes: { base: theme } })
+const selected = StyleSheet.select(output.styles, {
   theme: 'base',
   colorScheme: 'dark',
 })

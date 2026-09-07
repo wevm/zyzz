@@ -144,6 +144,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - Add flat PascalCase modules under `src/` with colocated tests as implementation phases land.
 - The proposed `css` leaf helper is exported directly; conceptual modules use namespace exports.
 - Core semantics must be deterministic and independent of environments and tools; target emitters and host adapters have separate entrypoints.
+- Expose platform APIs as named namespace exports: `Css` from `typestyle/web` and `StyleSheet` from `typestyle/react-native`. Keep shared `Style` definitions in the root entrypoint, independently of target namespaces.
 - Add examples for web, native, and standalone distribution as their capabilities land.
 - `.agents/plan.md` tracks phases and acceptance gates; `.agents/architecture.md` defines the target API.
 

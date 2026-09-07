@@ -59,8 +59,7 @@ for (const [name, count, unique] of [
                       gzip: css.gzip + javascript.gzip,
                       raw: css.raw + javascript.raw,
                     },
-                    typestyle:
-                      'Unavailable: CSS compilation is not implemented.',
+                    zyzz: 'Unavailable: CSS compilation is not implemented.',
                   },
                   null,
                   2,

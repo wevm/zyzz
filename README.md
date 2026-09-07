@@ -1,4 +1,4 @@
-# typestyle
+# Zyzz
 
 A type-safe styling library for agents. Familiar CSS, inferred design tokens, and small APIs make styles straightforward to generate, inspect, and change.
 
@@ -25,7 +25,7 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 Define styles with `css`, call them, and spread the resulting props onto a component. The core has no built-in tokens; styles compile into CSS ahead of time.
 
 ```tsx
-import { css } from 'typestyle'
+import { css } from 'zyzz'
 
 const button = css({ color: '#06c', padding: '1rem' })
 
@@ -41,7 +41,7 @@ export function Button() {
 Use `css` inline or export a callable style definition. Nest selectors and queries alongside typed declarations.
 
 ```tsx
-import { css } from 'typestyle'
+import { css } from 'zyzz'
 
 const button = css({
   color: '#06c',
@@ -57,7 +57,7 @@ const button = css({
 A callback receives typed runtime values. Call the style with those values and optional `className`/`style` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
 
 ```tsx
-import { css } from 'typestyle'
+import { css } from 'zyzz'
 
 const bar = css((values: { width: `${number}%` }) => ({
   width: values.width,
@@ -72,10 +72,10 @@ export function Bar() {
 
 ### Themes
 
-Import a bundled theme's `css` for inferred design tokens. `typestyle/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
+Import a bundled theme's `css` for inferred design tokens. `zyzz/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
 
 ```ts
-import { css } from 'typestyle/themes/default'
+import { css } from 'zyzz/themes/default'
 
 const button = css({ color: 'blue.700', padding: 4 })
 ```
@@ -83,7 +83,7 @@ const button = css({ color: 'blue.700', padding: 4 })
 Define tokens once and get a `css` function that infers them. Colors accept a shared value or a light/dark pair; query aliases infer from theme thresholds.
 
 ```ts
-import { Theme } from 'typestyle'
+import { Theme } from 'zyzz'
 
 const theme = Theme.define({
   color: { text: { light: '#111', dark: '#eee' }, brand: '#06c' },
@@ -102,7 +102,7 @@ Use `Theme.extend(theme, overrides)` to create an alternate theme, and apply its
 
 ### Variants
 
-Describe component choices with inferred props, defaults, and compound rules. Use `theme.variants` for theme tokens or import token-free `variants` from `typestyle`. Web variants select styles through data attributes.
+Describe component choices with inferred props, defaults, and compound rules. Use `theme.variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
 
 ```tsx
 const button = theme.variants({
@@ -138,7 +138,7 @@ const panel = theme.css({
 Prefer state attributes for conditional styling. Calls accept `className` and `style` overrides. Classes are retained and inline styles merge. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
 
 ```tsx
-import { css, cx } from 'typestyle'
+import { css, cx } from 'zyzz'
 
 const base = css({ padding: '0.5rem' })
 const roomy = css({ padding: '1rem' })
@@ -151,8 +151,8 @@ const roomy = css({ padding: '1rem' })
 `Css` provides global rules, keyframes, fonts, and in-memory CSS compilation. `StyleSheet` compiles shared `Style` definitions into React Native styles and selects precompiled theme values.
 
 ```ts
-import { Style } from 'typestyle'
-import { Css } from 'typestyle/web'
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
 
 Css.global({ body: { margin: 0 } })
 
@@ -163,7 +163,7 @@ const output = Css.compile({ styles })
 ```
 
 ```ts
-import { StyleSheet } from 'typestyle/react-native'
+import { StyleSheet } from 'zyzz/react-native'
 
 const output = StyleSheet.compile({ styles, themes: { base: theme } })
 const selected = StyleSheet.select(output.styles, {
@@ -177,8 +177,8 @@ const selected = StyleSheet.select(output.styles, {
 Compile source modules and styles independently of a build integration. Watch mode updates output as definitions change.
 
 ```sh
-typestyle src --out-dir dist --watch
-typestyle src --out-dir dist --minify
+zyzz src --out-dir dist --watch
+zyzz src --out-dir dist --minify
 ```
 
 ## Comparison

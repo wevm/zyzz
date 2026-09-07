@@ -3,7 +3,7 @@
 `Style.define` validates plain data and returns deeply frozen, ordered definitions. It does not emit CSS or create component props. This is the input boundary for target compilation.
 
 ```ts
-import { Style } from 'typestyle'
+import { Style } from 'zyzz'
 
 const styles = Style.define({
   card: { display: 'flex', padding: '1rem', paddingLeft: 0 },

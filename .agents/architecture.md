@@ -10,9 +10,9 @@ Use small modules and subpath exports. All compilation paths share core semantic
 
 ## Entry Points
 
-`css` and `variants` from `typestyle` author standard CSS with an empty token contract. The root entrypoint neither imports nor re-exports bundled themes or their token data. Importing a theme does not alter the root function or register global state.
+`css` and `variants` from `zyzz` author standard CSS with an empty token contract. The root entrypoint neither imports nor re-exports bundled themes or their token data. Importing a theme does not alter the root function or register global state.
 
-Bundled themes use independent `typestyle/themes/<name>` entrypoints. The MVP provides `typestyle/themes/default` with named exports:
+Bundled themes use independent `zyzz/themes/<name>` entrypoints. The MVP provides `zyzz/themes/default` with named exports:
 
 | Export     | Contract                                                             |
 | ---------- | -------------------------------------------------------------------- |
@@ -28,8 +28,8 @@ The exported `css` and `variants` alias `theme.css` and `theme.variants`, with i
 Platform APIs are named namespace exports from dedicated entrypoints:
 
 ```ts
-import { Css } from 'typestyle/web'
-import { StyleSheet } from 'typestyle/react-native'
+import { Css } from 'zyzz/web'
+import { StyleSheet } from 'zyzz/react-native'
 ```
 
 `Css` owns web stylesheet authoring and compilation. `StyleSheet` owns React Native compilation and precompiled theme/scheme selection. Both consume shared `Style.define` data through pure in-memory APIs. The root entrypoint remains independent of these target namespaces and their platform adapters.
@@ -39,7 +39,7 @@ import { StyleSheet } from 'typestyle/react-native'
 `Theme.define(tokens)` accepts only token definitions. No name, identifier, contract metadata, or scheme container is required.
 
 ```ts
-import { Theme } from 'typestyle'
+import { Theme } from 'zyzz'
 
 export const theme = Theme.define({
   color: {
@@ -76,14 +76,14 @@ Token names infer from literal definitions. A scheme pair is a leaf, never a pal
 
 Property-specific color groups augment the shared `color` group and win when a key exists in both. A `textColor.primary` token is available to `color: 'primary'`, but not `backgroundColor: 'primary'`. `textColor` is a token category; authored styles keep the standard CSS property `color`.
 
-`Theme.define` uses exactly the supplied token groups, with no implicit preset merge. Bundled definitions are available as `tokens` from `typestyle/themes/default`; object spreads can opt into its groups. Token values must be statically resolvable and valid for their target.
+`Theme.define` uses exactly the supplied token groups, with no implicit preset merge. Bundled definitions are available as `tokens` from `zyzz/themes/default`; object spreads can opt into its groups. Token values must be statically resolvable and valid for their target.
 
 ## Consuming Styles
 
 Every `css` definition returns a callable. Calling it returns plain props to spread onto a component. Static styles use `button()`; dynamic styles use `button(values)`. There is no direct class-string or props-object overload for consuming an uncalled definition.
 
 ```tsx
-import { css } from 'typestyle'
+import { css } from 'zyzz'
 
 const button = css({ color: '#06c', padding: '1rem' })
 
@@ -95,7 +95,7 @@ export function Button() {
 Theme-bound and bundled functions follow the same contract, with inferred tokens:
 
 ```tsx
-import { css } from 'typestyle/themes/default'
+import { css } from 'zyzz/themes/default'
 
 const button = css({ padding: 4, color: 'blue.700' })
 const element = <button {...button()} />
@@ -180,7 +180,7 @@ A props object containing a class string does not itself supply conflict metadat
 An expression-bodied callback receives only the runtime values record. An annotated parameter defines the input contract; the callback returns an object with static property/selector/condition structure. `css` always returns a callable, regardless of whether its definition is an object or callback.
 
 ```tsx
-import { css } from 'typestyle'
+import { css } from 'zyzz'
 
 const track = css({ height: '0.5rem' })
 const bar = css((values: { width: `${number}%` }) => ({
@@ -245,7 +245,7 @@ Integration gates cover static and dynamic calls, repeated updates, nested insta
 ## Typed runtime variables
 
 ```tsx
-import { Vars, css } from 'typestyle'
+import { Vars, css } from 'zyzz'
 
 const progress = Vars.define({ amount: 'percentage' })
 const bar = css({ width: progress.amount })
@@ -261,7 +261,7 @@ Dynamic assignment is allowed; dynamic rule generation is not. The core never re
 
 ## Variants
 
-`theme.variants(definition)` binds recipe definitions to the theme, just like `theme.css`. The direct `variants` export from `typestyle` has an empty token contract. Bundled theme entrypoints also export the bound function. No variant namespace or explicit theme argument is needed.
+`theme.variants(definition)` binds recipe definitions to the theme, just like `theme.css`. The direct `variants` export from `zyzz` has an empty token contract. Bundled theme entrypoints also export the bound function. No variant namespace or explicit theme argument is needed.
 
 ```tsx
 const button = theme.variants({
@@ -296,7 +296,7 @@ const element = <button {...button({ intent: 'ghost', size: 'sm', loading })} />
 `variants` and `theme.variants` take static recipe objects. Use `theme.tokens` and `theme.vars` for explicit references; no context callback is needed. Infer variant names, string values, booleans, defaults, compound keys, and style tokens. `NonNullable<Parameters<typeof button>[0]>` extracts selection props; callers can make selected properties required using ordinary type utilities. The selection argument is optional, so `button()` applies defaults. No custom props helper is required.
 
 ```ts
-import { variants } from 'typestyle'
+import { variants } from 'zyzz'
 
 const button = variants({
   variants: { size: { sm: { padding: '0.5rem' }, md: { padding: '1rem' } } },
@@ -451,7 +451,7 @@ Additional inferred query keys support comparisons and ranges:
 ## Stylesheet APIs and layers
 
 ```ts
-import { Css } from 'typestyle/web'
+import { Css } from 'zyzz/web'
 
 const fadeIn = Css.keyframes({
   from: { opacity: 0 },
@@ -487,7 +487,7 @@ Css.compile({
 
 Layer configuration is optional; omission preserves unlayered output. When supplied, emit the declared order and place generated element styles in the selected layer. Global rules belong to the base layer when declared, otherwise remain unlayered. Applications own the shared layer order across independently compiled libraries; conflicting declarations receive diagnostics when visible in one input graph. Normal and important declarations retain standard layer semantics.
 
-The reset is opt-in via `import 'typestyle/reset.css'` and declares a reset layer. Merely importing the core changes no global styles. Test coexistence with ordinary stylesheets, global rules, and independently packaged libraries in multiple load orders. Layer ordering does not turn arbitrary class concatenation into last-wins composition.
+The reset is opt-in via `import 'zyzz/reset.css'` and declares a reset layer. Merely importing the core changes no global styles. Test coexistence with ordinary stylesheets, global rules, and independently packaged libraries in multiple load orders. Layer ordering does not turn arbitrary class concatenation into last-wins composition.
 
 ## Theme scopes and extension
 
@@ -541,8 +541,8 @@ Browser fixtures must cover fallback values, explicit variables, nested themes, 
 ## Pure target compilers
 
 ```ts
-import { Style } from 'typestyle'
-import { Css } from 'typestyle/web'
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
 
 const styles = Style.define({
   card: {
@@ -560,7 +560,7 @@ web.themes.alternate // Scope class-name string.
 Theme map keys label outputs only; they do not define token identity or belong inside theme definitions. `Css.compile` returns `{ css, classes, themes }` and throws `Css.CompileError` with structured diagnostics. Direct in-memory calls need no parser or file access; source adapters additionally produce rewritten modules and source maps.
 
 ```ts
-import { StyleSheet } from 'typestyle/react-native'
+import { StyleSheet } from 'zyzz/react-native'
 
 const native = StyleSheet.compile({
   styles,
@@ -585,20 +585,20 @@ The CLI is a first-class compilation path alongside build integrations and in-me
 Planned default command:
 
 ```sh
-typestyle src --out-dir dist
+zyzz src --out-dir dist
 ```
 
 Planned watch and production commands:
 
 ```sh
 # Compile authored modules and extract a stylesheet.
-typestyle src --out-dir dist --css dist/styles.css
+zyzz src --out-dir dist --css dist/styles.css
 
 # Rebuild changed modules, styles, and imported theme dependencies.
-typestyle src --out-dir dist --css dist/styles.css --watch
+zyzz src --out-dir dist --css dist/styles.css --watch
 
 # Production output, retaining readable class names.
-typestyle src --out-dir dist --css dist/styles.css --minify
+zyzz src --out-dir dist --css dist/styles.css --minify
 ```
 
 `--out-dir` contains rewritten modules and declarations; `--css` defaults to `<out-dir>/styles.css`. Modules contain generated props-binding functions in place of definitions, with fully static applications eligible for constant folding. Both reference precompiled classes; authoring callbacks do not remain in delivered code. Applications import the stylesheet or load it through a standard stylesheet link. Libraries publish these artifacts directly.

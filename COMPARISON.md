@@ -1,15 +1,15 @@
 # Comparison
 
-How typestyle, Tailwind, StyleX, and vanilla-extract approach typed styling, themes, composition, and delivery. Examples use the same small components where practical. DX means developer experience; AX means agent experience.
+How Zyzz, Tailwind, StyleX, and vanilla-extract approach typed styling, themes, composition, and delivery. Examples use the same small components where practical. DX means developer experience; AX means agent experience.
 
 ## Authoring, Types, and DX/AX
 
-### typestyle
+### Zyzz
 
 `css` accepts standard CSS objects inline or outside a component and returns a callable that produces spreadable props. Property types, token domains, and variant choices provide compiler feedback. Readable generated classes help connect rendered output to authored styles. The root import has no built-in tokens.
 
 ```tsx
-import { css } from 'typestyle'
+import { css } from 'zyzz'
 
 const button = css({ color: '#06c', padding: '1rem' })
 
@@ -65,12 +65,12 @@ export function Button() {
 
 ## Themes and Color Schemes
 
-### typestyle
+### Zyzz
 
 `Theme.define` takes tokens and returns a bound `css`. Colors accept strings or light/dark pairs; token references emit CSS variables with defining fallbacks. `Theme.extend` shares the contract, and its `className` scopes inherited overrides. CSS `color-scheme` selects the active member of each `light-dark()` pair.
 
 ```ts
-import { Theme } from 'typestyle'
+import { Theme } from 'zyzz'
 
 const theme = Theme.define({
   color: { text: { light: '#111', dark: '#eee' } },
@@ -84,7 +84,7 @@ const panel = theme.css({
 })
 ```
 
-Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `typestyle/themes/default` entrypoint exports bundled `css`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
+Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `zyzz/themes/default` entrypoint exports bundled `css`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
 
 ### Tailwind
 
@@ -148,12 +148,12 @@ export const panel = style({ color: vars.color.text })
 
 ## Selectors, Queries, and Value Helpers
 
-### typestyle
+### Zyzz
 
 Selectors and conditions nest alongside declarations. Theme breakpoint and container thresholds infer query aliases and compile to literal conditions, not CSS variables. A container threshold alias addresses the nearest eligible ancestor; it does not name a container. Establish containment on that ancestor with `containerType: 'inline-size'`.
 
 ```ts
-import { Theme } from 'typestyle'
+import { Theme } from 'zyzz'
 
 const theme = Theme.define({
   spacing: { sm: '0.5rem', md: '1rem' },
@@ -228,12 +228,12 @@ export const panel = style({
 
 ## Variants and Overrides
 
-### typestyle
+### Zyzz
 
 `theme.variants(definition)` infers tokens, choices, defaults, and compound rules. The direct `variants` import is token-free. Its callable result supplies a class and data attributes, encouraging explicit state attributes. Standard `Parameters` extracts the consumer contract. Choices may also be typed callbacks, with values scoped to that choice.
 
 ```tsx
-import { Theme } from 'typestyle'
+import { Theme } from 'zyzz'
 
 const theme = Theme.define({ spacing: { sm: '0.5rem', md: '1rem' } })
 const button = theme.variants({
@@ -316,12 +316,12 @@ export type ButtonProps = RecipeVariants<typeof button>
 
 ## Runtime Values
 
-### typestyle
+### Zyzz
 
 `css(values => styles)` receives a typed input record. Every definition is callable: static calls return class props, and dynamic calls add inline CSS variables. Calls accept `className` and `style` overrides; consumed values stay out of component props. Other props stay on the component.
 
 ```tsx
-import { css } from 'typestyle'
+import { css } from 'zyzz'
 
 const bar = css((values: { width: `${number}%` }) => ({
   width: values.width,
@@ -383,16 +383,16 @@ export function Bar() {
 
 ## Compilation, Libraries, and Platforms
 
-### typestyle
+### Zyzz
 
 A pure core separates definitions from environment adapters. Web compilation emits CSS and class references; the CLI transforms source modules and writes styles independently of a bundler. Optional integrations handle development updates and production builds through that shared pipeline.
 
 ```sh
-typestyle src --out-dir dist --watch
-typestyle src --out-dir dist --minify
+zyzz src --out-dir dist --watch
+zyzz src --out-dir dist --minify
 ```
 
-`Css` from `typestyle/web` exposes globals, keyframes, fonts, and in-memory compilation. `StyleSheet` from `typestyle/react-native` compiles supported shared definitions and selects static theme/scheme values. Web correctness takes priority; native rejects unsupported CSS semantics. React and Vue consume ordinary platform class/style APIs.
+`Css` from `zyzz/web` exposes globals, keyframes, fonts, and in-memory compilation. `StyleSheet` from `zyzz/react-native` compiles supported shared definitions and selects static theme/scheme values. Web correctness takes priority; native rejects unsupported CSS semantics. React and Vue consume ordinary platform class/style APIs.
 
 ### Tailwind
 
@@ -416,7 +416,7 @@ Build integrations evaluate `.css.ts` modules and extract web CSS. Libraries can
 
 ## Performance and Bundle Size
 
-### typestyle
+### Zyzz
 
 Static applications can fold into props constants; surviving callables perform props merging. Ordered rules allow deduplication where declaration identity and cascade order remain intact. Classes use readable names with collision suffixes. Dynamic selection, variable binding, and composition may retain small helpers or metadata; their cost belongs in the delivered bundle measurement.
 

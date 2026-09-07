@@ -21,7 +21,7 @@ export default defineConfig({
   },
   test: {
     alias: {
-      typestyle: Path.resolve(import.meta.dirname, 'src'),
+      zyzz: Path.resolve(import.meta.dirname, 'src'),
     },
     coverage: {
       exclude: ['src/**/*.bench.ts', 'src/**/*.test-d.ts', 'src/**/*.test.ts'],

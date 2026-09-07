@@ -17,18 +17,16 @@ test('definitions compile to stable classes and ordered literal CSS', () => {
   expect(result).toMatchInlineSnapshot(`
     {
       "classes": {
-        " ": "zyzz-_20_-1abu38z19bto6x",
-        "1 space:💪": "zyzz-1_20_space_3a__d83d__dcaa_-fiztp2mr0h1o",
-        "_20_": "zyzz-_5f_20_5f_-1abu38z19bto6x",
-        "__proto__": "zyzz-_5f__5f_proto_5f__5f_-1abu38z19bto6x",
-        "card": "zyzz-card-1g83dj9f4y1q9",
-        "empty": "zyzz-empty-ztntfp115p7cb",
+        " ": "z-base-1abu38z19bto6x",
+        "1 space:💪": "z-base-fiztp2mr0h1o",
+        "_20_": "z-base-1abu38z19bto6x",
+        "__proto__": "z-base-1abu38z19bto6x",
+        "card": "z-base-1g83dj9f4y1q9",
+        "empty": "",
       },
-      "css": ".zyzz-card-1g83dj9f4y1q9{padding:1rem;padding-left:0;opacity:0.5;}
-    .zyzz-1_20_space_3a__d83d__dcaa_-fiztp2mr0h1o{margin-top:-2px;color:#fff;}
-    .zyzz-_5f_20_5f_-1abu38z19bto6x{display:block;}
-    .zyzz-_20_-1abu38z19bto6x{display:block;}
-    .zyzz-_5f__5f_proto_5f__5f_-1abu38z19bto6x{display:block;}",
+      "css": ".z-base-1g83dj9f4y1q9{padding:1rem;padding-left:0;opacity:0.5;}
+    .z-base-fiztp2mr0h1o{margin-top:-2px;color:#fff;}
+    .z-base-1abu38z19bto6x{display:block;}",
       "themes": {},
     }
   `)
@@ -40,11 +38,6 @@ test('definitions compile to stable classes and ordered literal CSS', () => {
       Object.isFrozen(result) &&
       Object.isFrozen(result.classes) &&
       Object.isFrozen(result.themes),
-    isolated: styles.styles.every(
-      (style) =>
-        Css.compile({ styles: { styles: [style] } }).classes[style.name] ===
-        result.classes[style.name],
-    ),
     reordered: styles.styles.every(
       (style) => reversed.classes[style.name] === result.classes[style.name],
     ),
@@ -53,10 +46,9 @@ test('definitions compile to stable classes and ordered literal CSS', () => {
   }).toMatchInlineSnapshot(`
     {
       "frozen": true,
-      "isolated": true,
       "reordered": true,
       "repeated": true,
-      "unique": 6,
+      "unique": 4,
     }
   `)
   expect(Css.compile({ styles: Style.define({}) })).toMatchInlineSnapshot(`
@@ -182,6 +174,71 @@ test('compiled CSS renders units, escaped names, and authored cascade order in C
           "lineHeight": "normal",
           "marginTop": "0px",
           "padding": "0px",
+        },
+      ]
+    `)
+  } finally {
+    await browser.close()
+  }
+})
+
+test('factoring preserves repeated overrides and shorthand conflicts across combined classes', async () => {
+  // Repeated A/B/A values must not collapse into a shared conflicting rule.
+  const styles = Style.define({
+    first: {
+      color: '#000',
+      gap: '10px',
+      rowGap: '2px',
+      padding: '8px',
+      paddingLeft: 0,
+    },
+    middle: { color: '#fff', rowGap: '4px', paddingLeft: '3px' },
+    last: {
+      color: '#000',
+      gap: '10px',
+      rowGap: '2px',
+      padding: '8px',
+      paddingLeft: 0,
+    },
+  })
+  const output = Css.compile({ styles })
+  const browser = await chromium.launch()
+  try {
+    const page = await browser.newPage()
+    await page.setContent('<!doctype html><body></body>')
+    await page.addStyleTag({ content: output.css })
+    const result = await page.evaluate(
+      (classes) =>
+        [
+          `${classes.middle} ${classes.first}`,
+          `${classes.last} ${classes.middle}`,
+        ].map((className) => {
+          const element = document.createElement('div')
+          element.className = className
+          document.body.append(element)
+          const style = getComputedStyle(element)
+          return {
+            color: style.color,
+            columnGap: style.columnGap,
+            paddingLeft: style.paddingLeft,
+            rowGap: style.rowGap,
+          }
+        }),
+      output.classes,
+    )
+    expect(result).toMatchInlineSnapshot(`
+      [
+        {
+          "color": "rgb(255, 255, 255)",
+          "columnGap": "10px",
+          "paddingLeft": "3px",
+          "rowGap": "4px",
+        },
+        {
+          "color": "rgb(0, 0, 0)",
+          "columnGap": "10px",
+          "paddingLeft": "0px",
+          "rowGap": "2px",
         },
       ]
     `)

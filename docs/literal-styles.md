@@ -64,8 +64,12 @@ const { classes, css, themes } = Css.compile({ styles })
 // themes is empty at the literal boundary.
 ```
 
-Compilation is pure and emits grouped rules in authored order. CamelCase properties become kebab-case; literal units remain unchanged and numeric values stay unitless. Empty styles retain a class but emit no rule. Output maps and the result are frozen. Only the web entrypoint imports the compiler.
+Compilation is pure. Declarations are partitioned into overlapping property domains: padding, margin, and gap include their supported longhands; other supported properties are independent. A domain is shared only when every style mentioning it has the exact same ordered declarations. Conflicting domains retain distinct authored rules, including repeated A/B/A overrides.
 
-Class names use `zyzz-<encoded-name>-<content-hash>`. Non-ASCII and punctuation code units, including underscores, use unambiguous hexadecimal escapes; names cannot inject CSS or split the class attribute. Ordered declarations determine the deterministic hash. Machine paths, traversal order, and other styles do not affect a class. Hashes are identifiers, not a cryptographic integrity mechanism.
+CamelCase properties become kebab-case; units remain unchanged and numeric values stay unitless. Empty styles return an empty class list and no rule. The result and maps are frozen. Only the web entrypoint imports the compiler.
+
+Each class-map value is a space-separated list. Common declarations use a readable `z-base-<hash>` identifier. Conflicting bodies use encoded CSS property/value names, with the encoded authored name added when a body repeats. Punctuation encoding is injective, and identifier collisions fail explicitly. No global registry or runtime helper is emitted.
+
+Artifacts belong to the complete compilation input. Reordering styles preserves class lists while changing cascade order; adding or removing styles can change factoring and class lists. Repeated independent compilations of identical data agree regardless of machine paths or clocks. Always distribute class maps with their matching stylesheet. Hashes are identifiers, not cryptographic integrity checks.
 
 `Css.CompileError` aggregates invalid declarations and empty or duplicate names; no partial stylesheet is returned. Compiler input is the ordered data contract returned by `Style.define`, not arbitrary untrusted objects. Themes, nested conditions, callbacks, and source parsing remain outside this literal API. Declaration and rule ordering follow CSS cascade semantics; class-attribute order does not control overrides.

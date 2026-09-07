@@ -645,4 +645,4 @@ Compare grouped and atomic emission on repeated and unique styles. Measure compr
 
 ## Literal Compiler Boundary
 
-`Css.compile({ styles })` from `zyzz/web` implements the literal subset documented in `docs/literal-styles.md`. It returns frozen `{ classes, css, themes }` artifacts, with an empty theme map. Grouped rules preserve authored ordering, and class identities depend on encoded names and ordered literal content. Themes, source extraction, and atomic optimization belong to subsequent boundaries.
+`Css.compile({ styles })` from `zyzz/web` implements the literal subset documented in `docs/literal-styles.md`. It returns frozen `{ classes, css, themes }` artifacts, with an empty theme map. Nonconflicting declaration domains are shared; conflicting rules preserve authored cascade order. Class maps contain space-separated identifiers scoped to the complete compilation input. Identical inputs produce identical artifacts; adding definitions can change factoring. Themes, source extraction, and general atomic optimization belong to subsequent boundaries. Literal factoring is implemented early to meet the bundle-size budget.

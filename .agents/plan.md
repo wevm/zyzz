@@ -49,7 +49,7 @@ Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration
 
 ## Phase 1 — Build the core
 
-Status: in progress. [PR 1.1](https://github.com/wevm/typestyle/pull/1) is merged; [PR 1.2](https://github.com/wevm/typestyle/pull/3) is implemented and awaiting CI/review; PRs 1.3–1.5 are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
+Status: in progress. [PR 1.1](https://github.com/wevm/zyzz/pull/1) is merged; [PR 1.2](https://github.com/wevm/zyzz/pull/3) is implemented and awaiting CI/review; PRs 1.3–1.5 are unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
 
 Merge in dependency order. Each PR includes real integration scenarios, consumer type fixtures, relevant benchmark evidence, and public TSDoc. No unit tests, mocks, or stubs. Keep CI green and record the actual PR link and completion evidence beside each item as work lands.
 
@@ -71,19 +71,19 @@ Merge in dependency order. Each PR includes real integration scenarios, consumer
 
 Acceptance: public consumer scenarios prove inference, ordered immutable data, and actionable validation errors through real modules. Consumer type fixtures run in CI; compiler comparisons have reproducible fixtures and reports. The root dependency graph contains no themes, target emitters, parsers, filesystem access, or framework runtimes.
 
-Evidence: [PR #1](https://github.com/wevm/typestyle/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all integration scenarios pass. The separate Benchmarks workflow uploads reports and host metadata as CI artifacts; [reproduction instructions](../bench/README.md) and the [literal contract](../docs/literal-styles.md) are tracked. Zyzz browser rendering and CSS-output benchmarks start with PR 1.2.
+Evidence: [PR #1](https://github.com/wevm/zyzz/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all integration scenarios pass. The separate Benchmarks workflow uploads reports and host metadata as CI artifacts; [reproduction instructions](../bench/README.md) and the [literal contract](../docs/literal-styles.md) are tracked. Zyzz browser rendering and CSS-output benchmarks start with PR 1.2.
 
 ### PR 1.2 — Literal CSS Compilation
 
 - [x] Add the named `Css` namespace at `zyzz/web` and implement pure `Css.compile({ styles })` for the literal subset. Return the architecture's `{ css, classes, themes }` shape with an empty theme map and structured `Css.CompileError` diagnostics.
-- [x] Serialize valid CSS values and property names, retaining authored declaration order. Start with grouped rules; atomic optimization remains in Phase 3.
+- [x] Serialize valid CSS values and property names, retaining authored declaration order. Factor nonconflicting declaration domains and retain ordered conflicting rules; general atomic optimization remains in Phase 3.
 - [x] Generate readable deterministic class names with collision handling. Keep identity independent of machine paths, traversal order, clocks, and global mutable state; repeated isolated calls must agree.
 - [x] Add the real Zyzz compiler to the shared Tailwind, StyleX, and vanilla-extract compilation corpus in `bench/Compilation.ts`. Measure minified emitted CSS and required browser JavaScript separately in raw, gzip, and Brotli bytes; retain the same literal workloads and verify equivalent computed styles before reporting deltas. Do not compare `Style.define` validation with compilation.
 - [x] Add integration fixtures from public definitions through the real compiler and browser for deterministic output, escaping, unit handling, collisions, and order-sensitive shorthand/longhand declarations. Verify computed styles and establish compilation-time and emitted-byte baselines on the same corpus.
 
 Acceptance: in-memory definitions produce usable CSS and matching class names without source parsing or file access. Unsupported features fail explicitly. Root imports do not pull in the web compiler.
 
-Evidence: [PR #3](https://github.com/wevm/typestyle/pull/3), based on main `a5905ad`. Local formatting/lint, types, build, ten non-browser integration scenarios, and twelve compiler benchmarks pass. Chromium rendering is checked by CI. Initial Zyzz CSS gzip sizes are 146 bytes (small), 2,559 bytes (repeated), and 16,231 bytes (unique); corresponding client JavaScript gzip sizes are 344, 2,811, and 12,396 bytes. These are literal-pipeline baselines, not source-extraction or whole-application comparisons.
+Evidence: [PR #3](https://github.com/wevm/zyzz/pull/3), based on main `a5905ad`. Local formatting/lint, types, build, ten non-browser integration scenarios, and twelve compiler benchmarks pass. Chromium rendering is checked by CI. After literal factoring, total CSS plus client JavaScript gzip sizes are 468 bytes (small), 559 bytes (repeated), and 8,106 bytes (unique), versus StyleX at 558, 846, and 14,013 bytes. The integration corpus gates raw, gzip, and Brotli combined sizes below StyleX while checking browser equivalence. These are literal-pipeline baselines, not source-extraction or whole-application comparisons.
 
 ### PR 1.3 — Static Source Extraction
 
@@ -201,6 +201,7 @@ Status: planned.
 - [ ] Review every API and dependency against the principles; remove abstractions that duplicate platform behavior.
 - [ ] Measure compilation, incremental updates, type-check cost, raw/compressed CSS, callable/props-merging overhead, class-string bytes, total transfer, browser style recalculation, and native adapter cost independently.
 - [ ] Measure theme multiplication and generated-table size; deduplicate without changing observable theme or cascade semantics.
+- [ ] Require combined emitted CSS and client JavaScript to beat StyleX in matched raw/gzip/Brotli workloads as each capability lands. Expand the existing literal size gate to themes, variants, selectors, and library consumers; preserve CSS behavior and readable names.
 - [ ] Compare atomic and grouped output on repeated and unique styles; optimize the smaller safe representation. Measure the agreed variant API; defer additional recipe abstractions and slot systems until concrete usage justifies them.
 - [ ] Verify package metadata and the standard changeset/release workflow.
 

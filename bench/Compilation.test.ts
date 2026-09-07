@@ -1,4 +1,5 @@
 import * as Fs from 'node:fs/promises'
+import * as Zlib from 'node:zlib'
 import { chromium } from 'playwright'
 import { expect, test } from 'vite-plus/test'
 import * as Compilation from './Compilation.js'
@@ -13,6 +14,10 @@ test('all compilation pipelines render the equivalent repeated and unique corpus
     ] as const) {
       const fixture = await Compilation.create(count, unique)
       try {
+        const sizes = new Map<
+          string,
+          { brotli: number; gzip: number; raw: number }
+        >()
         for (const compile of [
           Compilation.stylex,
           Compilation.tailwind,
@@ -20,6 +25,24 @@ test('all compilation pipelines render the equivalent repeated and unique corpus
           Compilation.zyzz,
         ]) {
           const bundle = await compile(fixture)
+          if (compile === Compilation.stylex || compile === Compilation.zyzz) {
+            const values = [bundle.css, bundle.javascript]
+            sizes.set(compile === Compilation.stylex ? 'stylex' : 'zyzz', {
+              brotli: values.reduce(
+                (total, value) =>
+                  total + Zlib.brotliCompressSync(value).byteLength,
+                0,
+              ),
+              gzip: values.reduce(
+                (total, value) => total + Zlib.gzipSync(value).byteLength,
+                0,
+              ),
+              raw: values.reduce(
+                (total, value) => total + Buffer.byteLength(value),
+                0,
+              ),
+            })
+          }
           const page = await browser.newPage()
           try {
             await page.setContent(
@@ -71,6 +94,19 @@ test('all compilation pipelines render the equivalent repeated and unique corpus
             await page.close()
           }
         }
+        const stylex = sizes.get('stylex')!
+        const zyzz = sizes.get('zyzz')!
+        expect({
+          brotli: zyzz.brotli < stylex.brotli,
+          gzip: zyzz.gzip < stylex.gzip,
+          raw: zyzz.raw < stylex.raw,
+        }).toMatchInlineSnapshot(`
+          {
+            "brotli": true,
+            "gzip": true,
+            "raw": true,
+          }
+        `)
       } finally {
         await Fs.rm(fixture.directory, { force: true, recursive: true })
       }

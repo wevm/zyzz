@@ -2,9 +2,10 @@ import * as Literal from '../internal/Literal.js'
 import type * as Style from '../Style.js'
 
 /**
- * Emits grouped literal CSS without reading files or generating runtime code.
- * Preserves style and declaration order. Names depend only on the authored name
- * and ordered declarations. Empty styles receive a class and no CSS rule.
+ * Emits factored literal CSS without reading files or generating runtime code.
+ * Shares only nonconflicting declaration domains; conflicting rules retain authored
+ * order. Class lists are scoped to the complete compilation input. Empty styles
+ * return an empty class list and no rule.
  * @param options - Validated, ordered definitions from Style.define.
  * @returns Frozen class and theme maps alongside stylesheet text.
  * @throws {CompileError} If declarations are invalid or class identities collide.
@@ -14,18 +15,10 @@ export function compile<const name extends string>(
 ): compile.ReturnType<name> {
   const classes = Object.create(null) as Record<name, string>
   const diagnostics: Diagnostic[] = []
-  const identities = new Map<string, string>()
-  const rules: string[] = []
-  for (const style of options.styles.styles) {
-    if (!style.name || Object.hasOwn(classes, style.name)) {
-      diagnostics.push({
-        code: 'invalid_name',
-        message: 'Style names must be nonempty and unique.',
-        path: [style.name],
-      })
-      continue
-    }
+  const groups = new Map<string, Set<string>>()
+  const prepared = options.styles.styles.map((style) => {
     const declarations: string[] = []
+    const domains = new Map<string, string[]>()
     for (const { property, value } of style.declarations) {
       const message = Object.hasOwn(Literal.rules, property)
         ? Literal.validate(property, value)
@@ -38,33 +31,79 @@ export function compile<const name extends string>(
         })
         continue
       }
-      declarations.push(
-        `${property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value};`,
-      )
+      const declaration = `${property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value};`
+      declarations.push(declaration)
+      const domain = property.startsWith('margin')
+        ? 'margin'
+        : property.startsWith('padding')
+          ? 'padding'
+          : ['columnGap', 'gap', 'rowGap'].includes(property)
+            ? 'gap'
+            : property
+      const sequence = domains.get(domain) ?? []
+      sequence.push(declaration)
+      domains.set(domain, sequence)
     }
-    const body = declarations.join('')
-    // Encode underscores too, so authored escape-like names remain distinct.
-    const label = style.name.replace(
-      /[^a-zA-Z0-9-]/g,
-      (character) => `_${character.charCodeAt(0).toString(16)}_`,
-    )
-    const className = `zyzz-${label}-${hash(body)}`
-    const identity = JSON.stringify([style.name, body])
-    const previous = identities.get(className)
-    if (previous !== undefined && previous !== identity)
+    for (const [domain, sequence] of domains) {
+      const signatures = groups.get(domain) ?? new Set<string>()
+      signatures.add(sequence.join(''))
+      groups.set(domain, signatures)
+    }
+    return { declarations, domains, name: style.name }
+  })
+  const counts = new Map<string, number>()
+  const factored = prepared.map((style) => {
+    const common = new Set<string>()
+    for (const [domain, sequence] of style.domains)
+      if (groups.get(domain)?.size === 1)
+        for (const declaration of sequence) common.add(declaration)
+    const ordered = style.declarations
+      .filter((declaration) => !common.has(declaration))
+      .join('')
+    const shared = style.declarations
+      .filter((declaration) => common.has(declaration))
+      .join('')
+    counts.set(ordered, (counts.get(ordered) ?? 0) + 1)
+    return { name: style.name, ordered, shared }
+  })
+  const rules = new Map<string, string>()
+  for (const style of factored) {
+    if (!style.name || Object.hasOwn(classes, style.name)) {
       diagnostics.push({
-        code: 'identity_collision',
-        message: 'Distinct rules produced the same class identifier.',
+        code: 'invalid_name',
+        message: 'Style names must be nonempty and unique.',
         path: [style.name],
       })
-    identities.set(className, identity)
-    classes[style.name] = className
-    if (body) rules.push(`.${className}{${body}}`)
+      continue
+    }
+    const { ordered, shared } = style
+    const names: string[] = []
+    // Shared domains have identical ordered declarations everywhere they occur.
+    // All conflicting domains retain a distinct rule per authored style.
+    for (const [body, sharedRule] of [
+      [shared, true],
+      [ordered, false],
+    ] as const) {
+      if (!body) continue
+      const identity = sharedRule
+        ? `z-base-${hash(body)}`
+        : `z-${counts.get(body) === 1 ? '' : `${encode(style.name)}-`}${encode(body.slice(0, -1))}`
+      const previous = rules.get(identity)
+      if (previous !== undefined && previous !== body)
+        diagnostics.push({
+          code: 'identity_collision',
+          message: 'Distinct rules produced the same class identifier.',
+          path: [style.name],
+        })
+      rules.set(identity, body)
+      names.push(identity)
+    }
+    classes[style.name] = names.join(' ')
   }
   if (diagnostics.length) throw new CompileError(diagnostics)
   return Object.freeze({
     classes: Object.freeze(classes),
-    css: rules.join('\n'),
+    css: [...rules].map(([name, body]) => `.${name}{${body}}`).join('\n'),
     themes: Object.freeze({}),
   })
 }
@@ -81,9 +120,9 @@ export declare namespace compile {
   }
   /** Static web artifacts with precisely inferred authored names. */
   type ReturnType<name extends string = string> = {
-    /** One readable class identifier per authored style. */
+    /** Readable space-separated class identifiers per authored style. */
     readonly classes: Readonly<Record<name, string>>
-    /** Grouped CSS in authored order, without reset, layers, or minification. */
+    /** Factored CSS preserving cascade behavior, without reset or layers. */
     readonly css: string
     /** Empty until theme compilation is supported. */
     readonly themes: Readonly<Record<string, never>>
@@ -122,6 +161,14 @@ export type Diagnostic = {
   readonly message: string
   /** Authored style name, followed by a property when applicable. */
   readonly path: readonly string[]
+}
+
+// Encoding underscores and delimiters makes the value form injective.
+function encode(value: string): string {
+  return value.replace(
+    /[^a-zA-Z0-9-]/g,
+    (character) => `_${character.charCodeAt(0).toString(16)}_`,
+  )
 }
 
 // Two independently seeded 32-bit streams; no platform crypto or shared state.

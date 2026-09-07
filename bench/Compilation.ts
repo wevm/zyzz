@@ -6,6 +6,7 @@ import StylexPlugin, {
 } from '@stylexjs/babel-plugin'
 import { vanillaExtractPlugin } from '@vanilla-extract/esbuild-plugin'
 import * as Esbuild from 'esbuild'
+import * as LightningCss from 'lightningcss'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Tailwind from 'tailwindcss'
@@ -111,14 +112,22 @@ async function javascript(source: string): Promise<string> {
   return result.outputFiles[0]!.text
 }
 
-async function minify(css: string): Promise<string> {
-  return (
-    await Esbuild.transform(css, {
-      legalComments: 'none',
-      loader: 'css',
-      minify: true,
-    })
-  ).code
+/** Fixed benchmark processing settings; these are not package support requirements. */
+export const minification = {
+  filename: 'styles.css',
+  minify: true,
+  sourceMap: false,
+  targets: { chrome: 120 << 16, firefox: 128 << 16, safari: 17 << 16 },
+}
+
+/** Applies the same final CSS processing to every compiler's emitted stylesheet. */
+export function minify(css: string): string {
+  return Buffer.from(
+    LightningCss.transform({
+      ...minification,
+      code: Buffer.from(css),
+    }).code,
+  ).toString()
 }
 
 /** Runs Panda's config loading, code generation, extraction, and browser bundling. */
@@ -130,7 +139,7 @@ export async function panda(fixture: Fixture): Promise<Bundle> {
   const file = Path.join(fixture.directory, 'panda.css')
   await Panda.cssgen(context, { cwd: fixture.directory, outfile: file })
   return {
-    css: await minify(await Fs.readFile(file, 'utf8')),
+    css: minify(await Fs.readFile(file, 'utf8')),
     javascript: await javascript(
       `export { classes } from ${JSON.stringify(Path.join(fixture.directory, 'panda.ts'))};`,
     ),
@@ -151,7 +160,7 @@ export async function stylex(fixture: Fixture): Promise<Bundle> {
   // The package exports a CommonJS function; its declaration uses an ESM default.
   const plugin = StylexPlugin as unknown as StyleXTransformObj
   return {
-    css: await minify(plugin.processStylexRules(metadata.stylex)),
+    css: minify(plugin.processStylexRules(metadata.stylex)),
     javascript: await javascript(result.code),
   }
 }
@@ -160,7 +169,7 @@ export async function stylex(fixture: Fixture): Promise<Bundle> {
 export async function tailwind(fixture: Fixture): Promise<Bundle> {
   const compiler = await Tailwind.compile('@tailwind utilities;')
   return {
-    css: await minify(
+    css: minify(
       compiler.build(fixture.tailwind.flatMap((value) => value.split(' '))),
     ),
     javascript: await javascript(
@@ -190,14 +199,14 @@ export async function vanillaExtract(fixture: Fixture): Promise<Bundle> {
   )?.text
   if (!css || !javascript)
     throw new Error('vanilla-extract did not emit CSS and JavaScript.')
-  return { css: await minify(css), javascript }
+  return { css: minify(css), javascript }
 }
 
 /** Emits grouped CSS from prepared definitions and bundles static class exports. */
 export async function zyzz(fixture: Fixture): Promise<Bundle> {
   const output = Css.compile({ styles: fixture.zyzz })
   return {
-    css: await minify(output.css),
+    css: minify(output.css),
     javascript: await javascript(
       `export const classes = ${JSON.stringify(fixture.zyzz.styles.map(({ name }) => output.classes[name]))};`,
     ),

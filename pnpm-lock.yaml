@@ -41,6 +41,9 @@ importers:
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
+      lightningcss:
+        specifier: ^1.33.0
+        version: 1.33.0
       pkg-pr-new:
         specifier: ^0.0.88
         version: 0.0.88

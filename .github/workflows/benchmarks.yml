@@ -158,12 +158,21 @@ jobs:
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/themes/*.json >> bench/results/report.md
           printf '\nBuild timings use warm host processes and fresh compiler state. Compiler workflows have different scopes; see bench/README.md in the repository for measurement boundaries.\n' >> bench/results/report.md
-          cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Prepare benchmark comparisons
         id: comparison
         env:
           BASELINE_DIRECTORY: ${{ steps.download-baseline.outcome == 'success' && format('{0}/benchmark-baseline', runner.temp) || '' }}
-        run: node bench/Compare.ts bench/results "$BASELINE_DIRECTORY" "$RUNNER_TEMP/benchmark-action"
+        run: |
+          node bench/Compare.ts bench/results "$BASELINE_DIRECTORY" "$RUNNER_TEMP/benchmark-action" > "$RUNNER_TEMP/benchmark-comparison.md"
+          cat "$RUNNER_TEMP/benchmark-comparison.md" bench/results/report.md > "$RUNNER_TEMP/benchmark-report.md"
+          mv "$RUNNER_TEMP/benchmark-report.md" bench/results/report.md
+          cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment benchmark results
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: benchmarks
+          path: bench/results/report.md
       - if: ${{ !cancelled() }}
         name: Upload benchmark results
         uses: actions/upload-artifact@v4
@@ -177,29 +186,24 @@ jobs:
         uses: benchmark-action/github-action-benchmark@v1
         with:
           alert-threshold: '${{ env.BENCH_TIME_THRESHOLD }}%'
-          comment-always: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-          comment-on-alert: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
           external-data-json-path: ${{ runner.temp }}/benchmark-action/time-baseline.json
           fail-on-alert: false
           github-token: ${{ github.token }}
           name: time
           output-file-path: ${{ runner.temp }}/benchmark-action/time.json
           save-data-file: false
-          summary-always: true
           tool: customSmallerIsBetter
       - name: Check size regressions
         if: ${{ !cancelled() && steps.comparison.outcome == 'success' }}
         uses: benchmark-action/github-action-benchmark@v1
         with:
           alert-threshold: '${{ env.BENCH_SIZE_THRESHOLD }}%'
-          comment-always: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
           external-data-json-path: ${{ runner.temp }}/benchmark-action/size-baseline.json
           fail-on-alert: ${{ github.event_name != 'push' }}
           github-token: ${{ github.token }}
           name: size
           output-file-path: ${{ runner.temp }}/benchmark-action/size.json
           save-data-file: false
-          summary-always: true
           tool: customSmallerIsBetter
     timeout-minutes: 15
 permissions:

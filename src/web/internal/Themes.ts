@@ -10,7 +10,7 @@ import type * as Theme from '../../Theme.js'
 export function create() {
   const contracts = new Map<
     Token.Contract,
-    { index: number; paths: Set<string> }
+    { index: number | string; paths: Set<string> }
   >()
 
   function serialize(
@@ -28,7 +28,10 @@ export function create() {
     }
     let contract = contracts.get(token.contract)
     if (!contract) {
-      contract = { index: contracts.size, paths: new Set() }
+      contract = {
+        index: token.contract[Token.identity] ?? contracts.size,
+        paths: new Set(),
+      }
       contracts.set(token.contract, contract)
     }
     contract.paths.add(token.path)
@@ -79,6 +82,6 @@ function literal(value: Token.Value): string {
     : String(value)
 }
 
-function variable(index: number, path: string): string {
-  return `--z-t${index}-${encode(path)}`
+function variable(index: number | string, path: string): string {
+  return `--z-t${encode(String(index))}-${encode(path)}`
 }

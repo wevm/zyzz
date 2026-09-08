@@ -41,11 +41,21 @@ Theme.extend(base, { spacing: { md: '2rem' } })
 
 Returns a complete immutable `Theme.Definition<tokens>` preserving the original contract identity and untouched values.
 
+### className
+
+- Type: `string`
+
+Scope class replaced by the source compiler for a local theme. Reading it without transformation throws the missing-transform error.
+
+```ts
+const scope = theme.className
+```
+
 ### css
 
 - Type: `Theme.Css<tokens>`
 
-Bound callable authoring with inferred token names. Source linking is a preview at this baseline; untransformed execution throws an error named `css.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
+Bound callable authoring with inferred token names. Same-module source compilation is supported; untransformed execution throws an error named `css.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
 
 ```ts
 const card = roomy.css({ padding: 'md' })

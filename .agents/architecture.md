@@ -1006,6 +1006,8 @@ JavaScript replacements map to the authored definition or direct application. CS
 
 ### File Host Lifecycle
 
+Local theme source compilation now extends the literal transform. Module-level local `Theme.define`/`Theme.extend` factories are analyzed as data, direct bound calls resolve names through the pure theme/style boundary, and `.className` reads become scope constants. Theme identities derive from the stable module ID and binding, independently of values and offsets. Generated JavaScript contains no theme constructor; TypeScript preserves literal contract types. Imported/exported themes and aliases remain the separate graph-linking gate. See [the supported boundary](../docs/guides/themes.md#compile-local-theme-source).
+
 `Host.create({ outDir, packageId, root })` from `zyzz/node` owns filesystem state and returns `{ build, close, watch }`. The source, web, root, and runtime entrypoints have no dependency on this host. Builds call the existing `Transform.compile`; cached results are reused only for identical source text and the same package-relative identity.
 
 The host scans JavaScript and TypeScript module extensions recursively, ignoring declaration/test/benchmark files, `.git`, `node_modules`, symbolic links, and its output subtree. It writes the source-relative module plus `.map`, `.css`, and `.css.map` sidecars. TypeScript/JSX lowering, assets, import resolution, stylesheet loading, and source-map URL composition remain consumer responsibilities. Source declarations cannot depend on other modules yet; dependency edits are rescan events, not an imported-value evaluator.

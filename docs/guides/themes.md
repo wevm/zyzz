@@ -162,7 +162,7 @@ Classes and variable slots belong to one in-memory graph. Separate outputs requi
 >
 > - Bundled tokens and typography presets.
 > - Query metadata.
-> - Source extraction and compiled `theme.className`.
+> - Cross-module theme source linking.
 > - `theme.vars` expressions.
 
 #### Selecting a Theme
@@ -184,7 +184,7 @@ function App({ appearance }: { appearance: 'alternate' | 'base' }) {
 The class selection changes inherited variable values; component styles stay the same. Select light or dark independently through `color-scheme`. Independently defined themes own separate contracts and do not override one another, even when token paths match.
 
 > [!NOTE]
-> Source authoring is a preview. It will expose scopes through `theme.className`. Define styles with bound `theme.css` or `theme.vars`, then select a compatible scope when rendering. No runtime compiler or variables function is needed.
+> Same-module source authoring supports `theme.css` and `theme.className`; see [Compile Local Theme Source](#compile-local-theme-source). Cross-module linking and `theme.vars` remain previews.
 
 #### Token Names
 
@@ -205,7 +205,38 @@ Token-aware option bags require a defined theme. An optional theme permits only 
 - **Nested palettes:** use dotted names.
 - **Numeric spacing keys:** accept numeric or string spelling.
 
-`theme.css` exposes the same inferred property types and callable props contract as root `css`, including literal styling overrides. Its extraction and rewrite support is a separate source-linking step; executing an untransformed call throws an error named `css.MissingTransformError`. The in-memory pipeline above is executable without a transform.
+`theme.css` exposes the same inferred property types and callable props contract as root `css`, including literal styling overrides. Same-module extraction and rewriting are supported by `Transform.compile`; executing an untransformed call throws an error named `css.MissingTransformError`. The in-memory pipeline above is executable without a transform.
+
+### Compile Local Theme Source
+
+The source compiler accepts module-level local `Theme.define` and `Theme.extend` calls with literal token data. Direct `theme.css` calls use the existing scalar property and token-name contract. Source is analyzed without executing application code.
+
+```ts
+import { Theme } from 'zyzz'
+
+const theme = Theme.define({
+  color: { brand: { dark: '#fff', light: '#000' } },
+  spacing: { md: '8px' },
+})
+const alternate = Theme.extend(theme, { color: { brand: '#f00' } })
+
+export const scope = alternate.className
+export const button = theme.css({ color: 'brand', padding: 'md' })
+```
+
+Apply `scope` to an ancestor and spread `button()` onto the styled element. Scope inheritance selects token values; standard CSS `color-scheme` independently selects light or dark. A style works without a scope using its defining token fallbacks.
+
+`Transform.compile({ moduleId, source })` returns executable module code, CSS, class/scope maps, and source maps. Module IDs include a stable package identity and relative path. Token and scope identities derive from that ID and the defining binding, independently of token values and statement offsets. Renaming a binding or module changes identity.
+
+Theme factories and scope reads become constants. Escaping style definitions use the existing small props runtime; direct no-argument applications can fold into props constants. Generated JavaScript does not import the theme authoring implementation or generate rules. Rewritten TypeScript retains literal theme types for type queries; JavaScript inputs receive no TypeScript syntax.
+
+`Source.extract` exposes local theme data and rewrite spans alongside ordered styles. Pass both `styles` and `themes` to `Css.compile` when using extraction without rewriting. Theme scope maps use stable module/binding keys. Theme scope rules trace to their factory; element declarations trace to their authored properties.
+
+Themes must be local `const` bindings declared before their references. Extensions reference a preceding local theme. Literal object keys, nested palette data, numeric keys, and transparent `as`/`satisfies` wrappers are supported. Namespace imports, expressions, spreads, mutation, dynamic factories, aliases, destructuring, and escaping/exported theme objects receive source diagnostics.
+
+Export compiled scope strings and style callables from this boundary. Importing/exporting theme contracts, aliases/re-exports, explicit source token paths, and cross-file dependency linking remain the next step. The file host compiles supported local themes through the same transform and rebuilds their CSS after edits.
+
+Reading `theme.className` or calling `theme.css` without transformation throws the missing-transform error. Pure in-memory compilation continues to use `Css.compile(...).themes`; it does not read the authoring getter.
 
 ### Shared Configuration
 

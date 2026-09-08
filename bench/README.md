@@ -72,6 +72,10 @@ Fixture projects have a fixed package name and relative source filename inside i
 
 `src/compiler/Transform.bench.ts` measures parsing, binding analysis, validation, ordered CSS emission, module rewriting, and both source maps for 10/100/1,000 exported literal definitions. File loading, final minification, and browser bundling are outside the timing. This is a broader pipeline than the independent in-memory comparison matrix and does not establish cross-library winners.
 
+A separate local-theme group uses the same counts with one literal color token, two compatible scalar scopes, and bound style calls. It includes factory extraction, token-name resolution, stable identities, scope constants, and maps. Literal and theme records use separate filenames and PR tables. This group does not include imported theme linking or replace the existing matched cross-library theme comparisons.
+
+Transform timing uses at least 30 samples and one second of measurement after at least 10 warmup iterations and 500 milliseconds. Baseline comparisons must use those same settings; the earlier three-sample windows are too noisy for large-module regression decisions.
+
 Setup records final CSS and bundled JavaScript under `bench/results/transform`, including the required `zyzz/runtime` props helper. CSS uses the existing shared Lightning CSS settings. JavaScript uses esbuild minification. Raw, gzip, and Brotli totals include both delivery assets; map bytes are recorded separately. Maps are not silently included in or subtracted from browser transfer.
 
 `src/runtime/Props.bench.ts` measures the actual generated-callable helper with no overrides and with class/style overrides. Creation happens outside timing; the measured operation validates inputs and returns props without generating rules. These are JavaScript binding costs, not browser rendering or framework rerender measurements.

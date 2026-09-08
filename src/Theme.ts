@@ -2,7 +2,7 @@
  * Defines typed token contracts and compatible immutable theme overrides.
  * @module
  */
-import { css } from './css.js'
+import { css, MissingTransformError } from './css.js'
 import * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import type * as Style from './Style.js'
@@ -37,6 +37,8 @@ export function define<const tokens extends Tokens>(
 
 /** A theme contract with immutable, property-aware portable token references. */
 export type Definition<tokens extends Tokens = Tokens> = {
+  /** Compiled scope class; reading untransformed authoring throws. */
+  readonly className: string
   /** Token-aware callable authoring boundary, replaced by the source compiler. */
   readonly css: Css<tokens>
   /** Internal contract and resolved values, carried without a registry. */
@@ -267,9 +269,19 @@ function build(
   }
   freeze(tokens)
   return Object.freeze(
-    Object.defineProperty({ css, tokens }, Token.definition, {
-      value: Object.freeze({ contract, values: Object.freeze(values) }),
-    }),
+    Object.defineProperty(
+      {
+        get className(): string {
+          throw new MissingTransformError()
+        },
+        css,
+        tokens,
+      },
+      Token.definition,
+      {
+        value: Object.freeze({ contract, values: Object.freeze(values) }),
+      },
+    ),
   )
 }
 

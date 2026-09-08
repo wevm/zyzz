@@ -11,7 +11,7 @@ import * as Css from '../web/Css.js'
 import * as Source from './Source.js'
 
 /**
- * Rewrites literal web authoring without evaluation, file access, or transpilation.
+ * Rewrites literal web styles and local themes without evaluation or file access.
  * Direct no-argument applications become props; other definitions become callables.
  * CSS retains ordered composition and receives module-scoped class identities.
  * @param options - Source text and a stable package-relative module identity.
@@ -21,7 +21,10 @@ import * as Source from './Source.js'
  */
 export function compile(options: compile.Options): compile.ReturnType {
   const extracted = Source.extract(options)
-  const emitted = Css.compile({ styles: extracted.styles })
+  const emitted = Css.compile({
+    styles: extracted.styles,
+    themes: extracted.themeCalls.length ? extracted.themes : undefined,
+  })
   const module = new MagicString(options.source)
   const program = Parser.parseSync('source.tsx', options.source, {
     preserveParens: false,
@@ -105,19 +108,40 @@ export function compile(options: compile.Options): compile.ReturnType {
     if (!application.folded) callable = true
   }
 
+  for (const call of extracted.themeCalls) {
+    const props = `{className:${JSON.stringify(emitted.themes[call.name])}}`
+    const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
+      ? ` as import('zyzz').Theme.Definition<${call.tokenType}>`
+      : ''
+    module.overwrite(call.start, call.end, `(${props}${assertion})`)
+  }
+  for (const reference of extracted.themeReferences)
+    module.overwrite(
+      reference.start,
+      reference.end,
+      JSON.stringify(emitted.themes[reference.name]),
+    )
+
+  const replacements = [
+    ...extracted.calls.map((call) => ({
+      end: applications.get(call.start)!.end,
+      start: call.start,
+    })),
+    ...extracted.themeCalls,
+    ...extracted.themeReferences,
+  ].sort((a, b) => a.start - b.start)
+
   function replaced(reference: Span) {
     let low = 0
-    let high = extracted.calls.length
+    let high = replacements.length
     while (low < high) {
       const middle = (low + high) >>> 1
-      if (extracted.calls[middle]!.start <= reference.start) low = middle + 1
+      if (replacements[middle]!.start <= reference.start) low = middle + 1
       else high = middle
     }
 
-    const call = extracted.calls[low - 1]
-    return (
-      call !== undefined && reference.end <= applications.get(call.start)!.end
-    )
+    const call = replacements[low - 1]
+    return call !== undefined && reference.end <= call.end
   }
 
   for (const node of program.body) {
@@ -129,9 +153,11 @@ export function compile(options: compile.Options): compile.ReturnType {
         node.importKind === 'type' ||
         specifier.type !== 'ImportSpecifier' ||
         specifier.importKind === 'type' ||
-        (specifier.imported.type === 'Identifier'
-          ? specifier.imported.name
-          : specifier.imported.value) !== 'css'
+        !['css', 'Theme'].includes(
+          specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value,
+        )
       )
         continue
 
@@ -218,12 +244,26 @@ export function compile(options: compile.Options): compile.ReturnType {
     extracted.styles.styles.map((style) => [style.name, style]),
   )
 
-  // The bounded literal emitter produces one single-line class rule per line.
+  const themeOwners = new Map(
+    extracted.themeCalls.map((call) => [emitted.themes[call.name], call]),
+  )
+
+  // Literal and scalar-theme rules each occupy one line at this boundary.
   const css = (emitted.css ? emitted.css.split('\n') : [])
     .map((rule, index) => {
       const line = index + 1
       const brace = rule.indexOf('{')
       const name = rule.slice(1, brace)
+      const themeOwner = themeOwners.get(name)
+      if (themeOwner) {
+        Mapping.addMapping(cssMap, {
+          generated: { column: 0, line },
+          name: themeOwner.name,
+          original: position(themeOwner.start),
+          source: options.moduleId,
+        })
+        return rule
+      }
       const selector = `.${names.get(name)!}`
       const call = owners.get(name)!
       Mapping.addMapping(cssMap, {
@@ -243,9 +283,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         propertyIndex++
       ) {
         const declaration = style.declarations[propertyIndex]!
-        if (typeof declaration.value === 'object')
-          throw new Error('Theme source rewriting is not supported.')
-        const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${declaration.value};`
+        const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:`
         const start = body.indexOf(text, cursor)
         if (start < 0) continue
 
@@ -282,6 +320,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       sourcesContent: map.sourcesContent!,
       version: 3 as const,
     },
+    themes: emitted.themes,
   })
 }
 
@@ -303,5 +342,7 @@ export declare namespace compile {
     readonly cssMap: Mapping.EncodedSourceMap
     /** Standard rewritten-module map, including original source content. */
     readonly map: Mapping.EncodedSourceMap
+    /** Stable scope classes keyed by local module/binding identity. */
+    readonly themes: Readonly<Record<string, string>>
   }
 }

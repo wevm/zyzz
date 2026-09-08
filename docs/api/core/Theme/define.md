@@ -100,11 +100,21 @@ Theme.define({ textColor: { muted: '#666' } })
 
 Returns `Theme.Definition<tokens>` with inferred references and bound authoring types.
 
+### className
+
+- Type: `string`
+
+Scope class replaced by the source compiler for a local theme. Reading it without transformation throws the missing-transform error.
+
+```ts
+const scope = theme.className
+```
+
 ### css
 
 - Type: `Theme.Css<tokens>`
 
-Bound callable authoring with inferred token names. Source linking is a preview at this baseline; untransformed execution throws an error named `css.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
+Bound callable authoring with inferred token names. Same-module source compilation is supported; untransformed execution throws an error named `css.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
 
 ```ts
 const card = theme.css({ padding: 'md' })
@@ -125,6 +135,6 @@ theme.tokens.spacing.md
 `Theme.InvalidError` identifies invalid groups, paths, records, values, or cycles. Palettes must be nonempty and keys dot-free.
 
 > [!NOTE]
-> Source-linked `theme.css`, `theme.className`, `theme.vars`, bound `variants`, and broader groups are previews at this baseline. Use [Compile Themes](../../../guides/themes.md#compile-themes) for the current executable flow.
+> Same-module `theme.css` and `theme.className` are supported by `Transform.compile`. Cross-module linking, `theme.vars`, bound `variants`, and broader groups remain previews. See [Compile Local Theme Source](../../../guides/themes.md#compile-local-theme-source).
 
 See [Theme](README.md) for related methods and types.

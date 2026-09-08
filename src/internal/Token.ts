@@ -31,7 +31,7 @@ export function accepts(
 }
 
 /** Opaque data shared by a definition and its compatible extensions. */
-export type Contract = Readonly<object>
+export type Contract = { readonly [identity]?: string | undefined }
 
 /** Constructs a frozen reference without registering global state. */
 export function create(options: Omit<Reference, typeof reference>): Reference {
@@ -49,6 +49,9 @@ export type Group =
   | 'color'
   | 'spacing'
   | 'textColor'
+
+/** Stable package/module/binding identity supplied by source adapters. */
+export const identity = Symbol('zyzz.contract.identity')
 
 /** Recognizes references without invoking getters on untrusted style values. */
 export function is(value: unknown): value is Reference {

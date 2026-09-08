@@ -1,12 +1,14 @@
 /**
- * Extracts literal style calls through static parsing and lexical binding analysis.
+ * Extracts literal styles and local themes through lexical source analysis.
  * @module
  */
 import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Style from '../Style.js'
+import type * as Theme from '../Theme.js'
 import * as Scope from './internal/Scope.js'
+import * as Themes from './internal/Themes.js'
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
@@ -37,10 +39,10 @@ export type Diagnostic = {
 }
 
 /**
- * Extracts direct literal calls bound to named css imports from zyzz.
+ * Extracts direct css calls and local Theme definitions imported from zyzz.
  * Parses TypeScript and JSX without reading files, loading config, or evaluating source.
  * @param options - Source text and a portable package-relative module identity.
- * @returns Frozen ordered definitions and call spans. Source text is not rewritten.
+ * @returns Frozen style/theme definitions and rewrite spans. Source text is unchanged.
  * @throws {ExtractError} For syntax errors, unsupported imported references, or invalid literals.
  */
 export function extract(options: extract.Options): extract.ReturnType {
@@ -88,6 +90,15 @@ export function extract(options: extract.Options): extract.ReturnType {
     throw new ExtractError(diagnostics)
   }
   const program = parsed.program
+  const themes = (() => {
+    try {
+      return Themes.collect(program, { namespace: identity(options.moduleId) })
+    } catch (error) {
+      if (!(error instanceof Themes.InvalidError)) throw error
+      report('unsupported_syntax', error.message, error)
+      throw new ExtractError(diagnostics)
+    }
+  })()
   const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
   Walker.walk(program, { scopeTracker })
   scopeTracker.freeze()
@@ -117,6 +128,14 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
         return
       const binding = scopeTracker.getDeclaration(node.name)
+      if (themes)
+        try {
+          if (themes.reference(node, parent, ancestors, binding)) return
+        } catch (error) {
+          if (!(error instanceof Themes.InvalidError)) throw error
+          report('unsupported_syntax', error.message, error)
+          return
+        }
       if (
         binding?.type !== 'Import' ||
         binding.importNode.source.value !== 'zyzz' ||
@@ -125,20 +144,20 @@ export function extract(options: extract.Options): extract.ReturnType {
         return
       const specifier = binding.node
       if (specifier.type === 'ImportNamespaceSpecifier') {
-        if (
-          parent.type === 'MemberExpression' &&
-          parent.object === node &&
-          ((parent.property.type === 'Identifier' &&
-            !parent.computed &&
-            parent.property.name === 'css') ||
-            (parent.property.type === 'Literal' &&
-              parent.property.value === 'css'))
-        )
-          report(
-            'unsupported_syntax',
-            'Import css by name; namespace authoring calls are not supported yet.',
-            parent,
-          )
+        if (parent.type === 'MemberExpression' && parent.object === node) {
+          const name =
+            parent.property.type === 'Identifier' && !parent.computed
+              ? parent.property.name
+              : parent.property.type === 'Literal'
+                ? parent.property.value
+                : undefined
+          if (name === 'css' || name === 'Theme')
+            report(
+              'unsupported_syntax',
+              `Import ${name} by name; namespace authoring calls are not supported yet.`,
+              parent,
+            )
+        }
         return
       }
       if (
@@ -201,6 +220,8 @@ export function extract(options: extract.Options): extract.ReturnType {
     scopeTracker,
   })
   // Imports and reference lists can have a different order from authored calls.
+  if (themes)
+    for (const entry of themes.styles.values()) pending.push(entry.call)
   pending.sort((a, b) => a.start - b.start)
   for (const call of pending) {
     let argument = call.arguments[0]
@@ -284,7 +305,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     try {
       const definition = Style.define(
         { [name]: values as Style.Properties },
-        { locations },
+        { locations, theme: themes?.styles.get(call.start)?.theme },
       )
       styles.push(...definition.styles)
       calls.push({ end: call.end, name, start: call.start })
@@ -304,6 +325,9 @@ export function extract(options: extract.Options): extract.ReturnType {
   return Object.freeze({
     calls: Object.freeze(calls.map((call) => Object.freeze(call))),
     styles: Object.freeze({ styles: Object.freeze(styles) }),
+    themeCalls: Object.freeze(themes?.calls ?? []),
+    themeReferences: Object.freeze(themes?.references ?? []),
+    themes: themes?.themes ?? Object.freeze({}),
   })
 }
 
@@ -324,6 +348,12 @@ export declare namespace extract {
     readonly calls: readonly Call[]
     /** Validated definitions accepted by Css.compile. */
     readonly styles: Style.Definition
+    /** Local factory spans replaced by compiled scope data. */
+    readonly themeCalls: readonly Themes.Call[]
+    /** Scope reads replaced by class constants. */
+    readonly themeReferences: readonly Themes.Reference[]
+    /** Stable scope keys and validated local theme definitions. */
+    readonly themes: Readonly<Record<string, Theme.Definition>>
   }
 }
 

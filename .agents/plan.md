@@ -142,7 +142,7 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) and [PR 2.2a / #10](https://github.com/wevm/zyzz/pull/10) are merged. Audit baseline: main `9aa72fc`. Source identity/linking in 2.2b is next.
+Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) and [PR 2.2a / #10](https://github.com/wevm/zyzz/pull/10) are merged. Local theme source compilation in 2.2b.1 starts from main `9aa72fc`; graph linking remains 2.2b.2.
 
 The [CSS capability union](parity.md) deduplicates parity items across the referenced frameworks, with numbered capabilities and Zyzz usage for each. It separates implemented capabilities, planned behavior, API proposals, and deferred external-CSS integration targets. Current declaration support is 40 literal properties; general CSS coverage is not complete.
 
@@ -151,6 +151,9 @@ The [CSS capability union](parity.md) deduplicates parity items across the refer
 1. **2.1 — In-Memory Theme Contracts:** `Theme.define`, compatible `Theme.extend`, immutable typed scalar references, and `Style.define` to `Css.compile` integration. Emit live custom properties, defining fallbacks, light/dark pairs, and complete inherited scopes. Cover browser scheme/scope behavior and compiler size/timing separately. Retain the documented literal grammar; source themes and authoring callables are not part of this PR.
 2. **2.2a — Theme Authoring Contracts:** bound `theme.css` inference and missing-transform behavior; typed shorthand resolution through `Style.define(styles, { theme })`; property-specific color precedence, nested/numeric names, literal precedence, browser scope parity, and resolution-to-CSS benchmarks. Source rewriting is a separate dependency and bound calls remain non-executable until it lands.
 3. **2.2b — Theme Source Identity and Linking:** extract bound calls, derive stable package/module/binding identities, link imported theme dependencies, and publish packed-library contracts. Expose compiled `theme.className`, preserve aliases/re-exports, and verify source/file/watch parity. No independently emitted theme library is supported before this gate.
+
+   This work is split into two implementation PRs. **2.2b.1 — Local Theme Source** compiles literal local definitions/extensions, bound calls, and scope reads with stable identities, maps, source-to-browser coverage, and host rebuilds. **2.2b.2 — Theme Graph Linking** adds imported/exported contracts, aliases/destructuring/re-exports, explicit source token references, dependency watching, and packed-library interoperability. Local source support does not complete the linking gate.
+
    Follow theme source identity/linking with **2.2c — Configuration Contracts:** `Config.create`, inline/reusable theme inputs, named defaults and shared contract normalization, bound inference, source extraction, and packed declarations. Layer key inference lands with this contract; layer emission/hoisting remains 2.4c and variants follow Phase 3.
 
 4. **2.3 — Standard Values and Variables:** widen CSS literal parsing, fallback arrays, importance, static expressions, and inferred `theme.vars`; add dynamic value bindings and explicit variables in dependency-sized follow-ups.
@@ -189,6 +192,7 @@ PR 2.1 uses opaque object references for contracts within one in-memory graph. C
 - [ ] Extract dynamic scalar positions without executing callbacks. Emit fixed CSS-variable rules and small binding functions; reject dynamic rule structure, token lookup, optional/null leaves, arbitrary calls, and unsupported expressions. Specify primitive validation, private variable isolation, static fallback restrictions, and explicit binding composition.
 - [ ] Add real source-to-browser integration scenarios for callback values, pseudo/query rules, nested instances, theme changes, server rendering/hydration, and packed callable exports. Prove stable classes/rule count after repeated updates and removal of authoring callbacks. Check input inference, callable static/dynamic props, consumed-key removal, override rules, reserved keys, and rejected className misuse through consumer fixtures and benchmark binding time, CSS/JavaScript bytes, and browser recalculation.
 - [ ] Recognize imported and destructured theme functions with full inference and static extraction.
+- [x] Implement local literal theme factories/extensions, direct bound calls, and scope reads through Source/Transform. Keep theme identities stable across value edits and unrelated source insertions; retain generated TypeScript contracts without shipping theme authoring code. See [local theme compilation](../docs/theme-source.md).
 - [ ] Support static `css` calls inline, outside markup, and in exported/imported style constants equally; extraction must not depend on a `className` attribute.
 - [ ] Implement scoped pseudo-classes/elements, explicit `&` selectors, and nested `@media`, `@container`, and `@supports` with theme inference at every depth.
 - [ ] Add relational-selector integration/type fixtures for named data groups/peers, group descendants using `:has`, sibling direction, direct/all children, nested names, state combinations, and cross-module reusable conditions. Preserve explicit `:where`/`:is` specificity; do not infer nearest-group boundaries.

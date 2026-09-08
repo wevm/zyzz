@@ -1,6 +1,6 @@
 # Host
 
-Filesystem builds, ownership, and watching.
+Filesystem builds, Lightning CSS processing, ownership, and watching.
 
 ```ts
 import { Host } from 'zyzz/node'

@@ -1016,7 +1016,7 @@ The initial adapter collects reachable physical JavaScript/TypeScript within the
 
 Dynamic imports, cycles, dependency authoring, and framework virtual sources remain unsupported. The existing standalone/in-memory relative resolver remains a compatibility path, not the production package resolver.
 
-Reuse Lightning CSS for browser compatibility transforms and minification at the build-adapter boundary, composing maps and retaining consuming-build targets. Let a consuming bundler own final CSS processing when it already does. A separate implementation step adds standalone processing; do not duplicate browser grammar, prefixing, or minification in Zyzz.
+Reuse Lightning CSS for browser compatibility transforms and minification at the build-adapter boundary, composing maps and retaining consuming-build targets. Let a consuming bundler own final CSS processing when it already does. `Host.create({ css })` processes standalone CSS with explicit Lightning CSS targets, optional minification, and composed maps. Processing defaults to enabled without minification or browser targets; `css: false` preserves intermediate output. Do not duplicate browser grammar, prefixing, or minification in Zyzz.
 
 Prior art: [vanilla-extract's compiler](https://github.com/vanilla-extract-css/vanilla-extract/blob/master/packages/compiler/src/compiler.ts) combines its own styling semantics with Vite and vite-node. Zyzz retains static analysis rather than executing source. [Vite environments](https://vite.dev/guide/api-environment-plugins) provide resolution/invalidation boundaries; [Lightning CSS](https://lightningcss.dev/docs.html) processes the resulting CSS.
 

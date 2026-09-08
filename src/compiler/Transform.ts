@@ -115,6 +115,14 @@ export function compile(options: compile.Options): compile.ReturnType {
       : ''
     module.overwrite(call.start, call.end, `(${props}${assertion})`)
   }
+  for (const alias of extracted.themeAliases) {
+    const value = alias.destructured ? '{css:undefined}' : 'undefined'
+    const type = `import('zyzz').Theme.Definition<${alias.tokenType}>`
+    const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
+      ? ` as unknown as ${alias.destructured ? `{readonly css:${type}['css']}` : `${type}['css']`}`
+      : ''
+    module.overwrite(alias.start, alias.end, `(${value}${assertion})`)
+  }
   for (const reference of extracted.themeReferences)
     module.overwrite(
       reference.start,
@@ -127,6 +135,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       end: applications.get(call.start)!.end,
       start: call.start,
     })),
+    ...extracted.themeAliases,
     ...extracted.themeCalls,
     ...extracted.themeReferences,
   ].sort((a, b) => a.start - b.start)

@@ -92,7 +92,7 @@ Use [Compile Themes](guides/themes.md#compile-themes) for the current pipeline.
 
 Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
 
-Use the instance handles from a [named-theme config](guides/themes.md#configure-authoring):
+Use the instance handles from a [named-theme config](guides/themes.md#selecting-a-theme):
 
 ```tsx
 import { zyzz } from './zyzz.config.js'

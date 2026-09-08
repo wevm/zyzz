@@ -92,6 +92,29 @@ const shorthand = Theme.define({
   textColor: { foreground: '#111' },
 })
 const { css: themedCss } = shorthand
+const memberCss = shorthand.css
+const chainedCss = memberCss
+const renamedCss = themedCss
+expectTypeOf(memberCss).toEqualTypeOf<typeof shorthand.css>()
+expectTypeOf(chainedCss).toEqualTypeOf<typeof shorthand.css>()
+expectTypeOf(renamedCss).toEqualTypeOf<typeof shorthand.css>()
+expectTypeOf(
+  chainedCss({ color: 'brand', padding: 4 }),
+).toEqualTypeOf<css.ReturnType>()
+expectTypeOf(
+  renamedCss({ color: 'blue.500', padding: 'md' })(),
+).toEqualTypeOf<css.Props>()
+// @ts-expect-error Member aliases reject undeclared token paths.
+memberCss({ color: 'blue.600' })
+// @ts-expect-error Alias chains retain token domains.
+chainedCss({ color: 'md' })
+// @ts-expect-error Renamed destructured aliases reject unknown properties.
+renamedCss({ colour: 'brand' })
+// @ts-expect-error Chained aliases require declared numeric spacing keys.
+chainedCss({ padding: 5 })
+// @ts-expect-error Applied alias styles accept only literal overrides.
+renamedCss({ padding: 'md' })({ style: { padding: 'md' } })
+
 const themedCard = themedCss({
   backgroundColor: 'surface',
   borderRadius: 'round',

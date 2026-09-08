@@ -73,6 +73,8 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [StyleSheet.select](api/react-native/StyleSheet/select.md): Reference and examples.
 - [CLI](api/cli.md): Reference and examples.
 - [zyzz/compiler](api/compiler/README.md): Section index.
+- [Graph](api/compiler/Graph/README.md): Source graph compilation.
+- [Graph.compile](api/compiler/Graph/compile.md): Linked modules, CSS, and maps.
 - [Source](api/compiler/Source/README.md): Section index.
 - [Source.extract](api/compiler/Source/extract.md): Reference and examples.
 - [Transform](api/compiler/Transform/README.md): Section index.

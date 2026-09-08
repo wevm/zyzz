@@ -142,7 +142,7 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) and [PR 2.2a / #10](https://github.com/wevm/zyzz/pull/10) are merged. [PR 2.2b.1 / #12](https://github.com/wevm/zyzz/pull/12) is merged. [PR #13](https://github.com/wevm/zyzz/pull/13) adds local bound-authoring aliases. Explicit source token references continue 2.2b.2; cross-module graph linking remains open.
+Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) and [PR 2.2a / #10](https://github.com/wevm/zyzz/pull/10) are merged. [PR 2.2b.1 / #12](https://github.com/wevm/zyzz/pull/12) is merged. [PR #13](https://github.com/wevm/zyzz/pull/13) adds local bound-authoring aliases. [PR #14](https://github.com/wevm/zyzz/pull/14) adds explicit source token references. Relative source graphs and host dependency rebuilds continue 2.2b.2; package contracts remain open.
 
 The [CSS capability union](parity.md) deduplicates parity items across the referenced frameworks, with numbered capabilities and Zyzz usage for each. It separates implemented capabilities, planned behavior, API proposals, and deferred external-CSS integration targets. Current declaration support is 40 literal properties; general CSS coverage is not complete.
 
@@ -193,7 +193,8 @@ PR 2.1 uses opaque object references for contracts within one in-memory graph. C
 - [ ] Add real source-to-browser integration scenarios for callback values, pseudo/query rules, nested instances, theme changes, server rendering/hydration, and packed callable exports. Prove stable classes/rule count after repeated updates and removal of authoring callbacks. Check input inference, callable static/dynamic props, consumed-key removal, override rules, reserved keys, and rejected className misuse through consumer fixtures and benchmark binding time, CSS/JavaScript bytes, and browser recalculation.
 - [x] Recognize local member aliases, css destructuring/renaming, and alias chains with inference, lexical shadowing, generated type contracts, and source/file/browser integration.
 - [x] Compile explicit local theme token paths in bound calls/aliases, preserving token domains, fallbacks, liveness, source locations, and numeric/nested paths.
-- [ ] Link imported/exported theme contracts and authoring functions, re-exports, dependency watching, and packed-library contracts. Local aliases are the first dependency slice of 2.2b.2 and do not complete graph linking.
+- [x] Link relative source theme imports/exports, bound-authoring functions, named/star re-exports, and compatible extensions through Graph.compile. Preserve defining identities and cross-file maps; rebuild file-host consumers on dependency edits and recover from missing modules.
+- [ ] Add package export resolution and packed authoring contracts, cycle handling, and dependency-scoped incremental compilation. Relative graph support rejects cycles/dynamic source imports and does not complete the packed-library gate.
 - [x] Implement local literal theme factories/extensions, direct bound calls, and scope reads through Source/Transform. Keep theme identities stable across value edits and unrelated source insertions; retain generated TypeScript contracts without shipping theme authoring code. See [local theme compilation](../docs/guides/themes.md#compile-local-theme-source).
 - [ ] Support static `css` calls inline, outside markup, and in exported/imported style constants equally; extraction must not depend on a `className` attribute.
 - [ ] Implement scoped pseudo-classes/elements, explicit `&` selectors, and nested `@media`, `@container`, and `@supports` with theme inference at every depth.

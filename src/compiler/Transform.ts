@@ -9,6 +9,7 @@ import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Css from '../web/Css.js'
 import * as Source from './Source.js'
+import * as Themes from './internal/Themes.js'
 
 /**
  * Rewrites literal web styles and local themes without evaluation or file access.
@@ -20,10 +21,11 @@ import * as Source from './Source.js'
  * @throws {Css.CompileError} If literal CSS compilation fails.
  */
 export function compile(options: compile.Options): compile.ReturnType {
-  const extracted = Source.extract(options)
+  const extracted =
+    options[Themes.context]?.extracted ?? Source.extract(options)
   const emitted = Css.compile({
     styles: extracted.styles,
-    themes: extracted.themeCalls.length ? extracted.themes : undefined,
+    themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
   })
   const module = new MagicString(options.source)
   const program = Parser.parseSync('source.tsx', options.source, {
@@ -257,12 +259,36 @@ export function compile(options: compile.Options): compile.ReturnType {
     extracted.themeCalls.map((call) => [emitted.themes[call.name], call]),
   )
 
+  const linkedOwners = new Map(
+    Object.entries(options[Themes.context]?.owners ?? {}).map(
+      ([key, owner]) => [emitted.themes[key], owner],
+    ),
+  )
+
   // Literal and scalar-theme rules each occupy one line at this boundary.
   const css = (emitted.css ? emitted.css.split('\n') : [])
     .map((rule, index) => {
       const line = index + 1
       const brace = rule.indexOf('{')
       const name = rule.slice(1, brace)
+      const linkedOwner = linkedOwners.get(name)
+      if (linkedOwner) {
+        const lines = linkedOwner.source
+          .slice(0, linkedOwner.call.start)
+          .split('\n')
+        Mapping.setSourceContent(
+          cssMap,
+          linkedOwner.moduleId,
+          linkedOwner.source,
+        )
+        Mapping.addMapping(cssMap, {
+          generated: { column: 0, line },
+          name: linkedOwner.call.name,
+          original: { line: lines.length, column: lines.at(-1)!.length },
+          source: linkedOwner.moduleId,
+        })
+        return rule
+      }
       const themeOwner = themeOwners.get(name)
       if (themeOwner) {
         Mapping.addMapping(cssMap, {

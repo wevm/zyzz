@@ -135,13 +135,23 @@ export const minification = {
 }
 
 /** Applies the same final CSS processing to every compiler's emitted stylesheet. */
-export function minify(css: string): string {
+export function minify(css: string, options: minify.Options = {}): string {
   return Buffer.from(
     LightningCss.transform({
       ...minification,
       code: Buffer.from(css),
+      targets: options.targets ?? minification.targets,
     }).code,
   ).toString()
+}
+
+/** Explicit final-processing targets shared by each comparison workload. */
+export declare namespace minify {
+  /** Defaults to the existing literal browser baseline. */
+  type Options = {
+    /** Browser feature targets for the complete matched comparison. */
+    readonly targets?: LightningCss.Targets | undefined
+  }
 }
 
 /** Runs Panda's config loading, code generation, extraction, and browser bundling. */

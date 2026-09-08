@@ -104,28 +104,28 @@ describe('create', () => {
               {
                 "backgroundColor": "rgb(255, 255, 255)",
                 "color": "rgb(17, 17, 17)",
-                "padding": "8px"
+                "padding": "8px",
               }
             `)
             expect(await read('alternate'), library).toMatchInlineSnapshot(`
               {
                 "backgroundColor": "rgb(238, 238, 238)",
                 "color": "rgb(0, 102, 204)",
-                "padding": "16px"
+                "padding": "16px",
               }
             `)
             expect(await read('nested'), library).toMatchInlineSnapshot(`
               {
                 "backgroundColor": "rgb(255, 255, 255)",
                 "color": "rgb(17, 17, 17)",
-                "padding": "8px"
+                "padding": "8px",
               }
             `)
             expect(await read('forced'), library).toMatchInlineSnapshot(`
               {
                 "backgroundColor": "rgb(34, 34, 34)",
                 "color": "rgb(153, 204, 255)",
-                "padding": "16px"
+                "padding": "16px",
               }
             `)
             expect(
@@ -145,14 +145,14 @@ describe('create', () => {
               {
                 "backgroundColor": "rgb(17, 17, 17)",
                 "color": "rgb(255, 255, 255)",
-                "padding": "8px"
+                "padding": "8px",
               }
             `)
             expect(await read('alternate'), library).toMatchInlineSnapshot(`
               {
                 "backgroundColor": "rgb(34, 34, 34)",
                 "color": "rgb(153, 204, 255)",
-                "padding": "16px"
+                "padding": "16px",
               }
             `)
             // Selection changes attributes only; the same compiled component classes remain.
@@ -171,7 +171,7 @@ describe('create', () => {
               {
                 "backgroundColor": "rgb(17, 17, 17)",
                 "color": "rgb(255, 255, 255)",
-                "padding": "8px"
+                "padding": "8px",
               }
             `)
           } finally {

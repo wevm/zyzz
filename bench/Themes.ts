@@ -164,7 +164,7 @@ export async function panda(fixture: Fixture): Promise<Compilation.Bundle> {
   const file = Path.join(fixture.directory, 'panda.css')
   await Panda.cssgen(context, { cwd: fixture.directory, outfile: file })
   return {
-    css: Compilation.minify(await Fs.readFile(file, 'utf8')),
+    css: Compilation.minify(await Fs.readFile(file, 'utf8'), { targets }),
     javascript: await Compilation.javascript(
       `export {classes,themes} from ${JSON.stringify(Path.join(fixture.directory, 'panda.ts'))};`,
     ),
@@ -222,7 +222,7 @@ export async function stylex(fixture: Fixture): Promise<Compilation.Bundle> {
   if (!rules.length) throw new Error('StyleX did not emit theme rules.')
   const plugin = StylexPlugin as unknown as StyleXTransformObj
   return {
-    css: Compilation.minify(plugin.processStylexRules(rules)),
+    css: Compilation.minify(plugin.processStylexRules(rules), { targets }),
     javascript: result.outputFiles[0]!.text,
   }
 }
@@ -233,11 +233,19 @@ export async function tailwind(fixture: Fixture): Promise<Compilation.Bundle> {
   return {
     css: Compilation.minify(
       compiler.build(fixture.tailwind.flatMap((classes) => classes.split(' '))),
+      { targets },
     ),
     javascript: await Compilation.javascript(
       `export const classes=${JSON.stringify(fixture.tailwind)};export const themes={alternate:{className:'alternate'},base:{className:'base'}};`,
     ),
   }
+}
+
+/** Native light-dark support keeps inherited and inline color-scheme selection intact. */
+export const targets = {
+  chrome: 123 << 16,
+  firefox: 128 << 16,
+  safari: (17 << 16) | (5 << 8),
 }
 
 /** Builds vanilla-extract contracts and scope implementations through esbuild. */
@@ -264,7 +272,7 @@ export async function vanillaExtract(
   )?.text
   if (!css || !javascript)
     throw new Error('vanilla-extract did not emit theme artifacts.')
-  return { css: Compilation.minify(css), javascript }
+  return { css: Compilation.minify(css, { targets }), javascript }
 }
 
 /** Emits a complete independent Zyzz graph and bundles actual class/scope exports. */
@@ -281,7 +289,7 @@ export async function zyzz(fixture: Fixture): Promise<Compilation.Bundle> {
     ]),
   )
   return {
-    css: Compilation.minify(output.css),
+    css: Compilation.minify(output.css, { targets }),
     javascript: await Compilation.javascript(
       `export const classes=${JSON.stringify(fixture.zyzz.styles.map(({ name }) => output.classes[name]))};export const themes=${JSON.stringify(themes)};`,
     ),

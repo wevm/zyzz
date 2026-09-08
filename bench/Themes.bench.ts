@@ -34,6 +34,11 @@ for (const count of [10, 100]) {
               const javascript = measure(bundle.javascript)
               const directory = `bench/results/theme-comparison/${count}`
               await Fs.mkdir(directory, { recursive: true })
+              await Fs.writeFile(`${directory}/${library}.css`, bundle.css)
+              await Fs.writeFile(
+                `${directory}/${library}.js`,
+                bundle.javascript,
+              )
               await Fs.writeFile(
                 `${directory}/${library}.json`,
                 JSON.stringify({

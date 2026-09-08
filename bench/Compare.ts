@@ -105,7 +105,7 @@ if (!hasBaseline) {
     '🟢 Improved · 🟡 Within tolerance / unchanged · 🔴 Regression above threshold\n',
   )
   console.log(
-    `Timing changes above ${thresholds.ms - 100}% are advisory. Gzip growth above ${thresholds.B - 100}% fails PR/manual checks. Zyzz measurements only; ${process.env.BENCH_BASELINE_MODE === 'same-runner' ? 'main and candidate ran sequentially on the same runner' : 'saved artifacts may come from different runners'}. Reported timing errors are informational.\n`,
+    `Timing changes above ${thresholds.ms - 100}% ${process.env.BENCH_FAIL_ON_TIME_REGRESSION === 'true' ? 'fail PR/manual checks' : 'are advisory'}. Gzip growth above ${thresholds.B - 100}% fails PR/manual checks. Zyzz measurements only; ${process.env.BENCH_BASELINE_MODE === 'same-runner' ? 'main and candidate ran sequentially on the same runner' : 'saved artifacts may come from different runners'}. Reported timing errors are informational.\n`,
   )
   console.log('| Benchmark | Main | PR / current | Change |')
   console.log('| --- | ---: | ---: | ---: |')
@@ -194,7 +194,13 @@ function threshold(name: string, fallback: number) {
   const input = process.env[name]
   if (input === undefined) return fallback
   const value = Number(input)
-  if (!input.trim() || !Number.isFinite(value) || value < 100)
-    throw new Error(`${name} must be a finite percentage ratio of at least 100`)
+  if (
+    !/^\d+(?:\.\d+)?$/.test(input.trim()) ||
+    !Number.isFinite(value) ||
+    value < 100
+  )
+    throw new Error(
+      `${name} must be a finite decimal percentage ratio of at least 100`,
+    )
   return value
 }

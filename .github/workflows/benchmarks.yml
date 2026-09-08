@@ -12,8 +12,9 @@ jobs:
   benchmarks:
     name: Benchmarks
     env:
-      BENCH_SIZE_THRESHOLD: '105'
-      BENCH_TIME_THRESHOLD: '110'
+      BENCH_FAIL_ON_TIME_REGRESSION: ${{ vars.BENCH_FAIL_ON_TIME_REGRESSION == 'true' }}
+      BENCH_SIZE_THRESHOLD: ${{ vars.BENCH_SIZE_THRESHOLD || '105' }}
+      BENCH_TIME_THRESHOLD: ${{ vars.BENCH_TIME_THRESHOLD || '110' }}
     permissions:
       contents: read
       pull-requests: write
@@ -188,13 +189,13 @@ jobs:
           name: benchmarks-baseline
           path: ${{ runner.temp }}/benchmark-baseline/
           retention-days: 30
-      - name: Report timing comparisons
+      - name: Check timing regressions
         if: ${{ !cancelled() && steps.comparison.outcome == 'success' }}
         uses: benchmark-action/github-action-benchmark@v1
         with:
           alert-threshold: '${{ env.BENCH_TIME_THRESHOLD }}%'
           external-data-json-path: ${{ runner.temp }}/benchmark-action/time-baseline.json
-          fail-on-alert: false
+          fail-on-alert: ${{ github.event_name != 'push' && env.BENCH_FAIL_ON_TIME_REGRESSION == 'true' }}
           github-token: ${{ github.token }}
           name: time
           output-file-path: ${{ runner.temp }}/benchmark-action/time.json

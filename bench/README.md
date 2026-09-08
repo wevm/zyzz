@@ -4,7 +4,17 @@ Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, w
 
 The Benchmarks workflow uploads results and environment metadata as a 30-day artifact. One updating PR comment shows traffic-light deltas against a fresh main baseline measured sequentially on the same runner followed by the full framework comparison tables. Fork PRs receive Actions summaries and artifacts without comment writes. Missing baselines show “No baseline available.”
 
-`BENCH_TIME_THRESHOLD: '110'` marks the 10% timing alert threshold; timing comparisons remain informational because one sequential pair does not eliminate measurement noise. `BENCH_SIZE_THRESHOLD: '105'` fails PR and manual checks above 5% gzip growth. Main pushes publish results without running a second benchmark suite or enforcing thresholds.
+Configure repository variables under **Settings → Secrets and variables → Actions → Variables**:
+
+| Variable                        | Default | Effect                                                   |
+| ------------------------------- | ------- | -------------------------------------------------------- |
+| `BENCH_FAIL_ON_TIME_REGRESSION` | `false` | Set to `true` to fail PR/manual checks on timing alerts. |
+| `BENCH_SIZE_THRESHOLD`          | `105`   | Fail PR/manual checks above 5% gzip growth.              |
+| `BENCH_TIME_THRESHOLD`          | `110`   | Alert above 10% timing growth.                           |
+
+Thresholds are decimal percentage ratios: `120` allows 20% growth; exactly 20% passes. Values must be finite and at least `100`. The comments and action use the same thresholds. For example, set `BENCH_TIME_THRESHOLD=120` and `BENCH_FAIL_ON_TIME_REGRESSION=true` to fail checks above 20% slowdown.
+
+Timing failures are opt-in because one sequential pair does not eliminate measurement noise. Main pushes publish results without running a second benchmark suite or enforcing thresholds. Comments and artifacts are published before the gates run, including when a regression fails CI.
 
 The adapter supplies `customSmallerIsBetter` JSON and seeds the action's external data with the fresh main baseline. `save-data-file: false` preserves the baseline. The custom report combines comparisons against main and framework tables in the PR comment, Actions summary, and artifact. The action handles regression checks without posting duplicate comments.
 

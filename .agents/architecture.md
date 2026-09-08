@@ -393,7 +393,7 @@ The initial conditional syntax supports `@media`, `@container`, and `@supports`.
 
 ## Relational Selector DX
 
-This is the planned selector API, not implemented source syntax. Use standard pseudos and explicit `&` relationships; retain token inference inside every nested declaration block. Named data attributes identify application-owned groups and peers.
+This is the planned selector API, not implemented source syntax. Use standard pseudos and explicit `&` relationships; retain token inference inside every nested declaration block. Named data attributes identify application-owned groups and peers. The typed marker proposal below adds inferred relationships without replacing raw CSS selectors.
 
 ```tsx
 import { css } from 'zyzz'
@@ -431,6 +431,96 @@ Offer completion for supported pseudos and condition forms without an unrestrict
 Literal `:hover` remains ordinary CSS. Use `@media (hover: hover)` explicitly for pointer-capable hover effects. Do not insert pseudo-element content or a reset automatically. Reusable imported immutable condition objects and spreads use the ordinary static-expression contract, not an additional variant-registration API.
 
 Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/removal, nested named groups, and combined queries. Native rejects relational selectors until a separately specified adapter can preserve their meaning.
+
+### Typed Markers and Ancestors
+
+Proposal for review in 2.4b: `Css.marker(schema?)` defines an element identity and optional finite data-state domains. `Css.ancestor(marker, condition?)` creates a scoped selector key referring to that identity. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
+
+```tsx
+import { css } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const card = Css.marker({ state: ['closed', 'open'] })
+const title = css({
+  color: '#666',
+  [Css.ancestor(card, ':hover')]: { color: '#06c' },
+  [Css.ancestor(card, { data: { state: 'open' } })]: { fontWeight: 600 },
+})
+
+const profile = (
+  <article {...card({ state: 'open' })}>
+    <h2 {...title()}>Profile</h2>
+  </article>
+)
+```
+
+`Css.marker()` also works without a schema. A schema maps case-sensitive state keys to nonempty readonly arrays of string or boolean literals; const inference preserves the literal domains without `as const`. Reject unbounded arrays, duplicate/ambiguous serialized values, invalid data-name fragments, and reserved application keys. Optional marker inputs select any subset of declared states; omitted/undefined fields emit no state attribute. Unknown keys or invalid values are errors, including through variables and untyped calls. False serializes as `"false"`, not attribute omission.
+
+Marker application returns readonly data attributes only: a presence attribute plus selected state attributes. For example, a generated identity might use `data-z-card-k3m9=""` and `data-z-card-k3m9-state="open"`. Names are illustrative; derive stable, readable identities from package/module/binding metadata, never runtime counters or caller-provided names. State attributes are private to the marker, so independent markers do not compete for a shared `data-state` property.
+
+Separate marker and styling spreads have disjoint fields: `<article {...card({ state: 'open' })} {...panel()} />` is valid. Markers neither consume nor output `className`, `style`, ARIA, event handlers, or other component props. Apply real `disabled`, `checked`, or `aria-expanded` attributes separately. Ordinary repeated spreads of the same marker replace its attributes; no automatic merge is implied, and marker props do not extend the existing `cx` input contract.
+
+An ancestor condition is a supported simple pseudo string or an options object with optional `data`, `pseudo`, and `has`. `data` infers a partial state selection from the first marker argument. `pseudo` is one supported nonfunctional pseudo-class such as `:focus-within` or `:hover`; offer completion and reject `:hovr` and pseudo-elements. `has` is a statically parsed relative-selector list such as `'a'` or `'> input:checked'`. Combined fields are AND predicates on the same marked ancestor. Omission matches marker presence.
+
+```ts
+const indicator = css({
+  opacity: 0,
+  [Css.ancestor(card, { has: 'a' })]: { opacity: 1 },
+})
+const activeTitle = css({
+  [Css.ancestor(card, {
+    data: { state: 'open' },
+    has: 'a',
+    pseudo: ':focus-within',
+  })]: { color: '#06c' },
+})
+
+// Expected type errors in the proposed contract.
+card({ state: 'expanded' })
+Css.ancestor(card, { data: { status: 'open' } })
+Css.ancestor(card, ':hovr')
+```
+
+The marker schema alone determines data inference; condition arguments must not widen it to accept arbitrary keys/values. Preserve that contract through imported aliases, re-exports, and packed declaration files. These types establish declared identity/state compatibility, not that a matching ancestor exists in the rendered DOM or that a marker is attached to a particular HTML element type.
+
+Use the same marker in `Css.descendant`, `Css.siblingBefore`, `Css.siblingAfter`, and `Css.anySibling`. Names describe the marked element relative to the styled element. `siblingBefore` observes an earlier marked sibling, including nonadjacent siblings; `siblingAfter` observes a later one. Immediate siblings and child-only relationships remain expressible through raw CSS until an explicit typed distance contract is needed.
+
+```tsx
+const choice = Css.marker()
+const hint = css({
+  [Css.siblingBefore(choice, ':checked')]: { color: '#06c' },
+})
+const fieldset = css({
+  [Css.descendant(choice, ':checked')]: { borderColor: '#06c' },
+})
+
+const example = (
+  <fieldset {...fieldset()}>
+    <input {...choice()} type="checkbox" />
+    <span {...hint()}>Selected</span>
+  </fieldset>
+)
+```
+
+Let `M` be the generated marker selector plus its authored predicates. Helper lowering has this explicit specificity contract:
+
+| Function                               | Selector Shape                           |
+| -------------------------------------- | ---------------------------------------- |
+| `Css.ancestor(marker, condition)`      | `:where(M) &`                            |
+| `Css.anySibling(marker, condition)`    | `:is(:where(M) ~ &, &:where(:has(~ M)))` |
+| `Css.descendant(marker, condition)`    | `&:where(:has(M))`                       |
+| `Css.siblingAfter(marker, condition)`  | `&:where(:has(~ M))`                     |
+| `Css.siblingBefore(marker, condition)` | `:where(M) ~ &`                          |
+
+The relation predicate adds zero specificity; the current generated class retains its ordinary specificity. This is documented helper behavior, not a rewrite of raw selectors or a hidden relation-priority ladder. Preserve authored ordering, local nested pseudos, and query contexts. Reusing one marker on nested elements matches any qualifying ancestor. A distinct marker separates roles; nearest-instance boundaries require a separate `@scope` design, not an implicit promise.
+
+CSS forbids nested `:has()`. Only `ancestor` and `siblingBefore` accept the `has` option. The descendant, following-sibling, and any-sibling options omit it in types because their lowering already uses `:has()`. The parser rejects nested `:has`, pseudo-elements, `&`, and other invalid grammar in `has` arguments. Raw complex selectors receive compiler validation, not a false claim of complete TypeScript grammar checking. [Selector grammar](https://www.w3.org/TR/selectors-4/#relational)
+
+Recognize marker definitions/applications and relational helper keys through static source analysis; do not execute application code. Preserve marker identity independently of style deduplication, source traversal order, and runtime state. Exported marker callables retain only attribute construction/validation, with statically known keys; relation helpers disappear. Applications choose state attributes, while the browser evaluates relationships. Server/client output must agree, imports must preserve identity, and unused definitions must not keep CSS alive accidentally.
+
+Before implementation acceptance, prove computed selector keys retain nested property/value/token inference and reject misspelled properties both inside and beside relational blocks. TypeScript can widen computed keys; a branded string alone is not proof of this contract. Require consumer fixtures for that case, schema inference without widening, aliases, unknown variable keys, nested conditions, unsupported `has` combinations, and packed declarations. If the keyed syntax cannot pass those fixtures, revise the shape before publishing it rather than weakening property checking.
+
+Real browser integration must cover pointer/focus/input updates, DOM insertion/removal, combined predicates, both sibling directions, multiple markers on one element, repeated/nested instances, and imported markers. Compare hand-authored equivalent selectors and existing library relationships before benchmarking. Report generated data-attribute/markup bytes and optional marker application code alongside CSS, JavaScript, and browser recalculation. Native rejects these browser relationships with located diagnostics.
 
 ## Inferred query thresholds
 
@@ -810,7 +900,7 @@ Benchmark fixtures accept an explicit shared Lightning CSS target map through `C
 
 ## CSS Completeness and Open Contracts
 
-The [parity audit](parity.md) records the public API comparisons and the capability backlog. Property typing, source extraction, CSS grammar, emission, browser compatibility, and native support are separate statuses. The current 40-property literal subset cannot establish general CSS parity.
+The [capability union](parity.md) consolidates the referenced frameworks into numbered capabilities, each with Zyzz usage and an implementation status. It includes typed marker/ancestor proposals, shared existing APIs, unresolved contracts, and explicit external-CSS examples for deferred features. Property typing, source extraction, CSS grammar, emission, browser compatibility, and native support are separate statuses. The current 40-property literal subset cannot establish general CSS parity.
 
 Before implementing variable registration, decide how `Vars.define` expresses optional CSS `syntax`, `inherits`, and `initial-value` descriptors while preserving its existing set-of-values API. Static variable assignment, nested `var()` fallback chains, scoped/external variable names, and registration conflicts need explicit contracts. Do not add metadata to `Theme.define` or replace runtime callbacks with a second binding abstraction.
 

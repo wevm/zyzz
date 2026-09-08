@@ -1,85 +1,555 @@
-# CSS Parity Audit
+# CSS Capability Union
 
-Audited 2026-09-08 against main `9aa72fc` after PR #10. This is a capability audit of the referenced libraries, not a claim of complete CSS standards conformance. “Planned” means specified but unimplemented; “design required” means the public contract still needs a decision.
+Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the capabilities from the [StyleX API](https://stylexjs.com/docs/api), [Tailwind reference](https://tailwindcss.com/docs/hover-focus-and-other-states), and [vanilla-extract API](https://vanilla-extract.style/documentation/api/style/). Each capability appears once, with its source equivalents and Zyzz usage. It is an API union, not exhaustive CSS standards conformance.
 
-## Current Coverage
+**Partial** means only the stated subset works today. **Planned** means an existing architecture contract awaits implementation. **Proposal** means an API shape is offered for review. **Deferred** means a later capability; external CSS examples demonstrate interoperability, not implemented Zyzz authoring support. Examples are independent unless they explicitly share a definition.
 
-The implementation validates 40 literal CSS properties in `src/internal/Literal.ts`, six scalar theme groups, portable token references, inherited theme scopes, and token-name resolution. Source rewriting supports direct literal root `css` calls. Bound `theme.css` has inference but still requires the upcoming theme-aware transform. Selectors, queries, keyframes, global/font rules, dynamic bindings, variants, CLI, and native stylesheet output are not implemented.
+Current implementation: 40 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
 
-The plan already names most common capabilities. Its gaps were explicit completeness tracking, relational-selector behavior, keyframe edge cases, CSS variable registration, and newer stylesheet constructs. A typed input alone does not establish parser, emitter, browser, packaging, or native support.
+## 01. Typed Styles and Inline Authoring
 
-## StyleX API Mapping
+Sources: StyleX `create`/`atoms`, Tailwind utilities, vanilla-extract `style`/Sprinkles. **Partial:** literal root styles; property expansion in 2.3 and bound transforms in 2.2b.
 
-The [API index](https://stylexjs.com/docs/api) provides the baseline inventory:
+```tsx
+import { css } from 'zyzz'
 
-- `create` → `Style.define` and callable `css`; partially implemented.
-- `props` → callable application plus planned `cx`; conflict-aware composition remains Phase 3.
-- `defineVars`, `createTheme` → `Theme.define`/`Theme.extend`; source/library identities remain 2.2b.
-- `defineConsts` → imported immutable values and static expression analysis; planned, without a second token system.
-- `firstThatWorks` → ordered fallback arrays; planned. Preserve CSS fallback order rather than copying argument-order conventions.
-- `keyframes` → `Css.keyframes`; planned.
-- `StyleXStyles`, `StyleXStylesWithout`, `StaticStyles`, `Theme`, `VarGroup` → public style/theme/reference types, `Parameters`, and planned property-restricted composition contracts. Test exclusions and cross-package assignability.
-- Build plugins and CLI → common compiler plus optional adapters; Phase 4.
+export const card = css({ display: 'flex', gap: '1rem', padding: '1rem' })
 
-`attrs` exposes `class` and serialized inline styles. Framework-agnostic compilation does not make `className` props universal: define an explicit DOM-attribute output adapter and test serialization/escaping with real template consumers in Phase 4. [Attribute output](https://stylexjs.com/docs/api/javascript/attrs)
+const article = <article {...card()} />
+const label = <span {...css({ color: '#06c' })()} />
+```
 
-`when.*`, `defaultMarker`, and `defineMarker` cover ancestor, descendant, preceding/following/any-sibling relationships. Zyzz should express these with scoped standard selectors and named data attributes first. Raw relationships must retain CSS specificity, including explicit `:where()`; no hidden relation-priority ladder is proposed. [Contextual selectors](https://stylexjs.com/docs/api/javascript/when)
+Complete the property/value inventory across accessibility, backgrounds/gradients, borders/outlines, filters/masks, grid/flex, interactivity, layout/containment/positioning, logical spacing/sizing, scrolling, shadows, SVG, tables, transforms, and typography. Property spellings and token domains remain checked; broad selector support must not introduce an unrestricted object-key index signature. No separate utility-string or property-access facade is needed.
 
-`types.*` generates registered custom properties. The current `Vars` plan types values but does not specify `@property` descriptors. Registration, initialization, inheritance, interpolation, and duplicate-registration errors need design in 2.3. [Typed variables](https://stylexjs.com/docs/api/javascript/types)
+## 02. Composition and Restricted Style Contracts
 
-`positionTry` and `viewTransitionClass` expose separate stylesheet constructs. Track anchor fallback descriptors, scoped identities, transition names/classes, and transition pseudo-elements as later web capabilities. They must not be accidentally treated as ordinary element rules. [Position fallbacks](https://stylexjs.com/docs/api/javascript/positionTry), [view transitions](https://stylexjs.com/docs/api/javascript/viewTransitionClass)
+Sources: StyleX `props` and style restriction types; utility composition; vanilla-extract composition. **Planned:** conflict-aware `cx` and property restrictions in Phase 3; literal callable styling overrides already exist.
 
-`env.*` does not require a matching configuration API: explicit imports and ordinary theme tokens cover reusable values, while arbitrary configured function execution remains outside the core. [Environment configuration](https://stylexjs.com/docs/api/javascript/env)
+```tsx
+import { css, cx } from 'zyzz'
 
-`@stylexjs/atoms` supplies inline property helpers. Zyzz covers the same authoring position with inline `css` and planned dynamic bindings; an additional property-access facade is unnecessary for parity. [Inline atoms](https://stylexjs.com/docs/api/javascript/atoms)
+const base = css({ color: '#06c', padding: '1rem' })
+const compact = css({ padding: '0.5rem' })
 
-## Tailwind Capability Mapping
+const button = <button {...cx(base(), compact())}>Continue</button>
+const checkout = (
+  <button {...base({ className: 'checkout', style: { marginTop: '1rem' } })} />
+)
+```
 
-The [utility reference and state guide](https://tailwindcss.com/docs/hover-focus-and-other-states) are a checklist of CSS behavior, not a requirement to reproduce utility names.
+Later generated declarations win in the same condition context, subject to CSS importance. External classes retain cascade semantics. Preserve bindings and recipe attributes, partial shorthand overrides, and packed metadata. `Parameters<typeof base>` describes application inputs. StyleX `StyleXStyles`, `StyleXStylesWithout`, and `StaticStyles` map to public style restrictions; property-restricted `ClassName<Properties>` remains a separate gate, including exclusions and static-only assignability.
 
-- Declarations: expand layout/positioning, grid/flex, logical spacing/sizing, typography, backgrounds/gradients, borders/outlines, shadows, transforms, filters/masks, tables, interactivity, scrolling, SVG, and accessibility property families.
-- States: cover focus/hover/active/visited, form validation, structural/nth selectors, empty/target, attribute/ARIA/data states, direction, open/popover/inert, and negation.
-- Relationships: named groups and peers, descendants of groups/peers, preceding/following siblings, direct/all children, and arbitrary scoped selectors.
-- Pseudo-elements: before/after, placeholder, selection, marker, file selector, first letter/line, and backdrop.
-- Conditions: responsive/container queries, schemes, motion/contrast/forced colors, pointer/hover capability, orientation, print, scripting, feature queries, and `@starting-style`.
+## 03. Values, Expressions, Importance, and Fallbacks
 
-Zyzz keeps literal `:hover` semantics. A pointer-capable hover effect is authored inside `@media (hover: hover)`; it is not silently added to every pseudo. `::before` and `::after` require authored `content`; no implicit content or global reset is injected.
+Sources: StyleX `firstThatWorks`/`defineConsts`, Tailwind arbitrary values/functions/importance, vanilla-extract fallback values/CSS Utils. **Planned:** 2.3.
 
-`@theme` maps to explicit themes; `@utility`/`@apply` to reusable styles and composition; `@variant`/`@custom-variant` to reusable static condition objects; `@source`/`@reference` to adapter input/dependency discovery. CSS math, color mixing, and theme variables use standard CSS values. Standard CSS imports and asset URLs belong to the consuming build or explicit file adapter. Legacy config/plugin compatibility is not a core requirement. [Functions and directives](https://tailwindcss.com/docs/functions-and-directives)
+```ts
+import { css } from 'zyzz'
 
-Opt-in reset behavior, external CSS coexistence, theme color opacity expressions, arbitrary values, and statically discoverable exported styles need their own fixtures. Responsive condition syntax and recipe variants are separate concepts.
+const gap = '1rem'
+const panel = css({
+  color: '#06c!',
+  display: ['block', 'grid'],
+  width: `calc(100% - ${gap})`,
+})
+```
 
-## Vanilla-Extract API Mapping
+Arrays emit ordered declarations; later supported values win under CSS importance. CSS lists remain strings. Static imported constants, literal math/color functions, and supported template interpolation use ordinary analysis. `theme.vars` works inside CSS expressions. Configured arbitrary function execution, including a clone of StyleX `env.*`, is outside core; import explicit constants instead. Dynamic inputs cannot inject selectors, declarations, or importance.
 
-The [API navigation](https://vanilla-extract.style/documentation/api/style/) lists these capability groups:
+## 04. Themes, Tokens, Scopes, and Schemes
 
-- `style`, `styleVariants` → `css`, named definitions, and planned `variants`.
-- `createTheme`, `createThemeContract` → definitions/extensions; contract-only or externally supplied theme values still need an explicit interoperability decision.
-- `createVar`, `assignVars`, `fallbackVar` → planned `Vars`, static assignments, and nested CSS `var()` fallbacks. Declaration fallback arrays are a different mechanism.
-- `fontFace`, `keyframes`, `layer` → planned `Css` contributions and layer ordering.
-- `createContainer` → planned named-container support; private generated names across packages need explicit identity handling.
-- `createViewTransition` → deferred scoped transition-name support.
-- Global style/theme/contract/variable/font/keyframe/layer counterparts → global contributions plus external-name interoperability. Explicit public names and side-effect retention need contracts; scoped output alone is insufficient.
-- Sprinkles/Recipes/Dynamic/CSS Utils → theme inference, recipes, runtime variable assignment, and supported static CSS expressions; no duplicate facade per package.
+Sources: StyleX `defineVars`/`createTheme`, Tailwind `@theme`/dark mode, vanilla-extract themes/contracts. **Partial:** in-memory scalar contracts; 2.2b source identities and 2.4a bundled themes/query metadata.
 
-Variable registration also exists here; verify descriptor handling, not just TypeScript annotations. [Variable API](https://vanilla-extract.style/documentation/api/create-var/)
+```tsx
+import { Theme } from 'zyzz'
 
-`addFunctionSerializer` serves reusable compiled library functions. Zyzz's source linking, generated callable exports, and packed-consumer tests cover that goal without requiring arbitrary authoring execution. [Library serialization](https://vanilla-extract.style/documentation/api/add-function-serializer/)
+const theme = Theme.define({
+  color: { brand: { dark: '#69f', light: '#06c' } },
+  spacing: { md: '1rem', sm: '0.5rem' },
+})
+const alternate = Theme.extend(theme, { color: { brand: '#147d32' } })
+const button = theme.css({ color: 'brand', padding: 'md' })
 
-## DX Recommendation
+const example = (
+  <section className={alternate.className} style={{ colorScheme: 'dark' }}>
+    <button {...button()}>Continue</button>
+  </section>
+)
+```
 
-Use `:hover` and other pseudos directly, `&` for relationships, named `data-*` markers for groups/peers, and `Css.keyframes` for reusable animation references. Concrete examples and specificity rules are in [architecture](architecture.md#relational-selector-dx). This extends the agreed object syntax instead of introducing a parallel utility language.
+`backgroundColor`, `borderColor`, and `textColor` augment shared colors only in matching properties. Portable `theme.tokens` references disambiguate token names from literals. CSS variables implement inheritance; scopes select compatible theme values independently of `color-scheme`. Independent definitions remain isolated. StyleX `Theme`/`VarGroup` contracts map to inferred theme/reference types; cross-package assignability remains an acceptance gate.
 
-The requested group-descendant case is an ancestor with `:has(a)` affecting the current element. It is not the same as `&:has(a)`, which inspects the current element's descendants. [Group descendants](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-the-descendants-of-a-group)
+```ts
+const inset = theme.css({
+  backgroundColor: `color-mix(in oklab, ${theme.vars.color.brand} 50%, transparent)`,
+  borderColor: theme.tokens.color.brand,
+  width: `calc(100% - ${theme.vars.spacing.md})`,
+})
+```
 
-Named markers are authored values, not automatically private namespaces. Distinct names isolate different groups; reusing the same name in nested groups matches any qualifying ancestor. A nearest-group boundary or generated marker helper needs a separate explicit contract if later added.
+This reuses the preceding theme; `theme.vars` and expression support remain 2.3 work.
+
+```tsx
+import { css } from 'zyzz/themes/default'
+
+const button = <button {...css({ color: 'blue.700', padding: 4 })()} />
+```
+
+Bundled themes are opt-in entrypoints. Root `css` stays token-free. Contract-only and external-name interoperability is tracked separately in item 19.
+
+## 05. Shared Variables and Variable Fallbacks
+
+Sources: StyleX variables, vanilla-extract `createVar`/`assignVars`/`fallbackVar`/Dynamic, CSS custom-property usage in Tailwind. **Planned:** 2.3.
+
+```tsx
+import { css, Vars } from 'zyzz'
+
+const progress = Vars.define({ amount: 'percentage' })
+const bar = css({ width: progress.amount })
+
+const element = (
+  <div {...bar({ style: Vars.set(progress, { amount: '42%' }) })} />
+)
+```
+
+Explicit sets are for shared contracts; callbacks in item 07 handle local values. Static custom-property assignments also need typed declaration support. A nested variable fallback is distinct from a declaration fallback array:
+
+```ts
+const text = css({ color: 'var(--app-accent, var(--app-brand, #06c))' })
+```
+
+The literal example references application-owned names. Generated reference fallback construction and assignment under nested conditions need a documented API before implementation; do not expose private names or accidentally nest a complete `var()` reference as the first `var()` argument.
+
+## 06. Registered Custom Properties
+
+Sources: [StyleX `types.*`](https://stylexjs.com/docs/api/javascript/types) and [vanilla-extract variable descriptors](https://vanilla-extract.style/documentation/api/create-var/). **Proposal required:** optional registration descriptors on `Vars.define` in 2.3. TypeScript value types alone do not register CSS properties.
+
+Until that shape is decided, the interoperability target is an ordinary external stylesheet plus a Zyzz declaration:
+
+```css
+@property --app-progress {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+```
+
+```ts
+const progress = css({ opacity: 'var(--app-progress)' })
+```
+
+Specify descriptor grammar, computationally independent initial values, inheritance, interpolation, duplicate ownership, and native errors. Preserve `Theme.define(tokens)` and the existing callback binding API.
+
+## 07. Dynamic Values
+
+Sources: StyleX dynamic styles/atoms, vanilla-extract Dynamic, Tailwind utilities referencing runtime variables. **Planned:** 2.3 bindings, using fixed compiled rules.
+
+```tsx
+const bar = css((values: { width: `${number}%` }) => ({
+  width: values.width,
+}))
+
+const element = <div {...bar({ width: '42%' })} />
+```
+
+Callbacks receive only typed inputs and disappear from delivered code. Applications bind values to precompiled slots; rule counts remain fixed. Styling overrides are allowed, while arbitrary component props stay on the component.
+
+## 08. Recipes, Defaults, and Compound Variants
+
+Sources: StyleX variant patterns, Tailwind state-driven utility combinations, vanilla-extract `styleVariants`/Recipes. **Planned:** Phase 3.
+
+```tsx
+import { variants } from 'zyzz'
+
+const button = variants({
+  base: { display: 'inline-flex' },
+  compoundVariants: [
+    { style: { fontWeight: 600 }, when: { intent: 'primary', size: 'sm' } },
+  ],
+  defaultVariants: { intent: 'primary', size: 'sm' },
+  variants: {
+    intent: { ghost: { color: 'inherit' }, primary: { color: '#06c' } },
+    size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } },
+  },
+})
+
+type ButtonProps = NonNullable<Parameters<typeof button>[0]>
+
+const element = <button {...button({ intent: 'ghost' })} />
+```
+
+Theme-bound `theme.variants` infers tokens. Include boolean choices, array compound matches, omitted/default/null semantics, and declaration-order precedence. Runtime selections produce classes and owned data attributes, without expanding every Cartesian combination.
+
+## 09. Dynamic Variant Choices
+
+Sources: dynamic style/recipe composition across the libraries. **Planned:** Phase 3; an additional Zyzz convenience, not a claim of identical APIs in each source.
+
+```tsx
+const button = variants({
+  variants: {
+    size: {
+      custom: (values: { padding: `${number}px` }) => ({
+        padding: values.padding,
+      }),
+      sm: { padding: '0.5rem' },
+    },
+  },
+})
+
+const element = (
+  <button {...button({ size: { custom: { padding: '12px' } } })} />
+)
+```
+
+Selections infer their payloads. Compounds match the choice name, not its continuous values. Switching choices removes stale bindings; payloads never become data attributes.
+
+## 10. Pseudos, Attributes, and Child Selectors
+
+Sources: all three libraries' selector/state systems. **Planned:** 2.4b.
+
+```ts
+const field = css({
+  ':disabled': { opacity: 0.5 },
+  ':focus-visible': { outline: '2px solid currentColor' },
+  '::placeholder': { color: '#666' },
+  '&[aria-invalid="true"]': { borderColor: '#c00' },
+  '&[data-state="open"]': { display: 'block' },
+})
+const list = css({ '& > *:nth-child(2n)': { backgroundColor: '#eee' } })
+const badge = css({ '::before': { content: '"New"' } })
+```
+
+Cover interactive/form/structural states, ARIA/data/direction, open/popover/inert, negation, and all supported pseudo-elements, including selection, marker, file selector, first letter/line, and backdrop. `& > *` selects direct children; `& *` selects descendants. Retain CSS specificity and explicit pseudo-element content. Raw selectors remain available with compiler grammar validation; types cannot prove DOM structure.
+
+## 11. Typed Ancestors, Groups, Peers, and Descendants
+
+Sources: [StyleX contextual selectors](https://stylexjs.com/docs/api/javascript/when), [Tailwind groups/peers and group descendants](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-the-descendants-of-a-group), vanilla-extract selector composition. **Proposal:** `Css.marker` and relational selector functions in 2.4b.
+
+```tsx
+import { css } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const card = Css.marker({ state: ['closed', 'open'] })
+const title = css({
+  color: '#666',
+  [Css.ancestor(card, ':hover')]: { color: '#06c' },
+  [Css.ancestor(card, { data: { state: 'open' } })]: { fontWeight: 600 },
+})
+
+const profile = (
+  <article {...card({ state: 'open' })}>
+    <h2 {...title()}>Profile</h2>
+  </article>
+)
+```
+
+The schema infers data keys and allowed values in both marker application and conditions. Simple pseudos autocomplete. Unknown keys, values, and pseudo typos are errors. Marker calls return only private data attributes; separate styling spreads do not overwrite them. These attributes express visual state and do not replace real ARIA or control attributes.
+
+```ts
+const indicator = css({
+  opacity: 0,
+  [Css.ancestor(card, { has: 'a' })]: { opacity: 1 },
+})
+const choice = Css.marker()
+const hint = css({
+  [Css.siblingBefore(choice, ':checked')]: { color: '#06c' },
+})
+const section = css({
+  [Css.descendant(choice, ':checked')]: { borderColor: '#06c' },
+})
+```
+
+Place `choice()` on the real checkbox. `siblingBefore` means the marked sibling precedes the styled element; `siblingAfter` reverses that direction, and `anySibling` covers either. `has: 'a'` checks descendants of the marked ancestor, not the styled element. Combined `data`, `pseudo`, and `has` conditions match the same marked element with AND. Full contracts and lowering are in [architecture](architecture.md#typed-markers-and-ancestors).
+
+Imported marker identity survives packaging. Helpers use explicitly documented zero-specificity relation conditions; raw selectors preserve authored specificity. Repeated instances of one marker retain normal any-matching-ancestor semantics, not an implicit nearest boundary. No runtime DOM lookup or CSS generation occurs.
+
+## 12. Media, Container, and Feature Conditions
+
+Sources: all three libraries' responsive/conditional styles and vanilla-extract `createContainer`. **Planned:** query metadata in 2.4a, nested rules in 2.4b.
+
+```ts
+const theme = Theme.define({
+  breakpoints: { desktop: '64rem', tablet: '48rem' },
+  containerNames: ['sidebar'],
+  containers: { card: '24rem' },
+  spacing: { md: '1rem', sm: '0.5rem' },
+})
+const region = theme.css({
+  containerName: 'sidebar',
+  containerType: 'inline-size',
+})
+const content = theme.css({
+  padding: 'sm',
+  '@container sidebar >=card': { display: 'grid' },
+  '@media tablet..desktop': { padding: 'md' },
+  '@supports (display: grid)': { display: 'grid' },
+})
+```
+
+Apply `region()` to an ancestor and `content()` to its child. Aliases infer from the correct theme groups and resolve to literal conditions, never CSS variables. Named-container private identities across packages remain a design gate. Containers select the nearest eligible ancestor, independently of marker ancestor semantics.
+
+```ts
+const link = css({
+  '@media (hover: hover)': { ':hover': { textDecorationLine: 'underline' } },
+  '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
+  '@media print': { color: '#000' },
+})
+```
+
+Also cover contrast/forced colors, pointer capability, orientation, scripting, and combined/nested conditions. Raw `:hover` does not silently add a capability query. Container style/scroll-state queries remain deferred in item 22.
+
+## 13. Reusable Conditions and Static Extension
+
+Sources: Tailwind `@utility`/`@apply`/`@variant`/`@custom-variant`, StyleX imported constants, vanilla-extract static style composition. **Planned:** static expressions in 2.3 and conditions in 2.4b.
+
+```ts
+export const focusRing = {
+  ':focus-visible': { outline: '2px solid currentColor' },
+} as const
+
+const button = css({ ...focusRing, padding: '1rem' })
+```
+
+Imported immutable objects and explicit composition cover reuse without a registration API. Ordinary object spreads have JavaScript replacement semantics; they do not deep-merge duplicate nested keys. Arbitrary helper execution is not part of static analysis. A duplicate utility/plugin/configuration language is outside scope.
+
+## 14. Keyframes, Animation, and Entry Transitions
+
+Sources: StyleX `keyframes`, Tailwind animation/starting styles, vanilla-extract `keyframes`. **Planned:** 2.4c keyframes and 2.4b `@starting-style`.
+
+```ts
+const enter = Css.keyframes({
+  from: { opacity: 0, transform: 'translateY(4px)' },
+  to: { opacity: 1, transform: 'translateY(0)' },
+})
+const notice = css({
+  animationDuration: '160ms',
+  animationName: enter,
+  '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
+})
+const entry = css({
+  opacity: 1,
+  transition: 'opacity 160ms',
+  '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+  '@starting-style': { opacity: 0 },
+})
+```
+
+Validate offsets, ordered overlapping frames, theme references, and animation shorthand/lists; reject important frame declarations. Preserve imported references and remove unused animations. Discrete entry/exit transitions additionally require explicit `transition-behavior` and relevant properties. Test actual browser animation progress and motion preferences.
+
+## 15. Font Faces and Assets
+
+Sources: vanilla-extract `fontFace`/`globalFontFace`, font authoring through ordinary CSS in the other libraries. **Planned:** 2.4c contributions; asset delivery in Phase 4.
+
+```ts
+Css.fontFace({
+  fontDisplay: 'swap',
+  fontFamily: 'App Sans',
+  fontWeight: '100 900',
+  src: 'url("/fonts/app.woff2") format("woff2")',
+})
+const text = css({ fontFamily: '"App Sans", sans-serif' })
+```
+
+Cover multiple sources, descriptor grammar, URL handling, and side-effect retention. Public font names need explicit ownership; a generated/private font-family reference remains a design decision rather than an assumed return type. Font loading stays with the platform/build.
+
+## 16. Globals, Layers, and Reset
+
+Sources: Tailwind cascade layers/Preflight, vanilla-extract `globalStyle`/`layer`/`globalLayer`, external CSS integration in StyleX. **Planned:** 2.4c.
+
+```ts
+import 'zyzz/reset.css'
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+Css.global({ body: { fontFamily: 'system-ui' } })
+
+const styles = Style.define({ card: { padding: '1rem' } })
+const output = Css.compile({
+  layers: { order: ['reset', 'base', 'components'], styles: 'components' },
+  styles,
+})
+```
+
+The source adapter extracts `Css.global` as an explicit contribution; the separate pure compile call receives only its supplied data and never reads global registration. Layer order is intentionally semantic. Core imports add no reset. Specify nested layers, unlayered rules, important reversal, contribution input shapes, and independently compiled ownership before broad parity claims.
+
+## 17. Component Props and DOM Attributes
+
+Sources: [StyleX `props`/`attrs`](https://stylexjs.com/docs/api/javascript/attrs), ordinary class/style consumption elsewhere. **Partial:** web `className`/style-object output. **Proposal required:** DOM attribute adapter in Phase 4.
+
+```tsx
+const button = css({ color: '#06c' })
+
+const element = <button {...button()}>Continue</button>
+```
+
+The non-React target must retain callable application while returning `class`, serialized inline styles where needed, and data attributes. Its public adapter shape is still open; no unsupported `Css.attrs` API is implied. Test escaping, attribute serialization, real template consumers, framework updates, SSR/hydration, and packed output. Do not require framework imports in core.
+
+## 18. Compilation, Libraries, and Build Integrations
+
+Sources: StyleX plugins/CLI, Tailwind CLI/build tools/`@source`/`@reference`, vanilla-extract integrations/`addFunctionSerializer`. **Partial:** pure transforms and file host. **Planned:** common delivery adapters/CLI in Phase 4.
+
+```ts
+import { Transform } from 'zyzz/compiler'
+
+const result = Transform.compile({
+  moduleId: 'app/card.ts',
+  source:
+    "import { css } from 'zyzz'; export const card = css({ color: '#06c' })",
+})
+```
+
+```sh
+zyzz src --out-dir dist --css dist/styles.css --watch
+zyzz src --out-dir dist --minify --targets 'chrome >= 123, firefox >= 128, safari >= 17.5'
+```
+
+Pure compilation accepts supplied text/data. CLI and optional build integrations own discovery, dependency linking, watch/HMR, assets, and stylesheet delivery. Packed libraries export generated callables and CSS without consumer authoring evaluation. Source maps, missing-transform diagnostics, editor inference, and lint integration are explicit DX gates. Final processing belongs to Lightning CSS or the consuming build, with equivalent targets and preserved semantics.
+
+## 19. External Names and Contract-Only Themes
+
+Sources: vanilla-extract global theme/contract/variable/keyframe APIs and external stylesheets across all three libraries. **Proposal required:** typed contract-only definitions and explicit global name ownership, 2.4c/Phase 4.
+
+The immediate interoperability form uses application-owned CSS plus literal references. This does not provide an inferred external theme contract:
+
+```css
+:root {
+  --app-accent: #06c;
+}
+[data-theme='alternate'] {
+  --app-accent: #147d32;
+}
+@keyframes app-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+```
+
+```ts
+const card = css({
+  animationDuration: '160ms',
+  animationName: 'app-enter',
+  color: 'var(--app-accent)',
+  '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
+})
+```
+
+Specify required/missing contract leaves, domain inference, external name mapping, initialization, global fonts/layers, static variable assignments, reachability, and duplicate diagnostics. Literal interoperability is not a substitute for those typed contracts.
+
+## 20. View Transitions
+
+Sources: StyleX `viewTransitionClass`, vanilla-extract `createViewTransition`, ordinary CSS in Tailwind. **Deferred:** typed scoped names/classes and transition pseudo-element contributions. Illustrative external stylesheet integration:
+
+```ts
+const avatar = css({ viewTransitionName: 'profile-avatar' })
+```
+
+```css
+::view-transition-old(profile-avatar),
+::view-transition-new(profile-avatar) {
+  animation-duration: 160ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*) {
+    animation: none;
+  }
+}
+```
+
+The declaration itself awaits property support. Define uniqueness, imported name identity, and transition-class grouping before a helper API. Navigation or `document.startViewTransition` orchestration belongs to the application.
+
+## 21. Anchor Positioning and Position Fallbacks
+
+Sources: StyleX `positionTry` and ordinary CSS positioning elsewhere. **Deferred:** declarations, restricted `@position-try` descriptors, and scoped references. External CSS target:
+
+```ts
+const trigger = css({ anchorName: '--profile-trigger' })
+const popup = css({
+  position: 'fixed',
+  positionAnchor: '--profile-trigger',
+  positionArea: 'bottom',
+  positionTryFallbacks: '--profile-above',
+})
+```
+
+```css
+@position-try --profile-above {
+  position-area: top;
+}
+```
+
+These declarations await capability support. Validate fallback-only descriptors and names; they are not ordinary element style blocks. Anchor layout does not provide popover behavior or accessibility semantics.
+
+## 22. Advanced Conditions, Timelines, and Stylesheet Rules
+
+Sources: standard CSS reachable through the libraries; extensions beyond their dedicated helpers are tracked explicitly. **Deferred:** `@scope`, container style/scroll-state queries, scroll-driven timelines, `@counter-style`, paged media, and emerging functions. External CSS target examples:
+
+```css
+@scope ([data-article]) to ([data-article-boundary]) {
+  a {
+    text-decoration-line: underline;
+  }
+}
+@container style(--density: compact) {
+  .app-card {
+    padding: 0.5rem;
+  }
+}
+@container scroll-state(stuck: top) {
+  .app-heading {
+    border-bottom: 1px solid;
+  }
+}
+@counter-style app-checks {
+  symbols: '\2713';
+  system: cyclic;
+  suffix: ' ';
+}
+@page {
+  margin: 1cm;
+}
+```
+
+```ts
+const reveal = css({
+  animationDuration: 'auto',
+  animationName: 'app-reveal',
+  animationTimeline: 'view()',
+  '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
+})
+```
+
+The timeline preview requires an external `app-reveal` animation and future property support. Query containers require their corresponding containment setup; scroll-state queries do not select the container itself. No blanket raw-at-rule passthrough is proposed. Browser DOM/CSSOM manipulation, observers, and Web Animations orchestration are application concerns.
+
+## 23. Native and Portable Authoring
+
+This is a Zyzz requirement in addition to the web-library union. **Planned:** Phase 3 native subset; unsupported web semantics must error.
+
+```ts
+import { Style } from 'zyzz'
+import { StyleSheet } from 'zyzz/react-native'
+
+const styles = Style.define({ card: { padding: '1rem' } })
+const native = StyleSheet.compile({
+  styles,
+  themes: { base: theme },
+  units: { rem: 16 },
+})
+const selected = StyleSheet.select(native.styles, {
+  colorScheme: 'dark',
+  theme: 'base',
+})
+```
+
+Theme labels, schemes, and style names infer from inputs. Unit conversion is explicit. Markers, DOM relationships, CSS variable text, and stylesheet rules are not native capabilities. Test real native selection/rendering separately from embedded JavaScript-engine portability.
 
 ## Completeness Gate
 
-Maintain a versioned capability inventory with one row per property, value family, pseudo, selector form, conditional rule, and stylesheet rule. Record type support, extraction, emission, source maps, browser targets, native behavior, integration fixture, and delivery benchmark. A row is complete only when its real consumer path works.
+Use these numbered capabilities as the shared index in the plan and architecture. Maintain a versioned property/value/selector/at-rule inventory beneath them, with independent statuses for types, extraction, emission, source maps, target compatibility, native behavior, integration proof, and benchmark coverage. A capability is complete only when its actual consumer path works.
 
-Phase 2.3 owns property/value expansion and variable registration design. Phase 2.4a owns theme/query metadata; 2.4b owns selectors/conditions; 2.4c owns animation/global/font/layer contributions. Phase 3 owns recipes/composition/native parity, and Phase 4 owns renderer output and packed-library interoperability.
+Validate semantic equivalence before benchmarking the existing library set. Cover cold/warm/incremental compilation, matched repeated/unique styles, scopes/schemes, markers, animations, recipes, library boundaries, and real framework updates. Measure CSS, JavaScript, markup/data attributes, optional helpers, and complete raw/gzip/Brotli delivery without double-counting; do not hide unsupported comparisons or claim universal wins.
 
-Explicit later backlog: `@scope`, container style/scroll-state queries, view transitions, anchor positioning/`@position-try`, scroll-driven timelines, `@counter-style`, paged-media rules, and newer CSS functions/at-rules. Unknown grammar must receive a located unsupported-capability diagnostic until supported. Browser DOM/CSSOM manipulation, Web Animations orchestration, and JavaScript layout observers remain application concerns.
-
-No claim that all CSS APIs are covered is justified yet. The audit adds the missing work and decisions; it does not turn deferred capabilities into MVP promises or implemented features.
+Every source API group above maps to an existing contract, a proposal, an external-CSS interoperability target, or an explicit non-goal. That classification does not make deferred APIs implemented or turn this union into a promise to duplicate each library's facade.

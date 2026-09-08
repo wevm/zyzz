@@ -17,6 +17,127 @@ const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('serialized library contracts link aliases, extensions, and consumer scopes', () => {
+    const library = Graph.compile({
+      modules: {
+        'library/theme.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#06c'},spacing:{md:'8px'}}); export const mint = Theme.extend(theme,{color:{brand:'#175'}}); export const css = theme.css;`,
+        'library/index.ts': `export * from './theme.js';`,
+      },
+    })
+    const compiler = Graph.create()
+    const options = {
+      contracts: { 'library/index.js': library.contracts['library/index.ts']! },
+      imports: {
+        'app/card.ts': { '@acme/theme': 'library/index.js', zyzz: null },
+      },
+      modules: {
+        'app/card.ts': `import { css, theme, mint } from '@acme/theme'; import { Theme } from 'zyzz'; export const local = Theme.extend(theme,{color:{brand:'#f00'}}); export const props = css({color:theme.tokens.color.brand,padding:'md'})(); export const scope = mint.className;`,
+      },
+    }
+    const output = compiler.compile(options)
+    expect(output.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-18pt0w1ocy15n-theme{--z-t18pt0w1ocy15n-theme-color_2e_brand:#06c;--z-t18pt0w1ocy15n-theme-spacing_2e_md:8px;}
+      .z_theme-18pt0w1ocy15n-mint{--z-t18pt0w1ocy15n-theme-color_2e_brand:#175;--z-t18pt0w1ocy15n-theme-spacing_2e_md:8px;}
+      .z_theme-ujlnau19561g8-local{--z-t18pt0w1ocy15n-theme-color_2e_brand:#f00;--z-t18pt0w1ocy15n-theme-spacing_2e_md:8px;}
+      .z-ujlnau19561g8-base0{color:var(--z-t18pt0w1ocy15n-theme-color_2e_brand,#06c);padding:var(--z-t18pt0w1ocy15n-theme-spacing_2e_md,8px);}"
+    `)
+    expect(output.modules['app/card.ts']!.code).toMatchInlineSnapshot(
+      `"import { css, theme, mint } from '@acme/theme';  export const local = ({className:"z_theme-ujlnau19561g8-local"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>); export const props = ({className:"z-ujlnau19561g8-base0"}); export const scope = "z_theme-18pt0w1ocy15n-mint";"`,
+    )
+    const updated = compiler.compile({
+      ...options,
+      contracts: {
+        'library/index.js': options.contracts['library/index.js'].replaceAll(
+          '#175',
+          '#080',
+        ),
+      },
+    })
+    expect(updated.modules['app/card.ts']!.classes).toMatchInlineSnapshot(`
+      {
+        "style-ujlnau19561g8-164": "z-ujlnau19561g8-base0",
+      }
+    `)
+    expect(updated.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-18pt0w1ocy15n-theme{--z-t18pt0w1ocy15n-theme-color_2e_brand:#06c;--z-t18pt0w1ocy15n-theme-spacing_2e_md:8px;}
+      .z_theme-18pt0w1ocy15n-mint{--z-t18pt0w1ocy15n-theme-color_2e_brand:#080;--z-t18pt0w1ocy15n-theme-spacing_2e_md:8px;}
+      .z_theme-ujlnau19561g8-local{--z-t18pt0w1ocy15n-theme-color_2e_brand:#f00;--z-t18pt0w1ocy15n-theme-spacing_2e_md:8px;}
+      .z-ujlnau19561g8-base0{color:var(--z-t18pt0w1ocy15n-theme-color_2e_brand,#06c);padding:var(--z-t18pt0w1ocy15n-theme-spacing_2e_md,8px);}"
+    `)
+    expect(() =>
+      compiler.compile({
+        ...options,
+        contracts: { 'library/index.js': '{"version":2}' },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library/index.js:0: Invalid library contract: Unsupported Zyzz contract version.]`,
+    )
+    expect(
+      compiler.compile(options).modules['app/card.ts']!.css ===
+        output.modules['app/card.ts']!.css,
+    ).toMatchInlineSnapshot(`true`)
+  })
+
+  test('unchanged and edited consumers retain one imported contract identity', () => {
+    const library = Graph.compile({ modules: Fixture.modules })
+    const compiler = Graph.create()
+    const options = {
+      contracts: { 'library/index.js': library.contracts['pkg/index.ts']! },
+      imports: {
+        'app/a.ts': { '@acme/theme': 'library/index.js' },
+        'app/b.ts': { '@acme/theme': 'library/index.js' },
+      },
+      modules: {
+        'app/a.ts': `import { style } from '@acme/theme'; export const a = style({color:'brand'})();`,
+        'app/b.ts': `import { style } from '@acme/theme'; export const b = style({padding:'md'})();`,
+      },
+    }
+    compiler.compile(options)
+    const next = {
+      ...options,
+      modules: {
+        ...options.modules,
+        'app/b.ts': options.modules['app/b.ts'].replace(
+          "padding:'md'",
+          "color:'brand',padding:'md'",
+        ),
+      },
+    }
+    const output = compiler.compile(next)
+    expect(output.modules['app/a.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;--z-t1p8at5ioin1tk-theme-spacing_2e_unused:99px;}
+      .z_theme-18i5hb1ihk25d-mint{--z-t1p8at5ioin1tk-theme-color_2e_brand:#175;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;--z-t1p8at5ioin1tk-theme-spacing_2e_unused:99px;}
+      .z-7vl04zjqauul-base0{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#06c);}"
+    `)
+    expect(output.modules['app/b.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;--z-t1p8at5ioin1tk-theme-spacing_2e_unused:99px;}
+      .z_theme-18i5hb1ihk25d-mint{--z-t1p8at5ioin1tk-theme-color_2e_brand:#175;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;--z-t1p8at5ioin1tk-theme-spacing_2e_unused:99px;}
+      .z-bm7tc8jqax5q-base0{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#06c);padding:var(--z-t1p8at5ioin1tk-theme-spacing_2e_md,8px);}"
+    `)
+    expect(
+      JSON.stringify(output) === JSON.stringify(Graph.compile(next)),
+    ).toMatchInlineSnapshot(`true`)
+  })
+
+  test('conflicting installed copies fail before compiling consumers', () => {
+    const library = Graph.compile({ modules: Fixture.modules })
+    const contract = library.contracts['pkg/index.ts']!
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          first: contract,
+          second: contract.replaceAll('#06c', '#f00'),
+        },
+        imports: { 'app/card.ts': { first: 'first', second: 'second' } },
+        modules: {
+          'app/card.ts': `import { style } from 'first'; import { mint } from 'second'; export const props = style({color:'brand'})(); export const scope = mint.className;`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: second:0: Invalid library contract: Conflicting library theme identity: 1p8at5ioin1tk-theme]`,
+    )
+  })
+
   test('ordinary exports named like object prototype properties remain ordinary imports', () => {
     const output = Graph.compile({
       modules: {
@@ -673,13 +794,17 @@ describe('create', () => {
     expect(after === before).toMatchInlineSnapshot(`false`)
     expect(() =>
       compiler.compile({ imports: {}, modules }),
-    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: pkg/a.ts:0: Missing host resolution: zyzz]`)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/a.ts:0: Missing host resolution: zyzz]`,
+    )
     expect(() =>
       compiler.compile({
         imports: { ...imports, 'pkg/card.ts': { '@theme': 'pkg/missing.ts' } },
         modules,
       }),
-    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: pkg/card.ts:0: Missing host source module: @theme]`)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/card.ts:0: Missing host source module: @theme]`,
+    )
     expect(
       compiler.compile({ imports, modules }) === after,
     ).toMatchInlineSnapshot(`true`)

@@ -299,6 +299,11 @@ export function compile(options: compile.Options): compile.ReturnType {
         })
         return rule
       }
+      if (Object.values(emitted.themes).includes(name)) {
+        // Packed theme declarations have no authored source in this graph.
+        Mapping.addMapping(cssMap, { generated: { column: 0, line } })
+        return rule
+      }
       const selector = `.${names.get(name)!}`
       const call = owners.get(name)!
       Mapping.addMapping(cssMap, {

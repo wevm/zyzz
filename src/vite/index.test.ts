@@ -3,12 +3,15 @@
  * @module
  */
 import * as Trace from '@jridgewell/trace-mapping'
+import * as ChildProcess from 'node:child_process'
+import * as Util from 'node:util'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import * as Vite from 'vite'
 import { describe, expect, test } from 'vite-plus/test'
 import { zyzz } from 'zyzz/vite'
+import * as Library from '../../test/fixtures/Library.js'
 import * as Fixture from '../../test/fixtures/Vite.js'
 
 async function create(files: Readonly<Record<string, string>> = Fixture.files) {
@@ -61,6 +64,192 @@ function message(socket: WebSocket, action: () => Promise<unknown>) {
 }
 
 describe('zyzz', () => {
+  test('packed themes retain types and compile through Vite package exports', async () => {
+    const directory = await Fs.mkdtemp(Path.resolve('.fixture-library-'))
+    try {
+      const root = await Library.create(directory)
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import { css, theme, mint, props as libraryProps } from '@acme/theme';
+import '@acme/theme/style.css';
+export const props = css({color:theme.tokens.color.brand,padding:'md'})();
+export const scope = mint.className;
+export { libraryProps };
+document.body.innerHTML = '<main class="' + scope + '"><div id="library" class="' + libraryProps.className + '"></div><div id="app" class="' + props.className + '"></div></main>';`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'types.ts'),
+        `import { css, theme } from '@acme/theme'; css({color:'brand',padding:'md'}); css({color:theme.tokens.color.brand});
+// @ts-expect-error Unknown tokens remain invalid through packed declarations.
+css({color:'missing'});
+// @ts-expect-error Imported references preserve property domains.
+css({padding:theme.tokens.color.brand});`,
+      )
+      const checked = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          Path.resolve('node_modules/typescript/bin/tsc'),
+          '--customConditions',
+          'src',
+          '--module',
+          'nodenext',
+          '--target',
+          'esnext',
+          '--strict',
+          '--skipLibCheck',
+          '--noEmit',
+          Path.join(root, 'types.ts'),
+        ],
+      )
+      expect(checked.stdout).toMatchInlineSnapshot(`""`)
+      await Fs.writeFile(
+        Path.join(root, 'index.html'),
+        '<script type="module" src="/app.ts"></script>',
+      )
+      const config: Vite.InlineConfig = {
+        configFile: false,
+        logLevel: 'silent',
+        optimizeDeps: { exclude: ['@acme/theme'] },
+        plugins: [zyzz()],
+        root,
+        server: { host: '127.0.0.1', port: 0 },
+      }
+      const build = await Vite.build({ ...config, build: { minify: false } })
+      if (Array.isArray(build) || !('output' in build))
+        throw new Error('Expected a Vite build')
+      const scripts = build.output
+        .filter((entry) => entry.type === 'chunk')
+        .map((entry) => entry.code)
+        .join('\n')
+      expect(
+        /Theme\.define|theme\.tokens|\.css\(\{|zyzz\.json|Unsupported Zyzz contract/.test(
+          scripts,
+        ),
+      ).toMatchInlineSnapshot(`false`)
+      const styles = build.output
+        .filter(
+          (entry) => entry.type === 'asset' && entry.fileName.endsWith('.css'),
+        )
+        .map((entry) => (entry.type === 'asset' ? String(entry.source) : ''))
+        .join('\n')
+      expect(styles.includes('light-dark(')).toMatchInlineSnapshot(`true`)
+      const server = await Vite.createServer(config)
+      try {
+        await server.listen()
+        const transformed = await server.transformRequest('/app.ts')
+        expect(
+          transformed!.code.includes('theme.tokens'),
+        ).toMatchInlineSnapshot(`false`)
+        const origin = server.resolvedUrls!.local[0]!.replace(/\/$/, '')
+        const cssPath = transformed!.code.match(
+          /import "([^"\n]*zyzz:[^"\n]*\.css)"/,
+        )![1]!
+        const css = await (await fetch(origin + cssPath)).text()
+        expect(css.includes('--z-t')).toMatchInlineSnapshot(`true`)
+      } finally {
+        await server.close()
+      }
+    } finally {
+      await Fs.rm(directory, { recursive: true, force: true })
+    }
+  }, 30000)
+
+  test('packed library and app styles share scopes and schemes in Chromium', async () => {
+    const directory = await Fs.mkdtemp(
+      Path.resolve('.fixture-library-browser-'),
+    )
+    try {
+      const root = await Library.create(directory)
+      await Fs.writeFile(
+        Path.join(root, 'index.html'),
+        '<script type="module" src="/app.ts"></script>',
+      )
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import { css, theme, mint, props } from '@acme/theme'; import { Theme } from 'zyzz'; import '@acme/theme/style.css';
+const extended = Theme.extend(theme, {spacing:{md:'16px'}});
+const app = css({color:'brand'})();
+document.body.innerHTML = '<main class="' + mint.className + '"><div id="library" class="' + props.className + '"></div><div id="app" class="' + app.className + '"></div><section class="' + theme.className + '"><div id="nested" class="' + app.className + '"></div></section><section class="' + extended.className + '"><div id="extended" class="' + props.className + '"></div></section></main>';`,
+      )
+      const config: Vite.InlineConfig = {
+        configFile: false,
+        logLevel: 'silent',
+        optimizeDeps: { exclude: ['@acme/theme'] },
+        plugins: [zyzz()],
+        root,
+        server: { host: '127.0.0.1', port: 0 },
+      }
+      await Vite.build(config)
+      const server = await Vite.preview({
+        ...config,
+        preview: { host: '127.0.0.1', port: 0 },
+      })
+      try {
+        const browser = await chromium.launch()
+        try {
+          const page = await browser.newPage()
+          await page.goto(server.resolvedUrls!.local[0]!)
+          await page.waitForSelector('#app', { state: 'attached' })
+          for (const selector of ['#library', '#app']) {
+            expect(
+              await page
+                .locator(selector)
+                .evaluate((element) => getComputedStyle(element).color),
+            ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
+          }
+          expect(
+            await page
+              .locator('#library')
+              .evaluate((element) => getComputedStyle(element).padding),
+          ).toMatchInlineSnapshot(`"8px"`)
+          expect(
+            await page
+              .locator('#extended')
+              .evaluate((element) => getComputedStyle(element).padding),
+          ).toMatchInlineSnapshot(`"16px"`)
+
+          expect(
+            await page
+              .locator('#nested')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot(`"rgb(0, 102, 204)"`)
+          const className = await page.locator('#app').getAttribute('class')
+          await page.evaluate(() => {
+            document.documentElement.style.colorScheme = 'dark'
+          })
+          expect(
+            await page
+              .locator('#app')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot(`"rgb(170, 255, 170)"`)
+          expect(
+            await page
+              .locator('#library')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot(`"rgb(170, 255, 170)"`)
+          expect(
+            await page
+              .locator('#nested')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot(`"rgb(153, 204, 255)"`)
+          expect(
+            (await page.locator('#app').getAttribute('class')) === className,
+          ).toMatchInlineSnapshot(`true`)
+        } finally {
+          await browser.close()
+        }
+      } finally {
+        await new Promise<void>((resolve, reject) =>
+          server.httpServer.close((error) =>
+            error ? reject(error) : resolve(),
+          ),
+        )
+      }
+    } finally {
+      await Fs.rm(directory, { recursive: true, force: true })
+    }
+  }, 30000)
+
   test('production leaves lazy styles in Vite dynamic chunks', async () => {
     const { config, root } = await create(Fixture.lazyFiles)
     try {

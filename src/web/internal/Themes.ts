@@ -51,7 +51,16 @@ export function create() {
       if (!data) throw new Error('Expected a theme definition.')
       const className = `z_theme-${encode(name)}`
       classes[name] = className
-      const contract = contracts.get(data.contract)
+      let contract = contracts.get(data.contract)
+      if (data.contract[Token.complete]) {
+        contract ??= {
+          index: data.contract[Token.identity] ?? contracts.size,
+          paths: new Set(),
+        }
+        // Separately compiled components may reference tokens absent from this graph.
+        for (const path of Object.keys(data.values)) contract.paths.add(path)
+        contracts.set(data.contract, contract)
+      }
       if (!contract) continue
       const body = [...contract.paths]
         .map((path) => {

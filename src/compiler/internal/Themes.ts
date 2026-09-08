@@ -7,6 +7,7 @@ import type * as Walker from 'oxc-walker'
 import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
 import type * as Source from '../Source.js'
+import * as Contract from './Contract.js'
 
 /** Local bound-authoring initializer replaced while retaining its inferred type. */
 export type Alias = Call & {
@@ -224,43 +225,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
           const input = data(expression.arguments[0]!)
           tokenType = type(expression.arguments[0]!)
           const original = Theme.define(input as Theme.Tokens)
-          const contract = Object.freeze({ [Token.identity]: name })
-          type Tree = { [key: string]: Token.Reference | Tree }
-          function rebind(tree: Theme.References<Theme.Tokens>): Tree {
-            return Object.freeze(
-              Object.fromEntries(
-                Object.entries(tree).map(([key, value]) => [
-                  key,
-                  Token.is(value)
-                    ? Token.create({
-                        contract,
-                        group: value.group,
-                        path: value.path,
-                        value: value.value,
-                      })
-                    : rebind(value as Theme.References<Theme.Tokens>),
-                ]),
-              ),
-            )
-          }
-          definition = Object.freeze(
-            Object.defineProperty(
-              {
-                get className() {
-                  return original.className
-                },
-                css: original.css,
-                tokens: rebind(original.tokens),
-              },
-              Token.definition,
-              {
-                value: Object.freeze({
-                  ...original[Token.definition],
-                  contract,
-                }),
-              },
-            ),
-          ) as Theme.Definition
+          definition = Contract.bind(
+            original,
+            Object.freeze({ [Token.identity]: name }),
+          )
         } else {
           const base = expression.arguments[0]
           const parent =

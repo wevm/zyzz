@@ -38,3 +38,8 @@ Graph.compile({
 })
 // @ts-expect-error Host edges must be module IDs or explicit externals.
 Graph.compile({ imports: { 'pkg/a.ts': { '@theme': false } }, modules: {} })
+
+expectTypeOf(result.contracts).toEqualTypeOf<Readonly<Record<string, string>>>()
+Graph.compile({ contracts: result.contracts, imports: {}, modules: {} })
+// @ts-expect-error Library contracts must be serialized JSON text.
+Graph.compile({ contracts: { 'library/index.js': {} }, modules: {} })

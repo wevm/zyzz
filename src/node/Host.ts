@@ -128,6 +128,8 @@ export async function create(options: create.Options): Promise<Runtime> {
     for (const name of Object.keys(sources)) {
       const output = graph.modules[`${options.packageId}/${name}`]!
 
+      const contract = graph.contracts[`${options.packageId}/${name}`]
+      if (contract) artifacts.set(`${name}.zyzz.json`, contract)
       artifacts.set(name, output.code)
       artifacts.set(`${name}.map`, JSON.stringify(output.map))
       let stylesheet = stylesheets.get(output)

@@ -1,7 +1,7 @@
 # zyzz
 
 > [!NOTE]
-> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. `Config.create`, cyclic static graphs, and packed theme authoring remain unsupported.
+> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. `Config.create` and cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
 
 Connect source transformation and CSS delivery to Vite.
 
@@ -38,6 +38,6 @@ Source/target errors must remain located; failed development builds preserve the
 
 The adapter statically analyzes source; it does not execute theme factories at build time. Each virtual stylesheet includes its reachable source graph so compatible theme scopes are available. Shared rules can repeat before Vite’s final CSS processing.
 
-Authoring inside virtual modules, framework SFCs, dependencies, or files outside the Vite root is not supported yet. See [Vite Setup](../../introduction/vite.md).
+Raw authoring inside virtual modules, framework SFCs, dependencies, or files outside the Vite root is not supported yet. Packed dependencies can supply adjacent compiler metadata; exclude their authoring entrypoints from Vite dependency optimization. See [Vite Setup](../../introduction/vite.md).
 
 See [zyzz/vite](README.md) for the entrypoint overview.

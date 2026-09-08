@@ -133,3 +133,24 @@ for (const count of [10, 100]) {
     })
   }
 }
+
+for (const count of [10, 100]) {
+  const library = Graph.compile({ modules: Fixture.modules })
+  const contracts = { 'library/index.js': library.contracts['pkg/index.ts']! }
+  const modules = {
+    'app/card.ts': `import { style } from '@acme/theme'; ${Array.from({ length: count }, (_, index) => `export const props${index} = style({color:'brand',padding:'${index}px'})();`).join('\n')}`,
+  }
+  describe(`packed theme graph / ${count} styles`, () => {
+    bench(
+      'read contracts + extract + emit + rewrite + maps',
+      () => {
+        Graph.compile({
+          contracts,
+          imports: { 'app/card.ts': { '@acme/theme': 'library/index.js' } },
+          modules,
+        })
+      },
+      { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
+    )
+  })
+}

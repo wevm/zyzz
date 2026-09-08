@@ -2,6 +2,9 @@
 
 Typed style definitions, themes, configuration, and callable authoring.
 
+> [!NOTE]
+> `Config`, `cx`, `variants`, and `Vars` are preview APIs and are not exported at this baseline. Only `css`, `Style`, and `Theme` are implemented root exports.
+
 | API                        | Description                                                            |
 | -------------------------- | ---------------------------------------------------------------------- |
 | [Config](Config/README.md) | Configuration-bound authoring and compatible theme scopes.             |

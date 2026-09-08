@@ -543,6 +543,8 @@ const profile = (
 
 `Css.marker()` also works without a schema. A schema maps case-sensitive state keys to nonempty readonly arrays of string or boolean literals; const inference preserves the literal domains without `as const`. Reject unbounded arrays, duplicate/ambiguous serialized values, invalid data-name fragments, and reserved application keys. Optional marker inputs select any subset of declared states; omitted/undefined fields emit no state attribute. Unknown keys or invalid values are errors, including through variables and untyped calls. False serializes as `"false"`, not attribute omission.
 
+HTML attribute-name fragments use ASCII-lowercase state keys. Reject schemas with keys colliding after ASCII case folding, such as `state` and `State`, before emission. Application and selector lowering use the same normalization; typed input keys remain case-sensitive.
+
 Marker application returns readonly data attributes only: a presence attribute plus selected state attributes. For example, a generated identity might use `data-z-card-k3m9=""` and `data-z-card-k3m9-state="open"`. Names are illustrative; derive stable, readable identities from package/module/binding metadata, never runtime counters or caller-provided names. State attributes are private to the marker, so independent markers do not compete for a shared `data-state` property.
 
 Separate marker and styling spreads have disjoint fields: `<article {...card({ state: 'open' })} {...panel()} />` is valid. Markers neither consume nor output `className`, `style`, ARIA, event handlers, or other component props. Apply real `disabled`, `checked`, or `aria-expanded` attributes separately. Ordinary repeated spreads of the same marker replace its attributes; no automatic merge is implied, and marker props do not extend the existing `cx` input contract.
@@ -583,7 +585,7 @@ const fieldset = css({
 
 const example = (
   <fieldset {...fieldset()}>
-    <input {...choice()} type="checkbox" />
+    <input {...choice()} aria-label="Select option" type="checkbox" />
     <span {...hint()}>Selected</span>
   </fieldset>
 )
@@ -792,7 +794,7 @@ const panel = (
 
 In-memory definitions carry opaque contract references. Source adapters derive stable internal identities from package identity, package-relative module location, and declaration binding; build hosts provide this context. Absolute machine paths, traversal order, and token values must not determine contract identity. Extensions reuse their base identity.
 
-Independent definitions remain isolated even when their keys match. Library output preserves contract identity in generated artifacts. Renaming a definition can change identity; changing only its values cannot. Callers never supply this metadata to `Theme.define`.
+Standalone definitions remain isolated even when their keys match. The planned Config catalog normalization described above creates a separate shared contract for returned handles without changing those standalone identities. Library output preserves contract identity in generated artifacts. Renaming a definition can change identity; changing only its values cannot. Callers never supply this metadata to `Theme.define`.
 
 ## Light and dark
 
@@ -881,7 +883,7 @@ zyzz src --out-dir dist --css dist/styles.css --minify
 
 CSS emission alone cannot make untouched `css()` calls executable. The standalone path must rewrite authoring modules; an application bundler can consume the rewritten tree without a styling plugin. A CSS-only mode is deferred until a concrete consumer can already provide matching compiled class references.
 
-Watch mode handles additions, edits, deletions, renames, and imported theme changes, excluding output directories. Errors include source locations. One-shot errors exit nonzero; watch remains active and preserves the last complete successful output. Interrupts release watchers. Owned-output manifests prevent overwriting unrelated files.
+Watch mode handles additions, edits, deletions, renames, and imported theme changes, excluding output directories. Errors include source locations. One-shot errors exit nonzero; watch remains active and preserves the last complete successful output. Interrupts release watchers and the exclusive lock; the ownership manifest and artifacts retain their recorded package identity. Owned-output manifests prevent overwriting unrelated files.
 
 The default target is web. A later `--target native` emits static tables through the same native emitter; CSS-specific flags are invalid for that target. CLI and build adapters must produce equivalent style identities and CSS for equivalent input graphs.
 
@@ -988,7 +990,7 @@ Only direct object literals with explicit keys and string/number values are acce
 
 Style names combine a deterministic module-identity digest with the call offset; identical input repeats exactly, and source edits may change call identities. Call-site names are extraction metadata, not a guarantee that independently emitted stylesheets can be combined. Hosts must aggregate graphs or supply the stable stylesheet namespaces required by later library work. No absolute machine path participates in naming.
 
-The root `css` signature accepts token-free literal properties and describes a callable returning web styling props with only className/style overrides. Untransformed definitions throw `css.MissingTransformError`. The source transform implements static callables and direct no-argument application folding; extraction alone is not an executable transform.
+The root `css` signature accepts token-free literal properties and describes a callable returning web styling props with only className/style overrides. Untransformed definitions throw an error named `css.MissingTransformError`; the constructor is not exposed as a property of the root `css` export. The source transform implements static callables and direct no-argument application folding; extraction alone is not an executable transform.
 
 ### Literal Module Rewriting
 
@@ -1028,7 +1030,9 @@ In-memory contract identity is an opaque frozen object carried by references and
 
 ## Theme Selection and Group Expansion
 
-Theme selection happens at two boundaries. Authoring selects a contract through `theme.css`, `theme.tokens`, or `theme.vars`; rendering selects a compatible scope through `theme.className` (currently `Css.compile(...).themes[name]`). A plain application-owned map can select scope classes without a provider, global registry, new selection API, or runtime compilation. Independent `Theme.define` calls remain isolated; switchable themes use `Theme.extend` to share a contract. Color schemes remain separate CSS state.
+Theme selection happens at two boundaries. Authoring selects a contract through `theme.css`, `theme.tokens`, or `theme.vars`; rendering selects a compatible scope through `theme.className` (currently `Css.compile(...).themes[name]`). A plain application-owned map can select scope classes without a provider, global registry, new selection API, or runtime compilation. Standalone `Theme.define` calls remain isolated; in-memory switchable themes use `Theme.extend` to share a contract.
+
+Planned `Config.create({ defaultTheme, themes })` is an explicit normalization boundary: complete compatible inline or independently defined alternatives become returned handles on one config contract. Original definitions remain isolated and unchanged. Components must use the normalized config helpers or handles to participate in that shared contract. Color schemes remain separate CSS state.
 
 The initial scalar groups are not the final token surface. Next groups include scalar typography (`fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, `lineHeight`), composite `typography`, and the agreed `breakpoints`/`containers` metadata. Further property-aligned scales such as `borderWidth`, `boxShadow`, `opacity`, `transitionDuration`, `transitionTimingFunction`, and `zIndex` follow the corresponding validated CSS properties. Preserve domain checking and extension compatibility for each group; do not add a permissive catch-all token namespace.
 

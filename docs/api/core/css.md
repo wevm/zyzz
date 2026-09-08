@@ -88,7 +88,7 @@ props.style
 
 ## Errors
 
-Untransformed calls throw `css.MissingTransformError`. Invalid source definitions produce source diagnostics; invalid applied override shapes throw `TypeError`.
+Untransformed calls throw an error whose `name` is `css.MissingTransformError`. This is a diagnostic name, not a constructor exported on `css`; it cannot be referenced as `css.MissingTransformError` for `instanceof`. Invalid source definitions produce source diagnostics; invalid applied override shapes throw `TypeError`.
 
 > [!NOTE]
 > Config-bound extraction, conditions, broad values, and `css((values: Values) => style)` are previews. Callback inputs bind to fixed CSS variables; unknown inputs fail.

@@ -27,7 +27,7 @@ Use integration tests without mocks or stubs. Snapshot results individually with
 
 #### Missing Transform
 
-`css.MissingTransformError` means authoring source reached execution. Confirm the build transforms that module; importing config or extracting CSS alone cannot fix it.
+An error named `css.MissingTransformError` means authoring source reached execution. The name identifies the diagnostic; the constructor is not a property of the exported `css` function. Confirm the build transforms that module; importing config or extracting CSS alone cannot fix it.
 
 #### Missing CSS
 

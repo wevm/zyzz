@@ -205,7 +205,7 @@ Token-aware option bags require a defined theme. An optional theme permits only 
 - **Nested palettes:** use dotted names.
 - **Numeric spacing keys:** accept numeric or string spelling.
 
-`theme.css` exposes the same inferred property types and callable props contract as root `css`, including literal styling overrides. Its extraction and rewrite support is a separate source-linking step; executing an untransformed call throws `css.MissingTransformError`. The in-memory pipeline above is executable without a transform.
+`theme.css` exposes the same inferred property types and callable props contract as root `css`, including literal styling overrides. Its extraction and rewrite support is a separate source-linking step; executing an untransformed call throws an error named `css.MissingTransformError`. The in-memory pipeline above is executable without a transform.
 
 ### Shared Configuration
 

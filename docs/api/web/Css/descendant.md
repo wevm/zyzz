@@ -34,10 +34,10 @@ Css.descendant(target)
 
 ### condition
 
-- Type: Simple pseudo or typed data/pseudo/has predicates
+- Type: Simple pseudo or typed data/pseudo predicates
 - Default: Marker presence.
 
-Combined predicates must match the same marked element.
+Combined predicates must match the same marked element. `has` is unsupported here because this relationship already lowers through `:has()`. Only `ancestor` and `siblingBefore` accept `has`.
 
 ```ts
 Css.descendant(target, { data: { state: 'open' } })

@@ -70,7 +70,7 @@ export function Button() {
 
 ### Zyzz
 
-`Theme.define` takes tokens and returns a bound `css`. Colors accept strings or light/dark pairs; token references emit CSS variables with defining fallbacks. `Theme.extend` shares the contract, and its `className` scopes inherited overrides. CSS `color-scheme` selects the active member of each `light-dark()` pair.
+`Theme.define` takes tokens and returns a bound `css`. Current colors accept the supported literal color grammar or light/dark pairs; token references emit CSS variables with defining fallbacks. `Theme.extend` shares the contract, and its `className` scopes inherited overrides. CSS `color-scheme` selects the active member of each `light-dark()` pair.
 
 ```ts
 import { Theme } from 'zyzz'

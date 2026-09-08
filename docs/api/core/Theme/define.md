@@ -24,6 +24,8 @@ const theme = Theme.define({
 
 Token palettes. Palettes must be nonempty data records with dot-free keys.
 
+Current color leaves accept 3/4/6/8-digit hex, `black`, `white`, `transparent`, or `currentColor`, optionally paired as `{ dark, light }`. Other named or functional colors are unsupported. Spacing and radius leaves accept nonnegative literal lengths or zero, without scheme pairs.
+
 ```ts
 Theme.define({ spacing: { md: '1rem' } })
 ```
@@ -55,7 +57,7 @@ Theme.define({ borderColor: { subtle: '#eee' } })
 - Type: `Theme.Tokens["borderRadius"]`
 - Default: `undefined`
 
-Border radius palette. Leaves use the supported literal grammar; nested palettes infer dotted paths. Color pairs require both schemes.
+Border radius palette. Leaves are nonnegative literal lengths or zero; nested palettes infer dotted paths. Light/dark pairs are unsupported.
 
 ```ts
 Theme.define({ borderRadius: { rounded: '0.5rem' } })
@@ -77,7 +79,7 @@ Theme.define({ color: { text: { dark: '#eee', light: '#111' } } })
 - Type: `Theme.Tokens["spacing"]`
 - Default: `undefined`
 
-Spacing and sizing palette. Leaves use the supported literal grammar; nested palettes infer dotted paths. Color pairs require both schemes.
+Spacing and sizing palette. Leaves are nonnegative literal lengths or zero; nested palettes infer dotted paths. Light/dark pairs are unsupported.
 
 ```ts
 Theme.define({ spacing: { md: '1rem' } })
@@ -102,7 +104,7 @@ Returns `Theme.Definition<tokens>` with inferred references and bound authoring 
 
 - Type: `Theme.Css<tokens>`
 
-Bound callable authoring with inferred token names. Source linking is a preview at this baseline; untransformed execution throws `css.MissingTransformError`.
+Bound callable authoring with inferred token names. Source linking is a preview at this baseline; untransformed execution throws an error named `css.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
 
 ```ts
 const card = theme.css({ padding: 'md' })

@@ -78,6 +78,9 @@ export function Bar() {
 
 [Compile theme tokens and inherited scopes from in-memory definitions.](docs/guides/themes.md#compile-themes)
 
+> [!NOTE]
+> Bundled themes and `Config.create` are previews; these source-authoring examples are not yet executable. Use the in-memory theme guide above for the implemented flow.
+
 Import a bundled theme's `css` for inferred design tokens. `zyzz/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
 
 ```ts
@@ -164,13 +167,14 @@ const example = (
 
 ### Stylesheets and Compilation
 
+> [!NOTE]
+> `global`, `keyframes`, `fontFace`, and React Native `StyleSheet` are previews and cannot yet be imported. The pure `Style.define` / `Css.compile` pipeline is implemented.
+
 `global`, `keyframes`, and `fontFace` from `zyzz/web` define stylesheet rules. `Css` provides in-memory CSS compilation. `StyleSheet` compiles shared `Style` definitions into React Native styles and selects precompiled theme values.
 
 ```ts
 import { Style } from 'zyzz'
-import { Css, global } from 'zyzz/web'
-
-global({ body: { margin: 0 } })
+import { Css } from 'zyzz/web'
 
 const styles = Style.define({
   card: { display: 'flex' },
@@ -179,6 +183,9 @@ const output = Css.compile({ styles })
 ```
 
 Use `composition: 'independent'` to deduplicate complete applications whose composition is resolved before compilation. Those generated class lists must remain separate. The default `ordered` mode preserves stylesheet precedence across combined class lists.
+
+> [!NOTE]
+> The following native adapter and config flow is not yet implemented.
 
 ```ts
 import { zyzz } from './zyzz.config.js'

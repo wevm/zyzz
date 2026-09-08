@@ -1,6 +1,6 @@
 # Host.close
 
-Dispose the host and release output ownership.
+Dispose the host and release the exclusive output lock.
 
 ```ts
 import { Host } from 'zyzz/node'
@@ -23,7 +23,9 @@ No parameters; call on an existing runtime.
 
 ## Returns
 
-`Promise<void>`. Completes after watchers stop, queued builds drain, and ownership is released. Closing is idempotent.
+`Promise<void>`. Completes after watchers stop, queued builds drain, and the exclusive output lock is released. Closing is idempotent.
+
+The `.zyzz.json` manifest and generated artifacts remain owned by the recorded `packageId`. Closing does not transfer ownership: reopening with a different `packageId` still causes the next build to reject that manifest.
 
 ## Errors
 

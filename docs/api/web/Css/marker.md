@@ -43,6 +43,6 @@ const attributes = card({ state: 'open' })
 
 ## Errors
 
-Reject invalid schemas and undeclared state values. Markers do not validate the DOM tree or supply ARIA attributes.
+Reject invalid schemas, state keys colliding after ASCII case folding, and undeclared state values. Attribute names and selectors use the same lowercase key fragments; typed selections remain case-sensitive. Markers do not validate the DOM tree or supply ARIA attributes.
 
 See [Css](README.md) for related methods and types.

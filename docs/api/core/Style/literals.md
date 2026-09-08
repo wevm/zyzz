@@ -88,13 +88,13 @@ CamelCase properties become kebab-case; units remain unchanged and numeric value
 
 Each class-map value is a space-separated list:
 
-- **Common declarations:** use `z-base-<hash>`.
-- **Conflicting bodies:** encode CSS property/value names; repeated bodies also include the authored name.
+- **Common declarations:** use sequential identifiers such as `z_base0` in ordered mode.
+- **Conflicting bodies:** use encoded authored style names, such as `z-card`.
 - **Identifiers:** punctuation encoding is injective; collisions fail explicitly.
 
 No global registry or runtime helper is emitted.
 
-Always distribute class maps with their matching stylesheet.
+Treat generated identifiers as opaque. Always consume the returned class map and distribute it with its matching stylesheet; do not derive class names from properties or values.
 
 - **Adding or removing styles:** can change factoring and class lists.
 - **Identical input:** produces identical output regardless of machine paths or clocks.

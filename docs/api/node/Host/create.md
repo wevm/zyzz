@@ -28,7 +28,7 @@ try {
 - Type: `string`
 - Required: Yes.
 
-Output directory exclusively owned until disposal.
+Output directory exclusively locked until disposal. The ownership manifest persists after close; its recorded package identity is not transferred.
 
 ```ts
 Host.create({ outDir: 'dist', packageId: 'my-library', root: 'src' })
@@ -74,7 +74,7 @@ await host.build()
 
 - Type: `() => Promise<void>`
 
-Stop watchers, drain queued builds, and release output ownership. Closing is idempotent.
+Stop watchers, drain queued builds, and release the exclusive output lock. Closing is idempotent.
 
 ```ts
 await host.close()

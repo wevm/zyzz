@@ -115,6 +115,21 @@ chainedCss({ padding: 5 })
 // @ts-expect-error Applied alias styles accept only literal overrides.
 renamedCss({ padding: 'md' })({ style: { padding: 'md' } })
 
+expectTypeOf(
+  chainedCss({
+    color: shorthand.tokens.color.blue[500],
+    padding: shorthand.tokens.spacing[4],
+  }),
+).toEqualTypeOf<css.ReturnType>()
+// @ts-expect-error Explicit spacing references retain their domain through aliases.
+renamedCss({ color: shorthand.tokens.spacing.md })
+// @ts-expect-error Explicit palette paths must exist.
+memberCss({ color: shorthand.tokens.color.blue[600] })
+// @ts-expect-error Token groups are not scalar references.
+chainedCss({ color: shorthand.tokens.color })
+// @ts-expect-error Root css remains token-free.
+css({ color: shorthand.tokens.color.brand })
+
 const themedCard = themedCss({
   backgroundColor: 'surface',
   borderRadius: 'round',

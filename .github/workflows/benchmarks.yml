@@ -94,10 +94,12 @@ jobs:
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/timings.json >> bench/results/report.md
           printf '\n## Module Transforms\n\nOrdered source compilation, rewriting, and maps. Final minification and browser bundling are outside timing; sizes include the bundled callable runtime. Local themes include literal token extraction, resolution, and two scalar scopes.\n' >> bench/results/report.md
-          for kind in literal theme; do
+          for kind in literal theme alias tokens; do
             case "$kind" in
               literal) title='Literal Styles'; group='module transform' ;;
               theme) title='Local Theme Styles'; group='theme source transform' ;;
+              alias) title='Theme Aliases'; group='theme alias transform' ;;
+              tokens) title='Explicit Theme Tokens'; group='theme token transform' ;;
             esac
             printf '\n### %s\n\n| Styles | Time (ms) | CSS gzip | JS gzip | Total gzip |\n| --- | ---: | ---: | ---: | ---: |\n' "$title" >> bench/results/report.md
             jq -rs --arg kind "$kind" --arg group "$group" --slurpfile timings bench/results/timings.json '

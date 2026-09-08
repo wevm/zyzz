@@ -10,14 +10,14 @@ import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import * as Compilation from '../../bench/Compilation.js'
 
-for (const kind of ['literal', 'theme', 'alias'] as const)
+for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
   for (const count of [10, 100, 1000]) {
     const header =
       kind !== 'literal'
         ? `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#fff' } }); const alternate = Theme.extend(theme, { color: { brand: '#000' } }); export const scope = alternate.className;`
         : `import { css } from 'zyzz';`
-    const source = `${header}\n${kind === 'alias' ? 'const { css } = theme;' : ''}\n${Array.from({ length: count }, (_, index) => `export const card${index} = ${kind === 'theme' ? 'theme.css' : 'css'}({ color: '${kind !== 'literal' ? 'brand' : '#fff'}', padding: '${index}px' });`).join('\n')}`
-    describe(`${kind === 'alias' ? 'theme alias transform' : kind === 'theme' ? 'theme source transform' : 'module transform'} / ${count} styles`, () => {
+    const source = `${header}\n${kind === 'alias' ? 'const { css } = theme;' : ''}\n${Array.from({ length: count }, (_, index) => `export const card${index} = ${kind === 'theme' || kind === 'tokens' ? 'theme.css' : 'css'}({ color: ${kind === 'tokens' ? 'theme.tokens.color.brand' : kind !== 'literal' ? "'brand'" : "'#fff'"}, padding: '${index}px' });`).join('\n')}`
+    describe(`${kind === 'tokens' ? 'theme token transform' : kind === 'alias' ? 'theme alias transform' : kind === 'theme' ? 'theme source transform' : 'module transform'} / ${count} styles`, () => {
       bench(
         'extract + emit + rewrite + maps',
         () => {

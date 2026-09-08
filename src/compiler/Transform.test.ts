@@ -15,6 +15,194 @@ import { Transform } from 'zyzz/compiler'
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('explicit token paths compile through bound aliases with defining fallbacks', async () => {
+    const result = Transform.compile({
+      moduleId: 'example/tokens.ts',
+      source: `import { Theme } from 'zyzz';
+const theme = Theme.define({ color: { transparent: '#06c', palette: { 500: '#123' } }, spacing: { 0: '8px', 4: '16px' } });
+const alternate = Theme.extend(theme, { color: { transparent: '#175', palette: { 500: '#456' } } });
+const { css } = theme;
+export const scope = alternate.className;
+export const props = css({ color: theme.tokens.color.transparent, borderColor: (theme['tokens'].color.palette['500']!), padding: theme.tokens.spacing[0] })();
+`,
+    })
+    expect(result.code).toMatchInlineSnapshot(`
+      "
+      const theme = ({className:"z_theme-1wr3l4n1jk260t-theme"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>);
+      const alternate = ({className:"z_theme-1wr3l4n1jk260t-alternate"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>);
+      const { css } = ({css:undefined} as unknown as {readonly css:import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>['css']});
+      export const scope = "z_theme-1wr3l4n1jk260t-alternate";
+      export const props = ({className:"z-1wr3l4n1jk260t-base0"});
+      "
+    `)
+    expect(result.css).toMatchInlineSnapshot(`
+      ".z_theme-1wr3l4n1jk260t-theme{--z-t1wr3l4n1jk260t-theme-color_2e_transparent:#06c;--z-t1wr3l4n1jk260t-theme-color_2e_palette_2e_500:#123;--z-t1wr3l4n1jk260t-theme-spacing_2e_0:8px;}
+      .z_theme-1wr3l4n1jk260t-alternate{--z-t1wr3l4n1jk260t-theme-color_2e_transparent:#175;--z-t1wr3l4n1jk260t-theme-color_2e_palette_2e_500:#456;--z-t1wr3l4n1jk260t-theme-spacing_2e_0:8px;}
+      .z-1wr3l4n1jk260t-base0{color:var(--z-t1wr3l4n1jk260t-theme-color_2e_transparent,#06c);border-color:var(--z-t1wr3l4n1jk260t-theme-color_2e_palette_2e_500,#123);padding:var(--z-t1wr3l4n1jk260t-theme-spacing_2e_0,8px);}"
+    `)
+    const output = await Esbuild.build({
+      bundle: true,
+      format: 'cjs',
+      metafile: true,
+      stdin: { contents: result.code, loader: 'ts' },
+      write: false,
+    })
+    expect(output.metafile!.outputs['stdin.js']!.imports).toMatchInlineSnapshot(
+      `[]`,
+    )
+    const directory = await Fs.mkdtemp(Path.join(root, '.fixture-tokens-'))
+    try {
+      const path = Path.join(directory, 'module.cjs')
+      await Fs.writeFile(path, output.outputFiles[0]!.text)
+      const executed = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          '-e',
+          `console.log(JSON.stringify(require(${JSON.stringify(path)}).props))`,
+        ],
+      )
+      expect(executed.stdout).toMatchInlineSnapshot(`
+        "{"className":"z-1wr3l4n1jk260t-base0"}
+        "
+      `)
+    } finally {
+      await Fs.rm(directory, { force: true, recursive: true })
+    }
+    const map = new Trace.TraceMap(result.cssMap)
+    const lines = result.css.split('\n')
+    const line = lines.findIndex((value) => value.includes('color:var('))
+    expect(
+      Trace.originalPositionFor(map, {
+        line: line + 1,
+        column: lines[line]!.indexOf('color:'),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 27,
+        "line": 6,
+        "name": "color",
+        "source": "example/tokens.ts",
+      }
+    `)
+  })
+
+  test('explicit token diagnostics reject dynamic paths', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/tokens.ts',
+        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color[key] });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: example/tokens.ts:106: Token paths require static property names without optional access.
+      example/tokens.ts:106: Expected a literal string or number; expressions are not evaluated.]
+    `)
+  })
+
+  test('explicit token diagnostics reject unknown paths', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/tokens.ts',
+        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color.missing });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: example/tokens.ts:106: Unknown theme token path.
+      example/tokens.ts:106: Expected a literal string or number; expressions are not evaluated.]
+    `)
+  })
+
+  test('explicit token diagnostics reject palette references', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/tokens.ts',
+        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: example/tokens.ts:106: Expected a scalar theme token reference.
+      example/tokens.ts:106: Expected a literal string or number; expressions are not evaluated.]
+    `)
+  })
+
+  test('explicit token diagnostics reject escaping tokens', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/tokens.ts',
+        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); export const value = theme.tokens.color.brand;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/tokens.ts:108: Token references must be direct property values in bound theme css calls.]`,
+    )
+  })
+
+  test('explicit token diagnostics reject root css tokens', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/tokens.ts',
+        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); css({ color: theme.tokens.color.brand });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: example/tokens.ts:100: Token references must be direct property values in bound theme css calls.
+      example/tokens.ts:100: Expected a literal string or number; expressions are not evaluated.]
+    `)
+  })
+
+  test('explicit token diagnostics reject token expressions', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/tokens.ts',
+        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color.brand + '' });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: example/tokens.ts:106: Token references must be direct property values in bound theme css calls.
+      example/tokens.ts:106: Expected a literal string or number; expressions are not evaluated.]
+    `)
+  })
+
+  test('explicit token diagnostics reject token writes', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/tokens.ts',
+        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.tokens.color.brand = value;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/tokens.ts:87: Token references must be direct property values in bound theme css calls.]`,
+    )
+  })
+
+  test('explicit token diagnostics reject optional tokens', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/tokens.ts',
+        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color?.brand });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: example/tokens.ts:106: Token paths require static property names without optional access.
+      example/tokens.ts:106: Expected a literal string or number; expressions are not evaluated.]
+    `)
+  })
+
+  test('explicit token diagnostics reject token metadata', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/tokens.ts',
+        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ color: theme.tokens.color.brand.value });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: example/tokens.ts:106: Unknown theme token path.
+      example/tokens.ts:106: Expected a literal string or number; expressions are not evaluated.]
+    `)
+  })
+
+  test('explicit token diagnostics reject wrong domains', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/tokens.ts',
+        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ padding: theme.tokens.color.brand });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/tokens.ts:108: Token group is incompatible with this property.]`,
+    )
+  })
+
   test('local themes compile to scope constants and executable token styles', async () => {
     const source = `import { Theme } from 'zyzz';
 const theme = Theme.define({ color: { brand: { dark: '#fff', light: '#000' } }, spacing: { 1: '4px', md: '8px' } });
@@ -171,7 +359,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
     `)
   })
 
-  test.each(['direct', 'member', 'destructured'] as const)(
+  test.each(['direct', 'member', 'destructured', 'tokens'] as const)(
     'local themed callables preserve overrides, scope inheritance, and schemes in Chromium: %s',
     async (kind) => {
       const source = `import { Theme } from 'zyzz';
@@ -180,7 +368,7 @@ const alternate = Theme.extend(theme, { color: { brand: '#f00' } });
 export const alternateScope = alternate.className;
 export const baseScope = theme.className;
 ${kind === 'member' ? 'const css = theme.css;' : kind === 'destructured' ? 'const { css } = theme;' : ''}
-export const button = ${kind === 'direct' ? 'theme.css' : 'css'}({ color: 'brand', padding: 'md' });`
+export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.css' : 'css'}(${kind === 'tokens' ? '{ color: theme.tokens.color.brand, padding: theme.tokens.spacing.md }' : "{ color: 'brand', padding: 'md' }"});`
       const result = Transform.compile({ moduleId: 'example/theme.ts', source })
       const bundle = await Esbuild.build({
         alias: { 'zyzz/runtime': Path.join(root, 'src/runtime/index.ts') },

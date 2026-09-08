@@ -393,7 +393,7 @@ The initial conditional syntax supports `@media`, `@container`, and `@supports`.
 
 ## Relational Selector DX
 
-This is the planned selector API, not implemented source syntax. Use standard pseudos and explicit `&` relationships; retain token inference inside every nested declaration block. Named data attributes identify application-owned groups and peers. The typed marker proposal below adds inferred relationships without replacing raw CSS selectors.
+This is the planned selector API, not implemented source syntax. Use standard pseudos and explicit `&` relationships; retain token inference inside every nested declaration block. Named data attributes identify application-owned groups and peers. The accepted typed marker design below adds inferred relationships without replacing raw CSS selectors.
 
 ```tsx
 import { css } from 'zyzz'
@@ -434,7 +434,7 @@ Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/r
 
 ### Typed Markers and Ancestors
 
-Proposal for review in 2.4b: `Css.marker(schema?)` defines an element identity and optional finite data-state domains. `Css.ancestor(marker, condition?)` creates a scoped selector key referring to that identity. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
+Accepted API for implementation in 2.4b: `Css.marker(schema?)` defines an element identity and optional finite data-state domains. `Css.ancestor(marker, condition?)` creates a scoped selector key referring to that identity. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
 
 ```tsx
 import { css } from 'zyzz'
@@ -900,7 +900,13 @@ Benchmark fixtures accept an explicit shared Lightning CSS target map through `C
 
 ## CSS Completeness and Open Contracts
 
-The [capability union](parity.md) consolidates the referenced frameworks into numbered capabilities, each with Zyzz usage and an implementation status. It includes typed marker/ancestor proposals, shared existing APIs, unresolved contracts, and explicit external-CSS examples for deferred features. Property typing, source extraction, CSS grammar, emission, browser compatibility, and native support are separate statuses. The current 40-property literal subset cannot establish general CSS parity.
+The [capability union](parity.md) consolidates the referenced frameworks into numbered capabilities, each with Zyzz usage and an implementation status. It includes the accepted typed marker/ancestor API, shared existing APIs, unresolved contracts, and explicit external-CSS examples for deferred features. Property typing, source extraction, CSS grammar, emission, browser compatibility, and native support are separate statuses. The current 40-property literal subset cannot establish general CSS parity.
+
+The Panda cross-check adds three explicit contracts in union items 24–26: multipart recipes, semantic token dependencies, and responsive recipe selections. The optional `variants({ slots, ... })` form is a proposal returning a map of spreadable props after application; it does not change single-element recipes or require component providers. Infer slot names and define per-slot override/binding ownership before acceptance.
+
+Reused token constants are not live aliases. A token dependency graph requires cycles, missing references, domain checking, source identity, and override/inheritance rules without adding metadata to `Theme.define` or replacing light/dark leaves. Conditional tokens and responsive variant selections remain separate decisions; neither may reuse declaration fallback arrays or conflict with dynamic choice payloads.
+
+Reusable typography, surface, and motion objects cover initial preset use. Rich named presets, strict token-only policy, and token documentation exports are optional follow-ups. Imported/exported recipes must retain every finite runtime-selectable alternative before static pruning; an unobserved literal choice is not necessarily dead CSS. JSX style props, component factories, runtime theme injection, and an application-local generated SDK are not core requirements.
 
 Before implementing variable registration, decide how `Vars.define` expresses optional CSS `syntax`, `inherits`, and `initial-value` descriptors while preserving its existing set-of-values API. Static variable assignment, nested `var()` fallback chains, scoped/external variable names, and registration conflicts need explicit contracts. Do not add metadata to `Theme.define` or replace runtime callbacks with a second binding abstraction.
 

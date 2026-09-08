@@ -1,6 +1,6 @@
 # CSS Capability Union
 
-Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the capabilities from the [StyleX API](https://stylexjs.com/docs/api), [Tailwind reference](https://tailwindcss.com/docs/hover-focus-and-other-states), and [vanilla-extract API](https://vanilla-extract.style/documentation/api/style/). Each capability appears once, with its source equivalents and Zyzz usage. It is an API union, not exhaustive CSS standards conformance.
+Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the capabilities from the [StyleX API](https://stylexjs.com/docs/api), [Tailwind reference](https://tailwindcss.com/docs/hover-focus-and-other-states), [vanilla-extract API](https://vanilla-extract.style/documentation/api/style/), and [Panda CSS docs](https://panda-css.com/docs/concepts/writing-styles). Each capability appears once, with its source equivalents and Zyzz usage. It is an API union, not exhaustive CSS standards conformance.
 
 **Partial** means only the stated subset works today. **Planned** means an existing architecture contract awaits implementation. **Proposal** means an API shape is offered for review. **Deferred** means a later capability; external CSS examples demonstrate interoperability, not implemented Zyzz authoring support. Examples are independent unless they explicitly share a definition.
 
@@ -8,7 +8,7 @@ Current implementation: 40 literal properties, six scalar theme groups, portable
 
 ## 01. Typed Styles and Inline Authoring
 
-Sources: StyleX `create`/`atoms`, Tailwind utilities, vanilla-extract `style`/Sprinkles. **Partial:** literal root styles; property expansion in 2.3 and bound transforms in 2.2b.
+Sources: StyleX `create`/`atoms`, Tailwind utilities, vanilla-extract `style`/Sprinkles, and Panda `css`/utilities. **Partial:** literal root styles; property expansion in 2.3 and bound transforms in 2.2b.
 
 ```tsx
 import { css } from 'zyzz'
@@ -21,9 +21,11 @@ const label = <span {...css({ color: '#06c' })()} />
 
 Complete the property/value inventory across accessibility, backgrounds/gradients, borders/outlines, filters/masks, grid/flex, interactivity, layout/containment/positioning, logical spacing/sizing, scrolling, shadows, SVG, tables, transforms, and typography. Property spellings and token domains remain checked; broad selector support must not introduce an unrestricted object-key index signature. No separate utility-string or property-access facade is needed.
 
+Panda's `strictTokens` and `strictPropertyValues` expose an additional policy choice. Zyzz keeps valid CSS literals available by default; opt-in token-only enforcement belongs in a future lint/type policy, not metadata inside `Theme.define`. Syntax validation and token-only policy are separate. Panda property shorthands and JSX style props do not require matching core APIs. [Writing styles](https://panda-css.com/docs/concepts/writing-styles)
+
 ## 02. Composition and Restricted Style Contracts
 
-Sources: StyleX `props` and style restriction types; utility composition; vanilla-extract composition. **Planned:** conflict-aware `cx` and property restrictions in Phase 3; literal callable styling overrides already exist.
+Sources: StyleX `props` and style restriction types; utility composition; vanilla-extract composition; Panda `css`/`mergeCss`/`cx`. **Planned:** conflict-aware `cx` and property restrictions in Phase 3; literal callable styling overrides already exist.
 
 ```tsx
 import { css, cx } from 'zyzz'
@@ -41,7 +43,7 @@ Later generated declarations win in the same condition context, subject to CSS i
 
 ## 03. Values, Expressions, Importance, and Fallbacks
 
-Sources: StyleX `firstThatWorks`/`defineConsts`, Tailwind arbitrary values/functions/importance, vanilla-extract fallback values/CSS Utils. **Planned:** 2.3.
+Sources: StyleX `firstThatWorks`/`defineConsts`, Tailwind arbitrary values/functions/importance, vanilla-extract fallback values/CSS Utils, and Panda values/token references/importance. **Planned:** 2.3.
 
 ```ts
 import { css } from 'zyzz'
@@ -58,7 +60,7 @@ Arrays emit ordered declarations; later supported values win under CSS importanc
 
 ## 04. Themes, Tokens, Scopes, and Schemes
 
-Sources: StyleX `defineVars`/`createTheme`, Tailwind `@theme`/dark mode, vanilla-extract themes/contracts. **Partial:** in-memory scalar contracts; 2.2b source identities and 2.4a bundled themes/query metadata.
+Sources: StyleX `defineVars`/`createTheme`, Tailwind `@theme`/dark mode, vanilla-extract themes/contracts, and Panda tokens/semantic tokens/themes. **Partial:** in-memory scalar contracts; 2.2b source identities and 2.4a bundled themes/query metadata.
 
 ```tsx
 import { Theme } from 'zyzz'
@@ -156,7 +158,7 @@ Callbacks receive only typed inputs and disappear from delivered code. Applicati
 
 ## 08. Recipes, Defaults, and Compound Variants
 
-Sources: StyleX variant patterns, Tailwind state-driven utility combinations, vanilla-extract `styleVariants`/Recipes. **Planned:** Phase 3.
+Sources: StyleX variant patterns, Tailwind state-driven utility combinations, vanilla-extract `styleVariants`/Recipes, and Panda `cva`/`defineRecipe`. **Planned:** Phase 3.
 
 ```tsx
 import { variants } from 'zyzz'
@@ -205,7 +207,7 @@ Selections infer their payloads. Compounds match the choice name, not its contin
 
 ## 10. Pseudos, Attributes, and Child Selectors
 
-Sources: all three libraries' selector/state systems. **Planned:** 2.4b.
+Sources: all four libraries' selector/state systems. **Planned:** 2.4b.
 
 ```ts
 const field = css({
@@ -223,7 +225,7 @@ Cover interactive/form/structural states, ARIA/data/direction, open/popover/iner
 
 ## 11. Typed Ancestors, Groups, Peers, and Descendants
 
-Sources: [StyleX contextual selectors](https://stylexjs.com/docs/api/javascript/when), [Tailwind groups/peers and group descendants](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-the-descendants-of-a-group), vanilla-extract selector composition. **Proposal:** `Css.marker` and relational selector functions in 2.4b.
+Sources: [StyleX contextual selectors](https://stylexjs.com/docs/api/javascript/when), [Tailwind groups/peers and group descendants](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-the-descendants-of-a-group), vanilla-extract selector composition, and Panda group/peer conditions. **Planned (API accepted):** `Css.marker` and relational selector functions in 2.4b.
 
 ```tsx
 import { css } from 'zyzz'
@@ -265,7 +267,7 @@ Imported marker identity survives packaging. Helpers use explicitly documented z
 
 ## 12. Media, Container, and Feature Conditions
 
-Sources: all three libraries' responsive/conditional styles and vanilla-extract `createContainer`. **Planned:** query metadata in 2.4a, nested rules in 2.4b.
+Sources: all four libraries' responsive/conditional styles and vanilla-extract `createContainer`. **Planned:** query metadata in 2.4a, nested rules in 2.4b.
 
 ```ts
 const theme = Theme.define({
@@ -300,7 +302,7 @@ Also cover contrast/forced colors, pointer capability, orientation, scripting, a
 
 ## 13. Reusable Conditions and Static Extension
 
-Sources: Tailwind `@utility`/`@apply`/`@variant`/`@custom-variant`, StyleX imported constants, vanilla-extract static style composition. **Planned:** static expressions in 2.3 and conditions in 2.4b.
+Sources: Tailwind `@utility`/`@apply`/`@variant`/`@custom-variant`, StyleX imported constants, vanilla-extract static style composition, and Panda `css.raw`/patterns/style presets/custom conditions. **Planned:** static expressions in 2.3 and conditions in 2.4b.
 
 ```ts
 export const focusRing = {
@@ -312,9 +314,27 @@ const button = css({ ...focusRing, padding: '1rem' })
 
 Imported immutable objects and explicit composition cover reuse without a registration API. Ordinary object spreads have JavaScript replacement semantics; they do not deep-merge duplicate nested keys. Arbitrary helper execution is not part of static analysis. A duplicate utility/plugin/configuration language is outside scope.
 
+Panda's [patterns](https://panda-css.com/docs/concepts/patterns), [text styles](https://panda-css.com/docs/theming/text-styles), [layer styles](https://panda-css.com/docs/theming/layer-styles), and [animation styles](https://panda-css.com/docs/theming/animation-styles) add reusable declaration groups. Zyzz can start with imported typed static objects and explicit CSS; composite typography is already planned. Named border/shadow/animation preset contracts remain design work. Layer styles are visual presets, not cascade layers.
+
+```ts
+const surface = {
+  borderColor: '#ddd',
+  borderRadius: '0.5rem',
+  borderWidth: '1px',
+} as const
+const stack = css({
+  ...surface,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '1rem',
+})
+```
+
+Panda property-based conditions and responsive arrays map to nested Zyzz blocks in item 12. Zyzz arrays remain declaration fallbacks, so they must never double as breakpoint positions. Reusable condition lists must specify AND versus OR and preserve order; no underscore-condition registry is needed. [Conditional styles](https://panda-css.com/docs/concepts/conditional-styles)
+
 ## 14. Keyframes, Animation, and Entry Transitions
 
-Sources: StyleX `keyframes`, Tailwind animation/starting styles, vanilla-extract `keyframes`. **Planned:** 2.4c keyframes and 2.4b `@starting-style`.
+Sources: StyleX `keyframes`, Tailwind animation/starting styles, vanilla-extract `keyframes`, and Panda keyframes/animation styles. **Planned:** 2.4c keyframes and 2.4b `@starting-style`.
 
 ```ts
 const enter = Css.keyframes({
@@ -354,7 +374,7 @@ Cover multiple sources, descriptor grammar, URL handling, and side-effect retent
 
 ## 16. Globals, Layers, and Reset
 
-Sources: Tailwind cascade layers/Preflight, vanilla-extract `globalStyle`/`layer`/`globalLayer`, external CSS integration in StyleX. **Planned:** 2.4c.
+Sources: Tailwind cascade layers/Preflight, vanilla-extract `globalStyle`/`layer`/`globalLayer`, external CSS integration in StyleX, and Panda `globalCss`/layers/preflight. **Planned:** 2.4c.
 
 ```ts
 import 'zyzz/reset.css'
@@ -386,7 +406,7 @@ The non-React target must retain callable application while returning `class`, s
 
 ## 18. Compilation, Libraries, and Build Integrations
 
-Sources: StyleX plugins/CLI, Tailwind CLI/build tools/`@source`/`@reference`, vanilla-extract integrations/`addFunctionSerializer`. **Partial:** pure transforms and file host. **Planned:** common delivery adapters/CLI in Phase 4.
+Sources: StyleX plugins/CLI, Tailwind CLI/build tools/`@source`/`@reference`, vanilla-extract integrations/`addFunctionSerializer`, and Panda codegen/CLI/presets/static CSS. **Partial:** pure transforms and file host. **Planned:** common delivery adapters/CLI in Phase 4.
 
 ```ts
 import { Transform } from 'zyzz/compiler'
@@ -405,9 +425,11 @@ zyzz src --out-dir dist --minify --targets 'chrome >= 123, firefox >= 128, safar
 
 Pure compilation accepts supplied text/data. CLI and optional build integrations own discovery, dependency linking, watch/HMR, assets, and stylesheet delivery. Packed libraries export generated callables and CSS without consumer authoring evaluation. Source maps, missing-transform diagnostics, editor inference, and lint integration are explicit DX gates. Final processing belongs to Lightning CSS or the consuming build, with equivalent targets and preserved semantics.
 
+Panda's [static CSS generation](https://panda-css.com/docs/guides/static) highlights an extraction gate: all finite choices available to a runtime recipe selection must ship, even if only a default appears literally in source. Prove exported/dynamically selected recipe reachability and packed-library delivery before pruning alternatives. Keep that separate from arbitrary runtime CSS generation. Optional token/recipe documentation export, analogous to [Panda Studio](https://panda-css.com/docs/theming/studio), is Phase 5 tooling; no generated application-local SDK or runtime theme injector is required.
+
 ## 19. External Names and Contract-Only Themes
 
-Sources: vanilla-extract global theme/contract/variable/keyframe APIs and external stylesheets across all three libraries. **Proposal required:** typed contract-only definitions and explicit global name ownership, 2.4c/Phase 4.
+Sources: vanilla-extract global theme/contract/variable/keyframe APIs and external stylesheets across all four libraries. **Proposal required:** typed contract-only definitions and explicit global name ownership, 2.4c/Phase 4.
 
 The immediate interoperability form uses application-owned CSS plus literal references. This does not provide an inferred external theme contract:
 
@@ -545,6 +567,67 @@ const selected = StyleSheet.select(native.styles, {
 ```
 
 Theme labels, schemes, and style names infer from inputs. Unit conversion is explicit. Markers, DOM relationships, CSS variable text, and stylesheet rules are not native capabilities. Test real native selection/rendering separately from embedded JavaScript-engine portability.
+
+## 24. Multipart Recipes and Parts
+
+Panda [slot recipes](https://panda-css.com/docs/concepts/slot-recipes), `sva`, and `defineParts` expose a gap beyond single-element recipes. **Proposal for Phase 3:** an optional `slots` form on the existing `variants` function, shared by `theme.variants`.
+
+```tsx
+const button = variants({
+  base: { label: { fontWeight: 600 }, root: { display: 'inline-flex' } },
+  defaultVariants: { size: 'sm' },
+  slots: ['label', 'root'],
+  variants: {
+    size: {
+      md: { label: { fontSize: '1rem' }, root: { padding: '1rem' } },
+      sm: { label: { fontSize: '0.875rem' }, root: { padding: '0.5rem' } },
+    },
+  },
+})
+const parts = button({ size: 'sm' })
+const element = (
+  <button {...parts.root}>
+    <span {...parts.label}>Save</span>
+  </button>
+)
+```
+
+Infer slot names throughout base, choices, compounds, and the returned props map. Define per-slot overrides, data-attribute ownership, dynamic bindings, and native output before implementation. No mandatory context provider; applications distribute returned props normally. Descendant-part styling can already use ordinary `data-part` selectors; portals require directly applied slot props because ancestor selectors do not cross DOM boundaries. This slot form is a new proposal, separate from the accepted marker API.
+
+## 25. Semantic Token Aliases and Conditional Tokens
+
+Panda [semantic tokens](https://panda-css.com/docs/theming/tokens) add references between token leaves and condition-dependent values. **Design required:** Zyzz currently has semantic names and light/dark pairs, but no token dependency graph or arbitrary conditional token definitions.
+
+```ts
+const palette = { blue: '#06c', paleBlue: '#69f' } as const
+const theme = Theme.define({
+  color: { brand: { dark: palette.paleBlue, light: palette.blue } },
+})
+const button = theme.css({ color: 'brand' })
+```
+
+This planned static-expression example reuses values; it is not a live alias between CSS variables. A true alias must retain domain inference, cycle/missing-reference diagnostics, imported identity, and the chosen inheritance behavior when its target is overridden. Preserve token-only `Theme.define` arguments and color leaves as `string | { light, dark }`; decide a compatible reference representation before adding one. Arbitrary conditional tokens need a separate contract from CSS scheme pairs and immutable query thresholds.
+
+## 26. Responsive Recipe Selections
+
+Panda config recipes can expose conditional selections, with restrictions around compounds. **Design required:** Zyzz's dynamic payload selections do not imply responsive variant selection. The existing planned syntax can express a finite responsive choice:
+
+```ts
+const button = variants({
+  variants: {
+    size: {
+      responsive: {
+        padding: '0.5rem',
+        '@media (width >= 48rem)': { padding: '1rem' },
+      },
+      sm: { padding: '0.5rem' },
+    },
+  },
+})
+const props = button({ size: 'responsive' })
+```
+
+An inferred per-condition selection API still needs a nonambiguous shape alongside `{ custom: payload }`, compound behavior, defaults/null semantics, query ordering, and native errors. Track this explicitly instead of claiming the example provides that API. [Recipes](https://panda-css.com/docs/concepts/recipes)
 
 ## Completeness Gate
 

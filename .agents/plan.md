@@ -43,7 +43,7 @@ Every `css` definition is callable. Static calls accept optional styling overrid
 
 ## Starting point
 
-Phase 1 is merged: typed definitions, literal CSS emission, source extraction, module rewriting, file hosts, and portability coverage. Phase 2 begins with in-memory theme contracts and CSS scopes.
+Phase 1 is merged: typed definitions, literal CSS emission, source extraction, module rewriting, file hosts, and portability coverage. Phase 2 includes merged in-memory themes and token-name authoring; source linking is next.
 
 Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration tests. Existing CI checks consumer type fixtures, runs integration scenarios and builds the package. Tooling remains outside the core dependency graph.
 
@@ -137,7 +137,9 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) is merged. PR 2.2a starts from main `18616ad`.
+Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) and [PR 2.2a / #10](https://github.com/wevm/zyzz/pull/10) are merged. Audit baseline: main `9aa72fc`. Source identity/linking in 2.2b is next.
+
+The [CSS parity audit](parity.md) separates implemented capabilities, planned behavior, and unresolved API decisions. Current declaration support is 40 literal properties; general CSS coverage is not complete.
 
 ### PR Sequence
 
@@ -145,10 +147,15 @@ Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) is merged. PR 2.2a st
 2. **2.2a — Theme Authoring Contracts:** bound `theme.css` inference and missing-transform behavior; typed shorthand resolution through `Style.define(styles, { theme })`; property-specific color precedence, nested/numeric names, literal precedence, browser scope parity, and resolution-to-CSS benchmarks. Source rewriting is a separate dependency and bound calls remain non-executable until it lands.
 3. **2.2b — Theme Source Identity and Linking:** extract bound calls, derive stable package/module/binding identities, link imported theme dependencies, and publish packed-library contracts. Expose compiled `theme.className`, preserve aliases/re-exports, and verify source/file/watch parity. No independently emitted theme library is supported before this gate.
 4. **2.3 — Standard Values and Variables:** widen CSS literal parsing, fallback arrays, importance, static expressions, and inferred `theme.vars`; add dynamic value bindings and explicit variables in dependency-sized follow-ups.
-5. **2.4 — Bundled Themes and Queries:** opt-in default tokens and typography, typed media/container thresholds, and conditions. Keep every later task below as an acceptance checklist; variants remain Phase 3.
+5. **2.4a — Bundled Themes and Queries:** opt-in default tokens and typography, typed media/container thresholds, containment, and named query identity.
+6. **2.4b — Selectors and Conditions:** pseudos/elements, data/ARIA states, group/peer/descendant relations, nesting, media/supports/container conditions, and `@starting-style`. Retain standard specificity and browser behavior.
+7. **2.4c — Stylesheet Contributions:** keyframes, globals, font faces, layers, and opt-in reset; cross-module references, contribution ownership, extraction, and browser/packaging gates. Variants remain Phase 3.
 
 PR 2.1 uses opaque object references for contracts within one in-memory graph. Compiler-local token slots do not depend on values or theme-map labels. Separate source graphs and persistent identities remain PR 2.2b; do not publish these graph-local artifacts as independently composable theme libraries.
 
+- [ ] Create a versioned CSS capability inventory before broadening the literal subset. Track property/value, selector, at-rule, type/extraction/emission/map support, browser targets, native disposition, integration proof, and benchmark separately. Never equate accepted strings or types with supported rendering.
+- [ ] Expand standard property families in 2.3: layout/positioning (including columns, containment, and overflow), grid/flex, logical dimensions/spacing, typography, backgrounds/gradients, borders/outlines, shadows, transforms, filters/masks, tables, scrolling, interactivity, SVG, and accessibility. Define shorthand/longhand and logical/physical interactions as each family lands.
+- [ ] Specify registered custom properties in 2.3: syntax, initial value, inheritance, interpolation, duplicate/conflicting registrations, and target diagnostics. Distinguish variable fallbacks from ordered declaration fallbacks; preserve existing callback and `Vars` value-binding roles.
 - [ ] Expand token groups alongside their validated properties: scalar typography, composite typography, query thresholds, then border, shadow, opacity, transition, and stacking scales. Keep inherited theme selection separate from CSS color-scheme selection.
 - [x] Implement the `Theme.define` and `Theme.extend` contracts before widening authoring syntax.
 - [ ] Add `zyzz/themes/default` with named `css`, `theme`, and raw `tokens` exports; add bound `variants` when recipe compilation lands in Phase 3. Bundle colors, typography, spacing, radii, and related scales using the ordinary theme contract; keep light/dark values within the theme.
@@ -170,11 +177,15 @@ PR 2.1 uses opaque object references for contracts within one in-memory graph. C
 - [ ] Recognize imported and destructured theme functions with full inference and static extraction.
 - [ ] Support static `css` calls inline, outside markup, and in exported/imported style constants equally; extraction must not depend on a `className` attribute.
 - [ ] Implement scoped pseudo-classes/elements, explicit `&` selectors, and nested `@media`, `@container`, and `@supports` with theme inference at every depth.
+- [ ] Add relational-selector integration/type fixtures for named data groups/peers, group descendants using `:has`, sibling direction, direct/all children, nested names, state combinations, and cross-module reusable conditions. Preserve explicit `:where`/`:is` specificity; do not infer nearest-group boundaries.
+- [ ] Cover structural/form/interactive pseudos, data/ARIA/direction/open states, pseudo-elements with explicit content, and accessibility/device/print/feature conditions. Keep raw hover semantics distinct from hover-capability queries; validate `@starting-style` ordering and discrete-transition behavior.
 - [ ] Add `breakpoints` and `containers` groups with inferred `@media <name>` and `@container <name>` aliases that expand into inclusive minimum-width conditions.
 - [ ] Extend query inference with `>=`, `<`, inclusive/exclusive ranges, and `containerNames` for named queries and declarations.
 - [ ] Reject unknown/cross-group aliases, reserved-name collisions, and invalid threshold lengths without weakening property checking or raw CSS condition support.
 - [ ] Resolve query thresholds statically; specify extension overrides, dependent recompilation, and unchanged thresholds when switching runtime theme scopes.
 - [ ] Document nearest eligible container selection, explicit containment, named raw queries, and stylesheet-level rule boundaries. Implement stylesheet contributions through `Css.global`, `Css.keyframes`, and `Css.fontFace`, with optional reset and layer configuration.
+- [ ] Define keyframe offsets, comma-separated stops, declaration-only frame bodies, importance rejection, stable imported references, theme variables, conditional reachability, and animation shorthand/list parsing. Test sampled animation progress and reduced motion in a real browser; measure reused/distinct animations and emitted CSS/JavaScript size.
+- [ ] Specify scoped/global contribution identity and explicit in-memory ownership, multi-source fonts and URLs, layer nesting/order/importance, and tree-shaking side effects. Global external names and contract-only theme interoperability require a documented decision before claiming parity.
 - [ ] Emit scoped custom properties and `light-dark()` values. Support `color-scheme: light`, `dark`, and `light dark`, independently of theme identity.
 - [ ] Specify nested scope inheritance, complete overrides, independently forced schemes, deterministic server output, and undeclared-theme failures.
 - [ ] Preserve standard declaration order, selectors, at-rules, inheritance, and cascade semantics. Specify token/literal precedence and retain authored condition order.
@@ -221,6 +232,7 @@ Status: planned.
 - [ ] Distribute web modules, declarations, and CSS; distribute native modules, declarations, and static theme tables. Consumers do not need compiler integrations.
 - [ ] Verify server rendering, hydration identity, state-preserving refresh where supported, CSS-to-source tracing, actionable missing-transform diagnostics, and add/edit/remove/rename recovery.
 - [ ] Verify optional reset, global/font contributions, layer ordering, and independently packaged CSS in different loading orders.
+- [ ] Define a renderer output adapter for DOM `class` attributes and serialized inline styles alongside `className`/style-object props. Verify escaping, units/custom properties, owned data attributes, server output/hydration, and packed consumers in real React and non-React/template integrations without adding framework dependencies to core.
 - [ ] Test independent packed consumers for root, `themes/default`, and named `Css`/`StyleSheet` exports from `web`/`react-native`. Include bundled aliases through CLI/build extraction. Ensure root imports exclude bundled token data and CSS, and unused themes, targets, parsers, and tools stay out of runtime dependencies.
 
 Gate: all integration paths use the same contracts and agree on identity. Theme classes and tables survive packaging. Static web styles compile away; optional runtime composition, value binding, and variant selection have measured isolated costs. No target generates rules at runtime.
@@ -307,3 +319,8 @@ Custom conflict graphs, shared-subset/biclique search, bounded beam search, MaxS
 - [ ] Target smaller complete delivery across the unchanged corpus while retaining existing gates and reporting every raw/gzip/Brotli result, including losses. No universal minimum or fastest-compiler claim follows from a single benchmark run.
 - [ ] Verify supported CSS semantics through real browser integration tests before accepting size improvements. Keep core agnostic and minification in adapters or consuming builds.
 - [ ] Confirm timing improvements across repeated matched runs and retain variance. Do not use noisy strict winner assertions or hide differing source-pipeline boundaries.
+
+### Explicit CSS Backlog
+
+- [ ] Track `@scope`, container style/scroll-state queries, scoped view-transition names/classes and pseudo-elements, anchor positioning/`@position-try`, scroll-driven animation timelines, `@counter-style`, paged-media rules, and emerging values as named later capabilities. Assign a phase and fixtures before implementation; reject unsupported grammar with source locations.
+- [ ] Keep browser API orchestration (DOM/CSSOM, Web Animations, preference/layout observers) outside the style compiler. Shared native authoring has its own capability matrix; a browser-only rule cannot silently disappear on native.

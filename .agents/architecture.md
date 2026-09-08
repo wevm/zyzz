@@ -2,7 +2,7 @@
 
 ## Status and boundaries
 
-PR 1.1 implements the literal `Style.define` boundary, immutable ordered data, and structured diagnostics, with integration/type coverage and an authoring benchmark. The [literal subset](../docs/literal-styles.md) documents the implemented surface. CSS emission, component authoring functions, themes, variants, CLI, and native rendering below remain implementation targets. The MVP prioritizes web correctness and includes a working native subset.
+Main `9aa72fc` includes Phase 1 and PRs 2.1/2.2a: 40-property literal validation, in-memory CSS emission, literal source extraction/rewriting, file hosts, scalar theme contracts/scopes, and token-name resolution. Bound `theme.css` has type inference but still requires theme-aware source linking. The [parity audit](parity.md) distinguishes implemented behavior from the remaining API targets. The MVP prioritizes web correctness and includes a working native subset.
 
 The core owns typed ordered declarations, token resolution, validation, and deterministic identity. It has no filesystem, browser, device, parser, framework, or build-tool dependencies. Source adapters extract definitions; target emitters generate artifacts; host adapters deliver them.
 
@@ -391,6 +391,47 @@ CSS property names and value types follow standard CSS, augmented by domain-spec
 
 The initial conditional syntax supports `@media`, `@container`, and `@supports`. Other at-rules require explicit capability support and diagnostics. Stylesheet-level rules use the optional `Css` APIs below, outside element declaration objects.
 
+## Relational Selector DX
+
+This is the planned selector API, not implemented source syntax. Use standard pseudos and explicit `&` relationships; retain token inference inside every nested declaration block. Named data attributes identify application-owned groups and peers.
+
+```tsx
+import { css } from 'zyzz'
+
+const indicator = css({
+  opacity: 0,
+  ':where([data-group="profile"]:has(a)) &': { opacity: 1 },
+})
+
+const profile = (
+  <article data-group="profile">
+    <a href="/profile">Profile</a>
+    <span {...indicator()}>Has a link</span>
+  </article>
+)
+```
+
+This inspects descendants of the marked ancestor. `:has(a)` alone would inspect descendants of the styled element. No parent-state JavaScript, wrapper component, generated marker class, or class concatenation is required.
+
+| Relationship                             | Authored Selector                                     |
+| ---------------------------------------- | ----------------------------------------------------- |
+| Current control state                    | `:checked`, `:focus-visible`, `&[data-state="open"]`  |
+| Current element contains a checked child | `:has(> input:checked)`                               |
+| Named ancestor state                     | `:where([data-group="profile"]:hover) &`              |
+| Earlier peer is checked                  | `:where([data-peer="choice"]:checked) ~ &`            |
+| Later peer is checked                    | `&:has(~ [data-peer="choice"]:checked)`               |
+| Earlier peer contains a checked input    | `:where([data-peer="choice"]:has(input:checked)) ~ &` |
+| Direct children / all descendants        | `& > *` / `& *`                                       |
+| A generated pseudo-element               | `::before` with explicit `content`                    |
+
+The compiler preserves normal selector matching and specificity. `:where(...)` explicitly lowers the surrounding condition's specificity; no implicit rewrite does so. Peer combinators retain direction. Repeated nested group names match any qualifying ancestor, not only the nearest one; distinct names separate roles. Selector strings cannot prove DOM structure or attribute existence through TypeScript.
+
+Offer completion for supported pseudos and condition forms without an unrestricted object-key index signature. Parse compound/relative selectors, `:has`, `:is`, `:not`, `:where`, nth formulas, and lists with a real CSS parser; preserve conjunction and authored order through nesting. Invalid syntax and unsupported target capabilities receive source diagnostics.
+
+Literal `:hover` remains ordinary CSS. Use `@media (hover: hover)` explicitly for pointer-capable hover effects. Do not insert pseudo-element content or a reset automatically. Reusable imported immutable condition objects and spreads use the ordinary static-expression contract, not an additional variant-registration API.
+
+Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/removal, nested named groups, and combined queries. Native rejects relational selectors until a separately specified adapter can preserve their meaning.
+
 ## Inferred query thresholds
 
 Themes can define dedicated size thresholds separately from spacing and general sizing tokens:
@@ -474,6 +515,25 @@ const animated = theme.css({
   animationDuration: '200ms',
 })
 ```
+
+`Css.keyframes(frames)` returns a typed animation-name reference. Accept `from`, `to`, percentages in the inclusive 0–100 range, and valid comma-separated stops. Frame values are declaration objects; reject nested selectors/queries and important declarations. Preserve source order at overlapping offsets, and never reorder frame declarations mechanically. Theme values use explicit `theme.tokens` or supported `theme.vars` references.
+
+```ts
+const enter = Css.keyframes({
+  from: { opacity: 0, transform: 'translateY(4px)' },
+  to: { opacity: 1, transform: 'translateY(0)' },
+})
+const notice = theme.css({
+  animationDuration: '160ms',
+  animationName: enter,
+  '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
+  ':focus-visible': { outline: '2px solid currentColor' },
+})
+```
+
+Longhands are the simplest typed usage. When animation shorthand/templates and comma-separated animation lists land, parse them and preserve reference identity instead of concatenating unvalidated strings. Reused/imported animations emit reachable definitions with stable names; frame references survive library packaging and query wrapping. Explicit global names need collision and ownership rules before they are exposed.
+
+Animation tests inspect paused/seeked animation progress through the real browser engine rather than sleeping. Cover theme variables, scope changes, reduced motion, malformed offsets, repeated references, and unused-definition removal. `@starting-style` is a separate ordered rule capability for entry transitions, not a keyframe alias.
 
 These authoring calls compile away into explicit stylesheet contributions. Preserve global/font-face side effects through tree shaking; emit reachable keyframes with stable references. Pure in-memory compilation receives extracted contributions as data and never relies on module registration. Native rejects these web-only operations; fonts are loaded through platform mechanisms.
 
@@ -747,3 +807,13 @@ Resolve query strings once at the adapter boundary into Lightning CSS targets; d
 Targets cannot silently weaken semantics. In particular, lowering `light-dark()` must preserve inherited, forced, inline, and externally authored `color-scheme` behavior. An adapter must diagnose an unsupported combination when it cannot preserve that contract; selecting an older browser is not permission to discard scheme behavior. Define browser fixtures before claiming support for each downlevel path.
 
 Benchmark fixtures accept an explicit shared Lightning CSS target map through `Compilation.create(workload, { targets })` or `Themes.create(count, { targets })`. The immutable profile reaches every library's final processing and is recorded in result artifacts. Reproducible CI defaults stay fixed; theme profiles that lower `light-dark()` are rejected before fixture preparation. Supported custom profiles still require browser-parity validation before performance claims.
+
+## CSS Completeness and Open Contracts
+
+The [parity audit](parity.md) records the public API comparisons and the capability backlog. Property typing, source extraction, CSS grammar, emission, browser compatibility, and native support are separate statuses. The current 40-property literal subset cannot establish general CSS parity.
+
+Before implementing variable registration, decide how `Vars.define` expresses optional CSS `syntax`, `inherits`, and `initial-value` descriptors while preserving its existing set-of-values API. Static variable assignment, nested `var()` fallback chains, scoped/external variable names, and registration conflicts need explicit contracts. Do not add metadata to `Theme.define` or replace runtime callbacks with a second binding abstraction.
+
+Renderer output also needs an explicit adapter contract: `className` plus a style object is not the same as DOM `class` plus a serialized style attribute. Keep application-time style definitions callable and spreadable; serialize at the target boundary with correct escaping and retain recipe attributes. The adapter belongs outside the agnostic core.
+
+Later web capabilities include `@scope`, container style/scroll-state queries, view transitions, anchor fallbacks, scroll-driven animations, counter styles, and paged media. Track grammar, identity, reachability, target constraints, and browser evidence separately. Raw CSS syntax is an authoring form, not permission to silently pass unsupported constructs through every target.

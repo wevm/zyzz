@@ -104,6 +104,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Keep examples small and focused on the exported behavior. Prefer a snippet, concrete example, or useful visual to a long conceptual explanation; avoid repeating what the example already shows.
 - Keep prose paragraphs under 50 words and focused on one idea. Use bullets for enumerable content and tables for comparisons. Tighten wording rather than mechanically splitting paragraphs.
 - Mark preview or unimplemented APIs with GitHub Markdown `> [!NOTE]` callouts scoped to the affected content. Do not add “Available” labels or status suffixes to headings. Examples must preserve the documented contract and must not imply preview APIs already work.
+- Order consumer documentation by common tasks: getting started, styling, themes, and variants before compiler internals. Use focused guides with end-to-end examples; show CLI and bundler setup variants in Getting Started. Preserve this intentional reading order instead of alphabetizing navigation.
 - Update the owning entrypoint documentation when adding or changing a public module.
 
 ## Prose Conventions

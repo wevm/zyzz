@@ -1,7 +1,7 @@
 # Concepts
 
 > [!NOTE]
-> Configuration, dynamic values, conditions, variants, and stylesheet helpers below are previews and are not yet implemented. See [Usage](usage.md) for current compilation flows and complete examples.
+> Configuration, dynamic values, conditions, variants, and stylesheet helpers below are previews and are not yet implemented. See [Guides](guides/README.md) for current compilation flows and complete examples.
 
 ## Definitions and Applications
 
@@ -38,7 +38,7 @@ Named alternatives share the default's token paths and domains. Config returns c
 
 Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
 
-Use the returned handles from a [named-theme config](usage.md#configure-authoring):
+Use the returned handles from a [named-theme config](guides/themes.md#configure-authoring):
 
 ```tsx
 import { themes } from './zyzz.config.js'
@@ -92,7 +92,7 @@ const button = css({
 })
 ```
 
-- **Ancestors and descendants:** match at any depth; see the [marker example](usage.md#match-ancestors).
+- **Ancestors and descendants:** match at any depth; see the [marker example](guides/relationships.md).
 - **Containers:** queries select the nearest eligible container.
 - **Markers:** declare typed identity and data states; retain real ARIA/control attributes separately.
 - **Parents and children:** imply immediate relationships; reserved for possible future helpers.
@@ -130,7 +130,7 @@ global({ '@layer base': { body: { margin: 0 } } })
 - **Ordering:** constraints merge deterministically; cycles produce located errors. Preserve authored order, unlayered rules, and important reversal.
 - **Watching:** edits and deletions replace or remove contributions; relative assets retain source ownership.
 
-See [stylesheet usage](usage.md#define-stylesheets) for fonts and motion. Standalone globals do not widen a config's inferred layer names.
+See [stylesheet usage](guides/stylesheets.md) for fonts and motion. Standalone globals do not widen a config's inferred layer names.
 
 ## Compilation and Platforms
 

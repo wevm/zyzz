@@ -13,7 +13,7 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 - [**File Builds**](#file-builds): incremental builds and filesystem watching.
 - [**CLI**](#cli): standalone compilation with watch mode.
 
-[Documentation](docs/README.md) · [Concepts](docs/concepts.md) · [Usage](docs/usage.md) · [API Reference](docs/api.md)
+[Getting Started](docs/guides/getting-started.md) · [Guides](docs/guides/README.md) · [Concepts](docs/concepts.md) · [API Reference](docs/api.md)
 
 ## Philosophy
 

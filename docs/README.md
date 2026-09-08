@@ -2,11 +2,12 @@
 
 Zyzz compiles typed styles to static CSS and small application props.
 
-- [Concepts](concepts.md): configuration, theme contracts, scopes, conditions, layers, and compilation.
-- [Usage](usage.md): current compilation flows and previews of configuration, styling, recipes, and stylesheet authoring.
-- [API Reference](api.md): entrypoints, public contracts, diagnostics, and implementation status.
-- [Literal Style Definitions](literal-styles.md): the implemented property grammar, validation, ordering, and pure CSS compilation.
-- [In-Memory Themes](themes.md): the implemented token groups, compatible overrides, and theme scope selection.
+1. [Getting Started](guides/getting-started.md): a first component with Vite or CLI setup.
+2. [Guides](guides/README.md): everyday styling, themes, variants, and shared CSS.
+3. [Concepts](concepts.md): theme scopes, conditions, relationships, and compilation.
+4. [API Reference](api.md): entrypoints and public contracts.
+5. [Literal Style Definitions](literal-styles.md): supported values, validation, and CSS emission.
+6. [In-Memory Themes](themes.md): token compilation and scope selection through compiler APIs.
 
 Literal styles, scalar themes, source transforms, and the file host are implemented at the documented boundaries. Bound `theme.css` has types and token resolution; source linking remains separate at this baseline (`9aa72fc`).
 

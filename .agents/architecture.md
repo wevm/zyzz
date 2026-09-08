@@ -872,6 +872,20 @@ Watch mode handles additions, edits, deletions, renames, and imported theme chan
 
 The default target is web. A later `--target native` emits static tables through the same native emitter; CSS-specific flags are invalid for that target. CLI and build adapters must produce equivalent style identities and CSS for equivalent input graphs.
 
+## Bundler Setup Preview
+
+> [!NOTE]
+> The guide proposes `Vite.create()` from `zyzz/vite`; this adapter is not implemented. Keep its public setup aligned with [Getting Started](../docs/guides/getting-started.md).
+
+The optional adapter connects the shared compiler to Vite's module graph. It rewrites authoring modules, delivers development CSS updates, and emits linked production CSS assets. Consumers retain their framework plugin and import source components normally.
+
+- **Core:** remains independent of Vite, frameworks, filesystems, and runtime CSS generation.
+- **Delivery:** plugin setup owns stylesheet loading; no manual virtual CSS import is required by the proposed guide.
+- **Other bundlers:** use CLI output until a concrete adapter and public setup are defined.
+- **Parity:** plugin and CLI paths must agree on identities, conditions, theme scopes, and emitted behavior for equivalent input graphs.
+
+The CLI guide uses a separate generated directory consumed by the application build. The consuming bundler handles TypeScript/JSX; importing untouched authoring modules is not a substitute for consuming rewritten output.
+
 ## Small CSS and readable classes
 
 The compiler emits well-structured standard CSS with sensible rule grouping and safe deduplication. Preserve authored cascade semantics and keep compatible rules together only where safety is established. Delegate general CSS optimization and minification to the build adapter or consuming build. Correctness is a release gate, not a tradeoff for fewer bytes.

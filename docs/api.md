@@ -1,6 +1,6 @@
 # API Reference
 
-See [Usage](usage.md) for examples and [Concepts](concepts.md) for authoring patterns. Notes identify APIs that are not yet implemented.
+See [Guides](guides/README.md) for examples and [Concepts](concepts.md) for authoring patterns. Notes identify APIs that are not yet implemented.
 
 ## Entry Points
 
@@ -110,7 +110,7 @@ const enter = keyframes({
 })
 ```
 
-Returns a typed `animationName` reference; see [motion usage](usage.md#define-stylesheets).
+Returns a typed `animationName` reference; see [motion usage](guides/stylesheets.md).
 
 - **Bodies:** declarations only; no importance or nested selectors/queries.
 - **Emission:** reachable definitions preserve imported identity.
@@ -138,7 +138,7 @@ Current in-memory scope selection uses `Css.compile(...).themes`. See [In-Memory
 
 `variants(definition)`, `theme.variants(definition)`, and config-bound `variants` accept `base`, `variants`, `defaultVariants`, and `compoundVariants`. Each recipe styles one element and returns one callable. Applied output is one props object, with no slots map.
 
-See the [recipe example](usage.md#define-variants).
+See the [recipe example](guides/variants.md).
 
 - **Compounds:** match choice names; arrays match any listed choice.
 - **Defaults:** apply to omitted selections; null suppresses both choice and default. False remains an explicit choice.
@@ -168,7 +168,7 @@ See the [recipe example](usage.md#define-variants).
 | `Css.siblingAfter(marker, condition?)`           | Marked sibling following the styled element                                           |
 | `Css.anySibling(marker, condition?)`             | Either sibling direction                                                              |
 
-See the [typed ancestor example](usage.md#match-ancestors).
+See the [typed ancestor example](guides/relationships.md).
 
 - **Combinations:** predicates match the same marked element; unsupported nested `:has()` fails.
 - **Conditions:** supported simple pseudos or typed data/pseudo/has predicates.

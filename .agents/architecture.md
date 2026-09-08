@@ -899,6 +899,23 @@ The optional adapter connects the shared compiler to Vite's module graph. It rew
 
 Application examples import authored components and the named `zyzz` instance normally. A bundler adapter hides rewriting and delivery. Standalone CLI output belongs to a downstream build or package distribution; consumers do not hand-maintain imports to generated component copies. CSS-only output cannot replace rewriting for the current callable API.
 
+### Next.js Setup
+
+> [!NOTE]
+> The accepted public setup is `zyzz(nextConfig)` from `zyzz/next`; the adapter is not implemented. See [Next.js Setup](../docs/introduction/next.md).
+
+```ts
+import { zyzz } from 'zyzz/next'
+
+export default zyzz({ reactStrictMode: true })
+```
+
+The wrapper configures source transformation, CSS delivery, and watching for Webpack and Turbopack internally. Application modules continue importing the named `zyzz` instance from their config. No separate Babel or PostCSS configuration is required by this public contract.
+
+Reuse the shared compiler and keep loader/transform selection internal. Preserve existing Next.js options and compose build hooks and rules without replacing application configuration. CSS delivery and dependency invalidation require separate bundler implementations and real fixtures; do not assume Webpack hooks work under Turbopack.
+
+Acceptance covers Server Components, client components, streaming, hydration identities, Fast Refresh, route navigation, imported config/theme edits, production CSS loading, and failure recovery. Record the verified Next.js version matrix. Async/function-valued configurations remain a separate design gate; unsupported forms must fail explicitly.
+
 ## Small CSS and readable classes
 
 The compiler emits well-structured standard CSS with sensible rule grouping and safe deduplication. Preserve authored cascade semantics and keep compatible rules together only where safety is established. Delegate general CSS optimization and minification to the build adapter or consuming build. Correctness is a release gate, not a tradeoff for fewer bytes.

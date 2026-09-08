@@ -42,11 +42,12 @@ export function Button() {
 }
 ```
 
-Import `Button` normally. Named helpers retain inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `css` directly from `zyzz`.
+Import `Button` normally. The named `zyzz` instance retains inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `css` directly from `zyzz`.
 
 ## Choose Compilation
 
 - **Bundler:** follow [Vite Setup](vite.md). The plugin transforms source imports and delivers CSS automatically.
+- **Next.js:** follow [Next.js Setup](next.md). The wrapper configures source transformation and CSS delivery for the selected bundler.
 - **CLI:** follow [CLI Setup](cli.md). The standalone compiler emits modules and CSS for a downstream build or library distribution.
 
 Importing config alone does not compile styles. The CLI is a source-transform path; it cannot make untouched authoring calls executable by emitting CSS alone.

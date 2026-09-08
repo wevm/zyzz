@@ -255,7 +255,7 @@ Status: planned.
 - [ ] Build the CLI with `--css`, `--watch`, and `--minify`; rewrite modules alongside CSS and declarations, requiring no styling plugin in consumers.
 - [ ] Verify CLI/build/in-memory parity, dependency watching, output exclusion, diagnostics, failure preservation, and owned-output cleanup. Include imported style constants and threshold edits in dependency recovery fixtures.
 - [ ] Keep build integrations optional and thin; implement only those needed by concrete fixtures.
-- [ ] Validate the [Getting Started](../docs/introduction/getting-started.md) Vite and CLI paths as real consumer fixtures. Finalize the proposed `Vite.create()` entrypoint, automatic dev/production CSS delivery, and standalone CLI output consumption without generated-component imports in application examples. Cover edits, production rendering, and matching CSS; remove preview callouts only when the complete paths work.
+- [ ] Validate the [Getting Started](../docs/introduction/getting-started.md) Vite and CLI paths as real consumer fixtures. Finalize the proposed `zyzz()` entrypoint, automatic dev/production CSS delivery, and standalone CLI output consumption without generated-component imports in application examples. Cover edits, production rendering, and matching CSS; remove preview callouts only when the complete paths work.
 - [ ] Support framework source boundaries in source adapters without leaking template syntax into core semantics.
 - [ ] Compile from in-memory definitions and from source adapters using the same target emitters.
 - [ ] Distribute web modules, declarations, and CSS; distribute native modules, declarations, and static theme tables. Consumers do not need compiler integrations.

@@ -8,10 +8,10 @@ Add the adapter to the existing Vite configuration. Retain the application's fra
 ```ts
 // vite.config.ts
 import { defineConfig } from 'vite'
-import { Vite } from 'zyzz/vite'
+import { zyzz } from 'zyzz/vite'
 
 export default defineConfig({
-  plugins: [Vite.create()],
+  plugins: [zyzz()],
 })
 ```
 

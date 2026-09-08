@@ -5,6 +5,6 @@
 
 Connect source transformation and CSS delivery to Vite.
 
-| API                    | Description                |
-| ---------------------- | -------------------------- |
-| [Vite](Vite/README.md) | Optional Vite integration. |
+| API             | Description                                                        |
+| --------------- | ------------------------------------------------------------------ |
+| [zyzz](zyzz.md) | Create the Vite plugin for source transformation and CSS delivery. |

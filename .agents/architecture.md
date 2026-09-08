@@ -888,7 +888,7 @@ The default target is web. A later `--target native` emits static tables through
 ## Bundler Setup Preview
 
 > [!NOTE]
-> The guide proposes `Vite.create()` from `zyzz/vite`; this adapter is not implemented. Keep its public setup aligned with [Getting Started](../docs/introduction/getting-started.md).
+> The guide proposes `zyzz()` from `zyzz/vite`; this adapter is not implemented. Keep its public setup aligned with [Getting Started](../docs/introduction/getting-started.md).
 
 The optional adapter connects the shared compiler to Vite's module graph. It rewrites authoring modules, delivers development CSS updates, and emits linked production CSS assets. Consumers retain their framework plugin and import source components normally.
 

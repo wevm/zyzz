@@ -109,6 +109,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Keep guide titles in Title Case with fewer than four words. Group guides by topic, with a Recipes section containing focused tasks; preserve recipe coverage when consolidating pages.
 - Use API tables with descriptions in entrypoint and module overview pages. Give each parameter and returned property its own subheading, type, description, and small usage snippet; document defaults where applicable. Keep preview type names and unresolved defaults explicitly provisional.
 - Recommend named imports from `zyzz.config.ts`, using `{ zyzz }`. Export `const zyzz = Config.create(...)`; consume `zyzz.css`, `zyzz.variants`, and `zyzz.theme` or `zyzz.themes`. Access variables through `zyzz.theme.vars` or a named theme's `vars`. Config modules need no default export, including for integrations. Keep ordinary source component imports; generated modules belong to standalone build/distribution documentation, not introductory application examples.
+- Document the Vite plugin as a named `zyzz` function from `zyzz/vite`, called with `plugins: [zyzz()]`.
 - Update the owning entrypoint documentation when adding or changing a public module.
 
 ## Prose Conventions

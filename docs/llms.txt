@@ -71,8 +71,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [zyzz/runtime](api/runtime/README.md): Section index.
 - [zyzz/themes/default](api/themes/default.md): Reference and examples.
 - [zyzz/vite](api/vite/README.md): Section index.
-- [Vite](api/vite/Vite/README.md): Section index.
-- [Vite.create](api/vite/Vite/create.md): Reference and examples.
+- [zyzz](api/vite/zyzz.md): Vite plugin factory.
 - [Css](api/web/Css/README.md): Section index.
 - [Css.ancestor](api/web/Css/ancestor.md): Reference and examples.
 - [Css.anySibling](api/web/Css/anySibling.md): Reference and examples.

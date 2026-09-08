@@ -1,4 +1,4 @@
-# Vite.create
+# zyzz
 
 > [!NOTE]
 > Preview API; not yet implemented.
@@ -7,14 +7,14 @@ Connect source transformation and CSS delivery to Vite.
 
 ```ts
 import { defineConfig } from 'vite'
-import { Vite } from 'zyzz/vite'
+import { zyzz } from 'zyzz/vite'
 
-export default defineConfig({ plugins: [Vite.create()] })
+export default defineConfig({ plugins: [zyzz()] })
 ```
 
 ## Signature
 
-`Vite.create()`
+`zyzz()`
 
 ## Parameters
 
@@ -29,13 +29,13 @@ The proposed minimal setup takes no required arguments. Additional options remai
 Connects development updates and linked production CSS delivery.
 
 ```ts
-defineConfig({ plugins: [Vite.create()] })
+defineConfig({ plugins: [zyzz()] })
 ```
 
 ## Errors
 
 Source/target errors must remain located; failed development builds preserve the previous complete output.
 
-The adapter does not execute config as an application hook. See [Vite Setup](../../../introduction/vite.md).
+The adapter does not execute config as an application hook. See [Vite Setup](../../introduction/vite.md).
 
-See [Vite](README.md) for related methods and types.
+See [zyzz/vite](README.md) for the entrypoint overview.

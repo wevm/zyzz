@@ -11,9 +11,9 @@ import { describe, expect, test } from 'vite-plus/test'
 import { zyzz } from 'zyzz/vite'
 import * as Fixture from '../../test/fixtures/Vite.js'
 
-async function create() {
+async function create(files: Readonly<Record<string, string>> = Fixture.files) {
   const root = await Fs.mkdtemp(Path.resolve('.fixture-vite-'))
-  for (const [name, content] of Object.entries(Fixture.files))
+  for (const [name, content] of Object.entries(files))
     await Fs.writeFile(Path.join(root, name), content)
   const config: Vite.InlineConfig = {
     configFile: false,
@@ -61,6 +61,155 @@ function message(socket: WebSocket, action: () => Promise<unknown>) {
 }
 
 describe('zyzz', () => {
+  test('production leaves lazy styles in Vite dynamic chunks', async () => {
+    const { config, root } = await create(Fixture.lazyFiles)
+    try {
+      await Fs.appendFile(
+        Path.join(root, 'lazy.ts'),
+        `\nthrow new Error('lazy source was executed');`,
+      )
+      const result = await Vite.build({
+        ...config,
+        build: { manifest: true, minify: false, write: false },
+      })
+      if (Array.isArray(result) || !('output' in result))
+        throw new Error('Expected one Vite build output')
+      const manifest = result.output.find(
+        (file) => file.fileName === '.vite/manifest.json',
+      )
+      if (!manifest || manifest.type !== 'asset')
+        throw new Error('Missing Vite manifest')
+      const entries = JSON.parse(String(manifest.source)) as Record<
+        string,
+        { css?: string[]; dynamicImports?: string[]; isDynamicEntry?: boolean }
+      >
+      expect(entries['index.html']?.dynamicImports).toMatchInlineSnapshot(`
+        [
+          "lazy.ts",
+        ]
+      `)
+      const entryCss = result.output
+        .flatMap((file) =>
+          file.type === 'asset' &&
+          entries['index.html']?.css?.includes(file.fileName)
+            ? [String(file.source)]
+            : [],
+        )
+        .join('')
+      expect(entryCss.trim()).toMatchInlineSnapshot('""')
+      expect(entries['lazy.ts']?.isDynamicEntry).toMatchInlineSnapshot('true')
+      expect(entries['lazy.ts']?.css?.length).toMatchInlineSnapshot('1')
+      const sheet = result.output.find(
+        (file) => file.fileName === entries['lazy.ts']?.css?.[0],
+      )
+      if (!sheet || sheet.type !== 'asset')
+        throw new Error('Missing lazy stylesheet')
+      expect(String(sheet.source).includes('#175')).toMatchInlineSnapshot(
+        'true',
+      )
+      expect(
+        String(sheet.source).includes('padding:8px'),
+      ).toMatchInlineSnapshot('true')
+      const javascript = result.output
+        .filter((file) => file.type === 'chunk')
+        .map((file) => file.code)
+        .join('\n')
+      expect(javascript.includes('Theme.define')).toMatchInlineSnapshot('false')
+      expect(
+        javascript.includes('lazy source was executed'),
+      ).toMatchInlineSnapshot('true')
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('development loads dynamic modules through Vite and preserves SSR imports', async () => {
+    const { config, root } = await create(Fixture.lazyFiles)
+    const server = await Vite.createServer(config)
+    try {
+      await server.listen()
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+      const origin = `http://127.0.0.1:${address.port}`
+      const response = await fetch(`${origin}/main.ts`)
+      expect(response.status).toMatchInlineSnapshot('200')
+      expect(
+        (await response.text()).includes('import("/lazy.ts")'),
+      ).toMatchInlineSnapshot('true')
+      const lazy = await fetch(`${origin}/lazy.ts`)
+      expect(lazy.status).toMatchInlineSnapshot('200')
+      const cssPath = (await lazy.text()).match(
+        /import\s*["']([^"']*zyzz:[^"']+\.css)["']/,
+      )?.[1]
+      if (!cssPath) throw new Error('Missing lazy CSS import')
+      expect(
+        (await (await fetch(origin + cssPath)).text()).includes('#175'),
+      ).toMatchInlineSnapshot('true')
+      await Fs.writeFile(
+        Path.join(root, 'server.ts'),
+        `export const load = () => import('./card');`,
+      )
+      const module = (await server.ssrLoadModule('/server.ts')) as {
+        load: () => Promise<{ props: { className: string } }>
+      }
+      expect((await module.load()).props.className).toMatchInlineSnapshot(
+        '"z-ujlnau19561g8-base0"',
+      )
+    } finally {
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test('lazy CSS loads on demand and updates without reload in Chromium', async () => {
+    const { config, root } = await create(Fixture.lazyFiles)
+    const server = await Vite.createServer(config)
+    let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+    try {
+      browser = await chromium.launch()
+      await server.listen()
+      const address = server.httpServer!.address()
+      if (!address || typeof address === 'string')
+        throw new Error('Missing server port')
+      const page = await browser.newPage()
+      await page.goto(`http://127.0.0.1:${address.port}`)
+      expect(
+        await page.locator('#card').getAttribute('class'),
+      ).toMatchInlineSnapshot('null')
+      await page.click('#load')
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card')!).color ===
+          'rgb(17, 119, 85)',
+      )
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).padding),
+      ).toMatchInlineSnapshot('"8px"')
+      await page
+        .locator('#card')
+        .evaluate((element) => element.setAttribute('data-preserved', 'yes'))
+      await Fs.writeFile(
+        Path.join(root, 'alternate.ts'),
+        Fixture.files['alternate.ts'].replace('#175', '#f00'),
+      )
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#card')!).color ===
+          'rgb(255, 0, 0)',
+      )
+      expect(
+        await page.locator('#card').getAttribute('data-preserved'),
+      ).toMatchInlineSnapshot('"yes"')
+    } finally {
+      await browser?.close()
+      await server.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 30000)
+
   test('production uses Vite resolution and emits linked CSS without executing sources', async () => {
     const { config, root } = await create()
     try {

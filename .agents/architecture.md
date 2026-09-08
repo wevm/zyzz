@@ -1014,7 +1014,7 @@ It creates no nested development server or independent watcher. Cache state is i
 
 The initial adapter collects reachable physical JavaScript/TypeScript within the Vite root. Virtual stylesheets include their reachable graph's rules and compatible scopes; shared rules can repeat before final processing.
 
-Dynamic imports, cycles, dependency authoring, and framework virtual sources remain unsupported. The existing standalone/in-memory relative resolver remains a compatibility path, not the production package resolver.
+Vite owns dynamic module loading and CSS splitting. Each lazy physical module is compiled on demand with its static theme dependencies. Dynamic authoring bindings, static cycles, dependency authoring, and framework virtual sources remain unsupported. Standalone graphs continue to reject dynamic source imports. The existing standalone/in-memory relative resolver remains a compatibility path, not the production package resolver.
 
 Reuse Lightning CSS for browser compatibility transforms and minification at the build-adapter boundary, composing maps and retaining consuming-build targets. Let a consuming bundler own final CSS processing when it already does. `Host.create({ css })` processes standalone CSS with explicit Lightning CSS targets, optional minification, and composed maps. Processing defaults to enabled without minification or browser targets; `css: false` preserves intermediate output. Do not duplicate browser grammar, prefixing, or minification in Zyzz.
 

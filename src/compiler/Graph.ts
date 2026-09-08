@@ -22,7 +22,7 @@ export declare namespace compile {
   type ErrorType = Source.ExtractError | Transform.compile.ErrorType
   /** Source modules available for relative import resolution. */
   type Options = {
-    /** Host-resolved runtime imports keyed by module ID and source specifier; null marks externals. Omit only for closed relative-graph resolution. */
+    /** Host-resolved static runtime imports keyed by module ID and source specifier; null marks externals. The host owns dynamic imports when supplied. Omit for closed relative-graph resolution. */
     readonly imports?:
       | Readonly<Record<string, Readonly<Record<string, string | null>>>>
       | undefined
@@ -31,7 +31,7 @@ export declare namespace compile {
   }
   /** Compiled modules and their direct source dependencies. */
   type ReturnType = {
-    /** Direct runtime source dependencies, keyed by module identity. */
+    /** Direct static runtime source dependencies, keyed by module identity. */
     readonly dependencies: Readonly<Record<string, readonly string[]>>
     /** Rewritten modules and their stylesheets/maps. Load the CSS for the graph together. */
     readonly modules: Readonly<Record<string, Transform.compile.ReturnType>>
@@ -174,6 +174,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     Walker.walk(parsed.program, {
       enter(node) {
         if (
+          options.imports === undefined &&
           node.type === 'ImportExpression' &&
           (node.source.type !== 'Literal' ||
             typeof node.source.value !== 'string' ||

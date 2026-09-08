@@ -28,7 +28,9 @@ For repeated edits, [Graph.create](create.md) retains an isolated incremental ca
 - Type: `Readonly<Record<string, Readonly<Record<string, string | null>>>>`
 - Default: Closed relative-source resolution.
 
-Host-resolved runtime imports, keyed by importing module ID and original specifier. Targets name supplied modules; `null` marks external imports. When supplied, every runtime import/re-export must have an entry. Zyzz links theme contracts against these identities without implementing host aliases or package resolution.
+Host-resolved static runtime imports, keyed by importing module ID and original specifier. Targets name supplied modules; `null` marks external imports. When supplied, every static runtime import/re-export must have an entry. Zyzz links theme contracts against these identities without implementing host aliases or package resolution.
+
+The host owns dynamic imports when `imports` is supplied. Dynamic expressions remain in JavaScript and are excluded from this graph; the host must compile and load each lazy module and its CSS. Theme bindings used during compilation still require static imports.
 
 ```ts
 Graph.compile({
@@ -78,4 +80,4 @@ Scope and variable identities retain the defining module/binding. CSS maps trace
 
 ## Errors
 
-`Source.ExtractError` or `Css.CompileError`; no partial result is returned. Missing modules, ambiguous exports, namespace theme imports, dynamic source imports, and cycles are rejected. Package authoring contracts and independently compiled theme libraries remain unsupported; supply the complete source graph.
+`Source.ExtractError` or `Css.CompileError`; no partial result is returned. Missing modules, ambiguous exports, namespace theme imports, and static cycles are rejected. Dynamic source imports are rejected in standalone mode. Package authoring contracts and independently compiled theme libraries remain unsupported; supply the complete source graph.

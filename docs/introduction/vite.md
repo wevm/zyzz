@@ -1,7 +1,7 @@
 # Vite Setup
 
 > [!NOTE]
-> Initial Vite 8 integration. Supports physical JavaScript/TypeScript with static ES module imports within the Vite root. `Config.create`, dynamic source imports, cyclic graphs, and packed theme authoring remain unsupported.
+> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. `Config.create`, cyclic static graphs, and packed theme authoring remain unsupported.
 
 Add the adapter to the existing Vite configuration. Retain the application's framework plugin.
 
@@ -24,3 +24,17 @@ No generated component imports or manual stylesheet import is required. Theme so
 Theme edits update generated CSS through Vite HMR. Missing source files report errors; restoring or creating the dependency recovers without restarting the server. Files outside the Vite root, dependency authoring, and virtual source modules remain separate integration gates.
 
 See [Vite's plugin setup](https://vite.dev/guide/using-plugins) for the host configuration format.
+
+## Lazy Modules
+
+Vite loads and transforms lazy modules, including their CSS. Production builds retain Vite's CSS code splitting. Theme bindings inside each module must use static imports; dynamically loading an authoring theme for use in `css` is unsupported.
+
+```ts
+// main.ts
+const { props } = await import('./card')
+element.className = props.className
+
+// card.ts
+import { theme } from './theme'
+export const props = theme.css({ color: 'brand' })()
+```

@@ -2,13 +2,13 @@
 
 Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, with shared workloads in `bench/Corpus.ts`. Run `pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json`. Reports are ignored by Git.
 
-The Benchmarks workflow uploads results and environment metadata as a 30-day artifact. github-action-benchmark posts separate timing and gzip comparison comments against the latest successful main push, with current, previous, and ratio columns. Fork PRs receive Actions summaries and artifacts without comment writes. Missing baselines skip comparisons.
+The Benchmarks workflow uploads results and environment metadata as a 30-day artifact. One updating PR comment shows traffic-light deltas against the latest successful main push followed by the full framework comparison tables. Fork PRs receive Actions summaries and artifacts without comment writes. Missing baselines show “No baseline available.”
 
 `BENCH_TIME_THRESHOLD: '110'` marks the 10% timing alert threshold; timing comparisons remain informational because runs use different machines. `BENCH_SIZE_THRESHOLD: '105'` fails PR and manual checks above 5% gzip growth. Main pushes publish results without threshold failures so the baseline keeps advancing.
 
-The adapter supplies `customSmallerIsBetter` JSON and seeds the action's external data with the selected main artifact. `save-data-file: false` preserves the baseline. Built-in comments and summaries replace the custom comparison renderer; the detailed competitor tables remain in the Actions summary and report artifact.
+The adapter supplies `customSmallerIsBetter` JSON and seeds the action's external data with the selected main artifact. `save-data-file: false` preserves the baseline. The custom report combines comparisons against main and framework tables in the PR comment, Actions summary, and artifact. The action handles regression checks without posting duplicate comments.
 
-Generate action inputs locally:
+Generate the report and action inputs locally:
 
 ```sh
 node bench/Compare.ts bench/results /tmp/main-benchmarks /tmp/benchmark-action
@@ -26,7 +26,7 @@ Each timing includes a compiler build and a minified browser bundle. Modules, fi
 
 All CSS passes through the same Lightning CSS final minifier with fixed Chrome 120, Firefox 128, and Safari 17 targets and source maps disabled. These are benchmark settings, not package support requirements. The lockfile pins the version, and every size report records the shared options. JavaScript bundling remains on esbuild. JSON reports under `bench/results/{small,repeated,unique}/` contain raw, gzip, and Brotli byte sizes for emitted CSS and client JavaScript, including required runtime helpers. Totals sum separately compressed delivery assets; class strings already in JavaScript are not counted again.
 
-The workflow uploads generated CSS, JavaScript, timing reports, size reports, and host metadata. Its summary groups compiler timings and sizes by workload, with variance and additional size metrics in expandable details. Built-in PR comments compare Zyzz against main. Fork PRs retain summaries and artifacts without requiring write access. `bench/Compilation.test.ts` checks equivalent computed declarations in real Chromium for repeated and unique inputs. Install the browser with `pnpm exec playwright install --only-shell chromium` before running tests locally.
+The workflow uploads generated CSS, JavaScript, timing reports, size reports, and host metadata. Its summary groups compiler timings and sizes by workload, with variance and additional size metrics in expandable details. The updating PR comment includes these tables and compares Zyzz against main. Fork PRs retain summaries and artifacts without requiring write access. `bench/Compilation.test.ts` checks equivalent computed declarations in real Chromium for repeated and unique inputs. Install the browser with `pnpm exec playwright install --only-shell chromium` before running tests locally.
 
 Zyzz runs `Css.compile` from `zyzz/web` on prepared `Style.define` data, followed by shared Lightning CSS minification and esbuild browser bundling. Definition validation is outside timing, like Tailwind candidate preparation. Source extraction is measured separately; StyleX and vanilla-extract include their source pipelines. The component corpus uses `composition: 'independent'`: each class list is a complete application, so identical conflicting bodies can share rules. The default ordered mode preserves arbitrary generated-class combinations and is covered separately by A/B/A and shorthand browser tests. Independent mode does not promise that behavior; compositions must be resolved before compiling. No source rewriting or runtime composition helper is included in this literal workload. These fixtures do not establish whole-application or cross-library performance claims.
 
@@ -123,48 +123,3 @@ const fixture = await Themes.create(100, {
 `Compilation.create(workload, { targets })` supports the same option. Every library receives a frozen copy of the profile for final CSS processing; result artifacts record it. Omitting the option retains the existing CI baseline. Changing a benchmark profile does not change package browser requirements or another workload's settings.
 
 Custom target profiles must retain native `light-dark()`. Fixture creation rejects profiles that Lightning CSS would lower, before preparing or timing any library. The profile-propagation integration test verifies supported overrides through every real compiler; Chromium scenarios validate inherited, nested, and inline scheme selection.
-
-## Incremental Source Graphs
-
-`src/compiler/Graph.bench.ts` compares fresh compilation with `Graph.create` on the shared source graph fixture: 10 or 100 independent consumers, a base theme, a compatible scope, and re-exports. Separate workloads alternate consumer edits, theme edits, and unchanged snapshots.
-
-Initial compilation and artifact equivalence checks are outside timing; each lane receives the same complete source snapshots. Parsing, extraction, emission, rewriting, and maps are included; filesystem scanning, publication, and browser rendering are excluded.
-
-Run both lanes sequentially on the same machine with at least 30 samples and one second of measurement after 500 milliseconds of warmup.
-
-The existing graph delivery measurements remain separate from incremental timing. Theme edits intentionally re-emit all modules to refresh compatible scopes; file-set changes use a full rebuild. These workloads measure cache reuse, not a change in CSS size or rendering semantics.
-
-## Vite Builds
-
-`src/vite/index.bench.ts` measures complete production builds of the physical integration app with 10/100 consumers, aliased theme imports, and an alternative scope. Fixture writes and initial size collection are outside timing. Vite resolution, Zyzz analysis, JavaScript bundling, final CSS processing, and asset generation are included; output is kept in memory.
-
-Reports under `bench/results/vite` include actual CSS, JavaScript, and combined raw/gzip/Brotli bytes. Virtual graph stylesheets can repeat shared rules before Vite's final CSS processing. These are new adapter baselines, not comparisons with the in-memory graph timing or another styling library. Use the existing matched graph benchmark to check compiler changes separately.
-
-### Standalone CSS Processing
-
-The Lightning CSS host comparison uses `src/node/Host.bench.ts` and its 100-style fixture. Run the cold-process and unchanged-rebuild lanes with `-t 'cold process rebuild|unchanged rebuild'`, saving baseline and candidate JSON on the same machine.
-
-Processing defaults to formatted CSS; compare `css: false`, `{}`, and `{ minify: true }` separately for delivery sizes.
-
-Against main `ad430fd`, the implementation run measured cold builds at 530→499 ms (3 samples, ±22%/9%; inconclusive).
-
-A longer unchanged-build repeat measured 2.81→3.27 ms (713/611 samples, ±3.68%/3.34%), including scanning, ownership checks, and the larger composed maps.
-
-The repeat used 2 seconds, at least 100 iterations, and 500 ms/10 iterations of warmup.
-
-For that fixture, intermediate/formatted/minified CSS was 4366/5064/4165 raw bytes, 586/581/572 gzip bytes, and 349/356/333 Brotli bytes.
-
-JavaScript remained 8521/724/445 raw/gzip/Brotli bytes. CSS maps grew from 9302 to 13194 formatted or 12996 minified raw bytes and are separate debug artifacts.
-
-These are standalone module outputs, not a browser bundle or a general size claim.
-
-Local reports and metadata are under ignored `bench/results/lightning/`. The run used Node 24.19.0, Lightning CSS 1.33.0, and an Intel Xeon Platinum 8272CL.
-
-The initial watch benchmark encountered a partial filesystem write; watch timing is excluded. Host integration tests cover watch recovery.
-
-
-### Vite Dynamic Imports
-
-The dynamic-import change retains the static 10-consumer build fixture as a regression comparison against main `a362745`. Matched runs measured 190.71→200.80 ms (30 samples, ±12.75%/10.26%); the difference is within reported uncertainty. CSS and JavaScript raw/gzip/Brotli sizes were identical. No performance improvement is claimed.
-
-Reproduce with `src/vite/index.bench.ts -t '10 consumers'` and save baseline/candidate JSON using the commands above. Reports are under ignored `bench/results/dynamic/`. Lazy-loading behavior is verified separately by the Vite manifest, HTTP/SSR integration, and browser HMR scenario; this timing comparison measures static builds.

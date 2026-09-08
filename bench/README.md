@@ -133,3 +133,9 @@ Initial compilation and artifact equivalence checks are outside timing; each lan
 Run both lanes sequentially on the same machine with at least 30 samples and one second of measurement after 500 milliseconds of warmup.
 
 The existing graph delivery measurements remain separate from incremental timing. Theme edits intentionally re-emit all modules to refresh compatible scopes; file-set changes use a full rebuild. These workloads measure cache reuse, not a change in CSS size or rendering semantics.
+
+## Vite Builds
+
+`src/vite/index.bench.ts` measures complete production builds of the physical integration app with 10/100 consumers, aliased theme imports, and an alternative scope. Fixture writes and initial size collection are outside timing. Vite resolution, Zyzz analysis, JavaScript bundling, final CSS processing, and asset generation are included; output is kept in memory.
+
+Reports under `bench/results/vite` include actual CSS, JavaScript, and combined raw/gzip/Brotli bytes. Virtual graph stylesheets can repeat shared rules before Vite's final CSS processing. These are new adapter baselines, not comparisons with the in-memory graph timing or another styling library. Use the existing matched graph benchmark to check compiler changes separately.

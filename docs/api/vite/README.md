@@ -1,7 +1,7 @@
 # zyzz/vite
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> Initial Vite 8 integration. Supports physical JavaScript/TypeScript with static ES module imports within the Vite root. `Config.create`, dynamic source imports, cyclic graphs, and packed theme authoring remain unsupported.
 
 Connect source transformation and CSS delivery to Vite.
 

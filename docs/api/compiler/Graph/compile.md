@@ -23,12 +23,29 @@ For repeated edits, [Graph.create](create.md) retains an isolated incremental ca
 
 ## Parameters
 
+### options.imports
+
+- Type: `Readonly<Record<string, Readonly<Record<string, string | null>>>>`
+- Default: Closed relative-source resolution.
+
+Host-resolved runtime imports, keyed by importing module ID and original specifier. Targets name supplied modules; `null` marks external imports. When supplied, every runtime import/re-export must have an entry. Zyzz links theme contracts against these identities without implementing host aliases or package resolution.
+
+```ts
+Graph.compile({
+  imports: {
+    'app/card.ts': { '@theme': 'app/theme.ts' },
+    'app/theme.ts': { zyzz: null },
+  },
+  modules,
+})
+```
+
 ### options.modules
 
 - Type: `Readonly<Record<string, string>>`
 - Required: Yes.
 
-Complete source graph keyed by stable package-relative module IDs. Relative source imports resolve against supplied files, including `.js` to `.ts` / `.tsx` and extensionless/index paths. Ambiguous paths fail. Type-only imports do not create runtime dependencies; bare package and asset imports remain external.
+Complete source graph keyed by stable package-relative module IDs. Without `imports`, relative source imports resolve against supplied files, including `.js` to `.ts` / `.tsx` and extensionless/index paths. Ambiguous paths fail. Type-only imports do not create runtime dependencies; bare package and asset imports remain external.
 
 ```ts
 Graph.compile({ modules: { 'app/card.ts': source } })

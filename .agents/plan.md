@@ -146,6 +146,15 @@ Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) and [PR 2.2a / #10](h
 
 The [CSS capability union](parity.md) deduplicates parity items across the referenced frameworks, with numbered capabilities and Zyzz usage for each. It separates implemented capabilities, planned behavior, API proposals, and deferred external-CSS integration targets. Current declaration support is 40 literal properties; general CSS coverage is not complete.
 
+### Build Infrastructure Follow-Up
+
+[PR #17](https://github.com/wevm/zyzz/pull/17) introduces incremental theme analysis and the host-supplied import boundary with a Vite 8 integration. Keep source analysis static and independent of build tools; use established host infrastructure before expanding module resolution.
+
+- [x] Accept resolved import identities from hosts and include them in analysis invalidation. Preserve the closed relative-graph compatibility path for standalone callers.
+- [x] Add named `zyzz()` from `zyzz/vite`, using the existing Vite resolver, environment module graph, watcher, and CSS pipeline. Cover aliases, production CSS, real HMR notifications, deletions, missing-file creation, and browser theme updates.
+- [ ] Add Lightning CSS to standalone build processing with explicit targets and composed source maps. Preserve the consuming bundler's ownership of final CSS processing.
+- [ ] Extend host integration to virtual/framework sources, library contracts, and Next.js using native host facilities. Do not add a general package resolver or watcher to the styling compiler.
+
 ### PR Sequence
 
 1. **2.1 — In-Memory Theme Contracts:** `Theme.define`, compatible `Theme.extend`, immutable typed scalar references, and `Style.define` to `Css.compile` integration. Emit live custom properties, defining fallbacks, light/dark pairs, and complete inherited scopes. Cover browser scheme/scope behavior and compiler size/timing separately. Retain the documented literal grammar; source themes and authoring callables are not part of this PR.

@@ -483,9 +483,8 @@ describe('create', () => {
     expect(
       after.modules['pkg/style.ts'] === before.modules['pkg/style.ts'],
     ).toMatchInlineSnapshot(`false`)
-    expect(
-      Object.keys(after.modules['pkg/style.ts']!.themes),
-    ).toMatchInlineSnapshot(`
+    expect(Object.keys(after.modules['pkg/style.ts']!.themes))
+      .toMatchInlineSnapshot(`
       [
         "dremeuyk1z1i-theme",
         "c1mlirqoc0mf-theme",
@@ -643,5 +642,46 @@ describe('create', () => {
     } finally {
       await browser.close()
     }
+  })
+})
+
+describe('create', () => {
+  test('host resolution controls aliases and invalidates changed targets', () => {
+    const compiler = Graph.create()
+    const modules = {
+      'pkg/a.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#000'}});`,
+      'pkg/b.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#fff'}});`,
+      'pkg/card.ts': `import { theme } from '@theme'; export const props = theme.css({color:'brand'})();`,
+    }
+    const imports = {
+      'pkg/a.ts': { zyzz: null },
+      'pkg/b.ts': { zyzz: null },
+      'pkg/card.ts': { '@theme': 'pkg/a.ts' },
+    }
+    const before = compiler.compile({ imports, modules })
+    imports['pkg/card.ts']['@theme'] = 'pkg/b.ts'
+    const after = compiler.compile({ imports, modules })
+    expect(after.dependencies['pkg/card.ts']).toMatchInlineSnapshot(`
+      [
+        "pkg/b.ts",
+      ]
+    `)
+    expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-c1mlirqoc0mf-theme{--z-tc1mlirqoc0mf-theme-color_2e_brand:#fff;}
+      .z-5ngs574r5xr9-base0{color:var(--z-tc1mlirqoc0mf-theme-color_2e_brand,#fff);}"
+    `)
+    expect(after === before).toMatchInlineSnapshot(`false`)
+    expect(() =>
+      compiler.compile({ imports: {}, modules }),
+    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: pkg/a.ts:0: Missing host resolution: zyzz]`)
+    expect(() =>
+      compiler.compile({
+        imports: { ...imports, 'pkg/card.ts': { '@theme': 'pkg/missing.ts' } },
+        modules,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: pkg/card.ts:0: Missing host source module: @theme]`)
+    expect(
+      compiler.compile({ imports, modules }) === after,
+    ).toMatchInlineSnapshot(`true`)
   })
 })

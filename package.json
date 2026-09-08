@@ -27,6 +27,7 @@
     "quickjs-emscripten": "^0.32.0",
     "tailwindcss": "^4.3.3",
     "typescript": "5.9.3",
+    "vite": "^8.2.2",
     "vite-plus": "0.2.2",
     "zile": "0.0.30"
   },
@@ -69,6 +70,11 @@
       "types": "./dist/runtime/index.d.ts",
       "default": "./dist/runtime/index.js"
     },
+    "./vite": {
+      "src": "./src/vite/index.ts",
+      "types": "./dist/vite/index.d.ts",
+      "default": "./dist/vite/index.js"
+    },
     "./web": {
       "src": "./src/web/index.ts",
       "types": "./dist/web/index.d.ts",
@@ -81,5 +87,13 @@
     "magic-string": "^1.2.3",
     "oxc-parser": "0.148.0",
     "oxc-walker": "1.1.1"
+  },
+  "peerDependencies": {
+    "vite": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
   }
 }

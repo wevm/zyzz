@@ -18,7 +18,7 @@ const next = compiler.compile({
 
 - Type: `(options: Graph.compile.Options) => Graph.compile.ReturnType`
 
-Accepts the same inputs and returns the same code, CSS, dependencies, and maps as [Graph.compile](compile.md). Unchanged snapshots reuse the previous result. Source edits re-extract the changed modules and their transitive importers; unaffected transforms are reused when the theme contracts are unchanged.
+Accepts the same inputs and returns the same code, CSS, dependencies, and maps as [Graph.compile](compile.md). Unchanged snapshots reuse the previous result. Source or resolved-import changes re-extract the changed modules and their transitive importers; unaffected transforms are reused when the theme contracts are unchanged.
 
 ```ts
 const output = compiler.compile({ modules })

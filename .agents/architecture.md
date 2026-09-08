@@ -1004,6 +1004,22 @@ Import removal is conservative: retain imports with remaining references, includ
 
 JavaScript replacements map to the authored definition or direct application. CSS selectors map to their representative definition and declarations to authored property locations. Factored shared rules map to the first contributing definition; the class map retains every definition's output. Host adapters compose these maps with later transforms and choose map URLs and stylesheet loading explicitly.
 
+### Build Host Boundary
+
+Zyzz owns static authoring analysis, theme contracts, generated props, and source maps. Build hosts own module resolution, package exports, aliases, source loading, watching, and HMR. `Graph.compile({ imports, modules })` accepts resolved source edges; `Graph.create` caches theme analysis using source text and resolved identities.
+
+The Vite adapter uses the application's existing Vite instance through plugin hooks. It resolves physical source with `this.resolve`, registers CSS dependencies with `addWatchFile`, and invalidates virtual stylesheets through the environment module graph.
+
+It creates no nested development server or independent watcher. Cache state is isolated per environment.
+
+The initial adapter collects reachable physical JavaScript/TypeScript within the Vite root. Virtual stylesheets include their reachable graph's rules and compatible scopes; shared rules can repeat before final processing.
+
+Dynamic imports, cycles, dependency authoring, and framework virtual sources remain unsupported. The existing standalone/in-memory relative resolver remains a compatibility path, not the production package resolver.
+
+Reuse Lightning CSS for browser compatibility transforms and minification at the build-adapter boundary, composing maps and retaining consuming-build targets. Let a consuming bundler own final CSS processing when it already does. A separate implementation step adds standalone processing; do not duplicate browser grammar, prefixing, or minification in Zyzz.
+
+Prior art: [vanilla-extract's compiler](https://github.com/vanilla-extract-css/vanilla-extract/blob/master/packages/compiler/src/compiler.ts) combines its own styling semantics with Vite and vite-node. Zyzz retains static analysis rather than executing source. [Vite environments](https://vite.dev/guide/api-environment-plugins) provide resolution/invalidation boundaries; [Lightning CSS](https://lightningcss.dev/docs.html) processes the resulting CSS.
+
 ### File Host Lifecycle
 
 Local theme source compilation now extends the literal transform. Module-level local `Theme.define`/`Theme.extend` factories are analyzed as data, direct bound calls resolve names through the pure theme/style boundary, and `.className` reads become scope constants. Theme identities derive from the stable module ID and binding, independently of values and offsets. Generated JavaScript contains no theme constructor; TypeScript preserves literal contract types. Local module-level const aliases of bound css, destructuring/renaming, and alias chains compile through lexical bindings; unsupported escaping authoring references receive diagnostics. Explicit local theme.tokens paths compile as scalar bound-style values with defining identities, fallbacks, and property-domain checks. Graph.compile links relative source imports/exports, authoring aliases, and re-exports with shared identities and cross-file maps. The file host incrementally recompiles source edits and their importers. Package authoring contracts, cyclic graphs, and independently emitted theme libraries remain separate gates. See [the supported boundary](../docs/guides/themes.md#compile-local-theme-source).

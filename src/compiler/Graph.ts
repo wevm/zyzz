@@ -6,6 +6,7 @@ import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import type * as Theme from '../Theme.js'
+import * as Relative from './internal/Relative.js'
 import * as Themes from './internal/Themes.js'
 import * as Source from './Source.js'
 import * as Transform from './Transform.js'
@@ -21,6 +22,10 @@ export declare namespace compile {
   type ErrorType = Source.ExtractError | Transform.compile.ErrorType
   /** Source modules available for relative import resolution. */
   type Options = {
+    /** Host-resolved runtime imports keyed by module ID and source specifier; null marks externals. Omit only for closed relative-graph resolution. */
+    readonly imports?:
+      | Readonly<Record<string, Readonly<Record<string, string | null>>>>
+      | undefined
     /** Complete source graph keyed by stable package-relative module identities. */
     readonly modules: Readonly<Record<string, string>>
   }
@@ -56,6 +61,7 @@ export declare namespace create {
 
 type Cache = {
   extracted: ReadonlyMap<string, Source.extract.ReturnType>
+  resolutions: Readonly<Record<string, string>>
   result: compile.ReturnType
   sources: Readonly<Record<string, string>>
   themes: Readonly<Record<string, Theme.Definition>>
@@ -63,6 +69,18 @@ type Cache = {
 
 function build(options: compile.Options, cache?: Cache): Cache {
   const ids = Object.keys(options.modules).sort()
+  const resolutions = Object.fromEntries(
+    ids.map((id) => [
+      id,
+      options.imports === undefined
+        ? 'relative'
+        : JSON.stringify(
+            Object.entries(options.imports[id] ?? {}).sort(([a], [b]) =>
+              a.localeCompare(b),
+            ),
+          ),
+    ]),
+  )
   // File-set changes can alter extensionless resolution even without source edits.
   const previous =
     cache &&
@@ -72,7 +90,11 @@ function build(options: compile.Options, cache?: Cache): Cache {
       : undefined
   if (
     previous &&
-    ids.every((id) => options.modules[id] === previous.sources[id])
+    ids.every(
+      (id) =>
+        options.modules[id] === previous.sources[id] &&
+        resolutions[id] === previous.resolutions[id],
+    )
   )
     return previous
 
@@ -104,59 +126,21 @@ function build(options: compile.Options, cache?: Cache): Cache {
     specifier: string,
     node: Ast.Node,
   ): string | undefined {
-    if (!specifier.startsWith('.')) return undefined
-    if (/\.[a-z0-9]+$/i.test(specifier) && !/\.[cm]?[jt]sx?$/.test(specifier))
-      return undefined
-    const parts = moduleId.split('/').slice(0, -1)
-    for (const part of specifier.split('/')) {
-      if (part === '.' || !part) continue
-      if (part === '..') {
-        if (!parts.length)
-          fail(moduleId, 'Source import escapes the supplied graph.', node)
-        parts.pop()
-      } else parts.push(part)
+    if (options.imports !== undefined) {
+      const imports = options.imports[moduleId]
+      if (!imports || !Object.hasOwn(imports, specifier))
+        fail(moduleId, `Missing host resolution: ${specifier}`, node)
+      const target = imports[specifier]
+      if (target === null) return undefined
+      if (target === undefined || !Object.hasOwn(options.modules, target))
+        fail(moduleId, `Missing host source module: ${specifier}`, node)
+      return target
     }
-    const path = parts.join('/')
-    if (Object.hasOwn(options.modules, path)) return path
-    const candidates = /\.[cm]?jsx?$/.test(path)
-      ? [
-          path.replace(/\.js$/, '.ts'),
-          path.replace(/\.js$/, '.tsx'),
-          path.replace(/\.jsx$/, '.tsx'),
-          path.replace(/\.mjs$/, '.mts'),
-          path.replace(/\.cjs$/, '.cts'),
-        ]
-      : !/\.[^/]+$/.test(path)
-        ? [
-            '.cjs',
-            '.cjsx',
-            '.cts',
-            '.ctsx',
-            '.js',
-            '.jsx',
-            '.mjs',
-            '.mjsx',
-            '.mts',
-            '.mtsx',
-            '.ts',
-            '.tsx',
-          ].flatMap((extension) => [
-            path + extension,
-            path + '/index' + extension,
-          ])
-        : []
-    const matches = [...new Set(candidates)].filter((candidate) =>
-      Object.hasOwn(options.modules, candidate),
-    )
-    if (matches.length !== 1)
-      fail(
-        moduleId,
-        matches.length
-          ? `Ambiguous source import: ${specifier}`
-          : `Missing source module: ${specifier}`,
-        node,
-      )
-    return matches[0]!
+    try {
+      return Relative.resolve({ moduleId, modules: options.modules, specifier })
+    } catch (error) {
+      fail(moduleId, (error as Error).message, node)
+    }
   }
 
   function visit(moduleId: string): Source.extract.ReturnType {
@@ -169,6 +153,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     if (
       previous &&
       source === previous.sources[moduleId] &&
+      resolutions[moduleId] === previous.resolutions[moduleId] &&
       previous.result.dependencies[moduleId]!.every(
         (target) => visit(target) === previous.extracted.get(target),
       )
@@ -394,6 +379,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
           })
   return {
     extracted,
+    resolutions: Object.freeze(resolutions),
     result: Object.freeze({
       dependencies: Object.freeze(dependencies),
       modules: Object.freeze(modules),

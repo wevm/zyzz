@@ -31,3 +31,10 @@ expectTypeOf(
 compiler.compile({ modules: { 'pkg/theme.ts': 1 } })
 // @ts-expect-error The complete source graph remains required.
 compiler.compile({})
+
+Graph.compile({
+  imports: { 'pkg/a.ts': { '@theme': 'pkg/theme.ts', react: null } },
+  modules: {},
+})
+// @ts-expect-error Host edges must be module IDs or explicit externals.
+Graph.compile({ imports: { 'pkg/a.ts': { '@theme': false } }, modules: {} })

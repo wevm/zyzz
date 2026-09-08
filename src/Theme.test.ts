@@ -14,6 +14,17 @@ const tokens = {
 } as const
 
 describe('define', () => {
+  test('bound authoring requires a transform and never generates runtime CSS', () => {
+    const theme = Theme.define(tokens)
+    const { css } = theme
+    expect(() =>
+      css({ color: 'brand', padding: 'md' }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[css.MissingTransformError: css requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.]`,
+    )
+    expect(Object.isFrozen(theme)).toMatchInlineSnapshot('true')
+  })
+
   test('annotated token records compile with omitted optional groups', () => {
     const input: Theme.Tokens = { color: { brand: '#fff' }, spacing: undefined }
     const theme = Theme.define(input)
@@ -143,6 +154,7 @@ describe('define', () => {
     )
     expect(Object.keys(theme)).toMatchInlineSnapshot(`
       [
+        "css",
         "tokens",
       ]
     `)

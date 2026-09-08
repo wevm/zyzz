@@ -2,7 +2,7 @@
  * Carries portable theme references and enforces their property domains.
  * @module
  */
-import type * as Literal from './Literal.js'
+import * as Literal from './Literal.js'
 
 /** Checks a reference's property domain. */
 export function accepts(
@@ -71,6 +71,23 @@ export type Metadata = {
   readonly values: Readonly<Record<string, Value>>
 }
 
+/** Inferred shorthand names whose leaves belong to a property's domain. */
+export type Names<tokens, property extends keyof Literal.Properties> = {
+  [group in Extract<keyof tokens, Group>]: property extends Properties<group>
+    ? Paths<NonNullable<tokens[group]>>
+    : never
+}[Extract<keyof tokens, Group>]
+
+type Paths<tree> = string extends keyof tree
+  ? string
+  : {
+      [key in Extract<keyof tree, number | string>]: NonNullable<
+        tree[key]
+      > extends Value
+        ? key | `${key}`
+        : `${key}.${Paths<NonNullable<tree[key]>>}`
+    }[Extract<keyof tree, number | string>]
+
 /** Property domains accepted by each token group. */
 export type Properties<group extends Group> = group extends 'spacing'
   ? Extract<
@@ -101,6 +118,49 @@ export type Reference<group extends Group = Group> = {
 }
 
 const reference = Symbol('zyzz.token')
+
+/** Resolves shorthand tokens after literal validation, with specific colors first. */
+export function resolve(value: unknown, options: resolve.Options): unknown {
+  if (
+    (typeof value !== 'string' && typeof value !== 'number') ||
+    !Literal.validate(options.property, value)
+  )
+    return value
+
+  const data = Object.getOwnPropertyDescriptor(options.theme, definition)
+    ?.value as Metadata | undefined
+  if (!data) throw new Error('Expected a theme definition.')
+
+  // Specific groups precede shared colors regardless of authored group order.
+  for (const group of [
+    'backgroundColor',
+    'borderColor',
+    'borderRadius',
+    'spacing',
+    'textColor',
+    'color',
+  ] as const) {
+    if (!accepts(group, options.property)) continue
+    const path = `${group}.${value}`
+    if (Object.hasOwn(data.values, path))
+      return create({
+        contract: data.contract,
+        group,
+        path,
+        value: data.values[path]!,
+      })
+  }
+  return value
+}
+
+/** Input contract for theme token resolution. */
+export declare namespace resolve {
+  /** Property domain and immutable theme metadata supplied by style validation. */
+  type Options = {
+    readonly property: keyof Literal.Properties
+    readonly theme: object
+  }
+}
 
 /** Scalar values retained for each rendering target. */
 export type Value =

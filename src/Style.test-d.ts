@@ -2,8 +2,8 @@
  * Checks consumer inference and rejected inputs through the public Style API.
  * @module
  */
-import { Style } from 'zyzz'
 import { expectTypeOf } from 'vite-plus/test'
+import { Style, Theme } from 'zyzz'
 import { components } from '../test/fixtures/components.js'
 
 const definition = Style.define(components)
@@ -62,3 +62,13 @@ declare const validUnion: { color: '#fff' } | { padding: 0 }
 expectTypeOf(Style.define({ card: validUnion })).toEqualTypeOf<
   Style.Definition<'card'>
 >()
+
+const theme = Theme.define({ color: { brand: '#06c' }, spacing: { 4: '1rem' } })
+const themed = Style.define({ card: { color: 'brand', padding: 4 } }, { theme })
+expectTypeOf(themed).toEqualTypeOf<Style.Definition<'card'>>()
+// @ts-expect-error Theme inference cannot widen to accept unknown tokens.
+Style.define({ card: { color: 'missing' } }, { theme })
+// @ts-expect-error Tokens remain property-specific.
+Style.define({ card: { padding: 'brand' } }, { theme })
+// @ts-expect-error Names require an explicitly supplied theme.
+Style.define({ card: { color: 'brand' } })

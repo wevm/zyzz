@@ -4,12 +4,17 @@
  */
 import * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
-type Exact<styles extends Record<string, unknown>> = {
+import type * as Theme from './Theme.js'
+type Exact<
+  styles extends Record<string, unknown>,
+  tokens extends Theme.Tokens,
+> = {
   [name in keyof styles]: Extract<
     styles[name],
     (...args: never[]) => unknown
   > extends never
-    ? Properties & Record<Exclude<Keys<styles[name]>, keyof Properties>, never>
+    ? Properties<tokens> &
+        Record<Exclude<Keys<styles[name]>, keyof Properties>, never>
     : never
 }
 type Keys<value> = value extends unknown ? keyof value : never
@@ -28,13 +33,16 @@ export type Declaration = {
  * evaluates accessors, mutates input, generates CSS, or reads an environment.
  * Empty maps and empty styles are valid. See the literal subset documentation.
  * @param styles - Plain objects containing supported primitives or typed theme references.
- * @param options - Optional caller-owned diagnostic source spans.
+ * @param options - Optional theme for shorthand names and caller-owned diagnostic source spans.
  * @returns Immutable definitions retaining the inferred style-name union.
  * @throws {InvalidError} If any structure, property, or value is unsupported.
  */
-export function define<const styles extends Record<string, unknown>>(
-  styles: styles & NoInfer<Exact<styles>>,
-  options: define.Options = {},
+export function define<
+  const styles extends Record<string, unknown>,
+  const tokens extends Theme.Tokens = {},
+>(
+  styles: styles & NoInfer<Exact<styles, tokens>>,
+  options: define.Options<tokens> = {},
 ): Definition<`${Extract<keyof styles, number | string>}`> {
   const diagnostics: Diagnostic[] = []
   const output: NamedStyle[] = []
@@ -114,7 +122,7 @@ export function define<const styles extends Record<string, unknown>>(
     if (name.length === 0)
       report('invalid_structure', [name], 'Style names must not be empty.')
     const declarations: Declaration[] = []
-    for (const [property, value] of entries(style, [name])) {
+    for (const [property, input] of entries(style, [name])) {
       if (!Object.hasOwn(Literal.rules, property)) {
         report(
           'unsupported_property',
@@ -124,6 +132,9 @@ export function define<const styles extends Record<string, unknown>>(
         continue
       }
       const key = property as keyof Properties
+      const value = options.theme
+        ? Token.resolve(input, { property: key, theme: options.theme })
+        : input
       const message = Token.is(value)
         ? Token.accepts(value.group, key)
           ? undefined
@@ -152,9 +163,11 @@ export function define<const styles extends Record<string, unknown>>(
 /** Options for defining styles. */
 export declare namespace define {
   /** Source locations are optional; pure in-memory callers need no source text. */
-  type Options = {
+  type Options<tokens extends Theme.Tokens = {}> = {
     /** Caller-provided spans matched by complete diagnostic path. */
     readonly locations?: readonly SourceLocation[] | undefined
+    /** Token contract for inferred shorthand names; literals retain precedence. */
+    readonly theme?: Theme.Definition<tokens> | undefined
   }
 }
 
@@ -205,9 +218,10 @@ export type NamedStyle<name extends string = string> = {
 }
 
 /** Supported literal and token declarations. Unknown properties and undefined values are rejected. */
-export type Properties = {
+export type Properties<tokens extends Theme.Tokens = {}> = {
   readonly [property in keyof Literal.Properties]:
     | Literal.Properties[property]
+    | Token.Names<tokens, property>
     | {
         [group in Token.Group]: property extends Token.Properties<group>
           ? Token.Reference<group>

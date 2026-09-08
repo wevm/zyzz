@@ -108,4 +108,4 @@ const fixture = await Themes.create(100, {
 
 `Compilation.create(workload, { targets })` supports the same option. Every library receives a frozen copy of the profile for final CSS processing; result artifacts record it. Omitting the option retains the existing CI baseline. Changing a benchmark profile does not change package browser requirements or another workload's settings.
 
-Custom target profiles need browser-parity validation. A lower target may change the integration requirements of features such as `light-dark()`; emitted output alone is not proof that externally authored `color-scheme` declarations retain their behavior. The profile-propagation integration test verifies actual compiler transformations, while the existing Chromium scenarios validate the supported native-scheme profile.
+Custom target profiles must retain native `light-dark()`. Fixture creation rejects profiles that Lightning CSS would lower, before preparing or timing any library. The profile-propagation integration test verifies supported overrides through every real compiler; Chromium scenarios validate inherited, nested, and inline scheme selection.

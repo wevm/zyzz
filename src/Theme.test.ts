@@ -14,6 +14,85 @@ const tokens = {
 } as const
 
 describe('define', () => {
+  test('annotated token records compile with omitted optional groups', () => {
+    const input: Theme.Tokens = { color: { brand: '#fff' }, spacing: undefined }
+    const theme = Theme.define(input)
+    const reference = theme.tokens.color!.brand as Theme.Reference<'color'>
+    const output = Css.compile({
+      styles: Style.define({ card: { color: reference } }),
+      themes: { base: theme },
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-base{--z-t0-color_2e_brand:#fff;}
+      .z_base0{color:var(--z-t0-color_2e_brand,#fff);}"
+    `)
+  })
+
+  test('escaped identifiers preserve independent styles and scoped palettes in Chromium', async () => {
+    const base = Theme.define({
+      color: { brand: { primary: '#fff' }, brand_2e_primary: '#000' },
+    })
+    const alternate = Theme.extend(base, {
+      color: { brand: { primary: '#06c' }, brand_2e_primary: '#f00' },
+    })
+    const output = Css.compile({
+      composition: 'independent',
+      styles: Style.define({
+        other: { color: base.tokens.color.brand_2e_primary },
+        'z_theme-base': { color: base.tokens.color.brand.primary },
+      }),
+      themes: { base, 'foo.bar': alternate, foo_2e_bar: base },
+    })
+    expect(output.classes).toMatchInlineSnapshot(`
+      {
+        "other": "other",
+        "z_theme-base": "z_5f_theme-base",
+      }
+    `)
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-base{--z-t0-color_2e_brand_5f_2e_5f_primary:#000;--z-t0-color_2e_brand_2e_primary:#fff;}
+      .z_theme-foo_2e_bar{--z-t0-color_2e_brand_5f_2e_5f_primary:#f00;--z-t0-color_2e_brand_2e_primary:#06c;}
+      .z_theme-foo_5f_2e_5f_bar{--z-t0-color_2e_brand_5f_2e_5f_primary:#000;--z-t0-color_2e_brand_2e_primary:#fff;}
+      .other{color:var(--z-t0-color_2e_brand_5f_2e_5f_primary,#000);}
+      .z_5f_theme-base{color:var(--z-t0-color_2e_brand_2e_primary,#fff);}"
+    `)
+    expect(output.themes).toMatchInlineSnapshot(`
+      {
+        "base": "z_theme-base",
+        "foo.bar": "z_theme-foo_2e_bar",
+        "foo_2e_bar": "z_theme-foo_5f_2e_5f_bar",
+      }
+    `)
+
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(`<style>${output.css}</style>
+        <section class="${output.themes['foo.bar']}">
+          <div id="nested" class="${output.classes['z_theme-base']}"></div>
+          <div id="escaped" class="${output.classes.other}"></div>
+        </section>
+        <section class="${output.themes.foo_2e_bar}"><div id="base" class="${output.classes['z_theme-base']}"></div></section>`)
+      expect(
+        await page
+          .locator('#nested')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot('"rgb(0, 102, 204)"')
+      expect(
+        await page
+          .locator('#escaped')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+      expect(
+        await page
+          .locator('#base')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot('"rgb(255, 255, 255)"')
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('portable references compile to live variables and defining fallbacks', () => {
     const theme = Theme.define(tokens)
     const independent = Theme.define(tokens)
@@ -109,7 +188,7 @@ describe('define', () => {
       color: {
         get brand() {
           reads++
-          return '#fff'
+          return '#fff' as const
         },
       },
     }

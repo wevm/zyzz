@@ -69,3 +69,16 @@ const extraOverride = {
 } as const
 // @ts-expect-error Extensions reject extra scheme fields through aliased values.
 Theme.extend(theme, extraOverride)
+
+const annotated: Theme.Tokens = { color: { brand: '#fff' }, spacing: undefined }
+expectTypeOf(Theme.define(annotated)).toEqualTypeOf<Theme.Definition>()
+const overrides: Theme.Overrides<typeof annotated> = {
+  color: { brand: '#000' },
+}
+Theme.extend(Theme.define(annotated), overrides)
+// @ts-expect-error Unsupported scalar colors fail at authoring time.
+Theme.define({ color: { brand: 'red' } })
+// @ts-expect-error Both scheme values use the supported color grammar.
+Theme.define({ color: { brand: { dark: 'red', light: '#fff' } } })
+// @ts-expect-error Extended colors use the same grammar.
+Theme.extend(theme, { color: { blue: { 500: 'red' } } })

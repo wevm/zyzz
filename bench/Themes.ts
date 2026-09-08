@@ -31,6 +31,17 @@ export async function create(
   count: number,
   options: create.Options = {},
 ): Promise<Fixture> {
+  const profile = Object.freeze({ ...(options.targets ?? targets) })
+  // Lowering light-dark cannot observe external or inline color-scheme scopes.
+  if (
+    !Compilation.minify('.probe{color:light-dark(#fff,#000)}', {
+      targets: profile,
+    }).includes('light-dark(')
+  )
+    throw new Error(
+      'Theme benchmarks require targets with native light-dark() support.',
+    )
+
   const directory = await Fs.mkdtemp(Path.resolve('.fixture-themes-'))
   try {
     await Fs.writeFile(
@@ -114,7 +125,7 @@ export const themes={alternate:{'data-panda-theme':'alternate'},base:{'data-pand
 @tailwind utilities;
 .base{--color-background:${base.background};--color-foreground:${base.foreground};--spacing-card:${base.space};}
 .alternate{--color-background:${alternate.background};--color-foreground:${alternate.foreground};--spacing-card:${alternate.space};}`,
-      targets: Object.freeze({ ...(options.targets ?? targets) }),
+      targets: profile,
       themes: {
         alternate: Theme.extend(theme, {
           backgroundColor: { surface: { dark: '#222', light: '#eee' } },

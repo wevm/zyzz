@@ -44,28 +44,36 @@ describe('create', () => {
 
   test('a caller profile reaches every real compiler without changing their exports', async () => {
     const modern = await Themes.create(10, { targets: { chrome: 123 << 16 } })
-    const legacy = await Themes.create(10, { targets: { chrome: 120 << 16 } })
+    const baseline = await Themes.create(10)
     try {
       for (const [library, compile] of Object.entries(Themes.compilers)) {
         const current = await compile(modern)
-        const lowered = await compile(legacy)
+        const original = await compile(baseline)
         expect(
           current.css.includes('light-dark('),
           library,
         ).toMatchInlineSnapshot('true')
         expect(
-          lowered.css.includes('light-dark('),
+          original.css.includes('light-dark('),
           library,
-        ).toMatchInlineSnapshot('false')
+        ).toMatchInlineSnapshot('true')
         expect(
-          lowered.javascript === current.javascript,
+          original.javascript === current.javascript,
           library,
         ).toMatchInlineSnapshot('true')
       }
     } finally {
-      await Fs.rm(legacy.directory, { force: true, recursive: true })
+      await Fs.rm(baseline.directory, { force: true, recursive: true })
       await Fs.rm(modern.directory, { force: true, recursive: true })
     }
+  })
+
+  test('targets that lower inherited scheme selection are rejected', async () => {
+    await expect(
+      Themes.create(10, { targets: { chrome: 120 << 16 } }),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `[Error: Theme benchmarks require targets with native light-dark() support.]`,
+    )
   })
 
   for (const count of [10, 100]) {

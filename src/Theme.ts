@@ -6,7 +6,9 @@ import * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 
 /** Complete color-scheme pair or a shared color. */
-export type Color = string | { readonly dark: string; readonly light: string }
+export type Color =
+  | Literal.Color
+  | { readonly dark: Literal.Color; readonly light: Literal.Color }
 
 /**
  * Defines scalar tokens without metadata, defaults, or environment access.
@@ -216,6 +218,8 @@ function build(
       ].includes(group)
     )
       throw new InvalidError([group], 'Unsupported token group.')
+    if (palette === undefined) continue
+
     if (base && !Object.keys(base).some((key) => key.startsWith(`${group}.`)))
       throw new InvalidError([group], 'Extensions cannot add token groups.')
     // Groups are always records; scalar leaves begin below them.
@@ -291,21 +295,25 @@ function record(
 
 type Validated<tokens> = {
   [group in keyof tokens]: group extends keyof Tokens
-    ? { [key in keyof tokens[group]]: ValidTree<tokens[group][key], group> }
+    ? ValidPalette<tokens[group], group>
     : never
 }
+type ValidPalette<palette, group> = palette extends undefined
+  ? undefined
+  : { [key in keyof palette]: ValidTree<palette[key], group> }
+
 type ValidTree<tree, group> = tree extends string | number
   ? group extends 'borderRadius' | 'spacing'
     ? Literal.Length
-    : string
+    : Literal.Color
   : Extract<keyof tree, 'dark' | 'light'> extends never
     ? { [key in keyof tree]: ValidTree<tree[key], group> }
     : group extends 'borderRadius' | 'spacing'
       ? never
-      : { readonly dark: string; readonly light: string } & Record<
-          Exclude<keyof tree, 'dark' | 'light'>,
-          never
-        >
+      : {
+          readonly dark: Literal.Color
+          readonly light: Literal.Color
+        } & Record<Exclude<keyof tree, 'dark' | 'light'>, never>
 
 function validate(property: keyof Literal.Properties, value: unknown) {
   if (

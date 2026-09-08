@@ -1,3 +1,7 @@
+/**
+ * Defines typed token contracts and compatible immutable theme overrides.
+ * @module
+ */
 import * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 

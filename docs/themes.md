@@ -43,3 +43,23 @@ Supported groups are `backgroundColor`, `borderColor`, `borderRadius`, `color`, 
 Values currently follow the [literal grammar](literal-styles.md): literal colors and nonnegative lengths or zero. Token palettes are nonempty data records with dot-free keys. Definitions copy and freeze inputs; accessors, symbols, cycles, and ambiguous paths are rejected.
 
 This entrypoint compiles one in-memory graph. Its classes and variable slots are graph-local; separate outputs require independent namespaces. Theme source extraction, bound `theme.css`, compiled `theme.className`, `theme.vars`, bundled tokens, typography presets, and query metadata are separate capabilities. Root `css` still accepts only literals.
+
+## Selecting a Theme
+
+Author shared components against one base contract. Create alternatives with `Theme.extend`, then choose a scope from the compiler output at render time:
+
+```tsx
+const scopes = output.themes
+
+function App({ appearance }: { appearance: 'alternate' | 'base' }) {
+  return (
+    <main className={scopes[appearance]}>
+      <div className={output.classes.card}>Card</div>
+    </main>
+  )
+}
+```
+
+The class selection changes inherited variable values; component styles stay the same. Select light or dark independently through `color-scheme`. Independently defined themes own separate contracts and do not override one another, even when token paths match.
+
+The source-authoring API will expose the equivalent scope through `theme.className`. Choose a bound `theme.css` or `theme.vars` reference while defining styles; select a compatible scope when rendering. Neither selection requires invoking a runtime compiler or a variables function.

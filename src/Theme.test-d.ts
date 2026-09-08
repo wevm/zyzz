@@ -1,3 +1,7 @@
+/**
+ * Checks consumer inference and rejected inputs through the public Theme API.
+ * @module
+ */
 import { expectTypeOf } from 'vite-plus/test'
 import { css, Style, Theme } from 'zyzz'
 import { Css } from 'zyzz/web'

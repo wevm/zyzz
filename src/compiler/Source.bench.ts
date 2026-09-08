@@ -1,3 +1,7 @@
+/**
+ * Measures static style extraction across distinct source workload sizes.
+ * @module
+ */
 import { bench, describe } from 'vite-plus/test'
 import { Source } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'

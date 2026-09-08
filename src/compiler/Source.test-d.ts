@@ -1,3 +1,7 @@
+/**
+ * Checks consumer inference and rejected inputs through the public Source API.
+ * @module
+ */
 import { expectTypeOf } from 'vite-plus/test'
 import type { Style } from 'zyzz'
 import { Source } from 'zyzz/compiler'

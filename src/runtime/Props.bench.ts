@@ -1,3 +1,7 @@
+/**
+ * Measures calls and styling overrides through the compiled props binding contract.
+ * @module
+ */
 import { bench, describe } from 'vite-plus/test'
 import { Props } from 'zyzz/runtime'
 

@@ -1,3 +1,7 @@
+/**
+ * Declares the token-free authoring boundary consumed by source transforms.
+ * @module
+ */
 import type * as Literal from './internal/Literal.js'
 
 type Keys<value> = value extends unknown ? keyof value : never

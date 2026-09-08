@@ -137,7 +137,7 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Status: PR 2.1 is in progress from main `e870709`.
+Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) is in progress from main `e870709`.
 
 ### PR Sequence
 
@@ -148,6 +148,7 @@ Status: PR 2.1 is in progress from main `e870709`.
 
 PR 2.1 uses opaque object references for contracts within one in-memory graph. Compiler-local token slots do not depend on values or theme-map labels. Separate source graphs and persistent identities remain PR 2.2; do not publish these graph-local artifacts as independently composable theme libraries.
 
+- [ ] Expand token groups alongside their validated properties: scalar typography, composite typography, query thresholds, then border, shadow, opacity, transition, and stacking scales. Keep inherited theme selection separate from CSS color-scheme selection.
 - [ ] Implement the `Theme.define` and `Theme.extend` contracts before widening authoring syntax.
 - [ ] Add `zyzz/themes/default` with named `css`, `theme`, and raw `tokens` exports; add bound `variants` when recipe compilation lands in Phase 3. Bundle colors, typography, spacing, radii, and related scales using the ordinary theme contract; keep light/dark values within the theme.
 - [ ] Preserve inference and extraction for bundled `css` aliases and re-exports. Verify parity with `theme.css`, explicit token composition, and use of the exported theme with target compilers. Apply the same alias contract to `variants` in Phase 3.
@@ -277,7 +278,9 @@ Status: eight literal workloads and five real compiler adapters are implemented 
 
 - [ ] PR 1.3–1.5: add cold-process source builds, warm builds, unchanged edits, new styles, removed styles, and imported-dependency edits. Include parsing, scanning, rewriting, and output writing explicitly. In-memory emission must remain a separate measurement.
 - [ ] PR 1.5: add opt-in 10/100/1,000/10,000-style sweeps and independently vary rendered instance count. Keep expensive runs outside the short PR matrix.
-- [ ] Phase 2: add basic/complex themes, nested scopes, forced/system schemes, query density, and independent dynamic values. Measure rule growth, CSS-variable assignment, and style recalculation in real browsers.
+- [x] Phase 2: add matched 10/100-component, two-scope theme compiler comparisons for Panda, StyleX, Tailwind, vanilla-extract, and Zyzz. Include complete delivery and real browser scope/scheme parity; keep differences in compiler boundaries explicit.
+- [ ] Close the 10-component theme compressed-delivery gap against vanilla-extract after browser parity: initial local measurements are 664 vs 609 gzip bytes and 550 vs 506 Brotli bytes. Keep the unchanged two-scope workload and report all sizes; matched CI results are authoritative.
+- [ ] Phase 2: add complex themes, nested scopes, forced/system schemes, query density, and independent dynamic values. Measure rule growth, CSS-variable assignment, and style recalculation in real browsers.
 - [ ] Phase 3: add default/compound variants, variant changes, consumed-value updates, unchanged parent rerenders, and override-heavy composition. Verify comparable cascade semantics before comparing shorthand and A/B/A composition across libraries.
 - [ ] Phase 3–4: adapt deep/wide component trees and dynamic triangle workloads using real production framework runtimes. Separate mount, cached rerender, changed props, CSSOM writes, layout, paint, and interaction latency. Do not substitute raw DOM timing for framework runtime cost.
 - [ ] Phase 4: add SSR throughput and full HTML/CSS/JavaScript delivery, hydration, route splitting, dead-style removal, and packed-library boundaries. Keep framework baseline and incremental styling cost visible without double-counting assets.

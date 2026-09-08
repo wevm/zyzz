@@ -1,3 +1,7 @@
+/**
+ * Validates style declarations into immutable, ordered, target-independent data.
+ * @module
+ */
 import * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 type Exact<styles extends Record<string, unknown>> = {

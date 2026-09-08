@@ -1,3 +1,7 @@
+/**
+ * Compiles shared literal workloads through real styling-library adapters.
+ * @module
+ */
 import * as Babel from '@babel/core'
 import * as Panda from '@pandacss/node'
 import StylexPlugin, {
@@ -99,7 +103,8 @@ export type Fixture = {
   zyzz: Style.Definition
 }
 
-async function javascript(source: string): Promise<string> {
+/** Bundles actual browser exports and their required runtime dependencies. */
+export async function javascript(source: string): Promise<string> {
   const result = await Esbuild.build({
     bundle: true,
     define: { 'process.env.NODE_ENV': JSON.stringify('production') },

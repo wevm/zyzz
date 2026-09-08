@@ -1,3 +1,7 @@
+/**
+ * Exercises the public Theme workflow through real collaborating modules.
+ * @module
+ */
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Style, Theme } from 'zyzz'

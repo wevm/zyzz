@@ -1,3 +1,7 @@
+/**
+ * Exercises the public Host workflow through real collaborating modules.
+ * @module
+ */
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import { describe, expect, test } from 'vite-plus/test'

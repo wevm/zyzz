@@ -1,3 +1,7 @@
+/**
+ * Exercises the public Source workflow through real collaborating modules.
+ * @module
+ */
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Source } from 'zyzz/compiler'

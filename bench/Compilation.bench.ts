@@ -1,3 +1,7 @@
+/**
+ * Measures literal compiler throughput and complete CSS/client delivery sizes.
+ * @module
+ */
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Zlib from 'node:zlib'

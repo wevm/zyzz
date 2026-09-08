@@ -1,3 +1,7 @@
+/**
+ * Measures pure theme emission and stylesheet sizes before final processing.
+ * @module
+ */
 import * as Fs from 'node:fs/promises'
 import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'

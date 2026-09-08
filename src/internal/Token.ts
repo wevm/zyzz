@@ -1,3 +1,7 @@
+/**
+ * Carries portable theme references and enforces their property domains.
+ * @module
+ */
 import type * as Literal from './Literal.js'
 
 /** Checks a reference's property domain. */

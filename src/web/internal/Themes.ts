@@ -1,3 +1,7 @@
+/**
+ * Collects live theme references and emits graph-local variables and scope rules.
+ * @module
+ */
 import * as Literal from '../../internal/Literal.js'
 import * as Token from '../../internal/Token.js'
 import type * as Theme from '../../Theme.js'

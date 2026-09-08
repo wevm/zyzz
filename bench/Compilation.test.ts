@@ -1,3 +1,7 @@
+/**
+ * Verifies compiler parity, cascade behavior, and transfer budgets in real browsers.
+ * @module
+ */
 import * as Fs from 'node:fs/promises'
 import * as Zlib from 'node:zlib'
 import { chromium } from 'playwright'

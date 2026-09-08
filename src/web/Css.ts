@@ -1,3 +1,7 @@
+/**
+ * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
+ * @module
+ */
 import * as Literal from '../internal/Literal.js'
 import * as Token from '../internal/Token.js'
 import type * as Style from '../Style.js'

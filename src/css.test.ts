@@ -1,3 +1,7 @@
+/**
+ * Exercises the public css workflow through real collaborating modules.
+ * @module
+ */
 import * as Esbuild from 'esbuild'
 import { describe, expect, test } from 'vite-plus/test'
 import { css } from 'zyzz'

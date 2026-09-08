@@ -1,3 +1,7 @@
+/**
+ * Configures repository formatting, lint, integration tests, and coverage.
+ * @module
+ */
 import * as Path from 'node:path'
 import { defineConfig } from 'vite-plus'
 export default defineConfig({

@@ -1,3 +1,7 @@
+/**
+ * Rewrites extracted style calls into executable modules with CSS and source maps.
+ * @module
+ */
 import * as Mapping from '@jridgewell/gen-mapping'
 import type * as Ast from '@oxc-project/types'
 import MagicString from 'magic-string'

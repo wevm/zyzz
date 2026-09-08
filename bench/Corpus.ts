@@ -1,3 +1,7 @@
+/**
+ * Defines deterministic component workloads shared by compiler and browser checks.
+ * @module
+ */
 import type { Style } from 'zyzz'
 
 /** A deterministic literal workload shared by every compiler and browser check. */

@@ -1,3 +1,7 @@
+/**
+ * Checks consumer inference and rejected inputs through the public css API.
+ * @module
+ */
 import { expectTypeOf } from 'vite-plus/test'
 import { css } from 'zyzz'
 

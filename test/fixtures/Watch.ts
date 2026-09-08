@@ -1,3 +1,7 @@
+/**
+ * Provides bounded completion notifications for real filesystem watch workflows.
+ * @module
+ */
 import type { Host } from 'zyzz/node'
 
 /** Bounded notifications for real host integration fixtures and benchmarks. */

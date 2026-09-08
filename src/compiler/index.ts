@@ -1,3 +1,7 @@
+/**
+ * Exposes static source extraction and module rewriting without a file host.
+ * @module
+ */
 /** Static source extraction without application evaluation or file loading. */
 export * as Source from './Source.js'
 /** Literal module rewriting and source maps for web output. */

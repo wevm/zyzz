@@ -1,3 +1,7 @@
+/**
+ * Checks consumer inference and rejected inputs through the public Host API.
+ * @module
+ */
 import { expectTypeOf } from 'vite-plus/test'
 import { Host } from 'zyzz/node'
 

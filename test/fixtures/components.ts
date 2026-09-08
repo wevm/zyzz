@@ -1,3 +1,7 @@
+/**
+ * Supplies shared literal component inputs for public authoring integration flows.
+ * @module
+ */
 import type { Style } from 'zyzz'
 
 /** Shared consumer input. Authored order is intentional: integration scenarios verify declaration and style order. */

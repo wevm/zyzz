@@ -1,4 +1,10 @@
-# Define Variants
+# Variants
+
+Define finite choices, defaults, and compound matches for one element. Begin with [Getting Started](../introduction/getting-started.md) to connect compilation.
+
+## Recipes
+
+### Define Variants
 
 Add typed choices to a component. This example imports bound helpers from the [theme config](themes.md#configure-authoring); import from `zyzz` for token-free recipes.
 

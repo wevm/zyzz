@@ -17,14 +17,23 @@ global({ '@layer base': { body: { margin: 0 } } })
 
 ## Parameters
 
-Module-level static selector maps and supported nested at-rules. Discovery includes configured unimported modules.
+### definition
+
+- Type: Static selector maps and nested stylesheet rules
+- Required: Yes.
+
+Module-level selectors and supported at-rules. Discovery includes configured unimported modules.
+
+```ts
+global({ '@layer base': { body: { margin: 0 } } })
+```
 
 ## Returns
 
-A retained stylesheet effect, independent of JavaScript export usage. Watching replaces or removes contributions with their sources.
+Creates a retained stylesheet effect independent of JavaScript export usage. Watching replaces or removes contributions with their sources. The preview contract does not expose a return object.
 
 ## Errors
 
 Reject invalid selectors, declarations, at-rules, and order cycles. Raw global layer names have no ambient config inference.
 
-See [Fonts and Motion](../../guides/motion.md) and [Global Styles](../../guides/stylesheets.md).
+See [Fonts and Motion](../../guides/stylesheets.md#fonts-and-motion) and [Global Styles](../../guides/stylesheets.md#global-styles).

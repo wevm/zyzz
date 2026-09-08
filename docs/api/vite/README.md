@@ -3,6 +3,8 @@
 > [!NOTE]
 > Preview API; not yet implemented.
 
-Public exports and their method contracts.
+Connect source transformation and CSS delivery to Vite.
 
-1. [Vite](Vite/README.md)
+| API                    | Description                |
+| ---------------------- | -------------------------- |
+| [Vite](Vite/README.md) | Optional Vite integration. |

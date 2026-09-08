@@ -58,7 +58,7 @@ Plain and null-prototype objects are accepted. Accessors, symbols, non-enumerabl
 
 `Style.define(input, { locations })` can attach caller-owned `{ path, source, start, end }` spans to errors at exactly matching paths. Source offsets are metadata supplied by a caller; this API does not parse source text. Locations are copied so input mutations do not alter emitted diagnostics.
 
-The root imports pure local style and theme modules without target emitters, parsers, filesystem calls, or framework imports. Validated theme references extend literal declarations through the [in-memory theme contract](../../../guides/in-memory-themes.md); arbitrary objects are not accepted as tokens.
+The root imports pure local style and theme modules without target emitters, parsers, filesystem calls, or framework imports. Validated theme references extend literal declarations through the [in-memory theme contract](../../../guides/themes.md#compile-themes); arbitrary objects are not accepted as tokens.
 
 Numeric style keys are returned and inferred as strings, matching JavaScript property enumeration. Plain data from other realms is accepted; class instances and accessor properties remain invalid. Every branch of a union-typed style must contain only supported properties.
 
@@ -102,4 +102,4 @@ Always distribute class maps with their matching stylesheet.
 
 `Css.CompileError` aggregates invalid declarations and empty or duplicate names without returning partial CSS. Pass ordered `Style.define` data to the compiler.
 
-See [In-Memory Themes](../../../guides/in-memory-themes.md) for token compilation. Nested conditions, callbacks, and source parsing are outside this API. Declaration and rule order control CSS precedence; class-attribute order does not.
+See [In-Memory Themes](../../../guides/themes.md#compile-themes) for token compilation. Nested conditions, callbacks, and source parsing are outside this API. Declaration and rule order control CSS precedence; class-attribute order does not.

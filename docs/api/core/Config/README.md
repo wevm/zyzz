@@ -11,4 +11,6 @@ import { Config } from 'zyzz'
 
 ## Methods
 
-- [Config.create](create.md): Bind style authoring to explicit theme and layer contracts. Export bound helpers from `zyzz.config.ts`; retain the config as its default export.
+| API                        | Description                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Config.create](create.md) | Bind style authoring to explicit theme and layer contracts. Export bound helpers from `zyzz.config.ts`; retain the config as its default export. |

@@ -20,13 +20,39 @@ const output = StyleSheet.compile({ styles, themes: { base: theme } })
 
 ## Parameters
 
-- `styles`: shared definitions.
-- `themes`: named compatible definitions.
-- Unit and font conversion options must be explicit when required; their full shape remains a design gate.
+### options.styles
+
+- Type: `Style.Definition`
+- Required: Yes.
+
+Shared validated style definitions.
+
+```ts
+StyleSheet.compile({ styles, themes: { base: theme } })
+```
+
+### options.themes
+
+- Type: Named theme definitions
+- Default: Not yet specified by the preview contract.
+
+Theme labels used by the compiled tables. Required unit/font conversion options remain a design gate.
+
+```ts
+StyleSheet.compile({ styles, themes: { base: theme } })
+```
 
 ## Returns
 
-`{ styles }`: tables indexed by theme label, scheme, and style name.
+### styles
+
+- Type: Native tables indexed by theme, scheme, and style name
+
+Precompiled data for selection outside the compiler.
+
+```ts
+StyleSheet.select(output.styles, { colorScheme: 'dark', theme: 'base' })
+```
 
 ## Errors
 

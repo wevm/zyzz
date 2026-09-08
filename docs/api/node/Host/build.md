@@ -27,7 +27,27 @@ No parameters; call on a runtime from `Host.create`.
 
 ## Returns
 
-A promise of `Host.Build`: `changed` and complete `files`, relative to output. Ownership manifests are excluded.
+Returns `Promise<Host.Build>`. The properties below belong to the resolved build result.
+
+### changed
+
+- Type: `readonly string[]`
+
+Changed artifact paths relative to the output directory.
+
+```ts
+result.changed
+```
+
+### files
+
+- Type: `readonly string[]`
+
+Complete artifact paths relative to output. Ownership manifests are excluded.
+
+```ts
+result.files
+```
 
 ## Errors
 

@@ -18,11 +18,19 @@ export default defineConfig({ plugins: [Vite.create()] })
 
 ## Parameters
 
-The proposed minimal setup takes no required arguments. Additional adapter options must be finalized against real integration fixtures.
+The proposed minimal setup takes no required arguments. Additional options remain to be finalized against integration fixtures.
 
 ## Returns
 
-A Vite-compatible plugin for development updates and linked production CSS.
+### plugin
+
+- Type: Vite-compatible plugin
+
+Connects development updates and linked production CSS delivery.
+
+```ts
+defineConfig({ plugins: [Vite.create()] })
+```
 
 ## Errors
 

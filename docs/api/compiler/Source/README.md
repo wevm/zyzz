@@ -8,7 +8,9 @@ import { Source } from 'zyzz/compiler'
 
 ## Methods
 
-- [Source.extract](extract.md): Extract supported root literal definitions without evaluating source.
+| API                          | Description                                                           |
+| ---------------------------- | --------------------------------------------------------------------- |
+| [Source.extract](extract.md) | Extract supported root literal definitions without evaluating source. |
 
 ## Types and Errors
 

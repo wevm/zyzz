@@ -3,7 +3,7 @@
 Import bound styling helpers and spread their applied props onto a component. Imports always refer to authored source files.
 
 > [!NOTE]
-> Config authoring, package installation, and integrations below describe the planned release. Use the [compiler APIs](../guides/compilation.md) for the current literal pipeline.
+> Config authoring, package installation, and integrations below describe the planned release. Use the [compiler APIs](../guides/compilation.md#publish-libraries) for the current literal pipeline.
 
 ## Install
 
@@ -57,6 +57,6 @@ Importing config alone does not compile styles. The CLI is a source-transform pa
 
 ## Continue
 
-1. [Style Components](../guides/styling.md).
-2. [Use Themes](../guides/themes.md).
-3. [Define Variants](../guides/variants.md).
+1. [Style Components](../guides/styling.md#style-components).
+2. [Use Themes](../guides/themes.md#use-themes).
+3. [Define Variants](../guides/variants.md#define-variants).

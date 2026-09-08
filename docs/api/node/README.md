@@ -1,5 +1,7 @@
 # zyzz/node
 
-Public exports and their method contracts.
+Build and watch filesystem sources with explicit output ownership.
 
-1. [Host](Host/README.md)
+| API                    | Description                                 |
+| ---------------------- | ------------------------------------------- |
+| [Host](Host/README.md) | Filesystem builds, ownership, and watching. |

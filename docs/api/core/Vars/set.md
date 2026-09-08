@@ -18,12 +18,39 @@ const style = Vars.set(progress, { amount: '42%' })
 
 ## Parameters
 
-- `definition`: the shared contract returned by `Vars.define`.
-- `values`: assignments to existing keys with compatible domains.
+### definition
+
+- Type: Shared contract returned by `Vars.define`
+- Required: Yes.
+
+Defines allowed assignment keys and domains.
+
+```ts
+Vars.set(progress, { amount: '42%' })
+```
+
+### values
+
+- Type: Assignments to inferred contract keys
+- Required: Yes.
+
+Existing keys with compatible values. Compiler-owned private variables are not application override keys.
+
+```ts
+Vars.set(progress, { amount: '42%' })
+```
 
 ## Returns
 
-An inline assignment object for the applied style override.
+### style
+
+- Type: Inline variable assignment object
+
+Returned object can be supplied as the applied style override.
+
+```ts
+const style = Vars.set(progress, { amount: '42%' })
+```
 
 ## Errors
 

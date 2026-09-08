@@ -3,6 +3,8 @@
 > [!NOTE]
 > Preview API; not yet implemented.
 
-Public exports and their method contracts.
+Compile shared definitions into native tables and select themes and schemes.
 
-1. [StyleSheet](StyleSheet/README.md)
+| API                                | Description                             |
+| ---------------------------------- | --------------------------------------- |
+| [StyleSheet](StyleSheet/README.md) | Native table compilation and selection. |

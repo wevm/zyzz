@@ -8,8 +8,10 @@ import { Theme } from 'zyzz'
 
 ## Methods
 
-- [Theme.define](define.md): Define immutable scalar tokens and portable references.
-- [Theme.extend](extend.md): Create compatible token overrides without changing the base definition.
+| API                       | Description                                                             |
+| ------------------------- | ----------------------------------------------------------------------- |
+| [Theme.define](define.md) | Define immutable scalar tokens and portable references.                 |
+| [Theme.extend](extend.md) | Create compatible token overrides without changing the base definition. |
 
 ## Types and Errors
 

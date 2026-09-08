@@ -15,11 +15,50 @@ const props = card({ style: { padding: '1rem' } })
 
 ## Parameters
 
-`className`: complete compiler-produced class list. Applications accept only `className` and `style`.
+### options.className
+
+- Type: `string`
+- Required: Yes.
+
+Complete compiler-produced class list with a matching stylesheet. No rules are generated.
+
+```ts
+Props.create({ className: 'compiled-card' })
+```
 
 ## Returns
 
-A `css.ReturnType` callable producing classes and copied inline overrides. No rules are generated.
+The returned callable accepts the [application parameters](../../core/css.md#application-parameters). The properties below Callable belong to its applied result.
+
+### Callable
+
+- Type: `css.ReturnType`
+
+Callable accepting only className and style overrides, and returning copied inline overrides.
+
+```ts
+const props = card({ style: { padding: '1rem' } })
+```
+
+### className
+
+- Type: `string`
+
+Generated class list, including supplied external classes. Class-string order does not establish CSS precedence.
+
+```ts
+props.className
+```
+
+### style
+
+- Type: `css.Props["style"]`
+
+Copied inline overrides when supplied. Other component props remain on the element.
+
+```ts
+props.style
+```
 
 ## Errors
 

@@ -11,5 +11,7 @@ import { Vars } from 'zyzz'
 
 ## Methods
 
-- [Vars.define](define.md): Create a shared contract for explicit CSS variable bindings.
-- [Vars.set](set.md): Assign values to an explicit shared variable contract.
+| API                      | Description                                                  |
+| ------------------------ | ------------------------------------------------------------ |
+| [Vars.define](define.md) | Create a shared contract for explicit CSS variable bindings. |
+| [Vars.set](set.md)       | Assign values to an explicit shared variable contract.       |

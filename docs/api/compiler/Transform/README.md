@@ -8,7 +8,9 @@ import { Transform } from 'zyzz/compiler'
 
 ## Methods
 
-- [Transform.compile](compile.md): Rewrite authoring calls and emit matching module and stylesheet artifacts.
+| API                             | Description                                                                |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| [Transform.compile](compile.md) | Rewrite authoring calls and emit matching module and stylesheet artifacts. |
 
 ## Types and Errors
 

@@ -1,5 +1,7 @@
 # zyzz/runtime
 
-Public exports and their method contracts.
+Bind compiled class lists to styling overrides without generating CSS.
 
-1. [Props](Props/README.md)
+| API                      | Description                                  |
+| ------------------------ | -------------------------------------------- |
+| [Props](Props/README.md) | Small binding helpers used by compiled code. |

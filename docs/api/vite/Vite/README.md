@@ -11,4 +11,6 @@ import { Vite } from 'zyzz/vite'
 
 ## Methods
 
-- [Vite.create](create.md): Connect source transformation and CSS delivery to Vite.
+| API                      | Description                                             |
+| ------------------------ | ------------------------------------------------------- |
+| [Vite.create](create.md) | Connect source transformation and CSS delivery to Vite. |

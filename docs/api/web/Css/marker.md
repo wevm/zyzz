@@ -18,11 +18,28 @@ const attributes = card({ state: 'open' })
 
 ## Parameters
 
-Optional state domains. Omitting the schema creates a presence marker; applications select declared states.
+### schema
+
+- Type: Named finite state domains
+- Default: Presence marker without state domains.
+
+Applications may select only declared state values.
+
+```ts
+Css.marker({ state: ['closed', 'open'] })
+```
 
 ## Returns
 
-A marker identity with a callable producing owned attributes. Imported identity survives package boundaries.
+### marker
+
+- Type: Typed callable marker identity
+
+Produces owned attributes when applied. Imported identity survives package boundaries. This does not validate DOM structure or supply ARIA attributes.
+
+```ts
+const attributes = card({ state: 'open' })
+```
 
 ## Errors
 

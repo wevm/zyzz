@@ -8,10 +8,12 @@ import { Host } from 'zyzz/node'
 
 ## Methods
 
-- [Host.build](build.md): Build the host source tree and publish owned artifacts.
-- [Host.close](close.md): Dispose the host and release output ownership.
-- [Host.create](create.md): Create a file-build lifecycle around the source transform.
-- [Host.watch](watch.md): Watch source changes and report rebuilds or failures.
+| API                      | Description                                                |
+| ------------------------ | ---------------------------------------------------------- |
+| [Host.build](build.md)   | Build the host source tree and publish owned artifacts.    |
+| [Host.close](close.md)   | Dispose the host and release output ownership.             |
+| [Host.create](create.md) | Create a file-build lifecycle around the source transform. |
+| [Host.watch](watch.md)   | Watch source changes and report rebuilds or failures.      |
 
 ## Types and Errors
 

@@ -21,17 +21,44 @@ const style = css({
 
 ## Parameters
 
-- `marker`: typed element identity.
-- `condition`: supported simple pseudo or typed data/pseudo/has predicates; combined predicates match the same marked element.
+### marker
+
+- Type: Typed identity returned by `Css.marker`
+- Required: Yes.
+
+Element identity used to match related elements.
+
+```ts
+Css.ancestor(target)
+```
+
+### condition
+
+- Type: Simple pseudo or typed data/pseudo/has predicates
+- Default: Marker presence.
+
+Combined predicates must match the same marked element.
+
+```ts
+Css.ancestor(target, { data: { state: 'open' } })
+```
 
 ## Returns
 
-A typed condition key for a style body. Helpers add zero condition specificity; authored raw selectors keep their specificity.
+### condition
+
+- Type: Typed style condition key
+
+Use as a computed style key. Helpers add zero condition specificity; raw authored selectors retain their specificity.
+
+```ts
+css({ [Css.ancestor(target, { data: { state: 'open' } })]: { opacity: 1 } })
+```
 
 ## Errors
 
 Reject undeclared marker states, unsupported nested `:has()` combinations, and unsupported native semantics.
 
-See [Style Relationships](../../../guides/relationships.md). Ancestors match any qualifying instance, not the nearest marker boundary.
+See [Style Relationships](../../../guides/conditions.md#style-relationships). Ancestors match any qualifying instance, not the nearest marker boundary.
 
 See [Css](README.md) for related methods and types.

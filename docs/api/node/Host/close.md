@@ -23,7 +23,7 @@ No parameters; call on an existing runtime.
 
 ## Returns
 
-A promise completing after watchers stop, queued builds drain, and ownership is released. Closing is idempotent.
+`Promise<void>`. Completes after watchers stop, queued builds drain, and ownership is released. Closing is idempotent.
 
 ## Errors
 

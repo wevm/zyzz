@@ -14,13 +14,61 @@ const styles = Style.define({ card: { padding: '1rem' } })
 
 ## Parameters
 
-- `styles`: plain or null-prototype records of supported declarations.
-- `options.locations`: optional caller-owned source spans matched by complete path.
-- `options.theme`: explicit theme enabling shorthand token inference.
+The optional options object defaults to `{}`.
+
+### styles
+
+- Type: `Readonly<Record<string, Style.Properties>>` (literal keys inferred)
+- Required: Yes.
+
+Plain or null-prototype records of supported declarations. Authored ordering is preserved.
+
+```ts
+Style.define({ card: { padding: '1rem' } })
+```
+
+### options.locations
+
+- Type: `readonly Style.SourceLocation[]`
+- Default: `undefined`
+
+Caller-owned source spans matched by complete path.
+
+```ts
+Style.define(
+  { card: { padding: 0 } },
+  {
+    locations: [
+      { end: 10, path: ['card', 'padding'], source: 'card.ts', start: 0 },
+    ],
+  },
+)
+```
+
+### options.theme
+
+- Type: `Theme.Definition`
+- Default: `undefined`
+
+Explicit defined theme enabling shorthand token inference. Optional themes must be narrowed before token names infer.
+
+```ts
+Style.define({ card: { padding: 'md' } }, { theme })
+```
 
 ## Returns
 
-A frozen `Style.Definition` containing ordered named styles and declarations. Names retain inference, including numeric keys as strings. No CSS or application props are emitted.
+Returns a frozen `Style.Definition`.
+
+### styles
+
+- Type: `readonly Style.NamedStyle[]` (names inferred)
+
+Frozen ordered named styles and declarations. Numeric names become strings. No CSS or application props are emitted.
+
+```ts
+styles.styles[0]?.declarations
+```
 
 ## Errors
 

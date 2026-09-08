@@ -1,11 +1,13 @@
 # zyzz
 
-Public exports and their method contracts.
+Typed style definitions, themes, configuration, and callable authoring.
 
-1. [Config](Config/README.md)
-2. [css](css.md)
-3. [cx](cx.md)
-4. [Style](Style/README.md)
-5. [Theme](Theme/README.md)
-6. [variants](variants.md)
-7. [Vars](Vars/README.md)
+| API                        | Description                                                            |
+| -------------------------- | ---------------------------------------------------------------------- |
+| [Config](Config/README.md) | Configuration-bound authoring and compatible theme scopes.             |
+| [css](css.md)              | Define callable styles that compile to static CSS and styling props.   |
+| [cx](cx.md)                | Compose applied generated styles while retaining their owned bindings. |
+| [Style](Style/README.md)   | Ordered style data and validation.                                     |
+| [Theme](Theme/README.md)   | Immutable scalar tokens and compatible extensions.                     |
+| [variants](variants.md)    | Define finite style choices for one element.                           |
+| [Vars](Vars/README.md)     | Explicit shared variable contracts.                                    |

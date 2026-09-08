@@ -76,7 +76,7 @@ export function Bar() {
 
 ### Themes
 
-[Compile theme tokens and inherited scopes from in-memory definitions.](docs/guides/in-memory-themes.md)
+[Compile theme tokens and inherited scopes from in-memory definitions.](docs/guides/themes.md#compile-themes)
 
 Import a bundled theme's `css` for inferred design tokens. `zyzz/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
 

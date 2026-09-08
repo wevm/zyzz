@@ -17,11 +17,30 @@ const progress = Vars.define({ amount: 'percentage' })
 
 ## Parameters
 
-`schema`: named `color`, `length`, `number`, or `percentage` domains.
+### schema
+
+- Type: Record of `color | length | number | percentage` domains
+- Required: Yes.
+
+Named shared variable contract. Use callbacks for ordinary local dynamic values.
+
+```ts
+Vars.define({ amount: 'percentage' })
+```
 
 ## Returns
 
-Typed variable references, such as `progress.amount`, usable in compatible style properties.
+Returns typed references whose keys are inferred from the schema. Exact public type names remain undecided.
+
+### [name]
+
+- Type: Typed CSS variable reference
+
+A reference for each schema key, usable in properties with a compatible domain.
+
+```ts
+progress.amount
+```
 
 ## Errors
 

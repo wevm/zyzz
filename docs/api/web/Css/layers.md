@@ -17,11 +17,20 @@ Css.layers(['reset', 'base', 'components'])
 
 ## Parameters
 
-`names`: static ordered CSS layer names, merged with other project order contributions.
+### names
+
+- Type: `readonly string[]`
+- Required: Yes.
+
+Static ordered CSS layer names, merged with other project order contributions.
+
+```ts
+Css.layers(['reset', 'base', 'components'])
+```
 
 ## Returns
 
-A stylesheet order contribution. No layer-reference return object is required by the authoring contract.
+Contributes stylesheet order. No layer-reference object is required by the preview contract; a concrete return type remains unspecified.
 
 ## Errors
 

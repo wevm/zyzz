@@ -11,5 +11,7 @@ import { StyleSheet } from 'zyzz/react-native'
 
 ## Methods
 
-- [StyleSheet.compile](compile.md): Compile shared definitions into static native tables.
-- [StyleSheet.select](select.md): Select a precompiled native theme and scheme.
+| API                              | Description                                           |
+| -------------------------------- | ----------------------------------------------------- |
+| [StyleSheet.compile](compile.md) | Compile shared definitions into static native tables. |
+| [StyleSheet.select](select.md)   | Select a precompiled native theme and scheme.         |

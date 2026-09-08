@@ -84,7 +84,7 @@ const theme = Theme.define({
 - **Names:** property-specific groups infer only where their domain is valid.
 - **Schemes:** color leaves accept one shared string or a complete light/dark pair.
 
-Use [Compile Themes](guides/in-memory-themes.md) for the current pipeline.
+Use [Compile Themes](guides/themes.md#compile-themes) for the current pipeline.
 
 > [!NOTE]
 > Config normalization, bundled defaults, typography/query groups, and web expression references are previews. Config returns compatible handles without mutating independently defined themes.
@@ -128,7 +128,7 @@ const roomy = css({ padding: '1rem' })
 const example = <button {...cx(compact(), roomy())}>Save</button>
 ```
 
-Later generated conflicts win within matching conditions, subject to importance. Owned variable bindings and recipe attributes stay attached. See [Override Styles](guides/overrides.md).
+Later generated conflicts win within matching conditions, subject to importance. Owned variable bindings and recipe attributes stay attached. See [Override Styles](guides/styling.md#override-styles).
 
 ## Variants
 
@@ -163,7 +163,7 @@ const button = css({
 
 Query aliases resolve from theme metadata to literal conditions. Theme scope changes do not change query thresholds. Container queries select the nearest eligible container; raw queries still require compiler validation.
 
-See [Responsive Styles](guides/responsive.md) and [Style States](guides/states.md).
+See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style States](guides/conditions.md#style-states).
 
 ## Relationships
 
@@ -185,7 +185,7 @@ const condition = Css.ancestor(card, { data: { state: 'open' } })
 - **Specificity:** helpers add zero condition specificity; raw selectors retain their own.
 - **Types:** constrain marker values, not DOM structure or accessibility semantics.
 
-See [Style Relationships](guides/relationships.md) for application and [Css](api/web/Css/README.md) for sibling directions.
+See [Style Relationships](guides/conditions.md#style-relationships) for application and [Css](api/web/Css/README.md) for sibling directions.
 
 ## Dynamic Values
 
@@ -231,7 +231,7 @@ global({ '@layer base': { body: { margin: 0 } } })
 - **Ordering:** constraints merge deterministically; cycles produce located errors. Preserve authored order, unlayered rules, and important reversal.
 - **Watching:** edits and deletions replace or remove contributions; relative assets retain source ownership.
 
-See [stylesheet usage](guides/stylesheets.md) for fonts and motion. Standalone globals do not widen a config's inferred layer names.
+See [stylesheet usage](guides/stylesheets.md#global-styles) for fonts and motion. Standalone globals do not widen a config's inferred layer names.
 
 ## Compilation and Platforms
 

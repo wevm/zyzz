@@ -22,28 +22,15 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 
 ## Guides
 
-- [Guides](guides/README.md): Section index.
-- [Publish Libraries](guides/compilation.md): Reference and examples.
-- [Dark Mode](guides/dark-mode.md): Reference and examples.
-- [Dynamic Values](guides/dynamic-values.md): Reference and examples.
-- [Compile Themes](guides/in-memory-themes.md): Reference and examples.
-- [Cascade Layers](guides/layers.md): Reference and examples.
-- [Migration](guides/migration.md): Reference and examples.
-- [Fonts and Motion](guides/motion.md): Reference and examples.
-- [Native Styles](guides/native.md): Reference and examples.
-- [Override Styles](guides/overrides.md): Reference and examples.
-- [Style Relationships](guides/relationships.md): Reference and examples.
-- [Responsive Styles](guides/responsive.md): Reference and examples.
-- [Shared Configuration](guides/shared-config.md): Reference and examples.
-- [Share Styles](guides/sharing.md): Reference and examples.
-- [Server Rendering](guides/ssr.md): Reference and examples.
-- [Style States](guides/states.md): Reference and examples.
-- [Global Styles](guides/stylesheets.md): Reference and examples.
-- [Style Components](guides/styling.md): Reference and examples.
-- [Test Styles](guides/testing.md): Reference and examples.
-- [Use Themes](guides/themes.md): Reference and examples.
-- [Troubleshooting](guides/troubleshooting.md): Reference and examples.
-- [Define Variants](guides/variants.md): Reference and examples.
+- [Guides](guides/README.md): Topic index.
+- [Styling](guides/styling.md): Define, reuse, compose, and bind component styles.
+- [Conditions](guides/conditions.md): Respond to viewport size, browser state, and related elements.
+- [Themes & Tokens](guides/themes.md): Define token contracts, choose theme scopes, and select color schemes.
+- [Variants](guides/variants.md): Define finite choices, defaults, and compound matches for one element.
+- [Stylesheets](guides/stylesheets.md): Declare global rules, cascade order, fonts, and animations.
+- [Build & Delivery](guides/compilation.md): Compile and publish matching artifacts, then deliver styles during server rendering.
+- [Testing & Migration](guides/testing.md): Verify rendered behavior, diagnose failures, and migrate existing components.
+- [React Native](guides/native.md): Compile shared definitions and select native theme tables.
 
 ## API
 

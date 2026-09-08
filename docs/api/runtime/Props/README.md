@@ -8,7 +8,9 @@ import { Props } from 'zyzz/runtime'
 
 ## Methods
 
-- [Props.create](create.md): Bind compiled classes to the literal styling override contract.
+| API                       | Description                                                     |
+| ------------------------- | --------------------------------------------------------------- |
+| [Props.create](create.md) | Bind compiled classes to the literal styling override contract. |
 
 ## Types and Errors
 

@@ -17,12 +17,55 @@ const output = Source.extract({
 
 ## Parameters
 
-- `moduleId`: portable package/module identity.
-- `source`: complete module text parsed as TypeScript with JSX.
+### options.moduleId
+
+- Type: `string`
+- Required: Yes.
+
+Stable portable package-relative module identity.
+
+```ts
+Source.extract({
+  moduleId: 'app/card.ts',
+  source: "import { css } from 'zyzz'; export const card = css({ padding: 0 })",
+})
+```
+
+### options.source
+
+- Type: `string`
+- Required: Yes.
+
+Complete module text parsed as TypeScript with JSX. No source execution or filesystem reads occur.
+
+```ts
+Source.extract({
+  moduleId: 'app/card.ts',
+  source: "import { css } from 'zyzz'; export const card = css({ padding: 0 })",
+})
+```
 
 ## Returns
 
-Ordered `calls` with rewrite spans and validated `styles` for `Css.compile`. Source extraction alone does not rewrite executable calls.
+### calls
+
+- Type: `readonly Source.Call[]`
+
+Ordered authoring calls with names and rewrite spans.
+
+```ts
+output.calls[0]?.start
+```
+
+### styles
+
+- Type: `Style.Definition`
+
+Validated ordered styles accepted by `Css.compile`. Extraction alone does not rewrite executable calls.
+
+```ts
+output.styles
+```
 
 ## Errors
 

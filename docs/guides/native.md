@@ -1,4 +1,10 @@
-# Native Styles
+# React Native
+
+Compile shared definitions and select native theme tables. Begin with [Getting Started](../introduction/getting-started.md) to connect compilation.
+
+## Recipes
+
+### Native Styles
 
 > [!NOTE]
 > Preview API; not yet implemented.

@@ -15,12 +15,51 @@ const roomy = Theme.extend(base, { spacing: { md: '2rem' } })
 
 ## Parameters
 
-- `theme`: an existing definition.
-- `overrides`: partial existing paths with compatible values; color pairs replace the whole leaf.
+### theme
+
+- Type: `Theme.Definition<tokens>`
+- Required: Yes.
+
+Existing definition supplying the contract and untouched token values.
+
+```ts
+Theme.extend(base, { spacing: { md: '2rem' } })
+```
+
+### overrides
+
+- Type: `Theme.Overrides<tokens>`
+- Required: Yes.
+
+Partial existing paths with compatible values. Color pairs replace the whole leaf.
+
+```ts
+Theme.extend(base, { spacing: { md: '2rem' } })
+```
 
 ## Returns
 
-A complete immutable theme preserving the original contract identity and untouched token values.
+Returns a complete immutable `Theme.Definition<tokens>` preserving the original contract identity and untouched values.
+
+### css
+
+- Type: `Theme.Css<tokens>`
+
+Bound callable authoring with inferred token names. Source linking is a preview at this baseline; untransformed execution throws `css.MissingTransformError`.
+
+```ts
+const card = roomy.css({ padding: 'md' })
+```
+
+### tokens
+
+- Type: `Theme.References<tokens>`
+
+Immutable references retaining defining identity and property domains. These references work in the in-memory compiler.
+
+```ts
+roomy.tokens.spacing.md
+```
 
 ## Errors
 

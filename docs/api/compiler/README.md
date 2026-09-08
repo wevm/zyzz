@@ -1,6 +1,8 @@
 # zyzz/compiler
 
-Public exports and their method contracts.
+Extract style definitions and rewrite source with matching CSS and source maps.
 
-1. [Source](Source/README.md)
-2. [Transform](Transform/README.md)
+| API                              | Description                                         |
+| -------------------------------- | --------------------------------------------------- |
+| [Source](Source/README.md)       | Static extraction from source text.                 |
+| [Transform](Transform/README.md) | Module rewriting with matching CSS and source maps. |

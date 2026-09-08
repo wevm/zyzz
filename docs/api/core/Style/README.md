@@ -8,7 +8,9 @@ import { Style } from 'zyzz'
 
 ## Methods
 
-- [Style.define](define.md): Validate named ordered styles and return immutable compiler data.
+| API                       | Description                                                       |
+| ------------------------- | ----------------------------------------------------------------- |
+| [Style.define](define.md) | Validate named ordered styles and return immutable compiler data. |
 
 ## Types and Errors
 

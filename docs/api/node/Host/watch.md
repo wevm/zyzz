@@ -20,11 +20,25 @@ host.watch({ onResult: (event) => console.log(event) })
 
 ## Parameters
 
-`onResult`: receives `Host.Event`, either `{ result }` or `{ error }`; the callback must not throw.
+### options.onResult
+
+- Type: `(event: Host.Event) => void`
+- Required: Yes.
+
+Receives either `{ result }` or `{ error }`. The callback must not throw.
+
+```ts
+host.watch({
+  onResult: (event) => {
+    if ('error' in event) console.error(event.error)
+    else console.log(event.result.files)
+  },
+})
+```
 
 ## Returns
 
-No return value. Watching starts with an initial build and remains active until `close`.
+`void`. Watching starts with an initial build and remains active until `close`.
 
 ## Errors
 

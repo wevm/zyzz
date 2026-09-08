@@ -1,5 +1,5 @@
 /**
- * Reports benchmark changes and optionally fails on configured regressions.
+ * Reports benchmark changes and prepares github-action-benchmark input.
  * @module
  */
 import * as Fs from 'node:fs'
@@ -31,25 +31,72 @@ type Timings = {
   }[]
 }
 
-const [candidate, baseline, check] = process.argv.slice(2)
+const [candidate, baseline, output] = process.argv.slice(2)
 const competitors = new Set(['panda', 'stylex', 'tailwind', 'vanilla-extract'])
 const thresholds = {
-  B: threshold('BENCH_SIZE_THRESHOLD', 5),
-  ms: threshold('BENCH_TIME_THRESHOLD', 10),
+  B: threshold('BENCH_SIZE_THRESHOLD', 105),
+  ms: threshold('BENCH_TIME_THRESHOLD', 110),
 }
 if (!candidate)
-  throw new Error('Usage: node bench/Compare.ts <results> [baseline] [--check]')
-if (check !== undefined && check !== '--check')
-  throw new Error(`Unknown option: ${check}`)
+  throw new Error(
+    'Usage: node bench/Compare.ts <results> [baseline] [action-output]',
+  )
+
+const current = read(candidate)
+const hasBaseline = Boolean(
+  baseline && Fs.existsSync(Path.join(baseline, 'timings.json')),
+)
+const previous =
+  hasBaseline && baseline ? read(baseline) : new Map<string, Measurement>()
+const commit =
+  hasBaseline && baseline
+    ? Fs.readFileSync(Path.join(baseline, 'commit.txt'), 'utf8').trim()
+    : ''
+if (output) {
+  Fs.mkdirSync(output, { recursive: true })
+  for (const [name, unit] of [
+    ['size', 'B'],
+    ['time', 'ms'],
+  ] as const) {
+    const benches = (measurements: Map<string, Measurement>) =>
+      [...measurements]
+        .filter(([, value]) => value.unit === unit)
+        .map(([name, value]) => ({
+          name,
+          range: `± ${(value.value * value.error) / 100}`,
+          unit,
+          value: value.value,
+        }))
+    Fs.writeFileSync(
+      Path.join(output, `${name}.json`),
+      JSON.stringify(benches(current)),
+    )
+    Fs.writeFileSync(
+      Path.join(output, `${name}-baseline.json`),
+      JSON.stringify({
+        entries: {
+          [name]: commit
+            ? [
+                {
+                  benches: benches(previous),
+                  commit: { id: commit },
+                  date: 0,
+                  tool: 'customSmallerIsBetter',
+                },
+              ]
+            : [],
+        },
+        lastUpdate: 0,
+        repoUrl: `https://github.com/${process.env.GITHUB_REPOSITORY ?? 'wevm/zyzz'}`,
+      }),
+    )
+  }
+}
 
 console.log('## Compared with main\n')
-if (!baseline || !Fs.existsSync(Path.join(baseline, 'timings.json'))) {
+if (!hasBaseline) {
   console.log('No baseline available.\n')
 } else {
-  const commit = Fs.readFileSync(
-    Path.join(baseline, 'commit.txt'),
-    'utf8',
-  ).trim()
   const repository = process.env.GITHUB_REPOSITORY ?? 'wevm/zyzz'
   console.log(
     `Baseline: [main @ ${commit.slice(0, 7)}](https://github.com/${repository}/commit/${commit})\n`,
@@ -58,14 +105,11 @@ if (!baseline || !Fs.existsSync(Path.join(baseline, 'timings.json'))) {
     '🟢 Improved · 🟡 Within tolerance / unchanged · 🔴 Regression above threshold\n',
   )
   console.log(
-    `CI fails for increases above ${thresholds.ms}% in time or ${thresholds.B}% in gzip size. Timing changes must also exceed the sum of both reported errors. Zyzz measurements only; timings come from separate CI runners.\n`,
+    `github-action-benchmark fails CI above ${thresholds.ms - 100}% slower or ${thresholds.B - 100}% larger gzip size. Zyzz measurements only; timings come from separate CI runners. Reported timing errors are informational.\n`,
   )
   console.log('| Benchmark | Main | PR / current | Change |')
   console.log('| --- | ---: | ---: | ---: |')
 
-  const previous = read(baseline)
-  const current = read(candidate)
-  const regressions: string[] = []
   for (const key of new Set([...current.keys(), ...previous.keys()])) {
     const before = previous.get(key)
     const after = current.get(key)
@@ -87,12 +131,10 @@ if (!baseline || !Fs.existsSync(Path.join(baseline, 'timings.json'))) {
         : before.value === 0
           ? undefined
           : (delta / before.value) * 100
-    const tolerance =
-      after.unit === 'ms'
-        ? Math.max(thresholds.ms, before.error + after.error)
-        : thresholds.B
-    const significant =
-      percent === undefined ? delta !== 0 : Math.abs(percent) > tolerance
+    const ratio =
+      before.value === 0 && after.value === 0 ? 1 : after.value / before.value
+    const tolerance = thresholds[after.unit] / 100
+    const significant = delta > 0 ? ratio > tolerance : ratio < 2 - tolerance
     const light = !significant ? '🟡' : delta < 0 ? '🟢' : '🔴'
     const change =
       percent === undefined
@@ -103,17 +145,12 @@ if (!baseline || !Fs.existsSync(Path.join(baseline, 'timings.json'))) {
     console.log(
       `| ${name} | ${format(before)} | ${format(after)} | ${light} ${bytes}${change} |`,
     )
-    if (significant && delta > 0) regressions.push(`${name}: ${bytes}${change}`)
   }
   console.log('')
-  if (check === '--check' && regressions.length > 0) {
-    console.error(`Benchmark regressions:\n${regressions.join('\n')}`)
-    process.exitCode = 1
-  }
 }
 
 function format(measurement: Measurement) {
-  return `${measurement.unit === 'B' ? measurement.value : Number(measurement.value.toPrecision(4))} ${measurement.unit}`
+  return `${measurement.unit === 'B' ? measurement.value : Number(measurement.value.toPrecision(4))} ${measurement.unit}${measurement.unit === 'ms' ? ` ±${measurement.error.toFixed(1)}%` : ''}`
 }
 
 function read(directory: string) {
@@ -157,7 +194,7 @@ function threshold(name: string, fallback: number) {
   const input = process.env[name]
   if (input === undefined) return fallback
   const value = Number(input)
-  if (!input.trim() || !Number.isFinite(value) || value < 0)
-    throw new Error(`${name} must be a finite, nonnegative percentage`)
+  if (!input.trim() || !Number.isFinite(value) || value < 100)
+    throw new Error(`${name} must be a finite percentage ratio of at least 100`)
   return value
 }

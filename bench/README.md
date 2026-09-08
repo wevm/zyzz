@@ -4,16 +4,16 @@ Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, w
 
 The separate Benchmarks workflow uploads results and environment metadata as a 30-day artifact. Its PR comment and summary compare matching measurements against the latest successful main push: 🟢 improved, 🟡 unchanged or within tolerance, and 🔴 regression above threshold. New and removed benchmarks are labeled; missing or expired artifacts show “No baseline available.”
 
-CI fails when time increases exceed both 10% and the sum of the reported relative errors, or gzip sizes increase by more than 5%. The comment and artifact publish before the check fails. Configure `BENCH_TIME_THRESHOLD` and `BENCH_SIZE_THRESHOLD` in the workflow; both are nonnegative percentage increases.
+[github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark) enforces timing and gzip thresholds after publishing the comment and artifact. `BENCH_TIME_THRESHOLD: '110'` means more than 10% slower; `BENCH_SIZE_THRESHOLD: '105'` means more than 5% larger. Values use the action's percentage-ratio convention and must be at least 100.
 
-Timings come from separate CI runners. Fixture or toolchain changes can affect comparisons; confirm unexpected timing failures on the same idle machine. Missing baselines and new or removed measurements are reported without failing the threshold check.
+The adapter converts existing artifacts to `customSmallerIsBetter` JSON and seeds the action's external data with the selected main baseline. `fail-on-alert: true` fails CI; `save-data-file: false` keeps that baseline unchanged. No Pages branch or additional comments are created.
 
-The same report can be generated locally from extracted artifacts:
+Timing errors remain visible but do not adjust the action's fixed thresholds. Timings come from separate runners; confirm unexpected failures on the same idle machine. Missing baselines and new or removed measurements are reported without failing the regression checks.
+
+Generate the report and action inputs locally:
 
 ```sh
-node bench/Compare.ts bench/results /tmp/main-benchmarks
-# Exit with status 1 when a threshold is exceeded.
-BENCH_TIME_THRESHOLD=10 BENCH_SIZE_THRESHOLD=5 node bench/Compare.ts bench/results /tmp/main-benchmarks --check
+node bench/Compare.ts bench/results /tmp/main-benchmarks /tmp/benchmark-action
 ```
 
 For a comparison, measure baseline and candidate sequentially on the same idle machine with the same fixture corpus. Save the baseline outside the checkout, then append `--compare <baseline.json>` when running the candidate. Record variance and measurement limitations with any reported delta.

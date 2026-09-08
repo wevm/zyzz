@@ -161,3 +161,10 @@ These are standalone module outputs, not a browser bundle or a general size clai
 Local reports and metadata are under ignored `bench/results/lightning/`. The run used Node 24.19.0, Lightning CSS 1.33.0, and an Intel Xeon Platinum 8272CL.
 
 The initial watch benchmark encountered a partial filesystem write; watch timing is excluded. Host integration tests cover watch recovery.
+
+
+### Vite Dynamic Imports
+
+The dynamic-import change retains the static 10-consumer build fixture as a regression comparison against main `a362745`. Matched runs measured 190.71→200.80 ms (30 samples, ±12.75%/10.26%); the difference is within reported uncertainty. CSS and JavaScript raw/gzip/Brotli sizes were identical. No performance improvement is claimed.
+
+Reproduce with `src/vite/index.bench.ts -t '10 consumers'` and save baseline/candidate JSON using the commands above. Reports are under ignored `bench/results/dynamic/`. Lazy-loading behavior is verified separately by the Vite manifest, HTTP/SSR integration, and browser HMR scenario; this timing comparison measures static builds.

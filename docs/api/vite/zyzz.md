@@ -1,7 +1,7 @@
 # zyzz
 
 > [!NOTE]
-> Initial Vite 8 integration. Supports physical JavaScript/TypeScript with static ES module imports within the Vite root. `Config.create`, dynamic source imports, cyclic graphs, and packed theme authoring remain unsupported.
+> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. `Config.create`, cyclic static graphs, and packed theme authoring remain unsupported.
 
 Connect source transformation and CSS delivery to Vite.
 

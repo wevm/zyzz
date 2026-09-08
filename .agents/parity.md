@@ -378,19 +378,28 @@ Sources: Tailwind cascade layers/Preflight, vanilla-extract `globalStyle`/`layer
 
 ```ts
 import 'zyzz/reset.css'
-import { Style } from 'zyzz'
+import { css } from 'zyzz'
 import { Css } from 'zyzz/web'
 
-Css.global({ body: { fontFamily: 'system-ui' } })
+const layer = Css.layers(['reset', 'base', 'components'])
 
-const styles = Style.define({ card: { padding: '1rem' } })
-const output = Css.compile({
-  layers: { order: ['reset', 'base', 'components'], styles: 'components' },
-  styles,
+Css.global({
+  [layer.base]: {
+    body: { fontFamily: 'system-ui' },
+    '@media print': { body: { color: '#000' } },
+  },
+})
+
+const card = css({
+  [layer.components]: { padding: '1rem' },
 })
 ```
 
-The source adapter extracts `Css.global` as an explicit contribution; the separate pure compile call receives only its supplied data and never reads global registration. Layer order is intentionally semantic. Core imports add no reset. Specify nested layers, unlayered rules, important reversal, contribution input shapes, and independently compiled ownership before broad parity claims.
+**API accepted:** module-level declarations may live anywhere in configured project sources, including unimported modules. The source adapter hoists global contributions and a shared layer-order prelude into initial CSS. Consumers do not manually register globals or configure layer placement on `Css.compile`; the pure compiler receives explicit extracted data without global registration.
+
+Layer references infer names and preserve declaration typing through imports. Unwrapped globals and scoped rules stay unlayered. Compatible order declarations merge; conflicting cycles receive diagnostics. Preserve authored rule order, stable cross-module order, nested layer hierarchy, and important reversal. Globals remain eager even beside lazy components or tree-shaken JavaScript exports. Core imports add no reset.
+
+The [collection contract](architecture.md#layer-and-global-collection) specifies source discovery, identity, watch replacement/removal, source maps, asset relocation, shared stylesheet ownership, and packed-library metadata. [Astro](https://docs.astro.build/en/guides/styling/) and [Svelte](https://svelte.dev/docs/svelte/global-styles) provide additional colocation precedents; project-wide unimported-module collection is an explicit Zyzz decision. Browser, type, source, library, and benchmark gates remain pending in 2.4c/Phase 4.
 
 ## 17. Component Props and DOM Attributes
 

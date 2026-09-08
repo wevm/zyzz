@@ -391,7 +391,7 @@ const control = theme.css({
 
 CSS property names and value types follow standard CSS, augmented by domain-specific tokens. Selector and raw condition strings remain flexible and receive compiler syntax validation; TypeScript does not prove that arbitrary selector/query text is valid. Do not add a general string index signature that hides misspelled properties.
 
-The initial conditional syntax supports `@media`, `@container`, and `@supports`. Other at-rules require explicit capability support and diagnostics. Stylesheet-level rules use the optional `Css` APIs below, outside element declaration objects.
+The initial conditional syntax supports `@media`, `@container`, and `@supports`. Layer grouping inside style objects uses the typed `Css.layers` references below. Other at-rules require explicit capability support and diagnostics. Stylesheet-level rules use the optional `Css` APIs below, outside element declaration objects.
 
 ## Relational Selector DX
 
@@ -629,17 +629,54 @@ Animation tests inspect paused/seeked animation progress through the real browse
 
 These authoring calls compile away into explicit stylesheet contributions. Preserve global/font-face side effects through tree shaking; emit reachable keyframes with stable references. Pure in-memory compilation receives extracted contributions as data and never relies on module registration. Native rejects these web-only operations; fonts are loaded through platform mechanisms.
 
+### Layer and Global Collection
+
+Accepted API for 2.4c: module-level `Css.layers(names)` declares named cascade layers in semantic order and returns readonly, inferred at-rule references. `Css.global(styles)` contributes global selector rules and supported nested at-rules. Both declarations may live in any ordinary project source module; no central registration file is required.
+
 ```ts
-Css.compile({
-  styles,
-  layers: {
-    order: ['reset', 'base', 'components', 'utilities'],
-    styles: 'components',
+import { Css } from 'zyzz/web'
+
+export const layer = Css.layers(['reset', 'base', 'components', 'overrides'])
+```
+
+`layer.components` represents `@layer components`. Unknown reference properties are type errors. References retain exact key types through imports and re-exports; prove nested property/value/token inference through computed keys before implementation acceptance. Layer names follow CSS identifier and dotted-name syntax; duplicate names in one declaration receive diagnostics. Named layers intentionally share CSS identity across declarations. Libraries namespace their public layers, such as `acme.components`.
+
+```ts
+import { Css } from 'zyzz/web'
+import { layer } from './layers.js'
+
+Css.global({
+  [layer.base]: {
+    body: { fontFamily: 'system-ui', margin: 0 },
+    '@media print': {
+      body: { color: '#000' },
+    },
+  },
+})
+
+export const button = theme.css({
+  [layer.components]: {
+    padding: 'md',
+    ':hover': { backgroundColor: 'brand' },
   },
 })
 ```
 
-Layer configuration is optional; omission preserves unlayered output. When supplied, emit the declared order and place generated element styles in the selected layer. Global rules belong to the base layer when declared, otherwise remain unlayered. Applications own the shared layer order across independently compiled libraries; conflicting declarations receive diagnostics when visible in one input graph. Normal and important declarations retain standard layer semantics.
+Layer placement belongs to authored blocks in both global and scoped styles. Unwrapped rules remain unlayered, including globals; declaring a layer named `base` does not implicitly place globals there. `Css.global({ 'html, body': { minHeight: '100%' } })` is a valid unlayered contribution. This replaces consumer-facing `Css.compile({ layers: ... })` configuration. Pure compilation still receives explicit extracted contribution data from its caller, independently of source discovery or a runtime registry.
+
+The collection contract is project-wide: adapters scan configured source roots, including unimported modules, with tests, generated output, and dependencies excluded by default. Dependency contributions require explicit inclusion or published library artifacts. Declarations must be static and module-level; calls inside functions, runtime branches, or component rendering receive diagnostics. No application code executes during collection.
+
+Collected globals are eager application-wide stylesheet effects even when declared beside lazy components or unused JavaScript exports. Preserve them independently of JavaScript tree shaking and package `sideEffects: false`; scope normal component styles through `css`. Identify contributions by stable package/module/call identity, emit repeated imports once, and retain repeated authored rules where their position affects the cascade.
+
+Collect layer order constraints before emitting content. Merge compatible declarations with stable topological ordering; reject cycles with diagnostics pointing to the conflicting declarations. Use canonical layer names to break otherwise unconstrained ties. A shared declaration specifies intentional relative precedence. Emit dotted layer hierarchy and one order prelude in initial shared CSS before any participating layer block; preserve ordinary unlayered precedence and important reversal. Already loaded external CSS cannot have its established layer order repaired retroactively.
+
+Within each module preserve authored rule order. Across project modules use a documented stable package/module order, independent of filesystem enumeration, parallel transform completion, and chunk arrival. Use explicit layers for intentional cross-file overrides. Hoisting and minification must not reorder conflicting rules or coalesce repeated declarations unsafely.
+
+The CLI and build adapters feed the same contribution representation to the pure compiler. Development replaces or removes contributions by source identity after edits/deletions; it never accumulates stale globals. Preserve source maps and resolve relative asset URLs through the owning source module before relocation. The initial shared stylesheet carries global contributions and the layer prelude; scoped styles may retain their normal chunk boundaries.
+
+Published libraries carry ordinary CSS plus contribution/layer metadata for composition. Applications own the final top-level ordering, include the prelude before library layer blocks, and detect conflicting declarations visible in the compilation graph. Plain CSS consumers load the exported stylesheet normally; native rejects globals and cascade layers explicitly.
+
+Prior art: [vanilla-extract layer references](https://vanilla-extract.style/documentation/api/layer/) and [globalStyle](https://vanilla-extract.style/documentation/global-api/global-style/) inform typed contributions; [Astro](https://docs.astro.build/en/guides/styling/) and [Svelte](https://svelte.dev/docs/svelte/global-styles) demonstrate colocated global authoring. [Panda globals](https://panda-css.com/docs/concepts/writing-styles) and [Tailwind layers](https://tailwindcss.com/docs/adding-custom-styles) inform object declarations and standard CSS grouping. Project-wide unimported-module collection is Zyzz's explicit policy. Ordering follows the [CSS cascade specification](https://www.w3.org/TR/css-cascade-5/#layer-ordering).
 
 The reset is opt-in via `import 'zyzz/reset.css'` and declares a reset layer. Merely importing the core changes no global styles. Test coexistence with ordinary stylesheets, global rules, and independently packaged libraries in multiple load orders. Layer ordering does not turn arbitrary class concatenation into last-wins composition.
 

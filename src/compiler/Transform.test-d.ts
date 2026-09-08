@@ -1,3 +1,7 @@
+/**
+ * Checks consumer inference and rejected inputs through the public Transform API.
+ * @module
+ */
 import { expectTypeOf } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 

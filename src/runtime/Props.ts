@@ -1,3 +1,7 @@
+/**
+ * Binds compiled classes to validated className and inline-style overrides.
+ * @module
+ */
 import type { css } from '../css.js'
 
 /**

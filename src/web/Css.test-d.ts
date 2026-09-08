@@ -1,3 +1,7 @@
+/**
+ * Checks consumer inference and rejected inputs through the public Css API.
+ * @module
+ */
 import { expectTypeOf } from 'vite-plus/test'
 import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
@@ -10,7 +14,6 @@ expectTypeOf(result.css).toEqualTypeOf<string>()
 expectTypeOf(result.classes.missing)
 // @ts-expect-error Results are readonly.
 result.classes.card = 'changed'
-// @ts-expect-error Theme compilation is not supported at the literal boundary.
 Css.compile({ styles: Style.define({}), themes: {} })
 
 const independent = Css.compile({

@@ -83,3 +83,29 @@ Setup records final CSS and bundled JavaScript under `bench/results/transform`, 
 Watch edits measure from the real source write through filesystem notification, recompilation, and successful artifact publication. Warmup/setup output is excluded; samples use distinct changed values. These host measurements are separate from in-memory library comparisons and do not claim cross-library wins. Raw/gzip/Brotli source-transform delivery remains in the module-transform report because the host writes those same artifacts without another compiler or minifier.
 
 Watch benchmark waits have a five-second deadline. Real host errors and source-write failures reject the pending sample; failed initial setup closes its watcher. Integration tests exercise both source-error recovery and a deadline with no source edit through the same notification fixture.
+
+Theme compilation measures 10 and 100 named styles with two compatible scopes and color-scheme pairs. Timing covers in-memory CSS emission from prevalidated definitions; emitted raw/gzip/Brotli CSS is reported before final minification. It excludes source extraction, JavaScript generation, and browser rendering. This pure-emitter baseline is separate from the matched theme-delivery comparison.
+
+## Theme Comparisons
+
+`Themes.bench.ts` compares 10 and 100 distinct component widths under two complete theme scopes. Each theme defines background, foreground, and spacing; colors use equivalent `light-dark()` values. Browser integration checks both scopes, nested restoration of the base theme, forced/system schemes, and changing the selected scope without changing component classes.
+
+Adapters use [Panda named semantic-token themes](https://panda-css.com/blog/building-a-multi-brand-design-system-with-panda-css), [StyleX variables and createTheme](https://stylexjs.com/docs/learn/theming/creating-themes), [Tailwind theme variables and ordinary scoped CSS](https://tailwindcss.com/docs/theme), and [vanilla-extract theme contracts](https://vanilla-extract.style/documentation/api/create-theme-contract/). Zyzz uses `Theme.define`/`Theme.extend` and its independent in-memory emitter. Every theme adapter uses shared Lightning CSS final processing targeting Chrome 123, Firefox 128, and Safari 17.5, retaining native `light-dark()` and external/inline `color-scheme` selection. The literal matrix retains its previous targets. Each adapter bundles actual component classes and scope exports; required helpers and default token rules are retained.
+
+Timing boundaries differ: fixture writes are excluded; Panda includes config loading/code generation/extraction, StyleX includes both source modules through the official Babel plugin, vanilla-extract includes its esbuild integration, Tailwind starts with prepared candidates, and Zyzz starts with validated definitions. All include final processing and browser bundling. These measurements do not establish equal source-pipeline throughput. Theme source parsing, framework mount/rerender cost, and theme-switch latency remain separate future workloads.
+
+Report CSS, client JavaScript, and their combined raw/gzip/Brotli transfer without recounting class strings already present in JavaScript. Keep all libraries and observed gaps visible. Existing literal transfer gates remain unchanged; theme budgets require matched measurements and browser parity before becoming regression gates.
+
+### Target Configuration
+
+Pass a shared target map when preparing a fixture:
+
+```ts
+const fixture = await Themes.create(100, {
+  targets: { chrome: 123 << 16, safari: (17 << 16) | (5 << 8) },
+})
+```
+
+`Compilation.create(workload, { targets })` supports the same option. Every library receives a frozen copy of the profile for final CSS processing; result artifacts record it. Omitting the option retains the existing CI baseline. Changing a benchmark profile does not change package browser requirements or another workload's settings.
+
+Custom target profiles must retain native `light-dark()`. Fixture creation rejects profiles that Lightning CSS would lower, before preparing or timing any library. The profile-propagation integration test verifies supported overrides through every real compiler; Chromium scenarios validate inherited, nested, and inline scheme selection.

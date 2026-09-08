@@ -1,3 +1,7 @@
+/**
+ * Exercises the public Style workflow through real collaborating modules.
+ * @module
+ */
 import * as Esbuild from 'esbuild'
 import * as Path from 'node:path'
 import * as Vm from 'node:vm'

@@ -1,3 +1,7 @@
+/**
+ * Resolves lexical bindings and shadowing across parsed JavaScript scopes.
+ * @module
+ */
 import * as Walker from 'oxc-walker'
 
 /** ScopeTracker extension that keeps body variables out of parameter initializers. */

@@ -97,6 +97,8 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 
 ## Documentation Conventions
 
+- Start every maintained TypeScript module with a brief standalone TSDoc `@module` comment describing its responsibility. Place it before imports, or after a required shebang. Include entrypoints, internal modules, tooling, fixtures, integration tests, type fixtures, and benchmarks; describe the module rather than repeating its filename. Keep export-level TSDoc separately.
+
 - Add TSDoc to every public export and public type property. Write or update the contract documentation alongside the implementation.
 - Document caller-visible purpose, inputs, output, defaults, errors, and side effects. Keep low-level wiring in nearby implementation comments.
 - Keep examples small and focused on the exported behavior.

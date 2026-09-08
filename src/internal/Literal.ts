@@ -1,3 +1,7 @@
+/**
+ * Defines and validates the supported primitive CSS property and value domains.
+ * @module
+ */
 /** Deliberately bounded color syntax; functional colors arrive with CSS parsing. */
 export type Color =
   | 'black'

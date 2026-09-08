@@ -1,3 +1,7 @@
+/**
+ * Checks consumer inference and rejected inputs through the public Props API.
+ * @module
+ */
 import { expectTypeOf } from 'vite-plus/test'
 import { css } from 'zyzz'
 import { Props } from 'zyzz/runtime'

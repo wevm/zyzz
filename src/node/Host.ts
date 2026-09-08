@@ -1,3 +1,7 @@
+/**
+ * Publishes incremental file builds and recovers from filesystem watch failures.
+ * @module
+ */
 import * as Crypto from 'node:crypto'
 import * as NativeFs from 'node:fs'
 import * as Fs from 'node:fs/promises'

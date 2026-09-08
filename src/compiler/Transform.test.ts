@@ -1,3 +1,7 @@
+/**
+ * Exercises the public Transform workflow through real collaborating modules.
+ * @module
+ */
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'

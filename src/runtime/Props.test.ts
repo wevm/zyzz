@@ -1,3 +1,7 @@
+/**
+ * Exercises the public Props workflow through real collaborating modules.
+ * @module
+ */
 import * as Esbuild from 'esbuild'
 import * as Path from 'node:path'
 import { describe, expect, test } from 'vite-plus/test'

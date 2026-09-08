@@ -1,0 +1,109 @@
+/**
+ * Carries portable theme references and enforces their property domains.
+ * @module
+ */
+import type * as Literal from './Literal.js'
+
+/** Checks a reference's property domain. */
+export function accepts(
+  group: Group,
+  property: keyof Literal.Properties,
+): boolean {
+  if (group === 'color')
+    return ['backgroundColor', 'borderColor', 'color'].includes(property)
+  if (group === 'textColor') return property === 'color'
+  if (group === 'spacing')
+    return (
+      /^(padding|margin)/.test(property) ||
+      [
+        'columnGap',
+        'gap',
+        'height',
+        'maxHeight',
+        'maxWidth',
+        'minHeight',
+        'minWidth',
+        'rowGap',
+        'width',
+      ].includes(property)
+    )
+  return group === property
+}
+
+/** Opaque data shared by a definition and its compatible extensions. */
+export type Contract = Readonly<object>
+
+/** Constructs a frozen reference without registering global state. */
+export function create(options: Omit<Reference, typeof reference>): Reference {
+  return Object.freeze({ ...options, [reference]: true as const })
+}
+
+/** Internal definition metadata; never enumerable consumer output. */
+export const definition = Symbol('zyzz.theme')
+
+/** Supported scalar token groups. */
+export type Group =
+  | 'backgroundColor'
+  | 'borderColor'
+  | 'borderRadius'
+  | 'color'
+  | 'spacing'
+  | 'textColor'
+
+/** Recognizes references without invoking getters on untrusted style values. */
+export function is(value: unknown): value is Reference {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    Object.getOwnPropertyDescriptor(value, reference)?.value !== true
+  )
+    return false
+  if (!Object.isFrozen(value)) return false
+  const fields = Object.getOwnPropertyDescriptors(value)
+  return ['contract', 'group', 'path', 'value'].every(
+    (key) => fields[key] && 'value' in fields[key]!,
+  )
+}
+
+/** Immutable theme data carried directly by each definition. */
+export type Metadata = {
+  readonly contract: Contract
+  readonly values: Readonly<Record<string, Value>>
+}
+
+/** Property domains accepted by each token group. */
+export type Properties<group extends Group> = group extends 'spacing'
+  ? Extract<
+      keyof Literal.Properties,
+      | `columnGap`
+      | `gap`
+      | `height`
+      | `margin${string}`
+      | `max${string}`
+      | `min${string}`
+      | `padding${string}`
+      | `rowGap`
+      | `width`
+    >
+  : group extends 'textColor'
+    ? 'color'
+    : group extends 'color'
+      ? 'backgroundColor' | 'borderColor' | 'color'
+      : group
+
+/** Immutable portable reference retaining its defining fallback. */
+export type Reference<group extends Group = Group> = {
+  readonly [reference]: true
+  readonly contract: Contract
+  readonly group: group
+  readonly path: string
+  readonly value: Value
+}
+
+const reference = Symbol('zyzz.token')
+
+/** Scalar values retained for each rendering target. */
+export type Value =
+  | number
+  | string
+  | { readonly dark: string; readonly light: string }

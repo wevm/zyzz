@@ -1,3 +1,7 @@
+/**
+ * Extracts literal style calls through static parsing and lexical binding analysis.
+ * @module
+ */
 import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'

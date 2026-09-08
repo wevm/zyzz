@@ -43,13 +43,13 @@ Every `css` definition is callable. Static calls accept optional styling overrid
 
 ## Starting point
 
-PRs 1.1–1.3 are merged: typed definitions, literal CSS emission, source extraction, and matched compiler benchmarks. PR 1.4 implements literal module rewriting and source maps. Host adapters, themes, variants, and native output remain subsequent work.
+Phase 1 is merged: typed definitions, literal CSS emission, source extraction, module rewriting, file hosts, and portability coverage. Phase 2 begins with in-memory theme contracts and CSS scopes.
 
 Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration tests. Existing CI checks consumer type fixtures, runs integration scenarios and builds the package. Tooling remains outside the core dependency graph.
 
 ## Phase 1 — Build the core
 
-Status: in progress. PRs 1.1–1.3 are merged; PR 1.4 is merged. PR 1.5 is under implementation and validation. Testing and benchmark conventions are defined in `AGENTS.md`.
+Status: complete. PRs 1.1–1.5 are merged. Testing and benchmark conventions are defined in `AGENTS.md`.
 
 Merge in dependency order. Each PR includes real integration scenarios, consumer type fixtures, relevant benchmark evidence, and public TSDoc. No unit tests, mocks, or stubs. Keep CI green and record the actual PR link and completion evidence beside each item as work lands.
 
@@ -122,7 +122,7 @@ Implementation: `Transform.compile` returns rewritten modules, ordered module-sc
 
 ### PR 1.5 — Host Adapters and Portability
 
-Status: implemented on `feat/file-host` from main `11d79be`; CI validation is pending.
+Status: merged in [PR #8](https://github.com/wevm/zyzz/pull/8) as `e870709`. Linux/browser tests, macOS ownership tests, build, checks, and benchmarks passed.
 
 - [x] Add a minimal file host and fixture driver around the source adapter for reads, output writes, and watch invalidation. Keep the public CLI and build-tool integrations in Phase 4; do not add another compiler path or general plugin system.
 - [x] Handle source additions, edits, removals, and renames for the supported literal subset. Exclude output directories, preserve the previous successful output on failure, and clean up only host-owned artifacts.
@@ -137,8 +137,18 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Status: planned.
+Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) is in progress from main `e870709`.
 
+### PR Sequence
+
+1. **2.1 — In-Memory Theme Contracts:** `Theme.define`, compatible `Theme.extend`, immutable typed scalar references, and `Style.define` to `Css.compile` integration. Emit live custom properties, defining fallbacks, light/dark pairs, and complete inherited scopes. Cover browser scheme/scope behavior and compiler size/timing separately. Retain the documented literal grammar; source themes and authoring callables are not part of this PR.
+2. **2.2 — Theme Authoring and Source Identity:** bound `theme.css`, inferred shorthand token names, property-specific precedence, source extraction, stable package/module/binding identities, imported theme dependencies, and packed-library contracts. Expose compiled `theme.className` and verify file/watch parity.
+3. **2.3 — Standard Values and Variables:** widen CSS literal parsing, fallback arrays, importance, static expressions, and inferred `theme.vars`; add dynamic value bindings and explicit variables in dependency-sized follow-ups.
+4. **2.4 — Bundled Themes and Queries:** opt-in default tokens and typography, typed media/container thresholds, and conditions. Keep every later task below as an acceptance checklist; variants remain Phase 3.
+
+PR 2.1 uses opaque object references for contracts within one in-memory graph. Compiler-local token slots do not depend on values or theme-map labels. Separate source graphs and persistent identities remain PR 2.2; do not publish these graph-local artifacts as independently composable theme libraries.
+
+- [ ] Expand token groups alongside their validated properties: scalar typography, composite typography, query thresholds, then border, shadow, opacity, transition, and stacking scales. Keep inherited theme selection separate from CSS color-scheme selection.
 - [ ] Implement the `Theme.define` and `Theme.extend` contracts before widening authoring syntax.
 - [ ] Add `zyzz/themes/default` with named `css`, `theme`, and raw `tokens` exports; add bound `variants` when recipe compilation lands in Phase 3. Bundle colors, typography, spacing, radii, and related scales using the ordinary theme contract; keep light/dark values within the theme.
 - [ ] Preserve inference and extraction for bundled `css` aliases and re-exports. Verify parity with `theme.css`, explicit token composition, and use of the exported theme with target compilers. Apply the same alias contract to `variants` in Phase 3.
@@ -252,7 +262,7 @@ Gate: a small documented API, tested compatibility matrix, reproducible measurem
 
 ## Scope
 
-The API and phases above are proposed. Implementation begins at Phase 1 with no retained code baseline. Build each capability and its acceptance fixtures before marking its phase complete.
+Build each remaining capability and its acceptance fixtures before marking its phase complete. Phase 1 is complete; Phase 2 is being delivered in the PR sequence above.
 
 ## Benchmark Expansion
 
@@ -268,7 +278,9 @@ Status: eight literal workloads and five real compiler adapters are implemented 
 
 - [ ] PR 1.3–1.5: add cold-process source builds, warm builds, unchanged edits, new styles, removed styles, and imported-dependency edits. Include parsing, scanning, rewriting, and output writing explicitly. In-memory emission must remain a separate measurement.
 - [ ] PR 1.5: add opt-in 10/100/1,000/10,000-style sweeps and independently vary rendered instance count. Keep expensive runs outside the short PR matrix.
-- [ ] Phase 2: add basic/complex themes, nested scopes, forced/system schemes, query density, and independent dynamic values. Measure rule growth, CSS-variable assignment, and style recalculation in real browsers.
+- [x] Phase 2: add matched 10/100-component, two-scope theme compiler comparisons for Panda, StyleX, Tailwind, vanilla-extract, and Zyzz. Include complete delivery and real browser scope/scheme parity; keep differences in compiler boundaries explicit.
+- [ ] Evaluate and close compressed-delivery gaps in the 10-component theme workload after browser parity with native light-dark targets. Keep the unchanged two-scope workload and report all sizes; matched CI results are authoritative.
+- [ ] Phase 2: add complex themes, nested scopes, forced/system schemes, query density, and independent dynamic values. Measure rule growth, CSS-variable assignment, and style recalculation in real browsers.
 - [ ] Phase 3: add default/compound variants, variant changes, consumed-value updates, unchanged parent rerenders, and override-heavy composition. Verify comparable cascade semantics before comparing shorthand and A/B/A composition across libraries.
 - [ ] Phase 3–4: adapt deep/wide component trees and dynamic triangle workloads using real production framework runtimes. Separate mount, cached rerender, changed props, CSSOM writes, layout, paint, and interaction latency. Do not substitute raw DOM timing for framework runtime cost.
 - [ ] Phase 4: add SSR throughput and full HTML/CSS/JavaScript delivery, hydration, route splitting, dead-style removal, and packed-library boundaries. Keep framework baseline and incremental styling cost visible without double-counting assets.
@@ -279,6 +291,8 @@ The benchmark implementation and reproduction notes record prior-art attribution
 ### Minification Follow-Through
 
 - [ ] PR 1.4–1.5: preserve deterministic identifiers, source maps, efficient class references, and sensible safe grouping through source emission. Avoid benchmark-only module serialization optimizations.
+- [ ] Phase 4: add configurable Browserslist `targets` to shared CLI/build options and a `--targets` CLI flag. Resolve at the adapter boundary; preserve modern CSS when omitted, inherit consuming-build targets where applicable, and keep compatibility transforms independent of minification. Include resolved targets in cache identities and processing diagnostics.
+- [ ] Phase 4: validate downlevel color-scheme behavior with inherited, forced, inline, and external scopes; diagnose target combinations that cannot preserve semantics.
 - [ ] Phase 4: add Lightning CSS at the CLI/build adapter boundary with explicit targets and source-map composition. Allow the consuming build to own final processing without a mandatory second pass; core compilation remains usable without minification.
 - [ ] Phase 4: namespace independently emitted graphs and verify packed-library consumption through final CSS processing. Preserve class/reference alignment and readable development/production identities.
 - [ ] After the shared baseline: improve simple code generation only where complete delivery measurements justify it. Keep CSS-only size, total size, compile time, and browser performance distinct.

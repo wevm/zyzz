@@ -1,3 +1,7 @@
+/**
+ * Compiles shared literal workloads through real styling-library adapters.
+ * @module
+ */
 import * as Babel from '@babel/core'
 import * as Panda from '@pandacss/node'
 import StylexPlugin, {
@@ -32,7 +36,10 @@ export const compilers = {
 }
 
 /** Writes real compiler inputs from a shared deterministic literal workload. */
-export async function create(workload: Corpus.Case): Promise<Fixture> {
+export async function create(
+  workload: Corpus.Case,
+  options: create.Options = {},
+): Promise<Fixture> {
   const directory = await Fs.mkdtemp(Path.resolve('.fixture-compilation-'))
   // Package-relative file identities must not depend on the random temporary root.
   await Fs.writeFile(
@@ -76,11 +83,18 @@ export async function create(workload: Corpus.Case): Promise<Fixture> {
         )
         .join(' '),
     ),
+    targets: Object.freeze({ ...(options.targets ?? minification.targets) }),
     workload,
     zyzz: Style.define(
       Object.fromEntries(styles.map((style, index) => [names[index]!, style])),
     ),
   }
+}
+
+/** Shared CSS processing configuration for a complete literal comparison. */
+export declare namespace create {
+  /** Optional targets; omitted values use the reproducible literal baseline. */
+  type Options = minify.Options
 }
 
 /** Prepared equivalent inputs; preparation is outside measured compilation. */
@@ -93,13 +107,16 @@ export type Fixture = {
   stylex: string
   /** Tailwind candidates, including repeated uses. */
   tailwind: readonly string[]
+  /** Immutable CSS targets shared by every adapter in this fixture. */
+  readonly targets: Readonly<LightningCss.Targets>
   /** Workload metadata and the browser reference input. */
   workload: Corpus.Case
   /** Validated literal data; definition preparation is outside compilation timing. */
   zyzz: Style.Definition
 }
 
-async function javascript(source: string): Promise<string> {
+/** Bundles actual browser exports and their required runtime dependencies. */
+export async function javascript(source: string): Promise<string> {
   const result = await Esbuild.build({
     bundle: true,
     define: { 'process.env.NODE_ENV': JSON.stringify('production') },
@@ -130,13 +147,23 @@ export const minification = {
 }
 
 /** Applies the same final CSS processing to every compiler's emitted stylesheet. */
-export function minify(css: string): string {
+export function minify(css: string, options: minify.Options = {}): string {
   return Buffer.from(
     LightningCss.transform({
       ...minification,
       code: Buffer.from(css),
+      targets: options.targets ?? minification.targets,
     }).code,
   ).toString()
+}
+
+/** Explicit final-processing targets shared by each comparison workload. */
+export declare namespace minify {
+  /** Defaults to the existing literal browser baseline. */
+  type Options = {
+    /** Browser feature targets for the complete matched comparison. */
+    readonly targets?: LightningCss.Targets | undefined
+  }
 }
 
 /** Runs Panda's config loading, code generation, extraction, and browser bundling. */
@@ -148,7 +175,7 @@ export async function panda(fixture: Fixture): Promise<Bundle> {
   const file = Path.join(fixture.directory, 'panda.css')
   await Panda.cssgen(context, { cwd: fixture.directory, outfile: file })
   return {
-    css: minify(await Fs.readFile(file, 'utf8')),
+    css: minify(await Fs.readFile(file, 'utf8'), { targets: fixture.targets }),
     javascript: await javascript(
       `export { classes } from ${JSON.stringify(Path.join(fixture.directory, 'panda.ts'))};`,
     ),
@@ -169,7 +196,9 @@ export async function stylex(fixture: Fixture): Promise<Bundle> {
   // The package exports a CommonJS function; its declaration uses an ESM default.
   const plugin = StylexPlugin as unknown as StyleXTransformObj
   return {
-    css: minify(plugin.processStylexRules(metadata.stylex)),
+    css: minify(plugin.processStylexRules(metadata.stylex), {
+      targets: fixture.targets,
+    }),
     javascript: await javascript(result.code),
   }
 }
@@ -180,6 +209,7 @@ export async function tailwind(fixture: Fixture): Promise<Bundle> {
   return {
     css: minify(
       compiler.build(fixture.tailwind.flatMap((value) => value.split(' '))),
+      { targets: fixture.targets },
     ),
     javascript: await javascript(
       `export const classes = ${JSON.stringify(fixture.tailwind)};`,
@@ -209,7 +239,7 @@ export async function vanillaExtract(fixture: Fixture): Promise<Bundle> {
   )?.text
   if (!css || !javascript)
     throw new Error('vanilla-extract did not emit CSS and JavaScript.')
-  return { css: minify(css), javascript }
+  return { css: minify(css, { targets: fixture.targets }), javascript }
 }
 
 /** Compiles independent component applications and bundles their static class exports. */
@@ -219,7 +249,7 @@ export async function zyzz(fixture: Fixture): Promise<Bundle> {
     styles: fixture.zyzz,
   })
   return {
-    css: minify(output.css),
+    css: minify(output.css, { targets: fixture.targets }),
     javascript: await javascript(
       `export const classes = ${JSON.stringify(fixture.zyzz.styles.map(({ name }) => output.classes[name]))};`,
     ),

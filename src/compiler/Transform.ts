@@ -1,3 +1,7 @@
+/**
+ * Rewrites extracted style calls into executable modules with CSS and source maps.
+ * @module
+ */
 import * as Mapping from '@jridgewell/gen-mapping'
 import type * as Ast from '@oxc-project/types'
 import MagicString from 'magic-string'
@@ -239,6 +243,8 @@ export function compile(options: compile.Options): compile.ReturnType {
         propertyIndex++
       ) {
         const declaration = style.declarations[propertyIndex]!
+        if (typeof declaration.value === 'object')
+          throw new Error('Theme source rewriting is not supported.')
         const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${declaration.value};`
         const start = body.indexOf(text, cursor)
         if (start < 0) continue

@@ -1,4 +1,8 @@
-import type * as Style from './Style.js'
+/**
+ * Declares the token-free authoring boundary consumed by source transforms.
+ * @module
+ */
+import type * as Literal from './internal/Literal.js'
 
 type Keys<value> = value extends unknown ? keyof value : never
 
@@ -11,8 +15,8 @@ type Keys<value> = value extends unknown ? keyof value : never
 export function css<const styles extends Record<string, unknown>>(
   styles: styles &
     NoInfer<
-      Style.Properties &
-        Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
+      Literal.Properties &
+        Record<Exclude<Keys<styles>, keyof Literal.Properties>, never>
     >,
 ): css.ReturnType {
   void styles
@@ -28,14 +32,14 @@ export declare namespace css {
     /** External class names appended to the generated classes. */
     readonly className?: string | undefined
     /** Literal inline styling overrides. */
-    readonly style?: Style.Properties | undefined
+    readonly style?: Literal.Properties | undefined
   }
   /** Props produced by a transformed web definition. */
   type Props = {
     /** Compiled and supplied class names. */
     readonly className: string
     /** Supplied inline styling overrides when present. */
-    readonly style?: Style.Properties | undefined
+    readonly style?: Literal.Properties | undefined
   }
   /** Callable definition; source rewriting supplies its implementation. */
   type ReturnType = <const options extends Options = Options>(

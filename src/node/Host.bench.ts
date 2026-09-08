@@ -1,3 +1,7 @@
+/**
+ * Measures cold file builds, unchanged rebuilds, and real watch-edit completion.
+ * @module
+ */
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'

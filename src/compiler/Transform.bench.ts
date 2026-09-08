@@ -1,3 +1,7 @@
+/**
+ * Measures complete module rewriting, source maps, and generated delivery sizes.
+ * @module
+ */
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'

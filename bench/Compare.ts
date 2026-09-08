@@ -105,7 +105,7 @@ if (!hasBaseline) {
     '🟢 Improved · 🟡 Within tolerance / unchanged · 🔴 Regression above threshold\n',
   )
   console.log(
-    `github-action-benchmark fails CI above ${thresholds.ms - 100}% slower or ${thresholds.B - 100}% larger gzip size. Zyzz measurements only; timings come from separate CI runners. Reported timing errors are informational.\n`,
+    `github-action-benchmark fails PR/manual checks above ${thresholds.ms - 100}% slower or ${thresholds.B - 100}% larger gzip size. Zyzz measurements only; timings come from separate CI runners. Reported timing errors are informational.\n`,
   )
   console.log('| Benchmark | Main | PR / current | Change |')
   console.log('| --- | ---: | ---: | ---: |')

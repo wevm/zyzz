@@ -182,7 +182,7 @@ jobs:
           path: bench/results/
           retention-days: 30
       - name: Check timing regressions
-        if: ${{ !cancelled() && steps.comparison.outcome == 'success' }}
+        if: ${{ !cancelled() && github.event_name != 'push' && steps.comparison.outcome == 'success' }}
         uses: benchmark-action/github-action-benchmark@v1
         with:
           alert-threshold: '${{ env.BENCH_TIME_THRESHOLD }}%'
@@ -194,7 +194,7 @@ jobs:
           save-data-file: false
           tool: customSmallerIsBetter
       - name: Check size regressions
-        if: ${{ !cancelled() && steps.comparison.outcome == 'success' }}
+        if: ${{ !cancelled() && github.event_name != 'push' && steps.comparison.outcome == 'success' }}
         uses: benchmark-action/github-action-benchmark@v1
         with:
           alert-threshold: '${{ env.BENCH_SIZE_THRESHOLD }}%'

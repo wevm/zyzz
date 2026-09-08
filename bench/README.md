@@ -4,7 +4,9 @@ Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, w
 
 The separate Benchmarks workflow uploads results and environment metadata as a 30-day artifact. Its PR comment and summary compare matching measurements against the latest successful main push: 🟢 improved, 🟡 unchanged or within tolerance, and 🔴 regression above threshold. New and removed benchmarks are labeled; missing or expired artifacts show “No baseline available.”
 
-[github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark) enforces timing and gzip thresholds after publishing the comment and artifact. `BENCH_TIME_THRESHOLD: '110'` means more than 10% slower; `BENCH_SIZE_THRESHOLD: '105'` means more than 5% larger. Values use the action's percentage-ratio convention and must be at least 100.
+[github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark) enforces timing and gzip thresholds on PRs and manual runs after publishing the comment and artifact. Main pushes only publish measurements, allowing the baseline to advance even after a regression.
+
+`BENCH_TIME_THRESHOLD: '110'` means more than 10% slower; `BENCH_SIZE_THRESHOLD: '105'` means more than 5% larger. Values use the action's percentage-ratio convention and must be at least 100.
 
 The adapter converts existing artifacts to `customSmallerIsBetter` JSON and seeds the action's external data with the selected main baseline. `fail-on-alert: true` fails CI; `save-data-file: false` keeps that baseline unchanged. No Pages branch or additional comments are created.
 

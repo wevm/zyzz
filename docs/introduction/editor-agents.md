@@ -1,11 +1,11 @@
 # Editor and Agents
 
-Use TypeScript inference from the imported config instance. Keep config values literal so token names and variant choices remain narrow.
+Use TypeScript inference from named config exports. Keep config values literal so token names and variant choices remain narrow.
 
 ```ts
-import config from '../../zyzz.config.js'
+import { css } from '../../zyzz.config.js'
 
-const card = config.css({ padding: 'md' })
+const card = css({ padding: 'md' })
 ```
 
 > [!NOTE]

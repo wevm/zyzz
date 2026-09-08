@@ -22,3 +22,13 @@ const label = css({
 ```
 
 Arrays preserve fallback order; a trailing `!` marks importance.
+
+## Theme Expressions
+
+```ts
+import { css, variables } from './zyzz.config.js'
+
+const panel = css({ width: `calc(100% - ${variables.spacing.md})` })
+```
+
+Export `variables = theme.vars` from the [config module](../concepts.md#configuration). These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `Vars` defines independent shared contracts.

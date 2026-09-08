@@ -6,10 +6,11 @@
 Keep exported definitions in an ordinary source module and import them where needed. Config remains an explicit dependency.
 
 ```ts
-// button.styles.ts
-import config from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
-export const button = config.css({ padding: 'md' })
+// button.styles.ts
+
+export const button = css({ padding: 'md' })
 ```
 
 ```tsx

@@ -4,7 +4,7 @@ Zyzz puts styling constraints into small, explicit APIs that developers and agen
 
 - **Agnostic:** the pure core is independent of frameworks and build tools.
 - **Compiled:** rules are emitted ahead of time; runtime values bind to existing rules.
-- **Minimal:** default imports contain no design tokens or mandatory provider.
+- **Minimal:** core imports contain no design tokens or mandatory provider.
 - **Standard:** properties, selectors, variables, and cascade behavior follow CSS.
 - **Typed:** properties, theme paths, and variants retain inference.
 

@@ -6,9 +6,9 @@
 Apply compiled styles during server rendering and deliver their stylesheet before styled content paints. Use the same compiled identities on server and client.
 
 ```tsx
-import config from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
-const card = config.css({ padding: 'md' })
+const card = css({ padding: 'md' })
 
 export function Card() {
   return <article {...card()}>Content</article>

@@ -16,7 +16,7 @@ const base = Theme.define({
   spacing: { md: '1rem', sm: '0.5rem' },
 })
 
-export default Config.create({
+const config = Config.create({
   defaultTheme: 'base',
   layers: ['reset', 'base', 'components'],
   themes: {
@@ -24,6 +24,10 @@ export default Config.create({
     mint: Theme.extend(base, { color: { brand: '#175' } }),
   },
 })
+
+export const { css, themes, variants } = config
+export const variables = themes.base.vars
+export default config
 ```
 
 Single-theme configs use `theme: base`, or put the tokens inline. Named catalogs also accept complete inline alternatives. Import returned functions normally; there is no implicit global token or layer registry.
@@ -34,9 +38,9 @@ Single-theme configs use `theme: base`, or put the tokens inline. Named catalogs
 > Preview API; not yet implemented.
 
 ```tsx
-import config from './zyzz.config.js'
+import { css, themes } from './zyzz.config.js'
 
-const button = config.css({
+const button = css({
   '@layer components': {
     backgroundColor: 'brand',
     padding: 'md',
@@ -45,10 +49,7 @@ const button = config.css({
 })
 
 const example = (
-  <section
-    className={config.themes.mint.className}
-    style={{ colorScheme: 'dark' }}
-  >
+  <section className={themes.mint.className} style={{ colorScheme: 'dark' }}>
     <button {...button()} type="button">
       Save
     </button>

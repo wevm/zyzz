@@ -14,4 +14,4 @@ This documentation describes the branch's implemented literal/scalar baseline (`
 
 Browser support depends on emitted CSS and selected processing targets. Explicit target processing belongs to adapters. React examples do not establish Vue/Svelte template compilation or native rendering parity; these need real integration coverage.
 
-See [Literal Values](../api/core/Style/literals.md) for current properties and [Platforms](../concepts/compilation.md) for target boundaries.
+See [Literal Values](../api/core/Style/literals.md) for current properties and [Platforms](../concepts.md#compilation-and-platforms) for target boundaries.

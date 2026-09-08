@@ -1,6 +1,6 @@
 # Getting Started
 
-Define styles with a config instance and spread their applied props onto a component. Imports always refer to authored source files.
+Import bound styling helpers and spread their applied props onto a component. Imports always refer to authored source files.
 
 > [!NOTE]
 > Config authoring, package installation, and integrations below describe the planned release. Use the [compiler APIs](../guides/compilation.md) for the current literal pipeline.
@@ -17,23 +17,28 @@ pnpm add zyzz
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export default Config.create({
+const config = Config.create({
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
     spacing: { md: '1rem' },
   },
 })
+
+export const { css, theme, variants } = config
+export const variables = theme.vars
+export default config
 ```
 
 ## Style a Component
 
 ```tsx
 // Button.tsx
-import config from './zyzz.config.js'
+import { css, variables } from './zyzz.config.js'
 
-const button = config.css({
+const button = css({
   backgroundColor: 'brand',
   padding: 'md',
+  width: `calc(100% - ${variables.spacing.md})`,
 })
 
 export function Button() {
@@ -41,7 +46,7 @@ export function Button() {
 }
 ```
 
-Import `Button` normally. Config supplies inferred tokens; compilation supplies the executable styles and CSS. For literal values without a theme, import `css` directly from `zyzz`.
+Import `Button` normally. Named helpers retain inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `css` directly from `zyzz`.
 
 ## Choose Compilation
 

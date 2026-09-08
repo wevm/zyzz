@@ -9,7 +9,7 @@ Define typed thresholds in config, then reference them in media and container co
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export default Config.create({
+const config = Config.create({
   theme: {
     breakpoints: { tablet: '48rem' },
     containerNames: ['sidebar'],
@@ -17,16 +17,20 @@ export default Config.create({
     spacing: { md: '1rem', sm: '0.5rem' },
   },
 })
+
+export const { css, theme, variants } = config
+export const variables = theme.vars
+export default config
 ```
 
 ```tsx
-import config from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
-const region = config.css({
+const region = css({
   containerName: 'sidebar',
   containerType: 'inline-size',
 })
-const content = config.css({
+const content = css({
   padding: 'sm',
   '@container sidebar >=card': { display: 'grid' },
   '@media tablet': { padding: 'md' },

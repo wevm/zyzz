@@ -9,15 +9,19 @@ Define light/dark values on each color leaf. Select the scheme with the ordinary
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export default Config.create({
+const config = Config.create({
   theme: { color: { text: { dark: '#eee', light: '#111' } } },
 })
+
+export const { css, theme, variants } = config
+export const variables = theme.vars
+export default config
 ```
 
 ```tsx
-import config from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
-const text = config.css({ color: 'text' })
+const text = css({ color: 'text' })
 const example = (
   <section style={{ colorScheme: 'dark' }}>
     <p {...text()}>Hello</p>

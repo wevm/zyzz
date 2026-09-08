@@ -9,13 +9,16 @@ Declare layer order once in config. Bound styles infer the exact layer names.
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export default Config.create({ layers: ['reset', 'base', 'components'] })
+const config = Config.create({ layers: ['reset', 'base', 'components'] })
+
+export const { css, variants } = config
+export default config
 ```
 
 ```ts
-import config from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
-const card = config.css({ '@layer components': { padding: '1rem' } })
+const card = css({ '@layer components': { padding: '1rem' } })
 ```
 
 Global modules may contribute rules independently. Their raw layer names receive compiler validation without ambient config inference.

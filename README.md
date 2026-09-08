@@ -13,7 +13,7 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 - [**File Builds**](#file-builds): incremental builds and filesystem watching.
 - [**CLI**](#cli): standalone compilation with watch mode.
 
-[Getting Started](docs/introduction/getting-started.md) · [Guides](docs/guides/README.md) · [Concepts](docs/concepts/README.md) · [API Reference](docs/api/README.md)
+[Getting Started](docs/introduction/getting-started.md) · [Guides](docs/guides/README.md) · [Concepts](docs/concepts.md) · [API Reference](docs/api/README.md)
 
 ## Philosophy
 
@@ -86,34 +86,40 @@ import { css } from 'zyzz/themes/default'
 const button = css({ color: 'blue.700', padding: 4 })
 ```
 
-Default-export a config to share inferred tokens. Colors accept a shared value or a light/dark pair.
+Export bound helpers from a shared config to retain inferred tokens. Colors accept a shared value or a light/dark pair.
 
 ```ts
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export default Config.create({
+const config = Config.create({
   theme: {
     color: { brand: '#06c', text: { dark: '#eee', light: '#111' } },
     spacing: { md: '1rem', sm: '0.5rem' },
   },
 })
+
+export const { css, theme, variants } = config
+export const variables = theme.vars
+export default config
 ```
 
 ```ts
-import config from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
-const card = config.css({ color: 'text', padding: 'sm' })
+const card = css({ color: 'text', padding: 'sm' })
 ```
 
 Use `Theme.define` and `Theme.extend` when tokens need a reusable definition outside config.
 
 ### Variants
 
-Describe component choices with inferred props, defaults, and compound rules. Use `config.variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
+Describe component choices with inferred props, defaults, and compound rules. Import bound `variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
 
 ```tsx
-const button = config.variants({
+import { variants } from './zyzz.config.js'
+
+const button = variants({
   base: { display: 'inline-flex' },
   variants: {
     size: {
@@ -133,11 +139,13 @@ const example = <button {...button({ size: 'sm' })}>Continue</button>
 Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
 
 ```ts
-const panel = config.css({
+import { css, variables } from './zyzz.config.js'
+
+const panel = css({
   display: ['block', 'grid'],
   color: 'brand!',
-  borderColor: config.theme.vars.color.brand,
-  width: `calc(100% - ${config.theme.vars.spacing.md})`,
+  borderColor: variables.color.brand,
+  width: `calc(100% - ${variables.spacing.md})`,
 })
 ```
 
@@ -177,9 +185,11 @@ const output = Css.compile({ styles })
 Use `composition: 'independent'` to deduplicate complete applications whose composition is resolved before compilation. Those generated class lists must remain separate. The default `ordered` mode preserves stylesheet precedence across combined class lists.
 
 ```ts
+import { theme } from './zyzz.config.js'
+
 import { StyleSheet } from 'zyzz/react-native'
 
-const output = StyleSheet.compile({ styles, themes: { base: config.theme } })
+const output = StyleSheet.compile({ styles, themes: { base: theme } })
 const selected = StyleSheet.select(output.styles, {
   theme: 'base',
   colorScheme: 'dark',
@@ -232,4 +242,4 @@ zyzz src --out-dir dist --minify
 
 ## Comparison
 
-See [the comparison](COMPARISON.md) for examples covering authoring, developer and agent experience, compilation, performance, and bundle size.
+See [the comparison](docs/introduction/comparisons.md) for examples covering authoring, developer and agent experience, compilation, performance, and bundle size.

@@ -2,12 +2,12 @@
 
 Migrate one component and its computed styles at a time. Preserve layout, states, theme behavior, and CSS delivery before expanding adoption.
 
-| Existing Approach        | Zyzz Authoring                          |
-| ------------------------ | --------------------------------------- |
-| Utility strings          | Typed properties in `css` definitions   |
-| Theme-specific utilities | Config-bound token names                |
-| Variant helpers          | `config.variants` choices and compounds |
-| Runtime style factories  | Typed value callbacks with fixed rules  |
+| Existing Approach        | Zyzz Authoring                         |
+| ------------------------ | -------------------------------------- |
+| Utility strings          | Typed properties in `css` definitions  |
+| Theme-specific utilities | Config-bound token names               |
+| Variant helpers          | Bound `variants` choices and compounds |
+| Runtime style factories  | Typed value callbacks with fixed rules |
 
 ```tsx
 import { css } from 'zyzz'

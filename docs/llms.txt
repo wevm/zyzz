@@ -18,19 +18,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 
 ## Concepts & Principles
 
-- [Concepts & Principles](concepts/README.md): Section index.
-- [Compilation and Platforms](concepts/compilation.md): Reference and examples.
-- [Composition and Overrides](concepts/composition.md): Reference and examples.
-- [Conditions](concepts/conditions.md): Reference and examples.
-- [Configuration](concepts/configuration.md): Reference and examples.
-- [Dynamic Values](concepts/dynamic-values.md): Reference and examples.
-- [Principles](concepts/principles.md): Reference and examples.
-- [Relationships](concepts/relationships.md): Reference and examples.
-- [Layers and Stylesheets](concepts/stylesheets.md): Reference and examples.
-- [Theme Scopes](concepts/theme-scopes.md): Reference and examples.
-- [Themes and Tokens](concepts/themes.md): Reference and examples.
-- [Typed Styles](concepts/typed-styles.md): Reference and examples.
-- [Variants](concepts/variants.md): Reference and examples.
+- [Concepts & Principles](concepts.md): Reference and examples.
 
 ## Guides
 

@@ -85,3 +85,51 @@ for (const count of [10, 100]) {
     )
   })
 }
+
+for (const count of [10, 100]) {
+  for (const edit of ['consumer', 'theme', 'unchanged'] as const) {
+    const original = Fixture.project(count)
+    const changed = { ...original }
+    if (edit === 'consumer')
+      changed['pkg/card0.ts'] = original['pkg/card0.ts']!.replace('0px', '20px')
+    else if (edit === 'theme')
+      changed['pkg/theme.ts'] = original['pkg/theme.ts']!.replace(
+        "'#06c'",
+        "'#f00'",
+      )
+    const snapshots = [original, changed]
+    describe(`incremental graph / ${count} consumers / ${edit}`, () => {
+      for (const mode of ['full', 'incremental']) {
+        let compiler: Graph.create.ReturnType
+        let iteration = 0
+        bench(
+          mode,
+          () => {
+            const modules = snapshots[++iteration % 2]!
+            if (mode === 'full') Graph.compile({ modules })
+            else compiler.compile({ modules })
+          },
+          {
+            iterations: 30,
+            setup: () => {
+              compiler = Graph.create()
+              compiler.compile({ modules: original })
+              // Both lanes must deliver the same complete artifacts after an edit.
+              const expected = Graph.compile({ modules: changed })
+              const actual = compiler.compile({ modules: changed })
+              if (JSON.stringify(actual) !== JSON.stringify(expected))
+                throw new Error(
+                  'Incremental graph artifacts differ from full compilation.',
+                )
+              compiler.compile({ modules: original })
+              iteration = 0
+            },
+            time: 1000,
+            warmupIterations: 10,
+            warmupTime: 500,
+          },
+        )
+      }
+    })
+  }
+}

@@ -1004,11 +1004,31 @@ Import removal is conservative: retain imports with remaining references, includ
 
 JavaScript replacements map to the authored definition or direct application. CSS selectors map to their representative definition and declarations to authored property locations. Factored shared rules map to the first contributing definition; the class map retains every definition's output. Host adapters compose these maps with later transforms and choose map URLs and stylesheet loading explicitly.
 
+### Build Host Boundary
+
+Zyzz owns static authoring analysis, theme contracts, generated props, and source maps. Build hosts own module resolution, package exports, aliases, source loading, watching, and HMR. `Graph.compile({ imports, modules })` accepts resolved source edges; `Graph.create` caches theme analysis using source text and resolved identities.
+
+The Vite adapter uses the application's existing Vite instance through plugin hooks. It resolves physical source with `this.resolve`, registers CSS dependencies with `addWatchFile`, and invalidates virtual stylesheets through the environment module graph.
+
+It creates no nested development server or independent watcher. Cache state is isolated per environment.
+
+The initial adapter collects reachable physical JavaScript/TypeScript within the Vite root. Virtual stylesheets include their reachable graph's rules and compatible scopes; shared rules can repeat before final processing.
+
+Dynamic imports, cycles, dependency authoring, and framework virtual sources remain unsupported. The existing standalone/in-memory relative resolver remains a compatibility path, not the production package resolver.
+
+Reuse Lightning CSS for browser compatibility transforms and minification at the build-adapter boundary, composing maps and retaining consuming-build targets. Let a consuming bundler own final CSS processing when it already does. A separate implementation step adds standalone processing; do not duplicate browser grammar, prefixing, or minification in Zyzz.
+
+Prior art: [vanilla-extract's compiler](https://github.com/vanilla-extract-css/vanilla-extract/blob/master/packages/compiler/src/compiler.ts) combines its own styling semantics with Vite and vite-node. Zyzz retains static analysis rather than executing source. [Vite environments](https://vite.dev/guide/api-environment-plugins) provide resolution/invalidation boundaries; [Lightning CSS](https://lightningcss.dev/docs.html) processes the resulting CSS.
+
 ### File Host Lifecycle
 
-Local theme source compilation now extends the literal transform. Module-level local `Theme.define`/`Theme.extend` factories are analyzed as data, direct bound calls resolve names through the pure theme/style boundary, and `.className` reads become scope constants. Theme identities derive from the stable module ID and binding, independently of values and offsets. Generated JavaScript contains no theme constructor; TypeScript preserves literal contract types. Local module-level const aliases of bound css, destructuring/renaming, and alias chains compile through lexical bindings; unsupported escaping authoring references receive diagnostics. Explicit local theme.tokens paths compile as scalar bound-style values with defining identities, fallbacks, and property-domain checks. Graph.compile links relative source imports/exports, authoring aliases, and re-exports with shared identities and cross-file maps. The file host rebuilds the graph after source edits. Package authoring contracts, cyclic graphs, and independently emitted theme libraries remain separate gates. See [the supported boundary](../docs/guides/themes.md#compile-local-theme-source).
+Local theme source compilation now extends the literal transform. Module-level local `Theme.define`/`Theme.extend` factories are analyzed as data, direct bound calls resolve names through the pure theme/style boundary, and `.className` reads become scope constants. Theme identities derive from the stable module ID and binding, independently of values and offsets. Generated JavaScript contains no theme constructor; TypeScript preserves literal contract types. Local module-level const aliases of bound css, destructuring/renaming, and alias chains compile through lexical bindings; unsupported escaping authoring references receive diagnostics. Explicit local theme.tokens paths compile as scalar bound-style values with defining identities, fallbacks, and property-domain checks. Graph.compile links relative source imports/exports, authoring aliases, and re-exports with shared identities and cross-file maps. The file host incrementally recompiles source edits and their importers. Package authoring contracts, cyclic graphs, and independently emitted theme libraries remain separate gates. See [the supported boundary](../docs/guides/themes.md#compile-local-theme-source).
 
-`Host.create({ outDir, packageId, root })` from `zyzz/node` owns filesystem state and returns `{ build, close, watch }`. The source, web, root, and runtime entrypoints have no dependency on this host. Builds call `Graph.compile` with the complete scanned source graph. Unchanged graphs reuse cached results; source additions, edits, or removals recompile the graph.
+`Host.create({ outDir, packageId, root })` from `zyzz/node` owns filesystem state and returns `{ build, close, watch }`. The source, web, root, and runtime entrypoints have no dependency on this host.
+
+Builds pass the complete scanned source snapshot to an owned `Graph.create` compiler. Unchanged graphs reuse results; edits re-extract changed modules and their transitive importers. Unaffected transforms are reused while theme contracts are unchanged.
+
+Theme changes re-emit all modules to refresh compatible scopes, including those without direct imports. Source additions and removals trigger a full rebuild to recheck resolution. Failed compilation preserves the last successful cache.
 
 The host scans JavaScript and TypeScript module extensions recursively, ignoring declaration/test/benchmark files, `.git`, `node_modules`, symbolic links, and its output subtree. It writes the source-relative module plus `.map`, `.css`, and `.css.map` sidecars. `Graph.compile` resolves static relative source imports and links supported theme declarations across modules. TypeScript/JSX lowering, package and asset import resolution, stylesheet loading, and source-map URL composition remain consumer responsibilities. Package authoring contracts, cycles, and dynamic source imports are unsupported.
 

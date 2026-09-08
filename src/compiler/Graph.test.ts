@@ -361,3 +361,327 @@ describe('compile', () => {
     )
   })
 })
+
+describe('create', () => {
+  test('unchanged snapshots reuse results within an isolated compiler', () => {
+    const compiler = Graph.create()
+    const before = compiler.compile({ modules })
+    expect(
+      compiler.compile({ modules: { ...modules } }) === before,
+    ).toMatchInlineSnapshot(`true`)
+    expect(
+      Graph.create().compile({ modules }) === before,
+    ).toMatchInlineSnapshot(`false`)
+  })
+
+  test('a consumer edit retains unrelated transforms and snapshots caller inputs', () => {
+    const compiler = Graph.create()
+    const sources = Fixture.project(3)
+    const before = compiler.compile({ modules: sources })
+    sources['pkg/card0.ts'] = sources['pkg/card0.ts']!.replace('0px', '20px')
+    const after = compiler.compile({ modules: sources })
+    expect(
+      after.modules['pkg/card1.ts'] === before.modules['pkg/card1.ts'],
+    ).toMatchInlineSnapshot(`true`)
+    expect(
+      after.modules['pkg/card0.ts'] === before.modules['pkg/card0.ts'],
+    ).toMatchInlineSnapshot(`false`)
+    expect(after.modules['pkg/card0.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;}
+      .z_theme-18i5hb1ihk25d-mint{--z-t1p8at5ioin1tk-theme-color_2e_brand:#175;}
+      .z-1k1dzu31vy9i39-base0{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#06c);padding:20px;}"
+    `)
+    expect(before.modules['pkg/card0.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;}
+      .z_theme-18i5hb1ihk25d-mint{--z-t1p8at5ioin1tk-theme-color_2e_brand:#175;}
+      .z-1k1dzu31vy9i39-base0{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#06c);padding:0px;}"
+    `)
+  })
+
+  test('theme edits propagate through re-exports and preserve defining source maps', () => {
+    const compiler = Graph.create()
+    compiler.compile({ modules })
+    const after = compiler.compile({
+      modules: {
+        ...modules,
+        'pkg/theme.ts':
+          '\n' + modules['pkg/theme.ts'].replace("'#06c'", "'#f00'"),
+      },
+    })
+    expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#f00;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;}
+      .z_theme-18i5hb1ihk25d-mint{--z-t1p8at5ioin1tk-theme-color_2e_brand:#175;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;}
+      .z-5ngs574r5xr9-base0{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#f00);padding:var(--z-t1p8at5ioin1tk-theme-spacing_2e_md,8px);}"
+    `)
+    const map = new Trace.TraceMap(after.modules['pkg/card.ts']!.cssMap)
+    expect(Trace.originalPositionFor(map, { column: 0, line: 1 }))
+      .toMatchInlineSnapshot(`
+      {
+        "column": 51,
+        "line": 2,
+        "name": "1p8at5ioin1tk-theme",
+        "source": "pkg/theme.ts",
+      }
+    `)
+    expect(after.modules['pkg/card.ts']!.cssMap.sourcesContent)
+      .toMatchInlineSnapshot(`
+      [
+        "import { theme, style, mint } from './index.js'; export const props = style({color:theme.tokens.color.brand,padding:'md'})(); export const scope = mint.className;",
+        "
+      import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#f00'},spacing:{md:'8px',unused:'99px'}}); export const css = theme.css;",
+        "import { Theme } from 'zyzz'; import { theme } from './theme.js'; export const mint = Theme.extend(theme, {color:{brand:'#175'}});",
+      ]
+    `)
+  })
+
+  test('unimported compatible scope edits invalidate consumer CSS', () => {
+    const compiler = Graph.create()
+    const sources = {
+      ...modules,
+      'pkg/card.ts': `import { css } from './theme.js'; export const props = css({color:'brand'})();`,
+    }
+    const before = compiler.compile({ modules: sources })
+    const after = compiler.compile({
+      modules: {
+        ...sources,
+        'pkg/alternate.ts': modules['pkg/alternate.ts'].replace(
+          "'#175'",
+          "'#f00'",
+        ),
+      },
+    })
+    expect(
+      after.modules['pkg/card.ts'] === before.modules['pkg/card.ts'],
+    ).toMatchInlineSnapshot(`false`)
+    expect(after.dependencies['pkg/card.ts']).toMatchInlineSnapshot(`
+      [
+        "pkg/theme.ts",
+      ]
+    `)
+    expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;}
+      .z_theme-18i5hb1ihk25d-mint{--z-t1p8at5ioin1tk-theme-color_2e_brand:#f00;}
+      .z-5ngs574r5xr9-base0{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#06c);}"
+    `)
+  })
+
+  test('import edits preserve the new graph scope order', () => {
+    const compiler = Graph.create()
+    const sources = {
+      'pkg/a.ts': `export const value = 1;`,
+      'pkg/b.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#000'}});`,
+      'pkg/c.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#fff'}});`,
+      'pkg/style.ts': `import { theme } from './b.js'; export const props = theme.css({color:'brand'})();`,
+    }
+    const before = compiler.compile({ modules: sources })
+    const after = compiler.compile({
+      modules: {
+        ...sources,
+        'pkg/a.ts': `import './c.js'; export const value = 1;`,
+      },
+    })
+    expect(
+      after.modules['pkg/style.ts'] === before.modules['pkg/style.ts'],
+    ).toMatchInlineSnapshot(`false`)
+    expect(Object.keys(after.modules['pkg/style.ts']!.themes))
+      .toMatchInlineSnapshot(`
+      [
+        "dremeuyk1z1i-theme",
+        "c1mlirqoc0mf-theme",
+      ]
+    `)
+  })
+
+  test('edited imports replace dependency edges before later theme edits', () => {
+    const compiler = Graph.create()
+    compiler.compile({ modules })
+    const sources = {
+      ...modules,
+      'pkg/card.ts': `import { mint } from './alternate.js'; export const props = mint.css({color:'brand'})();`,
+    }
+    compiler.compile({ modules: sources })
+    const after = compiler.compile({
+      modules: {
+        ...sources,
+        'pkg/alternate.ts': modules['pkg/alternate.ts'].replace(
+          "'#175'",
+          "'#f00'",
+        ),
+      },
+    })
+    expect(after.dependencies['pkg/card.ts']).toMatchInlineSnapshot(`
+      [
+        "pkg/alternate.ts",
+      ]
+    `)
+    expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;}
+      .z_theme-18i5hb1ihk25d-mint{--z-t1p8at5ioin1tk-theme-color_2e_brand:#f00;}
+      .z-5ngs574r5xr9-base0{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#f00);}"
+    `)
+  })
+
+  test('failed edits retain the last successful graph and recover', () => {
+    const compiler = Graph.create()
+    const before = compiler.compile({ modules })
+    expect(() =>
+      compiler.compile({
+        modules: {
+          ...modules,
+          'pkg/theme.ts': `import { theme } from './index.js'; export { theme };`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/theme.ts:0: Circular source dependencies are not supported yet.]`,
+    )
+    expect(compiler.compile({ modules }) === before).toMatchInlineSnapshot(
+      `true`,
+    )
+    const after = compiler.compile({
+      modules: {
+        ...modules,
+        'pkg/card.ts': `export const value = 'recovered';`,
+      },
+    })
+    expect(after.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
+      `"export const value = 'recovered';"`,
+    )
+    expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`""`)
+  })
+
+  test('file additions recheck ambiguity and removals drop stale scopes', () => {
+    const compiler = Graph.create()
+    const sources = {
+      ...modules,
+      'pkg/card.ts': `import { css } from './theme'; export const props = css({color:'brand'})();`,
+    }
+    const before = compiler.compile({ modules: sources })
+    expect(() =>
+      compiler.compile({
+        modules: {
+          ...sources,
+          'pkg/theme.mts': modules['pkg/theme.ts'],
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/card.ts:0: Ambiguous source import: ./theme]`,
+    )
+    expect(
+      compiler.compile({ modules: sources }) === before,
+    ).toMatchInlineSnapshot(`true`)
+    const after = compiler.compile({
+      modules: {
+        'pkg/card.ts': sources['pkg/card.ts'],
+        'pkg/theme.ts': sources['pkg/theme.ts'],
+      },
+    })
+    expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;}
+      .z-5ngs574r5xr9-base0{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#06c);}"
+    `)
+    expect(Object.keys(after.modules)).toMatchInlineSnapshot(`
+      [
+        "pkg/card.ts",
+        "pkg/theme.ts",
+      ]
+    `)
+    expect(() =>
+      compiler.compile({
+        modules: {
+          'pkg/card.ts': sources['pkg/card.ts'],
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/card.ts:0: Missing source module: ./theme]`,
+    )
+  })
+
+  test('incremental scope edits render without changing component classes in Chromium', async () => {
+    const compiler = Graph.create()
+    const before = compiler.compile({ modules })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      const scope = before.modules['pkg/card.ts']!.themes['18i5hb1ihk25d-mint']!
+      const className = Object.values(
+        before.modules['pkg/card.ts']!.classes,
+      ).join(' ')
+      await page.setContent(
+        `<main class="${scope}"><div id="card" class="${className}">Card</div></main>`,
+      )
+      const sheet = await page.addStyleTag({
+        content: before.modules['pkg/card.ts']!.css,
+      })
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
+      const after = compiler.compile({
+        modules: {
+          ...modules,
+          'pkg/alternate.ts': modules['pkg/alternate.ts'].replace(
+            "'#175'",
+            "'#f00'",
+          ),
+        },
+      })
+      await sheet.evaluate((element, css) => {
+        element.textContent = css
+      }, after.modules['pkg/card.ts']!.css)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).padding),
+      ).toMatchInlineSnapshot(`"8px"`)
+    } finally {
+      await browser.close()
+    }
+  })
+})
+
+describe('create', () => {
+  test('host resolution controls aliases and invalidates changed targets', () => {
+    const compiler = Graph.create()
+    const modules = {
+      'pkg/a.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#000'}});`,
+      'pkg/b.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#fff'}});`,
+      'pkg/card.ts': `import { theme } from '@theme'; export const props = theme.css({color:'brand'})();`,
+    }
+    const imports = {
+      'pkg/a.ts': { zyzz: null },
+      'pkg/b.ts': { zyzz: null },
+      'pkg/card.ts': { '@theme': 'pkg/a.ts' },
+    }
+    const before = compiler.compile({ imports, modules })
+    imports['pkg/card.ts']['@theme'] = 'pkg/b.ts'
+    const after = compiler.compile({ imports, modules })
+    expect(after.dependencies['pkg/card.ts']).toMatchInlineSnapshot(`
+      [
+        "pkg/b.ts",
+      ]
+    `)
+    expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-c1mlirqoc0mf-theme{--z-tc1mlirqoc0mf-theme-color_2e_brand:#fff;}
+      .z-5ngs574r5xr9-base0{color:var(--z-tc1mlirqoc0mf-theme-color_2e_brand,#fff);}"
+    `)
+    expect(after === before).toMatchInlineSnapshot(`false`)
+    expect(() =>
+      compiler.compile({ imports: {}, modules }),
+    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: pkg/a.ts:0: Missing host resolution: zyzz]`)
+    expect(() =>
+      compiler.compile({
+        imports: { ...imports, 'pkg/card.ts': { '@theme': 'pkg/missing.ts' } },
+        modules,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: pkg/card.ts:0: Missing host source module: @theme]`)
+    expect(
+      compiler.compile({ imports, modules }) === after,
+    ).toMatchInlineSnapshot(`true`)
+  })
+})

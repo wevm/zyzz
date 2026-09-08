@@ -8,3 +8,16 @@ export const modules = {
   'pkg/index.ts': `export { theme, css as style } from './theme.js'; export * from './alternate.js';`,
   'pkg/card.ts': `import { theme, style, mint } from './index.js'; export const props = style({color:theme.tokens.color.brand,padding:'md'})(); export const scope = mint.className;`,
 }
+
+/** Creates independent consumers of one shared theme graph. */
+export function project(count: number): Record<string, string> {
+  return {
+    ...modules,
+    ...Object.fromEntries(
+      Array.from({ length: count }, (_, index) => [
+        `pkg/card${index}.ts`,
+        `import { css } from './theme.js'; export const props = css({color:'brand',padding:'${index}px'})();`,
+      ]),
+    ),
+  }
+}

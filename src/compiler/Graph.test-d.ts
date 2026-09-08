@@ -21,3 +21,20 @@ Graph.compile({})
 result.modules.extra = result.modules['pkg/theme.ts']!
 // @ts-expect-error Dependencies cannot be mutated.
 result.dependencies['pkg/theme.ts']!.push('pkg/other.ts')
+
+const compiler = Graph.create()
+expectTypeOf(compiler.compile).toEqualTypeOf<typeof Graph.compile>()
+expectTypeOf(
+  compiler.compile({ modules: {} }),
+).toEqualTypeOf<Graph.compile.ReturnType>()
+// @ts-expect-error Incremental source values must be text.
+compiler.compile({ modules: { 'pkg/theme.ts': 1 } })
+// @ts-expect-error The complete source graph remains required.
+compiler.compile({})
+
+Graph.compile({
+  imports: { 'pkg/a.ts': { '@theme': 'pkg/theme.ts', react: null } },
+  modules: {},
+})
+// @ts-expect-error Host edges must be module IDs or explicit externals.
+Graph.compile({ imports: { 'pkg/a.ts': { '@theme': false } }, modules: {} })

@@ -61,8 +61,7 @@ export async function create(options: create.Options): Promise<Runtime> {
   })()
   const manifestPath = Path.join(outDir, '.zyzz.json')
 
-  type Cached = { output: Transform.compile.ReturnType; source: string }
-  const cache = new Map<string, Cached>()
+  const compiler = Graph.create()
   let closed = false
   let closing: Promise<void> | undefined
   let tail: Promise<void> = Promise.resolve()
@@ -96,7 +95,6 @@ export async function create(options: create.Options): Promise<Runtime> {
     inputs.sort()
 
     const artifacts = new Map<string, string>()
-    const live = new Set<string>()
     const sources: Record<string, string> = Object.create(null)
     for (const input of inputs) {
       const name = Path.relative(root, input).split(Path.sep).join('/')
@@ -108,27 +106,16 @@ export async function create(options: create.Options): Promise<Runtime> {
         )
       sources[name] = await Fs.readFile(input, 'utf8')
     }
-    const changedSources =
-      inputs.length !== cache.size ||
-      Object.entries(sources).some(
-        ([name, source]) => cache.get(name)?.source !== source,
-      )
-    const graph = changedSources
-      ? Graph.compile({
-          modules: Object.fromEntries(
-            Object.entries(sources).map(([name, source]) => [
-              `${options.packageId}/${name}`,
-              source,
-            ]),
-          ),
-        })
-      : undefined
-    for (const [name, source] of Object.entries(sources)) {
-      const output =
-        graph?.modules[`${options.packageId}/${name}`] ??
-        cache.get(name)!.output
-      cache.set(name, { output, source })
-      live.add(name)
+    const graph = compiler.compile({
+      modules: Object.fromEntries(
+        Object.entries(sources).map(([name, source]) => [
+          `${options.packageId}/${name}`,
+          source,
+        ]),
+      ),
+    })
+    for (const name of Object.keys(sources)) {
+      const output = graph.modules[`${options.packageId}/${name}`]!
 
       artifacts.set(name, output.code)
       artifacts.set(`${name}.map`, JSON.stringify(output.map))
@@ -206,8 +193,6 @@ export async function create(options: create.Options): Promise<Runtime> {
       }
       throw error
     }
-
-    for (const name of cache.keys()) if (!live.has(name)) cache.delete(name)
 
     return { changed: changed.sort(), files: [...artifacts.keys()].sort() }
   }

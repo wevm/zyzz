@@ -6,12 +6,98 @@ import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import type * as Theme from '../Theme.js'
+import * as Relative from './internal/Relative.js'
 import * as Themes from './internal/Themes.js'
 import * as Source from './Source.js'
 import * as Transform from './Transform.js'
 
 /** Compiles supplied modules with shared theme contracts and dependency metadata. */
 export function compile(options: compile.Options): compile.ReturnType {
+  return build(options).result
+}
+
+/** Input and output of graph compilation. */
+export declare namespace compile {
+  /** Errors raised while extracting or compiling a source graph. */
+  type ErrorType = Source.ExtractError | Transform.compile.ErrorType
+  /** Source modules available for relative import resolution. */
+  type Options = {
+    /** Host-resolved runtime imports keyed by module ID and source specifier; null marks externals. Omit only for closed relative-graph resolution. */
+    readonly imports?:
+      | Readonly<Record<string, Readonly<Record<string, string | null>>>>
+      | undefined
+    /** Complete source graph keyed by stable package-relative module identities. */
+    readonly modules: Readonly<Record<string, string>>
+  }
+  /** Compiled modules and their direct source dependencies. */
+  type ReturnType = {
+    /** Direct runtime source dependencies, keyed by module identity. */
+    readonly dependencies: Readonly<Record<string, readonly string[]>>
+    /** Rewritten modules and their stylesheets/maps. Load the CSS for the graph together. */
+    readonly modules: Readonly<Record<string, Transform.compile.ReturnType>>
+  }
+}
+
+/** Creates an isolated compiler that retains only the last successful graph. */
+export function create(): create.ReturnType {
+  let previous: Cache | undefined
+  return Object.freeze({
+    compile(options: compile.Options): compile.ReturnType {
+      const next = build(options, previous)
+      previous = next
+      return next.result
+    },
+  })
+}
+
+/** Incremental graph compiler contracts. */
+export declare namespace create {
+  /** Explicitly owned compilation state; dropping the compiler releases its cache. */
+  type ReturnType = {
+    /** Compiles a complete source snapshot, reusing unaffected work across calls. */
+    readonly compile: typeof compile
+  }
+}
+
+type Cache = {
+  extracted: ReadonlyMap<string, Source.extract.ReturnType>
+  resolutions: Readonly<Record<string, string>>
+  result: compile.ReturnType
+  sources: Readonly<Record<string, string>>
+  themes: Readonly<Record<string, Theme.Definition>>
+}
+
+function build(options: compile.Options, cache?: Cache): Cache {
+  const ids = Object.keys(options.modules).sort()
+  const resolutions = Object.fromEntries(
+    ids.map((id) => [
+      id,
+      options.imports === undefined
+        ? 'relative'
+        : JSON.stringify(
+            Object.entries(options.imports[id] ?? {}).sort(([a], [b]) =>
+              a.localeCompare(b),
+            ),
+          ),
+    ]),
+  )
+  // File-set changes can alter extensionless resolution even without source edits.
+  const previous =
+    cache &&
+    ids.length === Object.keys(cache.sources).length &&
+    ids.every((id) => Object.hasOwn(cache.sources, id))
+      ? cache
+      : undefined
+  if (
+    previous &&
+    ids.every(
+      (id) =>
+        options.modules[id] === previous.sources[id] &&
+        resolutions[id] === previous.resolutions[id],
+    )
+  )
+    return previous
+
   const dependencies: Record<string, readonly string[]> = Object.create(null)
   const extracted = new Map<string, Source.extract.ReturnType>()
   const owners: Record<string, NonNullable<Themes.Context['owners']>[string]> =
@@ -40,59 +126,21 @@ export function compile(options: compile.Options): compile.ReturnType {
     specifier: string,
     node: Ast.Node,
   ): string | undefined {
-    if (!specifier.startsWith('.')) return undefined
-    if (/\.[a-z0-9]+$/i.test(specifier) && !/\.[cm]?[jt]sx?$/.test(specifier))
-      return undefined
-    const parts = moduleId.split('/').slice(0, -1)
-    for (const part of specifier.split('/')) {
-      if (part === '.' || !part) continue
-      if (part === '..') {
-        if (!parts.length)
-          fail(moduleId, 'Source import escapes the supplied graph.', node)
-        parts.pop()
-      } else parts.push(part)
+    if (options.imports !== undefined) {
+      const imports = options.imports[moduleId]
+      if (!imports || !Object.hasOwn(imports, specifier))
+        fail(moduleId, `Missing host resolution: ${specifier}`, node)
+      const target = imports[specifier]
+      if (target === null) return undefined
+      if (target === undefined || !Object.hasOwn(options.modules, target))
+        fail(moduleId, `Missing host source module: ${specifier}`, node)
+      return target
     }
-    const path = parts.join('/')
-    if (Object.hasOwn(options.modules, path)) return path
-    const candidates = /\.[cm]?jsx?$/.test(path)
-      ? [
-          path.replace(/\.js$/, '.ts'),
-          path.replace(/\.js$/, '.tsx'),
-          path.replace(/\.jsx$/, '.tsx'),
-          path.replace(/\.mjs$/, '.mts'),
-          path.replace(/\.cjs$/, '.cts'),
-        ]
-      : !/\.[^/]+$/.test(path)
-        ? [
-            '.cjs',
-            '.cjsx',
-            '.cts',
-            '.ctsx',
-            '.js',
-            '.jsx',
-            '.mjs',
-            '.mjsx',
-            '.mts',
-            '.mtsx',
-            '.ts',
-            '.tsx',
-          ].flatMap((extension) => [
-            path + extension,
-            path + '/index' + extension,
-          ])
-        : []
-    const matches = [...new Set(candidates)].filter((candidate) =>
-      Object.hasOwn(options.modules, candidate),
-    )
-    if (matches.length !== 1)
-      fail(
-        moduleId,
-        matches.length
-          ? `Ambiguous source import: ${specifier}`
-          : `Missing source module: ${specifier}`,
-        node,
-      )
-    return matches[0]!
+    try {
+      return Relative.resolve({ moduleId, modules: options.modules, specifier })
+    } catch (error) {
+      fail(moduleId, (error as Error).message, node)
+    }
   }
 
   function visit(moduleId: string): Source.extract.ReturnType {
@@ -102,6 +150,20 @@ export function compile(options: compile.Options): compile.ReturnType {
       fail(moduleId, 'Circular source dependencies are not supported yet.')
     visiting.add(moduleId)
     const source = options.modules[moduleId]!
+    if (
+      previous &&
+      source === previous.sources[moduleId] &&
+      resolutions[moduleId] === previous.resolutions[moduleId] &&
+      previous.result.dependencies[moduleId]!.every(
+        (target) => visit(target) === previous.extracted.get(target),
+      )
+    ) {
+      return retain(
+        moduleId,
+        previous.extracted.get(moduleId)!,
+        previous.result.dependencies[moduleId]!,
+      )
+    }
     // Validate identity and syntax through the public source boundary before linking.
     Source.extract({ moduleId, source: '' })
     const parsed = Parser.parseSync('source.tsx', source, {
@@ -267,52 +329,62 @@ export function compile(options: compile.Options): compile.ReturnType {
       ...result,
       themeExports: Object.freeze(exports),
     })
-    extracted.set(moduleId, linked)
-    dependencies[moduleId] = Object.freeze([...imports])
-    for (const call of result.themeCalls)
-      owners[call.name] = { call, moduleId, source }
-    Object.assign(themes, result.themes)
-    visiting.delete(moduleId)
-    return linked
+    return retain(moduleId, linked, Object.freeze([...imports]))
   }
 
-  for (const moduleId of Object.keys(options.modules).sort()) visit(moduleId)
+  function retain(
+    moduleId: string,
+    result: Source.extract.ReturnType,
+    imports: readonly string[],
+  ): Source.extract.ReturnType {
+    extracted.set(moduleId, result)
+    dependencies[moduleId] = imports
+    for (const call of result.themeCalls)
+      owners[call.name] = { call, moduleId, source: options.modules[moduleId]! }
+    Object.assign(themes, result.themes)
+    visiting.delete(moduleId)
+    return result
+  }
+
+  for (const moduleId of ids) visit(moduleId)
   const modules: Record<string, Transform.compile.ReturnType> =
     Object.create(null)
   const sharedThemes = Object.freeze(themes)
-  for (const moduleId of Object.keys(options.modules).sort())
-    modules[moduleId] = Transform.compile({
-      moduleId,
-      source: options.modules[moduleId]!,
-      [Themes.context]: {
-        extracted: Object.freeze({
-          ...extracted.get(moduleId)!,
-          themes: sharedThemes,
-        }),
-        links: {},
-        owners,
-      },
-    })
-  return Object.freeze({
-    dependencies: Object.freeze(dependencies),
-    modules: Object.freeze(modules),
-  })
-}
-
-/** Input and output of graph compilation. */
-export declare namespace compile {
-  /** Errors raised while extracting or compiling a source graph. */
-  type ErrorType = Source.ExtractError | Transform.compile.ErrorType
-  /** Source modules available for relative import resolution. */
-  type Options = {
-    /** Complete source graph keyed by stable package-relative module identities. */
-    readonly modules: Readonly<Record<string, string>>
-  }
-  /** Compiled modules and their direct source dependencies. */
-  type ReturnType = {
-    /** Direct runtime source dependencies, keyed by module identity. */
-    readonly dependencies: Readonly<Record<string, readonly string[]>>
-    /** Rewritten modules and their stylesheets/maps. Load the CSS for the graph together. */
-    readonly modules: Readonly<Record<string, Transform.compile.ReturnType>>
+  // Every stylesheet includes all graph scopes, including unimported alternatives.
+  const names = Object.keys(themes)
+  const previousNames = Object.keys(previous?.themes ?? {})
+  const sameThemes =
+    previous &&
+    names.length === previousNames.length &&
+    names.every(
+      (name, index) =>
+        name === previousNames[index] && previous.themes[name] === themes[name],
+    )
+  for (const moduleId of ids)
+    modules[moduleId] =
+      sameThemes &&
+      extracted.get(moduleId) === previous!.extracted.get(moduleId)
+        ? previous!.result.modules[moduleId]!
+        : Transform.compile({
+            moduleId,
+            source: options.modules[moduleId]!,
+            [Themes.context]: {
+              extracted: Object.freeze({
+                ...extracted.get(moduleId)!,
+                themes: sharedThemes,
+              }),
+              links: {},
+              owners,
+            },
+          })
+  return {
+    extracted,
+    resolutions: Object.freeze(resolutions),
+    result: Object.freeze({
+      dependencies: Object.freeze(dependencies),
+      modules: Object.freeze(modules),
+    }),
+    sources: Object.freeze({ ...options.modules }),
+    themes: sharedThemes,
   }
 }

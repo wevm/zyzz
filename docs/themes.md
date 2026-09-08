@@ -20,7 +20,11 @@ const styles = Style.define({
 const output = Css.compile({ styles, themes: { alternate, base: theme } })
 ```
 
-Load `output.css`, apply `output.classes.card` to a component, and optionally apply `output.themes.alternate` to an ancestor. References include defining fallbacks, so the component also works outside a theme scope. Each scope resets every referenced variable in its contract. Unreferenced tokens emit no declarations.
+1. Load `output.css`.
+2. Apply `output.classes.card` to the component.
+3. Optionally apply `output.themes.alternate` to an ancestor.
+
+Token fallbacks work outside a scope. Each scope resets every referenced variable in its contract; unused tokens emit no declarations.
 
 Use ordinary CSS to select schemes:
 
@@ -38,11 +42,25 @@ Use ordinary CSS to select schemes:
 
 Shared strings work in both schemes. Pairs compile to `light-dark()`. Theme scopes and scheme selection are independent; neither JavaScript preference listeners nor runtime rule generation are required.
 
-Supported groups are `backgroundColor`, `borderColor`, `borderRadius`, `color`, `spacing`, and `textColor`. Nested palettes infer reference paths. Property-specific groups only work in their own domains; shared colors work in all supported color properties. Extensions accept existing paths only and replace whole color pairs.
+| Group                                         | Accepted Properties                     |
+| --------------------------------------------- | --------------------------------------- |
+| `backgroundColor`, `borderColor`, `textColor` | Their corresponding color property      |
+| `borderRadius`                                | Border radius                           |
+| `color`                                       | All supported color properties          |
+| `spacing`                                     | Supported spacing and sizing properties |
+
+Nested palettes infer reference paths. Extensions change existing paths only and replace whole color pairs.
 
 Values currently follow the [literal grammar](literal-styles.md): literal colors and nonnegative lengths or zero. Token palettes are nonempty data records with dot-free keys. Definitions copy and freeze inputs; accessors, symbols, cycles, and ambiguous paths are rejected.
 
-This entrypoint compiles one in-memory graph. Its classes and variable slots are graph-local; separate outputs require independent namespaces. Theme source extraction, compiled `theme.className`, `theme.vars`, bundled tokens, typography presets, and query metadata are separate capabilities. Root `css` still accepts only literals.
+Classes and variable slots belong to one in-memory graph. Separate outputs require independent namespaces. Root `css` still accepts only literals at this baseline.
+
+Separate capabilities include:
+
+- Bundled tokens and typography presets.
+- Query metadata.
+- Source extraction and compiled `theme.className`.
+- `theme.vars` expressions.
 
 ## Selecting a Theme
 
@@ -78,6 +96,9 @@ const output = Css.compile({ styles, themes: { alternate, base: theme } })
 
 Token-aware option bags require a defined theme. An optional theme permits only literals and explicit references until it is narrowed; explicitly undefined groups contribute no shorthand names.
 
-Nested palettes use dotted names. Numeric spacing keys accept their numeric or string spelling. Valid CSS literals and zero win over colliding token names; use explicit `theme.tokens` references to select the token instead. Property-specific colors win over shared colors at the same leaf path.
+- **Collisions:** CSS literals and zero win; explicit `theme.tokens` references select the token.
+- **Colors:** property-specific groups win over shared colors at the same path.
+- **Nested palettes:** use dotted names.
+- **Numeric spacing keys:** accept numeric or string spelling.
 
 `theme.css` exposes the same inferred property types and callable props contract as root `css`, including literal styling overrides. Its extraction and rewrite support is a separate source-linking step; executing an untransformed call throws `css.MissingTransformError`. The in-memory pipeline above is executable without a transform.

@@ -1,6 +1,6 @@
 # Documentation
 
-Zyzz compiles typed style definitions to static CSS and small application props. Start with the concepts, follow the usage guide, and use the API reference for signatures and availability.
+Zyzz compiles typed styles to static CSS and small application props.
 
 - [Concepts](concepts.md): configuration, theme contracts, scopes, conditions, layers, and compilation.
 - [Usage](usage.md): current compilation flows and previews of configuration, styling, recipes, and stylesheet authoring.

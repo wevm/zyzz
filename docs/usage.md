@@ -77,7 +77,10 @@ const example = (
 )
 ```
 
-The theme class selects inherited variables. The inline property selects the color scheme. Unknown layer and token names fail type checking. Use `className` and `style` inputs for styling overrides; other props stay on the element.
+- **Color scheme:** selected through the inline property.
+- **Overrides:** pass `className`/`style` to the styling function; keep other props on the element.
+- **Theme:** selected through the scope class.
+- **Types:** reject unknown layers and token names.
 
 ## Define Variants — Preview
 
@@ -112,7 +115,16 @@ const bar = css((values: { width: `${number}%` }) => ({
 const example = <div {...bar({ width: '50%' })} />
 ```
 
-Callbacks define value bindings, not runtime CSS generation. Arrays express ordered declaration fallbacks, and a trailing `!` marks an important value. Explicit shared variable contracts use `Vars`; local values usually use callbacks.
+Callbacks bind values without generating CSS. Use `Vars` only when a shared variable contract is needed.
+
+```ts
+const label = css({
+  color: 'black!',
+  display: ['block', 'flex'],
+})
+```
+
+Arrays preserve fallback order; a trailing `!` marks importance.
 
 ## Match Ancestors — Preview
 
@@ -164,7 +176,10 @@ export const notice = css({
 })
 ```
 
-Place these declarations at module scope in any configured source file. Globals and font contributions retain stylesheet effects; reachable keyframes retain stable names. The host collects CSS without executing these functions in the application. Raw global layer strings receive compiler validation; they do not inherit a config's TypeScript catalog.
+- **Collection:** place static declarations at module scope in configured source files.
+- **Effects:** globals and fonts survive bundling; reachable keyframes retain stable names.
+- **Layers:** standalone strings receive compiler validation, without config-bound TypeScript inference.
+- **Runtime:** the host collects CSS without executing application code.
 
 ## Compile With the CLI — Preview
 

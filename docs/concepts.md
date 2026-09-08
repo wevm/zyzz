@@ -1,57 +1,145 @@
 # Concepts
 
-Availability is listed in the [documentation index](README.md). Configuration, conditions, recipes, and stylesheet helpers below describe the accepted API preview.
+The examples below preview accepted APIs. See [availability](README.md#availability) for implemented boundaries and [Usage](usage.md) for complete examples.
 
 ## Definitions and Applications
 
-A style definition describes static rules. Applying it returns styling props to spread onto an element. Static calls can become constants; dynamic inputs bind values to precompiled custom properties. Application calls never create CSS rules. Untransformed authoring calls throw instead of injecting a stylesheet.
+Definitions describe static rules. Calling a definition returns styling props; it never creates CSS rules. Authoring calls require compilation.
+
+```tsx
+import { css } from 'zyzz'
+
+const card = css({ padding: '1rem' })
+const example = <div {...card()}>Card</div>
+```
 
 ## Configuration
 
-`Config.create` binds `css` and `variants` to explicit token and layer contracts. Name the module `zyzz.config.ts` by convention and import its functions normally. The filename does not change the types of unrelated imports. The compiler analyzes configuration as data without executing application code.
+`Config.create` binds authoring functions to explicit tokens and layers. Keep configuration in `zyzz.config.ts` and import its functions normally. The compiler reads static data without executing application code.
 
-A config accepts either one `theme` or named `themes`. Both inline tokens and reusable `Theme.define` values are supported. Named catalogs require an inferred `defaultTheme`; all entries satisfy its complete token paths and domains. With no theme, functions stay token-free.
+```ts
+import { Config } from 'zyzz'
+
+export const { css, theme, variants } = Config.create({
+  layers: ['base', 'components'],
+  theme: { spacing: { md: '1rem' } },
+})
+```
+
+- **Layers:** infer keys such as `@layer components`; unknown names fail.
+- **No theme:** authoring stays token-free.
+- **One theme:** accepts inline tokens or a reusable `Theme.define` value.
+- **Several themes:** use `themes` with a required `defaultTheme`.
+
+Named alternatives share the default's token paths and domains. Config returns compatible handles without mutating independent definitions. Imports outside that config receive no ambient tokens or layer types.
 
 ## Themes and Color Schemes
 
-A theme provides design values. A contract identifies their paths and allowed domains. `Theme.extend` changes existing values while preserving that contract. Independently defined themes stay isolated; config explicitly normalizes its alternatives onto a shared contract and returns the corresponding handles.
+Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
 
-A theme scope class assigns CSS variables inherited by descendants. Changing the scope changes token values while retaining component classes. Defaults supply fallbacks outside a scope. Nested scopes select another compatible theme for a subtree.
+Use the returned handles from a [named-theme config](usage.md#configure-authoring--preview):
 
-A color's `string | { light, dark }` value is separate from theme selection. `colorScheme: 'light'` or `'dark'` selects a scheme; `'light dark'` follows browser preference. The compiler emits `light-dark()` for pairs. Selecting a theme does not force its color scheme.
+```tsx
+import { themes } from './zyzz.config.js'
+
+const example = (
+  <section className={themes.mint.className} style={{ colorScheme: 'dark' }}>
+    Content
+  </section>
+)
+```
+
+- **Color pairs:** `{ dark, light }` compiles to `light-dark()`.
+- **Color scheme:** `light` or `dark` selects explicitly; `light dark` follows browser preference.
+- **Extensions:** `Theme.extend` changes existing values while preserving the contract.
+- **Theme selection:** changes tokens independently of color scheme.
 
 ## Tokens and Runtime Values
 
-Token names infer by property: a text-color token does not become a spacing token. Explicit `theme.tokens` references retain portable domains; planned `theme.vars` references expose CSS variable values for web expressions. Query thresholds compile to literals and do not change when a theme scope changes.
+Token names infer by property. A text-color token cannot become a spacing token.
 
-Dynamic callbacks receive only their typed input values. Rule structure stays static. Styling calls consume those inputs and accept `className`/`style` overrides; handlers, accessibility attributes, children, and other component props stay on the component.
+| Value                     | Purpose                                             |
+| ------------------------- | --------------------------------------------------- |
+| `theme.tokens.spacing.md` | Portable typed token reference                      |
+| `theme.vars.spacing.md`   | CSS variable reference for web expressions          |
+| Query threshold           | Compiled literal; unaffected by theme scope changes |
+
+Callbacks bind per-instance values to precompiled custom properties. Their rule structure stays static.
+
+```tsx
+import { css } from 'zyzz'
+
+const bar = css((values: { width: `${number}%` }) => ({
+  width: values.width,
+}))
+const example = <div {...bar({ width: '50%' })} aria-hidden="true" />
+```
+
+Calls accept declared inputs plus `className`/`style` overrides. Keep other component props on the element.
 
 ## Conditions and Relationships
 
-Pseudo-classes, selectors, and nested `@media`, `@container`, and `@supports` blocks preserve CSS semantics. Nesting combines conditions with AND and keeps property/token inference. Raw selector/query syntax receives compiler validation; types cannot prove a matching DOM structure exists.
+Nested conditions combine with AND and preserve property/token inference. CSS selectors and queries retain their standard semantics.
 
-`Css.ancestor` and `Css.descendant` match at any depth. `parent` and `child` would imply immediate relationships and are reserved for separate future helpers. They are not aliases. Repeated instances of one marker use ordinary any-matching-ancestor semantics, not nearest-boundary matching. Container queries separately select the nearest eligible container.
+```ts
+import { css } from 'zyzz'
 
-Markers declare typed identity and data-state domains. Apply a marker's attributes to an element, then reference that marker in another definition. Marker attributes are visual state; they do not replace real ARIA or control attributes. Relational helpers add zero condition specificity; authored raw selectors retain their specificity.
+const button = css({
+  ':hover': {
+    '@media (hover: hover)': { opacity: 0.8 },
+  },
+})
+```
+
+- **Ancestors and descendants:** match at any depth; see the [marker example](usage.md#match-ancestors--preview).
+- **Containers:** queries select the nearest eligible container.
+- **Markers:** declare typed identity and data states; retain real ARIA/control attributes separately.
+- **Parents and children:** imply immediate relationships; reserved for possible future helpers.
+- **Specificity:** relational helpers add zero condition specificity; raw selectors retain their own.
+
+Repeated markers match any qualifying ancestor, not a nearest boundary. TypeScript checks marker states, not the DOM structure. The compiler validates raw selectors and queries.
 
 ## Variants and Composition
 
-A variant recipe styles one element and returns one props object. Axes, defaults, and compounds describe finite alternatives; the compiler emits their rules ahead of time. Multipart components use separate definitions and ordinary shared inputs. There is no slots option.
+A recipe styles one element and returns one props object. Axes, defaults, and compounds select precompiled alternatives. Multipart components use separate definitions with shared inputs; there is no slots option.
 
-Use `cx` to compose applied generated styles with the documented override rules. Multiple JSX spreads replace fields instead of composing them. External classes follow normal CSS precedence; their order in a class string cannot establish last-wins behavior.
+```tsx
+import { variants } from 'zyzz'
+
+const button = variants({
+  variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
+})
+const example = <button {...button({ size: 'sm' })}>Save</button>
+```
+
+Use `cx` to compose generated styles with override rules. Multiple JSX spreads replace fields. External classes follow the CSS cascade; their class-string order does not establish precedence.
 
 ## Layers and Globals
 
-Config `layers` declares semantic order and infers literal keys such as `@layer components` in bound styles and recipe bodies. Unknown names are errors. No returned layer-reference object is needed. Additional global declarations do not ambiently widen a config's types.
+```ts
+import { global } from 'zyzz/web'
 
-`global`, `keyframes`, and `fontFace` are direct named web helpers. Globals contain selectors; keyframes contain frame declarations; font faces contain descriptors. They compile into stylesheet contributions and do not require a rendered component or runtime registry.
+// Layer order comes from config or Css.layers.
+global({ '@layer base': { body: { margin: 0 } } })
+```
 
-Collection scans configured project sources, including unimported modules, excluding tests, generated output, and dependencies by default. Collected globals are eager application-wide effects even beside lazy components. The initial stylesheet contains global rules and a shared layer-order prelude. Keyframes retain their separate reachability contract.
+- **Collection:** scans configured sources, including unimported modules; excludes tests, generated output, and dependencies by default.
+- **Delivery:** globals are eager, including declarations beside lazy components. The initial stylesheet includes the shared layer prelude.
+- **Helpers:** import `fontFace`, `global`, and `keyframes` directly. Keyframes have separate reachability rules.
+- **Ordering:** constraints merge deterministically; cycles produce located errors. Preserve authored order, unlayered rules, and important reversal.
+- **Watching:** edits and deletions replace or remove contributions; relative assets retain source ownership.
 
-Layer order constraints merge deterministically; contradictory cycles fail with source locations. Unwrapped rules stay unlayered. Preserve authored rule order and standard important reversal. Source edits and deletions replace or remove contributions; relative assets remain associated with their source module.
+See [stylesheet usage](usage.md#define-stylesheets--preview) for fonts and motion. Standalone globals do not widen a config's inferred layer names.
 
 ## Compilation and Platforms
 
-The pure core handles data, types, validation, and identity. Source adapters parse and rewrite modules. Target emitters produce CSS or native tables. Hosts own files, discovery, watching, and delivery. The CLI and build integrations share compiler semantics.
+| Boundary        | Responsibility                             |
+| --------------- | ------------------------------------------ |
+| Core            | Pure data, types, validation, and identity |
+| Source adapters | Parse and rewrite modules                  |
+| Target emitters | Produce CSS or native tables               |
+| Hosts           | Files, discovery, watching, and delivery   |
 
-Libraries distribute matching code, CSS, declarations, and required metadata. Minification belongs to standard downstream tooling; compilation preserves ordering and gives that tooling correct CSS. Native uses precompiled styles and theme/scheme tables, with explicit errors for unsupported web selectors and stylesheet operations.
+CLI and build integrations share compiler semantics. Libraries distribute matching code, CSS, declarations, and required metadata. Standard downstream tooling handles minification.
+
+Native selects precompiled styles and theme/scheme tables. Unsupported web selectors and stylesheet operations produce explicit errors.

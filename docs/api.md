@@ -17,9 +17,22 @@
 
 ## Config.create — Preview
 
-Accepts an optional ordered `layers` tuple and either `theme` or named `themes`. Theme values may be inline tokens or reusable definitions. Named mode requires `defaultTheme`, inferred from the catalog. Single mode returns `theme`; named mode returns normalized `themes`; both return bound `css` and `variants`.
+```ts
+import { Config } from 'zyzz'
 
-Named alternatives satisfy the default's complete paths and domains. Config establishes shared variable identity without mutating standalone definitions. No theme means no built-in tokens. `layers` infers exact `@layer <name>` keys inside bound style bodies; undeclared names fail. `zyzz.config.ts` is encouraged, not required.
+const { css, theme, variants } = Config.create({
+  layers: ['base', 'components'],
+  theme: { spacing: { md: '1rem' } },
+})
+```
+
+- **Contracts:** alternatives share the default's paths, domains, and variable identity; standalone definitions stay unchanged.
+- **Filename:** `zyzz.config.ts` is encouraged.
+- **Inputs:** optional ordered `layers`; either `theme` or named `themes`, accepting tokens or definitions.
+- **Layers:** infer exact `@layer <name>` keys; undeclared names fail.
+- **Named themes:** require an inferred `defaultTheme`; return normalized `themes`.
+- **Outputs:** bound `css` and `variants`, plus `theme` in single-theme mode.
+- **Tokens:** absent unless a theme is supplied.
 
 ## css
 
@@ -43,7 +56,12 @@ fontFace({
 })
 ```
 
-Contributes a static `@font-face` rule from validated descriptors. Preserve source-relative URL ownership and stylesheet effects across bundling. Use the declared family in styles. A generated/private family return API remains undecided; this contract does not promise one. Native font loading belongs to platform APIs.
+Emits `@font-face` from validated descriptors. Use the declared family in styles.
+
+- **Assets:** retain source-relative URL ownership.
+- **Bundling:** preserves stylesheet effects.
+- **Native:** font loading uses platform APIs.
+- **Return value:** generated/private family references remain undecided.
 
 ## global — Preview
 
@@ -55,7 +73,12 @@ global({
 })
 ```
 
-Contributes global selectors and supported nested at-rules from module-level static data. Configured source discovery includes unimported project modules. Globals are eager, retained independently of JavaScript export usage, and updated or removed during watching. Unwrapped rules remain unlayered. Config inference is not ambient in this standalone helper.
+Emits global selectors and supported nested at-rules from static module-level data.
+
+- **Discovery:** includes configured, unimported project modules.
+- **Effects:** eager and independent of JavaScript export usage.
+- **Layers:** unwrapped rules remain unlayered; config inference is not ambient.
+- **Watching:** updates or removes contributions with their sources.
 
 ## keyframes — Preview
 
@@ -68,7 +91,13 @@ const enter = keyframes({
 })
 ```
 
-Returns a typed animation-name reference. Accept `from`, `to`, percentages from 0–100, and valid comma-separated stops. Preserve authored order at overlapping stops. Frame bodies contain declarations; reject important declarations and nested selectors/queries. Emit reachable definitions with stable imported identity. Use explicit theme references in frames.
+Returns a typed `animationName` reference; see [motion usage](usage.md#define-stylesheets--preview).
+
+- **Bodies:** declarations only; no importance or nested selectors/queries.
+- **Emission:** reachable definitions preserve imported identity.
+- **Order:** authored order wins at overlapping stops.
+- **Stops:** `from`, `to`, 0–100% positions, or comma-separated stops.
+- **Tokens:** use explicit theme references.
 
 ## Style.define — Available
 
@@ -84,7 +113,12 @@ Bound `theme.css` has inference and in-memory resolution; source linking is sepa
 
 `variants(definition)`, `theme.variants(definition)`, and config-bound `variants` accept `base`, `variants`, `defaultVariants`, and `compoundVariants`. Each recipe styles one element and returns one callable. Applied output is one props object, with no slots map.
 
-Infer selections through `NonNullable<Parameters<typeof recipe>[0]>`. Omitted selections use defaults; null suppresses a selection and its default; false remains an explicit choice. Compounds match choice names, with arrays meaning any listed choice. Dynamic choice callbacks use scoped payloads under the same fixed-rule binding model as `css`.
+See the [recipe example](usage.md#define-variants--preview).
+
+- **Compounds:** match choice names; arrays match any listed choice.
+- **Defaults:** apply to omitted selections; null suppresses both choice and default. False remains an explicit choice.
+- **Dynamic choices:** callbacks bind scoped payloads to fixed rules.
+- **Types:** infer with `NonNullable<Parameters<typeof recipe>[0]>`.
 
 ## Vars — Preview
 
@@ -103,7 +137,11 @@ Infer selections through `NonNullable<Parameters<typeof recipe>[0]>`. Omitted se
 | `Css.siblingAfter(marker, condition?)`           | Marked sibling following the styled element                                           | Preview   |
 | `Css.anySibling(marker, condition?)`             | Either sibling direction                                                              | Preview   |
 
-Relational conditions accept supported simple pseudos or typed data/pseudo/has predicates. Combined predicates match the same marked element. Reject unsupported nested `:has()` combinations. `parent` and `child` are reserved for possible immediate-relationship helpers; they are not aliases or accepted APIs yet.
+See the [typed ancestor example](usage.md#match-ancestors--preview).
+
+- **Combinations:** predicates match the same marked element; unsupported nested `:has()` fails.
+- **Conditions:** supported simple pseudos or typed data/pseudo/has predicates.
+- **Depth:** `parent`/`child` are reserved for possible immediate-relationship helpers, not current aliases.
 
 `fontFace`, `global`, and `keyframes` are direct named exports, not `Css` members. Web helpers reject unsupported native semantics.
 

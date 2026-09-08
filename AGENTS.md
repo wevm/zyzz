@@ -101,12 +101,14 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 
 - Add TSDoc to every public export and public type property. Write or update the contract documentation alongside the implementation.
 - Document caller-visible purpose, inputs, output, defaults, errors, and side effects. Keep low-level wiring in nearby implementation comments.
-- Keep examples small and focused on the exported behavior.
+- Keep examples small and focused on the exported behavior. Prefer a snippet, concrete example, or useful visual to a long conceptual explanation; avoid repeating what the example already shows.
+- Keep prose paragraphs under 50 words and focused on one idea. Use bullets for enumerable content and tables for comparisons. Tighten wording rather than mechanically splitting paragraphs.
+- Label preview APIs separately from implemented behavior. Examples must preserve the documented contract and must not imply unavailable APIs already work.
 - Update the owning entrypoint documentation when adding or changing a public module.
 
 ## Prose Conventions
 
-Applies to comments, TSDoc, commit messages, and pull requests.
+Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 
 - Write about the code, not about the person using it. Avoid second person.
 - Describe behavior in technical terms rather than by the experience it produces. Prefer `answers before acquisition finishes` over `keeps the editor feeling fast`.

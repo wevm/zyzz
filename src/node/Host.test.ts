@@ -623,7 +623,12 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           Path.join(outDir, '.zyzz-components/button.ts.css'),
           'utf8',
         ),
-      ).toMatchInlineSnapshot(`".z-1wk3aow1vo00g4-base0{padding:8px;}"`)
+      ).toMatchInlineSnapshot(`
+        ".z-1wk3aow1vo00g4-base0 {
+          padding: 8px;
+        }
+        "
+      `)
       if (process.platform === 'darwin') {
         // This CI fixture must exercise a real case-insensitive volume.
         expect(

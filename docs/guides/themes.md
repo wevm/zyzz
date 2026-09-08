@@ -232,9 +232,21 @@ Theme factories and scope reads become constants. Escaping style definitions use
 
 `Source.extract` exposes local theme data and rewrite spans alongside ordered styles. Pass both `styles` and `themes` to `Css.compile` when using extraction without rewriting. Theme scope maps use stable module/binding keys. Theme scope rules trace to their factory; element declarations trace to their authored properties.
 
-Themes must be local `const` bindings declared before their references. Extensions reference a preceding local theme. Literal object keys, nested palette data, numeric keys, and transparent `as`/`satisfies` wrappers are supported. Namespace imports, expressions, spreads, mutation, dynamic factories, aliases, destructuring, and escaping/exported theme objects receive source diagnostics.
+Themes must be local `const` bindings declared before their references. Extensions reference a preceding local theme. Literal object keys, nested palette data, numeric keys, and transparent `as`/`satisfies` wrappers are supported. Namespace imports, expressions, spreads, mutation, dynamic factories, and escaping/exported theme objects receive source diagnostics.
 
-Export compiled scope strings and style callables from this boundary. Importing/exporting theme contracts, aliases/re-exports, explicit source token paths, and cross-file dependency linking remain the next step. The file host compiles supported local themes through the same transform and rebuilds their CSS after edits.
+Local bound authoring supports member aliases, destructuring with optional renaming, and alias chains:
+
+```ts
+const css = theme.css
+const { css: themedCss } = theme
+const other = themedCss
+
+export const card = other({ color: 'brand' })
+```
+
+Aliases must be module-level `const` bindings declared before use. Calls retain token inference and lexical shadowing. Destructuring accepts only `css`, without defaults or rest properties. Export compiled styles, rather than the authoring alias itself; passing an alias to another function or mutating it produces a source diagnostic.
+
+Export compiled scope strings and style callables from this boundary. Importing/exporting theme contracts and authoring aliases, re-exports, explicit source token paths, and cross-file dependency linking remain the next step. The file host compiles supported local themes through the same transform and rebuilds their CSS after edits.
 
 Reading `theme.className` or calling `theme.css` without transformation throws the missing-transform error. Pure in-memory compilation continues to use `Css.compile(...).themes`; it does not read the authoring getter.
 

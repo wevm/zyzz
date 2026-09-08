@@ -171,61 +171,66 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
     `)
   })
 
-  test('local themed callables preserve overrides, scope inheritance, and schemes in Chromium', async () => {
-    const source = `import { Theme } from 'zyzz';
+  test.each(['direct', 'member', 'destructured'] as const)(
+    'local themed callables preserve overrides, scope inheritance, and schemes in Chromium: %s',
+    async (kind) => {
+      const source = `import { Theme } from 'zyzz';
 const theme = Theme.define({ color: { brand: { dark: '#fff', light: '#000' } }, spacing: { md: '8px' } });
 const alternate = Theme.extend(theme, { color: { brand: '#f00' } });
 export const alternateScope = alternate.className;
 export const baseScope = theme.className;
-export const button = theme.css({ color: 'brand', padding: 'md' });`
-    const result = Transform.compile({ moduleId: 'example/theme.ts', source })
-    const bundle = await Esbuild.build({
-      alias: { 'zyzz/runtime': Path.join(root, 'src/runtime/index.ts') },
-      bundle: true,
-      format: 'iife',
-      globalName: 'Fixture',
-      metafile: true,
-      stdin: { contents: result.code, loader: 'ts', resolveDir: root },
-      write: false,
-    })
-    expect(
-      Object.keys(bundle.metafile!.inputs).some((path) =>
-        /Theme\.ts|compiler\//.test(path),
-      ),
-    ).toMatchInlineSnapshot('false')
+${kind === 'member' ? 'const css = theme.css;' : kind === 'destructured' ? 'const { css } = theme;' : ''}
+export const button = ${kind === 'direct' ? 'theme.css' : 'css'}({ color: 'brand', padding: 'md' });`
+      const result = Transform.compile({ moduleId: 'example/theme.ts', source })
+      const bundle = await Esbuild.build({
+        alias: { 'zyzz/runtime': Path.join(root, 'src/runtime/index.ts') },
+        bundle: true,
+        format: 'iife',
+        globalName: 'Fixture',
+        metafile: true,
+        stdin: { contents: result.code, loader: 'ts', resolveDir: root },
+        write: false,
+      })
+      expect(
+        Object.keys(bundle.metafile!.inputs).some((path) =>
+          /Theme\.ts|compiler\//.test(path),
+        ),
+      ).toMatchInlineSnapshot('false')
 
-    const browser = await chromium.launch()
-    try {
-      const page = await browser.newPage()
-      await page.setContent(
-        '<section id="scope"><button id="button">Continue</button></section>',
-      )
-      await page.addStyleTag({ content: result.css })
-      await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
-      const rendered = await page.evaluate(() => {
-        const fixture = (
-          window as unknown as {
-            Fixture: {
-              alternateScope: string
-              baseScope: string
-              button: (options: { className: string }) => { className: string }
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          '<section id="scope"><button id="button">Continue</button></section>',
+        )
+        await page.addStyleTag({ content: result.css })
+        await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+        const rendered = await page.evaluate(() => {
+          const fixture = (
+            window as unknown as {
+              Fixture: {
+                alternateScope: string
+                baseScope: string
+                button: (options: { className: string }) => {
+                  className: string
+                }
+              }
+            }
+          ).Fixture
+          const scope = document.querySelector<HTMLElement>('#scope')!
+          const button = document.querySelector<HTMLElement>('#button')!
+          button.className = fixture.button({ className: 'external' }).className
+          const values: string[] = []
+          for (const name of ['', fixture.alternateScope, fixture.baseScope]) {
+            scope.className = name
+            for (const scheme of ['light', 'dark']) {
+              scope.style.colorScheme = scheme
+              values.push(getComputedStyle(button).color)
             }
           }
-        ).Fixture
-        const scope = document.querySelector<HTMLElement>('#scope')!
-        const button = document.querySelector<HTMLElement>('#button')!
-        button.className = fixture.button({ className: 'external' }).className
-        const values: string[] = []
-        for (const name of ['', fixture.alternateScope, fixture.baseScope]) {
-          scope.className = name
-          for (const scheme of ['light', 'dark']) {
-            scope.style.colorScheme = scheme
-            values.push(getComputedStyle(button).color)
-          }
-        }
-        return values
-      })
-      expect(rendered).toMatchInlineSnapshot(`
+          return values
+        })
+        expect(rendered).toMatchInlineSnapshot(`
           [
             "rgb(0, 0, 0)",
             "rgb(255, 255, 255)",
@@ -235,20 +240,21 @@ export const button = theme.css({ color: 'brand', padding: 'md' });`
             "rgb(255, 255, 255)",
           ]
       `)
-      expect(
-        await page
-          .locator('#button')
-          .evaluate((element) => element.classList.contains('external')),
-      ).toMatchInlineSnapshot('true')
-      expect(
-        await page
-          .locator('#button')
-          .evaluate((element) => getComputedStyle(element).padding),
-      ).toMatchInlineSnapshot('"8px"')
-    } finally {
-      await browser.close()
-    }
-  })
+        expect(
+          await page
+            .locator('#button')
+            .evaluate((element) => element.classList.contains('external')),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          await page
+            .locator('#button')
+            .evaluate((element) => getComputedStyle(element).padding),
+        ).toMatchInlineSnapshot('"8px"')
+      } finally {
+        await browser.close()
+      }
+    },
+  )
 
   test('JavaScript theme modules remain JavaScript and shadowed factories remain untouched', async () => {
     const source = `import { Theme as T } from 'zyzz'; const theme = T.define({ color: { brand: '#000' } }); export const props = theme.css({ color: 'brand' })(); export function other(T) { return T.define({ arbitrary: true }); }`
@@ -287,14 +293,212 @@ export const button = theme.css({ color: 'brand', padding: 'md' });`
     )
   })
 
-  test('theme aliases require linking instead of surviving as broken runtime calls', () => {
+  test('theme css aliases and destructuring compile with lexical shadowing', async () => {
+    const result = Transform.compile({
+      moduleId: 'example/aliases.ts',
+      source: `import { Theme } from 'zyzz';
+const theme = Theme.define({ color: { brand: '#06c' }, spacing: { md: '8px' } });
+const css = theme.css;
+const chained = css;
+const { css: renamed } = theme;
+export type Styles = Parameters<typeof renamed>[0];
+export const first = chained({ color: 'brand' })();
+export const second = renamed({ padding: 'md' })();
+export function shadow(css: (input: string) => string) { return css('untouched') }
+`,
+    })
+    expect(result.code).toMatchInlineSnapshot(`
+      "
+      const theme = ({className:"z_theme-1ypjmwd1mnjqht-theme"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>);
+      const css = (undefined as unknown as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['css']);
+      const chained = (undefined as unknown as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['css']);
+      const { css: renamed } = ({css:undefined} as unknown as {readonly css:import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['css']});
+      export type Styles = Parameters<typeof renamed>[0];
+      export const first = ({className:"z-1ypjmwd1mnjqht-base0"});
+      export const second = ({className:"z-1ypjmwd1mnjqht-base1"});
+      export function shadow(css: (input: string) => string) { return css('untouched') }
+      "
+    `)
+    expect(result.css).toMatchInlineSnapshot(`
+      ".z_theme-1ypjmwd1mnjqht-theme{--z-t1ypjmwd1mnjqht-theme-color_2e_brand:#06c;--z-t1ypjmwd1mnjqht-theme-spacing_2e_md:8px;}
+      .z-1ypjmwd1mnjqht-base0{color:var(--z-t1ypjmwd1mnjqht-theme-color_2e_brand,#06c);}
+      .z-1ypjmwd1mnjqht-base1{padding:var(--z-t1ypjmwd1mnjqht-theme-spacing_2e_md,8px);}"
+    `)
+    const bundle = await Esbuild.build({
+      bundle: true,
+      format: 'cjs',
+      metafile: true,
+      stdin: { contents: result.code, loader: 'ts' },
+      write: false,
+    })
+    expect(bundle.metafile!.outputs['stdin.js']!.imports).toMatchInlineSnapshot(
+      `[]`,
+    )
+    const directory = await Fs.mkdtemp(Path.join(root, '.fixture-alias-'))
+    try {
+      const file = Path.join(directory, 'module.cjs')
+      await Fs.writeFile(file, bundle.outputFiles[0]!.text)
+      const executed = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          '-e',
+          `const value = require(${JSON.stringify(file)}); console.log(JSON.stringify(value.first)); console.log(JSON.stringify(value.second)); console.log(value.shadow(value => value));`,
+        ],
+      )
+      expect(executed.stdout).toMatchInlineSnapshot(`
+        "{"className":"z-1ypjmwd1mnjqht-base0"}
+        {"className":"z-1ypjmwd1mnjqht-base1"}
+        untouched
+        "
+      `)
+      await Fs.writeFile(
+        Path.join(directory, 'module.ts'),
+        `${result.code}
+renamed({ color: 'brand' });
+// @ts-expect-error Unknown tokens remain rejected after rewriting.
+renamed({ color: 'unknown' });
+// @ts-expect-error Aliases preserve token domains.
+css({ color: 'md' });
+`,
+      )
+      const checked = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          Path.join(root, 'node_modules/typescript/bin/tsc'),
+          '--customConditions',
+          'src',
+          '--module',
+          'NodeNext',
+          '--target',
+          'esnext',
+          '--strict',
+          '--skipLibCheck',
+          '--noEmit',
+          Path.join(directory, 'module.ts'),
+        ],
+      )
+      expect(checked.stdout).toMatchInlineSnapshot(`""`)
+    } finally {
+      await Fs.rm(directory, { force: true, recursive: true })
+    }
+  })
+
+  test('JavaScript aliases remain JavaScript and parameter initializers retain lexical bindings', async () => {
+    const result = Transform.compile({
+      moduleId: 'example/aliases.js',
+      source: `import { Theme } from 'zyzz';
+const theme = Theme.define({color:{brand:'#06c'}});
+const { css } = theme;
+export function card(value = css({color:'brand'})()) { var css = 1; return value }
+`,
+    })
+    expect(result.code).toMatchInlineSnapshot(`
+      "
+      const theme = ({className:"z_theme-1yrnmp3116l80n-theme"});
+      const { css } = ({css:undefined});
+      export function card(value = ({className:"z-1yrnmp3116l80n-base0"})) { var css = 1; return value }
+      "
+    `)
+    const output = await Esbuild.transform(result.code, { loader: 'js' })
+    expect(output.warnings).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('theme alias diagnostics reject exported aliases', () => {
     expect(() =>
       Transform.compile({
-        moduleId: 'example/theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); const { css } = theme; css({ color: 'brand' });`,
+        moduleId: 'example/aliases.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); export const css = theme.css;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/theme.ts:104: Use local theme.css calls, theme.className reads, or Theme.extend; other theme references require source linking.]`,
+      `[Source.ExtractError: example/aliases.ts:95: Theme css aliases require a local module-level const binding.]`,
+    )
+  })
+
+  test('theme alias diagnostics reject escaping aliases', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/aliases.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const css = theme.css; consume(css);`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/aliases.ts:113: Theme css aliases support direct calls only; exporting or escaping them requires source linking.]`,
+    )
+  })
+
+  test('theme alias diagnostics reject reassigned aliases', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/aliases.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const css = theme.css; (css as unknown) = value;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/aliases.ts:106: Theme css aliases support direct calls only; exporting or escaping them requires source linking.]`,
+    )
+  })
+
+  test('theme alias diagnostics reject destructuring defaults', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/aliases.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const { css = fallback } = theme;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/aliases.ts:88: Destructure only css into a const binding without defaults or rest properties.]`,
+    )
+  })
+
+  test('theme alias diagnostics reject destructuring rest', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/aliases.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const { css, ...rest } = theme;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/aliases.ts:88: Destructure only css into a const binding without defaults or rest properties.]`,
+    )
+  })
+
+  test('theme alias diagnostics reject mutable aliases', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/aliases.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); let css = theme.css;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/aliases.ts:86: Theme css aliases require a local module-level const binding.]`,
+    )
+  })
+
+  test('theme alias diagnostics reject early alias calls', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/aliases.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); css({color:'brand'}); const css = theme.css;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/aliases.ts:82: Theme css alias references must follow their definition.]`,
+    )
+  })
+
+  test('theme alias diagnostics reject optional alias calls', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/aliases.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const css = theme.css; css?.({color:'brand'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/aliases.ts:105: Theme css aliases support direct calls only; exporting or escaping them requires source linking.]`,
+    )
+  })
+
+  test('theme alias diagnostics reject export specifiers', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/aliases.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const css = theme.css; export { css };`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/aliases.ts:114: Theme css aliases support direct calls only; exporting or escaping them requires source linking.]`,
     )
   })
 

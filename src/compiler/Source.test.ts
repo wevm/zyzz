@@ -202,6 +202,7 @@ type Definition = ReturnType<typeof define>;
               },
             ],
           },
+          "themeAliases": [],
           "themeCalls": [],
           "themeReferences": [],
           "themes": {},
@@ -257,6 +258,7 @@ const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 
         "styles": {
           "styles": [],
         },
+        "themeAliases": [],
         "themeCalls": [],
         "themeReferences": [],
         "themes": {},

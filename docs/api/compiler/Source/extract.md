@@ -57,6 +57,16 @@ Ordered authoring calls with names and rewrite spans.
 output.calls[0]?.start
 ```
 
+### themeAliases
+
+- Type: `Source.extract.ReturnType["themeAliases"]`
+
+Local bound-authoring initializers, source spans, and token types used by the rewriter.
+
+```ts
+output.themeAliases[0]?.start
+```
+
 ### styles
 
 - Type: `Style.Definition`

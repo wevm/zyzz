@@ -7,6 +7,12 @@ import type * as Walker from 'oxc-walker'
 import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
 
+/** Local bound-authoring initializer replaced while retaining its inferred type. */
+export type Alias = Call & {
+  /** Whether the initializer supplies a destructured css binding. */
+  readonly destructured: boolean
+}
+
 /** Theme factory span and generated scope key. */
 export type Call = {
   /** Exclusive source offset. */
@@ -21,6 +27,9 @@ export type Call = {
 
 /** Collects immutable module-level themes without evaluating source. */
 export function collect(program: Ast.Program, options: collect.Options) {
+  const aliases: Alias[] = []
+  const aliasBindings = new Map<number, Alias>()
+  const aliasReferences = new Set<number>()
   const calls: Call[] = []
   const definitions = new Map<number, Call>()
   const factories = new Set<number>()
@@ -243,6 +252,77 @@ export function collect(program: Ast.Program, options: collect.Options) {
     }
   }
 
+  const aliasNames = new Map<string, Alias>()
+  for (const statement of program.body) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration'
+        ? statement.declaration
+        : statement
+    if (declaration?.type !== 'VariableDeclaration') continue
+    for (const variable of declaration.declarations) {
+      const expression = variable.init
+      if (!expression) continue
+      const member =
+        expression.type === 'MemberExpression' &&
+        !expression.computed &&
+        !expression.optional &&
+        expression.property.type === 'Identifier' &&
+        expression.property.name === 'css' &&
+        expression.object.type === 'Identifier'
+          ? expression.object
+          : undefined
+      const destructured =
+        variable.id.type === 'ObjectPattern' && expression.type === 'Identifier'
+      const source =
+        member ?? (expression.type === 'Identifier' ? expression : undefined)
+      if (!source) continue
+      const theme =
+        member || destructured
+          ? names.get(source.name)
+          : aliasNames.get(source.name)
+      if (!theme) continue
+      let id = variable.id
+      if (destructured && id.type === 'ObjectPattern') {
+        const property = id.properties[0]
+        if (
+          id.properties.length !== 1 ||
+          property?.type !== 'Property' ||
+          property.computed ||
+          property.key.type !== 'Identifier' ||
+          property.key.name !== 'css' ||
+          property.value.type !== 'Identifier'
+        )
+          fail(
+            'Destructure only css into a const binding without defaults or rest properties.',
+            id,
+          )
+        id = property.value
+      }
+      if (
+        declaration.kind !== 'const' ||
+        statement.type === 'ExportNamedDeclaration' ||
+        id.type !== 'Identifier'
+      )
+        fail(
+          'Theme css aliases require a local module-level const binding.',
+          variable,
+        )
+      if (expression.start < theme.end)
+        fail('Theme css aliases must follow their definition.', expression)
+      const alias = Object.freeze({
+        destructured,
+        end: expression.end,
+        name: theme.name,
+        start: expression.start,
+        tokenType: theme.tokenType,
+      })
+      aliases.push(alias)
+      aliasBindings.set(id.start, alias)
+      aliasNames.set(id.name, alias)
+      aliasReferences.add(source.start)
+    }
+  }
+
   function reference(
     node: Extract<Ast.Node, { type: 'Identifier' | 'JSXIdentifier' }>,
     parent: Ast.Node,
@@ -262,11 +342,33 @@ export function collect(program: Ast.Program, options: collect.Options) {
         node,
       )
     }
+    const alias =
+      binding?.type === 'Variable'
+        ? aliasBindings.get(binding.node.start)
+        : undefined
+    if (alias) {
+      if (node.start === binding!.node.start) return true
+      if (node.start < alias.end)
+        fail('Theme css alias references must follow their definition.', node)
+      if (aliasReferences.has(node.start)) return true
+      if (
+        parent.type !== 'CallExpression' ||
+        parent.callee !== node ||
+        parent.optional
+      )
+        fail(
+          'Theme css aliases support direct calls only; exporting or escaping them requires source linking.',
+          node,
+        )
+      styles.set(parent.start, { call: parent, theme: themes[alias.name]! })
+      return true
+    }
     const theme =
       binding?.type === 'Variable'
         ? definitions.get(binding.node.start)
         : undefined
     if (!theme) return false
+    if (aliasReferences.has(node.start)) return true
     if (node.start < theme.end)
       fail('Theme references must follow their local definition.', node)
     if (
@@ -339,7 +441,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
     return true
   }
 
-  return { calls, reference, references, styles, themes: Object.freeze(themes) }
+  return {
+    aliases,
+    calls,
+    reference,
+    references,
+    styles,
+    themes: Object.freeze(themes),
+  }
 }
 
 /** Inputs supplied by the source adapter. */

@@ -325,6 +325,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   return Object.freeze({
     calls: Object.freeze(calls.map((call) => Object.freeze(call))),
     styles: Object.freeze({ styles: Object.freeze(styles) }),
+    themeAliases: Object.freeze(themes?.aliases ?? []),
     themeCalls: Object.freeze(themes?.calls ?? []),
     themeReferences: Object.freeze(themes?.references ?? []),
     themes: themes?.themes ?? Object.freeze({}),
@@ -348,6 +349,8 @@ export declare namespace extract {
     readonly calls: readonly Call[]
     /** Validated definitions accepted by Css.compile. */
     readonly styles: Style.Definition
+    /** Local bound-authoring initializers and their retained token types. */
+    readonly themeAliases: readonly Themes.Alias[]
     /** Local factory spans replaced by compiled scope data. */
     readonly themeCalls: readonly Themes.Call[]
     /** Scope reads replaced by class constants. */

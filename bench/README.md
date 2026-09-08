@@ -2,14 +2,18 @@
 
 Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, with shared workloads in `bench/Corpus.ts`. Run `pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json`. Reports are ignored by Git.
 
-The separate Benchmarks workflow uploads results and environment metadata as a 30-day artifact. Its PR comment and summary compare matching measurements against the latest successful main push: 🟢 improved, 🟡 unchanged or within tolerance, and 🔴 possible regression. New and removed benchmarks are labeled; missing or expired artifacts show “No baseline available.”
+The separate Benchmarks workflow uploads results and environment metadata as a 30-day artifact. Its PR comment and summary compare matching measurements against the latest successful main push: 🟢 improved, 🟡 unchanged or within tolerance, and 🔴 regression above threshold. New and removed benchmarks are labeled; missing or expired artifacts show “No baseline available.”
 
-Timing comparisons are informational across separate CI runners. Changes must exceed both 10% and the sum of the two reported relative errors to turn green or red. Size changes show exact bytes and percentages. Fixture or toolchain changes can affect comparisons; confirm timing regressions on the same idle machine before drawing conclusions.
+CI fails when time increases exceed both 10% and the sum of the reported relative errors, or gzip sizes increase by more than 5%. The comment and artifact publish before the check fails. Configure `BENCH_TIME_THRESHOLD` and `BENCH_SIZE_THRESHOLD` in the workflow; both are nonnegative percentage increases.
+
+Timings come from separate CI runners. Fixture or toolchain changes can affect comparisons; confirm unexpected timing failures on the same idle machine. Missing baselines and new or removed measurements are reported without failing the threshold check.
 
 The same report can be generated locally from extracted artifacts:
 
 ```sh
 node bench/Compare.ts bench/results /tmp/main-benchmarks
+# Exit with status 1 when a threshold is exceeded.
+BENCH_TIME_THRESHOLD=10 BENCH_SIZE_THRESHOLD=5 node bench/Compare.ts bench/results /tmp/main-benchmarks --check
 ```
 
 For a comparison, measure baseline and candidate sequentially on the same idle machine with the same fixture corpus. Save the baseline outside the checkout, then append `--compare <baseline.json>` when running the candidate. Record variance and measurement limitations with any reported delta.

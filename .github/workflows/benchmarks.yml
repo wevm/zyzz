@@ -11,6 +11,9 @@ concurrency:
 jobs:
   benchmarks:
     name: Benchmarks
+    env:
+      BENCH_SIZE_THRESHOLD: '5'
+      BENCH_TIME_THRESHOLD: '10'
     permissions:
       actions: read
       contents: read
@@ -177,6 +180,10 @@ jobs:
           name: benchmarks
           path: bench/results/
           retention-days: 30
+      - name: Check benchmark thresholds
+        env:
+          BASELINE_DIRECTORY: ${{ steps.download-baseline.outcome == 'success' && format('{0}/benchmark-baseline', runner.temp) || '' }}
+        run: node bench/Compare.ts bench/results "$BASELINE_DIRECTORY" --check > /dev/null
     timeout-minutes: 15
 permissions:
   contents: read

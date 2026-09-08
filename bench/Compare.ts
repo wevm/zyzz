@@ -1,5 +1,5 @@
 /**
- * Prints an informational comparison against a saved main benchmark artifact.
+ * Reports benchmark changes and optionally fails on configured regressions.
  * @module
  */
 import * as Fs from 'node:fs'
@@ -31,10 +31,16 @@ type Timings = {
   }[]
 }
 
-const [candidate, baseline] = process.argv.slice(2)
+const [candidate, baseline, check] = process.argv.slice(2)
 const competitors = new Set(['panda', 'stylex', 'tailwind', 'vanilla-extract'])
+const thresholds = {
+  B: threshold('BENCH_SIZE_THRESHOLD', 5),
+  ms: threshold('BENCH_TIME_THRESHOLD', 10),
+}
 if (!candidate)
-  throw new Error('Usage: node bench/Compare.ts <results> [baseline]')
+  throw new Error('Usage: node bench/Compare.ts <results> [baseline] [--check]')
+if (check !== undefined && check !== '--check')
+  throw new Error(`Unknown option: ${check}`)
 
 console.log('## Compared with main\n')
 if (!baseline || !Fs.existsSync(Path.join(baseline, 'timings.json'))) {
@@ -49,16 +55,17 @@ if (!baseline || !Fs.existsSync(Path.join(baseline, 'timings.json'))) {
     `Baseline: [main @ ${commit.slice(0, 7)}](https://github.com/${repository}/commit/${commit})\n`,
   )
   console.log(
-    '🟢 Improved · 🟡 Within tolerance / unchanged · 🔴 Possible regression\n',
+    '🟢 Improved · 🟡 Within tolerance / unchanged · 🔴 Regression above threshold\n',
   )
   console.log(
-    'Zyzz measurements only. Timings come from separate CI runners; the tolerance is the larger of 10% or the sum of both reported errors. Size changes are exact. Results are informational.\n',
+    `CI fails for increases above ${thresholds.ms}% in time or ${thresholds.B}% in gzip size. Timing changes must also exceed the sum of both reported errors. Zyzz measurements only; timings come from separate CI runners.\n`,
   )
   console.log('| Benchmark | Main | PR / current | Change |')
   console.log('| --- | ---: | ---: | ---: |')
 
   const previous = read(baseline)
   const current = read(candidate)
+  const regressions: string[] = []
   for (const key of new Set([...current.keys(), ...previous.keys()])) {
     const before = previous.get(key)
     const after = current.get(key)
@@ -81,7 +88,9 @@ if (!baseline || !Fs.existsSync(Path.join(baseline, 'timings.json'))) {
           ? undefined
           : (delta / before.value) * 100
     const tolerance =
-      after.unit === 'ms' ? Math.max(10, before.error + after.error) : 0
+      after.unit === 'ms'
+        ? Math.max(thresholds.ms, before.error + after.error)
+        : thresholds.B
     const significant =
       percent === undefined ? delta !== 0 : Math.abs(percent) > tolerance
     const light = !significant ? '🟡' : delta < 0 ? '🟢' : '🔴'
@@ -94,8 +103,13 @@ if (!baseline || !Fs.existsSync(Path.join(baseline, 'timings.json'))) {
     console.log(
       `| ${name} | ${format(before)} | ${format(after)} | ${light} ${bytes}${change} |`,
     )
+    if (significant && delta > 0) regressions.push(`${name}: ${bytes}${change}`)
   }
   console.log('')
+  if (check === '--check' && regressions.length > 0) {
+    console.error(`Benchmark regressions:\n${regressions.join('\n')}`)
+    process.exitCode = 1
+  }
 }
 
 function format(measurement: Measurement) {
@@ -137,4 +151,13 @@ function read(directory: string) {
     }
   }
   return measurements
+}
+
+function threshold(name: string, fallback: number) {
+  const input = process.env[name]
+  if (input === undefined) return fallback
+  const value = Number(input)
+  if (!input.trim() || !Number.isFinite(value) || value < 0)
+    throw new Error(`${name} must be a finite, nonnegative percentage`)
+  return value
 }

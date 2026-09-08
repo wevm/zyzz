@@ -8,18 +8,14 @@ Zyzz compiles typed styles to static CSS and small application props.
 - [Literal Style Definitions](literal-styles.md): the implemented property grammar, validation, ordering, and pure CSS compilation.
 - [In-Memory Themes](themes.md): the implemented token groups, compatible overrides, and theme scope selection.
 
-## Availability
+Literal styles, scalar themes, source transforms, and the file host are implemented at the documented boundaries. Bound `theme.css` has types and token resolution; source linking remains separate at this baseline (`9aa72fc`).
 
-The implemented contracts below describe this branch's baseline, main `9aa72fc`. API previews document accepted designs and are not exports that can already be called.
-
-| Area                                                                | Availability                                                            |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Literal root `css`, source extraction/rewriting, and file host      | Implemented; authoring calls require transformation                     |
-| `Style.define`, `Theme.define`/`extend`, and `Css.compile`          | Implemented for the documented literal/scalar subset                    |
-| Bound `theme.css`                                                   | Types and token resolution implemented; source linking remains separate |
-| `Config.create`, theme variables in expressions, broad CSS values   | Preview                                                                 |
-| Conditions, typed relatives, layers, globals, fonts, and keyframes  | Preview                                                                 |
-| `variants`, dynamic callbacks, `cx`, and shared `Vars`              | Preview                                                                 |
-| CLI, bundled default themes, build plugins, and React Native output | Preview                                                                 |
+> [!NOTE]
+> These APIs are previews and are not yet implemented:
+>
+> - CLI, build plugins, bundled themes, and React Native output.
+> - Conditions, typed relatives, layers, globals, fonts, and keyframes.
+> - `Config.create`, theme variable expressions, and broad CSS values.
+> - `variants`, dynamic callbacks, `cx`, and shared `Vars`.
 
 The [capability inventory](../.agents/parity.md) tracks detailed gaps. The [architecture](../.agents/architecture.md) defines compiler contracts and the [plan](../.agents/plan.md) tracks implementation gates.

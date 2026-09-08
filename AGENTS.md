@@ -103,7 +103,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Document caller-visible purpose, inputs, output, defaults, errors, and side effects. Keep low-level wiring in nearby implementation comments.
 - Keep examples small and focused on the exported behavior. Prefer a snippet, concrete example, or useful visual to a long conceptual explanation; avoid repeating what the example already shows.
 - Keep prose paragraphs under 50 words and focused on one idea. Use bullets for enumerable content and tables for comparisons. Tighten wording rather than mechanically splitting paragraphs.
-- Label preview APIs separately from implemented behavior. Examples must preserve the documented contract and must not imply unavailable APIs already work.
+- Mark preview or unimplemented APIs with GitHub Markdown `> [!NOTE]` callouts scoped to the affected content. Do not add “Available” labels or status suffixes to headings. Examples must preserve the documented contract and must not imply preview APIs already work.
 - Update the owning entrypoint documentation when adding or changing a public module.
 
 ## Prose Conventions

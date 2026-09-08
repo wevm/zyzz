@@ -1,8 +1,8 @@
 # Usage
 
-Sections marked **Available** work at the documented current boundary. **Preview** sections describe accepted APIs that still require implementation. See [availability](README.md#availability).
+Compile styles directly or transform source modules. Preview APIs are marked with notes.
 
-## Compile Styles — Available
+## Compile Styles
 
 ```ts
 import { Style } from 'zyzz'
@@ -16,7 +16,7 @@ const output = Css.compile({ styles })
 
 Load `output.css` as a stylesheet and apply `output.classes.card` to the element. The compiler has no filesystem or browser side effects. [Literal styles](literal-styles.md) documents supported values; [themes](themes.md) adds token references and compatible scopes.
 
-## Transform Source — Available
+## Transform Source
 
 ```ts
 import { Transform } from 'zyzz/compiler'
@@ -32,7 +32,10 @@ Bundle the returned `code` and load its matching `css`. Keep their source maps t
 
 For filesystem builds, `Host.create({ outDir, packageId, root })` from `zyzz/node` returns build/watch/close operations. It writes module and CSS sidecars; loading CSS and lowering TypeScript/JSX remain application build responsibilities.
 
-## Configure Authoring — Preview
+## Configure Authoring
+
+> [!NOTE]
+> Preview API; not yet implemented.
 
 ```ts
 // zyzz.config.ts
@@ -55,7 +58,10 @@ export const { css, themes, variants } = Config.create({
 
 Single-theme configs use `theme: base`, or put the tokens inline. Named catalogs also accept complete inline alternatives. Import returned functions normally; there is no implicit global token or layer registry.
 
-## Apply Styles and Themes — Preview
+## Apply Styles and Themes
+
+> [!NOTE]
+> Preview API; not yet implemented.
 
 ```tsx
 import { css, themes } from './zyzz.config.js'
@@ -82,7 +88,10 @@ const example = (
 - **Theme:** selected through the scope class.
 - **Types:** reject unknown layers and token names.
 
-## Define Variants — Preview
+## Define Variants
+
+> [!NOTE]
+> Preview API; not yet implemented.
 
 ```tsx
 import { variants } from './zyzz.config.js'
@@ -104,7 +113,10 @@ const example = <button {...button({ size: 'md' })}>Save</button>
 
 Each recipe returns props for one element. Defaults apply to omitted selections; null suppresses a choice and its default. Compounds combine matching choice names. Finite choices compile ahead of time.
 
-## Express Runtime Values — Preview
+## Express Runtime Values
+
+> [!NOTE]
+> Preview API; not yet implemented.
 
 ```tsx
 import { css } from 'zyzz'
@@ -126,7 +138,10 @@ const label = css({
 
 Arrays preserve fallback order; a trailing `!` marks importance.
 
-## Match Ancestors — Preview
+## Match Ancestors
+
+> [!NOTE]
+> Preview API; not yet implemented.
 
 ```tsx
 import { css } from 'zyzz'
@@ -147,7 +162,10 @@ const example = (
 
 This deliberately includes an intermediate element: the marker is an ancestor, not the span's immediate parent. `Css.descendant` checks descendants of the styled element. Helper names describe direction and depth; they do not verify DOM structure through TypeScript.
 
-## Define Stylesheets — Preview
+## Define Stylesheets
+
+> [!NOTE]
+> Preview API; not yet implemented.
 
 ```ts
 import { fontFace, global, keyframes } from 'zyzz/web'
@@ -181,7 +199,10 @@ export const notice = css({
 - **Layers:** standalone strings receive compiler validation, without config-bound TypeScript inference.
 - **Runtime:** the host collects CSS without executing application code.
 
-## Compile With the CLI — Preview
+## Compile With the CLI
+
+> [!NOTE]
+> Preview API; not yet implemented.
 
 ```sh
 zyzz src --out-dir dist --css dist/styles.css

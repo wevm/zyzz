@@ -55,12 +55,13 @@ Values currently follow the [literal grammar](literal-styles.md): literal colors
 
 Classes and variable slots belong to one in-memory graph. Separate outputs require independent namespaces. Root `css` still accepts only literals at this baseline.
 
-Separate capabilities include:
-
-- Bundled tokens and typography presets.
-- Query metadata.
-- Source extraction and compiled `theme.className`.
-- `theme.vars` expressions.
+> [!NOTE]
+> These capabilities are not yet implemented:
+>
+> - Bundled tokens and typography presets.
+> - Query metadata.
+> - Source extraction and compiled `theme.className`.
+> - `theme.vars` expressions.
 
 ## Selecting a Theme
 
@@ -80,7 +81,8 @@ function App({ appearance }: { appearance: 'alternate' | 'base' }) {
 
 The class selection changes inherited variable values; component styles stay the same. Select light or dark independently through `color-scheme`. Independently defined themes own separate contracts and do not override one another, even when token paths match.
 
-The source-authoring API will expose the equivalent scope through `theme.className`. Choose a bound `theme.css` or `theme.vars` reference while defining styles; select a compatible scope when rendering. Neither selection requires invoking a runtime compiler or a variables function.
+> [!NOTE]
+> Source authoring is a preview. It will expose scopes through `theme.className`. Define styles with bound `theme.css` or `theme.vars`, then select a compatible scope when rendering. No runtime compiler or variables function is needed.
 
 ## Token Names
 

@@ -38,13 +38,15 @@ Consumer concepts, usage, and API status are documented in [docs](../docs/README
 
 ## Configuration and Inferred Authoring
 
-Accepted API: retain `Theme.define`/`Theme.extend` for reusable token definitions and add `Config.create` as the usual authoring entrypoint, exported as a namespace from `zyzz`. Encourage `zyzz.config.ts`; it is an ordinary importable, statically analyzed module, not an executable configuration hook or a required filename. The root core remains pure and independent of source discovery and platform adapters.
+Accepted API: retain `Theme.define`/`Theme.extend` for reusable token definitions and add `Config.create` as the usual authoring entrypoint, exported as a namespace from `zyzz`.
+
+Recommend default-exporting the config instance from `zyzz.config.ts`; it is an ordinary importable, statically analyzed module, not an executable configuration hook or a required filename. The root core remains pure and independent of source discovery and platform adapters.
 
 ```ts
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const { css, theme, variants } = Config.create({
+export default Config.create({
   layers: ['reset', 'base', 'components'],
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
@@ -62,7 +64,7 @@ const base = Theme.define({
   color: { brand: { dark: '#8cf', light: '#06c' } },
 })
 
-export const { css, themes, variants } = Config.create({
+export default Config.create({
   defaultTheme: 'base',
   layers: ['reset', 'base', 'components'],
   themes: {
@@ -77,7 +79,9 @@ The default determines token paths/domains and unscoped fallback values. Named a
 `layers` is an ordered readonly tuple of valid CSS layer names. Infer exact `@layer <name>` keys directly in the returned `css` and every supported style body of `variants`, retaining property/value/token inference at every depth:
 
 ```ts
-const button = css({
+import config from './zyzz.config.js'
+
+const button = config.css({
   '@layer components': {
     backgroundColor: 'brand',
     ':hover': { opacity: 0.8 },
@@ -90,10 +94,10 @@ Autocomplete declared keys and reject misspellings such as `@layer component`. N
 Select a theme through its returned compiled scope class and a color scheme through the ordinary CSS property:
 
 ```tsx
-const selected: keyof typeof themes = 'mint'
+const selected: keyof typeof config.themes = 'mint'
 const example = (
   <section
-    className={themes[selected].className}
+    className={config.themes[selected].className}
     style={{ colorScheme: 'dark' }}
   >
     <button {...button()}>Save</button>
@@ -104,6 +108,8 @@ const example = (
 Scope classes assign live custom properties; descendants inherit values without changing their component classes or copying a theme's token set into inline style. Nested scopes select themes independently. `colorScheme: 'light'` or `'dark'` forces a scheme; `'light dark'` follows browser preference through `light-dark()` color leaves. Themes and schemes remain separate axes. Dynamic per-instance values retain the existing callback binding API. Native selects precompiled theme/scheme tables through its adapter; it does not interpret web scope classes or layers.
 
 Globals and additional layer contributions retain project-wide collection and may be colocated outside `zyzz.config.ts`. Config declarations contribute their layer order through that same pipeline. The filename convention never changes inference in direct root imports or requires runtime providers. Public config properties remain explicit and narrowly typed; new settings need their own semantics rather than an arbitrary metadata bag.
+
+Default imports retain the config's complete inferred contract. Source adapters must follow `config.css`, `config.variants`, and theme handles through aliases and package boundaries. Named re-exports remain valid supported aliases, but documentation recommends one default instance. No config import performs compilation at runtime.
 
 ## Theme definition
 
@@ -711,14 +717,14 @@ Accepted API for 2.4c: `Config.create({ layers, ... })` declares semantic layer 
 ```ts
 import { Config } from 'zyzz'
 
-export const { css, variants } = Config.create({
+export default Config.create({
   layers: ['reset', 'base', 'components', 'overrides'],
 })
 ```
 
 ```ts
 import { global } from 'zyzz/web'
-import { css } from './zyzz.config.js'
+import config from './zyzz.config.js'
 
 global({
   '@layer base': {
@@ -727,7 +733,7 @@ global({
   },
 })
 
-export const button = css({
+export const button = config.css({
   '@layer components': { padding: '1rem' },
 })
 ```
@@ -875,7 +881,7 @@ The default target is web. A later `--target native` emits static tables through
 ## Bundler Setup Preview
 
 > [!NOTE]
-> The guide proposes `Vite.create()` from `zyzz/vite`; this adapter is not implemented. Keep its public setup aligned with [Getting Started](../docs/guides/getting-started.md).
+> The guide proposes `Vite.create()` from `zyzz/vite`; this adapter is not implemented. Keep its public setup aligned with [Getting Started](../docs/introduction/getting-started.md).
 
 The optional adapter connects the shared compiler to Vite's module graph. It rewrites authoring modules, delivers development CSS updates, and emits linked production CSS assets. Consumers retain their framework plugin and import source components normally.
 
@@ -884,7 +890,7 @@ The optional adapter connects the shared compiler to Vite's module graph. It rew
 - **Other bundlers:** use CLI output until a concrete adapter and public setup are defined.
 - **Parity:** plugin and CLI paths must agree on identities, conditions, theme scopes, and emitted behavior for equivalent input graphs.
 
-The CLI guide uses a separate generated directory consumed by the application build. The consuming bundler handles TypeScript/JSX; importing untouched authoring modules is not a substitute for consuming rewritten output.
+Application examples import authored components and the default config normally. A bundler adapter hides rewriting and delivery. Standalone CLI output belongs to a downstream build or package distribution; consumers do not hand-maintain imports to generated component copies. CSS-only output cannot replace rewriting for the current callable API.
 
 ## Small CSS and readable classes
 
@@ -946,7 +952,7 @@ Compare grouped and atomic emission on repeated and unique styles. Measure compr
 
 ## Literal Compiler Boundary
 
-`Css.compile({ styles })` from `zyzz/web` implements the literal subset documented in `docs/literal-styles.md`. It returns frozen `{ classes, css, themes }` artifacts, with an empty theme map. Nonconflicting declaration domains are shared; conflicting rules preserve authored cascade order. Class maps contain space-separated identifiers scoped to the complete compilation input. Identical inputs produce identical artifacts; adding definitions can change factoring. Themes, source extraction, and general atomic optimization belong to subsequent boundaries. Literal factoring is implemented early to meet the bundle-size budget.
+`Css.compile({ styles })` from `zyzz/web` implements the literal subset documented in `docs/api/core/Style/literals.md`. It returns frozen `{ classes, css, themes }` artifacts, with an empty theme map. Nonconflicting declaration domains are shared; conflicting rules preserve authored cascade order. Class maps contain space-separated identifiers scoped to the complete compilation input. Identical inputs produce identical artifacts; adding definitions can change factoring. Themes, source extraction, and general atomic optimization belong to subsequent boundaries. Literal factoring is implemented early to meet the bundle-size budget.
 
 ## Static Source Extraction Boundary
 

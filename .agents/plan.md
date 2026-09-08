@@ -76,7 +76,7 @@ Merge in dependency order. Each PR includes real integration scenarios, consumer
 
 Acceptance: public consumer scenarios prove inference, ordered immutable data, and actionable validation errors through real modules. Consumer type fixtures run in CI; compiler comparisons have reproducible fixtures and reports. The root dependency graph contains no themes, target emitters, parsers, filesystem access, or framework runtimes.
 
-Evidence: [PR #1](https://github.com/wevm/zyzz/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all integration scenarios pass. The separate Benchmarks workflow uploads reports and host metadata as CI artifacts; [reproduction instructions](../bench/README.md) and the [literal contract](../docs/literal-styles.md) are tracked. Zyzz browser rendering and CSS-output benchmarks start with PR 1.2.
+Evidence: [PR #1](https://github.com/wevm/zyzz/pull/1); `pnpm check`, `pnpm check:types`, `pnpm build`, and all integration scenarios pass. The separate Benchmarks workflow uploads reports and host metadata as CI artifacts; [reproduction instructions](../bench/README.md) and the [literal contract](../docs/api/core/Style/literals.md) are tracked. Zyzz browser rendering and CSS-output benchmarks start with PR 1.2.
 
 ### PR 1.2 — Literal CSS Compilation
 
@@ -167,7 +167,8 @@ PR 2.1 uses opaque object references for contracts within one in-memory graph. C
 - [ ] Specify registered custom properties in 2.3: syntax, initial value, inheritance, interpolation, duplicate/conflicting registrations, and target diagnostics. Distinguish variable fallbacks from ordered declaration fallbacks; preserve existing callback and `Vars` value-binding roles.
 - [ ] Expand token groups alongside their validated properties: scalar typography, composite typography, query thresholds, then border, shadow, opacity, transition, and stacking scales. Keep inherited theme selection separate from CSS color-scheme selection.
 - [x] Implement the `Theme.define` and `Theme.extend` contracts before widening authoring syntax.
-- [ ] Add pure `Config.create` from the root namespace while retaining reusable `Theme.define`/`Theme.extend`. Encourage an ordinary `zyzz.config.ts` module. Support inline or defined single themes, mixed named catalogs, mutually exclusive `theme`/`themes`, inferred required named defaults, token-free omission, and explicit layer lists. Return bound `css`/`variants` plus the corresponding normalized theme handle(s), without requiring a layer-reference object.
+- [ ] Add pure `Config.create` from the root namespace while retaining reusable `Theme.define`/`Theme.extend`. Recommend default-exporting an ordinary `zyzz.config.ts` instance. Support inline or defined single themes, mixed named catalogs, mutually exclusive `theme`/`themes`, inferred required named defaults, token-free omission, and explicit layer lists. Return bound `css`/`variants` plus the corresponding normalized theme handle(s), without requiring a layer-reference object.
+- [ ] Preserve inference and extraction through default config imports, `config.css`, `config.variants`, and theme handles; cover aliases and packed exports without runtime configuration execution.
 - [ ] Validate named themes against the default's complete paths/domains, normalize shared config identities without mutating standalone themes, and retain default fallbacks. Cover missing/extra tokens, incompatible domains, partial extensions, imported definitions, aliases, source edits, and packed contracts with integration/type fixtures.
 - [ ] Verify configuration-to-browser theme selection using `themes[name].className`, stable component classes, nested scopes, and independent `colorScheme` values including browser preference. No copied theme token map in inline styles or runtime config evaluation. Cover native table selection separately and benchmark full delivered CSS/JS and theme-switch behavior.
 
@@ -254,7 +255,7 @@ Status: planned.
 - [ ] Build the CLI with `--css`, `--watch`, and `--minify`; rewrite modules alongside CSS and declarations, requiring no styling plugin in consumers.
 - [ ] Verify CLI/build/in-memory parity, dependency watching, output exclusion, diagnostics, failure preservation, and owned-output cleanup. Include imported style constants and threshold edits in dependency recovery fixtures.
 - [ ] Keep build integrations optional and thin; implement only those needed by concrete fixtures.
-- [ ] Validate the [Getting Started](../docs/guides/getting-started.md) Vite and CLI paths as real consumer fixtures. Finalize the proposed `Vite.create()` entrypoint, automatic dev/production CSS delivery, and CLI rewritten-module imports. Cover edits, production rendering, and matching CSS; remove preview callouts only when the complete paths work.
+- [ ] Validate the [Getting Started](../docs/introduction/getting-started.md) Vite and CLI paths as real consumer fixtures. Finalize the proposed `Vite.create()` entrypoint, automatic dev/production CSS delivery, and standalone CLI output consumption without generated-component imports in application examples. Cover edits, production rendering, and matching CSS; remove preview callouts only when the complete paths work.
 - [ ] Support framework source boundaries in source adapters without leaking template syntax into core semantics.
 - [ ] Compile from in-memory definitions and from source adapters using the same target emitters.
 - [ ] Distribute web modules, declarations, and CSS; distribute native modules, declarations, and static theme tables. Consumers do not need compiler integrations.
@@ -355,3 +356,9 @@ Custom conflict graphs, shared-subset/biclique search, bounded beam search, MaxS
 
 - [ ] Track `@scope`, container style/scroll-state queries, scoped view-transition names/classes and pseudo-elements, anchor positioning/`@position-try`, scroll-driven animation timelines, `@counter-style`, paged-media rules, and emerging values as named later capabilities. Assign a phase and fixtures before implementation; reject unsupported grammar with source locations.
 - [ ] Keep browser API orchestration (DOM/CSSOM, Web Animations, preference/layout observers) outside the style compiler. Shared native authoring has its own capability matrix; a browser-only rule cannot silently disappear on native.
+
+## Documentation Coverage
+
+- [ ] Keep entrypoint/module/method reference coverage aligned with public exports and their types/errors. Preview APIs use note callouts and do not imply executable examples.
+- [ ] Verify Getting Started through real CLI and bundler consumer fixtures before removing preview notes. Source imports and default config authoring remain identical across supported integrations.
+- [ ] Extend framework, SSR, migration, and native guides alongside integration proof; do not claim target compatibility from shared authoring types alone.

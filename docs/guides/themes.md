@@ -16,7 +16,7 @@ const base = Theme.define({
   spacing: { md: '1rem', sm: '0.5rem' },
 })
 
-export const { css, themes, variants } = Config.create({
+export default Config.create({
   defaultTheme: 'base',
   layers: ['reset', 'base', 'components'],
   themes: {
@@ -34,9 +34,9 @@ Single-theme configs use `theme: base`, or put the tokens inline. Named catalogs
 > Preview API; not yet implemented.
 
 ```tsx
-import { css, themes } from './zyzz.config.js'
+import config from './zyzz.config.js'
 
-const button = css({
+const button = config.css({
   '@layer components': {
     backgroundColor: 'brand',
     padding: 'md',
@@ -45,7 +45,10 @@ const button = css({
 })
 
 const example = (
-  <section className={themes.mint.className} style={{ colorScheme: 'dark' }}>
+  <section
+    className={config.themes.mint.className}
+    style={{ colorScheme: 'dark' }}
+  >
     <button {...button()} type="button">
       Save
     </button>

@@ -1,6 +1,6 @@
 # Style Components
 
-Complete [Getting Started](getting-started.md) to connect compilation. Define styles once and apply them wherever needed.
+Complete [Getting Started](../introduction/getting-started.md) to connect compilation. Define styles once and apply them wherever needed.
 
 ## Reuse Styles
 
@@ -36,27 +36,4 @@ const card = css({
 
 Nest pseudo styles and queries inside a definition. Nested conditions combine with AND. See [relationships](relationships.md) for styling based on other elements.
 
-## Bind Runtime Values
-
-> [!NOTE]
-> Preview API; not yet implemented.
-
-```tsx
-import { css } from 'zyzz'
-
-const bar = css((values: { width: `${number}%` }) => ({
-  width: values.width,
-}))
-const example = <div {...bar({ width: '50%' })} />
-```
-
-Callbacks bind values without generating CSS. Use `Vars` only when a shared variable contract is needed.
-
-```ts
-const label = css({
-  color: 'black!',
-  display: ['block', 'flex'],
-})
-```
-
-Arrays preserve fallback order; a trailing `!` marks importance.
+Use [Dynamic Values](dynamic-values.md) for typed per-instance bindings.

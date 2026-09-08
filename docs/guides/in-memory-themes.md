@@ -1,4 +1,4 @@
-# In-Memory Themes
+# Compile Themes
 
 Define scalar tokens, reference them from named styles, and compile the resulting graph:
 
@@ -51,7 +51,7 @@ Shared strings work in both schemes. Pairs compile to `light-dark()`. Theme scop
 
 Nested palettes infer reference paths. Extensions change existing paths only and replace whole color pairs.
 
-Values currently follow the [literal grammar](literal-styles.md): literal colors and nonnegative lengths or zero. Token palettes are nonempty data records with dot-free keys. Definitions copy and freeze inputs; accessors, symbols, cycles, and ambiguous paths are rejected.
+Values currently follow the [literal grammar](../api/core/Style/literals.md): literal colors and nonnegative lengths or zero. Token palettes are nonempty data records with dot-free keys. Definitions copy and freeze inputs; accessors, symbols, cycles, and ambiguous paths are rejected.
 
 Classes and variable slots belong to one in-memory graph. Separate outputs require independent namespaces. Root `css` still accepts only literals at this baseline.
 

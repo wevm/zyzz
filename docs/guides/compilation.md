@@ -1,6 +1,6 @@
-# Compile Libraries and Build Tools
+# Publish Libraries
 
-Use compiler APIs when building a library pipeline or a custom integration. For application setup, start with [Getting Started](getting-started.md).
+Use compiler APIs when building a library pipeline or a custom integration. For application setup, start with [Getting Started](../introduction/getting-started.md).
 
 ## Compile Styles
 
@@ -14,7 +14,7 @@ const styles = Style.define({
 const output = Css.compile({ styles })
 ```
 
-Load `output.css` as a stylesheet and apply `output.classes.card` to the element. The compiler has no filesystem or browser side effects. [Literal styles](../literal-styles.md) documents supported values; [themes](../themes.md) adds token references and compatible scopes.
+Load `output.css` as a stylesheet and apply `output.classes.card` to the element. The compiler has no filesystem or browser side effects. [Literal styles](../api/core/Style/literals.md) documents supported values; [themes](in-memory-themes.md) adds token references and compatible scopes.
 
 ## Transform Source
 
@@ -39,3 +39,16 @@ For filesystem builds, `Host.create({ outDir, packageId, root })` from `zyzz/nod
 - **Identity:** keep modules, class maps, CSS, and source maps from the same compilation together.
 
 Consumers load the stylesheet once. They do not need Zyzz compilation for already-transformed library code.
+
+## Standalone Output
+
+> [!NOTE]
+> The public CLI remains unimplemented. These commands describe its distribution contract.
+
+```sh
+zyzz src --out-dir dist --css dist/styles.css
+```
+
+Treat `dist` as compiler output, not an application import convention. Downstream tooling consumes the rewritten tree and lowers TypeScript/JSX. Original relative imports remain authored normally; the build selects its input root.
+
+Libraries expose compiled modules through package exports and document stylesheet loading. Keep generated output separate from owned source files. A CSS-only scan cannot replace source rewriting for Zyzz's callable definitions.

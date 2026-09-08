@@ -1,13 +1,25 @@
 # Guides
 
-Start with setup, then add styles, themes, and variants as needed.
+Complete focused styling tasks. Begin with [Getting Started](../introduction/getting-started.md) to connect compilation.
 
-1. [Getting Started](getting-started.md): style a component and choose Vite or CLI setup.
-2. [Style Components](styling.md): reuse styles, apply overrides, and bind runtime values.
-3. [Use Themes](themes.md): define tokens and select themes and color schemes.
-4. [Define Variants](variants.md): add typed component options and defaults.
-5. [Style Relationships](relationships.md): respond to ancestor data states.
-6. [Add Global Styles, Fonts, and Motion](stylesheets.md): contribute shared CSS from project files.
-7. [Compile Libraries and Build Tools](compilation.md): emit matching modules and CSS through compiler APIs.
-
-Preview integrations and APIs carry notes. See [Concepts](../concepts.md) for semantics and [API Reference](../api.md) for contracts.
+1. [Style Components](styling.md)
+2. [Share Styles](sharing.md)
+3. [Responsive Styles](responsive.md)
+4. [Style States](states.md)
+5. [Use Themes](themes.md)
+6. [Dark Mode](dark-mode.md)
+7. [Define Variants](variants.md)
+8. [Override Styles](overrides.md)
+9. [Dynamic Values](dynamic-values.md)
+10. [Style Relationships](relationships.md)
+11. [Cascade Layers](layers.md)
+12. [Global Styles](stylesheets.md)
+13. [Fonts and Motion](motion.md)
+14. [Publish Libraries](compilation.md)
+15. [Shared Configuration](shared-config.md)
+16. [Server Rendering](ssr.md)
+17. [Test Styles](testing.md)
+18. [Troubleshooting](troubleshooting.md)
+19. [Migration](migration.md)
+20. [Native Styles](native.md)
+21. [Compile Themes](in-memory-themes.md)

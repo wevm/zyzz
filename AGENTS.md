@@ -105,6 +105,9 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Keep prose paragraphs under 50 words and focused on one idea. Use bullets for enumerable content and tables for comparisons. Tighten wording rather than mechanically splitting paragraphs.
 - Mark preview or unimplemented APIs with GitHub Markdown `> [!NOTE]` callouts scoped to the affected content. Do not add “Available” labels or status suffixes to headings. Examples must preserve the documented contract and must not imply preview APIs already work.
 - Order consumer documentation by common tasks: getting started, styling, themes, and variants before compiler internals. Use focused guides with end-to-end examples; show CLI and bundler setup variants in Getting Started. Preserve this intentional reading order instead of alphabetizing navigation.
+- Maintain four consumer documentation areas: Introduction, Concepts & Principles, Guides, and API. API navigation follows entrypoint, export/module, then method; document signatures, examples, parameters, returns, types, and errors alongside public exports.
+- Keep guide titles in Title Case with fewer than four words. Use short task names rather than implementation descriptions.
+- Recommend `export default Config.create(...)` in `zyzz.config.ts` and default-import that instance in consumers. Keep ordinary source component imports; generated modules belong to standalone build/distribution documentation, not introductory application examples.
 - Update the owning entrypoint documentation when adding or changing a public module.
 
 ## Prose Conventions

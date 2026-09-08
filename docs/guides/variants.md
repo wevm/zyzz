@@ -1,15 +1,16 @@
 # Define Variants
 
-Add typed choices to a component. This example uses `variants` from the [theme config](themes.md#configure-authoring); import from `zyzz` for token-free recipes.
+Add typed choices to a component. This example uses the default export from the [theme config](themes.md#configure-authoring); import from `zyzz` for token-free recipes.
 
 > [!NOTE]
 > Preview API; not yet implemented.
 
 ```tsx
-import { variants } from './zyzz.config.js'
+import config from './zyzz.config.js'
 
-const button = variants({
+const button = config.variants({
   base: { display: 'inline-flex' },
+  compoundVariants: [{ style: { fontWeight: 600 }, when: { size: 'md' } }],
   defaultVariants: { size: 'sm' },
   variants: {
     size: {

@@ -99,17 +99,19 @@ const button = <button {...css({ color: 'blue.700', padding: 4 })()} />
 
 Bundled themes are opt-in entrypoints. Root `css` stays token-free. Contract-only and external-name interoperability is tracked separately in item 19.
 
-**Config API accepted; implementation pending in 2.2c:** `Config.create({ theme })` accepts inline or reusable definitions. Named `{ defaultTheme, themes }` catalogs allow mixed inputs, validate one complete token contract, and return normalized scope handles with bound `css`/`variants`. Encourage `zyzz.config.ts`; neither the filename nor importing a config changes root-function inference globally.
+**Config API accepted; implementation pending in 2.2c:** `Config.create({ theme })` accepts inline or reusable definitions. Named `{ defaultTheme, themes }` catalogs allow mixed inputs, validate one complete token contract, and return normalized scope handles with bound `css`/`variants`. Recommend a default-exported config in `zyzz.config.ts`; neither the filename nor importing a config changes root-function inference globally.
 
 ```tsx
-const { css, themes } = Config.create({
+const config = Config.create({
   defaultTheme: 'base',
   themes: { base: theme, green: alternate },
 })
-const control = css({ color: 'brand' })
+export default config
+
+const control = config.css({ color: 'brand' })
 const selected = (
   <section
-    className={themes.green.className}
+    className={config.themes.green.className}
     style={{ colorScheme: 'light dark' }}
   >
     <button {...control()}>Continue</button>
@@ -405,7 +407,8 @@ import 'zyzz/reset.css'
 import { Config } from 'zyzz'
 import { global } from 'zyzz/web'
 
-const { css } = Config.create({ layers: ['reset', 'base', 'components'] })
+const config = Config.create({ layers: ['reset', 'base', 'components'] })
+export default config
 
 global({
   '@layer base': {
@@ -414,7 +417,7 @@ global({
   },
 })
 
-const card = css({
+const card = config.css({
   '@layer components': { padding: '1rem' },
 })
 ```

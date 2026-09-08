@@ -137,23 +137,24 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) is in progress from main `e870709`.
+Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) is merged. PR 2.2a starts from main `18616ad`.
 
 ### PR Sequence
 
 1. **2.1 — In-Memory Theme Contracts:** `Theme.define`, compatible `Theme.extend`, immutable typed scalar references, and `Style.define` to `Css.compile` integration. Emit live custom properties, defining fallbacks, light/dark pairs, and complete inherited scopes. Cover browser scheme/scope behavior and compiler size/timing separately. Retain the documented literal grammar; source themes and authoring callables are not part of this PR.
-2. **2.2 — Theme Authoring and Source Identity:** bound `theme.css`, inferred shorthand token names, property-specific precedence, source extraction, stable package/module/binding identities, imported theme dependencies, and packed-library contracts. Expose compiled `theme.className` and verify file/watch parity.
-3. **2.3 — Standard Values and Variables:** widen CSS literal parsing, fallback arrays, importance, static expressions, and inferred `theme.vars`; add dynamic value bindings and explicit variables in dependency-sized follow-ups.
-4. **2.4 — Bundled Themes and Queries:** opt-in default tokens and typography, typed media/container thresholds, and conditions. Keep every later task below as an acceptance checklist; variants remain Phase 3.
+2. **2.2a — Theme Authoring Contracts:** bound `theme.css` inference and missing-transform behavior; typed shorthand resolution through `Style.define(styles, { theme })`; property-specific color precedence, nested/numeric names, literal precedence, browser scope parity, and resolution-to-CSS benchmarks. Source rewriting is a separate dependency and bound calls remain non-executable until it lands.
+3. **2.2b — Theme Source Identity and Linking:** extract bound calls, derive stable package/module/binding identities, link imported theme dependencies, and publish packed-library contracts. Expose compiled `theme.className`, preserve aliases/re-exports, and verify source/file/watch parity. No independently emitted theme library is supported before this gate.
+4. **2.3 — Standard Values and Variables:** widen CSS literal parsing, fallback arrays, importance, static expressions, and inferred `theme.vars`; add dynamic value bindings and explicit variables in dependency-sized follow-ups.
+5. **2.4 — Bundled Themes and Queries:** opt-in default tokens and typography, typed media/container thresholds, and conditions. Keep every later task below as an acceptance checklist; variants remain Phase 3.
 
-PR 2.1 uses opaque object references for contracts within one in-memory graph. Compiler-local token slots do not depend on values or theme-map labels. Separate source graphs and persistent identities remain PR 2.2; do not publish these graph-local artifacts as independently composable theme libraries.
+PR 2.1 uses opaque object references for contracts within one in-memory graph. Compiler-local token slots do not depend on values or theme-map labels. Separate source graphs and persistent identities remain PR 2.2b; do not publish these graph-local artifacts as independently composable theme libraries.
 
 - [ ] Expand token groups alongside their validated properties: scalar typography, composite typography, query thresholds, then border, shadow, opacity, transition, and stacking scales. Keep inherited theme selection separate from CSS color-scheme selection.
-- [ ] Implement the `Theme.define` and `Theme.extend` contracts before widening authoring syntax.
+- [x] Implement the `Theme.define` and `Theme.extend` contracts before widening authoring syntax.
 - [ ] Add `zyzz/themes/default` with named `css`, `theme`, and raw `tokens` exports; add bound `variants` when recipe compilation lands in Phase 3. Bundle colors, typography, spacing, radii, and related scales using the ordinary theme contract; keep light/dark values within the theme.
 - [ ] Preserve inference and extraction for bundled `css` aliases and re-exports. Verify parity with `theme.css`, explicit token composition, and use of the exported theme with target compilers. Apply the same alias contract to `variants` in Phase 3.
-- [ ] Accept token groups directly with no metadata or scheme container. Each color leaf is `string | { light: string; dark: string }`; require both fields for pairs.
-- [ ] Infer `theme.css` arguments from shared `color` and property-specific `backgroundColor`, `textColor`, and `borderColor` groups, with documented fallback and override rules. Reject wrong domains, unknown tokens, partial pairs, and incompatible extensions.
+- [x] Accept token groups directly with no metadata or scheme container. Each color leaf is `string | { light: string; dark: string }`; require both fields for pairs.
+- [x] Infer `theme.css` arguments from shared `color` and property-specific `backgroundColor`, `textColor`, and `borderColor` groups, with documented fallback and override rules. Reject wrong domains, unknown tokens, partial pairs, and incompatible extensions.
 - [ ] Derive internal theme identities without caller metadata; extensions retain base token identities independently of values. Switching theme scopes must not require recompiling component classes.
 - [ ] Make bound styles work without a root scope using custom-property fallbacks; expose `theme.className` for inherited overrides and retain token-free `css` from the root entrypoint.
 - [ ] Implement trailing `!`/`!important` parsing and ordered nonempty fallback arrays. Validate suffixes, quoted/escaped exclamation marks, numeric values, token resolution, mixed fallback importance, invalid arrays, and native capability rejection without executing application code.

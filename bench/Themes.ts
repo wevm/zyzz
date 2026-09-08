@@ -24,6 +24,7 @@ export const compilers = {
   tailwind,
   'vanilla-extract': vanillaExtract,
   zyzz,
+  'zyzz-tokens': zyzzTokens,
 }
 
 /** Prepares two complete themes and distinct widths outside compilation timing. */
@@ -147,6 +148,17 @@ export const themes={alternate:{'data-panda-theme':'alternate'},base:{'data-pand
           ]),
         ),
       ),
+      zyzzTokens: Object.fromEntries(
+        indices.map((index) => [
+          `card${index}`,
+          {
+            backgroundColor: 'surface',
+            color: 'foreground',
+            padding: 'card',
+            width: `${index}px` as const,
+          },
+        ]),
+      ),
     }
   } catch (error) {
     await Fs.rm(directory, { force: true, recursive: true })
@@ -176,6 +188,8 @@ export type Fixture = {
   readonly themes: Readonly<Record<'alternate' | 'base', Theme.Definition>>
   /** Validated Zyzz style graph; preparation is outside timing. */
   readonly zyzz: Style.Definition
+  /** Unresolved token-name styles; validation and resolution occur inside timing. */
+  readonly zyzzTokens: Readonly<Record<string, Style.Properties<Theme.Tokens>>>
 }
 
 /** Generates Panda semantic-token themes, extracts styles, and bundles exports. */
@@ -324,4 +338,14 @@ export async function zyzz(fixture: Fixture): Promise<Compilation.Bundle> {
       `export const classes=${JSON.stringify(fixture.zyzz.styles.map(({ name }) => output.classes[name]))};export const themes=${JSON.stringify(themes)};`,
     ),
   }
+}
+
+/** Resolves token names, emits CSS, and bundles the same component/scope exports. */
+export async function zyzzTokens(
+  fixture: Fixture,
+): Promise<Compilation.Bundle> {
+  return zyzz({
+    ...fixture,
+    zyzz: Style.define(fixture.zyzzTokens, { theme: fixture.themes.base }),
+  })
 }

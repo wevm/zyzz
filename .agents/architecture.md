@@ -122,6 +122,8 @@ Inline usage is also valid: `<button {...css({ padding: '1rem' })()} />`. Extrac
 
 Token names autocomplete in their matching properties. CSS literals and keywords remain available; explicit `theme.tokens` references select tokens whose names collide with CSS values. `Style.define` remains the pure in-memory API for named definitions; low-level `Css.compile` still returns stylesheet text and class maps independently of the component authoring interface.
 
+The in-memory equivalent is `Style.define({ card: { color: 'brand', padding: 'md' } }, { theme })`. It resolves property-compatible names into the same portable references as explicit `theme.tokens` values before CSS emission. Literal syntax and CSS zero take precedence over token names. Property-specific color groups take precedence over shared colors only at matching leaf paths. Bound authoring types and this pure resolution boundary precede source linking; `theme.css` still throws without the corresponding transform.
+
 ## Value Syntax
 
 Importance uses a trailing `!` on a string. Fallbacks use a nonempty array of values, in declaration order. CSS expressions are ordinary strings or template literals. There is no helper context or helper callback.

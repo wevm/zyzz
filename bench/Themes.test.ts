@@ -9,6 +9,20 @@ import { describe, expect, test } from 'vite-plus/test'
 import * as Themes from './Themes.js'
 
 describe('create', () => {
+  test('token-name resolution retains identical CSS and JavaScript delivery', async () => {
+    const fixture = await Themes.create(10)
+    try {
+      const explicit = await Themes.zyzz(fixture)
+      const named = await Themes.zyzzTokens(fixture)
+      expect(named.css === explicit.css).toMatchInlineSnapshot('true')
+      expect(named.javascript === explicit.javascript).toMatchInlineSnapshot(
+        'true',
+      )
+    } finally {
+      await Fs.rm(fixture.directory, { force: true, recursive: true })
+    }
+  })
+
   test('real theme adapters emit executable exports and nonempty stylesheets', async () => {
     const fixture = await Themes.create(10)
     const other = await Themes.create(10)

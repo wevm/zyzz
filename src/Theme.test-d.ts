@@ -82,3 +82,47 @@ Theme.define({ color: { brand: 'red' } })
 Theme.define({ color: { brand: { dark: 'red', light: '#fff' } } })
 // @ts-expect-error Extended colors use the same grammar.
 Theme.extend(theme, { color: { blue: { 500: 'red' } } })
+
+const shorthand = Theme.define({
+  backgroundColor: { surface: '#fff' },
+  borderColor: { outline: '#000' },
+  borderRadius: { round: '1rem' },
+  color: { blue: { 500: '#06c' }, brand: '#06c' },
+  spacing: { 4: '1rem', md: '2rem' },
+  textColor: { foreground: '#111' },
+})
+const { css: themedCss } = shorthand
+const themedCard = themedCss({
+  backgroundColor: 'surface',
+  borderRadius: 'round',
+  color: 'blue.500',
+  padding: 4,
+})
+expectTypeOf(themedCard).toEqualTypeOf<css.ReturnType>()
+expectTypeOf(
+  themedCard({ className: 'external', style: { padding: '2rem' } }),
+).toEqualTypeOf<css.Props>()
+Theme.extend(shorthand, { spacing: { 4: '2rem' } }).css({ padding: 4 })
+themedCss({ color: 'foreground', padding: 'md' })
+themedCss({ color: shorthand.tokens.color.brand, padding: 0 })
+// @ts-expect-error Unknown theme paths are rejected.
+themedCss({ color: 'blue.600' })
+// @ts-expect-error A text token cannot be used as a background.
+themedCss({ backgroundColor: 'foreground' })
+// @ts-expect-error Spacing tokens cannot become colors.
+themedCss({ color: 'md' })
+// @ts-expect-error Nonzero numeric spacing requires a declared key.
+themedCss({ padding: 5 })
+// @ts-expect-error Styling overrides remain literal-only.
+themedCard({ style: { padding: 'md' } })
+// @ts-expect-error Unknown properties are rejected.
+themedCss({ colour: 'brand' })
+// @ts-expect-error Root authoring does not inherit the imported theme.
+css({ color: 'brand' })
+
+const omitted = Theme.define({ color: { brand: '#fff' }, spacing: undefined })
+omitted.css({ color: 'brand', padding: '1rem' })
+// @ts-expect-error An explicitly undefined group contributes no token names.
+omitted.css({ padding: 'missing' })
+// @ts-expect-error Undefined groups do not enable shorthand in named styles.
+Style.define({ card: { padding: 'missing' } }, { theme: omitted })

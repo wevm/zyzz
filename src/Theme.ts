@@ -2,13 +2,26 @@
  * Defines typed token contracts and compatible immutable theme overrides.
  * @module
  */
+import { css } from './css.js'
 import * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
+import type * as Style from './Style.js'
 
 /** Complete color-scheme pair or a shared color. */
 export type Color =
   | Literal.Color
   | { readonly dark: Literal.Color; readonly light: Literal.Color }
+
+/** Theme-bound authoring signature; execution requires source rewriting. */
+export type Css<tokens extends Tokens> = <
+  const styles extends Record<string, unknown>,
+>(
+  styles: styles &
+    NoInfer<
+      Style.Properties<tokens> &
+        Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
+    >,
+) => css.ReturnType
 
 /**
  * Defines scalar tokens without metadata, defaults, or environment access.
@@ -24,6 +37,8 @@ export function define<const tokens extends Tokens>(
 
 /** A theme contract with immutable, property-aware portable token references. */
 export type Definition<tokens extends Tokens = Tokens> = {
+  /** Token-aware callable authoring boundary, replaced by the source compiler. */
+  readonly css: Css<tokens>
   /** Internal contract and resolved values, carried without a registry. */
   readonly [Token.definition]: Token.Metadata
   /** Inferred references for use in Style.define declarations. */
@@ -78,6 +93,8 @@ export class InvalidError extends Error {
   /** Group and nested keys identifying the failure. */
   readonly path: readonly string[]
 }
+
+type Keys<value> = value extends unknown ? keyof value : never
 
 /** Existing paths with widened values and optional branches. */
 export type Overrides<tokens> = {
@@ -250,7 +267,7 @@ function build(
   }
   freeze(tokens)
   return Object.freeze(
-    Object.defineProperty({ tokens }, Token.definition, {
+    Object.defineProperty({ css, tokens }, Token.definition, {
       value: Object.freeze({ contract, values: Object.freeze(values) }),
     }),
   )

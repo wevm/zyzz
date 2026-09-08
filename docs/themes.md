@@ -42,7 +42,7 @@ Supported groups are `backgroundColor`, `borderColor`, `borderRadius`, `color`, 
 
 Values currently follow the [literal grammar](literal-styles.md): literal colors and nonnegative lengths or zero. Token palettes are nonempty data records with dot-free keys. Definitions copy and freeze inputs; accessors, symbols, cycles, and ambiguous paths are rejected.
 
-This entrypoint compiles one in-memory graph. Its classes and variable slots are graph-local; separate outputs require independent namespaces. Theme source extraction, bound `theme.css`, compiled `theme.className`, `theme.vars`, bundled tokens, typography presets, and query metadata are separate capabilities. Root `css` still accepts only literals.
+This entrypoint compiles one in-memory graph. Its classes and variable slots are graph-local; separate outputs require independent namespaces. Theme source extraction, compiled `theme.className`, `theme.vars`, bundled tokens, typography presets, and query metadata are separate capabilities. Root `css` still accepts only literals.
 
 ## Selecting a Theme
 
@@ -63,3 +63,21 @@ function App({ appearance }: { appearance: 'alternate' | 'base' }) {
 The class selection changes inherited variable values; component styles stay the same. Select light or dark independently through `color-scheme`. Independently defined themes own separate contracts and do not override one another, even when token paths match.
 
 The source-authoring API will expose the equivalent scope through `theme.className`. Choose a bound `theme.css` or `theme.vars` reference while defining styles; select a compatible scope when rendering. Neither selection requires invoking a runtime compiler or a variables function.
+
+## Token Names
+
+Pass the theme explicitly to infer shorthand names in the in-memory pipeline:
+
+```ts
+const styles = Style.define(
+  { card: { color: 'foreground', padding: 'md' } },
+  { theme },
+)
+const output = Css.compile({ styles, themes: { alternate, base: theme } })
+```
+
+Token-aware option bags require a defined theme. An optional theme permits only literals and explicit references until it is narrowed; explicitly undefined groups contribute no shorthand names.
+
+Nested palettes use dotted names. Numeric spacing keys accept their numeric or string spelling. Valid CSS literals and zero win over colliding token names; use explicit `theme.tokens` references to select the token instead. Property-specific colors win over shared colors at the same leaf path.
+
+`theme.css` exposes the same inferred property types and callable props contract as root `css`, including literal styling overrides. Its extraction and rewrite support is a separate source-linking step; executing an untransformed call throws `css.MissingTransformError`. The in-memory pipeline above is executable without a transform.

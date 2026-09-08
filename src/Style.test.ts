@@ -9,7 +9,8 @@ import * as Worker from 'node:worker_threads'
 import { chromium } from 'playwright'
 import { getQuickJS } from 'quickjs-emscripten'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
+import { Style, Theme } from 'zyzz'
+import { Css } from 'zyzz/web'
 import { components } from '../test/fixtures/components.js'
 
 function diagnose(input: unknown, options: Style.define.Options = {}) {
@@ -23,6 +24,162 @@ function diagnose(input: unknown, options: Style.define.Options = {}) {
 }
 
 describe('define', () => {
+  test('theme shorthand and explicit references emit identical scoped styles', () => {
+    const theme = Theme.define({
+      backgroundColor: { brand: '#fff' },
+      borderColor: { brand: '#000' },
+      borderRadius: { md: '4px' },
+      color: { blue: { 500: '#06c' }, brand: '#06c' },
+      spacing: { 4: '1rem' },
+      textColor: { brand: { dark: '#fff', light: '#111' } },
+    })
+    const named = Style.define(
+      {
+        card: {
+          backgroundColor: 'brand',
+          borderColor: 'brand',
+          borderRadius: 'md',
+          color: 'brand',
+          padding: 4,
+        },
+        link: { color: 'blue.500' },
+      },
+      { theme },
+    )
+    const explicit = Style.define({
+      card: {
+        backgroundColor: theme.tokens.backgroundColor.brand,
+        borderColor: theme.tokens.borderColor.brand,
+        borderRadius: theme.tokens.borderRadius.md,
+        color: theme.tokens.textColor.brand,
+        padding: theme.tokens.spacing[4],
+      },
+      link: { color: theme.tokens.color.blue[500] },
+    })
+    const alternate = Theme.extend(theme, { spacing: { 4: '2rem' } })
+    const output = Css.compile({
+      styles: named,
+      themes: { alternate, base: theme },
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-alternate{--z-t0-backgroundColor_2e_brand:#fff;--z-t0-borderColor_2e_brand:#000;--z-t0-borderRadius_2e_md:4px;--z-t0-textColor_2e_brand:light-dark(#111,#fff);--z-t0-spacing_2e_4:2rem;--z-t0-color_2e_blue_2e_500:#06c;}
+      .z_theme-base{--z-t0-backgroundColor_2e_brand:#fff;--z-t0-borderColor_2e_brand:#000;--z-t0-borderRadius_2e_md:4px;--z-t0-textColor_2e_brand:light-dark(#111,#fff);--z-t0-spacing_2e_4:1rem;--z-t0-color_2e_blue_2e_500:#06c;}
+      .z_base0{background-color:var(--z-t0-backgroundColor_2e_brand,#fff);border-color:var(--z-t0-borderColor_2e_brand,#000);border-radius:var(--z-t0-borderRadius_2e_md,4px);padding:var(--z-t0-spacing_2e_4,1rem);}
+      .z-card{color:var(--z-t0-textColor_2e_brand,light-dark(#111,#fff));}
+      .z-link{color:var(--z-t0-color_2e_blue_2e_500,#06c);}"
+    `)
+    expect(
+      output.css ===
+        Css.compile({ styles: explicit, themes: { alternate, base: theme } })
+          .css,
+    ).toMatchInlineSnapshot('true')
+  })
+
+  test('CSS literals and zero precede colliding token names', () => {
+    const theme = Theme.define({
+      color: { white: '#000' },
+      spacing: { 0: '8px', '1rem': '2rem' },
+    })
+    const styles = Style.define(
+      {
+        explicit: {
+          color: theme.tokens.color.white,
+          padding: theme.tokens.spacing[0],
+        },
+        literal: { color: 'white', padding: 0, width: '1rem' },
+      },
+      { theme },
+    )
+    expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
+      ".z-explicit{color:var(--z-t0-color_2e_white,#000);padding:var(--z-t0-spacing_2e_0,8px);}
+      .z_base0{width:1rem;}
+      .z-literal{color:white;padding:0;}"
+    `)
+  })
+
+  test('unknown and wrong-domain names fail through the public pipeline', () => {
+    const theme = Theme.define({
+      color: { brand: '#06c' },
+      spacing: { md: '1rem' },
+    })
+    function compile(style: unknown) {
+      const styles = Reflect.apply(Style.define, undefined, [
+        { card: style },
+        { theme },
+      ]) as Style.Definition
+      return Css.compile({ styles })
+    }
+    expect(() =>
+      compile({ color: 'missing' }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["card","color"]: Expected a hex color, transparent, currentColor, black, or white.]`,
+    )
+    expect(() => compile({ color: 'md' })).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["card","color"]: Expected a hex color, transparent, currentColor, black, or white.]`,
+    )
+    expect(() =>
+      compile({ padding: 'brand' }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["card","padding"]: Expected a nonnegative literal length or numeric zero.]`,
+    )
+    expect(() => compile({ padding: 4 })).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["card","padding"]: Expected a nonnegative literal length or numeric zero.]`,
+    )
+  })
+
+  test('named tokens follow inherited theme and scheme changes in Chromium', async () => {
+    const theme = Theme.define({
+      color: { brand: { dark: '#fff', light: '#111' } },
+      spacing: { md: '8px' },
+    })
+    const alternate = Theme.extend(theme, {
+      color: { brand: { dark: '#9cf', light: '#06c' } },
+      spacing: { md: '16px' },
+    })
+    const styles = Style.define(
+      { card: { color: 'brand', padding: 'md' } },
+      { theme },
+    )
+    const output = Css.compile({ styles, themes: { alternate, base: theme } })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({ colorScheme: 'light' })
+      await page.setContent(
+        `<style>:root{color-scheme:light dark}${output.css}</style><main><div class="${output.classes.card}">Card</div></main>`,
+      )
+      async function read() {
+        return page.locator('div').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return { color: style.color, padding: style.padding }
+        })
+      }
+      expect(await read()).toMatchInlineSnapshot(`
+        {
+          "color": "rgb(17, 17, 17)",
+          "padding": "8px",
+        }
+      `)
+      await page.locator('main').evaluate((element, scope) => {
+        element.setAttribute('class', scope)
+      }, output.themes.alternate)
+      expect(await read()).toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 102, 204)",
+          "padding": "16px",
+        }
+      `)
+      await page.emulateMedia({ colorScheme: 'dark' })
+      expect(await read()).toMatchInlineSnapshot(`
+        {
+          "color": "rgb(153, 204, 255)",
+          "padding": "16px",
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('preserves named declarations and cascade-significant order across modules', () => {
     const definition = Style.define(components)
     expect({

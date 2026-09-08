@@ -298,6 +298,109 @@ export const button = theme.css({ color: 'brand', padding: 'md' });`
     )
   })
 
+  test.each([
+    'Z.Theme.define({ color: { brand: "#000" } })',
+    'Z["Theme"].define({ color: { brand: "#000" } })',
+    'Z.Theme.extend(base, {})',
+  ])('namespace theme factories produce a source diagnostic: %s', (factory) => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/namespace.ts',
+        source: `import * as Z from 'zyzz'; const theme = ${factory}; export const scope = theme.className;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/namespace.ts:41: Import Theme by name; namespace authoring calls are not supported yet.]`,
+    )
+  })
+
+  test('rejects wrapped scope writes: (theme.className as string) = value;', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); (theme.className as string) = value;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+    )
+  })
+
+  test('rejects wrapped scope writes: (theme.className!) = value;', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); (theme.className!) = value;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+    )
+  })
+
+  test('rejects wrapped scope writes: (theme.className satisfies string) = value;', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); (theme.className satisfies string) = value;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+    )
+  })
+
+  test('rejects wrapped scope writes: ((theme.className as string)!) = value;', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); ((theme.className as string)!) = value;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+    )
+  })
+
+  test('rejects wrapped scope writes: (theme.className as string)++;', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); (theme.className as string)++;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+    )
+  })
+
+  test('rejects wrapped scope writes: delete (theme.className as string);', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); delete (theme.className as string);`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+    )
+  })
+
+  test('rejects wrapped scope writes: ({ value: (theme.className as string) } = input);', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); ({ value: (theme.className as string) } = input);`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:89: Theme scope properties cannot be reassigned.]`,
+    )
+  })
+
+  test('rejects wrapped scope writes: for ((theme.className as string) of values) {}', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); for ((theme.className as string) of values) {}`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:88: Theme scope properties cannot be reassigned.]`,
+    )
+  })
+
   test('theme scopes cannot be assigned through destructuring targets', () => {
     expect(() =>
       Transform.compile({

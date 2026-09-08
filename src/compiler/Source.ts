@@ -144,20 +144,20 @@ export function extract(options: extract.Options): extract.ReturnType {
         return
       const specifier = binding.node
       if (specifier.type === 'ImportNamespaceSpecifier') {
-        if (
-          parent.type === 'MemberExpression' &&
-          parent.object === node &&
-          ((parent.property.type === 'Identifier' &&
-            !parent.computed &&
-            parent.property.name === 'css') ||
-            (parent.property.type === 'Literal' &&
-              parent.property.value === 'css'))
-        )
-          report(
-            'unsupported_syntax',
-            'Import css by name; namespace authoring calls are not supported yet.',
-            parent,
-          )
+        if (parent.type === 'MemberExpression' && parent.object === node) {
+          const name =
+            parent.property.type === 'Identifier' && !parent.computed
+              ? parent.property.name
+              : parent.property.type === 'Literal'
+                ? parent.property.value
+                : undefined
+          if (name === 'css' || name === 'Theme')
+            report(
+              'unsupported_syntax',
+              `Import ${name} by name; namespace authoring calls are not supported yet.`,
+              parent,
+            )
+        }
         return
       }
       if (

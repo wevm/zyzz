@@ -101,12 +101,21 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 
 - Add TSDoc to every public export and public type property. Write or update the contract documentation alongside the implementation.
 - Document caller-visible purpose, inputs, output, defaults, errors, and side effects. Keep low-level wiring in nearby implementation comments.
-- Keep examples small and focused on the exported behavior.
+- Keep examples small and focused on the exported behavior. Prefer a snippet, concrete example, or useful visual to a long conceptual explanation; avoid repeating what the example already shows.
+- Keep prose paragraphs under 50 words and focused on one idea. Use bullets for enumerable content and tables for comparisons. Tighten wording rather than mechanically splitting paragraphs.
+- Mark preview or unimplemented APIs with GitHub Markdown `> [!NOTE]` callouts scoped to the affected content. Do not add “Available” labels or status suffixes to headings. Examples must preserve the documented contract and must not imply preview APIs already work.
+- Order consumer documentation by common tasks: getting started, styling, themes, and variants before compiler internals. Use focused guides with end-to-end examples; show CLI and bundler setup variants in Getting Started. Preserve this intentional reading order instead of alphabetizing navigation.
+- Maintain four consumer documentation areas: Introduction, Concepts & Principles, Guides, and API. Keep concepts on one page; theme scopes belong within Themes & Tokens. API navigation follows entrypoint, export/module, then method; document signatures, examples, parameters, returns, types, and errors alongside public exports.
+- Keep guide titles in Title Case with fewer than four words. Group guides by topic, with a Recipes section containing focused tasks; preserve recipe coverage when consolidating pages.
+- Use API tables with descriptions in entrypoint and module overview pages. Give each parameter and returned property its own subheading, type, description, and small usage snippet; document defaults where applicable. Keep preview type names and unresolved defaults explicitly provisional.
+- Recommend named imports from `zyzz.config.ts`, using `{ zyzz }`. Export `const zyzz = Config.create(...)`; consume `zyzz.css`, `zyzz.variants`, and `zyzz.theme` or `zyzz.themes`. Access variables through `zyzz.theme.vars` or a named theme's `vars`. Config modules need no default export, including for integrations. Keep ordinary source component imports; generated modules belong to standalone build/distribution documentation, not introductory application examples.
+- Document the Vite plugin as a named `zyzz` function from `zyzz/vite`, called with `plugins: [zyzz()]`.
+- Document the Next.js integration as `zyzz(nextConfig)` from `zyzz/next`. It wraps existing configuration and owns Webpack/Turbopack wiring without requiring separate Babel or PostCSS setup. Keep preview notes until both bundler paths are verified.
 - Update the owning entrypoint documentation when adding or changing a public module.
 
 ## Prose Conventions
 
-Applies to comments, TSDoc, commit messages, and pull requests.
+Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 
 - Write about the code, not about the person using it. Avoid second person.
 - Describe behavior in technical terms rather than by the experience it produces. Prefer `answers before acquisition finishes` over `keeps the editor feeling fast`.
@@ -137,7 +146,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 - Measure cold and warm compilation, incremental edits, throughput, memory, browser style recalculation, and native table selection separately. Use real browser/host timing for workloads outside the benchmark runner's execution model; do not substitute a function microbenchmark for end-to-end performance.
 - Record emitted CSS, generated JavaScript, class-name/markup bytes, and required runtime helpers separately, plus actual combined transfer. Report raw, gzip, and Brotli sizes without double-counting class strings already included in JavaScript or markup. Package download size is a separate metric.
 - Use repeated and mostly unique styles, small and large projects, theme/scheme changes, variants, and library boundaries. Validate equivalent behavior before comparing configurations or libraries; include each library's required helpers and delivery artifacts.
-- Keep generated benchmark reports and machine metadata under ignored `bench/results/`; never commit them. A separate benchmark workflow calls Vite Plus directly and uploads artifacts; PR descriptions record relevant summaries. Never compare results from different CI runners. Keep definitions and reproduction instructions in Git.
+- Keep generated benchmark reports and machine metadata under ignored `bench/results/`; never commit them. Curated benchmark snapshots in documentation may be committed when tied to one run, commit, measurement scope, and uncertainty; preserve all comparison lanes and observed losses. A separate benchmark workflow calls Vite Plus directly and uploads artifacts; PR descriptions record relevant summaries. Never compare results from different CI runners. Keep definitions and reproduction instructions in Git.
 - Save reproducible results with `--outputJson`; compare a baseline using `--compare`. Record commit, tool versions, fixture size, hardware, cache state, warmup, sample count, variance, and measurement boundaries. Run baseline and candidate on the same machine without competing benchmark jobs.
 - Changes to compilation, emitted artifacts, or runtime helpers include relevant benchmark deltas. Establish size budgets and timing tolerances from measured baselines; confirm regressions across repeated samples instead of enforcing noisy single-run timing gates. Do not claim speed or size advantages without matched evidence.
 
@@ -169,6 +178,7 @@ Applies to comments, TSDoc, commit messages, and pull requests.
 
 - The repository implements the literal `Style.define` boundary with Vite Plus/zile tooling, integration/type coverage, and external compiler benchmarks. Later phases add compilation, source transforms, and component APIs.
 - Add flat PascalCase modules under `src/`; colocate integration scenarios, consumer type fixtures, and benchmarks beside their owning modules. Keep reusable fixtures under `test/fixtures/` and benchmark instructions under `bench/`.
+- Export `fontFace`, `global`, and `keyframes` as direct named leaf functions from `zyzz/web`; keep `Css` as the namespace for compilation and remaining web helpers.
 - Export the `css` and `variants` leaf functions directly and bind both on themes; conceptual modules use namespace exports. Infer variant props with standard `Parameters`, without a variant namespace.
 - Every `css` definition is callable and returns props when applied. Callbacks receive only typed runtime values; no context helpers. Use trailing `!` for importance, arrays for fallbacks, and `theme.tokens`/`theme.vars` for references. Calls consume declared values and merge only styling overrides (`className`/`style` on web). Other component props stay on the component; unknown inputs are errors. Dynamic variant choices take typed callbacks and scoped payload selections; compound matches use choice names, while values bind to precompiled slots. Spread applied props; `cx` preserves bindings and recipe attributes. Generated functions never create CSS rules.
 - Core semantics must be deterministic and independent of environments and tools; target emitters and host adapters have separate entrypoints.

@@ -319,6 +319,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
       )
         fail('Theme scope properties cannot be reassigned.', ancestor)
       if (
+        ((ancestor.type === 'TSAsExpression' ||
+          ancestor.type === 'TSNonNullExpression' ||
+          ancestor.type === 'TSSatisfiesExpression' ||
+          ancestor.type === 'TSTypeAssertion') &&
+          ancestor.expression === target) ||
         (ancestor.type === 'Property' && ancestor.value === target) ||
         ancestor.type === 'ObjectPattern' ||
         ancestor.type === 'ArrayPattern' ||

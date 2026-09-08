@@ -1,6 +1,9 @@
-# Comparison
+# Comparisons
 
 How Zyzz, Tailwind, StyleX, and vanilla-extract approach typed styling, themes, composition, and delivery. Examples use the same small components where practical. DX means developer experience; AX means agent experience.
+
+> [!NOTE]
+> Zyzz examples include unimplemented APIs. See [Compatibility](compatibility.md) for the current boundary and [Benchmarks](benchmarks.md) for a recorded run.
 
 ## Authoring, Types, and DX/AX
 
@@ -67,7 +70,7 @@ export function Button() {
 
 ### Zyzz
 
-`Theme.define` takes tokens and returns a bound `css`. Colors accept strings or light/dark pairs; token references emit CSS variables with defining fallbacks. `Theme.extend` shares the contract, and its `className` scopes inherited overrides. CSS `color-scheme` selects the active member of each `light-dark()` pair.
+`Theme.define` takes tokens and returns a bound `css`. Current colors accept the supported literal color grammar or light/dark pairs; token references emit CSS variables with defining fallbacks. `Theme.extend` shares the contract, and its `className` scopes inherited overrides. CSS `color-scheme` selects the active member of each `light-dark()` pair.
 
 ```ts
 import { Theme } from 'zyzz'
@@ -418,7 +421,9 @@ Build integrations evaluate `.css.ts` modules and extract web CSS. Libraries can
 
 ### Zyzz
 
-Static applications can fold into props constants; surviving callables perform props merging. Ordered rules allow deduplication where declaration identity and cascade order remain intact. Classes use readable names with collision suffixes. Dynamic selection, variable binding, and composition may retain small helpers or metadata; their cost belongs in the delivered bundle measurement.
+Static applications can fold into props constants; surviving callables perform props merging. Ordered rules allow deduplication where declaration identity and cascade order remain intact. Classes use readable names with collision suffixes.
+
+Dynamic selection, variable binding, and composition may retain small helpers or metadata; their cost belongs in the delivered bundle measurement.
 
 ### Tailwind
 

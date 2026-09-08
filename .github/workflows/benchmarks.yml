@@ -15,38 +15,36 @@ jobs:
       BENCH_SIZE_THRESHOLD: '105'
       BENCH_TIME_THRESHOLD: '110'
     permissions:
-      actions: read
       contents: read
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
+      - name: Clone main baseline
+        if: github.event_name != 'push'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
+      - name: Install baseline dependencies
+        if: github.event_name != 'push'
+        uses: ./.github/actions/install-dependencies
+      - name: Benchmark main on this runner
+        if: github.event_name != 'push'
+        id: baseline
+        run: |
+          mkdir -p bench/results
+          git rev-parse HEAD > bench/results/commit.txt
+          sha256sum pnpm-lock.yaml > bench/results/lockfile.txt
+          lscpu > bench/results/cpu.txt
+          free -b > bench/results/memory.txt
+          node --version > bench/results/node.txt
+          pnpm --version > bench/results/pnpm.txt
+          uname -a > bench/results/platform.txt
+          pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json
+          mv bench/results "$RUNNER_TEMP/benchmark-baseline"
       - name: Clone repository
         uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
-      - name: Find main benchmark baseline
-        id: baseline
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          run_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/benchmarks.yml/runs?branch=main&event=push&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
-          if [ -n "$run_id" ]; then
-            artifact_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" --jq '.artifacts[] | select(.name == "benchmarks" and .expired == false) | .id')
-            if [ -n "$artifact_id" ]; then
-              echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
-            fi
-          fi
-      - name: Download main benchmark baseline
-        if: steps.baseline.outputs.run-id != ''
-        id: download-baseline
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          github-token: ${{ github.token }}
-          name: benchmarks
-          path: ${{ runner.temp }}/benchmark-baseline
-          run-id: ${{ steps.baseline.outputs.run-id }}
       - name: Record benchmark environment
         run: |
           mkdir -p bench/results
@@ -161,7 +159,8 @@ jobs:
       - name: Prepare benchmark comparisons
         id: comparison
         env:
-          BASELINE_DIRECTORY: ${{ steps.download-baseline.outcome == 'success' && format('{0}/benchmark-baseline', runner.temp) || '' }}
+          BENCH_BASELINE_MODE: same-runner
+          BASELINE_DIRECTORY: ${{ steps.baseline.outcome == 'success' && format('{0}/benchmark-baseline', runner.temp) || '' }}
         run: |
           node bench/Compare.ts bench/results "$BASELINE_DIRECTORY" "$RUNNER_TEMP/benchmark-action" > "$RUNNER_TEMP/benchmark-comparison.md"
           cat "$RUNNER_TEMP/benchmark-comparison.md" bench/results/report.md > "$RUNNER_TEMP/benchmark-report.md"
@@ -180,6 +179,14 @@ jobs:
           if-no-files-found: error
           name: benchmarks
           path: bench/results/
+          retention-days: 30
+      - name: Upload baseline results
+        if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: benchmarks-baseline
+          path: ${{ runner.temp }}/benchmark-baseline/
           retention-days: 30
       - name: Report timing comparisons
         if: ${{ !cancelled() && steps.comparison.outcome == 'success' }}
@@ -205,6 +212,6 @@ jobs:
           output-file-path: ${{ runner.temp }}/benchmark-action/size.json
           save-data-file: false
           tool: customSmallerIsBetter
-    timeout-minutes: 15
+    timeout-minutes: 30
 permissions:
   contents: read

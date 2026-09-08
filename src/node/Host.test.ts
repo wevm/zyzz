@@ -17,7 +17,7 @@ describe('create', () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-theme-host-'))
     const outDir = Path.join(root, 'output')
     const host = await Host.create({ outDir, packageId: 'example', root })
-    const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; const { css } = theme; export const props = css({ color: 'brand' })();`
+    const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; const { css } = theme; export const props = css({ color: theme.tokens.color.brand })();`
     try {
       await Fs.writeFile(Path.join(root, 'theme.ts'), source)
       await host.build()

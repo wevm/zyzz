@@ -273,7 +273,9 @@ export function extract(options: extract.Options): extract.ReturnType {
         continue
       }
       const value = property.value
-      if (
+      const token = themes?.tokens.get(value.start)
+      if (token?.end === value.end) values[key] = token.reference
+      else if (
         value.type === 'Literal' &&
         (typeof value.value === 'string' || typeof value.value === 'number')
       )

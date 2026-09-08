@@ -133,10 +133,12 @@ const alternate = Theme.extend(theme, { color: { brand: '#175' } })
 const { css } = theme
 
 export const scope = alternate.className
-export const card = css({ color: 'brand' })
+export const card = css({ color: theme.tokens.color.brand })
 ```
 
 Compile this module with [Transform.compile](../api/compiler/Transform/compile.md), load its CSS, and apply `scope` to an ancestor of an element using `card()`.
+
+Use explicit `theme.tokens` paths to select tokens whose names collide with CSS literals. Dot access and literal string/numeric brackets are supported.
 
 Local `const` aliases such as `const css = theme.css`, destructuring/renaming, and alias chains are supported. Themes and aliases must precede their uses; imported/exported authoring contracts and `theme.vars` remain unsupported. See [source restrictions](../api/compiler/Source/extract.md#theme-source) for details.
 

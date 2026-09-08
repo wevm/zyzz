@@ -40,6 +40,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     { call: Ast.CallExpression; theme: Theme.Definition }
   >()
   const themes: Record<string, Theme.Definition> = Object.create(null)
+  const tokens = new Map<number, { end: number; reference: Token.Reference }>()
 
   for (const node of program.body) {
     if (
@@ -378,6 +379,91 @@ export function collect(program: Ast.Program, options: collect.Options) {
     )
       return true
     if (
+      parent.type === 'MemberExpression' &&
+      parent.object === node &&
+      ((parent.property.type === 'Identifier' &&
+        !parent.computed &&
+        parent.property.name === 'tokens') ||
+        (parent.property.type === 'Literal' &&
+          parent.computed &&
+          parent.property.value === 'tokens'))
+    ) {
+      if (parent.optional)
+        fail('Token references cannot use optional access.', parent)
+      let value: unknown = themes[theme.name]!.tokens
+      let target: Ast.Node = parent
+      let index = ancestors.length - 3
+      for (; index >= 0; index--) {
+        const ancestor = ancestors[index]!
+        if (ancestor.type !== 'MemberExpression' || ancestor.object !== target)
+          break
+        const key =
+          ancestor.property.type === 'Identifier' && !ancestor.computed
+            ? ancestor.property.name
+            : ancestor.property.type === 'Literal' &&
+                ancestor.computed &&
+                (typeof ancestor.property.value === 'string' ||
+                  typeof ancestor.property.value === 'number')
+              ? String(ancestor.property.value)
+              : undefined
+        if (ancestor.optional || key === undefined)
+          fail(
+            'Token paths require static property names without optional access.',
+            ancestor,
+          )
+        value =
+          value && typeof value === 'object' && !Token.is(value)
+            ? Object.getOwnPropertyDescriptor(value, key)?.value
+            : undefined
+        if (value === undefined) fail('Unknown theme token path.', ancestor)
+        target = ancestor
+      }
+      if (!Token.is(value))
+        fail('Expected a scalar theme token reference.', target)
+      const reference = value
+      for (; index >= 0; index--) {
+        const ancestor = ancestors[index]!
+        if (
+          (ancestor.type === 'TSAsExpression' ||
+            ancestor.type === 'TSSatisfiesExpression' ||
+            ancestor.type === 'TSNonNullExpression' ||
+            ancestor.type === 'TSTypeAssertion') &&
+          ancestor.expression === target
+        )
+          target = ancestor
+        else break
+      }
+      const property = ancestors[index]
+      const object = ancestors[index - 1]
+      let argument: Ast.Node | undefined = object
+      let callIndex = index - 2
+      for (; callIndex >= 0; callIndex--) {
+        const ancestor = ancestors[callIndex]!
+        if (
+          (ancestor.type === 'TSAsExpression' ||
+            ancestor.type === 'TSSatisfiesExpression') &&
+          ancestor.expression === argument
+        )
+          argument = ancestor
+        else break
+      }
+      const call = ancestors[callIndex]
+      if (
+        property?.type !== 'Property' ||
+        property.value !== target ||
+        object?.type !== 'ObjectExpression' ||
+        call?.type !== 'CallExpression' ||
+        call.arguments[0] !== argument ||
+        !styles.has(call.start)
+      )
+        fail(
+          'Token references must be direct property values in bound theme css calls.',
+          target,
+        )
+      tokens.set(target.start, { end: target.end, reference })
+      return true
+    }
+    if (
       parent.type !== 'MemberExpression' ||
       parent.object !== node ||
       parent.computed ||
@@ -448,6 +534,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     references,
     styles,
     themes: Object.freeze(themes),
+    tokens,
   }
 }
 

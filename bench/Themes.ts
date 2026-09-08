@@ -27,7 +27,10 @@ export const compilers = {
 }
 
 /** Prepares two complete themes and distinct widths outside compilation timing. */
-export async function create(count: number): Promise<Fixture> {
+export async function create(
+  count: number,
+  options: create.Options = {},
+): Promise<Fixture> {
   const directory = await Fs.mkdtemp(Path.resolve('.fixture-themes-'))
   try {
     await Fs.writeFile(
@@ -111,6 +114,7 @@ export const themes={alternate:{'data-panda-theme':'alternate'},base:{'data-pand
 @tailwind utilities;
 .base{--color-background:${base.background};--color-foreground:${base.foreground};--spacing-card:${base.space};}
 .alternate{--color-background:${alternate.background};--color-foreground:${alternate.foreground};--spacing-card:${alternate.space};}`,
+      targets: Object.freeze({ ...(options.targets ?? targets) }),
       themes: {
         alternate: Theme.extend(theme, {
           backgroundColor: { surface: { dark: '#222', light: '#eee' } },
@@ -139,6 +143,12 @@ export const themes={alternate:{'data-panda-theme':'alternate'},base:{'data-pand
   }
 }
 
+/** Shared CSS processing configuration for a complete theme comparison. */
+export declare namespace create {
+  /** Optional targets; omitted values use the native light-dark baseline. */
+  type Options = Compilation.minify.Options
+}
+
 /** Inputs shared by timing, delivery measurement, and browser verification. */
 export type Fixture = {
   /** Number of distinct component widths. */
@@ -149,6 +159,8 @@ export type Fixture = {
   readonly tailwind: readonly string[]
   /** Native Tailwind theme declarations and scope overrides. */
   readonly tailwindCss: string
+  /** Immutable CSS targets shared by every adapter in this fixture. */
+  readonly targets: Readonly<NonNullable<Compilation.minify.Options['targets']>>
   /** Compatible Zyzz theme definitions. */
   readonly themes: Readonly<Record<'alternate' | 'base', Theme.Definition>>
   /** Validated Zyzz style graph; preparation is outside timing. */
@@ -164,7 +176,9 @@ export async function panda(fixture: Fixture): Promise<Compilation.Bundle> {
   const file = Path.join(fixture.directory, 'panda.css')
   await Panda.cssgen(context, { cwd: fixture.directory, outfile: file })
   return {
-    css: Compilation.minify(await Fs.readFile(file, 'utf8'), { targets }),
+    css: Compilation.minify(await Fs.readFile(file, 'utf8'), {
+      targets: fixture.targets,
+    }),
     javascript: await Compilation.javascript(
       `export {classes,themes} from ${JSON.stringify(Path.join(fixture.directory, 'panda.ts'))};`,
     ),
@@ -222,7 +236,9 @@ export async function stylex(fixture: Fixture): Promise<Compilation.Bundle> {
   if (!rules.length) throw new Error('StyleX did not emit theme rules.')
   const plugin = StylexPlugin as unknown as StyleXTransformObj
   return {
-    css: Compilation.minify(plugin.processStylexRules(rules), { targets }),
+    css: Compilation.minify(plugin.processStylexRules(rules), {
+      targets: fixture.targets,
+    }),
     javascript: result.outputFiles[0]!.text,
   }
 }
@@ -233,7 +249,7 @@ export async function tailwind(fixture: Fixture): Promise<Compilation.Bundle> {
   return {
     css: Compilation.minify(
       compiler.build(fixture.tailwind.flatMap((classes) => classes.split(' '))),
-      { targets },
+      { targets: fixture.targets },
     ),
     javascript: await Compilation.javascript(
       `export const classes=${JSON.stringify(fixture.tailwind)};export const themes={alternate:{className:'alternate'},base:{className:'base'}};`,
@@ -272,7 +288,10 @@ export async function vanillaExtract(
   )?.text
   if (!css || !javascript)
     throw new Error('vanilla-extract did not emit theme artifacts.')
-  return { css: Compilation.minify(css, { targets }), javascript }
+  return {
+    css: Compilation.minify(css, { targets: fixture.targets }),
+    javascript,
+  }
 }
 
 /** Emits a complete independent Zyzz graph and bundles actual class/scope exports. */
@@ -289,7 +308,7 @@ export async function zyzz(fixture: Fixture): Promise<Compilation.Bundle> {
     ]),
   )
   return {
-    css: Compilation.minify(output.css, { targets }),
+    css: Compilation.minify(output.css, { targets: fixture.targets }),
     javascript: await Compilation.javascript(
       `export const classes=${JSON.stringify(fixture.zyzz.styles.map(({ name }) => output.classes[name]))};export const themes=${JSON.stringify(themes)};`,
     ),

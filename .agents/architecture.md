@@ -724,3 +724,24 @@ In-memory contract identity is an opaque frozen object carried by references and
 Theme selection happens at two boundaries. Authoring selects a contract through `theme.css`, `theme.tokens`, or `theme.vars`; rendering selects a compatible scope through `theme.className` (currently `Css.compile(...).themes[name]`). A plain application-owned map can select scope classes without a provider, global registry, new selection API, or runtime compilation. Independent `Theme.define` calls remain isolated; switchable themes use `Theme.extend` to share a contract. Color schemes remain separate CSS state.
 
 The initial scalar groups are not the final token surface. Next groups include scalar typography (`fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, `lineHeight`), composite `typography`, and the agreed `breakpoints`/`containers` metadata. Further property-aligned scales such as `borderWidth`, `boxShadow`, `opacity`, `transitionDuration`, `transitionTimingFunction`, and `zIndex` follow the corresponding validated CSS properties. Preserve domain checking and extension compatibility for each group; do not add a permissive catch-all token namespace.
+
+## Configurable CSS Targets
+
+Browser compatibility belongs to optional CSS-processing adapters and consuming builds. `Css.compile` emits standard CSS without choosing browsers or importing a minifier. Browser targets are independent of the web/native rendering target.
+
+CLI and build adapters share an optional `targets: string | readonly string[]` option using Browserslist queries. For example:
+
+```ts
+const options = {
+  minify: true,
+  targets: ['chrome >= 123', 'firefox >= 128', 'safari >= 17.5'],
+}
+```
+
+The CLI equivalent is `zyzz src --out-dir dist --minify --targets 'chrome >= 123, firefox >= 128, safari >= 17.5'`. The public CLI and processing adapter remain Phase 4 work. Without targets, preserve modern CSS rather than silently choosing a browser floor. A consuming build may own all final processing; thin integrations inherit its target policy unless explicitly overridden. Requesting compatibility transforms is independent of requesting minification.
+
+Resolve query strings once at the adapter boundary into Lightning CSS targets; do not expose packed version integers as the public authoring API. Explicit options take precedence over host configuration. Include resolved targets, processing options, and processor versions in build-cache identities and diagnostic/benchmark metadata. Compose source maps after processing, and keep class references aligned.
+
+Targets cannot silently weaken semantics. In particular, lowering `light-dark()` must preserve inherited, forced, inline, and externally authored `color-scheme` behavior. An adapter must diagnose an unsupported combination when it cannot preserve that contract; selecting an older browser is not permission to discard scheme behavior. Define browser fixtures before claiming support for each downlevel path.
+
+Benchmark fixtures accept an explicit shared Lightning CSS target map through `Compilation.create(workload, { targets })` or `Themes.create(count, { targets })`. The immutable profile reaches every library's final processing and is recorded in result artifacts. Reproducible CI defaults stay fixed; custom profiles are experiments and require their own browser-parity validation before performance claims.

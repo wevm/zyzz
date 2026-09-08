@@ -42,6 +42,32 @@ describe('create', () => {
     }
   })
 
+  test('a caller profile reaches every real compiler without changing their exports', async () => {
+    const modern = await Themes.create(10, { targets: { chrome: 123 << 16 } })
+    const legacy = await Themes.create(10, { targets: { chrome: 120 << 16 } })
+    try {
+      for (const [library, compile] of Object.entries(Themes.compilers)) {
+        const current = await compile(modern)
+        const lowered = await compile(legacy)
+        expect(
+          current.css.includes('light-dark('),
+          library,
+        ).toMatchInlineSnapshot('true')
+        expect(
+          lowered.css.includes('light-dark('),
+          library,
+        ).toMatchInlineSnapshot('false')
+        expect(
+          lowered.javascript === current.javascript,
+          library,
+        ).toMatchInlineSnapshot('true')
+      }
+    } finally {
+      await Fs.rm(legacy.directory, { force: true, recursive: true })
+      await Fs.rm(modern.directory, { force: true, recursive: true })
+    }
+  })
+
   for (const count of [10, 100]) {
     test(`theme scopes, nesting, and schemes agree in Chromium / ${count} styles`, async () => {
       const fixture = await Themes.create(count)

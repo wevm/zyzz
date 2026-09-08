@@ -46,6 +46,7 @@ for (const count of [10, 100]) {
                   css,
                   javascript,
                   library,
+                  targets: fixture.targets,
                   total: {
                     brotli: css.brotli + javascript.brotli,
                     gzip: css.gzip + javascript.gzip,

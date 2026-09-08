@@ -95,3 +95,17 @@ Adapters use [Panda named semantic-token themes](https://panda-css.com/blog/buil
 Timing boundaries differ: fixture writes are excluded; Panda includes config loading/code generation/extraction, StyleX includes both source modules through the official Babel plugin, vanilla-extract includes its esbuild integration, Tailwind starts with prepared candidates, and Zyzz starts with validated definitions. All include final processing and browser bundling. These measurements do not establish equal source-pipeline throughput. Theme source parsing, framework mount/rerender cost, and theme-switch latency remain separate future workloads.
 
 Report CSS, client JavaScript, and their combined raw/gzip/Brotli transfer without recounting class strings already present in JavaScript. Keep all libraries and observed gaps visible. Existing literal transfer gates remain unchanged; theme budgets require matched measurements and browser parity before becoming regression gates.
+
+### Target Configuration
+
+Pass a shared target map when preparing a fixture:
+
+```ts
+const fixture = await Themes.create(100, {
+  targets: { chrome: 123 << 16, safari: (17 << 16) | (5 << 8) },
+})
+```
+
+`Compilation.create(workload, { targets })` supports the same option. Every library receives a frozen copy of the profile for final CSS processing; result artifacts record it. Omitting the option retains the existing CI baseline. Changing a benchmark profile does not change package browser requirements or another workload's settings.
+
+Custom target profiles need browser-parity validation. A lower target may change the integration requirements of features such as `light-dark()`; emitted output alone is not proof that externally authored `color-scheme` declarations retain their behavior. The profile-propagation integration test verifies actual compiler transformations, while the existing Chromium scenarios validate the supported native-scheme profile.

@@ -291,6 +291,8 @@ The benchmark implementation and reproduction notes record prior-art attribution
 ### Minification Follow-Through
 
 - [ ] PR 1.4–1.5: preserve deterministic identifiers, source maps, efficient class references, and sensible safe grouping through source emission. Avoid benchmark-only module serialization optimizations.
+- [ ] Phase 4: add configurable Browserslist `targets` to shared CLI/build options and a `--targets` CLI flag. Resolve at the adapter boundary; preserve modern CSS when omitted, inherit consuming-build targets where applicable, and keep compatibility transforms independent of minification. Include resolved targets in cache identities and processing diagnostics.
+- [ ] Phase 4: validate downlevel color-scheme behavior with inherited, forced, inline, and external scopes; diagnose target combinations that cannot preserve semantics.
 - [ ] Phase 4: add Lightning CSS at the CLI/build adapter boundary with explicit targets and source-map composition. Allow the consuming build to own final processing without a mandatory second pass; core compilation remains usable without minification.
 - [ ] Phase 4: namespace independently emitted graphs and verify packed-library consumption through final CSS processing. Preserve class/reference alignment and readable development/production identities.
 - [ ] After the shared baseline: improve simple code generation only where complete delivery measurements justify it. Keep CSS-only size, total size, compile time, and browser performance distinct.

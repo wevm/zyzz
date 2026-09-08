@@ -99,6 +99,26 @@ const button = <button {...css({ color: 'blue.700', padding: 4 })()} />
 
 Bundled themes are opt-in entrypoints. Root `css` stays token-free. Contract-only and external-name interoperability is tracked separately in item 19.
 
+**Config API accepted; implementation pending in 2.2c:** `Config.create({ theme })` accepts inline or reusable definitions. Named `{ defaultTheme, themes }` catalogs allow mixed inputs, validate one complete token contract, and return normalized scope handles with bound `css`/`variants`. Encourage `zyzz.config.ts`; neither the filename nor importing a config changes root-function inference globally.
+
+```tsx
+const { css, themes } = Config.create({
+  defaultTheme: 'base',
+  themes: { base: theme, green: alternate },
+})
+const control = css({ color: 'brand' })
+const selected = (
+  <section
+    className={themes.green.className}
+    style={{ colorScheme: 'light dark' }}
+  >
+    <button {...control()}>Continue</button>
+  </section>
+)
+```
+
+The scopes assign inherited CSS variables, while color scheme selection is independent. Standalone theme identities stay isolated; configuration normalization is explicit. See the [configuration contract](architecture.md#configuration-and-inferred-authoring) for defaults, compatibility, inferred layers, and native boundaries.
+
 ## 05. Shared Variables and Variable Fallbacks
 
 Sources: StyleX variables, vanilla-extract `createVar`/`assignVars`/`fallbackVar`/Dynamic, CSS custom-property usage in Tailwind. **Planned:** 2.3.
@@ -378,26 +398,26 @@ Sources: Tailwind cascade layers/Preflight, vanilla-extract `globalStyle`/`layer
 
 ```ts
 import 'zyzz/reset.css'
-import { css } from 'zyzz'
+import { Config } from 'zyzz'
 import { Css } from 'zyzz/web'
 
-const layer = Css.layers(['reset', 'base', 'components'])
+const { css } = Config.create({ layers: ['reset', 'base', 'components'] })
 
 Css.global({
-  [layer.base]: {
+  '@layer base': {
     body: { fontFamily: 'system-ui' },
     '@media print': { body: { color: '#000' } },
   },
 })
 
 const card = css({
-  [layer.components]: { padding: '1rem' },
+  '@layer components': { padding: '1rem' },
 })
 ```
 
 **API accepted:** module-level declarations may live anywhere in configured project sources, including unimported modules. The source adapter hoists global contributions and a shared layer-order prelude into initial CSS. Consumers do not manually register globals or configure layer placement on `Css.compile`; the pure compiler receives explicit extracted data without global registration.
 
-Layer references infer names and preserve declaration typing through imports. Unwrapped globals and scoped rules stay unlayered. Compatible order declarations merge; conflicting cycles receive diagnostics. Preserve authored rule order, stable cross-module order, nested layer hierarchy, and important reversal. Globals remain eager even beside lazy components or tree-shaken JavaScript exports. Core imports add no reset.
+Config-bound `css` and `variants` autocomplete exact `@layer <name>` strings and reject undeclared names while preserving nested declaration/token types through imports. No returned layer-reference object or computed key is needed. Raw `Css.global` strings receive compiler validation without ambient config inference. Unwrapped globals and scoped rules stay unlayered. Compatible order declarations merge; conflicting cycles receive diagnostics. Preserve authored rule order, stable cross-module order, nested layer hierarchy, and important reversal. Globals remain eager even beside lazy components or tree-shaken JavaScript exports. Core imports add no reset.
 
 The [collection contract](architecture.md#layer-and-global-collection) specifies source discovery, identity, watch replacement/removal, source maps, asset relocation, shared stylesheet ownership, and packed-library metadata. [Astro](https://docs.astro.build/en/guides/styling/) and [Svelte](https://svelte.dev/docs/svelte/global-styles) provide additional colocation precedents; project-wide unimported-module collection is an explicit Zyzz decision. Browser, type, source, library, and benchmark gates remain pending in 2.4c/Phase 4.
 

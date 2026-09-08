@@ -34,6 +34,75 @@ import { StyleSheet } from 'zyzz/react-native'
 
 `Css` owns web stylesheet authoring and compilation. `StyleSheet` owns React Native compilation and precompiled theme/scheme selection. Both consume shared `Style.define` data through pure in-memory APIs. The root entrypoint remains independent of these target namespaces and their platform adapters.
 
+## Configuration and Inferred Authoring
+
+Accepted API: retain `Theme.define`/`Theme.extend` for reusable token definitions and add `Config.create` as the usual authoring entrypoint, exported as a namespace from `zyzz`. Encourage `zyzz.config.ts`; it is an ordinary importable, statically analyzed module, not an executable configuration hook or a required filename. The root core remains pure and independent of source discovery and platform adapters.
+
+```ts
+// zyzz.config.ts
+import { Config } from 'zyzz'
+
+export const { css, theme, variants } = Config.create({
+  layers: ['reset', 'base', 'components'],
+  theme: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem' },
+  },
+})
+```
+
+`theme` accepts inline token definitions or an existing `Theme.define`/`Theme.extend` value. Named `themes` accepts a mixture of those inputs. `theme` and `themes` are mutually exclusive; omitting both produces token-free bound functions. In named mode, require `defaultTheme`, inferred from the catalog's keys, rather than choosing by object order. Single-theme mode returns `theme`; named mode returns `themes`. Both return `css` and `variants`; no returned layer-reference object is required.
+
+```ts
+import { Config, Theme } from 'zyzz'
+
+const base = Theme.define({
+  color: { brand: { dark: '#8cf', light: '#06c' } },
+})
+
+export const { css, themes, variants } = Config.create({
+  defaultTheme: 'base',
+  layers: ['reset', 'base', 'components'],
+  themes: {
+    base,
+    mint: { color: { brand: { dark: '#9fc', light: '#175' } } },
+  },
+})
+```
+
+The default determines token paths/domains and unscoped fallback values. Named alternatives must satisfy the complete shared contract; reject missing/extra paths or incompatible domains. Inline alternatives provide full tokens; `Theme.extend(base, overrides)` supplies partial changes through its resolved complete definition. Normalize returned theme handles onto a stable shared configuration contract without mutating standalone definitions or merging their existing identities globally. Config-bound styles and the returned handles participate in this contract; matching names on independently compiled definitions alone do not establish interchangeability. Preserve the contract across imports, aliases, re-exports, and packed libraries.
+
+`layers` is an ordered readonly tuple of valid CSS layer names. Infer exact `@layer <name>` keys directly in the returned `css` and every supported style body of `variants`, retaining property/value/token inference at every depth:
+
+```ts
+const button = css({
+  '@layer components': {
+    backgroundColor: 'brand',
+    ':hover': { opacity: 0.8 },
+  },
+})
+```
+
+Autocomplete declared keys and reject misspellings such as `@layer component`. No computed key, layer-reference import, or unrestricted string index signature is needed. Preserve declaration order in `layers` as cascade order. An omitted layer list contributes no named layer keys to config-bound functions. Additional project layer declarations do not ambiently widen an imported function's type; include every layer used by that function in its config. Raw unbound web authoring remains subject to its own syntax/extraction contract.
+
+Select a theme through its returned compiled scope class and a color scheme through the ordinary CSS property:
+
+```tsx
+const selected: keyof typeof themes = 'mint'
+const example = (
+  <section
+    className={themes[selected].className}
+    style={{ colorScheme: 'dark' }}
+  >
+    <button {...button()}>Save</button>
+  </section>
+)
+```
+
+Scope classes assign live custom properties; descendants inherit values without changing their component classes or copying a theme's token set into inline style. Nested scopes select themes independently. `colorScheme: 'light'` or `'dark'` forces a scheme; `'light dark'` follows browser preference through `light-dark()` color leaves. Themes and schemes remain separate axes. Dynamic per-instance values retain the existing callback binding API. Native selects precompiled theme/scheme tables through its adapter; it does not interpret web scope classes or layers.
+
+Globals and additional layer contributions retain project-wide collection and may be colocated outside `zyzz.config.ts`. Config declarations contribute their layer order through that same pipeline. The filename convention never changes inference in direct root imports or requires runtime providers. Public config properties remain explicit and narrowly typed; new settings need their own semantics rather than an arbitrary metadata bag.
+
 ## Theme definition
 
 `Theme.define(tokens)` accepts only token definitions. No name, identifier, contract metadata, or scheme container is required.
@@ -391,7 +460,7 @@ const control = theme.css({
 
 CSS property names and value types follow standard CSS, augmented by domain-specific tokens. Selector and raw condition strings remain flexible and receive compiler syntax validation; TypeScript does not prove that arbitrary selector/query text is valid. Do not add a general string index signature that hides misspelled properties.
 
-The initial conditional syntax supports `@media`, `@container`, and `@supports`. Layer grouping inside style objects uses the typed `Css.layers` references below. Other at-rules require explicit capability support and diagnostics. Stylesheet-level rules use the optional `Css` APIs below, outside element declaration objects.
+The initial conditional syntax supports `@media`, `@container`, and `@supports`. Config-bound style objects infer `@layer <name>` keys from their declared layers; standalone layer contributions use the collection API below. Other at-rules require explicit capability support and diagnostics. Stylesheet-level rules use the optional `Css` APIs below, outside element declaration objects.
 
 ## Relational Selector DX
 
@@ -631,38 +700,35 @@ These authoring calls compile away into explicit stylesheet contributions. Prese
 
 ### Layer and Global Collection
 
-Accepted API for 2.4c: module-level `Css.layers(names)` declares named cascade layers in semantic order and returns readonly, inferred at-rule references. `Css.global(styles)` contributes global selector rules and supported nested at-rules. Both declarations may live in any ordinary project source module; no central registration file is required.
+Accepted API for 2.4c: `Config.create({ layers, ... })` declares semantic layer order and binds inferred `@layer <name>` keys on `css` and `variants`. `Css.global(styles)` contributes global selector rules and supported nested at-rules anywhere at module scope. The [configuration contract](#configuration-and-inferred-authoring) replaces computed layer-reference keys in config-bound examples.
 
 ```ts
-import { Css } from 'zyzz/web'
+import { Config } from 'zyzz'
 
-export const layer = Css.layers(['reset', 'base', 'components', 'overrides'])
+export const { css, variants } = Config.create({
+  layers: ['reset', 'base', 'components', 'overrides'],
+})
 ```
 
-`layer.components` represents `@layer components`. Unknown reference properties are type errors. References retain exact key types through imports and re-exports; prove nested property/value/token inference through computed keys before implementation acceptance. Layer names follow CSS identifier and dotted-name syntax; duplicate names in one declaration receive diagnostics. Named layers intentionally share CSS identity across declarations. Libraries namespace their public layers, such as `acme.components`.
-
 ```ts
 import { Css } from 'zyzz/web'
-import { layer } from './layers.js'
+import { css } from './zyzz.config.js'
 
 Css.global({
-  [layer.base]: {
+  '@layer base': {
     body: { fontFamily: 'system-ui', margin: 0 },
-    '@media print': {
-      body: { color: '#000' },
-    },
+    '@media print': { body: { color: '#000' } },
   },
 })
 
-export const button = theme.css({
-  [layer.components]: {
-    padding: 'md',
-    ':hover': { backgroundColor: 'brand' },
-  },
+export const button = css({
+  '@layer components': { padding: '1rem' },
 })
 ```
 
-Layer placement belongs to authored blocks in both global and scoped styles. Unwrapped rules remain unlayered, including globals; declaring a layer named `base` does not implicitly place globals there. `Css.global({ 'html, body': { minHeight: '100%' } })` is a valid unlayered contribution. This replaces consumer-facing `Css.compile({ layers: ... })` configuration. Pure compilation still receives explicit extracted contribution data from its caller, independently of source discovery or a runtime registry.
+Layer placement belongs to authored blocks in both global and scoped styles. Unwrapped rules remain unlayered; declaring `base` does not implicitly place globals there. `Css.global` has no ambient access to a config's TypeScript catalog: raw global at-rule strings receive compiler validation. Config-bound functions reject undeclared layer keys through their explicit inferred contract.
+
+`Css.layers(names)` remains available for standalone module-level order contributions; it is not required to obtain keys for config-bound authoring. Its declarations and config layer lists feed the same order constraints. Layer names follow CSS identifier and dotted-name syntax; duplicate names in one declaration receive diagnostics. Named layers intentionally share CSS identity; libraries namespace public layers such as `acme.components`. Pure compilation receives explicit extracted data independently of source discovery or a runtime registry; consumers do not configure layer placement on `Css.compile`.
 
 The collection contract is project-wide: adapters scan configured source roots, including unimported modules, with tests, generated output, and dependencies excluded by default. Dependency contributions require explicit inclusion or published library artifacts. Declarations must be static and module-level; calls inside functions, runtime branches, or component rendering receive diagnostics. No application code executes during collection.
 

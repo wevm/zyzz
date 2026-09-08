@@ -13,6 +13,8 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 - [**File Builds**](#file-builds): incremental builds and filesystem watching.
 - [**CLI**](#cli): standalone compilation with watch mode.
 
+[Documentation](docs/README.md) · [Concepts](docs/concepts.md) · [Usage](docs/usage.md) · [API Reference](docs/api.md)
+
 ## Philosophy
 
 - **Typed.** Properties, tokens, and variants carry their constraints into every call.
@@ -152,13 +154,13 @@ const roomy = css({ padding: '1rem' })
 
 ### Stylesheets and Compilation
 
-`Css` provides global rules, keyframes, fonts, and in-memory CSS compilation. `StyleSheet` compiles shared `Style` definitions into React Native styles and selects precompiled theme values.
+`global`, `keyframes`, and `fontFace` from `zyzz/web` define stylesheet rules. `Css` provides in-memory CSS compilation. `StyleSheet` compiles shared `Style` definitions into React Native styles and selects precompiled theme values.
 
 ```ts
 import { Style } from 'zyzz'
-import { Css } from 'zyzz/web'
+import { Css, global } from 'zyzz/web'
 
-Css.global({ body: { margin: 0 } })
+global({ body: { margin: 0 } })
 
 const styles = Style.define({
   card: { display: 'flex' },

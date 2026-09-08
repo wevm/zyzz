@@ -32,7 +32,7 @@ Lengths accept finite CSS numbers followed by `px`, `rem`, `em`, `vh`, `vw`, or 
 
 Colors accept 3/4/6/8-digit hex, `transparent`, `currentColor`, `black`, and `white`. Other named colors and functional colors are outside this initial subset. Unitless numbers must be finite: opacity is 0–1, font weight 1–1000, and line height/flex factors are nonnegative. Every property accepts CSS-wide `inherit`, `initial`, `revert`, `revert-layer`, and `unset`.
 
-Template types reject unsupported units and token names but cannot prove numeric bounds or hex digits; runtime validation enforces those constraints. Explicit `undefined`, callbacks, selectors, queries, themes, variables, importance suffixes, fallback arrays, CSS functions, and unsupported properties fail at this boundary. Later authoring phases expand the contract explicitly.
+Template types reject unsupported units and token names but cannot prove numeric bounds or hex digits; runtime validation enforces those constraints. Explicit `undefined`, callbacks, selectors, queries, arbitrary variable objects, importance suffixes, fallback arrays, CSS functions, and unsupported properties fail at this boundary. Later authoring phases expand the contract explicitly.
 
 ## Ordering and Ownership
 
@@ -46,7 +46,7 @@ Plain and null-prototype objects are accepted. Accessors, symbols, non-enumerabl
 
 `Style.define(input, { locations })` can attach caller-owned `{ path, source, start, end }` spans to errors at exactly matching paths. Source offsets are metadata supplied by a caller; this API does not parse source text. Locations are copied so input mutations do not alter emitted diagnostics.
 
-The root imports only pure local style modules. There are no runtime dependencies, themes, target emitters, parsers, filesystem calls, or framework imports. Compiler reference types will extend this boundary in the theme phase; arbitrary objects are not accepted as future tokens today.
+The root imports pure local style and theme modules without target emitters, parsers, filesystem calls, or framework imports. Validated theme references extend literal declarations through the [in-memory theme contract](themes.md); arbitrary objects are not accepted as tokens.
 
 Numeric style keys are returned and inferred as strings, matching JavaScript property enumeration. Plain data from other realms is accepted; class instances and accessor properties remain invalid. Every branch of a union-typed style must contain only supported properties.
 
@@ -72,4 +72,4 @@ Each class-map value is a space-separated list. Common declarations use a readab
 
 Artifacts belong to the complete compilation input. Reordering styles preserves class lists while changing cascade order; adding or removing styles can change factoring and class lists. Repeated independent compilations of identical data agree regardless of machine paths or clocks. Always distribute class maps with their matching stylesheet. Hashes are identifiers, not cryptographic integrity checks.
 
-`Css.CompileError` aggregates invalid declarations and empty or duplicate names; no partial stylesheet is returned. Compiler input is the ordered data contract returned by `Style.define`, not arbitrary untrusted objects. Themes, nested conditions, callbacks, and source parsing remain outside this literal API. Declaration and rule ordering follow CSS cascade semantics; class-attribute order does not control overrides.
+`Css.CompileError` aggregates invalid declarations and empty or duplicate names; no partial stylesheet is returned. Compiler input is the ordered data contract returned by `Style.define`, not arbitrary untrusted objects. Theme-aware compilation is covered in [In-Memory Themes](themes.md). Nested conditions, callbacks, and source parsing remain outside this literal data API. Declaration and rule ordering follow CSS cascade semantics; class-attribute order does not control overrides.

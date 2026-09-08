@@ -357,7 +357,9 @@ Panda property-based conditions and responsive arrays map to nested Zyzz blocks 
 Sources: StyleX `keyframes`, Tailwind animation/starting styles, vanilla-extract `keyframes`, and Panda keyframes/animation styles. **Planned:** 2.4c keyframes and 2.4b `@starting-style`.
 
 ```ts
-const enter = Css.keyframes({
+import { keyframes } from 'zyzz/web'
+
+const enter = keyframes({
   from: { opacity: 0, transform: 'translateY(4px)' },
   to: { opacity: 1, transform: 'translateY(0)' },
 })
@@ -381,7 +383,9 @@ Validate offsets, ordered overlapping frames, theme references, and animation sh
 Sources: vanilla-extract `fontFace`/`globalFontFace`, font authoring through ordinary CSS in the other libraries. **Planned:** 2.4c contributions; asset delivery in Phase 4.
 
 ```ts
-Css.fontFace({
+import { fontFace } from 'zyzz/web'
+
+fontFace({
   fontDisplay: 'swap',
   fontFamily: 'App Sans',
   fontWeight: '100 900',
@@ -399,11 +403,11 @@ Sources: Tailwind cascade layers/Preflight, vanilla-extract `globalStyle`/`layer
 ```ts
 import 'zyzz/reset.css'
 import { Config } from 'zyzz'
-import { Css } from 'zyzz/web'
+import { global } from 'zyzz/web'
 
 const { css } = Config.create({ layers: ['reset', 'base', 'components'] })
 
-Css.global({
+global({
   '@layer base': {
     body: { fontFamily: 'system-ui' },
     '@media print': { body: { color: '#000' } },
@@ -417,7 +421,7 @@ const card = css({
 
 **API accepted:** module-level declarations may live anywhere in configured project sources, including unimported modules. The source adapter hoists global contributions and a shared layer-order prelude into initial CSS. Consumers do not manually register globals or configure layer placement on `Css.compile`; the pure compiler receives explicit extracted data without global registration.
 
-Config-bound `css` and `variants` autocomplete exact `@layer <name>` strings and reject undeclared names while preserving nested declaration/token types through imports. No returned layer-reference object or computed key is needed. Raw `Css.global` strings receive compiler validation without ambient config inference. Unwrapped globals and scoped rules stay unlayered. Compatible order declarations merge; conflicting cycles receive diagnostics. Preserve authored rule order, stable cross-module order, nested layer hierarchy, and important reversal. Globals remain eager even beside lazy components or tree-shaken JavaScript exports. Core imports add no reset.
+Config-bound `css` and `variants` autocomplete exact `@layer <name>` strings and reject undeclared names while preserving nested declaration/token types through imports. No returned layer-reference object or computed key is needed. Raw `global` strings receive compiler validation without ambient config inference. Unwrapped globals and scoped rules stay unlayered. Compatible order declarations merge; conflicting cycles receive diagnostics. Preserve authored rule order, stable cross-module order, nested layer hierarchy, and important reversal. Globals remain eager even beside lazy components or tree-shaken JavaScript exports. Core imports add no reset.
 
 The [collection contract](architecture.md#layer-and-global-collection) specifies source discovery, identity, watch replacement/removal, source maps, asset relocation, shared stylesheet ownership, and packed-library metadata. [Astro](https://docs.astro.build/en/guides/styling/) and [Svelte](https://svelte.dev/docs/svelte/global-styles) provide additional colocation precedents; project-wide unimported-module collection is an explicit Zyzz decision. Browser, type, source, library, and benchmark gates remain pending in 2.4c/Phase 4.
 

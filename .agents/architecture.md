@@ -32,7 +32,9 @@ import { Css } from 'zyzz/web'
 import { StyleSheet } from 'zyzz/react-native'
 ```
 
-`Css` owns web stylesheet authoring and compilation. `StyleSheet` owns React Native compilation and precompiled theme/scheme selection. Both consume shared `Style.define` data through pure in-memory APIs. The root entrypoint remains independent of these target namespaces and their platform adapters.
+`fontFace`, `global`, and `keyframes` are direct named exports from `zyzz/web`. `Css` remains the named namespace for pure web compilation and relational/layer helpers; the three stylesheet functions are not members of that namespace. `StyleSheet` owns React Native compilation and precompiled theme/scheme selection. Both target compilers consume shared `Style.define` data through pure in-memory APIs. The root entrypoint remains independent of these target namespaces and their platform adapters.
+
+Consumer concepts, usage, and API status are documented in [docs](../docs/README.md).
 
 ## Configuration and Inferred Authoring
 
@@ -505,6 +507,8 @@ Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/r
 
 ### Typed Markers and Ancestors
 
+`ancestor` and `descendant` name relationships at any depth. Reserve `parent` and `child` for immediate relationships; they are not aliases or currently accepted additional helpers. The existing helpers do not imply a nearest boundary.
+
 Accepted API for implementation in 2.4b: `Css.marker(schema?)` defines an element identity and optional finite data-state domains. `Css.ancestor(marker, condition?)` creates a scoped selector key referring to that identity. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
 
 ```tsx
@@ -655,17 +659,17 @@ Additional inferred query keys support comparisons and ranges:
 ## Stylesheet APIs and layers
 
 ```ts
-import { Css } from 'zyzz/web'
+import { fontFace, global, keyframes } from 'zyzz/web'
 
-const fadeIn = Css.keyframes({
+const fadeIn = keyframes({
   from: { opacity: 0 },
   to: { opacity: 1 },
 })
-Css.global({
+global({
   'html, body': { margin: 0 },
   body: { fontFamily: 'system-ui' },
 })
-Css.fontFace({
+fontFace({
   fontFamily: 'App Sans',
   src: 'url("/fonts/app.woff2") format("woff2")',
   fontWeight: '100 900',
@@ -677,10 +681,12 @@ const animated = theme.css({
 })
 ```
 
-`Css.keyframes(frames)` returns a typed animation-name reference. Accept `from`, `to`, percentages in the inclusive 0–100 range, and valid comma-separated stops. Frame values are declaration objects; reject nested selectors/queries and important declarations. Preserve source order at overlapping offsets, and never reorder frame declarations mechanically. Theme values use explicit `theme.tokens` or supported `theme.vars` references.
+`keyframes(frames)` returns a typed animation-name reference. Accept `from`, `to`, percentages in the inclusive 0–100 range, and valid comma-separated stops. Frame values are declaration objects; reject nested selectors/queries and important declarations. Preserve source order at overlapping offsets, and never reorder frame declarations mechanically. Theme values use explicit `theme.tokens` or supported `theme.vars` references.
 
 ```ts
-const enter = Css.keyframes({
+import { keyframes } from 'zyzz/web'
+
+const enter = keyframes({
   from: { opacity: 0, transform: 'translateY(4px)' },
   to: { opacity: 1, transform: 'translateY(0)' },
 })
@@ -700,7 +706,7 @@ These authoring calls compile away into explicit stylesheet contributions. Prese
 
 ### Layer and Global Collection
 
-Accepted API for 2.4c: `Config.create({ layers, ... })` declares semantic layer order and binds inferred `@layer <name>` keys on `css` and `variants`. `Css.global(styles)` contributes global selector rules and supported nested at-rules anywhere at module scope. The [configuration contract](#configuration-and-inferred-authoring) replaces computed layer-reference keys in config-bound examples.
+Accepted API for 2.4c: `Config.create({ layers, ... })` declares semantic layer order and binds inferred `@layer <name>` keys on `css` and `variants`. `global(styles)` contributes global selector rules and supported nested at-rules anywhere at module scope. The [configuration contract](#configuration-and-inferred-authoring) replaces computed layer-reference keys in config-bound examples.
 
 ```ts
 import { Config } from 'zyzz'
@@ -711,10 +717,10 @@ export const { css, variants } = Config.create({
 ```
 
 ```ts
-import { Css } from 'zyzz/web'
+import { global } from 'zyzz/web'
 import { css } from './zyzz.config.js'
 
-Css.global({
+global({
   '@layer base': {
     body: { fontFamily: 'system-ui', margin: 0 },
     '@media print': { body: { color: '#000' } },
@@ -726,7 +732,7 @@ export const button = css({
 })
 ```
 
-Layer placement belongs to authored blocks in both global and scoped styles. Unwrapped rules remain unlayered; declaring `base` does not implicitly place globals there. `Css.global` has no ambient access to a config's TypeScript catalog: raw global at-rule strings receive compiler validation. Config-bound functions reject undeclared layer keys through their explicit inferred contract.
+Layer placement belongs to authored blocks in both global and scoped styles. Unwrapped rules remain unlayered; declaring `base` does not implicitly place globals there. `global` has no ambient access to a config's TypeScript catalog: raw global at-rule strings receive compiler validation. Config-bound functions reject undeclared layer keys through their explicit inferred contract.
 
 `Css.layers(names)` remains available for standalone module-level order contributions; it is not required to obtain keys for config-bound authoring. Its declarations and config layer lists feed the same order constraints. Layer names follow CSS identifier and dotted-name syntax; duplicate names in one declaration receive diagnostics. Named layers intentionally share CSS identity; libraries namespace public layers such as `acme.components`. Pure compilation receives explicit extracted data independently of source discovery or a runtime registry; consumers do not configure layer placement on `Css.compile`.
 

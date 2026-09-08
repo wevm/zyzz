@@ -123,3 +123,13 @@ const fixture = await Themes.create(100, {
 `Compilation.create(workload, { targets })` supports the same option. Every library receives a frozen copy of the profile for final CSS processing; result artifacts record it. Omitting the option retains the existing CI baseline. Changing a benchmark profile does not change package browser requirements or another workload's settings.
 
 Custom target profiles must retain native `light-dark()`. Fixture creation rejects profiles that Lightning CSS would lower, before preparing or timing any library. The profile-propagation integration test verifies supported overrides through every real compiler; Chromium scenarios validate inherited, nested, and inline scheme selection.
+
+## Incremental Source Graphs
+
+`src/compiler/Graph.bench.ts` compares fresh compilation with `Graph.create` on the shared source graph fixture: 10 or 100 independent consumers, a base theme, a compatible scope, and re-exports. Separate workloads alternate consumer edits, theme edits, and unchanged snapshots.
+
+Initial compilation and artifact equivalence checks are outside timing; each lane receives the same complete source snapshots. Parsing, extraction, emission, rewriting, and maps are included; filesystem scanning, publication, and browser rendering are excluded.
+
+Run both lanes sequentially on the same machine with at least 30 samples and one second of measurement after 500 milliseconds of warmup.
+
+The existing graph delivery measurements remain separate from incremental timing. Theme edits intentionally re-emit all modules to refresh compatible scopes; file-set changes use a full rebuild. These workloads measure cache reuse, not a change in CSS size or rendering semantics.

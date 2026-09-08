@@ -19,6 +19,8 @@ const output = Graph.compile({
 })
 ```
 
+For repeated edits, [Graph.create](create.md) retains an isolated incremental cache. `Graph.compile` always starts fresh.
+
 ## Parameters
 
 ### options.modules

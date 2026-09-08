@@ -568,31 +568,30 @@ const selected = StyleSheet.select(native.styles, {
 
 Theme labels, schemes, and style names infer from inputs. Unit conversion is explicit. Markers, DOM relationships, CSS variable text, and stylesheet rules are not native capabilities. Test real native selection/rendering separately from embedded JavaScript-engine portability.
 
-## 24. Multipart Recipes and Parts
+## 24. Multipart Component Styling
 
-Panda [slot recipes](https://panda-css.com/docs/concepts/slot-recipes), `sva`, and `defineParts` expose a gap beyond single-element recipes. **Proposal for Phase 3:** an optional `slots` form on the existing `variants` function, shared by `theme.variants`.
+Panda [slot recipes](https://panda-css.com/docs/concepts/slot-recipes), `sva`, and `defineParts` coordinate styles across component elements. **Planned through existing APIs:** Zyzz uses separate `css` or `variants` definitions for each element. Each recipe application returns one props object; the `slots` pattern is excluded from `variants` and `theme.variants`.
 
 ```tsx
 const button = variants({
-  base: { label: { fontWeight: 600 }, root: { display: 'inline-flex' } },
+  base: { display: 'inline-flex' },
   defaultVariants: { size: 'sm' },
-  slots: ['label', 'root'],
   variants: {
     size: {
-      md: { label: { fontSize: '1rem' }, root: { padding: '1rem' } },
-      sm: { label: { fontSize: '0.875rem' }, root: { padding: '0.5rem' } },
+      md: { padding: '1rem' },
+      sm: { padding: '0.5rem' },
     },
   },
 })
-const parts = button({ size: 'sm' })
+const label = css({ fontWeight: 600 })
 const element = (
-  <button {...parts.root}>
-    <span {...parts.label}>Save</span>
+  <button {...button({ size: 'sm' })}>
+    <span {...label()}>Save</span>
   </button>
 )
 ```
 
-Infer slot names throughout base, choices, compounds, and the returned props map. Define per-slot overrides, data-attribute ownership, dynamic bindings, and native output before implementation. No mandatory context provider; applications distribute returned props normally. Descendant-part styling can already use ordinary `data-part` selectors; portals require directly applied slot props because ancestor selectors do not cross DOM boundaries. This slot form is a new proposal, separate from the accepted marker API.
+Pass shared component inputs to separate recipes when multiple elements vary together. Use ordinary data attributes or the typed markers in item 11 for DOM relationships. Portals require directly applied styles because ancestor selectors do not cross DOM boundaries. Shared component inputs and separate element definitions also apply to native; DOM selectors remain web-specific.
 
 ## 25. Semantic Token Aliases and Conditional Tokens
 

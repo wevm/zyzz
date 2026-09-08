@@ -265,6 +265,8 @@ Dynamic assignment is allowed; dynamic rule generation is not. The core never re
 
 `theme.variants(definition)` binds recipe definitions to the theme, just like `theme.css`. The direct `variants` export from `zyzz` has an empty token contract. Bundled theme entrypoints also export the bound function. No variant namespace or explicit theme argument is needed.
 
+Each recipe styles one element and returns one spreadable props object when applied. Multipart components use separate `css` or `variants` definitions for their elements. Shared selections use ordinary component inputs; DOM relationships use data attributes or typed markers. Recipes have no `slots` option or map of part props.
+
 ```tsx
 const button = theme.variants({
   base: { display: 'inline-flex' },
@@ -902,7 +904,7 @@ Benchmark fixtures accept an explicit shared Lightning CSS target map through `C
 
 The [capability union](parity.md) consolidates the referenced frameworks into numbered capabilities, each with Zyzz usage and an implementation status. It includes the accepted typed marker/ancestor API, shared existing APIs, unresolved contracts, and explicit external-CSS examples for deferred features. Property typing, source extraction, CSS grammar, emission, browser compatibility, and native support are separate statuses. The current 40-property literal subset cannot establish general CSS parity.
 
-The Panda cross-check adds three explicit contracts in union items 24–26: multipart recipes, semantic token dependencies, and responsive recipe selections. The optional `variants({ slots, ... })` form is a proposal returning a map of spreadable props after application; it does not change single-element recipes or require component providers. Infer slot names and define per-slot override/binding ownership before acceptance.
+The Panda cross-check covers multipart component styling, semantic token dependencies, and responsive recipe selections in union items 24–26. Multipart styling uses separate element definitions under the single-element recipe contract. Semantic token dependencies and responsive recipe selections retain their separate design gates.
 
 Reused token constants are not live aliases. A token dependency graph requires cycles, missing references, domain checking, source identity, and override/inheritance rules without adding metadata to `Theme.define` or replacing light/dark leaves. Conditional tokens and responsive variant selections remain separate decisions; neither may reuse declaration fallback arrays or conflict with dynamic choice payloads.
 

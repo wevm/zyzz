@@ -155,7 +155,7 @@ PR 2.1 uses opaque object references for contracts within one in-memory graph. C
 
 - [ ] Create a versioned CSS capability inventory before broadening the literal subset. Track property/value, selector, at-rule, type/extraction/emission/map support, browser targets, native disposition, integration proof, and benchmark separately. Never equate accepted strings or types with supported rendering.
 - [ ] Keep the numbered capability union and usage snippets synchronized as features land. Map 01–07 to source/value/theme work, 08–09 to recipes, 10–14 to selectors/queries/animation, 15–16 to contributions, 17–19 to renderer/library/external contracts, 20–22 to the explicit backlog, and 23 to native. Items span phases where stated; external-CSS examples do not satisfy typed API gates.
-- [ ] Include Panda in the same union. Track 24 multipart recipes in Phase 3, 25 semantic token dependency/conditional-token design after source identity, and 26 responsive recipe selections alongside recipe composition. Preserve the accepted marker API separately from newly proposed slot syntax.
+- [ ] Include Panda in the same union. Cover 24 multipart component styling through separate element definitions and the accepted marker API, 25 semantic token dependency/conditional-token design after source identity, and 26 responsive recipe selections alongside recipe composition. Keep each recipe's output a single props object.
 - [ ] Expand standard property families in 2.3: layout/positioning (including columns, containment, and overflow), grid/flex, logical dimensions/spacing, typography, backgrounds/gradients, borders/outlines, shadows, transforms, filters/masks, tables, scrolling, interactivity, SVG, and accessibility. Define shorthand/longhand and logical/physical interactions as each family lands.
 - [ ] Specify registered custom properties in 2.3: syntax, initial value, inheritance, interpolation, duplicate/conflicting registrations, and target diagnostics. Distinguish variable fallbacks from ordered declaration fallbacks; preserve existing callback and `Vars` value-binding roles.
 - [ ] Expand token groups alongside their validated properties: scalar typography, composite typography, query thresholds, then border, shadow, opacity, transition, and stacking scales. Keep inherited theme selection separate from CSS color-scheme selection.
@@ -200,9 +200,9 @@ Gate: two compatible themes each work in both schemes. Switching a scope changes
 
 ## Phase 3 — Composition, variants, and target output
 
-- [ ] Review the optional `variants({ slots, ... })` proposal from capability 24. Infer slot names in base/choices/compounds/output, specify per-slot overrides and binding ownership, test portal/direct application versus DOM relationships, and prove equivalent native behavior without mandatory providers.
+- [ ] Keep `variants` scoped to one element, returning one props object with no `slots` option. Cover multipart components through separate `css`/`variants` definitions and shared component inputs; use data attributes or typed markers for supported DOM relationships.
 - [ ] Specify responsive recipe selection separately from dynamic payload choices, including conditions/defaults/nulls/compounds and native diagnostics. A static choice containing media rules does not establish full conditional-selection parity.
-- [ ] Preserve every finite runtime-selectable recipe alternative across source extraction, aliases, and packed libraries before pruning unused choices. Verify CSS/JS/attribute delivery and matched multipart/conditional workloads against the existing benchmark set, including Panda.
+- [ ] Preserve every finite runtime-selectable recipe alternative across source extraction, aliases, and packed libraries before pruning unused choices. Verify CSS/JS/attribute delivery and matched component/conditional workloads against the existing benchmark set, including Panda.
 
 Status: planned.
 

@@ -17,3 +17,5 @@ zyzz src --out-dir dist --css dist/styles.css --minify
 - **Watching:** regenerate changed output and preserve the previous complete build after errors.
 
 A config import does not replace this transformation. CSS-only compilation with untouched style calls is outside the current design. Applications needing transparent original-source imports should use a bundler integration.
+
+The programmatic [file host](../api/node/Host/create.md) already supports Lightning CSS processing through `css: { minify: true, targets: { safari: 15 << 16 } }`. The CLI above remains planned. Vite uses its own CSS processing configuration.

@@ -139,3 +139,25 @@ The existing graph delivery measurements remain separate from incremental timing
 `src/vite/index.bench.ts` measures complete production builds of the physical integration app with 10/100 consumers, aliased theme imports, and an alternative scope. Fixture writes and initial size collection are outside timing. Vite resolution, Zyzz analysis, JavaScript bundling, final CSS processing, and asset generation are included; output is kept in memory.
 
 Reports under `bench/results/vite` include actual CSS, JavaScript, and combined raw/gzip/Brotli bytes. Virtual graph stylesheets can repeat shared rules before Vite's final CSS processing. These are new adapter baselines, not comparisons with the in-memory graph timing or another styling library. Use the existing matched graph benchmark to check compiler changes separately.
+
+### Standalone CSS Processing
+
+The Lightning CSS host comparison uses `src/node/Host.bench.ts` and its 100-style fixture. Run the cold-process and unchanged-rebuild lanes with `-t 'cold process rebuild|unchanged rebuild'`, saving baseline and candidate JSON on the same machine.
+
+Processing defaults to formatted CSS; compare `css: false`, `{}`, and `{ minify: true }` separately for delivery sizes.
+
+Against main `ad430fd`, the implementation run measured cold builds at 530→499 ms (3 samples, ±22%/9%; inconclusive).
+
+A longer unchanged-build repeat measured 2.81→3.27 ms (713/611 samples, ±3.68%/3.34%), including scanning, ownership checks, and the larger composed maps.
+
+The repeat used 2 seconds, at least 100 iterations, and 500 ms/10 iterations of warmup.
+
+For that fixture, intermediate/formatted/minified CSS was 4366/5064/4165 raw bytes, 586/581/572 gzip bytes, and 349/356/333 Brotli bytes.
+
+JavaScript remained 8521/724/445 raw/gzip/Brotli bytes. CSS maps grew from 9302 to 13194 formatted or 12996 minified raw bytes and are separate debug artifacts.
+
+These are standalone module outputs, not a browser bundle or a general size claim.
+
+Local reports and metadata are under ignored `bench/results/lightning/`. The run used Node 24.19.0, Lightning CSS 1.33.0, and an Intel Xeon Platinum 8272CL.
+
+The initial watch benchmark encountered a partial filesystem write; watch timing is excluded. Host integration tests cover watch recovery.

@@ -152,7 +152,7 @@ The [CSS capability union](parity.md) deduplicates parity items across the refer
 
 - [x] Accept resolved import identities from hosts and include them in analysis invalidation. Preserve the closed relative-graph compatibility path for standalone callers.
 - [x] Add named `zyzz()` from `zyzz/vite`, using the existing Vite resolver, environment module graph, watcher, and CSS pipeline. Cover aliases, production CSS, real HMR notifications, deletions, missing-file creation, and browser theme updates.
-- [ ] Add Lightning CSS to standalone build processing with explicit targets and composed source maps. Preserve the consuming bundler's ownership of final CSS processing.
+- [x] Add Lightning CSS to standalone build processing with explicit targets and composed source maps. Preserve the consuming bundler's ownership of final CSS processing.
 - [ ] Extend host integration to virtual/framework sources, library contracts, and Next.js using native host facilities. Do not add a general package resolver or watcher to the styling compiler.
 
 ### PR Sequence

@@ -1,7 +1,8 @@
 /**
- * Publishes incremental file builds and recovers from filesystem watch failures.
+ * Processes standalone CSS and publishes incremental file builds with watch recovery.
  * @module
  */
+import * as LightningCss from 'lightningcss'
 import * as Crypto from 'node:crypto'
 import * as NativeFs from 'node:fs'
 import * as Fs from 'node:fs/promises'
@@ -20,10 +21,19 @@ export type Build = {
 /**
  * Opens an exclusively owned output lifecycle around the literal source transform.
  * Source modules remain TypeScript/JSX; transpilation and CSS loading belong to the consumer.
+ * Lightning CSS processes stylesheets and composes maps before publication by default.
  * @param options - Source directory, separate output directory, and portable package identity.
  * @returns Explicit build, watch, and close operations. Close releases the output lock.
  */
 export async function create(options: create.Options): Promise<Runtime> {
+  type Stylesheet = { code: string; map: string }
+  const css =
+    options.css === false
+      ? false
+      : {
+          minify: options.css?.minify ?? false,
+          targets: { ...options.css?.targets },
+        }
   const outDir = Path.resolve(options.outDir)
   const root = await Fs.realpath(options.root)
 
@@ -62,6 +72,7 @@ export async function create(options: create.Options): Promise<Runtime> {
   const manifestPath = Path.join(outDir, '.zyzz.json')
 
   const compiler = Graph.create()
+  const stylesheets = new WeakMap<Transform.compile.ReturnType, Stylesheet>()
   let closed = false
   let closing: Promise<void> | undefined
   let tail: Promise<void> = Promise.resolve()
@@ -119,8 +130,28 @@ export async function create(options: create.Options): Promise<Runtime> {
 
       artifacts.set(name, output.code)
       artifacts.set(`${name}.map`, JSON.stringify(output.map))
-      artifacts.set(`${name}.css`, output.css)
-      artifacts.set(`${name}.css.map`, JSON.stringify(output.cssMap))
+      let stylesheet = stylesheets.get(output)
+      if (!stylesheet) {
+        if (css === false)
+          stylesheet = { code: output.css, map: JSON.stringify(output.cssMap) }
+        else {
+          const result = LightningCss.transform({
+            code: Buffer.from(output.css),
+            filename: `${options.packageId}/${name}.css`,
+            inputSourceMap: JSON.stringify(output.cssMap),
+            minify: css.minify,
+            sourceMap: true,
+            targets: css.targets,
+          })
+          stylesheet = {
+            code: Buffer.from(result.code).toString(),
+            map: Buffer.from(result.map!).toString(),
+          }
+        }
+        stylesheets.set(output, stylesheet)
+      }
+      artifacts.set(`${name}.css`, stylesheet.code)
+      artifacts.set(`${name}.css.map`, stylesheet.map)
     }
 
     await regular(manifestPath, outDir)
@@ -265,6 +296,16 @@ export async function create(options: create.Options): Promise<Runtime> {
 export declare namespace create {
   /** Explicit filesystem and module-identity boundaries. */
   type Options = {
+    /** Lightning CSS processing; false preserves intermediate CSS. Enabled by default. */
+    readonly css?:
+      | false
+      | {
+          /** Minify emitted stylesheets. Defaults to false. */
+          readonly minify?: boolean | undefined
+          /** Lightning CSS browser versions, encoded as major << 16 | minor << 8 | patch. No targets by default. */
+          readonly targets?: Readonly<LightningCss.Targets> | undefined
+        }
+      | undefined
     /** Output directory exclusively locked until close; may be nested under root. */
     readonly outDir: string
     /** Stable package identity prepended to relative source module IDs. */

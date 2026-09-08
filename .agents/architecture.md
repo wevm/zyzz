@@ -2,7 +2,7 @@
 
 ## Status and boundaries
 
-PR 1.1 implements the literal `Style.define` boundary, immutable ordered data, and structured diagnostics, with integration/type coverage and an authoring benchmark. The [literal subset](../docs/literal-styles.md) documents the implemented surface. CSS emission, component authoring functions, themes, variants, CLI, and native rendering below remain implementation targets. The MVP prioritizes web correctness and includes a working native subset.
+Main `9aa72fc` includes Phase 1 and PRs 2.1/2.2a: 40-property literal validation, in-memory CSS emission, literal source extraction/rewriting, file hosts, scalar theme contracts/scopes, and token-name resolution. Bound `theme.css` has type inference but still requires theme-aware source linking. The [parity audit](parity.md) distinguishes implemented behavior from the remaining API targets. The MVP prioritizes web correctness and includes a working native subset.
 
 The core owns typed ordered declarations, token resolution, validation, and deterministic identity. It has no filesystem, browser, device, parser, framework, or build-tool dependencies. Source adapters extract definitions; target emitters generate artifacts; host adapters deliver them.
 
@@ -32,7 +32,90 @@ import { Css } from 'zyzz/web'
 import { StyleSheet } from 'zyzz/react-native'
 ```
 
-`Css` owns web stylesheet authoring and compilation. `StyleSheet` owns React Native compilation and precompiled theme/scheme selection. Both consume shared `Style.define` data through pure in-memory APIs. The root entrypoint remains independent of these target namespaces and their platform adapters.
+`fontFace`, `global`, and `keyframes` are direct named exports from `zyzz/web`. `Css` remains the named namespace for pure web compilation and relational/layer helpers; the three stylesheet functions are not members of that namespace. `StyleSheet` owns React Native compilation and precompiled theme/scheme selection. Both target compilers consume shared `Style.define` data through pure in-memory APIs. The root entrypoint remains independent of these target namespaces and their platform adapters.
+
+Consumer concepts, usage, and API status are documented in [docs](../docs/README.md).
+
+## Configuration and Inferred Authoring
+
+Accepted API: retain `Theme.define`/`Theme.extend` for reusable token definitions and add `Config.create` as the usual authoring entrypoint, exported as a namespace from `zyzz`.
+
+Export `const zyzz = Config.create(...)` from `zyzz.config.ts`. Consumers import `{ zyzz }` and access its bound helpers and theme handles. Integrations follow this named instance without requiring a default export.
+
+The config is an ordinary importable, statically analyzed module, not an executable configuration hook or a required filename. The root core remains pure and independent of source discovery and platform adapters.
+
+```ts
+// zyzz.config.ts
+import { Config } from 'zyzz'
+
+export const zyzz = Config.create({
+  layers: ['reset', 'base', 'components'],
+  theme: {
+    color: { brand: { dark: '#8cf', light: '#06c' } },
+    spacing: { md: '1rem' },
+  },
+})
+```
+
+`theme` accepts inline token definitions or an existing `Theme.define`/`Theme.extend` value. Named `themes` accepts a mixture of those inputs. `theme` and `themes` are mutually exclusive; omitting both produces token-free bound functions. In named mode, require `defaultTheme`, inferred from the catalog's keys, rather than choosing by object order. Single-theme mode returns `theme`; named mode returns `themes`. Both return `css` and `variants`; no returned layer-reference object is required.
+
+```ts
+import { Config, Theme } from 'zyzz'
+
+const base = Theme.define({
+  color: { brand: { dark: '#8cf', light: '#06c' } },
+})
+
+export const zyzz = Config.create({
+  defaultTheme: 'base',
+  layers: ['reset', 'base', 'components'],
+  themes: {
+    base,
+    mint: { color: { brand: { dark: '#9fc', light: '#175' } } },
+  },
+})
+```
+
+The default determines token paths/domains and unscoped fallback values. Named alternatives must satisfy the complete shared contract; reject missing/extra paths or incompatible domains. Inline alternatives provide full tokens; `Theme.extend(base, overrides)` supplies partial changes through its resolved complete definition. Normalize returned theme handles onto a stable shared configuration contract without mutating standalone definitions or merging their existing identities globally. Config-bound styles and the returned handles participate in this contract; matching names on independently compiled definitions alone do not establish interchangeability. Preserve the contract across imports, aliases, re-exports, and packed libraries.
+
+`layers` is an ordered readonly tuple of valid CSS layer names. Infer exact `@layer <name>` keys directly in the returned `css` and every supported style body of `variants`, retaining property/value/token inference at every depth:
+
+```ts
+import { zyzz } from './zyzz.config.js'
+
+const button = zyzz.css({
+  '@layer components': {
+    backgroundColor: 'brand',
+    ':hover': { opacity: 0.8 },
+  },
+})
+```
+
+Autocomplete declared keys and reject misspellings such as `@layer component`. No computed key, layer-reference import, or unrestricted string index signature is needed. Preserve declaration order in `layers` as cascade order. An omitted layer list contributes no named layer keys to config-bound functions. Additional project layer declarations do not ambiently widen an imported function's type; include every layer used by that function in its config. Raw unbound web authoring remains subject to its own syntax/extraction contract.
+
+Select a theme through its returned compiled scope class and a color scheme through the ordinary CSS property:
+
+```tsx
+import { zyzz } from './zyzz.config.js'
+
+const selected: keyof typeof zyzz.themes = 'mint'
+const example = (
+  <section
+    className={zyzz.themes[selected].className}
+    style={{ colorScheme: 'dark' }}
+  >
+    <button {...button()}>Save</button>
+  </section>
+)
+```
+
+Scope classes assign live custom properties; descendants inherit values without changing their component classes or copying a theme's token set into inline style. Nested scopes select themes independently. `colorScheme: 'light'` or `'dark'` forces a scheme; `'light dark'` follows browser preference through `light-dark()` color leaves. Themes and schemes remain separate axes. Dynamic per-instance values retain the existing callback binding API. Native selects precompiled theme/scheme tables through its adapter; it does not interpret web scope classes or layers.
+
+Globals and additional layer contributions retain project-wide collection and may be colocated outside `zyzz.config.ts`. Config declarations contribute their layer order through that same pipeline. The filename convention never changes inference in direct root imports or requires runtime providers. Public config properties remain explicit and narrowly typed; new settings need their own semantics rather than an arbitrary metadata bag.
+
+The named `zyzz` instance retains the config's complete inferred contract. Source adapters must follow `zyzz.css`, `zyzz.variants`, and theme handles through aliases, re-exports, and package boundaries. CSS references use `zyzz.theme.vars` or `zyzz.themes.<name>.vars`.
+
+Integrations discover the originating config through that binding without requiring a default export. No config import performs compilation at runtime.
 
 ## Theme definition
 
@@ -265,6 +348,8 @@ Dynamic assignment is allowed; dynamic rule generation is not. The core never re
 
 `theme.variants(definition)` binds recipe definitions to the theme, just like `theme.css`. The direct `variants` export from `zyzz` has an empty token contract. Bundled theme entrypoints also export the bound function. No variant namespace or explicit theme argument is needed.
 
+Each recipe styles one element and returns one spreadable props object when applied. Multipart components use separate `css` or `variants` definitions for their elements. Shared selections use ordinary component inputs; DOM relationships use data attributes or typed markers. Recipes have no `slots` option or map of part props.
+
 ```tsx
 const button = theme.variants({
   base: { display: 'inline-flex' },
@@ -389,7 +474,142 @@ const control = theme.css({
 
 CSS property names and value types follow standard CSS, augmented by domain-specific tokens. Selector and raw condition strings remain flexible and receive compiler syntax validation; TypeScript does not prove that arbitrary selector/query text is valid. Do not add a general string index signature that hides misspelled properties.
 
-The initial conditional syntax supports `@media`, `@container`, and `@supports`. Other at-rules require explicit capability support and diagnostics. Stylesheet-level rules use the optional `Css` APIs below, outside element declaration objects.
+The initial conditional syntax supports `@media`, `@container`, and `@supports`. Config-bound style objects infer `@layer <name>` keys from their declared layers; standalone layer contributions use the collection API below. Other at-rules require explicit capability support and diagnostics. Stylesheet-level rules use the optional `Css` APIs below, outside element declaration objects.
+
+## Relational Selector DX
+
+This is the planned selector API, not implemented source syntax. Use standard pseudos and explicit `&` relationships; retain token inference inside every nested declaration block. Named data attributes identify application-owned groups and peers. The accepted typed marker design below adds inferred relationships without replacing raw CSS selectors.
+
+```tsx
+import { css } from 'zyzz'
+
+const indicator = css({
+  opacity: 0,
+  ':where([data-group="profile"]:has(a)) &': { opacity: 1 },
+})
+
+const profile = (
+  <article data-group="profile">
+    <a href="/profile">Profile</a>
+    <span {...indicator()}>Has a link</span>
+  </article>
+)
+```
+
+This inspects descendants of the marked ancestor. `:has(a)` alone would inspect descendants of the styled element. No parent-state JavaScript, wrapper component, generated marker class, or class concatenation is required.
+
+| Relationship                             | Authored Selector                                     |
+| ---------------------------------------- | ----------------------------------------------------- |
+| Current control state                    | `:checked`, `:focus-visible`, `&[data-state="open"]`  |
+| Current element contains a checked child | `:has(> input:checked)`                               |
+| Named ancestor state                     | `:where([data-group="profile"]:hover) &`              |
+| Earlier peer is checked                  | `:where([data-peer="choice"]:checked) ~ &`            |
+| Later peer is checked                    | `&:has(~ [data-peer="choice"]:checked)`               |
+| Earlier peer contains a checked input    | `:where([data-peer="choice"]:has(input:checked)) ~ &` |
+| Direct children / all descendants        | `& > *` / `& *`                                       |
+| A generated pseudo-element               | `::before` with explicit `content`                    |
+
+The compiler preserves normal selector matching and specificity. `:where(...)` explicitly lowers the surrounding condition's specificity; no implicit rewrite does so. Peer combinators retain direction. Repeated nested group names match any qualifying ancestor, not only the nearest one; distinct names separate roles. Selector strings cannot prove DOM structure or attribute existence through TypeScript.
+
+Offer completion for supported pseudos and condition forms without an unrestricted object-key index signature. Parse compound/relative selectors, `:has`, `:is`, `:not`, `:where`, nth formulas, and lists with a real CSS parser; preserve conjunction and authored order through nesting. Invalid syntax and unsupported target capabilities receive source diagnostics.
+
+Literal `:hover` remains ordinary CSS. Use `@media (hover: hover)` explicitly for pointer-capable hover effects. Do not insert pseudo-element content or a reset automatically. Reusable imported immutable condition objects and spreads use the ordinary static-expression contract, not an additional variant-registration API.
+
+Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/removal, nested named groups, and combined queries. Native rejects relational selectors until a separately specified adapter can preserve their meaning.
+
+### Typed Markers and Ancestors
+
+`ancestor` and `descendant` name relationships at any depth. Reserve `parent` and `child` for immediate relationships; they are not aliases or currently accepted additional helpers. The existing helpers do not imply a nearest boundary.
+
+Accepted API for implementation in 2.4b: `Css.marker(schema?)` defines an element identity and optional finite data-state domains. `Css.ancestor(marker, condition?)` creates a scoped selector key referring to that identity. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
+
+```tsx
+import { css } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const card = Css.marker({ state: ['closed', 'open'] })
+const title = css({
+  color: '#666',
+  [Css.ancestor(card, ':hover')]: { color: '#06c' },
+  [Css.ancestor(card, { data: { state: 'open' } })]: { fontWeight: 600 },
+})
+
+const profile = (
+  <article {...card({ state: 'open' })}>
+    <h2 {...title()}>Profile</h2>
+  </article>
+)
+```
+
+`Css.marker()` also works without a schema. A schema maps case-sensitive state keys to nonempty readonly arrays of string or boolean literals; const inference preserves the literal domains without `as const`. Reject unbounded arrays, duplicate/ambiguous serialized values, invalid data-name fragments, and reserved application keys. Optional marker inputs select any subset of declared states; omitted/undefined fields emit no state attribute. Unknown keys or invalid values are errors, including through variables and untyped calls. False serializes as `"false"`, not attribute omission.
+
+HTML attribute-name fragments use ASCII-lowercase state keys. Reject schemas with keys colliding after ASCII case folding, such as `state` and `State`, before emission. Application and selector lowering use the same normalization; typed input keys remain case-sensitive.
+
+Marker application returns readonly data attributes only: a presence attribute plus selected state attributes. For example, a generated identity might use `data-z-card-k3m9=""` and `data-z-card-k3m9-state="open"`. Names are illustrative; derive stable, readable identities from package/module/binding metadata, never runtime counters or caller-provided names. State attributes are private to the marker, so independent markers do not compete for a shared `data-state` property.
+
+Separate marker and styling spreads have disjoint fields: `<article {...card({ state: 'open' })} {...panel()} />` is valid. Markers neither consume nor output `className`, `style`, ARIA, event handlers, or other component props. Apply real `disabled`, `checked`, or `aria-expanded` attributes separately. Ordinary repeated spreads of the same marker replace its attributes; no automatic merge is implied, and marker props do not extend the existing `cx` input contract.
+
+An ancestor condition is a supported simple pseudo string or an options object with optional `data`, `pseudo`, and `has`. `data` infers a partial state selection from the first marker argument. `pseudo` is one supported nonfunctional pseudo-class such as `:focus-within` or `:hover`; offer completion and reject `:hovr` and pseudo-elements. `has` is a statically parsed relative-selector list such as `'a'` or `'> input:checked'`. Combined fields are AND predicates on the same marked ancestor. Omission matches marker presence.
+
+```ts
+const indicator = css({
+  opacity: 0,
+  [Css.ancestor(card, { has: 'a' })]: { opacity: 1 },
+})
+const activeTitle = css({
+  [Css.ancestor(card, {
+    data: { state: 'open' },
+    has: 'a',
+    pseudo: ':focus-within',
+  })]: { color: '#06c' },
+})
+
+// Expected type errors in the proposed contract.
+card({ state: 'expanded' })
+Css.ancestor(card, { data: { status: 'open' } })
+Css.ancestor(card, ':hovr')
+```
+
+The marker schema alone determines data inference; condition arguments must not widen it to accept arbitrary keys/values. Preserve that contract through imported aliases, re-exports, and packed declaration files. These types establish declared identity/state compatibility, not that a matching ancestor exists in the rendered DOM or that a marker is attached to a particular HTML element type.
+
+Use the same marker in `Css.descendant`, `Css.siblingBefore`, `Css.siblingAfter`, and `Css.anySibling`. Names describe the marked element relative to the styled element. `siblingBefore` observes an earlier marked sibling, including nonadjacent siblings; `siblingAfter` observes a later one. Immediate siblings and child-only relationships remain expressible through raw CSS until an explicit typed distance contract is needed.
+
+```tsx
+const choice = Css.marker()
+const hint = css({
+  [Css.siblingBefore(choice, ':checked')]: { color: '#06c' },
+})
+const fieldset = css({
+  [Css.descendant(choice, ':checked')]: { borderColor: '#06c' },
+})
+
+const example = (
+  <fieldset {...fieldset()}>
+    <input {...choice()} aria-label="Select option" type="checkbox" />
+    <span {...hint()}>Selected</span>
+  </fieldset>
+)
+```
+
+Let `M` be the generated marker selector plus its authored predicates. Helper lowering has this explicit specificity contract:
+
+| Function                               | Selector Shape                           |
+| -------------------------------------- | ---------------------------------------- |
+| `Css.ancestor(marker, condition)`      | `:where(M) &`                            |
+| `Css.anySibling(marker, condition)`    | `:is(:where(M) ~ &, &:where(:has(~ M)))` |
+| `Css.descendant(marker, condition)`    | `&:where(:has(M))`                       |
+| `Css.siblingAfter(marker, condition)`  | `&:where(:has(~ M))`                     |
+| `Css.siblingBefore(marker, condition)` | `:where(M) ~ &`                          |
+
+The relation predicate adds zero specificity; the current generated class retains its ordinary specificity. This is documented helper behavior, not a rewrite of raw selectors or a hidden relation-priority ladder. Preserve authored ordering, local nested pseudos, and query contexts. Reusing one marker on nested elements matches any qualifying ancestor. A distinct marker separates roles; nearest-instance boundaries require a separate `@scope` design, not an implicit promise.
+
+CSS forbids nested `:has()`. Only `ancestor` and `siblingBefore` accept the `has` option. The descendant, following-sibling, and any-sibling options omit it in types because their lowering already uses `:has()`. The parser rejects nested `:has`, pseudo-elements, `&`, and other invalid grammar in `has` arguments. Raw complex selectors receive compiler validation, not a false claim of complete TypeScript grammar checking. [Selector grammar](https://www.w3.org/TR/selectors-4/#relational)
+
+Recognize marker definitions/applications and relational helper keys through static source analysis; do not execute application code. Preserve marker identity independently of style deduplication, source traversal order, and runtime state. Exported marker callables retain only attribute construction/validation, with statically known keys; relation helpers disappear. Applications choose state attributes, while the browser evaluates relationships. Server/client output must agree, imports must preserve identity, and unused definitions must not keep CSS alive accidentally.
+
+Before implementation acceptance, prove computed selector keys retain nested property/value/token inference and reject misspelled properties both inside and beside relational blocks. TypeScript can widen computed keys; a branded string alone is not proof of this contract. Require consumer fixtures for that case, schema inference without widening, aliases, unknown variable keys, nested conditions, unsupported `has` combinations, and packed declarations. If the keyed syntax cannot pass those fixtures, revise the shape before publishing it rather than weakening property checking.
+
+Real browser integration must cover pointer/focus/input updates, DOM insertion/removal, combined predicates, both sibling directions, multiple markers on one element, repeated/nested instances, and imported markers. Compare hand-authored equivalent selectors and existing library relationships before benchmarking. Report generated data-attribute/markup bytes and optional marker application code alongside CSS, JavaScript, and browser recalculation. Native rejects these browser relationships with located diagnostics.
 
 ## Inferred query thresholds
 
@@ -453,17 +673,17 @@ Additional inferred query keys support comparisons and ranges:
 ## Stylesheet APIs and layers
 
 ```ts
-import { Css } from 'zyzz/web'
+import { fontFace, global, keyframes } from 'zyzz/web'
 
-const fadeIn = Css.keyframes({
+const fadeIn = keyframes({
   from: { opacity: 0 },
   to: { opacity: 1 },
 })
-Css.global({
+global({
   'html, body': { margin: 0 },
   body: { fontFamily: 'system-ui' },
 })
-Css.fontFace({
+fontFace({
   fontFamily: 'App Sans',
   src: 'url("/fonts/app.woff2") format("woff2")',
   fontWeight: '100 900',
@@ -475,19 +695,75 @@ const animated = theme.css({
 })
 ```
 
-These authoring calls compile away into explicit stylesheet contributions. Preserve global/font-face side effects through tree shaking; emit reachable keyframes with stable references. Pure in-memory compilation receives extracted contributions as data and never relies on module registration. Native rejects these web-only operations; fonts are loaded through platform mechanisms.
+`keyframes(frames)` returns a typed animation-name reference. Accept `from`, `to`, percentages in the inclusive 0–100 range, and valid comma-separated stops. Frame values are declaration objects; reject nested selectors/queries and important declarations. Preserve source order at overlapping offsets, and never reorder frame declarations mechanically. Theme values use explicit `theme.tokens` or supported `theme.vars` references.
 
 ```ts
-Css.compile({
-  styles,
-  layers: {
-    order: ['reset', 'base', 'components', 'utilities'],
-    styles: 'components',
-  },
+import { keyframes } from 'zyzz/web'
+
+const enter = keyframes({
+  from: { opacity: 0, transform: 'translateY(4px)' },
+  to: { opacity: 1, transform: 'translateY(0)' },
+})
+const notice = theme.css({
+  animationDuration: '160ms',
+  animationName: enter,
+  '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
+  ':focus-visible': { outline: '2px solid currentColor' },
 })
 ```
 
-Layer configuration is optional; omission preserves unlayered output. When supplied, emit the declared order and place generated element styles in the selected layer. Global rules belong to the base layer when declared, otherwise remain unlayered. Applications own the shared layer order across independently compiled libraries; conflicting declarations receive diagnostics when visible in one input graph. Normal and important declarations retain standard layer semantics.
+Longhands are the simplest typed usage. When animation shorthand/templates and comma-separated animation lists land, parse them and preserve reference identity instead of concatenating unvalidated strings. Reused/imported animations emit reachable definitions with stable names; frame references survive library packaging and query wrapping. Explicit global names need collision and ownership rules before they are exposed.
+
+Animation tests inspect paused/seeked animation progress through the real browser engine rather than sleeping. Cover theme variables, scope changes, reduced motion, malformed offsets, repeated references, and unused-definition removal. `@starting-style` is a separate ordered rule capability for entry transitions, not a keyframe alias.
+
+These authoring calls compile away into explicit stylesheet contributions. Preserve global/font-face side effects through tree shaking; emit reachable keyframes with stable references. Pure in-memory compilation receives extracted contributions as data and never relies on module registration. Native rejects these web-only operations; fonts are loaded through platform mechanisms.
+
+### Layer and Global Collection
+
+Accepted API for 2.4c: `Config.create({ layers, ... })` declares semantic layer order and binds inferred `@layer <name>` keys on `css` and `variants`. `global(styles)` contributes global selector rules and supported nested at-rules anywhere at module scope. The [configuration contract](#configuration-and-inferred-authoring) replaces computed layer-reference keys in config-bound examples.
+
+```ts
+import { Config } from 'zyzz'
+
+export const zyzz = Config.create({
+  layers: ['reset', 'base', 'components', 'overrides'],
+})
+```
+
+```ts
+import { zyzz } from './zyzz.config.js'
+
+import { global } from 'zyzz/web'
+
+global({
+  '@layer base': {
+    body: { fontFamily: 'system-ui', margin: 0 },
+    '@media print': { body: { color: '#000' } },
+  },
+})
+
+export const button = zyzz.css({
+  '@layer components': { padding: '1rem' },
+})
+```
+
+Layer placement belongs to authored blocks in both global and scoped styles. Unwrapped rules remain unlayered; declaring `base` does not implicitly place globals there. `global` has no ambient access to a config's TypeScript catalog: raw global at-rule strings receive compiler validation. Config-bound functions reject undeclared layer keys through their explicit inferred contract.
+
+`Css.layers(names)` remains available for standalone module-level order contributions; it is not required to obtain keys for config-bound authoring. Its declarations and config layer lists feed the same order constraints. Layer names follow CSS identifier and dotted-name syntax; duplicate names in one declaration receive diagnostics. Named layers intentionally share CSS identity; libraries namespace public layers such as `acme.components`. Pure compilation receives explicit extracted data independently of source discovery or a runtime registry; consumers do not configure layer placement on `Css.compile`.
+
+The collection contract is project-wide: adapters scan configured source roots, including unimported modules, with tests, generated output, and dependencies excluded by default. Dependency contributions require explicit inclusion or published library artifacts. Declarations must be static and module-level; calls inside functions, runtime branches, or component rendering receive diagnostics. No application code executes during collection.
+
+Collected globals are eager application-wide stylesheet effects even when declared beside lazy components or unused JavaScript exports. Preserve them independently of JavaScript tree shaking and package `sideEffects: false`; scope normal component styles through `css`. Identify contributions by stable package/module/call identity, emit repeated imports once, and retain repeated authored rules where their position affects the cascade.
+
+Collect layer order constraints before emitting content. Merge compatible declarations with stable topological ordering; reject cycles with diagnostics pointing to the conflicting declarations. Use canonical layer names to break otherwise unconstrained ties. A shared declaration specifies intentional relative precedence. Emit dotted layer hierarchy and one order prelude in initial shared CSS before any participating layer block; preserve ordinary unlayered precedence and important reversal. Already loaded external CSS cannot have its established layer order repaired retroactively.
+
+Within each module preserve authored rule order. Across project modules use a documented stable package/module order, independent of filesystem enumeration, parallel transform completion, and chunk arrival. Use explicit layers for intentional cross-file overrides. Hoisting and minification must not reorder conflicting rules or coalesce repeated declarations unsafely.
+
+The CLI and build adapters feed the same contribution representation to the pure compiler. Development replaces or removes contributions by source identity after edits/deletions; it never accumulates stale globals. Preserve source maps and resolve relative asset URLs through the owning source module before relocation. The initial shared stylesheet carries global contributions and the layer prelude; scoped styles may retain their normal chunk boundaries.
+
+Published libraries carry ordinary CSS plus contribution/layer metadata for composition. Applications own the final top-level ordering, include the prelude before library layer blocks, and detect conflicting declarations visible in the compilation graph. Plain CSS consumers load the exported stylesheet normally; native rejects globals and cascade layers explicitly.
+
+Prior art: [vanilla-extract layer references](https://vanilla-extract.style/documentation/api/layer/) and [globalStyle](https://vanilla-extract.style/documentation/global-api/global-style/) inform typed contributions; [Astro](https://docs.astro.build/en/guides/styling/) and [Svelte](https://svelte.dev/docs/svelte/global-styles) demonstrate colocated global authoring. [Panda globals](https://panda-css.com/docs/concepts/writing-styles) and [Tailwind layers](https://tailwindcss.com/docs/adding-custom-styles) inform object declarations and standard CSS grouping. Project-wide unimported-module collection is Zyzz's explicit policy. Ordering follows the [CSS cascade specification](https://www.w3.org/TR/css-cascade-5/#layer-ordering).
 
 The reset is opt-in via `import 'zyzz/reset.css'` and declares a reset layer. Merely importing the core changes no global styles. Test coexistence with ordinary stylesheets, global rules, and independently packaged libraries in multiple load orders. Layer ordering does not turn arbitrary class concatenation into last-wins composition.
 
@@ -518,7 +794,7 @@ const panel = (
 
 In-memory definitions carry opaque contract references. Source adapters derive stable internal identities from package identity, package-relative module location, and declaration binding; build hosts provide this context. Absolute machine paths, traversal order, and token values must not determine contract identity. Extensions reuse their base identity.
 
-Independent definitions remain isolated even when their keys match. Library output preserves contract identity in generated artifacts. Renaming a definition can change identity; changing only its values cannot. Callers never supply this metadata to `Theme.define`.
+Standalone definitions remain isolated even when their keys match. The planned Config catalog normalization described above creates a separate shared contract for returned handles without changing those standalone identities. Library output preserves contract identity in generated artifacts. Renaming a definition can change identity; changing only its values cannot. Callers never supply this metadata to `Theme.define`.
 
 ## Light and dark
 
@@ -607,9 +883,40 @@ zyzz src --out-dir dist --css dist/styles.css --minify
 
 CSS emission alone cannot make untouched `css()` calls executable. The standalone path must rewrite authoring modules; an application bundler can consume the rewritten tree without a styling plugin. A CSS-only mode is deferred until a concrete consumer can already provide matching compiled class references.
 
-Watch mode handles additions, edits, deletions, renames, and imported theme changes, excluding output directories. Errors include source locations. One-shot errors exit nonzero; watch remains active and preserves the last complete successful output. Interrupts release watchers. Owned-output manifests prevent overwriting unrelated files.
+Watch mode handles additions, edits, deletions, renames, and imported theme changes, excluding output directories. Errors include source locations. One-shot errors exit nonzero; watch remains active and preserves the last complete successful output. Interrupts release watchers and the exclusive lock; the ownership manifest and artifacts retain their recorded package identity. Owned-output manifests prevent overwriting unrelated files.
 
 The default target is web. A later `--target native` emits static tables through the same native emitter; CSS-specific flags are invalid for that target. CLI and build adapters must produce equivalent style identities and CSS for equivalent input graphs.
+
+## Bundler Setup Preview
+
+> [!NOTE]
+> The guide proposes `zyzz()` from `zyzz/vite`; this adapter is not implemented. Keep its public setup aligned with [Getting Started](../docs/introduction/getting-started.md).
+
+The optional adapter connects the shared compiler to Vite's module graph. It rewrites authoring modules, delivers development CSS updates, and emits linked production CSS assets. Consumers retain their framework plugin and import source components normally.
+
+- **Core:** remains independent of Vite, frameworks, filesystems, and runtime CSS generation.
+- **Delivery:** plugin setup owns stylesheet loading; no manual virtual CSS import is required by the proposed guide.
+- **Other bundlers:** use CLI output until a concrete adapter and public setup are defined.
+- **Parity:** plugin and CLI paths must agree on identities, conditions, theme scopes, and emitted behavior for equivalent input graphs.
+
+Application examples import authored components and the named `zyzz` instance normally. A bundler adapter hides rewriting and delivery. Standalone CLI output belongs to a downstream build or package distribution; consumers do not hand-maintain imports to generated component copies. CSS-only output cannot replace rewriting for the current callable API.
+
+### Next.js Setup
+
+> [!NOTE]
+> The accepted public setup is `zyzz(nextConfig)` from `zyzz/next`; the adapter is not implemented. See [Next.js Setup](../docs/introduction/next.md).
+
+```ts
+import { zyzz } from 'zyzz/next'
+
+export default zyzz({ reactStrictMode: true })
+```
+
+The wrapper configures source transformation, CSS delivery, and watching for Webpack and Turbopack internally. Application modules continue importing the named `zyzz` instance from their config. No separate Babel or PostCSS configuration is required by this public contract.
+
+Reuse the shared compiler and keep loader/transform selection internal. Preserve existing Next.js options and compose build hooks and rules without replacing application configuration. CSS delivery and dependency invalidation require separate bundler implementations and real fixtures; do not assume Webpack hooks work under Turbopack.
+
+Acceptance covers Server Components, client components, streaming, hydration identities, Fast Refresh, route navigation, imported config/theme edits, production CSS loading, and failure recovery. Record the verified Next.js version matrix. Async/function-valued configurations remain a separate design gate; unsupported forms must fail explicitly.
 
 ## Small CSS and readable classes
 
@@ -671,7 +978,7 @@ Compare grouped and atomic emission on repeated and unique styles. Measure compr
 
 ## Literal Compiler Boundary
 
-`Css.compile({ styles })` from `zyzz/web` implements the literal subset documented in `docs/literal-styles.md`. It returns frozen `{ classes, css, themes }` artifacts, with an empty theme map. Nonconflicting declaration domains are shared; conflicting rules preserve authored cascade order. Class maps contain space-separated identifiers scoped to the complete compilation input. Identical inputs produce identical artifacts; adding definitions can change factoring. Themes, source extraction, and general atomic optimization belong to subsequent boundaries. Literal factoring is implemented early to meet the bundle-size budget.
+`Css.compile({ styles })` from `zyzz/web` implements the literal subset documented in `docs/api/core/Style/literals.md`. It returns frozen `{ classes, css, themes }` artifacts, with an empty theme map. Nonconflicting declaration domains are shared; conflicting rules preserve authored cascade order. Class maps contain space-separated identifiers scoped to the complete compilation input. Identical inputs produce identical artifacts; adding definitions can change factoring. Themes, source extraction, and general atomic optimization belong to subsequent boundaries. Literal factoring is implemented early to meet the bundle-size budget.
 
 ## Static Source Extraction Boundary
 
@@ -683,7 +990,7 @@ Only direct object literals with explicit keys and string/number values are acce
 
 Style names combine a deterministic module-identity digest with the call offset; identical input repeats exactly, and source edits may change call identities. Call-site names are extraction metadata, not a guarantee that independently emitted stylesheets can be combined. Hosts must aggregate graphs or supply the stable stylesheet namespaces required by later library work. No absolute machine path participates in naming.
 
-The root `css` signature accepts token-free literal properties and describes a callable returning web styling props with only className/style overrides. Untransformed definitions throw `css.MissingTransformError`. The source transform implements static callables and direct no-argument application folding; extraction alone is not an executable transform.
+The root `css` signature accepts token-free literal properties and describes a callable returning web styling props with only className/style overrides. Untransformed definitions throw an error named `css.MissingTransformError`; the constructor is not exposed as a property of the root `css` export. The source transform implements static callables and direct no-argument application folding; extraction alone is not an executable transform.
 
 ### Literal Module Rewriting
 
@@ -723,7 +1030,9 @@ In-memory contract identity is an opaque frozen object carried by references and
 
 ## Theme Selection and Group Expansion
 
-Theme selection happens at two boundaries. Authoring selects a contract through `theme.css`, `theme.tokens`, or `theme.vars`; rendering selects a compatible scope through `theme.className` (currently `Css.compile(...).themes[name]`). A plain application-owned map can select scope classes without a provider, global registry, new selection API, or runtime compilation. Independent `Theme.define` calls remain isolated; switchable themes use `Theme.extend` to share a contract. Color schemes remain separate CSS state.
+Theme selection happens at two boundaries. Authoring selects a contract through `theme.css`, `theme.tokens`, or `theme.vars`; rendering selects a compatible scope through `theme.className` (currently `Css.compile(...).themes[name]`). A plain application-owned map can select scope classes without a provider, global registry, new selection API, or runtime compilation. Standalone `Theme.define` calls remain isolated; in-memory switchable themes use `Theme.extend` to share a contract.
+
+Planned `Config.create({ defaultTheme, themes })` is an explicit normalization boundary: complete compatible inline or independently defined alternatives become returned handles on one config contract. Original definitions remain isolated and unchanged. Components must use the normalized config helpers or handles to participate in that shared contract. Color schemes remain separate CSS state.
 
 The initial scalar groups are not the final token surface. Next groups include scalar typography (`fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, `lineHeight`), composite `typography`, and the agreed `breakpoints`/`containers` metadata. Further property-aligned scales such as `borderWidth`, `boxShadow`, `opacity`, `transitionDuration`, `transitionTimingFunction`, and `zIndex` follow the corresponding validated CSS properties. Preserve domain checking and extension compatibility for each group; do not add a permissive catch-all token namespace.
 
@@ -747,3 +1056,19 @@ Resolve query strings once at the adapter boundary into Lightning CSS targets; d
 Targets cannot silently weaken semantics. In particular, lowering `light-dark()` must preserve inherited, forced, inline, and externally authored `color-scheme` behavior. An adapter must diagnose an unsupported combination when it cannot preserve that contract; selecting an older browser is not permission to discard scheme behavior. Define browser fixtures before claiming support for each downlevel path.
 
 Benchmark fixtures accept an explicit shared Lightning CSS target map through `Compilation.create(workload, { targets })` or `Themes.create(count, { targets })`. The immutable profile reaches every library's final processing and is recorded in result artifacts. Reproducible CI defaults stay fixed; theme profiles that lower `light-dark()` are rejected before fixture preparation. Supported custom profiles still require browser-parity validation before performance claims.
+
+## CSS Completeness and Open Contracts
+
+The [capability union](parity.md) consolidates the referenced frameworks into numbered capabilities, each with Zyzz usage and an implementation status. It includes the accepted typed marker/ancestor API, shared existing APIs, unresolved contracts, and explicit external-CSS examples for deferred features. Property typing, source extraction, CSS grammar, emission, browser compatibility, and native support are separate statuses. The current 40-property literal subset cannot establish general CSS parity.
+
+The Panda cross-check covers multipart component styling, semantic token dependencies, and responsive recipe selections in union items 24–26. Multipart styling uses separate element definitions under the single-element recipe contract. Semantic token dependencies and responsive recipe selections retain their separate design gates.
+
+Reused token constants are not live aliases. A token dependency graph requires cycles, missing references, domain checking, source identity, and override/inheritance rules without adding metadata to `Theme.define` or replacing light/dark leaves. Conditional tokens and responsive variant selections remain separate decisions; neither may reuse declaration fallback arrays or conflict with dynamic choice payloads.
+
+Reusable typography, surface, and motion objects cover initial preset use. Rich named presets, strict token-only policy, and token documentation exports are optional follow-ups. Imported/exported recipes must retain every finite runtime-selectable alternative before static pruning; an unobserved literal choice is not necessarily dead CSS. JSX style props, component factories, runtime theme injection, and an application-local generated SDK are not core requirements.
+
+Before implementing variable registration, decide how `Vars.define` expresses optional CSS `syntax`, `inherits`, and `initial-value` descriptors while preserving its existing set-of-values API. Static variable assignment, nested `var()` fallback chains, scoped/external variable names, and registration conflicts need explicit contracts. Do not add metadata to `Theme.define` or replace runtime callbacks with a second binding abstraction.
+
+Renderer output also needs an explicit adapter contract: `className` plus a style object is not the same as DOM `class` plus a serialized style attribute. Keep application-time style definitions callable and spreadable; serialize at the target boundary with correct escaping and retain recipe attributes. The adapter belongs outside the agnostic core.
+
+Later web capabilities include `@scope`, container style/scroll-state queries, view transitions, anchor fallbacks, scroll-driven animations, counter styles, and paged media. Track grammar, identity, reachability, target constraints, and browser evidence separately. Raw CSS syntax is an authoring form, not permission to silently pass unsupported constructs through every target.

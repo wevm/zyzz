@@ -1,0 +1,93 @@
+# Zyzz Documentation
+
+Start with Introduction; use Concepts for semantics, Guides for tasks, and API for exact contracts. Preview notes identify unimplemented behavior.
+
+## Introduction
+
+- [Getting Started](introduction/getting-started.md): Reference and examples.
+- [Introduction](introduction/README.md): Section index.
+- [Installation](introduction/installation.md): Reference and examples.
+- [Vite Setup](introduction/vite.md): Reference and examples.
+- [Next.js Setup](introduction/next.md): Next.js configuration and consumer setup.
+- [CLI Setup](introduction/cli.md): Reference and examples.
+- [Why Zyzz](introduction/why-zyzz.md): Reference and examples.
+- [Editor and Agents](introduction/editor-agents.md): Reference and examples.
+- [Compatibility](introduction/compatibility.md): Reference and examples.
+- [FAQ](introduction/faq.md): Reference and examples.
+
+## Concepts & Principles
+
+- [Concepts & Principles](concepts.md): Reference and examples.
+
+## Guides
+
+- [Guides](guides/README.md): Topic index.
+- [Styling](guides/styling.md): Define, reuse, compose, and bind component styles.
+- [Conditions](guides/conditions.md): Respond to viewport size, browser state, and related elements.
+- [Themes & Tokens](guides/themes.md): Define token contracts, choose theme scopes, and select color schemes.
+- [Variants](guides/variants.md): Define finite choices, defaults, and compound matches for one element.
+- [Stylesheets](guides/stylesheets.md): Declare global rules, cascade order, fonts, and animations.
+- [Build & Delivery](guides/compilation.md): Compile and publish matching artifacts, then deliver styles during server rendering.
+- [Testing & Migration](guides/testing.md): Verify rendered behavior, diagnose failures, and migrate existing components.
+- [React Native](guides/native.md): Compile shared definitions and select native theme tables.
+
+## API
+
+- [API](api/README.md): Section index.
+- [zyzz](api/core/README.md): Section index.
+- [css](api/core/css.md): Reference and examples.
+- [Config](api/core/Config/README.md): Section index.
+- [Config.create](api/core/Config/create.md): Reference and examples.
+- [Theme](api/core/Theme/README.md): Section index.
+- [Theme.define](api/core/Theme/define.md): Reference and examples.
+- [Theme.extend](api/core/Theme/extend.md): Reference and examples.
+- [variants](api/core/variants.md): Reference and examples.
+- [cx](api/core/cx.md): Reference and examples.
+- [Vars](api/core/Vars/README.md): Section index.
+- [Vars.define](api/core/Vars/define.md): Reference and examples.
+- [Vars.set](api/core/Vars/set.md): Reference and examples.
+- [Style](api/core/Style/README.md): Section index.
+- [Style.define](api/core/Style/define.md): Reference and examples.
+- [Literal Values](api/core/Style/literals.md): Reference and examples.
+- [zyzz/themes/default](api/themes/default.md): Reference and examples.
+- [zyzz/web](api/web/README.md): Section index.
+- [Css](api/web/Css/README.md): Section index.
+- [Css.ancestor](api/web/Css/ancestor.md): Reference and examples.
+- [Css.anySibling](api/web/Css/anySibling.md): Reference and examples.
+- [Css.compile](api/web/Css/compile.md): Reference and examples.
+- [Css.descendant](api/web/Css/descendant.md): Reference and examples.
+- [Css.layers](api/web/Css/layers.md): Reference and examples.
+- [Css.marker](api/web/Css/marker.md): Reference and examples.
+- [Css.siblingAfter](api/web/Css/siblingAfter.md): Reference and examples.
+- [Css.siblingBefore](api/web/Css/siblingBefore.md): Reference and examples.
+- [fontFace](api/web/fontFace.md): Reference and examples.
+- [global](api/web/global.md): Reference and examples.
+- [keyframes](api/web/keyframes.md): Reference and examples.
+- [zyzz/vite](api/vite/README.md): Section index.
+- [zyzz](api/vite/zyzz.md): Vite plugin factory.
+- [zyzz/next](api/next/README.md): Section index.
+- [zyzz](api/next/zyzz.md): Next.js configuration wrapper.
+- [zyzz/react-native](api/react-native/README.md): Section index.
+- [StyleSheet](api/react-native/StyleSheet/README.md): Section index.
+- [StyleSheet.compile](api/react-native/StyleSheet/compile.md): Reference and examples.
+- [StyleSheet.select](api/react-native/StyleSheet/select.md): Reference and examples.
+- [CLI](api/cli.md): Reference and examples.
+- [zyzz/compiler](api/compiler/README.md): Section index.
+- [Source](api/compiler/Source/README.md): Section index.
+- [Source.extract](api/compiler/Source/extract.md): Reference and examples.
+- [Transform](api/compiler/Transform/README.md): Section index.
+- [Transform.compile](api/compiler/Transform/compile.md): Reference and examples.
+- [zyzz/node](api/node/README.md): Section index.
+- [Host](api/node/Host/README.md): Section index.
+- [Host.build](api/node/Host/build.md): Reference and examples.
+- [Host.close](api/node/Host/close.md): Reference and examples.
+- [Host.create](api/node/Host/create.md): Reference and examples.
+- [Host.watch](api/node/Host/watch.md): Reference and examples.
+- [zyzz/runtime](api/runtime/README.md): Section index.
+- [Props](api/runtime/Props/README.md): Section index.
+- [Props.create](api/runtime/Props/create.md): Reference and examples.
+
+## Introduction Reference
+
+- [Comparisons](introduction/comparisons.md): Reference and examples.
+- [Benchmarks](introduction/benchmarks.md): Reference and examples.

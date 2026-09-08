@@ -13,6 +13,8 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 - [**File Builds**](#file-builds): incremental builds and filesystem watching.
 - [**CLI**](#cli): standalone compilation with watch mode.
 
+[Getting Started](docs/introduction/getting-started.md) · [Guides](docs/guides/README.md) · [Concepts](docs/concepts.md) · [API Reference](docs/api/README.md)
+
 ## Philosophy
 
 - **Typed.** Properties, tokens, and variants carry their constraints into every call.
@@ -51,7 +53,7 @@ const button = css({
   ':hover': { opacity: 0.8 },
 })
 
-<button {...button()}>Continue</button>
+const example = <button {...button()}>Continue</button>
 ```
 
 ### Dynamic Styles
@@ -74,7 +76,10 @@ export function Bar() {
 
 ### Themes
 
-[Compile theme tokens and inherited scopes from in-memory definitions.](docs/themes.md)
+[Compile theme tokens and inherited scopes from in-memory definitions.](docs/guides/themes.md#compile-themes)
+
+> [!NOTE]
+> Bundled themes and `Config.create` are previews; these source-authoring examples are not yet executable. Use the in-memory theme guide above for the implemented flow.
 
 Import a bundled theme's `css` for inferred design tokens. `zyzz/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
 
@@ -84,32 +89,36 @@ import { css } from 'zyzz/themes/default'
 const button = css({ color: 'blue.700', padding: 4 })
 ```
 
-Define tokens once and get a `css` function that infers them. Colors accept a shared value or a light/dark pair; query aliases infer from theme thresholds.
+Export a named `zyzz` instance from a shared config to retain inferred tokens. Colors accept a shared value or a light/dark pair.
 
 ```ts
-import { Theme } from 'zyzz'
+// zyzz.config.ts
+import { Config } from 'zyzz'
 
-const theme = Theme.define({
-  color: { text: { light: '#111', dark: '#eee' }, brand: '#06c' },
-  spacing: { sm: '0.5rem', md: '1rem' },
-  breakpoints: { tablet: '48rem' },
-})
-
-const card = theme.css({
-  color: 'text',
-  padding: 'sm',
-  '@media tablet': { padding: 'md' },
+export const zyzz = Config.create({
+  theme: {
+    color: { brand: '#06c', text: { dark: '#eee', light: '#111' } },
+    spacing: { md: '1rem', sm: '0.5rem' },
+  },
 })
 ```
 
-Use `Theme.extend(theme, overrides)` to create an alternate theme, and apply its `className` to a subtree for inherited token overrides.
+```ts
+import { zyzz } from './zyzz.config.js'
+
+const card = zyzz.css({ color: 'text', padding: 'sm' })
+```
+
+Use `Theme.define` and `Theme.extend` when tokens need a reusable definition outside config.
 
 ### Variants
 
-Describe component choices with inferred props, defaults, and compound rules. Use `theme.variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
+Describe component choices with inferred props, defaults, and compound rules. Use `zyzz.variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
 
 ```tsx
-const button = theme.variants({
+import { zyzz } from './zyzz.config.js'
+
+const button = zyzz.variants({
   base: { display: 'inline-flex' },
   variants: {
     size: {
@@ -121,7 +130,7 @@ const button = theme.variants({
 })
 
 type ButtonProps = NonNullable<Parameters<typeof button>[0]>
-;<button {...button({ size: 'sm' })}>Continue</button>
+const example = <button {...button({ size: 'sm' })}>Continue</button>
 ```
 
 ### Value Syntax
@@ -129,11 +138,13 @@ type ButtonProps = NonNullable<Parameters<typeof button>[0]>
 Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
 
 ```ts
-const panel = theme.css({
+import { zyzz } from './zyzz.config.js'
+
+const panel = zyzz.css({
   display: ['block', 'grid'],
   color: 'brand!',
-  borderColor: theme.vars.color.brand,
-  width: `calc(100% - ${theme.vars.spacing.md})`,
+  borderColor: zyzz.theme.vars.color.brand,
+  width: `calc(100% - ${zyzz.theme.vars.spacing.md})`,
 })
 ```
 
@@ -147,18 +158,23 @@ import { css, cx } from 'zyzz'
 const base = css({ padding: '0.5rem' })
 const roomy = css({ padding: '1rem' })
 
-<button {...cx(base(), roomy())} disabled>Continue</button>
+const example = (
+  <button {...cx(base(), roomy())} disabled>
+    Continue
+  </button>
+)
 ```
 
 ### Stylesheets and Compilation
 
-`Css` provides global rules, keyframes, fonts, and in-memory CSS compilation. `StyleSheet` compiles shared `Style` definitions into React Native styles and selects precompiled theme values.
+> [!NOTE]
+> `global`, `keyframes`, `fontFace`, and React Native `StyleSheet` are previews and cannot yet be imported. The pure `Style.define` / `Css.compile` pipeline is implemented.
+
+`global`, `keyframes`, and `fontFace` from `zyzz/web` define stylesheet rules. `Css` provides in-memory CSS compilation. `StyleSheet` compiles shared `Style` definitions into React Native styles and selects precompiled theme values.
 
 ```ts
 import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
-
-Css.global({ body: { margin: 0 } })
 
 const styles = Style.define({
   card: { display: 'flex' },
@@ -168,10 +184,15 @@ const output = Css.compile({ styles })
 
 Use `composition: 'independent'` to deduplicate complete applications whose composition is resolved before compilation. Those generated class lists must remain separate. The default `ordered` mode preserves stylesheet precedence across combined class lists.
 
+> [!NOTE]
+> The following native adapter and config flow is not yet implemented.
+
 ```ts
+import { zyzz } from './zyzz.config.js'
+
 import { StyleSheet } from 'zyzz/react-native'
 
-const output = StyleSheet.compile({ styles, themes: { base: theme } })
+const output = StyleSheet.compile({ styles, themes: { base: zyzz.theme } })
 const selected = StyleSheet.select(output.styles, {
   theme: 'base',
   colorScheme: 'dark',
@@ -224,4 +245,4 @@ zyzz src --out-dir dist --minify
 
 ## Comparison
 
-See [the comparison](COMPARISON.md) for examples covering authoring, developer and agent experience, compilation, performance, and bundle size.
+See [the comparison](docs/introduction/comparisons.md) for examples covering authoring, developer and agent experience, compilation, performance, and bundle size.

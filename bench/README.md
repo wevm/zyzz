@@ -2,11 +2,13 @@
 
 Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, with shared workloads in `bench/Corpus.ts`. Run `pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json`. Reports are ignored by Git.
 
-The Benchmarks workflow uploads results and environment metadata as a 30-day artifact. One updating PR comment shows traffic-light deltas against the latest successful main push followed by the full framework comparison tables. Fork PRs receive Actions summaries and artifacts without comment writes. Missing baselines show “No baseline available.”
+The Benchmarks workflow uploads results and environment metadata as a 30-day artifact. One updating PR comment shows traffic-light deltas against a fresh main baseline measured sequentially on the same runner followed by the full framework comparison tables. Fork PRs receive Actions summaries and artifacts without comment writes. Missing baselines show “No baseline available.”
 
-`BENCH_TIME_THRESHOLD: '110'` marks the 10% timing alert threshold; timing comparisons remain informational because runs use different machines. `BENCH_SIZE_THRESHOLD: '105'` fails PR and manual checks above 5% gzip growth. Main pushes publish results without threshold failures so the baseline keeps advancing.
+`BENCH_TIME_THRESHOLD: '110'` marks the 10% timing alert threshold; timing comparisons remain informational because one sequential pair does not eliminate measurement noise. `BENCH_SIZE_THRESHOLD: '105'` fails PR and manual checks above 5% gzip growth. Main pushes publish results without running a second benchmark suite or enforcing thresholds.
 
-The adapter supplies `customSmallerIsBetter` JSON and seeds the action's external data with the selected main artifact. `save-data-file: false` preserves the baseline. The custom report combines comparisons against main and framework tables in the PR comment, Actions summary, and artifact. The action handles regression checks without posting duplicate comments.
+The adapter supplies `customSmallerIsBetter` JSON and seeds the action's external data with the fresh main baseline. `save-data-file: false` preserves the baseline. The custom report combines comparisons against main and framework tables in the PR comment, Actions summary, and artifact. The action handles regression checks without posting duplicate comments.
+
+PR runs benchmark the event's pinned main commit first, then the PR merge commit, using each checkout's locked dependencies. Manual runs compare main with the selected ref. Both runs record their environment and upload separate artifacts. This adds one benchmark pass to PR/manual jobs; baseline failures fail the job rather than silently skipping comparison.
 
 Generate the report and action inputs locally:
 

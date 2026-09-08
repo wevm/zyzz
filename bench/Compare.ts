@@ -105,7 +105,7 @@ if (!hasBaseline) {
     '🟢 Improved · 🟡 Within tolerance / unchanged · 🔴 Regression above threshold\n',
   )
   console.log(
-    `Timing changes above ${thresholds.ms - 100}% are advisory. Gzip growth above ${thresholds.B - 100}% fails PR/manual checks. Zyzz measurements only; timings come from separate CI runners. Reported timing errors are informational.\n`,
+    `Timing changes above ${thresholds.ms - 100}% are advisory. Gzip growth above ${thresholds.B - 100}% fails PR/manual checks. Zyzz measurements only; ${process.env.BENCH_BASELINE_MODE === 'same-runner' ? 'main and candidate ran sequentially on the same runner' : 'saved artifacts may come from different runners'}. Reported timing errors are informational.\n`,
   )
   console.log('| Benchmark | Main | PR / current | Change |')
   console.log('| --- | ---: | ---: | ---: |')

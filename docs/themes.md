@@ -76,6 +76,8 @@ const styles = Style.define(
 const output = Css.compile({ styles, themes: { alternate, base: theme } })
 ```
 
+Token-aware option bags require a defined theme. An optional theme permits only literals and explicit references until it is narrowed; explicitly undefined groups contribute no shorthand names.
+
 Nested palettes use dotted names. Numeric spacing keys accept their numeric or string spelling. Valid CSS literals and zero win over colliding token names; use explicit `theme.tokens` references to select the token instead. Property-specific colors win over shared colors at the same leaf path.
 
 `theme.css` exposes the same inferred property types and callable props contract as root `css`, including literal styling overrides. Its extraction and rewrite support is a separate source-linking step; executing an untransformed call throws `css.MissingTransformError`. The in-memory pipeline above is executable without a transform.

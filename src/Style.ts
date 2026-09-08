@@ -39,11 +39,19 @@ export type Declaration = {
  */
 export function define<
   const styles extends Record<string, unknown>,
-  const tokens extends Theme.Tokens = {},
+  const tokens extends Theme.Tokens,
 >(
   styles: styles & NoInfer<Exact<styles, tokens>>,
-  options: define.Options<tokens> = {},
-): Definition<`${Extract<keyof styles, number | string>}`> {
+  options: define.Options<tokens>,
+): Definition<`${Extract<keyof styles, number | string>}`>
+export function define<const styles extends Record<string, unknown>>(
+  styles: styles & NoInfer<Exact<styles, {}>>,
+  options?: define.Options,
+): Definition<`${Extract<keyof styles, number | string>}`>
+export function define(
+  styles: Record<string, unknown>,
+  options: define.Options = {},
+): Definition {
   const diagnostics: Diagnostic[] = []
   const output: NamedStyle[] = []
   function report(
@@ -157,18 +165,24 @@ export function define<
   // Validated names are precisely the input's enumerable string keys.
   return Object.freeze({
     styles: Object.freeze(output),
-  }) as Definition<`${Extract<keyof styles, number | string>}`>
+  })
 }
 
 /** Options for defining styles. */
 export declare namespace define {
   /** Source locations are optional; pure in-memory callers need no source text. */
-  type Options<tokens extends Theme.Tokens = {}> = {
+  type Options<tokens extends Theme.Tokens = never> = {
     /** Caller-provided spans matched by complete diagnostic path. */
     readonly locations?: readonly SourceLocation[] | undefined
-    /** Token contract for inferred shorthand names; literals retain precedence. */
-    readonly theme?: Theme.Definition<tokens> | undefined
-  }
+  } & ([tokens] extends [never]
+    ? {
+        /** Optional themes do not enable shorthand inference. */
+        readonly theme?: Theme.Definition | undefined
+      }
+    : {
+        /** Shorthand inference requires a defined token contract. */
+        readonly theme: Theme.Definition<tokens>
+      })
 }
 
 /** Immutable data passed from authoring to later target compilation. */

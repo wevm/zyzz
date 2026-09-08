@@ -72,3 +72,23 @@ Style.define({ card: { color: 'missing' } }, { theme })
 Style.define({ card: { padding: 'brand' } }, { theme })
 // @ts-expect-error Names require an explicitly supplied theme.
 Style.define({ card: { color: 'brand' } })
+
+type Tokens = { color: { brand: '#06c' }; spacing: { 4: '1rem' } }
+// @ts-expect-error A token-aware option bag requires a theme.
+const missingTheme: Style.define.Options<Tokens> = {}
+// @ts-expect-error A token-aware option bag cannot explicitly omit the theme.
+const undefinedTheme: Style.define.Options<Tokens> = { theme: undefined }
+void missingTheme
+void undefinedTheme
+const presentTheme: Style.define.Options<Tokens> = { theme }
+expectTypeOf(
+  Style.define({ card: { color: 'brand' } }, presentTheme),
+).toEqualTypeOf<Style.Definition<'card'>>()
+declare const optionalTheme: { theme?: typeof theme | undefined }
+Style.define({ card: { color: '#fff' } }, optionalTheme)
+// @ts-expect-error A potentially absent theme cannot enable shorthand names.
+Style.define({ card: { color: 'brand' } }, optionalTheme)
+// @ts-expect-error Explicit generic arguments cannot omit the required options.
+Style.define<{ card: { color: 'brand' } }, Tokens>({ card: { color: 'brand' } })
+if (optionalTheme.theme)
+  Style.define({ card: { color: 'brand' } }, { theme: optionalTheme.theme })

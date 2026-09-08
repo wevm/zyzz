@@ -119,3 +119,10 @@ themedCard({ style: { padding: 'md' } })
 themedCss({ colour: 'brand' })
 // @ts-expect-error Root authoring does not inherit the imported theme.
 css({ color: 'brand' })
+
+const omitted = Theme.define({ color: { brand: '#fff' }, spacing: undefined })
+omitted.css({ color: 'brand', padding: '1rem' })
+// @ts-expect-error An explicitly undefined group contributes no token names.
+omitted.css({ padding: 'missing' })
+// @ts-expect-error Undefined groups do not enable shorthand in named styles.
+Style.define({ card: { padding: 'missing' } }, { theme: omitted })

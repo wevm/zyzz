@@ -78,15 +78,17 @@ export type Names<tokens, property extends keyof Literal.Properties> = {
     : never
 }[Extract<keyof tokens, Group>]
 
-type Paths<tree> = string extends keyof tree
-  ? string
-  : {
-      [key in Extract<keyof tree, number | string>]: NonNullable<
-        tree[key]
-      > extends Value
-        ? key | `${key}`
-        : `${key}.${Paths<NonNullable<tree[key]>>}`
-    }[Extract<keyof tree, number | string>]
+type Paths<tree> = [tree] extends [never]
+  ? never
+  : string extends keyof tree
+    ? string
+    : {
+        [key in Extract<keyof tree, number | string>]: NonNullable<
+          tree[key]
+        > extends Value
+          ? key | `${key}`
+          : `${key}.${Paths<NonNullable<tree[key]>>}`
+      }[Extract<keyof tree, number | string>]
 
 /** Property domains accepted by each token group. */
 export type Properties<group extends Group> = group extends 'spacing'

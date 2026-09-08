@@ -2,7 +2,17 @@
 
 Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, with shared workloads in `bench/Corpus.ts`. Run `pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json`. Reports are ignored by Git.
 
-The separate Benchmarks workflow runs the same command and uploads results, commit, lockfile hash, runtime versions, and host details as a 30-day artifact. It does not compare results from different runners.
+The Benchmarks workflow uploads results and environment metadata as a 30-day artifact. github-action-benchmark posts separate timing and gzip comparison comments against the latest successful main push, with current, previous, and ratio columns. Fork PRs receive Actions summaries and artifacts without comment writes. Missing baselines skip comparisons.
+
+`BENCH_TIME_THRESHOLD: '110'` marks the 10% timing alert threshold; timing comparisons remain informational because runs use different machines. `BENCH_SIZE_THRESHOLD: '105'` fails PR and manual checks above 5% gzip growth. Main pushes publish results without threshold failures so the baseline keeps advancing.
+
+The adapter supplies `customSmallerIsBetter` JSON and seeds the action's external data with the selected main artifact. `save-data-file: false` preserves the baseline. Built-in comments and summaries replace the custom comparison renderer; the detailed competitor tables remain in the Actions summary and report artifact.
+
+Generate action inputs locally:
+
+```sh
+node bench/Compare.ts bench/results /tmp/main-benchmarks /tmp/benchmark-action
+```
 
 For a comparison, measure baseline and candidate sequentially on the same idle machine with the same fixture corpus. Save the baseline outside the checkout, then append `--compare <baseline.json>` when running the candidate. Record variance and measurement limitations with any reported delta.
 
@@ -16,7 +26,7 @@ Each timing includes a compiler build and a minified browser bundle. Modules, fi
 
 All CSS passes through the same Lightning CSS final minifier with fixed Chrome 120, Firefox 128, and Safari 17 targets and source maps disabled. These are benchmark settings, not package support requirements. The lockfile pins the version, and every size report records the shared options. JavaScript bundling remains on esbuild. JSON reports under `bench/results/{small,repeated,unique}/` contain raw, gzip, and Brotli byte sizes for emitted CSS and client JavaScript, including required runtime helpers. Totals sum separately compressed delivery assets; class strings already in JavaScript are not counted again.
 
-The workflow uploads generated CSS, JavaScript, timing reports, size reports, and host metadata. Its summary and updating PR comment group compiler timings and sizes by workload, with variance and additional size metrics in expandable details. Fork PRs retain summaries and artifacts without requiring write access. `bench/Compilation.test.ts` checks equivalent computed declarations in real Chromium for repeated and unique inputs. Install the browser with `pnpm exec playwright install --only-shell chromium` before running tests locally.
+The workflow uploads generated CSS, JavaScript, timing reports, size reports, and host metadata. Its summary groups compiler timings and sizes by workload, with variance and additional size metrics in expandable details. Built-in PR comments compare Zyzz against main. Fork PRs retain summaries and artifacts without requiring write access. `bench/Compilation.test.ts` checks equivalent computed declarations in real Chromium for repeated and unique inputs. Install the browser with `pnpm exec playwright install --only-shell chromium` before running tests locally.
 
 Zyzz runs `Css.compile` from `zyzz/web` on prepared `Style.define` data, followed by shared Lightning CSS minification and esbuild browser bundling. Definition validation is outside timing, like Tailwind candidate preparation. Source extraction is measured separately; StyleX and vanilla-extract include their source pipelines. The component corpus uses `composition: 'independent'`: each class list is a complete application, so identical conflicting bodies can share rules. The default ordered mode preserves arbitrary generated-class combinations and is covered separately by A/B/A and shorthand browser tests. Independent mode does not promise that behavior; compositions must be resolved before compiling. No source rewriting or runtime composition helper is included in this literal workload. These fixtures do not establish whole-application or cross-library performance claims.
 
@@ -44,7 +54,7 @@ Every compiler renders against browser-interpreted literal CSS, rather than anot
 
 Panda CSS uses `@pandacss/node` config loading, code generation, source extraction, and CSS emission, followed by the common esbuild browser bundler. The base utility preset is enabled, the design-token preset and preflight are disabled, and required generated helpers and base CSS are retained. Generated `.mjs` modules use normal esbuild resolution.
 
-The PR report groups all five compilers by workload. Short CI samples are regression signals, not precise speed rankings; retain sample counts and error bars and run longer quiet-machine measurements before making latency claims. No other styling libraries are added.
+The Actions summary groups all five compilers by workload. Short CI samples are regression signals, not precise speed rankings; retain sample counts and error bars and run longer quiet-machine measurements before making latency claims. No other styling libraries are added.
 
 ## Emitter Optimizations
 
@@ -62,7 +72,7 @@ Lightning CSS preserves license comments, which are counted in the emitted CSS s
 
 ## Source Extraction Pipeline
 
-`src/compiler/Source.bench.ts` measures real parsing, lexical binding analysis, literal validation, and CSS emission for 10, 100, and 1,000 source definitions. Source text preparation is outside timing. Module rewriting, final minification, and browser bundling are excluded. The PR report groups these measurements separately from compiler comparisons; they are not interchangeable speed rankings or full application bundle measurements.
+`src/compiler/Source.bench.ts` measures real parsing, lexical binding analysis, literal validation, and CSS emission for 10, 100, and 1,000 source definitions. Source text preparation is outside timing. Module rewriting, final minification, and browser bundling are excluded. The Actions summary groups these measurements separately from compiler comparisons; they are not interchangeable speed rankings or full application bundle measurements.
 
 Benchmark files run sequentially so extraction measurements do not compete with the compiler comparison suite. Integration-test parallelism is unchanged.
 
@@ -72,7 +82,7 @@ Fixture projects have a fixed package name and relative source filename inside i
 
 `src/compiler/Transform.bench.ts` measures parsing, binding analysis, validation, ordered CSS emission, module rewriting, and both source maps for 10/100/1,000 exported literal definitions. File loading, final minification, and browser bundling are outside the timing. This is a broader pipeline than the independent in-memory comparison matrix and does not establish cross-library winners.
 
-A separate local-theme group uses the same counts with one literal color token, two compatible scalar scopes, and bound style calls. It includes factory extraction, token-name resolution, stable identities, scope constants, and maps. Literal and theme records use separate filenames and PR tables. This group does not include imported theme linking or replace the existing matched cross-library theme comparisons.
+A separate local-theme group uses the same counts with one literal color token, two compatible scalar scopes, and bound style calls. It includes factory extraction, token-name resolution, stable identities, scope constants, and maps. Literal and theme records use separate filenames and summary tables. This group does not include imported theme linking or replace the existing matched cross-library theme comparisons.
 
 Transform timing uses at least 30 samples and one second of measurement after at least 10 warmup iterations and 500 milliseconds. Baseline comparisons must use those same settings; the earlier three-sample windows are too noisy for large-module regression decisions.
 
@@ -96,7 +106,7 @@ Theme compilation measures 10 and 100 named styles with two compatible scopes an
 
 Adapters use [Panda named semantic-token themes](https://panda-css.com/blog/building-a-multi-brand-design-system-with-panda-css), [StyleX variables and createTheme](https://stylexjs.com/docs/learn/theming/creating-themes), [Tailwind theme variables and ordinary scoped CSS](https://tailwindcss.com/docs/theme), and [vanilla-extract theme contracts](https://vanilla-extract.style/documentation/api/create-theme-contract/). Zyzz uses `Theme.define`/`Theme.extend` and its independent in-memory emitter. Every theme adapter uses shared Lightning CSS final processing targeting Chrome 123, Firefox 128, and Safari 17.5, retaining native `light-dark()` and external/inline `color-scheme` selection. The literal matrix retains its previous targets. Each adapter bundles actual component classes and scope exports; required helpers and default token rules are retained.
 
-Timing boundaries differ: fixture writes are excluded; Panda includes config loading/code generation/extraction, StyleX includes both source modules through the official Babel plugin, vanilla-extract includes its esbuild integration, Tailwind starts with prepared candidates, the `zyzz` lane starts with validated explicit references, and `zyzz-tokens` starts with unresolved named-token style data and includes `Style.define` validation/resolution inside each timed call. All include final processing and browser bundling. Both Zyzz lanes appear alongside all four competitors in the updating PR comment. Integration tests require byte-identical CSS and JavaScript from the two Zyzz lanes and computed-style parity across every lane. These measurements do not establish equal source-pipeline throughput. Theme source parsing, framework mount/rerender cost, and theme-switch latency remain separate future workloads.
+Timing boundaries differ: fixture writes are excluded; Panda includes config loading/code generation/extraction, StyleX includes both source modules through the official Babel plugin, vanilla-extract includes its esbuild integration, Tailwind starts with prepared candidates, the `zyzz` lane starts with validated explicit references, and `zyzz-tokens` starts with unresolved named-token style data and includes `Style.define` validation/resolution inside each timed call. All include final processing and browser bundling. Both Zyzz lanes appear alongside all four competitors in the Actions summary. Integration tests require byte-identical CSS and JavaScript from the two Zyzz lanes and computed-style parity across every lane. These measurements do not establish equal source-pipeline throughput. Theme source parsing, framework mount/rerender cost, and theme-switch latency remain separate future workloads.
 
 Report CSS, client JavaScript, and their combined raw/gzip/Brotli transfer without recounting class strings already present in JavaScript. Keep all libraries and observed gaps visible. Existing literal transfer gates remain unchanged; theme budgets require matched measurements and browser parity before becoming regression gates.
 

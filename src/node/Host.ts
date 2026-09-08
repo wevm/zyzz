@@ -35,6 +35,25 @@ export async function create(options: create.Options): Promise<Runtime> {
 
   const lockPath = Path.join(outDir, '.zyzz-lock')
   const lock = await Fs.open(lockPath, 'wx')
+  // Probe the actual output filesystem using the already exclusively owned lock.
+  const insensitive = await (async () => {
+    try {
+      const alternate = await Fs.stat(Path.join(outDir, '.ZYZZ-LOCK'))
+      const original = await lock.stat()
+      return alternate.dev === original.dev && alternate.ino === original.ino
+    } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'ENOENT'
+      )
+        return false
+      await lock.close()
+      await Fs.rm(lockPath)
+      throw error
+    }
+  })()
   const manifestPath = Path.join(outDir, '.zyzz.json')
 
   type Cached = { output: Transform.compile.ReturnType; source: string }
@@ -75,6 +94,12 @@ export async function create(options: create.Options): Promise<Runtime> {
     const live = new Set<string>()
     for (const input of inputs) {
       const name = Path.relative(root, input).split(Path.sep).join('/')
+      if (
+        ['.zyzz-lock', '.zyzz.json'].includes(name.split('/')[0]!.toLowerCase())
+      )
+        throw new Error(
+          `Source path conflicts with host control files: ${name}`,
+        )
       const source = await Fs.readFile(input, 'utf8')
       const previous = cache.get(name)
       const output =
@@ -97,15 +122,29 @@ export async function create(options: create.Options): Promise<Runtime> {
     const previous = await read(manifestPath)
     const owned =
       previous === undefined ? {} : manifest(previous, options.packageId)
+    const key = (name: string) => (insensitive ? name.toLowerCase() : name)
+    const ownedNames = new Map(
+      Object.keys(owned).map((name) => [key(name), name]),
+    )
+    const liveNames = new Map<string, string>()
+    for (const name of artifacts.keys()) {
+      if (liveNames.has(key(name)))
+        throw new Error(`Output paths differ only in case: ${name}`)
+      liveNames.set(key(name), name)
+    }
+
     const hashes: Record<string, string> = Object.create(null)
     const before = new Map<string, string | undefined>()
     const changed: string[] = []
 
     for (const name of new Set([...Object.keys(owned), ...artifacts.keys()])) {
+      // A case-only rename still owns the same physical file. Do not delete its old alias.
+      if (!artifacts.has(name) && liveNames.has(key(name))) continue
+      const owner = ownedNames.get(key(name))
       const path = Path.join(outDir, name)
       await regular(path, outDir)
       const content = await read(path)
-      const expected = owned[name]
+      const expected = owner === undefined ? undefined : owned[owner]
       if (
         content !== undefined &&
         (expected === undefined || hash(content) !== expected)
@@ -116,7 +155,7 @@ export async function create(options: create.Options): Promise<Runtime> {
 
       const next = artifacts.get(name)
       if (next !== undefined) hashes[name] = hash(next)
-      if (content !== next) {
+      if (content !== next || (owner !== undefined && owner !== name)) {
         before.set(name, content)
         changed.push(name)
       }
@@ -292,7 +331,7 @@ function manifest(source: string, packageId: string): Record<string, string> {
       path.split('/').some((part) => !part || part === '.' || part === '..') ||
       typeof digest !== 'string' ||
       !/^[a-f0-9]{64}$/.test(digest) ||
-      path.startsWith('.zyzz')
+      ['.zyzz-lock', '.zyzz.json'].includes(path.split('/')[0]!.toLowerCase())
     )
       throw new Error('Invalid owned output path or digest.')
 

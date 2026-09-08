@@ -18,7 +18,7 @@ function diagnose(input: unknown, options: Style.define.Options = {}) {
   }
 }
 
-describe('consumer authoring through immutable definitions', () => {
+describe('define', () => {
   test('preserves named declarations and cascade-significant order across modules', () => {
     const definition = Style.define(components)
     expect({
@@ -652,11 +652,10 @@ describe('consumer authoring through immutable definitions', () => {
       }
     `)
   })
-})
 
-test('preserves numeric names through public authoring', () => {
-  expect(Style.define({ 0: { color: '#fff' }, 1.5: { padding: 0 } }))
-    .toMatchInlineSnapshot(`
+  test('preserves numeric names through public authoring', () => {
+    expect(Style.define({ 0: { color: '#fff' }, 1.5: { padding: 0 } }))
+      .toMatchInlineSnapshot(`
     {
       "styles": [
         {
@@ -680,14 +679,14 @@ test('preserves numeric names through public authoring', () => {
       ],
     }
   `)
-})
+  })
 
-test('accepts cross-realm records while rejecting class instances without reading getters', () => {
-  const foreign: unknown = Vm.runInNewContext(`({
+  test('accepts cross-realm records while rejecting class instances without reading getters', () => {
+    const foreign: unknown = Vm.runInNewContext(`({
     card: { color: '#fff', padding: 0 },
   })`)
-  const nested: unknown = { card: Vm.runInNewContext("({ color: '#fff' })") }
-  const instances: readonly unknown[] = Vm.runInNewContext(`[
+    const nested: unknown = { card: Vm.runInNewContext("({ color: '#fff' })") }
+    const instances: readonly unknown[] = Vm.runInNewContext(`[
     new (class Card { color = '#fff' })(),
     new Date(),
     Object.create({ color: '#fff' }),
@@ -695,23 +694,23 @@ test('accepts cross-realm records while rejecting class instances without readin
       return Object.create(new.target.prototype)
     } })(),
   ]`)
-  let reads = 0
-  const prototype = Object.create(null) as object
-  Object.defineProperty(prototype, 'constructor', {
-    get() {
-      reads++
-      return Object
-    },
-  })
-  const rejected = [...instances, Object.create(prototype)].map((card) =>
-    diagnose({ card }),
-  )
-  expect({
-    foreign: diagnose(foreign),
-    nested: diagnose(nested),
-    reads,
-    rejected,
-  }).toMatchInlineSnapshot(`
+    let reads = 0
+    const prototype = Object.create(null) as object
+    Object.defineProperty(prototype, 'constructor', {
+      get() {
+        reads++
+        return Object
+      },
+    })
+    const rejected = [...instances, Object.create(prototype)].map((card) =>
+      diagnose({ card }),
+    )
+    expect({
+      foreign: diagnose(foreign),
+      nested: diagnose(nested),
+      reads,
+      rejected,
+    }).toMatchInlineSnapshot(`
     {
       "foreign": {
         "styles": [
@@ -808,39 +807,39 @@ test('accepts cross-realm records while rejecting class instances without readin
       ],
     }
   `)
-})
-
-const portableSource = `import { Style } from 'zyzz'; import { Css } from 'zyzz/web';
-export const result = Css.compile({ styles: Style.define({ button: { color: '#f00', padding: 0 } }) });`
-
-async function portableBundle() {
-  const bundle = await Esbuild.build({
-    bundle: true,
-    conditions: ['src'],
-    format: 'iife',
-    globalName: 'fixture',
-    metafile: true,
-    platform: 'browser',
-    stdin: {
-      contents: portableSource,
-      resolveDir: Path.resolve(import.meta.dirname, '..'),
-    },
-    target: 'es2022',
-    write: false,
   })
 
-  expect(
-    Object.keys(bundle.metafile.inputs).filter((path) =>
-      /oxc|compiler|node:|themes/.test(path),
-    ),
-  ).toMatchInlineSnapshot('[]')
-  return bundle.outputFiles[0]!.text
-}
+  const portableSource = `import { Style } from 'zyzz'; import { Css } from 'zyzz/web';
+export const result = Css.compile({ styles: Style.define({ button: { color: '#f00', padding: 0 } }) });`
 
-test('the pure compilation pipeline agrees in Node, a worker, and QuickJS', async () => {
-  const code = await portableBundle()
-  const server = Vm.runInNewContext(`${code}; JSON.stringify(fixture.result)`)
-  expect(JSON.parse(server)).toMatchInlineSnapshot(`
+  async function portableBundle() {
+    const bundle = await Esbuild.build({
+      bundle: true,
+      conditions: ['src'],
+      format: 'iife',
+      globalName: 'fixture',
+      metafile: true,
+      platform: 'browser',
+      stdin: {
+        contents: portableSource,
+        resolveDir: Path.resolve(import.meta.dirname, '..'),
+      },
+      target: 'es2022',
+      write: false,
+    })
+
+    expect(
+      Object.keys(bundle.metafile.inputs).filter((path) =>
+        /oxc|compiler|node:|themes/.test(path),
+      ),
+    ).toMatchInlineSnapshot('[]')
+    return bundle.outputFiles[0]!.text
+  }
+
+  test('the pure compilation pipeline agrees in Node, a worker, and QuickJS', async () => {
+    const code = await portableBundle()
+    const server = Vm.runInNewContext(`${code}; JSON.stringify(fixture.result)`)
+    expect(JSON.parse(server)).toMatchInlineSnapshot(`
     {
       "classes": {
         "button": "z_base0",
@@ -850,36 +849,16 @@ test('the pure compilation pipeline agrees in Node, a worker, and QuickJS', asyn
     }
   `)
 
-  const worker = new Worker.Worker(
-    `${code}; require('node:worker_threads').parentPort.postMessage(JSON.stringify(fixture.result));`,
-    { eval: true },
-  )
-  try {
-    const result = await new Promise<string>((resolve, reject) => {
-      worker.once('error', reject)
-      worker.once('message', resolve)
-    })
-    expect(JSON.parse(result)).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "button": "z_base0",
-        },
-        "css": ".z_base0{color:#f00;padding:0;}",
-        "themes": {},
-      }
-    `)
-  } finally {
-    await worker.terminate()
-  }
-
-  const engine = await getQuickJS()
-  const context = engine.newContext()
-  try {
-    const result = context.unwrapResult(
-      context.evalCode(`${code}; JSON.stringify(fixture.result)`),
+    const worker = new Worker.Worker(
+      `${code}; require('node:worker_threads').parentPort.postMessage(JSON.stringify(fixture.result));`,
+      { eval: true },
     )
     try {
-      expect(JSON.parse(context.getString(result))).toMatchInlineSnapshot(`
+      const result = await new Promise<string>((resolve, reject) => {
+        worker.once('error', reject)
+        worker.once('message', resolve)
+      })
+      expect(JSON.parse(result)).toMatchInlineSnapshot(`
       {
         "classes": {
           "button": "z_base0",
@@ -889,47 +868,17 @@ test('the pure compilation pipeline agrees in Node, a worker, and QuickJS', asyn
       }
     `)
     } finally {
-      result.dispose()
+      await worker.terminate()
     }
-  } finally {
-    context.dispose()
-  }
-})
 
-test('the pure compilation pipeline runs in Chromium and a browser worker', async () => {
-  const code = await portableBundle()
-  const browser = await chromium.launch()
-  try {
-    const page = await browser.newPage()
-    await page.addScriptTag({ content: code })
-    expect(await page.evaluate('fixture.result')).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "button": "z_base0",
-        },
-        "css": ".z_base0{color:#f00;padding:0;}",
-        "themes": {},
-      }
-    `)
-
-    const result = await page.evaluate(async (code) => {
-      const url = URL.createObjectURL(
-        new Blob([code + '; postMessage(fixture.result);'], {
-          type: 'text/javascript',
-        }),
+    const engine = await getQuickJS()
+    const context = engine.newContext()
+    try {
+      const result = context.unwrapResult(
+        context.evalCode(`${code}; JSON.stringify(fixture.result)`),
       )
-      const worker = new globalThis.Worker(url)
       try {
-        return await new Promise((resolve, reject) => {
-          worker.onmessage = (event) => resolve(event.data)
-          worker.onerror = (event) => reject(new Error(event.message))
-        })
-      } finally {
-        worker.terminate()
-        URL.revokeObjectURL(url)
-      }
-    }, code)
-    expect(result).toMatchInlineSnapshot(`
+        expect(JSON.parse(context.getString(result))).toMatchInlineSnapshot(`
       {
         "classes": {
           "button": "z_base0",
@@ -938,7 +887,58 @@ test('the pure compilation pipeline runs in Chromium and a browser worker', asyn
         "themes": {},
       }
     `)
-  } finally {
-    await browser.close()
-  }
+      } finally {
+        result.dispose()
+      }
+    } finally {
+      context.dispose()
+    }
+  })
+
+  test('the pure compilation pipeline runs in Chromium and a browser worker', async () => {
+    const code = await portableBundle()
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.addScriptTag({ content: code })
+      expect(await page.evaluate('fixture.result')).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "button": "z_base0",
+        },
+        "css": ".z_base0{color:#f00;padding:0;}",
+        "themes": {},
+      }
+    `)
+
+      const result = await page.evaluate(async (code) => {
+        const url = URL.createObjectURL(
+          new Blob([code + '; postMessage(fixture.result);'], {
+            type: 'text/javascript',
+          }),
+        )
+        const worker = new globalThis.Worker(url)
+        try {
+          return await new Promise((resolve, reject) => {
+            worker.onmessage = (event) => resolve(event.data)
+            worker.onerror = (event) => reject(new Error(event.message))
+          })
+        } finally {
+          worker.terminate()
+          URL.revokeObjectURL(url)
+        }
+      }, code)
+      expect(result).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "button": "z_base0",
+        },
+        "css": ".z_base0{color:#f00;padding:0;}",
+        "themes": {},
+      }
+    `)
+    } finally {
+      await browser.close()
+    }
+  })
 })

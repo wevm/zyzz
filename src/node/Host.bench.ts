@@ -5,6 +5,7 @@ import * as Path from 'node:path'
 import * as Util from 'node:util'
 import { bench, describe } from 'vite-plus/test'
 import { Host } from 'zyzz/node'
+import * as Watch from '../../test/fixtures/Watch.js'
 
 const run = Util.promisify(ChildProcess.execFile)
 const source = `import { css } from 'zyzz'; ${Array.from({ length: 100 }, (_, index) => `export const card${index} = css({ padding: '${index}px' });`).join('\n')}`
@@ -17,7 +18,7 @@ for (const mode of [
   describe('file host / 100 styles', () => {
     let directory: string
     let host: Host.Runtime | undefined
-    let resolve: (() => void) | undefined
+    let notifications: ReturnType<typeof Watch.create>
     let version = 0
 
     bench(
@@ -28,15 +29,13 @@ for (const mode of [
         } else if (mode === 'unchanged rebuild') {
           await host!.build()
         } else {
-          const completed = new Promise<void>((done) => {
-            resolve = done
-          })
           version++
-          await Fs.writeFile(
-            Path.join(directory, 'src/cards.ts'),
-            source.replace('0px', `${version}px`),
+          await notifications.next(() =>
+            Fs.writeFile(
+              Path.join(directory, 'src/cards.ts'),
+              source.replace('0px', `${version}px`),
+            ),
           )
-          await completed
         }
       },
       {
@@ -74,19 +73,16 @@ for (const mode of [
           } else {
             host = await Host.create(options)
             if (mode === 'watch edit') {
-              const initial = new Promise<void>((done) => {
-                resolve = done
-              })
-              host.watch({
-                onResult(event) {
-                  if ('error' in event) throw event.error
-                  if (event.result.changed.includes('cards.ts.css')) {
-                    resolve?.()
-                    resolve = undefined
-                  }
-                },
-              })
-              await initial
+              notifications = Watch.create({ path: 'cards.ts.css' })
+              try {
+                await notifications.next(async () => {
+                  host!.watch({ onResult: notifications.onResult })
+                })
+              } catch (error) {
+                await host.close()
+                await Fs.rm(directory, { force: true, recursive: true })
+                throw error
+              }
             } else await host.build()
           }
         },

@@ -1,0 +1,363 @@
+/**
+ * Exercises linked source modules through compilation and actual module execution.
+ * @module
+ */
+import * as Trace from '@jridgewell/trace-mapping'
+import * as Esbuild from 'esbuild'
+import * as ChildProcess from 'node:child_process'
+import * as Fs from 'node:fs/promises'
+import * as Path from 'node:path'
+import * as Util from 'node:util'
+import { chromium } from 'playwright'
+import { describe, expect, test } from 'vite-plus/test'
+import { Graph } from 'zyzz/compiler'
+import * as Fixture from '../../test/fixtures/ThemeGraph.js'
+
+const root = Path.resolve(import.meta.dirname, '../..')
+const modules = Fixture.modules
+
+describe('compile', () => {
+  test('ordinary exports named like object prototype properties remain ordinary imports', () => {
+    const output = Graph.compile({
+      modules: {
+        'pkg/utility.ts': `export function toString() { return 'ordinary' }`,
+        'pkg/card.ts': `import { toString } from './utility.js'; export const value = toString();`,
+      },
+    })
+    expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
+      `"import { toString } from './utility.js'; export const value = toString();"`,
+    )
+    expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`""`)
+  })
+
+  test('dynamic source imports fail before output', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          ...modules,
+          'pkg/lazy.ts': `export const load = () => import('./theme.js');`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/lazy.ts:26: Source graph dependencies require static imports.]`,
+    )
+  })
+
+  test('explicit non-theme exports shadow star contracts', () => {
+    const output = Graph.compile({
+      modules: {
+        ...modules,
+        'pkg/index.ts': `export * from './theme.js'; export const theme = { css: (value: string) => value };`,
+        'pkg/card.ts': `import { theme } from './index.js'; export const value = theme.css('ordinary');`,
+      },
+    })
+    expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
+      `"import { theme } from './index.js'; export const value = theme.css('ordinary');"`,
+    )
+    expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`""`)
+  })
+  test('conflicting star contracts fail before output', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'pkg/a.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#000'}});`,
+          'pkg/b.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#fff'}});`,
+          'pkg/index.ts': `export * from './a.js'; export * from './b.js';`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/index.ts:0: Ambiguous theme re-export: theme]`,
+    )
+  })
+  test('type-only imports do not load source dependencies', () => {
+    const output = Graph.compile({
+      modules: {
+        'pkg/types.ts': `import type { Theme } from './missing.js'; export type Contract = Theme;`,
+      },
+    })
+    expect(output.dependencies).toMatchInlineSnapshot(`
+      {
+        "pkg/types.ts": [],
+      }
+    `)
+  })
+  test('imported aliases retain shadowed bindings', () => {
+    const output = Graph.compile({
+      modules: {
+        ...modules,
+        'pkg/card.ts': `import { css } from './theme.js'; export function run(css: (value: string) => string) { return css('ordinary') } export const props = css({color:'brand'})();`,
+      },
+    })
+    expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
+      `"import { css } from './theme.js'; export function run(css: (value: string) => string) { return css('ordinary') } export const props = ({className:"z-5ngs574r5xr9-base0"});"`,
+    )
+  })
+
+  test('imports, aliases, extensions and re-exports share token identities and source maps', async () => {
+    const output = Graph.compile({ modules })
+    expect(output.dependencies).toMatchInlineSnapshot(`
+      {
+        "pkg/alternate.ts": [
+          "pkg/theme.ts",
+        ],
+        "pkg/card.ts": [
+          "pkg/index.ts",
+        ],
+        "pkg/index.ts": [
+          "pkg/theme.ts",
+          "pkg/alternate.ts",
+        ],
+        "pkg/theme.ts": [],
+      }
+    `)
+    expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
+      `"import { theme, style, mint } from './index.js'; export const props = ({className:"z-5ngs574r5xr9-base0"}); export const scope = "z_theme-18i5hb1ihk25d-mint";"`,
+    )
+    expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;}
+      .z_theme-18i5hb1ihk25d-mint{--z-t1p8at5ioin1tk-theme-color_2e_brand:#175;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;}
+      .z-5ngs574r5xr9-base0{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#06c);padding:var(--z-t1p8at5ioin1tk-theme-spacing_2e_md,8px);}"
+    `)
+    expect(
+      Trace.originalPositionFor(
+        new Trace.TraceMap(output.modules['pkg/card.ts']!.cssMap),
+        { line: 1, column: 0 },
+      ),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 51,
+        "line": 1,
+        "name": "1p8at5ioin1tk-theme",
+        "source": "pkg/theme.ts",
+      }
+    `)
+    const directory = await Fs.mkdtemp(Path.join(root, '.fixture-graph-'))
+    try {
+      for (const [name, module] of Object.entries(output.modules)) {
+        const file = Path.join(directory, name)
+        await Fs.mkdir(Path.dirname(file), { recursive: true })
+        await Fs.writeFile(file, module.code)
+      }
+      const bundle = await Esbuild.build({
+        entryPoints: [Path.join(directory, 'pkg/card.ts')],
+        bundle: true,
+        format: 'cjs',
+        metafile: true,
+        write: false,
+      })
+      expect(
+        Object.keys(bundle.metafile!.inputs).some((path) =>
+          /Theme\.ts|compiler\//.test(path),
+        ),
+      ).toMatchInlineSnapshot(`false`)
+      const path = Path.join(directory, 'bundle.cjs')
+      await Fs.writeFile(path, bundle.outputFiles[0]!.text)
+      const executed = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        ['-e', `console.log(JSON.stringify(require(${JSON.stringify(path)})))`],
+      )
+      expect(executed.stdout).toMatchInlineSnapshot(`
+        "{"props":{"className":"z-5ngs574r5xr9-base0"},"scope":"z_theme-18i5hb1ihk25d-mint"}
+        "
+      `)
+      const checked = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          Path.join(root, 'node_modules/typescript/bin/tsc'),
+          '--customConditions',
+          'src',
+          '--module',
+          'NodeNext',
+          '--target',
+          'esnext',
+          '--strict',
+          '--skipLibCheck',
+          '--noEmit',
+          Path.join(directory, 'pkg/card.ts'),
+        ],
+      )
+      expect(checked.stdout).toMatchInlineSnapshot(`""`)
+    } finally {
+      await Fs.rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  test('token edits preserve identities and removing the last use removes declarations', () => {
+    const before = Graph.compile({ modules })
+    const after = Graph.compile({
+      modules: {
+        ...modules,
+        'pkg/theme.ts': modules['pkg/theme.ts'].replace("'#06c'", "'#f00'"),
+      },
+    })
+    expect(after.modules['pkg/card.ts']!.classes).toMatchInlineSnapshot(`
+      {
+        "style-5ngs574r5xr9-70": "z-5ngs574r5xr9-base0",
+      }
+    `)
+    expect(after.modules['pkg/card.ts']!.themes).toMatchInlineSnapshot(`
+      {
+        "18i5hb1ihk25d-mint": "z_theme-18i5hb1ihk25d-mint",
+        "1p8at5ioin1tk-theme": "z_theme-1p8at5ioin1tk-theme",
+      }
+    `)
+    expect(before.modules['pkg/card.ts']!.classes).toMatchInlineSnapshot(`
+      {
+        "style-5ngs574r5xr9-70": "z-5ngs574r5xr9-base0",
+      }
+    `)
+    const removed = Graph.compile({
+      modules: {
+        ...modules,
+        'pkg/card.ts': `import { mint } from './alternate.js'; export const scope = mint.className;`,
+      },
+    })
+    expect(removed.modules['pkg/alternate.ts']!.css).toMatchInlineSnapshot(`""`)
+    expect(removed.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`""`)
+    expect(removed.modules['pkg/index.ts']!.css).toMatchInlineSnapshot(`""`)
+    expect(removed.modules['pkg/theme.ts']!.css).toMatchInlineSnapshot(`""`)
+  })
+
+  test('linked scopes render inherited values in Chromium', async () => {
+    const output = Graph.compile({ modules })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<main id="scope"><div id="card">Card</div></main>')
+      await page.addStyleTag({
+        content: Object.values(output.modules)
+          .map((module) => module.css)
+          .join('\n'),
+      })
+      const classes = Object.values(output.modules['pkg/card.ts']!.classes)[0]!
+      await page
+        .locator('#card')
+        .evaluate(
+          (element, classes) => element.setAttribute('class', classes),
+          classes,
+        )
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot(`"rgb(0, 102, 204)"`)
+      const scope =
+        output.modules['pkg/card.ts']!.themes[
+          Object.keys(output.modules['pkg/card.ts']!.themes).find((name) =>
+            name.endsWith('-mint'),
+          )!
+        ]!
+      await page
+        .locator('#scope')
+        .evaluate(
+          (element, scope) => element.setAttribute('class', scope),
+          scope,
+        )
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).padding),
+      ).toMatchInlineSnapshot(`"8px"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  for (const extension of [
+    'cjs',
+    'cjsx',
+    'cts',
+    'ctsx',
+    'js',
+    'jsx',
+    'mjs',
+    'mjsx',
+    'mts',
+    'mtsx',
+    'ts',
+    'tsx',
+  ]) {
+    for (const suffix of ['', '/index']) {
+      test(`extensionless imports link themes from ${suffix || 'direct'}.${extension}`, () => {
+        const output = Graph.compile({
+          modules: {
+            'pkg/card.ts': `import { theme } from './theme'; export const props = theme.css({color:'brand'})();`,
+            [`pkg/theme${suffix}.${extension}`]: modules['pkg/theme.ts'],
+          },
+        })
+        expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
+          `"import { theme } from './theme'; export const props = ({className:"z-5ngs574r5xr9-base0"});"`,
+        )
+      })
+    }
+  }
+
+  test.each(['pkg/theme.mts', 'pkg/theme/index.mjs'])(
+    'extensionless imports reject ambiguity with %s',
+    (moduleId) => {
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'pkg/card.ts': `import { theme } from './theme';`,
+            'pkg/theme.cts': modules['pkg/theme.ts'],
+            [moduleId]: modules['pkg/theme.ts'],
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: pkg/card.ts:0: Ambiguous source import: ./theme]`,
+      )
+    },
+  )
+
+  test('missing source imports fail before output', () => {
+    expect(() =>
+      Graph.compile({
+        modules: { 'pkg/card.ts': `import { theme } from './missing.js';` },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/card.ts:0: Missing source module: ./missing.js]`,
+    )
+  })
+  test('cycles fail before output', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'pkg/a.ts': `export * from './b.js';`,
+          'pkg/b.ts': `export * from './a.js';`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/a.ts:0: Circular source dependencies are not supported yet.]`,
+    )
+  })
+  test('ambiguous source extensions fail before output', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'pkg/a.ts': `import './b';`,
+          'pkg/b.ts': '',
+          'pkg/b.tsx': '',
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/a.ts:0: Ambiguous source import: ./b]`,
+    )
+  })
+  test('namespace theme imports fail before output', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          ...modules,
+          'pkg/card.ts': `import * as Themes from './theme.js';`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/card.ts:7: Import theme contracts by name; namespace imports are not supported.]`,
+    )
+  })
+})

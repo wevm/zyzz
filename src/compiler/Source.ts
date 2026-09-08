@@ -92,7 +92,11 @@ export function extract(options: extract.Options): extract.ReturnType {
   const program = parsed.program
   const themes = (() => {
     try {
-      return Themes.collect(program, { namespace: identity(options.moduleId) })
+      return Themes.collect(program, {
+        namespace: identity(options.moduleId),
+        linked: options[Themes.context] !== undefined,
+        links: options[Themes.context]?.links,
+      })
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
       report('unsupported_syntax', error.message, error)
@@ -325,6 +329,9 @@ export function extract(options: extract.Options): extract.ReturnType {
   }
   if (diagnostics.length) throw new ExtractError(diagnostics)
   return Object.freeze({
+    ...(options[Themes.context]
+      ? { themeExports: themes?.exports ?? Object.freeze({}) }
+      : {}),
     calls: Object.freeze(calls.map((call) => Object.freeze(call))),
     styles: Object.freeze({ styles: Object.freeze(styles) }),
     themeAliases: Object.freeze(themes?.aliases ?? []),
@@ -342,6 +349,8 @@ export declare namespace extract {
   type Options = {
     /** Portable identity including package and module path; no filesystem access occurs. */
     readonly moduleId: string
+    /** Compiler-owned graph context. */
+    readonly [Themes.context]?: Themes.Context | undefined
     /** Complete module text, parsed as TypeScript with JSX. */
     readonly source: string
   }
@@ -357,6 +366,8 @@ export declare namespace extract {
     readonly themeCalls: readonly Themes.Call[]
     /** Scope reads replaced by class constants. */
     readonly themeReferences: readonly Themes.Reference[]
+    /** Resolved authoring exports when extracted as part of a source graph. */
+    readonly themeExports?: Readonly<Record<string, Themes.Link>> | undefined
     /** Stable scope keys and validated local theme definitions. */
     readonly themes: Readonly<Record<string, Theme.Definition>>
   }

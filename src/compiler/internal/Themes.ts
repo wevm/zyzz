@@ -6,6 +6,7 @@ import type * as Ast from '@oxc-project/types'
 import type * as Walker from 'oxc-walker'
 import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
+import type * as Source from '../Source.js'
 
 /** Local bound-authoring initializer replaced while retaining its inferred type. */
 export type Alias = Call & {
@@ -23,6 +24,26 @@ export type Call = {
   readonly start: number
   /** Literal token contract retained in rewritten TypeScript type assertions. */
   readonly tokenType: string
+}
+
+/** Internal context passed between graph extraction and module rewriting. */
+export const context = Symbol('zyzz.source.graph')
+
+/** Resolved authoring contract within a supplied source graph. */
+export type Link = {
+  readonly binding: string
+  readonly call: Call
+  readonly definition: Theme.Definition
+  readonly kind: 'css' | 'theme'
+}
+
+/** Shared graph data; no filesystem or runtime evaluation is involved. */
+export type Context = {
+  readonly extracted?: Source.extract.ReturnType | undefined
+  readonly links: Readonly<Record<string, Link>>
+  readonly owners?:
+    | Readonly<Record<string, { call: Call; moduleId: string; source: string }>>
+    | undefined
 }
 
 /** Collects immutable module-level themes without evaluating source. */
@@ -59,9 +80,30 @@ export function collect(program: Ast.Program, options: collect.Options) {
       )
         imports.add(specifier.start)
   }
-  if (!imports.size) return undefined
+  if (!imports.size && !Object.keys(options.links ?? {}).length)
+    return undefined
 
   const names = new Map<string, Call>()
+  const aliasNames = new Map<string, Alias>()
+  const exports: Record<string, Link> = Object.create(null)
+  for (const node of program.body) {
+    if (node.type !== 'ImportDeclaration' || node.importKind === 'type')
+      continue
+    for (const specifier of node.specifiers) {
+      const link = options.links?.[specifier.local.name]
+      if (!link) continue
+      const call = { ...link.call, start: -1, end: -1 }
+      themes[call.name] = link.definition
+      if (link.kind === 'theme') {
+        definitions.set(specifier.start, call)
+        names.set(specifier.local.name, call)
+      } else {
+        const alias = { ...call, destructured: false }
+        aliasBindings.set(specifier.start, alias)
+        aliasNames.set(specifier.local.name, alias)
+      }
+    }
+  }
   const namespaces = new Set<string>()
   for (const node of program.body)
     if (node.type === 'ImportDeclaration')
@@ -164,7 +206,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       )
         continue
       if (
-        statement.type === 'ExportNamedDeclaration' ||
+        (statement.type === 'ExportNamedDeclaration' && !options.linked) ||
         declaration.kind !== 'const' ||
         variable.id.type !== 'Identifier'
       )
@@ -250,10 +292,16 @@ export function collect(program: Ast.Program, options: collect.Options) {
       factories.add(expression.start)
       names.set(variable.id.name, call)
       themes[name] = definition
+      if (statement.type === 'ExportNamedDeclaration')
+        exports[variable.id.name] = {
+          binding: name,
+          call,
+          definition,
+          kind: 'theme',
+        }
     }
   }
 
-  const aliasNames = new Map<string, Alias>()
   for (const statement of program.body) {
     const declaration =
       statement.type === 'ExportNamedDeclaration'
@@ -301,7 +349,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       }
       if (
         declaration.kind !== 'const' ||
-        statement.type === 'ExportNamedDeclaration' ||
+        (statement.type === 'ExportNamedDeclaration' && !options.linked) ||
         id.type !== 'Identifier'
       )
         fail(
@@ -321,8 +369,46 @@ export function collect(program: Ast.Program, options: collect.Options) {
       aliasBindings.set(id.start, alias)
       aliasNames.set(id.name, alias)
       aliasReferences.add(source.start)
+      if (statement.type === 'ExportNamedDeclaration')
+        exports[id.name] = {
+          binding: `${options.namespace}-${id.name}`,
+          call: alias,
+          definition: themes[alias.name]!,
+          kind: 'css',
+        }
     }
   }
+
+  const exportReferences = new Set<number>()
+  if (options.linked)
+    for (const statement of program.body) {
+      if (
+        statement.type !== 'ExportNamedDeclaration' ||
+        statement.source ||
+        statement.exportKind === 'type'
+      )
+        continue
+      for (const specifier of statement.specifiers) {
+        if (specifier.exportKind === 'type') continue
+        const name =
+          specifier.local.type === 'Identifier'
+            ? specifier.local.name
+            : specifier.local.value
+        const call = names.get(name) ?? aliasNames.get(name)
+        if (!call) continue
+        const exported =
+          specifier.exported.type === 'Identifier'
+            ? specifier.exported.name
+            : specifier.exported.value
+        exports[exported] = options.links?.[name] ?? {
+          binding: `${options.namespace}-${name}`,
+          call,
+          definition: themes[call.name]!,
+          kind: names.has(name) ? 'theme' : 'css',
+        }
+        exportReferences.add(specifier.local.start)
+      }
+    }
 
   function reference(
     node: Extract<Ast.Node, { type: 'Identifier' | 'JSXIdentifier' }>,
@@ -344,11 +430,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
       )
     }
     const alias =
-      binding?.type === 'Variable'
+      binding?.type === 'Variable' || binding?.type === 'Import'
         ? aliasBindings.get(binding.node.start)
         : undefined
     if (alias) {
-      if (node.start === binding!.node.start) return true
+      if (
+        node.start === binding!.node.start ||
+        exportReferences.has(node.start)
+      )
+        return true
       if (node.start < alias.end)
         fail('Theme css alias references must follow their definition.', node)
       if (aliasReferences.has(node.start)) return true
@@ -365,10 +455,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
       return true
     }
     const theme =
-      binding?.type === 'Variable'
+      binding?.type === 'Variable' || binding?.type === 'Import'
         ? definitions.get(binding.node.start)
         : undefined
     if (!theme) return false
+    if (exportReferences.has(node.start)) return true
     if (aliasReferences.has(node.start)) return true
     if (node.start < theme.end)
       fail('Theme references must follow their local definition.', node)
@@ -530,6 +621,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
   return {
     aliases,
     calls,
+    exports: Object.freeze(exports),
     reference,
     references,
     styles,
@@ -544,6 +636,8 @@ export declare namespace collect {
   type Options = {
     /** Encoded package/module identity from the source adapter. */
     readonly namespace: string
+    readonly linked?: boolean | undefined
+    readonly links?: Readonly<Record<string, Link>> | undefined
   }
 }
 

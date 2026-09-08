@@ -51,6 +51,8 @@ result.files
 
 ## Errors
 
+The host links source modules together. A source edit recompiles the graph so theme changes reach every consumer; an unchanged graph reuses its compiled output. Missing or invalid dependencies preserve the last successful artifacts.
+
 Build or filesystem failures reject. Failed compilation preserves the previous successful output.
 
 See [Host](README.md) for related methods and types.

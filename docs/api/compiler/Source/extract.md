@@ -81,7 +81,7 @@ output.styles
 
 Theme factories require literal token data in module-level `const` bindings. Extensions reference preceding local themes. Literal keys, nested palettes, numeric keys, and transparent `as` / `satisfies` wrappers are supported; expressions, spreads, mutation, namespace imports, and dynamic factories produce diagnostics without executing application code.
 
-Bound `css` supports local const member aliases, destructuring/renaming, and alias chains. Destructuring accepts only `css`, without defaults or rest properties. Aliases must precede their references and support direct calls only. Export compiled styles and scope strings; importing/exporting theme contracts or authoring aliases and re-exports still require graph linking.
+Bound `css` supports local const member aliases, destructuring/renaming, and alias chains. Destructuring accepts only `css`, without defaults or rest properties. Aliases must precede their references and support direct calls only. Export compiled styles and scope strings; use [Graph.compile](../Graph/compile.md) for imported/exported theme contracts, authoring aliases, and re-exports.
 
 Explicit `theme.tokens` paths are supported as scalar property values in bound css calls, including aliases. Dot access, literal string/numeric brackets, and transparent TypeScript assertions retain token identity and defining fallbacks. Paths must exist and match the property domain; optional/dynamic access, token-object escapes, and root css token values produce diagnostics.
 

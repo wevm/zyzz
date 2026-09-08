@@ -13,6 +13,57 @@ const project = Path.resolve(import.meta.dirname, '../..')
 const source = `import { css } from 'zyzz'; export const button = css({ padding: '8px' });`
 
 describe('create', () => {
+  test('shared theme edits rebuild consumers and recover after missing dependencies', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-graph-host-'))
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'example', root })
+    const notifications = Watch.create({ path: 'card.ts.css' })
+    const themePath = Path.join(root, 'theme.ts')
+    const themeSource = `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#06c'}});`
+    try {
+      await Fs.writeFile(themePath, themeSource)
+      await Fs.writeFile(
+        Path.join(root, 'card.ts'),
+        `import { theme } from './theme.js'; export const props = theme.css({color:'brand'})();`,
+      )
+      await host.build()
+      const before = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
+      expect(before).toMatchInlineSnapshot(`
+        ".z_theme-1dre7461ulsxz8-theme{--z-t1dre7461ulsxz8-theme-color_2e_brand:#06c;}
+        .z-4lx6a318y1wl5-base0{color:var(--z-t1dre7461ulsxz8-theme-color_2e_brand,#06c);}"
+      `)
+      expect((await host.build()).changed).toMatchInlineSnapshot(`[]`)
+      host.watch({ onResult: notifications.onResult })
+      await notifications.next(() =>
+        Fs.writeFile(themePath, themeSource.replace("'#06c'", "'#175'")),
+      )
+      const after = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
+      expect(after).toMatchInlineSnapshot(`
+        ".z_theme-1dre7461ulsxz8-theme{--z-t1dre7461ulsxz8-theme-color_2e_brand:#175;}
+        .z-4lx6a318y1wl5-base0{color:var(--z-t1dre7461ulsxz8-theme-color_2e_brand,#175);}"
+      `)
+      await expect(
+        notifications.next(() => Fs.rm(themePath)),
+      ).rejects.toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: example/card.ts:0: Missing source module: ./theme.js]`,
+      )
+      expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
+        ".z_theme-1dre7461ulsxz8-theme{--z-t1dre7461ulsxz8-theme-color_2e_brand:#175;}
+        .z-4lx6a318y1wl5-base0{color:var(--z-t1dre7461ulsxz8-theme-color_2e_brand,#175);}"
+      `)
+      await notifications.next(() => Fs.writeFile(themePath, themeSource))
+      expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
+        ".z_theme-1dre7461ulsxz8-theme{--z-t1dre7461ulsxz8-theme-color_2e_brand:#06c;}
+        .z-4lx6a318y1wl5-base0{color:var(--z-t1dre7461ulsxz8-theme-color_2e_brand,#06c);}"
+      `)
+    } finally {
+      await host.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('local theme edits rebuild CSS while keeping scope identities stable', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-theme-host-'))
     const outDir = Path.join(root, 'output')

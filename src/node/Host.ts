@@ -6,6 +6,7 @@ import * as Crypto from 'node:crypto'
 import * as NativeFs from 'node:fs'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Graph from '../compiler/Graph.js'
 import * as Transform from '../compiler/Transform.js'
 
 /** A successful publication; paths are relative to the output directory. */
@@ -96,6 +97,7 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     const artifacts = new Map<string, string>()
     const live = new Set<string>()
+    const sources: Record<string, string> = Object.create(null)
     for (const input of inputs) {
       const name = Path.relative(root, input).split(Path.sep).join('/')
       if (
@@ -104,15 +106,27 @@ export async function create(options: create.Options): Promise<Runtime> {
         throw new Error(
           `Source path conflicts with host control files: ${name}`,
         )
-      const source = await Fs.readFile(input, 'utf8')
-      const previous = cache.get(name)
-      const output =
-        previous?.source === source
-          ? previous.output
-          : Transform.compile({
-              moduleId: `${options.packageId}/${name}`,
+      sources[name] = await Fs.readFile(input, 'utf8')
+    }
+    const changedSources =
+      inputs.length !== cache.size ||
+      Object.entries(sources).some(
+        ([name, source]) => cache.get(name)?.source !== source,
+      )
+    const graph = changedSources
+      ? Graph.compile({
+          modules: Object.fromEntries(
+            Object.entries(sources).map(([name, source]) => [
+              `${options.packageId}/${name}`,
               source,
-            })
+            ]),
+          ),
+        })
+      : undefined
+    for (const [name, source] of Object.entries(sources)) {
+      const output =
+        graph?.modules[`${options.packageId}/${name}`] ??
+        cache.get(name)!.output
       cache.set(name, { output, source })
       live.add(name)
 

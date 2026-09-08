@@ -77,6 +77,14 @@ Validated ordered styles accepted by `Css.compile`. Extraction alone does not re
 output.styles
 ```
 
+## Theme Source
+
+Theme factories require literal token data in module-level `const` bindings. Extensions reference preceding local themes. Literal keys, nested palettes, numeric keys, and transparent `as` / `satisfies` wrappers are supported; expressions, spreads, mutation, namespace imports, and dynamic factories produce diagnostics without executing application code.
+
+Bound `css` supports local const member aliases, destructuring/renaming, and alias chains. Destructuring accepts only `css`, without defaults or rest properties. Aliases must precede their references and support direct calls only. Export compiled styles and scope strings; importing/exporting theme contracts or authoring aliases, re-exports, and explicit source token paths still require graph linking.
+
+Pass both `styles` and `themes` to `Css.compile` when using extraction without rewriting. Scope-map keys derive from module/binding identity.
+
 ## Errors
 
 `Source.ExtractError` aggregates located source failures without a partial result.

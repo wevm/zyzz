@@ -49,7 +49,7 @@ Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration
 
 ## Phase 1 — Build the core
 
-Status: in progress. PRs 1.1–1.3 are merged; PR 1.4 is under implementation and validation. PR 1.5 is unstarted. Testing and benchmark conventions are defined in `AGENTS.md`.
+Status: in progress. PRs 1.1–1.3 are merged; PR 1.4 is merged. PR 1.5 is under implementation and validation. Testing and benchmark conventions are defined in `AGENTS.md`.
 
 Merge in dependency order. Each PR includes real integration scenarios, consumer type fixtures, relevant benchmark evidence, and public TSDoc. No unit tests, mocks, or stubs. Keep CI green and record the actual PR link and completion evidence beside each item as work lands.
 
@@ -108,7 +108,7 @@ Acceptance: supported source calls and equivalent in-memory definitions produce 
 
 ### PR 1.4 — Module Rewriting and Maps
 
-Status: implemented in [PR #7](https://github.com/wevm/zyzz/pull/7) from main `b538b6b`. Build, checks, browser integration, packed consumption, and benchmarks pass in CI.
+Status: merged in [PR #7](https://github.com/wevm/zyzz/pull/7) as `11d79be`. Build, checks, browser integration, packed consumption, and benchmarks pass in CI.
 
 - [x] Replace extracted definitions with callable props binders; fold fully static applications to `{ className }` props objects when safe and return transformed source, stylesheet artifacts, and source maps from an adapter operating on strings and plain data.
 - [x] Preserve surrounding application code, exports, and source semantics. Remove authoring imports only when their bindings are no longer needed; leave no styling authoring closures or runtime CSS generation; surviving static callables only merge props.
@@ -122,14 +122,18 @@ Implementation: `Transform.compile` returns rewritten modules, ordered module-sc
 
 ### PR 1.5 — Host Adapters and Portability
 
-- [ ] Add a minimal file host and fixture driver around the source adapter for reads, output writes, and watch invalidation. Keep the public CLI and build-tool integrations in Phase 4; do not add another compiler path or general plugin system.
-- [ ] Handle source additions, edits, removals, and renames for the supported literal subset. Exclude output directories, preserve the previous successful output on failure, and clean up only host-owned artifacts.
-- [ ] Run identical pure-data fixtures across server, browser, worker, and a native JavaScript engine. Verify matching results and imports without environment shims; native stylesheet emission remains in Phase 3.
-- [ ] Verify packed root/web entrypoints, source-first declarations, and dependency isolation. Use real temporary files, processes, and watchers for recovery/disposal scenarios; measure cold builds and edit-to-artifact latency separately. Document how integration tests and benchmarks run with existing tooling.
+Status: implemented on `feat/file-host` from main `11d79be`; CI validation is pending.
+
+- [x] Add a minimal file host and fixture driver around the source adapter for reads, output writes, and watch invalidation. Keep the public CLI and build-tool integrations in Phase 4; do not add another compiler path or general plugin system.
+- [x] Handle source additions, edits, removals, and renames for the supported literal subset. Exclude output directories, preserve the previous successful output on failure, and clean up only host-owned artifacts.
+- [x] Run identical pure-data fixtures across server, browser, worker, and a native JavaScript engine. Verify matching results and imports without environment shims; native stylesheet emission remains in Phase 3.
+- [x] Verify packed root/web entrypoints, source-first declarations, and dependency isolation. Use real temporary files, processes, and watchers for recovery/disposal scenarios; measure cold builds and edit-to-artifact latency separately. Document how integration tests and benchmarks run with existing tooling.
 
 Acceptance: source edits update both modules and CSS, failed rebuilds preserve working artifacts, and deletion removes stale owned output. Portability checks demonstrate the core is independent of the host. No public CLI, theme, or native styling capability is claimed complete.
 
 Gate: identical public-pipeline results across real server, browser, worker, and native-engine fixtures. Core imports do not pull in bundled themes, parsers, frameworks, rendering targets, or file access. Integration and consumer type fixtures pass without mocks or stubs, and relevant benchmark baselines are recorded.
+
+Evidence: real filesystem integration covers output exclusion, ownership across restarts, changed-file protection, watcher recovery, and disposal. The pure pipeline runs on Node, workers, Chromium, and the QuickJS WebAssembly engine. Packed root/web/runtime consumption is exercised without a compiler plugin. This is embedded-engine portability coverage; Hermes/device rendering remains in Phase 3. Host benchmarks separately measure cold-process rebuilds, unchanged rebuilds, and edit-to-artifact watching.
 
 ## Phase 2 — Standard authoring and themes
 

@@ -1,10 +1,11 @@
 import { chromium } from 'playwright'
-import { expect, test } from 'vite-plus/test'
+import { describe, expect, test } from 'vite-plus/test'
 import { Source } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
-test('parameter initializers preserve imports across body hoisting and nested closures', () => {
-  const source = `import { css } from 'zyzz';
+describe('extract', () => {
+  test('parameter initializers preserve imports across body hoisting and nested closures', () => {
+    const source = `import { css } from 'zyzz';
 const text = '🎉';
 function button(style = css({ color: '#f00' })) { var css; }
 function closure(style = () => css({ color: '#f00' })) { if (true) { var css; } }
@@ -21,12 +22,12 @@ export { type css as StyleFunction };
 export { css as external } from 'another-package';
 function afterType(style = css({ color: '#f00' })) { var css; }
 `
-  const result = Source.extract({ moduleId: 'example/parameters.ts', source })
-  const output = Css.compile({ styles: result.styles })
-  expect({
-    calls: result.calls.map((call) => source.slice(call.start, call.end)),
-    css: output.css,
-  }).toMatchInlineSnapshot(`
+    const result = Source.extract({ moduleId: 'example/parameters.ts', source })
+    const output = Css.compile({ styles: result.styles })
+    expect({
+      calls: result.calls.map((call) => source.slice(call.start, call.end)),
+      css: output.css,
+    }).toMatchInlineSnapshot(`
     {
       "calls": [
         "css({ color: '#f00' })",
@@ -37,10 +38,10 @@ function afterType(style = css({ color: '#f00' })) { var css; }
       "css": ".z_base0{color:#f00;}",
     }
   `)
-})
+  })
 
-test('imported assignments and indirect references fail before CSS emission', () => {
-  const source = `import { css } from 'zyzz';
+  test('imported assignments and indirect references fail before CSS emission', () => {
+    const source = `import { css } from 'zyzz';
 import { css as Css } from 'zyzz';
 ({ css } = values);
 [css] = values;
@@ -50,19 +51,19 @@ export { css };
 const object = { css };
 const element = <Css />;
 `
-  try {
-    const result = Source.extract({ moduleId: 'example/writes.ts', source })
-    Css.compile({ styles: result.styles })
-    throw new Error('Expected extraction failure')
-  } catch (error) {
-    if (!(error instanceof Source.ExtractError)) throw error
-    expect(
-      error.diagnostics.map((item) => ({
-        code: item.code,
-        message: item.message,
-        text: source.slice(item.start, item.end),
-      })),
-    ).toMatchInlineSnapshot(`
+    try {
+      const result = Source.extract({ moduleId: 'example/writes.ts', source })
+      Css.compile({ styles: result.styles })
+      throw new Error('Expected extraction failure')
+    } catch (error) {
+      if (!(error instanceof Source.ExtractError)) throw error
+      expect(
+        error.diagnostics.map((item) => ({
+          code: item.code,
+          message: item.message,
+          text: source.slice(item.start, item.end),
+        })),
+      ).toMatchInlineSnapshot(`
       [
         {
           "code": "unsupported_syntax",
@@ -101,11 +102,11 @@ const element = <Css />;
         },
       ]
     `)
-  }
-})
+    }
+  })
 
-test('source bindings extract ordered literals without executing application code', () => {
-  const source = `import { css as define } from 'zyzz';
+  test('source bindings extract ordered literals without executing application code', () => {
+    const source = `import { css as define } from 'zyzz';
 throw new Error('Application source must never execute');
 export const card = define({ padding: '8px', paddingLeft: 0 });
 function nested(define) { return define({ padding: unknown }); }
@@ -114,18 +115,18 @@ css({ color: unknown });
 export const view = <div {...define({ color: '#fff', opacity: +0.5 })()} />;
 type Definition = ReturnType<typeof define>;
 `
-  const result = Source.extract({ moduleId: 'example/card.tsx', source })
-  const output = Css.compile({ styles: result.styles })
-  expect({
-    calls: result.calls.map((call) => source.slice(call.start, call.end)),
-    declarations: result.styles.styles.map((style) => style.declarations),
-    frozen:
-      Object.isFrozen(result) &&
-      Object.isFrozen(result.calls) &&
-      Object.isFrozen(result.styles.styles),
-    repeated: Source.extract({ moduleId: 'example/card.tsx', source }),
-    rules: output.css,
-  }).toMatchInlineSnapshot(`
+    const result = Source.extract({ moduleId: 'example/card.tsx', source })
+    const output = Css.compile({ styles: result.styles })
+    expect({
+      calls: result.calls.map((call) => source.slice(call.start, call.end)),
+      declarations: result.styles.styles.map((style) => style.declarations),
+      frozen:
+        Object.isFrozen(result) &&
+        Object.isFrozen(result.calls) &&
+        Object.isFrozen(result.styles.styles),
+      repeated: Source.extract({ moduleId: 'example/card.tsx', source }),
+      rules: output.css,
+    }).toMatchInlineSnapshot(`
     {
       "calls": [
         "define({ padding: '8px', paddingLeft: 0 })",
@@ -202,20 +203,20 @@ type Definition = ReturnType<typeof define>;
     .z_base0{color:#fff;opacity:0.5;}",
     }
   `)
-})
+  })
 
-test('renamed imports retain source order and isolate portable module identities', () => {
-  const source = `import { css as second } from 'zyzz'; import { css as first } from 'zyzz';
+  test('renamed imports retain source order and isolate portable module identities', () => {
+    const source = `import { css as second } from 'zyzz'; import { css as first } from 'zyzz';
 const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 1.5 } satisfies {});`
-  const first = Source.extract({ moduleId: '@example/ui/card.ts', source })
-  const second = Source.extract({ moduleId: '@example/ui/other.ts', source })
-  expect({
-    calls: first.calls.map((call) => source.slice(call.start, call.end)),
-    distinct: first.calls.every(
-      (call, index) => call.name !== second.calls[index]?.name,
-    ),
-    styles: first.styles.styles.map((style) => style.declarations),
-  }).toMatchInlineSnapshot(`
+    const first = Source.extract({ moduleId: '@example/ui/card.ts', source })
+    const second = Source.extract({ moduleId: '@example/ui/other.ts', source })
+    expect({
+      calls: first.calls.map((call) => source.slice(call.start, call.end)),
+      distinct: first.calls.every(
+        (call, index) => call.name !== second.calls[index]?.name,
+      ),
+      styles: first.styles.styles.map((style) => style.declarations),
+    }).toMatchInlineSnapshot(`
     {
       "calls": [
         "first({ marginTop: '-2px' } as const)",
@@ -238,12 +239,12 @@ const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 
       ],
     }
   `)
-  expect(
-    Source.extract({
-      moduleId: 'example/empty.ts',
-      source: 'const css = (x) => x; css({ anything: unknown });',
-    }),
-  ).toMatchInlineSnapshot(`
+    expect(
+      Source.extract({
+        moduleId: 'example/empty.ts',
+        source: 'const css = (x) => x; css({ anything: unknown });',
+      }),
+    ).toMatchInlineSnapshot(`
     {
       "calls": [],
       "styles": {
@@ -251,10 +252,10 @@ const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 
       },
     }
   `)
-})
+  })
 
-test('unsupported source produces located diagnostics without partial artifacts', () => {
-  const source = `import { css } from 'zyzz';
+  test('unsupported source produces located diagnostics without partial artifacts', () => {
+    const source = `import { css } from 'zyzz';
 css({ padding: 4 });
 css({ ...defaults });
 css(() => ({ color: '#fff' }));
@@ -270,21 +271,21 @@ css = unknown;
 import * as Zyzz from 'zyzz';
 Zyzz.css({ padding: 0 });
 `
-  try {
-    Source.extract({ moduleId: 'example/errors.ts', source })
-    throw new Error('Expected extraction failure')
-  } catch (error) {
-    if (!(error instanceof Source.ExtractError)) throw error
-    expect({
-      diagnostics: error.diagnostics.map((item) => ({
-        ...item,
-        text: source.slice(item.start, item.end),
-      })),
-      frozen:
-        Object.isFrozen(error.diagnostics) &&
-        error.diagnostics.every(Object.isFrozen),
-      name: error.name,
-    }).toMatchInlineSnapshot(`
+    try {
+      Source.extract({ moduleId: 'example/errors.ts', source })
+      throw new Error('Expected extraction failure')
+    } catch (error) {
+      if (!(error instanceof Source.ExtractError)) throw error
+      expect({
+        diagnostics: error.diagnostics.map((item) => ({
+          ...item,
+          text: source.slice(item.start, item.end),
+        })),
+        frozen:
+          Object.isFrozen(error.diagnostics) &&
+          error.diagnostics.every(Object.isFrozen),
+        name: error.name,
+      }).toMatchInlineSnapshot(`
       {
         "diagnostics": [
           {
@@ -396,12 +397,16 @@ Zyzz.css({ padding: 0 });
         "name": "Source.ExtractError",
       }
     `)
-  }
-})
+    }
+  })
 
-test('syntax and module identity failures remain source owned', () => {
-  const errors = ['/absolute.ts', 'C:\\file.ts', 'example/../file.ts', ''].map(
-    (moduleId) => {
+  test('syntax and module identity failures remain source owned', () => {
+    const errors = [
+      '/absolute.ts',
+      'C:\\file.ts',
+      'example/../file.ts',
+      '',
+    ].map((moduleId) => {
       try {
         Source.extract({ moduleId, source: '' })
         throw new Error('Expected invalid module ID')
@@ -409,9 +414,8 @@ test('syntax and module identity failures remain source owned', () => {
         if (!(error instanceof Source.ExtractError)) throw error
         return error.diagnostics
       }
-    },
-  )
-  expect(errors).toMatchInlineSnapshot(`
+    })
+    expect(errors).toMatchInlineSnapshot(`
     [
       [
         {
@@ -451,12 +455,15 @@ test('syntax and module identity failures remain source owned', () => {
       ],
     ]
   `)
-  try {
-    Source.extract({ moduleId: 'example/broken.ts', source: 'export const =' })
-    throw new Error('Expected parse failure')
-  } catch (error) {
-    if (!(error instanceof Source.ExtractError)) throw error
-    expect(error.diagnostics).toMatchInlineSnapshot(`
+    try {
+      Source.extract({
+        moduleId: 'example/broken.ts',
+        source: 'export const =',
+      })
+      throw new Error('Expected parse failure')
+    } catch (error) {
+      if (!(error instanceof Source.ExtractError)) throw error
+      expect(error.diagnostics).toMatchInlineSnapshot(`
       [
         {
           "code": "syntax_error",
@@ -467,38 +474,38 @@ test('syntax and module identity failures remain source owned', () => {
         },
       ]
     `)
-  }
-})
+    }
+  })
 
-test('extracted definitions render authored shorthand and override order in Chromium', async () => {
-  const extracted = Source.extract({
-    moduleId: 'example/cascade.tsx',
-    source: `import { css } from 'zyzz';
+  test('extracted definitions render authored shorthand and override order in Chromium', async () => {
+    const extracted = Source.extract({
+      moduleId: 'example/cascade.tsx',
+      source: `import { css } from 'zyzz';
 const first = css({ color: '#000', padding: '8px', paddingLeft: 0 });
 const middle = css({ color: '#fff', paddingLeft: '3px' });
 const last = css({ color: '#000', padding: '8px', paddingLeft: 0 });`,
-  })
-  const output = Css.compile({ styles: extracted.styles })
-  const classes = extracted.calls.map((call) => output.classes[call.name]!)
-  const browser = await chromium.launch()
-  try {
-    const page = await browser.newPage()
-    await page.setContent('<!doctype html><body></body>')
-    await page.addStyleTag({ content: output.css })
-    const result = await page.evaluate(
-      (classes) =>
-        [`${classes[1]} ${classes[0]}`, `${classes[2]} ${classes[1]}`].map(
-          (className) => {
-            const element = document.createElement('div')
-            element.className = className
-            document.body.append(element)
-            const computed = getComputedStyle(element)
-            return { color: computed.color, padding: computed.padding }
-          },
-        ),
-      classes,
-    )
-    expect(result).toMatchInlineSnapshot(`
+    })
+    const output = Css.compile({ styles: extracted.styles })
+    const classes = extracted.calls.map((call) => output.classes[call.name]!)
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<!doctype html><body></body>')
+      await page.addStyleTag({ content: output.css })
+      const result = await page.evaluate(
+        (classes) =>
+          [`${classes[1]} ${classes[0]}`, `${classes[2]} ${classes[1]}`].map(
+            (className) => {
+              const element = document.createElement('div')
+              element.className = className
+              document.body.append(element)
+              const computed = getComputedStyle(element)
+              return { color: computed.color, padding: computed.padding }
+            },
+          ),
+        classes,
+      )
+      expect(result).toMatchInlineSnapshot(`
       [
         {
           "color": "rgb(255, 255, 255)",
@@ -510,7 +517,8 @@ const last = css({ color: '#000', padding: '8px', paddingLeft: 0 });`,
         },
       ]
     `)
-  } finally {
-    await browser.close()
-  }
+    } finally {
+      await browser.close()
+    }
+  })
 })

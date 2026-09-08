@@ -694,3 +694,19 @@ Direct `css({ ... })()` calls become fresh `{ className }` expressions. Definiti
 Import removal is conservative: retain imports with remaining references, including type queries and shadowed names. Preserve directives, hashbangs, unrelated imports, and surrounding source. Generated runtime imports use a locally unbound name. Rewriting does not fold arbitrary named-function applications or execute authoring callbacks.
 
 JavaScript replacements map to the authored definition or direct application. CSS selectors map to their representative definition and declarations to authored property locations. Factored shared rules map to the first contributing definition; the class map retains every definition's output. Host adapters compose these maps with later transforms and choose map URLs and stylesheet loading explicitly.
+
+### File Host Lifecycle
+
+`Host.create({ outDir, packageId, root })` from `zyzz/node` owns filesystem state and returns `{ build, close, watch }`. The source, web, root, and runtime entrypoints have no dependency on this host. Builds call the existing `Transform.compile`; cached results are reused only for identical source text and the same package-relative identity.
+
+The host scans JavaScript and TypeScript module extensions recursively, ignoring declaration/test/benchmark files, `.git`, `node_modules`, symbolic links, and its output subtree. It writes the source-relative module plus `.map`, `.css`, and `.css.map` sidecars. TypeScript/JSX lowering, assets, import resolution, stylesheet loading, and source-map URL composition remain consumer responsibilities. Source declarations cannot depend on other modules yet; dependency edits are rescan events, not an imported-value evaluator.
+
+An exclusive `.zyzz-lock` prevents simultaneous output owners. `close()` stops watching, drains queued builds, and releases the lock. Abrupt process termination may leave a lock requiring removal after confirming the old process has stopped. The `.zyzz.json` manifest persists artifact hashes across lifecycles. Rebuilds refuse unowned collisions and externally modified artifacts; removal only applies to unchanged owned files. Output symlinks and manifest traversal paths are rejected.
+
+Every source must compile before publication starts. Source failures preserve the complete previous output. Each file is replaced through a temporary sibling and rename; publication failures attempt to restore applied changes. This is not a crash-atomic multi-file transaction, and concurrent external edits during publication are unsupported. One host serializes explicit builds and watch rebuilds. Empty directories may remain after their last owned file is removed.
+
+`host.watch({ onResult })` subscribes before an initial build and reports `{ result }` or `{ error }`. Notifications coalesce while a build runs; events under the output directory are excluded. A later source edit can recover from an error without reopening the host. Callbacks must not throw. There is no process-global watcher or registration.
+
+Portability fixtures run the same pure `Style.define` → `Css.compile` bundle in Node, a Node worker, Chromium, a browser worker, and QuickJS compiled to WebAssembly. No environment globals are injected. QuickJS provides independent embedded-engine coverage; mobile rendering and Hermes/device validation remain part of the native-target phase.
+
+Output ownership keys follow the output filesystem's detected case sensitivity. Case-only renames retain ownership while live path aliases are rejected. Only root control paths `.zyzz.json` and `.zyzz-lock` (including their directory forms) are reserved; other `.zyzz`-prefixed source files and directories rebuild normally. The macOS host fixture verifies case-insensitive behavior on a real filesystem.

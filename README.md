@@ -10,6 +10,7 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 - [**Composition**](#composition): explicit overrides between generated styles.
 - [**Stylesheets and Compilation**](#stylesheets-and-compilation): global rules, animations, fonts, and web/native output.
 - [**Source Compilation**](#source-compilation): executable modules, static CSS, and source maps.
+- [**File Builds**](#file-builds): incremental builds and filesystem watching.
 - [**CLI**](#cli): standalone compilation with watch mode.
 
 ## Philosophy
@@ -188,6 +189,26 @@ const output = Transform.compile({
     "import { css } from 'zyzz'; export const button = css({ padding: 0 })",
 })
 // output.code, output.css, output.map, output.cssMap
+```
+
+### File Builds
+
+Build source files through the same compiler, retain working output after source errors, and watch for changes. Explicit ownership protects unrelated files.
+
+```ts
+import { Host } from 'zyzz/node'
+
+const host = await Host.create({
+  outDir: 'dist/styles',
+  packageId: 'my-library',
+  root: 'src/styles',
+})
+
+try {
+  await host.build()
+} finally {
+  await host.close()
+}
 ```
 
 ### CLI

@@ -87,6 +87,12 @@ jobs:
             [.name, (.mean * 1000000 | round), ((.rme * 100 | round) / 100), .sampleCount] |
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/timings.json >> bench/results/report.md
+          printf '\n## File Host — 100 Styles\n\nCold process includes startup; watch edits include the source write through artifact publication.\n\n| Operation | Time (ms) | Error (±%%) | Samples |\n| --- | ---: | ---: | ---: |\n' >> bench/results/report.md
+          jq -r '
+            .files[].groups[] | select(.fullName | contains("file host / ")) | .benchmarks[] |
+            [.name, ((.mean * 1000 | round) / 1000), ((.rme * 100 | round) / 100), .sampleCount] |
+            "| " + (map(tostring) | join(" | ")) + " |"
+          ' bench/results/timings.json >> bench/results/report.md
           printf '\nBuild timings use warm host processes and fresh compiler state. Compiler workflows have different scopes; see bench/README.md in the repository for measurement boundaries.\n' >> bench/results/report.md
           cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
       - if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}

@@ -64,15 +64,22 @@ export function compile(options: compile.Options): compile.ReturnType {
         ]
       : !/\.[^/]+$/.test(path)
         ? [
-            '.ts',
-            '.tsx',
+            '.cjs',
+            '.cjsx',
+            '.cts',
+            '.ctsx',
             '.js',
             '.jsx',
-            '/index.ts',
-            '/index.tsx',
-            '/index.js',
-            '/index.jsx',
-          ].map((extension) => path + extension)
+            '.mjs',
+            '.mjsx',
+            '.mts',
+            '.mtsx',
+            '.ts',
+            '.tsx',
+          ].flatMap((extension) => [
+            path + extension,
+            path + '/index' + extension,
+          ])
         : []
     const matches = [...new Set(candidates)].filter((candidate) =>
       Object.hasOwn(options.modules, candidate),
@@ -294,11 +301,14 @@ export function compile(options: compile.Options): compile.ReturnType {
 
 /** Input and output of graph compilation. */
 export declare namespace compile {
+  /** Errors raised while extracting or compiling a source graph. */
   type ErrorType = Source.ExtractError | Transform.compile.ErrorType
+  /** Source modules available for relative import resolution. */
   type Options = {
     /** Complete source graph keyed by stable package-relative module identities. */
     readonly modules: Readonly<Record<string, string>>
   }
+  /** Compiled modules and their direct source dependencies. */
   type ReturnType = {
     /** Direct runtime source dependencies, keyed by module identity. */
     readonly dependencies: Readonly<Record<string, readonly string[]>>

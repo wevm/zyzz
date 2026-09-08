@@ -1,4 +1,7 @@
-/** Exercises linked source modules through compilation and actual module execution. */
+/**
+ * Exercises linked source modules through compilation and actual module execution.
+ * @module
+ */
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
@@ -21,7 +24,9 @@ describe('compile', () => {
         'pkg/card.ts': `import { toString } from './utility.js'; export const value = toString();`,
       },
     })
-    expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(`"import { toString } from './utility.js'; export const value = toString();"`)
+    expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
+      `"import { toString } from './utility.js'; export const value = toString();"`,
+    )
     expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`""`)
   })
 
@@ -207,15 +212,10 @@ describe('compile', () => {
         'pkg/card.ts': `import { mint } from './alternate.js'; export const scope = mint.className;`,
       },
     })
-    expect(Object.values(removed.modules).map((module) => module.css))
-      .toMatchInlineSnapshot(`
-      [
-        "",
-        "",
-        "",
-        "",
-      ]
-    `)
+    expect(removed.modules['pkg/alternate.ts']!.css).toMatchInlineSnapshot(`""`)
+    expect(removed.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`""`)
+    expect(removed.modules['pkg/index.ts']!.css).toMatchInlineSnapshot(`""`)
+    expect(removed.modules['pkg/theme.ts']!.css).toMatchInlineSnapshot(`""`)
   })
 
   test('linked scopes render inherited values in Chromium', async () => {
@@ -267,6 +267,52 @@ describe('compile', () => {
       await browser.close()
     }
   })
+
+  for (const extension of [
+    'cjs',
+    'cjsx',
+    'cts',
+    'ctsx',
+    'js',
+    'jsx',
+    'mjs',
+    'mjsx',
+    'mts',
+    'mtsx',
+    'ts',
+    'tsx',
+  ]) {
+    for (const suffix of ['', '/index']) {
+      test(`extensionless imports link themes from ${suffix || 'direct'}.${extension}`, () => {
+        const output = Graph.compile({
+          modules: {
+            'pkg/card.ts': `import { theme } from './theme'; export const props = theme.css({color:'brand'})();`,
+            [`pkg/theme${suffix}.${extension}`]: modules['pkg/theme.ts'],
+          },
+        })
+        expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
+          `"import { theme } from './theme'; export const props = ({className:"z-5ngs574r5xr9-base0"});"`,
+        )
+      })
+    }
+  }
+
+  test.each(['pkg/theme.mts', 'pkg/theme/index.mjs'])(
+    'extensionless imports reject ambiguity with %s',
+    (moduleId) => {
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'pkg/card.ts': `import { theme } from './theme';`,
+            'pkg/theme.cts': modules['pkg/theme.ts'],
+            [moduleId]: modules['pkg/theme.ts'],
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: pkg/card.ts:0: Ambiguous source import: ./theme]`,
+      )
+    },
+  )
 
   test('missing source imports fail before output', () => {
     expect(() =>

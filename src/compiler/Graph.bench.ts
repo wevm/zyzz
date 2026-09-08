@@ -1,12 +1,15 @@
-/** Measures linked source compilation using the integration module graph. */
+/**
+ * Measures linked source compilation using the integration module graph.
+ * @module
+ */
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
-import * as Fixture from '../../test/fixtures/ThemeGraph.js'
 import * as Compilation from '../../bench/Compilation.js'
+import * as Fixture from '../../test/fixtures/ThemeGraph.js'
 
 for (const count of [10, 100]) {
   const modules = {

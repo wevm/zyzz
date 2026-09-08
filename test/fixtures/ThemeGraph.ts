@@ -1,4 +1,7 @@
-/** Shared source modules for graph integration and benchmarks. */
+/**
+ * Shared source modules for graph integration and benchmarks.
+ * @module
+ */
 export const modules = {
   'pkg/theme.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#06c'},spacing:{md:'8px',unused:'99px'}}); export const css = theme.css;`,
   'pkg/alternate.ts': `import { Theme } from 'zyzz'; import { theme } from './theme.js'; export const mint = Theme.extend(theme, {color:{brand:'#175'}});`,

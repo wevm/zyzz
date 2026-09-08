@@ -1,4 +1,7 @@
-/** Checks the public source-graph compiler contract. */
+/**
+ * Checks the public source-graph compiler contract.
+ * @module
+ */
 import { expectTypeOf } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import type { Transform } from 'zyzz/compiler'

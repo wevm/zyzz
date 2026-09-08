@@ -121,6 +121,9 @@ themedCss({ colour: 'brand' })
 css({ color: 'brand' })
 
 const omitted = Theme.define({ color: { brand: '#fff' }, spacing: undefined })
+expectTypeOf(omitted.className).toEqualTypeOf<string>()
+// @ts-expect-error Theme scope properties are readonly.
+omitted.className = 'external'
 omitted.css({ color: 'brand', padding: '1rem' })
 // @ts-expect-error An explicitly undefined group contributes no token names.
 omitted.css({ padding: 'missing' })

@@ -15,6 +15,300 @@ import { Transform } from 'zyzz/compiler'
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('local themes compile to scope constants and executable token styles', async () => {
+    const source = `import { Theme } from 'zyzz';
+const theme = Theme.define({ color: { brand: { dark: '#fff', light: '#000' } }, spacing: { 1: '4px', md: '8px' } });
+const alternate = Theme.extend(theme, { color: { brand: '#f00' } });
+export type Brand = typeof theme.tokens.color.brand;
+export const scope = alternate.className;
+export const props = theme.css({ color: 'brand', padding: 'md' })();`
+    const result = Transform.compile({ moduleId: 'example/theme.ts', source })
+    const bundle = await Esbuild.build({
+      bundle: true,
+      format: 'esm',
+      metafile: true,
+      stdin: { contents: result.code, loader: 'ts' },
+      write: false,
+    })
+
+    expect(result.code).toMatchInlineSnapshot(`
+      "
+      const theme = ({className:"z_theme-1dre7461ulsxz8-theme"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":{readonly "dark":"#fff";readonly "light":"#000"}};readonly "spacing":{readonly 1:"4px";readonly "md":"8px"}}>);
+      const alternate = ({className:"z_theme-1dre7461ulsxz8-alternate"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":{readonly "dark":"#fff";readonly "light":"#000"}};readonly "spacing":{readonly 1:"4px";readonly "md":"8px"}}>);
+      export type Brand = typeof theme.tokens.color.brand;
+      export const scope = "z_theme-1dre7461ulsxz8-alternate";
+      export const props = ({className:"z-1dre7461ulsxz8-base0"});"
+    `)
+    expect(result.css).toMatchInlineSnapshot(`
+      ".z_theme-1dre7461ulsxz8-theme{--z-t1dre7461ulsxz8-theme-color_2e_brand:light-dark(#000,#fff);--z-t1dre7461ulsxz8-theme-spacing_2e_md:8px;}
+      .z_theme-1dre7461ulsxz8-alternate{--z-t1dre7461ulsxz8-theme-color_2e_brand:#f00;--z-t1dre7461ulsxz8-theme-spacing_2e_md:8px;}
+      .z-1dre7461ulsxz8-base0{color:var(--z-t1dre7461ulsxz8-theme-color_2e_brand,light-dark(#000,#fff));padding:var(--z-t1dre7461ulsxz8-theme-spacing_2e_md,8px);}"
+    `)
+    expect(result.themes).toMatchInlineSnapshot(`
+      {
+        "1dre7461ulsxz8-alternate": "z_theme-1dre7461ulsxz8-alternate",
+        "1dre7461ulsxz8-theme": "z_theme-1dre7461ulsxz8-theme",
+      }
+    `)
+    expect(bundle.metafile!.outputs['stdin.js']!.imports).toMatchInlineSnapshot(
+      `[]`,
+    )
+    expect(
+      bundle.outputFiles[0]!.text.includes('Theme.define'),
+    ).toMatchInlineSnapshot('false')
+
+    const directory = await Fs.mkdtemp(Path.join(root, '.fixture-theme-types-'))
+    try {
+      const file = Path.join(directory, 'theme.ts')
+      await Fs.writeFile(
+        file,
+        `${result.code}\ntheme.css({ padding: 1 });\n// @ts-expect-error The numeric token 2 is undeclared.\ntheme.css({ padding: 2 });`,
+      )
+      const checked = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          Path.join(root, 'node_modules/typescript/bin/tsc'),
+          '--customConditions',
+          'src',
+          '--module',
+          'NodeNext',
+          '--noEmit',
+          '--skipLibCheck',
+          '--strict',
+          '--target',
+          'ES2022',
+          file,
+        ],
+      ).catch((error: Error & { stdout?: string }) => {
+        throw new Error(error.stdout || error.message)
+      })
+      expect(checked.stdout).toMatchInlineSnapshot('""')
+    } finally {
+      await Fs.rm(directory, { force: true, recursive: true })
+    }
+
+    const map = new Trace.TraceMap(result.cssMap)
+    const lines = result.css.split('\n')
+    const line = lines.findIndex((value) => value.includes('color:var('))
+    expect(
+      Trace.originalPositionFor(map, {
+        column: lines[line]!.indexOf('color:'),
+        line: line + 1,
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 33,
+        "line": 6,
+        "name": "color",
+        "source": "example/theme.ts",
+      }
+    `)
+    expect(Trace.originalPositionFor(map, { column: 0, line: 1 }))
+      .toMatchInlineSnapshot(`
+      {
+        "column": 14,
+        "line": 2,
+        "name": "1dre7461ulsxz8-theme",
+        "source": "example/theme.ts",
+      }
+    `)
+  })
+
+  test('theme identity survives value edits and preceding unrelated definitions', () => {
+    const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; export const props = theme.css({ color: 'brand' })();`
+    const original = Transform.compile({ moduleId: 'example/theme.ts', source })
+    const changed = Transform.compile({
+      moduleId: 'example/theme.ts',
+      source: source.replace("'#000'", "'#fff'"),
+    })
+    const inserted = Transform.compile({
+      moduleId: 'example/theme.ts',
+      source: source.replace(
+        'const theme',
+        "const other = Theme.define({ spacing: { sm: '4px' } }); const theme",
+      ),
+    })
+    const separate = Transform.compile({ moduleId: 'another/theme.ts', source })
+
+    expect(original.themes).toMatchInlineSnapshot(`
+      {
+        "1dre7461ulsxz8-theme": "z_theme-1dre7461ulsxz8-theme",
+      }
+    `)
+    expect(changed.themes).toMatchInlineSnapshot(`
+      {
+        "1dre7461ulsxz8-theme": "z_theme-1dre7461ulsxz8-theme",
+      }
+    `)
+    expect(inserted.themes).toMatchInlineSnapshot(`
+      {
+        "1dre7461ulsxz8-other": "z_theme-1dre7461ulsxz8-other",
+        "1dre7461ulsxz8-theme": "z_theme-1dre7461ulsxz8-theme",
+      }
+    `)
+    expect(separate.themes).toMatchInlineSnapshot(`
+      {
+        "134fgjpd7aup3-theme": "z_theme-134fgjpd7aup3-theme",
+      }
+    `)
+    expect(original.css.match(/--z-t[^,:;]+/g)).toMatchInlineSnapshot(`
+      [
+        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
+        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
+      ]
+    `)
+    expect(changed.css.match(/--z-t[^,:;]+/g)).toMatchInlineSnapshot(`
+      [
+        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
+        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
+      ]
+    `)
+    expect(inserted.css.match(/--z-t[^,:;]+/g)).toMatchInlineSnapshot(`
+      [
+        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
+        "--z-t1dre7461ulsxz8-theme-color_2e_brand",
+      ]
+    `)
+  })
+
+  test('local themed callables preserve overrides, scope inheritance, and schemes in Chromium', async () => {
+    const source = `import { Theme } from 'zyzz';
+const theme = Theme.define({ color: { brand: { dark: '#fff', light: '#000' } }, spacing: { md: '8px' } });
+const alternate = Theme.extend(theme, { color: { brand: '#f00' } });
+export const alternateScope = alternate.className;
+export const baseScope = theme.className;
+export const button = theme.css({ color: 'brand', padding: 'md' });`
+    const result = Transform.compile({ moduleId: 'example/theme.ts', source })
+    const bundle = await Esbuild.build({
+      alias: { 'zyzz/runtime': Path.join(root, 'src/runtime/index.ts') },
+      bundle: true,
+      format: 'iife',
+      globalName: 'Fixture',
+      metafile: true,
+      stdin: { contents: result.code, loader: 'ts', resolveDir: root },
+      write: false,
+    })
+    expect(
+      Object.keys(bundle.metafile!.inputs).some((path) =>
+        /Theme\.ts|compiler\//.test(path),
+      ),
+    ).toMatchInlineSnapshot('false')
+
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        '<section id="scope"><button id="button">Continue</button></section>',
+      )
+      await page.addStyleTag({ content: result.css })
+      await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+      const rendered = await page.evaluate(() => {
+        const fixture = (
+          window as unknown as {
+            Fixture: {
+              alternateScope: string
+              baseScope: string
+              button: (options: { className: string }) => { className: string }
+            }
+          }
+        ).Fixture
+        const scope = document.querySelector<HTMLElement>('#scope')!
+        const button = document.querySelector<HTMLElement>('#button')!
+        button.className = fixture.button({ className: 'external' }).className
+        const values: string[] = []
+        for (const name of ['', fixture.alternateScope, fixture.baseScope]) {
+          scope.className = name
+          for (const scheme of ['light', 'dark']) {
+            scope.style.colorScheme = scheme
+            values.push(getComputedStyle(button).color)
+          }
+        }
+        return values
+      })
+      expect(rendered).toMatchInlineSnapshot(`
+          [
+            "rgb(0, 0, 0)",
+            "rgb(255, 255, 255)",
+            "rgb(255, 0, 0)",
+            "rgb(255, 0, 0)",
+            "rgb(0, 0, 0)",
+            "rgb(255, 255, 255)",
+          ]
+      `)
+      expect(
+        await page
+          .locator('#button')
+          .evaluate((element) => element.classList.contains('external')),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        await page
+          .locator('#button')
+          .evaluate((element) => getComputedStyle(element).padding),
+      ).toMatchInlineSnapshot('"8px"')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('JavaScript theme modules remain JavaScript and shadowed factories remain untouched', async () => {
+    const source = `import { Theme as T } from 'zyzz'; const theme = T.define({ color: { brand: '#000' } }); export const props = theme.css({ color: 'brand' })(); export function other(T) { return T.define({ arbitrary: true }); }`
+    const result = Transform.compile({ moduleId: 'example/theme.js', source })
+    const transformed = await Esbuild.transform(result.code, { loader: 'js' })
+    expect(transformed.code).toMatchInlineSnapshot(`
+      "import { Theme as T } from "zyzz";
+      const theme = { className: "z_theme-1kg4lys8lrjea-theme" };
+      export const props = { className: "z-1kg4lys8lrjea-base0" };
+      export function other(T2) {
+        return T2.define({ arbitrary: true });
+      }
+      "
+    `)
+  })
+
+  test('exported theme objects require linking instead of losing their authoring contract', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; export const theme = Theme.define({ color: { brand: '#000' } });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:43: Define local themes with a module-level const; exported themes require source linking.]`,
+    )
+  })
+
+  test('theme expressions are rejected without executing application code', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: readColor() } });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:75: Theme values must be literal data; expressions are not evaluated.]`,
+    )
+  })
+
+  test('theme aliases require linking instead of surviving as broken runtime calls', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); const { css } = theme; css({ color: 'brand' });`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:104: Use local theme.css calls, theme.className reads, or Theme.extend; other theme references require source linking.]`,
+    )
+  })
+
+  test('theme scopes cannot be assigned through destructuring targets', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); ({ value: theme.className } = input);`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/theme.ts:89: Theme scope properties cannot be reassigned.]`,
+    )
+  })
+
   test('folded applications need no runtime and maps trace Unicode and CRLF sources', async () => {
     const source = `import { css } from 'zyzz';\r\nconst text = '🎉';\r\nexport const props = css({ color: '#f00', padding: '8px' })();`
     const result = Transform.compile({ moduleId: 'example/inline.ts', source })

@@ -16,6 +16,9 @@ const tokens = {
 describe('define', () => {
   test('bound authoring requires a transform and never generates runtime CSS', () => {
     const theme = Theme.define(tokens)
+    expect(() => theme.className).toThrowErrorMatchingInlineSnapshot(
+      `[css.MissingTransformError: css requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.]`,
+    )
     const { css } = theme
     expect(() =>
       css({ color: 'brand', padding: 'md' }),
@@ -154,6 +157,7 @@ describe('define', () => {
     )
     expect(Object.keys(theme)).toMatchInlineSnapshot(`
       [
+        "className",
         "css",
         "tokens",
       ]

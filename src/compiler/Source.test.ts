@@ -131,82 +131,85 @@ type Definition = ReturnType<typeof define>;
       repeated: Source.extract({ moduleId: 'example/card.tsx', source }),
       rules: output.css,
     }).toMatchInlineSnapshot(`
-    {
-      "calls": [
-        "define({ padding: '8px', paddingLeft: 0 })",
-        "define({ color: '#fff', opacity: +0.5 })",
-      ],
-      "declarations": [
-        [
-          {
-            "property": "padding",
-            "value": "8px",
-          },
-          {
-            "property": "paddingLeft",
-            "value": 0,
-          },
-        ],
-        [
-          {
-            "property": "color",
-            "value": "#fff",
-          },
-          {
-            "property": "opacity",
-            "value": 0.5,
-          },
-        ],
-      ],
-      "frozen": true,
-      "repeated": {
+      {
         "calls": [
-          {
-            "end": 158,
-            "name": "style-16i62vd1bo8k8l-116",
-            "start": 116,
-          },
-          {
-            "end": 357,
-            "name": "style-16i62vd1bo8k8l-317",
-            "start": 317,
-          },
+          "define({ padding: '8px', paddingLeft: 0 })",
+          "define({ color: '#fff', opacity: +0.5 })",
         ],
-        "styles": {
-          "styles": [
+        "declarations": [
+          [
             {
-              "declarations": [
-                {
-                  "property": "padding",
-                  "value": "8px",
-                },
-                {
-                  "property": "paddingLeft",
-                  "value": 0,
-                },
-              ],
-              "name": "style-16i62vd1bo8k8l-116",
+              "property": "padding",
+              "value": "8px",
             },
             {
-              "declarations": [
-                {
-                  "property": "color",
-                  "value": "#fff",
-                },
-                {
-                  "property": "opacity",
-                  "value": 0.5,
-                },
-              ],
-              "name": "style-16i62vd1bo8k8l-317",
+              "property": "paddingLeft",
+              "value": 0,
             },
           ],
+          [
+            {
+              "property": "color",
+              "value": "#fff",
+            },
+            {
+              "property": "opacity",
+              "value": 0.5,
+            },
+          ],
+        ],
+        "frozen": true,
+        "repeated": {
+          "calls": [
+            {
+              "end": 158,
+              "name": "style-16i62vd1bo8k8l-116",
+              "start": 116,
+            },
+            {
+              "end": 357,
+              "name": "style-16i62vd1bo8k8l-317",
+              "start": 317,
+            },
+          ],
+          "styles": {
+            "styles": [
+              {
+                "declarations": [
+                  {
+                    "property": "padding",
+                    "value": "8px",
+                  },
+                  {
+                    "property": "paddingLeft",
+                    "value": 0,
+                  },
+                ],
+                "name": "style-16i62vd1bo8k8l-116",
+              },
+              {
+                "declarations": [
+                  {
+                    "property": "color",
+                    "value": "#fff",
+                  },
+                  {
+                    "property": "opacity",
+                    "value": 0.5,
+                  },
+                ],
+                "name": "style-16i62vd1bo8k8l-317",
+              },
+            ],
+          },
+          "themeCalls": [],
+          "themeReferences": [],
+          "themes": {},
         },
-      },
-      "rules": ".z_base1{padding:8px;padding-left:0;}
-    .z_base0{color:#fff;opacity:0.5;}",
-    }
-  `)
+        "rules": ".z_base1{padding:8px;padding-left:0;}
+      .z_base0{color:#fff;opacity:0.5;}",
+      }
+    `)
   })
 
   test('renamed imports retain source order and isolate portable module identities', () => {
@@ -249,13 +252,16 @@ const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 
         source: 'const css = (x) => x; css({ anything: unknown });',
       }),
     ).toMatchInlineSnapshot(`
-    {
-      "calls": [],
-      "styles": {
-        "styles": [],
-      },
-    }
-  `)
+      {
+        "calls": [],
+        "styles": {
+          "styles": [],
+        },
+        "themeCalls": [],
+        "themeReferences": [],
+        "themes": {},
+      }
+    `)
   })
 
   test('unsupported source produces located diagnostics without partial artifacts', () => {

@@ -13,6 +13,50 @@ const project = Path.resolve(import.meta.dirname, '../..')
 const source = `import { css } from 'zyzz'; export const button = css({ padding: '8px' });`
 
 describe('create', () => {
+  test('local theme edits rebuild CSS while keeping scope identities stable', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-theme-host-'))
+    const outDir = Path.join(root, 'output')
+    const host = await Host.create({ outDir, packageId: 'example', root })
+    const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; export const props = theme.css({ color: 'brand' })();`
+    try {
+      await Fs.writeFile(Path.join(root, 'theme.ts'), source)
+      await host.build()
+      const before = await Fs.readFile(
+        Path.join(outDir, 'theme.ts.css'),
+        'utf8',
+      )
+      expect(before).toMatchInlineSnapshot(`
+        ".z_theme-1dre7461ulsxz8-theme{--z-t1dre7461ulsxz8-theme-color_2e_brand:#000;}
+        .z-1dre7461ulsxz8-base0{color:var(--z-t1dre7461ulsxz8-theme-color_2e_brand,#000);}"
+      `)
+
+      await Fs.writeFile(
+        Path.join(root, 'theme.ts'),
+        source.replace("'#000'", "'#fff'"),
+      )
+      const rebuilt = await host.build()
+      expect(rebuilt.changed).toMatchInlineSnapshot(`
+        [
+          "theme.ts",
+          "theme.ts.css",
+          "theme.ts.css.map",
+          "theme.ts.map",
+        ]
+      `)
+      const after = await Fs.readFile(Path.join(outDir, 'theme.ts.css'), 'utf8')
+      expect(after).toMatchInlineSnapshot(`
+        ".z_theme-1dre7461ulsxz8-theme{--z-t1dre7461ulsxz8-theme-color_2e_brand:#fff;}
+        .z-1dre7461ulsxz8-base0{color:var(--z-t1dre7461ulsxz8-theme-color_2e_brand,#fff);}"
+      `)
+      expect(
+        before.split('{')[0] === after.split('{')[0],
+      ).toMatchInlineSnapshot('true')
+    } finally {
+      await host.close()
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('file builds preserve working artifacts, cache unchanged inputs, and clean owned outputs', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-host-'))
     const outDir = Path.join(root, 'output')

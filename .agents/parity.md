@@ -99,19 +99,18 @@ const button = <button {...css({ color: 'blue.700', padding: 4 })()} />
 
 Bundled themes are opt-in entrypoints. Root `css` stays token-free. Contract-only and external-name interoperability is tracked separately in item 19.
 
-**Config API accepted; implementation pending in 2.2c:** `Config.create({ theme })` accepts inline or reusable definitions. Named `{ defaultTheme, themes }` catalogs allow mixed inputs, validate one complete token contract, and return normalized scope handles with bound `css`/`variants`. Recommend a default-exported config in `zyzz.config.ts`; neither the filename nor importing a config changes root-function inference globally.
+**Config API accepted; implementation pending in 2.2c:** `Config.create({ theme })` accepts inline or reusable definitions. Named `{ defaultTheme, themes }` catalogs allow mixed inputs, validate one complete token contract, and return normalized scope handles with bound `css`/`variants`. Recommend `export const zyzz = Config.create(...)` in `zyzz.config.ts` and named `{ zyzz }` imports; neither the filename nor importing a config changes root-function inference globally.
 
 ```tsx
-const config = Config.create({
+export const zyzz = Config.create({
   defaultTheme: 'base',
   themes: { base: theme, green: alternate },
 })
-export default config
 
-const control = config.css({ color: 'brand' })
+const control = zyzz.css({ color: 'brand' })
 const selected = (
   <section
-    className={config.themes.green.className}
+    className={zyzz.themes.green.className}
     style={{ colorScheme: 'light dark' }}
   >
     <button {...control()}>Continue</button>
@@ -407,8 +406,7 @@ import 'zyzz/reset.css'
 import { Config } from 'zyzz'
 import { global } from 'zyzz/web'
 
-const config = Config.create({ layers: ['reset', 'base', 'components'] })
-export default config
+export const zyzz = Config.create({ layers: ['reset', 'base', 'components'] })
 
 global({
   '@layer base': {
@@ -417,7 +415,7 @@ global({
   },
 })
 
-const card = config.css({
+const card = zyzz.css({
   '@layer components': { padding: '1rem' },
 })
 ```

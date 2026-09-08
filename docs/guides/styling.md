@@ -52,11 +52,11 @@ Use [Dynamic Values](styling.md#dynamic-values) for typed per-instance bindings.
 Keep exported definitions in an ordinary source module and import them where needed. Config remains an explicit dependency.
 
 ```ts
-import { css } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
 // button.styles.ts
 
-export const button = css({ padding: 'md' })
+export const button = zyzz.css({ padding: 'md' })
 ```
 
 ```tsx
@@ -121,9 +121,9 @@ Arrays preserve fallback order; a trailing `!` marks importance.
 #### Theme Expressions
 
 ```ts
-import { css, variables } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const panel = css({ width: `calc(100% - ${variables.spacing.md})` })
+const panel = zyzz.css({ width: `calc(100% - ${zyzz.theme.vars.spacing.md})` })
 ```
 
-Export `variables = theme.vars` from the [config module](../concepts.md#configuration). These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `Vars` defines independent shared contracts.
+Import `{ zyzz }` from the [config module](../concepts.md#configuration) and access `zyzz.theme.vars` directly. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `Vars` defines independent shared contracts.

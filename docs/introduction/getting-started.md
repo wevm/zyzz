@@ -17,28 +17,24 @@ pnpm add zyzz
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const zyzz = Config.create({
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
     spacing: { md: '1rem' },
   },
 })
-
-export const { css, theme, variants } = config
-export const variables = theme.vars
-export default config
 ```
 
 ## Style a Component
 
 ```tsx
 // Button.tsx
-import { css, variables } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const button = css({
+const button = zyzz.css({
   backgroundColor: 'brand',
   padding: 'md',
-  width: `calc(100% - ${variables.spacing.md})`,
+  width: `calc(100% - ${zyzz.theme.vars.spacing.md})`,
 })
 
 export function Button() {

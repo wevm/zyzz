@@ -67,9 +67,9 @@ Libraries expose compiled modules through package exports and document styleshee
 Apply compiled styles during server rendering and deliver their stylesheet before styled content paints. Use the same compiled identities on server and client.
 
 ```tsx
-import { css } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const card = css({ padding: 'md' })
+const card = zyzz.css({ padding: 'md' })
 
 export function Card() {
   return <article {...card()}>Content</article>

@@ -3,19 +3,15 @@
 > [!NOTE]
 > Preview API; not yet implemented.
 
-Bind style authoring to explicit theme and layer contracts. Export bound helpers from `zyzz.config.ts`; retain the config as its default export.
+Bind style authoring to explicit theme and layer contracts. Export the config as `zyzz` from `zyzz.config.ts` and consume its members through a named import.
 
 ```ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const zyzz = Config.create({
   layers: ['base', 'components'],
   theme: { spacing: { md: '1rem' } },
 })
-
-export const { css, theme, variants } = config
-export const variables = theme.vars
-export default config
 ```
 
 ## Signature
@@ -85,17 +81,17 @@ The preview contract returns bound helpers plus `theme` or `themes`, according t
 Infers configured token and layer names. Without a theme, authoring remains token-free.
 
 ```ts
-const card = config.css({ padding: 'md' })
+const card = zyzz.css({ padding: 'md' })
 ```
 
 ### theme
 
 - Type: Normalized single-theme definition
 
-Present for single-theme configuration. Alias its typed CSS references as the named `variables` export.
+Present for single-theme configuration. Access typed CSS references through `zyzz.theme.vars`.
 
 ```ts
-export const variables = config.theme.vars
+zyzz.theme.vars.spacing.md
 ```
 
 ### themes
@@ -105,11 +101,11 @@ export const variables = config.theme.vars
 Present for named catalogs. Compatible alternatives share config identity without mutating independent definitions.
 
 ```ts
-const { themes } = Config.create({
+const zyzz = Config.create({
   defaultTheme: 'base',
   themes: { base: { spacing: { md: '1rem' } } },
 })
-const scope = themes.base.className
+const scope = zyzz.themes.base.className
 ```
 
 ### variants
@@ -119,7 +115,7 @@ const scope = themes.base.className
 Infers the same theme and layer contract as bound css.
 
 ```ts
-const button = config.variants({
+const button = zyzz.variants({
   variants: { size: { md: { padding: 'md' } } },
 })
 ```
@@ -134,4 +130,4 @@ See [Config](README.md) for related methods and types.
 
 ## Named Exports
 
-Export `css` and `variants` from the returned config. Export `variables = theme.vars` for a single theme, or alias the default named theme's `vars`. Keep default config export for integrations. These aliases preserve inference; they do not introduce another Config method.
+Export `const zyzz = Config.create(...)` and import `{ zyzz }` in consuming modules. Use `zyzz.css` and `zyzz.variants`; access `zyzz.theme` for single themes or `zyzz.themes` for named catalogs. Integrations follow the named instance without requiring a default export.

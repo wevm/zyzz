@@ -86,40 +86,36 @@ import { css } from 'zyzz/themes/default'
 const button = css({ color: 'blue.700', padding: 4 })
 ```
 
-Export bound helpers from a shared config to retain inferred tokens. Colors accept a shared value or a light/dark pair.
+Export a named `zyzz` instance from a shared config to retain inferred tokens. Colors accept a shared value or a light/dark pair.
 
 ```ts
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const zyzz = Config.create({
   theme: {
     color: { brand: '#06c', text: { dark: '#eee', light: '#111' } },
     spacing: { md: '1rem', sm: '0.5rem' },
   },
 })
-
-export const { css, theme, variants } = config
-export const variables = theme.vars
-export default config
 ```
 
 ```ts
-import { css } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const card = css({ color: 'text', padding: 'sm' })
+const card = zyzz.css({ color: 'text', padding: 'sm' })
 ```
 
 Use `Theme.define` and `Theme.extend` when tokens need a reusable definition outside config.
 
 ### Variants
 
-Describe component choices with inferred props, defaults, and compound rules. Import bound `variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
+Describe component choices with inferred props, defaults, and compound rules. Use `zyzz.variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
 
 ```tsx
-import { variants } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const button = variants({
+const button = zyzz.variants({
   base: { display: 'inline-flex' },
   variants: {
     size: {
@@ -139,13 +135,13 @@ const example = <button {...button({ size: 'sm' })}>Continue</button>
 Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
 
 ```ts
-import { css, variables } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const panel = css({
+const panel = zyzz.css({
   display: ['block', 'grid'],
   color: 'brand!',
-  borderColor: variables.color.brand,
-  width: `calc(100% - ${variables.spacing.md})`,
+  borderColor: zyzz.theme.vars.color.brand,
+  width: `calc(100% - ${zyzz.theme.vars.spacing.md})`,
 })
 ```
 
@@ -185,11 +181,11 @@ const output = Css.compile({ styles })
 Use `composition: 'independent'` to deduplicate complete applications whose composition is resolved before compilation. Those generated class lists must remain separate. The default `ordered` mode preserves stylesheet precedence across combined class lists.
 
 ```ts
-import { theme } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
 import { StyleSheet } from 'zyzz/react-native'
 
-const output = StyleSheet.compile({ styles, themes: { base: theme } })
+const output = StyleSheet.compile({ styles, themes: { base: zyzz.theme } })
 const selected = StyleSheet.select(output.styles, {
   theme: 'base',
   colorScheme: 'dark',

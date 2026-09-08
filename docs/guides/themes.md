@@ -22,7 +22,7 @@ const base = Theme.define({
   spacing: { md: '1rem', sm: '0.5rem' },
 })
 
-const config = Config.create({
+export const zyzz = Config.create({
   defaultTheme: 'base',
   layers: ['reset', 'base', 'components'],
   themes: {
@@ -30,13 +30,9 @@ const config = Config.create({
     mint: Theme.extend(base, { color: { brand: '#175' } }),
   },
 })
-
-export const { css, themes, variants } = config
-export const variables = themes.base.vars
-export default config
 ```
 
-Single-theme configs use `theme: base`, or put the tokens inline. Named catalogs also accept complete inline alternatives. Import returned functions normally; there is no implicit global token or layer registry.
+Single-theme configs use `theme: base`, or put the tokens inline. Named catalogs also accept complete inline alternatives. Import `{ zyzz }` and access its members; there is no implicit global token or layer registry.
 
 #### Apply Styles and Themes
 
@@ -44,9 +40,9 @@ Single-theme configs use `theme: base`, or put the tokens inline. Named catalogs
 > Preview API; not yet implemented.
 
 ```tsx
-import { css, themes } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const button = css({
+const button = zyzz.css({
   '@layer components': {
     backgroundColor: 'brand',
     padding: 'md',
@@ -55,7 +51,10 @@ const button = css({
 })
 
 const example = (
-  <section className={themes.mint.className} style={{ colorScheme: 'dark' }}>
+  <section
+    className={zyzz.themes.mint.className}
+    style={{ colorScheme: 'dark' }}
+  >
     <button {...button()} type="button">
       Save
     </button>
@@ -79,19 +78,15 @@ Define light/dark values on each color leaf. Select the scheme with the ordinary
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const zyzz = Config.create({
   theme: { color: { text: { dark: '#eee', light: '#111' } } },
 })
-
-export const { css, theme, variants } = config
-export const variables = theme.vars
-export default config
 ```
 
 ```tsx
-import { css } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const text = css({ color: 'text' })
+const text = zyzz.css({ color: 'text' })
 const example = (
   <section style={{ colorScheme: 'dark' }}>
     <p {...text()}>Hello</p>
@@ -231,12 +226,9 @@ export const theme = Theme.define({ spacing: { md: '1rem' } })
 import { Config } from 'zyzz'
 import { theme } from './tokens.js'
 
-const config = Config.create({ theme })
-
-export const { css, variants } = config
-export default config
+export const zyzz = Config.create({ theme })
 ```
 
-Import named helpers from a stable package export in consuming code. Preserve source/declaration exports so adapters can follow bindings. Independent theme definitions do not become compatible merely because their token paths match.
+Import `{ zyzz }` from a stable package export in consuming code. Preserve source/declaration exports so adapters can follow bindings. Independent theme definitions do not become compatible merely because their token paths match.
 
 See [Publish Libraries](compilation.md#publish-libraries) when sharing precompiled components rather than authoring configuration.

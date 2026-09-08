@@ -3,7 +3,7 @@
 > [!NOTE]
 > Preview API; not yet implemented.
 
-Use the CLI to precompile source modules and CSS independently of a styling plugin. Authoring still uses the same named config helpers and normal relative imports.
+Use the CLI to precompile source modules and CSS independently of a styling plugin. Authoring still uses the same the named `zyzz` instance and normal relative imports.
 
 ```sh
 zyzz src --out-dir dist --css dist/styles.css

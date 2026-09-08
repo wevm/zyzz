@@ -40,23 +40,21 @@ Consumer concepts, usage, and API status are documented in [docs](../docs/README
 
 Accepted API: retain `Theme.define`/`Theme.extend` for reusable token definitions and add `Config.create` as the usual authoring entrypoint, exported as a namespace from `zyzz`.
 
-Recommend named helper exports from `zyzz.config.ts`, retaining the config as a default export for integrations; it is an ordinary importable, statically analyzed module, not an executable configuration hook or a required filename. The root core remains pure and independent of source discovery and platform adapters.
+Export `const zyzz = Config.create(...)` from `zyzz.config.ts`. Consumers import `{ zyzz }` and access its bound helpers and theme handles. Integrations follow this named instance without requiring a default export.
+
+The config is an ordinary importable, statically analyzed module, not an executable configuration hook or a required filename. The root core remains pure and independent of source discovery and platform adapters.
 
 ```ts
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const zyzz = Config.create({
   layers: ['reset', 'base', 'components'],
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
     spacing: { md: '1rem' },
   },
 })
-
-export const { css, theme, variants } = config
-export const variables = theme.vars
-export default config
 ```
 
 `theme` accepts inline token definitions or an existing `Theme.define`/`Theme.extend` value. Named `themes` accepts a mixture of those inputs. `theme` and `themes` are mutually exclusive; omitting both produces token-free bound functions. In named mode, require `defaultTheme`, inferred from the catalog's keys, rather than choosing by object order. Single-theme mode returns `theme`; named mode returns `themes`. Both return `css` and `variants`; no returned layer-reference object is required.
@@ -68,7 +66,7 @@ const base = Theme.define({
   color: { brand: { dark: '#8cf', light: '#06c' } },
 })
 
-const config = Config.create({
+export const zyzz = Config.create({
   defaultTheme: 'base',
   layers: ['reset', 'base', 'components'],
   themes: {
@@ -76,10 +74,6 @@ const config = Config.create({
     mint: { color: { brand: { dark: '#9fc', light: '#175' } } },
   },
 })
-
-export const { css, themes, variants } = config
-export const variables = themes.base.vars
-export default config
 ```
 
 The default determines token paths/domains and unscoped fallback values. Named alternatives must satisfy the complete shared contract; reject missing/extra paths or incompatible domains. Inline alternatives provide full tokens; `Theme.extend(base, overrides)` supplies partial changes through its resolved complete definition. Normalize returned theme handles onto a stable shared configuration contract without mutating standalone definitions or merging their existing identities globally. Config-bound styles and the returned handles participate in this contract; matching names on independently compiled definitions alone do not establish interchangeability. Preserve the contract across imports, aliases, re-exports, and packed libraries.
@@ -87,9 +81,9 @@ The default determines token paths/domains and unscoped fallback values. Named a
 `layers` is an ordered readonly tuple of valid CSS layer names. Infer exact `@layer <name>` keys directly in the returned `css` and every supported style body of `variants`, retaining property/value/token inference at every depth:
 
 ```ts
-import { css } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const button = css({
+const button = zyzz.css({
   '@layer components': {
     backgroundColor: 'brand',
     ':hover': { opacity: 0.8 },
@@ -102,12 +96,12 @@ Autocomplete declared keys and reject misspellings such as `@layer component`. N
 Select a theme through its returned compiled scope class and a color scheme through the ordinary CSS property:
 
 ```tsx
-import { themes } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const selected: keyof typeof themes = 'mint'
+const selected: keyof typeof zyzz.themes = 'mint'
 const example = (
   <section
-    className={themes[selected].className}
+    className={zyzz.themes[selected].className}
     style={{ colorScheme: 'dark' }}
   >
     <button {...button()}>Save</button>
@@ -119,7 +113,9 @@ Scope classes assign live custom properties; descendants inherit values without 
 
 Globals and additional layer contributions retain project-wide collection and may be colocated outside `zyzz.config.ts`. Config declarations contribute their layer order through that same pipeline. The filename convention never changes inference in direct root imports or requires runtime providers. Public config properties remain explicit and narrowly typed; new settings need their own semantics rather than an arbitrary metadata bag.
 
-Default imports retain the config's complete inferred contract. Source adapters must follow `config.css`, `config.variants`, and theme handles through aliases and package boundaries. Documentation recommends named imports of bound `css`/`variants` and a `variables` alias of `theme.vars` or the default named theme's `vars`. The default config remains available to integrations. No config import performs compilation at runtime.
+The named `zyzz` instance retains the config's complete inferred contract. Source adapters must follow `zyzz.css`, `zyzz.variants`, and theme handles through aliases, re-exports, and package boundaries. CSS references use `zyzz.theme.vars` or `zyzz.themes.<name>.vars`.
+
+Integrations discover the originating config through that binding without requiring a default export. No config import performs compilation at runtime.
 
 ## Theme definition
 
@@ -727,16 +723,13 @@ Accepted API for 2.4c: `Config.create({ layers, ... })` declares semantic layer 
 ```ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const zyzz = Config.create({
   layers: ['reset', 'base', 'components', 'overrides'],
 })
-
-export const { css, variants } = config
-export default config
 ```
 
 ```ts
-import { css } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
 import { global } from 'zyzz/web'
 
@@ -747,7 +740,7 @@ global({
   },
 })
 
-export const button = css({
+export const button = zyzz.css({
   '@layer components': { padding: '1rem' },
 })
 ```
@@ -904,7 +897,7 @@ The optional adapter connects the shared compiler to Vite's module graph. It rew
 - **Other bundlers:** use CLI output until a concrete adapter and public setup are defined.
 - **Parity:** plugin and CLI paths must agree on identities, conditions, theme scopes, and emitted behavior for equivalent input graphs.
 
-Application examples import authored components and named config helpers normally. A bundler adapter hides rewriting and delivery. Standalone CLI output belongs to a downstream build or package distribution; consumers do not hand-maintain imports to generated component copies. CSS-only output cannot replace rewriting for the current callable API.
+Application examples import authored components and the named `zyzz` instance normally. A bundler adapter hides rewriting and delivery. Standalone CLI output belongs to a downstream build or package distribution; consumers do not hand-maintain imports to generated component copies. CSS-only output cannot replace rewriting for the current callable API.
 
 ## Small CSS and readable classes
 

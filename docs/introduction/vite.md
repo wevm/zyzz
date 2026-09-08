@@ -16,7 +16,7 @@ export default defineConfig({
 ```
 
 - **Development:** run the existing dev command; edits update transformed modules and CSS.
-- **Imports:** consume named helpers from [config](getting-started.md#define-config) and source components normally.
+- **Imports:** import `{ zyzz }` from [config](getting-started.md#define-config) and source components normally.
 - **Production:** run the existing build command; the adapter emits linked CSS assets.
 
 No generated component imports or manual virtual stylesheet import are part of this proposed setup. Config is analyzed as static data; application code is not executed for discovery.

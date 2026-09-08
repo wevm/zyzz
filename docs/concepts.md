@@ -36,19 +36,15 @@ const example = <div {...card()}>Card</div>
 > [!NOTE]
 > Preview API; not yet implemented.
 
-`Config.create` binds authoring functions to explicit tokens and layers. Export bound helpers from `zyzz.config.ts` and import them by name. Keep the config as the default export for integrations. The compiler reads static data without executing application code.
+`Config.create` binds authoring functions to explicit tokens and layers. Export `const zyzz = Config.create(...)` from `zyzz.config.ts` and import `{ zyzz }`. Integrations follow this binding to the originating config; no default export is required. The compiler reads static data without executing application code.
 
 ```ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const zyzz = Config.create({
   layers: ['base', 'components'],
   theme: { spacing: { md: '1rem' } },
 })
-
-export const { css, theme, variants } = config
-export const variables = theme.vars
-export default config
 ```
 
 - **Layers:** infer keys such as `@layer components`; unknown names fail.
@@ -59,12 +55,12 @@ export default config
 Named alternatives share the default's token paths and domains. Config returns compatible handles without mutating independent definitions. Imports outside that config receive no ambient tokens or layer types.
 
 ```ts
-import { css } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const card = css({ padding: 'md' })
+const card = zyzz.css({ padding: 'md' })
 ```
 
-Named exports preserve the config's inferred contract. `variables` aliases the single theme's `vars`, or the default named theme's `vars`. It contains CSS variable references, not a runtime setter; compatible scopes change their inherited values.
+The named `zyzz` export preserves the config's inferred contract. Access CSS references through `zyzz.theme.vars` or `zyzz.themes.<name>.vars`. These are CSS variable references, not runtime setters; compatible scopes change their inherited values.
 
 ## Themes & Tokens
 
@@ -96,13 +92,16 @@ Use [Compile Themes](guides/themes.md#compile-themes) for the current pipeline.
 
 Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
 
-Use the exported handles from a [named-theme config](guides/themes.md#configure-authoring):
+Use the instance handles from a [named-theme config](guides/themes.md#configure-authoring):
 
 ```tsx
-import { themes } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
 const example = (
-  <section className={themes.mint.className} style={{ colorScheme: 'dark' }}>
+  <section
+    className={zyzz.themes.mint.className}
+    style={{ colorScheme: 'dark' }}
+  >
     Content
   </section>
 )

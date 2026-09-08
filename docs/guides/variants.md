@@ -6,15 +6,15 @@ Define finite choices, defaults, and compound matches for one element. Begin wit
 
 ### Define Variants
 
-Add typed choices to a component. This example imports bound helpers from the [theme config](themes.md#configure-authoring); import from `zyzz` for token-free recipes.
+Add typed choices to a component. This example imports `{ zyzz }` from the [theme config](themes.md#configure-authoring); import from `zyzz` for token-free recipes.
 
 > [!NOTE]
 > Preview API; not yet implemented.
 
 ```tsx
-import { variants } from './zyzz.config.js'
+import { zyzz } from './zyzz.config.js'
 
-const button = variants({
+const button = zyzz.variants({
   base: { display: 'inline-flex' },
   compoundVariants: [{ style: { fontWeight: 600 }, when: { size: 'md' } }],
   defaultVariants: { size: 'sm' },

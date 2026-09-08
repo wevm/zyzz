@@ -66,7 +66,7 @@ jobs:
             ' bench/results/"$workload"/*.json >> bench/results/report.md
             printf '\n</details>\n' >> bench/results/report.md
           done
-          printf '\n## Theme Comparisons\n\nTwo compatible scopes, light/dark values, and independent components. Theme CSS uses shared final minification targeting native light-dark support (Chrome 123, Firefox 128, Safari 17.5). Total delivery includes CSS and actual component/scope JavaScript exports. Zyzz starts from validated in-memory data; other compiler boundaries are documented in bench/README.md.\n' >> bench/results/report.md
+          printf '\n## Theme Comparisons\n\nTwo compatible scopes, light/dark values, and independent components. Theme CSS uses shared final minification targeting native light-dark support (Chrome 123, Firefox 128, Safari 17.5). Total delivery includes CSS and actual component/scope JavaScript exports. zyzz starts from validated references; zyzz-tokens includes shorthand validation and resolution before the same emission and bundling. Neither Zyzz lane includes source parsing. Other compiler boundaries are documented in bench/README.md.\n' >> bench/results/report.md
           for count in 10 100; do
             printf '\n### %s Components\n\n| Library | Build (ms) | CSS gzip | JS gzip | Total gzip |\n| --- | ---: | ---: | ---: | ---: |\n' "$count" >> bench/results/report.md
             jq -rs --arg count "$count" --slurpfile timings bench/results/timings.json '

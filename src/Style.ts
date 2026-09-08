@@ -1,4 +1,5 @@
 import * as Literal from './internal/Literal.js'
+import * as Token from './internal/Token.js'
 type Exact<styles extends Record<string, unknown>> = {
   [name in keyof styles]: Extract<
     styles[name],
@@ -13,16 +14,16 @@ type Keys<value> = value extends unknown ? keyof value : never
 export type Declaration = {
   /** Supported CSS property in camelCase. */
   readonly property: keyof Properties
-  /** Validated primitive, retaining its authored spelling and units. */
-  readonly value: number | string
+  /** Validated primitive or immutable, domain-checked theme reference. */
+  readonly value: number | string | Token.Reference
 }
 
 /**
- * Validates named literal styles and copies them into deeply frozen ordered data.
+ * Validates named literal and token styles and copies them into deeply frozen ordered data.
  * Preserves names, values, and JavaScript own-property enumeration order. Never
  * evaluates accessors, mutates input, generates CSS, or reads an environment.
  * Empty maps and empty styles are valid. See the literal subset documentation.
- * @param styles - Plain objects containing supported primitive declarations.
+ * @param styles - Plain objects containing supported primitives or typed theme references.
  * @param options - Optional caller-owned diagnostic source spans.
  * @returns Immutable definitions retaining the inferred style-name union.
  * @throws {InvalidError} If any structure, property, or value is unsupported.
@@ -119,11 +120,18 @@ export function define<const styles extends Record<string, unknown>>(
         continue
       }
       const key = property as keyof Properties
-      const message = Literal.validate(key, value)
+      const message = Token.is(value)
+        ? Token.accepts(value.group, key)
+          ? undefined
+          : 'Token group is incompatible with this property.'
+        : Literal.validate(key, value)
       if (message) report('invalid_value', [name, property], message)
       else
         declarations.push(
-          Object.freeze({ property: key, value: value as number | string }),
+          Object.freeze({
+            property: key,
+            value: value as number | string | Token.Reference,
+          }),
         )
     }
     output.push(
@@ -181,6 +189,9 @@ export class InvalidError extends Error {
   override name = 'Style.InvalidError'
 }
 
+/** Supported primitive CSS declarations without theme references. */
+export type LiteralProperties = Literal.Properties
+
 /** A named group of ordered declarations. */
 export type NamedStyle<name extends string = string> = {
   /** Declarations in own enumerable property order. */
@@ -189,8 +200,16 @@ export type NamedStyle<name extends string = string> = {
   readonly name: name
 }
 
-/** Supported literal declarations. Unknown properties and undefined values are rejected. */
-export type Properties = Literal.Properties
+/** Supported literal and token declarations. Unknown properties and undefined values are rejected. */
+export type Properties = {
+  readonly [property in keyof Literal.Properties]:
+    | Literal.Properties[property]
+    | {
+        [group in Token.Group]: property extends Token.Properties<group>
+          ? Token.Reference<group>
+          : never
+      }[Token.Group]
+}
 
 /** A source span optionally attached to a diagnostic by a caller. */
 export type SourceLocation = {

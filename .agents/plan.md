@@ -43,13 +43,13 @@ Every `css` definition is callable. Static calls accept optional styling overrid
 
 ## Starting point
 
-PRs 1.1–1.3 are merged: typed definitions, literal CSS emission, source extraction, and matched compiler benchmarks. PR 1.4 implements literal module rewriting and source maps. Host adapters, themes, variants, and native output remain subsequent work.
+Phase 1 is merged: typed definitions, literal CSS emission, source extraction, module rewriting, file hosts, and portability coverage. Phase 2 begins with in-memory theme contracts and CSS scopes.
 
 Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration tests. Existing CI checks consumer type fixtures, runs integration scenarios and builds the package. Tooling remains outside the core dependency graph.
 
 ## Phase 1 — Build the core
 
-Status: in progress. PRs 1.1–1.3 are merged; PR 1.4 is merged. PR 1.5 is under implementation and validation. Testing and benchmark conventions are defined in `AGENTS.md`.
+Status: complete. PRs 1.1–1.5 are merged. Testing and benchmark conventions are defined in `AGENTS.md`.
 
 Merge in dependency order. Each PR includes real integration scenarios, consumer type fixtures, relevant benchmark evidence, and public TSDoc. No unit tests, mocks, or stubs. Keep CI green and record the actual PR link and completion evidence beside each item as work lands.
 
@@ -122,7 +122,7 @@ Implementation: `Transform.compile` returns rewritten modules, ordered module-sc
 
 ### PR 1.5 — Host Adapters and Portability
 
-Status: implemented on `feat/file-host` from main `11d79be`; CI validation is pending.
+Status: merged in [PR #8](https://github.com/wevm/zyzz/pull/8) as `e870709`. Linux/browser tests, macOS ownership tests, build, checks, and benchmarks passed.
 
 - [x] Add a minimal file host and fixture driver around the source adapter for reads, output writes, and watch invalidation. Keep the public CLI and build-tool integrations in Phase 4; do not add another compiler path or general plugin system.
 - [x] Handle source additions, edits, removals, and renames for the supported literal subset. Exclude output directories, preserve the previous successful output on failure, and clean up only host-owned artifacts.
@@ -137,7 +137,16 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Status: planned.
+Status: PR 2.1 is in progress from main `e870709`.
+
+### PR Sequence
+
+1. **2.1 — In-Memory Theme Contracts:** `Theme.define`, compatible `Theme.extend`, immutable typed scalar references, and `Style.define` to `Css.compile` integration. Emit live custom properties, defining fallbacks, light/dark pairs, and complete inherited scopes. Cover browser scheme/scope behavior and compiler size/timing separately. Retain the documented literal grammar; source themes and authoring callables are not part of this PR.
+2. **2.2 — Theme Authoring and Source Identity:** bound `theme.css`, inferred shorthand token names, property-specific precedence, source extraction, stable package/module/binding identities, imported theme dependencies, and packed-library contracts. Expose compiled `theme.className` and verify file/watch parity.
+3. **2.3 — Standard Values and Variables:** widen CSS literal parsing, fallback arrays, importance, static expressions, and inferred `theme.vars`; add dynamic value bindings and explicit variables in dependency-sized follow-ups.
+4. **2.4 — Bundled Themes and Queries:** opt-in default tokens and typography, typed media/container thresholds, and conditions. Keep every later task below as an acceptance checklist; variants remain Phase 3.
+
+PR 2.1 uses opaque object references for contracts within one in-memory graph. Compiler-local token slots do not depend on values or theme-map labels. Separate source graphs and persistent identities remain PR 2.2; do not publish these graph-local artifacts as independently composable theme libraries.
 
 - [ ] Implement the `Theme.define` and `Theme.extend` contracts before widening authoring syntax.
 - [ ] Add `zyzz/themes/default` with named `css`, `theme`, and raw `tokens` exports; add bound `variants` when recipe compilation lands in Phase 3. Bundle colors, typography, spacing, radii, and related scales using the ordinary theme contract; keep light/dark values within the theme.
@@ -252,7 +261,7 @@ Gate: a small documented API, tested compatibility matrix, reproducible measurem
 
 ## Scope
 
-The API and phases above are proposed. Implementation begins at Phase 1 with no retained code baseline. Build each capability and its acceptance fixtures before marking its phase complete.
+Build each remaining capability and its acceptance fixtures before marking its phase complete. Phase 1 is complete; Phase 2 is being delivered in the PR sequence above.
 
 ## Benchmark Expansion
 

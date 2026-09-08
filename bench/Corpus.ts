@@ -30,12 +30,12 @@ export const cases = [
 ] as const satisfies readonly Case[]
 
 /** Creates literal data; fixed integer mixing avoids clocks and random globals. */
-export function styles(workload: Case): readonly Style.Properties[] {
+export function styles(workload: Case): readonly Style.LiteralProperties[] {
   return Array.from({ length: workload.count }, (_, index) => {
     const value = Math.imul(index + 1, 2654435761) >>> 0
     const color = (seed: number) =>
       `#${(seed & 0xffffff).toString(16).padStart(6, '0')}` as const
-    const base: Style.Properties = {
+    const base: Style.LiteralProperties = {
       backgroundColor: '#fff',
       borderColor: '#000',
       borderStyle: 'solid',
@@ -54,7 +54,7 @@ export function styles(workload: Case): readonly Style.Properties[] {
           { color: '#333', fontSize: '24px', fontWeight: 700, lineHeight: 1.5 },
           { ...base, borderWidth: '2px', height: '40px', width: '160px' },
           { ...base, borderRadius: '12px', margin: '8px', padding: '24px' },
-        ][index % 6] as Style.Properties
+        ][index % 6] as Style.LiteralProperties
       case 'independent':
         return {
           backgroundColor: color(value),

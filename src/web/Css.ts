@@ -1,19 +1,26 @@
 import * as Literal from '../internal/Literal.js'
+import * as Token from '../internal/Token.js'
 import type * as Style from '../Style.js'
+import type * as Theme from '../Theme.js'
+import * as Themes from './internal/Themes.js'
 
 /**
- * Emits factored literal CSS without reading files or generating runtime code.
+ * Emits factored literal and theme-reference CSS without reading files or generating runtime code.
  * Shares only nonconflicting declaration domains; conflicting rules retain authored
  * order by default. Independent composition deduplicates complete applications.
  * Class lists are scoped to the complete compilation input. Empty styles
  * return an empty class list and no rule.
  * @param options - Validated, ordered definitions from Style.define.
  * @returns Frozen class and theme maps alongside stylesheet text.
- * @throws {CompileError} If declarations are invalid or class identities collide.
+ * @throws {CompileError} If declarations or themes are invalid, or class identities collide.
  */
-export function compile<const name extends string>(
-  options: compile.Options<name>,
-): compile.ReturnType<name> {
+export function compile<
+  const name extends string,
+  const themeName extends string = never,
+>(
+  options: compile.Options<name, themeName>,
+): compile.ReturnType<name, themeName> {
+  let theme: ReturnType<typeof Themes.create> | undefined
   type Cached = {
     declaration: string
     domain: string
@@ -26,7 +33,29 @@ export function compile<const name extends string>(
   const prepared = options.styles.styles.map((style) => {
     const declarations: string[] = []
     const domains = new Map<string, string[]>()
-    for (const { property, value } of style.declarations) {
+    for (const { property, value: input } of style.declarations) {
+      const token = Token.is(input)
+      let value: number | string
+      try {
+        value = token
+          ? (theme ??= Themes.create()).serialize(input, property)
+          : (input as number | string)
+      } catch (error) {
+        diagnostics.push({
+          code: 'invalid_declaration',
+          message: (error as Error).message,
+          path: [style.name, property],
+        })
+        continue
+      }
+      if (!token && typeof value === 'string' && value.startsWith('var(')) {
+        diagnostics.push({
+          code: 'invalid_declaration',
+          message: 'Use a typed theme token reference.',
+          path: [style.name, property],
+        })
+        continue
+      }
       let values = cache.get(property)
       if (!values) {
         values = new Map()
@@ -35,7 +64,9 @@ export function compile<const name extends string>(
       let entry = values.get(value)
       if (!entry) {
         const message = Object.hasOwn(Literal.rules, property)
-          ? Literal.validate(property, value)
+          ? token
+            ? undefined
+            : Literal.validate(property, value)
           : 'Unsupported literal property.'
         entry = {
           declaration: message
@@ -149,10 +180,27 @@ export function compile<const name extends string>(
     classes[style.name] = names.join(' ')
   }
   if (diagnostics.length) throw new CompileError(diagnostics)
+  let scopes: ReturnType<NonNullable<typeof theme>['emit']>
+  try {
+    scopes =
+      theme || options.themes
+        ? (theme ??= Themes.create()).emit(options.themes ?? {})
+        : { classes: Object.freeze({}), css: '' }
+  } catch (error) {
+    throw new CompileError([
+      {
+        code: 'invalid_theme',
+        message: (error as Error).message,
+        path: ['themes'],
+      },
+    ])
+  }
   return Object.freeze({
     classes: Object.freeze(classes),
-    css: [...rules].map(([name, body]) => `.${name}{${body}}`).join('\n'),
-    themes: Object.freeze({}),
+    css: [scopes.css, ...[...rules].map(([name, body]) => `.${name}{${body}}`)]
+      .filter(Boolean)
+      .join('\n'),
+    themes: scopes.classes as Readonly<Record<themeName, string>>,
   })
 }
 
@@ -162,7 +210,10 @@ export declare namespace compile {
   type ErrorType = CompileError
 
   /** Environment-independent compiler input. */
-  type Options<name extends string = string> = {
+  type Options<
+    name extends string = string,
+    themeName extends string = string,
+  > = {
     /**
      * Defaults to ordered, preserving stylesheet precedence across combined class lists.
      * Independent deduplicates complete applications; its class lists must not be
@@ -171,15 +222,20 @@ export declare namespace compile {
     readonly composition?: 'independent' | 'ordered' | undefined
     /** Ordered definitions; no themes or source adapter is required. */
     readonly styles: Style.Definition<name>
+    /** Named scopes; only variables referenced by these styles are emitted. */
+    readonly themes?: Readonly<Record<themeName, Theme.Definition>> | undefined
   }
   /** Static web artifacts with precisely inferred authored names. */
-  type ReturnType<name extends string = string> = {
+  type ReturnType<
+    name extends string = string,
+    themeName extends string = string,
+  > = {
     /** Readable space-separated class identifiers per authored style. */
     readonly classes: Readonly<Record<name, string>>
     /** Factored CSS preserving cascade behavior, without reset or layers. */
     readonly css: string
-    /** Empty until theme compilation is supported. */
-    readonly themes: Readonly<Record<string, never>>
+    /** Scope classes keyed by the supplied theme labels. */
+    readonly themes: Readonly<Record<themeName, string>>
   }
 }
 
@@ -210,7 +266,11 @@ export class CompileError extends Error {
 /** A literal compilation failure. */
 export type Diagnostic = {
   /** Stable failure category. */
-  readonly code: 'identity_collision' | 'invalid_declaration' | 'invalid_name'
+  readonly code:
+    | 'identity_collision'
+    | 'invalid_declaration'
+    | 'invalid_name'
+    | 'invalid_theme'
   /** Explanation of the unsupported input. */
   readonly message: string
   /** Authored style name, followed by a property when applicable. */

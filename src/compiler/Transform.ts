@@ -239,6 +239,8 @@ export function compile(options: compile.Options): compile.ReturnType {
         propertyIndex++
       ) {
         const declaration = style.declarations[propertyIndex]!
+        if (typeof declaration.value === 'object')
+          throw new Error('Theme source rewriting is not supported.')
         const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${declaration.value};`
         const start = body.indexOf(text, cursor)
         if (start < 0) continue

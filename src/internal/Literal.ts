@@ -351,6 +351,11 @@ export const rules = {
     kind: 'enum',
     values: ['border-box', 'content-box', 'padding-box'],
   },
+  backgroundPosition: {
+    ...length,
+    keywords: ['bottom', 'center', 'left', 'right', 'top'],
+    negative: true,
+  },
   backgroundPositionX: {
     ...length,
     keywords: ['center', 'left', 'right'],
@@ -664,6 +669,10 @@ export const rules = {
   },
   height: size,
   hyphens: { kind: 'enum', values: ['auto', 'manual', 'none'] },
+  imageRendering: {
+    kind: 'enum',
+    values: ['auto', 'crisp-edges', 'pixelated', 'smooth'],
+  },
   inlineSize: size,
   inset: margin,
   insetBlock: margin,
@@ -702,6 +711,45 @@ export const rules = {
   marginLeft: margin,
   marginRight: margin,
   marginTop: margin,
+  maskClip: {
+    kind: 'enum',
+    values: [
+      'border-box',
+      'content-box',
+      'fill-box',
+      'no-clip',
+      'padding-box',
+      'stroke-box',
+      'view-box',
+    ],
+  },
+  maskComposite: {
+    kind: 'enum',
+    values: ['add', 'exclude', 'intersect', 'subtract'],
+  },
+  maskMode: { kind: 'enum', values: ['alpha', 'luminance', 'match-source'] },
+  maskOrigin: {
+    kind: 'enum',
+    values: [
+      'border-box',
+      'content-box',
+      'fill-box',
+      'padding-box',
+      'stroke-box',
+      'view-box',
+    ],
+  },
+  maskPosition: {
+    ...length,
+    keywords: ['bottom', 'center', 'left', 'right', 'top'],
+    negative: true,
+  },
+  maskRepeat: {
+    kind: 'enum',
+    values: ['no-repeat', 'repeat', 'repeat-x', 'repeat-y', 'round', 'space'],
+  },
+  maskSize: { ...length, auto: true, keywords: ['contain', 'cover'] },
+  maskType: { kind: 'enum', values: ['alpha', 'luminance'] },
   maxBlockSize: maximum,
   maxHeight: maximum,
   maxInlineSize: maximum,
@@ -736,6 +784,11 @@ export const rules = {
   objectFit: {
     kind: 'enum',
     values: ['contain', 'cover', 'fill', 'none', 'scale-down'],
+  },
+  objectPosition: {
+    ...length,
+    keywords: ['bottom', 'center', 'left', 'right', 'top'],
+    negative: true,
   },
   opacity: { kind: 'number', max: 1, min: 0 },
   // Safe integers serialize without exponential notation in CSS integer positions.
@@ -783,6 +836,12 @@ export const rules = {
   paddingRight: length,
   paddingTop: length,
   paintOrder: { kind: 'enum', values: ['fill', 'markers', 'normal', 'stroke'] },
+  perspective: { ...length, keywords: ['none'], percentage: false },
+  perspectiveOrigin: {
+    ...length,
+    keywords: ['bottom', 'center', 'left', 'right', 'top'],
+    negative: true,
+  },
   pointerEvents: { kind: 'enum', values: ['auto', 'none'] },
   position: {
     kind: 'enum',
@@ -882,6 +941,7 @@ export const rules = {
       'y proximity',
     ],
   },
+  shapeMargin: length,
   shapeRendering: {
     kind: 'enum',
     values: ['auto', 'crispEdges', 'geometricPrecision', 'optimizeSpeed'],
@@ -1006,6 +1066,15 @@ export const rules = {
   },
   textUnderlineOffset: { ...length, auto: true, negative: true },
   top: margin,
+  transformBox: {
+    kind: 'enum',
+    values: ['border-box', 'content-box', 'fill-box', 'stroke-box', 'view-box'],
+  },
+  transformOrigin: {
+    ...length,
+    keywords: ['bottom', 'center', 'left', 'right', 'top'],
+    negative: true,
+  },
   transformStyle: { kind: 'enum', values: ['flat', 'preserve-3d'] },
   transitionBehavior: { kind: 'enum', values: ['allow-discrete', 'normal'] },
   transitionDelay: { kind: 'time', negative: true },

@@ -238,12 +238,15 @@ const example = <button {...button({ size: 'sm' })}>Continue</button>
 
 ### Dynamic Styles
 
-A callback receives typed runtime values. Call the style with those values and optional `className`/`style` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
+Mix static declarations with typed runtime values in the same callback. Call the style with those values and optional `className`/`style` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
 
 ```tsx
 import { css } from 'zyzz'
 
 const bar = css((values: { width: `${number}%` }) => ({
+  backgroundColor: '#06c',
+  borderRadius: '0.25rem',
+  height: '0.5rem',
   width: values.width,
 }))
 

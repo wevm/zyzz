@@ -1,14 +1,15 @@
 # zyzz
 
-Typed style definitions, themes, configuration, and callable authoring.
+Typed style values, themes, and configuration.
 
 > [!NOTE]
-> `Config`, `css`, `Style`, and `Theme` are exported. Config source extraction is still planned. `cx`, `variants`, and `Vars` remain preview APIs and are not exported.
+> `Config`, `style`, `Style`, and `Theme` are exported. Config source extraction and named bound `style` exports are implemented. `cx`, `variants`, and `Vars` remain preview APIs and are not exported.
 
 | API                        | Description                                                            |
 | -------------------------- | ---------------------------------------------------------------------- |
 | [Config](Config/README.md) | Configuration-bound authoring and compatible theme scopes.             |
-| [css](css.md)              | Define callable styles that compile to static CSS and styling props.   |
+| [style](style.md)          | Define static values for the compiled JSX style prop.                  |
+| [css](css.md)              | Legacy callable authoring for existing spread applications.            |
 | [cx](cx.md)                | Compose applied generated styles while retaining their owned bindings. |
 | [Style](Style/README.md)   | Ordered style data and validation.                                     |
 | [Theme](Theme/README.md)   | Immutable scalar tokens and compatible extensions.                     |

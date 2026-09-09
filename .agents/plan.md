@@ -1,3 +1,6 @@
+> [!NOTE]
+> The canonical authoring contract uses named `style` and `variants` imports from `zyzz` or config, grouped in a plain `const styles = { ... }`. Static `style({...})` returns a non-callable value applied as `style={styles.button}`. Dynamic callbacks and variants remain callable, returning values for the same prop. Legacy `css`/spread examples below describe the earlier transport; future work follows this contract. No callback grouping API is introduced.
+
 # Implementation plan
 
 ## Goal
@@ -423,3 +426,11 @@ Custom conflict graphs, shared-subset/biclique search, bounded beam search, MaxS
 - [ ] Keep entrypoint/module/method reference coverage aligned with public exports and their types/errors. Preview APIs use note callouts and do not imply executable examples.
 - [ ] Verify Getting Started through real CLI and bundler consumer fixtures before removing preview notes. Source imports and the named `zyzz` instance remain identical across supported integrations.
 - [ ] Extend framework, SSR, migration, and native guides alongside integration proof; do not claim target compatibility from shared authoring types alone.
+
+## Style Prop Migration
+
+- [x] Add token-free and config/theme-bound static `style` values with named exports and exact property/token inference.
+- [x] Compile intrinsic JSX style props and forwarding spreads into DOM props, preserving ordinary inline styles and explicit attributes.
+- [x] Keep legacy callable `css` compatible; update canonical docs and examples to named helpers and plain `styles` groupings.
+- [ ] Land dynamic callback bindings and variant values through this same transport with their existing phase acceptance gates.
+- [ ] Add static application folding to avoid metadata/runtime work where every use is statically known.

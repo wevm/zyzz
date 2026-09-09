@@ -11,19 +11,21 @@ Complete [Getting Started](../introduction/getting-started.md) to connect compil
 #### Reuse Styles
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const button = css({ padding: '1rem' })
+const styles = {
+  button: style({ padding: '1rem' }),
+}
 
 const example = (
   <>
-    <button {...button()}>Save</button>
-    <button {...button({ style: { padding: '2rem' } })}>Continue</button>
+    <button style={styles.button}>Save</button>
+    <button style={{ ...styles.button, padding: '2rem' }}>Continue</button>
   </>
 )
 ```
 
-Pass `className` and `style` overrides to the styling function. Keep events, children, and accessibility props on the component. External classes follow the CSS cascade; class-string order does not establish precedence.
+Put `className` on the element. Spread one compiled value into an inline style object for per-instance overrides. Keep events, children, and accessibility props on the component. External classes follow the CSS cascade; class-string order does not establish precedence.
 
 #### Add Hover and Responsive Styles
 
@@ -31,13 +33,15 @@ Pass `className` and `style` overrides to the styling function. Keep events, chi
 > Conditions are not yet implemented.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const card = css({
-  padding: '1rem',
-  ':hover': { opacity: 0.8 },
-  '@media (min-width: 48rem)': { padding: '2rem' },
-})
+const styles = {
+  card: style({
+    padding: '1rem',
+    ':hover': { opacity: 0.8 },
+    '@media (min-width: 48rem)': { padding: '2rem' },
+  }),
+}
 ```
 
 Nest pseudo styles and queries inside a definition. Nested conditions combine with AND. See [relationships](conditions.md#style-relationships) for styling based on other elements.
@@ -46,25 +50,22 @@ Use [Dynamic Values](styling.md#dynamic-values) for typed per-instance bindings.
 
 ### Share Styles
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Keep exported definitions in an ordinary source module and import them where needed. Config remains an explicit dependency.
 
 ```ts
-import { zyzz } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
 // button.styles.ts
 
-export const button = zyzz.css({ padding: 'md' })
+export const styles = { button: style({ padding: 'md' }) }
 ```
 
 ```tsx
 // Button.tsx
-import { button } from './button.styles.js'
+import { styles } from './button.styles.js'
 
 export function Button() {
-  return <button {...button()}>Save</button>
+  return <button style={styles.button}>Save</button>
 }
 ```
 
@@ -72,23 +73,26 @@ The bundler integration resolves and transforms source imports. Consumers never 
 
 ### Override Styles
 
-Pass styling overrides to a definition. Compose generated declarations through `cx` when one generated style must override another.
+Spread one compiled value into a native inline style object. Compose generated declarations through `cx` when one generated style must override another.
 
 > [!NOTE]
-> `cx` composition is not yet implemented. Literal `className`/`style` overrides already exist on transformed definitions.
+> `cx` composition is not yet implemented. Native inline overrides are supported through `style={{ ...styles.button, opacity: 0.5 }}`.
 
 ```tsx
-import { css, cx } from 'zyzz'
+import { style, cx } from 'zyzz'
 
-const base = css({ padding: '0.5rem' })
-const roomy = css({ padding: '1rem' })
-const example = <button {...cx(base(), roomy())}>Continue</button>
+const styles = {
+  base: style({ padding: '0.5rem' }),
+
+  roomy: style({ padding: '1rem' }),
+}
+const example = <button style={cx(styles.base, styles.roomy)}>Continue</button>
 ```
 
 Later conflicts win within matching conditions, subject to importance. `cx` preserves owned variables and recipe attributes; incompatible recipe ownership fails. External classes retain normal cascade behavior.
 
 ```tsx
-const custom = <button {...base({ style: { padding: '2rem' } })}>Save</button>
+const custom = <button style={{ ...styles.base, padding: '2rem' }}>Save</button>
 ```
 
 Keep events and accessibility props on the component. Multiple JSX spreads replace fields instead of composing styles.
@@ -99,21 +103,25 @@ Keep events and accessibility props on the component. Multiple JSX spreads repla
 > Preview API; not yet implemented.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const bar = css((values: { width: `${number}%` }) => ({
-  width: values.width,
-}))
-const example = <div {...bar({ width: '50%' })} />
+const styles = {
+  bar: style((values: { width: `${number}%` }) => ({
+    width: values.width,
+  })),
+}
+const example = <div style={styles.bar({ width: '50%' })} />
 ```
 
 Callbacks bind values without generating CSS. Use `Vars` only when a shared variable contract is needed.
 
 ```ts
-const label = css({
-  color: 'black!',
-  display: ['block', 'flex'],
-})
+const styles = {
+  label: style({
+    color: 'black!',
+    display: ['block', 'flex'],
+  }),
+}
 ```
 
 Arrays preserve fallback order; a trailing `!` marks importance.
@@ -121,9 +129,33 @@ Arrays preserve fallback order; a trailing `!` marks importance.
 #### Theme Expressions
 
 ```ts
-import { zyzz } from './zyzz.config.js'
+import { style, theme } from './zyzz.config.js'
 
-const panel = zyzz.css({ width: `calc(100% - ${zyzz.theme.vars.spacing.md})` })
+const styles = {
+  panel: style({ width: `calc(100% - ${theme.vars.spacing.md})` }),
+}
 ```
 
-Import `{ zyzz }` from the [config module](../concepts.md#configuration) and access `zyzz.theme.vars` directly. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `Vars` defines independent shared contracts.
+Import `{ theme }` from the [config module](../concepts.md#configuration) to access `theme.vars`. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `Vars` defines independent shared contracts.
+
+### Forward Styles
+
+Custom components retain opaque style values. Forward the `style` prop or the complete props object to an intrinsic element processed by Zyzz:
+
+```tsx
+import type { ComponentProps } from 'react'
+
+export function Button(props: ComponentProps<'button'>) {
+  return <button {...props} />
+}
+```
+
+The intrinsic boundary merges generated classes with `className` and keeps inline overrides. It evaluates attributes once in authored order. Ordinary inline styles keep their native behavior. Components containing the receiving DOM element must pass through the Zyzz compiler.
+
+For an uncompiled third-party component that forwards DOM props, resolve the value explicitly in an adapter:
+
+```tsx
+import { Style } from 'zyzz/runtime'
+
+const example = <ExternalButton {...Style.resolve({ style: styles.button })} />
+```

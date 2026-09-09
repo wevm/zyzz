@@ -8,11 +8,13 @@ Define finite style choices for one element.
 ```ts
 import { variants } from 'zyzz'
 
-const button = variants({
-  defaultVariants: { size: 'sm' },
-  variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
-})
-const props = button({ size: 'md' })
+const styles = {
+  button: variants({
+    defaultVariants: { size: 'sm' },
+    variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
+  }),
+}
+const selected = styles.button({ size: 'md' })
 ```
 
 ## Signature
@@ -73,37 +75,13 @@ variants({ variants: { size: { md: { padding: '1rem' } } } })
 
 ## Returns
 
-Applying the returned callable produces one props object, including generated recipe attributes when required. `className` and `style` describe that object; the exact preview type names remain to be finalized.
+A callable that accepts inferred selections and returns one opaque style value for the `style` prop. The compiler carries generated classes, recipe attributes, and dynamic bindings to the intrinsic element. Exact preview type names remain to be finalized.
 
-### Callable
-
-- Type: Callable returning styling props
-
-Returns props for one element. Infer selections with `NonNullable<Parameters<typeof button>[0]>`.
-
-```ts
-const props = button({ size: 'md' })
+```tsx
+const example = <button style={styles.button({ size: 'md' })} />
 ```
 
-### className
-
-- Type: `string`
-
-Generated class list, including supplied external classes. Class-string order does not establish CSS precedence.
-
-```ts
-props.className
-```
-
-### style
-
-- Type: Inline style bindings and overrides
-
-Copied inline overrides when supplied. Other component props remain on the element.
-
-```ts
-props.style
-```
+Infer selections with `NonNullable<Parameters<typeof styles.button>[0]>`. Keep external classes and unrelated component props on the element.
 
 ## Errors
 

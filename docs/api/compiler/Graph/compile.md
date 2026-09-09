@@ -13,7 +13,7 @@ const output = Graph.compile({
     `,
     'app/card.ts': `
       import { theme } from './theme.js'
-      export const card = theme.css({ color: 'brand' })
+      export const card = theme.style({ color: 'brand' })
     `,
   },
 })
@@ -74,7 +74,7 @@ Graph.compile({ modules: { 'app/card.ts': source } })
 
 - Type: `Readonly<Record<string, string>>`
 
-Compiler-only JSON for modules exporting themes or bound authoring aliases, including re-exports. Each file contains version 1 export bindings and complete graph theme data. Publish it beside the corresponding compiled runtime entrypoint as `<entry>.zyzz.json`; regenerate it together with JavaScript, declarations, and CSS.
+Compiler-only JSON for modules exporting themes or bound authoring aliases, including re-exports. Contracts retain complete theme data. Versions 1 and 2 support legacy theme/config exports; version 3 preserves static `style` aliases and rejects consumption by older compilers. Publish it beside the corresponding compiled runtime entrypoint as `<entry>.zyzz.json`; regenerate it together with JavaScript, declarations, and CSS.
 
 ```ts
 output.contracts['library/index.ts'] // Publish as index.js.zyzz.json after lowering index.ts.
@@ -112,10 +112,10 @@ Scope and variable identities retain the defining module/binding. CSS maps trace
 Named `Config.create` exports and bound aliases retain token and layer inference across source re-exports and packed declarations. Configuration metadata uses version 2; version 1 theme metadata remains readable. Publish matching JavaScript, declarations, CSS, and adjacent metadata from one build.
 
 ```ts
-import { zyzz } from '@acme/theme'
+import { style, themes } from '@acme/theme'
 
-export const card = zyzz.css({ color: 'brand' })
-export const scope = zyzz.themes.mint.className
+export const card = style({ color: 'brand' })
+export const scope = themes.mint.className
 ```
 
 The graph normalizes configured themes without executing library code. Source edits invalidate dependent authoring and retain stable scope names. Layer emission and variants remain planned.

@@ -1,9 +1,9 @@
 # Getting Started
 
-Import bound styling helpers and spread their applied props onto a component. Imports always refer to authored source files.
+Import named styling helpers and apply their values through the `style` prop. Imports always refer to authored source files.
 
 > [!NOTE]
-> Config authoring, package installation, and integrations below describe the planned release. Use the [compiler APIs](../guides/compilation.md#publish-libraries) for the current literal pipeline.
+> Static style values and config token imports compile through Vite and the source compiler. Next.js, dynamic callbacks, and variants remain previews.
 
 ## Install
 
@@ -17,32 +17,36 @@ pnpm add zyzz
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+const config = Config.create({
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
     spacing: { md: '1rem' },
   },
 })
+
+export const style = config.style
+export const theme = config.theme
 ```
 
 ## Style a Component
 
 ```tsx
 // Button.tsx
-import { zyzz } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
-const button = zyzz.css({
-  backgroundColor: 'brand',
-  padding: 'md',
-  width: `calc(100% - ${zyzz.theme.vars.spacing.md})`,
-})
+const styles = {
+  button: style({
+    backgroundColor: 'brand',
+    padding: 'md',
+  }),
+}
 
 export function Button() {
-  return <button {...button()}>Save</button>
+  return <button style={styles.button}>Save</button>
 }
 ```
 
-Import `Button` normally. The named `zyzz` instance retains inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `css` directly from `zyzz`.
+Import `Button` normally. The named `style` export retains inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `style` directly from `zyzz`.
 
 ## Choose Compilation
 

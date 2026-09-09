@@ -20,6 +20,8 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Static-value authoring alias, rather than legacy callable css. */
+  readonly value?: boolean | undefined
   /** Validated inline configuration options retained for packed declarations. */
   readonly options?: Readonly<Record<string, unknown>> | undefined
   /** JSON-encoded member path tuples and their compiled scope keys. */
@@ -73,7 +75,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const references: Reference[] = []
   const styles = new Map<
     number,
-    { call: Ast.CallExpression; theme: Theme.Definition }
+    {
+      call: Ast.CallExpression
+      theme: Theme.Definition
+      value?: boolean | undefined
+    }
   >()
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const tokens = new Map<number, { end: number; reference: Token.Reference }>()
@@ -438,7 +444,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         !expression.computed &&
         !expression.optional &&
         expression.property.type === 'Identifier' &&
-        expression.property.name === 'css'
+        ['css', 'style'].includes(expression.property.name)
       ) {
         return expression.object
       }
@@ -459,6 +465,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
       return undefined
     })()
     if (!theme) return
+    let value =
+      member &&
+      expression.type === 'MemberExpression' &&
+      expression.property.type === 'Identifier'
+        ? expression.property.name === 'style'
+        : theme.value
     let id = variable.id
     if (destructured && id.type === 'ObjectPattern') {
       const property = id.properties[0]
@@ -467,13 +479,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
         property?.type !== 'Property' ||
         property.computed ||
         property.key.type !== 'Identifier' ||
-        property.key.name !== 'css' ||
+        !['css', 'style'].includes(property.key.name) ||
         property.value.type !== 'Identifier'
       )
         fail(
           'Destructure only css into a const binding without defaults or rest properties.',
           id,
         )
+      value = property.key.name === 'style'
       id = property.value
     }
     if (
@@ -488,6 +501,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (expression.start < theme.end)
       fail('Theme css aliases must follow their definition.', expression)
     const alias = Object.freeze({
+      ...(value ? { value: true } : {}),
       destructured,
       end: expression.end,
       name: theme.name,
@@ -586,7 +600,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
           'Theme css aliases support direct calls only; exporting or escaping them requires source linking.',
           node,
         )
-      styles.set(parent.start, { call: parent, theme: themes[alias.name]! })
+      styles.set(parent.start, {
+        call: parent,
+        theme: themes[alias.name]!,
+        value: alias.value,
+      })
       return true
     }
     const config =
@@ -634,7 +652,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
           factoryReferences.has(target.start)
         )
           return true
-        if (path.length === 1 && path[0] === 'css') {
+        if (path.length === 1 && (path[0] === 'css' || path[0] === 'style')) {
           const call = ancestors[index - 1]
           if (
             call?.type !== 'CallExpression' ||
@@ -642,7 +660,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
             call.optional
           )
             break
-          styles.set(call.start, { call, theme: config.definition })
+          styles.set(call.start, {
+            call,
+            theme: config.definition,
+            value: path[0] === 'style',
+          })
           return true
         }
         const linked = config.members?.[JSON.stringify(path)]
@@ -808,13 +830,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
         node,
       )
     if (
-      parent.property.name === 'css' &&
+      ['css', 'style'].includes(parent.property.name) &&
       grandparent?.type === 'CallExpression' &&
       grandparent.callee === parent &&
       !grandparent.optional
     ) {
       styles.set(grandparent.start, {
         call: grandparent,
+        value: parent.property.name === 'style',
         theme: themes[theme.name]!,
       })
       return true

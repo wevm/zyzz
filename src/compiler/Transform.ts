@@ -5,6 +5,7 @@
 import * as Expression from './internal/Expression.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import type * as Ast from '@oxc-project/types'
+import * as Entities from 'entities'
 import MagicString from 'magic-string'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
@@ -39,9 +40,11 @@ export function compile(options: compile.Options): compile.ReturnType {
   const calls = new Map(extracted.calls.map((call) => [call.start, call]))
   const definitions = new Map<number, Ast.ObjectExpression>()
   const identifiers = new Map<string, Span[]>()
+  const elements: Ast.JSXOpeningElement[] = []
 
   Walker.walk(program, {
     enter(node, parent) {
+      if (node.type === 'JSXOpeningElement') elements.push(node)
       if (node.type === 'Identifier') {
         const references = identifiers.get(node.name) ?? []
         references.push(node)
@@ -53,6 +56,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (!call || node.end !== call.end) return
 
       const folded =
+        !call.value &&
         parent?.type === 'CallExpression' &&
         parent.callee === node &&
         !parent.optional &&
@@ -75,6 +79,8 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   let runtime = '__zyzzProps'
   while (identifiers.has(runtime)) runtime += '_'
+  let transport = '__zyzzStyle'
+  while (identifiers.has(transport)) transport += '_'
 
   const first = extracted.calls[0]
   const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
@@ -100,15 +106,21 @@ export function compile(options: compile.Options): compile.ReturnType {
   )
 
   let callable = false
+  let styled = false
   for (const call of extracted.calls) {
     const application = applications.get(call.start)!
     const props = `{className:${JSON.stringify(classes[call.name])}}`
     module.overwrite(
       call.start,
       application.end,
-      application.folded ? `(${props})` : `${runtime}.create(${props})`,
+      (() => {
+        if (call.value) return `${transport}.value(${props})`
+        if (application.folded) return `(${props})`
+        return `${runtime}.create(${props})`
+      })(),
     )
-    if (!application.folded) callable = true
+    if (call.value) styled = true
+    else if (!application.folded) callable = true
   }
 
   for (const call of extracted.themeCalls) {
@@ -143,11 +155,12 @@ export function compile(options: compile.Options): compile.ReturnType {
         )
       continue
     }
-    const value = alias.destructured ? '{css:undefined}' : 'undefined'
+    const helper = alias.value ? 'style' : 'css'
+    const value = alias.destructured ? `{${helper}:undefined}` : 'undefined'
     const type =
       alias.type ?? `import('zyzz').Theme.Definition<${alias.tokenType}>`
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
-      ? ` as unknown as ${alias.destructured ? `{readonly css:${type}['css']}` : `${type}['css']`}`
+      ? ` as unknown as ${alias.destructured ? `{readonly ${helper}:${type}['${helper}']}` : `${type}['${helper}']`}`
       : ''
     module.overwrite(alias.start, alias.end, `(${value}${assertion})`)
   }
@@ -190,7 +203,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         node.importKind === 'type' ||
         specifier.type !== 'ImportSpecifier' ||
         specifier.importKind === 'type' ||
-        !['Config', 'css', 'Theme'].includes(
+        !['Config', 'css', 'style', 'Theme'].includes(
           specifier.imported.type === 'Identifier'
             ? specifier.imported.name
             : specifier.imported.value,
@@ -237,7 +250,59 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable) {
+  // Custom components retain style values; only intrinsic elements consume them.
+  // Resolve spreads too, so a component can forward an unchanged props object.
+  for (const node of elements) {
+    if (node.name.type !== 'JSXIdentifier' || !/^[a-z]/.test(node.name.name))
+      continue
+    if (
+      !node.attributes.some(
+        (attribute) =>
+          attribute.type === 'JSXSpreadAttribute' ||
+          (attribute.name.type === 'JSXIdentifier' &&
+            attribute.name.name === 'style'),
+      )
+    )
+      continue
+    const first = node.attributes[0]!
+    const last = node.attributes.at(-1)!
+    module.appendLeft(first.start, `{...${transport}.resolve({`)
+    for (const attribute of node.attributes) {
+      if (attribute.type === 'JSXSpreadAttribute') {
+        module.overwrite(attribute.start, attribute.argument.start, '...')
+        module.overwrite(attribute.argument.end, attribute.end, ',')
+        continue
+      }
+      const name =
+        attribute.name.type === 'JSXIdentifier'
+          ? attribute.name.name
+          : `${attribute.name.namespace.name}:${attribute.name.name.name}`
+      const prefix =
+        name === '__proto__'
+          ? `[${JSON.stringify(name)}]:`
+          : `${JSON.stringify(name)}:`
+      const value = attribute.value
+      if (!value)
+        module.overwrite(attribute.start, attribute.end, `${prefix}true,`)
+      else if (value.type === 'JSXExpressionContainer') {
+        module.overwrite(attribute.start, value.start + 1, prefix)
+        module.overwrite(value.end - 1, attribute.end, ',')
+      } else if (value.type === 'Literal') {
+        module.overwrite(
+          attribute.start,
+          attribute.end,
+          `${prefix}${JSON.stringify(typeof value.value === 'string' ? Entities.decodeHTMLStrict(value.value.replace(/\n\s+/g, ' ')) : value.value)},`,
+        )
+      } else {
+        module.overwrite(attribute.start, value.start, prefix)
+        module.appendLeft(attribute.end, ',')
+      }
+    }
+    module.appendLeft(last.end, '})}')
+    styled = true
+  }
+
+  if (callable || styled) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -249,7 +314,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { Props as ${runtime} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[...(callable ? [`Props as ${runtime}`] : []), ...(styled ? [`Style as ${transport}`] : [])].join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

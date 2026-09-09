@@ -4,6 +4,7 @@
  */
 import type * as Value from './internal/Value.js'
 import { css } from './css.js'
+import { style } from './authoring/style.js'
 import type * as Style from './Style.js'
 import * as Theme from './Theme.js'
 import * as Token from './internal/Token.js'
@@ -84,6 +85,7 @@ export function create(options: create.Options = {}): unknown {
     }
     return Object.freeze({
       css,
+      style,
       themes: Object.freeze(
         Object.fromEntries(
           Object.entries(definitions).map(([name, value]) => [
@@ -99,9 +101,10 @@ export function create(options: create.Options = {}): unknown {
   if (input.theme !== undefined)
     return Object.freeze({
       css,
+      style,
       theme: Token.bind(definition(input.theme), contract),
     })
-  return Object.freeze({ css })
+  return Object.freeze({ css, style })
 }
 
 /** Configuration inputs and inferred results. */
@@ -132,6 +135,14 @@ export declare namespace create {
   /** Bound authoring and the handles corresponding to the selected theme mode. */
   type ReturnType<options extends Options = Options> = {
     /** Inferred callable authoring; execution requires a source transform. */
+    readonly style: Css<
+      Tokens<options>,
+      options extends { layers: readonly (infer name extends string)[] }
+        ? name
+        : never,
+      style.ReturnType
+    >
+    /** Legacy callable authoring for spread applications. */
     readonly css: Css<
       Tokens<options>,
       options extends { layers: readonly (infer name extends string)[] }
@@ -155,12 +166,14 @@ export declare namespace create {
       : {})
 }
 
-type Css<tokens extends Theme.Tokens, layers extends string> = <
-  const styles extends Record<string, unknown>,
->(
+type Css<
+  tokens extends Theme.Tokens,
+  layers extends string,
+  result = css.ReturnType,
+> = <const styles extends Record<string, unknown>>(
   styles: styles &
     NoInfer<Properties<tokens, layers> & Body<styles, tokens, layers>>,
-) => css.ReturnType
+) => result
 type Properties<
   tokens extends Theme.Tokens,
   layers extends string,

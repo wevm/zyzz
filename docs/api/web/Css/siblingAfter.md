@@ -6,13 +6,15 @@
 A qualifying marked sibling following the styled element.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const target = Css.marker({ state: ['closed', 'open'] })
-const style = css({
-  [Css.siblingAfter(target, { data: { state: 'open' } })]: { opacity: 1 },
-})
+const styles = {
+  style: style({
+    [Css.siblingAfter(target, { data: { state: 'open' } })]: { opacity: 1 },
+  }),
+}
 ```
 
 ## Signature
@@ -52,7 +54,9 @@ Css.siblingAfter(target, { data: { state: 'open' } })
 Use as a computed style key. Helpers add zero condition specificity; raw authored selectors retain their specificity.
 
 ```ts
-css({ [Css.siblingAfter(target, { data: { state: 'open' } })]: { opacity: 1 } })
+style({
+  [Css.siblingAfter(target, { data: { state: 'open' } })]: { opacity: 1 },
+})
 ```
 
 ## Errors

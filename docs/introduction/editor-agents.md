@@ -3,13 +3,15 @@
 Use TypeScript inference from the named `zyzz` export. Keep config values literal so token names and variant choices remain narrow.
 
 ```ts
-import { zyzz } from '../../zyzz.config.js'
+import { style } from '../../zyzz.config.js'
 
-const card = zyzz.css({ padding: 'md' })
+const styles = {
+  card: style({ padding: 'md' }),
+}
 ```
 
 > [!NOTE]
-> Config-bound authoring is a preview. Current root `css` and in-memory theme definitions expose their documented types.
+> Config-bound authoring is a preview. Current root `style` and in-memory theme definitions expose their documented types.
 
 - **Agents:** start from [the documentation index](../llms.txt), then load the relevant method and guide.
 - **Diagnostics:** preserve source locations and resolve errors before consuming new artifacts.

@@ -3,8 +3,10 @@
 Call a theme to obtain web props without generating CSS or accessing the DOM.
 
 ```tsx
-<html {...zyzz.theme({ colorScheme: 'light dark' })}>
-  <head><title>My App</title></head>
+<html {...theme({ colorScheme: 'light dark' })}>
+  <head>
+    <title>My App</title>
+  </head>
   <body>Content</body>
 </html>
 ```
@@ -13,7 +15,7 @@ Call a theme to obtain web props without generating CSS or accessing the DOM.
 
 `theme(options = {})`
 
-The callable retains `className`, `css`, `tokens`, and other theme members. Named config themes use the same contract: `zyzz.themes.mint(options)`. Source compilation supplies the scope identity.
+The callable retains `className`, `style`, `tokens`, and other theme members. Named config themes use the same contract: `zyzz.themes.mint(options)`. Source compilation supplies the scope identity.
 
 ## Parameters
 
@@ -25,7 +27,7 @@ The callable retains `className`, `css`, `tokens`, and other theme members. Name
 Choose an explicit scheme or follow system preference. Omission emits no style property, preserving inherited CSS behavior.
 
 ```ts
-zyzz.theme({ colorScheme: 'dark' })
+theme({ colorScheme: 'dark' })
 ```
 
 ## Returns
@@ -37,7 +39,7 @@ zyzz.theme({ colorScheme: 'dark' })
 Generated, isolated theme scope class. Identical to `theme.className`.
 
 ```ts
-zyzz.theme().className
+theme().className
 ```
 
 ### style
@@ -47,7 +49,7 @@ zyzz.theme().className
 Inline color-scheme selection. No `style` key is emitted when the option is omitted.
 
 ```ts
-zyzz.theme({ colorScheme: 'dark' }).style
+theme({ colorScheme: 'dark' }).style
 ```
 
 ## Errors

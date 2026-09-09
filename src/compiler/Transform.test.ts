@@ -24,6 +24,7 @@ import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as StyleProp from '../../test/fixtures/StyleProp.js'
 import * as Tables from '../../test/fixtures/Tables.js'
 import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../../test/fixtures/TextFlow.js'
@@ -2796,27 +2797,27 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     }
 
     expect(outputs).toMatchInlineSnapshot(`
-    [
-      "import other from 'zyzz'; export const props = ({className:""}); export { other };",
-      ""use client";
-    import { Props as __zyzzProps } from 'zyzz/runtime';
-      export const button = __zyzzProps.create({className:""});",
-      "#!/usr/bin/env node
+      [
+        "import other from 'zyzz'; export const props = ({className:""}); export { other };",
+        ""use client";
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+        export const button = __zyzzProps.create({className:""});",
+        "#!/usr/bin/env node
 
-    import { Props as __zyzzProps } from 'zyzz/runtime';
-    import { Style } from 'zyzz'; export const button = __zyzzProps.create({className:""}); export { Style };",
-      "import { Style,  } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
-      "import { Style } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
-      "
-    import { Props as __zyzzProps } from 'zyzz/runtime';
-    import { css } from 'zyzz'; export type Signature = typeof css; export const button = __zyzzProps.create({className:""});",
-      "
-    import { Props as __zyzzProps_ } from 'zyzz/runtime';
-     const __zyzzProps = 1; export const el = <button {...({className:"z-15sihh01ggr9so-base0"})} />; export const button = __zyzzProps_.create({className:""});",
-      "import { css } from 'zyzz'; export function f(value = ({className:""})) { var css; return value; }",
-      "export const untouched = '🎉';",
-    ]
-  `)
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+      import { Style } from 'zyzz'; export const button = __zyzzProps.create({className:""}); export { Style };",
+        "import { Style,  } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
+        "import { Style } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
+        "
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+      import { css } from 'zyzz'; export type Signature = typeof css; export const button = __zyzzProps.create({className:""});",
+        "
+      import { Props as __zyzzProps_, Style as __zyzzStyle } from 'zyzz/runtime';
+       const __zyzzProps = 1; export const el = <button {...__zyzzStyle.resolve({...({className:"z-15sihh01ggr9so-base0"}),})} />; export const button = __zyzzProps_.create({className:""});",
+        "import { css } from 'zyzz'; export function f(value = ({className:""})) { var css; return value; }",
+        "export const untouched = '🎉';",
+      ]
+    `)
   })
 
   test('separately transformed modules render without class collisions in Chromium', async () => {
@@ -2972,4 +2973,124 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
       await Fs.rm(directory, { force: true, recursive: true })
     }
   }, 30000)
+})
+
+describe('compile', () => {
+  test('style props render through custom components, spreads, aliases, and inline overrides', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/style-prop.tsx',
+      source: StyleProp.source,
+    })
+    expect(output.code.includes('define(')).toMatchInlineSnapshot('false')
+    expect(output.code.includes('<Button style={alias}')).toMatchInlineSnapshot(
+      'true',
+    )
+    const built = await Esbuild.build({
+      alias: { 'zyzz/runtime': Path.join(root, 'src/runtime/index.ts') },
+      bundle: true,
+      format: 'iife',
+      jsx: 'automatic',
+      platform: 'browser',
+      stdin: {
+        contents:
+          output.code +
+          `
+import { createRoot } from 'react-dom/client';
+createRoot(document.getElementById('root')).render(<Example />);`,
+        loader: 'tsx',
+        resolveDir: root,
+      },
+      write: false,
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(`<style>${output.css}</style><div id="root"></div>`)
+      await page.addScriptTag({ content: built.outputFiles[0]!.text })
+      await page.locator('#button').waitFor()
+      expect(
+        await page.locator('#button').evaluate((element) => ({
+          color: getComputedStyle(element).color,
+          external: element.classList.contains('external'),
+          padding: getComputedStyle(element).padding,
+          text: element.textContent,
+          title: element.getAttribute('title'),
+        })),
+      ).toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 102, 204)",
+          "external": true,
+          "padding": "16px",
+          "text": "Continue",
+          "title": "forwarded",
+        }
+      `)
+      expect(
+        await page
+          .locator('#label')
+          .evaluate((element) => getComputedStyle(element).padding),
+      ).toMatchInlineSnapshot('"24px"')
+      expect(
+        await page.locator('#plain').getAttribute('title'),
+      ).toMatchInlineSnapshot('"A & B"')
+      expect(
+        await page
+          .locator('#plain')
+          .evaluate((element) => getComputedStyle(element).padding),
+      ).toMatchInlineSnapshot('"3px"')
+      expect(
+        await page
+          .locator('#conditional')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot('"rgb(0, 102, 204)"')
+      expect(
+        await page
+          .locator('#inline')
+          .evaluate((element) => getComputedStyle(element).opacity),
+      ).toMatchInlineSnapshot('"0.5"')
+      expect(
+        await page.locator('#count').getAttribute('data-count'),
+      ).toMatchInlineSnapshot('"1"')
+      expect(
+        await page.locator('#button').getAttribute('style'),
+      ).toMatchInlineSnapshot('null')
+    } finally {
+      await browser.close()
+    }
+  })
+})
+
+describe('compile', () => {
+  test('style props server render with native attributes and forwarded inline styles', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/style-prop.tsx',
+      source: StyleProp.source,
+    })
+    const built = await Esbuild.build({
+      alias: { 'zyzz/runtime': Path.join(root, 'src/runtime/index.ts') },
+      bundle: true,
+      format: 'cjs',
+      jsx: 'automatic',
+      platform: 'node',
+      stdin: {
+        contents:
+          output.code +
+          `\nimport { renderToStaticMarkup } from 'react-dom/server'; export const html = renderToStaticMarkup(<Example />);`,
+        loader: 'tsx',
+        resolveDir: root,
+      },
+      write: false,
+    })
+    const directory = await Fs.mkdtemp(Path.join(root, '.fixture-style-prop-'))
+    try {
+      const file = Path.join(directory, 'render.cjs')
+      await Fs.writeFile(file, built.outputFiles[0]!.text)
+      const module = Module.createRequire(import.meta.url)(file)
+      expect(module.html).toMatchInlineSnapshot(
+        `"<button id="button" class="z-15arqxi1nuwkvq-base0 external" title="forwarded">Continue</button><span style="padding:24px" id="label" class="z-15arqxi1nuwkvq-base0">Label</span><div id="plain" style="padding:3px" title="A &amp; B"></div><div id="conditional" class="z-15arqxi1nuwkvq-base0"></div><div id="inline" class="z-15arqxi1nuwkvq-base1"></div><div id="count" data-count="1"></div>"`,
+      )
+    } finally {
+      await Fs.rm(directory, { force: true, recursive: true })
+    }
+  })
 })

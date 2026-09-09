@@ -13,9 +13,11 @@ How styles, tokens, and compilation behave. Use [Guides](guides/README.md) for c
 - **Universal:** shared authoring targets explicit web/native capabilities.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const card = css({ padding: '1rem' })
+const styles = {
+  card: style({ padding: '1rem' }),
+}
 ```
 
 The [compilation model](#compilation-and-platforms) explains which boundaries are shared and which belong to platform adapters.
@@ -25,10 +27,12 @@ The [compilation model](#compilation-and-platforms) explains which boundaries ar
 Definitions describe static rules. Calling a definition returns styling props; it never creates CSS rules. Authoring calls require compilation.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const card = css({ padding: '1rem' })
-const example = <div {...card()}>Card</div>
+const styles = {
+  card: style({ padding: '1rem' }),
+}
+const example = <div style={styles.card}>Card</div>
 ```
 
 ## Configuration
@@ -36,15 +40,18 @@ const example = <div {...card()}>Card</div>
 > [!NOTE]
 > Preview API; not yet implemented.
 
-`Config.create` binds authoring functions to explicit tokens and layers. Export `const zyzz = Config.create(...)` from `zyzz.config.ts` and import `{ zyzz }`. Integrations follow this binding to the originating config; no default export is required. The compiler reads static data without executing application code.
+`Config.create` binds authoring functions to explicit tokens and layers. Create `const config = Config.create(...)` from `zyzz.config.ts` and export `const style = config.style` for named consumer imports. Integrations follow this binding to the originating config; no default export is required. The compiler reads static data without executing application code.
 
 ```ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+const config = Config.create({
   layers: ['base', 'components'],
   theme: { spacing: { md: '1rem' } },
 })
+
+export const style = config.style
+export const theme = config.theme
 ```
 
 - **Layers:** infer keys such as `@layer components`; unknown names fail.
@@ -55,12 +62,14 @@ export const zyzz = Config.create({
 Named alternatives share the default's token paths and domains. Config returns compatible handles without mutating independent definitions. Imports outside that config receive no ambient tokens or layer types.
 
 ```ts
-import { zyzz } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
-const card = zyzz.css({ padding: 'md' })
+const styles = {
+  card: style({ padding: 'md' }),
+}
 ```
 
-The named `zyzz` export preserves the config's inferred contract. Access CSS references through `zyzz.theme.vars` or `zyzz.themes.<name>.vars`. These are CSS variable references, not runtime setters; compatible scopes change their inherited values.
+Named bound exports preserve the config's inferred contract. Access CSS references through `zyzz.theme.vars` or `zyzz.themes.<name>.vars`. These are CSS variable references, not runtime setters; compatible scopes change their inherited values.
 
 ## Themes & Tokens
 
@@ -95,12 +104,10 @@ Callable themes return generated scope classes and optional inline color-scheme 
 Use the instance handles from a [named-theme config](guides/themes.md#selecting-a-theme):
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { themes } from './zyzz.config.js'
 
 const example = (
-  <section {...zyzz.themes.mint({ colorScheme: 'dark' })}>
-    Content
-  </section>
+  <section {...themes.mint({ colorScheme: 'dark' })}>Content</section>
 )
 ```
 
@@ -117,11 +124,14 @@ const example = (
 Use `cx` to compose generated styles with override rules. Multiple JSX spreads replace fields. External classes follow the CSS cascade; their class-string order does not establish precedence.
 
 ```tsx
-import { css, cx } from 'zyzz'
+import { style, cx } from 'zyzz'
 
-const compact = css({ padding: '0.5rem' })
-const roomy = css({ padding: '1rem' })
-const example = <button {...cx(compact(), roomy())}>Save</button>
+const styles = {
+  compact: style({ padding: '0.5rem' }),
+
+  roomy: style({ padding: '1rem' }),
+}
+const example = <button style={cx(styles.compact, styles.roomy)}>Save</button>
 ```
 
 Later generated conflicts win within matching conditions, subject to importance. Owned variable bindings and recipe attributes stay attached. See [Override Styles](guides/styling.md#override-styles).
@@ -131,15 +141,17 @@ Later generated conflicts win within matching conditions, subject to importance.
 > [!NOTE]
 > Preview API; not yet implemented.
 
-A recipe styles one element and returns one props object. Axes, defaults, and compounds select precompiled alternatives. Multipart components use separate definitions with shared inputs; there is no slots option.
+A recipe styles one element; each call returns a value for its `style` prop. Axes, defaults, and compounds select precompiled alternatives. Multipart components use separate definitions with shared inputs; there is no slots option.
 
 ```tsx
 import { variants } from 'zyzz'
 
-const button = variants({
-  variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
-})
-const example = <button {...button({ size: 'sm' })}>Save</button>
+const styles = {
+  button: variants({
+    variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
+  }),
+}
+const example = <button style={styles.button({ size: 'sm' })}>Save</button>
 ```
 
 ## Conditions
@@ -150,11 +162,13 @@ const example = <button {...button({ size: 'sm' })}>Save</button>
 Pseudo styles, media queries, container queries, and feature queries keep their CSS meaning. Nested conditions combine with AND while preserving property/token inference.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const button = css({
-  ':hover': { '@media (hover: hover)': { opacity: 0.8 } },
-})
+const styles = {
+  button: style({
+    ':hover': { '@media (hover: hover)': { opacity: 0.8 } },
+  }),
+}
 ```
 
 Query aliases resolve from theme metadata to literal conditions. Theme scope changes do not change query thresholds. Container queries select the nearest eligible container; raw queries still require compiler validation.
@@ -199,12 +213,14 @@ Token names infer by property. A text-color token cannot become a spacing token.
 Callbacks bind per-instance values to precompiled custom properties. Their rule structure stays static.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const bar = css((values: { width: `${number}%` }) => ({
-  width: values.width,
-}))
-const example = <div {...bar({ width: '50%' })} aria-hidden="true" />
+const styles = {
+  bar: style((values: { width: `${number}%` }) => ({
+    width: values.width,
+  })),
+}
+const example = <div style={styles.bar({ width: '50%' })} aria-hidden="true" />
 ```
 
 Calls accept declared inputs plus `className`/`style` overrides. Keep other component props on the element.

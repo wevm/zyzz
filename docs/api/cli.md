@@ -9,20 +9,20 @@ npx zyzz watch
 
 ## Commands
 
-| Command | Behavior |
-| --- | --- |
-| `build [src]` | Compile once; exit nonzero on failure |
+| Command       | Behavior                                                              |
+| ------------- | --------------------------------------------------------------------- |
+| `build [src]` | Compile once; exit nonzero on failure                                 |
 | `watch [src]` | Compile immediately, then rebuild after source and dependency changes |
 
 ## Defaults and Options
 
-| Argument / Flag | Default | Contract |
-| --- | --- | --- |
-| `[src]` | `src` | Authored module tree to scan |
-| `--css` | `<out-dir>/styles.css` | Emitted stylesheet path |
-| `--minify` | Off | Final CSS minification through the adapter |
-| `--out-dir` | `dist` | Rewritten module/declaration output |
-| `--targets` | Preserve modern CSS | Browserslist queries for compatibility processing |
+| Argument / Flag | Default                | Contract                                          |
+| --------------- | ---------------------- | ------------------------------------------------- |
+| `[src]`         | `src`                  | Authored module tree to scan                      |
+| `--css`         | `<out-dir>/styles.css` | Emitted stylesheet path                           |
+| `--minify`      | Off                    | Final CSS minification through the adapter        |
+| `--out-dir`     | `dist`                 | Rewritten module/declaration output               |
+| `--targets`     | Preserve modern CSS    | Browserslist queries for compatibility processing |
 
 Paths resolve from the working directory. No config is required for token-free styles. Both commands share the same defaults and flags; `watch` replaces the `--watch` flag.
 

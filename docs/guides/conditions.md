@@ -15,7 +15,7 @@ Define typed thresholds in config, then reference them in media and container co
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+const config = Config.create({
   theme: {
     breakpoints: { tablet: '48rem' },
     containerNames: ['sidebar'],
@@ -23,23 +23,29 @@ export const zyzz = Config.create({
     spacing: { md: '1rem', sm: '0.5rem' },
   },
 })
+
+export const style = config.style
+export const theme = config.theme
 ```
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
-const region = zyzz.css({
-  containerName: 'sidebar',
-  containerType: 'inline-size',
-})
-const content = zyzz.css({
-  padding: 'sm',
-  '@container sidebar >=card': { display: 'grid' },
-  '@media tablet': { padding: 'md' },
-})
+const styles = {
+  region: style({
+    containerName: 'sidebar',
+    containerType: 'inline-size',
+  }),
+
+  content: style({
+    padding: 'sm',
+    '@container sidebar >=card': { display: 'grid' },
+    '@media tablet': { padding: 'md' },
+  }),
+}
 const example = (
-  <aside {...region()}>
-    <div {...content()}>Content</div>
+  <aside style={styles.region}>
+    <div style={styles.content}>Content</div>
   </aside>
 )
 ```
@@ -54,16 +60,18 @@ Media thresholds measure the viewport; container thresholds measure the eligible
 Use pseudo styles for browser state and data attributes for application state. Keep accessibility attributes on the real control.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const button = css({
-  ':disabled': { opacity: 0.5 },
-  ':focus-visible': { outline: '2px solid currentColor' },
-  ':hover': { opacity: 0.8 },
-  '&[data-state="open"]': { backgroundColor: '#eee' },
-})
+const styles = {
+  button: style({
+    ':disabled': { opacity: 0.5 },
+    ':focus-visible': { outline: '2px solid currentColor' },
+    ':hover': { opacity: 0.8 },
+    '&[data-state="open"]': { backgroundColor: '#eee' },
+  }),
+}
 const example = (
-  <button {...button()} aria-expanded={true} data-state="open">
+  <button style={styles.button} aria-expanded={true} data-state="open">
     Details
   </button>
 )
@@ -79,17 +87,19 @@ Use a typed marker to style an element when an ancestor has a matching data stat
 > Preview API; not yet implemented.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const card = Css.marker({ state: ['closed', 'open'] })
-const label = css({
-  [Css.ancestor(card, { data: { state: 'open' } })]: { opacity: 1 },
-})
+const styles = {
+  label: style({
+    [Css.ancestor(card, { data: { state: 'open' } })]: { opacity: 1 },
+  }),
+}
 const example = (
   <section {...card({ state: 'open' })}>
     <div>
-      <span {...label()}>Details</span>
+      <span style={styles.label}>Details</span>
     </div>
   </section>
 )

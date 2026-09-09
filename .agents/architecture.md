@@ -1,3 +1,6 @@
+> [!NOTE]
+> The canonical authoring contract uses named `style` and `variants` imports from `zyzz` or config, grouped in a plain `const styles = { ... }`. Static `style({...})` returns a non-callable value applied as `style={styles.button}`. Dynamic callbacks and variants remain callable, returning values for the same prop. Legacy `css`/spread examples below describe the earlier transport; future work follows this contract. No callback grouping API is introduced.
+
 # Architecture and API
 
 ## Status and boundaries
@@ -101,8 +104,12 @@ import { zyzz } from './zyzz.config.js'
 const selected: keyof typeof zyzz.themes = 'mint'
 const example = (
   <html {...zyzz.themes[selected]({ colorScheme: 'dark' })}>
-    <head><title>My App</title></head>
-    <body><button {...button()}>Save</button></body>
+    <head>
+      <title>My App</title>
+    </head>
+    <body>
+      <button {...button()}>Save</button>
+    </body>
   </html>
 )
 ```

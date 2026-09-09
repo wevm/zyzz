@@ -299,3 +299,22 @@ for (const count of [10, 100]) {
     )
   })
 }
+
+for (const count of [10, 100])
+  describe(`style prop authoring / ${count} elements`, () => {
+    for (const api of ['css', 'style'] as const) {
+      const declarations = Array.from(
+        { length: count },
+        (_, index) =>
+          `card${index}:${api}({color:'#06c',padding:'${index}px'})`,
+      ).join(',')
+      const elements = Array.from({ length: count }, (_, index) => {
+        if (api === 'style') return `<div style={styles.card${index}} />`
+        return `<div {...styles.card${index}()} />`
+      }).join('')
+      const source = `import { ${api} } from 'zyzz'; const styles={${declarations}}; export const example=<>${elements}</>`
+      bench(api, () => {
+        Transform.compile({ moduleId: 'bench/style-props.tsx', source })
+      })
+    }
+  })

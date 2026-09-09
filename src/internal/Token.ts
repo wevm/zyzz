@@ -76,6 +76,7 @@ export function bind<tokens extends Theme.Tokens>(
           return original.className
         },
         css: original.css,
+        style: original.style,
         tokens: rebind(original.tokens),
       },
       definition,

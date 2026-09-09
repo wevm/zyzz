@@ -7,7 +7,8 @@ import { Transform } from 'zyzz/compiler'
 
 const output = Transform.compile({
   moduleId: 'app/card.ts',
-  source: "import { css } from 'zyzz'; export const card = css({ padding: 0 })",
+  source:
+    "import { style } from 'zyzz'; export const card = style({ padding: 0 })",
 })
 ```
 
@@ -27,7 +28,8 @@ Stable portable package-relative module identity.
 ```ts
 Transform.compile({
   moduleId: 'app/card.ts',
-  source: "import { css } from 'zyzz'; export const card = css({ padding: 0 })",
+  source:
+    "import { style } from 'zyzz'; export const card = style({ padding: 0 })",
 })
 ```
 
@@ -41,7 +43,8 @@ Complete module text parsed as TypeScript with JSX. No source execution or files
 ```ts
 Transform.compile({
   moduleId: 'app/card.ts',
-  source: "import { css } from 'zyzz'; export const card = css({ padding: 0 })",
+  source:
+    "import { style } from 'zyzz'; export const card = style({ padding: 0 })",
 })
 ```
 
@@ -103,7 +106,7 @@ Local theme factories and scope reads become constants. Bound style calls compil
 
 Theme variable and scope identities derive from the stable package/module ID and defining binding. Token-value edits and unrelated source insertions preserve those identities; renaming the binding or module changes them. Scope rules trace to their factory and element declarations to their authored properties. The file host uses this transform and rebuilds CSS after edits.
 
-Untransformed `theme.css` calls and `theme.className` reads throw the missing-transform error. In-memory compilation reads scope classes from `Css.compile(...).themes` instead.
+Untransformed `theme.style` calls and `theme.className` reads throw the missing-transform error. In-memory compilation reads scope classes from `Css.compile(...).themes` instead.
 
 ## Errors
 

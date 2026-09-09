@@ -13,6 +13,8 @@ import * as Themes from './internal/Themes.js'
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Produces a static value for the style prop. */
+  readonly value?: boolean | undefined
   /** Exclusive UTF-16 offset of the complete call. */
   readonly end: number
   /** Matching name in the extracted style definition. */
@@ -50,6 +52,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   const calls: Call[] = []
   const diagnostics: Diagnostic[] = []
   const pending: Ast.CallExpression[] = []
+  const staticValues = new Set<number>()
   const styles: Style.NamedStyle[] = []
   function report(
     code: Diagnostic['code'],
@@ -159,7 +162,12 @@ export function extract(options: extract.Options): extract.ReturnType {
             }
             return undefined
           })()
-          if (name === 'Config' || name === 'css' || name === 'Theme')
+          if (
+            name === 'Config' ||
+            name === 'css' ||
+            name === 'style' ||
+            name === 'Theme'
+          )
             report(
               'unsupported_syntax',
               `Import ${name} by name; namespace authoring calls are not supported yet.`,
@@ -171,9 +179,11 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (
         specifier.type !== 'ImportSpecifier' ||
         specifier.importKind === 'type' ||
-        (specifier.imported.type === 'Identifier'
-          ? specifier.imported.name
-          : specifier.imported.value) !== 'css'
+        !['css', 'style'].includes(
+          specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value,
+        )
       )
         return
       // Follow only assignment targets; computed keys and default values are reads.
@@ -213,9 +223,15 @@ export function extract(options: extract.Options): extract.ReturnType {
         parent.type === 'CallExpression' &&
         parent.callee === node &&
         !parent.optional
-      )
+      ) {
         pending.push(parent)
-      else
+        if (
+          (specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value) === 'style'
+        )
+          staticValues.add(parent.start)
+      } else
         report(
           'unsupported_syntax',
           'Use a direct css call; aliases, re-exports, and indirect references are not supported yet.',
@@ -229,7 +245,10 @@ export function extract(options: extract.Options): extract.ReturnType {
   })
   // Imports and reference lists can have a different order from authored calls.
   if (themes)
-    for (const entry of themes.styles.values()) pending.push(entry.call)
+    for (const entry of themes.styles.values()) {
+      pending.push(entry.call)
+      if (entry.value) staticValues.add(entry.call.start)
+    }
   pending.sort((a, b) => a.start - b.start)
   for (const call of pending) {
     let argument = call.arguments[0]
@@ -336,7 +355,12 @@ export function extract(options: extract.Options): extract.ReturnType {
         { locations, theme: themes?.styles.get(call.start)?.theme },
       )
       styles.push(...definition.styles)
-      calls.push({ end: call.end, name, start: call.start })
+      calls.push({
+        end: call.end,
+        name,
+        start: call.start,
+        ...(staticValues.has(call.start) ? { value: true } : {}),
+      })
     } catch (error) {
       if (!(error instanceof Style.InvalidError)) throw error
       for (const diagnostic of error.diagnostics)

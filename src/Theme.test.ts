@@ -168,6 +168,7 @@ describe('define', () => {
       [
         "className",
         "css",
+        "style",
         "tokens",
       ]
     `)

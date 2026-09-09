@@ -29,12 +29,12 @@ import { Transform } from 'zyzz/compiler'
 
 const output = Transform.compile({
   moduleId: 'example/button.ts',
-  source: `import { css } from 'zyzz';
-export const button = css({ padding: '1rem' });`,
+  source: `import { style } from 'zyzz';
+export const button = style({ padding: '1rem' });`,
 })
 ```
 
-Bundle the returned `code` and load its matching `css`. Keep their source maps together. Apply the exported `button()` props to an element. A stable package-relative module ID prevents unrelated modules sharing identities. Source extraction alone does not rewrite executable calls.
+Bundle the returned `code` and load its matching `css`. Keep their source maps together. Apply the exported static value through `style={button}` in compiled JSX. A stable package-relative module ID prevents unrelated modules sharing identities. Source extraction alone does not rewrite executable calls.
 
 For filesystem builds, `await Host.create({ outDir, packageId, root })` from `zyzz/node` resolves to build/watch/close operations. It writes module and CSS sidecars; loading CSS and lowering TypeScript/JSX remain application build responsibilities.
 
@@ -54,7 +54,7 @@ npx zyzz build
 
 The defaults compile `src` into `dist`, with CSS at `dist/styles.css`. Treat `dist` as compiler output, not an application import convention. Downstream tooling consumes the rewritten tree and lowers TypeScript/JSX. Original relative imports remain authored normally; the build selects its input root.
 
-Libraries expose compiled modules through package exports and document stylesheet loading. Keep generated output separate from owned source files. A CSS-only scan cannot replace source rewriting for Zyzz's callable definitions.
+Libraries expose compiled modules through package exports and document stylesheet loading. Keep generated output separate from owned source files. A CSS-only scan cannot replace source rewriting for Zyzz's style definitions.
 
 ### Server Rendering
 
@@ -64,12 +64,14 @@ Libraries expose compiled modules through package exports and document styleshee
 Apply compiled styles during server rendering and deliver their stylesheet before styled content paints. Use the same compiled identities on server and client.
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
-const card = zyzz.css({ padding: 'md' })
+const styles = {
+  card: style({ padding: 'md' }),
+}
 
 export function Card() {
-  return <article {...card()}>Content</article>
+  return <article style={styles.card}>Content</article>
 }
 ```
 

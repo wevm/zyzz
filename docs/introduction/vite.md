@@ -16,7 +16,7 @@ export default defineConfig({
 ```
 
 - **Development:** run the existing dev command; edits update transformed modules and CSS.
-- **Imports:** import source components normally. Use token-free `css` or `Theme.define`/`theme.css` within the current source subset; the named `zyzz` config instance remains planned.
+- **Imports:** import source components normally. Import token-free `style` or a named bound `style` export from config.
 - **Production:** run the existing build command; the adapter emits linked CSS assets.
 
 No generated component imports or manual stylesheet import is required. Theme source is analyzed without executing application code. Vite owns alias resolution, TypeScript/JSX lowering, final CSS processing, and asset delivery.
@@ -27,16 +27,16 @@ See [Vite's plugin setup](https://vite.dev/guide/using-plugins) for the host con
 
 ## Lazy Modules
 
-Vite loads and transforms lazy modules, including their CSS. Production builds retain Vite's CSS code splitting. Theme bindings inside each module must use static imports; dynamically loading an authoring theme for use in `css` is unsupported.
+Vite loads and transforms lazy modules, including their CSS. Production builds retain Vite's CSS code splitting. Theme bindings inside each module must use static imports; dynamically loading an authoring theme for use in `style` is unsupported.
 
-```ts
-// main.ts
-const { props } = await import('./card')
-element.className = props.className
+```tsx
+// card.tsx, imported normally or through the framework's lazy-loading API
+import { style } from './zyzz.config.js'
 
-// card.ts
-import { theme } from './theme'
-export const props = theme.css({ color: 'brand' })()
+const styles = { card: style({ color: 'brand' }) }
+export function Card() {
+  return <article style={styles.card}>Content</article>
+}
 ```
 
 ## Configuration
@@ -45,17 +45,20 @@ export const props = theme.css({ color: 'brand' })()
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+const config = Config.create({
   theme: { color: { brand: '#06c' } },
 })
+
+export const style = config.style
+export const theme = config.theme
 ```
 
-```ts
-// card.ts
-import { zyzz } from './zyzz.config.js'
+```tsx
+// card.tsx
+import { style, theme } from './zyzz.config.js'
 
-export const card = zyzz.css({ color: 'brand' })
-element.className = `${zyzz.theme.className} ${card().className}`
+const styles = { card: style({ color: 'brand' }) }
+const example = <article className={theme.className} style={styles.card} />
 ```
 
 Named catalogs use `zyzz.themes.<name>.className`; `defaultTheme` selects shorthand token fallbacks. Config edits rebuild dependent styles. Direct literal calls, immutable aliases, and named re-exports are supported. Dynamic member access, escaping config objects, variants, and layer bodies remain unsupported.
@@ -74,12 +77,14 @@ export default defineConfig({
 })
 ```
 
-```ts
-import { css, mint } from '@acme/theme'
+```tsx
+import { style, mint } from '@acme/theme'
 import '@acme/theme/style.css'
 
-const card = css({ color: 'brand' })
-element.className = `${mint.className} ${card().className}`
+const styles = {
+  card: style({ color: 'brand' }),
+}
+const example = <article className={mint.className} style={styles.card} />
 ```
 
 Light/dark pairs require final CSS targets with native `light-dark()` support. The profile above preserves it; Vite's default minification targets can lower it to scheme helper variables, which do not preserve arbitrary inherited or inline `color-scheme` selection. Zyzz does not override the host's target policy.

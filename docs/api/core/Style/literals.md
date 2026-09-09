@@ -68,13 +68,15 @@ The scalar grammar accepts these units from [CSS Values and Units](https://www.w
 Units use the listed spellings. Signed decimals and finite scientific notation are accepted where the property permits their value. Emission preserves units; the browser resolves font, viewport, and container metrics. Existing theme length tokens, fallbacks, and importance suffixes use the same grammar.
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const panel = css({
-  width: ['80vw', '80cqi'],
-  height: '100dvh',
-  padding: '1lh!',
-})
+const styles = {
+  panel: style({
+    width: ['80vw', '80cqi'],
+    height: '100dvh',
+    padding: '1lh!',
+  }),
+}
 ```
 
 Container units can refer to containment established by ordinary CSS. Zyzz does not yet author containment declarations or container conditions. Browser support for newer units depends on the deployment target; ordered fallback declarations can retain an older unit. Native unit conversion remains unimplemented.
@@ -91,15 +93,21 @@ Container units can refer to containment established by ordinary CSS. Zyzz does 
 | `overscrollBehavior`, `overscrollBehaviorX`, `overscrollBehaviorY` | `auto`, `contain`, `none`                         |
 
 ```ts
-import { Config, css } from 'zyzz'
+import { Config, style } from 'zyzz'
 
-const zyzz = Config.create({ theme: { spacing: { header: '4rem' } } })
-const scroller = zyzz.css({
-  overflow: 'auto',
-  scrollPaddingBlockStart: 'header',
-  overscrollBehavior: 'contain',
-})
-const section = css({ scrollMarginBlockStart: '1rem' })
+const config = Config.create({ theme: { spacing: { header: '4rem' } } })
+
+const style = config.style
+
+const styles = {
+  scroller: style({
+    overflow: 'auto',
+    scrollPaddingBlockStart: 'header',
+    overscrollBehavior: 'contain',
+  }),
+
+  section: style({ scrollMarginBlockStart: '1rem' }),
+}
 ```
 
 Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, and importance. Scroll margins remain literal-only because the shared spacing token contract permits percentages. Negative scroll padding fails validation. Shorthands accept one scalar per fallback entry.
@@ -117,18 +125,21 @@ Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, a
 | `scrollSnapStop`  | `normal`, `always`                                                                                |
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const carousel = css({
-  display: 'flex',
-  overflowX: 'auto',
-  scrollSnapType: 'x mandatory',
-})
-const slide = css({
-  flexShrink: 0,
-  scrollSnapAlign: 'start',
-  scrollSnapStop: 'always',
-})
+const styles = {
+  carousel: style({
+    display: 'flex',
+    overflowX: 'auto',
+    scrollSnapType: 'x mandatory',
+  }),
+
+  slide: style({
+    flexShrink: 0,
+    scrollSnapAlign: 'start',
+    scrollSnapStop: 'always',
+  }),
+}
 ```
 
 Snap declarations accept CSS-wide keywords, fallback arrays, and importance in root, theme, and Config authoring. Theme tokens do not map to snap keywords. Scroll margins and padding adjust the alignment area. The browser owns proximity thresholds, motion, and gesture physics; native snapping remains deferred.
@@ -147,14 +158,16 @@ Snap declarations accept CSS-wide keywords, fallback arrays, and importance in r
 | `textUnderlineOffset`     | Signed lengths, percentages, zero, `auto`                                                    |
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const link = css({
-  textDecorationLine: ['underline', 'underline overline!'],
-  textDecorationStyle: 'wavy',
-  textDecorationThickness: '2px',
-  textUnderlineOffset: '.2em',
-})
+const styles = {
+  link: style({
+    textDecorationLine: ['underline', 'underline overline!'],
+    textDecorationStyle: 'wavy',
+    textDecorationThickness: '2px',
+    textUnderlineOffset: '.2em',
+  }),
+}
 ```
 
 Thickness supports a bounded nonnegative subset of CSS. Percentages use font-relative browser semantics. Combined `textDecoration` shorthands, underline position, additional ink-skipping values, emphasis, shadows, and native conversion remain deferred. The browser owns line placement and painting.
@@ -176,15 +189,19 @@ Thickness supports a bounded nonnegative subset of CSS. Percentages use font-rel
 | `textOverflow`                 | `clip`, `ellipsis`                                                |
 
 ```ts
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const title = css({ letterSpacing: '-.02em', textTransform: 'uppercase' })
-const excerpt = css({
-  overflow: 'hidden',
-  whiteSpace: 'nowrap',
-  textOverflow: 'ellipsis',
-})
-const paragraph = css({ overflowWrap: 'anywhere', textIndent: '1em' })
+const styles = {
+  title: style({ letterSpacing: '-.02em', textTransform: 'uppercase' }),
+
+  excerpt: style({
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+  }),
+
+  paragraph: style({ overflowWrap: 'anywhere', textIndent: '1em' }),
+}
 ```
 
 [Text overflow](https://www.w3.org/TR/css-overflow-3/#text-overflow) does not create overflow by itself. Use a constrained container with hidden overflow and the appropriate wrapping behavior. All listed properties accept CSS-wide keywords, ordered fallback arrays, and importance.
@@ -194,7 +211,7 @@ Hyphenation dictionaries and language-sensitive casing remain browser-owned. Ind
 ## Intrinsic Sizing
 
 ```ts
-css({
+style({
   inlineSize: 'fit-content',
   minInlineSize: 'min-content',
   maxInlineSize: 'none',
@@ -215,7 +232,7 @@ Valid CSS keywords precede same-named theme tokens. An explicit `theme.tokens.sp
 ## Borders and Outlines
 
 ```ts
-zyzz.css({
+style({
   borderStyle: 'solid',
   borderWidth: '1px',
   borderInlineStartColor: 'brand',
@@ -237,14 +254,17 @@ Border styles include `dashed`, `dotted`, `double`, `groove`, `hidden`, `inset`,
 ## Flex and Overflow
 
 ```ts
-const row = css({
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignContent: 'space-between',
-  overflow: 'hidden',
-  overflowY: 'auto',
-})
-const item = css({ flexBasis: '12rem', alignSelf: 'center', order: -1 })
+const styles = {
+  row: style({
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignContent: 'space-between',
+    overflow: 'hidden',
+    overflowY: 'auto',
+  }),
+
+  item: style({ flexBasis: '12rem', alignSelf: 'center', order: -1 }),
+}
 ```
 
 [Flex basis](https://www.w3.org/TR/css-flexbox-1/#flex-basis-property) accepts nonnegative lengths, percentages, zero, `auto`, `content`, or intrinsic sizing keywords, including spacing tokens in bound styles. `order` accepts safe integers; fractional values fail validation. Visual ordering does not change DOM or keyboard order. The multi-value `flex` shorthand remains deferred.
@@ -254,13 +274,15 @@ const item = css({ flexBasis: '12rem', alignSelf: 'center', order: -1 })
 ## Logical Boxes
 
 ```ts
-const panel = css({
-  inlineSize: '20rem',
-  paddingInline: '1rem',
-  marginBlockEnd: '0.5rem!',
-  position: 'relative',
-  insetInlineStart: '-2px',
-})
+const styles = {
+  panel: style({
+    inlineSize: '20rem',
+    paddingInline: '1rem',
+    marginBlockEnd: '0.5rem!',
+    position: 'relative',
+    insetInlineStart: '-2px',
+  }),
+}
 ```
 
 [Logical dimensions, spacing, and offsets](https://www.w3.org/TR/css-logical-1/) follow the element's writing mode and direction. Emission retains logical property names and authored order relative to physical properties. Spacing tokens work in every new length property, including explicit references and fallback arrays.
@@ -310,8 +332,8 @@ import { Css } from 'zyzz/web'
 const styles = Style.define({
   card: { padding: '1rem', paddingLeft: 0 },
 })
-const { classes, css, themes } = Css.compile({ styles })
-// Write css to a stylesheet; apply classes.card to the element.
+const { classes, style, themes } = Css.compile({ styles })
+// Write style to a stylesheet; apply classes.card to the element.
 // themes is empty at the literal boundary.
 ```
 
@@ -356,7 +378,7 @@ See [In-Memory Themes](../../../guides/themes.md#compile-themes) for token compi
 CSS-wide keywords, ordered fallbacks, and importance are supported. Border spacing applies to separated borders; caption placement and empty-cell visibility follow native table behavior. Two-length spacing and spacing tokens remain deferred because the current token domain permits percentages.
 
 ```ts
-css({
+style({
   borderCollapse: 'separate',
   borderSpacing: '8px',
   captionSide: 'bottom',
@@ -379,7 +401,7 @@ css({
 All five accept CSS-wide keywords, ordered fallbacks, and importance. Cursor images, SVG pointer targeting, and selection containment remain deferred. These keyword domains do not accept theme tokens. Resizing requires suitable native overflow behavior; hidden elements retain layout space. Pointer targeting does not disable keyboard interaction or establish disabled-control semantics.
 
 ```ts
-css({
+style({
   cursor: 'text',
   overflow: 'auto',
   resize: 'inline',

@@ -3,6 +3,7 @@
  * @module
  */
 import { css, MissingTransformError } from './css.js'
+import { style } from './authoring/style.js'
 import * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import type * as Value from './internal/Value.js'
@@ -14,7 +15,7 @@ export type Color =
   | { readonly dark: Literal.Color; readonly light: Literal.Color }
 
 /** Theme-bound authoring signature; execution requires source rewriting. */
-export type Css<tokens extends Tokens> = <
+export type Css<tokens extends Tokens, result = css.ReturnType> = <
   const styles extends Record<string, unknown>,
 >(
   styles: styles &
@@ -23,7 +24,7 @@ export type Css<tokens extends Tokens> = <
         Value.Checked<styles, tokens> &
         Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
     >,
-) => css.ReturnType
+) => result
 
 /**
  * Defines scalar tokens without metadata, defaults, or environment access.
@@ -43,6 +44,8 @@ export type Definition<tokens extends Tokens = Tokens> = {
   readonly className: string
   /** Token-aware callable authoring boundary, replaced by the source compiler. */
   readonly css: Css<tokens>
+  /** Token-aware static value for the compiled style prop. */
+  readonly style: Css<tokens, style.ReturnType>
   /** Internal contract and resolved values, carried without a registry. */
   readonly [Token.definition]: Token.Metadata
   /** Inferred references for use in Style.define declarations. */
@@ -284,6 +287,7 @@ function build(
           throw new MissingTransformError()
         },
         css,
+        style,
         tokens,
       },
       Token.definition,

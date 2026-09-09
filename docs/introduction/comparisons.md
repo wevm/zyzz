@@ -9,15 +9,17 @@ How Zyzz, Tailwind, StyleX, and vanilla-extract approach typed styling, themes, 
 
 ### Zyzz
 
-`css` accepts standard CSS objects inline or outside a component and returns a callable that produces spreadable props. Property types, token domains, and variant choices provide compiler feedback. Readable generated classes help connect rendered output to authored styles. The root import has no built-in tokens.
+`style` accepts static CSS declarations and returns a value applied through the JSX `style` prop. Property types, token domains, and variant choices provide compiler feedback. Readable generated classes help connect rendered output to authored styles. The root import has no built-in tokens.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const button = css({ color: '#06c', padding: '1rem' })
+const styles = {
+  button: style({ color: '#06c', padding: '1rem' }),
+}
 
 export function Button() {
-  return <button {...button()}>Continue</button>
+  return <button style={styles.button}>Continue</button>
 }
 ```
 
@@ -70,7 +72,7 @@ export function Button() {
 
 ### Zyzz
 
-`Theme.define` takes tokens and returns a bound `css`. Current colors accept the supported literal color grammar or light/dark pairs; token references emit CSS variables with defining fallbacks. `Theme.extend` shares the contract, and its `className` scopes inherited overrides. CSS `color-scheme` selects the active member of each `light-dark()` pair.
+`Theme.define` takes tokens and returns a bound `style`. Current colors accept the supported literal color grammar or light/dark pairs; token references emit CSS variables with defining fallbacks. `Theme.extend` shares the contract, and its `className` scopes inherited overrides. CSS `color-scheme` selects the active member of each `light-dark()` pair.
 
 ```ts
 import { Theme } from 'zyzz'
@@ -80,14 +82,16 @@ const theme = Theme.define({
   spacing: { md: '1rem' },
 })
 
-const panel = theme.css({
-  color: 'text',
-  padding: 'md',
-  colorScheme: 'light dark',
-})
+const styles = {
+  panel: theme.style({
+    color: 'text',
+    padding: 'md',
+    colorScheme: 'light dark',
+  }),
+}
 ```
 
-Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `zyzz/themes/default` entrypoint exports bundled `css`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
+Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `zyzz/themes/default` entrypoint exports bundled `style`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
 
 ### Tailwind
 
@@ -137,7 +141,7 @@ const styles = stylex.create({ panel: { color: colors.text } })
 `createTheme` returns a class and a typed variable contract. Additional themes reuse that contract. Apply the selected theme class to an ancestor; switching between these classes is explicit. See [creating themes](https://vanilla-extract.style/documentation/api/create-theme/).
 
 ```ts
-// theme.css.ts
+// theme.style.ts
 import { createTheme, style } from '@vanilla-extract/css'
 
 export const [lightTheme, vars] = createTheme({
@@ -164,15 +168,17 @@ const theme = Theme.define({
   containers: { card: '24rem' },
 })
 
-const panel = theme.css({
-  display: ['block', 'grid'],
-  padding: 'sm',
-  ':hover': { opacity: 0.8 },
-  '&[data-loading="true"]': { cursor: 'wait' },
-  '@media tablet': { padding: 'md' },
-  '@container card': { gap: 'md' },
-  width: `calc(100% - ${theme.vars.spacing.md})`,
-})
+const styles = {
+  panel: theme.style({
+    display: ['block', 'grid'],
+    padding: 'sm',
+    ':hover': { opacity: 0.8 },
+    '&[data-loading="true"]': { cursor: 'wait' },
+    '@media tablet': { padding: 'md' },
+    '@container card': { gap: 'md' },
+    width: `calc(100% - ${theme.vars.spacing.md})`,
+  }),
+}
 ```
 
 Arrays preserve fallback declaration order: later supported values win, subject to importance. A trailing `!` marks importance, as in `color: 'brand!'`. Ordinary strings express CSS values; `theme.tokens` disambiguates token references. Raw media/container conditions and `@supports` remain available.
@@ -239,24 +245,26 @@ export const panel = style({
 import { Theme } from 'zyzz'
 
 const theme = Theme.define({ spacing: { sm: '0.5rem', md: '1rem' } })
-const button = theme.variants({
-  base: { display: 'inline-flex' },
-  variants: {
-    size: {
-      sm: { padding: 'sm' },
-      md: { padding: 'md' },
-      custom: (values: { padding: `${number}px` }) => ({
-        padding: values.padding,
-      }),
+const styles = {
+  button: theme.variants({
+    base: { display: 'inline-flex' },
+    variants: {
+      size: {
+        sm: { padding: 'sm' },
+        md: { padding: 'md' },
+        custom: (values: { padding: `${number}px` }) => ({
+          padding: values.padding,
+        }),
+      },
     },
-  },
-  defaultVariants: { size: 'md' },
-})
+    defaultVariants: { size: 'md' },
+  }),
+}
 
-type ButtonProps = NonNullable<Parameters<typeof button>[0]>
+type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
 
 export function Button(props: ButtonProps) {
-  return <button {...button(props)}>Continue</button>
+  return <button style={styles.button(props)}>Continue</button>
 }
 ```
 
@@ -321,17 +329,19 @@ export type ButtonProps = RecipeVariants<typeof button>
 
 ### Zyzz
 
-`css(values => styles)` receives a typed input record. Every definition is callable: static calls return class props, and dynamic calls add inline CSS variables. Calls accept `className` and `style` overrides; consumed values stay out of component props. Other props stay on the component.
+`style(values => declarations)` is the planned dynamic API. Static definitions are values; dynamic definitions remain callable and bind inline CSS variables. External classes stay on the element. Other props stay on the component.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const bar = css((values: { width: `${number}%` }) => ({
-  width: values.width,
-}))
+const styles = {
+  bar: style((values: { width: `${number}%` }) => ({
+    width: values.width,
+  })),
+}
 
 export function Bar() {
-  return <div {...bar({ width: '50%', className: 'progress' })} />
+  return <div className="progress" style={styles.bar({ width: '50%' })} />
 }
 ```
 
@@ -421,7 +431,7 @@ Build integrations evaluate `.css.ts` modules and extract web CSS. Libraries can
 
 ### Zyzz
 
-Static applications can fold into props constants; surviving callables perform props merging. Ordered rules allow deduplication where declaration identity and cascade order remain intact. Classes use readable names with collision suffixes.
+Static definitions carry compiled class metadata; intrinsic JSX boundaries merge it into DOM props. Ordered rules allow deduplication where declaration identity and cascade order remain intact. Classes use readable names with collision suffixes.
 
 Dynamic selection, variable binding, and composition may retain small helpers or metadata; their cost belongs in the delivered bundle measurement.
 

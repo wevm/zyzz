@@ -4,7 +4,7 @@ This documentation describes the branch's implemented literal/scalar baseline (`
 
 | Boundary                          | Scope                                                |
 | --------------------------------- | ---------------------------------------------------- |
-| Root `css`                        | Literal source authoring requiring a transform       |
+| Root `style`                      | Literal source authoring requiring a transform       |
 | `Style.define` and `Css.compile`  | Ordered literal data and scalar token references     |
 | `Theme.define` and `Theme.extend` | Six scalar groups and compatible overrides           |
 | `Source`, `Transform`, and `Host` | Literal extraction, rewriting, and filesystem builds |

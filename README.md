@@ -10,15 +10,17 @@
 
 ## Overview
 
-Zyzz combines typed CSS, design tokens, themes, and variants with ahead-of-time compilation. Define styles with `css`, call them, and spread the resulting props onto a component.
+Zyzz combines typed CSS, design tokens, themes, and variants with ahead-of-time compilation. Define styles with `style` and apply the resulting values through the `style` prop.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const button = css({ color: '#06c', padding: '1rem' })
+const styles = {
+  button: style({ color: '#06c', padding: '1rem' }),
+}
 
 export function Button() {
-  return <button {...button()}>Continue</button>
+  return <button style={styles.button}>Continue</button>
 }
 ```
 
@@ -115,18 +117,19 @@ Watching performs an initial build, then reports rebuilds and errors. `await usi
 
 ### Typed Styles
 
-Standard CSS properties and values carry TypeScript inference into each definition. Styles can live beside components or in shared modules; applying them returns ordinary styling props without a provider or component wrapper.
+Standard CSS properties and values carry TypeScript inference into each definition. Styles can live beside components or in shared modules; the compiler applies them through native element props without a provider or custom JSX runtime.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const button = css({
-  color: '#06c',
-  padding: '1rem',
-  ':hover': { opacity: 0.8 },
-})
+const styles = {
+  button: style({
+    color: '#06c',
+    padding: '1rem',
+  }),
+}
 
-const example = <button {...button()}>Continue</button>
+const example = <button style={styles.button}>Continue</button>
 ```
 
 ### Themes
@@ -135,12 +138,17 @@ Token names infer by property, and compatible theme scopes change inherited valu
 
 #### Default Theme
 
-Import the default theme's `css` for inferred colors, typography, spacing, and radius tokens. `zyzz/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
+> [!NOTE]
+> Preview API; not yet implemented.
+
+Import the default theme's `style` for inferred colors, typography, spacing, and radius tokens. `zyzz/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
 
 ```ts
-import { css } from 'zyzz/themes/default'
+import { style } from 'zyzz/themes/default'
 
-const button = css({ color: 'blue.700', padding: 4 })
+const styles = {
+  button: style({ color: 'blue.700', padding: 4 }),
+}
 ```
 
 Extend the default theme with [`Theme.extend`](docs/api/core/Theme/extend.md) to override existing tokens while retaining all other values and the same token contract.
@@ -148,41 +156,50 @@ Extend the default theme with [`Theme.extend`](docs/api/core/Theme/extend.md) to
 ```ts
 // zyzz.config.ts
 import { Config, Theme } from 'zyzz'
-import { theme } from 'zyzz/themes/default'
+import { theme as defaultTheme } from 'zyzz/themes/default'
 
-export const zyzz = Config.create({
-  theme: Theme.extend(theme, {
+const config = Config.create({
+  theme: Theme.extend(defaultTheme, {
     color: { blue: { 700: '#175' } },
   }),
 })
+
+export const style = config.style
 ```
 
 ```ts
-import { zyzz } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
-const button = zyzz.css({ color: 'blue.700', padding: 4 })
+const styles = {
+  button: style({ color: 'blue.700', padding: 4 }),
+}
 ```
 
 #### Custom Theme
 
-Export a named `zyzz` instance with an application's own tokens. Colors accept a shared value or a light/dark pair.
+Export named helpers from a config with application tokens. Colors accept a shared value or a light/dark pair.
 
 ```ts
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+const config = Config.create({
   theme: {
     color: { brand: '#06c', text: { dark: '#eee', light: '#111' } },
     spacing: { md: '1rem', sm: '0.5rem' },
   },
 })
+
+export const style = config.style
+export const theme = config.theme
 ```
 
 ```ts
-import { zyzz } from './zyzz.config.js'
+import { style } from './zyzz.config.js'
 
-const card = zyzz.css({ color: 'text', padding: 'sm' })
+const styles = {
+  card: style({ color: 'text', padding: 'sm' }),
+}
 ```
 
 Use [`Theme.define`](docs/api/core/Theme/define.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
@@ -192,16 +209,20 @@ Use [`Theme.define`](docs/api/core/Theme/define.md) for reusable definitions out
 Apply the theme to `<html>` and select a color scheme through its callable props:
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { style, theme } from './zyzz.config.js'
 
-const card = zyzz.css({ color: 'text', padding: 'sm' })
+const styles = {
+  card: style({ color: 'text', padding: 'sm' }),
+}
 
 export function Document() {
   return (
-    <html {...zyzz.theme({ colorScheme: 'light dark' })}>
-      <head><title>My App</title></head>
+    <html {...theme({ colorScheme: 'light dark' })}>
+      <head>
+        <title>My App</title>
+      </head>
       <body>
-        <article {...card()}>Content</article>
+        <article style={styles.card}>Content</article>
       </body>
     </html>
   )
@@ -216,43 +237,57 @@ For saved preferences, `zyzz.script()` generates an optional [initialization scr
 
 ### Variants
 
-Describe component choices with inferred props, defaults, and compound rules. Use `zyzz.variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
+> [!NOTE]
+> Preview API; not yet implemented.
+
+Describe component choices with inferred props, defaults, and compound rules. Use `variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { variants } from './zyzz.config.js'
 
-const button = zyzz.variants({
-  base: { display: 'inline-flex' },
-  variants: {
-    size: {
-      sm: { padding: 'sm' },
-      md: { padding: 'md' },
+const styles = {
+  button: variants({
+    base: { display: 'inline-flex' },
+    variants: {
+      size: {
+        sm: { padding: 'sm' },
+        md: { padding: 'md' },
+      },
     },
-  },
-  defaultVariants: { size: 'md' },
-})
+    defaultVariants: { size: 'md' },
+  }),
+}
 
-type ButtonProps = NonNullable<Parameters<typeof button>[0]>
-const example = <button {...button({ size: 'sm' })}>Continue</button>
+type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
+const example = <button style={styles.button({ size: 'sm' })}>Continue</button>
 ```
 
 ### Dynamic Styles
 
-Mix static declarations with typed runtime values in the same callback. Call the style with those values and optional `className`/`style` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
+> [!NOTE]
+> Preview API; not yet implemented.
+
+Mix static declarations with typed runtime values in the same callback. Call the dynamic style with those values; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
 
 ```tsx
-import { css } from 'zyzz'
+import { style } from 'zyzz'
 
-const bar = css((values: { width: `${number}%` }) => ({
-  backgroundColor: '#06c',
-  borderRadius: '0.25rem',
-  height: '0.5rem',
-  width: values.width,
-}))
+const styles = {
+  bar: style((values: { width: `${number}%` }) => ({
+    backgroundColor: '#06c',
+    borderRadius: '0.25rem',
+    height: '0.5rem',
+    width: values.width,
+  })),
+}
 
 export function Bar() {
   return (
-    <div {...bar({ width: '50%', className: 'progress' })} aria-hidden={true} />
+    <div
+      className="progress"
+      style={styles.bar({ width: '50%' })}
+      aria-hidden={true}
+    />
   )
 }
 ```
@@ -262,28 +297,36 @@ export function Bar() {
 Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
 
 ```ts
-import { zyzz } from './zyzz.config.js'
+import { style, theme } from './zyzz.config.js'
 
-const panel = zyzz.css({
-  display: ['block', 'grid'],
-  color: 'brand!',
-  borderColor: zyzz.theme.vars.color.brand,
-  width: `calc(100% - ${zyzz.theme.vars.spacing.md})`,
-})
+const styles = {
+  panel: style({
+    display: ['block', 'grid'],
+    color: 'brand!',
+    borderColor: theme.vars.color.brand,
+    width: `calc(100% - ${theme.vars.spacing.md})`,
+  }),
+}
 ```
 
 ### Composition
 
-Prefer state attributes for conditional styling. Calls accept `className` and `style` overrides. Classes are retained and inline styles merge. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
+> [!NOTE]
+> Preview API; not yet implemented.
+
+Prefer state attributes for conditional styling. Put external classes on the element and inline overrides alongside one spread style value. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
 
 ```tsx
-import { css, cx } from 'zyzz'
+import { style, cx } from 'zyzz'
 
-const base = css({ padding: '0.5rem' })
-const roomy = css({ padding: '1rem' })
+const styles = {
+  base: style({ padding: '0.5rem' }),
+
+  roomy: style({ padding: '1rem' }),
+}
 
 const example = (
-  <button {...cx(base(), roomy())} disabled>
+  <button style={cx(styles.base, styles.roomy)} disabled>
     Continue
   </button>
 )
@@ -291,7 +334,7 @@ const example = (
 
 ### Static CSS
 
-Styles compile ahead of time into CSS and executable modules with source maps. Direct applications become props; exported definitions remain callable. Generated functions never create CSS rules, and unused theme tokens emit no declarations.
+Styles compile ahead of time into CSS and executable modules with source maps. Static definitions become values; intrinsic JSX elements resolve them into DOM props. Generated functions never create CSS rules, and unused theme tokens emit no declarations.
 
 Use the [Vite plugin](docs/introduction/vite.md) for source transformation and CSS delivery, or the [compiler APIs](docs/guides/compilation.md) for standalone builds and library distribution.
 

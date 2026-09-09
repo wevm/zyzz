@@ -44,8 +44,8 @@ export function cases(): readonly Case[] {
         values.push(rule.groups.map((group) => group[0]).join(' '))
       if ('items' in rule)
         values.push(
-          'solid dashed',
-          ...(rule.items === 4 ? ['solid dashed dotted double'] : []),
+          `${rule.values[0]} ${rule.values[1]}`,
+          ...(rule.items === 4 ? [rule.values.slice(0, 4).join(' ')] : []),
         )
       if ('list' in rule) values.push(`${rule.values[0]}, ${rule.values[1]}`)
       if ('easing' in rule)
@@ -125,7 +125,7 @@ export function cases(): readonly Case[] {
       values.push('auto', 1, -1, 2, 'span 1', 'span 2')
     if (rule.kind === 'time') {
       values.push('calc(1s + 20ms)', 'min(1s, 500ms)')
-      values.push('0s, 250ms, 1s')
+      if ('list' in rule) values.push('0s, 250ms, 1s')
       if ('keywords' in rule) values.push(...rule.keywords)
       for (const unit of Object.keys(units))
         for (const number of ['0', '1', '.5', '1e2', '-1']) {

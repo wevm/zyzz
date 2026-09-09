@@ -12,10 +12,34 @@ import * as Scrolling from '../test/fixtures/Scrolling.js'
 import * as Snapping from '../test/fixtures/Snapping.js'
 import * as Tables from '../test/fixtures/Tables.js'
 import * as TextDecoration from '../test/fixtures/TextDecoration.js'
+import * as TextTimeline from '../test/fixtures/TextTimeline.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
 describe('css', () => {
+  test('text and timeline groups retain public type constraints', () => {
+    Style.define(TextTimeline.styles)
+    css({
+      hangingPunctuation: 'last first allow-end',
+      masonryAutoFlow: 'ordered pack',
+      positionVisibility: 'anchors-visible no-overflow',
+      speakAs: 'digits spell-out',
+      maskBorderRepeat: 'stretch round',
+    })
+    css({
+      columnHeight: 'calc(20px + 2em)',
+      lineHeightStep: '2em',
+      shapeImageThreshold: 0.5,
+      textDecorationInset: '1px 2px',
+    })
+    // @ts-expect-error Timeline axes are an explicit finite vocabulary.
+    css({ viewTimelineAxis: 'horizontal' })
+    // @ts-expect-error Height accepts lengths rather than percentages.
+    css({ columnHeight: '50%' })
+    // @ts-expect-error Delay requires a time unit.
+    css({ interestDelayStart: 20 })
+  })
+
   test('SVG geometry and text scalars preserve finite authoring', () => {
     Style.define(Scalars.styles)
     css({

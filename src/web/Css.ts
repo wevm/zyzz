@@ -118,11 +118,19 @@ export function compile<
               }
               return 'borderRadius'
             }
+            if (['flexDirection', 'flexFlow', 'flexWrap'].includes(property))
+              return 'flexFlow'
+            if (/^(pageBreak|break)(After|Before|Inside)$/.test(property))
+              return property.replace('pageBreak', 'break')
             if (property.startsWith('fontSynthesis')) return 'fontSynthesis'
             if (
-              ['whiteSpace', 'whiteSpaceCollapse', 'textWrapMode'].includes(
-                property,
-              )
+              [
+                'whiteSpace',
+                'whiteSpaceCollapse',
+                'textWrap',
+                'textWrapMode',
+                'textWrapStyle',
+              ].includes(property)
             )
               return 'whiteSpace'
             if (['wordWrap', 'overflowWrap'].includes(property))

@@ -40,6 +40,7 @@ import * as Substitution from '../../test/fixtures/Substitution.js'
 import * as Svg from '../../test/fixtures/Svg.js'
 import * as Tables from '../../test/fixtures/Tables.js'
 import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
+import * as TextTimeline from '../../test/fixtures/TextTimeline.js'
 import * as TextFlow from '../../test/fixtures/TextFlow.js'
 import * as Compilation from '../../bench/Compilation.js'
 
@@ -332,6 +333,12 @@ const workloads = {
       `export const slide${index} = css({scrollMarginInlineStart:'${index}px',scrollSnapAlign:'start center',scrollSnapStop:'always',scrollSnapType:['inline proximity','inline mandatory!']})();`,
     source: Snapping.source,
     title: 'scroll snap',
+  },
+  textTimeline: {
+    declaration: (index: number) =>
+      `export const line${index} = css({flexFlow:'row wrap',textWrap:'wrap balance',verticalAlign:'${index}px',viewTimelineAxis:'block, x'})();`,
+    source: TextTimeline.source,
+    title: 'text timeline',
   },
   substitution: {
     declaration: (index: number) =>

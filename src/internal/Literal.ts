@@ -68,6 +68,7 @@ type Rule = { readonly list?: true } & (
       readonly kind: 'length'
       readonly negative: boolean
       readonly percentage?: boolean
+      readonly standalone?: readonly string[]
     }
   | {
       readonly items?: 2 | 4
@@ -681,6 +682,11 @@ export const rules = {
   borderColor: { ...color, items: 4 },
   borderEndEndRadius: { ...length, items: 2 },
   borderEndStartRadius: { ...length, items: 2 },
+  borderImageRepeat: {
+    items: 2,
+    kind: 'enum',
+    values: ['repeat', 'round', 'space', 'stretch'],
+  },
   borderInlineColor: { ...color, items: 2 },
   borderInlineEndColor: color,
   borderInlineEndStyle: border,
@@ -712,7 +718,31 @@ export const rules = {
   borderTopWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
   borderWidth: { ...stroke, items: 4, keywords: ['medium', 'thick', 'thin'] },
   bottom: margin,
+  boxAlign: {
+    kind: 'enum',
+    values: ['baseline', 'center', 'end', 'start', 'stretch'],
+  },
   boxDecorationBreak: { kind: 'enum', values: ['clone', 'slice'] },
+  boxDirection: { kind: 'enum', values: ['normal', 'reverse'] },
+  boxFlex: { kind: 'number', max: Number.MAX_SAFE_INTEGER, min: 0 },
+  boxFlexGroup: {
+    integer: true,
+    kind: 'number',
+    max: Number.MAX_SAFE_INTEGER,
+    min: 1,
+  },
+  boxLines: { kind: 'enum', values: ['multiple', 'single'] },
+  boxOrdinalGroup: {
+    integer: true,
+    kind: 'number',
+    max: Number.MAX_SAFE_INTEGER,
+    min: 1,
+  },
+  boxOrient: {
+    kind: 'enum',
+    values: ['block-axis', 'horizontal', 'inline-axis', 'vertical'],
+  },
+  boxPack: { kind: 'enum', values: ['center', 'end', 'justify', 'start'] },
   boxSizing: { kind: 'enum', values: ['border-box', 'content-box'] },
   breakAfter: fragmentation,
   breakBefore: fragmentation,
@@ -749,11 +779,13 @@ export const rules = {
   columnCount: { ...positiveInteger, keywords: ['auto'] },
   columnFill: { kind: 'enum', values: ['auto', 'balance'] },
   columnGap: { ...length, keywords: ['normal'] },
+  columnHeight: { ...length, auto: true, percentage: false },
   columnRuleColor: color,
   columnRuleStyle: border,
   columnRuleWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
   columnSpan: { kind: 'enum', values: ['all', 'none'] },
   columnWidth: { ...stroke, auto: true },
+  columnWrap: { kind: 'enum', values: ['auto', 'nowrap', 'wrap'] },
   contain: {
     groups: [['size', 'inline-size'], ['layout'], ['style'], ['paint']],
     kind: 'enum',
@@ -852,6 +884,24 @@ export const rules = {
       'table-row-group',
     ],
   },
+  dominantBaseline: {
+    kind: 'enum',
+    values: [
+      'alphabetic',
+      'auto',
+      'central',
+      'hanging',
+      'ideographic',
+      'mathematical',
+      'middle',
+      'text-bottom',
+      'text-top',
+    ],
+  },
+  dynamicRangeLimit: {
+    kind: 'enum',
+    values: ['constrained', 'no-limit', 'standard'],
+  },
   emptyCells: { kind: 'enum', values: ['hide', 'show'] },
   fieldSizing: { kind: 'enum', values: ['content', 'fixed'] },
   fill: { ...color, keywords: ['context-fill', 'context-stroke', 'none'] },
@@ -862,7 +912,29 @@ export const rules = {
     kind: 'enum',
     values: ['column', 'column-reverse', 'row', 'row-reverse'],
   },
+  flexFlow: {
+    groups: [
+      ['column', 'column-reverse', 'row', 'row-reverse'],
+      ['nowrap', 'wrap', 'wrap-reverse'],
+    ],
+    kind: 'enum',
+    values: [
+      'column',
+      'column-reverse',
+      'nowrap',
+      'row',
+      'row-reverse',
+      'wrap',
+      'wrap-reverse',
+    ],
+  },
   flexGrow: { kind: 'number', max: Infinity, min: 0 },
+  flexLineCount: {
+    integer: true,
+    kind: 'number',
+    max: Number.MAX_SAFE_INTEGER,
+    min: 1,
+  },
   flexShrink: { kind: 'number', max: Infinity, min: 0 },
   flexWrap: { kind: 'enum', values: ['nowrap', 'wrap', 'wrap-reverse'] },
   float: {
@@ -1019,11 +1091,24 @@ export const rules = {
     ...track,
     explicit: true,
   },
+  hangingPunctuation: {
+    groups: [['first'], ['allow-end', 'force-end'], ['last']],
+    kind: 'enum',
+    values: ['allow-end', 'first', 'force-end', 'last', 'none'],
+  },
   height: size,
   hyphens: { kind: 'enum', values: ['auto', 'manual', 'none'] },
   imageRendering: {
     kind: 'enum',
     values: ['auto', 'crisp-edges', 'pixelated', 'smooth'],
+  },
+  imeMode: {
+    kind: 'enum',
+    values: ['active', 'auto', 'disabled', 'inactive', 'normal'],
+  },
+  initialLetterAlign: {
+    kind: 'enum',
+    values: ['alphabetic', 'auto', 'hanging', 'ideographic'],
   },
   inlineSize: size,
   inset: { ...margin, items: 4 },
@@ -1034,6 +1119,8 @@ export const rules = {
   insetInlineEnd: margin,
   insetInlineStart: margin,
   interactivity: { kind: 'enum', values: ['auto', 'inert'] },
+  interestDelayEnd: { keywords: ['normal'], kind: 'time', negative: true },
+  interestDelayStart: { keywords: ['normal'], kind: 'time', negative: true },
   interpolateSize: { kind: 'enum', values: ['allow-keywords', 'numeric-only'] },
   isolation: { kind: 'enum', values: ['auto', 'isolate'] },
   justifyContent: {
@@ -1057,7 +1144,15 @@ export const rules = {
     kind: 'enum',
     values: ['anywhere', 'auto', 'loose', 'normal', 'strict'],
   },
+  lineClamp: {
+    integer: true,
+    keywords: ['none'],
+    kind: 'number',
+    max: Number.MAX_SAFE_INTEGER,
+    min: 1,
+  },
   lineHeight: { kind: 'number', max: Infinity, min: 0 },
+  lineHeightStep: { ...length, percentage: false },
   listStylePosition: { kind: 'enum', values: ['inside', 'outside'] },
   listStyleType: {
     kind: 'enum',
@@ -1098,6 +1193,13 @@ export const rules = {
   marginLeft: margin,
   marginRight: margin,
   marginTop: margin,
+  marginTrim: { kind: 'enum', values: ['all', 'in-flow', 'none'] },
+  maskBorderMode: { kind: 'enum', values: ['alpha', 'luminance'] },
+  maskBorderRepeat: {
+    items: 2,
+    kind: 'enum',
+    values: ['repeat', 'round', 'space', 'stretch'],
+  },
   maskClip: {
     kind: 'enum',
     values: [
@@ -1137,11 +1239,26 @@ export const rules = {
   },
   maskSize: { ...length, auto: true, keywords: ['contain', 'cover'] },
   maskType: { kind: 'enum', values: ['alpha', 'luminance'] },
+  masonryAutoFlow: {
+    groups: [
+      ['next', 'pack'],
+      ['definite-first', 'ordered'],
+    ],
+    kind: 'enum',
+    values: ['definite-first', 'next', 'ordered', 'pack'],
+  },
   mathShift: { kind: 'enum', values: ['compact', 'normal'] },
   mathStyle: { kind: 'enum', values: ['compact', 'normal'] },
   maxBlockSize: maximum,
   maxHeight: maximum,
   maxInlineSize: maximum,
+  maxLines: {
+    integer: true,
+    keywords: ['none'],
+    kind: 'number',
+    max: Number.MAX_SAFE_INTEGER,
+    min: 1,
+  },
   maxWidth: maximum,
   minBlockSize: size,
   minHeight: size,
@@ -1179,6 +1296,7 @@ export const rules = {
     keywords: ['bottom', 'center', 'left', 'right', 'top'],
     negative: true,
   },
+  offsetDistance: { ...length, negative: true },
   opacity: { kind: 'number', max: 1, min: 0 },
   // Safe integers serialize without exponential notation in CSS integer positions.
   order: {
@@ -1212,6 +1330,7 @@ export const rules = {
     kind: 'enum',
     values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
   },
+  overflowClipBox: { kind: 'enum', values: ['content-box', 'padding-box'] },
   overflowInline: {
     kind: 'enum',
     values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
@@ -1242,6 +1361,15 @@ export const rules = {
   paddingLeft: length,
   paddingRight: length,
   paddingTop: length,
+  pageBreakAfter: {
+    kind: 'enum',
+    values: ['always', 'auto', 'avoid', 'left', 'recto', 'right', 'verso'],
+  },
+  pageBreakBefore: {
+    kind: 'enum',
+    values: ['always', 'auto', 'avoid', 'left', 'recto', 'right', 'verso'],
+  },
+  pageBreakInside: { kind: 'enum', values: ['auto', 'avoid'] },
   paintOrder: { kind: 'enum', values: ['fill', 'markers', 'normal', 'stroke'] },
   perspective: { ...length, keywords: ['none'], percentage: false },
   perspectiveOrigin: {
@@ -1253,6 +1381,11 @@ export const rules = {
   position: {
     kind: 'enum',
     values: ['absolute', 'fixed', 'relative', 'static', 'sticky'],
+  },
+  positionVisibility: {
+    groups: [['anchors-valid'], ['anchors-visible'], ['no-overflow']],
+    kind: 'enum',
+    values: ['always', 'anchors-valid', 'anchors-visible', 'no-overflow'],
   },
   printColorAdjust: { kind: 'enum', values: ['economy', 'exact'] },
   r: length,
@@ -1319,6 +1452,7 @@ export const rules = {
   scrollMarginLeft: scrollMargin,
   scrollMarginRight: scrollMargin,
   scrollMarginTop: scrollMargin,
+  scrollMarkerGroup: { kind: 'enum', values: ['after', 'before', 'none'] },
   scrollPadding: { ...scrollPadding, items: 4 },
   scrollPaddingBlock: { ...scrollPadding, items: 2 },
   scrollPaddingBlockEnd: scrollPadding,
@@ -1377,16 +1511,34 @@ export const rules = {
       'y proximity',
     ],
   },
+  scrollSnapTypeX: { kind: 'enum', values: ['mandatory', 'none', 'proximity'] },
+  scrollSnapTypeY: { kind: 'enum', values: ['mandatory', 'none', 'proximity'] },
   scrollTargetGroup: { kind: 'enum', values: ['auto', 'none'] },
   scrollTimelineAxis: {
     kind: 'enum',
     list: true,
     values: ['block', 'inline', 'x', 'y'],
   },
+  shapeImageThreshold: { kind: 'number', min: 0, max: 1 },
   shapeMargin: length,
   shapeRendering: {
     kind: 'enum',
     values: ['auto', 'crispEdges', 'geometricPrecision', 'optimizeSpeed'],
+  },
+  speakAs: {
+    groups: [
+      ['spell-out'],
+      ['digits'],
+      ['literal-punctuation', 'no-punctuation'],
+    ],
+    kind: 'enum',
+    values: [
+      'digits',
+      'literal-punctuation',
+      'no-punctuation',
+      'normal',
+      'spell-out',
+    ],
   },
   stopColor: color,
   stopOpacity: { kind: 'number', max: 1, min: 0 },
@@ -1423,6 +1575,13 @@ export const rules = {
   },
   textCombineUpright: { kind: 'enum', values: ['all', 'none'] },
   textDecorationColor: color,
+  textDecorationInset: {
+    ...length,
+    auto: true,
+    items: 2,
+    negative: true,
+    standalone: ['auto'],
+  },
   textDecorationLine: {
     kind: 'enum',
     values: [
@@ -1526,6 +1685,19 @@ export const rules = {
     values: ['capitalize', 'lowercase', 'none', 'uppercase'],
   },
   textUnderlineOffset: { ...length, auto: true, negative: true },
+  textUnderlinePosition: {
+    groups: [['under'], ['left', 'right']],
+    kind: 'enum',
+    values: ['auto', 'from-font', 'left', 'right', 'under'],
+  },
+  textWrap: {
+    groups: [
+      ['nowrap', 'wrap'],
+      ['auto', 'balance', 'pretty', 'stable'],
+    ],
+    kind: 'enum',
+    values: ['auto', 'balance', 'nowrap', 'pretty', 'stable', 'wrap'],
+  },
   textWrapMode: { kind: 'enum', values: ['nowrap', 'wrap'] },
   textWrapStyle: {
     kind: 'enum',
@@ -1675,6 +1847,26 @@ export const rules = {
   },
   userSelect: { kind: 'enum', values: ['all', 'auto', 'none', 'text'] },
   vectorEffect: { kind: 'enum', values: ['none', 'non-scaling-stroke'] },
+  verticalAlign: {
+    ...length,
+    keywords: [
+      'baseline',
+      'bottom',
+      'middle',
+      'sub',
+      'super',
+      'text-bottom',
+      'text-top',
+      'top',
+    ],
+    negative: true,
+  },
+  viewTimelineAxis: {
+    kind: 'enum',
+    list: true,
+    values: ['block', 'inline', 'x', 'y'],
+  },
+  viewTransitionScope: { kind: 'enum', values: ['all', 'none'] },
   visibility: { kind: 'enum', values: ['collapse', 'hidden', 'visible'] },
   whiteSpace: {
     kind: 'enum',
@@ -1811,6 +2003,7 @@ export function validate(
         parts.every(
           (part) =>
             !globals.has(part) &&
+            !rule.standalone?.includes(part) &&
             validate(
               property,
               /^[+-]?(?:0*\.0+|0+)(?:[eE][+-]?\d+)?$/.test(part) ? 0 : part,

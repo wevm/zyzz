@@ -6,8 +6,90 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
+import * as Lengths from '../../test/fixtures/Lengths.js'
 
 describe('compile', () => {
+  test('standard length families compile through public definitions', () => {
+    const styles = Style.define({
+      card: {
+        width: ['1px', ...Lengths.units.map((unit) => `1${unit}` as const)],
+      },
+    })
+    expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
+      `".z_base0{width:1px;width:1px;width:1cm;width:1mm;width:1q;width:1Q;width:1in;width:1pc;width:1pt;width:1em;width:1ex;width:1cap;width:1ch;width:1ic;width:1lh;width:1rem;width:1rex;width:1rcap;width:1rch;width:1ric;width:1rlh;width:1vw;width:1vh;width:1vi;width:1vb;width:1vmin;width:1vmax;width:1svw;width:1svh;width:1svi;width:1svb;width:1svmin;width:1svmax;width:1lvw;width:1lvh;width:1lvi;width:1lvb;width:1lvmin;width:1lvmax;width:1dvw;width:1dvh;width:1dvi;width:1dvb;width:1dvmin;width:1dvmax;width:1cqw;width:1cqh;width:1cqi;width:1cqb;width:1cqmin;width:1cqmax;width:1%;}"`,
+    )
+  })
+
+  test('standard length families match authored CSS in the browser', async () => {
+    const styles = Style.define(
+      Object.fromEntries(
+        Lengths.units.map((unit) => [unit, { width: `1${unit}` as const }]),
+      ),
+    )
+    const output = Css.compile({ styles })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 800, height: 600 },
+      })
+      await page.setContent(
+        `<style>html{font-size:16px;line-height:24px}main{container-type:size;width:400px;height:300px}${output.css}</style><main>${Lengths.units.map((unit) => `<div id="compiled-${unit}" class="${output.classes[unit]}"></div><div id="authored-${unit}" style="width:1${unit}"></div>`).join('')}</main>`,
+      )
+      expect(
+        await page.evaluate(
+          (units) => units.filter((unit) => !CSS.supports('width', `1${unit}`)),
+          [...Lengths.units],
+        ),
+      ).toMatchInlineSnapshot(`[]`)
+      expect(
+        await page.evaluate(
+          (units) =>
+            units.filter(
+              (unit) =>
+                getComputedStyle(document.getElementById(`compiled-${unit}`)!)
+                  .width !==
+                getComputedStyle(document.getElementById(`authored-${unit}`)!)
+                  .width,
+            ),
+          [...Lengths.units],
+        ),
+      ).toMatchInlineSnapshot(`[]`)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('standard length validation retains property bounds and syntax restrictions', () => {
+    expect(() =>
+      Style.define({
+        card: {
+          padding: '-1cqi',
+          borderWidth: '1%',
+          width: '1e999dvh',
+          height: '1ms',
+          margin: '1 dvw',
+          fontSize: '1cqi; color:red',
+        },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Style.InvalidError: ["card","padding"]: Expected a nonnegative literal length or numeric zero.
+      ["card","borderWidth"]: Expected a nonnegative literal length or numeric zero.
+      ["card","width"]: Expected a nonnegative literal length, auto, or numeric zero.
+      ["card","height"]: Expected a nonnegative literal length, auto, or numeric zero.
+      ["card","margin"]: Expected a literal length, auto, or numeric zero.
+      ["card","fontSize"]: Expected a nonnegative literal length or numeric zero.]
+    `)
+    expect(
+      Css.compile({
+        styles: Style.define({
+          card: { margin: '-1e2cqi', padding: '+.5rlh', borderWidth: '1Q' },
+        }),
+      }).css,
+    ).toMatchInlineSnapshot(
+      `".z_base0{margin:-1e2cqi;padding:+.5rlh;border-width:1Q;}"`,
+    )
+  })
+
   test('importance is distinct in cached and factored declarations', () => {
     const styles = Style.define({
       first: { color: ['#fff!', '#000!'] },

@@ -1,6 +1,6 @@
 # CSS Capability Inventory
 
-Version 1. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
+Version 2. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
 
 ## Current Web Surface
 
@@ -14,11 +14,15 @@ Version 1. This inventory separates accepted authoring from rendered support. Th
 | Ordered declaration fallbacks                                                                   | Nonempty readonly tuples, independently checked entries               | Dense literal arrays expand in place; each emitted declaration maps to its own entry | Transform fallback browser scenario                           | Fallback transform lane                        |
 | Trailing `!` / `!important`                                                                     | String/number suffixes preserve property and token domains            | Importance is separate declaration data; mixed priority and order retained           | Transform fallback browser scenario                           | Fallback transform lane                        |
 
-Supported lengths are finite px/rem/em/vh/vw/% or numeric zero; border widths exclude percentages. Colors accept hex, transparent, currentColor, black, and white. Full lists and bounds remain in the owning literal rules rather than a second parser definition.
+Supported lengths include absolute, font-relative, viewport-relative (default/small/large/dynamic), and container-relative units, percentages, or numeric zero; border widths exclude percentages. Colors accept hex, transparent, currentColor, black, and white. Full lists and bounds remain in the owning literal rules rather than a second parser definition.
+
+Standard length units share one vocabulary for types and runtime validation. Source-to-CSS snapshots preserve spelling, token fallbacks, importance, and per-entry maps. Browser fixtures compare every unit with directly authored CSS and check viewport/container/font computations. The standard-length transform lane measures the complete source pipeline.
 
 ## Targets
 
 The pure core validates ordered declarations. The web compiler emits standard CSS and leaves browser lowering to the host. Chromium integration verifies fallback order, priority, shorthand/longhand precedence, and inherited tokens. Vite and Lightning CSS retain ownership of configured browser targets; existing native `light-dark()` fixtures use Chrome 123, Firefox 128, and Safari 17.5 targets.
+
+Newer length units remain native browser syntax; acceptance does not establish support in older browser targets. Container units do not imply authoring support for containment declarations or queries.
 
 A native emitter is not implemented. Neither these web fixtures nor accepted core types establish native rendering support. Native importance, ordered fallbacks, web variables, selectors, and conditions require explicit target diagnostics when that adapter lands.
 

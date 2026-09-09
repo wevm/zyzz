@@ -43,11 +43,12 @@ Later generated declarations win in the same condition context, subject to CSS i
 
 ## 03. Values, Expressions, Importance, and Fallbacks
 
-Sources: StyleX `firstThatWorks`/`defineConsts`, Tailwind arbitrary values/functions/importance, vanilla-extract fallback values/CSS Utils, and Panda values/token references/importance. **Planned:** 2.3.
+Sources: StyleX `firstThatWorks`/`defineConsts`, Tailwind arbitrary values/functions/importance, vanilla-extract fallback values/CSS Utils, and Panda values/token references/importance. **Partial:** ordered fallbacks, importance, and standard length units; expressions and variables remain in 2.3.
 
 ```ts
 import { css } from 'zyzz'
 
+// Static constants and template expressions remain planned.
 const gap = '1rem'
 const panel = css({
   color: '#06c!',

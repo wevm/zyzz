@@ -13,8 +13,8 @@ export type Color =
 /** CSS-wide keywords accepted by every supported property. */
 export type Global = 'inherit' | 'initial' | 'revert-layer' | 'revert' | 'unset'
 
-/** Length units supported by the initial literal contract. */
-export type Length = `${number}${'%' | 'em' | 'px' | 'rem' | 'vh' | 'vw'}` | 0
+/** Finite CSS lengths and percentages; numeric zero needs no unit. */
+export type Length = `${number}${(typeof lengthUnits)[number]}` | 0
 
 /** Finite property surface with no arbitrary string index signature. */
 export type Properties = {
@@ -70,8 +70,63 @@ const globals = new Set<string>([
   'unset',
 ])
 const length = { auto: false, kind: 'length', negative: false } as const
-const lengthPattern =
-  /^([+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?)(px|rem|em|vh|vw|%)$/
+// Keep type inference and validation on the same unit vocabulary.
+const lengthUnits = [
+  '%',
+  'cap',
+  'ch',
+  'cm',
+  'cqb',
+  'cqh',
+  'cqi',
+  'cqmax',
+  'cqmin',
+  'cqw',
+  'dvb',
+  'dvh',
+  'dvi',
+  'dvmax',
+  'dvmin',
+  'dvw',
+  'em',
+  'ex',
+  'ic',
+  'in',
+  'lh',
+  'lvb',
+  'lvh',
+  'lvi',
+  'lvmax',
+  'lvmin',
+  'lvw',
+  'mm',
+  'pc',
+  'pt',
+  'px',
+  'q',
+  'Q',
+  'rcap',
+  'rch',
+  'rem',
+  'rex',
+  'ric',
+  'rlh',
+  'svb',
+  'svh',
+  'svi',
+  'svmax',
+  'svmin',
+  'svw',
+  'vb',
+  'vh',
+  'vi',
+  'vmax',
+  'vmin',
+  'vw',
+] as const
+const lengthPattern = new RegExp(
+  `^([+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?)(${lengthUnits.join('|')})$`,
+)
 const margin = { auto: true, kind: 'length', negative: true } as const
 const size = { auto: true, kind: 'length', negative: false } as const
 

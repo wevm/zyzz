@@ -54,11 +54,11 @@ export type Definition<tokens extends Tokens = Tokens> = {
  */
 export function extend<
   const tokens extends Tokens,
-  const overrides extends Overrides<NoInfer<tokens>>,
+  const overrides extends Record<string, unknown>,
 >(
   theme: Definition<tokens>,
   overrides: overrides &
-    Exact<overrides, Overrides<NoInfer<tokens>>> &
+    NoInfer<Exact<overrides, Overrides<tokens>>> &
     NoInfer<Validated<overrides>>,
 ): Definition<tokens> {
   if (!theme || typeof theme !== 'object')

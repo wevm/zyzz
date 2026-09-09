@@ -118,3 +118,30 @@ css({ display: 'banana!' })
 css({ color: ['brand!'] })
 // @ts-expect-error Tokens retain their domain in fallback arrays.
 configured.css({ padding: [configured.theme.tokens.color.brand] })
+
+css({
+  borderWidth: '1Q',
+  height: ['100vh', '100dvh!'],
+  marginLeft: '-2cqi',
+  padding: '1lh',
+  width: '80ch',
+})
+const lengthTheme = Theme.define({ spacing: { space: '2cqi' } })
+Style.define({ card: { padding: 'space!' } }, { theme: lengthTheme })
+// @ts-expect-error A time unit is not a CSS length.
+css({ width: '1ms' })
+// @ts-expect-error An unknown viewport suffix is not a CSS unit.
+css({ height: '1dvheight' })
+// @ts-expect-error Border widths still exclude percentages.
+css({ borderWidth: '1%!' })
+// @ts-expect-error Length tokens still retain their property domains.
+lengthTheme.css({ color: lengthTheme.tokens.spacing.space })
+
+const extendedLengths = Theme.extend(lengthTheme, {
+  spacing: { space: '1dvh' },
+})
+expectTypeOf(extendedLengths).toEqualTypeOf<typeof lengthTheme>()
+// @ts-expect-error Overrides cannot introduce token paths.
+Theme.extend(lengthTheme, { spacing: { missing: '1lh' } })
+// @ts-expect-error Overrides cannot change length tokens to colors.
+Theme.extend(lengthTheme, { spacing: { space: '#fff' } })

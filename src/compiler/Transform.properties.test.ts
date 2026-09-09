@@ -17,12 +17,6 @@ describe('compile', () => {
   test('every property preserves native declaration and computed-style behavior', async () => {
     const samples = new Map<string, Conformance.Case[]>()
     for (const entry of Conformance.cases()) {
-      if (
-        ['inherit', 'initial', 'revert', 'revert-layer', 'unset'].includes(
-          String(entry.value),
-        )
-      )
-        continue
       const group = samples.get(entry.property) ?? []
       group.push(entry)
       samples.set(entry.property, group)

@@ -43,7 +43,7 @@ result.changed
 
 - Type: `readonly string[]`
 
-Complete artifact paths relative to output. Ownership manifests are excluded.
+Complete artifact paths relative to output. Exported themes and authoring aliases also produce `<source>.zyzz.json` metadata. When lowering TypeScript for publication, copy this sidecar beside its JavaScript entrypoint (for example, `theme.js.zyzz.json`). Ownership manifests are excluded.
 
 ```ts
 result.files

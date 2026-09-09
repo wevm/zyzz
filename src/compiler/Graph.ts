@@ -6,6 +6,8 @@ import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import type * as Theme from '../Theme.js'
+import type * as Token from '../internal/Token.js'
+import * as Contract from './internal/Contract.js'
 import * as Relative from './internal/Relative.js'
 import * as Themes from './internal/Themes.js'
 import * as Source from './Source.js'
@@ -22,6 +24,8 @@ export declare namespace compile {
   type ErrorType = Source.ExtractError | Transform.compile.ErrorType
   /** Source modules available for relative import resolution. */
   type Options = {
+    /** Serialized library contracts keyed by host-resolved module identity. Runtime modules stay external to this graph. */
+    readonly contracts?: Readonly<Record<string, string>> | undefined
     /** Host-resolved static runtime imports keyed by module ID and source specifier; null marks externals. The host owns dynamic imports when supplied. Omit for closed relative-graph resolution. */
     readonly imports?:
       | Readonly<Record<string, Readonly<Record<string, string | null>>>>
@@ -31,7 +35,9 @@ export declare namespace compile {
   }
   /** Compiled modules and their direct source dependencies. */
   type ReturnType = {
-    /** Direct static runtime source dependencies, keyed by module identity. */
+    /** Versioned compiler-only JSON per module; publish beside the compiled entrypoint as <entry>.zyzz.json. */
+    readonly contracts: Readonly<Record<string, string>>
+    /** Direct static runtime source and library-contract dependencies, keyed by module identity. */
     readonly dependencies: Readonly<Record<string, readonly string[]>>
     /** Rewritten modules and their stylesheets/maps. Load the CSS for the graph together. */
     readonly modules: Readonly<Record<string, Transform.compile.ReturnType>>
@@ -60,7 +66,9 @@ export declare namespace create {
 }
 
 type Cache = {
+  contracts: string
   extracted: ReadonlyMap<string, Source.extract.ReturnType>
+  libraries: Readonly<Record<string, ReturnType<typeof Contract.read>>>
   resolutions: Readonly<Record<string, string>>
   result: compile.ReturnType
   sources: Readonly<Record<string, string>>
@@ -69,6 +77,11 @@ type Cache = {
 
 function build(options: compile.Options, cache?: Cache): Cache {
   const ids = Object.keys(options.modules).sort()
+  const contracts = JSON.stringify(
+    Object.entries(options.contracts ?? {}).sort(([a], [b]) =>
+      a.localeCompare(b),
+    ),
+  )
   const resolutions = Object.fromEntries(
     ids.map((id) => [
       id,
@@ -84,6 +97,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
   // File-set changes can alter extensionless resolution even without source edits.
   const previous =
     cache &&
+    cache.contracts === contracts &&
     ids.length === Object.keys(cache.sources).length &&
     ids.every((id) => Object.hasOwn(cache.sources, id))
       ? cache
@@ -104,6 +118,31 @@ function build(options: compile.Options, cache?: Cache): Cache {
     Object.create(null)
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const visiting = new Set<string>()
+  const libraries: Record<
+    string,
+    ReturnType<typeof Contract.read>
+  > = Object.create(null)
+  const identities = new Map<string, Token.Contract>()
+  for (const [id, source] of Object.entries(options.contracts ?? {})) {
+    if (Object.hasOwn(options.modules, id))
+      fail(id, 'A module cannot supply both source and a library contract.')
+    try {
+      const library =
+        previous?.libraries[id] ?? Contract.read(source, identities)
+      for (const [name, theme] of Object.entries(library.themes)) {
+        if (
+          themes[name] &&
+          Contract.write({}, { [name]: themes[name]! }) !==
+            Contract.write({}, { [name]: theme })
+        )
+          throw new Error(`Conflicting library theme identity: ${name}`)
+        themes[name] = theme
+      }
+      libraries[id] = library
+    } catch (error) {
+      fail(id, `Invalid library contract: ${(error as Error).message}`)
+    }
+  }
 
   function fail(
     moduleId: string,
@@ -132,7 +171,11 @@ function build(options: compile.Options, cache?: Cache): Cache {
         fail(moduleId, `Missing host resolution: ${specifier}`, node)
       const target = imports[specifier]
       if (target === null) return undefined
-      if (target === undefined || !Object.hasOwn(options.modules, target))
+      if (
+        target === undefined ||
+        (!Object.hasOwn(options.modules, target) &&
+          !Object.hasOwn(libraries, target))
+      )
         fail(moduleId, `Missing host source module: ${specifier}`, node)
       return target
     }
@@ -155,7 +198,9 @@ function build(options: compile.Options, cache?: Cache): Cache {
       source === previous.sources[moduleId] &&
       resolutions[moduleId] === previous.resolutions[moduleId] &&
       previous.result.dependencies[moduleId]!.every(
-        (target) => visit(target) === previous.extracted.get(target),
+        (target) =>
+          Object.hasOwn(libraries, target) ||
+          visit(target) === previous.extracted.get(target),
       )
     ) {
       return retain(
@@ -256,7 +301,8 @@ function build(options: compile.Options, cache?: Cache): Cache {
       const target = resolve(moduleId, node.source.value, node)
       if (!target) continue
       imports.add(target)
-      const contracts = visit(target).themeExports ?? {}
+      const contracts =
+        libraries[target]?.links ?? visit(target).themeExports ?? {}
       if (node.type === 'ImportDeclaration') {
         for (const specifier of node.specifiers) {
           if (specifier.type === 'ImportNamespaceSpecifier') {
@@ -379,9 +425,26 @@ function build(options: compile.Options, cache?: Cache): Cache {
             },
           })
   return {
+    contracts,
     extracted,
+    libraries: Object.freeze(libraries),
     resolutions: Object.freeze(resolutions),
     result: Object.freeze({
+      contracts: Object.freeze(
+        Object.fromEntries(
+          ids
+            .filter(
+              (id) => Object.keys(extracted.get(id)!.themeExports ?? {}).length,
+            )
+            .map((id) => [
+              id,
+              Contract.write(
+                extracted.get(id)!.themeExports ?? {},
+                sharedThemes,
+              ),
+            ]),
+        ),
+      ),
       dependencies: Object.freeze(dependencies),
       modules: Object.freeze(modules),
     }),

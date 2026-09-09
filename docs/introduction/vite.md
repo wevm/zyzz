@@ -1,7 +1,7 @@
 # Vite Setup
 
 > [!NOTE]
-> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. `Config.create`, cyclic static graphs, and packed theme authoring remain unsupported.
+> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. `Config.create` and cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
 
 Add the adapter to the existing Vite configuration. Retain the application's framework plugin.
 
@@ -38,3 +38,29 @@ element.className = props.className
 import { theme } from './theme'
 export const props = theme.css({ color: 'brand' })()
 ```
+
+## Theme Libraries
+
+Publish the [graph contract](../api/compiler/Graph/compile.md#contracts) next to each exported JavaScript entrypoint: `index.js.zyzz.json` beside `index.js`. Vite resolves package exports and aliases; Zyzz reads the adjacent metadata without evaluating the library. Raw dependency source extraction remains unsupported.
+
+Exclude authoring packages from dependency optimization so Vite retains the original entrypoint and its metadata:
+
+```ts
+export default defineConfig({
+  build: { cssTarget: ['chrome123', 'firefox128', 'safari17.5'] },
+  optimizeDeps: { exclude: ['@acme/theme'] },
+  plugins: [zyzz()],
+})
+```
+
+```ts
+import { css, mint } from '@acme/theme'
+import '@acme/theme/style.css'
+
+const card = css({ color: 'brand' })
+element.className = `${mint.className} ${card().className}`
+```
+
+Light/dark pairs require final CSS targets with native `light-dark()` support. The profile above preserves it; Vite's default minification targets can lower it to scheme helper variables, which do not preserve arbitrary inherited or inline `color-scheme` selection. Zyzz does not override the host's target policy.
+
+Import the library stylesheet for its precompiled components. App-authored styles receive matching scopes through the plugin. Publish JavaScript, declarations, CSS, and metadata from the same build. Restart Vite after replacing an installed package; dependency watching follows Vite's normal exclusions.

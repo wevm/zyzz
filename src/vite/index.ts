@@ -48,6 +48,7 @@ export function zyzz(): Plugin {
       string,
       Record<string, string | null>
     > = Object.create(null)
+    const contracts: Record<string, string> = Object.create(null)
     const modules: Record<string, string> = Object.create(null)
     const files = new Set<string>()
     async function visit(file: string, source?: string) {
@@ -105,6 +106,20 @@ export function zyzz(): Plugin {
             },
           ])
         if (resolved.external || !eligible(resolved.id)) {
+          const physical = resolved.id.split('?')[0]!.split('#')[0]!
+          const sidecar = `${physical}.zyzz.json`
+          if (Path.isAbsolute(physical) && /\.[cm]?[jt]sx?$/.test(physical)) {
+            try {
+              contracts[resolved.id] = await Fs.readFile(sidecar, 'utf8')
+              host.watch(sidecar)
+              files.add(sidecar)
+              resolutions[specifier] = resolved.id
+              continue
+            } catch (error) {
+              if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
+                throw error
+            }
+          }
           resolutions[specifier] = null
           continue
         }
@@ -113,7 +128,7 @@ export function zyzz(): Plugin {
       }
     }
     await visit(entry.file, code)
-    const result = entry.compiler.compile({ imports, modules })
+    const result = entry.compiler.compile({ contracts, imports, modules })
     const map = new Mapping.GenMapping()
     const styles: string[] = []
     let line = 0

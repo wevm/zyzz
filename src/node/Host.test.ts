@@ -182,6 +182,11 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         `import { theme } from './theme.js'; export const props = theme.css({color:'brand'})();`,
       )
       await host.build()
+      expect(
+        await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
+      ).toMatchInlineSnapshot(
+        `"{"exports":{"theme":{"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#06c"}}}},"version":1}"`,
+      )
       const before = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
       expect(before).toMatchInlineSnapshot(`
         ".z_theme-1dre7461ulsxz8-theme {
@@ -197,6 +202,11 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       host.watch({ onResult: notifications.onResult })
       await notifications.next(() =>
         Fs.writeFile(themePath, themeSource.replace("'#06c'", "'#175'")),
+      )
+      expect(
+        await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
+      ).toMatchInlineSnapshot(
+        `"{"exports":{"theme":{"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#175"}}}},"version":1}"`,
       )
       const after = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
       expect(after).toMatchInlineSnapshot(`

@@ -48,7 +48,7 @@ Every `css` definition is callable. Static calls accept optional styling overrid
 
 ## Starting point
 
-Phase 1 is merged: typed definitions, literal CSS emission, source extraction, module rewriting, file hosts, and portability coverage. Phase 2 includes merged in-memory themes, token-name authoring, and relative source graph linking; incremental graph compilation is the current follow-up.
+Phase 1 is merged: typed definitions, literal CSS emission, source extraction, module rewriting, file hosts, and portability coverage. Phase 2 includes merged in-memory themes, token-name authoring, and relative source graph linking; incremental graph compilation, Vite 8 integration, standalone Lightning CSS processing, and lazy physical modules are merged. Packed theme contracts are the current 2.2b follow-up; configuration contracts follow next.
 
 Zile builds and links the library; Vite Plus runs oxfmt, oxlint, and integration tests. Existing CI checks consumer type fixtures, runs integration scenarios and builds the package. Tooling remains outside the core dependency graph.
 
@@ -142,7 +142,7 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) and [PR 2.2a / #10](https://github.com/wevm/zyzz/pull/10) are merged. [PR 2.2b.1 / #12](https://github.com/wevm/zyzz/pull/12) is merged. [PR #13](https://github.com/wevm/zyzz/pull/13) adds local bound-authoring aliases. [PR #14](https://github.com/wevm/zyzz/pull/14) adds explicit source token references. [PR #16](https://github.com/wevm/zyzz/pull/16) merged relative source graphs and host dependency rebuilds; incremental compilation continues 2.2b.2, while package contracts remain open.
+Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) and [PR 2.2a / #10](https://github.com/wevm/zyzz/pull/10) are merged. [PR 2.2b.1 / #12](https://github.com/wevm/zyzz/pull/12) is merged. [PR #13](https://github.com/wevm/zyzz/pull/13) adds local bound-authoring aliases. [PR #14](https://github.com/wevm/zyzz/pull/14) adds explicit source token references. [PR #16](https://github.com/wevm/zyzz/pull/16) merged relative source graphs and host dependency rebuilds; PRs #17–#19 add incremental compilation, Vite 8, standalone CSS processing, and lazy modules. This PR adds versioned packed-theme metadata, host sidecars, and Vite consumption; browser/CI verification remains the completion gate.
 
 The [CSS capability union](parity.md) deduplicates parity items across the referenced frameworks, with numbered capabilities and Zyzz usage for each. It separates implemented capabilities, planned behavior, API proposals, and deferred external-CSS integration targets. Current declaration support is 40 literal properties; general CSS coverage is not complete.
 
@@ -205,7 +205,8 @@ PR 2.1 uses opaque object references for contracts within one in-memory graph. C
 - [x] Compile explicit local theme token paths in bound calls/aliases, preserving token domains, fallbacks, liveness, source locations, and numeric/nested paths.
 - [x] Link relative source theme imports/exports, bound-authoring functions, named/star re-exports, and compatible extensions through Graph.compile. Preserve defining identities and cross-file maps; rebuild file-host consumers on dependency edits and recover from missing modules.
 - [x] Add an owned incremental graph compiler and use it in the file host. Reuse unchanged extractions/transforms, invalidate transitive importers, re-emit all scopes after theme changes, and recheck resolution after file-set changes. Failed compilations preserve the last successful snapshot.
-- [ ] Add package export resolution and packed authoring contracts and cycle handling. Relative graph support rejects cycles/dynamic source imports and does not complete the packed-library gate.
+- [x] Add versioned packed authoring contracts and host sidecars. Resolve package exports through Vite, retain aliases/re-exports and declarations, and compile consumers from metadata without executing libraries. Cyclic source graphs still produce explicit diagnostics; dynamic imports remain host-owned.
+- [ ] Confirm the packed-library browser fixture and CI on this PR before declaring 2.2b complete. It checks independently built library/app styles, nested scopes, schemes, and stable component classes. Next: 2.2c Configuration Contracts.
 - [x] Implement local literal theme factories/extensions, direct bound calls, and scope reads through Source/Transform. Keep theme identities stable across value edits and unrelated source insertions; retain generated TypeScript contracts without shipping theme authoring code. See [local theme compilation](../docs/guides/themes.md#compile-local-theme-source).
 - [ ] Support static `css` calls inline, outside markup, and in exported/imported style constants equally; extraction must not depend on a `className` attribute.
 - [ ] Implement scoped pseudo-classes/elements, explicit `&` selectors, and nested `@media`, `@container`, and `@supports` with theme inference at every depth.

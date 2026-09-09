@@ -30,8 +30,14 @@ export function accepts(
   return group === property
 }
 
+/** Retains full scopes when styles may have been compiled in another graph. */
+export const complete = Symbol('zyzz.contract.complete')
+
 /** Opaque data shared by a definition and its compatible extensions. */
-export type Contract = { readonly [identity]?: string | undefined }
+export type Contract = {
+  readonly [complete]?: boolean | undefined
+  readonly [identity]?: string | undefined
+}
 
 /** Constructs a frozen reference without registering global state. */
 export function create(options: Omit<Reference, typeof reference>): Reference {

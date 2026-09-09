@@ -50,6 +50,9 @@ export function compile<
       /^(min|max)?(blockSize|inlineSize)$/i.test(property),
     ),
   )
+  const resets = options.styles.styles.some((style) =>
+    style.declarations.some(({ property }) => property === 'all'),
+  )
   const combinedLines = new Set<string>()
   for (const style of options.styles.styles)
     for (const { property } of style.declarations)
@@ -114,6 +117,8 @@ export function compile<
             ? ''
             : `${Literal.name(property)}:${value}${important ? '!important' : ''};`,
           domain: ((property: string) => {
+            if (resets) return 'all'
+            if (property.startsWith('corner')) return 'cornerShape'
             if (property.startsWith('backgroundPosition'))
               return 'backgroundPosition'
             if (

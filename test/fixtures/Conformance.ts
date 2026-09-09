@@ -38,6 +38,24 @@ export function cases(): readonly Case[] {
       'revert-layer',
       'unset',
     ]
+    if (rule.kind === 'corner') {
+      values.push(
+        'bevel',
+        'notch',
+        'round',
+        'scoop',
+        'square',
+        'squircle',
+        'superellipse(2)',
+        'superellipse(-.5)',
+        'superellipse(infinity)',
+        'superellipse(-infinity)',
+        'superellipse(calc(1 + 1))',
+      )
+      if ('items' in rule) values.push('superellipse(2) bevel')
+      if ('items' in rule && rule.items === 4)
+        values.push('bevel notch round scoop')
+    }
     if (rule.kind === 'ratio')
       values.push(0, 2, 'auto', '16/9', 'auto 4 / 3', '1/0', '4 / 3 auto')
     if (rule.kind === 'rotate')

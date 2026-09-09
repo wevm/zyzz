@@ -3,6 +3,7 @@
  * @module
  */
 import * as Colors from './Color.js'
+import * as Corner from './Corner.js'
 import * as Component from './Component.js'
 import * as Grid from './Grid.js'
 import * as Geometry from './Geometry.js'
@@ -64,6 +65,7 @@ type Rule = { readonly list?: true } & (
   | { [kind in Geometry.Kind]: { readonly kind: kind } }[Geometry.Kind]
   | ({ readonly kind: 'identifier' } & Identifier.valid.Options)
   | { readonly kind: 'line'; readonly outline?: true }
+  | { readonly kind: 'corner'; readonly items?: 2 | 4 }
   | {
       readonly auto: boolean
       readonly axes?: true
@@ -179,76 +181,83 @@ type Value<rule extends Rule> =
                     | (rule extends { outline: true }
                         ? 'auto' | `auto ${string}`
                         : never)
-                : rule extends { kind: 'identifier' }
-                  ? string
-                  : rule extends { kind: 'length' }
-                    ?
-                        | Listed<
-                            Extract<LengthValue<rule>, string | number>,
+                : rule extends { kind: 'corner' }
+                  ?
+                      | Corner.Value
+                      | (rule extends { items: number }
+                          ? `${Corner.Value} ${string}`
+                          : never)
+                  : rule extends { kind: 'identifier' }
+                    ? string
+                    : rule extends { kind: 'length' }
+                      ?
+                          | Listed<
+                              Extract<LengthValue<rule>, string | number>,
+                              rule
+                            >
+                          | (rule extends { items: number }
+                              ? `${Extract<LengthValue<rule>, string | number>} ${string}`
+                              : never)
+                          | (rule extends { axes: true }
+                              ? `${Length | Calculation}/${string}`
+                              : never)
+                      : rule extends { kind: 'number' }
+                        ? Listed<
+                            | Calculation
+                            | number
+                            | Keywords<rule>
+                            | (rule extends { percentage: true }
+                                ? `${number}%`
+                                : never),
                             rule
                           >
-                        | (rule extends { items: number }
-                            ? `${Extract<LengthValue<rule>, string | number>} ${string}`
-                            : never)
-                        | (rule extends { axes: true }
-                            ? `${Length | Calculation}/${string}`
-                            : never)
-                    : rule extends { kind: 'number' }
-                      ? Listed<
-                          | Calculation
-                          | number
-                          | Keywords<rule>
-                          | (rule extends { percentage: true }
-                              ? `${number}%`
-                              : never),
-                          rule
-                        >
-                      : rule extends { kind: 'percentage' }
-                        ? Calculation | `${number}%` | Keywords<rule>
-                        : rule extends {
-                              kind: 'enum'
-                              values: readonly (infer keyword extends string)[]
-                            }
-                          ?
-                              | Listed<
-                                  | keyword
-                                  | (rule extends { easing: true }
-                                      ? Easing
-                                      : never),
-                                  rule
-                                >
-                              | (rule extends { items: number }
-                                  ? `${keyword} ${string}`
-                                  : never)
-                              | (rule extends {
-                                  groups: readonly (readonly (infer component extends
-                                    string)[])[]
-                                }
-                                  ? `${component} ${string}`
-                                  : never)
-                          : rule extends { kind: 'grid-tracks' }
+                        : rule extends { kind: 'percentage' }
+                          ? Calculation | `${number}%` | Keywords<rule>
+                          : rule extends {
+                                kind: 'enum'
+                                values: readonly (infer keyword extends
+                                  string)[]
+                              }
                             ?
-                                | GridTracks
-                                | (rule extends { explicit: true }
-                                    ?
-                                        | 'none'
-                                        | 'subgrid'
-                                        | `repeat(${string})${string}`
-                                        | `[${string}`
-                                    : never)
-                            : rule extends { kind: 'grid-line' }
-                              ? number | 'auto' | `span ${bigint}`
-                              : rule extends { kind: 'time' }
-                                ? Listed<
-                                    Calculation | Time | Keywords<rule>,
+                                | Listed<
+                                    | keyword
+                                    | (rule extends { easing: true }
+                                        ? Easing
+                                        : never),
                                     rule
                                   >
-                                :
-                                    | Color
-                                    | Keywords<rule>
-                                    | (rule extends { items: number }
-                                        ? `${Color} ${string}`
-                                        : never))
+                                | (rule extends { items: number }
+                                    ? `${keyword} ${string}`
+                                    : never)
+                                | (rule extends {
+                                    groups: readonly (readonly (infer component extends
+                                      string)[])[]
+                                  }
+                                    ? `${component} ${string}`
+                                    : never)
+                            : rule extends { kind: 'grid-tracks' }
+                              ?
+                                  | GridTracks
+                                  | (rule extends { explicit: true }
+                                      ?
+                                          | 'none'
+                                          | 'subgrid'
+                                          | `repeat(${string})${string}`
+                                          | `[${string}`
+                                      : never)
+                              : rule extends { kind: 'grid-line' }
+                                ? number | 'auto' | `span ${bigint}`
+                                : rule extends { kind: 'time' }
+                                  ? Listed<
+                                      Calculation | Time | Keywords<rule>,
+                                      rule
+                                    >
+                                  :
+                                      | Color
+                                      | Keywords<rule>
+                                      | (rule extends { items: number }
+                                          ? `${Color} ${string}`
+                                          : never))
 const blend = {
   kind: 'enum',
   values: [
@@ -599,6 +608,9 @@ const track = { explicit: false, kind: 'grid-tracks' } as const
 
 /** Canonical domains shared by legacy aliases and standard declarations. */
 export const aliases = {
+  gridColumnGap: 'columnGap',
+  gridGap: 'gap',
+  gridRowGap: 'rowGap',
   MozAppearance: 'appearance',
   WebkitAppearance: 'appearance',
   WebkitBorderAfter: 'borderBlockEnd',
@@ -687,6 +699,10 @@ export const rules = {
       'start',
       'stretch',
     ],
+  },
+  all: {
+    kind: 'enum',
+    values: ['inherit', 'initial', 'revert', 'revert-layer', 'unset'],
   },
   anchorName: {
     dashed: true,
@@ -988,6 +1004,23 @@ export const rules = {
     ],
   },
   contentVisibility: { kind: 'enum', values: ['auto', 'hidden', 'visible'] },
+  cornerBlockEndShape: { kind: 'corner', items: 2 },
+  cornerBlockStartShape: { kind: 'corner', items: 2 },
+  cornerBottomLeftShape: { kind: 'corner' },
+  cornerBottomRightShape: { kind: 'corner' },
+  cornerBottomShape: { kind: 'corner', items: 2 },
+  cornerEndEndShape: { kind: 'corner' },
+  cornerEndStartShape: { kind: 'corner' },
+  cornerInlineEndShape: { kind: 'corner', items: 2 },
+  cornerInlineStartShape: { kind: 'corner', items: 2 },
+  cornerLeftShape: { kind: 'corner', items: 2 },
+  cornerRightShape: { kind: 'corner', items: 2 },
+  cornerShape: { kind: 'corner', items: 4 },
+  cornerStartEndShape: { kind: 'corner' },
+  cornerStartStartShape: { kind: 'corner' },
+  cornerTopLeftShape: { kind: 'corner' },
+  cornerTopRightShape: { kind: 'corner' },
+  cornerTopShape: { kind: 'corner', items: 2 },
   cursor: {
     kind: 'enum',
     values: [
@@ -1125,6 +1158,22 @@ export const rules = {
     kind: 'identifier',
   },
   fontSize: length,
+  fontSmooth: {
+    ...stroke,
+    keywords: [
+      'always',
+      'auto',
+      'large',
+      'medium',
+      'never',
+      'small',
+      'x-large',
+      'x-small',
+      'xx-large',
+      'xx-small',
+      'xxx-large',
+    ],
+  },
   fontStretch: fontWidth,
   fontStyle: { kind: 'enum', values: ['italic', 'normal', 'oblique'] },
   fontSynthesis: {
@@ -1247,8 +1296,11 @@ export const rules = {
   },
   gridAutoRows: track,
   gridColumnEnd: { kind: 'grid-line' },
+  gridColumnGap: length,
   gridColumnStart: { kind: 'grid-line' },
+  gridGap: { ...length, items: 2 },
   gridRowEnd: { kind: 'grid-line' },
+  gridRowGap: length,
   gridRowStart: { kind: 'grid-line' },
   gridTemplateColumns: {
     ...track,
@@ -1302,6 +1354,90 @@ export const rules = {
       'space-between',
       'space-evenly',
       'start',
+    ],
+  },
+  justifyItems: {
+    kind: 'enum',
+    values: [
+      'anchor-center',
+      'baseline',
+      'center',
+      'center legacy',
+      'end',
+      'first baseline',
+      'flex-end',
+      'flex-start',
+      'last baseline',
+      'left',
+      'left legacy',
+      'legacy',
+      'legacy center',
+      'legacy left',
+      'legacy right',
+      'normal',
+      'right',
+      'right legacy',
+      'safe center',
+      'safe end',
+      'safe flex-end',
+      'safe flex-start',
+      'safe left',
+      'safe right',
+      'safe self-end',
+      'safe self-start',
+      'safe start',
+      'self-end',
+      'self-start',
+      'start',
+      'stretch',
+      'unsafe center',
+      'unsafe end',
+      'unsafe flex-end',
+      'unsafe flex-start',
+      'unsafe left',
+      'unsafe right',
+      'unsafe self-end',
+      'unsafe self-start',
+      'unsafe start',
+    ],
+  },
+  justifySelf: {
+    kind: 'enum',
+    values: [
+      'anchor-center',
+      'auto',
+      'baseline',
+      'center',
+      'end',
+      'first baseline',
+      'flex-end',
+      'flex-start',
+      'last baseline',
+      'left',
+      'normal',
+      'right',
+      'safe center',
+      'safe end',
+      'safe flex-end',
+      'safe flex-start',
+      'safe left',
+      'safe right',
+      'safe self-end',
+      'safe self-start',
+      'safe start',
+      'self-end',
+      'self-start',
+      'start',
+      'stretch',
+      'unsafe center',
+      'unsafe end',
+      'unsafe flex-end',
+      'unsafe flex-start',
+      'unsafe left',
+      'unsafe right',
+      'unsafe self-end',
+      'unsafe self-start',
+      'unsafe start',
     ],
   },
   left: margin,
@@ -1769,6 +1905,16 @@ export const rules = {
     keywords: ['auto', 'match-parent', 'none', 'normal'],
     kind: 'identifier',
   },
+  positionTryOrder: {
+    kind: 'enum',
+    values: [
+      'most-block-size',
+      'most-height',
+      'most-inline-size',
+      'most-width',
+      'normal',
+    ],
+  },
   positionVisibility: {
     groups: [['anchors-valid'], ['anchors-visible'], ['no-overflow']],
     kind: 'enum',
@@ -1964,6 +2110,37 @@ export const rules = {
     values: ['auto', 'center', 'end', 'justify', 'left', 'right', 'start'],
   },
   textAnchor: { kind: 'enum', values: ['end', 'middle', 'start'] },
+  textBoxEdge: {
+    kind: 'enum',
+    values: [
+      'auto',
+      'cap',
+      'cap alphabetic',
+      'cap ideographic',
+      'cap ideographic-ink',
+      'cap text',
+      'ex',
+      'ex alphabetic',
+      'ex ideographic',
+      'ex ideographic-ink',
+      'ex text',
+      'ideographic',
+      'ideographic alphabetic',
+      'ideographic ideographic',
+      'ideographic ideographic-ink',
+      'ideographic text',
+      'ideographic-ink',
+      'ideographic-ink alphabetic',
+      'ideographic-ink ideographic',
+      'ideographic-ink ideographic-ink',
+      'ideographic-ink text',
+      'text',
+      'text alphabetic',
+      'text ideographic',
+      'text ideographic-ink',
+      'text text',
+    ],
+  },
   textBoxTrim: {
     kind: 'enum',
     values: ['none', 'trim-both', 'trim-end', 'trim-start'],
@@ -2715,6 +2892,17 @@ export function validate(
         Colors.functional(value))
       ? undefined
       : 'Expected a named color, system color, hex color, transparent, or currentColor.'
+  if (rule.kind === 'corner') {
+    const parts =
+      typeof value === 'string'
+        ? Component.split(value, { separator: 'space' })
+        : undefined
+    return parts &&
+      parts.length <= (rule.items ?? 1) &&
+      parts.every(Corner.valid)
+      ? undefined
+      : 'Expected corner shape keywords or numeric superellipse functions with the required arity.'
+  }
   if (rule.kind === 'percentage' || rule.kind === 'number')
     return (() => {
       if (typeof value === 'string' && rule.keywords?.includes(value))

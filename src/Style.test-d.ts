@@ -19,6 +19,28 @@ import * as TextTimeline from '../test/fixtures/TextTimeline.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
+describe('corner and layout declarations', () => {
+  test('typed curvature and reset values preserve property domains', () => {
+    css({
+      cornerShape: 'superellipse(2) bevel',
+      cornerTopLeftShape: 'round',
+      all: 'initial',
+      gridGap: '10px 20px',
+      justifySelf: 'safe end',
+      textBoxEdge: 'cap alphabetic',
+      positionTryOrder: 'most-width',
+    })
+    // @ts-expect-error Curvature is a keyword or function rather than a bare number.
+    css({ cornerShape: 2 })
+    // @ts-expect-error All accepts only CSS-wide values or deferred substitution.
+    css({ all: 'red' })
+    // @ts-expect-error Legacy is exclusive to justify-items.
+    css({ justifySelf: 'legacy' })
+    // @ts-expect-error Text box edges retain separate over and under keyword domains.
+    css({ textBoxEdge: 'cap ex' })
+  })
+})
+
 describe('prefixed declarations', () => {
   test('vendor keywords preserve prefixes and domains', () => {
     css({

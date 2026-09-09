@@ -25,6 +25,7 @@ import * as Grid from '../../test/fixtures/Grid.js'
 import * as GridLists from '../../test/fixtures/GridLists.js'
 import * as Prefixed from '../../test/fixtures/Prefixed.js'
 import * as Percentage from '../../test/fixtures/Percentage.js'
+import * as Corners from '../../test/fixtures/Corners.js'
 import * as Geometry from '../../test/fixtures/Geometry.js'
 import * as Identifiers from '../../test/fixtures/Identifiers.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
@@ -278,6 +279,12 @@ const workloads = {
       `export const percentage${index} = css({fontWidth:'${100 + index}%',textSizeAdjust:'110%',opacity:'${index}%',zoom:'125%'})();`,
     source: Percentage.source,
     title: 'percentage',
+  },
+  corners: {
+    declaration: (index: number) =>
+      `export const corner${index} = css({borderRadius:'${index}px',cornerShape:'superellipse(2) bevel',gridGap:'10px 20px',justifySelf:'safe end'})();`,
+    source: Corners.source,
+    title: 'corner and layout',
   },
   geometry: {
     declaration: (index: number) =>

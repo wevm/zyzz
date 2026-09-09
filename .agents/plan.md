@@ -476,7 +476,7 @@ Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthan
 
 Motion lists preserve easing-function commas and validate cubic-bezier(), steps(), and linear() constraints. Absolute functional colors preserve color spaces and browser clamping. Border color/style lists and elliptical radii preserve logical overrides and importance. Compatible font variant and containment groups reject conflicts; font-synthesis adds one partially implemented property.
 
-The completion count remains 0/670: 505 partial and 165 deferred (135 standard, 30 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
+The completion count remains 0/670: 531 partial and 139 deferred (109 standard, 30 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
 
 ### Dimensional Math
 
@@ -526,4 +526,14 @@ The percentage benchmark CI lost the token-inclusive 100-style theme lane: 5.484
 
 Cache entries are scoped by property and scalar within one definition; no state persists across calls or themes. Public integration controls cover repeated names in different property groups and successive distinct themes. Browser percentage checks now explicitly record Chromium's missing font-width implementation, with independent native fallback controls.
 
-Prefixed mappings add 82 properties, reaching 505 partial and 165 deferred (135 standard, 30 prefixed). The initial 100-style transform comparison rose from 3.7546 to 4.3133 ms; a clean matched repeat measured 4.0851 ms ±5.74% before and 4.2505 ms ±6.27% after. New prefixed lanes measured 1.2137 ms (10 styles) and 6.2824 ms (100).
+Prefixed mappings added 82 properties, reaching 505 partial and 165 deferred (135 standard, 30 prefixed). The initial 100-style transform comparison rose from 3.7546 to 4.3133 ms; a clean matched repeat measured 4.0851 ms ±5.74% before and 4.2505 ms ±6.27% after. New prefixed lanes measured 1.2137 ms (10 styles) and 6.2824 ms (100).
+
+Seventeen corner-shape properties accept canonical curvature keywords, finite superellipse numbers, infinity endpoints, numeric math, and their one/two/four-value shorthands. Additional mappings cover all, grid-gap aliases, font-smooth, justify-items/self, position-try-order, and text-box-edge. Corner aliases share conflict domains; all prevents declaration factoring across reset boundaries.
+
+Source and type probes retain arity and dimension restrictions. Browser fixtures compare bevel hit testing with an independent polygon and verify A/B/A declarations around an all reset. These entries remain partial. Contracts follow [CSS Borders](https://www.w3.org/TR/css-borders-4/#corner-shaping).
+
+Path-length remains deferred: the pinned grammar places its range outside the length production, while [the MDN examples](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/path-length) describe unitless numbers. The independent grammar oracle is unchanged pending clarification of that experimental property.
+
+Corner/layout validation passes full TypeScript, lint, generated consumer probes, and source/grammar tests. The same-machine 100-style transform measured 4.0065 ms ±5.94% before and 4.3670 ms ±7.34% after; new 10/100-style lanes measured 1.1467/6.1129 ms. Browser curvature and reset assertions await CI.
+
+The prefixed head passed every standard CI check, but benchmark CI still lost palette (Zyzz 6.576 ms ±62.99%, Tailwind 4.031 ms ±47.00%) and token-inclusive themes (5.093 ms ±19.46%, 4.669 ms ±46.38%). Local confirmation retained all frameworks: palette 1.6219 vs 3.3085 ms; themes 3.0934 vs 4.3162 ms. Neither loss reproduced; gates remain unchanged.

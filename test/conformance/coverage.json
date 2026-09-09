@@ -983,7 +983,7 @@
       },
       "all": {
         "grammar": "9203e200ccddd568d4fc734ee41622484ea4f34a34524cdadc7e7016101dd443",
-        "status": "deferred"
+        "status": "partial"
       },
       "anchor-name": {
         "grammar": "80521c87f3e08b65e979e1c0678561e8db56f4ffff51ac4c8ff1f60a9b90ccb0",
@@ -1579,71 +1579,71 @@
       },
       "corner-block-end-shape": {
         "grammar": "1e7103a79f2782f406fd295fd4f7ec7ea106e297972ebc6fbaf22cd1a78f99c1",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-block-start-shape": {
         "grammar": "51160c1b852eab210686443294a8009cd1ed8acb3bd7c08d9cccbcca9509c704",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-bottom-left-shape": {
         "grammar": "88babf2da92d6e18db4732782bbd9a727a14759911f3267bd724d4b43aeffea2",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-bottom-right-shape": {
         "grammar": "9451a2911be95d273eb382874f11085cb5b949cb61834cc9463d917d4e525822",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-bottom-shape": {
         "grammar": "10e19b27de34c5d6c9fdd12690a3c2b5211df643e3a33016b68d829c87e9d844",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-end-end-shape": {
         "grammar": "92b8d52ecd7c90e13bb32ed0af1c3738adb64a28dcf2a82d413786ec4ad84b34",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-end-start-shape": {
         "grammar": "0cc8eed9c4eb15fb397e4567472fc7665bd35e4e7ab9ad5bbc20b948421302b4",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-inline-end-shape": {
         "grammar": "6fd6e4dcf46479a79d2637b2637d4d8784d355691c1205ec2a2351e9b37b5a38",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-inline-start-shape": {
         "grammar": "daa8ec975337afd699ccfeb639b6beef726aa60a99d522fc1df3936156b66ad9",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-left-shape": {
         "grammar": "28bab084983598573008c99fed3fdd8225eeade4db2550792c8d959756bfbe5b",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-right-shape": {
         "grammar": "67efc016a2f5fcbd84339d48c21875c3d6ec10e002b8a5471fd4cc7a00fbee8f",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-shape": {
         "grammar": "83a936f42e244233ef3ade4b82b1aa2ea9e54767be460abe5293fd8738cf8ac3",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-start-end-shape": {
         "grammar": "7c335fecb7dda8c4a98effb7959458fca07c75c3c59dd7e57d668387b0add723",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-start-start-shape": {
         "grammar": "38c52adbed0c68571cf42acf3bddfc0fd1f4b029828dcd122c38372f4834872a",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-top-left-shape": {
         "grammar": "078b798d81ad43e443cc736a98c085f05ff08a100a9871b869e0c97807fdff86",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-top-right-shape": {
         "grammar": "219507ed186fa1472297ddecc6081bdcf5c40872330ed7211e6bb2a13d0066c5",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-top-shape": {
         "grammar": "ccfe3ddc7ed72590c26bab1a9211293eeb671fda7f7f5c280841be6b6bf7f55e",
-        "status": "deferred"
+        "status": "partial"
       },
       "counter-increment": {
         "grammar": "149f9f765d65153e248da23c5f1eceb52cc1158dd05f15f75555f2930613d696",
@@ -1795,7 +1795,7 @@
       },
       "font-smooth": {
         "grammar": "a4d914fd9e58c5aaaaa95ef3eaf58ea990741bd3f616f68c5740708280b1fc3f",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-stretch": {
         "grammar": "f5f6c2b1041d6dd5eeaac245970007754a58af863a5a9277071f62766b905a42",
@@ -1911,7 +1911,7 @@
       },
       "grid-column-gap": {
         "grammar": "6a70b851aa48430f56d663492a95e7c119b2e633583f15cf9cb13f7aa1de1998",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-column-start": {
         "grammar": "3459721b2b04076fa2e9bc6195815832d748ce5832f06aa3da23f25b0589dc4b",
@@ -1919,7 +1919,7 @@
       },
       "grid-gap": {
         "grammar": "5b5a38af597536ca0f9376bc87ca1b3e0d3d1cfcca1dbe58c273186d26ee05e1",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-row": {
         "grammar": "856e7caae6d7141bdb4ac9ee54f502383f9e2faed7f686edbadff06d676468b6",
@@ -1931,7 +1931,7 @@
       },
       "grid-row-gap": {
         "grammar": "1681fcbe8fab2700f78975c7f81bcad387d9f44d75f77671ba6682058f37b65b",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-row-start": {
         "grammar": "349596ddaf68f72b0d16032f8734e740d587bc198a0a7929753ec1f10d74cc8a",
@@ -2059,11 +2059,11 @@
       },
       "justify-items": {
         "grammar": "00647111562f21d932dd8698f1a73b7be903357ca0f732503c4822ad0526e4e0",
-        "status": "deferred"
+        "status": "partial"
       },
       "justify-self": {
         "grammar": "59200e64e9633fa414ad4924bbe9875ccfe4c7cf795cc3a4072959c827c9758f",
-        "status": "deferred"
+        "status": "partial"
       },
       "justify-tracks": {
         "grammar": "bcb491d1b0a9062fb81747b7f5b271163b37cdba9cf09faa688cf1ebdfcfc275",
@@ -2547,7 +2547,7 @@
       },
       "position-try-order": {
         "grammar": "d91e23c795d8609bf3d1386cf665edb4fd26564afd5ce7006bd96f26fc5b57cc",
-        "status": "deferred"
+        "status": "partial"
       },
       "position-visibility": {
         "grammar": "3cbdb2080ebbea19b59599853aaa8f9036b4d407917ae5cceb0c1d5e7db55a02",
@@ -2875,7 +2875,7 @@
       },
       "text-box-edge": {
         "grammar": "63c96882f63dae097da4c604bcfa30e18daa7b47d922293bd91bc2e3d0529b27",
-        "status": "deferred"
+        "status": "partial"
       },
       "text-box-trim": {
         "grammar": "db1188c20ec6ab8b2457993d7ef4322a84109e42777f2a6eac454c36f35c85f8",

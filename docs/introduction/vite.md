@@ -1,7 +1,7 @@
 # Vite Setup
 
 > [!NOTE]
-> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. `Config.create` and cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
+> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. Named `Config.create` instances are supported. Cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
 
 Add the adapter to the existing Vite configuration. Retain the application's framework plugin.
 
@@ -38,6 +38,27 @@ element.className = props.className
 import { theme } from './theme'
 export const props = theme.css({ color: 'brand' })()
 ```
+
+## Configuration
+
+```ts
+// zyzz.config.ts
+import { Config } from 'zyzz'
+
+export const zyzz = Config.create({
+  theme: { color: { brand: '#06c' } },
+})
+```
+
+```ts
+// card.ts
+import { zyzz } from './zyzz.config.js'
+
+export const card = zyzz.css({ color: 'brand' })
+element.className = `${zyzz.theme.className} ${card().className}`
+```
+
+Named catalogs use `zyzz.themes.<name>.className`; `defaultTheme` selects shorthand token fallbacks. Config edits rebuild dependent styles. Direct literal calls, immutable aliases, and named re-exports are supported. Dynamic member access, escaping config objects, variants, and layer bodies remain unsupported.
 
 ## Theme Libraries
 

@@ -4,18 +4,28 @@
  */
 import type * as Ast from '@oxc-project/types'
 import type * as Walker from 'oxc-walker'
+import * as Config from '../../Config.js'
+import * as Configurations from './Configurations.js'
 import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
 import type * as Source from '../Source.js'
 
 /** Local bound-authoring initializer replaced while retaining its inferred type. */
 export type Alias = Call & {
+  /** Retains an immutable theme/configuration alias value with an explicit type. */
+  readonly retained?: boolean | undefined
   /** Whether the initializer supplies a destructured css binding. */
   readonly destructured: boolean
 }
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Validated inline configuration options retained for packed declarations. */
+  readonly options?: Readonly<Record<string, unknown>> | undefined
+  /** Configuration theme paths and their compiled scope keys. */
+  readonly members?: Readonly<Record<string, string>> | undefined
+  /** Complete authoring type retained for configuration declarations. */
+  readonly type?: string | undefined
   /** Exclusive source offset. */
   readonly end: number
   /** Stable module/binding scope key. */
@@ -34,7 +44,8 @@ export type Link = {
   readonly binding: string
   readonly call: Call
   readonly definition: Theme.Definition
-  readonly kind: 'css' | 'theme'
+  readonly kind: 'config' | 'css' | 'theme'
+  readonly members?: Readonly<Record<string, Link>> | undefined
 }
 
 /** Shared graph data; no filesystem or runtime evaluation is involved. */
@@ -55,6 +66,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const definitions = new Map<number, Call>()
   const factories = new Set<number>()
   const imports = new Set<number>()
+  const configImports = new Set<number>()
+  const configs = new Map<string, Link>()
+  const configBindings = new Map<number, Link>()
+  const factoryReferences = new Set<number>()
   const references: Reference[] = []
   const styles = new Map<
     number,
@@ -79,8 +94,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
           : specifier.imported.value) === 'Theme'
       )
         imports.add(specifier.start)
+      else if (
+        specifier.type === 'ImportSpecifier' &&
+        specifier.importKind !== 'type' &&
+        (specifier.imported.type === 'Identifier'
+          ? specifier.imported.name
+          : specifier.imported.value) === 'Config'
+      )
+        configImports.add(specifier.start)
   }
-  if (!imports.size && !Object.keys(options.links ?? {}).length)
+  if (
+    !imports.size &&
+    !configImports.size &&
+    !Object.keys(options.links ?? {}).length
+  )
     return undefined
 
   const names = new Map<string, Call>()
@@ -94,7 +121,22 @@ export function collect(program: Ast.Program, options: collect.Options) {
       if (!link) continue
       const call = { ...link.call, start: -1, end: -1 }
       themes[call.name] = link.definition
-      if (link.kind === 'theme') {
+      if (link.kind === 'config') {
+        const imported = {
+          ...link,
+          call,
+          members: Object.fromEntries(
+            Object.entries(link.members ?? {}).map(([key, member]) => [
+              key,
+              { ...member, call: { ...member.call, start: -1, end: -1 } },
+            ]),
+          ),
+        }
+        configs.set(specifier.local.name, imported)
+        configBindings.set(specifier.start, imported)
+        for (const member of Object.values(link.members ?? {}))
+          themes[member.call.name] = member.definition
+      } else if (link.kind === 'theme') {
         definitions.set(specifier.start, call)
         names.set(specifier.local.name, call)
       } else {
@@ -105,10 +147,48 @@ export function collect(program: Ast.Program, options: collect.Options) {
     }
   }
   const namespaces = new Set<string>()
+  const configNamespaces = new Set<string>()
   for (const node of program.body)
     if (node.type === 'ImportDeclaration')
       for (const specifier of node.specifiers)
         if (imports.has(specifier.start)) namespaces.add(specifier.local.name)
+        else if (configImports.has(specifier.start))
+          configNamespaces.add(specifier.local.name)
+
+  function resolve(node: Ast.Node): Link | undefined {
+    if (node.type === 'Identifier') {
+      const config = configs.get(node.name)
+      if (config) return config
+      const call = names.get(node.name)
+      if (call)
+        return {
+          binding: call.name,
+          call,
+          definition: themes[call.name]!,
+          kind: 'theme',
+        }
+      return undefined
+    }
+    if (node.type !== 'MemberExpression' || node.optional) return undefined
+    const path: string[] = []
+    let root: Ast.Node = node
+    while (root.type === 'MemberExpression') {
+      const key =
+        root.property.type === 'Identifier' && !root.computed
+          ? root.property.name
+          : root.property.type === 'Literal' &&
+              root.computed &&
+              typeof root.property.value === 'string'
+            ? root.property.value
+            : undefined
+      if (root.optional || key === undefined) return undefined
+      path.unshift(key)
+      root = root.object
+    }
+    return root.type === 'Identifier'
+      ? configs.get(root.name)?.members?.[path.join('.')]
+      : undefined
+  }
 
   function data(node: Ast.Node): unknown {
     if (node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression')
@@ -193,7 +273,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
         expression?.type !== 'CallExpression' ||
         expression.callee.type !== 'MemberExpression' ||
         expression.callee.object.type !== 'Identifier' ||
-        !namespaces.has(expression.callee.object.name)
+        (!namespaces.has(expression.callee.object.name) &&
+          !configNamespaces.has(expression.callee.object.name))
       )
         continue
       const member = expression.callee
@@ -202,7 +283,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
         member.optional ||
         expression.optional ||
         member.property.type !== 'Identifier' ||
-        !['define', 'extend'].includes(member.property.name)
+        !(
+          configNamespaces.has(expression.callee.object.name)
+            ? ['create']
+            : ['define', 'extend']
+        ).includes(member.property.name)
       )
         continue
       if (
@@ -215,6 +300,33 @@ export function collect(program: Ast.Program, options: collect.Options) {
           variable,
         )
       const name = `${options.namespace}-${variable.id.name}`
+      if (configNamespaces.has(expression.callee.object.name)) {
+        try {
+          const link = Configurations.collect({
+            data,
+            expression,
+            name,
+            resolve: (node) => {
+              const link = resolve(node)
+              if (link) factoryReferences.add(node.start)
+              return link
+            },
+          })
+          configs.set(variable.id.name, link)
+          configBindings.set(variable.id.start, link)
+          calls.push(link.call)
+          factories.add(expression.start)
+          for (const member of Object.values(link.members ?? {}))
+            themes[member.call.name] = member.definition
+          themes[link.call.name] = link.definition
+          if (statement.type === 'ExportNamedDeclaration')
+            exports[variable.id.name] = link
+        } catch (error) {
+          if (!(error instanceof Config.InvalidError)) throw error
+          fail(error.message, expression)
+        }
+        continue
+      }
       let definition: Theme.Definition
       let tokenType: string
       try {
@@ -230,13 +342,13 @@ export function collect(program: Ast.Program, options: collect.Options) {
           )
         } else {
           const base = expression.arguments[0]
-          const parent =
-            base?.type === 'Identifier' ? names.get(base.name) : undefined
+          const parent = base ? resolve(base)?.call : undefined
           if (expression.arguments.length !== 2 || !parent)
             fail(
               'Theme.extend requires a preceding local theme and literal overrides.',
               expression,
             )
+          factoryReferences.add(base!.start)
           definition = Theme.extend(
             themes[parent.name]!,
             data(expression.arguments[1]!) as Theme.Overrides<Theme.Tokens>,
@@ -278,13 +390,43 @@ export function collect(program: Ast.Program, options: collect.Options) {
     for (const variable of declaration.declarations) {
       const expression = variable.init
       if (!expression) continue
+      const linked = resolve(expression)
+      if (linked && variable.id.type === 'Identifier') {
+        if (expression.start < linked.call.end)
+          fail('Authoring aliases must follow their definition.', expression)
+        if (
+          declaration.kind !== 'const' ||
+          (statement.type === 'ExportNamedDeclaration' && !options.linked)
+        )
+          fail(
+            'Authoring aliases require module-level const bindings.',
+            variable,
+          )
+        if (linked.kind === 'config') {
+          configs.set(variable.id.name, linked)
+          configBindings.set(variable.id.start, linked)
+        } else {
+          names.set(variable.id.name, linked.call)
+          definitions.set(variable.id.start, linked.call)
+        }
+        aliases.push({
+          ...linked.call,
+          start: expression.start,
+          end: expression.end,
+          destructured: false,
+          retained: true,
+        })
+        aliasReferences.add(expression.start)
+        if (statement.type === 'ExportNamedDeclaration')
+          exports[variable.id.name] = linked
+        continue
+      }
       const member =
         expression.type === 'MemberExpression' &&
         !expression.computed &&
         !expression.optional &&
         expression.property.type === 'Identifier' &&
-        expression.property.name === 'css' &&
-        expression.object.type === 'Identifier'
+        expression.property.name === 'css'
           ? expression.object
           : undefined
       const destructured =
@@ -294,8 +436,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
       if (!source) continue
       const theme =
         member || destructured
-          ? names.get(source.name)
-          : aliasNames.get(source.name)
+          ? resolve(source)?.call
+          : source.type === 'Identifier'
+            ? aliasNames.get(source.name)
+            : undefined
       if (!theme) continue
       let id = variable.id
       if (destructured && id.type === 'ObjectPattern') {
@@ -331,6 +475,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
         name: theme.name,
         start: expression.start,
         tokenType: theme.tokenType,
+        type: theme.type,
+        options: theme.options,
       })
       aliases.push(alias)
       aliasBindings.set(id.start, alias)
@@ -361,18 +507,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
           specifier.local.type === 'Identifier'
             ? specifier.local.name
             : specifier.local.value
-        const call = names.get(name) ?? aliasNames.get(name)
+        const call =
+          configs.get(name)?.call ?? names.get(name) ?? aliasNames.get(name)
         if (!call) continue
         const exported =
           specifier.exported.type === 'Identifier'
             ? specifier.exported.name
             : specifier.exported.value
-        exports[exported] = options.links?.[name] ?? {
-          binding: `${options.namespace}-${name}`,
-          call,
-          definition: themes[call.name]!,
-          kind: names.has(name) ? 'theme' : 'css',
-        }
+        exports[exported] = configs.get(name) ??
+          options.links?.[name] ?? {
+            binding: `${options.namespace}-${name}`,
+            call,
+            definition: themes[call.name]!,
+            kind: names.has(name) ? 'theme' : 'css',
+          }
         exportReferences.add(specifier.local.start)
       }
     }
@@ -384,7 +532,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
     binding: Walker.ScopeTrackerNode | null,
   ): boolean {
     const grandparent = ancestors.at(-3)
-    if (binding?.type === 'Import' && imports.has(binding.node.start)) {
+    if (
+      binding?.type === 'Import' &&
+      (imports.has(binding.node.start) || configImports.has(binding.node.start))
+    ) {
       if (
         parent.type === 'MemberExpression' &&
         grandparent?.type === 'CallExpression' &&
@@ -421,11 +572,86 @@ export function collect(program: Ast.Program, options: collect.Options) {
       styles.set(parent.start, { call: parent, theme: themes[alias.name]! })
       return true
     }
+    const config =
+      binding?.type === 'Variable' || binding?.type === 'Import'
+        ? configBindings.get(binding.node.start)
+        : undefined
+    if (config) {
+      if (exportReferences.has(node.start) || aliasReferences.has(node.start))
+        return true
+      if (
+        node.start < config.call.end &&
+        config.call.start >= 0 &&
+        binding?.type !== 'Import'
+      )
+        fail('Configuration references must follow their definition.', node)
+      let target: Ast.Node = node
+      let path = ''
+      for (let index = ancestors.length - 2; index >= 0; index--) {
+        const member = ancestors[index]!
+        if (
+          member.type !== 'MemberExpression' ||
+          member.object !== target ||
+          member.optional
+        )
+          break
+        const key =
+          member.property.type === 'Identifier' && !member.computed
+            ? member.property.name
+            : member.property.type === 'Literal' &&
+                member.computed &&
+                typeof member.property.value === 'string'
+              ? member.property.value
+              : undefined
+        if (key === undefined) break
+        path = path ? `${path}.${key}` : key
+        target = member
+        if (
+          aliasReferences.has(target.start) ||
+          factoryReferences.has(target.start)
+        )
+          return true
+        if (path === 'css') {
+          const call = ancestors[index - 1]
+          if (
+            call?.type !== 'CallExpression' ||
+            call.callee !== target ||
+            call.optional
+          )
+            break
+          styles.set(call.start, { call, theme: config.definition })
+          return true
+        }
+        const linked = config.members?.[path]
+        if (linked)
+          return themeReference(
+            target,
+            ancestors[index - 1]!,
+            ancestors.slice(0, index + 1),
+            linked.call,
+          )
+      }
+      fail(
+        'Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.',
+        node,
+      )
+    }
     const theme =
       binding?.type === 'Variable' || binding?.type === 'Import'
         ? definitions.get(binding.node.start)
         : undefined
     if (!theme) return false
+    return themeReference(node, parent, ancestors, theme)
+  }
+
+  function themeReference(
+    node: Ast.Node,
+    parent: Ast.Node,
+    ancestors: readonly Ast.Node[],
+    theme: Call,
+  ): boolean {
+    const grandparent = ancestors.at(-3)
+    if (factoryReferences.has(node.start)) return true
     if (exportReferences.has(node.start)) return true
     if (aliasReferences.has(node.start)) return true
     if (node.start < theme.end)

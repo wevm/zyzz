@@ -1,7 +1,7 @@
 # Config
 
 > [!NOTE]
-> The pure factory, normalized themes, and token/layer inference are implemented. Config source extraction and layer emission remain planned; bound `css` execution still requires that integration.
+> The pure factory, normalized themes, and token/layer inference are implemented. Source compilation supports direct bound `css` calls and static theme members. Layer emission, `vars`, and variants remain planned.
 
 Configuration-bound authoring and compatible theme scopes.
 

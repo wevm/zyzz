@@ -11,14 +11,21 @@ import * as Ts from 'typescript'
 import { Graph } from 'zyzz/compiler'
 
 /** Packs compiled JavaScript, generated declarations, CSS, and authoring metadata. */
-export async function create(root: string) {
+export async function create(root: string, options: create.Options = {}) {
   const directory = Path.join(root, 'publisher')
   const consumer = Path.join(root, 'consumer')
   await Fs.mkdir(directory, { recursive: true })
   await Fs.mkdir(consumer, { recursive: true })
   const compiled = Graph.compile({
     modules: {
-      '@acme/theme/index.ts': `import { Theme } from 'zyzz';
+      '@acme/theme/index.ts': options.configuration
+        ? `import { Config } from 'zyzz';
+export const zyzz = Config.create({defaultTheme:'base',layers:['components'],themes:{base:{color:{brand:{light:'#06c',dark:'#9cf'}},spacing:{md:'8px'}},mint:{color:{brand:{light:'#175',dark:'#afa'}},spacing:{md:'8px'}}}});
+export const design = zyzz;
+export const theme = zyzz.themes.base;
+export const css = zyzz.css;
+export const props = zyzz.css({color:'brand',padding:'md'})();`
+        : `import { Theme } from 'zyzz';
 export const theme = Theme.define({color:{brand:{light:'#06c',dark:'#9cf'}},spacing:{md:'8px'}});
 export const mint = Theme.extend(theme,{color:{brand:{light:'#175',dark:'#afa'}}});
 export const css = theme.css;
@@ -88,4 +95,13 @@ export const props = css({color:'brand',padding:'md'})();`,
     'dir',
   )
   return consumer
+}
+
+/** Packed-library fixture inputs. */
+export declare namespace create {
+  /** Selects the configured instance fixture while retaining the standalone theme lane. */
+  type Options = {
+    /** Whether the library exports a named Config.create instance. */
+    readonly configuration?: boolean | undefined
+  }
 }

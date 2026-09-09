@@ -1,7 +1,7 @@
 # Config.create
 
 > [!NOTE]
-> The factory and inferred authoring contracts are implemented. Config source extraction, executable `zyzz.css` calls, `vars`, `variants`, and layer emission remain planned. Use normalized handles with `Style.define` and `Css.compile` for in-memory compilation.
+> The factory, source extraction, and direct `zyzz.css` calls are implemented. `vars`, `variants`, and layer emission remain planned. Layer keys are inferred but are not yet accepted by source compilation.
 
 Bind style authoring to explicit theme and layer contracts. Export the config as `zyzz` from `zyzz.config.ts` and consume its members through a named import.
 
@@ -78,7 +78,7 @@ Returns `Config.create.ReturnType<options>`: a frozen object with typed `css` an
 
 - Type: Inferred callable authoring returning `css.ReturnType`
 
-Infers configured token and layer names, retaining property checking inside layer bodies. Without a theme, authoring remains token-free. Calling this authoring helper currently throws the missing-transform error; config source integration follows separately.
+Infers configured token and layer names, retaining property checking inside layer bodies. Without a theme, authoring remains token-free. Direct literal calls compile through Vite or the source graph/file host. Untransformed calls throw the missing-transform error.
 
 ```ts
 const card = zyzz.css({ padding: 'md' })
@@ -133,7 +133,7 @@ See [Config](README.md) for related methods and types.
 
 ## Named Exports
 
-Export `const zyzz = Config.create(...)` and import `{ zyzz }` in consuming modules. Use `zyzz.css`; access `zyzz.theme` for single themes or `zyzz.themes` for named catalogs. Source integrations will follow this named instance without requiring a default export. `zyzz.variants` remains planned.
+Export `const zyzz = Config.create(...)` and import `{ zyzz }` in consuming modules. Use `zyzz.css`; access `zyzz.theme` for single themes or `zyzz.themes` for named catalogs. Source integrations follow this named instance without requiring a default export. Immutable aliases, named re-exports, and packed declarations retain its contract. `zyzz.variants` remains planned.
 
 ## In-Memory Compilation
 

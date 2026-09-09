@@ -106,3 +106,16 @@ Scope and variable identities retain the defining module/binding. CSS maps trace
 ## Errors
 
 `Source.ExtractError` or `Css.CompileError`; no partial result is returned. Missing modules, ambiguous exports, namespace theme imports, and static cycles are rejected. Dynamic source imports are rejected in standalone mode. Library authoring requires matching contract metadata; runtime JavaScript alone cannot supply token definitions.
+
+## Configured Libraries
+
+Named `Config.create` exports and bound aliases retain token and layer inference across source re-exports and packed declarations. Configuration metadata uses version 2; version 1 theme metadata remains readable. Publish matching JavaScript, declarations, CSS, and adjacent metadata from one build.
+
+```ts
+import { zyzz } from '@acme/theme'
+
+export const card = zyzz.css({ color: 'brand' })
+export const scope = zyzz.themes.mint.className
+```
+
+The graph normalizes configured themes without executing library code. Source edits invalidate dependent authoring and retain stable scope names. Layer emission and variants remain planned.

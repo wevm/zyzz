@@ -9,6 +9,7 @@ import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import * as Compilation from '../../bench/Compilation.js'
+import * as ConfigFixture from '../../test/fixtures/ConfigGraph.js'
 import * as Fixture from '../../test/fixtures/ThemeGraph.js'
 
 for (const count of [10, 100]) {
@@ -149,6 +150,22 @@ for (const count of [10, 100]) {
           imports: { 'app/card.ts': { '@acme/theme': 'library/index.js' } },
           modules,
         })
+      },
+      { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
+    )
+  })
+}
+
+for (const count of [10, 100]) {
+  const modules = {
+    ...ConfigFixture.modules,
+    'pkg/card.ts': `import { design as zyzz } from './index.js'; ${Array.from({ length: count }, (_, index) => `export const props${index} = zyzz.css({color:'brand',padding:'${index}px'})();`).join('\n')}`,
+  }
+  describe(`configuration graph / ${count} styles`, () => {
+    bench(
+      'normalize + link + extract + emit + rewrite + maps',
+      () => {
+        Graph.compile({ modules })
       },
       { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
     )

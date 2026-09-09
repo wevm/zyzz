@@ -53,8 +53,13 @@ export function compile<
   const combinedLines = new Set<string>()
   for (const style of options.styles.styles)
     for (const { property } of style.declarations)
-      if (Literal.rules[property]?.kind === 'line')
-        combinedLines.add(property.startsWith('border') ? 'border' : property)
+      if (Literal.rules[property]?.kind === 'line') {
+        const canonical =
+          property in Literal.aliases
+            ? Literal.aliases[property as keyof typeof Literal.aliases]
+            : property
+        combinedLines.add(canonical.startsWith('border') ? 'border' : canonical)
+      }
   type Prepared = {
     declarations: readonly Cached[]
     ordered: string
@@ -107,8 +112,8 @@ export function compile<
         entry = {
           declaration: message
             ? ''
-            : `${property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}${important ? '!important' : ''};`,
-          domain: (() => {
+            : `${Literal.name(property)}:${value}${important ? '!important' : ''};`,
+          domain: ((property: string) => {
             if (property.startsWith('backgroundPosition'))
               return 'backgroundPosition'
             if (
@@ -193,7 +198,11 @@ export function compile<
               return 'size'
             }
             return property
-          })(),
+          })(
+            property in Literal.aliases
+              ? Literal.aliases[property as keyof typeof Literal.aliases]
+              : property,
+          ),
           message,
         }
         values.set(value, entry)

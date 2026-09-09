@@ -44,7 +44,7 @@ The dedicated **CSS Property Conformance (100%)** CI job publishes a summary and
 
 The status inventory is a reviewed completion ledger, not a browser certification or proof derived from test counts. A property may be promoted only after its grammar, public typing, emitted declarations, and browser behavior have been reviewed against independent evidence. Relabeling entries does not implement them. The existing grammar/type/browser integration jobs must also pass.
 
-Current completion is 0/670 (0%): 423 partial and 247 deferred. This intentionally leaves the consolidated implementation PR blocked. All remaining implementation and evidence work stays in that PR until the full gate passes.
+Current completion is 0/670 (0%): 505 partial and 165 deferred. This intentionally leaves the consolidated implementation PR blocked. All remaining implementation and evidence work stays in that PR until the full gate passes.
 
 Motion lists preserve comma grouping inside `cubic-bezier()`, `steps()`, and `linear()`. Independent grammar probes, consumer types, and browser comparisons cover numeric restrictions, list ordering, importance, and paused animation output. Substitution, comments, and escaped spellings remain incomplete. Easing semantics follow [CSS Easing Functions](https://www.w3.org/TR/css-easing-2/).
 
@@ -83,3 +83,9 @@ Theme authoring constrains its generic to the property contract before refining 
 Percentage domains support fontWidth, its fontStretch alias, and textSizeAdjust, including nonnegative literals and dimensionally valid math. Zoom accepts percentages. Opacity, fillOpacity, strokeOpacity, floodOpacity, and stopOpacity preserve finite numbers and percentages outside 0–1 for browser clamping. Number/percentage addition remains invalid.
 
 Public source, grammar, type, and browser fixtures cover percentage units, alpha clamping, aliases, importance, and rejection paths. These properties remain partial: escaped numeric spellings, complete tokenization, and broader math still need coverage. See [CSS Color](https://www.w3.org/TR/css-color-4/#transparency), [CSS Fonts](https://www.w3.org/TR/css-fonts-4/#font-width-prop), and [CSS Values](https://www.w3.org/TR/css-values-4/#percentages).
+
+Eighty-two prefixed properties now cover finite keyword domains, lengths, colors, percentages, logical borders, outline radii, line clamping, and scalar mask lists. Public names preserve capitalized prefixes: MozAppearance, MsAccelerator, and WebkitUserSelect. MsScrollbar3dlightColor emits the exact historical -ms-scrollbar-3dlight-color spelling.
+
+WebKit logical-border aliases share conflict domains with standard borders. Independent grammar and consumer probes cover all added mappings; native controls cover logical borders in three writing modes and both directions, text fill/stroke, selection, and repeated alias overrides. Legacy Microsoft/Mozilla platform behavior remains unverified; all entries remain partial.
+
+The percentage browser fixture confirms alpha clamping. Current Chromium ignores font-width and retains the font-stretch fallback; the fixture records that capability and an independent native control. See [legacy logical borders](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-webkit-border-before) and [text stroke width](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-webkit-text-stroke-width).

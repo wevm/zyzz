@@ -19,6 +19,30 @@ import * as TextTimeline from '../test/fixtures/TextTimeline.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
+describe('prefixed declarations', () => {
+  test('vendor keywords preserve prefixes and domains', () => {
+    css({
+      MozAppearance: 'button',
+      MsAccelerator: 'true',
+      MsScrollbar3dlightColor: 'red',
+      WebkitBorderBefore: '2px solid red',
+      WebkitTextStrokeWidth: '2px',
+      WebkitMaskPositionX: 'left, 20%',
+      WebkitLineClamp: 2,
+    })
+    // @ts-expect-error Prefix spelling is part of the public property name.
+    css({ webkitUserSelect: 'none' })
+    // @ts-expect-error CSS true is a keyword rather than a JavaScript boolean.
+    css({ MsAccelerator: true })
+    // @ts-expect-error Vendor keyword domains remain distinct.
+    css({ WebkitUserSelect: 'element' })
+    // @ts-expect-error Scroll limits exclude percentages.
+    css({ MsScrollLimitXMin: '20%' })
+    // @ts-expect-error Text stroke widths exclude percentages.
+    css({ WebkitTextStrokeWidth: '20%' })
+  })
+})
+
 describe('percentage values', () => {
   test('percentages retain their property dimensions', () => {
     css({

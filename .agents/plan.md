@@ -476,7 +476,7 @@ Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthan
 
 Motion lists preserve easing-function commas and validate cubic-bezier(), steps(), and linear() constraints. Absolute functional colors preserve color spaces and browser clamping. Border color/style lists and elliptical radii preserve logical overrides and importance. Compatible font variant and containment groups reject conflicts; font-synthesis adds one partially implemented property.
 
-The completion count remains 0/670: 423 partial and 247 deferred (136 standard, 112 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
+The completion count remains 0/670: 505 partial and 165 deferred (135 standard, 30 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
 
 ### Dimensional Math
 
@@ -515,3 +515,15 @@ Public source, grammar, type, and browser fixtures cover percentage units, alpha
 The theme signature now skips redundant whole-map literal refinement at its already-constrained broad boundary, while retaining exact-key checks. Both real theme subprocess integrations pass in 3.36 seconds combined without timeout increases; arbitrary records, callable declarations, undeclared numeric tokens, and malformed literal spellings remain rejected.
 
 Percentage benchmark: the unchanged 100-style module measured 4.3502 ms ±6.01% before and 4.1858 ms ±6.48% after on the same machine without competing heavy work. New percentage lanes measured 0.9308 ms (10 additional styles) and 5.5985 ms (100). Full TypeScript, generated conformance probes, lint, and non-browser integration checks pass. Percentage browser assertions await CI.
+
+Eighty-two prefixed properties now cover finite keyword domains, lengths, colors, percentages, logical borders, outline radii, line clamping, and scalar mask lists. Public names preserve capitalized prefixes: MozAppearance, MsAccelerator, and WebkitUserSelect. MsScrollbar3dlightColor emits the exact historical -ms-scrollbar-3dlight-color spelling.
+
+WebKit logical-border aliases share conflict domains with standard borders. Independent grammar and consumer probes cover all added mappings; native controls cover logical borders in three writing modes and both directions, text fill/stroke, selection, and repeated alias overrides. Legacy Microsoft/Mozilla platform behavior remains unverified; all entries remain partial.
+
+The percentage browser fixture confirms alpha clamping. Current Chromium ignores font-width and retains the font-stretch fallback; the fixture records that capability and an independent native control. See [legacy logical borders](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-webkit-border-before) and [text stroke width](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-webkit-text-stroke-width).
+
+The percentage benchmark CI lost the token-inclusive 100-style theme lane: 5.484 ms ±18.58% against Tailwind 4.896 ms ±41.16%. Local confirmation measured 3.6241 ms against 3.6002 ms. Reusing validated token references within one Style.define call reduced the follow-up to 2.4569 ms ±6.01% against Tailwind 3.3350 ms ±28.96%; all five frameworks remain measured.
+
+Cache entries are scoped by property and scalar within one definition; no state persists across calls or themes. Public integration controls cover repeated names in different property groups and successive distinct themes. Browser percentage checks now explicitly record Chromium's missing font-width implementation, with independent native fallback controls.
+
+Prefixed mappings add 82 properties, reaching 505 partial and 165 deferred (135 standard, 30 prefixed). The initial 100-style transform comparison rose from 3.7546 to 4.3133 ms; a clean matched repeat measured 4.0851 ms ±5.74% before and 4.2505 ms ±6.27% after. New prefixed lanes measured 1.2137 ms (10 styles) and 6.2824 ms (100).

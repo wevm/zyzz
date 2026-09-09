@@ -76,7 +76,7 @@ describe('compile', () => {
     try {
       const page = await browser.newPage()
       await page.setContent(
-        `<style>${output.css}</style><svg><rect id="high" class="${module.high.className}"/><rect id="low" class="${module.low.className}"/></svg><div id="text" class="${module.text.className}"></div>`,
+        `<style>${output.css}</style><svg><rect id="high" class="${module.high.className}"/><rect id="low" class="${module.low.className}"/></svg><div id="text" class="${module.text.className}"></div><div id="text-control" style="font-stretch:120%;font-width:125%;zoom:125%"></div>`,
       )
       expect(
         await page
@@ -112,7 +112,15 @@ describe('compile', () => {
         await page
           .locator('#text')
           .evaluate((element) => getComputedStyle(element).fontStretch),
-      ).toMatchInlineSnapshot(`"125%"`)
+      ).toMatchInlineSnapshot(`"120%"`)
+      expect(
+        await page
+          .locator('#text-control')
+          .evaluate((element) => getComputedStyle(element).fontStretch),
+      ).toMatchInlineSnapshot(`"120%"`)
+      expect(
+        await page.evaluate(() => CSS.supports('font-width', '125%')),
+      ).toMatchInlineSnapshot(`false`)
       expect(
         await page
           .locator('#text')

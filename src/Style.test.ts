@@ -75,6 +75,35 @@ describe('define', () => {
     ).toMatchInlineSnapshot('true')
   })
 
+  test('repeated shorthand tokens remain isolated by property and theme', () => {
+    const styles = {
+      first: { color: 'brand', padding: 'brand', width: '1px' },
+      second: { color: 'brand', padding: 'brand', width: '2px' },
+    } as const
+    for (const theme of [
+      Theme.define({ color: { brand: 'red' }, spacing: { brand: '4px' } }),
+      Theme.define({ color: { brand: 'blue' }, spacing: { brand: '8px' } }),
+    ]) {
+      const named = Style.define(styles, { theme })
+      const explicit = Style.define({
+        first: {
+          color: theme.tokens.color.brand,
+          padding: theme.tokens.spacing.brand,
+          width: '1px',
+        },
+        second: {
+          color: theme.tokens.color.brand,
+          padding: theme.tokens.spacing.brand,
+          width: '2px',
+        },
+      })
+      expect(
+        Css.compile({ styles: named, themes: { base: theme } }).css ===
+          Css.compile({ styles: explicit, themes: { base: theme } }).css,
+      ).toMatchInlineSnapshot(`true`)
+    }
+  })
+
   test('CSS literals and zero precede colliding token names', () => {
     const theme = Theme.define({
       color: { white: '#000' },

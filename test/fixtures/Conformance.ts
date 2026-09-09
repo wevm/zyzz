@@ -192,6 +192,7 @@ export function cases(): readonly Case[] {
         }
     }
     if (rule.kind === 'length') {
+      if ('list' in rule) values.push('0, 1px', 'calc(1px + 2px), 3px')
       values.push('calc(1px + 2px)', 'clamp(1px, 2px, 3px)')
       if ('axes' in rule) values.push('10px/20%', '1px 2px / 3px 4px 5px 6px')
       if ('items' in rule)
@@ -244,6 +245,8 @@ export function lexer() {
 
 /** Converts public property spelling to its standard CSS name. */
 export function name(property: string): string {
+  if (property === 'MsScrollbar3dlightColor')
+    return '-ms-scrollbar-3dlight-color'
   return property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)
 }
 

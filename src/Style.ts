@@ -58,6 +58,11 @@ export function define(
 ): Definition {
   const diagnostics: Diagnostic[] = []
   const output: NamedStyle[] = []
+  // One definition owns one theme; only validated references are reused within this call.
+  const references = new Map<
+    keyof Properties,
+    Map<string | number, Token.Reference>
+  >()
   function report(
     code: Diagnostic['code'],
     path: readonly string[],
@@ -174,9 +179,23 @@ export function define(
       for (const [index, entry] of inputs.entries()) {
         const parsed = Value.parse(entry, key)
         const scalar = parsed ? parsed.value : entry
-        const resolved = options.theme
-          ? Token.resolve(scalar, { property: key, theme: options.theme })
-          : scalar
+        const resolved = (() => {
+          if (!options.theme) return scalar
+          if (typeof scalar !== 'string' && typeof scalar !== 'number')
+            return scalar
+          const cached = references.get(key)?.get(scalar)
+          if (cached) return cached
+          const resolved = Token.resolve(scalar, {
+            property: key,
+            theme: options.theme,
+          })
+          if (Token.is(resolved)) {
+            let values = references.get(key)
+            if (!values) references.set(key, (values = new Map()))
+            values.set(scalar, resolved)
+          }
+          return resolved
+        })()
         const value = parsed && resolved === '0' ? 0 : resolved
         const message = (() => {
           if (Token.is(value)) {

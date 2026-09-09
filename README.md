@@ -189,23 +189,30 @@ Use [`Theme.define`](docs/api/core/Theme/define.md) for reusable definitions out
 
 ### Color Schemes (Light/Dark Mode)
 
-Color pairs compile to `light-dark()`. Set `colorScheme` through an ancestor's `style` prop to select the scheme for its descendants:
+Apply the theme to `<html>` and select a color scheme through its callable props:
 
 ```tsx
 import { zyzz } from './zyzz.config.js'
 
 const card = zyzz.css({ color: 'text', padding: 'sm' })
 
-export function App() {
+export function Document() {
   return (
-    <main className={zyzz.theme.className} style={{ colorScheme: 'dark' }}>
-      <article {...card()}>Dark mode</article>
-    </main>
+    <html {...zyzz.theme({ colorScheme: 'light dark' })}>
+      <head><title>My App</title></head>
+      <body>
+        <article {...card()}>Content</article>
+      </body>
+    </html>
   )
 }
 ```
 
-Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` to follow system preference without a JavaScript listener. The custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode.
+The theme returns its generated `className` and `style.colorScheme`. Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` for system preference. Named themes use `zyzz.themes.mint({ colorScheme: 'dark' })`.
+
+Color pairs compile to `light-dark()`; the custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme calls can scope a subtree independently.
+
+For saved preferences, an optional [initialization script](docs/guides/themes.md#restore-preferences) in `<head>` restores the theme and scheme from localStorage before first paint. System preference needs no script or provider.
 
 ### Variants
 

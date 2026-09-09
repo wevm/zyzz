@@ -93,19 +93,17 @@ const button = zyzz.css({
 
 Autocomplete declared keys and reject misspellings such as `@layer component`. No computed key, layer-reference import, or unrestricted string index signature is needed. Preserve declaration order in `layers` as cascade order. An omitted layer list contributes no named layer keys to config-bound functions. Additional project layer declarations do not ambiently widen an imported function's type; include every layer used by that function in its config. Raw unbound web authoring remains subject to its own syntax/extraction contract.
 
-Select a theme through its returned compiled scope class and a color scheme through the ordinary CSS property:
+Apply a callable theme to `<html>` for document-wide scope and color-scheme selection:
 
 ```tsx
 import { zyzz } from './zyzz.config.js'
 
 const selected: keyof typeof zyzz.themes = 'mint'
 const example = (
-  <section
-    className={zyzz.themes[selected].className}
-    style={{ colorScheme: 'dark' }}
-  >
-    <button {...button()}>Save</button>
-  </section>
+  <html {...zyzz.themes[selected]({ colorScheme: 'dark' })}>
+    <head><title>My App</title></head>
+    <body><button {...button()}>Save</button></body>
+  </html>
 )
 ```
 
@@ -780,7 +778,7 @@ export const alternate = Theme.extend(theme, {
 })
 
 const panel = (
-  <section className={alternate.className}>
+  <section {...alternate()}>
     <button {...theme.css({ backgroundColor: 'surface', color: 'brand' })()}>
       Continue
     </button>
@@ -815,6 +813,24 @@ Scheme pairs emit `light-dark(lightValue, darkValue)`; plain strings emit unchan
 `light dark` permits the browser's preferred scheme. `light` and `dark` select one explicitly. Theme scopes do not force a scheme. Nested scheme scopes retain theme values; nested theme scopes inherit the scheme. There is no preference listener or separate “system” token value.
 
 Browser fixtures must cover fallback values, explicit variables, nested themes, forced schemes, preference changes, and server-rendered markup. Native targets resolve each pair into two static alternatives; strings are identical in both. Device preference resolution belongs in an application adapter.
+
+### Callable Theme Props
+
+A theme handle is callable while retaining its metadata, token references, authoring helpers, and `className`. `theme(options = {})` returns `{ className }` or `{ className, style: { colorScheme } }` when a scheme is supplied. Accept only `'light'`, `'dark'`, and `'light dark'`; unknown options and invalid schemes are errors.
+
+Config single themes and named catalog members share this contract. Apply the main theme to `<html>`; nested elements can select independent scopes. Retain generated class identities rather than global `data-theme` names, preserving isolation between configs and libraries. Theme application generates no rules and accesses neither DOM nor storage.
+
+The compiler must support local/imported/packed handles and finite dynamic catalog selection, retaining application types and stable server/client identities. Untransformed calls fail with the missing-transform diagnostic. Native adaptation remains separate from this web props contract.
+
+### Root Preference Initialization
+
+The optional `ThemeScript.create` namespace in `zyzz/web` returns inline JavaScript. Input is a `themes` map of names to compiled classes (default empty) and `storageKey` (default `'zyzz'`). The server renders fallback root props; the script has no duplicate defaults. No cookies, providers, or core browser dependencies.
+
+The localStorage record is `{ theme?: string, colorScheme?: 'light' | 'dark' | 'light dark' }`. Read it synchronously once from a classic inline script early in `<head>`, before stylesheets and visible content. Apply allowlisted preferences to `document.documentElement`; retain unrelated classes/styles and remove only classes belonging to the supplied catalog.
+
+Missing/malformed/inaccessible storage preserves server defaults. Validate fields independently and use own-key catalog lookup. Never evaluate saved strings or trust saved classes. Serialize script inputs safely for HTML raw-text contexts, including closing script tags and Unicode separators. Support application-provided CSP nonce attributes or exact-source hashes.
+
+System preference uses `light dark` directly, with no listener or script required. The initializer neither writes storage nor synchronizes live state. React may suppress the expected root-attribute hydration warning; preference controls initialize from the applied DOM state before updates. Verify first-paint behavior and hydration before accepting implementation.
 
 ## Pure target compilers
 

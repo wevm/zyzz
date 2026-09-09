@@ -90,7 +90,7 @@ Use [Compile Themes](guides/themes.md#compile-themes) for the current pipeline.
 > [!NOTE]
 > Preview API; not yet implemented.
 
-Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
+Callable themes return generated scope classes and optional inline color-scheme props. Apply them to `<html>` for the whole document or an ancestor for a subtree. Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
 
 Use the instance handles from a [named-theme config](guides/themes.md#selecting-a-theme):
 
@@ -98,10 +98,7 @@ Use the instance handles from a [named-theme config](guides/themes.md#selecting-
 import { zyzz } from './zyzz.config.js'
 
 const example = (
-  <section
-    className={zyzz.themes.mint.className}
-    style={{ colorScheme: 'dark' }}
-  >
+  <section {...zyzz.themes.mint({ colorScheme: 'dark' })}>
     Content
   </section>
 )

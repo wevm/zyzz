@@ -33,7 +33,7 @@ The proposed signatures, examples, type rules, and emitted theme CSS are specifi
 | `theme.css(style)`                                    | Infers property-specific tokens and compiles directly to props containing readable classes                         |
 | `css((values: Values) => style)`                      | Compiles static rules and returns a typed callable web class/style binding                                         |
 | `variants(definition)` / `theme.variants(definition)` | Defines token-free or theme-bound recipes with inferred selection props                                            |
-| `theme.className`                                     | Optional scope for inherited theme overrides                                                                       |
+| `theme({ colorScheme })` / `theme.className`           | Callable web scope props with optional scheme; raw compiled class remains accessible                               |
 | `zyzz build` / `zyzz watch`                         | Standalone module rewriting and stylesheet emission; defaults: `src`, `dist`, `dist/styles.css`                                    |
 
 The accepted [configuration contract](architecture.md#configuration-and-inferred-authoring) retains `Theme.define` and supports mutually exclusive `theme`/`themes`, an inferred named default, normalized scope handles, and direct `@layer <name>` keys. Theme scope classes select inherited CSS variables; `colorScheme` selects light/dark independently.
@@ -234,6 +234,9 @@ PR 2.1 uses opaque object references for contracts within one in-memory graph. C
 
 - [ ] Emit scoped custom properties and `light-dark()` values. Support `color-scheme: light`, `dark`, and `light dark`, independently of theme identity.
 - [ ] Specify nested scope inheritance, complete overrides, independently forced schemes, deterministic server output, and undeclared-theme failures.
+- [ ] Implement callable theme handles retaining metadata and `.className`; return generated scope props with optional `colorScheme`. Cover root `<html>`, nested scopes, no-option inheritance, rejected options, aliases/imports, packed handles, dynamic catalog selection, and compiler/type/browser parity.
+- [ ] Implement optional `ThemeScript.create` in `zyzz/web` for localStorage-only root initialization. Share compiled catalog classes; preserve server defaults and unrelated root attributes. No cookies, providers, implicit persistence, or preference listeners.
+- [ ] Verify synchronous first-paint restoration and hydration in a real browser: saved/default/system schemes, saved theme selection, invalid/blocked storage, own-key validation, HTML-safe script serialization, CSP nonce/hash execution, unrelated classes/styles, and client controls adopting the initialized DOM state.
 - [ ] Preserve standard declaration order, selectors, at-rules, inheritance, and cascade semantics. Specify token/literal precedence and retain authored condition order.
 - [ ] Support same-module immutable definitions and spreads through static binding analysis; add imported definitions only with explicit resolution and cycle errors.
 

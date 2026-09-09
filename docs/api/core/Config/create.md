@@ -86,9 +86,9 @@ const card = zyzz.css({ padding: 'md' })
 
 ### theme
 
-- Type: Normalized single-theme definition
+- Type: Normalized callable single-theme definition
 
-Present for single-theme configuration. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
+Present for single-theme configuration. Call `zyzz.theme({ colorScheme: 'light dark' })` to spread root props onto `<html>`. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
 
 ```ts
 zyzz.theme.tokens.spacing.md
@@ -98,7 +98,7 @@ zyzz.theme.tokens.spacing.md
 
 - Type: Normalized named theme catalog
 
-Present for named catalogs. Compatible alternatives share config identity without mutating independent definitions.
+Present for named catalogs. Call `zyzz.themes.mint({ colorScheme: 'dark' })` to apply a named scope. Compatible alternatives share config identity without mutating independent definitions.
 
 ```ts
 const zyzz = Config.create({

@@ -38,12 +38,17 @@ Token names are inferred from the config. Nested palettes use dotted paths; CSS 
 > [!NOTE]
 > Config authoring is a preview.
 
-Apply the single theme's scope to an ancestor:
+Apply the single theme's scope to the document root:
 
 ```tsx
 import { zyzz } from './zyzz.config.js'
 
-const example = <main className={zyzz.theme.className}>...</main>
+const example = (
+  <html {...zyzz.theme()}>
+    <head><title>My App</title></head>
+    <body>Content</body>
+  </html>
+)
 ```
 
 For alternatives, configure a named catalog with a shared token contract:
@@ -70,32 +75,80 @@ const card = zyzz.css({ color: 'brand' })
 
 function App({ appearance }: { appearance: 'base' | 'mint' }) {
   return (
-    <main className={zyzz.themes[appearance].className}>
-      <div {...card()}>Card</div>
-    </main>
+    <html {...zyzz.themes[appearance]()}>
+      <head><title>My App</title></head>
+      <body><div {...card()}>Card</div></body>
+    </html>
   )
 }
 ```
 
 Changing the scope updates inherited token values while component styles stay the same. Single-theme configs expose `zyzz.theme`; named catalogs expose `zyzz.themes`. Independently defined themes do not share a contract merely because their token names match.
 
-### Dark Mode
+<a id="dark-mode"></a>
 
-Color tokens accept a shared string or a `{ dark, light }` pair, as in [Use Themes](#use-themes). Select the scheme with ordinary CSS, independently of the theme scope:
+### Color Schemes
 
-```css
-:root {
-  color-scheme: light dark;
-}
-.light {
-  color-scheme: light;
-}
-.dark {
-  color-scheme: dark;
+Color tokens accept a shared string or a `{ dark, light }` pair, as in [Use Themes](#use-themes). Pass the scheme when applying the theme:
+
+```tsx
+import { zyzz } from './zyzz.config.js'
+
+const example = (
+  <html {...zyzz.theme({ colorScheme: 'light dark' })}>
+    <head><title>My App</title></head>
+    <body>Content</body>
+  </html>
+)
+```
+
+Use `light dark` for system preference, or `light` / `dark` to force a scheme. The call returns the scope class and an inline `colorScheme` style. Omitting `colorScheme` preserves inherited CSS behavior. Nested scopes can select a different theme, scheme, or both.
+
+### Restore Preferences
+
+Use an optional initialization script when preferences persist in localStorage. Render the default theme and scheme on `<html>`; place the inline script early in `<head>`, before stylesheets and visible content. It requires no cookies, provider, or preference listener.
+
+The following uses the named catalog from [Selecting a Theme](#selecting-a-theme):
+
+```tsx
+import { ThemeScript } from 'zyzz/web'
+import { zyzz } from './zyzz.config.js'
+
+const script = ThemeScript.create({
+  themes: {
+    base: zyzz.themes.base.className,
+    mint: zyzz.themes.mint.className,
+  },
+})
+
+export function Document({ nonce }: { nonce?: string }) {
+  return (
+    <html
+      {...zyzz.themes.base({ colorScheme: 'light dark' })}
+      suppressHydrationWarning
+    >
+      <head>
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: script }} />
+        <title>My App</title>
+      </head>
+      <body>Content</body>
+    </html>
+  )
 }
 ```
 
-Use `light dark` for system preference, or `light` / `dark` to force a scheme. No JavaScript preference listener is needed.
+The application saves preferences under `zyzz`:
+
+```ts
+localStorage.setItem(
+  'zyzz',
+  JSON.stringify({ theme: 'mint', colorScheme: 'dark' }),
+)
+```
+
+The script reads this record once and updates only known theme classes and `document.documentElement.style.colorScheme`. Unrelated classes and styles remain intact. Unknown preferences, malformed data, or unavailable storage preserve the corresponding server-rendered defaults.
+
+React's `suppressHydrationWarning` is limited to the root attributes changed before hydration. Preference controls should initialize from the applied root state before changing it; the script does not synchronize component state or persist later changes. See [ThemeScript.create](../api/web/ThemeScript/create.md) for the full contract.
 
 ### Shared Configuration
 

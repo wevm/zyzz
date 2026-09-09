@@ -141,7 +141,7 @@
       },
       "color()": {
         "grammar": "11009224667a683f20c2a140083c06dfeeef7b97a13a63aa4b732bd316a3a6ca",
-        "status": "deferred"
+        "status": "partial"
       },
       "color-mix()": {
         "grammar": "89d300d54d46abbbadf3d6544873d92187a7d167b308b6518db320e72fc50961",
@@ -205,11 +205,11 @@
       },
       "hsl()": {
         "grammar": "4e68bc29b1f2e8f61b34a45ba5df59a417438b2c5889955ec86f90b07bce1979",
-        "status": "deferred"
+        "status": "partial"
       },
       "hsla()": {
         "grammar": "08a7f2eff6e3d89c012f565327e7d91122ade844c8a545090581056e7e780334",
-        "status": "deferred"
+        "status": "partial"
       },
       "hue-rotate()": {
         "grammar": "383ec8d3cf47d26a2e6f412ef609bb2781f90dfeedf09bbde00f99f27bff3b8f",
@@ -217,7 +217,7 @@
       },
       "hwb()": {
         "grammar": "fb37ca3f65697b2d80e3df30a36f76b6b7bba656778506659af4322a9b325a76",
-        "status": "deferred"
+        "status": "partial"
       },
       "hypot()": {
         "grammar": "1b6f41d87d383ac720d80c70cf87159865c667e3262d5445977112ff0973a167",
@@ -241,7 +241,7 @@
       },
       "lab()": {
         "grammar": "a1fcb022b00145894ac76043344741edc190bfffd84e3cf208be75f3572896a6",
-        "status": "deferred"
+        "status": "partial"
       },
       "layer()": {
         "grammar": "a11de38b6d4721d6321056db0e60c59758b918b24f12d7597abfe15f572970ed",
@@ -249,7 +249,7 @@
       },
       "lch()": {
         "grammar": "e2709df71877e817bf0a67d71e54a16851963498deb669ff1df74be5d40418b9",
-        "status": "deferred"
+        "status": "partial"
       },
       "leader()": {
         "grammar": "719b9c5d0eedd07b56e1f40dcd098a2eced43ae632c4b88dafb669b8528a468d",
@@ -297,11 +297,11 @@
       },
       "oklab()": {
         "grammar": "fa4566ec65e7409d8a834c19c5fd4abd3e1d1ea6ea3760b0c900c9fe1ed80910",
-        "status": "deferred"
+        "status": "partial"
       },
       "oklch()": {
         "grammar": "aece031e28edc3bd50b813ee8f608adb77a5d9c0a667c2002c48e62c20aca1bb",
-        "status": "deferred"
+        "status": "partial"
       },
       "opacity()": {
         "grammar": "2021099a9e98f328db599f66cf0f86b4f9edc7fcd1ae57d40db2222865cbfb75",
@@ -365,11 +365,11 @@
       },
       "rgb()": {
         "grammar": "a731ab4f375d36476db11a576e51e98145e49f36c6f45ef6d9bf559741e0baeb",
-        "status": "deferred"
+        "status": "partial"
       },
       "rgba()": {
         "grammar": "e11fa8095a9f28ecfb79e34442b48125872cdc76dbb25a33076e23574787c672",
-        "status": "deferred"
+        "status": "partial"
       },
       "rotate()": {
         "grammar": "e306d8859c0f2a5c9d13aa77c17e72ac3a9dc1f36d3920264836621b50379f06",
@@ -3983,7 +3983,7 @@
       },
       "color()": {
         "grammar": "81b53b0d2ed35a46bc7ecb2c0a286908e85281dcaac0e94fd22fe82f975bb430",
-        "status": "deferred"
+        "status": "partial"
       },
       "color-base": {
         "grammar": "c8fddec149c48a9e6291d2906ccac946cca87ea5eeac62967f3d4b81b7746c92",
@@ -4367,11 +4367,11 @@
       },
       "hsl()": {
         "grammar": "98d22014d73af9a25f7003176405b5b2e29c1e435884a0973493bd3e5d6cc3a3",
-        "status": "deferred"
+        "status": "partial"
       },
       "hsla()": {
         "grammar": "de8e11b6e25e038aab0ff1ac2d87801e96bc01dd755b876ec828e191fd5c26f6",
-        "status": "deferred"
+        "status": "partial"
       },
       "hue": {
         "grammar": "82cab00c23e9a3c43122aec56e8c803512b97d8001de06943c7a5457edb19736",
@@ -4387,7 +4387,7 @@
       },
       "hwb()": {
         "grammar": "d5c8e7db0c2bc61041e32709991e1cc873f4487363563be33b3fe46020b1f7f4",
-        "status": "deferred"
+        "status": "partial"
       },
       "hypot()": {
         "grammar": "fb877bde4626302697f9484711202f5230cd97aaaee098bda3476fe7454611b9",
@@ -4451,7 +4451,7 @@
       },
       "lab()": {
         "grammar": "d580c641a7889e936173346e1967323ef93c542b02b4a7fe33ebaaa5be3439f1",
-        "status": "deferred"
+        "status": "partial"
       },
       "layer()": {
         "grammar": "9469a646ac993bcbabdb9325655fd14d5d66cb028c28ac852b8acdb0efecfbf8",
@@ -4463,7 +4463,7 @@
       },
       "lch()": {
         "grammar": "493bee8a9cbf000d1d8c112b87016d2c945ad21bf13c0707b4b11586a05cf16e",
-        "status": "deferred"
+        "status": "partial"
       },
       "leader()": {
         "grammar": "6b417072049124ea49f18ba450a3581fa920c00ef29d63936b647ac8b8b9b2fa",
@@ -4683,11 +4683,11 @@
       },
       "oklab()": {
         "grammar": "b9fbaa391a3b5e2d564994c2503ea3d149a5d1e5d593870871b0c2a323bd9274",
-        "status": "deferred"
+        "status": "partial"
       },
       "oklch()": {
         "grammar": "a4a35d3166048b8d51dd1526dfb0e47ff0cb8b41b620c1b8d41ff58b5dc7745d",
-        "status": "deferred"
+        "status": "partial"
       },
       "opacity()": {
         "grammar": "e5baa1d46ee5df0b72ee4740af122e733b6829fb1a3f47844e03e2906894dca4",
@@ -4887,11 +4887,11 @@
       },
       "rgb()": {
         "grammar": "5b1eb34434ddf003eac949555791985b88ed1c6e112d6de8e87caba3e456e1d8",
-        "status": "deferred"
+        "status": "partial"
       },
       "rgba()": {
         "grammar": "c3b947bc569a60329ea7172548f3f989b1b41f91ef10040f8140b30ea30cd3df",
-        "status": "deferred"
+        "status": "partial"
       },
       "rotate()": {
         "grammar": "4f021c89727c5e02cac7f28891831b4e7cddd450bfb0b10487f42cf683753f6e",

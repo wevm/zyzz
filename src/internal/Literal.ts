@@ -2,6 +2,7 @@
  * Defines and validates the supported primitive CSS property and value domains.
  * @module
  */
+import * as Colors from './Color.js'
 import * as Grid from './Grid.js'
 import * as Motion from './Motion.js'
 
@@ -14,13 +15,14 @@ export type Checked<value> = value extends Fraction | Length | Time
     : value
   : value
 
-/** Deliberately bounded color syntax; functional colors arrive with CSS parsing. */
+/** Named, hexadecimal, and absolute functional colors; arguments are checked at compilation. */
 export type Color =
   | (typeof namedColors)[number]
   | (typeof systemColors)[number]
   | 'currentColor'
   | 'transparent'
   | `#${string}`
+  | `${'color' | 'hsl' | 'hsla' | 'hwb' | 'lab' | 'lch' | 'oklab' | 'oklch' | 'rgb' | 'rgba'}(${string})`
 
 /** Flexible grid track dimensions. */
 export type Fraction = `${number}fr`
@@ -1595,7 +1597,8 @@ export function validate(
         /^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(value) ||
         colorKeywordSet.has(value) ||
         value === 'currentColor' ||
-        value === 'transparent')
+        value === 'transparent' ||
+        Colors.functional(value))
       ? undefined
       : 'Expected a named color, system color, hex color, transparent, or currentColor.'
   if (rule.kind === 'number')

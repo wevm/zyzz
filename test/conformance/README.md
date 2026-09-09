@@ -47,3 +47,5 @@ The status inventory is a reviewed completion ledger, not a browser certificatio
 Current completion is 0/670 (0%): 303 partial and 367 deferred. This intentionally leaves the consolidated implementation PR blocked. All remaining implementation and evidence work stays in that PR until the full gate passes.
 
 Motion lists preserve comma grouping inside `cubic-bezier()`, `steps()`, and `linear()`. Independent grammar probes, consumer types, and browser comparisons cover numeric restrictions, list ordering, importance, and paused animation output. Substitution, comments, and escaped spellings remain incomplete. Easing semantics follow [CSS Easing Functions](https://www.w3.org/TR/css-easing-2/).
+
+Absolute functional colors are checked across color properties and public types, with theme, inheritance, importance, and SVG browser comparisons. Literal channel ranges retain browser clamping; malformed units, legacy separator mixing, and invalid arity fail. Relative colors and nested expressions remain incomplete. Source: [CSS Color](https://www.w3.org/TR/css-color-4/).

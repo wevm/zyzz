@@ -61,6 +61,25 @@ export function cases(): readonly Case[] {
         'white',
         'transparent',
         'currentColor',
+        'rgb(255 0 0 / 50%)',
+        'hsl(120deg 50% 50%)',
+        'hwb(120 20% 30%)',
+        'lab(50% 20 -30)',
+        'lch(50 30 120)',
+        'oklab(.5 .1 -.1)',
+        'oklch(.5 .1 120)',
+        ...[
+          'a98-rgb',
+          'display-p3',
+          'display-p3-linear',
+          'prophoto-rgb',
+          'rec2020',
+          'srgb',
+          'srgb-linear',
+          'xyz',
+          'xyz-d50',
+          'xyz-d65',
+        ].map((space) => `color(${space} .1 .2 .3)`),
       )
     }
     if (rule.kind === 'number') {
@@ -162,7 +181,6 @@ export const rejected = [
   { property: 'animationDuration', value: '1px' },
   { property: 'appearance', value: 'native' },
   { property: 'color', value: 'not-a-color' },
-  { property: 'color', value: 'rgb(0 0 0)' },
   { property: 'containerType', value: 'normal size' },
   { property: 'containerType', value: 'size inline-size' },
   { property: 'containerType', value: 'scroll-state scroll-state' },

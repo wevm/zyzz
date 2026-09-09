@@ -999,3 +999,21 @@ describe('css', () => {
     css({ animationDirection: 'inherit, normal' })
   })
 })
+
+describe('css', () => {
+  test('supports absolute functional colors across color properties', () => {
+    css({
+      backgroundColor: 'hsl(120deg 50% 50% / .5)',
+      borderColor: 'hwb(120 20% 30%)',
+      color: ['rgb(255, 0, 0)', 'oklch(.5 .1 120)!'],
+      fill: 'lab(50% 20 -30)',
+      outlineColor: 'color(display-p3 .1 .2 .3)',
+      stroke: 'oklab(.5 .1 -.1)',
+      textDecorationColor: 'lch(50 30 120)',
+    })
+    // @ts-expect-error Unknown function names are rejected by the structural type.
+    css({ color: 'cmyk(0, 0, 0, 1)' })
+    // @ts-expect-error Functions require a closing delimiter.
+    css({ color: 'rgb(0 0 0' })
+  })
+})

@@ -18,6 +18,7 @@ import * as Controls from '../../test/fixtures/Controls.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Fonts from '../../test/fixtures/Fonts.js'
+import * as FunctionalColors from '../../test/fixtures/FunctionalColors.js'
 import * as Grid from '../../test/fixtures/Grid.js'
 import * as GridLists from '../../test/fixtures/GridLists.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
@@ -230,6 +231,12 @@ const workloads = {
       `export const tracks${index} = css({gridTemplateColumns:'repeat(3, minmax(0, 1fr))',gridAutoRows:'${index}px 40px'})();`,
     source: GridLists.source,
     title: 'grid list',
+  },
+  functionalColors: {
+    declaration: (index: number) =>
+      `export const functionalColor${index} = css({color:'oklch(.5 .1 ${index})',backgroundColor:'rgb(255 0 0 / 50%)'})();`,
+    source: FunctionalColors.source,
+    title: 'functional color',
   },
   grid: {
     declaration: (index: number) =>

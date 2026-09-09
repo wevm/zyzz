@@ -464,7 +464,7 @@ Tab sizes are nonnegative safe integers. Custom counter styles/strings, length-b
 
 ## Color Keywords
 
-All 148 canonical lowercase CSS named colors and 19 canonical system-color keywords are accepted by color properties and theme values, including paired schemes. Literal names take precedence over inferred token names; explicit theme.tokens references retain access to colliding tokens. The independent MDN corpus exhausts every named color across each color property and consumer type. Browser fixtures verify named RGB values, explicit references, importance, and light/dark scheme changes. Noncanonical case spellings and functional color syntax remain deferred.
+All 148 canonical lowercase CSS named colors and 19 canonical system-color keywords are accepted by color properties and theme values, including paired schemes. Literal names take precedence over inferred token names; explicit theme.tokens references retain access to colliding tokens. The independent MDN corpus exhausts every named color across each color property and consumer type. Browser fixtures verify named RGB values, explicit references, importance, and light/dark scheme changes. Absolute rgb()/rgba(), hsl()/hsla(), hwb(), lab()/lch(), oklab()/oklch(), and predefined color() spaces accept finite literal channels, alpha, and modern none components. Legacy separators retain their restrictions. Relative colors, nested functions, comments, and escaped spellings remain deferred.
 
 ## Container and Field Sizing
 

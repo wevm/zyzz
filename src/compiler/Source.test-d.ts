@@ -2,19 +2,23 @@
  * Checks consumer inference and rejected inputs through the public Source API.
  * @module
  */
-import { expectTypeOf } from 'vite-plus/test'
+import { describe, expectTypeOf, test } from 'vite-plus/test'
 import type { Style, Theme } from 'zyzz'
 import { Source } from 'zyzz/compiler'
 
-const result = Source.extract({ moduleId: 'example/card.ts', source: '' })
-expectTypeOf(result.styles).toEqualTypeOf<Style.Definition>()
-expectTypeOf(result.calls).toEqualTypeOf<readonly Source.Call[]>()
-expectTypeOf(result.themes).toEqualTypeOf<
-  Readonly<Record<string, Theme.Definition>>
->()
-// @ts-expect-error Extracted scope maps are readonly.
-result.themes.extra = result.themes.existing!
-// @ts-expect-error A portable host module ID is required.
-Source.extract({ source: '' })
-// @ts-expect-error Call-site metadata is immutable.
-result.calls.push({ end: 1, name: 'card', start: 0 })
+describe('extract', () => {
+  test('preserves extracted metadata and rejects invalid inputs', () => {
+    const result = Source.extract({ moduleId: 'example/card.ts', source: '' })
+    expectTypeOf(result.styles).toEqualTypeOf<Style.Definition>()
+    expectTypeOf(result.calls).toEqualTypeOf<readonly Source.Call[]>()
+    expectTypeOf(result.themes).toEqualTypeOf<
+      Readonly<Record<string, Theme.Definition>>
+    >()
+    // @ts-expect-error Extracted scope maps are readonly.
+    result.themes.extra = result.themes.existing!
+    // @ts-expect-error A portable host module ID is required.
+    Source.extract({ source: '' })
+    // @ts-expect-error Call-site metadata is immutable.
+    result.calls.push({ end: 1, name: 'card', start: 0 })
+  })
+})

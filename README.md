@@ -212,7 +212,7 @@ The theme returns its generated `className` and `style.colorScheme`. Use `'light
 
 Color pairs compile to `light-dark()`; the custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme calls can scope a subtree independently.
 
-For saved preferences, an optional [initialization script](docs/guides/themes.md#restore-preferences) in `<head>` restores the theme and scheme from localStorage before first paint. System preference needs no script or provider.
+For saved preferences, `zyzz.script()` generates an optional [initialization script](docs/guides/themes.md#restore-preferences) for `<head>`. It restores the theme and scheme from localStorage before first paint. System preference needs no script or provider.
 
 ### Variants
 

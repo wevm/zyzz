@@ -824,7 +824,9 @@ The compiler must support local/imported/packed handles and finite dynamic catal
 
 ### Root Preference Initialization
 
-The optional `ThemeScript.create` namespace in `zyzz/web` returns inline JavaScript. Input is a `themes` map of names to compiled classes (default empty) and `storageKey` (default `'zyzz'`). The server renders fallback root props; the script has no duplicate defaults. No cookies, providers, or core browser dependencies.
+`Config.create` returns a bound `zyzz.script(options = {})` function that generates inline JavaScript. It needs no separate import. Derive the named theme catalog, compiled scope classes, and default selection from its config; the only override is `options.storageKey` (default `'zyzz'`). The server renders fallback root props. No explicit mapping API, duplicate defaults, cookies, providers, or core browser dependencies.
+
+Source integration must recognize `zyzz.script` calls on the config receiver through imports, aliases, re-exports, and packed metadata. Serialize only compiled scope identities and selection metadata, never token data or authoring functions. Single-theme and token-free configs restore the color scheme only; ignore stored theme names in those modes. Preserve server-rendered defaults when no valid stored preference exists.
 
 The localStorage record is `{ theme?: string, colorScheme?: 'light' | 'dark' | 'light dark' }`. Read it synchronously once from a classic inline script early in `<head>`, before stylesheets and visible content. Apply allowlisted preferences to `document.documentElement`; retain unrelated classes/styles and remove only classes belonging to the supplied catalog.
 

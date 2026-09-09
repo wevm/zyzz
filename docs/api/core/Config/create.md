@@ -72,7 +72,7 @@ Config.create({
 
 ## Returns
 
-Returns `Config.create.ReturnType<options>`: a frozen object with typed `css` and either `theme` or `themes`. Omission returns only token-free `css`. Separate calls own isolated contracts and leave supplied definitions unchanged.
+Returns `Config.create.ReturnType<options>`: a frozen object with typed `css`, a bound `script` function, and either `theme` or `themes`. Omission returns token-free `css` and a color-scheme-only `script`. Separate calls own isolated contracts and leave supplied definitions unchanged.
 
 ### css
 
@@ -107,6 +107,19 @@ const zyzz = Config.create({
 })
 const token = zyzz.themes.base.tokens.spacing.md
 ```
+
+### script
+
+- Type: `(options?: { storageKey?: string }) => string`
+
+Generate an optional inline initialization script using this config's theme catalog. It restores localStorage preferences on `<html>` before first paint. No cookies, provider, or extra import is required.
+
+```ts
+const script = zyzz.script()
+const custom = zyzz.script({ storageKey: 'my-app-appearance' })
+```
+
+See [Config Script](script.md) for storage, CSP, and hydration behavior.
 
 ### variants
 

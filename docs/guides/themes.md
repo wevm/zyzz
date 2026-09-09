@@ -111,15 +111,9 @@ Use an optional initialization script when preferences persist in localStorage. 
 The following uses the named catalog from [Selecting a Theme](#selecting-a-theme):
 
 ```tsx
-import { ThemeScript } from 'zyzz/web'
 import { zyzz } from './zyzz.config.js'
 
-const script = ThemeScript.create({
-  themes: {
-    base: zyzz.themes.base.className,
-    mint: zyzz.themes.mint.className,
-  },
-})
+const script = zyzz.script()
 
 export function Document({ nonce }: { nonce?: string }) {
   return (
@@ -137,6 +131,8 @@ export function Document({ nonce }: { nonce?: string }) {
 }
 ```
 
+The script derives the theme catalog and compiled classes from the config. An optional argument sets `storageKey`; its default is `'zyzz'`.
+
 The application saves preferences under `zyzz`:
 
 ```ts
@@ -148,7 +144,7 @@ localStorage.setItem(
 
 The script reads this record once and updates only known theme classes and `document.documentElement.style.colorScheme`. Unrelated classes and styles remain intact. Unknown preferences, malformed data, or unavailable storage preserve the corresponding server-rendered defaults.
 
-React's `suppressHydrationWarning` is limited to the root attributes changed before hydration. Preference controls should initialize from the applied root state before changing it; the script does not synchronize component state or persist later changes. See [ThemeScript.create](../api/web/ThemeScript/create.md) for the full contract.
+React's `suppressHydrationWarning` is limited to the root attributes changed before hydration. Preference controls should initialize from the applied root state before changing it; the script does not synchronize component state or persist later changes. See [Config Script](../api/core/Config/script.md) for the full contract.
 
 ### Shared Configuration
 

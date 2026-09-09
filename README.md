@@ -2,16 +2,13 @@
 
 A type-safe styling library for agents. Familiar CSS, inferred design tokens, and small APIs make styles straightforward to generate, inspect, and change.
 
-- [**Typed Styles**](#typed-styles): typed CSS properties, values, selectors, and queries.
-- [**Dynamic Styles**](#dynamic-styles): callable styles with typed runtime values and static CSS.
-- [**Themes**](#themes): bundled or custom tokens with light and dark color schemes.
-- [**Variants**](#variants): component choices with inferred props and data attributes.
-- [**Value Syntax**](#value-syntax): fallbacks, importance, expressions, and theme CSS variables.
-- [**Composition**](#composition): explicit overrides between generated styles.
-- [**Stylesheets and Compilation**](#stylesheets-and-compilation): global rules, animations, fonts, and web/native output.
-- [**Source Compilation**](#source-compilation): executable modules, static CSS, and source maps.
-- [**File Builds**](#file-builds): incremental builds and filesystem watching.
-- [**CLI**](#cli): standalone compilation with watch mode.
+- [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
+- [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
+- [**Dark Mode**](#dark-mode): light/dark token pairs selected by CSS, without a preference listener.
+- [**Variants**](#variants): typed component choices, defaults, and compound rules.
+- [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
+- [**Composition**](#composition): explicit style overrides that retain bindings and variant attributes.
+- [**Static CSS**](#static-css): ahead-of-time output with readable classes and no runtime rule generation.
 
 [Getting Started](docs/introduction/getting-started.md) · [Guides](docs/guides/README.md) · [Concepts](docs/concepts.md) · [API Reference](docs/api/README.md)
 
@@ -42,7 +39,10 @@ export function Button() {
 
 ### Typed Styles
 
-Use `css` inline or export a callable style definition. Nest selectors and queries alongside typed declarations.
+Standard CSS properties and values carry TypeScript inference into each definition. Styles can live beside components or in shared modules; applying them returns ordinary styling props without a provider or component wrapper.
+
+> [!NOTE]
+> Nested selectors and queries below are preview syntax; literal declarations are supported by the source compiler.
 
 ```tsx
 import { css } from 'zyzz'
@@ -56,32 +56,16 @@ const button = css({
 const example = <button {...button()}>Continue</button>
 ```
 
-### Dynamic Styles
-
-A callback receives typed runtime values. Call the style with those values and optional `className`/`style` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
-
-```tsx
-import { css } from 'zyzz'
-
-const bar = css((values: { width: `${number}%` }) => ({
-  width: values.width,
-}))
-
-export function Bar() {
-  return (
-    <div {...bar({ width: '50%', className: 'progress' })} aria-hidden={true} />
-  )
-}
-```
-
 ### Themes
 
-[Compile theme tokens and inherited scopes from in-memory definitions.](docs/guides/themes.md#compile-themes)
+Token names infer by property, and compatible theme scopes change inherited values without changing component styles. Core imports remain token-free.
 
 > [!NOTE]
-> Bundled themes and `Config.create` are previews; these source-authoring examples are not yet executable. Use the in-memory theme guide above for the implemented flow.
+> Bundled themes and `Config.create` below are previews. Current compilation supports [authored theme definitions and extensions](docs/guides/themes.md#compile-local-theme-source).
 
-Import a bundled theme's `css` for inferred design tokens. `zyzz/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
+#### Default Theme
+
+Import the default theme's `css` for inferred colors, typography, spacing, and radius tokens. `zyzz/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
 
 ```ts
 import { css } from 'zyzz/themes/default'
@@ -89,7 +73,25 @@ import { css } from 'zyzz/themes/default'
 const button = css({ color: 'blue.700', padding: 4 })
 ```
 
-Export a named `zyzz` instance from a shared config to retain inferred tokens. Colors accept a shared value or a light/dark pair.
+Extend the default theme with [`Theme.extend`](docs/api/core/Theme/extend.md) to override existing tokens while retaining all other values and the same token contract.
+
+```ts
+// zyzz.config.ts
+import { Config, Theme } from 'zyzz'
+import { theme } from 'zyzz/themes/default'
+
+export const zyzz = Config.create({
+  theme: Theme.extend(theme, {
+    color: { blue: { 700: '#175' } },
+  }),
+})
+```
+
+`Theme.extend` accepts existing paths only. Define a custom theme for a different token vocabulary.
+
+#### Custom Theme
+
+Export a named `zyzz` instance with an application's own tokens. Colors accept a shared value or a light/dark pair.
 
 ```ts
 // zyzz.config.ts
@@ -109,9 +111,30 @@ import { zyzz } from './zyzz.config.js'
 const card = zyzz.css({ color: 'text', padding: 'sm' })
 ```
 
-Use `Theme.define` and `Theme.extend` when tokens need a reusable definition outside config.
+Use [`Theme.define`](docs/api/core/Theme/define.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
+
+### Dark Mode
+
+Color pairs compile to `light-dark()`. CSS selects the scheme independently of the theme, including system preference without a JavaScript listener.
+
+```css
+:root {
+  color-scheme: light dark;
+}
+.light {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+```
+
+The custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode.
 
 ### Variants
+
+> [!NOTE]
+> Variant authoring is a preview; not yet implemented.
 
 Describe component choices with inferred props, defaults, and compound rules. Use `zyzz.variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
 
@@ -133,7 +156,31 @@ type ButtonProps = NonNullable<Parameters<typeof button>[0]>
 const example = <button {...button({ size: 'sm' })}>Continue</button>
 ```
 
+### Dynamic Styles
+
+> [!NOTE]
+> Callback authoring is a preview; not yet implemented.
+
+A callback receives typed runtime values. Call the style with those values and optional `className`/`style` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
+
+```tsx
+import { css } from 'zyzz'
+
+const bar = css((values: { width: `${number}%` }) => ({
+  width: values.width,
+}))
+
+export function Bar() {
+  return (
+    <div {...bar({ width: '50%', className: 'progress' })} aria-hidden={true} />
+  )
+}
+```
+
 ### Value Syntax
+
+> [!NOTE]
+> Config-bound expressions and `theme.vars` below are previews.
 
 Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
 
@@ -150,6 +197,9 @@ const panel = zyzz.css({
 
 ### Composition
 
+> [!NOTE]
+> `cx` is a preview; not yet implemented.
+
 Prefer state attributes for conditional styling. Calls accept `className` and `style` overrides. Classes are retained and inline styles merge. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
 
 ```tsx
@@ -165,83 +215,16 @@ const example = (
 )
 ```
 
-### Stylesheets and Compilation
+### Static CSS
+
+Styles compile ahead of time into CSS and executable modules with source maps. Direct applications become props; exported definitions remain callable. Generated functions never create CSS rules, and unused theme tokens emit no declarations.
+
+Use the [Vite plugin](docs/introduction/vite.md) for source transformation and CSS delivery, or the [compiler APIs](docs/guides/compilation.md) for standalone builds and library distribution.
 
 > [!NOTE]
-> `global`, `keyframes`, `fontFace`, and React Native `StyleSheet` are previews and cannot yet be imported. The pure `Style.define` / `Css.compile` pipeline is implemented.
+> [CLI](docs/introduction/cli.md) and [Next.js](docs/introduction/next.md) integrations are previews.
 
-`global`, `keyframes`, and `fontFace` from `zyzz/web` define stylesheet rules. `Css` provides in-memory CSS compilation. `StyleSheet` compiles shared `Style` definitions into React Native styles and selects precompiled theme values.
-
-```ts
-import { Style } from 'zyzz'
-import { Css } from 'zyzz/web'
-
-const styles = Style.define({
-  card: { display: 'flex' },
-})
-const output = Css.compile({ styles })
-```
-
-Use `composition: 'independent'` to deduplicate complete applications whose composition is resolved before compilation. Those generated class lists must remain separate. The default `ordered` mode preserves stylesheet precedence across combined class lists.
-
-> [!NOTE]
-> The following native adapter and config flow is not yet implemented.
-
-```ts
-import { zyzz } from './zyzz.config.js'
-
-import { StyleSheet } from 'zyzz/react-native'
-
-const output = StyleSheet.compile({ styles, themes: { base: zyzz.theme } })
-const selected = StyleSheet.select(output.styles, {
-  theme: 'base',
-  colorScheme: 'dark',
-})
-```
-
-### Source Compilation
-
-Compile literal definitions into executable modules and static CSS with source maps. Direct applications become props; exported definitions remain callable. The transform accepts source text without reading files or evaluating application code.
-
-```ts
-import { Transform } from 'zyzz/compiler'
-
-const output = Transform.compile({
-  moduleId: 'app/button.tsx',
-  source:
-    "import { css } from 'zyzz'; export const button = css({ padding: 0 })",
-})
-// output.code, output.css, output.map, output.cssMap
-```
-
-### File Builds
-
-Build source files through the same compiler, retain working output after source errors, and watch for changes. Explicit ownership protects unrelated files.
-
-```ts
-import { Host } from 'zyzz/node'
-
-const host = await Host.create({
-  outDir: 'dist/styles',
-  packageId: 'my-library',
-  root: 'src/styles',
-})
-
-try {
-  await host.build()
-} finally {
-  await host.close()
-}
-```
-
-### CLI
-
-Compile source modules and styles independently of a build integration. Watch mode updates output as definitions change.
-
-```sh
-zyzz src --out-dir dist --watch
-zyzz src --out-dir dist --minify
-```
+See [Benchmarks](docs/introduction/benchmarks.md) for measured compilation, runtime, and output-size comparisons.
 
 ## Comparison
 

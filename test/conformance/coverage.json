@@ -1207,7 +1207,7 @@
       },
       "border-collapse": {
         "grammar": "c27648f5fe2323858538dbd53708b5c541ef4fcfb051b9896b866015358401dd",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-color": {
         "grammar": "3cbfb667e446d875a8ecf61c5ee25c9d42ca1d73823f014a32dd3dcdfd76e93f",
@@ -1335,7 +1335,7 @@
       },
       "border-spacing": {
         "grammar": "86e18eb3b8af0ad95d117bcced1fdb9f1a220fd4a9a28598b10be7c8a33d01b4",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-start-end-radius": {
         "grammar": "339578569a317ef066715854559eab6d6df3797a445916824293e92930fb492d",
@@ -1439,7 +1439,7 @@
       },
       "caption-side": {
         "grammar": "bd9aae0d7a5426ea28bc9389db2f4b9fd20468cbbaad91dd67cc700bf71a01b2",
-        "status": "deferred"
+        "status": "partial"
       },
       "caret": {
         "grammar": "0a7dd52ead09aa4dc8066090ba4ef663cdd181643d9287f95449284b3f27b3e4",
@@ -1691,7 +1691,7 @@
       },
       "empty-cells": {
         "grammar": "6e84eb3c1186e58a32e3e34a904a8d0d385fb12fd96b0514eb59f707b5e1dbe7",
-        "status": "deferred"
+        "status": "partial"
       },
       "field-sizing": {
         "grammar": "a71ad57af252991a0a66a22e23d303787e311e5f91bf0886a5d82fc107c8f1ce",
@@ -2851,7 +2851,7 @@
       },
       "table-layout": {
         "grammar": "7c32574e6a95fbd0b4fa6412a145e1705bd598cdcaad448053f001d4c8681ff8",
-        "status": "deferred"
+        "status": "partial"
       },
       "text-align": {
         "grammar": "7cfde0c4a5e91286e9d3fec3a994bc9d3795ca63f99f61227dcd57f72a6bc1e8",

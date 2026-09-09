@@ -23,6 +23,7 @@ import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as Tables from '../../test/fixtures/Tables.js'
 import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../../test/fixtures/TextFlow.js'
 
@@ -222,6 +223,175 @@ describe('compile', () => {
       await Fs.rm(directory, { force: true, recursive: true })
     }
   }, 120_000)
+
+  test('table declarations preserve fallback priority and source maps', () => {
+    const output = Transform.compile({
+      moduleId: 'example/tables.ts',
+      source: Tables.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-style-m20tii1jg8qc0-53{border-collapse:collapse;border-spacing:12px;caption-side:top;empty-cells:show;table-layout:auto;}
+      .z-style-m20tii1jg8qc0-190{border-collapse:separate;border-spacing:2px;border-spacing:8px!important;border-spacing:4px;caption-side:bottom;empty-cells:hide;table-layout:fixed;}
+      .z-style-m20tii1jg8qc0-347{border-collapse:separate;border-spacing:0;caption-side:top;empty-cells:show;table-layout:fixed;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) =>
+      line.includes('border-spacing:8px!important'),
+    )
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        column: lines[line]!.indexOf('border-spacing:8px!important'),
+        line: line + 1,
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 49,
+        "line": 4,
+        "name": "borderSpacing",
+        "source": "example/tables.ts",
+      }
+    `)
+  })
+
+  test('table declarations reject invalid keywords, lengths, and tokens', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import { css } from 'zyzz'; css({borderCollapse:'solid',borderSpacing:'-1px',captionSide:'center',emptyCells:'hidden',tableLayout:'flex'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: invalid.ts:48: Expected one of: collapse, separate (or a CSS-wide keyword).
+      invalid.ts:70: Expected a nonnegative literal length or numeric zero.
+      invalid.ts:89: Expected one of: bottom, top (or a CSS-wide keyword).
+      invalid.ts:109: Expected one of: hide, show (or a CSS-wide keyword).
+      invalid.ts:130: Expected one of: auto, fixed (or a CSS-wide keyword).]
+    `)
+    for (const value of ['10%', 'auto', '1px 2px', '0x10px!', 'Infinitypx'])
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import { css } from 'zyzz'; css({borderSpacing:${JSON.stringify(value)}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:47: Expected a nonnegative literal length or numeric zero.]`,
+      )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid-token.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({spacing:{gutter:'8px'}}); theme.css({borderSpacing:theme.tokens.spacing.gutter});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid-token.ts:109: Token group is incompatible with this property.]`,
+    )
+  })
+
+  test('table declarations match browser layout and inherited cell styles', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/tables.ts',
+      source: Tables.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      format: 'esm',
+      loader: 'ts',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      const rows =
+        '<caption>Caption</caption><tbody><tr><td>Wide content</td><td></td></tr><tr><td>A</td><td>B</td></tr></tbody>'
+      await page.setContent(
+        `<style>table{width:240px}td{border:2px solid;padding:0;height:24px}${output.css}</style>${Object.entries(
+          Tables.controls,
+        )
+          .map(
+            ([name, css]) =>
+              `<table id="${name}" class="${module[name].className}">${rows}</table><table id="${name}-control" style="${css}">${rows}</table>`,
+          )
+          .join('')}`,
+      )
+      for (const direction of ['ltr', 'rtl']) {
+        await page.locator('body').evaluate((element, direction) => {
+          element.style.direction = direction
+        }, direction)
+        expect(
+          await page.evaluate(
+            (names) =>
+              names.filter((name) => {
+                const actual = document.getElementById(name)!
+                const control = document.getElementById(`${name}-control`)!
+                for (const selector of [
+                  '',
+                  'caption',
+                  'td',
+                  'td:nth-child(2)',
+                ]) {
+                  const a = selector ? actual.querySelector(selector)! : actual
+                  const b = selector
+                    ? control.querySelector(selector)!
+                    : control
+                  const aa = getComputedStyle(a)
+                  const bb = getComputedStyle(b)
+                  if (
+                    [
+                      'border-collapse',
+                      'border-spacing',
+                      'caption-side',
+                      'empty-cells',
+                      'table-layout',
+                    ].some(
+                      (property) =>
+                        aa.getPropertyValue(property) !==
+                        bb.getPropertyValue(property),
+                    )
+                  )
+                    return true
+                  const ar = a.getBoundingClientRect()
+                  const br = b.getBoundingClientRect()
+                  if (
+                    ar.width !== br.width ||
+                    ar.height !== br.height ||
+                    ar.top - actual.getBoundingClientRect().top !==
+                      br.top - control.getBoundingClientRect().top
+                  )
+                    return true
+                }
+                return false
+              }),
+            Object.keys(Tables.controls),
+          ),
+        ).toMatchInlineSnapshot(`[]`)
+      }
+      expect(
+        await page.locator('#separated').evaluate((element) => {
+          const cells = element.querySelectorAll('td')
+          return {
+            captionBelow:
+              element.querySelector('caption')!.getBoundingClientRect().top >=
+              cells[2]!.getBoundingClientRect().bottom,
+            emptyCells: getComputedStyle(cells[1]!).emptyCells,
+            gap:
+              cells[0]!.getBoundingClientRect().left -
+              cells[1]!.getBoundingClientRect().right,
+            spacing: getComputedStyle(element).borderSpacing,
+            tableLayout: getComputedStyle(element).tableLayout,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "captionBelow": true,
+          "emptyCells": "hide",
+          "gap": 8,
+          "spacing": "8px",
+          "tableLayout": "fixed",
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
 
   test('text decorations preserve color domains, spacing tokens, priority, and maps', () => {
     const output = Transform.compile({

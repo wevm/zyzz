@@ -4,7 +4,7 @@ Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the ca
 
 **Partial** means only the stated subset works today. **Planned** means an existing architecture contract awaits implementation. **Proposal** means an API shape is offered for review. **Deferred** means a later capability; external CSS examples demonstrate interoperability, not implemented Zyzz authoring support. Examples are independent unless they explicitly share a definition.
 
-Current implementation: 165 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
+Current implementation: 170 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
 
 ## 01. Typed Styles and Inline Authoring
 
@@ -20,6 +20,8 @@ const label = <span {...css({ color: '#06c' })()} />
 ```
 
 Complete the property/value inventory across accessibility, backgrounds/gradients, borders/outlines, filters/masks, grid/flex, interactivity, layout/containment/positioning, logical spacing/sizing, scrolling, shadows, SVG, tables, transforms, and typography. Property spellings and token domains remain checked; broad selector support must not introduce an unrestricted object-key index signature. No separate utility-string or property-access facade is needed.
+
+The table subset supports `css({ borderCollapse: 'separate', borderSpacing: '8px', captionSide: 'bottom', emptyCells: 'hide', tableLayout: 'fixed' })`. Border spacing accepts a single nonnegative length or zero; paired lengths and spacing tokens remain deferred.
 
 Panda's `strictTokens` and `strictPropertyValues` expose an additional policy choice. Zyzz keeps valid CSS literals available by default; opt-in token-only enforcement belongs in a future lint/type policy, not metadata inside `Theme.define`. Syntax validation and token-only policy are separate. Panda property shorthands and JSX style props do not require matching core APIs. [Writing styles](https://panda-css.com/docs/concepts/writing-styles)
 
@@ -38,13 +40,21 @@ Intrinsic dimension keywords, auto minimums, unbounded maximums, and content fle
 Scroll margins/padding and scroll/overscroll behavior now support scalar declarations, fallback importance, and conflict-safe physical/logical ordering. Scroll padding accepts spacing tokens; scroll margins require literal lengths. Multi-value shorthands remain pending.
 
 ```ts
-css({ scrollPaddingBlockStart: '4rem', scrollBehavior: 'smooth', overscrollBehavior: 'contain' })
+css({
+  scrollPaddingBlockStart: '4rem',
+  scrollBehavior: 'smooth',
+  overscrollBehavior: 'contain',
+})
 ```
 
 Scroll snap type/alignment/stop support finite keyword combinations, ordered fallbacks, and importance. Axis strictness and paired block/inline alignment are validated without accepting arbitrary CSS strings.
 
 ```ts
-css({ scrollSnapType: 'x mandatory', scrollSnapAlign: 'start', scrollSnapStop: 'always' })
+css({
+  scrollSnapType: 'x mandatory',
+  scrollSnapAlign: 'start',
+  scrollSnapStop: 'always',
+})
 ```
 
 Text flow now includes wrapping, hyphenation, letter/word spacing, indentation, last-line alignment, transformation, and overflow through bounded scalar values. Indentation supports spacing tokens; other typography scales and composite presets remain pending.

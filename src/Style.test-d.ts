@@ -8,9 +8,37 @@ import * as Borders from '../test/fixtures/Borders.js'
 import * as Logical from '../test/fixtures/Logical.js'
 import * as Scrolling from '../test/fixtures/Scrolling.js'
 import * as Snapping from '../test/fixtures/Snapping.js'
+import * as Tables from '../test/fixtures/Tables.js'
 import * as TextDecoration from '../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
+
+Style.define(Tables.styles)
+css({ borderSpacing: [0, '1em!'], tableLayout: 'fixed' })
+css({
+  borderCollapse: 'revert-layer',
+  captionSide: 'inherit',
+  emptyCells: 'unset',
+})
+Config.create().css({ borderSpacing: '2px', tableLayout: 'auto' })
+Theme.define({}).css({ borderSpacing: '1rem', captionSide: 'bottom' })
+// @ts-expect-error Border spacing does not accept percentages.
+css({ borderSpacing: '10%' })
+// @ts-expect-error Paired border spacing remains deferred.
+css({ borderSpacing: '1px 2px' })
+// @ts-expect-error Table layout has a finite keyword domain.
+css({ tableLayout: 'flex' })
+// @ts-expect-error Empty cells use hide/show, not visibility keywords.
+css({ emptyCells: 'hidden' })
+// @ts-expect-error Caption alignment is not caption placement.
+css({ captionSide: 'center' })
+// @ts-expect-error Border collapse is not a border style.
+css({ borderCollapse: 'solid' })
+const tableTheme = Theme.define({ spacing: { gutter: '8px' } })
+// @ts-expect-error Unconstrained spacing tokens can contain percentages.
+tableTheme.css({ borderSpacing: tableTheme.tokens.spacing.gutter })
+// @ts-expect-error Named spacing tokens are not supported for border spacing.
+tableTheme.css({ borderSpacing: 'gutter' })
 
 Style.define(TextDecoration.styles)
 css({

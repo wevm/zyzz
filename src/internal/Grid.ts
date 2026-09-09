@@ -3,6 +3,8 @@
  * @module
  */
 
+import * as MathExpression from './Math.js'
+
 /** Checks track functions, repetition constraints, and optional line-name groups. */
 export function tracks(value: unknown, options: tracks.Options): boolean {
   if (value === 0) return true
@@ -12,6 +14,12 @@ export function tracks(value: unknown, options: tracks.Options): boolean {
   const units = new Set(options.units.map((unit) => unit.toLowerCase()))
 
   function length(text: string) {
+    if (/^(calc|clamp|max|min)\(/i.test(text))
+      return MathExpression.valid(text, {
+        kind: 'length',
+        percentage: true,
+        units: options.units,
+      })
     const match = /^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)([a-z]+|%)?$/i.exec(
       text,
     )

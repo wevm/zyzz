@@ -3,8 +3,10 @@
  * @module
  */
 import * as Colors from './Color.js'
+import * as Component from './Component.js'
 import * as Grid from './Grid.js'
 import * as Motion from './Motion.js'
+import * as MathExpression from './Math.js'
 
 /** Refines inferred dimension strings where TypeScript's number template is broader than CSS. */
 export type Checked<value> = value extends
@@ -14,6 +16,9 @@ export type Checked<value> = value extends
     ? never
     : value
   : value
+
+/** Math function shapes; dimensional compatibility is validated during compilation. */
+export type Calculation = `${'calc' | 'clamp' | 'max' | 'min'}(${string})`
 
 /** Named, hexadecimal, and absolute functional colors; arguments are checked at compilation. */
 export type Color =
@@ -29,12 +34,13 @@ export type Fraction = `${number}fr`
 
 /** Structured track values; nested argument semantics are checked by the compiler. */
 export type GridTracks =
+  | Calculation
   | Length
   | Fraction
   | 'auto'
   | 'min-content'
   | 'max-content'
-  | `${Length | Fraction | 'auto' | 'min-content' | 'max-content'} ${string}`
+  | `${Calculation | Length | Fraction | 'auto' | 'min-content' | 'max-content'} ${string}`
   | `minmax(${string})${string}`
   | `fit-content(${string})${string}`
 
@@ -90,6 +96,7 @@ type Rule = { readonly list?: true } & (
     }
 )
 type LengthValue<rule extends Rule> =
+  | Calculation
   | (rule extends { auto: true } ? 'auto' : never)
   | (rule extends { fraction: true } ? Fraction : never)
   | (rule extends { keywords: readonly (infer keyword)[] } ? keyword : never)
@@ -117,9 +124,11 @@ type Value<rule extends Rule> =
           | (rule extends { items: number }
               ? `${Extract<LengthValue<rule>, string | number>} ${string}`
               : never)
-          | (rule extends { axes: true } ? `${Length}/${string}` : never)
+          | (rule extends { axes: true }
+              ? `${Length | Calculation}/${string}`
+              : never)
       : rule extends { kind: 'number' }
-        ? Listed<number | Keywords<rule>, rule>
+        ? Listed<Calculation | number | Keywords<rule>, rule>
         : rule extends {
               kind: 'enum'
               values: readonly (infer keyword extends string)[]
@@ -151,7 +160,7 @@ type Value<rule extends Rule> =
             : rule extends { kind: 'grid-line' }
               ? number | 'auto' | `span ${bigint}`
               : rule extends { kind: 'time' }
-                ? Listed<Time | Keywords<rule>, rule>
+                ? Listed<Calculation | Time | Keywords<rule>, rule>
                 :
                     | Color
                     | Keywords<rule>
@@ -1632,25 +1641,25 @@ export function validate(
     rule.axes &&
     value.includes('/')
   ) {
-    const axes = value
-      .split('/')
-      .map((axis) => axis.replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, ''))
-    return axes.length === 2 &&
-      axes.every(
-        (axis) =>
-          axis &&
-          !globals.has(axis) &&
-          validate(property, axis === '0' ? 0 : axis) === undefined,
-      )
-      ? undefined
-      : 'Expected one to four nonnegative radii on each side of a single slash.'
+    const axes = Component.split(value, { separator: 'slash' })
+    if (!axes) return 'Expected balanced radius axes.'
+    if (axes.length > 1)
+      return axes.length === 2 &&
+        axes.every(
+          (axis) =>
+            axis &&
+            !globals.has(axis) &&
+            validate(property, axis === '0' ? 0 : axis) === undefined,
+        )
+        ? undefined
+        : 'Expected one to four nonnegative radii on each side of a single slash.'
   }
   if (
     typeof value === 'string' &&
     (rule.kind === 'color' || rule.kind === 'enum') &&
     rule.items
   ) {
-    const parts = Colors.list(value)
+    const parts = Component.split(value, { separator: 'space' })
     if (!parts || parts.length > rule.items)
       return `Expected one to ${rule.items} valid space-separated values.`
     if (parts.length > 1) {
@@ -1678,6 +1687,45 @@ export function validate(
       used.add(group)
     }
     return undefined
+  }
+  if (
+    rule.kind === 'length' &&
+    rule.items &&
+    typeof value === 'string' &&
+    /[ \t\n\r\f]/.test(value)
+  ) {
+    const parts = Component.split(value, { separator: 'space' })
+    if (!parts) return 'Expected a balanced list of length components.'
+    if (parts.length > 1) {
+      if (
+        parts.length <= rule.items &&
+        parts.every(
+          (part) =>
+            !globals.has(part) &&
+            validate(
+              property,
+              /^[+-]?(?:0*\.0+|0+)(?:[eE][+-]?\d+)?$/.test(part) ? 0 : part,
+            ) === undefined,
+        )
+      )
+        return undefined
+      return `Expected one to ${rule.items} valid space-separated values; CSS-wide keywords must stand alone.`
+    }
+  }
+  if (
+    typeof value === 'string' &&
+    (rule.kind === 'length' ||
+      rule.kind === 'number' ||
+      rule.kind === 'time') &&
+    /^(calc|clamp|max|min)\(/i.test(value)
+  ) {
+    return MathExpression.valid(value, {
+      kind: rule.kind,
+      percentage: rule.kind === 'length' && rule.percentage !== false,
+      units: lengthUnits,
+    })
+      ? undefined
+      : 'Expected a valid math expression with compatible numeric dimensions.'
   }
   if (rule.kind === 'enum')
     return typeof value === 'string' &&
@@ -1734,26 +1782,6 @@ export function validate(
     if (Number.isFinite(amount) && (rule.negative || amount >= 0))
       return undefined
     return `Expected ${rule.negative ? 'a' : 'a nonnegative'} finite time in s or ms.${rule.keywords ? ` Also accepts: ${rule.keywords.join(', ')}.` : ''}`
-  }
-  if (rule.items && typeof value === 'string' && /[ \t\n\r\f]/.test(value)) {
-    const parts = value
-      .replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
-      .split(/[ \t\n\r\f]+/)
-    if (parts.length > 1) {
-      if (
-        parts.length <= rule.items &&
-        parts.every(
-          (part) =>
-            !globals.has(part) &&
-            validate(
-              property,
-              /^[+-]?(?:0*\.0+|0+)(?:[eE][+-]?\d+)?$/.test(part) ? 0 : part,
-            ) === undefined,
-        )
-      )
-        return undefined
-      return `Expected one to ${rule.items} valid space-separated values; CSS-wide keywords must stand alone.`
-    }
   }
   if (value === 0 || (rule.auto && value === 'auto')) return undefined
   const match = (() => {

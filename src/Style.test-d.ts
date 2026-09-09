@@ -1054,3 +1054,20 @@ describe('css', () => {
     css({ fontSynthesis: 'bold style' })
   })
 })
+
+describe('css', () => {
+  test('supports dimensional math inside scalar and list values', () => {
+    css({
+      animationDuration: 'min(1s, 500ms), calc(1s + 20ms)',
+      borderRadius: 'calc(10px / 2) / max(10px, 20%)',
+      gridTemplateColumns: 'minmax(calc(10px + 2px), 1fr)',
+      opacity: 'calc(1 / 2)',
+      padding: 'calc(1px + 2px) max(2px, 1%)',
+      width: 'clamp(10px, 50%, 100px)',
+    })
+    // @ts-expect-error Unknown math function names are outside the supported structural type.
+    css({ width: 'multiply(1px, 2)' })
+    // @ts-expect-error Easing properties do not take arbitrary dimensional math.
+    css({ transitionTimingFunction: 'calc(1 + 2)' })
+  })
+})

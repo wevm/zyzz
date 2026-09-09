@@ -28,6 +28,7 @@ import * as Layout from '../../test/fixtures/Layout.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 import * as Masks from '../../test/fixtures/Masks.js'
+import * as MathExpressions from '../../test/fixtures/MathExpressions.js'
 import * as Motion from '../../test/fixtures/Motion.js'
 import * as MotionLists from '../../test/fixtures/MotionLists.js'
 import * as Reading from '../../test/fixtures/Reading.js'
@@ -293,6 +294,12 @@ const workloads = {
       `export const motionList${index} = css({transitionDuration:'${index}ms, 1s',transitionTimingFunction:'steps(4, end), cubic-bezier(0, -1, 1, 2)'})();`,
     source: MotionLists.source,
     title: 'motion list',
+  },
+  mathExpressions: {
+    declaration: (index: number) =>
+      `export const math${index} = css({width:'calc(50% - ${index}px)',padding:'calc(2px * 3) min(20px, 5%)'})();`,
+    source: MathExpressions.source,
+    title: 'math expression',
   },
   motion: {
     declaration: (index: number) =>

@@ -26,7 +26,7 @@ Flex layout adds `flexBasis`, `order`, `alignSelf`, and `alignContent`; overflow
 
 Border/outline coverage adds 42 scalar properties: physical/logical side colors, styles and widths; physical/logical corner radii; outline color/style/width/offset. Widths and offsets exclude percentages; radii retain them. Border-specific tokens precede shared colors, radius tokens cover corners, and outlines use shared colors. Border color/style/width/radius each retain overlapping declaration order.
 
-Type, source/map, native-control browser fixtures, A/B/A composition, and 10/100-style transform/delivery lanes cover the expansion. Browser fixtures exercise all new properties across both directions and three writing modes. Physical color/style lists accept up to four components; logical block/inline lists accept pairs. Radii support elliptical corner pairs and slash-separated axes in border-radius. Border and outline widths accept thin, medium, and thick. Combined border shorthands, border images, math/substitution, escaped spellings, and native conversion remain deferred.
+Type, source/map, native-control browser fixtures, A/B/A composition, and 10/100-style transform/delivery lanes cover the expansion. Browser fixtures exercise all new properties across both directions and three writing modes. Physical color/style lists accept up to four components; logical block/inline lists accept pairs. Radii support elliptical corner pairs and slash-separated axes in border-radius. Border and outline widths accept thin, medium, and thick. Combined border shorthands, border images, substitution, escaped spellings, and native conversion remain deferred.
 
 Intrinsic sizing adds `fit-content`, `min-content`, and `max-content` to physical/logical dimensions, minimum/maximum dimensions, and flex basis. Minimum dimensions accept `auto`; maximum dimensions accept `none`; flex basis additionally accepts `content`. Types and runtime derive keyword domains from the same rule table. Source/map fixtures cover fallback importance and literal/token precedence; browser fixtures verify content-based widths and flex basis. A 10/100-style transform lane records timing and delivery.
 
@@ -84,7 +84,7 @@ A native emitter is not implemented. Neither these web fixtures nor accepted cor
 | Cascade layer bodies, global rules, keyframes, fonts, reset | Layer names have types only; contributions not emitted | 2.4c              |
 | Recipes, responsive selections, multipart styling           | Not implemented                                        | Phase 3 and later |
 
-Quoted/escaped exclamation marks do not become importance markers. String-content properties and CSS functions remain outside the scalar grammar, so this version rejects them rather than claiming string parsing support. Empty, sparse, nested, accessor-backed, spread, and invalid fallback entries produce diagnostics before emission. Runtime inline-style overrides retain their scalar contract.
+Quoted/escaped exclamation marks do not become importance markers. Quoted string-content properties remain outside the supported grammar. Functional values use explicit property-domain validators. Empty, sparse, nested, accessor-backed, spread, and invalid fallback entries produce diagnostics before emission. Runtime inline-style overrides retain their scalar contract.
 
 Update this versioned inventory with type, extraction, emission, mapping, target, integration, and benchmark evidence whenever a capability expands. The numbered union in the plan remains the complete cross-phase backlog.
 
@@ -122,7 +122,7 @@ Numeric, East Asian, and ligature variants accept compatible keyword combination
 
 Eleven animation and transition properties support comma-separated durations/delays, easing functions, iteration counts, direction, fill mode, play state, and discrete transition behavior. Times use finite decimal or exponent values with s/ms units, including zero; negative delays are accepted, while negative durations are rejected. Animation duration also accepts auto. Iteration counts accept nonnegative numbers or infinite.
 
-Literal cubic-bezier(), steps(), and linear() curves validate argument counts and numeric constraints. Math/substitution functions, comments, escaped spellings, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
+Literal cubic-bezier(), steps(), and linear() curves validate argument counts and numeric constraints. Math inside easing arguments, substitution, comments, escaped spellings, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
 
 ## Grid Tracks
 
@@ -158,8 +158,14 @@ All 148 canonical lowercase CSS named colors and 19 canonical system-color keywo
 
 Explicit and implicit grid tracks accept size lists, `minmax()` and `fit-content()`. Explicit tracks also accept line-name groups and integer or automatic `repeat()`, including fixed-size restrictions for auto-repeat. Repetitions remain compact CSS rather than being expanded by the compiler. The compiler rejects invalid argument counts, flexible minima, nested repetition, and multiple auto-repeat groups. Consumer types constrain the outer value shape; nested grammar is checked during compilation.
 
-Independent MDN grammar probes and native responsive-grid fixtures cover these additions. Math functions, variable references, escaped identifiers, and subgrid name repetition remain incomplete; property completion stays partial.
+Independent MDN grammar probes and native responsive-grid fixtures cover these additions. Additional math functions, variable references, escaped identifiers, and subgrid name repetition remain incomplete; property completion stays partial.
 
 ### Box Value Lists
 
 Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthands accept one to four space-separated scalar components. Their logical block/inline shorthands and gap accept pairs. Each component retains its property-specific auto, percentage, and sign rules; CSS-wide keywords must stand alone. Longhands remain scalar. Type shapes cover lists while the compiler validates arity and every component. Native browser fixtures compare physical longhands in horizontal and vertical writing modes, including importance and shorthand/longhand overrides. Functions, variable substitution, and broader component spellings remain incomplete.
+
+### Math Expressions
+
+Numeric, length, and time properties accept literal calc(), min(), max(), and clamp() expressions. Grid track sizes and length lists retain nested function arguments. Addition requires compatible dimensions; multiplication and division accept scalar factors. Length-percentage mixtures are restricted to properties accepting percentages. Browser evaluation owns range clamping, integer rounding, and unit resolution.
+
+Variable substitution, escaped tokens, numeric constants, dimension cancellation, additional math functions, and expressions beyond 128 nested levels remain unsupported. Function names and outer shapes are typed; argument dimensions are checked during compilation. Browser comparisons cover responsive dimensions, radius axes, integer rounding, opacity, and durations.

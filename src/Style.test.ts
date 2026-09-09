@@ -581,7 +581,7 @@ describe('define', () => {
       { padding: undefined },
       { display: { fallback: 'block' } },
       { color: '#fff!!' },
-      { width: 'calc(100% - 1rem)' },
+      { width: 'calc(100% - 1s)' },
       { padding: { token: 'sm' } },
     ]
     expect({
@@ -787,7 +787,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.",
+                "message": "Expected a valid math expression with compatible numeric dimensions.",
                 "path": [
                   "card",
                   "width",

@@ -125,7 +125,7 @@
       },
       "calc()": {
         "grammar": "9700c19c244b693046522db0d38d11e86780c0876d79f09606d2cdfa40c87aba",
-        "status": "deferred"
+        "status": "partial"
       },
       "calc-size()": {
         "grammar": "301bce43cd920fd4daac2cdabd02e5bc76088a523a367b0f32586235a68f3486",
@@ -137,7 +137,7 @@
       },
       "clamp()": {
         "grammar": "9e57a9356d78a73ee95d674077f36d1819b9f5967bb5f2168aed61912dcadc04",
-        "status": "deferred"
+        "status": "partial"
       },
       "color()": {
         "grammar": "11009224667a683f20c2a140083c06dfeeef7b97a13a63aa4b732bd316a3a6ca",
@@ -281,11 +281,11 @@
       },
       "max()": {
         "grammar": "47f69dc239e3ea28278c9456d782b6b132dbe29fc4825d8abe2496f26f146089",
-        "status": "deferred"
+        "status": "partial"
       },
       "min()": {
         "grammar": "04c09cbbb2db0fbe07af2a78552c75d84e4e703e0f1ccf41e9288fe02c273d5d",
-        "status": "deferred"
+        "status": "partial"
       },
       "minmax()": {
         "grammar": "1a4ecf2af75190910eec9c24bc62150d3a6b4eb82d3b6458aa61f1c2adccbbf0",
@@ -3927,7 +3927,7 @@
       },
       "calc()": {
         "grammar": "24b0ea59948302d05c8d5b299e29382d49f15ec5c6a369a2542499ccd3530aca",
-        "status": "deferred"
+        "status": "partial"
       },
       "calc-constant": {
         "grammar": "fa23db80397753abc40515ce6802e2fa3664ab96edaae103ae57b13495c3c7c8",
@@ -3935,7 +3935,7 @@
       },
       "calc-product": {
         "grammar": "6ac340b6d3aba9bf5dd27ff9363baebd22b3b340eadc04646cf1cd04ce690511",
-        "status": "deferred"
+        "status": "partial"
       },
       "calc-size()": {
         "grammar": "416ba1b23f74c7f1978c4ac7f59e893a7f2b23470e1804f86a5cfc5220f1cde8",
@@ -3947,11 +3947,11 @@
       },
       "calc-sum": {
         "grammar": "1acdd7815b83df84faffaecefccfe69c7a37ddbaa559fdeddd4f86e549d94ee4",
-        "status": "deferred"
+        "status": "partial"
       },
       "calc-value": {
         "grammar": "5fbb55868d1d12eeb1f054031f4b58f5447b8075c97e77726794d0bd37d3dc88",
-        "status": "deferred"
+        "status": "partial"
       },
       "cf-final-image": {
         "grammar": "bbb5f940ae6edf276b01be830aae56aff68542587f6612f9878600a03a6165f9",
@@ -3967,7 +3967,7 @@
       },
       "clamp()": {
         "grammar": "2b066d5d03030f8a2c96586f617266693c1a677f2d2b74a2aed0c2cd21d903de",
-        "status": "deferred"
+        "status": "partial"
       },
       "class-selector": {
         "grammar": "c7fa40dd798aeee8709f2c13bb8ec5f567a9c97065f47322c82ac6d61f240f7b",
@@ -4555,7 +4555,7 @@
       },
       "max()": {
         "grammar": "0006940ad61749d37ccc8fe33bd20fa564e7dc456f9e0a05bf34532fb3f4fb80",
-        "status": "deferred"
+        "status": "partial"
       },
       "media-and": {
         "grammar": "6db8ff96b01e51851c830be58aca7d30676924787f46ff43365b95cb4fe5844a",
@@ -4619,7 +4619,7 @@
       },
       "min()": {
         "grammar": "57ebc7961b6e20fe313b6da2bd68bf9b4b510d34d0ca9214a25be4e3ff103ad2",
-        "status": "deferred"
+        "status": "partial"
       },
       "minmax()": {
         "grammar": "2ac9bd8e006bed95338b067c4bf53690fec5ba2070e723248cf8cd5b4577860c",

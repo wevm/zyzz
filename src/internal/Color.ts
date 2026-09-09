@@ -67,24 +67,6 @@ export function functional(value: string): boolean {
   })
 }
 
-/** Separates shorthand colors without splitting functional channels. */
-export function list(value: string): readonly string[] | undefined {
-  const parts: string[] = []
-  let depth = 0
-  let start = 0
-  for (let index = 0; index < value.length; index++) {
-    const char = value[index]!
-    if (char === '(') depth++
-    if (char === ')' && --depth < 0) return undefined
-    if (depth === 0 && /[ \t\n\r\f]/.test(char)) {
-      if (index > start) parts.push(value.slice(start, index))
-      start = index + 1
-    }
-  }
-  if (start < value.length) parts.push(value.slice(start))
-  return depth === 0 && parts.length > 0 ? parts : undefined
-}
-
 function component(value: string): boolean {
   return value.toLowerCase() === 'none' || numeric(value)
 }

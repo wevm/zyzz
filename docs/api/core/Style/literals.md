@@ -442,7 +442,7 @@ Numeric, East Asian, and ligature variants accept compatible keyword combination
 
 Eleven animation and transition properties support comma-separated durations/delays, easing functions, iteration counts, direction, fill mode, play state, and discrete transition behavior. Times use finite decimal or exponent values with s/ms units, including zero; negative delays are accepted, while negative durations are rejected. Animation duration also accepts auto. Iteration counts accept nonnegative numbers or infinite.
 
-Literal cubic-bezier(), steps(), and linear() curves validate argument counts and numeric constraints. Math/substitution functions, comments, escaped spellings, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
+Literal cubic-bezier(), steps(), and linear() curves validate argument counts and numeric constraints. Math inside easing arguments, substitution, comments, escaped spellings, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
 
 ## Grid Tracks
 
@@ -478,7 +478,7 @@ All 148 canonical lowercase CSS named colors and 19 canonical system-color keywo
 
 Explicit and implicit grid tracks accept size lists, `minmax()` and `fit-content()`. Explicit tracks also accept line-name groups and integer or automatic `repeat()`, including fixed-size restrictions for auto-repeat. Repetitions remain compact CSS rather than being expanded by the compiler. The compiler rejects invalid argument counts, flexible minima, nested repetition, and multiple auto-repeat groups. Consumer types constrain the outer value shape; nested grammar is checked during compilation.
 
-Independent MDN grammar probes and native responsive-grid fixtures cover these additions. Math functions, variable references, escaped identifiers, and subgrid name repetition remain incomplete; property completion stays partial.
+Independent MDN grammar probes and native responsive-grid fixtures cover these additions. Additional math functions, variable references, escaped identifiers, and subgrid name repetition remain incomplete; property completion stays partial.
 
 ### Box Value Lists
 
@@ -495,3 +495,9 @@ css({
 ```
 
 Bézier x coordinates must fall within zero and one; y coordinates may overshoot. Step counts must be positive integers, and `jump-none` requires at least two. Linear stops support one or two percentage positions. CSS-wide keywords must stand alone. Nested functions remain unsupported.
+
+### Math Expressions
+
+Numeric, length, and time properties accept literal calc(), min(), max(), and clamp() expressions. Grid track sizes and length lists retain nested function arguments. Addition requires compatible dimensions; multiplication and division accept scalar factors. Length-percentage mixtures are restricted to properties accepting percentages. Browser evaluation owns range clamping, integer rounding, and unit resolution.
+
+Variable substitution, escaped tokens, numeric constants, dimension cancellation, additional math functions, and expressions beyond 128 nested levels remain unsupported. Function names and outer shapes are typed; argument dimensions are checked during compilation. Browser comparisons cover responsive dimensions, radius axes, integer rounding, opacity, and durations.

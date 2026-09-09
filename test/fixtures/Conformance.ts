@@ -95,6 +95,7 @@ export function cases(): readonly Case[] {
       )
     }
     if (rule.kind === 'number') {
+      values.push('calc(1 + 1)', 'clamp(1, 2, 3)')
       if ('keywords' in rule) values.push(...rule.keywords)
       if ('list' in rule) values.push('0, 2.5, infinite')
       values.push(rule.min, Math.max(1, rule.min))
@@ -106,6 +107,7 @@ export function cases(): readonly Case[] {
         0,
         '1fr',
         '1fr 2fr',
+        'minmax(calc(10px + 2px), 1fr)',
         'minmax(0, 1fr)',
         'fit-content(40%)',
         'minmax(min-content, 100px) 2fr',
@@ -122,6 +124,7 @@ export function cases(): readonly Case[] {
     if (rule.kind === 'grid-line')
       values.push('auto', 1, -1, 2, 'span 1', 'span 2')
     if (rule.kind === 'time') {
+      values.push('calc(1s + 20ms)', 'min(1s, 500ms)')
       values.push('0s, 250ms, 1s')
       if ('keywords' in rule) values.push(...rule.keywords)
       for (const unit of Object.keys(units))
@@ -132,6 +135,7 @@ export function cases(): readonly Case[] {
         }
     }
     if (rule.kind === 'length') {
+      values.push('calc(1px + 2px)', 'clamp(1px, 2px, 3px)')
       if ('axes' in rule) values.push('10px/20%', '1px 2px / 3px 4px 5px 6px')
       if ('items' in rule)
         values.push(

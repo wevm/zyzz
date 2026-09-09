@@ -126,12 +126,12 @@ describe('framework gate', () => {
             .split('\n')
             .filter((line) => line.startsWith('| ') && line.includes('🟢'))
             .length,
-        ).toMatchInlineSnapshot('48')
-        expect(result.stdout.includes('🔴')).toMatchInlineSnapshot('false')
+        ).toMatchInlineSnapshot('12')
+        expect(result.stdout.includes('| 🔴')).toMatchInlineSnapshot('false')
       } else {
         expect(result.code).toMatchInlineSnapshot('1')
         expect(
-          result.stdout.includes('| theme-comparison/100 |'),
+          result.stdout.includes('### Themes — 100 Components'),
         ).toMatchInlineSnapshot('true')
         expect(result.stdout.includes('🔴')).toMatchInlineSnapshot('true')
       }

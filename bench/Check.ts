@@ -15,10 +15,22 @@ type Report = {
 }
 
 type Sizes = {
-  readonly css: { readonly gzip: number }
-  readonly javascript: { readonly gzip: number }
+  readonly css: {
+    readonly brotli?: number
+    readonly gzip: number
+    readonly raw?: number
+  }
+  readonly javascript: {
+    readonly brotli?: number
+    readonly gzip: number
+    readonly raw?: number
+  }
   readonly library: string
-  readonly total: { readonly gzip: number }
+  readonly total: {
+    readonly brotli?: number
+    readonly gzip: number
+    readonly raw?: number
+  }
 }
 
 type Timing = {
@@ -57,14 +69,37 @@ const workloads = [
   })),
 ]
 
-console.log('## Framework Gate\n')
+const names: Record<string, string> = {
+  panda: 'Panda CSS',
+  stylex: 'StyleX',
+  tailwind: 'Tailwind',
+  'vanilla-extract': 'vanilla-extract',
+  zyzz: 'Zyzz',
+  'zyzz-tokens': 'Zyzz (token resolution included)',
+}
+const titles: Record<string, string> = {
+  small: '3 Components',
+  repeated: '1,000 Components — Repeated Styles',
+  unique: '1,000 Components — Unique Padding',
+  partial: '100 Components — Partial Sharing',
+  palette: '100 Components — Reused Palette',
+  independent: '100 Components — Independent Values',
+  sparse: '100 Components — Sparse Properties',
+  components: '60 Components — Mixed Shapes',
+  'theme-comparison/10': 'Themes — 10 Components',
+  'theme-comparison/100': 'Themes — 100 Components',
+}
+
+console.log('## Framework Comparisons\n')
 console.log(
-  'Zyzz must beat every alternative on mean build time and total gzip (CSS + required JavaScript). Ties and missing measurements fail. Timing errors remain visible in the full report.\n',
+  '🟢 Zyzz beats every other framework · 🔴 Zyzz does not beat every other framework. Both build time and total gzip must pass; ties fail. Total gzip includes CSS + required JavaScript.\n',
 )
-console.log('| Workload | Zyzz lane | Alternative | Build time | Total gzip |')
-console.log('| --- | --- | --- | --- | --- |')
+console.log(
+  'Literal workloads use prepared inputs; theme workloads include two scopes and light/dark values. Zyzz starts from validated definitions; the second theme result includes token resolution. Source parsing is measured separately. See bench/README.md for each compiler’s measurement boundary.\n',
+)
 
 for (const workload of workloads) {
+  console.log(`### ${titles[workload.directory]}\n`)
   try {
     const matches = groups.filter(
       (group) =>
@@ -73,7 +108,10 @@ for (const workload of workloads) {
     )
     if (matches.length !== 1)
       throw new Error('Expected exactly one timing group.')
-    const measurements = new Map<string, { mean: number; size: number }>()
+    const measurements = new Map<
+      string,
+      { mean: number; size: number; sizes: Sizes; timing: Timing }
+    >()
     for (const library of [...workload.lanes, ...competitors]) {
       const timings = matches[0]!.benchmarks.filter(
         (entry) => entry.name === library,
@@ -107,25 +145,48 @@ for (const workload of workloads) {
         size.total.gzip !== size.css.gzip + size.javascript.gzip
       )
         throw new Error(`Missing or invalid size: ${library}.`)
-      measurements.set(library, { mean: timing.mean!, size: size.total.gzip })
+      measurements.set(library, {
+        mean: timing.mean!,
+        size: size.total.gzip,
+        sizes: size,
+        timing,
+      })
     }
-    for (const lane of workload.lanes) {
-      const zyzz = measurements.get(lane)!
-      for (const library of competitors) {
-        const other = measurements.get(library)!
-        const faster = zyzz.mean < other.mean
-        const smaller = zyzz.size < other.size
-        if (!faster || !smaller) process.exitCode = 1
-        console.log(
-          `| ${workload.directory} | ${lane} | ${library} | ${faster ? '🟢' : '🔴'} ${zyzz.mean.toFixed(3)} / ${other.mean.toFixed(3)} ms | ${smaller ? '🟢' : '🔴'} ${zyzz.size} / ${other.size} B |`,
+    console.log('| Framework | Build (ms) | CSS gzip | JS gzip | Total gzip |')
+    console.log('| --- | ---: | ---: | ---: | ---: |')
+    for (const [library, result] of measurements) {
+      const status = (() => {
+        if (!workload.lanes.includes(library)) return { speed: '', size: '' }
+        const faster = competitors.every(
+          (name) => result.mean < measurements.get(name)!.mean,
         )
-      }
+        const smaller = competitors.every(
+          (name) => result.size < measurements.get(name)!.size,
+        )
+        if (!faster || !smaller) process.exitCode = 1
+        return { speed: faster ? '🟢 ' : '🔴 ', size: smaller ? '🟢 ' : '🔴 ' }
+      })()
+      console.log(
+        `| ${names[library]} | ${status.speed}${result.mean.toFixed(3)} | ${result.sizes.css.gzip} B | ${result.sizes.javascript.gzip} B | ${status.size}${result.size} B |`,
+      )
     }
+    console.log('\n<details>\n<summary>Full Measurements</summary>\n')
+    console.log(
+      '| Framework | Error (±%) | Samples | CSS raw | CSS Brotli | JS raw | JS Brotli | Total raw | Total Brotli |',
+    )
+    console.log(
+      '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+    )
+    for (const [library, result] of measurements) {
+      const { sizes, timing } = result
+      console.log(
+        `| ${names[library]} | ${timing.rme!.toFixed(2)} | ${timing.sampleCount} | ${sizes.css.raw ?? '—'} | ${sizes.css.brotli ?? '—'} | ${sizes.javascript.raw ?? '—'} | ${sizes.javascript.brotli ?? '—'} | ${sizes.total.raw ?? '—'} | ${sizes.total.brotli ?? '—'} |`,
+      )
+    }
+    console.log('\n</details>\n')
   } catch (error) {
     process.exitCode = 1
-    console.log(
-      `| ${workload.directory} | — | — | 🔴 Missing or invalid measurements | — |`,
-    )
+    console.log('🔴 Missing or invalid measurements. See workflow logs.\n')
     console.error(`${workload.directory}:`, error)
   }
 }

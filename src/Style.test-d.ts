@@ -2,7 +2,7 @@
  * Checks consumer inference and rejected inputs through the public Style API.
  * @module
  */
-import { expectTypeOf } from 'vite-plus/test'
+import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, css, Style, Theme } from 'zyzz'
 import * as Borders from '../test/fixtures/Borders.js'
 import * as Interaction from '../test/fixtures/Interaction.js'
@@ -491,3 +491,44 @@ numericNames.css({ padding: '0x10px!' })
 
 // @ts-expect-error Binary values also fail for units with overlapping suffixes.
 css({ height: '0b10dvh' })
+
+describe('css', () => {
+  test('columns and fragmentation preserve property domains', () => {
+    css({
+      columnCount: ['auto', '2!'],
+      columnWidth: '12rem',
+      columnGap: 'normal',
+      columnFill: 'balance',
+    })
+    css({
+      breakAfter: 'page',
+      breakBefore: 'column',
+      breakInside: 'avoid',
+      columnSpan: 'all',
+      orphans: 2,
+      widows: 3,
+    })
+    const theme = Theme.define({
+      color: { rule: '#06c' },
+      spacing: { gutter: '8px' },
+    })
+    theme.css({
+      columnRuleColor: 'rule',
+      columnRuleStyle: 'solid',
+      columnRuleWidth: 'thin',
+    })
+    Config.create({ theme }).css({ columnRuleColor: theme.tokens.color.rule })
+    // @ts-expect-error Column widths exclude percentages.
+    css({ columnWidth: '10%' })
+    // @ts-expect-error Counts cannot use arbitrary keywords.
+    css({ columnCount: 'none' })
+    // @ts-expect-error Rule widths exclude percentages.
+    css({ columnRuleWidth: '5%' })
+    // @ts-expect-error Inside breaks cannot force a new column.
+    css({ breakInside: 'column' })
+    // @ts-expect-error Column widths do not accept percentage-capable spacing tokens.
+    theme.css({ columnWidth: theme.tokens.spacing.gutter })
+    // @ts-expect-error Legacy regions remain deferred.
+    css({ breakAfter: 'region' })
+  })
+})

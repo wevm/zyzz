@@ -87,3 +87,9 @@ A native emitter is not implemented. Neither these web fixtures nor accepted cor
 Quoted/escaped exclamation marks do not become importance markers. String-content properties and CSS functions remain outside the scalar grammar, so this version rejects them rather than claiming string parsing support. Empty, sparse, nested, accessor-backed, spread, and invalid fallback entries produce diagnostics before emission. Runtime inline-style overrides retain their scalar contract.
 
 Update this versioned inventory with type, extraction, emission, mapping, target, integration, and benchmark evidence whenever a capability expands. The numbered union in the plan remains the complete cross-phase backlog.
+
+## Column Properties
+
+Twelve properties add column count/width/fill/span, rule color/style/width, before/after/inside breaks, and orphan/widow counts. Column gaps accept `normal`. Counts use positive safe integers; column count also accepts `auto`. Widths exclude percentages. Shared color tokens map to rule colors.
+
+The MDN grammar/type corpus covers accepted domains. Source fixtures preserve fallback priority and maps; a browser fixture compares columns and forced breaks against independent CSS. Shorthands, regions, additional fragmentation keywords, and paged-media rendering remain deferred. Timing and delivery use the column transform lanes.

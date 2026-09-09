@@ -46,6 +46,7 @@ type Rule =
     }
   | {
       readonly integer?: boolean
+      readonly keywords?: readonly string[]
       readonly kind: 'number'
       readonly max: number
       readonly min: number
@@ -66,7 +67,11 @@ type Value<rule extends Rule> =
       : rule extends {
             kind: 'number'
           }
-        ? number
+        ?
+            | number
+            | (rule extends { keywords: readonly (infer keyword)[] }
+                ? keyword
+                : never)
         : rule extends {
               kind: 'enum'
               values: readonly (infer value)[]
@@ -90,6 +95,21 @@ const border = {
   ],
 } as const
 const color = { kind: 'color' } as const
+const fragmentation = {
+  kind: 'enum',
+  values: [
+    'auto',
+    'avoid',
+    'avoid-column',
+    'avoid-page',
+    'column',
+    'left',
+    'page',
+    'recto',
+    'right',
+    'verso',
+  ],
+} as const
 const globals = new Set<string>([
   'inherit',
   'initial',
@@ -165,6 +185,12 @@ const overflow = {
 const overscroll = {
   kind: 'enum',
   values: ['auto', 'contain', 'none'],
+} as const
+const positiveInteger = {
+  integer: true,
+  kind: 'number',
+  max: Number.MAX_SAFE_INTEGER,
+  min: 1,
 } as const
 const scrollMargin = { ...length, negative: true, percentage: false } as const
 const scrollPadding = { ...length, auto: true } as const
@@ -276,9 +302,22 @@ export const rules = {
   borderWidth: stroke,
   bottom: margin,
   boxSizing: { kind: 'enum', values: ['border-box', 'content-box'] },
+  breakAfter: fragmentation,
+  breakBefore: fragmentation,
+  breakInside: {
+    kind: 'enum',
+    values: ['auto', 'avoid', 'avoid-column', 'avoid-page'],
+  },
   captionSide: { kind: 'enum', values: ['bottom', 'top'] },
   color,
-  columnGap: length,
+  columnCount: { ...positiveInteger, keywords: ['auto'] },
+  columnFill: { kind: 'enum', values: ['auto', 'balance'] },
+  columnGap: { ...length, keywords: ['normal'] },
+  columnRuleColor: color,
+  columnRuleStyle: border,
+  columnRuleWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
+  columnSpan: { kind: 'enum', values: ['all', 'none'] },
+  columnWidth: { ...stroke, auto: true },
   cursor: {
     kind: 'enum',
     values: [
@@ -401,6 +440,7 @@ export const rules = {
     max: Number.MAX_SAFE_INTEGER,
     min: Number.MIN_SAFE_INTEGER,
   },
+  orphans: positiveInteger,
   outlineColor: color,
   outlineOffset: { ...stroke, negative: true },
   outlineStyle: {
@@ -569,6 +609,7 @@ export const rules = {
     kind: 'enum',
     values: ['break-spaces', 'normal', 'nowrap', 'pre', 'pre-line', 'pre-wrap'],
   },
+  widows: positiveInteger,
   width: size,
   wordBreak: { kind: 'enum', values: ['break-all', 'keep-all', 'normal'] },
   wordSpacing: textSpacing,
@@ -597,6 +638,8 @@ export function validate(
       : 'Expected a hex color, transparent, currentColor, black, or white.'
   if (rule.kind === 'number')
     return (() => {
+      if (typeof value === 'string' && rule.keywords?.includes(value))
+        return undefined
       if (
         typeof value === 'number' &&
         Number.isFinite(value) &&

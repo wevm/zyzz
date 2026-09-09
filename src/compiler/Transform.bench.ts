@@ -9,6 +9,7 @@ import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import * as Borders from '../../test/fixtures/Borders.js'
+import * as Columns from '../../test/fixtures/Columns.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
@@ -155,6 +156,12 @@ const workloads = {
       `export const box${index} = css({borderStyle:'solid',borderWidth:'2px',borderInlineStartWidth:'${index}px',borderStartStartRadius:'8px',outlineWidth:'1px'})();`,
     source: Borders.source,
     title: 'border',
+  },
+  columns: {
+    declaration: (index: number) =>
+      `export const col${index} = css({columnWidth:'${index}px',columnCount:2,columnFill:'balance',breakInside:'avoid-column'})();`,
+    source: Columns.source,
+    title: 'column',
   },
   decoration: {
     declaration: (index: number) =>

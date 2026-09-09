@@ -44,6 +44,7 @@ export function cases(): readonly Case[] {
         'currentColor',
       )
     if (rule.kind === 'number') {
+      if ('keywords' in rule) values.push(...rule.keywords)
       values.push(rule.min, Math.max(1, rule.min))
       if (Number.isFinite(rule.max)) values.push(rule.max)
       if (!('integer' in rule)) values.push(Math.max(rule.min, 0.5))

@@ -72,7 +72,7 @@ Config.create({
 
 ## Returns
 
-Returns `Config.create.ReturnType<options>`: a frozen object with typed `css` and either `theme` or `themes`. Omission returns only token-free `css`. Separate calls own isolated contracts and leave supplied definitions unchanged.
+Returns `Config.create.ReturnType<options>`: a frozen object with typed `css`, a bound `script` function, and either `theme` or `themes`. Omission returns token-free `css` and a color-scheme-only `script`. Separate calls own isolated contracts and leave supplied definitions unchanged.
 
 ### css
 
@@ -86,9 +86,9 @@ const card = zyzz.css({ padding: 'md' })
 
 ### theme
 
-- Type: Normalized single-theme definition
+- Type: Normalized callable single-theme definition
 
-Present for single-theme configuration. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
+Present for single-theme configuration. Call `zyzz.theme({ colorScheme: 'light dark' })` to spread root props onto `<html>`. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
 
 ```ts
 zyzz.theme.tokens.spacing.md
@@ -98,7 +98,7 @@ zyzz.theme.tokens.spacing.md
 
 - Type: Normalized named theme catalog
 
-Present for named catalogs. Compatible alternatives share config identity without mutating independent definitions.
+Present for named catalogs. Call `zyzz.themes.mint({ colorScheme: 'dark' })` to apply a named scope. Compatible alternatives share config identity without mutating independent definitions.
 
 ```ts
 const zyzz = Config.create({
@@ -107,6 +107,19 @@ const zyzz = Config.create({
 })
 const token = zyzz.themes.base.tokens.spacing.md
 ```
+
+### script
+
+- Type: `(options?: { storageKey?: string }) => string`
+
+Generate an optional inline initialization script using this config's theme catalog. It restores localStorage preferences on `<html>` before first paint. No cookies, provider, or extra import is required.
+
+```ts
+const script = zyzz.script()
+const custom = zyzz.script({ storageKey: 'my-app-appearance' })
+```
+
+See [Config Script](script.md) for storage, CSP, and hydration behavior.
 
 ### variants
 

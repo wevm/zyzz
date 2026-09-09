@@ -93,19 +93,17 @@ const button = zyzz.css({
 
 Autocomplete declared keys and reject misspellings such as `@layer component`. No computed key, layer-reference import, or unrestricted string index signature is needed. Preserve declaration order in `layers` as cascade order. An omitted layer list contributes no named layer keys to config-bound functions. Additional project layer declarations do not ambiently widen an imported function's type; include every layer used by that function in its config. Raw unbound web authoring remains subject to its own syntax/extraction contract.
 
-Select a theme through its returned compiled scope class and a color scheme through the ordinary CSS property:
+Apply a callable theme to `<html>` for document-wide scope and color-scheme selection:
 
 ```tsx
 import { zyzz } from './zyzz.config.js'
 
 const selected: keyof typeof zyzz.themes = 'mint'
 const example = (
-  <section
-    className={zyzz.themes[selected].className}
-    style={{ colorScheme: 'dark' }}
-  >
-    <button {...button()}>Save</button>
-  </section>
+  <html {...zyzz.themes[selected]({ colorScheme: 'dark' })}>
+    <head><title>My App</title></head>
+    <body><button {...button()}>Save</button></body>
+  </html>
 )
 ```
 
@@ -780,7 +778,7 @@ export const alternate = Theme.extend(theme, {
 })
 
 const panel = (
-  <section className={alternate.className}>
+  <section {...alternate()}>
     <button {...theme.css({ backgroundColor: 'surface', color: 'brand' })()}>
       Continue
     </button>
@@ -815,6 +813,26 @@ Scheme pairs emit `light-dark(lightValue, darkValue)`; plain strings emit unchan
 `light dark` permits the browser's preferred scheme. `light` and `dark` select one explicitly. Theme scopes do not force a scheme. Nested scheme scopes retain theme values; nested theme scopes inherit the scheme. There is no preference listener or separate “system” token value.
 
 Browser fixtures must cover fallback values, explicit variables, nested themes, forced schemes, preference changes, and server-rendered markup. Native targets resolve each pair into two static alternatives; strings are identical in both. Device preference resolution belongs in an application adapter.
+
+### Callable Theme Props
+
+A theme handle is callable while retaining its metadata, token references, authoring helpers, and `className`. `theme(options = {})` returns `{ className }` or `{ className, style: { colorScheme } }` when a scheme is supplied. Accept only `'light'`, `'dark'`, and `'light dark'`; unknown options and invalid schemes are errors.
+
+Config single themes and named catalog members share this contract. Apply the main theme to `<html>`; nested elements can select independent scopes. Retain generated class identities rather than global `data-theme` names, preserving isolation between configs and libraries. Theme application generates no rules and accesses neither DOM nor storage.
+
+The compiler must support local/imported/packed handles and finite dynamic catalog selection, retaining application types and stable server/client identities. Untransformed calls fail with the missing-transform diagnostic. Native adaptation remains separate from this web props contract.
+
+### Root Preference Initialization
+
+`Config.create` returns a bound `zyzz.script(options = {})` function that generates inline JavaScript. It needs no separate import. Derive the named theme catalog, compiled scope classes, and default selection from its config; the only override is `options.storageKey` (default `'zyzz'`). The server renders fallback root props. No explicit mapping API, duplicate defaults, cookies, providers, or core browser dependencies.
+
+Source integration must recognize `zyzz.script` calls on the config receiver through imports, aliases, re-exports, and packed metadata. Serialize only compiled scope identities and selection metadata, never token data or authoring functions. Single-theme and token-free configs restore the color scheme only; ignore stored theme names in those modes. Preserve server-rendered defaults when no valid stored preference exists.
+
+The localStorage record is `{ theme?: string, colorScheme?: 'light' | 'dark' | 'light dark' }`. Read it synchronously once from a classic inline script early in `<head>`, before stylesheets and visible content. Apply allowlisted preferences to `document.documentElement`; retain unrelated classes/styles and remove only classes belonging to the supplied catalog.
+
+Missing/malformed/inaccessible storage preserves server defaults. Validate fields independently and use own-key catalog lookup. Never evaluate saved strings or trust saved classes. Serialize script inputs safely for HTML raw-text contexts, including closing script tags and Unicode separators. Support application-provided CSP nonce attributes or exact-source hashes.
+
+System preference uses `light dark` directly, with no listener or script required. The initializer neither writes storage nor synchronizes live state. React may suppress the expected root-attribute hydration warning; preference controls initialize from the applied DOM state before updates. Verify first-paint behavior and hydration before accepting implementation.
 
 ## Pure target compilers
 
@@ -863,20 +881,20 @@ The CLI is a first-class compilation path alongside build integrations and in-me
 Planned default command:
 
 ```sh
-zyzz src --out-dir dist
+zyzz build
 ```
 
 Planned watch and production commands:
 
 ```sh
 # Compile authored modules and extract a stylesheet.
-zyzz src --out-dir dist --css dist/styles.css
+zyzz build
 
 # Rebuild changed modules, styles, and imported theme dependencies.
-zyzz src --out-dir dist --css dist/styles.css --watch
+zyzz watch
 
 # Production output, retaining readable class names.
-zyzz src --out-dir dist --css dist/styles.css --minify
+zyzz build --minify
 ```
 
 `--out-dir` contains rewritten modules and declarations; `--css` defaults to `<out-dir>/styles.css`. Modules contain generated props-binding functions in place of definitions, with fully static applications eligible for constant folding. Both reference precompiled classes; authoring callbacks do not remain in delivered code. Applications import the stylesheet or load it through a standard stylesheet link. Libraries publish these artifacts directly.
@@ -1071,7 +1089,7 @@ const options = {
 }
 ```
 
-The CLI equivalent is `zyzz src --out-dir dist --minify --targets 'chrome >= 123, firefox >= 128, safari >= 17.5'`. The public CLI and processing adapter remain Phase 4 work. Without targets, preserve modern CSS rather than silently choosing a browser floor. A consuming build may own all final processing; thin integrations inherit its target policy unless explicitly overridden. Requesting compatibility transforms is independent of requesting minification.
+The CLI equivalent is `zyzz build --minify --targets 'chrome >= 123, firefox >= 128, safari >= 17.5'`. The public CLI and processing adapter remain Phase 4 work. Without targets, preserve modern CSS rather than silently choosing a browser floor. A consuming build may own all final processing; thin integrations inherit its target policy unless explicitly overridden. Requesting compatibility transforms is independent of requesting minification.
 
 Resolve query strings once at the adapter boundary into Lightning CSS targets; do not expose packed version integers as the public authoring API. Explicit options take precedence over host configuration. Include resolved targets, processing options, and processor versions in build-cache identities and diagnostic/benchmark metadata. Compose source maps after processing, and keep class references aligned.
 
@@ -1094,3 +1112,11 @@ Before implementing variable registration, decide how `Vars.define` expresses op
 Renderer output also needs an explicit adapter contract: `className` plus a style object is not the same as DOM `class` plus a serialized style attribute. Keep application-time style definitions callable and spreadable; serialize at the target boundary with correct escaping and retain recipe attributes. The adapter belongs outside the agnostic core.
 
 Later web capabilities include `@scope`, container style/scroll-state queries, view transitions, anchor fallbacks, scroll-driven animations, counter styles, and paged media. Track grammar, identity, reachability, target constraints, and browser evidence separately. Raw CSS syntax is an authoring form, not permission to silently pass unsupported constructs through every target.
+
+### CLI Commands and Defaults
+
+`zyzz build [src]` compiles once; `zyzz watch [src]` compiles immediately and rebuilds after source or dependency changes. The npm invocations are `npx zyzz build` and `npx zyzz watch`.
+
+Both commands default to `src` input, `dist` module output, and `<out-dir>/styles.css`. Paths resolve from the working directory. Optional `--out-dir`, `--css`, `--minify`, and `--targets` flags override defaults. Minification is opt-in and unspecified targets preserve modern CSS. Token-free authoring requires no config.
+
+Missing source directories are errors. Output directories stay excluded from discovery. Watch failures preserve the previous complete output; cleanup removes only owned artifacts. The public CLI remains an unchecked Phase 4 implementation gate.

@@ -291,7 +291,7 @@ export async function create(options: create.Options): Promise<Runtime> {
     void flush()
   }
 
-  return { build, close, watch }
+  return { [Symbol.asyncDispose]: close, build, close, watch }
 }
 
 /** File host creation contracts. */
@@ -322,6 +322,8 @@ export type Event = { readonly error: unknown } | { readonly result: Build }
 
 /** An explicitly disposed file host. */
 export type Runtime = {
+  /** Stops watching, drains builds, and releases ownership when an await using scope exits. */
+  readonly [Symbol.asyncDispose]: () => Promise<void>
   /** Serializes a complete scan, compile, and publication; failures reject. */
   readonly build: () => Promise<Build>
   /** Stops watching, drains builds, and releases ownership. Idempotent. */

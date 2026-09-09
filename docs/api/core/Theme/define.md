@@ -98,7 +98,7 @@ Theme.define({ textColor: { muted: '#666' } })
 
 ## Returns
 
-Returns `Theme.Definition<tokens>` with inferred references and bound authoring types.
+Returns a callable `Theme.Definition<tokens>` with inferred references and bound authoring types. [Theme application](apply.md) returns scope props with an optional `colorScheme`.
 
 ### className
 

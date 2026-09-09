@@ -1,21 +1,37 @@
 # CLI
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Compile a source tree into rewritten modules, declarations, and CSS.
 
 ```sh
-zyzz src --out-dir dist --css dist/styles.css --watch
+npx zyzz build
+npx zyzz watch
 ```
 
-| Argument / Flag  | Contract                                                  |
-| ---------------- | --------------------------------------------------------- |
-| Source directory | Authored module tree to scan                              |
-| `--css`          | Stylesheet path; defaults to `<out-dir>/styles.css`       |
-| `--minify`       | Final CSS processing through the adapter                  |
-| `--out-dir`      | Rewritten module/declaration output                       |
-| `--targets`      | Planned Browserslist queries for compatibility processing |
-| `--watch`        | Rebuild after source and dependency changes               |
+## Commands
 
-One-shot errors exit nonzero. Watching reports errors and retains the previous complete output. Output ownership excludes unrelated files. See [CLI Setup](../introduction/cli.md) for the application/build boundary.
+| Command | Behavior |
+| --- | --- |
+| `build [src]` | Compile once; exit nonzero on failure |
+| `watch [src]` | Compile immediately, then rebuild after source and dependency changes |
+
+## Defaults and Options
+
+| Argument / Flag | Default | Contract |
+| --- | --- | --- |
+| `[src]` | `src` | Authored module tree to scan |
+| `--css` | `<out-dir>/styles.css` | Emitted stylesheet path |
+| `--minify` | Off | Final CSS minification through the adapter |
+| `--out-dir` | `dist` | Rewritten module/declaration output |
+| `--targets` | Preserve modern CSS | Browserslist queries for compatibility processing |
+
+Paths resolve from the working directory. No config is required for token-free styles. Both commands share the same defaults and flags; `watch` replaces the `--watch` flag.
+
+```sh
+npx zyzz build app --out-dir build --minify
+```
+
+This override scans `app`, writes modules to `build`, and emits `build/styles.css`.
+
+Missing source directories produce an error rather than falling back to a broader scan. Watching reports errors and retains the previous complete output. Output directories are excluded from discovery; cleanup preserves unrelated files.
+
+See [CLI Setup](../introduction/cli.md) for the application/build boundary.

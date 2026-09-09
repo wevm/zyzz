@@ -5,17 +5,13 @@ Create a file-build lifecycle with Lightning CSS processing and source maps back
 ```ts
 import { Host } from 'zyzz/node'
 
-const host = await Host.create({
+await using host = await Host.create({
   css: { minify: true, targets: { safari: 15 << 16 } },
   outDir: 'dist',
   packageId: 'my-library',
   root: 'src',
 })
-try {
-  await host.build()
-} finally {
-  await host.close()
-}
+await host.build()
 ```
 
 ## Signature
@@ -93,6 +89,17 @@ Host.create({ outDir: 'dist', packageId: 'my-library', root: 'src' })
 ## Returns
 
 Returns `Promise<Host.Runtime>`. Await creation before calling the returned operations.
+
+### Symbol.asyncDispose
+
+- Type: `() => Promise<void>`
+
+Runs the same cleanup as `close` when an `await using` scope exits, including after an error. Stops watchers, drains pending builds, and releases the output lock. Keep watch scopes alive for the intended watch lifetime.
+
+```ts
+await using host = await Host.create({ outDir: 'dist', packageId: 'my-library', root: 'src' })
+await host.build()
+```
 
 ### build
 

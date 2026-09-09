@@ -1,29 +1,16 @@
-# Zyzz
+<h1 align="center">zyzz</h1>
 
-A type-safe styling library for agents. Familiar CSS, inferred design tokens, and small APIs make styles straightforward to generate, inspect, and change.
+<p align="center">
+  Next-gen styling library for the modern era
+</p>
 
-- [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
-- [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
-- [**Dark Mode**](#dark-mode): light/dark token pairs selected by CSS, without a preference listener.
-- [**Variants**](#variants): typed component choices, defaults, and compound rules.
-- [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
-- [**Composition**](#composition): explicit style overrides that retain bindings and variant attributes.
-- [**Static CSS**](#static-css): ahead-of-time output with readable classes and no runtime rule generation.
-
-[Getting Started](docs/introduction/getting-started.md) · [Guides](docs/guides/README.md) · [Concepts](docs/concepts.md) · [API Reference](docs/api/README.md)
-
-## Philosophy
-
-- **Typed.** Properties, tokens, and variants carry their constraints into every call.
-- **Standard.** Styles use familiar CSS properties, selectors, queries, and cascade behavior.
-- **Agnostic.** The core is independent of frameworks, build tools, and environments.
-- **Universal.** Shared definitions target web and native with explicit platform capabilities.
-- **Minimal.** Small, composable APIs keep configuration and dependencies optional.
-- **Compiled.** Rules compile ahead of time into compact output with readable class names on web.
+<p align="center">
+  <a href="#overview">Overview</a> · <a href="#getting-started">Getting Started</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="#comparison">Comparison</a> · <a href="docs/guides/README.md">Guides</a> · <a href="docs/concepts.md">Concepts</a> · <a href="docs/api/README.md">API Reference</a>
+</p>
 
 ## Overview
 
-Define styles with `css`, call them, and spread the resulting props onto a component. The core has no built-in tokens; styles compile into CSS ahead of time.
+Zyzz combines typed CSS, design tokens, themes, and variants with ahead-of-time compilation. Define styles with `css`, call them, and spread the resulting props onto a component.
 
 ```tsx
 import { css } from 'zyzz'
@@ -35,7 +22,96 @@ export function Button() {
 }
 ```
 
+## Getting Started
+
+### Install
+
+```sh
+npm install zyzz
+```
+
+Then:
+
+- [Setup with Vite](#setup-with-vite)
+- [Setup with CLI](#setup-with-cli)
+- [Use Compiler API](#use-compiler-api)
+
+### Setup with Vite
+
+Requires Vite 8 (`vite: ^8.0.0`). Add `zyzz()` to the existing plugins array, alongside the application's framework plugin:
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  plugins: [zyzz()],
+})
+```
+
+Import components normally. The plugin transforms source modules and delivers CSS automatically during development and production builds. See [Vite Setup](docs/introduction/vite.md).
+
+### Setup with CLI
+
+Compile source modules and CSS before the application build:
+
+```sh
+npx zyzz build
+npx zyzz watch
+```
+
+By default, compile `src` into `dist` and emit `dist/styles.css`. Point the downstream build at the rewritten `dist` tree and load its stylesheet. The downstream build handles TypeScript/JSX lowering. See [CLI Setup](docs/introduction/cli.md).
+
+### Use Compiler API
+
+Build source files programmatically with `Host` from `zyzz/node`:
+
+```ts
+import { Host } from 'zyzz/node'
+
+await using host = await Host.create({
+  outDir: 'dist',
+  packageId: 'my-app',
+  root: 'src',
+})
+
+await host.build()
+```
+
+The host writes rewritten modules, CSS sidecars, and source maps to `dist`. Downstream tooling handles TypeScript/JSX lowering and stylesheet loading.
+
+For watching, keep the scope alive until shutdown:
+
+```ts
+import { once } from 'node:events'
+
+host.watch({
+  onResult: (event) => console.log(event),
+})
+await once(process, 'SIGINT')
+```
+
+Watching performs an initial build, then reports rebuilds and errors. `await using` stops watchers, drains pending builds, and releases the output lock when the scope exits. See [Host.create](docs/api/node/Host/create.md).
+
+## Philosophy
+
+- **Typed.** Properties, tokens, and variants carry their constraints into every call.
+- **Standard.** Styles use familiar CSS properties, selectors, queries, and cascade behavior.
+- **Agnostic.** The core is independent of frameworks, build tools, and environments.
+- **Universal.** Shared definitions target web and native with explicit platform capabilities.
+- **Minimal.** Small, composable APIs keep configuration and dependencies optional.
+- **Compiled.** Rules compile ahead of time into compact output with readable class names on web.
+
 ## Features
+
+- [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
+- [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
+- [**Color Schemes (Light/Dark Mode)**](#color-schemes-lightdark-mode): light/dark token pairs selected by CSS, without a preference listener.
+- [**Variants**](#variants): typed component choices, defaults, and compound rules.
+- [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
+- [**Composition**](#composition): explicit style overrides that retain bindings and variant attributes.
+- [**Static CSS**](#static-css): ahead-of-time output with readable classes and no runtime rule generation.
 
 ### Typed Styles
 
@@ -111,23 +187,32 @@ const card = zyzz.css({ color: 'text', padding: 'sm' })
 
 Use [`Theme.define`](docs/api/core/Theme/define.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
 
-### Dark Mode
+### Color Schemes (Light/Dark Mode)
 
-Color pairs compile to `light-dark()`. CSS selects the scheme independently of the theme, including system preference without a JavaScript listener.
+Apply the theme to `<html>` and select a color scheme through its callable props:
 
-```css
-:root {
-  color-scheme: light dark;
-}
-.light {
-  color-scheme: light;
-}
-.dark {
-  color-scheme: dark;
+```tsx
+import { zyzz } from './zyzz.config.js'
+
+const card = zyzz.css({ color: 'text', padding: 'sm' })
+
+export function Document() {
+  return (
+    <html {...zyzz.theme({ colorScheme: 'light dark' })}>
+      <head><title>My App</title></head>
+      <body>
+        <article {...card()}>Content</article>
+      </body>
+    </html>
+  )
 }
 ```
 
-The custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode.
+The theme returns its generated `className` and `style.colorScheme`. Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` for system preference. Named themes use `zyzz.themes.mint({ colorScheme: 'dark' })`.
+
+Color pairs compile to `light-dark()`; the custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme calls can scope a subtree independently.
+
+For saved preferences, `zyzz.script()` generates an optional [initialization script](docs/guides/themes.md#restore-preferences) for `<head>`. It restores the theme and scheme from localStorage before first paint. System preference needs no script or provider.
 
 ### Variants
 

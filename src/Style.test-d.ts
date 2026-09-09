@@ -566,3 +566,43 @@ describe('css', () => {
     css({ display: 'inline flow-root' })
   })
 })
+
+describe('css', () => {
+  test('background and color controls preserve token and keyword domains', () => {
+    css({
+      backgroundAttachment: 'fixed',
+      backgroundBlendMode: 'multiply',
+      backgroundClip: 'text',
+      backgroundOrigin: 'content-box',
+    })
+    css({
+      backgroundPositionX: '-2px',
+      backgroundPositionY: '40%',
+      backgroundRepeat: 'repeat-x',
+      backgroundSize: ['auto', 'cover!'],
+      mixBlendMode: 'plus-lighter',
+    })
+    const theme = Theme.define({
+      color: { auto: '#06c' },
+      spacing: { gap: '2px' },
+    })
+    theme.css({ accentColor: 'auto', caretColor: theme.tokens.color.auto })
+    Config.create({ theme }).css({
+      colorScheme: 'only dark',
+      forcedColorAdjust: 'none',
+      printColorAdjust: 'exact',
+    })
+    // @ts-expect-error Background position axes use different side keywords.
+    css({ backgroundPositionX: 'top' })
+    // @ts-expect-error Image lists remain deferred.
+    css({ backgroundAttachment: 'scroll, fixed' })
+    // @ts-expect-error Two-axis background sizes remain deferred.
+    css({ backgroundSize: '10px 20px' })
+    // @ts-expect-error Color controls do not accept length tokens.
+    theme.css({ accentColor: theme.tokens.spacing.gap })
+    // @ts-expect-error A blend mode is not a color value.
+    css({ caretColor: 'multiply' })
+    // @ts-expect-error Background geometry does not map spacing tokens.
+    theme.css({ backgroundPositionX: theme.tokens.spacing.gap })
+  })
+})

@@ -99,3 +99,9 @@ The MDN grammar/type corpus covers accepted domains. Source fixtures preserve fa
 Ten properties add float clearing, containment, content visibility, isolation, object fitting, backface visibility, box decoration breaks, transform style, and stacking indices. Display adds contents, flow-root, list-item, and table roles. Containment currently accepts single keywords; z-index accepts auto or safe integers.
 
 Independent MDN/type probes cover every accepted keyword. Browser fixtures verify computed declarations, float clearance, and stacking hit tests. Object cropping, 3D painting, containment combinations, multi-keyword display, and native rendering remain separate gates; computed values alone do not prove those behaviors.
+
+## Backgrounds and color controls
+
+Background attachment, blend mode, clipping, origin, repeat, axis positions, and size accept bounded scalar values. Axis positions accept signed lengths/percentages and the corresponding axis keywords; size accepts nonnegative lengths/percentages, auto, contain, or cover. Lists, position pairs, size pairs, images, and gradients remain deferred.
+
+Accent and caret colors accept the shared color domain, color tokens, and auto. Explicit token references disambiguate a color token named auto. Color schemes accept normal, light, dark, light dark, dark light, only light, and only dark. Forced-color adjustment, print-color adjustment, and mix blending use finite keywords. Grammar and type probes cover these domains; browser fixtures compare computed styles with independent CSS. Computed styles do not establish pixel-level blending, clipping, or forced-color rendering.

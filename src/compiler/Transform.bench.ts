@@ -8,6 +8,7 @@ import * as Path from 'node:path'
 import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
+import * as Backgrounds from '../../test/fixtures/Backgrounds.js'
 import * as Borders from '../../test/fixtures/Borders.js'
 import * as Columns from '../../test/fixtures/Columns.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
@@ -152,6 +153,12 @@ for (const count of [10, 100]) {
 }
 
 const workloads = {
+  backgrounds: {
+    declaration: (index: number) =>
+      `export const bg${index} = css({backgroundPositionX:'${index}px',backgroundPositionY:'50%',backgroundSize:'cover',backgroundRepeat:'no-repeat',accentColor:'auto'})();`,
+    source: Backgrounds.source,
+    title: 'background',
+  },
   borders: {
     declaration: (index: number) =>
       `export const box${index} = css({borderStyle:'solid',borderWidth:'2px',borderInlineStartWidth:'${index}px',borderStartStartRadius:'8px',outlineWidth:'1px'})();`,

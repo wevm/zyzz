@@ -27,10 +27,14 @@ export function Button() {
 ### Install
 
 ```sh
-pnpm add zyzz
+npm install zyzz
 ```
 
-Choose Vite, the CLI, or the compiler API to compile styles.
+Then:
+
+- [Setup with Vite](#setup-with-vite)
+- [Setup with CLI](#setup-with-cli)
+- [Use Compiler API](#use-compiler-api)
 
 ### Setup with Vite
 

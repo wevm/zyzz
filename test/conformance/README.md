@@ -44,10 +44,12 @@ The dedicated **CSS Property Conformance (100%)** CI job publishes a summary and
 
 The status inventory is a reviewed completion ledger, not a browser certification or proof derived from test counts. A property may be promoted only after its grammar, public typing, emitted declarations, and browser behavior have been reviewed against independent evidence. Relabeling entries does not implement them. The existing grammar/type/browser integration jobs must also pass.
 
-Current completion is 0/670 (0%): 303 partial and 367 deferred. This intentionally leaves the consolidated implementation PR blocked. All remaining implementation and evidence work stays in that PR until the full gate passes.
+Current completion is 0/670 (0%): 304 partial and 366 deferred. This intentionally leaves the consolidated implementation PR blocked. All remaining implementation and evidence work stays in that PR until the full gate passes.
 
 Motion lists preserve comma grouping inside `cubic-bezier()`, `steps()`, and `linear()`. Independent grammar probes, consumer types, and browser comparisons cover numeric restrictions, list ordering, importance, and paused animation output. Substitution, comments, and escaped spellings remain incomplete. Easing semantics follow [CSS Easing Functions](https://www.w3.org/TR/css-easing-2/).
 
 Absolute functional colors are checked across color properties and public types, with theme, inheritance, importance, and SVG browser comparisons. Literal channel ranges retain browser clamping; malformed units, legacy separator mixing, and invalid arity fail. Relative colors and nested expressions remain incomplete. Source: [CSS Color](https://www.w3.org/TR/css-color-4/).
 
 Border color/style shorthands validate component counts without splitting functional colors. Width keywords and elliptical radius axes have independent grammar and type probes; browser comparisons cover physical/logical expansion and important shorthand precedence. Combined border shorthands, substitution, and math remain incomplete.
+
+Font variant and containment keyword groups reject conflicting alternatives and repeated groups. The font-synthesis shorthand adds one partially implemented property. Independent grammar, public types, and native computed-value comparisons cover authored order; font-specific glyph formation and substitution remain incomplete.

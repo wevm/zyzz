@@ -670,7 +670,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected a nonnegative literal length or numeric zero.",
+                "message": "Expected a nonnegative literal length or numeric zero. Also accepts: medium, thick, thin.",
                 "path": [
                   "card",
                   "borderWidth",

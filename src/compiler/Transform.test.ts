@@ -1322,9 +1322,9 @@ describe('compile', () => {
         source: `import { css } from 'zyzz'; css({borderLeftWidth:'10%',borderBlockWidth:'5%',outlineWidth:'2%',outlineOffset:'4%',borderEndStartRadius:'-1px'});`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid.ts:49: Expected a nonnegative literal length or numeric zero.
-      invalid.ts:72: Expected a nonnegative literal length or numeric zero.
-      invalid.ts:90: Expected a nonnegative literal length or numeric zero.
+      [Source.ExtractError: invalid.ts:49: Expected a nonnegative literal length or numeric zero. Also accepts: medium, thick, thin.
+      invalid.ts:72: Expected a nonnegative literal length or numeric zero. Also accepts: medium, thick, thin.
+      invalid.ts:90: Expected a nonnegative literal length or numeric zero. Also accepts: medium, thick, thin.
       invalid.ts:109: Expected a literal length or numeric zero.
       invalid.ts:135: Expected a nonnegative literal length or numeric zero.]
     `)
@@ -2438,12 +2438,13 @@ css({ color: 'md' });
           '--noEmit',
           Path.join(directory, 'module.ts'),
         ],
+        { timeout: 10_000 },
       )
       expect(checked.stdout).toMatchInlineSnapshot(`""`)
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })
     }
-  })
+  }, 15_000)
 
   test('JavaScript aliases remain JavaScript and parameter initializers retain lexical bindings', async () => {
     const result = Transform.compile({

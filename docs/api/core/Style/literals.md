@@ -407,7 +407,7 @@ css({
 
 `display` includes `contents`, `flow-root`, `list-item`, `inline-table`, and table roles. `float` and `clear` accept physical and logical sides; clear also accepts `both`. `zIndex` accepts `auto` or safe integers, including negatives. `isolation` accepts `auto`/`isolate`.
 
-`contain` accepts single `none`, `strict`, `content`, `size`, `inline-size`, `layout`, `style`, or `paint` keywords. `contentVisibility` accepts `auto`, `hidden`, or `visible`. Combined containment and multi-keyword display values remain deferred.
+`contain` accepts single `none`, `strict`, `content`, `size`, `inline-size`, `layout`, `style`, or `paint` keywords. `contentVisibility` accepts `auto`, `hidden`, or `visible`. Compatible containment keywords can be combined; size and inline-size remain mutually exclusive. Multi-keyword display values remain deferred.
 
 `objectFit` accepts `fill`, `contain`, `cover`, `none`, or `scale-down`; `boxDecorationBreak` accepts `slice`/`clone`. `backfaceVisibility` accepts `hidden`/`visible` and `transformStyle` accepts `flat`/`preserve-3d`. Transform functions remain a separate capability. These keyword domains do not map theme tokens.
 
@@ -436,7 +436,7 @@ Paint order currently accepts normal or a single fill/stroke/markers keyword. Un
 
 Nineteen properties add font kerning, optical sizing, stretch keywords, synthesis controls, caps/position/east-Asian/ligature/numeric variants, ruby placement/alignment, vertical orientation, text combination, justification, and emphasis. Emphasis colors accept shared color tokens; emphasis shapes support filled/open combinations in either order. Emphasis positioning and ruby positioning use finite keyword combinations.
 
-Font variants currently accept individual keywords. Combined variants, stretch percentages, custom emphasis strings, digit-combination counts, and font feature settings remain deferred. Browser fixtures compare independent computed styles and verify ruby annotation placement and upright vertical text geometry; they do not establish font-specific glyph selection or justification quality.
+Numeric, East Asian, and ligature variants accept compatible keyword combinations. Font synthesis accepts independent weight, style, small-caps, and position choices. Conflicting alternatives and repeated groups fail. Stretch percentages, custom emphasis strings, digit-combination counts, and font feature settings remain deferred. Browser fixtures compare independent computed styles and verify ruby annotation placement and upright vertical text geometry; they do not establish font-specific glyph selection or justification quality.
 
 ## Motion Controls
 
@@ -472,7 +472,7 @@ All 148 canonical lowercase CSS named colors and 19 canonical system-color keywo
 
 ## Reading Order
 
-`readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 303 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
+`readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 304 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
 
 ### Structured Grid Tracks
 

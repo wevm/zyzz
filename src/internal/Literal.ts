@@ -7,10 +7,10 @@ import * as Grid from './Grid.js'
 import * as Motion from './Motion.js'
 
 /** Refines inferred dimension strings where TypeScript's number template is broader than CSS. */
-export type Checked<value> = value extends Fraction | Length | Time
-  ? value extends
-      | `${'0x' | '0X' | '0b' | '0B' | '0o' | '0O'}${string}`
-      | `${string}${' ' | '\n' | '\r' | '\t' | '\f'}${string}`
+export type Checked<value> = value extends
+  | `${'0x' | '0X' | '0b' | '0B' | '0o' | '0O'}${string}`
+  | `${string}${' ' | '\n' | '\r' | '\t' | '\f'}${string}`
+  ? value extends Fraction | Length | Time
     ? never
     : value
   : value
@@ -69,6 +69,7 @@ type Rule = { readonly list?: true } & (
     }
   | {
       readonly easing?: true
+      readonly groups?: readonly (readonly string[])[]
       readonly items?: 2 | 4
       readonly kind: 'enum'
       readonly values: readonly string[]
@@ -96,48 +97,46 @@ type LengthValue<rule extends Rule> =
       ? Exclude<Length, `${number}%`>
       : Length)
 
+type Easing =
+  | `cubic-bezier(${string})`
+  | `steps(${string})`
+  | `linear(${string})`
+type Keywords<rule> = rule extends {
+  keywords: readonly (infer keyword extends string)[]
+}
+  ? keyword
+  : never
+type Listed<value extends string | number, rule> =
+  | value
+  | (rule extends { list: true } ? `${value},${string}` : never)
 type Value<rule extends Rule> =
-  | Scalar<rule>
-  | (rule extends { items: number; kind: 'color' }
-      ? `${Color} ${string}`
-      : rule extends {
-            items: number
-            kind: 'enum'
-            values: readonly (infer keyword)[]
-          }
-        ? `${Extract<keyword, string>} ${string}`
-        : never)
-  | (rule extends { axes: true } ? `${Length}/${string}` : never)
-  | (rule extends { list: true }
-      ? `${Extract<Exclude<Scalar<rule>, Global>, string | number>},${string}`
-      : never)
-
-type Scalar<rule extends Rule> =
+  | Global
   | (rule extends { kind: 'length' }
       ?
           | LengthValue<rule>
           | (rule extends { items: number }
               ? `${Extract<LengthValue<rule>, string | number>} ${string}`
               : never)
-      : rule extends {
-            kind: 'number'
-          }
-        ?
-            | number
-            | (rule extends { keywords: readonly (infer keyword)[] }
-                ? keyword
-                : never)
+          | (rule extends { axes: true } ? `${Length}/${string}` : never)
+      : rule extends { kind: 'number' }
+        ? Listed<number | Keywords<rule>, rule>
         : rule extends {
               kind: 'enum'
-              values: readonly (infer value)[]
+              values: readonly (infer keyword extends string)[]
             }
           ?
-              | value
-              | (rule extends { easing: true }
-                  ?
-                      | `cubic-bezier(${string})`
-                      | `steps(${string})`
-                      | `linear(${string})`
+              | Listed<
+                  keyword | (rule extends { easing: true } ? Easing : never),
+                  rule
+                >
+              | (rule extends { items: number }
+                  ? `${keyword} ${string}`
+                  : never)
+              | (rule extends {
+                  groups: readonly (readonly (infer component extends
+                    string)[])[]
+                }
+                  ? `${component} ${string}`
                   : never)
           : rule extends { kind: 'grid-tracks' }
             ?
@@ -152,17 +151,13 @@ type Scalar<rule extends Rule> =
             : rule extends { kind: 'grid-line' }
               ? number | 'auto' | `span ${bigint}`
               : rule extends { kind: 'time' }
-                ?
-                    | Time
-                    | (rule extends { keywords: readonly (infer keyword)[] }
-                        ? keyword
-                        : never)
+                ? Listed<Time | Keywords<rule>, rule>
                 :
                     | Color
-                    | (rule extends { keywords: readonly (infer keyword)[] }
-                        ? keyword
+                    | Keywords<rule>
+                    | (rule extends { items: number }
+                        ? `${Color} ${string}`
                         : never))
-  | Global
 const blend = {
   kind: 'enum',
   values: [
@@ -723,6 +718,7 @@ export const rules = {
   columnSpan: { kind: 'enum', values: ['all', 'none'] },
   columnWidth: { ...stroke, auto: true },
   contain: {
+    groups: [['size', 'inline-size'], ['layout'], ['style'], ['paint']],
     kind: 'enum',
     values: [
       'content',
@@ -854,6 +850,11 @@ export const rules = {
     ],
   },
   fontStyle: { kind: 'enum', values: ['italic', 'normal', 'oblique'] },
+  fontSynthesis: {
+    groups: [['position'], ['small-caps'], ['style'], ['weight']],
+    kind: 'enum',
+    values: ['none', 'position', 'small-caps', 'style', 'weight'],
+  },
   fontSynthesisSmallCaps: { kind: 'enum', values: ['auto', 'none'] },
   fontSynthesisStyle: { kind: 'enum', values: ['auto', 'none'] },
   fontSynthesisWeight: { kind: 'enum', values: ['auto', 'none'] },
@@ -870,6 +871,11 @@ export const rules = {
     ],
   },
   fontVariantEastAsian: {
+    groups: [
+      ['jis04', 'jis78', 'jis83', 'jis90', 'simplified', 'traditional'],
+      ['full-width', 'proportional-width'],
+      ['ruby'],
+    ],
     kind: 'enum',
     values: [
       'full-width',
@@ -885,6 +891,12 @@ export const rules = {
     ],
   },
   fontVariantLigatures: {
+    groups: [
+      ['common-ligatures', 'no-common-ligatures'],
+      ['contextual', 'no-contextual'],
+      ['discretionary-ligatures', 'no-discretionary-ligatures'],
+      ['historical-ligatures', 'no-historical-ligatures'],
+    ],
     kind: 'enum',
     values: [
       'common-ligatures',
@@ -900,6 +912,13 @@ export const rules = {
     ],
   },
   fontVariantNumeric: {
+    groups: [
+      ['diagonal-fractions', 'stacked-fractions'],
+      ['lining-nums', 'oldstyle-nums'],
+      ['ordinal'],
+      ['proportional-nums', 'tabular-nums'],
+      ['slashed-zero'],
+    ],
     kind: 'enum',
     values: [
       'diagonal-fractions',
@@ -1641,6 +1660,24 @@ export function validate(
         ? undefined
         : `Expected one to ${rule.items} valid space-separated values.`
     }
+  }
+  if (
+    rule.kind === 'enum' &&
+    rule.groups &&
+    typeof value === 'string' &&
+    /[ \t\n\r\f]/.test(value)
+  ) {
+    const words = value
+      .replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
+      .split(/[ \t\n\r\f]+/)
+    const used = new Set<number>()
+    for (const word of words) {
+      const group = rule.groups.findIndex((group) => group.includes(word))
+      if (group < 0 || used.has(group))
+        return 'Expected compatible keywords with at most one choice from each group.'
+      used.add(group)
+    }
+    return undefined
   }
   if (rule.kind === 'enum')
     return typeof value === 'string' &&

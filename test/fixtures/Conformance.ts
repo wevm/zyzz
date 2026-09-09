@@ -40,6 +40,8 @@ export function cases(): readonly Case[] {
     ]
     if (rule.kind === 'enum') {
       values.push(...rule.values)
+      if ('groups' in rule)
+        values.push(rule.groups.map((group) => group[0]).join(' '))
       if ('items' in rule)
         values.push(
           'solid dashed',
@@ -202,7 +204,6 @@ export const rejected = [
   { property: 'fillRule', value: 'winding' },
   { property: 'floodColor', value: 'none' },
   { property: 'fontStretch', value: '120%' },
-  { property: 'fontVariantNumeric', value: 'tabular-nums slashed-zero' },
   { property: 'gridAutoColumns', value: '0x10fr' },
   { property: 'gridAutoFlow', value: 'row column' },
   { property: 'gridColumnStart', value: 'span 1.5' },

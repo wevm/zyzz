@@ -615,7 +615,6 @@ describe('css', () => {
     })
     Config.create().css({ zIndex: 2, display: 'flow-root' })
     Theme.define({}).css({ contain: 'strict', objectFit: 'contain' })
-    // @ts-expect-error Containment combinations are a later grammar expansion.
     css({ contain: 'layout paint' })
     // @ts-expect-error Floats are not centering controls.
     css({ float: 'center' })
@@ -731,7 +730,6 @@ describe('css', () => {
     })
     const zyzz = Config.create({ theme: { color: { accent: '#06c' } } })
     zyzz.css({ textEmphasisColor: 'accent' })
-    // @ts-expect-error Combined font variants remain deferred.
     css({ fontVariantNumeric: 'tabular-nums slashed-zero' })
     // @ts-expect-error Custom emphasis strings remain deferred.
     css({ textEmphasisStyle: '"*"' })
@@ -1038,5 +1036,21 @@ describe('css', () => {
     css({ borderTopLeftRadius: '10px/20px' })
     // @ts-expect-error SVG stroke widths do not accept border width keywords.
     css({ strokeWidth: 'thin' })
+  })
+})
+
+describe('css', () => {
+  test('supports compatible font and containment keyword groups', () => {
+    css({
+      contain: 'layout style paint',
+      fontSynthesis: 'style weight small-caps',
+      fontVariantEastAsian: 'jis78 full-width ruby',
+      fontVariantLigatures: 'no-common-ligatures contextual',
+      fontVariantNumeric: 'oldstyle-nums tabular-nums slashed-zero',
+    })
+    // @ts-expect-error Standalone keywords cannot introduce groups.
+    css({ fontVariantNumeric: 'normal tabular-nums' })
+    // @ts-expect-error Unsupported leading keywords are rejected structurally.
+    css({ fontSynthesis: 'bold style' })
   })
 })

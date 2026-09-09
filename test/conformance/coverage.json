@@ -1807,7 +1807,7 @@
       },
       "font-synthesis": {
         "grammar": "e4421da8e839a313dc0fd5d513e56fbdeab8ba1975f289e35b3b8ec4f6431a30",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-synthesis-position": {
         "grammar": "b6fa88a7628ff7f3e1f380d960201e687bb621f5275ad49f9651c6975f2685ce",
@@ -4027,7 +4027,7 @@
       },
       "common-lig-values": {
         "grammar": "0e9c9c651a1afc07e23d25e21c82d2a11b23f505732b00de39ab6dca9386e31f",
-        "status": "deferred"
+        "status": "partial"
       },
       "compat-auto": {
         "grammar": "caf6202a17c504c93d237bb15f7a07249b1f1477bcaca681cbf7a3851d6a5cc9",
@@ -4099,7 +4099,7 @@
       },
       "contextual-alt-values": {
         "grammar": "7e74d5662045755506ec173d878d5fd5a76c9c20095443a11440767e91d5a57d",
-        "status": "deferred"
+        "status": "partial"
       },
       "contrast()": {
         "grammar": "865c01466f07ae290918d83162fb7781cf424de305a7abf3239a2e6ad1fad5bf",
@@ -4179,7 +4179,7 @@
       },
       "discretionary-lig-values": {
         "grammar": "c9ed24a6831321b611762af229f15a0affc2390fbf76cb905be4fa78b839fd71",
-        "status": "deferred"
+        "status": "partial"
       },
       "display-box": {
         "grammar": "1eac73f669f578d2ac5561a6030c131138890cc0fcc08de46d4244a026ec8f3b",
@@ -4219,11 +4219,11 @@
       },
       "east-asian-variant-values": {
         "grammar": "dea70621cacdffcc76f757c9bfcac6aceaa4f1ec9abc90019fa8ca5e93660bb9",
-        "status": "deferred"
+        "status": "partial"
       },
       "east-asian-width-values": {
         "grammar": "17009792ae63b7e6d0b4a8e466642b3572639423638a5cf3c7088b7eb8d55330",
-        "status": "deferred"
+        "status": "partial"
       },
       "element()": {
         "grammar": "810bc0ea9824f2a0e2bd6cdd86ac5d893c29158a4587a36d9f9d8973fa6de903",
@@ -4363,7 +4363,7 @@
       },
       "historical-lig-values": {
         "grammar": "3d463a2908440922f21563512de5176128d527939234fe0cf9f999bbe4a1c64e",
-        "status": "deferred"
+        "status": "partial"
       },
       "hsl()": {
         "grammar": "98d22014d73af9a25f7003176405b5b2e29c1e435884a0973493bd3e5d6cc3a3",
@@ -4667,15 +4667,15 @@
       },
       "numeric-figure-values": {
         "grammar": "3459f9b34b3945635e7df8d00f77217f045760bdc6b3b57bf203977ed21cf4b6",
-        "status": "deferred"
+        "status": "partial"
       },
       "numeric-fraction-values": {
         "grammar": "67e12894d0912ef2e1e94ec297e21bb020513b89a13d89b01bde58f68216ee3b",
-        "status": "deferred"
+        "status": "partial"
       },
       "numeric-spacing-values": {
         "grammar": "facee8c447e485fc204e30f8f122d59bb0a20e84027b64332261f0ee36963d24",
-        "status": "deferred"
+        "status": "partial"
       },
       "offset-path": {
         "grammar": "563adf872e324f80f1c60595c0c5cda7d1918cab7aca20dc6a5bf4c73150e210",

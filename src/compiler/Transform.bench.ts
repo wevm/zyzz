@@ -23,6 +23,7 @@ import * as FunctionalColors from '../../test/fixtures/FunctionalColors.js'
 import * as Grid from '../../test/fixtures/Grid.js'
 import * as GridLists from '../../test/fixtures/GridLists.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
+import * as KeywordGroups from '../../test/fixtures/KeywordGroups.js'
 import * as Layout from '../../test/fixtures/Layout.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
@@ -256,6 +257,12 @@ const workloads = {
       `export const control${index} = css({width:'${index}px',cursor:'pointer',pointerEvents:['auto','none!'],resize:'inline',userSelect:'all',visibility:'visible'})();`,
     source: Interaction.source,
     title: 'interaction',
+  },
+  keywordGroups: {
+    declaration: (index: number) =>
+      `export const keywordGroup${index} = css({fontVariantNumeric:'oldstyle-nums tabular-nums slashed-zero',contain:'layout style paint',padding:'${index}px'})();`,
+    source: KeywordGroups.source,
+    title: 'keyword group',
   },
   layout: {
     declaration: (index: number) =>

@@ -549,7 +549,7 @@ describe('compile', () => {
       } as never),
     ).toThrowErrorMatchingInlineSnapshot(`
       [Style.InvalidError: ["card","padding"]: Expected a nonnegative literal length or numeric zero.
-      ["card","borderWidth"]: Expected a nonnegative literal length or numeric zero.
+      ["card","borderWidth"]: Expected a nonnegative literal length or numeric zero. Also accepts: medium, thick, thin.
       ["card","width"]: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
       ["card","height"]: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
       ["card","margin"]: Expected one to 4 valid space-separated values; CSS-wide keywords must stand alone.

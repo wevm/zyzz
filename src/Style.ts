@@ -268,10 +268,16 @@ export class InvalidError extends Error {
   override name = 'Style.InvalidError'
 }
 
+type LiteralAtoms = {
+  readonly [property in keyof Literal.Properties]-?: Value.Atom<
+    Exclude<Literal.Properties[property], undefined>
+  >
+}
+
 /** Supported primitive CSS declarations without theme references. */
 export type LiteralProperties = {
-  readonly [property in keyof Literal.Properties]: Value.Input<
-    Literal.Properties[property]
+  readonly [property in keyof Literal.Properties]: Value.Fallbacks<
+    LiteralAtoms[property]
   >
 }
 
@@ -285,9 +291,9 @@ export type NamedStyle<name extends string = string> = {
 
 /** Supported literal and token declarations. Unknown properties and undefined values are rejected. */
 export type Properties<tokens extends Theme.Tokens = {}> = {
-  readonly [property in keyof Literal.Properties]: Value.Input<
-    | Literal.Properties[property]
-    | Token.Names<tokens, property>
+  readonly [property in keyof Literal.Properties]: Value.Fallbacks<
+    | LiteralAtoms[property]
+    | Value.Atom<Token.Names<tokens, property>>
     | {
         [group in Token.Group]: property extends Token.Properties<group>
           ? Token.Reference<group>

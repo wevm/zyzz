@@ -8,9 +8,7 @@ import type * as Token from './Token.js'
 /** Scalar declarations optionally carrying a trailing importance marker. */
 export type Atom<value> =
   | value
-  | (value extends string | number
-      ? `${value}${'!' | ' !' | '!important' | ' !important'}`
-      : never)
+  | `${Extract<value, string | number>}${'!' | ' !' | '!important' | ' !important'}`
 
 /** Checks inferred scalar spellings without expanding the property-value unions. */
 export type Checked<style, tokens = {}> = {
@@ -42,13 +40,11 @@ type Trim<value extends string> =
     ? Trim<body>
     : value
 
+/** One atom or a nonempty ordered sequence of declaration fallback atoms. */
+export type Fallbacks<atom> = atom | readonly [atom, ...atom[]]
+
 /** One declaration or a nonempty ordered sequence of declaration fallbacks. */
-export type Input<value> =
-  | Atom<Exclude<value, undefined>>
-  | readonly [
-      Atom<Exclude<value, undefined>>,
-      ...Atom<Exclude<value, undefined>>[],
-    ]
+export type Input<value> = Fallbacks<Atom<Exclude<value, undefined>>>
 
 /** Splits a trailing importance marker without interpreting quoted or escaped text. */
 export function parse(input: unknown, property: keyof Literal.Properties) {

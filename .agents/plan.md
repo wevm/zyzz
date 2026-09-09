@@ -460,7 +460,7 @@ Continue all property/value work in the single consolidated CSS conformance PR a
 
 Keep the remaining CSS property implementation in one PR. The required CI job fails unless all 670 pinned MDN properties are fully supported; partial entries never count toward 100%. Retain independent grammar checks, public type probes, emission checks, browser evidence, and performance gates. Do not promote inventory statuses to make CI green before the implementation and evidence exist.
 
-Outstanding work includes the 367 deferred properties and completion of all 303 partial domains: CSS tokenization/escaping and case handling; compositional value grammars, lists, functions and custom identifiers; property-specific numeric rules; shorthand/longhand cascade interactions; and independent browser/type evidence. The threshold remains red while these gaps exist. The property gate does not claim full support for the separately tracked selectors and at-rule families.
+Outstanding work includes the 366 deferred properties and completion of all 304 partial domains: CSS tokenization/escaping and case handling; compositional value grammars, lists, functions and custom identifiers; property-specific numeric rules; shorthand/longhand cascade interactions; and independent browser/type evidence. The threshold remains red while these gaps exist. The property gate does not claim full support for the separately tracked selectors and at-rule families.
 
 ### Structured Grid Tracks
 
@@ -471,3 +471,10 @@ Independent MDN grammar probes and native responsive-grid fixtures cover these a
 ### Box Value Lists
 
 Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthands accept one to four space-separated scalar components. Their logical block/inline shorthands and gap accept pairs. Each component retains its property-specific auto, percentage, and sign rules; CSS-wide keywords must stand alone. Longhands remain scalar. Type shapes cover lists while the compiler validates arity and every component. Native browser fixtures compare physical longhands in horizontal and vertical writing modes, including importance and shorthand/longhand overrides. Functions, variable substitution, and broader component spellings remain incomplete.
+
+
+### Motion, Color, Border, and Keyword Grammar
+
+Motion lists preserve easing-function commas and validate cubic-bezier(), steps(), and linear() constraints. Absolute functional colors preserve color spaces and browser clamping. Border color/style lists and elliptical radii preserve logical overrides and importance. Compatible font variant and containment groups reject conflicts; font-synthesis adds one partially implemented property.
+
+The completion count remains 0/670: 304 partial and 366 deferred (254 standard, 112 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.

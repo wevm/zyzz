@@ -309,7 +309,7 @@ describe('compile', () => {
       ).toMatchInlineSnapshot(`
         {
           "align": "none center",
-          "type": "both proximity",
+          "type": "both",
         }
       `)
     } finally {

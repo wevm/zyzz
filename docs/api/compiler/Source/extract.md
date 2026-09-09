@@ -83,7 +83,7 @@ Theme factories require literal token data in module-level `const` bindings. Ext
 
 Bound `css` supports local const member aliases, destructuring/renaming, and alias chains. Destructuring accepts only `css`, without defaults or rest properties. Aliases must precede their references and support direct calls only. Export compiled styles and scope strings; use [Graph.compile](../Graph/compile.md) for imported/exported theme contracts, authoring aliases, and re-exports.
 
-Explicit `theme.tokens` paths are supported as scalar property values in bound css calls, including aliases. Dot access, literal string/numeric brackets, and transparent TypeScript assertions retain token identity and defining fallbacks. Paths must exist and match the property domain; optional/dynamic access, token-object escapes, and root css token values produce diagnostics.
+Explicit `theme.tokens` paths are supported as scalar property values or fallback entries in bound css calls, including aliases. Dot access, literal string/numeric brackets, and transparent TypeScript assertions retain token identity and defining fallbacks. Paths must exist and match the property domain; optional/dynamic access, token-object escapes, and root css token values produce diagnostics.
 
 Pass both `styles` and `themes` to `Css.compile` when using extraction without rewriting. Scope-map keys derive from module/binding identity.
 
@@ -98,3 +98,7 @@ Use the source graph for named config imports and re-exports. Dynamic access, ob
 `Source.ExtractError` aggregates located source failures without a partial result.
 
 See [Source](README.md) for related methods and types.
+
+## Declaration Values
+
+Direct literal fallback arrays expand into repeated declarations without reordering. Each entry retains its own source-map position and diagnostics. Trailing `!` and `!important` apply to that entry before literal/token resolution. Sparse arrays, spreads, nested arrays, and arbitrary expressions are rejected without evaluation.

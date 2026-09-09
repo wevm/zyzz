@@ -3,7 +3,7 @@
  * @module
  */
 import { expectTypeOf } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { Config, css, Style, Theme } from 'zyzz'
 import { components } from '../test/fixtures/components.js'
 
 const definition = Style.define(components)
@@ -92,3 +92,29 @@ Style.define({ card: { color: 'brand' } }, optionalTheme)
 Style.define<{ card: { color: 'brand' } }, Tokens>({ card: { color: 'brand' } })
 if (optionalTheme.theme)
   Style.define({ card: { color: 'brand' } }, { theme: optionalTheme.theme })
+
+css({
+  display: ['block', 'flex!'],
+  opacity: '0.5 !important',
+  padding: [0, '8px!'],
+})
+const configured = Config.create({
+  theme: { color: { brand: '#06c' }, spacing: { md: '8px' } },
+})
+configured.css({
+  color: ['#fff', 'brand!', configured.theme.tokens.color.brand],
+  padding: ['md!', 0],
+})
+Style.define({ card: { padding: ['1px', '2px !important'] } })
+// @ts-expect-error Fallbacks are nonempty.
+css({ color: [] })
+// @ts-expect-error Fallback elements cannot be undefined.
+css({ padding: ['8px', undefined] })
+// @ts-expect-error Nested fallback arrays are unsupported.
+css({ color: [['#fff']] })
+// @ts-expect-error Importance does not widen the property domain.
+css({ display: 'banana!' })
+// @ts-expect-error Root styles remain token-free.
+css({ color: ['brand!'] })
+// @ts-expect-error Tokens retain their domain in fallback arrays.
+configured.css({ padding: [configured.theme.tokens.color.brand] })

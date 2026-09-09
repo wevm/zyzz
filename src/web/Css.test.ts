@@ -8,6 +8,56 @@ import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('importance is distinct in cached and factored declarations', () => {
+    const styles = Style.define({
+      first: { color: ['#fff!', '#000!'] },
+      normal: { color: '#fff' },
+      last: { color: '#fff !important' },
+      numeric: { opacity: '0.5!', padding: '0!' },
+    })
+    expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
+      ".z-first{color:#fff!important;color:#000!important;}
+      .z-normal{color:#fff;}
+      .z-last{color:#fff!important;}
+      .z_base0{opacity:0.5!important;padding:0!important;}"
+    `)
+  })
+
+  test('invalid fallback values and importance produce located diagnostics', () => {
+    expect(() =>
+      Style.define({ card: { color: [] } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["card","color"]: Fallback arrays must be nonempty.]`,
+    )
+    expect(() =>
+      Style.define({ card: { padding: ['8px', undefined] } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["card","padding","1"]: Expected a nonnegative literal length or numeric zero.]`,
+    )
+    expect(() =>
+      Style.define({ card: { color: ['#fff', ['#000']] } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["card","color","1"]: Expected a hex color, transparent, currentColor, black, or white.]`,
+    )
+    expect(() =>
+      Style.define({
+        card: { color: '#fff!!', opacity: '2!', padding: "'8px!'" },
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Style.InvalidError: ["card","color"]: Expected a hex color, transparent, currentColor, black, or white.
+      ["card","opacity"]: Expected a finite number from 0 to 1.
+      ["card","padding"]: Expected a nonnegative literal length or numeric zero.]
+    `)
+    const sparse = ['8px']
+    sparse.length = 3
+    sparse[2] = '12px'
+    expect(() =>
+      Style.define({ card: { padding: sparse } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["card","padding","1"]: Fallback arrays require dense data entries without accessors.]`,
+    )
+  })
+
   test('independent applications share complete rules and retain valid class identifiers', async () => {
     const styles = Style.define({
       '1': { color: '#000', display: 'block', padding: '8px' },

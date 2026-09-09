@@ -276,36 +276,52 @@ export function extract(options: extract.Options): extract.ReturnType {
         )
         continue
       }
-      const value = property.value
-      const token = themes?.tokens.get(value.start)
-      if (token?.end === value.end) values[key] = token.reference
-      else if (
-        value.type === 'Literal' &&
-        (typeof value.value === 'string' || typeof value.value === 'number')
-      )
-        values[key] = value.value
-      else if (
-        value.type === 'UnaryExpression' &&
-        (value.operator === '-' || value.operator === '+') &&
-        value.argument.type === 'Literal' &&
-        typeof value.argument.value === 'number'
-      )
-        values[key] =
-          value.operator === '-' ? -value.argument.value : value.argument.value
-      else {
-        report(
-          'unsupported_syntax',
-          'Expected a literal string or number; expressions are not evaluated.',
-          value,
+      function value(node: Ast.Node, path: readonly string[]): unknown {
+        const token = themes?.tokens.get(node.start)
+        let result: unknown
+        if (token?.end === node.end) result = token.reference
+        else if (
+          node.type === 'Literal' &&
+          (typeof node.value === 'string' || typeof node.value === 'number')
         )
-        continue
+          result = node.value
+        else if (
+          node.type === 'UnaryExpression' &&
+          (node.operator === '-' || node.operator === '+') &&
+          node.argument.type === 'Literal' &&
+          typeof node.argument.value === 'number'
+        )
+          result =
+            node.operator === '-' ? -node.argument.value : node.argument.value
+        else if (node.type === 'ArrayExpression' && path.length === 2) {
+          result = node.elements.map((element, index) => {
+            if (!element || element.type === 'SpreadElement') {
+              report(
+                'unsupported_syntax',
+                'Fallback arrays require dense literal entries without spreads.',
+                element ?? node,
+              )
+              return undefined
+            }
+            return value(element, [...path, String(index)])
+          })
+        } else {
+          report(
+            'unsupported_syntax',
+            'Expected a literal string or number; expressions are not evaluated.',
+            node,
+          )
+          return undefined
+        }
+        locations.push({
+          end: node.end,
+          path,
+          source: options.moduleId,
+          start: node.start,
+        })
+        return result
       }
-      locations.push({
-        end: value.end,
-        path: [name, key],
-        source: options.moduleId,
-        start: value.start,
-      })
+      values[key] = value(property.value, [name, key])
     }
     if (diagnostics.length !== before) continue
     try {

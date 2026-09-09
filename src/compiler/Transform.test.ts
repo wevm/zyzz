@@ -11,10 +11,83 @@ import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
+import * as Declarations from '../../test/fixtures/Declarations.js'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('fallback declarations retain importance, token identity, and element source maps', () => {
+    const output = Transform.compile({
+      moduleId: 'example/fallbacks.ts',
+      source: Declarations.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-1ne2r2w17wkfe-theme{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#06c;}
+      .z_theme-1ne2r2w17wkfe-mint{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#175;}
+      .z-1ne2r2w17wkfe-base0{display:block;display:flex;opacity:0.25!important;opacity:0.75;}
+      .z-style-1ne2r2w17wkfe-183{color:#000;color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c);color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c)!important;padding:4px!important;padding:8px;padding-left:12px;}
+      .z-style-1ne2r2w17wkfe-390{color:#fff;padding:20px;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) => line.includes('color:var('))
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('color:var('),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 18,
+        "line": 6,
+        "name": "color",
+        "source": "example/fallbacks.ts",
+      }
+    `)
+  })
+
+  test('fallback order and importance select browser styles with inherited tokens', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/fallbacks.ts',
+      source: Declarations.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      loader: 'ts',
+      format: 'esm',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><main class="${module.scope}"><div id="card" class="${module.props.className} ${module.later.className}"></div></main>`,
+      )
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).opacity),
+      ).toMatchInlineSnapshot(`"0.25"`)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).paddingLeft),
+      ).toMatchInlineSnapshot(`"4px"`)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).display),
+      ).toMatchInlineSnapshot(`"flex"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('explicit token paths compile through bound aliases with defining fallbacks', async () => {
     const result = Transform.compile({
       moduleId: 'example/tokens.ts',

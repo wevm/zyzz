@@ -43,14 +43,30 @@ This boundary rejects:
 
 - Arbitrary variable objects and explicit `undefined`.
 - Callbacks, selectors, and queries.
-- CSS functions, importance suffixes, and fallback arrays.
+- CSS functions and nested fallback arrays.
 - Unsupported properties and other named colors.
+
+## Fallbacks and Importance
+
+```ts
+Style.define({
+  card: {
+    display: ['block', 'flex'],
+    color: ['#000!', '#fff'],
+    opacity: '0.5 !important',
+  },
+})
+```
+
+Nonempty arrays emit repeated declarations in authored order. Each entry is independently validated and may use a trailing `!` or `!important`. Normal entries cannot override important entries; later important entries win. Token names resolve after suffix parsing, and explicit token references remain valid fallback entries.
+
+Importance is stored separately on `Style.Declaration.important`. Numeric importance uses a string, such as `'0.5!'` or `'0!'`. Empty, sparse, nested, accessor-backed, and invalid arrays fail before emission. Quoted or escaped exclamation marks are not suffixes; unsupported string-content syntax still fails scalar validation.
 
 ## Ordering and Ownership
 
-Definitions preserve JavaScript own enumerable string-key order, including its integer-key ordering. Property order preserves shorthand/longhand precedence for later emitters; validation never sorts or normalizes declarations. Empty maps and empty styles are valid; empty style names are not.
+Definitions preserve JavaScript own enumerable string-key order, including its integer-key ordering. Property order preserves shorthand/longhand precedence for later emitters; validation never sorts declarations. Fallback entries expand in place and importance is separated from each scalar value. Empty maps and empty styles are valid; empty style names are not.
 
-Plain and null-prototype objects are accepted. Accessors, symbols, non-enumerable properties, arrays, and class instances are rejected. Input must be ordinary data, not proxies. Values are copied into frozen style, declaration, and array objects. Subsequent changes to input cannot change the result.
+Plain and null-prototype objects are accepted. Accessors, symbols, non-enumerable properties, array-shaped style objects, and class instances are rejected. Input must be ordinary data, not proxies. Values are copied into frozen style, declaration, and array objects. Subsequent changes to input cannot change the result.
 
 ## Diagnostics
 

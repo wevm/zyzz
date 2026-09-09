@@ -77,10 +77,11 @@ export async function create(
       export const classes = [${names.map((name) => `stylex.props(styles.${name}).className`).join(',')}];`,
     tailwind: styles.map((style) =>
       Object.entries(style)
-        .map(
-          ([key, value]) =>
-            `[${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}]`,
-        )
+        .map(([key, value]) => {
+          if (typeof value !== 'string' && typeof value !== 'number')
+            throw new Error('Comparison fixtures require scalar values.')
+          return `[${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}]`
+        })
         .join(' '),
     ),
     targets: Object.freeze({ ...(options.targets ?? minification.targets) }),

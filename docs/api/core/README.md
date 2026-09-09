@@ -14,3 +14,5 @@ Typed style definitions, themes, configuration, and callable authoring.
 | [Theme](Theme/README.md)   | Immutable scalar tokens and compatible extensions.                     |
 | [variants](variants.md)    | Define finite style choices for one element.                           |
 | [Vars](Vars/README.md)     | Explicit shared variable contracts.                                    |
+
+Style declarations support ordered nonempty fallback arrays and trailing `!`/`!important`; see [Literal Values](Style/literals.md).

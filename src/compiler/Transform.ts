@@ -346,6 +346,12 @@ export function compile(options: compile.Options): compile.ReturnType {
       const body = rule.slice(brace)
       const style = styles.get(call.name)!
       const properties = definitions.get(call.start)!.properties
+      const fallbacks = properties.some(
+        (property) =>
+          property.type === 'Property' &&
+          property.value.type === 'ArrayExpression',
+      )
+      const occurrences = new Map<string, number>()
       let cursor = 1
       for (
         let propertyIndex = 0;
@@ -357,11 +363,28 @@ export function compile(options: compile.Options): compile.ReturnType {
         const start = body.indexOf(text, cursor)
         if (start < 0) continue
 
-        const property = properties[propertyIndex]!
+        const property = fallbacks
+          ? properties.find(
+              (property) =>
+                property.type === 'Property' &&
+                (property.key.type === 'Identifier'
+                  ? property.key.name
+                  : property.key.type === 'Literal'
+                    ? property.key.value
+                    : undefined) === declaration.property,
+            )!
+          : properties[propertyIndex]!
+        const occurrence = occurrences.get(declaration.property) ?? 0
+        occurrences.set(declaration.property, occurrence + 1)
+        const location =
+          property.type === 'Property' &&
+          property.value.type === 'ArrayExpression'
+            ? property.value.elements[occurrence]!
+            : property
         Mapping.addMapping(cssMap, {
           generated: { column: selector.length + start, line },
           name: declaration.property,
-          original: position(property.start),
+          original: position(location.start),
           source: options.moduleId,
         })
         cursor = start + text.length

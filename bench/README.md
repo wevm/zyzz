@@ -4,7 +4,7 @@ Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, w
 
 The Benchmarks workflow uploads results and environment metadata as a 30-day artifact. One updating PR comment shows traffic-light deltas against a fresh main baseline measured sequentially on the same runner followed by the full framework comparison tables. Fork PRs receive Actions summaries and artifacts without comment writes. Missing baselines show “No baseline available.”
 
-`BENCH_TIME_THRESHOLD: '110'` marks the 10% timing alert threshold; timing comparisons remain informational because one sequential pair does not eliminate measurement noise. `BENCH_SIZE_THRESHOLD: '105'` fails PR and manual checks above 5% gzip growth. Main pushes publish results without running a second benchmark suite or enforcing thresholds.
+`BENCH_TIME_THRESHOLD: '110'` marks the 10% timing alert threshold; timing comparisons remain informational because one sequential pair does not eliminate measurement noise. `BENCH_SIZE_THRESHOLD: '105'` fails PR and manual checks above 5% gzip growth. Main pushes publish results without running a second benchmark suite or enforcing baseline regression thresholds.
 
 The adapter supplies `customSmallerIsBetter` JSON and seeds the action's external data with the fresh main baseline. `save-data-file: false` preserves the baseline. The custom report combines comparisons against main and framework tables in the PR comment, Actions summary, and artifact. The action handles regression checks without posting duplicate comments.
 
@@ -17,6 +17,14 @@ node bench/Compare.ts bench/results /tmp/main-benchmarks /tmp/benchmark-action
 ```
 
 For a comparison, measure baseline and candidate sequentially on the same idle machine with the same fixture corpus. Save the baseline outside the checkout, then append `--compare <baseline.json>` when running the candidate. Record variance and measurement limitations with any reported delta.
+
+## Framework Gate
+
+`node bench/Check.ts bench/results` requires Zyzz to beat Panda, StyleX, Tailwind, and vanilla-extract on every matched workload: eight literal cases and 10/100-component themes. Both `zyzz` and `zyzz-tokens` theme lanes must pass.
+
+Each comparison requires strictly lower mean build time and strictly lower total gzip bytes (CSS plus required client JavaScript). Ties, missing competitors/workloads, invalid sizes, and unavailable timing samples fail. Raw/Brotli sizes and timing errors remain visible in the detailed report.
+
+This gate runs on PRs, main pushes, and manual runs, using competitors measured in the same suite. It is independent of the existing baseline regression thresholds. Reports and artifacts publish before the job fails. Existing framework losses will make CI red until resolved; measured means can fluctuate near a tie.
 
 ## Compilation and Bundle Size
 

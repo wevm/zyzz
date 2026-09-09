@@ -59,69 +59,12 @@ jobs:
         run: pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json
       - name: Summarize benchmarks
         run: |
-          printf '## Benchmarks\n\n[Workflow run](%s/%s/actions/runs/%s)\n\nZyzz uses its in-memory literal compiler with independent composition for these separate component applications; source extraction and runtime composition are excluded. Ordered class combinations are tested separately.\n\n## Compiler Comparisons\n\nSizes are bytes. Total gzip includes CSS + required client JavaScript. Literal comparisons use shared Lightning CSS final processing (Chrome 120, Firefox 128, Safari 17); upstream compiler processing differs.\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > bench/results/report.md
           jq '
             .files |= map(.groups |= map(.benchmarks |= map(select(
               (.mean | type) == "number" and (.rme | type) == "number" and .sampleCount > 0
             ))))
           ' bench/results/timings.json > bench/results/timings-measured.json
-          jq -r '
-            .files[].groups[] | . as $group | .benchmarks[] |
-            select((.mean | type) != "number" or (.rme | type) != "number" or (.sampleCount // 0) <= 0) |
-            "Unavailable timing (no samples): " + $group.fullName + " / " + .name + "\n"
-          ' bench/results/timings.json >> bench/results/report.md
-          for workload in small repeated unique partial palette independent sparse components; do
-            case "$workload" in
-              small) title='3 Components' ;;
-              repeated) title='1,000 Components — Repeated Styles' ;;
-              unique) title='1,000 Components — Unique Padding' ;;
-              partial) title='100 Components — Partial Sharing' ;;
-              palette) title='100 Components — Reused Palette' ;;
-              independent) title='100 Components — Independent Values' ;;
-              sparse) title='100 Components — Sparse Properties' ;;
-              components) title='60 Components — Mixed Shapes' ;;
-            esac
-            printf '\n### %s\n\n| Library | Build (ms) | CSS gzip | Total gzip |\n| --- | ---: | ---: | ---: |\n' "$title" >> bench/results/report.md
-            jq -rs --arg workload "$workload" --slurpfile timings bench/results/timings-measured.json '
-              sort_by(.library)[] as $size |
-              $timings[0].files[].groups[] | select(.fullName | endswith(" / " + $workload)) |
-              .benchmarks[] | select(.name == $size.library) |
-              [({"panda":"Panda CSS","stylex":"StyleX","tailwind":"Tailwind","vanilla-extract":"vanilla-extract","zyzz":"Zyzz"}[.name]),
-               ((.mean * 1000 | round) / 1000), $size.css.gzip, $size.total.gzip] |
-              "| " + (map(tostring) | join(" | ")) + " |"
-            ' bench/results/"$workload"/*.json >> bench/results/report.md
-            printf '\n<details>\n<summary>Full Measurements</summary>\n\n| Library | Error (±%%) | Samples | CSS raw | CSS Brotli | JS gzip |\n| --- | ---: | ---: | ---: | ---: | ---: |\n' >> bench/results/report.md
-            jq -rs --arg workload "$workload" --slurpfile timings bench/results/timings-measured.json '
-              sort_by(.library)[] as $size |
-              $timings[0].files[].groups[] | select(.fullName | endswith(" / " + $workload)) |
-              .benchmarks[] | select(.name == $size.library) |
-              [({"panda":"Panda CSS","stylex":"StyleX","tailwind":"Tailwind","vanilla-extract":"vanilla-extract","zyzz":"Zyzz"}[.name]),
-               ((.rme * 100 | round) / 100), .sampleCount, $size.css.raw, $size.css.brotli, $size.javascript.gzip] |
-              "| " + (map(tostring) | join(" | ")) + " |"
-            ' bench/results/"$workload"/*.json >> bench/results/report.md
-            printf '\n</details>\n' >> bench/results/report.md
-          done
-          printf '\n## Theme Comparisons\n\nTwo compatible scopes, light/dark values, and independent components. Theme CSS uses shared final minification targeting native light-dark support (Chrome 123, Firefox 128, Safari 17.5). Total delivery includes CSS and actual component/scope JavaScript exports. zyzz starts from validated references; zyzz-tokens includes shorthand validation and resolution before the same emission and bundling. Neither Zyzz lane includes source parsing. Other compiler boundaries are documented in bench/README.md.\n' >> bench/results/report.md
-          for count in 10 100; do
-            printf '\n### %s Components\n\n| Library | Build (ms) | CSS gzip | JS gzip | Total gzip |\n| --- | ---: | ---: | ---: | ---: |\n' "$count" >> bench/results/report.md
-            jq -rs --arg count "$count" --slurpfile timings bench/results/timings-measured.json '
-              sort_by(.library)[] as $size |
-              $timings[0].files[].groups[] | select(.fullName | endswith("theme comparison / " + $count + " styles")) |
-              .benchmarks[] | select(.name == $size.library) |
-              [.name, ((.mean * 1000 | round) / 1000), $size.css.gzip, $size.javascript.gzip, $size.total.gzip] |
-              "| " + (map(tostring) | join(" | ")) + " |"
-            ' bench/results/theme-comparison/"$count"/*.json >> bench/results/report.md
-            printf '\n<details>\n<summary>Full Measurements</summary>\n\n| Library | Error (±%%) | Samples | CSS raw | CSS Brotli | JS raw | JS Brotli | Total raw | Total Brotli |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n' >> bench/results/report.md
-            jq -rs --arg count "$count" --slurpfile timings bench/results/timings-measured.json '
-              sort_by(.library)[] as $size |
-              $timings[0].files[].groups[] | select(.fullName | endswith("theme comparison / " + $count + " styles")) |
-              .benchmarks[] | select(.name == $size.library) |
-              [.name, ((.rme * 100 | round) / 100), .sampleCount, $size.css.raw, $size.css.brotli, $size.javascript.raw, $size.javascript.brotli, $size.total.raw, $size.total.brotli] |
-              "| " + (map(tostring) | join(" | ")) + " |"
-            ' bench/results/theme-comparison/"$count"/*.json >> bench/results/report.md
-            printf '\n</details>\n' >> bench/results/report.md
-          done
-          printf '\n## Source Extraction\n\nParsing, binding analysis, literal validation, and CSS emission. Excludes rewriting, final minification, and browser bundling.\n\n| Workload | Time (ms) | Error (±%%) | Samples |\n| --- | ---: | ---: | ---: |\n' >> bench/results/report.md
+          printf '\n## Source Extraction\n\nParsing, binding analysis, literal validation, and CSS emission. Excludes rewriting, final minification, and browser bundling.\n\n| Workload | Time (ms) | Error (±%%) | Samples |\n| --- | ---: | ---: | ---: |\n' > bench/results/report.md
           jq -r '
             .files[].groups[] | select(.fullName | contains("source extraction / ")) |
             . as $group | .benchmarks[] |
@@ -166,6 +109,10 @@ jobs:
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/themes/*.json >> bench/results/report.md
           printf '\nBuild timings use warm host processes and fresh compiler state. Compiler workflows have different scopes; see bench/README.md in the repository for measurement boundaries.\n' >> bench/results/report.md
+      - name: Check framework performance
+        id: frameworks
+        continue-on-error: true
+        run: node bench/Check.ts bench/results > bench/results/frameworks.md
       - name: Prepare benchmark comparisons
         id: comparison
         env:
@@ -173,7 +120,8 @@ jobs:
           BASELINE_DIRECTORY: ${{ steps.baseline.outcome == 'success' && format('{0}/benchmark-baseline', runner.temp) || '' }}
         run: |
           node bench/Compare.ts bench/results "$BASELINE_DIRECTORY" "$RUNNER_TEMP/benchmark-action" > "$RUNNER_TEMP/benchmark-comparison.md"
-          cat "$RUNNER_TEMP/benchmark-comparison.md" bench/results/report.md > "$RUNNER_TEMP/benchmark-report.md"
+          printf '# Benchmark Report\n\n[Workflow run](%s/%s/actions/runs/%s)\n\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > "$RUNNER_TEMP/benchmark-report.md"
+          cat bench/results/frameworks.md "$RUNNER_TEMP/benchmark-comparison.md" bench/results/report.md >> "$RUNNER_TEMP/benchmark-report.md"
           mv "$RUNNER_TEMP/benchmark-report.md" bench/results/report.md
           cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Comment benchmark results
@@ -222,6 +170,9 @@ jobs:
           output-file-path: ${{ runner.temp }}/benchmark-action/size.json
           save-data-file: false
           tool: customSmallerIsBetter
+      - name: Enforce framework performance
+        if: ${{ !cancelled() && steps.frameworks.outcome == 'failure' }}
+        run: exit 1
     timeout-minutes: 30
 permissions:
   contents: read

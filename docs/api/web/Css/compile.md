@@ -79,6 +79,8 @@ output.css
 
 Frozen scope class map retaining theme keys. Empty when no themes are supplied.
 
+Anonymous themes use compact identifiers scoped to this compilation. Source-owned theme contracts retain stable identifiers for separately compiled components. Consume the returned scope map and distribute it with the matching CSS.
+
 ```ts
 output.themes
 ```

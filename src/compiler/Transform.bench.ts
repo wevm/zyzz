@@ -14,6 +14,7 @@ import * as Columns from '../../test/fixtures/Columns.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Fonts from '../../test/fixtures/Fonts.js'
+import * as Grid from '../../test/fixtures/Grid.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
 import * as Layout from '../../test/fixtures/Layout.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
@@ -191,6 +192,12 @@ const workloads = {
       `export const text${index} = css({fontKerning:'normal',fontVariantNumeric:'tabular-nums',textEmphasisStyle:'open circle',textEmphasisColor:'#06c',letterSpacing:'${index}px'})();`,
     source: Fonts.source,
     title: 'font',
+  },
+  grid: {
+    declaration: (index: number) =>
+      `export const cell${index} = css({display:'grid',gridAutoColumns:'1fr',gridAutoRows:'${index}px',gridAutoFlow:'column',gridColumnEnd:'span 2'})();`,
+    source: Grid.source,
+    title: 'grid',
   },
   interaction: {
     declaration: (index: number) =>

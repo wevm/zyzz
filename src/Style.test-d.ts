@@ -770,3 +770,29 @@ describe('css', () => {
     css({ transitionDuration: 'auto' })
   })
 })
+
+describe('grid tracks and placement', () => {
+  test('supports flexible tracks and bounded line placement', () => {
+    css({
+      gridAutoColumns: '1fr',
+      gridAutoRows: '40px',
+      gridAutoFlow: 'column dense',
+      gridTemplateColumns: 'min-content',
+      gridTemplateRows: 'subgrid',
+      gridColumnStart: [1, '2!'],
+      gridColumnEnd: 'span 2',
+      gridRowStart: -1,
+      gridRowEnd: 'auto',
+    })
+    // @ts-expect-error Track lists require structural grammar support.
+    css({ gridTemplateColumns: '1fr 2fr' })
+    // @ts-expect-error Flexible units are limited to grid tracks.
+    css({ width: '1fr' })
+    // @ts-expect-error Spans cannot contain fractional counts.
+    css({ gridColumnStart: 'span 1.5' })
+    // @ts-expect-error Nondecimal fractional units are not CSS dimensions.
+    css({ gridAutoColumns: '0x10fr' })
+    // @ts-expect-error Named grid lines remain deferred.
+    css({ gridRowStart: 'header' })
+  })
+})

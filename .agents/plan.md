@@ -439,3 +439,5 @@ Continue opening coherent property/value PRs against the pinned MDN inventory. E
 - Font controls: 19 additional typography, emphasis, and ruby properties with bounded keyword combinations, independent grammar/type probes, and native text layout fixtures. Font-dependent glyph behavior and broader values remain deferred.
 
 - Motion controls: 11 additional properties and a finite time dimension domain, independent grammar/type probes, invalid duration checks, source maps, and native paused-animation timing. Lists, easing functions, keyframes, and timelines remain deferred.
+
+- Grid tracks: nine additional properties, bounded fr dimensions and grid-line domains, independent grammar/type probes, source maps, and implicit-track/span geometry. Lists, functions, named lines, and areas remain deferred.

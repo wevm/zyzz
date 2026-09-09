@@ -58,7 +58,9 @@ export function parse(input: unknown, property: keyof Literal.Properties) {
   const text = input.slice(0, match.index).trimEnd()
   // Quotes and escapes belong to future CSS expression parsing, not this scalar grammar.
   if (/["'\\!]/.test(text)) return undefined
-  const numeric = Literal.rules[property].kind === 'number'
+  const numeric =
+    Literal.rules[property].kind === 'number' ||
+    Literal.rules[property].kind === 'grid-line'
   const value =
     numeric && /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(text)
       ? Number(text)

@@ -123,3 +123,9 @@ Font variants currently accept individual keywords. Combined variants, stretch p
 Eleven animation and transition properties support scalar durations/delays, easing keywords, iteration counts, direction, fill mode, play state, and discrete transition behavior. Times use finite decimal or exponent values with s/ms units, including zero; negative delays are accepted, while negative durations are rejected. Animation duration also accepts auto. Iteration counts accept nonnegative numbers or infinite.
 
 Comma-separated lists, easing functions, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
+
+## Grid Tracks
+
+Nine properties cover implicit tracks, scalar explicit tracks, auto-placement, and row/column start/end lines. Tracks accept nonnegative lengths, percentages, fr dimensions, auto, min-content, and max-content. Explicit tracks also accept none and subgrid. Auto flow accepts row/column with optional dense in either order.
+
+Grid lines accept auto, nonzero safe integers, and span followed by a canonical positive safe integer. Important numeric fallbacks preserve their number domain. Track lists, repeat/minmax functions, named lines, areas, and grid shorthands remain deferred. Browser fixtures compare independent CSS and verify fractional implicit tracks and a two-column span; subgrid layout remains a separate gate.

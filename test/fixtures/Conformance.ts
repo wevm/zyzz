@@ -51,6 +51,8 @@ export function cases(): readonly Case[] {
       if (Number.isFinite(rule.max)) values.push(rule.max)
       if (!('integer' in rule)) values.push(Math.max(rule.min, 0.5))
     }
+    if (rule.kind === 'grid-line')
+      values.push('auto', 1, -1, 2, 'span 1', 'span 2')
     if (rule.kind === 'time') {
       if ('keywords' in rule) values.push(...rule.keywords)
       for (const unit of Object.keys(units))
@@ -124,6 +126,10 @@ export const rejected = [
   { property: 'floodColor', value: 'none' },
   { property: 'fontStretch', value: '120%' },
   { property: 'fontVariantNumeric', value: 'tabular-nums slashed-zero' },
+  { property: 'gridAutoColumns', value: '0x10fr' },
+  { property: 'gridAutoFlow', value: 'row column' },
+  { property: 'gridColumnStart', value: 'span 1.5' },
+  { property: 'gridTemplateColumns', value: '1fr 2fr' },
   { property: 'letterSpacing', value: '10%' },
   { property: 'margin', value: '1px 2px' },
   { property: 'padding', value: '0x10px' },

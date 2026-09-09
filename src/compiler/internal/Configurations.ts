@@ -39,8 +39,9 @@ export function collect(options: collect.Options): Themes.Link {
           property.key.type === 'Identifier'
             ? property.key.name
             : property.key.type === 'Literal' &&
-                typeof property.key.value === 'string'
-              ? property.key.value
+                (typeof property.key.value === 'string' ||
+                  typeof property.key.value === 'number')
+              ? String(property.key.value)
               : undefined
         if (key === undefined || Object.hasOwn(entries, key))
           throw new Config.InvalidError(
@@ -79,15 +80,20 @@ export function collect(options: collect.Options): Themes.Link {
       start: options.expression.start,
       tokenType: type(values(original.tokens)),
     }
-    members['themes' in config ? `themes.${key}` : 'theme'] = {
-      binding: name,
-      call,
-      definition,
-      kind: 'theme',
-    }
+    members[JSON.stringify('themes' in config ? ['themes', key] : ['theme'])] =
+      {
+        binding: name,
+        call,
+        definition,
+        kind: 'theme',
+      }
   }
   const selected =
-    members['themes' in config ? `themes.${input.defaultTheme}` : 'theme']
+    members[
+      JSON.stringify(
+        'themes' in config ? ['themes', input.defaultTheme] : ['theme'],
+      )
+    ]
   const definition =
     selected?.definition ?? Token.bind(Theme.define({}), contract)
   const normalized = {

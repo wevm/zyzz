@@ -23,6 +23,7 @@ export async function create(root: string, options: create.Options = {}) {
 export const zyzz = Config.create({defaultTheme:'base',layers:['components'],themes:{base:{color:{brand:{light:'#06c',dark:'#9cf'}},spacing:{md:'8px'}},mint:{color:{brand:{light:'#175',dark:'#afa'}},spacing:{md:'8px'}}}});
 export const design = zyzz;
 export const theme = zyzz.themes.base;
+export const reusable = Config.create({theme});
 export const css = zyzz.css;
 export const props = zyzz.css({color:'brand',padding:'md'})();`
         : `import { Theme } from 'zyzz';

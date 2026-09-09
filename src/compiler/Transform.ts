@@ -114,13 +114,13 @@ export function compile(options: compile.Options): compile.ReturnType {
     const scope = (name: string) => ({ className: emitted.themes[name] })
     const props = call.members
       ? JSON.stringify(
-          Object.hasOwn(call.members, 'theme')
-            ? { theme: scope(call.members.theme!) }
+          Object.hasOwn(call.members, '["theme"]')
+            ? { theme: scope(call.members['["theme"]']!) }
             : Object.keys(call.members).length
               ? {
                   themes: Object.fromEntries(
                     Object.entries(call.members).map(([key, name]) => [
-                      key.slice(7),
+                      (JSON.parse(key) as readonly string[])[1]!,
                       scope(name),
                     ]),
                   ),

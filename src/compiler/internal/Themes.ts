@@ -22,7 +22,7 @@ export type Alias = Call & {
 export type Call = {
   /** Validated inline configuration options retained for packed declarations. */
   readonly options?: Readonly<Record<string, unknown>> | undefined
-  /** Configuration theme paths and their compiled scope keys. */
+  /** JSON-encoded member path tuples and their compiled scope keys. */
   readonly members?: Readonly<Record<string, string>> | undefined
   /** Complete authoring type retained for configuration declarations. */
   readonly type?: string | undefined
@@ -178,15 +178,16 @@ export function collect(program: Ast.Program, options: collect.Options) {
           ? root.property.name
           : root.property.type === 'Literal' &&
               root.computed &&
-              typeof root.property.value === 'string'
-            ? root.property.value
+              (typeof root.property.value === 'string' ||
+                typeof root.property.value === 'number')
+            ? String(root.property.value)
             : undefined
       if (root.optional || key === undefined) return undefined
       path.unshift(key)
       root = root.object
     }
     return root.type === 'Identifier'
-      ? configs.get(root.name)?.members?.[path.join('.')]
+      ? configs.get(root.name)?.members?.[JSON.stringify(path)]
       : undefined
   }
 
@@ -268,6 +269,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         : statement
     if (declaration?.type !== 'VariableDeclaration') continue
     for (const variable of declaration.declarations) {
+      registerAlias({ declaration, statement, variable })
       const expression = variable.init
       if (
         expression?.type !== 'CallExpression' ||
@@ -381,115 +383,110 @@ export function collect(program: Ast.Program, options: collect.Options) {
     }
   }
 
-  for (const statement of program.body) {
-    const declaration =
-      statement.type === 'ExportNamedDeclaration'
-        ? statement.declaration
-        : statement
-    if (declaration?.type !== 'VariableDeclaration') continue
-    for (const variable of declaration.declarations) {
-      const expression = variable.init
-      if (!expression) continue
-      const linked = resolve(expression)
-      if (linked && variable.id.type === 'Identifier') {
-        if (expression.start < linked.call.end)
-          fail('Authoring aliases must follow their definition.', expression)
-        if (
-          declaration.kind !== 'const' ||
-          (statement.type === 'ExportNamedDeclaration' && !options.linked)
-        )
-          fail(
-            'Authoring aliases require module-level const bindings.',
-            variable,
-          )
-        if (linked.kind === 'config') {
-          configs.set(variable.id.name, linked)
-          configBindings.set(variable.id.start, linked)
-        } else {
-          names.set(variable.id.name, linked.call)
-          definitions.set(variable.id.start, linked.call)
-        }
-        aliases.push({
-          ...linked.call,
-          start: expression.start,
-          end: expression.end,
-          destructured: false,
-          retained: true,
-        })
-        aliasReferences.add(expression.start)
-        if (statement.type === 'ExportNamedDeclaration')
-          exports[variable.id.name] = linked
-        continue
-      }
-      const member =
-        expression.type === 'MemberExpression' &&
-        !expression.computed &&
-        !expression.optional &&
-        expression.property.type === 'Identifier' &&
-        expression.property.name === 'css'
-          ? expression.object
-          : undefined
-      const destructured =
-        variable.id.type === 'ObjectPattern' && expression.type === 'Identifier'
-      const source =
-        member ?? (expression.type === 'Identifier' ? expression : undefined)
-      if (!source) continue
-      const theme =
-        member || destructured
-          ? resolve(source)?.call
-          : source.type === 'Identifier'
-            ? aliasNames.get(source.name)
-            : undefined
-      if (!theme) continue
-      let id = variable.id
-      if (destructured && id.type === 'ObjectPattern') {
-        const property = id.properties[0]
-        if (
-          id.properties.length !== 1 ||
-          property?.type !== 'Property' ||
-          property.computed ||
-          property.key.type !== 'Identifier' ||
-          property.key.name !== 'css' ||
-          property.value.type !== 'Identifier'
-        )
-          fail(
-            'Destructure only css into a const binding without defaults or rest properties.',
-            id,
-          )
-        id = property.value
-      }
+  function registerAlias(input: {
+    declaration: Ast.VariableDeclaration
+    statement: Ast.Node
+    variable: Ast.VariableDeclarator
+  }) {
+    const { declaration, statement, variable } = input
+    const expression = variable.init
+    if (!expression) return
+    const linked = resolve(expression)
+    if (linked && variable.id.type === 'Identifier') {
+      if (expression.start < linked.call.end)
+        fail('Authoring aliases must follow their definition.', expression)
       if (
         declaration.kind !== 'const' ||
-        (statement.type === 'ExportNamedDeclaration' && !options.linked) ||
-        id.type !== 'Identifier'
+        (statement.type === 'ExportNamedDeclaration' && !options.linked)
+      )
+        fail('Authoring aliases require module-level const bindings.', variable)
+      if (linked.kind === 'config') {
+        configs.set(variable.id.name, linked)
+        configBindings.set(variable.id.start, linked)
+      } else {
+        names.set(variable.id.name, linked.call)
+        definitions.set(variable.id.start, linked.call)
+      }
+      aliases.push({
+        ...linked.call,
+        start: expression.start,
+        end: expression.end,
+        destructured: false,
+        retained: true,
+      })
+      aliasReferences.add(expression.start)
+      if (statement.type === 'ExportNamedDeclaration')
+        exports[variable.id.name] = linked
+      return
+    }
+    const member =
+      expression.type === 'MemberExpression' &&
+      !expression.computed &&
+      !expression.optional &&
+      expression.property.type === 'Identifier' &&
+      expression.property.name === 'css'
+        ? expression.object
+        : undefined
+    const destructured =
+      variable.id.type === 'ObjectPattern' && expression.type === 'Identifier'
+    const source =
+      member ?? (expression.type === 'Identifier' ? expression : undefined)
+    if (!source) return
+    const theme =
+      member || destructured
+        ? resolve(source)?.call
+        : source.type === 'Identifier'
+          ? aliasNames.get(source.name)
+          : undefined
+    if (!theme) return
+    let id = variable.id
+    if (destructured && id.type === 'ObjectPattern') {
+      const property = id.properties[0]
+      if (
+        id.properties.length !== 1 ||
+        property?.type !== 'Property' ||
+        property.computed ||
+        property.key.type !== 'Identifier' ||
+        property.key.name !== 'css' ||
+        property.value.type !== 'Identifier'
       )
         fail(
-          'Theme css aliases require a local module-level const binding.',
-          variable,
+          'Destructure only css into a const binding without defaults or rest properties.',
+          id,
         )
-      if (expression.start < theme.end)
-        fail('Theme css aliases must follow their definition.', expression)
-      const alias = Object.freeze({
-        destructured,
-        end: expression.end,
-        name: theme.name,
-        start: expression.start,
-        tokenType: theme.tokenType,
-        type: theme.type,
-        options: theme.options,
-      })
-      aliases.push(alias)
-      aliasBindings.set(id.start, alias)
-      aliasNames.set(id.name, alias)
-      aliasReferences.add(source.start)
-      if (statement.type === 'ExportNamedDeclaration')
-        exports[id.name] = {
-          binding: `${options.namespace}-${id.name}`,
-          call: alias,
-          definition: themes[alias.name]!,
-          kind: 'css',
-        }
+      id = property.value
     }
+    if (
+      declaration.kind !== 'const' ||
+      (statement.type === 'ExportNamedDeclaration' && !options.linked) ||
+      id.type !== 'Identifier'
+    )
+      fail(
+        'Theme css aliases require a local module-level const binding.',
+        variable,
+      )
+    if (expression.start < theme.end)
+      fail('Theme css aliases must follow their definition.', expression)
+    const alias = Object.freeze({
+      destructured,
+      end: expression.end,
+      name: theme.name,
+      start: expression.start,
+      tokenType: theme.tokenType,
+      type: theme.type,
+      options: theme.options,
+    })
+    aliases.push(alias)
+    aliasBindings.set(id.start, alias)
+    aliasNames.set(id.name, alias)
+    aliasReferences.add(source.start)
+    if (statement.type === 'ExportNamedDeclaration')
+      exports[id.name] = {
+        binding: `${options.namespace}-${id.name}`,
+        call: alias,
+        definition: themes[alias.name]!,
+        kind: 'css',
+      }
   }
 
   const exportReferences = new Set<number>()
@@ -586,7 +583,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       )
         fail('Configuration references must follow their definition.', node)
       let target: Ast.Node = node
-      let path = ''
+      const path: string[] = []
       for (let index = ancestors.length - 2; index >= 0; index--) {
         const member = ancestors[index]!
         if (
@@ -600,18 +597,19 @@ export function collect(program: Ast.Program, options: collect.Options) {
             ? member.property.name
             : member.property.type === 'Literal' &&
                 member.computed &&
-                typeof member.property.value === 'string'
-              ? member.property.value
+                (typeof member.property.value === 'string' ||
+                  typeof member.property.value === 'number')
+              ? String(member.property.value)
               : undefined
         if (key === undefined) break
-        path = path ? `${path}.${key}` : key
+        path.push(key)
         target = member
         if (
           aliasReferences.has(target.start) ||
           factoryReferences.has(target.start)
         )
           return true
-        if (path === 'css') {
+        if (path.length === 1 && path[0] === 'css') {
           const call = ancestors[index - 1]
           if (
             call?.type !== 'CallExpression' ||
@@ -622,7 +620,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
           styles.set(call.start, { call, theme: config.definition })
           return true
         }
-        const linked = config.members?.[path]
+        const linked = config.members?.[JSON.stringify(path)]
         if (linked)
           return themeReference(
             target,

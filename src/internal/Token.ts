@@ -2,6 +2,7 @@
  * Carries portable theme references and enforces their property domains.
  * @module
  */
+import type * as Theme from '../Theme.js'
 import * as Literal from './Literal.js'
 
 /** Checks a reference's property domain. */
@@ -28,6 +29,44 @@ export function accepts(
       ].includes(property)
     )
   return group === property
+}
+
+/** Rebinds validated scalar references to a explicitly owned contract identity. */
+export function bind<tokens extends Theme.Tokens>(
+  original: Theme.Definition<tokens>,
+  contract: Contract,
+): Theme.Definition<tokens> {
+  type Tree = { [key: string]: Reference | Tree }
+  function rebind(tree: Theme.References<Theme.Tokens>): Tree {
+    return Object.freeze(
+      Object.fromEntries(
+        Object.entries(tree).map(([key, value]) => [
+          key,
+          is(value)
+            ? create({
+                contract,
+                group: value.group,
+                path: value.path,
+                value: value.value,
+              })
+            : rebind(value as Theme.References<Theme.Tokens>),
+        ]),
+      ),
+    )
+  }
+  return Object.freeze(
+    Object.defineProperty(
+      {
+        get className() {
+          return original.className
+        },
+        css: original.css,
+        tokens: rebind(original.tokens),
+      },
+      definition,
+      { value: Object.freeze({ ...original[definition], contract }) },
+    ),
+  ) as Theme.Definition<tokens>
 }
 
 /** Retains full scopes when styles may have been compiled in another graph. */

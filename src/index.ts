@@ -2,6 +2,8 @@
  * Exposes token-free authoring, ordered style definitions, and theme contracts.
  * @module
  */
+/** Explicit theme and layer authoring contracts. */
+export * as Config from './Config.js'
 /** Token-free literal authoring; requires a compile-time source transform. */
 export { css } from './css.js'
 /** Typed literal style definitions and validation diagnostics. */

@@ -1,14 +1,48 @@
-# Zyzz
+<h1 align="center">zyzz</h1>
 
-A type-safe styling library for agents. Familiar CSS, inferred design tokens, and small APIs make styles straightforward to generate, inspect, and change.
+<p align="center">
+  Next-gen styling library for the modern era
+</p>
 
-- [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
-- [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
-- [**Dark Mode**](#dark-mode): light/dark token pairs selected by CSS, without a preference listener.
-- [**Variants**](#variants): typed component choices, defaults, and compound rules.
-- [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
-- [**Composition**](#composition): explicit style overrides that retain bindings and variant attributes.
-- [**Static CSS**](#static-css): ahead-of-time output with readable classes and no runtime rule generation.
+<p align="center">
+  <a href="#overview">Overview</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="#comparison">Comparison</a>
+</p>
+
+## Overview
+
+Define styles with `css`, call them, and spread the resulting props onto a component. Styles compile into CSS ahead of time.
+
+Install Zyzz in an existing application:
+
+```sh
+pnpm add zyzz
+```
+
+For Vite, add `zyzz()` to the existing plugins array, alongside the application's framework plugin:
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  plugins: [zyzz()],
+})
+```
+
+Define and apply a style:
+
+```tsx
+import { css } from 'zyzz'
+
+const button = css({ color: '#06c', padding: '1rem' })
+
+export function Button() {
+  return <button {...button()}>Continue</button>
+}
+```
+
+The Vite plugin transforms source modules and delivers CSS automatically. See [Next.js Setup](docs/introduction/next.md) or [CLI Setup](docs/introduction/cli.md) for other build paths.
 
 [Getting Started](docs/introduction/getting-started.md) · [Guides](docs/guides/README.md) · [Concepts](docs/concepts.md) · [API Reference](docs/api/README.md)
 
@@ -21,21 +55,15 @@ A type-safe styling library for agents. Familiar CSS, inferred design tokens, an
 - **Minimal.** Small, composable APIs keep configuration and dependencies optional.
 - **Compiled.** Rules compile ahead of time into compact output with readable class names on web.
 
-## Overview
-
-Define styles with `css`, call them, and spread the resulting props onto a component. The core has no built-in tokens; styles compile into CSS ahead of time.
-
-```tsx
-import { css } from 'zyzz'
-
-const button = css({ color: '#06c', padding: '1rem' })
-
-export function Button() {
-  return <button {...button()}>Continue</button>
-}
-```
-
 ## Features
+
+- [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
+- [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
+- [**Dark Mode**](#dark-mode): light/dark token pairs selected by CSS, without a preference listener.
+- [**Variants**](#variants): typed component choices, defaults, and compound rules.
+- [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
+- [**Composition**](#composition): explicit style overrides that retain bindings and variant attributes.
+- [**Static CSS**](#static-css): ahead-of-time output with readable classes and no runtime rule generation.
 
 ### Typed Styles
 

@@ -141,3 +141,7 @@ Benchmarks without timing samples are marked unavailable in reports and excluded
 ## Flex Layout and Overflow
 
 `Transform.bench.ts` includes 10/100 additional flex styles with token sizing, integer order, alignment, and overflow fallbacks. Timings cover the complete source pipeline; setup records CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli delivery under `bench/results/transform/flex-*.json`. Browser fixtures compare native flex layout and distinguish clipping from scrolling.
+
+## Borders and Outlines
+
+`Transform.bench.ts` includes 10/100 additional border styles with logical/physical conflicts, corners, outlines, token colors/radii, and important fallbacks. Timings cover the source pipeline; setup records CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli transfer in `bench/results/transform/borders-*.json`. Browser fixtures compare every added property with native CSS and verify repeated whole-border overrides.

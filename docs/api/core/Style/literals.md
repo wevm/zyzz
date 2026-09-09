@@ -24,14 +24,15 @@ The property surface is intentionally finite. No catch-all string index permits 
 | Spacing     | `padding`, `margin`, and their physical top/right/bottom/left and logical block/inline start/end longhands                                                                                                 |
 | Sizing      | `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, plus `inlineSize`, `blockSize`, and their `min`/`max` forms                                                                           |
 | Colors      | `color`, `backgroundColor`, `borderColor`                                                                                                                                                                  |
-| Borders     | `borderWidth`, `borderStyle`, `borderRadius`                                                                                                                                                               |
+| Borders     | `borderWidth`, `borderStyle`, `borderColor`, their physical/logical side forms, and physical/logical corner radii                                                                                          |
 | Typography  | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`                                                                                                                                           |
 | Positioning | `inset`, `insetBlock`, `insetInline`, their start/end longhands, and `top`, `right`, `bottom`, `left`                                                                                                      |
 | Writing     | `direction` (`ltr`, `rtl`), `writingMode` (`horizontal-tb`, `vertical-lr`, `vertical-rl`)                                                                                                                  |
+| Outlines    | `outlineColor`, `outlineWidth`, `outlineStyle`, `outlineOffset`                                                                                                                                            |
 | Overflow    | `overflow`, `overflowX`, `overflowY`                                                                                                                                                                       |
 | Other       | `opacity`                                                                                                                                                                                                  |
 
-- **Lengths:** finite absolute, font-relative, viewport-relative, and container-relative lengths, percentages, or numeric zero. Border width excludes percentages.
+- **Lengths:** finite absolute, font-relative, viewport-relative, and container-relative lengths, percentages, or numeric zero. Border and outline widths, and outline offsets, exclude percentages.
 - **Margins:** allow negative lengths. Margins, inset offsets, and width/height/inlineSize/blockSize also accept `auto`. Offsets accept negative lengths.
 - **Shorthands:** scalar values only; no multi-value strings yet.
 - **Units:** preserve spelling without implicit pixel conversion.
@@ -75,6 +76,28 @@ const panel = css({
 
 Container units can refer to containment established by ordinary CSS. Zyzz does not yet author containment declarations or container conditions. Browser support for newer units depends on the deployment target; ordered fallback declarations can retain an older unit. Native unit conversion remains unimplemented.
 
+## Borders and Outlines
+
+```ts
+zyzz.css({
+  borderStyle: 'solid',
+  borderWidth: '1px',
+  borderInlineStartColor: 'brand',
+  borderStartStartRadius: 'round',
+  outlineStyle: 'dashed',
+  outlineWidth: '2px',
+  outlineOffset: '-1px',
+})
+```
+
+[Border sides and corners](https://www.w3.org/TR/css-logical-1/#border-properties) retain authored order across physical and logical declarations. Color/style/width support all four physical sides, block/inline shorthands, and logical start/end sides.
+
+Radius supports all four physical and logical corners. Scalar shorthands apply one value to their sides; arrays remain fallbacks.
+
+`borderColor` tokens apply to every border color property before shared `color` tokens. `borderRadius` tokens apply to every corner radius. Outlines use shared `color` tokens. Widths accept nonnegative lengths or zero; radii additionally accept percentages. Outline offsets accept negative lengths. Named widths and combined border/outline strings remain deferred.
+
+Border styles include `dashed`, `dotted`, `double`, `groove`, `hidden`, `inset`, `none`, `outset`, `ridge`, and `solid`. [Outline styles](https://www.w3.org/TR/css-ui-4/#outline-props) accept `auto` instead of `hidden`. Rendering details remain browser-owned; native border/outline conversion is not implemented.
+
 ## Flex and Overflow
 
 ```ts
@@ -106,7 +129,7 @@ const panel = css({
 
 [Logical dimensions, spacing, and offsets](https://www.w3.org/TR/css-logical-1/) follow the element's writing mode and direction. Emission retains logical property names and authored order relative to physical properties. Spacing tokens work in every new length property, including explicit references and fallback arrays.
 
-Shorthands currently accept a single scalar, applied to both logical edges. Arrays remain ordered declaration fallbacks, not paired edge values. Minimum/maximum sizes retain the existing length-only subset; intrinsic sizing keywords and logical borders remain follow-ups. Native mapping is not implemented.
+Shorthands currently accept a single scalar, applied to both logical edges. Arrays remain ordered declaration fallbacks, not paired edge values. Minimum/maximum sizes retain the existing length-only subset; intrinsic sizing keywords remain follow-ups. Native mapping is not implemented.
 
 ## Fallbacks and Importance
 
@@ -159,7 +182,7 @@ const { classes, css, themes } = Css.compile({ styles })
 Compilation is pure. Sharing follows property overlap:
 
 - **Independent properties:** each forms its own domain.
-- **Overlapping properties:** padding, margin, inset, overflow, and gap group with their supported longhands. Logical sizes group with both physical axes of the corresponding size/minimum/maximum family when present.
+- **Overlapping properties:** padding, margin, inset, overflow, and gap group with their supported longhands. Logical sizes group with both physical axes of the corresponding size/minimum/maximum family when present. Border color, style, width, and radius each group their overlapping physical/logical declarations.
 - **Shared domains:** every participating style must have identical ordered declarations.
 
 Conflicting domains retain distinct rules, including repeated A/B/A overrides.

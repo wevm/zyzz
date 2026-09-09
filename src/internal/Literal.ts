@@ -27,15 +27,14 @@ export type Length = `${number}${(typeof lengthUnits)[number]}` | 0
 
 /** Finite property surface with no arbitrary string index signature. */
 export type Properties = {
-  readonly [key in keyof typeof rules]?: key extends 'borderWidth'
-    ? Exclude<Length, `${number}%`> | Global
-    : Value<(typeof rules)[key]>
+  readonly [key in keyof typeof rules]?: Value<(typeof rules)[key]>
 }
 type Rule =
   | {
       readonly auto: boolean
       readonly kind: 'length'
       readonly negative: boolean
+      readonly percentage?: boolean
     }
   | {
       readonly kind: 'color'
@@ -55,7 +54,11 @@ type Value<rule extends Rule> =
       auto: infer auto
       kind: 'length'
     }
-      ? (auto extends true ? 'auto' : never) | Length
+      ?
+          | (auto extends true ? 'auto' : never)
+          | (rule extends { percentage: false }
+              ? Exclude<Length, `${number}%`>
+              : Length)
       : rule extends {
             kind: 'number'
           }
@@ -69,7 +72,18 @@ type Value<rule extends Rule> =
   | Global
 const border = {
   kind: 'enum',
-  values: ['dashed', 'dotted', 'double', 'hidden', 'none', 'solid'],
+  values: [
+    'dashed',
+    'dotted',
+    'double',
+    'groove',
+    'hidden',
+    'inset',
+    'none',
+    'outset',
+    'ridge',
+    'solid',
+  ],
 } as const
 const color = { kind: 'color' } as const
 const globals = new Set<string>([
@@ -143,6 +157,7 @@ const overflow = {
   values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
 } as const
 const size = { auto: true, kind: 'length', negative: false } as const
+const stroke = { ...length, percentage: false } as const
 
 /** Single source of truth for the supported literal properties and domains. */
 export const rules = {
@@ -193,10 +208,48 @@ export const rules = {
   },
   backgroundColor: color,
   blockSize: size,
+  borderBlockColor: color,
+  borderBlockEndColor: color,
+  borderBlockEndStyle: border,
+  borderBlockEndWidth: stroke,
+  borderBlockStartColor: color,
+  borderBlockStartStyle: border,
+  borderBlockStartWidth: stroke,
+  borderBlockStyle: border,
+  borderBlockWidth: stroke,
+  borderBottomColor: color,
+  borderBottomLeftRadius: length,
+  borderBottomRightRadius: length,
+  borderBottomStyle: border,
+  borderBottomWidth: stroke,
   borderColor: color,
+  borderEndEndRadius: length,
+  borderEndStartRadius: length,
+  borderInlineColor: color,
+  borderInlineEndColor: color,
+  borderInlineEndStyle: border,
+  borderInlineEndWidth: stroke,
+  borderInlineStartColor: color,
+  borderInlineStartStyle: border,
+  borderInlineStartWidth: stroke,
+  borderInlineStyle: border,
+  borderInlineWidth: stroke,
+  borderLeftColor: color,
+  borderLeftStyle: border,
+  borderLeftWidth: stroke,
   borderRadius: length,
+  borderRightColor: color,
+  borderRightStyle: border,
+  borderRightWidth: stroke,
+  borderStartEndRadius: length,
+  borderStartStartRadius: length,
   borderStyle: border,
-  borderWidth: length,
+  borderTopColor: color,
+  borderTopLeftRadius: length,
+  borderTopRightRadius: length,
+  borderTopStyle: border,
+  borderTopWidth: stroke,
+  borderWidth: stroke,
   bottom: margin,
   boxSizing: { kind: 'enum', values: ['border-box', 'content-box'] },
   color,
@@ -279,6 +332,24 @@ export const rules = {
     max: Number.MAX_SAFE_INTEGER,
     min: Number.MIN_SAFE_INTEGER,
   },
+  outlineColor: color,
+  outlineOffset: { ...stroke, negative: true },
+  outlineStyle: {
+    kind: 'enum',
+    values: [
+      'auto',
+      'dashed',
+      'dotted',
+      'double',
+      'groove',
+      'inset',
+      'none',
+      'outset',
+      'ridge',
+      'solid',
+    ],
+  },
+  outlineWidth: stroke,
   overflow,
   overflowX: overflow,
   overflowY: overflow,
@@ -340,8 +411,8 @@ export function validate(
   const match = typeof value === 'string' ? lengthPattern.exec(value) : null
   const amount = match ? Number(match[1]) : NaN
   if (Number.isFinite(amount) && (rule.negative || amount >= 0)) {
-    // Percentages are not legal CSS border widths.
-    if (property !== 'borderWidth' || match?.[2] !== '%') return undefined
+    // Stroke widths and outline offsets do not accept percentages.
+    if (rule.percentage !== false || match?.[2] !== '%') return undefined
   }
   return `Expected ${rule.negative ? 'a' : 'a nonnegative'} literal length${rule.auto ? ', auto,' : ''} or numeric zero.`
 }

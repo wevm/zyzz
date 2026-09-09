@@ -92,28 +92,36 @@ export function compile<
           declaration: message
             ? ''
             : `${property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}${important ? '!important' : ''};`,
-          domain: property.startsWith('margin')
-            ? 'margin'
-            : property.startsWith('padding')
-              ? 'padding'
-              : property === 'overflow' ||
-                  property === 'overflowX' ||
-                  property === 'overflowY'
-                ? 'overflow'
-                : ['columnGap', 'gap', 'rowGap'].includes(property)
-                  ? 'gap'
-                  : /^(inset|top$|right$|bottom$|left$)/.test(property)
-                    ? 'inset'
-                    : logicalSizing &&
-                        /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(
-                          property,
-                        )
-                      ? property.startsWith('min')
-                        ? 'min-size'
-                        : property.startsWith('max')
-                          ? 'max-size'
-                          : 'size'
-                      : property,
+          domain: property.startsWith('border')
+            ? property.endsWith('Color')
+              ? 'borderColor'
+              : property.endsWith('Style')
+                ? 'borderStyle'
+                : property.endsWith('Width')
+                  ? 'borderWidth'
+                  : 'borderRadius'
+            : property.startsWith('margin')
+              ? 'margin'
+              : property.startsWith('padding')
+                ? 'padding'
+                : property === 'overflow' ||
+                    property === 'overflowX' ||
+                    property === 'overflowY'
+                  ? 'overflow'
+                  : ['columnGap', 'gap', 'rowGap'].includes(property)
+                    ? 'gap'
+                    : /^(inset|top$|right$|bottom$|left$)/.test(property)
+                      ? 'inset'
+                      : logicalSizing &&
+                          /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(
+                            property,
+                          )
+                        ? property.startsWith('min')
+                          ? 'min-size'
+                          : property.startsWith('max')
+                            ? 'max-size'
+                            : 'size'
+                        : property,
           message,
         }
         values.set(value, entry)

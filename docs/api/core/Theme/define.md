@@ -46,7 +46,7 @@ Theme.define({ backgroundColor: { brand: '#06c' } })
 - Type: `Theme.Tokens["borderColor"]`
 - Default: `undefined`
 
-Border color palette. Leaves use the supported literal grammar; nested palettes infer dotted paths. Color pairs require both schemes.
+Border color palette for whole borders and physical/logical sides, preferred over shared colors. Leaves use the supported literal grammar; nested palettes infer dotted paths. Color pairs require both schemes.
 
 ```ts
 Theme.define({ borderColor: { subtle: '#eee' } })
@@ -57,7 +57,7 @@ Theme.define({ borderColor: { subtle: '#eee' } })
 - Type: `Theme.Tokens["borderRadius"]`
 - Default: `undefined`
 
-Border radius palette. Leaves are nonnegative literal lengths or zero; nested palettes infer dotted paths. Light/dark pairs are unsupported.
+Border radius palette for whole borders and physical/logical corners. Leaves are nonnegative literal lengths, percentages, or zero; nested palettes infer dotted paths. Light/dark pairs are unsupported.
 
 ```ts
 Theme.define({ borderRadius: { rounded: '0.5rem' } })
@@ -68,7 +68,7 @@ Theme.define({ borderRadius: { rounded: '0.5rem' } })
 - Type: `Theme.Tokens["color"]`
 - Default: `undefined`
 
-Shared color palette. Leaves use the supported literal grammar; nested palettes infer dotted paths. Color pairs require both schemes.
+Shared color palette for text, backgrounds, borders, and outlines. Leaves use the supported literal grammar; nested palettes infer dotted paths. Color pairs require both schemes.
 
 ```ts
 Theme.define({ color: { text: { dark: '#eee', light: '#111' } } })

@@ -8,8 +8,9 @@ import * as Path from 'node:path'
 import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
-import * as Flex from '../../test/fixtures/Flex.js'
+import * as Borders from '../../test/fixtures/Borders.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
+import * as Flex from '../../test/fixtures/Flex.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 import * as Compilation from '../../bench/Compilation.js'
@@ -116,16 +117,22 @@ for (const count of [10, 100]) {
   })
 }
 
-for (const kind of ['flex', 'logical'] as const)
+for (const kind of ['borders', 'flex', 'logical'] as const)
   for (const count of [10, 100]) {
     const source =
-      (kind === 'logical' ? Logical.source : Flex.source) +
+      (kind === 'logical'
+        ? Logical.source
+        : kind === 'borders'
+          ? Borders.source
+          : Flex.source) +
       Array.from({ length: count }, (_, index) =>
-        kind === 'logical'
-          ? `export const box${index} = css({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`
-          : `export const box${index} = css({flexBasis:'${index}px',alignSelf:'center',order:${index},overflow:['hidden','clip!'],overflowX:'auto'})();`,
+        kind === 'borders'
+          ? `export const box${index} = css({borderStyle:'solid',borderWidth:'2px',borderInlineStartWidth:'${index}px',borderStartStartRadius:'8px',outlineWidth:'1px'})();`
+          : kind === 'logical'
+            ? `export const box${index} = css({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`
+            : `export const box${index} = css({flexBasis:'${index}px',alignSelf:'center',order:${index},overflow:['hidden','clip!'],overflowX:'auto'})();`,
       ).join('\n')
-    describe(`${kind === 'logical' ? 'logical box' : 'flex layout'} transform / ${count} additional styles`, () => {
+    describe(`${kind === 'logical' ? 'logical box' : kind === 'borders' ? 'border' : 'flex layout'} transform / ${count} additional styles`, () => {
       bench(
         'extract + emit + rewrite + maps',
         () => {

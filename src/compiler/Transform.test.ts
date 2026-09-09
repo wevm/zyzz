@@ -180,13 +180,14 @@ describe('compile', () => {
       )
       const booleans = Conformance.properties().map(
         (property) =>
-          `css({${JSON.stringify(property)}: 'InHeRiT!ImPoRtAnT'});\n// @ts-expect-error Booleans are outside every CSS scalar domain.\ncss({${JSON.stringify(property)}: true});`,
+          `css({${JSON.stringify(property)}: ' InHeRiT ! ImPoRtAnT '});\n// @ts-expect-error Booleans are outside every CSS scalar domain.\ncss({${JSON.stringify(property)}: true});`,
       )
       const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { css, type Style } from 'zyzz';\ndescribe('css', () => {\n  test('validates generated conformance probes', () => {\n${[...[...groups].map(([values, group]) => `const ${group} = ${values} as const;`), ...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
       await Fs.writeFile(Path.join(directory, 'consumer.test-d.ts'), source)
       await Fs.writeFile(
         Path.join(directory, 'tsconfig.json'),
         JSON.stringify({
+          exclude: [],
           extends: '../tsconfig.json',
           include: ['./consumer.test-d.ts'],
         }),

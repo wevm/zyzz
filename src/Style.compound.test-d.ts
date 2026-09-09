@@ -38,9 +38,9 @@ describe('css', () => {
 
   test('accepts case-insensitive literals while keeping tokens case-sensitive', () => {
     css({
-      color: 'ReD',
+      color: '  ReD\t',
       display: 'FlEx',
-      padding: '2PX',
+      padding: ' 2PX\n! ImPoRtAnT  ',
       transform: 'RoTaTe(45DEG)',
     })
     Style.define({
@@ -61,12 +61,34 @@ describe('css', () => {
     css({ color: '#ABG' })
     // @ts-expect-error Unit case does not bypass nonnegative dimensions.
     css({ padding: '-1PX' })
+    // @ts-expect-error Surrounding whitespace does not bypass nonnegative dimensions.
+    css({ padding: ' -1PX ! important  ' })
     // @ts-expect-error Keyword case does not bypass integer grid spans.
     css({ gridColumnStart: 'SPAN 1.5' })
     // @ts-expect-error Named theme tokens retain their original case.
     theme.css({ color: 'brand' })
     // @ts-expect-error Case-insensitive literals do not change token domains.
     theme.css({ padding: 'Brand' })
+  })
+
+  test('preserves CSS numeric spelling and range constraints', () => {
+    css({
+      padding: ['01px', '+.5px', '1e2px', '-0px'],
+      order: '+01!',
+      opacity: '1e-1!',
+    })
+    // @ts-expect-error Leading zeroes do not bypass a nonnegative range.
+    css({ padding: '-01px' })
+    // @ts-expect-error CSS fractional syntax requires a digit after the dot.
+    css({ padding: '1.px' })
+    // @ts-expect-error JavaScript radix spellings do not become CSS dimensions with a sign.
+    css({ padding: '+0x10px' })
+    // @ts-expect-error Exponent number tokens are not integer tokens.
+    css({ order: '1e0!' })
+    // @ts-expect-error Positive integer properties cannot use a zero mantissa.
+    css({ columnCount: '+00!' })
+    // @ts-expect-error A trailing decimal point does not form a complete CSS number.
+    css({ opacity: '1.!' })
   })
 
   test('rejects wrong compound domains through fallbacks and importance', () => {

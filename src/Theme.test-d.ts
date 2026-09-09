@@ -184,6 +184,7 @@ describe('css', () => {
     // @ts-expect-error Inferred dimensions still reject hexadecimal numeric prefixes.
     themed({ padding: '0x10px' })
     // @ts-expect-error Inferred dimensions still reject non-CSS whitespace within numeric values.
+    themed({ padding: '2 px' })
     themed({ padding: ' 2px' })
     // @ts-expect-error Unknown properties remain rejected alongside known properties.
     themed({ color: 'brand', colour: 'red' })

@@ -55,3 +55,5 @@ The new compound fixture records positive declarations independently of the emit
 The grammar oracle supplements the missing `param()` production from CSS Linked Parameters. It corrects the pinned circle production's use of radial-gradient sizing and normalizes SVG 2's path-length range notation. These exceptions are test-only; upstream fingerprints remain checked.
 
 Compositional probes sample upstream grammar alternatives, repetition counts, and component orders with bounded traversal. They complement keyword and scalar probes; they are not an exhaustive enumeration of recursive CSS text. The test oracle also applies the CSS Writing Modes requirement that explicit `text-combine-upright: digits` counts be between two and four.
+
+Authoring helpers accept mixed-case CSS literals and surrounding CSS whitespace while retaining case-sensitive token names. Numeric refinements distinguish CSS decimal and integer tokens from JavaScript radix spellings, preserve signed zero, and retain nonnegative and positive constraints. These refinements exist only in TypeScript.

@@ -6,6 +6,7 @@ import type * as Compound from './Compound.js'
 import type * as Corner from './Corner.js'
 import type * as Geometry from './Geometry.js'
 import type * as Identifier from './Identifier.js'
+import type * as Numeric from './Numeric.js'
 import type * as Tuple from './Tuple.js'
 
 /** Refines inferred dimension strings where TypeScript's number template is broader than CSS. */
@@ -15,13 +16,43 @@ export type Checked<value> = value extends `#${infer hex}`
     : Hex<hex> extends true
       ? value
       : never
-  : value extends
-        | `${'0x' | '0X' | '0b' | '0B' | '0o' | '0O'}${string}`
-        | `${string}${' ' | '\n' | '\r' | '\t' | '\f'}${string}`
-    ? value extends Fraction | Length | Time
-      ? never
-      : value
+  : value extends string
+    ? BroadDimension<value> extends true
+      ? value
+      : value extends `${number}${NumericUnit}` | '0'
+        ? [Numeric.Parse<value>] extends [never]
+          ? never
+          : Numeric.Parse<value> extends readonly [infer unit, boolean]
+            ? unit extends NumericUnit | ''
+              ? value
+              : never
+            : never
+        : value
     : value
+
+// Annotated dimension domains remain usable without pretending their runtime values are known.
+type BroadDimension<value extends string> =
+  value extends `${number}${infer unit}`
+    ? `${number}${unit}` extends value
+      ? true
+      : false
+    : false
+
+type NumericUnit =
+  | Unit
+  | 'fr'
+  | 'ms'
+  | 's'
+  | 'deg'
+  | 'grad'
+  | 'rad'
+  | 'turn'
+  | 'dpi'
+  | 'dpcm'
+  | 'dppx'
+  | 'x'
+  | 'hz'
+  | 'khz'
 
 type Hex<
   value extends string,
@@ -818,7 +849,10 @@ export function isLiteral(
   const rule: Rule | undefined = rules[property as keyof typeof rules]
   if (!rule) return false
   if (typeof value === 'string') {
-    const folded = value.toLowerCase()
+    const folded = value
+      .replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
+      .toLowerCase()
+    if (globals.has(folded)) return true
     if (
       rule.kind === 'color' &&
       (colorKeywordSet.has(folded) ||

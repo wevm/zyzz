@@ -109,6 +109,8 @@ export const rejected = [
   { property: 'fill', value: 'url(#gradient)' },
   { property: 'fillRule', value: 'winding' },
   { property: 'floodColor', value: 'none' },
+  { property: 'fontStretch', value: '120%' },
+  { property: 'fontVariantNumeric', value: 'tabular-nums slashed-zero' },
   { property: 'letterSpacing', value: '10%' },
   { property: 'margin', value: '1px 2px' },
   { property: 'padding', value: '0x10px' },
@@ -118,5 +120,7 @@ export const rejected = [
   { property: 'textDecorationLine', value: 'none underline' },
   { property: 'textDecorationLine', value: 'underline underline' },
   { property: 'textDecorationStyle', value: 'groove' },
+  { property: 'textEmphasisPosition', value: 'over under' },
+  { property: 'textEmphasisStyle', value: 'open filled' },
   { property: 'textUnderlineOffset', value: 'from-font' },
 ] as const

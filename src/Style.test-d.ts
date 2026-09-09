@@ -642,3 +642,39 @@ describe('SVG paint properties', () => {
     css({ floodColor: 'none' })
   })
 })
+
+describe('font and text controls', () => {
+  test('supports bounded typography and emphasis tokens', () => {
+    css({
+      fontKerning: 'normal',
+      fontOpticalSizing: 'auto',
+      fontStretch: 'semi-expanded',
+      fontSynthesisSmallCaps: 'none',
+      fontSynthesisStyle: 'auto',
+      fontSynthesisWeight: 'none',
+      fontVariantCaps: 'all-small-caps',
+      fontVariantEastAsian: 'jis04',
+      fontVariantLigatures: 'no-common-ligatures',
+      fontVariantNumeric: 'tabular-nums',
+      fontVariantPosition: 'super',
+      rubyAlign: 'space-around',
+      rubyPosition: 'alternate over',
+      textCombineUpright: 'all',
+      textEmphasisColor: '#06c',
+      textEmphasisPosition: 'over right',
+      textEmphasisStyle: 'open sesame',
+      textJustify: 'inter-character',
+      textOrientation: 'upright',
+    })
+    const zyzz = Config.create({ theme: { color: { accent: '#06c' } } })
+    zyzz.css({ textEmphasisColor: 'accent' })
+    // @ts-expect-error Combined font variants remain deferred.
+    css({ fontVariantNumeric: 'tabular-nums slashed-zero' })
+    // @ts-expect-error Custom emphasis strings remain deferred.
+    css({ textEmphasisStyle: '"*"' })
+    // @ts-expect-error Font stretch percentages remain deferred.
+    css({ fontStretch: '120%' })
+    // @ts-expect-error Conflicting emphasis fill keywords are invalid.
+    css({ textEmphasisStyle: 'open filled' })
+  })
+})

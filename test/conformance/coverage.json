@@ -1771,7 +1771,7 @@
       },
       "font-kerning": {
         "grammar": "d5b839d1abafadfd1748207cd076edfefbb8636dc90c088b7b35fcff38421c8e",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-language-override": {
         "grammar": "06d2943f08e6c63f550dd093e45f10f63c0f653c5144aaf5e7e5cad63e549b72",
@@ -1779,7 +1779,7 @@
       },
       "font-optical-sizing": {
         "grammar": "15df79a5d9f23406eb695563f9afccb9b6143f84802f521254ad5450ade0fbc5",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-palette": {
         "grammar": "6dc0371e1a7bd3afe8de675053fffca3bd239d830fd65409ce37fb96944a5003",
@@ -1799,7 +1799,7 @@
       },
       "font-stretch": {
         "grammar": "f5f6c2b1041d6dd5eeaac245970007754a58af863a5a9277071f62766b905a42",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-style": {
         "grammar": "2cdf0a1ac99174d0c4660632adddba811b7fe8f9574211b666c3d697b53579b3",
@@ -1815,15 +1815,15 @@
       },
       "font-synthesis-small-caps": {
         "grammar": "d702841b92615f54bbd55a7451720c6badab7ea1e39a91372511b98f2c83a22d",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-synthesis-style": {
         "grammar": "d706c1cfd72085451b165f1e5ff87ad6b64a07b6cdc8d43a6582ca524dae0a8b",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-synthesis-weight": {
         "grammar": "ee50261d1d7b2bf4c865936484c69290c31f965199dd6af1c0d88f65000feb15",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-variant": {
         "grammar": "4cc32eff260d069faafcc4ced675da2eacca3ec87308593012d3174798402642",
@@ -1835,11 +1835,11 @@
       },
       "font-variant-caps": {
         "grammar": "f05b88717cd625168af1b7f8bf83057d1ffdf29a4d41cdb79173f0a5d9d78b5e",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-variant-east-asian": {
         "grammar": "3a761ceadbf5bb3580248e7dfa64a4ce4f28c5518024f6731b0099278e2cf26b",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-variant-emoji": {
         "grammar": "223bca6b154c3f9bd1ad9f359969bdf78fc10b92ed526c2a65dca82f089656a2",
@@ -1847,15 +1847,15 @@
       },
       "font-variant-ligatures": {
         "grammar": "ff8835d4a7c342d2cac2506b2915c675598ba4de99d3e7fcec5f0b85fb8885de",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-variant-numeric": {
         "grammar": "179075113913e561e7bd996ded20ea8fc77c3e1290af94342c739b366790c109",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-variant-position": {
         "grammar": "23bfa03c15340972b420898ded2c18d7b196748f7d4d2d4a53c1d2ff5b257956",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-variation-settings": {
         "grammar": "e171480820cd6740fb582649a464cccb72b24a1bab286941bf8d6f33477684f7",
@@ -2591,7 +2591,7 @@
       },
       "ruby-align": {
         "grammar": "ec5d3f102a09652028c5f182182181c9d3a0ecd50e462aee6bda9615b9c21fee",
-        "status": "deferred"
+        "status": "partial"
       },
       "ruby-merge": {
         "grammar": "3eee0561932743962beda049df9a17e9afc980882c75ba41b8adb5afa67eaab9",
@@ -2603,7 +2603,7 @@
       },
       "ruby-position": {
         "grammar": "7847c1f1d2f10cb08da868bf865a629d777b9a390df2eb1b24ebfdab78540b18",
-        "status": "deferred"
+        "status": "partial"
       },
       "rx": {
         "grammar": "91148350d076d2f1845ada5dbf42523d40b8527b6bc9ae61a44d914bd81f8c8e",
@@ -2883,7 +2883,7 @@
       },
       "text-combine-upright": {
         "grammar": "afa83850c762f348f884244b518f6e18209600f1a90986b16812525c1cf1b2bb",
-        "status": "deferred"
+        "status": "partial"
       },
       "text-decoration": {
         "grammar": "cfa19883bde0966d2fd59f58fb4b29f832cee8110cf1cabd406dfb319d609981",
@@ -2923,15 +2923,15 @@
       },
       "text-emphasis-color": {
         "grammar": "6ff1a3175f7b06bbede66692ce54955bbf02895efb2f2ff47e315859c5220f2b",
-        "status": "deferred"
+        "status": "partial"
       },
       "text-emphasis-position": {
         "grammar": "3b482998d8b721ea04d55745d4ed2bcb9bd4543a377ba522645979bd789efad6",
-        "status": "deferred"
+        "status": "partial"
       },
       "text-emphasis-style": {
         "grammar": "044da41be22a9874b7f9c417e835c2857f47001c04151fb008ac131fde5aa38f",
-        "status": "deferred"
+        "status": "partial"
       },
       "text-fit": {
         "grammar": "5e96a81c45ed1c8b74be907a4f67ea0cb00875212848c703ea62ec883d1a1f22",
@@ -2943,11 +2943,11 @@
       },
       "text-justify": {
         "grammar": "f9eb59b2ecb81fc96359a53c5c7269cb13e66c451c24d8e8e70efb61bbaf4220",
-        "status": "deferred"
+        "status": "partial"
       },
       "text-orientation": {
         "grammar": "0839774ff55f1b5ba6e791facf9b5f0b8d1e087cf775e7ee7543dba1bfe3e2e5",
-        "status": "deferred"
+        "status": "partial"
       },
       "text-overflow": {
         "grammar": "f84ac4c8d13724c61d0fef9f792a96883bf25fec27039848d0e78f2e27490846",

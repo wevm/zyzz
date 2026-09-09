@@ -435,3 +435,5 @@ Continue opening coherent property/value PRs against the pinned MDN inventory. E
 - Backgrounds and color controls: 14 additional scalar properties, color-token/auto disambiguation, independent grammar/type probes, and browser computed-style comparisons. Images, gradients, lists, and paired values remain deferred.
 
 - SVG paint: 19 additional properties with shared color tokens, bounded scalar domains, source maps, independent grammar/type probes, and evenodd path geometry in Chromium. Broad paint syntax and filter rendering remain deferred.
+
+- Font controls: 19 additional typography, emphasis, and ruby properties with bounded keyword combinations, independent grammar/type probes, and native text layout fixtures. Font-dependent glyph behavior and broader values remain deferred.

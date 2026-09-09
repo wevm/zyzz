@@ -3,6 +3,7 @@
  * @module
  */
 import * as Grid from './Grid.js'
+import * as Motion from './Motion.js'
 
 /** Refines inferred dimension strings where TypeScript's number template is broader than CSS. */
 export type Checked<value> = value extends Fraction | Length | Time
@@ -48,7 +49,7 @@ export type Properties = {
 /** Finite seconds and milliseconds; CSS times always require units. */
 export type Time = `${number}${'ms' | 's'}`
 
-type Rule =
+type Rule = { readonly list?: true } & (
   | {
       readonly auto: boolean
       readonly fraction?: boolean
@@ -63,6 +64,7 @@ type Rule =
       readonly kind: 'color'
     }
   | {
+      readonly easing?: true
       readonly kind: 'enum'
       readonly values: readonly string[]
     }
@@ -80,6 +82,7 @@ type Rule =
       readonly kind: 'time'
       readonly negative: boolean
     }
+)
 type LengthValue<rule extends Rule> =
   | (rule extends { auto: true } ? 'auto' : never)
   | (rule extends { fraction: true } ? Fraction : never)
@@ -89,6 +92,12 @@ type LengthValue<rule extends Rule> =
       : Length)
 
 type Value<rule extends Rule> =
+  | Scalar<rule>
+  | (rule extends { list: true }
+      ? `${Extract<Exclude<Scalar<rule>, Global>, string | number>},${string}`
+      : never)
+
+type Scalar<rule extends Rule> =
   | (rule extends { kind: 'length' }
       ?
           | LengthValue<rule>
@@ -107,7 +116,14 @@ type Value<rule extends Rule> =
               kind: 'enum'
               values: readonly (infer value)[]
             }
-          ? value
+          ?
+              | value
+              | (rule extends { easing: true }
+                  ?
+                      | `cubic-bezier(${string})`
+                      | `steps(${string})`
+                      | `linear(${string})`
+                  : never)
           : rule extends { kind: 'grid-tracks' }
             ?
                 | GridTracks
@@ -504,25 +520,39 @@ export const rules = {
       'stretch',
     ],
   },
-  animationDelay: { kind: 'time', negative: true },
+  animationDelay: { kind: 'time', list: true, negative: true },
   animationDirection: {
     kind: 'enum',
+    list: true,
     values: ['alternate', 'alternate-reverse', 'normal', 'reverse'],
   },
-  animationDuration: { keywords: ['auto'], kind: 'time', negative: false },
+  animationDuration: {
+    keywords: ['auto'],
+    kind: 'time',
+    list: true,
+    negative: false,
+  },
   animationFillMode: {
     kind: 'enum',
+    list: true,
     values: ['backwards', 'both', 'forwards', 'none'],
   },
   animationIterationCount: {
     keywords: ['infinite'],
     kind: 'number',
+    list: true,
     max: Infinity,
     min: 0,
   },
-  animationPlayState: { kind: 'enum', values: ['paused', 'running'] },
-  animationTimingFunction: {
+  animationPlayState: {
     kind: 'enum',
+    list: true,
+    values: ['paused', 'running'],
+  },
+  animationTimingFunction: {
+    easing: true,
+    kind: 'enum',
+    list: true,
     values: [
       'ease',
       'ease-in',
@@ -1474,11 +1504,17 @@ export const rules = {
     negative: true,
   },
   transformStyle: { kind: 'enum', values: ['flat', 'preserve-3d'] },
-  transitionBehavior: { kind: 'enum', values: ['allow-discrete', 'normal'] },
-  transitionDelay: { kind: 'time', negative: true },
-  transitionDuration: { kind: 'time', negative: false },
-  transitionTimingFunction: {
+  transitionBehavior: {
     kind: 'enum',
+    list: true,
+    values: ['allow-discrete', 'normal'],
+  },
+  transitionDelay: { kind: 'time', list: true, negative: true },
+  transitionDuration: { kind: 'time', list: true, negative: false },
+  transitionTimingFunction: {
+    easing: true,
+    kind: 'enum',
+    list: true,
     values: [
       'ease',
       'ease-in',
@@ -1531,8 +1567,26 @@ export function validate(
 ): string | undefined {
   const rule: Rule = rules[property]
   if (typeof value === 'string' && globals.has(value)) return undefined
+  if (rule.list && typeof value === 'string' && value.includes(',')) {
+    const parts = Motion.list(value)
+    if (!parts) return 'Expected a nonempty comma-separated motion list.'
+    if (parts.length > 1) {
+      for (const part of parts) {
+        if (globals.has(part)) return 'CSS-wide keywords must stand alone.'
+        const component =
+          rule.kind === 'number' &&
+          /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(part)
+            ? Number(part)
+            : part
+        const error = validate(property, component)
+        if (error) return error
+      }
+      return undefined
+    }
+  }
   if (rule.kind === 'enum')
-    return typeof value === 'string' && rule.values.includes(value)
+    return typeof value === 'string' &&
+      (rule.values.includes(value) || (rule.easing && Motion.easing(value)))
       ? undefined
       : `Expected one of: ${rule.values.join(', ')} (or a CSS-wide keyword).`
   if (rule.kind === 'color')

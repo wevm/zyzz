@@ -120,9 +120,9 @@ Font variants currently accept individual keywords. Combined variants, stretch p
 
 ## Motion Controls
 
-Eleven animation and transition properties support scalar durations/delays, easing keywords, iteration counts, direction, fill mode, play state, and discrete transition behavior. Times use finite decimal or exponent values with s/ms units, including zero; negative delays are accepted, while negative durations are rejected. Animation duration also accepts auto. Iteration counts accept nonnegative numbers or infinite.
+Eleven animation and transition properties support comma-separated durations/delays, easing functions, iteration counts, direction, fill mode, play state, and discrete transition behavior. Times use finite decimal or exponent values with s/ms units, including zero; negative delays are accepted, while negative durations are rejected. Animation duration also accepts auto. Iteration counts accept nonnegative numbers or infinite.
 
-Comma-separated lists, easing functions, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
+Literal cubic-bezier(), steps(), and linear() curves validate argument counts and numeric constraints. Math/substitution functions, comments, escaped spellings, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
 
 ## Grid Tracks
 

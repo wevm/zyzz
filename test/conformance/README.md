@@ -45,3 +45,5 @@ The dedicated **CSS Property Conformance (100%)** CI job publishes a summary and
 The status inventory is a reviewed completion ledger, not a browser certification or proof derived from test counts. A property may be promoted only after its grammar, public typing, emitted declarations, and browser behavior have been reviewed against independent evidence. Relabeling entries does not implement them. The existing grammar/type/browser integration jobs must also pass.
 
 Current completion is 0/670 (0%): 303 partial and 367 deferred. This intentionally leaves the consolidated implementation PR blocked. All remaining implementation and evidence work stays in that PR until the full gate passes.
+
+Motion lists preserve comma grouping inside `cubic-bezier()`, `steps()`, and `linear()`. Independent grammar probes, consumer types, and browser comparisons cover numeric restrictions, list ordering, importance, and paused animation output. Substitution, comments, and escaped spellings remain incomplete. Easing semantics follow [CSS Easing Functions](https://www.w3.org/TR/css-easing-2/).

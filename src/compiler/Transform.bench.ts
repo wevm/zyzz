@@ -26,6 +26,7 @@ import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 import * as Masks from '../../test/fixtures/Masks.js'
 import * as Motion from '../../test/fixtures/Motion.js'
+import * as MotionLists from '../../test/fixtures/MotionLists.js'
 import * as Reading from '../../test/fixtures/Reading.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
@@ -265,6 +266,12 @@ const workloads = {
       `export const mask${index} = css({maskPosition:'${index}px',maskSize:'50%',maskRepeat:'no-repeat',maskMode:'alpha',transformOrigin:'center'})();`,
     source: Masks.source,
     title: 'mask',
+  },
+  motionLists: {
+    declaration: (index: number) =>
+      `export const motionList${index} = css({transitionDuration:'${index}ms, 1s',transitionTimingFunction:'steps(4, end), cubic-bezier(0, -1, 1, 2)'})();`,
+    source: MotionLists.source,
+    title: 'motion list',
   },
   motion: {
     declaration: (index: number) =>

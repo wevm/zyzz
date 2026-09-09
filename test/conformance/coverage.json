@@ -173,7 +173,7 @@
       },
       "cubic-bezier()": {
         "grammar": "23eaaf951ff72b87ad1732d5e784fa80e7b9022ec3876ff2b9754d0f2d65d403",
-        "status": "deferred"
+        "status": "partial"
       },
       "drop-shadow()": {
         "grammar": "bbf477d6b981eba964de269cef166daf98ca45b91b760a829a0fbae9a3fb3d52",
@@ -261,7 +261,7 @@
       },
       "linear()": {
         "grammar": "59d2d0688757db37e5db6e5364a856f72aaf6cf2d0a984138e80bef30ae65f19",
-        "status": "deferred"
+        "status": "partial"
       },
       "linear-gradient()": {
         "grammar": "ae950ce2776ce88e94964c678028783e563725498df535c32cb4dd492c1f8f97",
@@ -453,7 +453,7 @@
       },
       "steps()": {
         "grammar": "d78017956bf2bdab6f279d20ff2be036a00566d10132b4a8e1667fb9e1c94e2e",
-        "status": "deferred"
+        "status": "partial"
       },
       "symbols()": {
         "grammar": "020a4ba2dd1cb28696bc71db668cd0ad76ee2aaeb3543a4990bdfc4717f51fb4",
@@ -4147,11 +4147,11 @@
       },
       "cubic-bezier()": {
         "grammar": "c9c1956699b4067d1dc895e5f931be96c899450bf9bf129e796c3b5292bcfd5a",
-        "status": "deferred"
+        "status": "partial"
       },
       "cubic-bezier-easing-function": {
         "grammar": "7d72d8736ec6abd49bb32483c33cac9449e980f85dceca8c8294143326c6e687",
-        "status": "deferred"
+        "status": "partial"
       },
       "cursor-predefined": {
         "grammar": "0aaa8384ac221f2796dc35a7cb3e79462f0733de04b0cb8ee33e8e70fc1a8157",
@@ -4215,7 +4215,7 @@
       },
       "easing-function": {
         "grammar": "4137bca0e9b6f0164e16181cb0acff6b3877abdbc1c1075e03cc900e39389b45",
-        "status": "deferred"
+        "status": "partial"
       },
       "east-asian-variant-values": {
         "grammar": "dea70621cacdffcc76f757c9bfcac6aceaa4f1ec9abc90019fa8ca5e93660bb9",
@@ -4499,7 +4499,7 @@
       },
       "linear()": {
         "grammar": "dd462df66ff4c13642bd0d3b8537199301d53a4c1d109a7ef5b89815b55b328c",
-        "status": "deferred"
+        "status": "partial"
       },
       "linear-color-hint": {
         "grammar": "cd2cdc4fbf70280b613808caa8c2dd794bcb9c287659546ad8dc21f8f48d3c4a",
@@ -4511,7 +4511,7 @@
       },
       "linear-easing-function": {
         "grammar": "d14564f26a99803e41a1eb3abd1d20a6e48bf07e16fa101cab3ae77e0c91617b",
-        "status": "deferred"
+        "status": "partial"
       },
       "linear-gradient()": {
         "grammar": "294f5701508b21212d132ac09be144e1e1ba571cbeb9081107e22c95acfcd6c5",
@@ -5083,7 +5083,7 @@
       },
       "step-easing-function": {
         "grammar": "a9ac65bbea10cf8f08dac3090dffc0a3723add478d4d8d333e25812170b17e29",
-        "status": "deferred"
+        "status": "partial"
       },
       "step-position": {
         "grammar": "3d00c386a8e4bafcb5f754083edfb7bea07ef76a8b8dfe1d3ff2252d953ba10a",
@@ -5091,7 +5091,7 @@
       },
       "steps()": {
         "grammar": "13da83d1c53b0b2fc88f7fc7a102ee0eb6054c6f1e266de407a15bc83c531b97",
-        "status": "deferred"
+        "status": "partial"
       },
       "style-feature": {
         "grammar": "cb223a11082927ee25582a7d217bb88e5f709260950ae9b7165ce00f998b11b6",

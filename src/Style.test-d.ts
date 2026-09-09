@@ -763,7 +763,6 @@ describe('css', () => {
     css({ transitionDelay: '2px' })
     // @ts-expect-error Nondecimal times are not CSS dimensions.
     css({ animationDelay: '0x10s' })
-    // @ts-expect-error Multiple transitions require list support.
     css({ transitionDuration: '1s, 2s' })
     // @ts-expect-error Transition duration has no auto keyword.
     css({ transitionDuration: 'auto' })
@@ -975,5 +974,28 @@ describe('css', () => {
     css({ paddingLeft: '1px 2px' })
     // @ts-expect-error Auto is not a padding item.
     css({ padding: 'auto 2px' })
+  })
+})
+
+describe('css', () => {
+  test('supports motion lists and structured easing functions', () => {
+    css({
+      animationDelay: '-1s, 0s',
+      animationDirection: 'alternate, reverse',
+      animationDuration: 'auto, 1s',
+      animationFillMode: 'both, forwards',
+      animationIterationCount: '2.5, infinite',
+      animationPlayState: 'running, paused',
+      animationTimingFunction: 'cubic-bezier(0, -1, 1, 2), steps(2, jump-none)',
+      transitionBehavior: 'normal, allow-discrete',
+      transitionDuration: ['1s, 2s', '250ms, 500ms!'],
+      transitionTimingFunction: 'linear(0, .5 25% 75%, 1)',
+    })
+    // @ts-expect-error Unknown easing functions are outside the structural grammar.
+    css({ transitionTimingFunction: 'spring(1)' })
+    // @ts-expect-error A duration list must start with a time.
+    css({ transitionDuration: '20px, 1s' })
+    // @ts-expect-error A CSS-wide keyword cannot start a component list.
+    css({ animationDirection: 'inherit, normal' })
   })
 })

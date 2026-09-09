@@ -440,9 +440,9 @@ Font variants currently accept individual keywords. Combined variants, stretch p
 
 ## Motion Controls
 
-Eleven animation and transition properties support scalar durations/delays, easing keywords, iteration counts, direction, fill mode, play state, and discrete transition behavior. Times use finite decimal or exponent values with s/ms units, including zero; negative delays are accepted, while negative durations are rejected. Animation duration also accepts auto. Iteration counts accept nonnegative numbers or infinite.
+Eleven animation and transition properties support comma-separated durations/delays, easing functions, iteration counts, direction, fill mode, play state, and discrete transition behavior. Times use finite decimal or exponent values with s/ms units, including zero; negative delays are accepted, while negative durations are rejected. Animation duration also accepts auto. Iteration counts accept nonnegative numbers or infinite.
 
-Comma-separated lists, easing functions, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
+Literal cubic-bezier(), steps(), and linear() curves validate argument counts and numeric constraints. Math/substitution functions, comments, escaped spellings, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
 
 ## Grid Tracks
 
@@ -483,3 +483,15 @@ Independent MDN grammar probes and native responsive-grid fixtures cover these a
 ### Box Value Lists
 
 Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthands accept one to four space-separated scalar components. Their logical block/inline shorthands and gap accept pairs. Each component retains its property-specific auto, percentage, and sign rules; CSS-wide keywords must stand alone. Longhands remain scalar. Type shapes cover lists while the compiler validates arity and every component. Native browser fixtures compare physical longhands in horizontal and vertical writing modes, including importance and shorthand/longhand overrides. Functions, variable substitution, and broader component spellings remain incomplete.
+
+Motion lists keep function commas separate from declaration-list commas:
+
+```ts
+css({
+  transitionDuration: '250ms, 500ms',
+  transitionTimingFunction: 'steps(4, end), cubic-bezier(0, -1, 1, 2)',
+  animationIterationCount: '2.5, infinite',
+})
+```
+
+Bézier x coordinates must fall within zero and one; y coordinates may overshoot. Step counts must be positive integers, and `jump-none` requires at least two. Linear stops support one or two percentage positions. CSS-wide keywords must stand alone. Nested functions remain unsupported.

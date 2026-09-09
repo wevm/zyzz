@@ -38,7 +38,17 @@ export function cases(): readonly Case[] {
       'revert-layer',
       'unset',
     ]
-    if (rule.kind === 'enum') values.push(...rule.values)
+    if (rule.kind === 'enum') {
+      values.push(...rule.values)
+      if ('list' in rule) values.push(`${rule.values[0]}, ${rule.values[1]}`)
+      if ('easing' in rule)
+        values.push(
+          'cubic-bezier(0, -1, 1, 2)',
+          'steps(4, jump-none)',
+          'linear(0, .5 30% 60%, 1)',
+          'ease, steps(2, end)',
+        )
+    }
     if (rule.kind === 'color') {
       if ('keywords' in rule) values.push(...rule.keywords)
       values.push(
@@ -55,6 +65,7 @@ export function cases(): readonly Case[] {
     }
     if (rule.kind === 'number') {
       if ('keywords' in rule) values.push(...rule.keywords)
+      if ('list' in rule) values.push('0, 2.5, infinite')
       values.push(rule.min, Math.max(1, rule.min))
       if (Number.isFinite(rule.max)) values.push(rule.max)
       if (!('integer' in rule)) values.push(Math.max(rule.min, 0.5))
@@ -80,6 +91,7 @@ export function cases(): readonly Case[] {
     if (rule.kind === 'grid-line')
       values.push('auto', 1, -1, 2, 'span 1', 'span 2')
     if (rule.kind === 'time') {
+      values.push('0s, 250ms, 1s')
       if ('keywords' in rule) values.push(...rule.keywords)
       for (const unit of Object.keys(units))
         for (const number of ['0', '1', '.5', '1e2', '-1']) {
@@ -148,7 +160,6 @@ export const rejected = [
   { property: 'animationDelay', value: '0x10s' },
   { property: 'animationDuration', value: 0 },
   { property: 'animationDuration', value: '1px' },
-  { property: 'animationTimingFunction', value: 'cubic-bezier(0,0,1,1)' },
   { property: 'appearance', value: 'native' },
   { property: 'color', value: 'not-a-color' },
   { property: 'color', value: 'rgb(0 0 0)' },

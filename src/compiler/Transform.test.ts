@@ -12,6 +12,7 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import * as Declarations from '../../test/fixtures/Declarations.js'
+import * as Lengths from '../../test/fixtures/Lengths.js'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 
@@ -62,6 +63,108 @@ export const props = theme.css({
         "source": "assertions.ts",
       }
     `)
+  })
+
+  test('nondecimal length spellings fail source and theme compilation', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid-length.ts',
+        source: `import { css } from 'zyzz'; export const props = css({width:'0x10dvh'})();`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid-length.ts:60: Expected a nonnegative literal length, auto, or numeric zero.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid-theme.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({spacing:{space:'0b10lh'}}); export const props = theme.css({padding:'space'})();`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid-theme.ts:44: ["spacing","space"]: Expected a nonnegative literal length or numeric zero.]`,
+    )
+  })
+
+  test('standard lengths preserve source spelling, token fallbacks, and maps', () => {
+    const output = Transform.compile({
+      moduleId: 'example/lengths.ts',
+      source: Lengths.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-1aowg2i1i6ewzi-zyzz-theme{--z-t1aowg2i1i6ewzi-zyzz-spacing_2e_space:1lh;}
+      .z-1aowg2i1i6ewzi-base1{width:50vw;width:50cqi!important;height:10dvh;border-width:1pc;border-style:solid;}
+      .z-style-1aowg2i1i6ewzi-117{margin-left:-1in;}
+      .z-1aowg2i1i6ewzi-base0{padding:1rem;padding:var(--z-t1aowg2i1i6ewzi-zyzz-spacing_2e_space,1lh);}
+      .z-style-1aowg2i1i6ewzi-244{margin-top:2rlh!important;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) => line.includes('width:50cqi'))
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('width:50cqi'),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 39,
+        "line": 3,
+        "name": "width",
+        "source": "example/lengths.ts",
+      }
+    `)
+  })
+
+  test('standard lengths resolve against browser viewport, container, and font metrics', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/lengths.ts',
+      source: Lengths.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      loader: 'ts',
+      format: 'esm',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 800, height: 600 },
+      })
+      await page.setContent(
+        `<style>html{font-size:16px;line-height:24px}main{container-type:size;width:400px;height:300px;line-height:30px}${output.css}</style><main><div id="root" class="${module.root.className}"></div><div id="themed" class="${module.themed.className}"></div></main>`,
+      )
+      expect(
+        await page.locator('#root').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return {
+            borderWidth: style.borderTopWidth,
+            height: style.height,
+            marginLeft: style.marginLeft,
+            width: style.width,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "borderWidth": "16px",
+          "height": "60px",
+          "marginLeft": "-96px",
+          "width": "200px",
+        }
+      `)
+      expect(
+        await page.locator('#themed').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return { marginTop: style.marginTop, padding: style.paddingTop }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "marginTop": "48px",
+          "padding": "30px",
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
   })
 
   test('importance syntax cannot collide with theme token names', () => {

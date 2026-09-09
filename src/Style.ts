@@ -15,6 +15,7 @@ type Exact<
     (...args: never[]) => unknown
   > extends never
     ? Properties<tokens> &
+        Value.Checked<styles[name], tokens> &
         Record<Exclude<Keys<styles[name]>, keyof Properties>, never>
     : never
 }

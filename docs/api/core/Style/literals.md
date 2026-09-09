@@ -28,7 +28,7 @@ The property surface is intentionally finite. No catch-all string index permits 
 | Typography | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`                                                                                        |
 | Other      | `opacity`                                                                                                                                               |
 
-- **Lengths:** finite `px`, `rem`, `em`, `vh`, `vw`, `%`, or numeric zero. Border width excludes percentages.
+- **Lengths:** finite absolute, font-relative, viewport-relative, and container-relative lengths, percentages, or numeric zero. Border width excludes percentages.
 - **Margins:** allow negative lengths. Margins and width/height also accept `auto`.
 - **Shorthands:** scalar values only; no multi-value strings yet.
 - **Units:** preserve spelling without implicit pixel conversion.
@@ -37,7 +37,7 @@ The property surface is intentionally finite. No catch-all string index permits 
 - **CSS-wide values:** every property accepts `inherit`, `initial`, `revert`, `revert-layer`, and `unset`.
 - **Numbers:** finite values only; opacity 0–1, font weight 1–1000, line height/flex factors nonnegative.
 
-Types check units and token names; runtime validation checks numeric bounds and hex digits.
+Inferred authoring values reject hexadecimal, binary, octal, and whitespace-separated numeric lengths. Valid token names remain usable even when their spelling resembles an invalid CSS value. Types check units and token names; runtime validation checks numeric bounds and hex digits.
 
 This boundary rejects:
 
@@ -45,6 +45,32 @@ This boundary rejects:
 - Callbacks, selectors, and queries.
 - CSS functions and nested fallback arrays.
 - Unsupported properties and other named colors.
+
+## Length Units
+
+The scalar grammar accepts these units from [CSS Values and Units](https://www.w3.org/TR/css-values-4/#lengths) and [CSS Containment](https://www.w3.org/TR/css-contain-3/#container-lengths).
+
+| Family             | Units                                                                             |
+| ------------------ | --------------------------------------------------------------------------------- |
+| Absolute           | `px`, `cm`, `mm`, `q`/`Q`, `in`, `pc`, `pt`                                       |
+| Font-relative      | `em`, `ex`, `cap`, `ch`, `ic`, `lh`, `rem`, `rex`, `rcap`, `rch`, `ric`, `rlh`    |
+| Viewport-relative  | `vw`, `vh`, `vi`, `vb`, `vmin`, `vmax`, plus each with an `s`, `l`, or `d` prefix |
+| Container-relative | `cqw`, `cqh`, `cqi`, `cqb`, `cqmin`, `cqmax`                                      |
+| Percentage         | `%` where the property permits it                                                 |
+
+Units use the listed spellings. Signed decimals and finite scientific notation are accepted where the property permits their value. Emission preserves units; the browser resolves font, viewport, and container metrics. Existing theme length tokens, fallbacks, and importance suffixes use the same grammar.
+
+```ts
+import { css } from 'zyzz'
+
+const panel = css({
+  width: ['80vw', '80cqi'],
+  height: '100dvh',
+  padding: '1lh!',
+})
+```
+
+Container units can refer to containment established by ordinary CSS. Zyzz does not yet author containment declarations or container conditions. Browser support for newer units depends on the deployment target; ordered fallback declarations can retain an older unit. Native unit conversion remains unimplemented.
 
 ## Fallbacks and Importance
 

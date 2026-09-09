@@ -3,6 +3,7 @@
  * @module
  */
 import * as Literal from './Literal.js'
+import type * as Token from './Token.js'
 
 /** Scalar declarations optionally carrying a trailing importance marker. */
 export type Atom<value> =
@@ -10,6 +11,36 @@ export type Atom<value> =
   | (value extends string | number
       ? `${value}${'!' | ' !' | '!important' | ' !important'}`
       : never)
+
+/** Checks inferred scalar spellings without expanding the property-value unions. */
+export type Checked<style, tokens = {}> = {
+  [property in keyof style]: property extends keyof Literal.Properties
+    ? style[property] extends Check<
+        style[property],
+        Token.Names<tokens, property>
+      >
+      ? unknown
+      : never
+    : unknown
+}
+type Check<input, names> = input extends readonly unknown[]
+  ? { [key in keyof input]: Check<input[key], names> }
+  : input extends string
+    ? Plain<input> extends names
+      ? input
+      : Literal.Checked<Plain<input>> extends never
+        ? never
+        : input
+    : input
+type Plain<value extends string> = value extends
+  | `${infer body}!important`
+  | `${infer body}!`
+  ? Trim<body>
+  : value
+type Trim<value extends string> =
+  value extends `${infer body}${' ' | '\n' | '\r' | '\t' | '\f'}`
+    ? Trim<body>
+    : value
 
 /** One declaration or a nonempty ordered sequence of declaration fallbacks. */
 export type Input<value> =

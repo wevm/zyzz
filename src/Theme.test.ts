@@ -241,6 +241,50 @@ describe('define', () => {
 })
 
 describe('extend', () => {
+  test('object-shaped length overrides fail at the public boundary', () => {
+    const theme = Theme.define({ spacing: { md: '1lh' } })
+    expect(() =>
+      Theme.extend(theme, { spacing: { md: {} } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["spacing","md"]: A token leaf cannot become a palette.]`,
+    )
+    expect(() =>
+      Theme.extend(theme, { spacing: { md: [] } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["spacing","md"]: Expected a plain data record.]`,
+    )
+    expect(() =>
+      Theme.extend(theme, { spacing: { md: () => '2rem' } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["spacing","md"]: Expected a plain data record.]`,
+    )
+  })
+
+  test('undefined override leaves fail while omitted leaves inherit', () => {
+    const theme = Theme.define({
+      color: { brand: '#06c' },
+      spacing: { md: '1lh' },
+    })
+    const alternate = Theme.extend(theme, { color: { brand: '#fff' } })
+    const styles = Style.define({ card: { padding: theme.tokens.spacing.md } })
+    expect(Css.compile({ styles, themes: { alternate, base: theme } }).css)
+      .toMatchInlineSnapshot(`
+      ".z_theme-alternate{--z-t0-spacing_2e_md:1lh;}
+      .z_theme-base{--z-t0-spacing_2e_md:1lh;}
+      .z_base0{padding:var(--z-t0-spacing_2e_md,1lh);}"
+    `)
+    expect(() =>
+      Theme.extend(theme, { spacing: { md: undefined } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["spacing","md"]: Expected a plain data record.]`,
+    )
+    expect(() =>
+      Theme.extend(theme, { color: { brand: undefined } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["color","brand"]: Expected a plain data record.]`,
+    )
+  })
+
   test('compatible overrides retain identities and reset every live inherited value', () => {
     const input = {
       color: { blue: { 500: '#06c' } },

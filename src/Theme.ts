@@ -5,6 +5,7 @@
 import { css, MissingTransformError } from './css.js'
 import * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
+import type * as Value from './internal/Value.js'
 import type * as Style from './Style.js'
 
 /** Complete color-scheme pair or a shared color. */
@@ -19,6 +20,7 @@ export type Css<tokens extends Tokens> = <
   styles: styles &
     NoInfer<
       Style.Properties<tokens> &
+        Value.Checked<styles, tokens> &
         Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
     >,
 ) => css.ReturnType
@@ -54,11 +56,11 @@ export type Definition<tokens extends Tokens = Tokens> = {
  */
 export function extend<
   const tokens extends Tokens,
-  const overrides extends Overrides<NoInfer<tokens>>,
+  const overrides extends Record<string, unknown>,
 >(
   theme: Definition<tokens>,
   overrides: overrides &
-    Exact<overrides, Overrides<NoInfer<tokens>>> &
+    NoInfer<Exact<overrides, Overrides<tokens>>> &
     NoInfer<Validated<overrides>>,
 ): Definition<tokens> {
   if (!theme || typeof theme !== 'object')
@@ -75,11 +77,15 @@ export function extend<
 
 type Exact<input, shape> = {
   [key in keyof input]: key extends keyof shape
-    ? input[key] extends object
-      ? shape[key] extends Color | undefined
-        ? Color
-        : Exact<input[key], NonNullable<shape[key]>>
-      : shape[key]
+    ? NonNullable<shape[key]> extends string | number
+      ? Required<shape>[key]
+      : input[key] extends readonly unknown[] | ((...args: never[]) => unknown)
+        ? never
+        : input[key] extends object
+          ? shape[key] extends Color | undefined
+            ? Color
+            : Exact<input[key], NonNullable<shape[key]>>
+          : Required<shape>[key]
     : never
 }
 
@@ -342,7 +348,9 @@ type ValidPalette<palette, group> = palette extends undefined
 
 type ValidTree<tree, group> = tree extends string | number
   ? group extends 'borderRadius' | 'spacing'
-    ? Literal.Length
+    ? tree extends Literal.Length
+      ? Literal.Checked<tree>
+      : never
     : Literal.Color
   : Extract<keyof tree, 'dark' | 'light'> extends never
     ? {

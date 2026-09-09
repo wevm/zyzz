@@ -9,6 +9,7 @@ import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import * as Declarations from '../../test/fixtures/Declarations.js'
+import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Compilation from '../../bench/Compilation.js'
 
 for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
@@ -107,6 +108,25 @@ for (const count of [10, 100]) {
       'extract + emit + rewrite + maps',
       () => {
         Transform.compile({ moduleId: 'example/fallbacks.ts', source })
+      },
+      { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
+    )
+  })
+}
+
+for (const count of [10, 100]) {
+  const source =
+    Lengths.source +
+    Array.from(
+      { length: count },
+      (_, index) =>
+        `export const length${index} = css({width:['50vw','${index}cqi!'],padding:'1lh',height:'10dvh'})();`,
+    ).join('\n')
+  describe(`standard length transform / ${count} additional styles`, () => {
+    bench(
+      'extract + emit + rewrite + maps',
+      () => {
+        Transform.compile({ moduleId: 'example/lengths.ts', source })
       },
       { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
     )

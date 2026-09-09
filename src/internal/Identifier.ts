@@ -6,14 +6,14 @@
 /** Checks lexical spelling, reserved words, and list boundaries without changing case. */
 export function valid(value: unknown, options: valid.Options): boolean {
   if (typeof value !== 'string') return false
-  const parts =
-    options.separator === 'comma'
-      ? value.split(',')
-      : options.separator === 'space'
-        ? value
-            .replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
-            .split(/[ \t\n\r\f]+/)
-        : [value]
+  const parts = (() => {
+    if (options.separator === 'comma') return value.split(',')
+    if (options.separator === 'space')
+      return value
+        .replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
+        .split(/[ \t\n\r\f]+/)
+    return [value]
+  })()
   for (const part of parts) {
     const name = part.replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
     const lower = name.toLowerCase()

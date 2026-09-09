@@ -109,7 +109,7 @@ export declare namespace valid {
   /** Numeric domain of the complete result; unit resolution belongs to the browser. */
   type Options = {
     /** Required result dimension. */
-    readonly kind: 'length' | 'number' | 'time'
+    readonly kind: 'angle' | 'length' | 'number' | 'percentage' | 'time'
     /** Whether lengths may combine with percentage terms. */
     readonly percentage: boolean
     /** Supported length units, including any case-sensitive source spellings. */
@@ -124,7 +124,13 @@ type Token =
       readonly kind: 'function'
       readonly name: 'calc' | 'clamp' | 'max' | 'min'
     }
-type Unit = 'length' | 'length-percentage' | 'number' | 'percentage' | 'time'
+type Unit =
+  | 'angle'
+  | 'length'
+  | 'length-percentage'
+  | 'number'
+  | 'percentage'
+  | 'time'
 
 function tokenize(
   value: string,
@@ -150,6 +156,7 @@ function tokenize(
         if (!suffix) return 'number'
         if (suffix === '%') return 'percentage'
         if (suffix === 'ms' || suffix === 's') return 'time'
+        if (['deg', 'grad', 'rad', 'turn'].includes(suffix)) return 'angle'
         if (lengths.has(suffix)) return 'length'
         return undefined
       })()

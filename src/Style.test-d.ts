@@ -6,6 +6,7 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, css, Style, Theme } from 'zyzz'
 import * as BorderShorthand from '../test/fixtures/BorderShorthand.js'
 import * as Borders from '../test/fixtures/Borders.js'
+import * as Geometry from '../test/fixtures/Geometry.js'
 import * as Identifiers from '../test/fixtures/Identifiers.js'
 import * as Interaction from '../test/fixtures/Interaction.js'
 import * as Logical from '../test/fixtures/Logical.js'
@@ -19,6 +20,30 @@ import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
 describe('css', () => {
+  test('geometric values expose structured transform shapes', () => {
+    Style.define(Geometry.styles)
+    for (const transform of Geometry.functions) css({ transform })
+    css({
+      aspectRatio: 'auto 16/9',
+      rotate: '0 1 0 45deg',
+      scale: '-1 50% 2',
+      translate: 'calc(50% - 10px) 2px -3px',
+    })
+    css({
+      transform: ['rotate(90deg)', 'translateX(20px) rotate(45deg)!'],
+      aspectRatio: 2,
+      scale: 1.5,
+    })
+    // @ts-expect-error Transform names remain a finite function vocabulary.
+    css({ transform: 'unknown(1)' })
+    // @ts-expect-error Nonzero translations need units.
+    css({ translate: 20 })
+    // @ts-expect-error Scale factors do not use length units.
+    css({ scale: '2px' })
+    // @ts-expect-error Ratios do not use dimensional components.
+    css({ aspectRatio: '16px/9px' })
+  })
+
   test('combined line values retain typed width style and color components', () => {
     Style.define(BorderShorthand.styles)
     css({

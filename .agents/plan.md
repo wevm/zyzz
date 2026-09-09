@@ -460,7 +460,7 @@ Continue all property/value work in the single consolidated CSS conformance PR a
 
 Keep the remaining CSS property implementation in one PR. The required CI job fails unless all 670 pinned MDN properties are fully supported; partial entries never count toward 100%. Retain independent grammar checks, public type probes, emission checks, browser evidence, and performance gates. Do not promote inventory statuses to make CI green before the implementation and evidence exist.
 
-Outstanding work includes the 253 deferred properties and completion of all 417 partial domains: CSS tokenization/escaping and case handling; compositional value grammars, lists, functions and custom identifiers; property-specific numeric rules; shorthand/longhand cascade interactions; and independent browser/type evidence. The threshold remains red while these gaps exist. The property gate does not claim full support for the separately tracked selectors and at-rule families.
+Outstanding work includes the 248 deferred properties and completion of all 422 partial domains: CSS tokenization/escaping and case handling; compositional value grammars, lists, functions and custom identifiers; property-specific numeric rules; shorthand/longhand cascade interactions; and independent browser/type evidence. The threshold remains red while these gaps exist. The property gate does not claim full support for the separately tracked selectors and at-rule families.
 
 ### Structured Grid Tracks
 
@@ -476,7 +476,7 @@ Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthan
 
 Motion lists preserve easing-function commas and validate cubic-bezier(), steps(), and linear() constraints. Absolute functional colors preserve color spaces and browser clamping. Border color/style lists and elliptical radii preserve logical overrides and importance. Compatible font variant and containment groups reject conflicts; font-synthesis adds one partially implemented property.
 
-The completion count remains 0/670: 417 partial and 253 deferred (141 standard, 112 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
+The completion count remains 0/670: 422 partial and 248 deferred (136 standard, 112 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
 
 ### Dimensional Math
 
@@ -501,3 +501,9 @@ Browser fixtures resolve case-sensitive keyframes and named container queries. N
 Combined border, physical/logical border sides, outline, and column-rule add thirteen partial properties. Values accept one width, style, and color in any order, preserving functional components. Duplicate domains, negative literal widths, and percentages are rejected. When a combined shorthand occurs, related declaration domains remain ordered to preserve longhand overrides.
 
 Browser controls compare both text directions and three writing modes, A/B/A overrides, and the border-image reset performed by border. Independent grammar and consumer probes cover component permutations and functional values. Escaped spellings, broader color functions, and complete numeric forms remain incomplete.
+
+Aspect ratios and transform/translate/rotate/scale add five partial properties. Transform functions validate arity and component dimensions while preserving authored order. Individual transforms accept their respective vector forms. Angle math extends calc/min/max/clamp dimensional checks; percentage depth translations and malformed matrices are rejected.
+
+Browser fixtures compare individual transforms with equivalent function lists, native 3D matrices, rendered bounds, and aspect-ratio sizing. Constants, dimension cancellation, full escaping, and broader numeric spellings remain incomplete. See [CSS Transforms](https://www.w3.org/TR/css-transforms-2/) and [CSS Sizing](https://www.w3.org/TR/css-sizing-4/#aspect-ratio).
+
+Theme authoring constrains its generic to the property contract before refining concrete literals. Extracted Parameters remain usable without comparing an impossible arbitrary-key intersection. A standalone consumer probe fell from 14.81 seconds to 5.97 seconds; the alias integration passed in 7.28 seconds. Its 10-second subprocess and 15-second integration limits remain unchanged.

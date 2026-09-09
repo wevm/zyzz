@@ -10,17 +10,20 @@ export type Atom<value> =
   | value
   | `${Extract<value, string | number>}${'!' | ' !' | '!important' | ' !important'}`
 
-/** Checks inferred scalar spellings without expanding the property-value unions. */
+/** Refines concrete scalar spellings; already-broad property contracts need no literal refinement. */
 export type Checked<style, tokens = {}> = {
-  [property in keyof style]: property extends keyof Literal.Properties
-    ? style[property] extends Check<
-        style[property],
-        Token.Names<tokens, property>
-      >
-      ? unknown
-      : never
-    : unknown
+  [property in keyof style]: Literal.Properties extends style
+    ? unknown
+    : property extends keyof Literal.Properties
+      ? style[property] extends Check<
+          style[property],
+          Token.Names<tokens, property>
+        >
+        ? unknown
+        : never
+      : unknown
 }
+
 type Check<input, names> = input extends readonly unknown[]
   ? { [key in keyof input]: Check<input[key], names> }
   : input extends string

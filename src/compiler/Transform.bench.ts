@@ -23,6 +23,7 @@ import * as Fonts from '../../test/fixtures/Fonts.js'
 import * as FunctionalColors from '../../test/fixtures/FunctionalColors.js'
 import * as Grid from '../../test/fixtures/Grid.js'
 import * as GridLists from '../../test/fixtures/GridLists.js'
+import * as Geometry from '../../test/fixtures/Geometry.js'
 import * as Identifiers from '../../test/fixtures/Identifiers.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
 import * as KeywordGroups from '../../test/fixtures/KeywordGroups.js'
@@ -263,6 +264,12 @@ const workloads = {
       `export const cell${index} = css({display:'grid',gridAutoColumns:'1fr',gridAutoRows:'${index}px',gridAutoFlow:'column',gridColumnEnd:'span 2'})();`,
     source: Grid.source,
     title: 'grid',
+  },
+  geometry: {
+    declaration: (index: number) =>
+      `export const transformed${index} = css({transform:'translate(${index}px,20%) rotate(45deg) scale(2,3)',aspectRatio:'16/9'})();`,
+    source: Geometry.source,
+    title: 'geometry',
   },
   identifiers: {
     declaration: (index: number) =>

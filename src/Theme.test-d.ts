@@ -161,6 +161,36 @@ describe('extend', () => {
 })
 
 describe('css', () => {
+  test('extracted parameters preserve tokens without weakening inferred declarations', () => {
+    const { css: themed } = Theme.define({
+      color: { brand: '#06c' },
+      spacing: { md: '8px' },
+    })
+    type ParametersStyle = Parameters<typeof themed>[0]
+    const extracted: ParametersStyle = {
+      color: 'brand',
+      padding: ['md', '2px!'],
+    }
+    themed(extracted)
+    // @ts-expect-error Extracted parameter types retain token domains.
+    const wrongDomain: ParametersStyle = { color: 'md' }
+    void wrongDomain
+    const unknown: Record<string, unknown> = { color: 'red' }
+    // @ts-expect-error An arbitrary key/value record cannot bypass exact declarations.
+    themed(unknown)
+    const callable = Object.assign(() => null, { color: 'red' as const })
+    // @ts-expect-error Callable objects are not declaration records.
+    themed(callable)
+    // @ts-expect-error Inferred dimensions still reject hexadecimal numeric prefixes.
+    themed({ padding: '0x10px' })
+    // @ts-expect-error Inferred dimensions still reject non-CSS whitespace within numeric values.
+    themed({ padding: ' 2px' })
+    // @ts-expect-error Unknown properties remain rejected alongside known properties.
+    themed({ color: 'brand', colour: 'red' })
+    // @ts-expect-error Ordered fallbacks cannot be empty.
+    themed({ color: [] })
+  })
+
   test('preserves token inference through aliases and applied styles', () => {
     const shorthand = Theme.define({
       backgroundColor: { surface: '#fff' },

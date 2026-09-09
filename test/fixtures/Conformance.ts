@@ -38,6 +38,34 @@ export function cases(): readonly Case[] {
       'revert-layer',
       'unset',
     ]
+    if (rule.kind === 'ratio')
+      values.push(0, 2, 'auto', '16/9', 'auto 4 / 3', '1/0', '4 / 3 auto')
+    if (rule.kind === 'rotate')
+      values.push(
+        'none',
+        '90deg',
+        'x 1turn',
+        '0 1 0 45deg',
+        '90deg 0 1 0',
+        'calc(1turn / 4)',
+      )
+    if (rule.kind === 'scale')
+      values.push('none', 2, '-1 2', '50% 100% 1', 'calc(1 + .5)')
+    if (rule.kind === 'translate')
+      values.push('none', 0, '10px 20% -3px', 'calc(50% - 10px) 0')
+    if (rule.kind === 'transform')
+      values.push(
+        'none',
+        'translate(10px,20%) rotate(45deg)',
+        'matrix(1,0,0,1,20,30)',
+        'scale3d(1,2,3)',
+        'translate3d(10px,20%,30px)',
+        'rotate3d(0,1,0,45deg)',
+        'perspective(100px)',
+        'skew(10deg,20deg)',
+        'rotateX(calc(1turn / 2))',
+        'translateX(1px)rotateY(20deg)',
+      )
     if (rule.kind === 'line') {
       values.push(
         0,

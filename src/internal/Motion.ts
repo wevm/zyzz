@@ -1,5 +1,5 @@
 /**
- * Validates literal easing functions and separates comma-delimited motion values.
+ * Validates literal easing functions and their numeric constraints.
  * @module
  */
 
@@ -51,25 +51,6 @@ export function easing(value: string): boolean {
       return false
   }
   return true
-}
-
-/** Splits complete literal motion values, preserving commas inside easing functions. */
-export function list(value: string): readonly string[] | undefined {
-  if (/[;{}!"'\\[\]]/.test(value)) return undefined
-  const parts: string[] = []
-  let depth = 0
-  let start = 0
-  for (let index = 0; index < value.length; index++) {
-    const char = value[index]
-    if (char === '(') depth++
-    if (char === ')' && --depth < 0) return undefined
-    if (char === ',' && depth === 0) {
-      parts.push(trim(value.slice(start, index)))
-      start = index + 1
-    }
-  }
-  parts.push(trim(value.slice(start)))
-  return depth === 0 && parts.every(Boolean) ? parts : undefined
 }
 
 function number(value: string): boolean {

@@ -15,11 +15,13 @@ export type Color =
 
 /** Theme-bound authoring signature; execution requires source rewriting. */
 export type Css<tokens extends Tokens> = <
-  const styles extends Record<string, unknown>,
+  const styles extends Style.Properties<tokens>,
 >(
   styles: styles &
     NoInfer<
-      Style.Properties<tokens> &
+      (Extract<styles, (...args: never[]) => unknown> extends never
+        ? unknown
+        : never) &
         Value.Checked<styles, tokens> &
         Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
     >,

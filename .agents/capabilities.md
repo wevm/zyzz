@@ -152,7 +152,7 @@ All 148 canonical lowercase CSS named colors and 19 canonical system-color keywo
 
 ## Reading Order
 
-`readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 417 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
+`readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 422 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
 
 ### Structured Grid Tracks
 
@@ -191,3 +191,7 @@ Browser fixtures resolve case-sensitive keyframes and named container queries. N
 Combined border, physical/logical border sides, outline, and column-rule add thirteen partial properties. Values accept one width, style, and color in any order, preserving functional components. Duplicate domains, negative literal widths, and percentages are rejected. When a combined shorthand occurs, related declaration domains remain ordered to preserve longhand overrides.
 
 Browser controls compare both text directions and three writing modes, A/B/A overrides, and the border-image reset performed by border. Independent grammar and consumer probes cover component permutations and functional values. Escaped spellings, broader color functions, and complete numeric forms remain incomplete.
+
+Aspect ratios and transform/translate/rotate/scale add five partial properties. Transform functions validate arity and component dimensions while preserving authored order. Individual transforms accept their respective vector forms. Angle math extends calc/min/max/clamp dimensional checks; percentage depth translations and malformed matrices are rejected.
+
+Browser fixtures compare individual transforms with equivalent function lists, native 3D matrices, rendered bounds, and aspect-ratio sizing. Constants, dimension cancellation, full escaping, and broader numeric spellings remain incomplete. See [CSS Transforms](https://www.w3.org/TR/css-transforms-2/) and [CSS Sizing](https://www.w3.org/TR/css-sizing-4/#aspect-ratio).

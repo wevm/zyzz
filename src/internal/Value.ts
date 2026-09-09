@@ -29,8 +29,7 @@ export function parse(input: unknown, property: keyof Literal.Properties) {
   if (/["'\\!]/.test(text)) return undefined
   const numeric = Literal.rules[property].kind === 'number'
   const value =
-    (numeric || text === '0') &&
-    /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(text)
+    numeric && /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(text)
       ? Number(text)
       : text
   return { important: true as const, value }

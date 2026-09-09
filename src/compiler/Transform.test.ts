@@ -16,6 +16,54 @@ import * as Declarations from '../../test/fixtures/Declarations.js'
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('important zero shorthands retain token identity before literal coercion', () => {
+    const output = Transform.compile({
+      moduleId: 'zero.ts',
+      source: `import { Theme, css } from 'zyzz';
+const theme = Theme.define({spacing:{0:'8px'}});
+export const token = theme.css({padding:'0!'})();
+export const literal = css({padding:'0!'})();
+export const plain = theme.css({padding:0})();`,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-1s1gwcevjtf8w-theme{--z-t1s1gwcevjtf8w-theme-spacing_2e_0:8px;}
+      .z-style-1s1gwcevjtf8w-105{padding:var(--z-t1s1gwcevjtf8w-theme-spacing_2e_0,8px)!important;}
+      .z-style-1s1gwcevjtf8w-157{padding:0!important;}
+      .z-style-1s1gwcevjtf8w-201{padding:0;}"
+    `)
+  })
+
+  test('asserted fallback arrays retain token references and entry source maps', () => {
+    const output = Transform.compile({
+      moduleId: 'assertions.ts',
+      source: `import { Theme } from 'zyzz';
+const theme = Theme.define({color:{brand:'#06c'}});
+export const props = theme.css({
+  display: ['block','flex'] as const,
+  color: ((['#000',theme.tokens.color.brand] as const) satisfies readonly unknown[])!,
+})();`,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-color_2e_brand:#06c;}
+      .z-1jvt0134f5zz3-base0{display:block;display:flex;color:#000;color:var(--z-t1jvt0134f5zz3-theme-color_2e_brand,#06c);}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) => line.includes('color:var('))
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('color:var('),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 19,
+        "line": 5,
+        "name": "color",
+        "source": "assertions.ts",
+      }
+    `)
+  })
+
   test('importance syntax cannot collide with theme token names', () => {
     expect(() =>
       Transform.compile({

@@ -8,6 +8,21 @@ import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('unsupported properties cannot collide with important cache entries', () => {
+    const declarations = [
+      { property: 'color', value: '#fff', important: true },
+      { property: 'color!', value: '#fff' },
+    ]
+    for (const values of [declarations, [...declarations].reverse()])
+      expect(() =>
+        Css.compile({
+          styles: { styles: [{ name: 'card', declarations: values }] },
+        } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Css.CompileError: ["card","color!"]: Unsupported literal property.]`,
+      )
+  })
+
   test('importance is distinct in cached and factored declarations', () => {
     const styles = Style.define({
       first: { color: ['#fff!', '#000!'] },

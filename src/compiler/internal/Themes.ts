@@ -723,6 +723,18 @@ export function collect(program: Ast.Program, options: collect.Options) {
       ) {
         target = array
         index--
+        for (; index >= 0; index--) {
+          const ancestor = ancestors[index]!
+          if (
+            (ancestor.type === 'TSAsExpression' ||
+              ancestor.type === 'TSSatisfiesExpression' ||
+              ancestor.type === 'TSNonNullExpression' ||
+              ancestor.type === 'TSTypeAssertion') &&
+            ancestor.expression === target
+          )
+            target = ancestor
+          else break
+        }
       }
       const property = ancestors[index]
       const object = ancestors[index - 1]

@@ -173,9 +173,10 @@ export function define(
       for (const [index, entry] of inputs.entries()) {
         const parsed = Value.parse(entry, key)
         const scalar = parsed ? parsed.value : entry
-        const value = options.theme
+        const resolved = options.theme
           ? Token.resolve(scalar, { property: key, theme: options.theme })
           : scalar
+        const value = parsed && resolved === '0' ? 0 : resolved
         const message = Token.is(value)
           ? Token.accepts(value.group, key)
             ? undefined

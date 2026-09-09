@@ -16,6 +16,7 @@ import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as Tables from '../../test/fixtures/Tables.js'
 import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../../test/fixtures/TextFlow.js'
 import * as Compilation from '../../bench/Compilation.js'
@@ -189,6 +190,12 @@ const workloads = {
       `export const slide${index} = css({scrollMarginInlineStart:'${index}px',scrollSnapAlign:'start center',scrollSnapStop:'always',scrollSnapType:['inline proximity','inline mandatory!']})();`,
     source: Snapping.source,
     title: 'scroll snap',
+  },
+  tables: {
+    declaration: (index: number) =>
+      `export const table${index} = css({borderCollapse:'separate',borderSpacing:['1px','${index}px!'],captionSide:'bottom',emptyCells:'hide',tableLayout:'fixed'})();`,
+    source: Tables.source,
+    title: 'table',
   },
   text: {
     declaration: (index: number) =>

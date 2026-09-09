@@ -92,7 +92,7 @@ const titles: Record<string, string> = {
 
 console.log('## Framework Comparisons\n')
 console.log(
-  '🟢 Zyzz beats every other framework · 🔴 Zyzz does not beat every other framework. Both build time and total gzip must pass; ties fail. Total gzip includes CSS + required JavaScript.\n',
+  '🟢 Zyzz beats every other framework · 🔴 Zyzz fails, or another framework beats a Zyzz result on speed or size. Both build time and total gzip must pass; ties fail. Total gzip includes CSS + required JavaScript.\n',
 )
 console.log(
   'Literal workloads use prepared inputs; theme workloads include two scopes and light/dark values. Zyzz starts from validated definitions; the second theme result includes token resolution. Source parsing is measured separately. See bench/README.md for each compiler’s measurement boundary.\n',
@@ -156,7 +156,13 @@ for (const workload of workloads) {
     console.log('| --- | ---: | ---: | ---: | ---: |')
     for (const [library, result] of measurements) {
       const status = (() => {
-        if (!workload.lanes.includes(library)) return ''
+        if (!workload.lanes.includes(library)) {
+          const wins = workload.lanes.some((name) => {
+            const zyzz = measurements.get(name)!
+            return result.mean < zyzz.mean || result.size < zyzz.size
+          })
+          return wins ? '🔴 ' : ''
+        }
         const faster = competitors.every(
           (name) => result.mean < measurements.get(name)!.mean,
         )

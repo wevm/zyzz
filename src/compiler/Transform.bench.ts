@@ -16,6 +16,7 @@ import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as TextFlow from '../../test/fixtures/TextFlow.js'
 import * as Compilation from '../../bench/Compilation.js'
 
 for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
@@ -181,6 +182,12 @@ const workloads = {
       `export const slide${index} = css({scrollMarginInlineStart:'${index}px',scrollSnapAlign:'start center',scrollSnapStop:'always',scrollSnapType:['inline proximity','inline mandatory!']})();`,
     source: Snapping.source,
     title: 'scroll snap',
+  },
+  text: {
+    declaration: (index: number) =>
+      `export const text${index} = css({textIndent:'${index}px',letterSpacing:['normal','1px!'],overflowWrap:'anywhere',whiteSpace:'pre-wrap',textOverflow:'ellipsis'})();`,
+    source: TextFlow.source,
+    title: 'text flow',
   },
 }
 for (const [kind, workload] of Object.entries(workloads))

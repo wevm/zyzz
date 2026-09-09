@@ -19,10 +19,170 @@ import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as TextFlow from '../../test/fixtures/TextFlow.js'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('text flow preserves indentation tokens, fallback priority, and maps', () => {
+    const output = Transform.compile({
+      moduleId: 'example/text.ts',
+      source: TextFlow.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-r52i20xb74bg-zyzz-theme{--z-tr52i20xb74bg-zyzz-spacing_2e_indent:12px;}
+      .z-r52i20xb74bg-base4{word-break:break-all;}
+      .z-style-r52i20xb74bg-121{width:65px;}
+      .z-r52i20xb74bg-base0{letter-spacing:normal;letter-spacing:2px;}
+      .z-r52i20xb74bg-base3{text-indent:var(--z-tr52i20xb74bg-zyzz-spacing_2e_indent,12px);text-align-last:start;hyphens:manual;text-transform:uppercase;}
+      .z-style-r52i20xb74bg-255{width:200px;}
+      .z-r52i20xb74bg-base2{overflow:hidden;text-overflow:ellipsis;}
+      .z-style-r52i20xb74bg-417{width:65px;white-space:pre;white-space:nowrap!important;}
+      .z-r52i20xb74bg-base5{word-spacing:3px;}
+      .z-r52i20xb74bg-base1{overflow-wrap:anywhere;}
+      .z-style-r52i20xb74bg-580{width:65px;white-space:normal;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) => line.includes('white-space:nowrap'))
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('white-space:nowrap'),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 78,
+        "line": 6,
+        "name": "whiteSpace",
+        "source": "example/text.ts",
+      }
+    `)
+  })
+
+  test('text flow rejects invalid spacing and keyword domains', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import { css } from 'zyzz'; css({letterSpacing:'10%',wordSpacing:'auto',textIndent:'auto',whiteSpace:'preserve',textOverflow:'fade',hyphens:'always',textTransform:'wide',wordBreak:'anywhere',overflowWrap:'all',textAlignLast:'normal'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: invalid.ts:47: Expected a literal length or numeric zero. Also accepts: normal.
+      invalid.ts:65: Expected a literal length or numeric zero. Also accepts: normal.
+      invalid.ts:83: Expected a literal length or numeric zero.
+      invalid.ts:101: Expected one of: break-spaces, normal, nowrap, pre, pre-line, pre-wrap (or a CSS-wide keyword).
+      invalid.ts:125: Expected one of: clip, ellipsis (or a CSS-wide keyword).
+      invalid.ts:140: Expected one of: auto, manual, none (or a CSS-wide keyword).
+      invalid.ts:163: Expected one of: capitalize, lowercase, none, uppercase (or a CSS-wide keyword).
+      invalid.ts:180: Expected one of: break-all, keep-all, normal (or a CSS-wide keyword).
+      invalid.ts:204: Expected one of: anywhere, break-word, normal (or a CSS-wide keyword).
+      invalid.ts:224: Expected one of: auto, center, end, justify, left, right, start (or a CSS-wide keyword).]
+    `)
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid-token.ts',
+        source: `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{spacing:{portion:'10%'}}}); zyzz.css({wordSpacing:zyzz.theme.tokens.spacing.portion});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: invalid-token.ts:116: Token group is incompatible with this property.]`)
+  })
+
+  test('text flow wraps and spaces text like native CSS in the browser', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/text.ts',
+      source: TextFlow.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      loader: 'ts',
+      format: 'esm',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      const text = 'abcdefghij'
+      await page.setContent(
+        `<style>body{font:20px/1 monospace}${output.css}</style>${Object.entries(
+          TextFlow.controls,
+        )
+          .map(
+            ([name, control]) =>
+              `<div id="${name}" class="${module[name].className}"><span>${text}</span></div><div id="${name}-control" style="${control}"><span>${text}</span></div>`,
+          )
+          .join(
+            '',
+          )}<span id="letters-measure" class="${module.letters.className}">abcd</span><span id="letters-plain">abcd</span><span id="words-measure" class="${module.words.className}">a a</span><span id="words-plain">a a</span>`,
+      )
+      expect(
+        await page.evaluate((names) => {
+          const properties = [
+            'hyphens',
+            'letter-spacing',
+            'overflow-wrap',
+            'text-align-last',
+            'text-indent',
+            'text-overflow',
+            'text-transform',
+            'white-space',
+            'word-break',
+            'word-spacing',
+          ]
+          return names.filter((name) => {
+            const actual = document.getElementById(name)!
+            const control = document.getElementById(`${name}-control`)!
+            const style = getComputedStyle(actual)
+            const expected = getComputedStyle(control)
+            return (
+              actual.scrollWidth !== control.scrollWidth ||
+              actual.getBoundingClientRect().height !==
+                control.getBoundingClientRect().height ||
+              properties.some(
+                (property) =>
+                  style.getPropertyValue(property) !==
+                  expected.getPropertyValue(property),
+              )
+            )
+          })
+        }, Object.keys(TextFlow.controls)),
+      ).toMatchInlineSnapshot(`[]`)
+      expect(
+        await page.evaluate(() => {
+          const width = (id: string) =>
+            document.getElementById(id)!.getBoundingClientRect().width
+          const paragraph = document.getElementById('paragraph')!
+          const truncate = document.getElementById('truncate')!
+          return {
+            brokenHeight: document
+              .getElementById('breaks')!
+              .getBoundingClientRect().height,
+            indent:
+              paragraph.firstElementChild!.getBoundingClientRect().left -
+              paragraph.getBoundingClientRect().left,
+            letterSpacing: width('letters-measure') - width('letters-plain'),
+            truncatedHeight: truncate.getBoundingClientRect().height,
+            truncates: truncate.scrollWidth > truncate.clientWidth,
+            wordSpacing: width('words-measure') - width('words-plain'),
+            wrappedHeight: document
+              .getElementById('wrap')!
+              .getBoundingClientRect().height,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "brokenHeight": 40,
+          "indent": 12,
+          "letterSpacing": 8,
+          "truncatedHeight": 20,
+          "truncates": true,
+          "wordSpacing": 3,
+          "wrappedHeight": 40,
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('scroll snap preserves compound keywords, fallback importance, and maps', () => {
     const output = Transform.compile({
       moduleId: 'example/snapping.ts',

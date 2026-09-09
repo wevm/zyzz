@@ -1,6 +1,6 @@
 # CSS Capability Inventory
 
-Version 8. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
+Version 9. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
 
 ## Current Web Surface
 
@@ -41,6 +41,10 @@ Logical overscroll axes, multi-value shorthands, and native conversion remain de
 Scroll snapping adds `scrollSnapType`, `scrollSnapAlign`, and `scrollSnapStop`. Finite enums share type/runtime validation for axes, strictness, and one/two-keyword alignment. Canonical single-space combinations, CSS-wide keywords, fallbacks, and importance retain source locations and authored order; theme tokens do not map to these keyword domains.
 
 Source/map and A/B/A fixtures cover extraction and emission. A real browser fixture compares physical-axis snap positions and always-stop behavior with independent CSS controls, plus computed paired alignment. A 10/100-style lane records complete transform timing and delivery. Proximity heuristics, gesture physics, and native snapping are outside this compiler proof.
+
+Text flow adds ten properties: letter/word spacing, indentation, last-line alignment, text transformation/overflow, whitespace, word breaking, overflow wrapping, and hyphenation. Types and runtime share finite keyword/length domains. Indentation accepts spacing tokens; letter/word spacing exclude percentages and unconstrained spacing references.
+
+Source/map fixtures cover fallback importance, indentation tokens, and rejected domains. Browser fixtures compare emitted declarations with independent CSS controls and check wrapping height, spacing width, overflow, and indentation. A 10/100-style transform lane records delivery and timing. Language dictionaries, extended grammar, typography token scales, and native rendering remain deferred.
 
 ## Targets
 

@@ -4,7 +4,7 @@ Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the ca
 
 **Partial** means only the stated subset works today. **Planned** means an existing architecture contract awaits implementation. **Proposal** means an API shape is offered for review. **Deferred** means a later capability; external CSS examples demonstrate interoperability, not implemented Zyzz authoring support. Examples are independent unless they explicitly share a definition.
 
-Current implementation: 149 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
+Current implementation: 159 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
 
 ## 01. Typed Styles and Inline Authoring
 
@@ -45,6 +45,12 @@ Scroll snap type/alignment/stop support finite keyword combinations, ordered fal
 
 ```ts
 css({ scrollSnapType: 'x mandatory', scrollSnapAlign: 'start', scrollSnapStop: 'always' })
+```
+
+Text flow now includes wrapping, hyphenation, letter/word spacing, indentation, last-line alignment, transformation, and overflow through bounded scalar values. Indentation supports spacing tokens; other typography scales and composite presets remain pending.
+
+```ts
+css({ letterSpacing: '-.02em', overflowWrap: 'anywhere', textIndent: '1em' })
 ```
 
 ## 02. Composition and Restricted Style Contracts

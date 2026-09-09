@@ -8,7 +8,43 @@ import * as Borders from '../test/fixtures/Borders.js'
 import * as Logical from '../test/fixtures/Logical.js'
 import * as Scrolling from '../test/fixtures/Scrolling.js'
 import * as Snapping from '../test/fixtures/Snapping.js'
+import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
+
+Style.define(TextFlow.styles)
+css({
+  letterSpacing: ['normal', '-1px!'],
+  wordSpacing: '-.2em',
+  textIndent: '10%',
+})
+const textTheme = Theme.define({ spacing: { indent: '12px', portion: '10%' } })
+textTheme.css({ textIndent: 'indent', whiteSpace: 'pre-wrap' })
+Config.create({ theme: textTheme }).css({
+  textIndent: textTheme.tokens.spacing.portion,
+})
+Style.define({ paragraph: { textIndent: textTheme.tokens.spacing.indent } })
+// @ts-expect-error Letter spacing excludes percentages.
+css({ letterSpacing: '10%' })
+// @ts-expect-error Word spacing excludes percentages in the supported grammar.
+css({ wordSpacing: '10%!' })
+// @ts-expect-error Indentation does not accept auto.
+css({ textIndent: 'auto' })
+// @ts-expect-error Length-only text spacing cannot use unconstrained spacing tokens.
+textTheme.css({ letterSpacing: textTheme.tokens.spacing.portion })
+// @ts-expect-error Text keyword domains cannot use spacing tokens.
+textTheme.css({ whiteSpace: textTheme.tokens.spacing.indent })
+// @ts-expect-error Root indentation remains token-free.
+css({ textIndent: 'indent' })
+// @ts-expect-error Indentation modifiers remain deferred.
+css({ textIndent: '2em hanging' })
+// @ts-expect-error Unknown wrapping values do not widen the finite domain.
+css({ overflowWrap: 'all' })
+// @ts-expect-error Custom text-overflow strings remain deferred.
+css({ textOverflow: '"..."' })
+// @ts-expect-error New whitespace longhands are not part of this surface.
+css({ whiteSpaceCollapse: 'preserve' })
+// @ts-expect-error Numeric spellings remain checked through fallback importance.
+css({ letterSpacing: ['normal', '0x10px!'] })
 
 Style.define(Snapping.styles)
 css({

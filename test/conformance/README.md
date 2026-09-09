@@ -44,7 +44,7 @@ The dedicated **CSS Property Conformance (100%)** CI job publishes a summary and
 
 The status inventory is a reviewed completion ledger, not a browser certification or proof derived from test counts. A property may be promoted only after its grammar, public typing, emitted declarations, and browser behavior have been reviewed against independent evidence. Relabeling entries does not implement them. The existing grammar/type/browser integration jobs must also pass.
 
-Current completion is 0/670 (0%): 304 partial and 366 deferred. This intentionally leaves the consolidated implementation PR blocked. All remaining implementation and evidence work stays in that PR until the full gate passes.
+Current completion is 0/670 (0%): 342 partial and 328 deferred. This intentionally leaves the consolidated implementation PR blocked. All remaining implementation and evidence work stays in that PR until the full gate passes.
 
 Motion lists preserve comma grouping inside `cubic-bezier()`, `steps()`, and `linear()`. Independent grammar probes, consumer types, and browser comparisons cover numeric restrictions, list ordering, importance, and paused animation output. Substitution, comments, and escaped spellings remain incomplete. Easing semantics follow [CSS Easing Functions](https://www.w3.org/TR/css-easing-2/).
 
@@ -57,3 +57,7 @@ Font variant and containment keyword groups reject conflicting alternatives and 
 Math probes cover calc(), min(), max(), and clamp() for number, length, time, and track domains. Independent grammar checks are paired with invalid-dimension cases and browser evaluation; emitted expressions retain browser clamping and integer rounding. Variable substitution, constants, dimension cancellation, and other math functions remain incomplete. Source: [CSS Values and Units](https://www.w3.org/TR/css-values-4/#calc-type-checking).
 
 Unquoted var() references have public type probes for every mapped property, independent token parsing, and native browser substitution tests. CSS Tree property matching cannot resolve variables; these values receive separate declaration-structure and browser evidence. Empty fallback, cycles, inheritance, and invalid-at-computed-value behavior are covered. Quotes, escapes, comments, URLs, and full tokenization remain incomplete. Source: [CSS Custom Properties](https://www.w3.org/TR/css-variables-1/#using-variables).
+
+SVG geometry, baseline, caret, emoji, font-synthesis-position, logical overflow, scrolling axes, text wrapping, and additional scalar keywords add 38 partial property mappings. Positions allow signed lengths; radii retain nonnegative bounds. Animation composition and scroll timeline axes accept comma lists. Related shorthand and alias domains preserve A/B/A declaration order.
+
+Zoom currently accepts nonnegative numbers and normal/reset; percentage values remain deferred. Stop opacity retains the existing bounded scalar subset. Experimental properties may lack browser implementation; grammar and type coverage do not imply browser support. New SVG geometry and text fixtures compare native computed values and rendered bounds.

@@ -7,6 +7,7 @@ import { Config, css, Style, Theme } from 'zyzz'
 import * as Borders from '../test/fixtures/Borders.js'
 import * as Interaction from '../test/fixtures/Interaction.js'
 import * as Logical from '../test/fixtures/Logical.js'
+import * as Scalars from '../test/fixtures/Scalars.js'
 import * as Scrolling from '../test/fixtures/Scrolling.js'
 import * as Snapping from '../test/fixtures/Snapping.js'
 import * as Tables from '../test/fixtures/Tables.js'
@@ -15,6 +16,31 @@ import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
 describe('css', () => {
+  test('SVG geometry and text scalars preserve finite authoring', () => {
+    Style.define(Scalars.styles)
+    css({
+      animationComposition: 'add, replace',
+      scrollTimelineAxis: 'block, x',
+      fontSynthesisPosition: 'none',
+      caretAnimation: 'manual',
+      caretShape: 'bar',
+      zoom: 1.5,
+    })
+    css({
+      x: 'calc(10% - 2px)',
+      r: 'var(--radius)',
+      stopColor: 'rgb(0 0 255)',
+      stopOpacity: 0.5,
+      strokeColor: 'red',
+    })
+    // @ts-expect-error SVG radii require a dimension for nonzero numbers.
+    css({ r: 12 })
+    // @ts-expect-error Caret keywords cannot be combined.
+    css({ caretShape: 'bar block' })
+    // @ts-expect-error Raw percentages for zoom remain outside the typed subset.
+    css({ zoom: '150%' })
+  })
+
   test('interaction properties', () => {
     Style.define(Interaction.styles)
     css({
@@ -146,7 +172,6 @@ describe('css', () => {
     css({ overflowWrap: 'all' })
     // @ts-expect-error Custom text-overflow strings remain deferred.
     css({ textOverflow: '"..."' })
-    // @ts-expect-error New whitespace longhands are not part of this surface.
     css({ whiteSpaceCollapse: 'preserve' })
     // @ts-expect-error Numeric spellings remain checked through fallback importance.
     css({ letterSpacing: ['normal', '0x10px!'] })

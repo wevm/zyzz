@@ -525,6 +525,19 @@ export const rules = {
       'stretch',
     ],
   },
+  alignmentBaseline: {
+    kind: 'enum',
+    values: [
+      'alphabetic',
+      'baseline',
+      'central',
+      'ideographic',
+      'mathematical',
+      'middle',
+      'text-after-edge',
+      'text-before-edge',
+    ],
+  },
   alignSelf: {
     kind: 'enum',
     values: [
@@ -540,6 +553,11 @@ export const rules = {
       'start',
       'stretch',
     ],
+  },
+  animationComposition: {
+    kind: 'enum',
+    list: true,
+    values: ['accumulate', 'add', 'replace'],
   },
   animationDelay: { kind: 'time', list: true, negative: true },
   animationDirection: {
@@ -634,6 +652,12 @@ export const rules = {
     values: ['no-repeat', 'repeat', 'repeat-x', 'repeat-y', 'round', 'space'],
   },
   backgroundSize: { ...length, auto: true, keywords: ['contain', 'cover'] },
+  baselineShift: {
+    ...length,
+    keywords: ['baseline', 'sub', 'super'],
+    negative: true,
+  },
+  baselineSource: { kind: 'enum', values: ['auto', 'first', 'last'] },
   blockSize: size,
   borderBlockColor: { ...color, items: 2 },
   borderBlockEndColor: color,
@@ -697,7 +721,9 @@ export const rules = {
     values: ['auto', 'avoid', 'avoid-column', 'avoid-page'],
   },
   captionSide: { kind: 'enum', values: ['bottom', 'top'] },
+  caretAnimation: { kind: 'enum', values: ['auto', 'manual'] },
   caretColor: { ...color, keywords: ['auto'] },
+  caretShape: { kind: 'enum', values: ['auto', 'bar', 'block', 'underscore'] },
   clear: {
     kind: 'enum',
     values: ['both', 'inline-end', 'inline-start', 'left', 'none', 'right'],
@@ -797,6 +823,8 @@ export const rules = {
       'zoom-out',
     ],
   },
+  cx: { ...length, negative: true },
+  cy: { ...length, negative: true },
   direction: { kind: 'enum', values: ['ltr', 'rtl'] },
   display: {
     kind: 'enum',
@@ -866,6 +894,7 @@ export const rules = {
     kind: 'enum',
     values: ['none', 'position', 'small-caps', 'style', 'weight'],
   },
+  fontSynthesisPosition: { kind: 'enum', values: ['auto', 'none'] },
   fontSynthesisSmallCaps: { kind: 'enum', values: ['auto', 'none'] },
   fontSynthesisStyle: { kind: 'enum', values: ['auto', 'none'] },
   fontSynthesisWeight: { kind: 'enum', values: ['auto', 'none'] },
@@ -900,6 +929,10 @@ export const rules = {
       'simplified',
       'traditional',
     ],
+  },
+  fontVariantEmoji: {
+    kind: 'enum',
+    values: ['emoji', 'normal', 'text', 'unicode'],
   },
   fontVariantLigatures: {
     groups: [
@@ -949,6 +982,16 @@ export const rules = {
     kind: 'enum',
     values: ['auto', 'none', 'preserve-parent-color'],
   },
+  frameSizing: {
+    kind: 'enum',
+    values: [
+      'auto',
+      'content-block-size',
+      'content-height',
+      'content-inline-size',
+      'content-width',
+    ],
+  },
   gap: { ...length, items: 2 },
   gridAutoColumns: track,
   gridAutoFlow: {
@@ -990,6 +1033,7 @@ export const rules = {
   insetInline: { ...margin, items: 2 },
   insetInlineEnd: margin,
   insetInlineStart: margin,
+  interactivity: { kind: 'enum', values: ['auto', 'inert'] },
   interpolateSize: { kind: 'enum', values: ['allow-keywords', 'numeric-only'] },
   isolation: { kind: 'enum', values: ['auto', 'isolate'] },
   justifyContent: {
@@ -1093,6 +1137,8 @@ export const rules = {
   },
   maskSize: { ...length, auto: true, keywords: ['contain', 'cover'] },
   maskType: { kind: 'enum', values: ['alpha', 'luminance'] },
+  mathShift: { kind: 'enum', values: ['compact', 'normal'] },
+  mathStyle: { kind: 'enum', values: ['compact', 'normal'] },
   maxBlockSize: maximum,
   maxHeight: maximum,
   maxInlineSize: maximum,
@@ -1162,9 +1208,18 @@ export const rules = {
   outlineWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
   overflow,
   overflowAnchor: { kind: 'enum', values: ['auto', 'none'] },
+  overflowBlock: {
+    kind: 'enum',
+    values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
+  },
+  overflowInline: {
+    kind: 'enum',
+    values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
+  },
   overflowWrap: { kind: 'enum', values: ['anywhere', 'break-word', 'normal'] },
   overflowX: overflow,
   overflowY: overflow,
+  overlay: { kind: 'enum', values: ['auto', 'none'] },
   overscrollBehavior: overscroll,
   overscrollBehaviorBlock: {
     kind: 'enum',
@@ -1200,6 +1255,7 @@ export const rules = {
     values: ['absolute', 'fixed', 'relative', 'static', 'sticky'],
   },
   printColorAdjust: { kind: 'enum', values: ['economy', 'exact'] },
+  r: length,
   readingFlow: {
     kind: 'enum',
     values: [
@@ -1228,6 +1284,8 @@ export const rules = {
     kind: 'enum',
     values: ['center', 'space-around', 'space-between', 'start'],
   },
+  rubyMerge: { kind: 'enum', values: ['auto', 'collapse', 'separate'] },
+  rubyOverhang: { kind: 'enum', values: ['auto', 'none'] },
   rubyPosition: {
     kind: 'enum',
     values: [
@@ -1241,8 +1299,15 @@ export const rules = {
       'under alternate',
     ],
   },
+  rx: { ...length, auto: true },
+  ry: { ...length, auto: true },
+  scrollbarGutter: {
+    kind: 'enum',
+    values: ['auto', 'both-edges stable', 'stable', 'stable both-edges'],
+  },
   scrollbarWidth: { kind: 'enum', values: ['auto', 'none', 'thin'] },
   scrollBehavior: { kind: 'enum', values: ['auto', 'smooth'] },
+  scrollInitialTarget: { kind: 'enum', values: ['nearest', 'none'] },
   scrollMargin: { ...scrollMargin, items: 4 },
   scrollMarginBlock: { ...scrollMargin, items: 2 },
   scrollMarginBlockEnd: scrollMargin,
@@ -1312,12 +1377,21 @@ export const rules = {
       'y proximity',
     ],
   },
+  scrollTargetGroup: { kind: 'enum', values: ['auto', 'none'] },
+  scrollTimelineAxis: {
+    kind: 'enum',
+    list: true,
+    values: ['block', 'inline', 'x', 'y'],
+  },
   shapeMargin: length,
   shapeRendering: {
     kind: 'enum',
     values: ['auto', 'crispEdges', 'geometricPrecision', 'optimizeSpeed'],
   },
+  stopColor: color,
+  stopOpacity: { kind: 'number', max: 1, min: 0 },
   stroke: { ...color, keywords: ['context-fill', 'context-stroke', 'none'] },
+  strokeColor: color,
   strokeDashoffset: { ...length, negative: true },
   strokeLinecap: { kind: 'enum', values: ['butt', 'round', 'square'] },
   strokeLinejoin: {
@@ -1341,6 +1415,11 @@ export const rules = {
   textAlignLast: {
     kind: 'enum',
     values: ['auto', 'center', 'end', 'justify', 'left', 'right', 'start'],
+  },
+  textAnchor: { kind: 'enum', values: ['end', 'middle', 'start'] },
+  textBoxTrim: {
+    kind: 'enum',
+    values: ['none', 'trim-both', 'trim-end', 'trim-start'],
   },
   textCombineUpright: { kind: 'enum', values: ['all', 'none'] },
   textDecorationColor: color,
@@ -1447,6 +1526,11 @@ export const rules = {
     values: ['capitalize', 'lowercase', 'none', 'uppercase'],
   },
   textUnderlineOffset: { ...length, auto: true, negative: true },
+  textWrapMode: { kind: 'enum', values: ['nowrap', 'wrap'] },
+  textWrapStyle: {
+    kind: 'enum',
+    values: ['auto', 'balance', 'pretty', 'stable'],
+  },
   top: margin,
   touchAction: {
     kind: 'enum',
@@ -1596,20 +1680,39 @@ export const rules = {
     kind: 'enum',
     values: ['break-spaces', 'normal', 'nowrap', 'pre', 'pre-line', 'pre-wrap'],
   },
+  whiteSpaceCollapse: {
+    kind: 'enum',
+    values: [
+      'break-spaces',
+      'collapse',
+      'preserve',
+      'preserve-breaks',
+      'preserve-spaces',
+    ],
+  },
   widows: positiveInteger,
   width: size,
   wordBreak: { kind: 'enum', values: ['break-all', 'keep-all', 'normal'] },
   wordSpacing: textSpacing,
+  wordWrap: { kind: 'enum', values: ['break-word', 'normal'] },
   writingMode: {
     kind: 'enum',
     values: ['horizontal-tb', 'vertical-lr', 'vertical-rl'],
   },
+  x: { ...length, negative: true },
+  y: { ...length, negative: true },
   zIndex: {
     integer: true,
     keywords: ['auto'],
     kind: 'number',
     max: Number.MAX_SAFE_INTEGER,
     min: Number.MIN_SAFE_INTEGER,
+  },
+  zoom: {
+    kind: 'number',
+    keywords: ['normal', 'reset'],
+    max: Infinity,
+    min: 0,
   },
 } as const satisfies Record<string, Rule>
 
@@ -1626,7 +1729,7 @@ export function validate(
       : 'Expected balanced var() expressions with valid custom-property names.'
   if (rule.list && typeof value === 'string' && value.includes(',')) {
     const parts = Motion.list(value)
-    if (!parts) return 'Expected a nonempty comma-separated motion list.'
+    if (!parts) return 'Expected a nonempty comma-separated list.'
     if (parts.length > 1) {
       for (const part of parts) {
         if (globals.has(part)) return 'CSS-wide keywords must stand alone.'

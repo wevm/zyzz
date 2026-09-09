@@ -118,6 +118,15 @@ export function compile<
               }
               return 'borderRadius'
             }
+            if (property.startsWith('fontSynthesis')) return 'fontSynthesis'
+            if (
+              ['whiteSpace', 'whiteSpaceCollapse', 'textWrapMode'].includes(
+                property,
+              )
+            )
+              return 'whiteSpace'
+            if (['wordWrap', 'overflowWrap'].includes(property))
+              return 'overflowWrap'
             if (property.startsWith('margin')) {
               return 'margin'
             }
@@ -127,7 +136,9 @@ export function compile<
             if (
               property === 'overflow' ||
               property === 'overflowX' ||
-              property === 'overflowY'
+              property === 'overflowY' ||
+              property === 'overflowBlock' ||
+              property === 'overflowInline'
             ) {
               return 'overflow'
             }

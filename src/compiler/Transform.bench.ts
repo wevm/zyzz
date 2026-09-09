@@ -32,6 +32,7 @@ import * as MathExpressions from '../../test/fixtures/MathExpressions.js'
 import * as Motion from '../../test/fixtures/Motion.js'
 import * as MotionLists from '../../test/fixtures/MotionLists.js'
 import * as Reading from '../../test/fixtures/Reading.js'
+import * as Scalars from '../../test/fixtures/Scalars.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
@@ -307,6 +308,12 @@ const workloads = {
       `export const motion${index} = css({animationDelay:'-${index}ms',animationDuration:'1s',animationIterationCount:'infinite',animationTimingFunction:'linear',transitionDuration:'250ms'})();`,
     source: Motion.source,
     title: 'motion',
+  },
+  scalars: {
+    declaration: (index: number) =>
+      `export const scalar${index} = css({cx:'${index}px',cy:'20px',r:'10px',textWrapMode:'nowrap',caretShape:'bar'})();`,
+    source: Scalars.source,
+    title: 'remaining scalar',
   },
   scrolling: {
     declaration: (index: number) =>

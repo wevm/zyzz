@@ -2,6 +2,7 @@
  * Rewrites extracted style calls into executable modules with CSS and source maps.
  * @module
  */
+import * as Expression from './internal/Expression.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import type * as Ast from '@oxc-project/types'
 import MagicString from 'magic-string'
@@ -349,7 +350,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       const fallbacks = properties.some(
         (property) =>
           property.type === 'Property' &&
-          property.value.type === 'ArrayExpression',
+          Expression.unwrap(property.value).type === 'ArrayExpression',
       )
       const occurrences = new Map<string, number>()
       let cursor = 1
@@ -376,10 +377,13 @@ export function compile(options: compile.Options): compile.ReturnType {
           : properties[propertyIndex]!
         const occurrence = occurrences.get(declaration.property) ?? 0
         occurrences.set(declaration.property, occurrence + 1)
+        const value =
+          property.type === 'Property'
+            ? Expression.unwrap(property.value)
+            : undefined
         const location =
-          property.type === 'Property' &&
-          property.value.type === 'ArrayExpression'
-            ? property.value.elements[occurrence]!
+          value?.type === 'ArrayExpression'
+            ? value.elements[occurrence]!
             : property
         Mapping.addMapping(cssMap, {
           generated: { column: selector.length + start, line },

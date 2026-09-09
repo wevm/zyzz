@@ -68,7 +68,7 @@ export function compile<
         })
         continue
       }
-      const key = important ? `${property}!` : property
+      const key = `${important ? 1 : 0}:${property}`
       let values = cache.get(key)
       if (!values) {
         values = new Map()

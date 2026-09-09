@@ -2,6 +2,7 @@
  * Extracts literal styles and local themes through lexical source analysis.
  * @module
  */
+import * as Expression from './internal/Expression.js'
 import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
@@ -278,8 +279,10 @@ export function extract(options: extract.Options): extract.ReturnType {
       }
       function value(node: Ast.Node, path: readonly string[]): unknown {
         const token = themes?.tokens.get(node.start)
+        const reference = token?.end === node.end ? token.reference : undefined
+        node = Expression.unwrap(node)
         let result: unknown
-        if (token?.end === node.end) result = token.reference
+        if (reference) result = reference
         else if (
           node.type === 'Literal' &&
           (typeof node.value === 'string' || typeof node.value === 'number')

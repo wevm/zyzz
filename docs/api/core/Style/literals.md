@@ -37,7 +37,7 @@ The property surface is intentionally finite. No catch-all string index permits 
 - **CSS-wide values:** every property accepts `inherit`, `initial`, `revert`, `revert-layer`, and `unset`.
 - **Numbers:** finite values only; opacity 0–1, font weight 1–1000, line height/flex factors nonnegative.
 
-Types check units and token names; runtime validation checks numeric bounds and hex digits.
+Inferred authoring values reject hexadecimal, binary, octal, and whitespace-separated numeric lengths. Valid token names remain usable even when their spelling resembles an invalid CSS value. Types check units and token names; runtime validation checks numeric bounds and hex digits.
 
 This boundary rejects:
 

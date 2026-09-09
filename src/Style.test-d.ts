@@ -145,3 +145,25 @@ expectTypeOf(extendedLengths).toEqualTypeOf<typeof lengthTheme>()
 Theme.extend(lengthTheme, { spacing: { missing: '1lh' } })
 // @ts-expect-error Overrides cannot change length tokens to colors.
 Theme.extend(lengthTheme, { spacing: { space: '#fff' } })
+
+// @ts-expect-error CSS lengths exclude hexadecimal numbers.
+css({ width: '0x10dvh' })
+// @ts-expect-error CSS lengths exclude binary numbers.
+css({ width: '0b10lh!' })
+// @ts-expect-error CSS lengths exclude octal numbers.
+css({ padding: ['1px', '0o10cqi'] })
+// @ts-expect-error Theme lengths use the same decimal grammar.
+Theme.define({ spacing: { space: '0b10lh' } })
+css({ width: '01dvh', height: '.5cqi', margin: '-1e-2lh', padding: '+0.5rem' })
+
+// @ts-expect-error CSS numbers cannot contain whitespace before the unit.
+css({ width: '10 dvh' })
+// @ts-expect-error Style.define checks the same numeric spellings.
+Style.define({ card: { padding: '0x10px' } })
+// @ts-expect-error Config-bound values use the same inferred checks.
+configured.css({ width: '0b10cqi!' })
+const numericNames = Theme.define({ spacing: { '0x10px': '8px' } })
+numericNames.css({ padding: '0x10px!' })
+
+// @ts-expect-error Binary values also fail for units with overlapping suffixes.
+css({ height: '0b10dvh' })

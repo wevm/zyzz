@@ -2,6 +2,15 @@
  * Defines and validates the supported primitive CSS property and value domains.
  * @module
  */
+/** Refines inferred length strings where TypeScript's number template is broader than CSS. */
+export type Checked<value> = value extends Length
+  ? value extends
+      | `${'0x' | '0X' | '0b' | '0B' | '0o' | '0O'}${string}`
+      | `${string}${' ' | '\n' | '\r' | '\t' | '\f'}${string}`
+    ? never
+    : value
+  : value
+
 /** Deliberately bounded color syntax; functional colors arrive with CSS parsing. */
 export type Color =
   | 'black'

@@ -189,3 +189,13 @@ Theme.extend(theme, { color: { blue: undefined } })
 declare const possiblyMissing: '1lh' | undefined
 // @ts-expect-error An aliased optional value is also invalid as an override.
 Theme.extend(theme, { spacing: { md: possiblyMissing } })
+
+// @ts-expect-error A length leaf cannot become an empty object.
+Theme.extend(theme, { spacing: { md: {} } })
+// @ts-expect-error A length leaf cannot become an array.
+Theme.extend(theme, { spacing: { md: [] } })
+// @ts-expect-error A length leaf cannot become a function.
+Theme.extend(theme, { spacing: { md: () => '2rem' } })
+
+// @ts-expect-error Theme overrides reject nondecimal length spellings too.
+Theme.extend(theme, { spacing: { md: '0x10px' } })

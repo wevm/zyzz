@@ -2,6 +2,7 @@
  * Normalizes explicit configuration into isolated typed authoring contracts.
  * @module
  */
+import type * as Value from './internal/Value.js'
 import { css } from './css.js'
 import type * as Style from './Style.js'
 import * as Theme from './Theme.js'
@@ -170,7 +171,7 @@ type Properties<
 // Intersecting the value unions twice multiplies fallback tuple alternatives.
 type Body<styles, tokens extends Theme.Tokens, layers extends string> = {
   [key in keyof styles]: key extends keyof Style.Properties<tokens>
-    ? unknown
+    ? Value.Checked<styles, tokens>[key]
     : key extends `@layer ${layers}`
       ? styles[key] extends Record<string, unknown>
         ? Body<styles[key], tokens, layers>

@@ -9,6 +9,21 @@ import { Css } from 'zyzz/web'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 
 describe('compile', () => {
+  test('unsupported properties cannot collide with important cache entries', () => {
+    const declarations = [
+      { property: 'color', value: '#fff', important: true },
+      { property: 'color!', value: '#fff' },
+    ]
+    for (const values of [declarations, [...declarations].reverse()])
+      expect(() =>
+        Css.compile({
+          styles: { styles: [{ name: 'card', declarations: values }] },
+        } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Css.CompileError: ["card","color!"]: Unsupported literal property.]`,
+      )
+  })
+
   test('standard length families compile through public definitions', () => {
     const styles = Style.define({
       card: {

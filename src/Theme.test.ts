@@ -241,6 +241,25 @@ describe('define', () => {
 })
 
 describe('extend', () => {
+  test('object-shaped length overrides fail at the public boundary', () => {
+    const theme = Theme.define({ spacing: { md: '1lh' } })
+    expect(() =>
+      Theme.extend(theme, { spacing: { md: {} } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["spacing","md"]: A token leaf cannot become a palette.]`,
+    )
+    expect(() =>
+      Theme.extend(theme, { spacing: { md: [] } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["spacing","md"]: Expected a plain data record.]`,
+    )
+    expect(() =>
+      Theme.extend(theme, { spacing: { md: () => '2rem' } } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Theme.InvalidError: ["spacing","md"]: Expected a plain data record.]`,
+    )
+  })
+
   test('undefined override leaves fail while omitted leaves inherit', () => {
     const theme = Theme.define({
       color: { brand: '#06c' },

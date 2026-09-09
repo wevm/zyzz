@@ -60,7 +60,7 @@ describe('compile', () => {
           source: `import { css } from 'zyzz'; css({gridColumnStart:${JSON.stringify(value)}});`,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:49: Expected auto, a nonzero safe integer, or span followed by a positive safe integer.]`,
+        `[Source.ExtractError: invalid.ts:49: Expected valid named or numbered grid lines with nonzero indices, positive spans, and the required slash arity.]`,
       )
   })
 

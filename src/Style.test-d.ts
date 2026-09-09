@@ -33,6 +33,20 @@ describe('intrinsic scalar prefixes', () => {
   })
 })
 
+describe('timeline range endpoints', () => {
+  test('retains typed names and offsets', () => {
+    css({
+      animationRangeStart: 'entry 20%',
+      animationRangeEnd: 'exit -10px',
+      timelineTriggerActiveRangeStart: 'auto',
+    })
+    // @ts-expect-error Range offsets cannot use time units.
+    css({ animationRangeStart: '1s' })
+    // @ts-expect-error Auto is exclusive to active trigger endpoints.
+    css({ animationRangeEnd: 'auto' })
+  })
+})
+
 describe('compound scalar declarations', () => {
   test('typed tuples preserve scalar domains', () => {
     css({

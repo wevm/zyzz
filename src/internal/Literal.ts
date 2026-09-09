@@ -334,6 +334,31 @@ const fontWidth = {
   ],
 } as const
 
+const attachmentRange = {
+  atoms: ['length', 'percentage'],
+  kind: 'tuple',
+  list: true,
+  max: 1,
+  min: 1,
+  negative: true,
+  prefixes: [
+    'cover',
+    'contain',
+    'entry',
+    'exit',
+    'entry-crossing',
+    'exit-crossing',
+  ],
+  standalone: [
+    'normal',
+    'cover',
+    'contain',
+    'entry',
+    'exit',
+    'entry-crossing',
+    'exit-crossing',
+  ],
+} as const
 const border = {
   kind: 'enum',
   values: [
@@ -790,6 +815,8 @@ export const rules = {
     kind: 'identifier',
     separator: 'comma',
   },
+  animationRangeEnd: attachmentRange,
+  animationRangeStart: attachmentRange,
   animationTimingFunction: {
     easing: true,
     kind: 'enum',
@@ -2487,6 +2514,16 @@ export const rules = {
     kind: 'identifier',
     separator: 'comma',
     standalone: ['none'],
+  },
+  timelineTriggerActivationRangeEnd: attachmentRange,
+  timelineTriggerActivationRangeStart: attachmentRange,
+  timelineTriggerActiveRangeEnd: {
+    ...attachmentRange,
+    standalone: [...attachmentRange.standalone, 'auto'],
+  },
+  timelineTriggerActiveRangeStart: {
+    ...attachmentRange,
+    standalone: [...attachmentRange.standalone, 'auto'],
   },
   timelineTriggerName: {
     dashed: true,

@@ -551,3 +551,5 @@ Interest-delay shorthands share conflict domains with start/end longhands. Indep
 Intrinsic size overrides accept lengths or none, each optionally prefixed by auto. Font-size-adjust accepts a nonnegative number or from-font, optionally prefixed by ex-height, cap-height, ch-width, ic-width, or ic-height. These contracts follow [CSS Sizing](https://www.w3.org/TR/css-sizing-4/#intrinsic-size-override) and [CSS Fonts](https://www.w3.org/TR/css-fonts-5/#font-size-adjust-prop).
 
 Grid placement accepts named lines and integer indices, positive spans, and row/column/area shorthands. For example, gridColumn accepts `start / span 2` and gridArea accepts `1 / 2 / 3 / 4`. Escaped line names and complete integer math remain deferred. See [CSS Grid placement](https://www.w3.org/TR/css-grid-2/#line-placement).
+
+Animation and timeline-trigger range endpoints accept cover, contain, entry, exit, entry-crossing, or exit-crossing with optional length/percentage offsets. Lists preserve boundaries; normal is standalone, and auto is limited to active-trigger endpoints. See [Scroll-driven Animations](https://www.w3.org/TR/scroll-animations-1/#animation-range).

@@ -152,7 +152,7 @@ All 148 canonical lowercase CSS named colors and 19 canonical system-color keywo
 
 ## Reading Order
 
-`readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 555 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
+`readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 561 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
 
 ### Structured Grid Tracks
 
@@ -219,3 +219,5 @@ Interest-delay shorthands share conflict domains with start/end longhands. Indep
 Intrinsic size overrides and font-size-adjust accept optional component prefixes with dimension and arity checks. Intrinsic shorthand and physical/logical longhands share a cascade conflict domain. Native controls exercise contained sizing. These six properties remain partial pending complete lexical and browser evidence.
 
 Grid row, column, and area shorthands accept slash-separated placement lines. Named indices and spans extend all four placement longhands; nonzero indices, positive spans, reserved names, and component limits are checked. Placement declarations share a conflict domain. These three new mappings remain partial.
+
+Six animation/trigger range endpoints accept named ranges with optional signed length/percentage offsets and comma lists. Standalone normal and active-trigger auto remain exclusive. Native controls compare view-animation progress. These mappings remain partial; trigger event behavior and complete tokenization remain unverified.

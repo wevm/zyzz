@@ -476,7 +476,7 @@ Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthan
 
 Motion lists preserve easing-function commas and validate cubic-bezier(), steps(), and linear() constraints. Absolute functional colors preserve color spaces and browser clamping. Border color/style lists and elliptical radii preserve logical overrides and importance. Compatible font variant and containment groups reject conflicts; font-synthesis adds one partially implemented property.
 
-The completion count remains 0/670: 555 partial and 115 deferred (90 standard, 25 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
+The completion count remains 0/670: 561 partial and 109 deferred (84 standard, 25 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
 
 ### Dimensional Math
 
@@ -559,3 +559,9 @@ Intrinsic-sizing CI passed all standard checks and browser tests. Matching devic
 Grid placement passes full TypeScript, generated consumers, source/grammar checks, and lint. The 100-style baseline measured 4.2487 ms ±5.96%; an initial 5.2802 ms ±19.17% candidate prompted a repeat at 4.3584 ms ±7.96%. New grid lanes measured 0.7551/4.5315 ms for 10/100 styles. Native layout controls await CI.
 
 Grid span type refinement preserves fractional/negative rejection through importance markers and fallback arrays. Runtime compilation additionally checks named combinations and slash arity. Escaped names and integer math remain incomplete.
+
+Six animation/trigger range endpoints accept named ranges with optional signed length/percentage offsets and comma lists. Standalone normal and active-trigger auto remain exclusive. Native controls compare view-animation progress. These mappings remain partial; trigger event behavior and complete tokenization remain unverified.
+
+Range endpoint validation passes full TypeScript, generated consumers, source/grammar checks, lint, and the package build. The 100-style transform measured 4.2752 ms ±6.08% before and 4.1974 ms ±6.99% after; range lanes measured 0.6734/4.1274 ms for 10/100 styles. Browser progress controls await CI.
+
+The intrinsic-sizing benchmark workflow passed. Grid CI passed native layout controls but found an older rejection diagnostic snapshot; the updated diagnostic passes all retained invalid-count cases locally. Both theme consumer integrations passed in 3.70 seconds combined without changed timeouts.

@@ -1035,11 +1035,11 @@
       },
       "animation-range-end": {
         "grammar": "04049fa651f6cc99d677f1ef5e8b6c8cf44c64a65c1fa79dfc5ccfd2c24d25b8",
-        "status": "deferred"
+        "status": "partial"
       },
       "animation-range-start": {
         "grammar": "a640b6be0ea00f8edc23c789907c548989f0d9937471bb8e53079fbd5fb5b69f",
-        "status": "deferred"
+        "status": "partial"
       },
       "animation-timeline": {
         "grammar": "a9cca6f0968806a245872abee191dc8852bde24c7a4e597457cc76eca57fc12b",
@@ -3007,11 +3007,11 @@
       },
       "timeline-trigger-activation-range-end": {
         "grammar": "172502e791b3dfc328019e89eac9d5da9b64bab6dac05602a67bc28b33585fd5",
-        "status": "deferred"
+        "status": "partial"
       },
       "timeline-trigger-activation-range-start": {
         "grammar": "912ce80767505f1232f54aaadfc59ed2a7cca0f9130e1027ad614e1c209cf4f2",
-        "status": "deferred"
+        "status": "partial"
       },
       "timeline-trigger-active-range": {
         "grammar": "ff41faeced201426d36abdad8830f87afe853675ef6ea4f98b01610a9922261b",
@@ -3019,11 +3019,11 @@
       },
       "timeline-trigger-active-range-end": {
         "grammar": "737001cfa650dadaa0dbf9271b0f06a11a7edee86a71baf1b8e283d3dd00a42d",
-        "status": "deferred"
+        "status": "partial"
       },
       "timeline-trigger-active-range-start": {
         "grammar": "d08a40c03819b6b8697f87cb5840c88b1ebd14ec5ff48bf534d54938b6c23f61",
-        "status": "deferred"
+        "status": "partial"
       },
       "timeline-trigger-name": {
         "grammar": "80a7239ec9d87fabe794a5e25ac4b528f3c82341567b14663adfa8941891a58c",

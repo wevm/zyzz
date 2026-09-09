@@ -26,6 +26,7 @@ import * as GridLists from '../../test/fixtures/GridLists.js'
 import * as Prefixed from '../../test/fixtures/Prefixed.js'
 import * as Percentage from '../../test/fixtures/Percentage.js'
 import * as GridLines from '../../test/fixtures/GridLines.js'
+import * as Ranges from '../../test/fixtures/Ranges.js'
 import * as Tuples from '../../test/fixtures/Tuples.js'
 import * as Corners from '../../test/fixtures/Corners.js'
 import * as Geometry from '../../test/fixtures/Geometry.js'
@@ -293,6 +294,12 @@ const workloads = {
       `export const grid${index} = css({gridArea:'1 / 2 / 3 / 4',gridColumnStart:'span content 2'})();`,
     source: GridLines.source,
     title: 'grid placement',
+  },
+  ranges: {
+    declaration: (index: number) =>
+      `export const range${index} = css({animationRangeStart:'entry ${index}%',animationRangeEnd:'exit 80%'})();`,
+    source: Ranges.source,
+    title: 'timeline range',
   },
   corners: {
     declaration: (index: number) =>

@@ -63,12 +63,16 @@ export function cases(): readonly Case[] {
       if ('prefixes' in rule) {
         for (const prefix of rule.prefixes) {
           values.push(`${prefix} ${atoms.includes('length') ? '10px' : '.5'}`)
-          for (const keyword of rule.keywords)
-            values.push(`${prefix} ${keyword}`)
+          if ('keywords' in rule)
+            for (const keyword of rule.keywords)
+              values.push(`${prefix} ${keyword}`)
         }
         if (rule.max > 1) values.push('auto 10px auto 20px', 'none auto 20px')
       }
-      if (atoms.includes('percentage')) values.push('10%', '10% 20%')
+      if (atoms.includes('percentage')) {
+        values.push('10%')
+        if (rule.max > 1) values.push('10% 20%')
+      }
       if (atoms.includes('length') && atoms.includes('number'))
         values.push('1px 2 3px 4')
       if (atoms.includes('time')) values.push('1s', '1s 200ms', 'normal 200ms')
@@ -78,7 +82,10 @@ export function cases(): readonly Case[] {
       }
       if (atoms.includes('integer') && 'keywords' in rule)
         values.push('auto 2 3')
-      if ('list' in rule) values.push('auto 10%, 20px')
+      if ('list' in rule) {
+        if ('prefixes' in rule) values.push('entry 20%, exit -10px')
+        else values.push('auto 10%, 20px')
+      }
     }
     if (rule.kind === 'corner') {
       values.push(

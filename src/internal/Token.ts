@@ -15,16 +15,26 @@ export function accepts(
   if (group === 'textColor') return property === 'color'
   if (group === 'spacing')
     return (
-      /^(padding|margin)/.test(property) ||
+      /^(padding|margin|inset)/.test(property) ||
       [
+        'blockSize',
+        'bottom',
         'columnGap',
         'gap',
         'height',
+        'inlineSize',
+        'left',
+        'maxBlockSize',
         'maxHeight',
+        'maxInlineSize',
         'maxWidth',
+        'minBlockSize',
         'minHeight',
+        'minInlineSize',
         'minWidth',
+        'right',
         'rowGap',
+        'top',
         'width',
       ].includes(property)
     )
@@ -142,14 +152,21 @@ type Paths<tree> = [tree] extends [never]
 export type Properties<group extends Group> = group extends 'spacing'
   ? Extract<
       keyof Literal.Properties,
+      | `blockSize`
+      | `bottom`
       | `columnGap`
       | `gap`
       | `height`
+      | `inlineSize`
+      | `inset${string}`
+      | `left`
       | `margin${string}`
       | `max${string}`
       | `min${string}`
       | `padding${string}`
+      | `right`
       | `rowGap`
+      | `top`
       | `width`
     >
   : group extends 'textColor'

@@ -18,18 +18,20 @@ styles.styles[0]?.declarations
 
 The property surface is intentionally finite. No catch-all string index permits misspelled properties. The exact enum members and property list live together in `src/internal/Literal.ts`; the public `Style.Properties` type derives from that list.
 
-| Group      | Supported Properties                                                                                                                                    |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Layout     | `display`, `position`, `boxSizing`, `flexDirection`, `flexWrap`, `alignItems`, `justifyContent`, `gap`, `rowGap`, `columnGap`, `flexGrow`, `flexShrink` |
-| Spacing    | `padding`, `margin`, and their physical top/right/bottom/left longhands                                                                                 |
-| Sizing     | `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`                                                                                     |
-| Colors     | `color`, `backgroundColor`, `borderColor`                                                                                                               |
-| Borders    | `borderWidth`, `borderStyle`, `borderRadius`                                                                                                            |
-| Typography | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`                                                                                        |
-| Other      | `opacity`                                                                                                                                               |
+| Group       | Supported Properties                                                                                                                                    |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layout      | `display`, `position`, `boxSizing`, `flexDirection`, `flexWrap`, `alignItems`, `justifyContent`, `gap`, `rowGap`, `columnGap`, `flexGrow`, `flexShrink` |
+| Spacing     | `padding`, `margin`, and their physical top/right/bottom/left and logical block/inline start/end longhands                                              |
+| Sizing      | `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, plus `inlineSize`, `blockSize`, and their `min`/`max` forms                        |
+| Colors      | `color`, `backgroundColor`, `borderColor`                                                                                                               |
+| Borders     | `borderWidth`, `borderStyle`, `borderRadius`                                                                                                            |
+| Typography  | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`                                                                                        |
+| Positioning | `inset`, `insetBlock`, `insetInline`, their start/end longhands, and `top`, `right`, `bottom`, `left`                                                   |
+| Writing     | `direction` (`ltr`, `rtl`), `writingMode` (`horizontal-tb`, `vertical-lr`, `vertical-rl`)                                                               |
+| Other       | `opacity`                                                                                                                                               |
 
 - **Lengths:** finite absolute, font-relative, viewport-relative, and container-relative lengths, percentages, or numeric zero. Border width excludes percentages.
-- **Margins:** allow negative lengths. Margins and width/height also accept `auto`.
+- **Margins:** allow negative lengths. Margins, inset offsets, and width/height/inlineSize/blockSize also accept `auto`. Offsets accept negative lengths.
 - **Shorthands:** scalar values only; no multi-value strings yet.
 - **Units:** preserve spelling without implicit pixel conversion.
 
@@ -71,6 +73,22 @@ const panel = css({
 ```
 
 Container units can refer to containment established by ordinary CSS. Zyzz does not yet author containment declarations or container conditions. Browser support for newer units depends on the deployment target; ordered fallback declarations can retain an older unit. Native unit conversion remains unimplemented.
+
+## Logical Boxes
+
+```ts
+const panel = css({
+  inlineSize: '20rem',
+  paddingInline: '1rem',
+  marginBlockEnd: '0.5rem!',
+  position: 'relative',
+  insetInlineStart: '-2px',
+})
+```
+
+[Logical dimensions, spacing, and offsets](https://www.w3.org/TR/css-logical-1/) follow the element's writing mode and direction. Emission retains logical property names and authored order relative to physical properties. Spacing tokens work in every new length property, including explicit references and fallback arrays.
+
+Shorthands currently accept a single scalar, applied to both logical edges. Arrays remain ordered declaration fallbacks, not paired edge values. Minimum/maximum sizes retain the existing length-only subset; intrinsic sizing keywords and logical borders remain follow-ups. Native mapping is not implemented.
 
 ## Fallbacks and Importance
 
@@ -123,7 +141,7 @@ const { classes, css, themes } = Css.compile({ styles })
 Compilation is pure. Sharing follows property overlap:
 
 - **Independent properties:** each forms its own domain.
-- **Overlapping properties:** padding, margin, and gap group with their supported longhands.
+- **Overlapping properties:** padding, margin, inset, and gap group with their supported longhands. Logical sizes group with both physical axes of the corresponding size/minimum/maximum family when present.
 - **Shared domains:** every participating style must have identical ordered declarations.
 
 Conflicting domains retain distinct rules, including repeated A/B/A overrides.

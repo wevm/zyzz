@@ -4,7 +4,7 @@ Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the ca
 
 **Partial** means only the stated subset works today. **Planned** means an existing architecture contract awaits implementation. **Proposal** means an API shape is offered for review. **Deferred** means a later capability; external CSS examples demonstrate interoperability, not implemented Zyzz authoring support. Examples are independent unless they explicitly share a definition.
 
-Current implementation: 40 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
+Current implementation: 71 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
 
 ## 01. Typed Styles and Inline Authoring
 
@@ -22,6 +22,12 @@ const label = <span {...css({ color: '#06c' })()} />
 Complete the property/value inventory across accessibility, backgrounds/gradients, borders/outlines, filters/masks, grid/flex, interactivity, layout/containment/positioning, logical spacing/sizing, scrolling, shadows, SVG, tables, transforms, and typography. Property spellings and token domains remain checked; broad selector support must not introduce an unrestricted object-key index signature. No separate utility-string or property-access facade is needed.
 
 Panda's `strictTokens` and `strictPropertyValues` expose an additional policy choice. Zyzz keeps valid CSS literals available by default; opt-in token-only enforcement belongs in a future lint/type policy, not metadata inside `Theme.define`. Syntax validation and token-only policy are separate. Panda property shorthands and JSX style props do not require matching core APIs. [Writing styles](https://panda-css.com/docs/concepts/writing-styles)
+
+Logical dimensions, min/max dimensions, block/inline margins and padding, and inset offsets now share the scalar token/fallback/importance pipeline. Mixed physical/logical declarations preserve order across writing modes. Shorthands accept one scalar; intrinsic sizing values and logical borders remain pending.
+
+```ts
+css({ inlineSize: '20rem', paddingInline: '1rem', marginBlockEnd: '8px' })
+```
 
 ## 02. Composition and Restricted Style Contracts
 

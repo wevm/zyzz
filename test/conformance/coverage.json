@@ -1067,7 +1067,7 @@
       },
       "backface-visibility": {
         "grammar": "b68feea901c3df37e716ca707ac951fd57d7cb4a21c9f9b2c3feaf0d0f4d27ed",
-        "status": "deferred"
+        "status": "partial"
       },
       "background": {
         "grammar": "a47ff57e5184918c81dcd2dc22a357a401eaff8ef8ea955b901f26261a2cf4af",
@@ -1387,7 +1387,7 @@
       },
       "box-decoration-break": {
         "grammar": "909a1c5f2ea1f62944bc14faa0b21ab81b48c7a2349921eb748d7a986d9a5ed7",
-        "status": "deferred"
+        "status": "partial"
       },
       "box-direction": {
         "grammar": "f1b89a183913570c046c1517b200db0b51f9a02683ff42bfbb09d9dc846d0a7a",
@@ -1459,7 +1459,7 @@
       },
       "clear": {
         "grammar": "7455880df8a6e49998bbc6b5521052c9dcda1d044810489b64c2458a6206a670",
-        "status": "deferred"
+        "status": "partial"
       },
       "clip": {
         "grammar": "b7970f8d46bbd7e6aa77fcf8cf6db741a1cc4385500662bc523adb6fc718a990",
@@ -1535,7 +1535,7 @@
       },
       "contain": {
         "grammar": "da7bf572fb59bda9be449a53f46fd867e7c453d76d4707dd3a492a3e273ca27f",
-        "status": "deferred"
+        "status": "partial"
       },
       "contain-intrinsic-block-size": {
         "grammar": "77b8dad94a98196c141cc31e1bba726977ebd6575cccefa59f6a0f21c07aaa3d",
@@ -1575,7 +1575,7 @@
       },
       "content-visibility": {
         "grammar": "a607a0c919d3e009ea99ce9ea4049ff32dce3727b14ee2bd3c2db577e0e5f333",
-        "status": "deferred"
+        "status": "partial"
       },
       "corner-block-end-shape": {
         "grammar": "1e7103a79f2782f406fd295fd4f7ec7ea106e297972ebc6fbaf22cd1a78f99c1",
@@ -1747,7 +1747,7 @@
       },
       "float": {
         "grammar": "6bcb4e1f6f7eb40dc9efaea408bc56e50520d7644603d2d09db6fd015502e654",
-        "status": "deferred"
+        "status": "partial"
       },
       "flood-color": {
         "grammar": "9b1005c1a90345db27e799fa2db491fba3181bd699e4938a419526ed157836c5",
@@ -2051,7 +2051,7 @@
       },
       "isolation": {
         "grammar": "858699e76aef445185c6acef7a94d83f9b86f4ba722b033ee873faa845524ca3",
-        "status": "deferred"
+        "status": "partial"
       },
       "justify-content": {
         "grammar": "2b79c4e4d4b2dd3bfb36a55ef17448e3d916e7053f78e7127f873b7c6d1204c5",
@@ -2307,7 +2307,7 @@
       },
       "object-fit": {
         "grammar": "04fc9a62358cb5289a8776e1b66f8ef02b62683d64b92cb60c535b9534bd964b",
-        "status": "deferred"
+        "status": "partial"
       },
       "object-position": {
         "grammar": "2ed2dc4ba1022546d02fe075df1944b6a2d84ea111dae0de0a8578c1afb7489c",
@@ -3055,7 +3055,7 @@
       },
       "transform-style": {
         "grammar": "04f6b9095bb2b976cc3a21a34dd4415c40b51fe374754f8c352505aa828224f1",
-        "status": "deferred"
+        "status": "partial"
       },
       "transition": {
         "grammar": "ce6f225f88ec7e312a498393142eddfc0dbe2180252b6482ebff44f3ff8c42e6",
@@ -3183,7 +3183,7 @@
       },
       "z-index": {
         "grammar": "e56aa478f0859378a0bec1d29284285c42439fac3143f5a09496ab28d93f30ff",
-        "status": "deferred"
+        "status": "partial"
       },
       "zoom": {
         "grammar": "0d68b347860c1a4bc3c8918760e7145404de1d67a6d3e85373ee8763f80d319b",

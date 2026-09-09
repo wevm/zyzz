@@ -93,3 +93,9 @@ Update this versioned inventory with type, extraction, emission, mapping, target
 Twelve properties add column count/width/fill/span, rule color/style/width, before/after/inside breaks, and orphan/widow counts. Column gaps accept `normal`. Counts use positive safe integers; column count also accepts `auto`. Widths exclude percentages. Shared color tokens map to rule colors.
 
 The MDN grammar/type corpus covers accepted domains. Source fixtures preserve fallback priority and maps; a browser fixture compares columns and forced breaks against independent CSS. Shorthands, regions, additional fragmentation keywords, and paged-media rendering remain deferred. Timing and delivery use the column transform lanes.
+
+## Layout and Containment
+
+Ten properties add float clearing, containment, content visibility, isolation, object fitting, backface visibility, box decoration breaks, transform style, and stacking indices. Display adds contents, flow-root, list-item, and table roles. Containment currently accepts single keywords; z-index accepts auto or safe integers.
+
+Independent MDN/type probes cover every accepted keyword. Browser fixtures verify computed declarations, float clearance, and stacking hit tests. Object cropping, 3D painting, containment combinations, multi-keyword display, and native rendering remain separate gates; computed values alone do not prove those behaviors.

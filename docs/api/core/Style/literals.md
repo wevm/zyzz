@@ -402,3 +402,20 @@ css({
   breakInside: 'avoid-column',
 })
 ```
+
+## Layout and Containment
+
+`display` includes `contents`, `flow-root`, `list-item`, `inline-table`, and table roles. `float` and `clear` accept physical and logical sides; clear also accepts `both`. `zIndex` accepts `auto` or safe integers, including negatives. `isolation` accepts `auto`/`isolate`.
+
+`contain` accepts single `none`, `strict`, `content`, `size`, `inline-size`, `layout`, `style`, or `paint` keywords. `contentVisibility` accepts `auto`, `hidden`, or `visible`. Combined containment and multi-keyword display values remain deferred.
+
+`objectFit` accepts `fill`, `contain`, `cover`, `none`, or `scale-down`; `boxDecorationBreak` accepts `slice`/`clone`. `backfaceVisibility` accepts `hidden`/`visible` and `transformStyle` accepts `flat`/`preserve-3d`. Transform functions remain a separate capability. These keyword domains do not map theme tokens.
+
+```ts
+css({
+  display: 'flow-root',
+  contain: 'layout',
+  isolation: 'isolate',
+  zIndex: 2,
+})
+```

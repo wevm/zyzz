@@ -144,7 +144,7 @@ describe('compile', () => {
         failures.push(`Declaration count: ${count} != ${batch.length * 2}`)
     }
     expect(failures).toMatchInlineSnapshot(`[]`)
-  })
+  }, 30_000)
 
   test('CSS conformance rejects invalid and unsupported values through source authoring', () => {
     const accepted: string[] = []

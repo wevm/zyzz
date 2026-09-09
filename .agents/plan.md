@@ -429,3 +429,5 @@ Custom conflict graphs, shared-subset/biclique search, bounded beam search, MaxS
 Continue opening coherent property/value PRs against the pinned MDN inventory. Each batch preserves independent grammar/type validation, adds browser fixtures and benchmark evidence, and records remaining restrictions. New type fixtures use describe/test blocks. Full support requires value and rendering proof, not property-name acceptance.
 
 - Column properties: 12 additions plus normal column gaps; numeric keyword domains preserve positive count validation. Shorthands and remaining fragment grammar follow separately.
+
+- Layout and containment: 10 additional properties and 13 display keywords, with finite containment, safe stacking integers, independent grammar/type checks, and float/stacking browser fixtures. Broad syntax remains partial in the inventory.

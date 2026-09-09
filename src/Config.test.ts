@@ -47,9 +47,7 @@ describe('create', () => {
         }),
         themes: { original: base },
       }).css,
-    ).toMatchInlineSnapshot(
-      `".z_base0{color:var(--z0,#06c);}"`,
-    )
+    ).toMatchInlineSnapshot(`".z_base0{color:var(--z0,#06c);}"`)
     const other = Config.create({ theme: base })
     expect(
       Css.compile({
@@ -58,9 +56,7 @@ describe('create', () => {
         }),
         themes: zyzz.themes,
       }).css,
-    ).toMatchInlineSnapshot(
-      `".z_base0{color:var(--z0,#06c);}"`,
-    )
+    ).toMatchInlineSnapshot(`".z_base0{color:var(--z0,#06c);}"`)
   })
 
   test('normalized themes inherit and select schemes in Chromium', async () => {
@@ -149,9 +145,7 @@ describe('create', () => {
           card: { padding: inline.theme.tokens.spacing.md },
         }),
       }).css,
-    ).toMatchInlineSnapshot(
-      `".z_base0{padding:var(--z0,1rem);}"`,
-    )
+    ).toMatchInlineSnapshot(`".z_base0{padding:var(--z0,1rem);}"`)
     expect(() =>
       zyzz.css({ padding: 'md' }),
     ).toThrowErrorMatchingInlineSnapshot(

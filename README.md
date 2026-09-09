@@ -38,7 +38,7 @@ Then:
 
 ### Setup with Vite
 
-Requires Vite 8 (`vite: ^8.0.0`). Add `zyzz()` to the existing plugins array, alongside the application's framework plugin:
+Add `zyzz()` to the existing plugins array, alongside the application's framework plugin:
 
 ```ts
 // vite.config.ts
@@ -54,14 +54,14 @@ Import components normally. The plugin transforms source modules and delivers CS
 
 ### Setup with CLI
 
-Compile source modules and CSS before the application build:
+Build or watch source files:
 
 ```sh
 npx zyzz build
 npx zyzz watch
 ```
 
-By default, compile `src` into `dist` and emit `dist/styles.css`. Point the downstream build at the rewritten `dist` tree and load its stylesheet. The downstream build handles TypeScript/JSX lowering. See [CLI Setup](docs/introduction/cli.md).
+Compiles `src` to `dist` and outputs CSS to `dist/styles.css` by default. See [CLI Setup](docs/introduction/cli.md).
 
 ### Use Compiler API
 

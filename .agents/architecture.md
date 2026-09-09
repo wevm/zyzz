@@ -159,6 +159,48 @@ Property-specific color groups augment the shared `color` group and win when a k
 
 `Theme.define` uses exactly the supplied token groups, with no implicit preset merge. Bundled definitions are available as `tokens` from `zyzz/themes/default`; object spreads can opt into its groups. Token values must be statically resolvable and valid for their target.
 
+## Property Mappings
+
+`Config.create({ shorthands })` defines optional authoring aliases. Each key maps to a nonempty readonly tuple of supported standard properties. No aliases are installed by default; root `css` and independently defined themes retain standard property names.
+
+```ts
+import { Config } from 'zyzz'
+
+export const zyzz = Config.create({
+  shorthands: {
+    px: ['paddingLeft', 'paddingRight'],
+    paddingX: ['paddingLeft', 'paddingRight'],
+    paddingHorizontal: ['paddingLeft', 'paddingRight'],
+  },
+  theme: {
+    spacing: { sm: '0.5rem' },
+    margin: { sm: '0.75rem', gutter: '2rem' },
+    padding: { sm: '1rem' },
+    textColor: { primary: '#111' },
+  },
+})
+
+const card = zyzz.css({ px: 'sm', margin: 'gutter', color: 'primary' })
+```
+
+All three aliases expand to physical left/right padding. Logical alternatives can target `paddingInlineStart` and `paddingInlineEnd`. Aliases never change meaning implicitly with the output target.
+
+Expand each alias in place, preserving authored declaration order and target tuple order. Resolve tokens and validate values against each target property after expansion. Alias values must be valid for every target; only token names available to every target are inferred, with each target resolving its own value.
+
+Standard declarations and aliases follow the same cascade rules after expansion. For `{ px: 'sm', paddingLeft: '2rem' }`, the later left declaration wins at equal importance. Preserve fallback arrays, importance, conditions, dynamic bindings, and composition conflict domains through normalization; do not sort aliases ahead of standard properties.
+
+Reject empty/duplicate targets, unknown properties, alias-to-alias references, and alias names colliding with standard properties, selectors, queries, or reserved authoring keys. Mappings contain static data only, with no callbacks or runtime registration. A config owns its aliases; named theme switches cannot change them.
+
+Apply the same contract to config-bound `css`, theme handles, and `variants`. Preserve exact key/value inference inside nested rules without a broad string index. Source extraction, imported configs, packed metadata, and watch invalidation must retain mappings without evaluating application code. Native validates expanded properties against its supported subset.
+
+### Property-Specific Tokens
+
+`margin` and `padding` are optional token groups covering their shorthand, physical, and logical properties. They augment `spacing`; matching keys in the specific group win. Either group can be supplied without `spacing`. Margin tokens accept supported signed lengths; padding tokens require nonnegative lengths. CSS keywords such as `auto` remain literal declarations.
+
+In the example, `px: 'sm'` resolves through `padding.sm`, while `marginLeft: 'sm'` resolves through `margin.sm`. Margin-only keys are unavailable to padding or sizing. `textColor.primary` applies to CSS `color`; shared `color` is optional. Styling with a `textColor` property requires an explicit `textColor: ['color']` shorthand.
+
+Retain group identity in token references, variables, liveness, extension validation, and named theme compatibility. Explicit references select their original group rather than being redirected by implicit precedence. Additional arbitrary token categories need their own domain contract; shorthand configuration alone does not create token groups.
+
 ## Consuming Styles
 
 Every `css` definition returns a callable. Calling it returns plain props to spread onto a component. Static styles use `button()`; dynamic styles use `button(values)`. There is no direct class-string or props-object overload for consuming an uncalled definition.

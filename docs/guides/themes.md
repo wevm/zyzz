@@ -33,6 +33,36 @@ const example = <button {...button()}>Save</button>
 
 Token names are inferred from the config. Nested palettes use dotted paths; CSS literals win over colliding token names. See [Theme.define](../api/core/Theme/define.md) for supported groups and values.
 
+### Property Mappings
+
+Define custom property names with `shorthands` and separate token scales by property:
+
+```ts
+import { Config } from 'zyzz'
+
+export const zyzz = Config.create({
+  shorthands: {
+    px: ['paddingLeft', 'paddingRight'],
+    paddingX: ['paddingLeft', 'paddingRight'],
+    paddingHorizontal: ['paddingLeft', 'paddingRight'],
+  },
+  theme: {
+    spacing: { sm: '0.5rem' },
+    margin: { sm: '0.75rem', gutter: '2rem' },
+    padding: { sm: '1rem' },
+    textColor: { primary: '#111' },
+  },
+})
+
+const card = zyzz.css({ px: 'sm', margin: 'gutter', color: 'primary' })
+```
+
+`px`, `paddingX`, and `paddingHorizontal` each set left/right padding. Use logical targets such as `paddingInlineStart` and `paddingInlineEnd` for writing-direction-aware aliases. Aliases are optional and local to the config.
+
+`margin` and `padding` tokens augment `spacing`, taking precedence for matching keys. Either works without `spacing`. Likewise, `textColor` augments `color` for text only. A margin-only token cannot be used for padding; `textColor` does not supply background tokens.
+
+The example uses `padding.sm` for `px`, `margin.gutter` for margin, and `textColor.primary` for color. Later declarations override earlier aliases at equal importance. See [Config.create](../api/core/Config/create.md#optionsshorthands).
+
 ### Selecting a Theme
 
 > [!NOTE]

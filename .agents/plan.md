@@ -248,6 +248,13 @@ PR 2.1 uses opaque object references for contracts within one in-memory graph. C
 
 Gate: two compatible themes each work in both schemes. Switching a scope changes colors and shared tokens through CSS alone. Nested themes and explicit schemes behave as specified. Inline and exported styles retain inference. Dynamic callbacks bind typed values to fixed rules with stable classes, and static definitions remain callable with optional styling overrides; browser integration and binding benchmarks verify both. Nested selectors and raw/aliased queries preserve CSS semantics; invalid definitions fail without evaluating application code.
 
+### Property Mappings and Token Groups
+
+- [ ] Implement [config shorthands](architecture.md#property-mappings) after standard box properties: static one-to-many mappings such as `px`, `paddingX`, and `paddingHorizontal`; preserve declaration order, importance, fallbacks, and expanded conflict domains.
+- [ ] Add optional `margin` and `padding` token groups with property-specific precedence over `spacing`, signed-margin/nonnegative-padding validation, and physical/logical coverage. Retain existing `textColor` precedence over `color`.
+- [ ] Preserve mappings through bound css/theme handles, nested declarations, source graphs, packed metadata, and config watch edits; extend the same boundary to variants and native as those capabilities land.
+- [ ] Verify exact alias/value inference, cross-target token intersections, rejected collisions/chains/unknown targets, explicit reference domains, extensions, and named theme compatibility. Integration gates compare mapped and expanded declarations in a browser, including mixed ordering and importance; measure compilation and emitted output against the equivalent standard-property workload.
+
 ## Phase 3 — Composition, variants, and target output
 
 - [ ] Keep `variants` scoped to one element, returning one props object with no `slots` option. Cover multipart components through separate `css`/`variants` definitions and shared component inputs; use data attributes or typed markers for supported DOM relationships.

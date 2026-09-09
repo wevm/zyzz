@@ -45,6 +45,23 @@ Ordered plain or dotted CSS identifiers, without duplicates or CSS-wide keywords
 Config.create({ layers: ['base', 'components'] })
 ```
 
+### options.shorthands
+
+- Type: Inferred record of nonempty readonly standard-property tuples
+- Default: No aliases.
+
+Map custom names to one or more properties. Values infer from all targets; tokens resolve separately for each property. Expansion preserves declaration order. Targets must be supported standard properties, and alias names cannot replace existing properties or reserved keys.
+
+```ts
+const zyzz = Config.create({
+  shorthands: { px: ['paddingLeft', 'paddingRight'] },
+  theme: { padding: { md: '1rem' } },
+})
+const card = zyzz.css({ px: 'md' })
+```
+
+See [Property Mappings](../../../guides/themes.md#property-mappings) for aliases and property-specific token scales.
+
 ### options.theme
 
 - Type: Inline token data or a theme definition

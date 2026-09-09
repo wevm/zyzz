@@ -106,7 +106,7 @@ Watching performs an initial build, then reports rebuilds and errors. Call `awai
 
 - [**Typed Styles**](#typed-styles): familiar CSS with property and value inference, inline or reusable.
 - [**Themes**](#themes): inferred design tokens, optional defaults, and compatible overrides.
-- [**Dark Mode**](#dark-mode): light/dark token pairs selected by CSS, without a preference listener.
+- [**Color Schemes (Light/Dark Mode)**](#color-schemes-lightdark-mode): light/dark token pairs selected by CSS, without a preference listener.
 - [**Variants**](#variants): typed component choices, defaults, and compound rules.
 - [**Dynamic Styles**](#dynamic-styles): runtime values bound to static CSS through custom properties.
 - [**Composition**](#composition): explicit style overrides that retain bindings and variant attributes.
@@ -186,7 +186,7 @@ const card = zyzz.css({ color: 'text', padding: 'sm' })
 
 Use [`Theme.define`](docs/api/core/Theme/define.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
 
-### Dark Mode
+### Color Schemes (Light/Dark Mode)
 
 Color pairs compile to `light-dark()`. Set `colorScheme` through an ancestor's `style` prop to select the scheme for its descendants:
 

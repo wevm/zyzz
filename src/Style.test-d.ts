@@ -288,7 +288,6 @@ describe('css', () => {
     logicalTheme.css({ blockSize: logicalTheme.tokens.color.brand })
     // @ts-expect-error Invalid numeric spellings remain rejected on logical lengths.
     css({ insetInlineStart: '0x10px!' })
-    // @ts-expect-error Shorthands accept one scalar per fallback, not multi-value strings.
     css({ marginInline: '1px 2px' })
     // @ts-expect-error Unknown writing modes cannot widen the enum.
     css({ writingMode: 'diagonal' })
@@ -954,5 +953,27 @@ describe('css', () => {
     css({ gridAutoColumns: 'repeat(2, 1fr)' })
     // @ts-expect-error Grid functions are not ordinary dimensions.
     css({ width: 'minmax(0, 1fr)' })
+  })
+})
+
+describe('css', () => {
+  test('accepts physical box lists and logical pairs', () => {
+    css({
+      margin: '8px auto',
+      padding: '1px 2px 3px 4px',
+      inset: '0 20% auto -1px',
+      borderWidth: '1px 2px',
+      gap: '4px 8px',
+    })
+    css({
+      marginInline: '-1px auto',
+      paddingBlock: '1px 2px',
+      scrollMargin: '1px 2px 3px 4px',
+      scrollPaddingInline: '10% auto',
+    })
+    // @ts-expect-error Longhands still accept a single length.
+    css({ paddingLeft: '1px 2px' })
+    // @ts-expect-error Auto is not a padding item.
+    css({ padding: 'auto 2px' })
   })
 })

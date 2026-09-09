@@ -10,6 +10,7 @@ import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import * as Backgrounds from '../../test/fixtures/Backgrounds.js'
 import * as Borders from '../../test/fixtures/Borders.js'
+import * as BoxLists from '../../test/fixtures/BoxLists.js'
 import * as Colors from '../../test/fixtures/Colors.js'
 import * as Columns from '../../test/fixtures/Columns.js'
 import * as ContainerSizing from '../../test/fixtures/ContainerSizing.js'
@@ -180,6 +181,12 @@ const workloads = {
       `export const named${index} = css({color:'rebeccapurple',backgroundColor:'aliceblue',fill:'gold',stroke:'navy',padding:'${index}px'})();`,
     source: Colors.source,
     title: 'named color',
+  },
+  boxLists: {
+    declaration: (index: number) =>
+      `export const boxList${index} = css({padding:'${index}px 8px 12px 16px',marginInline:'2px auto'})();`,
+    source: BoxLists.source,
+    title: 'box list',
   },
   columns: {
     declaration: (index: number) =>

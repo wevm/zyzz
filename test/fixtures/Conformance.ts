@@ -89,6 +89,11 @@ export function cases(): readonly Case[] {
         }
     }
     if (rule.kind === 'length') {
+      if ('items' in rule)
+        values.push(
+          '1px 2px',
+          ...(rule.items === 4 ? ['1px 2px 3px', '1px 2px 3px 4px'] : []),
+        )
       values.push(0)
       if (rule.auto) values.push('auto')
       if ('keywords' in rule) values.push(...rule.keywords)
@@ -162,7 +167,6 @@ export const rejected = [
   { property: 'gridAutoFlow', value: 'row column' },
   { property: 'gridColumnStart', value: 'span 1.5' },
   { property: 'letterSpacing', value: '10%' },
-  { property: 'margin', value: '1px 2px' },
   { property: 'maskMode', value: 'normal' },
   { property: 'maskSize', value: '1px 2px' },
   { property: 'padding', value: '0x10px' },

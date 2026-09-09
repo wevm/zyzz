@@ -52,6 +52,7 @@ type Rule =
   | {
       readonly auto: boolean
       readonly fraction?: boolean
+      readonly items?: 2 | 4
       readonly keywords?: readonly string[]
       readonly kind: 'length'
       readonly negative: boolean
@@ -79,20 +80,21 @@ type Rule =
       readonly kind: 'time'
       readonly negative: boolean
     }
+type LengthValue<rule extends Rule> =
+  | (rule extends { auto: true } ? 'auto' : never)
+  | (rule extends { fraction: true } ? Fraction : never)
+  | (rule extends { keywords: readonly (infer keyword)[] } ? keyword : never)
+  | (rule extends { percentage: false }
+      ? Exclude<Length, `${number}%`>
+      : Length)
+
 type Value<rule extends Rule> =
-  | (rule extends {
-      auto: infer auto
-      kind: 'length'
-    }
+  | (rule extends { kind: 'length' }
       ?
-          | (auto extends true ? 'auto' : never)
-          | (rule extends { fraction: true } ? Fraction : never)
-          | (rule extends { keywords: readonly (infer keyword)[] }
-              ? keyword
+          | LengthValue<rule>
+          | (rule extends { items: number }
+              ? `${Extract<LengthValue<rule>, string | number>} ${string}`
               : never)
-          | (rule extends { percentage: false }
-              ? Exclude<Length, `${number}%`>
-              : Length)
       : rule extends {
             kind: 'number'
           }
@@ -590,7 +592,7 @@ export const rules = {
   borderBlockStartStyle: border,
   borderBlockStartWidth: stroke,
   borderBlockStyle: border,
-  borderBlockWidth: stroke,
+  borderBlockWidth: { ...stroke, items: 2 },
   borderBottomColor: color,
   borderBottomLeftRadius: length,
   borderBottomRightRadius: length,
@@ -608,7 +610,7 @@ export const rules = {
   borderInlineStartStyle: border,
   borderInlineStartWidth: stroke,
   borderInlineStyle: border,
-  borderInlineWidth: stroke,
+  borderInlineWidth: { ...stroke, items: 2 },
   borderLeftColor: color,
   borderLeftStyle: border,
   borderLeftWidth: stroke,
@@ -625,7 +627,7 @@ export const rules = {
   borderTopRightRadius: length,
   borderTopStyle: border,
   borderTopWidth: stroke,
-  borderWidth: stroke,
+  borderWidth: { ...stroke, items: 4 },
   bottom: margin,
   boxDecorationBreak: { kind: 'enum', values: ['clone', 'slice'] },
   boxSizing: { kind: 'enum', values: ['border-box', 'content-box'] },
@@ -864,7 +866,7 @@ export const rules = {
     kind: 'enum',
     values: ['auto', 'none', 'preserve-parent-color'],
   },
-  gap: length,
+  gap: { ...length, items: 2 },
   gridAutoColumns: track,
   gridAutoFlow: {
     kind: 'enum',
@@ -898,11 +900,11 @@ export const rules = {
     values: ['auto', 'crisp-edges', 'pixelated', 'smooth'],
   },
   inlineSize: size,
-  inset: margin,
-  insetBlock: margin,
+  inset: { ...margin, items: 4 },
+  insetBlock: { ...margin, items: 2 },
   insetBlockEnd: margin,
   insetBlockStart: margin,
-  insetInline: margin,
+  insetInline: { ...margin, items: 2 },
   insetInlineEnd: margin,
   insetInlineStart: margin,
   interpolateSize: { kind: 'enum', values: ['allow-keywords', 'numeric-only'] },
@@ -958,12 +960,12 @@ export const rules = {
       'upper-roman',
     ],
   },
-  margin,
-  marginBlock: margin,
+  margin: { ...margin, items: 4 },
+  marginBlock: { ...margin, items: 2 },
   marginBlockEnd: margin,
   marginBlockStart: margin,
   marginBottom: margin,
-  marginInline: margin,
+  marginInline: { ...margin, items: 2 },
   marginInlineEnd: margin,
   marginInlineStart: margin,
   marginLeft: margin,
@@ -1091,12 +1093,12 @@ export const rules = {
   },
   overscrollBehaviorX: overscroll,
   overscrollBehaviorY: overscroll,
-  padding: length,
-  paddingBlock: length,
+  padding: { ...length, items: 4 },
+  paddingBlock: { ...length, items: 2 },
   paddingBlockEnd: length,
   paddingBlockStart: length,
   paddingBottom: length,
-  paddingInline: length,
+  paddingInline: { ...length, items: 2 },
   paddingInlineEnd: length,
   paddingInlineStart: length,
   paddingLeft: length,
@@ -1158,23 +1160,23 @@ export const rules = {
   },
   scrollbarWidth: { kind: 'enum', values: ['auto', 'none', 'thin'] },
   scrollBehavior: { kind: 'enum', values: ['auto', 'smooth'] },
-  scrollMargin,
-  scrollMarginBlock: scrollMargin,
+  scrollMargin: { ...scrollMargin, items: 4 },
+  scrollMarginBlock: { ...scrollMargin, items: 2 },
   scrollMarginBlockEnd: scrollMargin,
   scrollMarginBlockStart: scrollMargin,
   scrollMarginBottom: scrollMargin,
-  scrollMarginInline: scrollMargin,
+  scrollMarginInline: { ...scrollMargin, items: 2 },
   scrollMarginInlineEnd: scrollMargin,
   scrollMarginInlineStart: scrollMargin,
   scrollMarginLeft: scrollMargin,
   scrollMarginRight: scrollMargin,
   scrollMarginTop: scrollMargin,
-  scrollPadding,
-  scrollPaddingBlock: scrollPadding,
+  scrollPadding: { ...scrollPadding, items: 4 },
+  scrollPaddingBlock: { ...scrollPadding, items: 2 },
   scrollPaddingBlockEnd: scrollPadding,
   scrollPaddingBlockStart: scrollPadding,
   scrollPaddingBottom: scrollPadding,
-  scrollPaddingInline: scrollPadding,
+  scrollPaddingInline: { ...scrollPadding, items: 2 },
   scrollPaddingInlineEnd: scrollPadding,
   scrollPaddingInlineStart: scrollPadding,
   scrollPaddingLeft: scrollPadding,
@@ -1582,6 +1584,26 @@ export function validate(
     if (Number.isFinite(amount) && (rule.negative || amount >= 0))
       return undefined
     return `Expected ${rule.negative ? 'a' : 'a nonnegative'} finite time in s or ms.${rule.keywords ? ` Also accepts: ${rule.keywords.join(', ')}.` : ''}`
+  }
+  if (rule.items && typeof value === 'string' && /[ \t\n\r\f]/.test(value)) {
+    const parts = value
+      .replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
+      .split(/[ \t\n\r\f]+/)
+    if (parts.length > 1) {
+      if (
+        parts.length <= rule.items &&
+        parts.every(
+          (part) =>
+            !globals.has(part) &&
+            validate(
+              property,
+              /^[+-]?(?:0*\.0+|0+)(?:[eE][+-]?\d+)?$/.test(part) ? 0 : part,
+            ) === undefined,
+        )
+      )
+        return undefined
+      return `Expected one to ${rule.items} valid space-separated values; CSS-wide keywords must stand alone.`
+    }
   }
   if (value === 0 || (rule.auto && value === 'auto')) return undefined
   const match = (() => {

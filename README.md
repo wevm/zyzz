@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="#overview">Overview</a> · <a href="#getting-started">Getting Started</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="#comparison">Comparison</a>
+  <a href="#overview">Overview</a> · <a href="#getting-started">Getting Started</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="#comparison">Comparison</a> · <a href="docs/guides/README.md">Guides</a> · <a href="docs/concepts.md">Concepts</a> · <a href="docs/api/README.md">API Reference</a>
 </p>
 
 ## Overview
@@ -70,32 +70,29 @@ Build source files programmatically with `Host` from `zyzz/node`:
 ```ts
 import { Host } from 'zyzz/node'
 
-const host = await Host.create({
+await using host = await Host.create({
   outDir: 'dist',
   packageId: 'my-app',
   root: 'src',
 })
 
-try {
-  await host.build()
-} finally {
-  await host.close()
-}
+await host.build()
 ```
 
 The host writes rewritten modules, CSS sidecars, and source maps to `dist`. Downstream tooling handles TypeScript/JSX lowering and stylesheet loading.
 
-For watching, replace the build-and-close block with:
+For watching, keep the scope alive until shutdown:
 
 ```ts
+import { once } from 'node:events'
+
 host.watch({
   onResult: (event) => console.log(event),
 })
+await once(process, 'SIGINT')
 ```
 
-Watching performs an initial build, then reports rebuilds and errors. Call `await host.close()` when the owning process or integration shuts down. See [Host.create](docs/api/node/Host/create.md).
-
-[Guides](docs/guides/README.md) · [Concepts](docs/concepts.md) · [API Reference](docs/api/README.md)
+Watching performs an initial build, then reports rebuilds and errors. `await using` stops watchers, drains pending builds, and releases the output lock when the scope exits. See [Host.create](docs/api/node/Host/create.md).
 
 ## Philosophy
 

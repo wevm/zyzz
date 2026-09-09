@@ -16,6 +16,36 @@ const project = Path.resolve(import.meta.dirname, '../..')
 const source = `import { css } from 'zyzz'; export const button = css({ padding: '8px' });`
 
 describe('create', () => {
+  test('await using drains builds and releases output ownership on scope exit', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-dispose-'))
+    const outDir = Path.join(root, 'output')
+    const options = { outDir, packageId: 'example', root }
+    try {
+      await Fs.writeFile(Path.join(root, 'button.ts'), source)
+      await expect(
+        (async () => {
+          await using host = await Host.create(options)
+          void host.build()
+          throw new Error('Scope failed')
+        })(),
+      ).rejects.toThrowErrorMatchingInlineSnapshot('[Error: Scope failed]')
+
+      expect(
+        await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'),
+      ).toMatchInlineSnapshot(`
+        ".z-12ydhop55omeb-base0 {
+          padding: 8px;
+        }
+        "
+      `)
+
+      await using host = await Host.create(options)
+      expect((await host.build()).changed).toMatchInlineSnapshot('[]')
+    } finally {
+      await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+
   test('processed themes and props render in Chromium', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-css-browser-'))
     const outDir = Path.join(root, 'output')

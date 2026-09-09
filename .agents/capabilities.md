@@ -1,6 +1,6 @@
 # CSS Capability Inventory
 
-Version 2. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
+Version 3. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
 
 ## Current Web Surface
 
@@ -17,6 +17,10 @@ Version 2. This inventory separates accepted authoring from rendered support. Th
 Supported lengths include absolute, font-relative, viewport-relative (default/small/large/dynamic), and container-relative units, percentages, or numeric zero; border widths exclude percentages. Colors accept hex, transparent, currentColor, black, and white. Full lists and bounds remain in the owning literal rules rather than a second parser definition.
 
 Standard length units share one vocabulary for types and runtime validation. Source-to-CSS snapshots preserve spelling, token fallbacks, importance, and per-entry maps. Browser fixtures compare every unit with directly authored CSS and check viewport/container/font computations. The standard-length transform lane measures the complete source pipeline.
+
+Logical box properties add dimensions, min/max dimensions, block/inline margins and padding, and logical/physical inset offsets. Direction and horizontal/vertical writing-mode enums control browser mapping. `Logical` fixtures cover every added property, source maps, token fallbacks/importance, inherited modes, and ordered A/B/A conflicts; browser validation runs in CI. A logical-box transform benchmark covers 10/100 additional styles.
+
+Logical/physical dimensions share conflict domains only when logical dimensions are authored. Insets share one domain; existing margin/padding domains include their logical forms. Scalar shorthands retain authored order. Multi-value shorthands, intrinsic sizing keywords, sideways writing modes, and logical borders remain deferred.
 
 ## Targets
 

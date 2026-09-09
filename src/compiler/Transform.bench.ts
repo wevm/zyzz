@@ -10,6 +10,7 @@ import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
+import * as Logical from '../../test/fixtures/Logical.js'
 import * as Compilation from '../../bench/Compilation.js'
 
 for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
@@ -110,6 +111,77 @@ for (const count of [10, 100]) {
         Transform.compile({ moduleId: 'example/fallbacks.ts', source })
       },
       { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
+    )
+  })
+}
+
+for (const count of [10, 100]) {
+  const source =
+    Logical.source +
+    Array.from(
+      { length: count },
+      (_, index) =>
+        `export const box${index} = css({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`,
+    ).join('\n')
+  describe(`logical box transform / ${count} additional styles`, () => {
+    bench(
+      'extract + emit + rewrite + maps',
+      () => {
+        Transform.compile({ moduleId: 'example/logical.ts', source })
+      },
+      {
+        iterations: 30,
+        setup: async () => {
+          const output = Transform.compile({
+            moduleId: 'example/logical.ts',
+            source,
+          })
+          const bundle = await Esbuild.build({
+            alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+            bundle: true,
+            format: 'esm',
+            minify: true,
+            stdin: {
+              contents: output.code,
+              loader: 'ts',
+              resolveDir: process.cwd(),
+            },
+            write: false,
+          })
+          const measure = (text: string) => ({
+            brotli: Zlib.brotliCompressSync(text).byteLength,
+            gzip: Zlib.gzipSync(text).byteLength,
+            raw: Buffer.byteLength(text),
+          })
+          const css = measure(Compilation.minify(output.css))
+          const javascript = measure(bundle.outputFiles[0]!.text)
+          await Fs.mkdir('bench/results/transform', { recursive: true })
+          await Fs.writeFile(
+            `bench/results/transform/logical-${count}.json`,
+            JSON.stringify(
+              {
+                count,
+                css,
+                javascript,
+                maps: {
+                  css: measure(JSON.stringify(output.cssMap)),
+                  javascript: measure(JSON.stringify(output.map)),
+                },
+                total: {
+                  brotli: css.brotli + javascript.brotli,
+                  gzip: css.gzip + javascript.gzip,
+                  raw: css.raw + javascript.raw,
+                },
+              },
+              null,
+              2,
+            ),
+          )
+        },
+        time: 1000,
+        warmupIterations: 10,
+        warmupTime: 500,
+      },
     )
   })
 }

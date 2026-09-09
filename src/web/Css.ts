@@ -34,6 +34,13 @@ export function compile<
   const classes = Object.create(null) as Record<name, string>
   const diagnostics: Diagnostic[] = []
   const groups = new Map<string, false | string>()
+  // Logical dimensions may alias either physical axis in inherited writing modes.
+  // Preserve physical-only factoring when no logical dimension is authored.
+  const logicalSizing = options.styles.styles.some((style) =>
+    style.declarations.some(({ property }) =>
+      /^(min|max)?(blockSize|inlineSize)$/i.test(property),
+    ),
+  )
   const prepared = options.styles.styles.map((style) => {
     const declarations: string[] = []
     const domains = new Map<string, string[]>()
@@ -91,7 +98,18 @@ export function compile<
               ? 'padding'
               : ['columnGap', 'gap', 'rowGap'].includes(property)
                 ? 'gap'
-                : property,
+                : /^(inset|top$|right$|bottom$|left$)/.test(property)
+                  ? 'inset'
+                  : logicalSizing &&
+                      /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(
+                        property,
+                      )
+                    ? property.startsWith('min')
+                      ? 'min-size'
+                      : property.startsWith('max')
+                        ? 'max-size'
+                        : 'size'
+                    : property,
           message,
         }
         values.set(value, entry)

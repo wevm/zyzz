@@ -5,6 +5,50 @@
 import { expectTypeOf } from 'vite-plus/test'
 import { Config, css, Style, Theme } from 'zyzz'
 import { components } from '../test/fixtures/components.js'
+import * as Logical from '../test/fixtures/Logical.js'
+
+Style.define(Logical.styles)
+css({
+  direction: 'rtl',
+  writingMode: 'vertical-rl',
+  inset: 'auto',
+  inlineSize: 'auto',
+})
+const logicalTheme = Theme.define({
+  spacing: { md: '12px' },
+  color: { brand: '#fff' },
+})
+logicalTheme.css({
+  inlineSize: 'md',
+  insetBlock: 'md!',
+  paddingInline: ['1px', 'md'],
+})
+Style.define({
+  card: {
+    minInlineSize: logicalTheme.tokens.spacing.md,
+    top: logicalTheme.tokens.spacing.md,
+  },
+})
+Config.create({ theme: logicalTheme }).css({
+  blockSize: 'md',
+  maxBlockSize: 'md',
+  left: 'md',
+  marginBlockEnd: 'md!',
+})
+// @ts-expect-error Root logical dimensions remain token-free.
+css({ inlineSize: 'md' })
+// @ts-expect-error Padding cannot accept auto.
+css({ paddingInline: 'auto' })
+// @ts-expect-error Minimum sizes retain the bounded length grammar.
+css({ minBlockSize: 'auto' })
+// @ts-expect-error Color tokens cannot become dimensions.
+logicalTheme.css({ blockSize: logicalTheme.tokens.color.brand })
+// @ts-expect-error Invalid numeric spellings remain rejected on logical lengths.
+css({ insetInlineStart: '0x10px!' })
+// @ts-expect-error Shorthands accept one scalar per fallback, not multi-value strings.
+css({ marginInline: '1px 2px' })
+// @ts-expect-error Unknown writing modes cannot widen the enum.
+css({ writingMode: 'diagonal' })
 
 const definition = Style.define(components)
 expectTypeOf(definition.styles[0]!.name).toEqualTypeOf<

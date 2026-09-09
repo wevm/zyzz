@@ -7,8 +7,148 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 import * as Lengths from '../../test/fixtures/Lengths.js'
+import * as Logical from '../../test/fixtures/Logical.js'
 
 describe('compile', () => {
+  test('logical boxes match native controls across authored writing modes in the browser', async () => {
+    const output = Css.compile({
+      styles: Style.define({
+        ...Logical.styles,
+        horizontal: { writingMode: 'horizontal-tb', direction: 'ltr' },
+        vertical: { writingMode: 'vertical-rl', direction: 'rtl' },
+      }),
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      for (const mode of ['horizontal', 'vertical'] as const) {
+        await page.setContent(
+          `<style>${output.css}</style><main class="${output.classes[mode]}">${Object.entries(
+            Logical.controls,
+          )
+            .map(
+              ([name, css]) =>
+                `<div id="${name}" class="${output.classes[name as keyof typeof Logical.controls]}"></div><div id="${name}-control" style="${css}"></div>`,
+            )
+            .join('')}</main>`,
+        )
+        expect(
+          await page.evaluate(() => {
+            return ['dimensions', 'offsets', 'spacing'].flatMap((name) => {
+              const actual = getComputedStyle(document.getElementById(name)!)
+              const expected = getComputedStyle(
+                document.getElementById(`${name}-control`)!,
+              )
+              const properties = [
+                'width',
+                'height',
+                'min-width',
+                'min-height',
+                'max-width',
+                'max-height',
+                'top',
+                'right',
+                'bottom',
+                'left',
+                'margin-top',
+                'margin-right',
+                'margin-bottom',
+                'margin-left',
+                'padding-top',
+                'padding-right',
+                'padding-bottom',
+                'padding-left',
+              ]
+              return properties
+                .filter(
+                  (property) =>
+                    actual.getPropertyValue(property) !==
+                    expected.getPropertyValue(property),
+                )
+                .map((property) => ({
+                  name,
+                  property,
+                  actual: actual.getPropertyValue(property),
+                  expected: expected.getPropertyValue(property),
+                }))
+            })
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+      }
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('logical boxes compile the complete scalar property vocabulary', () => {
+    expect(Css.compile({ styles: Style.define(Logical.styles) }).css)
+      .toMatchInlineSnapshot(`
+      ".z_base0{block-size:40px;inline-size:80px;max-block-size:100px;max-inline-size:120px;min-block-size:10px;min-inline-size:20px;}
+      .z_base2{position:relative;inset:1px;inset-block:2px;inset-block-start:-3px;inset-block-end:4px;inset-inline:5px;inset-inline-start:-6px;inset-inline-end:7px;top:8px;right:9px;bottom:10px;left:11px;}
+      .z_base1{margin-block:-2px;margin-block-start:3px;margin-block-end:4px;margin-inline:5px;margin-inline-start:6px;margin-inline-end:7px;padding-block:8px;padding-block-start:9px;padding-block-end:10px;padding-inline:11px;padding-inline-start:12px;padding-inline-end:13px;}"
+    `)
+  })
+
+  test('logical boxes retain conflicting A/B/A rules across physical axes in the browser', async () => {
+    const a = {
+      width: '80px',
+      minWidth: '20px',
+      maxWidth: '100px',
+      top: '4px',
+      marginLeft: '6px',
+      paddingLeft: '8px',
+    } as const
+    const styles = Style.define({
+      a,
+      b: {
+        inlineSize: '40px',
+        minInlineSize: '30px',
+        maxInlineSize: '60px',
+        insetBlockStart: '12px',
+        marginInlineStart: '14px',
+        paddingInlineStart: '16px',
+      },
+      c: a,
+    })
+    const output = Css.compile({ styles })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-a{width:80px;min-width:20px;max-width:100px;top:4px;margin-left:6px;padding-left:8px;}
+      .z-b{inline-size:40px;min-inline-size:30px;max-inline-size:60px;inset-block-start:12px;margin-inline-start:14px;padding-inline-start:16px;}
+      .z-c{width:80px;min-width:20px;max-width:100px;top:4px;margin-left:6px;padding-left:8px;}"
+    `)
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>div{position:relative}${output.css}</style><div id="box" class="${output.classes.a} ${output.classes.b} ${output.classes.c}"></div>`,
+      )
+      expect(
+        await page.locator('#box').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return {
+            maxWidth: style.maxWidth,
+            minWidth: style.minWidth,
+            marginLeft: style.marginLeft,
+            paddingLeft: style.paddingLeft,
+            top: style.top,
+            width: style.width,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "marginLeft": "6px",
+          "maxWidth": "100px",
+          "minWidth": "20px",
+          "paddingLeft": "8px",
+          "top": "4px",
+          "width": "80px",
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('unsupported properties cannot collide with important cache entries', () => {
     const declarations = [
       { property: 'color', value: '#fff', important: true },

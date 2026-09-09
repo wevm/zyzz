@@ -13,10 +13,163 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
+import * as Logical from '../../test/fixtures/Logical.js'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('logical boxes preserve tokens, importance, and fallback source maps', () => {
+    const output = Transform.compile({
+      moduleId: 'example/logical.ts',
+      source: Logical.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-9k2sno1hln8ye-zyzz-theme{--z-t9k2sno1hln8ye-zyzz-spacing_2e_space:12px;}
+      .z-9k2sno1hln8ye-base0{margin-inline-end:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px)!important;position:relative;inset-inline-start:-3px;}
+      .z-style-9k2sno1hln8ye-121{width:60px;inline-size:70px;inline-size:80px!important;block-size:40px;padding-left:2px;padding-inline-start:4px;padding-inline-start:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px);}
+      .z-style-9k2sno1hln8ye-374{inline-size:30px;width:50px;padding-inline-start:6px;padding-left:8px;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) => line.includes('inline-size:80px'))
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('inline-size:80px'),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 34,
+        "line": 4,
+        "name": "inlineSize",
+        "source": "example/logical.ts",
+      }
+    `)
+  })
+
+  test('logical boxes reject invalid scalar values with source locations', () => {
+    const diagnostics = [
+      "paddingInline:'-1px'",
+      "blockSize:'-1px'",
+      "inset:'1px 2px'",
+      "writingMode:'diagonal'",
+    ].map((declaration) => {
+      try {
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import { css } from 'zyzz'; css({${declaration}});`,
+        })
+      } catch (error) {
+        return (error as Error).message
+      }
+      return null
+    })
+    expect(diagnostics).toMatchInlineSnapshot(`
+      [
+        "invalid.ts:47: Expected a nonnegative literal length or numeric zero.",
+        "invalid.ts:43: Expected a nonnegative literal length, auto, or numeric zero.",
+        "invalid.ts:39: Expected a literal length, auto, or numeric zero.",
+        "invalid.ts:45: Expected one of: horizontal-tb, vertical-lr, vertical-rl (or a CSS-wide keyword).",
+      ]
+    `)
+  })
+
+  test('logical boxes render inherited writing modes and scope overrides in the browser', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/logical.ts',
+      source: Logical.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      loader: 'ts',
+      format: 'esm',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><main style="writing-mode:horizontal-tb;direction:ltr"><div id="box" class="${module.logical.className}"></div><div id="control" style="width:60px;inline-size:70px;inline-size:80px!important;block-size:40px;padding-left:2px;padding-inline-start:4px;padding-inline-start:12px;margin-inline-end:12px!important;position:relative;inset-inline-start:-3px"></div><div id="physical" class="${module.physical.className}"></div><div id="physical-control" style="inline-size:30px;width:50px;padding-inline-start:6px;padding-left:8px"></div></main>`,
+      )
+      for (const writingMode of [
+        'horizontal-tb',
+        'vertical-rl',
+        'vertical-lr',
+      ]) {
+        for (const direction of ['ltr', 'rtl']) {
+          await page.locator('main').evaluate(
+            (element, values) => {
+              element.style.writingMode = values.writingMode
+              element.style.direction = values.direction
+            },
+            { writingMode, direction },
+          )
+          expect(
+            await page.evaluate(() => {
+              const properties = [
+                'width',
+                'height',
+                'padding-left',
+                'padding-right',
+                'padding-top',
+                'padding-bottom',
+                'margin-left',
+                'margin-right',
+                'margin-top',
+                'margin-bottom',
+                'left',
+                'right',
+                'top',
+                'bottom',
+              ]
+              return [
+                ['box', 'control'],
+                ['physical', 'physical-control'],
+              ].flatMap(([actual, expected]) => {
+                const a = getComputedStyle(document.getElementById(actual!)!)
+                const b = getComputedStyle(document.getElementById(expected!)!)
+                return properties
+                  .filter(
+                    (property) =>
+                      a.getPropertyValue(property) !==
+                      b.getPropertyValue(property),
+                  )
+                  .map((property) => ({
+                    actual: a.getPropertyValue(property),
+                    expected: b.getPropertyValue(property),
+                    property,
+                  }))
+              })
+            }),
+          ).toMatchInlineSnapshot(`[]`)
+        }
+      }
+      await page.locator('main').evaluate((element, scope) => {
+        element.setAttribute('class', scope)
+      }, module.scope)
+      // A scope edit must update both the shorthand and explicit reference.
+      await page.addStyleTag({
+        content: `.${module.scope}{${output.css.match(/--[^:]+(?=:12px)/)![0]}:20px;}`,
+      })
+      expect(
+        await page.locator('#box').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return {
+            marginInlineEnd: style.marginInlineEnd,
+            paddingInlineStart: style.paddingInlineStart,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "marginInlineEnd": "20px",
+          "paddingInlineStart": "20px",
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('important zero shorthands retain token identity before literal coercion', () => {
     const output = Transform.compile({
       moduleId: 'zero.ts',

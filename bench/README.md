@@ -133,3 +133,7 @@ Custom target profiles must retain native `light-dark()`. Fixture creation rejec
 Contract sidecars are compiler inputs, not client JavaScript. Imported contracts retain complete token scopes so app extensions can style independently compiled library components. This can retain more CSS than closed-graph token liveness; report that cost separately from metadata download size.
 
 Benchmarks without timing samples are marked unavailable in reports and excluded from timing-action input. Their absence does not become a zero-duration result or suppress valid framework/size measurements. Pull requests compare with their base commit, including stacked PRs.
+
+## Logical Boxes
+
+`Transform.bench.ts` includes 10/100 additional logical-box styles with mixed axes, token references, fallbacks, and importance. Timings cover extraction, emission, rewriting, and maps. Setup separately records minified CSS, bundled client JavaScript, map sizes, and combined raw/gzip/Brotli transfer under `bench/results/transform/logical-*.json`. Browser fixtures compare native logical CSS across writing modes and verify ordered physical/logical conflicts.

@@ -11,6 +11,7 @@ import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
+import * as Borders from '../../test/fixtures/Borders.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
@@ -19,6 +20,115 @@ import * as Logical from '../../test/fixtures/Logical.js'
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('border source tokens and mixed physical/logical priority render in the browser', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/borders.ts',
+      source: Borders.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      loader: 'ts',
+      format: 'esm',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>div{width:100px;height:100px}${output.css}</style><main><div id="box" class="${module.box.className}"></div><div id="control" style="border-style:solid;border-width:2px;border-left-width:3px;border-inline-start-width:4px;border-inline-start-width:5px!important;border-color:#06c;border-inline-end-color:#fff;border-radius:8px;border-start-start-radius:10px;outline-color:#fff;outline-style:dashed;outline-width:2px;outline-offset:-1px"></div></main>`,
+      )
+      for (const writingMode of ['horizontal-tb', 'vertical-rl', 'vertical-lr'])
+        for (const direction of ['ltr', 'rtl']) {
+          await page.locator('main').evaluate(
+            (element, values) => {
+              element.style.writingMode = values.writingMode
+              element.style.direction = values.direction
+            },
+            { writingMode, direction },
+          )
+          expect(
+            await page.evaluate(() => {
+              const actual = getComputedStyle(document.getElementById('box')!)
+              const expected = getComputedStyle(
+                document.getElementById('control')!,
+              )
+              return [
+                'border-top-width',
+                'border-left-width',
+                'border-bottom-width',
+                'border-right-width',
+                'border-top-color',
+                'border-left-color',
+                'border-bottom-color',
+                'border-right-color',
+                'border-top-left-radius',
+                'border-top-right-radius',
+                'border-bottom-left-radius',
+                'border-bottom-right-radius',
+                'outline-color',
+                'outline-width',
+                'outline-style',
+                'outline-offset',
+              ].filter(
+                (property) =>
+                  actual.getPropertyValue(property) !==
+                  expected.getPropertyValue(property),
+              )
+            }),
+          ).toMatchInlineSnapshot(`[]`)
+        }
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('border tokens, priority, and per-entry source maps survive compilation', () => {
+    const output = Transform.compile({
+      moduleId: 'example/borders.ts',
+      source: Borders.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-1qal89srxpye2-zyzz-theme{--z-t1qal89srxpye2-zyzz-borderColor_2e_brand:#06c;--z-t1qal89srxpye2-zyzz-color_2e_brand:#fff;--z-t1qal89srxpye2-zyzz-borderRadius_2e_round:8px;}
+      .z-1qal89srxpye2-base1{border-style:solid;border-color:var(--z-t1qal89srxpye2-zyzz-borderColor_2e_brand,#06c);border-inline-end-color:var(--z-t1qal89srxpye2-zyzz-color_2e_brand,#fff);border-radius:var(--z-t1qal89srxpye2-zyzz-borderRadius_2e_round,8px);border-start-start-radius:10px;outline-color:var(--z-t1qal89srxpye2-zyzz-color_2e_brand,#fff);outline-style:dashed;outline-width:2px;outline-offset:-1px;}
+      .z-style-1qal89srxpye2-169{border-width:2px;border-left-width:3px;border-inline-start-width:4px;border-inline-start-width:5px!important;}
+      .z-1qal89srxpye2-base0{border-style:solid;}
+      .z-style-1qal89srxpye2-524{border-width:2px;border-inline-start-width:5px;border-left-width:3px;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) =>
+      line.includes('border-inline-start-width:5px'),
+    )
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('border-inline-start-width:5px'),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 92,
+        "line": 4,
+        "name": "borderInlineStartWidth",
+        "source": "example/borders.ts",
+      }
+    `)
+  })
+
+  test('border and outline sources reject percentages and invalid scalar bounds', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import { css } from 'zyzz'; css({borderLeftWidth:'10%',borderBlockWidth:'5%',outlineWidth:'2%',outlineOffset:'4%',borderEndStartRadius:'-1px'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: invalid.ts:49: Expected a nonnegative literal length or numeric zero.
+      invalid.ts:72: Expected a nonnegative literal length or numeric zero.
+      invalid.ts:90: Expected a nonnegative literal length or numeric zero.
+      invalid.ts:109: Expected a literal length or numeric zero.
+      invalid.ts:135: Expected a nonnegative literal length or numeric zero.]
+    `)
+  })
+
   test('flex sizing and overflow preserve tokens, importance, and maps', () => {
     const output = Transform.compile({
       moduleId: 'example/flex.ts',
@@ -67,7 +177,9 @@ describe('compile', () => {
         moduleId: 'invalid.ts',
         source: `import { css } from 'zyzz'; css({order:'1.5!'});`,
       }),
-    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: invalid.ts:39: Expected a finite integer from -9007199254740991 to 9007199254740991.]`)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:39: Expected a finite integer from -9007199254740991 to 9007199254740991.]`,
+    )
   })
 
   test('flex sizing, line alignment, and overflow match native browser layout', async () => {

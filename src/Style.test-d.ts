@@ -4,8 +4,40 @@
  */
 import { expectTypeOf } from 'vite-plus/test'
 import { Config, css, Style, Theme } from 'zyzz'
-import { components } from '../test/fixtures/components.js'
+import * as Borders from '../test/fixtures/Borders.js'
 import * as Logical from '../test/fixtures/Logical.js'
+import { components } from '../test/fixtures/components.js'
+
+Style.define({ box: Borders.styles })
+const borderTheme = Theme.define({
+  color: { brand: '#fff' },
+  borderColor: { brand: '#06c' },
+  borderRadius: { round: '50%' },
+})
+borderTheme.css({
+  borderInlineStartColor: 'brand!',
+  borderTopLeftRadius: 'round',
+  outlineColor: 'brand',
+})
+Config.create({ theme: borderTheme }).css({
+  borderBlockColor: ['#000', borderTheme.tokens.borderColor.brand],
+})
+// @ts-expect-error Border widths exclude percentages on physical sides.
+css({ borderTopWidth: '10%' })
+// @ts-expect-error Border widths exclude percentages on logical shorthands.
+css({ borderInlineWidth: '10%!' })
+// @ts-expect-error Outline widths exclude percentages.
+css({ outlineWidth: '10%' })
+// @ts-expect-error Outline offsets exclude percentages.
+css({ outlineOffset: '10%' })
+// @ts-expect-error Border color tokens do not apply to outlines.
+borderTheme.css({ outlineColor: borderTheme.tokens.borderColor.brand })
+// @ts-expect-error Radius tokens cannot become stroke widths.
+borderTheme.css({ borderLeftWidth: borderTheme.tokens.borderRadius.round })
+// @ts-expect-error Hidden is a border style, not an outline style.
+css({ outlineStyle: 'hidden' })
+// @ts-expect-error Auto is an outline style, not a border style.
+css({ borderBlockStyle: 'auto' })
 
 Style.define(Logical.styles)
 css({

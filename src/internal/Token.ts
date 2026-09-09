@@ -10,8 +10,9 @@ export function accepts(
   group: Group,
   property: keyof Literal.Properties,
 ): boolean {
-  if (group === 'color')
-    return ['backgroundColor', 'borderColor', 'color'].includes(property)
+  if (group === 'color') return Literal.rules[property]?.kind === 'color'
+  if (group === 'borderColor') return /^border.*Color$/.test(property)
+  if (group === 'borderRadius') return /^border.*Radius$/.test(property)
   if (group === 'textColor') return property === 'color'
   if (group === 'spacing')
     return (
@@ -174,8 +175,18 @@ export type Properties<group extends Group> = group extends 'spacing'
   : group extends 'textColor'
     ? 'color'
     : group extends 'color'
-      ? 'backgroundColor' | 'borderColor' | 'color'
-      : group
+      ? {
+          [property in keyof typeof Literal.rules]: (typeof Literal.rules)[property] extends {
+            kind: 'color'
+          }
+            ? property
+            : never
+        }[keyof typeof Literal.rules]
+      : group extends 'borderColor'
+        ? Extract<keyof Literal.Properties, `border${string}Color`>
+        : group extends 'borderRadius'
+          ? Extract<keyof Literal.Properties, `border${string}Radius`>
+          : group
 
 /** Immutable portable reference retaining its defining fallback. */
 export type Reference<group extends Group = Group> = {

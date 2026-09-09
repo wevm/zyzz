@@ -6,10 +6,144 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
+import * as Borders from '../../test/fixtures/Borders.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 
 describe('compile', () => {
+  test('border and outline properties match native browser controls in every writing mode', async () => {
+    const input: Record<string, Style.LiteralProperties> = {}
+    for (const entry of Borders.cases)
+      input[entry.property] = {
+        borderStyle: 'solid',
+        borderWidth: '10px',
+        width: '100px',
+        height: '100px',
+        [entry.property]: entry.value,
+      }
+    const output = Css.compile({ styles: Style.define(input) })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><main>${Borders.cases.map((entry) => `<div id="${entry.property}" class="${output.classes[entry.property]}"></div><div id="${entry.property}-control" style="border-style:solid;border-width:10px;width:100px;height:100px;${entry.css}:${entry.value}"></div>`).join('')}</main>`,
+      )
+      for (const writingMode of ['horizontal-tb', 'vertical-lr', 'vertical-rl'])
+        for (const direction of ['ltr', 'rtl']) {
+          await page.locator('main').evaluate(
+            (element, values) => {
+              element.style.writingMode = values.writingMode
+              element.style.direction = values.direction
+            },
+            { writingMode, direction },
+          )
+          expect(
+            await page.evaluate(
+              (names) =>
+                names.flatMap((name) => {
+                  const actual = getComputedStyle(
+                    document.getElementById(name)!,
+                  )
+                  const expected = getComputedStyle(
+                    document.getElementById(`${name}-control`)!,
+                  )
+                  const properties = [
+                    'border-top-width',
+                    'border-right-width',
+                    'border-bottom-width',
+                    'border-left-width',
+                    'border-top-style',
+                    'border-right-style',
+                    'border-bottom-style',
+                    'border-left-style',
+                    'border-top-color',
+                    'border-right-color',
+                    'border-bottom-color',
+                    'border-left-color',
+                    'border-top-left-radius',
+                    'border-top-right-radius',
+                    'border-bottom-left-radius',
+                    'border-bottom-right-radius',
+                    'outline-color',
+                    'outline-offset',
+                    'outline-style',
+                    'outline-width',
+                  ]
+                  return properties
+                    .filter(
+                      (property) =>
+                        actual.getPropertyValue(property) !==
+                        expected.getPropertyValue(property),
+                    )
+                    .map((property) => ({
+                      name,
+                      property,
+                      actual: actual.getPropertyValue(property),
+                      expected: expected.getPropertyValue(property),
+                    }))
+                }),
+              Borders.cases.map((entry) => entry.property),
+            ),
+          ).toMatchInlineSnapshot(`[]`)
+        }
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('border sharing retains whole-border A/B/A overrides in the browser', async () => {
+    const a = {
+      borderColor: '#000',
+      borderRadius: '4px',
+      borderStyle: 'solid',
+      borderWidth: '2px',
+    } as const
+    const output = Css.compile({
+      styles: Style.define({
+        a,
+        b: {
+          borderInlineStartColor: '#fff',
+          borderStartStartRadius: '8px',
+          borderInlineStartStyle: 'dashed',
+          borderInlineStartWidth: '6px',
+        },
+        c: a,
+      }),
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-a{border-color:#000;border-radius:4px;border-style:solid;border-width:2px;}
+      .z-b{border-inline-start-color:#fff;border-start-start-radius:8px;border-inline-start-style:dashed;border-inline-start-width:6px;}
+      .z-c{border-color:#000;border-radius:4px;border-style:solid;border-width:2px;}"
+    `)
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.a} ${output.classes.b} ${output.classes.c}"></div>`,
+      )
+      expect(
+        await page.locator('div').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return {
+            color: style.borderLeftColor,
+            radius: style.borderTopLeftRadius,
+            style: style.borderLeftStyle,
+            width: style.borderLeftWidth,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 0, 0)",
+          "radius": "4px",
+          "style": "solid",
+          "width": "2px",
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('overflow shorthand sharing retains repeated overrides in the browser', async () => {
     const output = Css.compile({
       styles: Style.define({

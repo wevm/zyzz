@@ -1131,11 +1131,11 @@
       },
       "border": {
         "grammar": "d32fc20b3133d436dca119c4f2d67c08fda0ed92edbc22cf8dac1c4e47ad2385",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-block": {
         "grammar": "6afbe73ecb8f966c82b0a2a182fcb07ec6b43e0541c0fce6ba744e0e70b76658",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-block-color": {
         "grammar": "22a61b32fe24a747c431a6453141e876c5f82482236c66b3a439503447f4a640",
@@ -1143,7 +1143,7 @@
       },
       "border-block-end": {
         "grammar": "004a3b3ace0b15748dcb004ed88f3ce4c2db54432cb8001a290508d822ba38fd",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-block-end-color": {
         "grammar": "06cd72b15a8cdbff3799c46be02eefb4f2c67b5e206e2d2053684fc39681ffd5",
@@ -1159,7 +1159,7 @@
       },
       "border-block-start": {
         "grammar": "c0716ae18c70094085e8492a30e5eecc60257d9e56df8b35c59e080f258d2322",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-block-start-color": {
         "grammar": "94bfff7e5fe69d4a112c392fc5c4d09baacc5941ddd4a71d10f54820ed971a9d",
@@ -1183,7 +1183,7 @@
       },
       "border-bottom": {
         "grammar": "519b70ac10c5c0567415cec7a1eb9236483fee84ed5fa615cebfe031d78c8d90",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-bottom-color": {
         "grammar": "1ee8e7ec817d3d78cf01a7af885031b0e6099313e5e3773510e5b165bf750d27",
@@ -1247,7 +1247,7 @@
       },
       "border-inline": {
         "grammar": "a5c93ade1bc6135a91a8e78b0636e721a0f74361a369970955411195b86bf2f0",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-inline-color": {
         "grammar": "2edde2d74d7b14226a1e915a81f3b6820187967b0bf6d6084952f96f97d65c40",
@@ -1255,7 +1255,7 @@
       },
       "border-inline-end": {
         "grammar": "d473b1276386a7a8fc6180c54a799c466997088f42e5e9fbcdcb287e06b461f9",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-inline-end-color": {
         "grammar": "0618a3a02710c892a46692361e165afe7070d9c69ff83306fcde1330a35cef09",
@@ -1271,7 +1271,7 @@
       },
       "border-inline-start": {
         "grammar": "a283ba8dc8caacef5331f9f81f4f0f44f1e7582b87aad87e27ef3c6d37f6fd22",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-inline-start-color": {
         "grammar": "025fe6fcd15edeac9fcf99e6308f45c7f7a40d8130e43fbe240b50ffcf952c59",
@@ -1295,7 +1295,7 @@
       },
       "border-left": {
         "grammar": "2dc4501e399fcc774bcf28ce66dd811ad6d2fee2983839157f2dbfae4cd234c9",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-left-color": {
         "grammar": "b5aebb442fc554be2892cf46482aba0e1160d85e8c58f31f3ee75b9dab2990e2",
@@ -1315,7 +1315,7 @@
       },
       "border-right": {
         "grammar": "a43ee75b8d7aa72458ea6faeaee2802523230b7c2ac073ac1bfc0037c417cf50",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-right-color": {
         "grammar": "6ccc19f326528f16892c3cab44e71d565f277e1793da3304dc395cce695d4960",
@@ -1351,7 +1351,7 @@
       },
       "border-top": {
         "grammar": "11e53428e767b8324a1905a502c5f245f54ff8d18eaa19939810d3fd45bded4d",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-top-color": {
         "grammar": "5775d1aa923b13d7bbb5738c0466b41f683ece3105f2aa173a6a8df2bc9b4f20",
@@ -1503,7 +1503,7 @@
       },
       "column-rule": {
         "grammar": "9ddf1802f64a1799b8ebca2c999786c8d5e13696108a27d82985b32899a3648d",
-        "status": "deferred"
+        "status": "partial"
       },
       "column-rule-color": {
         "grammar": "a5599afc1c65be95548b3fb669eb9a7a320a91ff1098a3b0b20c9f3328ec51e3",
@@ -2355,7 +2355,7 @@
       },
       "outline": {
         "grammar": "6dbc8972fa07195d73ef01be98d5942c556729ac65ba4b29473917e95b685803",
-        "status": "deferred"
+        "status": "partial"
       },
       "outline-color": {
         "grammar": "91a20d9c90fb0022b999de8853294b49859ac4f57254b09a896a89cb6d05e3b0",

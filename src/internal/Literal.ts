@@ -61,6 +61,7 @@ export type Time = `${number}${'ms' | 's'}`
 
 type Rule = { readonly list?: true } & (
   | ({ readonly kind: 'identifier' } & Identifier.valid.Options)
+  | { readonly kind: 'line'; readonly outline?: true }
   | {
       readonly auto: boolean
       readonly axes?: true
@@ -108,6 +109,15 @@ type LengthValue<rule extends Rule> =
       ? Exclude<Length, `${number}%`>
       : Length)
 
+type LinePart =
+  | Color
+  | Calculation
+  | Exclude<Length, `${number}%`>
+  | (typeof border.values)[number]
+  | 'medium'
+  | 'thick'
+  | 'thin'
+
 type Easing =
   | `cubic-bezier(${string})`
   | `steps(${string})`
@@ -123,57 +133,63 @@ type Listed<value extends string | number, rule> =
 type Value<rule extends Rule> =
   | `${string}var(--${string})${string}`
   | Global
-  | (rule extends { kind: 'identifier' }
-      ? string
-      : rule extends { kind: 'length' }
-        ?
-            | LengthValue<rule>
-            | (rule extends { items: number }
-                ? `${Extract<LengthValue<rule>, string | number>} ${string}`
-                : never)
-            | (rule extends { axes: true }
-                ? `${Length | Calculation}/${string}`
-                : never)
-        : rule extends { kind: 'number' }
-          ? Listed<Calculation | number | Keywords<rule>, rule>
-          : rule extends {
-                kind: 'enum'
-                values: readonly (infer keyword extends string)[]
-              }
-            ?
-                | Listed<
-                    keyword | (rule extends { easing: true } ? Easing : never),
-                    rule
-                  >
-                | (rule extends { items: number }
-                    ? `${keyword} ${string}`
-                    : never)
-                | (rule extends {
-                    groups: readonly (readonly (infer component extends
-                      string)[])[]
-                  }
-                    ? `${component} ${string}`
-                    : never)
-            : rule extends { kind: 'grid-tracks' }
+  | (rule extends { kind: 'line' }
+      ?
+          | LinePart
+          | `${LinePart} ${string}`
+          | (rule extends { outline: true } ? 'auto' | `auto ${string}` : never)
+      : rule extends { kind: 'identifier' }
+        ? string
+        : rule extends { kind: 'length' }
+          ?
+              | LengthValue<rule>
+              | (rule extends { items: number }
+                  ? `${Extract<LengthValue<rule>, string | number>} ${string}`
+                  : never)
+              | (rule extends { axes: true }
+                  ? `${Length | Calculation}/${string}`
+                  : never)
+          : rule extends { kind: 'number' }
+            ? Listed<Calculation | number | Keywords<rule>, rule>
+            : rule extends {
+                  kind: 'enum'
+                  values: readonly (infer keyword extends string)[]
+                }
               ?
-                  | GridTracks
-                  | (rule extends { explicit: true }
-                      ?
-                          | 'none'
-                          | 'subgrid'
-                          | `repeat(${string})${string}`
-                          | `[${string}`
+                  | Listed<
+                      | keyword
+                      | (rule extends { easing: true } ? Easing : never),
+                      rule
+                    >
+                  | (rule extends { items: number }
+                      ? `${keyword} ${string}`
                       : never)
-              : rule extends { kind: 'grid-line' }
-                ? number | 'auto' | `span ${bigint}`
-                : rule extends { kind: 'time' }
-                  ? Listed<Calculation | Time | Keywords<rule>, rule>
-                  :
-                      | Color
-                      | Keywords<rule>
-                      | (rule extends { items: number }
-                          ? `${Color} ${string}`
-                          : never))
+                  | (rule extends {
+                      groups: readonly (readonly (infer component extends
+                        string)[])[]
+                    }
+                      ? `${component} ${string}`
+                      : never)
+              : rule extends { kind: 'grid-tracks' }
+                ?
+                    | GridTracks
+                    | (rule extends { explicit: true }
+                        ?
+                            | 'none'
+                            | 'subgrid'
+                            | `repeat(${string})${string}`
+                            | `[${string}`
+                        : never)
+                : rule extends { kind: 'grid-line' }
+                  ? number | 'auto' | `span ${bigint}`
+                  : rule extends { kind: 'time' }
+                    ? Listed<Calculation | Time | Keywords<rule>, rule>
+                    :
+                        | Color
+                        | Keywords<rule>
+                        | (rule extends { items: number }
+                            ? `${Color} ${string}`
+                            : never))
 const blend = {
   kind: 'enum',
   values: [
@@ -685,10 +701,14 @@ export const rules = {
   },
   baselineSource: { kind: 'enum', values: ['auto', 'first', 'last'] },
   blockSize: size,
+  border: { kind: 'line' },
+  borderBlock: { kind: 'line' },
   borderBlockColor: { ...color, items: 2 },
+  borderBlockEnd: { kind: 'line' },
   borderBlockEndColor: color,
   borderBlockEndStyle: border,
   borderBlockEndWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
+  borderBlockStart: { kind: 'line' },
   borderBlockStartColor: color,
   borderBlockStartStyle: border,
   borderBlockStartWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
@@ -698,6 +718,7 @@ export const rules = {
     items: 2,
     keywords: ['medium', 'thick', 'thin'],
   },
+  borderBottom: { kind: 'line' },
   borderBottomColor: color,
   borderBottomLeftRadius: { ...length, items: 2 },
   borderBottomRightRadius: { ...length, items: 2 },
@@ -712,10 +733,13 @@ export const rules = {
     kind: 'enum',
     values: ['repeat', 'round', 'space', 'stretch'],
   },
+  borderInline: { kind: 'line' },
   borderInlineColor: { ...color, items: 2 },
+  borderInlineEnd: { kind: 'line' },
   borderInlineEndColor: color,
   borderInlineEndStyle: border,
   borderInlineEndWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
+  borderInlineStart: { kind: 'line' },
   borderInlineStartColor: color,
   borderInlineStartStyle: border,
   borderInlineStartWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
@@ -725,10 +749,12 @@ export const rules = {
     items: 2,
     keywords: ['medium', 'thick', 'thin'],
   },
+  borderLeft: { kind: 'line' },
   borderLeftColor: color,
   borderLeftStyle: border,
   borderLeftWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
   borderRadius: { ...length, axes: true, items: 4 },
+  borderRight: { kind: 'line' },
   borderRightColor: color,
   borderRightStyle: border,
   borderRightWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
@@ -736,6 +762,7 @@ export const rules = {
   borderStartEndRadius: { ...length, items: 2 },
   borderStartStartRadius: { ...length, items: 2 },
   borderStyle: { ...border, items: 4 },
+  borderTop: { kind: 'line' },
   borderTopColor: color,
   borderTopLeftRadius: { ...length, items: 2 },
   borderTopRightRadius: { ...length, items: 2 },
@@ -805,6 +832,7 @@ export const rules = {
   columnFill: { kind: 'enum', values: ['auto', 'balance'] },
   columnGap: { ...length, keywords: ['normal'] },
   columnHeight: { ...length, auto: true, percentage: false },
+  columnRule: { kind: 'line' },
   columnRuleColor: color,
   columnRuleStyle: border,
   columnRuleWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
@@ -1343,6 +1371,7 @@ export const rules = {
     min: Number.MIN_SAFE_INTEGER,
   },
   orphans: positiveInteger,
+  outline: { kind: 'line', outline: true },
   outlineColor: color,
   outlineOffset: { ...stroke, negative: true },
   outlineStyle: {
@@ -2025,6 +2054,37 @@ export function validate(
     return Substitution.valid(value)
       ? undefined
       : 'Expected balanced var() expressions with valid custom-property names.'
+  if (rule.kind === 'line') {
+    const parts =
+      typeof value === 'string'
+        ? Component.split(value, { separator: 'space' })
+        : value === 0
+          ? ['0']
+          : undefined
+    if (!parts || parts.length === 0 || parts.length > 3)
+      return 'Expected at most one line width, style, and color in any order.'
+    const used = new Set<string>()
+    for (const part of parts) {
+      if (!part || globals.has(part))
+        return 'CSS-wide keywords must stand alone.'
+      const width = /^[+-]?(?:0*\.0+|0+)(?:[eE][+-]?\d+)?$/.test(part)
+        ? 0
+        : part
+      const domain =
+        validate(rule.outline ? 'outlineStyle' : 'borderTopStyle', part) ===
+        undefined
+          ? 'style'
+          : validate('borderTopWidth', width) === undefined
+            ? 'width'
+            : validate('color', part) === undefined
+              ? 'color'
+              : undefined
+      if (!domain || used.has(domain))
+        return 'Expected at most one line width, style, and color in any order.'
+      used.add(domain)
+    }
+    return undefined
+  }
   if (rule.kind === 'identifier')
     return Identifier.valid(value, rule)
       ? undefined

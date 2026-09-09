@@ -4,6 +4,7 @@
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, css, Style, Theme } from 'zyzz'
+import * as BorderShorthand from '../test/fixtures/BorderShorthand.js'
 import * as Borders from '../test/fixtures/Borders.js'
 import * as Identifiers from '../test/fixtures/Identifiers.js'
 import * as Interaction from '../test/fixtures/Interaction.js'
@@ -18,6 +19,23 @@ import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
 describe('css', () => {
+  test('combined line values retain typed width style and color components', () => {
+    Style.define(BorderShorthand.styles)
+    css({
+      border: 0,
+      borderBlock: 'red solid thin',
+      borderInlineEnd: 'rgb(0 0 255) dashed calc(1px + 2px)',
+      outline: 'auto thin red',
+      columnRule: 'medium double blue',
+    })
+    // @ts-expect-error A nonzero number requires a length unit.
+    css({ border: 5 })
+    // @ts-expect-error Border widths do not accept percentages.
+    css({ border: '50%' })
+    // @ts-expect-error Arbitrary identifiers are not line components.
+    css({ border: 'unknown' })
+  })
+
   test('custom identifiers retain string authoring and declaration fallbacks', () => {
     Style.define(Identifiers.styles)
     css({

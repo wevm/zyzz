@@ -50,6 +50,11 @@ export function compile<
       /^(min|max)?(blockSize|inlineSize)$/i.test(property),
     ),
   )
+  const combinedLines = new Set<string>()
+  for (const style of options.styles.styles)
+    for (const { property } of style.declarations)
+      if (Literal.rules[property]?.kind === 'line')
+        combinedLines.add(property.startsWith('border') ? 'border' : property)
   type Prepared = {
     declarations: readonly Cached[]
     ordered: string
@@ -106,7 +111,15 @@ export function compile<
           domain: (() => {
             if (property.startsWith('backgroundPosition'))
               return 'backgroundPosition'
+            if (
+              combinedLines.has('columnRule') &&
+              property.startsWith('columnRule')
+            )
+              return 'columnRule'
+            if (combinedLines.has('outline') && property.startsWith('outline'))
+              return 'outline'
             if (property.startsWith('border')) {
+              if (combinedLines.has('border')) return 'border'
               if (property.endsWith('Color')) {
                 return 'borderColor'
               }

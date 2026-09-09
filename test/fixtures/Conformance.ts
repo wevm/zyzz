@@ -38,6 +38,20 @@ export function cases(): readonly Case[] {
       'revert-layer',
       'unset',
     ]
+    if (rule.kind === 'line') {
+      values.push(
+        0,
+        'none',
+        'solid',
+        'thin',
+        'red',
+        '1px solid red',
+        'red 1px solid',
+        'solid red 1px',
+        'rgb(0 0 255) dashed calc(1px + 2px)',
+      )
+      if ('outline' in rule) values.push('auto', 'auto 1px red')
+    }
     if (rule.kind === 'identifier') {
       values.push(...rule.keywords, '--Probe', '--other')
       if (!('dashed' in rule))

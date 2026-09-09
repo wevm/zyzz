@@ -23,15 +23,17 @@ Complete the property/value inventory across accessibility, backgrounds/gradient
 
 Panda's `strictTokens` and `strictPropertyValues` expose an additional policy choice. Zyzz keeps valid CSS literals available by default; opt-in token-only enforcement belongs in a future lint/type policy, not metadata inside `Theme.define`. Syntax validation and token-only policy are separate. Panda property shorthands and JSX style props do not require matching core APIs. [Writing styles](https://panda-css.com/docs/concepts/writing-styles)
 
-Logical dimensions, min/max dimensions, block/inline margins and padding, and inset offsets now share the scalar token/fallback/importance pipeline. Mixed physical/logical declarations preserve order across writing modes. Shorthands accept one scalar; intrinsic sizing values remain pending.
+Logical dimensions, min/max dimensions, block/inline margins and padding, and inset offsets now share the scalar token/fallback/importance pipeline. Mixed physical/logical declarations preserve order across writing modes. Shorthands accept one scalar; functional sizing values remain pending.
 
 ```ts
 css({ inlineSize: '20rem', paddingInline: '1rem', marginBlockEnd: '8px' })
 ```
 
-Flex basis, integer order, item/line alignment, and overflow axes now use the same type/source/emission pipeline. Intrinsic flex basis and multi-value shorthands remain deferred.
+Flex basis, integer order, item/line alignment, and overflow axes now use the same type/source/emission pipeline. Multi-value shorthands remain deferred.
 
 Physical/logical border sides and corner radii, plus outline color/style/width/offset, now share scalar token/fallback/importance handling. Border-specific colors precede shared colors; outline colors use the shared group. Combined border/outline strings and elliptical radius pairs remain pending.
+
+Intrinsic dimension keywords, auto minimums, unbounded maximums, and content flex basis now retain literal precedence and fallback importance. Function-valued sizing remains pending.
 
 ## 02. Composition and Restricted Style Contracts
 

@@ -787,7 +787,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected a nonnegative literal length, auto, or numeric zero.",
+                "message": "Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.",
                 "path": [
                   "card",
                   "width",

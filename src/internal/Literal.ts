@@ -32,6 +32,7 @@ export type Properties = {
 type Rule =
   | {
       readonly auto: boolean
+      readonly keywords?: readonly string[]
       readonly kind: 'length'
       readonly negative: boolean
       readonly percentage?: boolean
@@ -56,6 +57,9 @@ type Value<rule extends Rule> =
     }
       ?
           | (auto extends true ? 'auto' : never)
+          | (rule extends { keywords: readonly (infer keyword)[] }
+              ? keyword
+              : never)
           | (rule extends { percentage: false }
               ? Exclude<Length, `${number}%`>
               : Length)
@@ -93,6 +97,7 @@ const globals = new Set<string>([
   'revert-layer',
   'unset',
 ])
+const intrinsic = ['fit-content', 'max-content', 'min-content'] as const
 const length = { auto: false, kind: 'length', negative: false } as const
 // Keep type inference and validation on the same unit vocabulary.
 const lengthUnits = [
@@ -152,11 +157,17 @@ const lengthPattern = new RegExp(
   `^([+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?)(${lengthUnits.join('|')})$`,
 )
 const margin = { auto: true, kind: 'length', negative: true } as const
+const maximum = { ...length, keywords: [...intrinsic, 'none'] } as const
 const overflow = {
   kind: 'enum',
   values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
 } as const
-const size = { auto: true, kind: 'length', negative: false } as const
+const size = {
+  auto: true,
+  keywords: intrinsic,
+  kind: 'length',
+  negative: false,
+} as const
 const stroke = { ...length, percentage: false } as const
 
 /** Single source of truth for the supported literal properties and domains. */
@@ -268,7 +279,7 @@ export const rules = {
       'none',
     ],
   },
-  flexBasis: size,
+  flexBasis: { ...size, keywords: ['content', ...intrinsic] },
   flexDirection: {
     kind: 'enum',
     values: ['column', 'column-reverse', 'row', 'row-reverse'],
@@ -316,14 +327,14 @@ export const rules = {
   marginLeft: margin,
   marginRight: margin,
   marginTop: margin,
-  maxBlockSize: length,
-  maxHeight: { auto: false, kind: 'length', negative: false },
-  maxInlineSize: length,
-  maxWidth: { auto: false, kind: 'length', negative: false },
-  minBlockSize: length,
-  minHeight: length,
-  minInlineSize: length,
-  minWidth: length,
+  maxBlockSize: maximum,
+  maxHeight: maximum,
+  maxInlineSize: maximum,
+  maxWidth: maximum,
+  minBlockSize: size,
+  minHeight: size,
+  minInlineSize: size,
+  minWidth: size,
   opacity: { kind: 'number', max: 1, min: 0 },
   // Safe integers serialize without exponential notation in CSS integer positions.
   order: {
@@ -419,5 +430,7 @@ export function validate(
     // Stroke widths and outline offsets do not accept percentages.
     if (rule.percentage !== false || match?.[2] !== '%') return undefined
   }
-  return `Expected ${rule.negative ? 'a' : 'a nonnegative'} literal length${rule.auto ? ', auto,' : ''} or numeric zero.`
+  if (typeof value === 'string' && rule.keywords?.includes(value))
+    return undefined
+  return `Expected ${rule.negative ? 'a' : 'a nonnegative'} literal length${rule.auto ? ', auto,' : ''} or numeric zero.${rule.keywords ? ` Also accepts: ${rule.keywords.join(', ')}.` : ''}`
 }

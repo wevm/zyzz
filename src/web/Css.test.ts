@@ -408,8 +408,8 @@ describe('compile', () => {
     ).toThrowErrorMatchingInlineSnapshot(`
       [Style.InvalidError: ["card","padding"]: Expected a nonnegative literal length or numeric zero.
       ["card","borderWidth"]: Expected a nonnegative literal length or numeric zero.
-      ["card","width"]: Expected a nonnegative literal length, auto, or numeric zero.
-      ["card","height"]: Expected a nonnegative literal length, auto, or numeric zero.
+      ["card","width"]: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
+      ["card","height"]: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
       ["card","margin"]: Expected a literal length, auto, or numeric zero.
       ["card","fontSize"]: Expected a nonnegative literal length or numeric zero.]
     `)

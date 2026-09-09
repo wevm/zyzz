@@ -76,6 +76,27 @@ const panel = css({
 
 Container units can refer to containment established by ordinary CSS. Zyzz does not yet author containment declarations or container conditions. Browser support for newer units depends on the deployment target; ordered fallback declarations can retain an older unit. Native unit conversion remains unimplemented.
 
+## Intrinsic Sizing
+
+```ts
+css({
+  inlineSize: 'fit-content',
+  minInlineSize: 'min-content',
+  maxInlineSize: 'none',
+  flexBasis: 'content',
+})
+```
+
+[Intrinsic sizing keywords](https://www.w3.org/TR/css-sizing-3/#sizing-values) apply to width/height, inline/block size, their minimum/maximum forms, and flex basis. Keywords retain CSS semantics and can appear in ordered fallback arrays or carry importance.
+
+| Properties                       | Additional Values                                              |
+| -------------------------------- | -------------------------------------------------------------- |
+| Preferred and minimum dimensions | `auto`, `fit-content`, `min-content`, `max-content`            |
+| Maximum dimensions               | `none`, `fit-content`, `min-content`, `max-content`            |
+| `flexBasis`                      | `auto`, `content`, `fit-content`, `min-content`, `max-content` |
+
+Valid CSS keywords precede same-named theme tokens. An explicit `theme.tokens.spacing['min-content']` reference still selects that token's length. Theme spacing values remain lengths; keywords are not accepted as padding or margin values. Function forms such as `fit-content(20rem)`, `stretch`, and native intrinsic sizing remain deferred.
+
 ## Borders and Outlines
 
 ```ts
@@ -111,7 +132,7 @@ const row = css({
 const item = css({ flexBasis: '12rem', alignSelf: 'center', order: -1 })
 ```
 
-[Flex basis](https://www.w3.org/TR/css-flexbox-1/#flex-basis-property) accepts nonnegative lengths, percentages, zero, or `auto`, including spacing tokens in bound styles. `order` accepts safe integers; fractional values fail validation. Visual ordering does not change DOM or keyboard order. Intrinsic sizing keywords and the multi-value `flex` shorthand remain deferred.
+[Flex basis](https://www.w3.org/TR/css-flexbox-1/#flex-basis-property) accepts nonnegative lengths, percentages, zero, `auto`, `content`, or intrinsic sizing keywords, including spacing tokens in bound styles. `order` accepts safe integers; fractional values fail validation. Visual ordering does not change DOM or keyboard order. The multi-value `flex` shorthand remains deferred.
 
 [Overflow](https://www.w3.org/TR/css-overflow-3/#overflow-properties) accepts `auto`, `clip`, `hidden`, `scroll`, or `visible`. The scalar shorthand sets both axes; later longhands retain precedence, including mixed importance. Arrays remain declaration fallbacks. The browser owns axis coupling and scrolling behavior; `clip` does not create a scroll container.
 
@@ -129,7 +150,7 @@ const panel = css({
 
 [Logical dimensions, spacing, and offsets](https://www.w3.org/TR/css-logical-1/) follow the element's writing mode and direction. Emission retains logical property names and authored order relative to physical properties. Spacing tokens work in every new length property, including explicit references and fallback arrays.
 
-Shorthands currently accept a single scalar, applied to both logical edges. Arrays remain ordered declaration fallbacks, not paired edge values. Minimum/maximum sizes retain the existing length-only subset; intrinsic sizing keywords remain follow-ups. Native mapping is not implemented.
+Shorthands currently accept a single scalar, applied to both logical edges. Arrays remain ordered declaration fallbacks, not paired edge values. Minimum/maximum sizes support the intrinsic keywords above. Native mapping is not implemented.
 
 ## Fallbacks and Importance
 

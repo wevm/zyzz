@@ -13,6 +13,7 @@ import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
+import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Compilation from '../../bench/Compilation.js'
 
 for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
@@ -142,39 +143,40 @@ for (const count of [10, 100]) {
   })
 }
 
-for (const kind of ['borders', 'flex', 'logical'] as const)
+const workloads = {
+  borders: {
+    declaration: (index: number) =>
+      `export const box${index} = css({borderStyle:'solid',borderWidth:'2px',borderInlineStartWidth:'${index}px',borderStartStartRadius:'8px',outlineWidth:'1px'})();`,
+    source: Borders.source,
+    title: 'border',
+  },
+  flex: {
+    declaration: (index: number) =>
+      `export const box${index} = css({flexBasis:'${index}px',alignSelf:'center',order:${index},overflow:['hidden','clip!'],overflowX:'auto'})();`,
+    source: Flex.source,
+    title: 'flex layout',
+  },
+  logical: {
+    declaration: (index: number) =>
+      `export const box${index} = css({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`,
+    source: Logical.source,
+    title: 'logical box',
+  },
+  sizing: {
+    declaration: (index: number) =>
+      `export const box${index} = css({width:['${index}px','fit-content!'],minInlineSize:'min-content',maxInlineSize:'none',flexBasis:'content'})();`,
+    source: Sizing.source,
+    title: 'intrinsic sizing',
+  },
+}
+for (const [kind, workload] of Object.entries(workloads))
   for (const count of [10, 100]) {
     const source =
-      (() => {
-        if (kind === 'logical') {
-          return Logical.source
-        }
-        if (kind === 'borders') {
-          return Borders.source
-        }
-        return Flex.source
-      })() +
+      workload.source +
       Array.from({ length: count }, (_, index) =>
-        (() => {
-          if (kind === 'borders') {
-            return `export const box${index} = css({borderStyle:'solid',borderWidth:'2px',borderInlineStartWidth:'${index}px',borderStartStartRadius:'8px',outlineWidth:'1px'})();`
-          }
-          if (kind === 'logical') {
-            return `export const box${index} = css({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`
-          }
-          return `export const box${index} = css({flexBasis:'${index}px',alignSelf:'center',order:${index},overflow:['hidden','clip!'],overflowX:'auto'})();`
-        })(),
+        workload.declaration(index),
       ).join('\n')
-    const name = (() => {
-      if (kind === 'logical') {
-        return 'logical box'
-      }
-      if (kind === 'borders') {
-        return 'border'
-      }
-      return 'flex layout'
-    })()
-    describe(`${name} transform / ${count} additional styles`, () => {
+    describe(`${workload.title} transform / ${count} additional styles`, () => {
       bench(
         'extract + emit + rewrite + maps',
         () => {

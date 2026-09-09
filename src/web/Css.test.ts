@@ -9,8 +9,150 @@ import { Css } from 'zyzz/web'
 import * as Borders from '../../test/fixtures/Borders.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
+import * as Scrolling from '../../test/fixtures/Scrolling.js'
 
 describe('compile', () => {
+  test('scroll snap sharing retains A/B/A keyword and priority order', () => {
+    const a = {
+      scrollSnapAlign: 'start end',
+      scrollSnapStop: 'normal',
+      scrollSnapType: 'x proximity',
+    } as const
+    const output = Css.compile({
+      styles: Style.define({
+        a,
+        b: {
+          scrollSnapAlign: ['center', 'none start!'],
+          scrollSnapStop: 'always',
+          scrollSnapType: 'both mandatory',
+        },
+        c: a,
+      }),
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-a{scroll-snap-align:start end;scroll-snap-stop:normal;scroll-snap-type:x proximity;}
+      .z-b{scroll-snap-align:center;scroll-snap-align:none start!important;scroll-snap-stop:always;scroll-snap-type:both mandatory;}
+      .z-c{scroll-snap-align:start end;scroll-snap-stop:normal;scroll-snap-type:x proximity;}"
+    `)
+  })
+
+  test('scroll spacing sharing preserves shorthand and logical A/B/A order', () => {
+    const a = {
+      scrollMargin: '4px',
+      scrollPadding: '8px',
+      overscrollBehavior: 'contain',
+    } as const
+    const output = Css.compile({
+      styles: Style.define({
+        a,
+        b: {
+          scrollMarginInlineStart: '-2px',
+          scrollPaddingBlockStart: '20px',
+          overscrollBehaviorX: 'none',
+        },
+        c: a,
+      }),
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-a{scroll-margin:4px;scroll-padding:8px;overscroll-behavior:contain;}
+      .z-b{scroll-margin-inline-start:-2px;scroll-padding-block-start:20px;overscroll-behavior-x:none;}
+      .z-c{scroll-margin:4px;scroll-padding:8px;overscroll-behavior:contain;}"
+    `)
+  })
+
+  test('scroll spacing properties match native browser controls across writing modes', async () => {
+    const cases = Object.entries(Scrolling.styles).flatMap(([family, styles]) =>
+      Object.entries(styles).map(([property, value], index) => ({
+        css: Scrolling.controls[
+          family as keyof typeof Scrolling.controls
+        ].split(';')[index]!,
+        property,
+        value,
+      })),
+    )
+    const input = Object.fromEntries(
+      cases.map(({ property, value }) => [property, { [property]: value }]),
+    )
+    const a = {
+      scrollMargin: '4px',
+      scrollPadding: '8px',
+      overscrollBehavior: 'contain',
+    } as const
+    const styles: Record<string, Style.LiteralProperties> = {
+      ...input,
+      a,
+      b: {
+        scrollMarginInlineStart: '-2px',
+        scrollPaddingBlockStart: '20px',
+        overscrollBehaviorX: 'none',
+      },
+      c: a,
+    }
+    const output = Css.compile({ styles: Style.define(styles) })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>main>div{overflow:auto;height:100px;width:100px}${output.css}</style><main>${cases.map(({ property, css }) => `<div id="${property}" class="${output.classes[property]}"></div><div id="${property}-control" style="${css}"></div>`).join('')}<div id="combined" class="${output.classes.a} ${output.classes.b} ${output.classes.c}"></div><div id="combined-control" style="scroll-margin:4px;scroll-padding:8px;overscroll-behavior:contain"></div></main>`,
+      )
+      for (const writingMode of ['horizontal-tb', 'vertical-lr', 'vertical-rl'])
+        for (const direction of ['ltr', 'rtl']) {
+          await page.locator('main').evaluate(
+            (element, mode) => {
+              element.style.direction = mode.direction
+              element.style.writingMode = mode.writingMode
+            },
+            { direction, writingMode },
+          )
+          expect(
+            await page.evaluate((cases) => {
+              const properties = [
+                'overscroll-behavior-x',
+                'overscroll-behavior-y',
+                'scroll-behavior',
+                'scroll-margin-top',
+                'scroll-margin-right',
+                'scroll-margin-bottom',
+                'scroll-margin-left',
+                'scroll-padding-top',
+                'scroll-padding-right',
+                'scroll-padding-bottom',
+                'scroll-padding-left',
+              ]
+              const unsupported = cases
+                .filter(
+                  ({ css }) =>
+                    !CSS.supports(css.split(':')[0]!, css.split(':')[1]!),
+                )
+                .map(({ property }) => property)
+              const mismatches = [
+                ...cases.map(({ property }) => property),
+                'combined',
+              ].filter((id) => {
+                const actual = getComputedStyle(document.getElementById(id)!)
+                const control = getComputedStyle(
+                  document.getElementById(`${id}-control`)!,
+                )
+                return properties.some(
+                  (property) =>
+                    actual.getPropertyValue(property) !==
+                    control.getPropertyValue(property),
+                )
+              })
+              return { mismatches, unsupported }
+            }, cases),
+          ).toMatchInlineSnapshot(`
+            {
+              "mismatches": [],
+              "unsupported": [],
+            }
+          `)
+        }
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('border and outline properties match native browser controls in every writing mode', async () => {
     const input: Record<string, Style.LiteralProperties> = {}
     for (const entry of Borders.cases)

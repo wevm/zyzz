@@ -4,7 +4,7 @@ Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the ca
 
 **Partial** means only the stated subset works today. **Planned** means an existing architecture contract awaits implementation. **Proposal** means an API shape is offered for review. **Deferred** means a later capability; external CSS examples demonstrate interoperability, not implemented Zyzz authoring support. Examples are independent unless they explicitly share a definition.
 
-Current implementation: 120 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
+Current implementation: 159 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
 
 ## 01. Typed Styles and Inline Authoring
 
@@ -34,6 +34,24 @@ Flex basis, integer order, item/line alignment, and overflow axes now use the sa
 Physical/logical border sides and corner radii, plus outline color/style/width/offset, now share scalar token/fallback/importance handling. Border-specific colors precede shared colors; outline colors use the shared group. Combined border/outline strings and elliptical radius pairs remain pending.
 
 Intrinsic dimension keywords, auto minimums, unbounded maximums, and content flex basis now retain literal precedence and fallback importance. Function-valued sizing remains pending.
+
+Scroll margins/padding and scroll/overscroll behavior now support scalar declarations, fallback importance, and conflict-safe physical/logical ordering. Scroll padding accepts spacing tokens; scroll margins require literal lengths. Multi-value shorthands remain pending.
+
+```ts
+css({ scrollPaddingBlockStart: '4rem', scrollBehavior: 'smooth', overscrollBehavior: 'contain' })
+```
+
+Scroll snap type/alignment/stop support finite keyword combinations, ordered fallbacks, and importance. Axis strictness and paired block/inline alignment are validated without accepting arbitrary CSS strings.
+
+```ts
+css({ scrollSnapType: 'x mandatory', scrollSnapAlign: 'start', scrollSnapStop: 'always' })
+```
+
+Text flow now includes wrapping, hyphenation, letter/word spacing, indentation, last-line alignment, transformation, and overflow through bounded scalar values. Indentation supports spacing tokens; other typography scales and composite presets remain pending.
+
+```ts
+css({ letterSpacing: '-.02em', overflowWrap: 'anywhere', textIndent: '1em' })
+```
 
 ## 02. Composition and Restricted Style Contracts
 

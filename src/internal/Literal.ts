@@ -162,6 +162,12 @@ const overflow = {
   kind: 'enum',
   values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
 } as const
+const overscroll = {
+  kind: 'enum',
+  values: ['auto', 'contain', 'none'],
+} as const
+const scrollMargin = { ...length, negative: true, percentage: false } as const
+const scrollPadding = { ...length, auto: true } as const
 const size = {
   auto: true,
   keywords: intrinsic,
@@ -169,6 +175,11 @@ const size = {
   negative: false,
 } as const
 const stroke = { ...length, percentage: false } as const
+const textSpacing = {
+  ...stroke,
+  keywords: ['normal'],
+  negative: true,
+} as const
 
 /** Single source of truth for the supported literal properties and domains. */
 export const rules = {
@@ -292,6 +303,7 @@ export const rules = {
   fontWeight: { kind: 'number', max: 1000, min: 1 },
   gap: length,
   height: size,
+  hyphens: { kind: 'enum', values: ['auto', 'manual', 'none'] },
   inlineSize: size,
   inset: margin,
   insetBlock: margin,
@@ -315,6 +327,7 @@ export const rules = {
     ],
   },
   left: margin,
+  letterSpacing: textSpacing,
   lineHeight: { kind: 'number', max: Infinity, min: 0 },
   margin,
   marginBlock: margin,
@@ -362,8 +375,12 @@ export const rules = {
   },
   outlineWidth: stroke,
   overflow,
+  overflowWrap: { kind: 'enum', values: ['anywhere', 'break-word', 'normal'] },
   overflowX: overflow,
   overflowY: overflow,
+  overscrollBehavior: overscroll,
+  overscrollBehaviorX: overscroll,
+  overscrollBehaviorY: overscroll,
   padding: length,
   paddingBlock: length,
   paddingBlockEnd: length,
@@ -381,12 +398,98 @@ export const rules = {
   },
   right: margin,
   rowGap: length,
+  scrollBehavior: { kind: 'enum', values: ['auto', 'smooth'] },
+  scrollMargin,
+  scrollMarginBlock: scrollMargin,
+  scrollMarginBlockEnd: scrollMargin,
+  scrollMarginBlockStart: scrollMargin,
+  scrollMarginBottom: scrollMargin,
+  scrollMarginInline: scrollMargin,
+  scrollMarginInlineEnd: scrollMargin,
+  scrollMarginInlineStart: scrollMargin,
+  scrollMarginLeft: scrollMargin,
+  scrollMarginRight: scrollMargin,
+  scrollMarginTop: scrollMargin,
+  scrollPadding,
+  scrollPaddingBlock: scrollPadding,
+  scrollPaddingBlockEnd: scrollPadding,
+  scrollPaddingBlockStart: scrollPadding,
+  scrollPaddingBottom: scrollPadding,
+  scrollPaddingInline: scrollPadding,
+  scrollPaddingInlineEnd: scrollPadding,
+  scrollPaddingInlineStart: scrollPadding,
+  scrollPaddingLeft: scrollPadding,
+  scrollPaddingRight: scrollPadding,
+  scrollPaddingTop: scrollPadding,
+  scrollSnapAlign: {
+    kind: 'enum',
+    values: [
+      'center',
+      'center center',
+      'center end',
+      'center none',
+      'center start',
+      'end',
+      'end center',
+      'end end',
+      'end none',
+      'end start',
+      'none',
+      'none center',
+      'none end',
+      'none none',
+      'none start',
+      'start',
+      'start center',
+      'start end',
+      'start none',
+      'start start',
+    ],
+  },
+  scrollSnapStop: { kind: 'enum', values: ['always', 'normal'] },
+  scrollSnapType: {
+    kind: 'enum',
+    values: [
+      'block',
+      'block mandatory',
+      'block proximity',
+      'both',
+      'both mandatory',
+      'both proximity',
+      'inline',
+      'inline mandatory',
+      'inline proximity',
+      'none',
+      'x',
+      'x mandatory',
+      'x proximity',
+      'y',
+      'y mandatory',
+      'y proximity',
+    ],
+  },
   textAlign: {
     kind: 'enum',
     values: ['center', 'end', 'justify', 'left', 'right', 'start'],
   },
+  textAlignLast: {
+    kind: 'enum',
+    values: ['auto', 'center', 'end', 'justify', 'left', 'right', 'start'],
+  },
+  textIndent: { ...length, negative: true },
+  textOverflow: { kind: 'enum', values: ['clip', 'ellipsis'] },
+  textTransform: {
+    kind: 'enum',
+    values: ['capitalize', 'lowercase', 'none', 'uppercase'],
+  },
   top: margin,
+  whiteSpace: {
+    kind: 'enum',
+    values: ['break-spaces', 'normal', 'nowrap', 'pre', 'pre-line', 'pre-wrap'],
+  },
   width: size,
+  wordBreak: { kind: 'enum', values: ['break-all', 'keep-all', 'normal'] },
+  wordSpacing: textSpacing,
   writingMode: {
     kind: 'enum',
     values: ['horizontal-tb', 'vertical-lr', 'vertical-rl'],
@@ -427,7 +530,7 @@ export function validate(
   const match = typeof value === 'string' ? lengthPattern.exec(value) : null
   const amount = match ? Number(match[1]) : NaN
   if (Number.isFinite(amount) && (rule.negative || amount >= 0)) {
-    // Stroke widths and outline offsets do not accept percentages.
+    // Length-only domains exclude percentages.
     if (rule.percentage !== false || match?.[2] !== '%') return undefined
   }
   if (typeof value === 'string' && rule.keywords?.includes(value))

@@ -16,7 +16,7 @@ export function accepts(
   if (group === 'textColor') return property === 'color'
   if (group === 'spacing')
     return (
-      /^(padding|margin|inset)/.test(property) ||
+      /^(padding|margin|inset|scrollPadding)/.test(property) ||
       [
         'blockSize',
         'bottom',
@@ -36,6 +36,7 @@ export function accepts(
         'minWidth',
         'right',
         'rowGap',
+        'textIndent',
         'top',
         'width',
       ].includes(property)
@@ -169,6 +170,8 @@ export type Properties<group extends Group> = group extends 'spacing'
       | `padding${string}`
       | `right`
       | `rowGap`
+      | `scrollPadding${string}`
+      | `textIndent`
       | `top`
       | `width`
     >

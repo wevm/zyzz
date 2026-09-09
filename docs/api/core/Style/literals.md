@@ -25,14 +25,15 @@ The property surface is intentionally finite. No catch-all string index permits 
 | Sizing      | `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, plus `inlineSize`, `blockSize`, and their `min`/`max` forms                                                                           |
 | Colors      | `color`, `backgroundColor`, `borderColor`                                                                                                                                                                  |
 | Borders     | `borderWidth`, `borderStyle`, `borderColor`, their physical/logical side forms, and physical/logical corner radii                                                                                          |
-| Typography  | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`                                                                                                                                           |
+| Typography  | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`, `textAlignLast`, `textIndent`, `letterSpacing`, `wordSpacing`, `hyphens`, `overflowWrap`, `wordBreak`, `whiteSpace`, `textTransform`, `textOverflow`                                                                                                                                           |
 | Positioning | `inset`, `insetBlock`, `insetInline`, their start/end longhands, and `top`, `right`, `bottom`, `left`                                                                                                      |
 | Writing     | `direction` (`ltr`, `rtl`), `writingMode` (`horizontal-tb`, `vertical-lr`, `vertical-rl`)                                                                                                                  |
 | Outlines    | `outlineColor`, `outlineWidth`, `outlineStyle`, `outlineOffset`                                                                                                                                            |
 | Overflow    | `overflow`, `overflowX`, `overflowY`                                                                                                                                                                       |
+| Scrolling   | `scrollMargin`/`scrollPadding` and physical/logical longhands, `scrollBehavior`, `scrollSnapType`/`scrollSnapAlign`/`scrollSnapStop`, `overscrollBehavior`/`overscrollBehaviorX`/`overscrollBehaviorY` |
 | Other       | `opacity`                                                                                                                                                                                                  |
 
-- **Lengths:** finite absolute, font-relative, viewport-relative, and container-relative lengths, percentages, or numeric zero. Border and outline widths, and outline offsets, exclude percentages.
+- **Lengths:** finite absolute, font-relative, viewport-relative, and container-relative lengths, percentages, or numeric zero. Border and outline widths, outline offsets, and scroll margins exclude percentages.
 - **Margins:** allow negative lengths. Margins, inset offsets, and width/height/inlineSize/blockSize also accept `auto`. Offsets accept negative lengths.
 - **Shorthands:** scalar values only; no multi-value strings yet.
 - **Units:** preserve spelling without implicit pixel conversion.
@@ -75,6 +76,80 @@ const panel = css({
 ```
 
 Container units can refer to containment established by ordinary CSS. Zyzz does not yet author containment declarations or container conditions. Browser support for newer units depends on the deployment target; ordered fallback declarations can retain an older unit. Native unit conversion remains unimplemented.
+
+## Scroll Spacing
+
+[Scroll margins and padding](https://www.w3.org/TR/css-scroll-snap-1/#scroll-padding) adjust scroll-into-view alignment without changing layout spacing. Physical sides, logical block/inline shorthands, and logical start/end longhands retain authored order.
+
+| Properties | Values |
+| --- | --- |
+| `scrollMargin*` | Signed lengths or zero; no percentages or `auto` |
+| `scrollPadding*` | Nonnegative lengths, percentages, zero, or `auto` |
+| `scrollBehavior` | `auto`, `smooth` |
+| `overscrollBehavior`, `overscrollBehaviorX`, `overscrollBehaviorY` | `auto`, `contain`, `none` |
+
+```ts
+import { Config, css } from 'zyzz'
+
+const zyzz = Config.create({ theme: { spacing: { header: '4rem' } } })
+const scroller = zyzz.css({
+  overflow: 'auto',
+  scrollPaddingBlockStart: 'header',
+  overscrollBehavior: 'contain',
+})
+const section = css({ scrollMarginBlockStart: '1rem' })
+```
+
+Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, and importance. Scroll margins remain literal-only because the shared spacing token contract permits percentages. Negative scroll padding fails validation. Shorthands accept one scalar per fallback entry.
+
+[Scroll behavior](https://www.w3.org/TR/css-overflow-3/#scroll-behavior-property) controls navigation/API scrolling; [overscroll behavior](https://www.w3.org/TR/css-overscroll-1/#overscroll-behavior-properties) controls boundary actions. Smooth-scroll timing remains browser-owned. Logical overscroll axes, multi-value shorthands, and native scrolling conversion remain deferred.
+
+## Scroll Snapping
+
+[Scroll snap properties](https://www.w3.org/TR/css-scroll-snap-1/#scroll-snap-type) align items within a scroll container. Values use the listed lowercase keywords and single-space combinations; arrays remain ordered declaration fallbacks.
+
+| Property | Values |
+| --- | --- |
+| `scrollSnapType` | `none`; `x`, `y`, `block`, `inline`, or `both`, optionally followed by `mandatory` or `proximity` |
+| `scrollSnapAlign` | One or two of `none`, `start`, `end`, `center`; paired values select block then inline alignment |
+| `scrollSnapStop` | `normal`, `always` |
+
+```ts
+import { css } from 'zyzz'
+
+const carousel = css({ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory' })
+const slide = css({ flexShrink: 0, scrollSnapAlign: 'start', scrollSnapStop: 'always' })
+```
+
+Snap declarations accept CSS-wide keywords, fallback arrays, and importance in root, theme, and Config authoring. Theme tokens do not map to snap keywords. Scroll margins and padding adjust the alignment area. The browser owns proximity thresholds, motion, and gesture physics; native snapping remains deferred.
+
+## Text Flow
+
+[Text spacing and line breaking](https://www.w3.org/TR/css-text-3/) use explicit scalar domains. Indentation accepts spacing tokens; letter and word spacing remain literal-only because the shared spacing token contract permits percentages.
+
+| Properties | Supported Values |
+| --- | --- |
+| `letterSpacing`, `wordSpacing` | Signed lengths, zero, `normal`; percentages excluded |
+| `textIndent` | Signed lengths, percentages, zero, or spacing tokens |
+| `hyphens` | `auto`, `manual`, `none` |
+| `overflowWrap` | `anywhere`, `break-word`, `normal` |
+| `wordBreak` | `break-all`, `keep-all`, `normal` |
+| `whiteSpace` | `break-spaces`, `normal`, `nowrap`, `pre`, `pre-line`, `pre-wrap` |
+| `textAlignLast` | `auto`, `center`, `end`, `justify`, `left`, `right`, `start` |
+| `textTransform` | `capitalize`, `lowercase`, `none`, `uppercase` |
+| `textOverflow` | `clip`, `ellipsis` |
+
+```ts
+import { css } from 'zyzz'
+
+const title = css({ letterSpacing: '-.02em', textTransform: 'uppercase' })
+const excerpt = css({ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' })
+const paragraph = css({ overflowWrap: 'anywhere', textIndent: '1em' })
+```
+
+[Text overflow](https://www.w3.org/TR/css-overflow-3/#text-overflow) does not create overflow by itself. Use a constrained container with hidden overflow and the appropriate wrapping behavior. All listed properties accept CSS-wide keywords, ordered fallback arrays, and importance.
+
+Hyphenation dictionaries and language-sensitive casing remain browser-owned. Indentation modifiers, custom overflow strings, extended transformation keywords, whitespace longhands, font families, composite typography tokens, and native text conversion remain deferred.
 
 ## Intrinsic Sizing
 

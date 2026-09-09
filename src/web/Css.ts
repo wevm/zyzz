@@ -31,6 +31,15 @@ export function compile<
     message: string | undefined
   }
   const cache = new Map<string, Map<number | string, Cached>>()
+  const references = new Map<object, boolean>()
+  function isReference(value: unknown): value is Token.Reference {
+    if (typeof value !== 'object' || value === null) return false
+    const previous = references.get(value)
+    if (previous !== undefined) return previous
+    const result = Token.is(value)
+    references.set(value, result)
+    return result
+  }
   const classes = Object.create(null) as Record<name, string>
   const diagnostics: Diagnostic[] = []
   const groups = new Map<string, false | string>()
@@ -41,9 +50,15 @@ export function compile<
       /^(min|max)?(blockSize|inlineSize)$/i.test(property),
     ),
   )
+  type Prepared = {
+    declarations: readonly Cached[]
+    ordered: string
+    shared: string
+  }
+  const unique = new Map<string, Prepared>()
   const prepared = options.styles.styles.map((style) => {
-    const declarations: string[] = []
-    const domains = new Map<string, string[]>()
+    let body = ''
+    const declarations: Cached[] = []
     for (const { important, property, value: input } of style.declarations) {
       if (important !== undefined && typeof important !== 'boolean') {
         diagnostics.push({
@@ -53,7 +68,7 @@ export function compile<
         })
         continue
       }
-      const token = Token.is(input)
+      const token = isReference(input)
       let value: number | string
       try {
         value = token
@@ -122,6 +137,15 @@ export function compile<
             ) {
               return 'overflow'
             }
+            if (property.startsWith('overscrollBehavior')) {
+              return 'overscrollBehavior'
+            }
+            if (property.startsWith('scrollMargin')) {
+              return 'scrollMargin'
+            }
+            if (property.startsWith('scrollPadding')) {
+              return 'scrollPadding'
+            }
             if (['columnGap', 'gap', 'rowGap'].includes(property)) {
               return 'gap'
             }
@@ -146,7 +170,7 @@ export function compile<
         }
         values.set(value, entry)
       }
-      const { declaration, domain, message } = entry
+      const { declaration, message } = entry
       if (message) {
         diagnostics.push({
           code: 'invalid_declaration',
@@ -155,39 +179,38 @@ export function compile<
         })
         continue
       }
-      declarations.push(declaration)
-      const sequence = domains.get(domain) ?? []
-      sequence.push(declaration)
-      domains.set(domain, sequence)
+      body += declaration
+      declarations.push(entry)
     }
-    for (const [domain, sequence] of domains) {
+    const previous = unique.get(body)
+    if (previous) return { content: previous, name: style.name }
+
+    const content = { declarations, ordered: '', shared: '' }
+    unique.set(body, content)
+    const domains = new Map<string, string>()
+    for (const { declaration, domain } of declarations)
+      domains.set(domain, (domains.get(domain) ?? '') + declaration)
+    for (const [domain, signature] of domains) {
       const previous = groups.get(domain)
       if (previous === false) continue
-      const signature = sequence.join('')
       groups.set(
         domain,
         previous === undefined || previous === signature ? signature : false,
       )
     }
-    return { declarations, domains, name: style.name }
+    return { content, name: style.name }
   })
-  const factored = prepared.map((style) => {
-    const common = new Set<string>()
-    for (const [domain, sequence] of style.domains)
-      if (groups.get(domain) !== false)
-        for (const declaration of sequence) common.add(declaration)
-    const ordered = style.declarations
-      .filter((declaration) => !common.has(declaration))
-      .join('')
-    const shared = style.declarations
-      .filter((declaration) => common.has(declaration))
-      .join('')
-    return { name: style.name, ordered, shared }
-  })
+  // Equivalent validated bodies share factoring work, including repeated tokens.
+  // Validation still visits every input to retain diagnostics and live contracts.
+  for (const content of unique.values())
+    for (const { declaration, domain } of content.declarations) {
+      if (groups.get(domain) === false) content.ordered += declaration
+      else content.shared += declaration
+    }
   // Sort identities only, never authored declarations or cascade order. Separate
   // prefixes keep generated base identities disjoint from encoded authored names.
   const bases = new Map(
-    [...new Set(factored.map((style) => style.shared))]
+    [...new Set([...unique.values()].map((style) => style.shared))]
       .filter(Boolean)
       .sort()
       .map((body, index) => [
@@ -197,7 +220,7 @@ export function compile<
   )
   const identical = new Map<string, string>()
   const rules = new Map<string, string>()
-  for (const style of factored) {
+  for (const style of prepared) {
     if (!style.name || Object.hasOwn(classes, style.name)) {
       diagnostics.push({
         code: 'invalid_name',
@@ -206,7 +229,7 @@ export function compile<
       })
       continue
     }
-    const { ordered, shared } = style
+    const { ordered, shared } = style.content
     const names: string[] = []
     // Shared domains have identical ordered declarations everywhere they occur.
     // Ordered composition retains a distinct rule per authored style for conflicts.

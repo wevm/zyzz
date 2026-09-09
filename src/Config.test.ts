@@ -33,9 +33,9 @@ describe('create', () => {
       themes: zyzz.themes,
     })
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-base{--z-t0-color_2e_brand:#06c;--z-t0-spacing_2e_md:8px;}
-      .z_theme-mint{--z-t0-color_2e_brand:light-dark(#175,#afa);--z-t0-spacing_2e_md:12px;}
-      .z_base0{color:var(--z-t0-color_2e_brand,#06c);padding:var(--z-t0-spacing_2e_md,8px);}"
+      ".t_0{--z0:#06c;--z1:8px;}
+      .t_1{--z0:light-dark(#175,#afa);--z1:12px;}
+      .z_base0{color:var(--z0,#06c);padding:var(--z1,8px);}"
     `)
     expect(Object.isFrozen(zyzz.themes)).toMatchInlineSnapshot(`true`)
     expect(zyzz.themes.base === base).toMatchInlineSnapshot(`false`)
@@ -48,7 +48,7 @@ describe('create', () => {
         themes: { original: base },
       }).css,
     ).toMatchInlineSnapshot(
-      `".z_base0{color:var(--z-t0-color_2e_brand,#06c);}"`,
+      `".z_base0{color:var(--z0,#06c);}"`,
     )
     const other = Config.create({ theme: base })
     expect(
@@ -59,7 +59,7 @@ describe('create', () => {
         themes: zyzz.themes,
       }).css,
     ).toMatchInlineSnapshot(
-      `".z_base0{color:var(--z-t0-color_2e_brand,#06c);}"`,
+      `".z_base0{color:var(--z0,#06c);}"`,
     )
   })
 
@@ -139,8 +139,8 @@ describe('create', () => {
         themes: { selected: zyzz.theme },
       }).css,
     ).toMatchInlineSnapshot(`
-      ".z_theme-selected{--z-t0-spacing_2e_md:12px;}
-      .z_base0{padding:var(--z-t0-spacing_2e_md,12px);}"
+      ".t_0{--z0:12px;}
+      .z_base0{padding:var(--z0,12px);}"
     `)
     const inline = Config.create({ theme: { spacing: { md: '1rem' } } })
     expect(
@@ -150,7 +150,7 @@ describe('create', () => {
         }),
       }).css,
     ).toMatchInlineSnapshot(
-      `".z_base0{padding:var(--z-t0-spacing_2e_md,1rem);}"`,
+      `".z_base0{padding:var(--z0,1rem);}"`,
     )
     expect(() =>
       zyzz.css({ padding: 'md' }),

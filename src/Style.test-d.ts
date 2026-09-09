@@ -6,7 +6,105 @@ import { expectTypeOf } from 'vite-plus/test'
 import { Config, css, Style, Theme } from 'zyzz'
 import * as Borders from '../test/fixtures/Borders.js'
 import * as Logical from '../test/fixtures/Logical.js'
+import * as Scrolling from '../test/fixtures/Scrolling.js'
+import * as Snapping from '../test/fixtures/Snapping.js'
+import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
+
+Style.define(TextFlow.styles)
+css({
+  letterSpacing: ['normal', '-1px!'],
+  wordSpacing: '-.2em',
+  textIndent: '10%',
+})
+const textTheme = Theme.define({ spacing: { indent: '12px', portion: '10%' } })
+textTheme.css({ textIndent: 'indent', whiteSpace: 'pre-wrap' })
+Config.create({ theme: textTheme }).css({
+  textIndent: textTheme.tokens.spacing.portion,
+})
+Style.define({ paragraph: { textIndent: textTheme.tokens.spacing.indent } })
+// @ts-expect-error Letter spacing excludes percentages.
+css({ letterSpacing: '10%' })
+// @ts-expect-error Word spacing excludes percentages in the supported grammar.
+css({ wordSpacing: '10%!' })
+// @ts-expect-error Indentation does not accept auto.
+css({ textIndent: 'auto' })
+// @ts-expect-error Length-only text spacing cannot use unconstrained spacing tokens.
+textTheme.css({ letterSpacing: textTheme.tokens.spacing.portion })
+// @ts-expect-error Text keyword domains cannot use spacing tokens.
+textTheme.css({ whiteSpace: textTheme.tokens.spacing.indent })
+// @ts-expect-error Root indentation remains token-free.
+css({ textIndent: 'indent' })
+// @ts-expect-error Indentation modifiers remain deferred.
+css({ textIndent: '2em hanging' })
+// @ts-expect-error Unknown wrapping values do not widen the finite domain.
+css({ overflowWrap: 'all' })
+// @ts-expect-error Custom text-overflow strings remain deferred.
+css({ textOverflow: '"..."' })
+// @ts-expect-error New whitespace longhands are not part of this surface.
+css({ whiteSpaceCollapse: 'preserve' })
+// @ts-expect-error Numeric spellings remain checked through fallback importance.
+css({ letterSpacing: ['normal', '0x10px!'] })
+
+Style.define(Snapping.styles)
+css({
+  scrollSnapType: ['both proximity', 'both mandatory!'],
+  scrollSnapAlign: 'center end',
+  scrollSnapStop: 'normal',
+})
+const snapTheme = Theme.define({ spacing: { edge: '10px' } })
+snapTheme.css({ scrollPadding: 'edge', scrollSnapType: 'inline mandatory' })
+Config.create({ theme: snapTheme }).css({
+  scrollSnapType: 'block proximity',
+  scrollSnapAlign: 'none start',
+})
+// @ts-expect-error Strictness needs an axis.
+css({ scrollSnapType: 'mandatory' })
+// @ts-expect-error None cannot be combined with strictness.
+css({ scrollSnapType: 'none mandatory' })
+// @ts-expect-error Snap axes are finite.
+css({ scrollSnapType: 'horizontal mandatory' })
+// @ts-expect-error Alignment accepts at most two keywords.
+css({ scrollSnapAlign: 'start center end' })
+// @ts-expect-error CSS-wide keywords apply to the whole value.
+css({ scrollSnapAlign: 'inherit center' })
+// @ts-expect-error Stop values are not snap strictness values.
+css({ scrollSnapStop: 'mandatory' })
+// @ts-expect-error Token groups do not map to snap keyword domains.
+snapTheme.css({ scrollSnapType: snapTheme.tokens.spacing.edge })
+// @ts-expect-error Invalid entries remain invalid inside fallbacks.
+css({ scrollSnapType: ['x', 'mandatory!'] })
+
+Style.define(Scrolling.styles)
+css({ scrollMargin: '-2px!', scrollPaddingInline: ['auto', '10%'] })
+const scrollTheme = Theme.define({
+  spacing: { offset: '20px', portion: '10%' },
+})
+scrollTheme.css({ scrollPaddingTop: 'offset!' })
+Config.create({ theme: scrollTheme }).css({
+  scrollPaddingBlock: ['auto', scrollTheme.tokens.spacing.portion],
+})
+Style.define({ box: { scrollPadding: scrollTheme.tokens.spacing.offset } })
+// @ts-expect-error Scroll margin excludes percentages.
+css({ scrollMarginTop: '10%!' })
+// @ts-expect-error Scroll margin does not accept auto.
+css({ scrollMarginInline: 'auto' })
+// @ts-expect-error Scroll padding is not an intrinsic size.
+css({ scrollPadding: 'min-content' })
+// @ts-expect-error Root scroll padding remains token-free.
+css({ scrollPadding: 'offset' })
+// @ts-expect-error Unconstrained spacing tokens can contain percentages.
+scrollTheme.css({ scrollMargin: scrollTheme.tokens.spacing.portion })
+// @ts-expect-error Scroll margin token mapping awaits a length-only token domain.
+scrollTheme.css({ scrollMargin: 'offset' })
+// @ts-expect-error Overflow keywords are not overscroll behavior.
+css({ overscrollBehavior: 'hidden' })
+// @ts-expect-error Instant is a scrolling API option, not a CSS scroll-behavior value.
+css({ scrollBehavior: 'instant' })
+// @ts-expect-error Multi-value shorthands remain unsupported.
+css({ overscrollBehavior: 'none contain' })
+// @ts-expect-error Numeric spellings are checked inside fallback arrays.
+css({ scrollPadding: ['auto', '0x10px!'] })
 
 Style.define({ box: Borders.styles })
 const borderTheme = Theme.define({

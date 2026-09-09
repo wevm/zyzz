@@ -157,3 +157,21 @@ Benchmarks without timing samples are marked unavailable in reports and excluded
 ## Intrinsic Sizing
 
 `Transform.bench.ts` measures 10/100 additional intrinsic sizing styles with minimum/maximum constraints, flex content, and important fallbacks. Setup writes CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli delivery to `bench/results/transform/sizing-*.json`. Browser fixtures verify min/max/fit-content widths and the distinction between content and auto flex basis.
+
+## Scroll Spacing
+
+`Transform.bench.ts` adds 10/100-style scrolling workloads with physical/logical scroll offsets, spacing-token padding, ordered fallbacks, importance, and scroll/overscroll behavior. The shared fixture also exercises source maps and real browser scroll-into-view alignment.
+
+Run `pnpm exec vp test bench src/compiler/Transform.bench.ts --run --no-file-parallelism -t 'scroll spacing transform' --outputJson bench/results/scrolling.json`. Delivery reports under `bench/results/transform/scrolling-*.json` separate CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli transfer. Device gesture latency and smooth-scroll duration are not compiler timings.
+
+## Scroll Snapping
+
+`Transform.bench.ts` adds 10/100-style snap workloads with axis/strictness pairs, paired alignment, stop behavior, ordered fallbacks, and importance. The shared source fixture includes themed scroll padding; browser integration compares snap positions and always-stop behavior with native CSS controls.
+
+Run `pnpm exec vp test bench src/compiler/Transform.bench.ts --run --no-file-parallelism -t 'scroll snap transform' --outputJson bench/results/snapping.json`. Reports under `bench/results/transform/snapping-*.json` separate CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli transfer. Browser snap physics are not part of compiler timing.
+
+## Text Flow
+
+`Transform.bench.ts` adds 10/100-style text workloads with indentation, letter-spacing fallbacks, wrapping, and text overflow. The shared source fixture covers indentation tokens and browser comparisons for wrapping, spacing, and overflow.
+
+Run `pnpm exec vp test bench src/compiler/Transform.bench.ts --run --no-file-parallelism -t 'text flow transform' --outputJson bench/results/text-flow.json`. Reports under `bench/results/transform/text-*.json` separate CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli transfer. Font shaping and browser layout time remain separate from compiler timing.

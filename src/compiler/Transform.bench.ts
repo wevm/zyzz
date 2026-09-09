@@ -13,7 +13,10 @@ import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
+import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
+import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as TextFlow from '../../test/fixtures/TextFlow.js'
 import * as Compilation from '../../bench/Compilation.js'
 
 for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
@@ -162,11 +165,29 @@ const workloads = {
     source: Logical.source,
     title: 'logical box',
   },
+  scrolling: {
+    declaration: (index: number) =>
+      `export const box${index} = css({scrollMarginBlockStart:'${index}px',scrollPadding:['10%','20px!'],overscrollBehavior:'contain',scrollBehavior:'smooth'})();`,
+    source: Scrolling.source,
+    title: 'scroll spacing',
+  },
   sizing: {
     declaration: (index: number) =>
       `export const box${index} = css({width:['${index}px','fit-content!'],minInlineSize:'min-content',maxInlineSize:'none',flexBasis:'content'})();`,
     source: Sizing.source,
     title: 'intrinsic sizing',
+  },
+  snapping: {
+    declaration: (index: number) =>
+      `export const slide${index} = css({scrollMarginInlineStart:'${index}px',scrollSnapAlign:'start center',scrollSnapStop:'always',scrollSnapType:['inline proximity','inline mandatory!']})();`,
+    source: Snapping.source,
+    title: 'scroll snap',
+  },
+  text: {
+    declaration: (index: number) =>
+      `export const text${index} = css({textIndent:'${index}px',letterSpacing:['normal','1px!'],overflowWrap:'anywhere',whiteSpace:'pre-wrap',textOverflow:'ellipsis'})();`,
+    source: TextFlow.source,
+    title: 'text flow',
   },
 }
 for (const [kind, workload] of Object.entries(workloads))

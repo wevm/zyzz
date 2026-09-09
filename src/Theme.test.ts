@@ -37,8 +37,8 @@ describe('define', () => {
       themes: { base: theme },
     })
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-base{--z-t0-color_2e_brand:#fff;}
-      .z_base0{color:var(--z-t0-color_2e_brand,#fff);}"
+      ".t_0{--z0:#fff;}
+      .z_base0{color:var(--z0,#fff);}"
     `)
   })
 
@@ -53,6 +53,7 @@ describe('define', () => {
       composition: 'independent',
       styles: Style.define({
         other: { color: base.tokens.color.brand_2e_primary },
+        t_0: { color: '#175' },
         'z_theme-base': { color: base.tokens.color.brand.primary },
       }),
       themes: { base, 'foo.bar': alternate, foo_2e_bar: base },
@@ -60,21 +61,23 @@ describe('define', () => {
     expect(output.classes).toMatchInlineSnapshot(`
       {
         "other": "other",
+        "t_0": "t_5f_0",
         "z_theme-base": "z_5f_theme-base",
       }
     `)
     expect(output.css).toMatchInlineSnapshot(`
-      ".z_theme-base{--z-t0-color_2e_brand_5f_2e_5f_primary:#000;--z-t0-color_2e_brand_2e_primary:#fff;}
-      .z_theme-foo_2e_bar{--z-t0-color_2e_brand_5f_2e_5f_primary:#f00;--z-t0-color_2e_brand_2e_primary:#06c;}
-      .z_theme-foo_5f_2e_5f_bar{--z-t0-color_2e_brand_5f_2e_5f_primary:#000;--z-t0-color_2e_brand_2e_primary:#fff;}
-      .other{color:var(--z-t0-color_2e_brand_5f_2e_5f_primary,#000);}
-      .z_5f_theme-base{color:var(--z-t0-color_2e_brand_2e_primary,#fff);}"
+      ".t_0{--z0:#000;--z1:#fff;}
+      .t_1{--z0:#f00;--z1:#06c;}
+      .t_2{--z0:#000;--z1:#fff;}
+      .other{color:var(--z0,#000);}
+      .t_5f_0{color:#175;}
+      .z_5f_theme-base{color:var(--z1,#fff);}"
     `)
     expect(output.themes).toMatchInlineSnapshot(`
       {
-        "base": "z_theme-base",
-        "foo.bar": "z_theme-foo_2e_bar",
-        "foo_2e_bar": "z_theme-foo_5f_2e_5f_bar",
+        "base": "t_0",
+        "foo.bar": "t_1",
+        "foo_2e_bar": "t_2",
       }
     `)
 
@@ -85,6 +88,7 @@ describe('define', () => {
         <section class="${output.themes['foo.bar']}">
           <div id="nested" class="${output.classes['z_theme-base']}"></div>
           <div id="escaped" class="${output.classes.other}"></div>
+          <div id="collision" class="${output.classes.t_0}"></div>
         </section>
         <section class="${output.themes.foo_2e_bar}"><div id="base" class="${output.classes['z_theme-base']}"></div></section>`)
       expect(
@@ -97,6 +101,11 @@ describe('define', () => {
           .locator('#escaped')
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+      expect(
+        await page
+          .locator('#collision')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot('"rgb(17, 119, 85)"')
       expect(
         await page
           .locator('#base')
@@ -121,11 +130,11 @@ describe('define', () => {
     const result = Css.compile({ styles, themes: { base: theme, independent } })
 
     expect(result.css).toMatchInlineSnapshot(`
-      ".z_theme-base{--z-t0-backgroundColor_2e_surface:light-dark(#fff,#111);--z-t0-color_2e_brand:#06c;--z-t0-spacing_2e_md:8px;}
-      .z_theme-independent{--z-t1-color_2e_brand:#06c;}
-      .z_base0{background-color:var(--z-t0-backgroundColor_2e_surface,light-dark(#fff,#111));padding:var(--z-t0-spacing_2e_md,8px);}
-      .z-button{color:var(--z-t0-color_2e_brand,#06c);}
-      .z-independent{color:var(--z-t1-color_2e_brand,#06c);}"
+      ".t_0{--z0:light-dark(#fff,#111);--z1:#06c;--z2:8px;}
+      .t_1{--z3:#06c;}
+      .z_base0{background-color:var(--z0,light-dark(#fff,#111));padding:var(--z2,8px);}
+      .z-button{color:var(--z1,#06c);}
+      .z-independent{color:var(--z3,#06c);}"
     `)
     expect(result.classes).toMatchInlineSnapshot(`
       {
@@ -135,23 +144,23 @@ describe('define', () => {
     `)
     expect(result.themes).toMatchInlineSnapshot(`
       {
-        "base": "z_theme-base",
-        "independent": "z_theme-independent",
+        "base": "t_0",
+        "independent": "t_1",
       }
     `)
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z_base0{background-color:var(--z-t0-backgroundColor_2e_surface,light-dark(#fff,#111));padding:var(--z-t0-spacing_2e_md,8px);}
-      .z-button{color:var(--z-t0-color_2e_brand,#06c);}
-      .z-independent{color:var(--z-t1-color_2e_brand,#06c);}"
+      ".z_base0{background-color:var(--z0,light-dark(#fff,#111));padding:var(--z2,8px);}
+      .z-button{color:var(--z1,#06c);}
+      .z-independent{color:var(--z3,#06c);}"
     `)
     expect(Css.compile({ styles, themes: { independent, renamed: theme } }).css)
       .toMatchInlineSnapshot(`
-      ".z_theme-independent{--z-t1-color_2e_brand:#06c;}
-      .z_theme-renamed{--z-t0-backgroundColor_2e_surface:light-dark(#fff,#111);--z-t0-color_2e_brand:#06c;--z-t0-spacing_2e_md:8px;}
-      .z_base0{background-color:var(--z-t0-backgroundColor_2e_surface,light-dark(#fff,#111));padding:var(--z-t0-spacing_2e_md,8px);}
-      .z-button{color:var(--z-t0-color_2e_brand,#06c);}
-      .z-independent{color:var(--z-t1-color_2e_brand,#06c);}"
-    `)
+        ".t_0{--z3:#06c;}
+        .t_1{--z0:light-dark(#fff,#111);--z1:#06c;--z2:8px;}
+        .z_base0{background-color:var(--z0,light-dark(#fff,#111));padding:var(--z2,8px);}
+        .z-button{color:var(--z1,#06c);}
+        .z-independent{color:var(--z3,#06c);}"
+      `)
     expect(Object.isFrozen(theme.tokens.spacing.md)).toMatchInlineSnapshot(
       'true',
     )
@@ -171,9 +180,9 @@ describe('define', () => {
     })
     expect(Css.compile({ styles, themes: { base: theme } }).css)
       .toMatchInlineSnapshot(`
-      ".z_theme-base{--z-t0-color_2e_brand:#06c;}
-      .z_base0{color:var(--z-t0-color_2e_brand,#06c);}"
-    `)
+        ".t_0{--z0:#06c;}
+        .z_base0{color:var(--z0,#06c);}"
+      `)
   })
 
   test('invalid authoring fails before CSS can be emitted without reading accessors', () => {
@@ -269,10 +278,10 @@ describe('extend', () => {
     const styles = Style.define({ card: { padding: theme.tokens.spacing.md } })
     expect(Css.compile({ styles, themes: { alternate, base: theme } }).css)
       .toMatchInlineSnapshot(`
-      ".z_theme-alternate{--z-t0-spacing_2e_md:1lh;}
-      .z_theme-base{--z-t0-spacing_2e_md:1lh;}
-      .z_base0{padding:var(--z-t0-spacing_2e_md,1lh);}"
-    `)
+        ".t_0{--z0:1lh;}
+        .t_1{--z0:1lh;}
+        .z_base0{padding:var(--z0,1lh);}"
+      `)
     expect(() =>
       Theme.extend(theme, { spacing: { md: undefined } } as never),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -303,10 +312,10 @@ describe('extend', () => {
     expect(
       Css.compile({ styles, themes: { alternate, base: theme, nested } }).css,
     ).toMatchInlineSnapshot(`
-      ".z_theme-alternate{--z-t0-color_2e_blue_2e_500:#f00;--z-t0-spacing_2e_md:8px;}
-      .z_theme-base{--z-t0-color_2e_blue_2e_500:#06c;--z-t0-spacing_2e_md:8px;}
-      .z_theme-nested{--z-t0-color_2e_blue_2e_500:#f00;--z-t0-spacing_2e_md:12px;}
-      .z_base0{color:var(--z-t0-color_2e_blue_2e_500,#06c);padding:var(--z-t0-spacing_2e_md,8px);}"
+      ".t_0{--z0:#f00;--z1:8px;}
+      .t_1{--z0:#06c;--z1:8px;}
+      .t_2{--z0:#f00;--z1:12px;}
+      .z_base0{color:var(--z0,#06c);padding:var(--z1,8px);}"
     `)
     expect(
       Css.compile({
@@ -314,9 +323,7 @@ describe('extend', () => {
           button: { color: alternate.tokens.color.blue[500] },
         }),
       }).css,
-    ).toMatchInlineSnapshot(
-      `".z_base0{color:var(--z-t0-color_2e_blue_2e_500,#f00);}"`,
-    )
+    ).toMatchInlineSnapshot(`".z_base0{color:var(--z0,#f00);}"`)
     expect(input).toMatchInlineSnapshot(`
       {
         "color": {

@@ -38,6 +38,7 @@ type Rule =
       readonly percentage?: boolean
     }
   | {
+      readonly keywords?: readonly string[]
       readonly kind: 'color'
     }
   | {
@@ -77,8 +78,33 @@ type Value<rule extends Rule> =
               values: readonly (infer value)[]
             }
           ? value
-          : Color)
+          :
+              | Color
+              | (rule extends { keywords: readonly (infer keyword)[] }
+                  ? keyword
+                  : never))
   | Global
+const blend = {
+  kind: 'enum',
+  values: [
+    'color',
+    'color-burn',
+    'color-dodge',
+    'darken',
+    'difference',
+    'exclusion',
+    'hard-light',
+    'hue',
+    'lighten',
+    'luminosity',
+    'multiply',
+    'normal',
+    'overlay',
+    'saturation',
+    'screen',
+    'soft-light',
+  ],
+} as const
 const border = {
   kind: 'enum',
   values: [
@@ -209,6 +235,7 @@ const textSpacing = {
 
 /** Single source of truth for the supported literal properties and domains. */
 export const rules = {
+  accentColor: { ...color, keywords: ['auto'] },
   alignContent: {
     kind: 'enum',
     values: [
@@ -255,7 +282,32 @@ export const rules = {
     ],
   },
   backfaceVisibility: { kind: 'enum', values: ['hidden', 'visible'] },
+  backgroundAttachment: { kind: 'enum', values: ['fixed', 'local', 'scroll'] },
+  backgroundBlendMode: blend,
+  backgroundClip: {
+    kind: 'enum',
+    values: ['border-box', 'content-box', 'padding-box', 'text'],
+  },
   backgroundColor: color,
+  backgroundOrigin: {
+    kind: 'enum',
+    values: ['border-box', 'content-box', 'padding-box'],
+  },
+  backgroundPositionX: {
+    ...length,
+    keywords: ['center', 'left', 'right'],
+    negative: true,
+  },
+  backgroundPositionY: {
+    ...length,
+    keywords: ['bottom', 'center', 'top'],
+    negative: true,
+  },
+  backgroundRepeat: {
+    kind: 'enum',
+    values: ['no-repeat', 'repeat', 'repeat-x', 'repeat-y', 'round', 'space'],
+  },
+  backgroundSize: { ...length, auto: true, keywords: ['contain', 'cover'] },
   blockSize: size,
   borderBlockColor: color,
   borderBlockEndColor: color,
@@ -311,11 +363,24 @@ export const rules = {
     values: ['auto', 'avoid', 'avoid-column', 'avoid-page'],
   },
   captionSide: { kind: 'enum', values: ['bottom', 'top'] },
+  caretColor: { ...color, keywords: ['auto'] },
   clear: {
     kind: 'enum',
     values: ['both', 'inline-end', 'inline-start', 'left', 'none', 'right'],
   },
   color,
+  colorScheme: {
+    kind: 'enum',
+    values: [
+      'dark',
+      'dark light',
+      'light',
+      'light dark',
+      'normal',
+      'only dark',
+      'only light',
+    ],
+  },
   columnCount: { ...positiveInteger, keywords: ['auto'] },
   columnFill: { kind: 'enum', values: ['auto', 'balance'] },
   columnGap: { ...length, keywords: ['normal'] },
@@ -422,6 +487,10 @@ export const rules = {
   fontSize: length,
   fontStyle: { kind: 'enum', values: ['italic', 'normal', 'oblique'] },
   fontWeight: { kind: 'number', max: 1000, min: 1 },
+  forcedColorAdjust: {
+    kind: 'enum',
+    values: ['auto', 'none', 'preserve-parent-color'],
+  },
   gap: length,
   height: size,
   hyphens: { kind: 'enum', values: ['auto', 'manual', 'none'] },
@@ -470,6 +539,29 @@ export const rules = {
   minHeight: size,
   minInlineSize: size,
   minWidth: size,
+  mixBlendMode: {
+    kind: 'enum',
+    values: [
+      'color',
+      'color-burn',
+      'color-dodge',
+      'darken',
+      'difference',
+      'exclusion',
+      'hard-light',
+      'hue',
+      'lighten',
+      'luminosity',
+      'multiply',
+      'normal',
+      'overlay',
+      'plus-darker',
+      'plus-lighter',
+      'saturation',
+      'screen',
+      'soft-light',
+    ],
+  },
   objectFit: {
     kind: 'enum',
     values: ['contain', 'cover', 'fill', 'none', 'scale-down'],
@@ -524,6 +616,7 @@ export const rules = {
     kind: 'enum',
     values: ['absolute', 'fixed', 'relative', 'static', 'sticky'],
   },
+  printColorAdjust: { kind: 'enum', values: ['economy', 'exact'] },
   resize: {
     kind: 'enum',
     values: ['block', 'both', 'horizontal', 'inline', 'none', 'vertical'],
@@ -682,7 +775,8 @@ export function validate(
       : `Expected one of: ${rule.values.join(', ')} (or a CSS-wide keyword).`
   if (rule.kind === 'color')
     return typeof value === 'string' &&
-      (/^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(value) ||
+      (rule.keywords?.includes(value) ||
+        /^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(value) ||
         ['black', 'currentColor', 'transparent', 'white'].includes(value))
       ? undefined
       : 'Expected a hex color, transparent, currentColor, black, or white.'

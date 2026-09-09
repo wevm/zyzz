@@ -32,7 +32,8 @@ export function cases(): readonly Case[] {
       'unset',
     ]
     if (rule.kind === 'enum') values.push(...rule.values)
-    if (rule.kind === 'color')
+    if (rule.kind === 'color') {
+      if ('keywords' in rule) values.push(...rule.keywords)
       values.push(
         '#123',
         '#1234',
@@ -43,6 +44,7 @@ export function cases(): readonly Case[] {
         'transparent',
         'currentColor',
       )
+    }
     if (rule.kind === 'number') {
       if ('keywords' in rule) values.push(...rule.keywords)
       values.push(rule.min, Math.max(1, rule.min))

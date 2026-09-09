@@ -959,7 +959,7 @@
       },
       "accent-color": {
         "grammar": "169fb7d01804060c9b5a39db630e6de38e0b4fdfbdba5597b9a466ea6f087c76",
-        "status": "deferred"
+        "status": "partial"
       },
       "align-content": {
         "grammar": "7173809bc507c74e57b78c6d3531def77963be96645b2ff5e94805547d0a1c56",
@@ -1075,15 +1075,15 @@
       },
       "background-attachment": {
         "grammar": "7ed5b8580241075cd29cfe34bcc299f904c5069e65d54208bc263c6747c761c4",
-        "status": "deferred"
+        "status": "partial"
       },
       "background-blend-mode": {
         "grammar": "27d8251fc443323fbfa39309892d62b8eebf3670f6ebee6fa744d838a5089bf4",
-        "status": "deferred"
+        "status": "partial"
       },
       "background-clip": {
         "grammar": "89db32945210a350f7b3d4ed65a219a75c2d5abfac6fc2b25ffedd6db8806055",
-        "status": "deferred"
+        "status": "partial"
       },
       "background-color": {
         "grammar": "aeda430b9cf4641b8fe8f3bcf5f61e305e33a474eef5ac869d078e528479b930",
@@ -1095,7 +1095,7 @@
       },
       "background-origin": {
         "grammar": "4154755b03a783c2a2bd548fce670c66e9afce08af055e9adaef14deb830e311",
-        "status": "deferred"
+        "status": "partial"
       },
       "background-position": {
         "grammar": "0bf527d877591f4dbc988d62688a087e85c208c50432017268081a5aa584f3a7",
@@ -1103,19 +1103,19 @@
       },
       "background-position-x": {
         "grammar": "10af4cd0362f55b9c2775b85b6d92e461003bae757e7f47c143bbaeaae7fbaf3",
-        "status": "deferred"
+        "status": "partial"
       },
       "background-position-y": {
         "grammar": "796df57790a0aae4c0a6875b03555446d0385bce41e21b987f64bf425d351d80",
-        "status": "deferred"
+        "status": "partial"
       },
       "background-repeat": {
         "grammar": "7ebb4060e02213ebca841fa02975d71762adafc6591a73c9d464d1982f90bf57",
-        "status": "deferred"
+        "status": "partial"
       },
       "background-size": {
         "grammar": "e2897764bd4e872be162624c7d857d6d9052ece35ed1d9ee04947b64ef9fc7de",
-        "status": "deferred"
+        "status": "partial"
       },
       "baseline-shift": {
         "grammar": "8873d8d8f00bc71310abdf16845b36d32ecb5096ab723c8216de665f0a2ebcd6",
@@ -1451,7 +1451,7 @@
       },
       "caret-color": {
         "grammar": "7c1794f0937f4422dd25e3570a40c1ed33fc60608056e720683dd99dd28bff42",
-        "status": "deferred"
+        "status": "partial"
       },
       "caret-shape": {
         "grammar": "ae7b76adc66ea43f9dab445c9afd37bb1e9374a289ff217c08e1bdff3d765410",
@@ -1483,7 +1483,7 @@
       },
       "color-scheme": {
         "grammar": "3551b430ad1c94da36b825c11ee0e63e54c3354f3b130b89f0d49dd52f875bd3",
-        "status": "deferred"
+        "status": "partial"
       },
       "column-count": {
         "grammar": "0af23add518d02601a803865cde6e0ce1b32c1fd9f4d5d6763ae7374b71e46db",
@@ -1871,7 +1871,7 @@
       },
       "forced-color-adjust": {
         "grammar": "4dfce0da29b97992ba530459580341fd17c130801992163892463d371c05d4b9",
-        "status": "deferred"
+        "status": "partial"
       },
       "frame-sizing": {
         "grammar": "d9fad3eb346701663a85c283416ff3900ada31b84f0bf0d56d25a7f886e74048",
@@ -2303,7 +2303,7 @@
       },
       "mix-blend-mode": {
         "grammar": "77daee812b375c8d965ed03155235695c690c4ea01c5fdbb68f5487391eb1786",
-        "status": "deferred"
+        "status": "partial"
       },
       "object-fit": {
         "grammar": "04fc9a62358cb5289a8776e1b66f8ef02b62683d64b92cb60c535b9534bd964b",
@@ -2555,7 +2555,7 @@
       },
       "print-color-adjust": {
         "grammar": "4ac4122043ab1454013b3bd417997559f21293435cc96b7daaf08ba426c0a57c",
-        "status": "deferred"
+        "status": "partial"
       },
       "quotes": {
         "grammar": "53c7701cc536ca3b49b3617d6201dcd62ac6011f8fced476892bef9eb2b71724",

@@ -1427,15 +1427,15 @@
       },
       "break-after": {
         "grammar": "96d8ae636b54403fea02978beab47cb5ff68ad03f8fddc1822496be75e816a38",
-        "status": "deferred"
+        "status": "partial"
       },
       "break-before": {
         "grammar": "b0640ac8d965711a4cbc9dff7cdccff421757f86e73e17ad20856bff2cb17e33",
-        "status": "deferred"
+        "status": "partial"
       },
       "break-inside": {
         "grammar": "a8c624f9590fbf1c7ebb3ff1be958755d32eba9b9bd01c99f88682c9ff433311",
-        "status": "deferred"
+        "status": "partial"
       },
       "caption-side": {
         "grammar": "bd9aae0d7a5426ea28bc9389db2f4b9fd20468cbbaad91dd67cc700bf71a01b2",
@@ -1487,11 +1487,11 @@
       },
       "column-count": {
         "grammar": "0af23add518d02601a803865cde6e0ce1b32c1fd9f4d5d6763ae7374b71e46db",
-        "status": "deferred"
+        "status": "partial"
       },
       "column-fill": {
         "grammar": "2729e7a6921e65c4bd0843af114f0867933a539f4b23882ecce664505b1fe484",
-        "status": "deferred"
+        "status": "partial"
       },
       "column-gap": {
         "grammar": "82a3f57ed88e10f071fb8a7cf09adeb478b76c99ba2a638a6bc1de97da319c72",
@@ -1507,23 +1507,23 @@
       },
       "column-rule-color": {
         "grammar": "a5599afc1c65be95548b3fb669eb9a7a320a91ff1098a3b0b20c9f3328ec51e3",
-        "status": "deferred"
+        "status": "partial"
       },
       "column-rule-style": {
         "grammar": "d803de258a4a1b8c4a4813c3fcea5aea309fe373cdaa424007077bb7962d0334",
-        "status": "deferred"
+        "status": "partial"
       },
       "column-rule-width": {
         "grammar": "a77efc708eb54a14c0b411775dcddc14fdad55c9f27f59a4ab4e0adbb5d2a53b",
-        "status": "deferred"
+        "status": "partial"
       },
       "column-span": {
         "grammar": "6f9c7c52e8429b2c66eeb1bfcf2306bcb295d2972891f9e9db3e984c13b01dec",
-        "status": "deferred"
+        "status": "partial"
       },
       "column-width": {
         "grammar": "5eb9ab0327dc2e8b798557215b78804854bf3ba323bff6c46834fffe73acdc3a",
-        "status": "deferred"
+        "status": "partial"
       },
       "column-wrap": {
         "grammar": "57d4e48130c0661861073c72580f4a7152c1590a42c0a467c8ad61d12229ce84",
@@ -2351,7 +2351,7 @@
       },
       "orphans": {
         "grammar": "ac8121c0779e736b335178b7219cbc7fb66a5b655c8e72586e98af2b03ae91a7",
-        "status": "deferred"
+        "status": "partial"
       },
       "outline": {
         "grammar": "6dbc8972fa07195d73ef01be98d5942c556729ac65ba4b29473917e95b685803",
@@ -3147,7 +3147,7 @@
       },
       "widows": {
         "grammar": "bb286d4a0acfecbcf8bdee356e77b21e662e0e1f16e9b681f0c7b9a28f0d5c62",
-        "status": "deferred"
+        "status": "partial"
       },
       "width": {
         "grammar": "89a8389f1f24731e8740429594a498414f89f8a6cb6488dac198dbb5cf2ade1d",

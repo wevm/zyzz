@@ -423,3 +423,9 @@ Custom conflict graphs, shared-subset/biclique search, bounded beam search, MaxS
 - [ ] Keep entrypoint/module/method reference coverage aligned with public exports and their types/errors. Preview APIs use note callouts and do not imply executable examples.
 - [ ] Verify Getting Started through real CLI and bundler consumer fixtures before removing preview notes. Source imports and the named `zyzz` instance remain identical across supported integrations.
 - [ ] Extend framework, SSR, migration, and native guides alongside integration proof; do not claim target compatibility from shared authoring types alone.
+
+## Continuing CSS Conformance
+
+Continue opening coherent property/value PRs against the pinned MDN inventory. Each batch preserves independent grammar/type validation, adds browser fixtures and benchmark evidence, and records remaining restrictions. New type fixtures use describe/test blocks. Full support requires value and rendering proof, not property-name acceptance.
+
+- Column properties: 12 additions plus normal column gaps; numeric keyword domains preserve positive count validation. Shorthands and remaining fragment grammar follow separately.

@@ -386,3 +386,19 @@ css({
   userSelect: 'text',
 })
 ```
+
+## Columns
+
+`columnCount` accepts positive safe integers or `auto`; `columnWidth` accepts nonnegative lengths, zero, or `auto`. `columnFill` accepts `auto`/`balance`, `columnSpan` accepts `none`/`all`, and `columnGap` also accepts `normal`.
+
+Column rule color/style/width follow scalar color, line-style, and nonnegative length domains; widths also accept thin/medium/thick. Shared color tokens apply to rule colors. Break-before/after/inside keywords control fragmentation; orphan/widow counts are positive safe integers. Percentages in column widths, shorthands, and regions remain deferred.
+
+```ts
+css({
+  columnCount: 2,
+  columnGap: '1rem',
+  columnRuleStyle: 'solid',
+  columnRuleWidth: 'thin',
+  breakInside: 'avoid-column',
+})
+```

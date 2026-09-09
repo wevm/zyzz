@@ -555,3 +555,44 @@ describe('css', () => {
     css({ height: '0b10dvh' })
   })
 })
+
+describe('css', () => {
+  test('columns and fragmentation preserve property domains', () => {
+    css({
+      columnCount: ['auto', '2!'],
+      columnWidth: '12rem',
+      columnGap: 'normal',
+      columnFill: 'balance',
+    })
+    css({
+      breakAfter: 'page',
+      breakBefore: 'column',
+      breakInside: 'avoid',
+      columnSpan: 'all',
+      orphans: 2,
+      widows: 3,
+    })
+    const theme = Theme.define({
+      color: { rule: '#06c' },
+      spacing: { gutter: '8px' },
+    })
+    theme.css({
+      columnRuleColor: 'rule',
+      columnRuleStyle: 'solid',
+      columnRuleWidth: 'thin',
+    })
+    Config.create({ theme }).css({ columnRuleColor: theme.tokens.color.rule })
+    // @ts-expect-error Column widths exclude percentages.
+    css({ columnWidth: '10%' })
+    // @ts-expect-error Counts cannot use arbitrary keywords.
+    css({ columnCount: 'none' })
+    // @ts-expect-error Rule widths exclude percentages.
+    css({ columnRuleWidth: '5%' })
+    // @ts-expect-error Inside breaks cannot force a new column.
+    css({ breakInside: 'column' })
+    // @ts-expect-error Column widths do not accept percentage-capable spacing tokens.
+    theme.css({ columnWidth: theme.tokens.spacing.gutter })
+    // @ts-expect-error Legacy regions remain deferred.
+    css({ breakAfter: 'region' })
+  })
+})

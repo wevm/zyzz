@@ -437,3 +437,5 @@ Continue opening coherent property/value PRs against the pinned MDN inventory. E
 - SVG paint: 19 additional properties with shared color tokens, bounded scalar domains, source maps, independent grammar/type probes, and evenodd path geometry in Chromium. Broad paint syntax and filter rendering remain deferred.
 
 - Font controls: 19 additional typography, emphasis, and ruby properties with bounded keyword combinations, independent grammar/type probes, and native text layout fixtures. Font-dependent glyph behavior and broader values remain deferred.
+
+- Motion controls: 11 additional properties and a finite time dimension domain, independent grammar/type probes, invalid duration checks, source maps, and native paused-animation timing. Lists, easing functions, keyframes, and timelines remain deferred.

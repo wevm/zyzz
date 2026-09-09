@@ -51,6 +51,15 @@ export function cases(): readonly Case[] {
       if (Number.isFinite(rule.max)) values.push(rule.max)
       if (!('integer' in rule)) values.push(Math.max(rule.min, 0.5))
     }
+    if (rule.kind === 'time') {
+      if ('keywords' in rule) values.push(...rule.keywords)
+      for (const unit of Object.keys(units))
+        for (const number of ['0', '1', '.5', '1e2', '-1']) {
+          const value = `${number}${unit}`
+          if (!Literal.validate(property as Case['property'], value))
+            values.push(value)
+        }
+    }
     if (rule.kind === 'length') {
       values.push(0)
       if (rule.auto) values.push('auto')
@@ -103,6 +112,10 @@ export function name(property: string): string {
 /** Independent invalid and intentionally unsupported inputs shared by runtime and type probes. */
 export const rejected = [
   { property: 'alignItems', value: 'middle' },
+  { property: 'animationDelay', value: '0x10s' },
+  { property: 'animationDuration', value: 0 },
+  { property: 'animationDuration', value: '1px' },
+  { property: 'animationTimingFunction', value: 'cubic-bezier(0,0,1,1)' },
   { property: 'color', value: 'red' },
   { property: 'color', value: 'rgb(0 0 0)' },
   { property: 'display', value: 'fleex' },

@@ -2,8 +2,8 @@
  * Defines and validates the supported primitive CSS property and value domains.
  * @module
  */
-/** Refines inferred length strings where TypeScript's number template is broader than CSS. */
-export type Checked<value> = value extends Length
+/** Refines inferred dimension strings where TypeScript's number template is broader than CSS. */
+export type Checked<value> = value extends Length | Time
   ? value extends
       | `${'0x' | '0X' | '0b' | '0B' | '0o' | '0O'}${string}`
       | `${string}${' ' | '\n' | '\r' | '\t' | '\f'}${string}`
@@ -29,6 +29,9 @@ export type Length = `${number}${(typeof lengthUnits)[number]}` | 0
 export type Properties = {
   readonly [key in keyof typeof rules]?: Value<(typeof rules)[key]>
 }
+/** Finite seconds and milliseconds; CSS times always require units. */
+export type Time = `${number}${'ms' | 's'}`
+
 type Rule =
   | {
       readonly auto: boolean
@@ -51,6 +54,11 @@ type Rule =
       readonly kind: 'number'
       readonly max: number
       readonly min: number
+    }
+  | {
+      readonly keywords?: readonly string[]
+      readonly kind: 'time'
+      readonly negative: boolean
     }
 type Value<rule extends Rule> =
   | (rule extends {
@@ -78,11 +86,17 @@ type Value<rule extends Rule> =
               values: readonly (infer value)[]
             }
           ? value
-          :
-              | Color
-              | (rule extends { keywords: readonly (infer keyword)[] }
-                  ? keyword
-                  : never))
+          : rule extends { kind: 'time' }
+            ?
+                | Time
+                | (rule extends { keywords: readonly (infer keyword)[] }
+                    ? keyword
+                    : never)
+            :
+                | Color
+                | (rule extends { keywords: readonly (infer keyword)[] }
+                    ? keyword
+                    : never))
   | Global
 const blend = {
   kind: 'enum',
@@ -279,6 +293,35 @@ export const rules = {
       'self-start',
       'start',
       'stretch',
+    ],
+  },
+  animationDelay: { kind: 'time', negative: true },
+  animationDirection: {
+    kind: 'enum',
+    values: ['alternate', 'alternate-reverse', 'normal', 'reverse'],
+  },
+  animationDuration: { keywords: ['auto'], kind: 'time', negative: false },
+  animationFillMode: {
+    kind: 'enum',
+    values: ['backwards', 'both', 'forwards', 'none'],
+  },
+  animationIterationCount: {
+    keywords: ['infinite'],
+    kind: 'number',
+    max: Infinity,
+    min: 0,
+  },
+  animationPlayState: { kind: 'enum', values: ['paused', 'running'] },
+  animationTimingFunction: {
+    kind: 'enum',
+    values: [
+      'ease',
+      'ease-in',
+      'ease-in-out',
+      'ease-out',
+      'linear',
+      'step-end',
+      'step-start',
     ],
   },
   backfaceVisibility: { kind: 'enum', values: ['hidden', 'visible'] },
@@ -923,6 +966,21 @@ export const rules = {
   textUnderlineOffset: { ...length, auto: true, negative: true },
   top: margin,
   transformStyle: { kind: 'enum', values: ['flat', 'preserve-3d'] },
+  transitionBehavior: { kind: 'enum', values: ['allow-discrete', 'normal'] },
+  transitionDelay: { kind: 'time', negative: true },
+  transitionDuration: { kind: 'time', negative: false },
+  transitionTimingFunction: {
+    kind: 'enum',
+    values: [
+      'ease',
+      'ease-in',
+      'ease-in-out',
+      'ease-out',
+      'linear',
+      'step-end',
+      'step-start',
+    ],
+  },
   userSelect: { kind: 'enum', values: ['all', 'auto', 'none', 'text'] },
   vectorEffect: { kind: 'enum', values: ['none', 'non-scaling-stroke'] },
   visibility: { kind: 'enum', values: ['collapse', 'hidden', 'visible'] },
@@ -980,6 +1038,18 @@ export function validate(
       }
       return `Expected a finite ${rule.integer ? 'integer' : 'number'} from ${rule.min} to ${rule.max}.`
     })()
+  if (rule.kind === 'time') {
+    if (typeof value === 'string' && rule.keywords?.includes(value))
+      return undefined
+    const match =
+      typeof value === 'string'
+        ? /^([+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?)(?:ms|s)$/.exec(value)
+        : null
+    const amount = match ? Number(match[1]) : NaN
+    if (Number.isFinite(amount) && (rule.negative || amount >= 0))
+      return undefined
+    return `Expected ${rule.negative ? 'a' : 'a nonnegative'} finite time in s or ms.${rule.keywords ? ` Also accepts: ${rule.keywords.join(', ')}.` : ''}`
+  }
   if (value === 0 || (rule.auto && value === 'auto')) return undefined
   const match = typeof value === 'string' ? lengthPattern.exec(value) : null
   const amount = match ? Number(match[1]) : NaN

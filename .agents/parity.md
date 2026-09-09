@@ -4,7 +4,7 @@ Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the ca
 
 **Partial** means only the stated subset works today. **Planned** means an existing architecture contract awaits implementation. **Proposal** means an API shape is offered for review. **Deferred** means a later capability; external CSS examples demonstrate interoperability, not implemented Zyzz authoring support. Examples are independent unless they explicitly share a definition.
 
-Current implementation: 170 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
+Current implementation: 175 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
 
 ## 01. Typed Styles and Inline Authoring
 
@@ -20,6 +20,8 @@ const label = <span {...css({ color: '#06c' })()} />
 ```
 
 Complete the property/value inventory across accessibility, backgrounds/gradients, borders/outlines, filters/masks, grid/flex, interactivity, layout/containment/positioning, logical spacing/sizing, scrolling, shadows, SVG, tables, transforms, and typography. Property spellings and token domains remain checked; broad selector support must not introduce an unrestricted object-key index signature. No separate utility-string or property-access facade is needed.
+
+Interaction keywords support `css({ cursor: 'pointer', pointerEvents: 'auto', resize: 'inline', userSelect: 'text', visibility: 'visible' })`. Cursor image lists, SVG pointer targeting, and selection containment remain deferred.
 
 The table subset supports `css({ borderCollapse: 'separate', borderSpacing: '8px', captionSide: 'bottom', emptyCells: 'hide', tableLayout: 'fixed' })`. Border spacing accepts a single nonnegative length or zero; paired lengths and spacing tokens remain deferred.
 

@@ -5,6 +5,7 @@
 import { expectTypeOf } from 'vite-plus/test'
 import { Config, css, Style, Theme } from 'zyzz'
 import * as Borders from '../test/fixtures/Borders.js'
+import * as Interaction from '../test/fixtures/Interaction.js'
 import * as Logical from '../test/fixtures/Logical.js'
 import * as Scrolling from '../test/fixtures/Scrolling.js'
 import * as Snapping from '../test/fixtures/Snapping.js'
@@ -12,6 +13,27 @@ import * as Tables from '../test/fixtures/Tables.js'
 import * as TextDecoration from '../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
+
+Style.define(Interaction.styles)
+css({ cursor: ['grab', 'grabbing!'], pointerEvents: 'none', userSelect: 'all' })
+css({ resize: 'vertical', visibility: 'revert-layer' })
+Config.create().css({ cursor: 'zoom-in', pointerEvents: 'auto' })
+Theme.define({}).css({ userSelect: 'text', resize: 'both' })
+// @ts-expect-error Cursor URL lists remain deferred.
+css({ cursor: 'url(cursor.png), pointer' })
+// @ts-expect-error Pointer-events SVG keywords remain deferred.
+css({ pointerEvents: 'visiblePainted' })
+// @ts-expect-error Resize axes cannot be combined.
+css({ resize: 'horizontal vertical' })
+// @ts-expect-error Selection containment remains deferred.
+css({ userSelect: 'contain' })
+// @ts-expect-error Visibility is not opacity.
+css({ visibility: 0 })
+// @ts-expect-error Display keywords do not name visibility states.
+css({ visibility: 'none' })
+const interactionTheme = Theme.define({ spacing: { control: '8px' } })
+// @ts-expect-error Interaction keywords do not accept theme tokens.
+interactionTheme.css({ cursor: interactionTheme.tokens.spacing.control })
 
 Style.define(Tables.styles)
 css({ borderSpacing: [0, '1em!'], tableLayout: 'fixed' })

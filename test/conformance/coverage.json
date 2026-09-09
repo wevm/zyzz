@@ -1659,7 +1659,7 @@
       },
       "cursor": {
         "grammar": "6e6188103469abe1e892010d3eaa992505923b44a6aa40bf6c47cbed2ae4aea2",
-        "status": "deferred"
+        "status": "partial"
       },
       "cx": {
         "grammar": "ba7c55a3c36cf1d932fbead4f956dbf30731a061e20386f11c6aa2e7fa6f67cb",
@@ -2523,7 +2523,7 @@
       },
       "pointer-events": {
         "grammar": "35a44b80f8910d8ba74436d70b8982dfca5b2ba1223c67ef80352cb9c5e727a0",
-        "status": "deferred"
+        "status": "partial"
       },
       "position": {
         "grammar": "112d7f1d13f0dfdadea13b1971b1da37e2c7757de764ab240fad9b586f0403c9",
@@ -2575,7 +2575,7 @@
       },
       "resize": {
         "grammar": "c397aaa23fe8535567232bc3c806cf914cdb2f0a5f5428602db2de2caff207ee",
-        "status": "deferred"
+        "status": "partial"
       },
       "right": {
         "grammar": "67e085ca94f11bf446f4274b2b1b5baeeb1cc34e3f67e8e9d08ba164f1c89820",
@@ -3095,7 +3095,7 @@
       },
       "user-select": {
         "grammar": "47b91ca832e5c77b9d1e562909bc95e03e490f4aef111c529569d2895872048f",
-        "status": "deferred"
+        "status": "partial"
       },
       "vector-effect": {
         "grammar": "1dde1c4ad057499eb99bb086c1af41fc3f657a3f7a316d9651406e846e795ab1",
@@ -3135,7 +3135,7 @@
       },
       "visibility": {
         "grammar": "116321fe82414e22df60aa48616dfd21488642fd32305f3c6994c8b68e49b151",
-        "status": "deferred"
+        "status": "partial"
       },
       "white-space": {
         "grammar": "978368d5cb2fd79c8460607abe06c5c4aada772dc13caceac7a87a01c4c6dcec",

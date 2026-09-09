@@ -18,6 +18,7 @@ import * as Borders from '../../test/fixtures/Borders.js'
 import * as Conformance from '../../test/fixtures/Conformance.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
+import * as Interaction from '../../test/fixtures/Interaction.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
@@ -223,6 +224,168 @@ describe('compile', () => {
       await Fs.rm(directory, { force: true, recursive: true })
     }
   }, 120_000)
+
+  test('interaction declarations preserve importance and source maps', () => {
+    const output = Transform.compile({
+      moduleId: 'example/interaction.ts',
+      source: Interaction.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-style-bsh2u91k616n-90{cursor:not-allowed;pointer-events:auto;pointer-events:none!important;pointer-events:auto;resize:none;user-select:none;visibility:visible;}
+      .z-style-bsh2u91k616n-243{cursor:text;pointer-events:auto;resize:both;user-select:text;visibility:visible;}
+      .z-style-bsh2u91k616n-368{cursor:default;pointer-events:auto;resize:none;user-select:auto;visibility:hidden;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) =>
+      line.includes('pointer-events:none!important'),
+    )
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        column: lines[line]!.indexOf('pointer-events:none!important'),
+        line: line + 1,
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 45,
+        "line": 4,
+        "name": "pointerEvents",
+        "source": "example/interaction.ts",
+      }
+    `)
+  })
+
+  test('interaction declarations reject unsupported keywords and token domains', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import { css } from 'zyzz'; css({cursor:'hand',pointerEvents:'visiblePainted',resize:'horizontal vertical',userSelect:'contain',visibility:'none'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: invalid.ts:40: Expected one of: alias, all-scroll, auto, cell, col-resize, context-menu, copy, crosshair, default, e-resize, ew-resize, grab, grabbing, help, move, n-resize, ne-resize, nesw-resize, no-drop, none, not-allowed, ns-resize, nw-resize, nwse-resize, pointer, progress, row-resize, s-resize, se-resize, sw-resize, text, vertical-text, w-resize, wait, zoom-in, zoom-out (or a CSS-wide keyword).
+      invalid.ts:61: Expected one of: auto, none (or a CSS-wide keyword).
+      invalid.ts:85: Expected one of: block, both, horizontal, inline, none, vertical (or a CSS-wide keyword).
+      invalid.ts:118: Expected one of: all, auto, none, text (or a CSS-wide keyword).
+      invalid.ts:139: Expected one of: collapse, hidden, visible (or a CSS-wide keyword).]
+    `)
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid-token.ts',
+        source: `import { Theme } from 'zyzz'; const theme = Theme.define({spacing:{control:'8px'}}); theme.css({cursor:theme.tokens.spacing.control});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid-token.ts:103: Token group is incompatible with this property.]`,
+    )
+  })
+
+  test('interaction declarations match browser hit testing, selection, and visibility', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/interaction.ts',
+      source: Interaction.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      format: 'esm',
+      loader: 'ts',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>.panel{position:relative;width:160px;height:60px;margin:8px}.panel>button,.overlay{position:absolute;inset:0;width:160px;height:60px;box-sizing:border-box}.overlay{overflow:auto;background:white}${output.css}</style>${Object.entries(
+          Interaction.controls,
+        )
+          .map(
+            ([name, css]) =>
+              `<div class="panel"><button>Underneath</button><div id="${name}" class="overlay ${module[name].className}">Selection</div></div><div class="panel"><button>Underneath</button><div id="${name}-control" class="overlay" style="${css}">Selection</div></div>`,
+          )
+          .join('')}`,
+      )
+      expect(
+        await page.evaluate(
+          (names) =>
+            names.filter((name) => {
+              const actual = document.getElementById(name)!
+              const control = document.getElementById(`${name}-control`)!
+              const a = getComputedStyle(actual)
+              const b = getComputedStyle(control)
+              return (
+                [
+                  'cursor',
+                  'pointer-events',
+                  'resize',
+                  'user-select',
+                  'visibility',
+                ].some(
+                  (property) =>
+                    a.getPropertyValue(property) !==
+                    b.getPropertyValue(property),
+                ) ||
+                actual.getBoundingClientRect().height !==
+                  control.getBoundingClientRect().height
+              )
+            }),
+          Object.keys(Interaction.controls),
+        ),
+      ).toMatchInlineSnapshot(`[]`)
+      await page.evaluate(() => {
+        for (const panel of document.querySelectorAll('.panel'))
+          panel.addEventListener('click', (event) => {
+            const target = event.target as HTMLElement
+            panel.setAttribute('data-target', target.tagName)
+          })
+      })
+      for (const name of Object.keys(Interaction.controls)) {
+        for (const suffix of ['', '-control']) {
+          const box = await page
+            .locator(`#${name}${suffix}`)
+            .evaluate((element) => {
+              const rect = element.getBoundingClientRect()
+              return { x: rect.x, y: rect.y }
+            })
+          await page.mouse.click(box.x + 80, box.y + 30)
+        }
+      }
+      expect(
+        await page
+          .locator('.panel')
+          .evaluateAll((elements) =>
+            elements.map((element) => element.getAttribute('data-target')),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "BUTTON",
+          "BUTTON",
+          "DIV",
+          "DIV",
+          "BUTTON",
+          "BUTTON",
+        ]
+      `)
+      expect(
+        await page
+          .locator('#hidden')
+          .evaluate((element) => element.getBoundingClientRect().height),
+      ).toMatchInlineSnapshot(`60`)
+      // Isolate selection from the disabled control's hit-testing declaration.
+      await page
+        .locator('#disabled')
+        .evaluate((element) =>
+          element.style.setProperty('pointer-events', 'auto', 'important'),
+        )
+      await page.locator('#disabled').dblclick({ position: { x: 20, y: 8 } })
+      expect(
+        await page.evaluate(() => getSelection()!.toString()),
+      ).toMatchInlineSnapshot(`""`)
+      await page.locator('#editable').dblclick({ position: { x: 20, y: 8 } })
+      expect(
+        await page.evaluate(() => getSelection()!.toString()),
+      ).toMatchInlineSnapshot(`"Selection"`)
+    } finally {
+      await browser.close()
+    }
+  })
 
   test('table declarations preserve fallback priority and source maps', () => {
     const output = Transform.compile({

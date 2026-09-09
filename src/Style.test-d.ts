@@ -670,3 +670,39 @@ describe('css', () => {
     theme.css({ backgroundPositionX: theme.tokens.spacing.gap })
   })
 })
+
+describe('css', () => {
+  test('supports paint tokens and bounded SVG domains', () => {
+    css({
+      fill: 'none',
+      stroke: '#06c',
+      fillOpacity: 0.5,
+      strokeWidth: '2px',
+      strokeDashoffset: '-5%',
+      strokeLinecap: 'round',
+      strokeLinejoin: 'bevel',
+      strokeMiterlimit: 2,
+      fillRule: 'evenodd',
+      clipRule: 'nonzero',
+      paintOrder: 'stroke',
+      shapeRendering: 'crispEdges',
+      textRendering: 'optimizeLegibility',
+      vectorEffect: 'non-scaling-stroke',
+      colorInterpolationFilters: 'linearRGB',
+      floodColor: 'black',
+      floodOpacity: 0.2,
+      lightingColor: 'white',
+      strokeOpacity: 0.5,
+    })
+    const zyzz = Config.create({ theme: { color: { ink: '#06c' } } })
+    zyzz.css({ fill: 'ink', stroke: zyzz.theme.tokens.color.ink })
+    // @ts-expect-error Paint servers require URL syntax support.
+    css({ fill: 'url(#gradient)' })
+    // @ts-expect-error Multi-keyword paint order remains deferred.
+    css({ paintOrder: 'stroke fill' })
+    // @ts-expect-error Widths require units except for zero.
+    css({ strokeWidth: 2 })
+    // @ts-expect-error Scalar paint keywords do not apply to filter colors.
+    css({ floodColor: 'none' })
+  })
+})

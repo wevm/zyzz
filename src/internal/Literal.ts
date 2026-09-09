@@ -368,7 +368,12 @@ export const rules = {
     kind: 'enum',
     values: ['both', 'inline-end', 'inline-start', 'left', 'none', 'right'],
   },
+  clipRule: { kind: 'enum', values: ['evenodd', 'nonzero'] },
   color,
+  colorInterpolationFilters: {
+    kind: 'enum',
+    values: ['auto', 'linearRGB', 'sRGB'],
+  },
   colorScheme: {
     kind: 'enum',
     values: [
@@ -472,6 +477,9 @@ export const rules = {
     ],
   },
   emptyCells: { kind: 'enum', values: ['hide', 'show'] },
+  fill: { ...color, keywords: ['context-fill', 'context-stroke', 'none'] },
+  fillOpacity: { kind: 'number', max: 1, min: 0 },
+  fillRule: { kind: 'enum', values: ['evenodd', 'nonzero'] },
   flexBasis: { ...size, keywords: ['content', ...intrinsic] },
   flexDirection: {
     kind: 'enum',
@@ -484,6 +492,8 @@ export const rules = {
     kind: 'enum',
     values: ['inline-end', 'inline-start', 'left', 'none', 'right'],
   },
+  floodColor: color,
+  floodOpacity: { kind: 'number', max: 1, min: 0 },
   fontSize: length,
   fontStyle: { kind: 'enum', values: ['italic', 'normal', 'oblique'] },
   fontWeight: { kind: 'number', max: 1000, min: 1 },
@@ -519,6 +529,7 @@ export const rules = {
   },
   left: margin,
   letterSpacing: textSpacing,
+  lightingColor: color,
   lineHeight: { kind: 'number', max: Infinity, min: 0 },
   margin,
   marginBlock: margin,
@@ -611,6 +622,7 @@ export const rules = {
   paddingLeft: length,
   paddingRight: length,
   paddingTop: length,
+  paintOrder: { kind: 'enum', values: ['fill', 'markers', 'normal', 'stroke'] },
   pointerEvents: { kind: 'enum', values: ['auto', 'none'] },
   position: {
     kind: 'enum',
@@ -693,6 +705,20 @@ export const rules = {
       'y proximity',
     ],
   },
+  shapeRendering: {
+    kind: 'enum',
+    values: ['auto', 'crispEdges', 'geometricPrecision', 'optimizeSpeed'],
+  },
+  stroke: { ...color, keywords: ['context-fill', 'context-stroke', 'none'] },
+  strokeDashoffset: { ...length, negative: true },
+  strokeLinecap: { kind: 'enum', values: ['butt', 'round', 'square'] },
+  strokeLinejoin: {
+    kind: 'enum',
+    values: ['arcs', 'bevel', 'miter', 'miter-clip', 'round'],
+  },
+  strokeMiterlimit: { kind: 'number', max: Infinity, min: 1 },
+  strokeOpacity: { kind: 'number', max: 1, min: 0 },
+  strokeWidth: length,
   tableLayout: { kind: 'enum', values: ['auto', 'fixed'] },
   textAlign: {
     kind: 'enum',
@@ -732,6 +758,15 @@ export const rules = {
   textDecorationThickness: { ...length, auto: true, keywords: ['from-font'] },
   textIndent: { ...length, negative: true },
   textOverflow: { kind: 'enum', values: ['clip', 'ellipsis'] },
+  textRendering: {
+    kind: 'enum',
+    values: [
+      'auto',
+      'geometricPrecision',
+      'optimizeLegibility',
+      'optimizeSpeed',
+    ],
+  },
   textTransform: {
     kind: 'enum',
     values: ['capitalize', 'lowercase', 'none', 'uppercase'],
@@ -740,6 +775,7 @@ export const rules = {
   top: margin,
   transformStyle: { kind: 'enum', values: ['flat', 'preserve-3d'] },
   userSelect: { kind: 'enum', values: ['all', 'auto', 'none', 'text'] },
+  vectorEffect: { kind: 'enum', values: ['none', 'non-scaling-stroke'] },
   visibility: { kind: 'enum', values: ['collapse', 'hidden', 'visible'] },
   whiteSpace: {
     kind: 'enum',

@@ -105,3 +105,9 @@ Independent MDN/type probes cover every accepted keyword. Browser fixtures verif
 Background attachment, blend mode, clipping, origin, repeat, axis positions, and size accept bounded scalar values. Axis positions accept signed lengths/percentages and the corresponding axis keywords; size accepts nonnegative lengths/percentages, auto, contain, or cover. Lists, position pairs, size pairs, images, and gradients remain deferred.
 
 Accent and caret colors accept the shared color domain, color tokens, and auto. Explicit token references disambiguate a color token named auto. Color schemes accept normal, light, dark, light dark, dark light, only light, and only dark. Forced-color adjustment, print-color adjustment, and mix blending use finite keywords. Grammar and type probes cover these domains; browser fixtures compare computed styles with independent CSS. Computed styles do not establish pixel-level blending, clipping, or forced-color rendering.
+
+## SVG Paint
+
+Nineteen properties cover fill/stroke paints, opacity, fill/clip rules, line caps/joins, stroke lengths and miter limits, filter colors, paint order, rendering hints, and non-scaling strokes. Fill and stroke accept scalar colors, shared color tokens, none, context-fill, and context-stroke. Opacities accept numbers from zero to one; miter limits accept finite numbers at least one. Stroke widths use nonnegative lengths/percentages; dash offsets also allow negative values.
+
+Paint order currently accepts normal or a single fill/stroke/markers keyword. Unitless nonzero SVG lengths, paint servers, dash arrays, opacity percentages, multi-keyword paint order, and other vector effects remain deferred. Browser evidence compares independent computed styles and verifies evenodd path geometry; it does not prove filter pixels, hint quality, or vector-effect rendering.

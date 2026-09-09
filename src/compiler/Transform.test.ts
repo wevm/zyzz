@@ -150,6 +150,10 @@ describe('compile', () => {
     const accepted: string[] = []
     const rejected = [
       ...Conformance.rejected,
+      { property: 'fillOpacity', value: -0.1 },
+      { property: 'strokeMiterlimit', value: 0.5 },
+      { property: 'strokeOpacity', value: 1.1 },
+      { property: 'strokeWidth', value: '-2px' },
       { property: 'color', value: '#12' },
       { property: 'fontWeight', value: 1001 },
       { property: 'opacity', value: -1 },

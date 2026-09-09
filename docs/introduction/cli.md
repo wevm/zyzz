@@ -1,21 +1,22 @@
 # CLI Setup
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
-Use the CLI to precompile source modules and CSS independently of a styling plugin. Authoring still uses the same the named `zyzz` instance and normal relative imports.
+Precompile source modules and CSS with one command:
 
 ```sh
-zyzz src --out-dir dist --css dist/styles.css
-zyzz src --out-dir dist --css dist/styles.css --watch
-zyzz src --out-dir dist --css dist/styles.css --minify
+npx zyzz build
+npx zyzz watch
 ```
 
-- **Application builds:** consume the rewritten output as the build's source tree; see [Publish Libraries](../guides/compilation.md#standalone-output) for output ownership.
-- **CSS:** load the emitted stylesheet through the consuming build or a stylesheet link.
-- **Libraries:** publish matching modules, CSS, and declarations.
-- **Watching:** regenerate changed output and preserve the previous complete build after errors.
+Both commands read `src`, write rewritten modules to `dist`, and emit `dist/styles.css`, relative to the working directory. `build` runs once; `watch` builds immediately and rebuilds after source or dependency changes.
 
-A config import does not replace this transformation. CSS-only compilation with untouched style calls is outside the current design. Applications needing transparent original-source imports should use a bundler integration.
+Override paths only when needed:
 
-The programmatic [file host](../api/node/Host/create.md) already supports Lightning CSS processing through `css: { minify: true, targets: { safari: 15 << 16 } }`. The CLI above remains planned. Vite uses its own CSS processing configuration.
+```sh
+npx zyzz build app --out-dir build --css build/app.css
+```
+
+Point the application build at the rewritten output and load its stylesheet. Downstream tooling handles TypeScript/JSX lowering. Libraries publish matching modules, CSS, and declarations. See [Build & Delivery](../guides/compilation.md#standalone-output).
+
+Watch errors preserve the previous complete output. Cleanup only removes owned artifacts; output is excluded from source discovery.
+
+See the [CLI reference](../api/cli.md) for optional flags. Authoring uses normal source imports; no config is required for token-free styles.

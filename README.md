@@ -53,11 +53,11 @@ Import components normally. The plugin transforms source modules and delivers CS
 Compile source modules and CSS before the application build:
 
 ```sh
-pnpm exec zyzz src --out-dir dist --css dist/styles.css
-pnpm exec zyzz src --out-dir dist --css dist/styles.css --watch
+npx zyzz build
+npx zyzz watch
 ```
 
-Point the downstream build at the rewritten `dist` tree and load `dist/styles.css`. The downstream build handles TypeScript/JSX lowering. See [CLI Setup](docs/introduction/cli.md).
+By default, compile `src` into `dist` and emit `dist/styles.css`. Point the downstream build at the rewritten `dist` tree and load its stylesheet. The downstream build handles TypeScript/JSX lowering. See [CLI Setup](docs/introduction/cli.md).
 
 ### Use Compiler API
 

@@ -863,20 +863,20 @@ The CLI is a first-class compilation path alongside build integrations and in-me
 Planned default command:
 
 ```sh
-zyzz src --out-dir dist
+zyzz build
 ```
 
 Planned watch and production commands:
 
 ```sh
 # Compile authored modules and extract a stylesheet.
-zyzz src --out-dir dist --css dist/styles.css
+zyzz build
 
 # Rebuild changed modules, styles, and imported theme dependencies.
-zyzz src --out-dir dist --css dist/styles.css --watch
+zyzz watch
 
 # Production output, retaining readable class names.
-zyzz src --out-dir dist --css dist/styles.css --minify
+zyzz build --minify
 ```
 
 `--out-dir` contains rewritten modules and declarations; `--css` defaults to `<out-dir>/styles.css`. Modules contain generated props-binding functions in place of definitions, with fully static applications eligible for constant folding. Both reference precompiled classes; authoring callbacks do not remain in delivered code. Applications import the stylesheet or load it through a standard stylesheet link. Libraries publish these artifacts directly.
@@ -1071,7 +1071,7 @@ const options = {
 }
 ```
 
-The CLI equivalent is `zyzz src --out-dir dist --minify --targets 'chrome >= 123, firefox >= 128, safari >= 17.5'`. The public CLI and processing adapter remain Phase 4 work. Without targets, preserve modern CSS rather than silently choosing a browser floor. A consuming build may own all final processing; thin integrations inherit its target policy unless explicitly overridden. Requesting compatibility transforms is independent of requesting minification.
+The CLI equivalent is `zyzz build --minify --targets 'chrome >= 123, firefox >= 128, safari >= 17.5'`. The public CLI and processing adapter remain Phase 4 work. Without targets, preserve modern CSS rather than silently choosing a browser floor. A consuming build may own all final processing; thin integrations inherit its target policy unless explicitly overridden. Requesting compatibility transforms is independent of requesting minification.
 
 Resolve query strings once at the adapter boundary into Lightning CSS targets; do not expose packed version integers as the public authoring API. Explicit options take precedence over host configuration. Include resolved targets, processing options, and processor versions in build-cache identities and diagnostic/benchmark metadata. Compose source maps after processing, and keep class references aligned.
 
@@ -1094,3 +1094,11 @@ Before implementing variable registration, decide how `Vars.define` expresses op
 Renderer output also needs an explicit adapter contract: `className` plus a style object is not the same as DOM `class` plus a serialized style attribute. Keep application-time style definitions callable and spreadable; serialize at the target boundary with correct escaping and retain recipe attributes. The adapter belongs outside the agnostic core.
 
 Later web capabilities include `@scope`, container style/scroll-state queries, view transitions, anchor fallbacks, scroll-driven animations, counter styles, and paged media. Track grammar, identity, reachability, target constraints, and browser evidence separately. Raw CSS syntax is an authoring form, not permission to silently pass unsupported constructs through every target.
+
+### CLI Commands and Defaults
+
+`zyzz build [src]` compiles once; `zyzz watch [src]` compiles immediately and rebuilds after source or dependency changes. The npm invocations are `npx zyzz build` and `npx zyzz watch`.
+
+Both commands default to `src` input, `dist` module output, and `<out-dir>/styles.css`. Paths resolve from the working directory. Optional `--out-dir`, `--css`, `--minify`, and `--targets` flags override defaults. Minification is opt-in and unspecified targets preserve modern CSS. Token-free authoring requires no config.
+
+Missing source directories are errors. Output directories stay excluded from discovery. Watch failures preserve the previous complete output; cleanup removes only owned artifacts. The public CLI remains an unchecked Phase 4 implementation gate.

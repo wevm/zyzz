@@ -34,7 +34,7 @@ The proposed signatures, examples, type rules, and emitted theme CSS are specifi
 | `css((values: Values) => style)`                      | Compiles static rules and returns a typed callable web class/style binding                                         |
 | `variants(definition)` / `theme.variants(definition)` | Defines token-free or theme-bound recipes with inferred selection props                                            |
 | `theme.className`                                     | Optional scope for inherited theme overrides                                                                       |
-| `zyzz <src> --out-dir <dist>`                         | Standalone module rewriting and stylesheet emission; planned watch/minify flags                                    |
+| `zyzz build` / `zyzz watch`                         | Standalone module rewriting and stylesheet emission; defaults: `src`, `dist`, `dist/styles.css`                                    |
 
 The accepted [configuration contract](architecture.md#configuration-and-inferred-authoring) retains `Theme.define` and supports mutually exclusive `theme`/`themes`, an inferred named default, normalized scope handles, and direct `@layer <name>` keys. Theme scope classes select inherited CSS variables; `colorScheme` selects light/dark independently.
 
@@ -274,7 +274,8 @@ Gate: shared definitions render on web and both mobile platforms. Theme/scheme s
 Status: planned.
 
 - [ ] Verify plain document, component, template, and native consumers through their normal class/style APIs.
-- [ ] Build the CLI with `--css`, `--watch`, and `--minify`; rewrite modules alongside CSS and declarations, requiring no styling plugin in consumers.
+- [ ] Build the CLI with `build [src]` and `watch [src]` commands (defaults: `src`, `dist`, `<out-dir>/styles.css`) and optional `--out-dir`, `--css`, and `--minify` flags; rewrite modules alongside CSS and declarations, requiring no styling plugin in consumers.
+- [ ] Verify zero-argument `build`/`watch` defaults, initial watch compilation, explicit path overrides, missing-source errors, and CSS defaults following `--out-dir`.
 - [ ] Verify CLI/build/in-memory parity, dependency watching, output exclusion, diagnostics, failure preservation, and owned-output cleanup. Include imported style constants and threshold edits in dependency recovery fixtures.
 - [ ] Keep build integrations optional and thin; implement only those needed by concrete fixtures.
 - [ ] Validate the [Getting Started](../docs/introduction/getting-started.md) Vite and CLI paths as real consumer fixtures. Finalize the proposed `zyzz()` entrypoint, automatic dev/production CSS delivery, and standalone CLI output consumption without generated-component imports in application examples. Cover edits, production rendering, and matching CSS; remove preview callouts only when the complete paths work.

@@ -35,10 +35,10 @@ for (const mode of [
         } else {
           version++
           await notifications.next(() =>
-            Fs.writeFile(
-              Path.join(directory, 'src/cards.ts'),
-              source.replace('0px', `${version}px`),
-            ),
+            Watch.write({
+              path: Path.join(directory, 'src/cards.ts'),
+              source: source.replace('0px', `${version}px`),
+            }),
           )
         }
       },

@@ -2,6 +2,7 @@
  * Provides bounded completion notifications for real filesystem watch workflows.
  * @module
  */
+import * as Fs from 'node:fs/promises'
 import type { Host } from 'zyzz/node'
 
 /** Bounded notifications for real host integration fixtures and benchmarks. */
@@ -59,5 +60,30 @@ export declare namespace create {
     readonly path: string
     /** Failure deadline, defaulting to five seconds. */
     readonly timeoutMs?: number | undefined
+  }
+}
+
+/**
+ * Publishes one complete source edit by renaming a sibling temporary file.
+ * Calls for the same path must be serialized; temporary files are not source modules.
+ */
+export async function write(options: write.Options) {
+  const temporary = `${options.path}.tmp`
+  try {
+    await Fs.writeFile(temporary, options.source)
+    await Fs.rename(temporary, options.path)
+  } finally {
+    await Fs.rm(temporary, { force: true })
+  }
+}
+
+/** Atomic source edit options for real watch workflows. */
+export declare namespace write {
+  /** Destination and complete next source. */
+  type Options = {
+    /** Source file replaced after its complete contents have been written. */
+    readonly path: string
+    /** Complete source text. */
+    readonly source: string
   }
 }

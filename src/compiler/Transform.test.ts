@@ -194,7 +194,7 @@ describe('compile', () => {
         (property) =>
           `// @ts-expect-error Booleans are outside every CSS scalar domain.\ncss({${property}: true});`,
       )
-      const source = `/** Checks generated consumer declarations. @module */\nimport { css, type Style } from 'zyzz';\n${[...declarations, ...rejections, ...booleans].join('\n')}`
+      const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { css, type Style } from 'zyzz';\ndescribe('css', () => {\n  test('validates generated conformance probes', () => {\n${[...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
       await Fs.writeFile(Path.join(directory, 'consumer.test-d.ts'), source)
       await Fs.writeFile(
         Path.join(directory, 'tsconfig.json'),

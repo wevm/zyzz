@@ -238,8 +238,23 @@ export function cases(): readonly Case[] {
           '10px repeat(auto-fit, 20px) 30px',
         )
     }
-    if (rule.kind === 'grid-line')
-      values.push('auto', 1, -1, 2, 'span 1', 'span 2')
+    if (rule.kind === 'grid-line') {
+      values.push(
+        'auto',
+        1,
+        -1,
+        2,
+        'span 1',
+        'span 2',
+        'header',
+        '2 header',
+        'header -1',
+        'span header 2',
+        'header span',
+      )
+      if ('items' in rule) values.push('1 / -1', 'header / span 2')
+      if ('items' in rule && rule.items === 4) values.push('1 / 2 / 3 / 4')
+    }
     if (rule.kind === 'time') {
       values.push('calc(1s + 20ms)', 'min(1s, 500ms)')
       if ('list' in rule) values.push('0s, 250ms, 1s')

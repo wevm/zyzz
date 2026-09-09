@@ -476,7 +476,7 @@ Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthan
 
 Motion lists preserve easing-function commas and validate cubic-bezier(), steps(), and linear() constraints. Absolute functional colors preserve color spaces and browser clamping. Border color/style lists and elliptical radii preserve logical overrides and importance. Compatible font variant and containment groups reject conflicts; font-synthesis adds one partially implemented property.
 
-The completion count remains 0/670: 552 partial and 118 deferred (93 standard, 25 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
+The completion count remains 0/670: 555 partial and 115 deferred (90 standard, 25 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
 
 ### Dimensional Math
 
@@ -551,3 +551,11 @@ Intrinsic size overrides and font-size-adjust accept optional component prefixes
 Intrinsic prefix validation passes full TypeScript, generated consumers, lint, and source/grammar checks. The same-machine 100-style transform measured 3.8647 ms ±5.32% before and 4.2825 ms ±5.66% after; expanded scalar lanes measured 1.1911/6.5752 ms for 10/100 styles. The six mappings remain partial.
 
 Compound-value CI passed build, checks, and macOS, but the native image-border pixel comparison differed. The follow-up compares all computed border-image components and paints both controls at identical device coordinates, retaining exact pixel equality. CI must verify the revised control and intrinsic sizing.
+
+Grid row, column, and area shorthands accept slash-separated placement lines. Named indices and spans extend all four placement longhands; nonzero indices, positive spans, reserved names, and component limits are checked. Placement declarations share a conflict domain. These three new mappings remain partial.
+
+Intrinsic-sizing CI passed all standard checks and browser tests. Matching device coordinates resolved the exact border-image pixel comparison; computed component equality also passed. The 100% conformance gate remains failing.
+
+Grid placement passes full TypeScript, generated consumers, source/grammar checks, and lint. The 100-style baseline measured 4.2487 ms ±5.96%; an initial 5.2802 ms ±19.17% candidate prompted a repeat at 4.3584 ms ±7.96%. New grid lanes measured 0.7551/4.5315 ms for 10/100 styles. Native layout controls await CI.
+
+Grid span type refinement preserves fractional/negative rejection through importance markers and fallback arrays. Runtime compilation additionally checks named combinations and slash arity. Escaped names and integer math remain incomplete.

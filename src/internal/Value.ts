@@ -2,6 +2,7 @@
  * Describes declaration fallbacks and separates importance from scalar values.
  * @module
  */
+import type * as Grid from './Grid.js'
 import * as Literal from './Literal.js'
 import type * as Token from './Token.js'
 
@@ -15,10 +16,17 @@ export type Checked<style, tokens = {}> = {
   [property in keyof style]: Literal.Properties extends style
     ? unknown
     : property extends keyof Literal.Properties
-      ? style[property] extends Check<
-          style[property],
-          Token.Names<tokens, property>
-        >
+      ? style[property] extends (property extends
+          | 'gridArea'
+          | 'gridColumn'
+          | 'gridColumnEnd'
+          | 'gridColumnStart'
+          | 'gridRow'
+          | 'gridRowEnd'
+          | 'gridRowStart'
+          ? Grid.Checked<style[property]>
+          : unknown) &
+          Check<style[property], Token.Names<tokens, property>>
         ? unknown
         : never
       : unknown

@@ -1887,7 +1887,7 @@
       },
       "grid-area": {
         "grammar": "4030da447b5f2a6ad55a7b76c5f60559ba4817b274dd5b2abe74e8507ef4a64d",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-auto-columns": {
         "grammar": "86d669445e5769e444244b97e532726d9cd51ed34f5789d32296aa5799751673",
@@ -1903,7 +1903,7 @@
       },
       "grid-column": {
         "grammar": "c9e70f2feaaeff55bd9fffc0f2d4eda2b088491eeb3744c6732a21a8cd7b4b09",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-column-end": {
         "grammar": "1c920deb0a0e54b934851a02e52ed4efd01030b566fc66ad065f0daa66b77812",
@@ -1923,7 +1923,7 @@
       },
       "grid-row": {
         "grammar": "856e7caae6d7141bdb4ac9ee54f502383f9e2faed7f686edbadff06d676468b6",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-row-end": {
         "grammar": "9b5679180e1af1b3a1a20e11e5cbffeefc701962eee1ce6a829fb059703b1eb0",

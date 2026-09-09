@@ -97,7 +97,7 @@ type Rule = { readonly list?: true } & (
       readonly min: number
       readonly max: number
     }
-  | { readonly kind: 'grid-line' }
+  | { readonly kind: 'grid-line'; readonly items?: 2 | 4 }
   | { readonly kind: 'grid-tracks'; readonly explicit: boolean }
   | {
       readonly integer?: boolean
@@ -277,7 +277,7 @@ type Value<rule extends Rule> =
                                             | `[${string}`
                                         : never)
                                 : rule extends { kind: 'grid-line' }
-                                  ? number | 'auto' | `span ${bigint}`
+                                  ? number | string
                                   : rule extends { kind: 'time' }
                                     ? Listed<
                                         Calculation | Time | Keywords<rule>,
@@ -1391,6 +1391,7 @@ export const rules = {
     ],
   },
   gap: { ...length, items: 2 },
+  gridArea: { kind: 'grid-line', items: 4 },
   gridAutoColumns: track,
   gridAutoFlow: {
     kind: 'enum',
@@ -1405,10 +1406,12 @@ export const rules = {
     ],
   },
   gridAutoRows: track,
+  gridColumn: { kind: 'grid-line', items: 2 },
   gridColumnEnd: { kind: 'grid-line' },
   gridColumnGap: length,
   gridColumnStart: { kind: 'grid-line' },
   gridGap: { ...length, items: 2 },
+  gridRow: { kind: 'grid-line', items: 2 },
   gridRowEnd: { kind: 'grid-line' },
   gridRowGap: length,
   gridRowStart: { kind: 'grid-line' },
@@ -3161,16 +3164,10 @@ export function validate(
     return Grid.tracks(value, { explicit: rule.explicit, units: lengthUnits })
       ? undefined
       : 'Expected a valid grid track list with nonnegative sizes and valid repetition constraints.'
-  if (rule.kind === 'grid-line') {
-    if (value === 'auto') return undefined
-    if (typeof value === 'number' && Number.isSafeInteger(value) && value !== 0)
-      return undefined
-    const match =
-      typeof value === 'string' ? /^span ([1-9]\d*)$/.exec(value) : null
-    const count = match ? Number(match[1]) : NaN
-    if (Number.isSafeInteger(count) && count > 0) return undefined
-    return 'Expected auto, a nonzero safe integer, or span followed by a positive safe integer.'
-  }
+  if (rule.kind === 'grid-line')
+    return Grid.line(value, rule)
+      ? undefined
+      : 'Expected valid named or numbered grid lines with nonzero indices, positive spans, and the required slash arity.'
   if (rule.kind === 'time') {
     if (typeof value === 'string' && rule.keywords?.includes(value))
       return undefined

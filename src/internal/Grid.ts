@@ -3,7 +3,73 @@
  * @module
  */
 
+import * as Component from './Component.js'
+import * as Identifier from './Identifier.js'
 import * as MathExpression from './Math.js'
+
+/** Refines simple span counts while named combinations receive compiler validation. */
+export type Checked<value> = value extends readonly unknown[]
+  ? { [key in keyof value]: Checked<value[key]> }
+  : value extends `${infer body}!important` | `${infer body}!`
+    ? Checked<Trim<body>> extends never
+      ? never
+      : value
+    : value extends `span ${infer count extends number}`
+      ? `${count}` extends `${bigint}`
+        ? `${count}` extends `-${string}` | '0'
+          ? never
+          : value
+        : never
+      : value
+
+type Trim<value extends string> =
+  value extends `${infer body}${' ' | '\n' | '\r' | '\t' | '\f'}`
+    ? Trim<body>
+    : value
+
+/** Checks named or numbered grid lines and slash-separated placement shorthands. */
+export function line(value: unknown, options: line.Options = {}): boolean {
+  if (typeof value !== 'string' && typeof value !== 'number') return false
+  const lines = Component.split(String(value), { separator: 'slash' })
+  if (!lines || lines.length > (options.items ?? 1)) return false
+  return lines.every((text) => {
+    const parts = Component.split(text, { separator: 'space' })
+    if (!parts || parts.length > 3) return false
+    if (parts.length === 1 && parts[0]!.toLowerCase() === 'auto') return true
+    let span = false
+    let number: number | undefined
+    let name = false
+    for (const part of parts) {
+      if (part.toLowerCase() === 'span') {
+        if (span) return false
+        span = true
+      } else if (/^[+-]?\d+$/.test(part)) {
+        if (number !== undefined) return false
+        number = Number(part)
+        if (!Number.isSafeInteger(number) || number === 0) return false
+      } else {
+        if (
+          name ||
+          !Identifier.valid(part, { excluded: ['auto', 'span'], keywords: [] })
+        )
+          return false
+        name = true
+      }
+    }
+    return (
+      (!span || number !== undefined || name) &&
+      (!span || number === undefined || number > 0)
+    )
+  })
+}
+
+export declare namespace line {
+  /** Maximum number of independently validated grid lines. */
+  type Options = {
+    /** Slash-separated components; omission permits one line. */
+    readonly items?: 2 | 4
+  }
+}
 
 /** Checks track functions, repetition constraints, and optional line-name groups. */
 export function tracks(value: unknown, options: tracks.Options): boolean {

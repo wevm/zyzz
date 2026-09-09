@@ -118,6 +118,12 @@ export function compile<
             : `${Literal.name(property)}:${value}${important ? '!important' : ''};`,
           domain: ((property: string) => {
             if (resets) return 'all'
+            if (
+              /^grid(?:Area|Column(?:Start|End)?|Row(?:Start|End)?)$/.test(
+                property,
+              )
+            )
+              return 'gridArea'
             if (property.startsWith('corner')) return 'cornerShape'
             if (property.startsWith('containIntrinsic'))
               return 'containIntrinsicSize'

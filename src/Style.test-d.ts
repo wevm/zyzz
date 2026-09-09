@@ -1003,8 +1003,13 @@ describe('grid tracks and placement', () => {
     css({ gridColumnStart: 'span 1.5' })
     // @ts-expect-error Nondecimal fractional units are not CSS dimensions.
     css({ gridAutoColumns: '0x10fr' })
-    // @ts-expect-error Named grid lines remain deferred.
-    css({ gridRowStart: 'header' })
+    css({
+      gridRowStart: 'header',
+      gridColumn: 'start / end',
+      gridArea: '1 / 2 / 3 / 4',
+    })
+    // @ts-expect-error Negative spans are invalid.
+    css({ gridColumnEnd: 'span -1' })
   })
 })
 

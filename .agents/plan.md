@@ -447,3 +447,7 @@ Continue opening coherent property/value PRs against the pinned MDN inventory. E
 - Lists and input controls: 13 additional properties, 94 finite touch-action forms, independent grammar/type probes, source maps, and native list-marker/tab comparisons. Custom counter styles and gesture behavior remain deferred.
 
 - Color keywords: expands the existing color domains to all 148 canonical lowercase names and 19 system colors with independent exhaustive grammar/type probes and native scheme comparisons. Functional colors remain deferred.
+
+## Container and Field Sizing
+
+`containerType` accepts `normal`, `size`, `inline-size`, `scroll-state`, and either size mode combined with `scroll-state` in either order. `fieldSizing` accepts `content` or `fixed`; `interpolateSize` accepts `allow-keywords` or `numeric-only`. Fallbacks and importance use the shared literal pipeline. The inventory tracks 301 partially implemented properties; container names, query authoring, and interpolation functions remain deferred. Browser evidence covers native container-query responses and content-sized inputs; scroll-state queries and animated intrinsic-size interpolation remain separate gates.

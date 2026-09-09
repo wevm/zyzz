@@ -4,9 +4,11 @@
     "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
     "changeset:version": "changeset version",
     "check": "vp check --fix",
+    "check:css": "node scripts/css-conformance.ts",
     "check:types": "tsc",
     "dev": "zile dev",
-    "test": "vp test"
+    "test": "vp test",
+    "update:css": "node scripts/css-conformance.ts --update"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
@@ -16,11 +18,14 @@
     "@stylexjs/babel-plugin": "^0.19.0",
     "@stylexjs/stylex": "^0.19.0",
     "@types/babel__core": "^7.20.5",
+    "@types/css-tree": "3.2.0",
     "@types/node": "^24.10.1",
     "@vanilla-extract/css": "^1.21.2",
     "@vanilla-extract/esbuild-plugin": "^2.3.22",
     "@vitest/coverage-v8": "4.1.9",
+    "css-tree": "3.2.1",
     "esbuild": "^0.28.2",
+    "mdn-data": "2.35.0",
     "pkg-pr-new": "^0.0.88",
     "playwright": "^1.63.0",
     "quickjs-emscripten": "^0.32.0",

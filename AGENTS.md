@@ -141,6 +141,8 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 - Add an integration regression scenario for every bug fix. Track coverage of consumer workflows and error paths rather than targeting a unit-test count or percentage.
 - Use bounded waits for observable conditions, isolate real resources, and clean them up after success or failure. Do not hide flakes with arbitrary sleeps or retries.
 
+- CSS mapping changes must update `test/conformance/coverage.json` and pass `pnpm check:css` plus the Transform CSS conformance scenarios. Review upstream grammar changes before refreshing fingerprints with `pnpm update:css`. Keep partial/deferred coverage explicit; preserve independent value checks, public type probes, and browser evidence.
+
 ## Benchmark Conventions
 
 - Use the installed Vite Plus/Vitest benchmark runner: import `bench` and `describe` from `vite-plus/test` in colocated `*.bench.ts` files, and run `pnpm exec vp test bench --run --no-file-parallelism`. Keep benchmark APIs aligned with the lockfile.

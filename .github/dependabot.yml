@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - allow:
+      - dependency-name: '@types/css-tree'
+      - dependency-name: css-tree
+      - dependency-name: mdn-data
+    directory: /
+    groups:
+      css-conformance:
+        patterns:
+          - '@types/css-tree'
+          - css-tree
+          - mdn-data
+    open-pull-requests-limit: 1
+    package-ecosystem: npm
+    schedule:
+      interval: weekly

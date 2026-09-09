@@ -23,6 +23,8 @@ jobs:
         uses: ./.github/actions/install-dependencies
       - name: Check code
         run: pnpm check
+      - name: Check CSS coverage
+        run: pnpm check:css >> "$GITHUB_STEP_SUMMARY"
       - name: Check types
         run: pnpm check:types
   host-macos:

@@ -126,6 +126,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 
 ## Testing Conventions
 
+- Encapsulate every `.test-d.ts` assertion and expected compiler error in a named `test` inside a `describe` for the public function. Keep scenario-specific fixtures inside their tests; module scope is reserved for imports and shared type declarations.
 - Group tests in a `describe` named after the public function under test, such as `describe('create')`. Keep scenario names inside that group and use separate groups for different entry functions. These groups exercise complete integration flows, not isolated function implementations.
 - Runtime coverage is integration-only. Do not write unit tests, private-helper tests, or per-function suites disguised as integration tests.
 - Colocate integration suites, benchmarks, and consumer type fixtures with their owning module: `Style.test.ts`, `Style.bench.ts`, and `Style.test-d.ts` beside `Style.ts`. Keep reusable input projects under `test/fixtures/`. Import public entrypoints and exercise real collaborating modules: authoring and validation, compilation and output, or host and consumer behavior.

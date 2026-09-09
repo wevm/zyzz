@@ -1,5 +1,5 @@
 /** Samples compositional grammar branches independently of Zyzz property metadata. @module */
-import type * as CssTree from 'css-tree'
+import * as CssTree from 'css-tree'
 
 const primitives: Readonly<Record<string, readonly string[]>> = {
   angle: ['1deg'],
@@ -141,7 +141,15 @@ export function values(
       }
     }
   }
-  return reference('Property', property, 8)
+  const candidates = reference('Property', property, 8)
     .map((value) => value.trim())
     .filter((value) => value && !lexer.matchProperty(property, value).error)
+  return [
+    ...new Set(
+      candidates.flatMap((value) => [
+        value,
+        CssTree.generate(CssTree.parse(value, { context: 'value' })),
+      ]),
+    ),
+  ]
 }

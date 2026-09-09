@@ -34,9 +34,9 @@ describe('compile', () => {
         (groups) =>
           groups.map(([property, entries]) => ({
             property,
-            entries: entries
-              .filter(({ name, value }) => CSS.supports(name, String(value)))
-              .slice(0, 3),
+            entries: entries.filter(({ name, value }) =>
+              CSS.supports(name, String(value)),
+            ),
           })),
         [...samples].map(
           ([property, entries]) =>
@@ -56,7 +56,20 @@ describe('compile', () => {
       await Fs.mkdir('test-results', { recursive: true })
       await Fs.writeFile(
         'test-results/css-browser-capabilities.json',
-        JSON.stringify({ browser: browser.version(), unsupported }, null, 2),
+        JSON.stringify(
+          {
+            browser: browser.version(),
+            tested: Object.fromEntries(
+              selected.map(({ property, entries }) => [
+                Conformance.name(property),
+                entries.length,
+              ]),
+            ),
+            unsupported,
+          },
+          null,
+          2,
+        ),
       )
       const cases = selected.flatMap(({ entries }) => entries)
       const covered = new Set(cases.map(({ name }) => name))

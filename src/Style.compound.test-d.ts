@@ -71,6 +71,42 @@ describe('css', () => {
     theme.css({ padding: 'Brand' })
   })
 
+  test('accepts CSS whitespace separators and equivalent zero spellings', () => {
+    css({
+      display: 'BlOcK\tFlow',
+      alignItems: 'FiRsT\nBaSeLiNe',
+      overflow: 'hidden\tauto',
+    })
+    css({
+      padding: ['0e3', '-.0', '+00', '00.00!', '0e3 1px'],
+      borderRadius: '0e3/0',
+    })
+    // @ts-expect-error Whitespace cannot split a numeric token from its unit.
+    css({ padding: '1\tpx' })
+    // @ts-expect-error Whitespace normalization retains integer span constraints.
+    css({ gridColumnStart: 'SPAN\t1.5' })
+    // @ts-expect-error Numeric normalization cannot turn an exponent token into an integer token.
+    css({ order: '0e3!' })
+    // @ts-expect-error Time values still require units even for zero.
+    css({ animationDelay: '0e3!' })
+  })
+
+  test('accepts CSS identifier escapes without changing numeric token boundaries', () => {
+    css({ color: '\\72 ed', display: 'bl\\6f ck', padding: '1\\70 x' })
+    css({ color: '#\\66 00', display: 'block/**/flow' })
+    css({ color: 'red/**/!impor\\74 ant/**/' })
+    // @ts-expect-error An escaped identifier cannot become a numeric dimension.
+    css({ padding: '\\31 px' })
+    // @ts-expect-error An escaped unit prefix cannot become a numeric exponent.
+    css({ padding: '1\\65 2px' })
+    // @ts-expect-error Escapes retain nonnegative dimension constraints.
+    css({ padding: '-1\\70 x' })
+    // @ts-expect-error Escaped punctuation does not create a hash token.
+    css({ color: '\\23 abc' })
+    // @ts-expect-error CSS keyword folding is ASCII-only.
+    css({ color: 'blacK' })
+  })
+
   test('preserves CSS numeric spelling and range constraints', () => {
     css({
       padding: ['01px', '+.5px', '1e2px', '-0px'],

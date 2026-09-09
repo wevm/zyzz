@@ -3,6 +3,7 @@
  * @module
  */
 import type * as Grid from './Grid.js'
+import * as Lexical from './Lexical.js'
 import * as Literal from './Literal.js'
 import type * as Numeric from './Numeric.js'
 import type * as Token from './Token.js'
@@ -37,7 +38,7 @@ export type Accepted<style, properties> = {
 }
 
 type Fold<value> = value extends string
-  ? Lowercase<Normalized<value>>
+  ? Lexical.Fold<Canonical<Spaces<Normalized<Lexical.Normalized<value>>>>>
   : value extends readonly unknown[]
     ? { [key in keyof value]: Fold<value[key]> }
     : value
@@ -76,9 +77,14 @@ type Check<input, names, rule> = input extends readonly unknown[]
     : input extends string
       ? Plain<input> extends names
         ? input
-        : Literal.Checked<Lowercase<Plain<Normalized<input>>>> extends never
+        : Literal.Checked<
+              Lexical.Fold<Plain<Normalized<Lexical.Normalized<input>>>>
+            > extends never
           ? never
-          : Scalar<Lowercase<Plain<Normalized<input>>>, rule> extends never
+          : Scalar<
+                Lexical.Fold<Plain<Normalized<Lexical.Normalized<input>>>>,
+                rule
+              > extends never
             ? never
             : input
       : Scalar<input, rule>
@@ -116,6 +122,38 @@ type Range<input, rule> = rule extends
     : input
   : input
 
+type Canonical<value extends string> = value extends `${infer body}!important`
+  ? `${Zeros<body>}!important`
+  : Zeros<value>
+type Zeros<value extends string> =
+  value extends `${infer before} ${infer after}`
+    ? `${Zeros<before>} ${Zeros<after>}`
+    : value extends `${infer before}/${infer after}`
+      ? `${Zeros<before>}/${Zeros<after>}`
+      : value extends `${infer before},${infer after}`
+        ? `${Zeros<before>},${Zeros<after>}`
+        : Zero<value>
+type Zero<value extends string> = [Numeric.Checked<value>] extends [never]
+  ? value
+  : Numeric.Zero<value> extends true
+    ? '0'
+    : value
+
+type Replace<
+  value extends string,
+  character extends string,
+  output extends string = '',
+> = value extends `${infer before}${character}${infer after}`
+  ? Replace<after, character, `${output}${before} `>
+  : `${output}${value}`
+type Collapse<value extends string> =
+  value extends `${infer before}  ${infer after}`
+    ? Collapse<`${before} ${after}`>
+    : value
+type Spaces<value extends string> = Collapse<
+  Replace<Replace<Replace<Replace<value, '\t'>, '\r'>, '\n'>, '\f'>
+>
+
 type Normalized<value extends string> =
   TrimStart<Trim<value>> extends infer text extends string
     ? text extends `${infer body}!${infer suffix}`
@@ -148,8 +186,6 @@ export type Input<value> = Fallbacks<Atom<Exclude<value, undefined>>>
 /** Splits a trailing importance marker without interpreting quoted or escaped text. */
 export function parse(input: unknown, property: keyof Literal.Properties) {
   if (typeof input !== 'string') return undefined
-  const match = /!(?:[ \t\n\r\f]*important)?[ \t\n\r\f]*$/i.exec(input)
-  if (!match) return undefined
   const valueText = input
   function escaped(index: number): boolean {
     let count = 0
@@ -159,8 +195,17 @@ export function parse(input: unknown, property: keyof Literal.Properties) {
     }
     return count % 2 === 1
   }
-  if (escaped(match.index)) return undefined
-  let end = match.index
+  let marker = input.lastIndexOf('!')
+  while (marker >= 0) {
+    const suffix = Lexical.normalize(input.slice(marker + 1)).replace(
+      /^[ \t\n\r\f]+|[ \t\n\r\f]+$/g,
+      '',
+    )
+    if (!escaped(marker) && (suffix === '' || suffix === 'important')) break
+    marker = marker === 0 ? -1 : input.lastIndexOf('!', marker - 1)
+  }
+  if (marker < 0) return undefined
+  let end = marker
   while (end > 0 && /[ \t\n\r\f]/.test(input[end - 1]!) && !escaped(end - 1))
     end--
   const text = input.slice(0, end)

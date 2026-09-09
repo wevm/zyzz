@@ -10,9 +10,16 @@ type Box =
   | 'padding-box'
   | 'stroke-box'
   | 'view-box'
-type Chain<value extends string | number> = value | `${value} ${string}`
+// Delimiters and closed tokens can separate CSS components without whitespace.
+type Chain<value extends string | number> =
+  | value
+  | (value extends `${string}${')' | ']' | '%' | '"' | "'"}`
+      ? `${value}${string}`
+      : `${value}${' ' | '/' | '"' | "'" | '#' | '['}${string}`)
 type List<value extends string | number> = value | `${value},${string}`
 type Dimension = Literal.Length | Literal.Calculation
+type Numeric = number | Literal.Calculation
+type Percentage = `${number}%` | Literal.Calculation
 type Filter =
   `${'blur' | 'brightness' | 'contrast' | 'drop-shadow' | 'grayscale' | 'hue-rotate' | 'invert' | 'opacity' | 'saturate' | 'sepia'}(${string})`
 type Position = Chain<
@@ -169,42 +176,44 @@ export type Properties = {
     | 'none'
     | `fit-content(${string})`
   >
-  readonly font: Chain<
-    | Exclude<Dimension, 0>
-    | number
-    | 'caption'
-    | 'icon'
-    | 'menu'
-    | 'message-box'
-    | 'small-caption'
-    | 'status-bar'
-    | 'math'
-    | 'italic'
-    | 'oblique'
-    | 'normal'
-    | 'small-caps'
-    | 'bold'
-    | 'bolder'
-    | 'lighter'
-    | 'ultra-condensed'
-    | 'extra-condensed'
-    | 'condensed'
-    | 'semi-condensed'
-    | 'semi-expanded'
-    | 'expanded'
-    | 'extra-expanded'
-    | 'ultra-expanded'
-    | 'xx-small'
-    | 'x-small'
-    | 'small'
-    | 'medium'
-    | 'large'
-    | 'x-large'
-    | 'xx-large'
-    | 'xxx-large'
-    | 'smaller'
-    | 'larger'
-  >
+  readonly font:
+    | `${Exclude<Dimension, 0>}/${string}`
+    | Chain<
+        | Exclude<Dimension, 0>
+        | number
+        | 'caption'
+        | 'icon'
+        | 'menu'
+        | 'message-box'
+        | 'small-caption'
+        | 'status-bar'
+        | 'math'
+        | 'italic'
+        | 'oblique'
+        | 'normal'
+        | 'small-caps'
+        | 'bold'
+        | 'bolder'
+        | 'lighter'
+        | 'ultra-condensed'
+        | 'extra-condensed'
+        | 'condensed'
+        | 'semi-condensed'
+        | 'semi-expanded'
+        | 'expanded'
+        | 'extra-expanded'
+        | 'ultra-expanded'
+        | 'xx-small'
+        | 'x-small'
+        | 'small'
+        | 'medium'
+        | 'large'
+        | 'x-large'
+        | 'xx-large'
+        | 'xxx-large'
+        | 'smaller'
+        | 'larger'
+      >
   readonly fontFamily: string
   readonly fontFeatureSettings: 'normal' | List<Chain<Quoted>>
   readonly fontLanguageOverride: 'normal' | Quoted
@@ -216,7 +225,9 @@ export type Properties = {
         | 'historical-forms'
         | `${'annotation' | 'character-variant' | 'ornaments' | 'styleset' | 'stylistic' | 'swash'}(${string})`
       >
-  readonly fontVariationSettings: 'normal' | List<`${Quoted} ${number}`>
+  readonly fontVariationSettings:
+    | 'normal'
+    | List<`${Quoted}${'' | ' '}${number}`>
   readonly grid:
     | 'none'
     | Chain<Track | Quoted | 'auto-flow' | 'dense'>
@@ -374,8 +385,8 @@ export type Properties = {
   readonly quotes:
     | 'auto'
     | 'none'
-    | `${Quoted} ${Quoted}`
-    | `${Quoted} ${Quoted} ${string}`
+    | `${Quoted}${'' | ' '}${Quoted}`
+    | `${Quoted}${'' | ' '}${Quoted}${string}`
   readonly scrollSnapCoordinate: 'none' | List<Position>
   readonly scrollSnapDestination: Position
   readonly scrollSnapPointsX: 'none' | `repeat(${string})`
@@ -490,8 +501,9 @@ export type Properties = {
   readonly zoom:
     | 'normal'
     | 'reset'
-    | number
-    | `${number}%`
-    | `${number} ${number}%`
-    | `${number}% ${number}`
+    | Numeric
+    | Percentage
+    | `${Numeric} ${Percentage}`
+    | `${Percentage}${'' | ' '}${Numeric}`
+    | `${Literal.Calculation}${Percentage}`
 }

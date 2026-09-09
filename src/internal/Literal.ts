@@ -6,6 +6,7 @@ import type * as Compound from './Compound.js'
 import type * as Corner from './Corner.js'
 import type * as Geometry from './Geometry.js'
 import type * as Identifier from './Identifier.js'
+import * as Lexical from './Lexical.js'
 import type * as Numeric from './Numeric.js'
 import type * as Tuple from './Tuple.js'
 
@@ -410,7 +411,7 @@ type Value<rule extends Rule> =
                                             | (rule extends { paint: true }
                                                 ?
                                                     | Url
-                                                    | `${Url} ${Color | 'none'}`
+                                                    | `${Url}${'' | ' '}${Color | 'none'}`
                                                 : never)
                                             | Keywords<rule>
                                             | (rule extends { items: number }
@@ -849,9 +850,9 @@ export function isLiteral(
   const rule: Rule | undefined = rules[property as keyof typeof rules]
   if (!rule) return false
   if (typeof value === 'string') {
-    const folded = value
+    const folded = Lexical.normalize(value)
       .replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
-      .toLowerCase()
+      .replace(/[ \t\n\r\f]+/g, ' ')
     if (globals.has(folded)) return true
     if (
       rule.kind === 'color' &&

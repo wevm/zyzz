@@ -6,12 +6,12 @@ Zyzz owns its property/value mapping. Pinned `mdn-data` and `css-tree` developme
 
 Run `pnpm check:css` for the traffic-light report. `coverage.json` classifies every upstream property, function, selector, at-rule, syntax, type, and unit. SHA-256 fingerprints include each complete upstream entry; shared syntax changes are checked independently, including changes referenced indirectly by a property.
 
-| Status | Meaning |
-| --- | --- |
-| 🟢 Supported | Reviewed complete support for the upstream feature, with type/compiler/browser evidence |
-| 🟡 Partial | Implemented with deliberate restrictions; see the capability inventory and literal guide |
-| ⚪ Deferred | Tracked, with no complete support claim |
-| 🔴 Unclassified | Requires an explicit coverage decision; CI fails |
+| Status          | Meaning                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| 🟢 Supported    | Reviewed complete support for the upstream feature, with type/compiler/browser evidence  |
+| 🟡 Partial      | Implemented with deliberate restrictions; see the capability inventory and literal guide |
+| ⚪ Deferred     | Tracked, with no complete support claim                                                  |
+| 🔴 Unclassified | Requires an explicit coverage decision; CI fails                                         |
 
 Current properties are conservatively partial: Zyzz's bounded values are not the entire CSS grammar. Other families remain deferred as whole features, including units whose use is already partially exercised through property probes. The integration check requires exact agreement between implemented properties and supported/partial inventory entries.
 
@@ -35,3 +35,13 @@ Dependabot opens weekly grouped PRs for MDN data, CSS Tree, and its type declara
 Refreshing fingerprints acknowledges upstream changes; it does not implement features or promote coverage. Review updated grammars before accepting that diff. Removal and renaming are also reported. Broader browser tests run in CI.
 
 Sources: [MDN data](https://github.com/mdn/data), [CSS Tree](https://github.com/csstree/csstree), [Zyzz capabilities](../../.agents/capabilities.md).
+
+## Completion Gate
+
+`pnpm check:css:full` requires every property in the pinned MDN inventory to be reviewed as supported. Partial, deferred, and unclassified entries receive zero completion credit. The threshold uses exact counts, not rounded percentages. Grammar drift still fails even if all statuses say supported; `--update` cannot be combined with the strict gate.
+
+The dedicated **CSS Property Conformance (100%)** CI job publishes a summary and downloadable report, including every incomplete property, even when the command fails. It runs alongside type, build, grammar, and browser integration checks. Its scope is the 670 pinned properties, including vendor-prefixed and obsolete entries; the other CSS feature families remain visible in the report but are not silently added to the property denominator.
+
+The status inventory is a reviewed completion ledger, not a browser certification or proof derived from test counts. A property may be promoted only after its grammar, public typing, emitted declarations, and browser behavior have been reviewed against independent evidence. Relabeling entries does not implement them. The existing grammar/type/browser integration jobs must also pass.
+
+Current completion is 0/670 (0%): 303 partial and 367 deferred. This intentionally leaves the consolidated implementation PR blocked. All remaining implementation and evidence work stays in that PR until the full gate passes.

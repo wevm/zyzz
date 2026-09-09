@@ -426,7 +426,7 @@ Custom conflict graphs, shared-subset/biclique search, bounded beam search, MaxS
 
 ## Continuing CSS Conformance
 
-Continue opening coherent property/value PRs against the pinned MDN inventory. Each batch preserves independent grammar/type validation, adds browser fixtures and benchmark evidence, and records remaining restrictions. New type fixtures use describe/test blocks. Full support requires value and rendering proof, not property-name acceptance.
+Continue all property/value work in the single consolidated CSS conformance PR against the pinned MDN inventory. Each batch preserves independent grammar/type validation, adds browser fixtures and benchmark evidence, and records remaining restrictions. New type fixtures use describe/test blocks. Full support requires value and rendering proof, not property-name acceptance.
 
 - Column properties: 12 additions plus normal column gaps; numeric keyword domains preserve positive count validation. Shorthands and remaining fragment grammar follow separately.
 
@@ -455,3 +455,9 @@ Continue opening coherent property/value PRs against the pinned MDN inventory. E
 ## Reading Order
 
 `readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 303 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
+
+## Full Property Conformance Acceptance
+
+Keep the remaining CSS property implementation in one PR. The required CI job fails unless all 670 pinned MDN properties are fully supported; partial entries never count toward 100%. Retain independent grammar checks, public type probes, emission checks, browser evidence, and performance gates. Do not promote inventory statuses to make CI green before the implementation and evidence exist.
+
+Outstanding work includes the 367 deferred properties and completion of all 303 partial domains: CSS tokenization/escaping and case handling; compositional value grammars, lists, functions and custom identifiers; property-specific numeric rules; shorthand/longhand cascade interactions; and independent browser/type evidence. The threshold remains red while these gaps exist. The property gate does not claim full support for the separately tracked selectors and at-rule families.

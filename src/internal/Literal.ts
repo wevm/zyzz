@@ -661,6 +661,19 @@ export const rules = {
       'style',
     ],
   },
+  containerType: {
+    kind: 'enum',
+    values: [
+      'inline-size',
+      'inline-size scroll-state',
+      'normal',
+      'scroll-state',
+      'scroll-state inline-size',
+      'scroll-state size',
+      'size',
+      'size scroll-state',
+    ],
+  },
   contentVisibility: { kind: 'enum', values: ['auto', 'hidden', 'visible'] },
   cursor: {
     kind: 'enum',
@@ -731,6 +744,7 @@ export const rules = {
     ],
   },
   emptyCells: { kind: 'enum', values: ['hide', 'show'] },
+  fieldSizing: { kind: 'enum', values: ['content', 'fixed'] },
   fill: { ...color, keywords: ['context-fill', 'context-stroke', 'none'] },
   fillOpacity: { kind: 'number', max: 1, min: 0 },
   fillRule: { kind: 'enum', values: ['evenodd', 'nonzero'] },
@@ -872,6 +886,7 @@ export const rules = {
   insetInline: margin,
   insetInlineEnd: margin,
   insetInlineStart: margin,
+  interpolateSize: { kind: 'enum', values: ['allow-keywords', 'numeric-only'] },
   isolation: { kind: 'enum', values: ['auto', 'isolate'] },
   justifyContent: {
     kind: 'enum',

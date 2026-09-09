@@ -904,3 +904,26 @@ describe('css', () => {
     })
   })
 })
+
+describe('css', () => {
+  test('accepts container and intrinsic field sizing controls', () => {
+    css({
+      containerType: ['normal', 'inline-size scroll-state!'],
+      fieldSizing: 'content',
+      interpolateSize: 'allow-keywords',
+    })
+    css({
+      containerType: 'scroll-state size',
+      fieldSizing: 'fixed',
+      interpolateSize: 'numeric-only',
+    })
+    // @ts-expect-error Size modes are mutually exclusive.
+    css({ containerType: 'size inline-size' })
+    // @ts-expect-error Normal cannot be combined with containment modes.
+    css({ containerType: 'normal scroll-state' })
+    // @ts-expect-error Field sizing has no auto keyword.
+    css({ fieldSizing: 'auto' })
+    // @ts-expect-error Interpolation is an explicit keyword policy.
+    css({ interpolateSize: true })
+  })
+})

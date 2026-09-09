@@ -1567,7 +1567,7 @@
       },
       "container-type": {
         "grammar": "cb45cac647fef540220aeb31ea14689ab1cf667964eb5459669bb49e93375002",
-        "status": "deferred"
+        "status": "partial"
       },
       "content": {
         "grammar": "5e95cf3869b4844671a3fef1aa55ca57ac85a77cd661dbc7526c2a9675f0c89c",
@@ -1695,7 +1695,7 @@
       },
       "field-sizing": {
         "grammar": "a71ad57af252991a0a66a22e23d303787e311e5f91bf0886a5d82fc107c8f1ce",
-        "status": "deferred"
+        "status": "partial"
       },
       "fill": {
         "grammar": "931ed37f2196c2c2f18000610bc942f8b43cbda02f705b9e4079c94bf921b25a",
@@ -2047,7 +2047,7 @@
       },
       "interpolate-size": {
         "grammar": "f0ad8d029fbf7331e4ec621a31106073d0a1ae4dc473fb6dabaa4ea952fd29c3",
-        "status": "deferred"
+        "status": "partial"
       },
       "isolation": {
         "grammar": "858699e76aef445185c6acef7a94d83f9b86f4ba722b033ee873faa845524ca3",

@@ -47,6 +47,7 @@ Exclude authoring packages from dependency optimization so Vite retains the orig
 
 ```ts
 export default defineConfig({
+  build: { cssTarget: ['chrome123', 'firefox128', 'safari17.5'] },
   optimizeDeps: { exclude: ['@acme/theme'] },
   plugins: [zyzz()],
 })
@@ -57,7 +58,9 @@ import { css, mint } from '@acme/theme'
 import '@acme/theme/style.css'
 
 const card = css({ color: 'brand' })
-element.className = mint.className
+element.className = `${mint.className} ${card().className}`
 ```
+
+Light/dark pairs require final CSS targets with native `light-dark()` support. The profile above preserves it; Vite's default minification targets can lower it to scheme helper variables, which do not preserve arbitrary inherited or inline `color-scheme` selection. Zyzz does not override the host's target policy.
 
 Import the library stylesheet for its precompiled components. App-authored styles receive matching scopes through the plugin. Publish JavaScript, declarations, CSS, and metadata from the same build. Restart Vite after replacing an installed package; dependency watching follows Vite's normal exclusions.

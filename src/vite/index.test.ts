@@ -107,6 +107,7 @@ css({padding:theme.tokens.color.brand});`,
         '<script type="module" src="/app.ts"></script>',
       )
       const config: Vite.InlineConfig = {
+        build: { cssTarget: ['chrome123', 'firefox128', 'safari17.5'] },
         configFile: false,
         logLevel: 'silent',
         optimizeDeps: { exclude: ['@acme/theme'] },
@@ -172,6 +173,7 @@ const app = css({color:'brand'})();
 document.body.innerHTML = '<main class="' + mint.className + '"><div id="library" class="' + props.className + '"></div><div id="app" class="' + app.className + '"></div><section class="' + theme.className + '"><div id="nested" class="' + app.className + '"></div></section><section class="' + extended.className + '"><div id="extended" class="' + props.className + '"></div></section></main>';`,
       )
       const config: Vite.InlineConfig = {
+        build: { cssTarget: ['chrome123', 'firefox128', 'safari17.5'] },
         configFile: false,
         logLevel: 'silent',
         optimizeDeps: { exclude: ['@acme/theme'] },

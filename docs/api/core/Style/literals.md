@@ -455,3 +455,9 @@ Grid lines accept auto, nonzero safe integers, and span followed by a canonical 
 Sixteen properties add mask geometry/mode/composition, scalar mask sizing and positioning, image rendering, object/background positioning, perspective, transform boxes/origins, and shape margins. Scalar positions accept signed lengths/percentages or one bottom/center/left/right/top keyword. Perspective accepts none or nonnegative lengths without percentages. Mask sizing accepts nonnegative lengths/percentages, auto, contain, or cover.
 
 Background position and its X/Y longhands share a conflict domain to preserve authored precedence during CSS factoring. Mask images can be supplied by ordinary CSS; a Chromium fixture compares masked pixels with independent declarations and an unmasked control. Lists, image sources, paired positions/sizes, gradients, filter functions, and 3D transform rendering remain deferred.
+
+## Lists and Input
+
+Thirteen properties add common list marker styles and placement, appearance keywords, touch actions, scrollbar width, overflow anchoring, logical overscroll axes, integer tab sizes, bidi controls, line breaking, text autoscaling keywords, and spacing trim. Touch action enumerates all 94 combinations of the supported gesture keywords, preserving permutations without allowing conflicting directions.
+
+Tab sizes are nonnegative safe integers. Custom counter styles/strings, length-based tab stops, text-size percentages, and broader appearance syntax remain deferred. Chromium fixtures compare native marker pixels, tab layout, and computed controls; touch gesture dispatch, rubber-banding, bidi visual ordering, and text autoscaling behavior remain separate gates.

@@ -118,6 +118,7 @@ export const rejected = [
   { property: 'animationDuration', value: 0 },
   { property: 'animationDuration', value: '1px' },
   { property: 'animationTimingFunction', value: 'cubic-bezier(0,0,1,1)' },
+  { property: 'appearance', value: 'native' },
   { property: 'color', value: 'red' },
   { property: 'color', value: 'rgb(0 0 0)' },
   { property: 'display', value: 'fleex' },
@@ -144,5 +145,7 @@ export const rejected = [
   { property: 'textDecorationStyle', value: 'groove' },
   { property: 'textEmphasisPosition', value: 'over under' },
   { property: 'textEmphasisStyle', value: 'open filled' },
+  { property: 'touchAction', value: 'pan-left pan-right' },
+  { property: 'touchAction', value: 'auto pinch-zoom' },
   { property: 'textUnderlineOffset', value: 'from-font' },
 ] as const

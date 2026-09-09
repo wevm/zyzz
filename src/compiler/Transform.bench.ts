@@ -11,6 +11,7 @@ import { Transform } from 'zyzz/compiler'
 import * as Backgrounds from '../../test/fixtures/Backgrounds.js'
 import * as Borders from '../../test/fixtures/Borders.js'
 import * as Columns from '../../test/fixtures/Columns.js'
+import * as Controls from '../../test/fixtures/Controls.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Fonts from '../../test/fixtures/Fonts.js'
@@ -181,6 +182,12 @@ const workloads = {
       `export const link${index} = css({textDecorationLine:['underline','underline overline!'],textDecorationStyle:'dotted',textDecorationThickness:'2px',textUnderlineOffset:'${index}px'})();`,
     source: TextDecoration.source,
     title: 'text decoration',
+  },
+  controls: {
+    declaration: (index: number) =>
+      `export const control${index} = css({tabSize:${index},touchAction:'pan-x pinch-zoom',listStyleType:'upper-roman',scrollbarWidth:'thin'})();`,
+    source: Controls.source,
+    title: 'control',
   },
   flex: {
     declaration: (index: number) =>

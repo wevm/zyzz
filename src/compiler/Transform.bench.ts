@@ -19,6 +19,7 @@ import * as Interaction from '../../test/fixtures/Interaction.js'
 import * as Layout from '../../test/fixtures/Layout.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
+import * as Masks from '../../test/fixtures/Masks.js'
 import * as Motion from '../../test/fixtures/Motion.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
@@ -216,6 +217,12 @@ const workloads = {
       `export const box${index} = css({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`,
     source: Logical.source,
     title: 'logical box',
+  },
+  masks: {
+    declaration: (index: number) =>
+      `export const mask${index} = css({maskPosition:'${index}px',maskSize:'50%',maskRepeat:'no-repeat',maskMode:'alpha',transformOrigin:'center'})();`,
+    source: Masks.source,
+    title: 'mask',
   },
   motion: {
     declaration: (index: number) =>

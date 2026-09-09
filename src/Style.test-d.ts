@@ -796,3 +796,34 @@ describe('grid tracks and placement', () => {
     css({ gridRowStart: 'header' })
   })
 })
+
+describe('mask and image properties', () => {
+  test('supports bounded masks and scalar positioning', () => {
+    css({
+      backgroundPosition: 'right',
+      imageRendering: 'pixelated',
+      maskClip: 'padding-box',
+      maskComposite: 'exclude',
+      maskMode: 'alpha',
+      maskOrigin: 'content-box',
+      maskPosition: '50%',
+      maskRepeat: 'no-repeat',
+      maskSize: 'cover',
+      maskType: 'luminance',
+      objectPosition: 'bottom',
+      perspective: '300px',
+      perspectiveOrigin: 'center',
+      shapeMargin: '5%',
+      transformBox: 'border-box',
+      transformOrigin: '-5px',
+    })
+    // @ts-expect-error Mask lists remain deferred.
+    css({ maskMode: 'alpha, luminance' })
+    // @ts-expect-error Perspective distances exclude percentages.
+    css({ perspective: '50%' })
+    // @ts-expect-error Paired mask sizes remain deferred.
+    css({ maskSize: '50% 100%' })
+    // @ts-expect-error Multi-axis origin positions remain deferred.
+    css({ transformOrigin: 'left top' })
+  })
+})

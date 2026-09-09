@@ -1099,7 +1099,7 @@
       },
       "background-position": {
         "grammar": "0bf527d877591f4dbc988d62688a087e85c208c50432017268081a5aa584f3a7",
-        "status": "deferred"
+        "status": "partial"
       },
       "background-position-x": {
         "grammar": "10af4cd0362f55b9c2775b85b6d92e461003bae757e7f47c143bbaeaae7fbaf3",
@@ -1979,7 +1979,7 @@
       },
       "image-rendering": {
         "grammar": "5828dc62bcf0654a266038da5aed7e54be8f5419c40623f465134b7fc37e1b38",
-        "status": "deferred"
+        "status": "partial"
       },
       "image-resolution": {
         "grammar": "ca77546ba064ae2d0f42c7cf409338fda1e2d9d2dff11cd675e46fa02dc5110a",
@@ -2215,11 +2215,11 @@
       },
       "mask-clip": {
         "grammar": "247cba6ea53c781e3b2e4e91effdecbd8e627270a261763f83111f3aee0cde02",
-        "status": "deferred"
+        "status": "partial"
       },
       "mask-composite": {
         "grammar": "8c3811946648df341f3f44bf2ba675cc5673d4c44b7618c31350b2d5e18490e8",
-        "status": "deferred"
+        "status": "partial"
       },
       "mask-image": {
         "grammar": "3520e619823baed3d393e777efa1659ea5b82e8ecd314c992b4706c62ea8f60c",
@@ -2227,27 +2227,27 @@
       },
       "mask-mode": {
         "grammar": "43d79b145c3256f3a77e6b47ffa9ea106936068eaeae4bfd589c9474cf5971e9",
-        "status": "deferred"
+        "status": "partial"
       },
       "mask-origin": {
         "grammar": "8a5ce8befe3f30118de7bf34af9c0393f6e546712b1a9b5e566cd8089f12a72b",
-        "status": "deferred"
+        "status": "partial"
       },
       "mask-position": {
         "grammar": "6fdc5cd6f446a714db378da6905231587e4861a1a3d858c2b8fe9429ccf9ef77",
-        "status": "deferred"
+        "status": "partial"
       },
       "mask-repeat": {
         "grammar": "4781686b0bc4f693b2a369652d5b1034b72d6dd8241cf40700669ef35b803d68",
-        "status": "deferred"
+        "status": "partial"
       },
       "mask-size": {
         "grammar": "c15d6f5b2151fd2efb023563facb8b67d39e161aa5854025573df88680e8f73a",
-        "status": "deferred"
+        "status": "partial"
       },
       "mask-type": {
         "grammar": "a74b3e9c2d29153a04932c4136fc1ad067c27c12cdf8a33e6bd4b02e78950c98",
-        "status": "deferred"
+        "status": "partial"
       },
       "masonry-auto-flow": {
         "grammar": "eee8ab6578d2ffb4f939ecfb666fd115add218be162e90e81ab5e2a6dd03d4ac",
@@ -2311,7 +2311,7 @@
       },
       "object-position": {
         "grammar": "2ed2dc4ba1022546d02fe075df1944b6a2d84ea111dae0de0a8578c1afb7489c",
-        "status": "deferred"
+        "status": "partial"
       },
       "object-view-box": {
         "grammar": "6797436059663f275896c120a376a26830e486a817bcf0ad98d24fafb23432ac",
@@ -2503,11 +2503,11 @@
       },
       "perspective": {
         "grammar": "f0e11c6deace2be525efdd4190ca8a65f7a84199de7bfdb86178a401d68ae8a7",
-        "status": "deferred"
+        "status": "partial"
       },
       "perspective-origin": {
         "grammar": "5e7bcf98f65a8c17d508df1cba19595710495655b2260c916367ebe3839573f7",
-        "status": "deferred"
+        "status": "partial"
       },
       "place-content": {
         "grammar": "92c6e2639dbf2d501bf83de75b2a50a11c6c668f023ed90fc2e9cd7a448a43e6",
@@ -2787,7 +2787,7 @@
       },
       "shape-margin": {
         "grammar": "bc387d6411c697b67ce4926911ef2704c57b685a4fc768fc3217aac91ef99de9",
-        "status": "deferred"
+        "status": "partial"
       },
       "shape-outside": {
         "grammar": "3383cc0ba8eca48870b039b217bb3fe3ebd3bbffa2223bcf953e4832d12af342",
@@ -3047,11 +3047,11 @@
       },
       "transform-box": {
         "grammar": "503cf36cdb453a78b65af4160d2fc09113b71e2941de71b038e8684375c0e7eb",
-        "status": "deferred"
+        "status": "partial"
       },
       "transform-origin": {
         "grammar": "ab973a55c62243de2ecf001d2733974d188f333f4b01e9483d434012f26359fd",
-        "status": "deferred"
+        "status": "partial"
       },
       "transform-style": {
         "grammar": "04f6b9095bb2b976cc3a21a34dd4415c40b51fe374754f8c352505aa828224f1",

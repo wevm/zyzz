@@ -134,8 +134,18 @@ if (!hasBaseline) {
       currentReport.unavailable.has(key) ||
       previousReport.unavailable.has(key)
     ) {
+      const previousValue = (() => {
+        if (previousReport.unavailable.has(key)) return 'Unavailable'
+        if (before) return format(before)
+        return '—'
+      })()
+      const currentValue = (() => {
+        if (currentReport.unavailable.has(key)) return 'Unavailable'
+        if (after) return format(after)
+        return '—'
+      })()
       console.log(
-        `| ${name} | ${previousReport.unavailable.has(key) ? 'Unavailable' : before ? format(before) : '—'} | ${currentReport.unavailable.has(key) ? 'Unavailable' : after ? format(after) : '—'} | No timing samples |`,
+        `| ${name} | ${previousValue} | ${currentValue} | No timing samples |`,
       )
       continue
     }
@@ -147,17 +157,28 @@ if (!hasBaseline) {
     }
 
     const delta = after.value - before.value
-    const percent =
-      delta === 0
-        ? 0
-        : before.value === 0
-          ? undefined
-          : (delta / before.value) * 100
+    const percent = (() => {
+      if (delta === 0) {
+        return 0
+      }
+      if (before.value === 0) {
+        return undefined
+      }
+      return (delta / before.value) * 100
+    })()
     const ratio =
       before.value === 0 && after.value === 0 ? 1 : after.value / before.value
     const tolerance = thresholds[after.unit] / 100
     const significant = delta > 0 ? ratio > tolerance : ratio < 2 - tolerance
-    const light = !significant ? '🟡' : delta < 0 ? '🟢' : '🔴'
+    const light = (() => {
+      if (!significant) {
+        return '🟡'
+      }
+      if (delta < 0) {
+        return '🟢'
+      }
+      return '🔴'
+    })()
     const change =
       percent === undefined
         ? 'new from zero'

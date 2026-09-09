@@ -83,45 +83,65 @@ export function compile<
       }
       let entry = values.get(value)
       if (!entry) {
-        const message = Object.hasOwn(Literal.rules, property)
-          ? token
-            ? undefined
-            : Literal.validate(property, value)
-          : 'Unsupported literal property.'
+        const message = (() => {
+          if (Object.hasOwn(Literal.rules, property)) {
+            if (token) {
+              return undefined
+            }
+            return Literal.validate(property, value)
+          }
+          return 'Unsupported literal property.'
+        })()
         entry = {
           declaration: message
             ? ''
             : `${property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}${important ? '!important' : ''};`,
-          domain: property.startsWith('border')
-            ? property.endsWith('Color')
-              ? 'borderColor'
-              : property.endsWith('Style')
-                ? 'borderStyle'
-                : property.endsWith('Width')
-                  ? 'borderWidth'
-                  : 'borderRadius'
-            : property.startsWith('margin')
-              ? 'margin'
-              : property.startsWith('padding')
-                ? 'padding'
-                : property === 'overflow' ||
-                    property === 'overflowX' ||
-                    property === 'overflowY'
-                  ? 'overflow'
-                  : ['columnGap', 'gap', 'rowGap'].includes(property)
-                    ? 'gap'
-                    : /^(inset|top$|right$|bottom$|left$)/.test(property)
-                      ? 'inset'
-                      : logicalSizing &&
-                          /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(
-                            property,
-                          )
-                        ? property.startsWith('min')
-                          ? 'min-size'
-                          : property.startsWith('max')
-                            ? 'max-size'
-                            : 'size'
-                        : property,
+          domain: (() => {
+            if (property.startsWith('border')) {
+              if (property.endsWith('Color')) {
+                return 'borderColor'
+              }
+              if (property.endsWith('Style')) {
+                return 'borderStyle'
+              }
+              if (property.endsWith('Width')) {
+                return 'borderWidth'
+              }
+              return 'borderRadius'
+            }
+            if (property.startsWith('margin')) {
+              return 'margin'
+            }
+            if (property.startsWith('padding')) {
+              return 'padding'
+            }
+            if (
+              property === 'overflow' ||
+              property === 'overflowX' ||
+              property === 'overflowY'
+            ) {
+              return 'overflow'
+            }
+            if (['columnGap', 'gap', 'rowGap'].includes(property)) {
+              return 'gap'
+            }
+            if (/^(inset|top$|right$|bottom$|left$)/.test(property)) {
+              return 'inset'
+            }
+            if (
+              logicalSizing &&
+              /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(property)
+            ) {
+              if (property.startsWith('min')) {
+                return 'min-size'
+              }
+              if (property.startsWith('max')) {
+                return 'max-size'
+              }
+              return 'size'
+            }
+            return property
+          })(),
           message,
         }
         values.set(value, entry)
@@ -195,11 +215,15 @@ export function compile<
       [ordered, false],
     ] as const) {
       if (!body) continue
-      const identity = sharedRule
-        ? bases.get(body)!
-        : options.composition === 'independent'
-          ? identifier(style.name)
-          : `z-${encode(style.name)}`
+      const identity = (() => {
+        if (sharedRule) {
+          return bases.get(body)!
+        }
+        if (options.composition === 'independent') {
+          return identifier(style.name)
+        }
+        return `z-${encode(style.name)}`
+      })()
       // Independent styles are already complete applications. Reusing a rule
       // cannot affect another application, but would change raw A/B/A composition.
       if (!sharedRule && options.composition === 'independent') {

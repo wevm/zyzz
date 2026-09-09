@@ -35,14 +35,19 @@ export function collect(options: collect.Options): Themes.Link {
           throw new Config.InvalidError(
             'Configuration requires static properties without spreads or methods.',
           )
-        const key =
-          property.key.type === 'Identifier'
-            ? property.key.name
-            : property.key.type === 'Literal' &&
-                (typeof property.key.value === 'string' ||
-                  typeof property.key.value === 'number')
-              ? String(property.key.value)
-              : undefined
+        const key = (() => {
+          if (property.key.type === 'Identifier') {
+            return property.key.name
+          }
+          if (
+            property.key.type === 'Literal' &&
+            (typeof property.key.value === 'string' ||
+              typeof property.key.value === 'number')
+          ) {
+            return String(property.key.value)
+          }
+          return undefined
+        })()
         if (key === undefined || Object.hasOwn(entries, key))
           throw new Config.InvalidError(
             'Configuration requires unique literal keys.',
@@ -63,12 +68,15 @@ export function collect(options: collect.Options): Themes.Link {
       : {}
   ) as Config.create.Options
   const config = Config.create(input)
-  const catalog =
-    'themes' in config
-      ? config.themes
-      : 'theme' in config
-        ? { theme: config.theme }
-        : {}
+  const catalog = (() => {
+    if ('themes' in config) {
+      return config.themes
+    }
+    if ('theme' in config) {
+      return { theme: config.theme }
+    }
+    return {}
+  })()
   const contract = Object.freeze({ [Token.identity]: options.name })
   const members: Record<string, Themes.Link> = Object.create(null)
   for (const [key, original] of Object.entries(catalog)) {
@@ -97,8 +105,9 @@ export function collect(options: collect.Options): Themes.Link {
   const definition =
     selected?.definition ?? Token.bind(Theme.define({}), contract)
   const normalized = {
-    ...('themes' in config
-      ? {
+    ...(() => {
+      if ('themes' in config) {
+        return {
           defaultTheme: input.defaultTheme,
           themes: Object.fromEntries(
             Object.entries(catalog).map(([name, theme]) => [
@@ -107,9 +116,12 @@ export function collect(options: collect.Options): Themes.Link {
             ]),
           ),
         }
-      : 'theme' in config
-        ? { theme: values(config.theme.tokens) }
-        : {}),
+      }
+      if ('theme' in config) {
+        return { theme: values(config.theme.tokens) }
+      }
+      return {}
+    })(),
     ...(input.layers ? { layers: input.layers } : {}),
   }
   return {

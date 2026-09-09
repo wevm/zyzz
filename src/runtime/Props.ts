@@ -35,11 +35,10 @@ export function create(options: create.Options): css.ReturnType {
       throw new TypeError('Expected an inline style object.')
 
     return {
-      className: external
-        ? className
+      className:
+        className && external
           ? `${className} ${external}`
-          : external
-        : className,
+          : external || className,
       ...(style === undefined ? {} : { style: { ...style } }),
     }
   }

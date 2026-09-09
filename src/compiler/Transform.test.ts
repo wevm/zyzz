@@ -1026,12 +1026,21 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
   test.each(['direct', 'member', 'destructured', 'tokens'] as const)(
     'local themed callables preserve overrides, scope inheritance, and schemes in Chromium: %s',
     async (kind) => {
+      const alias = (() => {
+        if (kind === 'member') {
+          return 'const css = theme.css;'
+        }
+        if (kind === 'destructured') {
+          return 'const { css } = theme;'
+        }
+        return ''
+      })()
       const source = `import { Theme } from 'zyzz';
 const theme = Theme.define({ color: { brand: { dark: '#fff', light: '#000' } }, spacing: { md: '8px' } });
 const alternate = Theme.extend(theme, { color: { brand: '#f00' } });
 export const alternateScope = alternate.className;
 export const baseScope = theme.className;
-${kind === 'member' ? 'const css = theme.css;' : kind === 'destructured' ? 'const { css } = theme;' : ''}
+${alias}
 export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.css' : 'css'}(${kind === 'tokens' ? '{ color: theme.tokens.color.brand, padding: theme.tokens.spacing.md }' : "{ color: 'brand', padding: 'md' }"});`
       const result = Transform.compile({ moduleId: 'example/theme.ts', source })
       const bundle = await Esbuild.build({

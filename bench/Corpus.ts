@@ -84,15 +84,19 @@ export function styles(workload: Case): readonly Style.LiteralProperties[] {
           padding: `${index}px`,
         }
       case 'sparse':
-        return index % 3 === 0
-          ? { color: color(value), padding: `${value % 31}px` }
-          : index % 3 === 1
-            ? { display: 'flex', gap: `${value % 13}px` }
-            : {
-                ...base,
-                backgroundColor: color(value),
-                margin: `${value % 17}px`,
-              }
+        return (() => {
+          if (index % 3 === 0) {
+            return { color: color(value), padding: `${value % 31}px` }
+          }
+          if (index % 3 === 1) {
+            return { display: 'flex', gap: `${value % 13}px` }
+          }
+          return {
+            ...base,
+            backgroundColor: color(value),
+            margin: `${value % 17}px`,
+          }
+        })()
       default:
         return base
     }

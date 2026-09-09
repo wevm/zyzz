@@ -113,22 +113,21 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   for (const call of extracted.themeCalls) {
     const scope = (name: string) => ({ className: emitted.themes[name] })
-    const props = call.members
-      ? JSON.stringify(
-          Object.hasOwn(call.members, '["theme"]')
-            ? { theme: scope(call.members['["theme"]']!) }
-            : Object.keys(call.members).length
-              ? {
-                  themes: Object.fromEntries(
-                    Object.entries(call.members).map(([key, name]) => [
-                      (JSON.parse(key) as readonly string[])[1]!,
-                      scope(name),
-                    ]),
-                  ),
-                }
-              : {},
-        )
-      : `{className:${JSON.stringify(emitted.themes[call.name])}}`
+    const props = (() => {
+      if (!call.members)
+        return `{className:${JSON.stringify(emitted.themes[call.name])}}`
+      if (Object.hasOwn(call.members, '["theme"]'))
+        return JSON.stringify({ theme: scope(call.members['["theme"]']!) })
+      if (!Object.keys(call.members).length) return JSON.stringify({})
+      return JSON.stringify({
+        themes: Object.fromEntries(
+          Object.entries(call.members).map(([key, name]) => [
+            (JSON.parse(key) as readonly string[])[1]!,
+            scope(name),
+          ]),
+        ),
+      })
+    })()
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
       ? ` as ${call.type ?? `import('zyzz').Theme.Definition<${call.tokenType}>`}`
       : ''
@@ -368,11 +367,15 @@ export function compile(options: compile.Options): compile.ReturnType {
           ? properties.find(
               (property) =>
                 property.type === 'Property' &&
-                (property.key.type === 'Identifier'
-                  ? property.key.name
-                  : property.key.type === 'Literal'
-                    ? property.key.value
-                    : undefined) === declaration.property,
+                (() => {
+                  if (property.key.type === 'Identifier') {
+                    return property.key.name
+                  }
+                  if (property.key.type === 'Literal') {
+                    return property.key.value
+                  }
+                  return undefined
+                })() === declaration.property,
             )!
           : properties[propertyIndex]!
         const occurrence = occurrences.get(declaration.property) ?? 0

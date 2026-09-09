@@ -178,11 +178,15 @@ export function define(
           ? Token.resolve(scalar, { property: key, theme: options.theme })
           : scalar
         const value = parsed && resolved === '0' ? 0 : resolved
-        const message = Token.is(value)
-          ? Token.accepts(value.group, key)
-            ? undefined
-            : 'Token group is incompatible with this property.'
-          : Literal.validate(key, value)
+        const message = (() => {
+          if (Token.is(value)) {
+            if (Token.accepts(value.group, key)) {
+              return undefined
+            }
+            return 'Token group is incompatible with this property.'
+          }
+          return Literal.validate(key, value)
+        })()
         if (message)
           report(
             'invalid_value',

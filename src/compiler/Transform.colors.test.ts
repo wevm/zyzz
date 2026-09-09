@@ -57,7 +57,7 @@ describe('compile', () => {
     try {
       const page = await browser.newPage({ colorScheme: 'light' })
       await page.setContent(
-        `<style>${output.css}#theme-control{color:coral}@media(prefers-color-scheme:dark){#theme-control{color:gold}}</style><div id="literal" class="${module.literal.className}">Literal</div><div id="theme" class="${module.theme.className}">Theme</div><div id="theme-control">Control</div><div id="fallback" class="${module.fallback.className}">Fallback</div><div id="system" class="${module.system.className}">System</div><div id="system-control" style="color:CanvasText;background-color:Canvas;color-scheme:light dark;forced-color-adjust:none">Control</div>`,
+        `<style>:root{color-scheme:light dark}${output.css}#theme-control{color:coral}@media(prefers-color-scheme:dark){#theme-control{color:gold}}</style><div id="literal" class="${module.literal.className}">Literal</div><div id="theme" class="${module.theme.className}">Theme</div><div id="theme-control">Control</div><div id="fallback" class="${module.fallback.className}">Fallback</div><div id="system" class="${module.system.className}">System</div><div id="system-control" style="color:CanvasText;background-color:Canvas;color-scheme:light dark;forced-color-adjust:none">Control</div>`,
       )
       expect(
         await page

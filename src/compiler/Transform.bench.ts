@@ -11,6 +11,7 @@ import { Transform } from 'zyzz/compiler'
 import * as Borders from '../../test/fixtures/Borders.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
+import * as Interaction from '../../test/fixtures/Interaction.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
@@ -166,6 +167,12 @@ const workloads = {
       `export const box${index} = css({flexBasis:'${index}px',alignSelf:'center',order:${index},overflow:['hidden','clip!'],overflowX:'auto'})();`,
     source: Flex.source,
     title: 'flex layout',
+  },
+  interaction: {
+    declaration: (index: number) =>
+      `export const control${index} = css({width:'${index}px',cursor:'pointer',pointerEvents:['auto','none!'],resize:'inline',userSelect:'all',visibility:'visible'})();`,
+    source: Interaction.source,
+    title: 'interaction',
   },
   logical: {
     declaration: (index: number) =>

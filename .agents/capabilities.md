@@ -1,6 +1,6 @@
 # CSS Capability Inventory
 
-Version 11. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
+Version 12. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
 
 ## Current Web Surface
 
@@ -53,6 +53,10 @@ Source/map and type fixtures cover token domains, line combinations, and fallbac
 Tables add `borderCollapse`, `borderSpacing`, `captionSide`, `emptyCells`, and `tableLayout`. Shared finite rules preserve keyword domains, nonnegative scalar lengths, fallback priority, and source maps. Border spacing excludes percentages and unconstrained spacing tokens. Two-length spacing, extended caption placement, and native rendering remain deferred.
 
 Browser fixtures compare real table/caption/cell geometry and computed declarations against independent CSS controls in both directions. Explicit checks cover spacing priority, caption placement, and inherited empty-cell visibility. A 10/100-style transform lane measures timing and delivery. Property contracts follow [CSS Tables](https://www.w3.org/TR/CSS22/tables.html).
+
+Interaction adds `cursor`, `pointerEvents`, `resize`, `userSelect`, and `visibility` with finite keyword domains. CSS-wide keywords, fallback importance, and source maps use the existing pipeline. Cursor images, SVG pointer-event values, selection containment, and native rendering remain deferred; these keyword properties accept no theme token groups.
+
+Browser fixtures compare computed declarations with independent CSS controls, exercise pointer hit testing, verify hidden layout preservation, and test text selection. Resize and cursor checks cover computed declarations; platform resize gestures and cursor artwork remain browser-owned. A 10/100-style transform lane measures timing and delivery. Contracts follow [CSS UI](https://www.w3.org/TR/css-ui-4/).
 
 ## Targets
 

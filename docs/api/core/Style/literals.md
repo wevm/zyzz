@@ -365,3 +365,24 @@ css({
   width: '100%',
 })
 ```
+
+## Interaction
+
+| Property        | Values                                                                                                                |
+| --------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `cursor`        | Standard keywords including `auto`, `pointer`, `text`, `grab`, `grabbing`, resize directions, and zoom; no image URLs |
+| `pointerEvents` | `auto`, `none`                                                                                                        |
+| `resize`        | `block`, `both`, `horizontal`, `inline`, `none`, `vertical`                                                           |
+| `userSelect`    | `all`, `auto`, `none`, `text`                                                                                         |
+| `visibility`    | `collapse`, `hidden`, `visible`                                                                                       |
+
+All five accept CSS-wide keywords, ordered fallbacks, and importance. Cursor images, SVG pointer targeting, and selection containment remain deferred. These keyword domains do not accept theme tokens. Resizing requires suitable native overflow behavior; hidden elements retain layout space. Pointer targeting does not disable keyboard interaction or establish disabled-control semantics.
+
+```ts
+css({
+  cursor: 'text',
+  overflow: 'auto',
+  resize: 'inline',
+  userSelect: 'text',
+})
+```

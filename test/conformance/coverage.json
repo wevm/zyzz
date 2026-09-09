@@ -497,7 +497,7 @@
       },
       "var()": {
         "grammar": "6258b83b3804adca2bbd4e6e9e981597ddcf4afddd26acdd94cf2eb29c9dc9c0",
-        "status": "deferred"
+        "status": "partial"
       },
       "view()": {
         "grammar": "b9e0b7b808bccea488ba2855832afec3b38c8607a7c8907c7f396ae6d80ffedd",
@@ -5251,7 +5251,7 @@
       },
       "var()": {
         "grammar": "84262feff8b8f27429049eed434690984fbb5e4069d3dad853b01f87d9ee2d92",
-        "status": "deferred"
+        "status": "partial"
       },
       "view()": {
         "grammar": "79394af59c6f38ce1345e63c6e98d061ef1a5aca71b34e21da668abec06be378",

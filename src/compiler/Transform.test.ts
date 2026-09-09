@@ -182,9 +182,14 @@ describe('compile', () => {
     try {
       const cases = Conformance.cases()
       const declarations = Object.keys(Literal.rules).map((property) => {
-        const values = cases
-          .filter((entry) => entry.property === property)
-          .flatMap(({ value }) => [value, `${value}!`])
+        const values = [
+          ...cases
+            .filter((entry) => entry.property === property)
+            .map(({ value }) => value),
+          'var(--probe)',
+          'var(--probe,)',
+          'calc(1px + var(--probe))',
+        ].flatMap((value) => [value, `${value}!`])
         return `[${values.map((value) => JSON.stringify(value)).join(',')}] as const satisfies readonly Style.Properties['${property}'][];\ncss({${property}: [${values
           .slice(0, 16)
           .map((value) => JSON.stringify(value))

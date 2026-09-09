@@ -478,7 +478,10 @@ Motion lists preserve easing-function commas and validate cubic-bezier(), steps(
 
 The completion count remains 0/670: 304 partial and 366 deferred (254 standard, 112 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
 
-
 ### Dimensional Math
 
 Number, length, time, and grid track domains accept literal calc(), min(), max(), and clamp(). Component splitting preserves nested function spaces and slash axes. The parser checks dimensional compatibility and arithmetic precedence; browser evaluation owns clamping, integer rounding, and unit resolution. Substitution, constants, dimension cancellation, and additional functions remain incomplete. Nesting is bounded at 128 levels.
+
+### Deferred Variable Values
+
+All mapped property types admit unquoted var() expressions. The web emitter validates and preserves raw references alongside typed theme tokens; browser substitution owns property-value matching, inherited custom properties, cycles, and invalid-at-computed-value semantics. Compiler validation requires balanced delimiters and valid unescaped custom-property names. Quotes, comments, braces, URL tokens, and more than 128 nested levels remain unsupported.

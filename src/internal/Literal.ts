@@ -6,6 +6,7 @@ import * as Colors from './Color.js'
 import * as Component from './Component.js'
 import * as Grid from './Grid.js'
 import * as Motion from './Motion.js'
+import * as Substitution from './Substitution.js'
 import * as MathExpression from './Math.js'
 
 /** Refines inferred dimension strings where TypeScript's number template is broader than CSS. */
@@ -117,6 +118,7 @@ type Listed<value extends string | number, rule> =
   | value
   | (rule extends { list: true } ? `${value},${string}` : never)
 type Value<rule extends Rule> =
+  | `${string}var(--${string})${string}`
   | Global
   | (rule extends { kind: 'length' }
       ?
@@ -1618,6 +1620,10 @@ export function validate(
 ): string | undefined {
   const rule: Rule = rules[property]
   if (typeof value === 'string' && globals.has(value)) return undefined
+  if (typeof value === 'string' && value.includes('(') && /var\(/i.test(value))
+    return Substitution.valid(value)
+      ? undefined
+      : 'Expected balanced var() expressions with valid custom-property names.'
   if (rule.list && typeof value === 'string' && value.includes(',')) {
     const parts = Motion.list(value)
     if (!parts) return 'Expected a nonempty comma-separated motion list.'

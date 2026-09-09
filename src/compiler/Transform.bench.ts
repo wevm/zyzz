@@ -35,6 +35,7 @@ import * as Reading from '../../test/fixtures/Reading.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as Substitution from '../../test/fixtures/Substitution.js'
 import * as Svg from '../../test/fixtures/Svg.js'
 import * as Tables from '../../test/fixtures/Tables.js'
 import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
@@ -324,6 +325,12 @@ const workloads = {
       `export const slide${index} = css({scrollMarginInlineStart:'${index}px',scrollSnapAlign:'start center',scrollSnapStop:'always',scrollSnapType:['inline proximity','inline mandatory!']})();`,
     source: Snapping.source,
     title: 'scroll snap',
+  },
+  substitution: {
+    declaration: (index: number) =>
+      `export const substituted${index} = css({width:'calc(var(--width, 100px) - ${index}px)',color:'var(--ink, var(--fallback, blue))'})();`,
+    source: Substitution.source,
+    title: 'variable substitution',
   },
   svg: {
     declaration: (index: number) =>

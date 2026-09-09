@@ -82,14 +82,6 @@ export function compile<
         })
         continue
       }
-      if (!token && typeof value === 'string' && value.startsWith('var(')) {
-        diagnostics.push({
-          code: 'invalid_declaration',
-          message: 'Use a typed theme token reference.',
-          path: [style.name, property],
-        })
-        continue
-      }
       const key = `${important ? 1 : 0}:${property}`
       let values = cache.get(key)
       if (!values) {

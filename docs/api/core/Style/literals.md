@@ -500,4 +500,10 @@ Bézier x coordinates must fall within zero and one; y coordinates may overshoot
 
 Numeric, length, and time properties accept literal calc(), min(), max(), and clamp() expressions. Grid track sizes and length lists retain nested function arguments. Addition requires compatible dimensions; multiplication and division accept scalar factors. Length-percentage mixtures are restricted to properties accepting percentages. Browser evaluation owns range clamping, integer rounding, and unit resolution.
 
-Variable substitution, escaped tokens, numeric constants, dimension cancellation, additional math functions, and expressions beyond 128 nested levels remain unsupported. Function names and outer shapes are typed; argument dimensions are checked during compilation. Browser comparisons cover responsive dimensions, radius axes, integer rounding, opacity, and durations.
+Quoted or escaped substitution, escaped tokens, numeric constants, dimension cancellation, additional math functions, and expressions beyond 128 nested levels remain unsupported. Function names and outer shapes are typed; argument dimensions are checked during compilation. Browser comparisons cover responsive dimensions, radius axes, integer rounding, opacity, and durations.
+
+### Custom-Property References
+
+All mapped properties accept unquoted var() references, including nested and empty fallbacks and variables inside other expressions. Compilation validates balanced components and custom-property names. Property-value matching is deferred until browser substitution, including invalid-at-computed-value behavior. References preserve case and authored spelling; custom properties are supplied by ordinary CSS or native style APIs.
+
+Quotes, escapes, comments, braces, URL tokens, and nesting beyond 128 levels remain outside this subset. Browser fixtures cover inheritance, overrides, cycles, empty fallbacks, importance, and invalid substitutions. These limitations retain partial property status.

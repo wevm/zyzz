@@ -1071,3 +1071,21 @@ describe('css', () => {
     css({ transitionTimingFunction: 'calc(1 + 2)' })
   })
 })
+
+describe('css', () => {
+  test('supports deferred custom-property substitution in every property domain', () => {
+    css({
+      animationTimingFunction: 'var(--easing, ease)',
+      color: 'rgb(var(--channels) / var(--alpha, .5))',
+      display: 'var(--display, block)',
+      fontVariantNumeric: 'var(--numeric, tabular-nums)',
+      gridTemplateColumns: 'var(--tracks, 1fr 2fr)',
+      padding: 'var(--spacing, 1px 2px)',
+      width: 'calc(100% - var(--gap, 10px))',
+    })
+    // @ts-expect-error Custom properties still require their double-hyphen spelling.
+    css({ display: 'var(display)' })
+    // @ts-expect-error Variable expressions do not add arbitrary property names.
+    css({ imaginaryProperty: 'var(--anything)' })
+  })
+})

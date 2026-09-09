@@ -109,7 +109,6 @@ describe('define', () => {
       'clamp(1px, 2px)',
       'min()',
       'calc(1px);color:red',
-      'calc(1px + var(--gap))',
     ])
       expect(() =>
         // @ts-expect-error Untyped invalid function strings reach the public validator.

@@ -38,7 +38,7 @@ Then:
 
 ### Setup with Vite
 
-Add `zyzz()` to the existing plugins array, alongside the application's framework plugin:
+Requires Vite 8 (`vite: ^8.0.0`). Add `zyzz()` to the existing plugins array, alongside the application's framework plugin:
 
 ```ts
 // vite.config.ts

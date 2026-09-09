@@ -22,6 +22,7 @@ import * as Fonts from '../../test/fixtures/Fonts.js'
 import * as FunctionalColors from '../../test/fixtures/FunctionalColors.js'
 import * as Grid from '../../test/fixtures/Grid.js'
 import * as GridLists from '../../test/fixtures/GridLists.js'
+import * as Identifiers from '../../test/fixtures/Identifiers.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
 import * as KeywordGroups from '../../test/fixtures/KeywordGroups.js'
 import * as Layout from '../../test/fixtures/Layout.js'
@@ -255,6 +256,12 @@ const workloads = {
       `export const cell${index} = css({display:'grid',gridAutoColumns:'1fr',gridAutoRows:'${index}px',gridAutoFlow:'column',gridColumnEnd:'span 2'})();`,
     source: Grid.source,
     title: 'grid',
+  },
+  identifiers: {
+    declaration: (index: number) =>
+      `export const named${index} = css({animationName:'Fade${index}',containerName:'Card${index} Secondary',anchorName:'--Anchor${index}',transitionProperty:'opacity, transform'})();`,
+    source: Identifiers.source,
+    title: 'custom identifier',
   },
   interaction: {
     declaration: (index: number) =>

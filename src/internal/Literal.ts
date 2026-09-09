@@ -5,6 +5,7 @@
 import * as Colors from './Color.js'
 import * as Component from './Component.js'
 import * as Grid from './Grid.js'
+import * as Identifier from './Identifier.js'
 import * as Motion from './Motion.js'
 import * as Substitution from './Substitution.js'
 import * as MathExpression from './Math.js'
@@ -59,6 +60,7 @@ export type Properties = {
 export type Time = `${number}${'ms' | 's'}`
 
 type Rule = { readonly list?: true } & (
+  | ({ readonly kind: 'identifier' } & Identifier.valid.Options)
   | {
       readonly auto: boolean
       readonly axes?: true
@@ -121,55 +123,57 @@ type Listed<value extends string | number, rule> =
 type Value<rule extends Rule> =
   | `${string}var(--${string})${string}`
   | Global
-  | (rule extends { kind: 'length' }
-      ?
-          | LengthValue<rule>
-          | (rule extends { items: number }
-              ? `${Extract<LengthValue<rule>, string | number>} ${string}`
-              : never)
-          | (rule extends { axes: true }
-              ? `${Length | Calculation}/${string}`
-              : never)
-      : rule extends { kind: 'number' }
-        ? Listed<Calculation | number | Keywords<rule>, rule>
-        : rule extends {
-              kind: 'enum'
-              values: readonly (infer keyword extends string)[]
-            }
-          ?
-              | Listed<
-                  keyword | (rule extends { easing: true } ? Easing : never),
-                  rule
-                >
-              | (rule extends { items: number }
-                  ? `${keyword} ${string}`
-                  : never)
-              | (rule extends {
-                  groups: readonly (readonly (infer component extends
-                    string)[])[]
-                }
-                  ? `${component} ${string}`
-                  : never)
-          : rule extends { kind: 'grid-tracks' }
+  | (rule extends { kind: 'identifier' }
+      ? string
+      : rule extends { kind: 'length' }
+        ?
+            | LengthValue<rule>
+            | (rule extends { items: number }
+                ? `${Extract<LengthValue<rule>, string | number>} ${string}`
+                : never)
+            | (rule extends { axes: true }
+                ? `${Length | Calculation}/${string}`
+                : never)
+        : rule extends { kind: 'number' }
+          ? Listed<Calculation | number | Keywords<rule>, rule>
+          : rule extends {
+                kind: 'enum'
+                values: readonly (infer keyword extends string)[]
+              }
             ?
-                | GridTracks
-                | (rule extends { explicit: true }
-                    ?
-                        | 'none'
-                        | 'subgrid'
-                        | `repeat(${string})${string}`
-                        | `[${string}`
+                | Listed<
+                    keyword | (rule extends { easing: true } ? Easing : never),
+                    rule
+                  >
+                | (rule extends { items: number }
+                    ? `${keyword} ${string}`
                     : never)
-            : rule extends { kind: 'grid-line' }
-              ? number | 'auto' | `span ${bigint}`
-              : rule extends { kind: 'time' }
-                ? Listed<Calculation | Time | Keywords<rule>, rule>
-                :
-                    | Color
-                    | Keywords<rule>
-                    | (rule extends { items: number }
-                        ? `${Color} ${string}`
-                        : never))
+                | (rule extends {
+                    groups: readonly (readonly (infer component extends
+                      string)[])[]
+                  }
+                    ? `${component} ${string}`
+                    : never)
+            : rule extends { kind: 'grid-tracks' }
+              ?
+                  | GridTracks
+                  | (rule extends { explicit: true }
+                      ?
+                          | 'none'
+                          | 'subgrid'
+                          | `repeat(${string})${string}`
+                          | `[${string}`
+                      : never)
+              : rule extends { kind: 'grid-line' }
+                ? number | 'auto' | `span ${bigint}`
+                : rule extends { kind: 'time' }
+                  ? Listed<Calculation | Time | Keywords<rule>, rule>
+                  :
+                      | Color
+                      | Keywords<rule>
+                      | (rule extends { items: number }
+                          ? `${Color} ${string}`
+                          : never))
 const blend = {
   kind: 'enum',
   values: [
@@ -555,6 +559,20 @@ export const rules = {
       'stretch',
     ],
   },
+  anchorName: {
+    dashed: true,
+    keywords: ['none'],
+    kind: 'identifier',
+    separator: 'comma',
+    standalone: ['none'],
+  },
+  anchorScope: {
+    dashed: true,
+    keywords: ['all', 'none'],
+    kind: 'identifier',
+    separator: 'comma',
+    standalone: ['all', 'none'],
+  },
   animationComposition: {
     kind: 'enum',
     list: true,
@@ -584,10 +602,17 @@ export const rules = {
     max: Infinity,
     min: 0,
   },
+  animationName: { keywords: ['none'], kind: 'identifier', separator: 'comma' },
   animationPlayState: {
     kind: 'enum',
     list: true,
     values: ['paused', 'running'],
+  },
+  animationTimeline: {
+    dashed: true,
+    keywords: ['auto', 'none'],
+    kind: 'identifier',
+    separator: 'comma',
   },
   animationTimingFunction: {
     easing: true,
@@ -800,6 +825,13 @@ export const rules = {
       'style',
     ],
   },
+  containerName: {
+    keywords: ['none'],
+    kind: 'identifier',
+    separator: 'space',
+    standalone: ['none'],
+    excluded: ['and', 'not', 'or'],
+  },
   containerType: {
     kind: 'enum',
     values: [
@@ -945,6 +977,11 @@ export const rules = {
   floodOpacity: { kind: 'number', max: 1, min: 0 },
   fontKerning: { kind: 'enum', values: ['auto', 'none', 'normal'] },
   fontOpticalSizing: { kind: 'enum', values: ['auto', 'none'] },
+  fontPalette: {
+    dashed: true,
+    keywords: ['dark', 'light', 'normal'],
+    kind: 'identifier',
+  },
   fontSize: length,
   fontStretch: {
     kind: 'enum',
@@ -1361,6 +1398,7 @@ export const rules = {
   paddingLeft: length,
   paddingRight: length,
   paddingTop: length,
+  page: { keywords: ['auto'], kind: 'identifier' },
   pageBreakAfter: {
     kind: 'enum',
     values: ['always', 'auto', 'avoid', 'left', 'recto', 'right', 'verso'],
@@ -1381,6 +1419,11 @@ export const rules = {
   position: {
     kind: 'enum',
     values: ['absolute', 'fixed', 'relative', 'static', 'sticky'],
+  },
+  positionAnchor: {
+    dashed: true,
+    keywords: ['auto', 'match-parent', 'none', 'normal'],
+    kind: 'identifier',
   },
   positionVisibility: {
     groups: [['anchors-valid'], ['anchors-visible'], ['no-overflow']],
@@ -1518,6 +1561,12 @@ export const rules = {
     kind: 'enum',
     list: true,
     values: ['block', 'inline', 'x', 'y'],
+  },
+  scrollTimelineName: {
+    dashed: true,
+    keywords: ['none'],
+    kind: 'identifier',
+    separator: 'comma',
   },
   shapeImageThreshold: { kind: 'number', min: 0, max: 1 },
   shapeMargin: length,
@@ -1703,6 +1752,26 @@ export const rules = {
     kind: 'enum',
     values: ['auto', 'balance', 'pretty', 'stable'],
   },
+  timelineScope: {
+    dashed: true,
+    keywords: ['none'],
+    kind: 'identifier',
+    separator: 'comma',
+    standalone: ['none'],
+  },
+  timelineTriggerName: {
+    dashed: true,
+    keywords: ['none'],
+    kind: 'identifier',
+    separator: 'comma',
+    standalone: ['none'],
+  },
+  timelineTriggerSource: {
+    dashed: true,
+    keywords: ['auto', 'none'],
+    kind: 'identifier',
+    separator: 'comma',
+  },
   top: margin,
   touchAction: {
     kind: 'enum',
@@ -1820,6 +1889,12 @@ export const rules = {
   },
   transitionDelay: { kind: 'time', list: true, negative: true },
   transitionDuration: { kind: 'time', list: true, negative: false },
+  transitionProperty: {
+    keywords: ['all', 'none'],
+    kind: 'identifier',
+    separator: 'comma',
+    standalone: ['none'],
+  },
   transitionTimingFunction: {
     easing: true,
     kind: 'enum',
@@ -1833,6 +1908,13 @@ export const rules = {
       'step-end',
       'step-start',
     ],
+  },
+  triggerScope: {
+    dashed: true,
+    keywords: ['all', 'none'],
+    kind: 'identifier',
+    separator: 'comma',
+    standalone: ['all', 'none'],
   },
   unicodeBidi: {
     kind: 'enum',
@@ -1866,6 +1948,23 @@ export const rules = {
     list: true,
     values: ['block', 'inline', 'x', 'y'],
   },
+  viewTimelineName: {
+    dashed: true,
+    keywords: ['none'],
+    kind: 'identifier',
+    separator: 'comma',
+  },
+  viewTransitionClass: {
+    keywords: ['none'],
+    kind: 'identifier',
+    separator: 'space',
+    standalone: ['none'],
+  },
+  viewTransitionName: {
+    keywords: ['match-element', 'none'],
+    kind: 'identifier',
+    excluded: ['auto'],
+  },
   viewTransitionScope: { kind: 'enum', values: ['all', 'none'] },
   visibility: { kind: 'enum', values: ['collapse', 'hidden', 'visible'] },
   whiteSpace: {
@@ -1884,6 +1983,13 @@ export const rules = {
   },
   widows: positiveInteger,
   width: size,
+  willChange: {
+    keywords: ['auto', 'contents', 'scroll-position'],
+    kind: 'identifier',
+    separator: 'comma',
+    standalone: ['auto'],
+    excluded: ['all', 'none', 'will-change'],
+  },
   wordBreak: { kind: 'enum', values: ['break-all', 'keep-all', 'normal'] },
   wordSpacing: textSpacing,
   wordWrap: { kind: 'enum', values: ['break-word', 'normal'] },
@@ -1919,6 +2025,10 @@ export function validate(
     return Substitution.valid(value)
       ? undefined
       : 'Expected balanced var() expressions with valid custom-property names.'
+  if (rule.kind === 'identifier')
+    return Identifier.valid(value, rule)
+      ? undefined
+      : 'Expected valid CSS identifiers with the required prefix, reserved-word exclusions, and list boundaries.'
   if (rule.list && typeof value === 'string' && value.includes(',')) {
     const parts = Motion.list(value)
     if (!parts) return 'Expected a nonempty comma-separated list.'

@@ -38,6 +38,15 @@ export function cases(): readonly Case[] {
       'revert-layer',
       'unset',
     ]
+    if (rule.kind === 'identifier') {
+      values.push(...rule.keywords, '--Probe', '--other')
+      if (!('dashed' in rule))
+        values.push('Probe', 'name-with-dashes', '_name', 'éclair')
+      if ('separator' in rule)
+        values.push(
+          rule.separator === 'comma' ? '--Probe, --other' : '--Probe --other',
+        )
+    }
     if (rule.kind === 'enum') {
       values.push(...rule.values)
       if ('groups' in rule)

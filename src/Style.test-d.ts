@@ -5,6 +5,7 @@
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, css, Style, Theme } from 'zyzz'
 import * as Borders from '../test/fixtures/Borders.js'
+import * as Identifiers from '../test/fixtures/Identifiers.js'
 import * as Interaction from '../test/fixtures/Interaction.js'
 import * as Logical from '../test/fixtures/Logical.js'
 import * as Scalars from '../test/fixtures/Scalars.js'
@@ -17,6 +18,22 @@ import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
 describe('css', () => {
+  test('custom identifiers retain string authoring and declaration fallbacks', () => {
+    Style.define(Identifiers.styles)
+    css({
+      animationName: ['Fade', 'Pulse!'],
+      anchorScope: '--Anchor, --Other',
+      fontPalette: '--Palette',
+      timelineScope: '--Scroll',
+      triggerScope: 'all',
+      page: 'Chapter',
+    })
+    // @ts-expect-error Identifiers cannot be authored as numbers.
+    css({ animationName: 123 })
+    // @ts-expect-error Identifiers cannot be authored as booleans.
+    css({ containerName: false })
+  })
+
   test('text and timeline groups retain public type constraints', () => {
     Style.define(TextTimeline.styles)
     css({

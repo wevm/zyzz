@@ -164,6 +164,9 @@ type TupleValue<rule extends Rule> =
       : never)
   | (rule extends { min: 1 } ? TupleAtom<rule> : never)
   | `${TupleAtom<rule>} ${string}`
+  | (rule extends { prefixes: readonly (infer prefix extends string)[] }
+      ? `${prefix} ${string}`
+      : never)
   | (rule extends { marker: 'fill'; markerPosition: 'any' }
       ? `fill ${string}`
       : never)
@@ -1035,6 +1038,51 @@ export const rules = {
       'style',
     ],
   },
+  containIntrinsicBlockSize: {
+    atoms: ['length'],
+    keywords: ['none'],
+    kind: 'tuple',
+    max: 1,
+    min: 1,
+    negative: false,
+    prefixes: ['auto'],
+  },
+  containIntrinsicHeight: {
+    atoms: ['length'],
+    keywords: ['none'],
+    kind: 'tuple',
+    max: 1,
+    min: 1,
+    negative: false,
+    prefixes: ['auto'],
+  },
+  containIntrinsicInlineSize: {
+    atoms: ['length'],
+    keywords: ['none'],
+    kind: 'tuple',
+    max: 1,
+    min: 1,
+    negative: false,
+    prefixes: ['auto'],
+  },
+  containIntrinsicSize: {
+    atoms: ['length'],
+    keywords: ['none'],
+    kind: 'tuple',
+    max: 2,
+    min: 1,
+    negative: false,
+    prefixes: ['auto'],
+  },
+  containIntrinsicWidth: {
+    atoms: ['length'],
+    keywords: ['none'],
+    kind: 'tuple',
+    max: 1,
+    min: 1,
+    negative: false,
+    prefixes: ['auto'],
+  },
   containerName: {
     keywords: ['none'],
     kind: 'identifier',
@@ -1210,6 +1258,16 @@ export const rules = {
     kind: 'identifier',
   },
   fontSize: length,
+  fontSizeAdjust: {
+    atoms: ['number'],
+    keywords: ['from-font'],
+    kind: 'tuple',
+    max: 1,
+    min: 1,
+    negative: false,
+    prefixes: ['ex-height', 'cap-height', 'ch-width', 'ic-width', 'ic-height'],
+    standalone: ['none'],
+  },
   fontSmooth: {
     ...stroke,
     keywords: [

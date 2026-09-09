@@ -11,6 +11,14 @@ export const styles = {
     borderImageWidth: '1 2 3 4',
     borderImageOutset: '2px 4px 6px 8px',
   },
+  intrinsic: {
+    containIntrinsicBlockSize: 'auto 20px',
+    containIntrinsicHeight: 'none',
+    containIntrinsicInlineSize: 'auto none',
+    containIntrinsicSize: 'auto 80px auto 40px',
+    containIntrinsicWidth: '40px',
+    fontSizeAdjust: 'cap-height .7',
+  },
   mask: {
     maskBorderSlice: '10 20 30 40 fill',
     maskBorderWidth: '1 auto 20% 3px',
@@ -36,6 +44,10 @@ export const control =
 export const source = `import { css } from 'zyzz';
 export const border = css({borderImageSlice:'25% fill',borderImageWidth:'1 2 3 4',borderImageOutset:'2px 4px 6px 8px'})();
 export const text = css({scrollbarColor:'red blue',hyphenateLimitChars:'auto 3 2'})();
+export const intrinsic = css({contain:'size',containIntrinsicSize:'auto 80px auto 40px',display:'inline-block'})();
+export const sizingFirst = css({containIntrinsicSize:'80px 40px'})();
+export const sizingSecond = css({containIntrinsicWidth:'120px'})();
+export const sizingThird = css({containIntrinsicSize:'80px 40px',opacity:.5})();
 export const first = css({interestDelay:'100ms 200ms'})();
 export const second = css({interestDelayEnd:'300ms'})();
 export const third = css({interestDelay:'100ms 200ms',opacity:.5})();`

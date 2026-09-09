@@ -19,6 +19,20 @@ import * as TextTimeline from '../test/fixtures/TextTimeline.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
+describe('intrinsic scalar prefixes', () => {
+  test('preserves component domains through public authoring', () => {
+    css({
+      containIntrinsicSize: 'auto 80px auto 40px',
+      containIntrinsicWidth: 'auto none',
+      fontSizeAdjust: 'cap-height .7',
+    })
+    // @ts-expect-error Intrinsic sizes exclude percentages.
+    css({ containIntrinsicWidth: '10%' })
+    // @ts-expect-error Metric prefixes need a following value.
+    css({ fontSizeAdjust: 'cap-height' })
+  })
+})
+
 describe('compound scalar declarations', () => {
   test('typed tuples preserve scalar domains', () => {
     css({

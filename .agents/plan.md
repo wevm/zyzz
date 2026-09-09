@@ -476,7 +476,7 @@ Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthan
 
 Motion lists preserve easing-function commas and validate cubic-bezier(), steps(), and linear() constraints. Absolute functional colors preserve color spaces and browser clamping. Border color/style lists and elliptical radii preserve logical overrides and importance. Compatible font variant and containment groups reject conflicts; font-synthesis adds one partially implemented property.
 
-The completion count remains 0/670: 546 partial and 124 deferred (99 standard, 25 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
+The completion count remains 0/670: 552 partial and 118 deferred (93 standard, 25 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
 
 ### Dimensional Math
 
@@ -545,3 +545,9 @@ Interest-delay shorthands share conflict domains with start/end longhands. Indep
 Compound-value validation passes full TypeScript, generated consumer probes, source/grammar tests, lint, and the package build. The 100-style transform measured 8.4964 ms ±41.31% before and 7.5531 ms ±30.22% after; the high variance limits conclusions. New 10/100-style lanes measured 1.7317/14.3092 ms. Native painting assertions await CI.
 
 The corner/layout head passed all standard checks, browser tests, and the benchmark workflow. Only the strict 100% conformance gate failed, as expected from the explicitly incomplete inventory.
+
+Intrinsic size overrides and font-size-adjust accept optional component prefixes with dimension and arity checks. Intrinsic shorthand and physical/logical longhands share a cascade conflict domain. Native controls exercise contained sizing. These six properties remain partial pending complete lexical and browser evidence.
+
+Intrinsic prefix validation passes full TypeScript, generated consumers, lint, and source/grammar checks. The same-machine 100-style transform measured 3.8647 ms ±5.32% before and 4.2825 ms ±5.66% after; expanded scalar lanes measured 1.1911/6.5752 ms for 10/100 styles. The six mappings remain partial.
+
+Compound-value CI passed build, checks, and macOS, but the native image-border pixel comparison differed. The follow-up compares all computed border-image components and paints both controls at identical device coordinates, retaining exact pixel equality. CI must verify the revised control and intrinsic sizing.

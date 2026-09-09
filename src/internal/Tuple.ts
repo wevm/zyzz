@@ -20,7 +20,16 @@ export function valid(value: unknown, options: valid.Options): boolean {
     parts.at(-1) !== options.marker
   )
     return false
-  const atoms = parts.filter((part) => part !== options.marker)
+  const atoms: string[] = []
+  const components = parts.filter((part) => part !== options.marker)
+  for (let index = 0; index < components.length; index++) {
+    const part = components[index]!
+    if (options.prefixes?.includes(part)) {
+      const next = components[++index]
+      if (!next || options.prefixes.includes(next)) return false
+      atoms.push(next)
+    } else atoms.push(part)
+  }
   if (atoms.length < options.min || atoms.length > options.max) return false
   return atoms.every((part) => {
     if (options.keywords?.includes(part)) return true
@@ -84,6 +93,8 @@ export declare namespace valid {
     readonly min: 1 | 2
     /** Whether literal numeric components can be negative. */
     readonly negative: boolean
+    /** Optional keyword prefix for each component. */
+    readonly prefixes?: readonly string[]
     /** Keywords that must form the entire declaration. */
     readonly standalone?: readonly string[]
     /** Recognized length units from the owning property map. */

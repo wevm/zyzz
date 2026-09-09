@@ -32,12 +32,28 @@ describe('compile', () => {
       source: Tuples.source,
     })
     expect(
+      output.css.match(/contain-intrinsic-size:80px 40px;/g)?.length,
+    ).toMatchInlineSnapshot(`2`)
+    expect(
       output.css.match(/interest-delay:100ms 200ms;/g)?.length,
     ).toMatchInlineSnapshot(`2`)
   })
   test('scalar tuples reject invalid arity, domains, and marker placement', () => {
     const accepted: string[] = []
     for (const [property, value] of [
+      ['containIntrinsicSize', 'auto'],
+      ['containIntrinsicSize', 'auto auto 20px'],
+      ['containIntrinsicSize', '10px auto'],
+      ['containIntrinsicSize', '10px 20px 30px'],
+      ['containIntrinsicWidth', '10px 20px'],
+      ['containIntrinsicHeight', '-1px'],
+      ['containIntrinsicBlockSize', '10%'],
+      ['fontSizeAdjust', 'cap-height'],
+      ['fontSizeAdjust', 'cap-height ex-height .5'],
+      ['fontSizeAdjust', '.5 cap-height'],
+      ['fontSizeAdjust', 'cap-height none'],
+      ['fontSizeAdjust', '-.5'],
+      ['fontSizeAdjust', '10%'],
       ['borderImageSlice', 'fill'],
       ['borderImageSlice', '1 fill fill'],
       ['borderImageSlice', '1px'],
@@ -89,9 +105,67 @@ describe('compile', () => {
     try {
       const page = await browser.newPage()
       await page.setContent(
-        `<style>.frame{display:inline-block;vertical-align:top;width:160px;height:160px;background:white}.box{width:60px;height:60px;margin:30px;border:10px solid transparent;border-image-source:linear-gradient(90deg,red,blue)}${output.css}</style><div id="actual" class="frame"><div class="box ${module.border.className}"></div></div><div id="control" class="frame"><div class="box" style="${Tuples.control}"></div></div><div id="text" class="${module.text.className}"></div>`,
+        `<style>.frame{display:inline-block;vertical-align:top;width:160px;height:160px;background:white}.box{width:60px;height:60px;margin:30px;border:10px solid transparent;border-image-source:linear-gradient(90deg,red,blue)}${output.css}</style><div id="actual" class="frame"><div class="box ${module.border.className}"></div></div><div id="control" class="frame"><div class="box" style="${Tuples.control}"></div></div><div id="intrinsic" class="${module.intrinsic.className}"></div><div id="intrinsic-control" style="contain:size;contain-intrinsic-size:auto 80px auto 40px;display:inline-block"></div><div id="text" class="${module.text.className}"></div>`,
       )
+      const size = await page
+        .locator('#intrinsic')
+        .evaluate((element) => [
+          element.getBoundingClientRect().width,
+          element.getBoundingClientRect().height,
+        ])
+      expect(size).toMatchInlineSnapshot(`
+        [
+          80,
+          40,
+        ]
+      `)
+      expect(
+        await page
+          .locator('#intrinsic-control')
+          .evaluate((element) => [
+            element.getBoundingClientRect().width,
+            element.getBoundingClientRect().height,
+          ]),
+      ).toMatchInlineSnapshot(`
+        [
+          80,
+          40,
+        ]
+      `)
+      const computed = await page
+        .locator('#actual .box')
+        .evaluate((element) => {
+          const style = getComputedStyle(element)
+          return [
+            style.borderImageSource,
+            style.borderImageSlice,
+            style.borderImageWidth,
+            style.borderImageOutset,
+            style.borderImageRepeat,
+          ]
+        })
+      const native = await page.locator('#control .box').evaluate((element) => {
+        const style = getComputedStyle(element)
+        return [
+          style.borderImageSource,
+          style.borderImageSlice,
+          style.borderImageWidth,
+          style.borderImageOutset,
+          style.borderImageRepeat,
+        ]
+      })
+      expect(
+        JSON.stringify(computed) === JSON.stringify(native),
+      ).toMatchInlineSnapshot(`true`)
+      // Paint both controls at the same device coordinates to avoid gradient dithering differences.
+      await page.addStyleTag({
+        content:
+          '#actual,#control{position:absolute;left:0;top:0}#control{visibility:hidden}',
+      })
       const actual = await page.locator('#actual').screenshot()
+      await page.addStyleTag({
+        content: '#actual{visibility:hidden}#control{visibility:visible}',
+      })
       const control = await page.locator('#control').screenshot()
       expect(actual.equals(control)).toMatchInlineSnapshot(`true`)
       expect(

@@ -1539,23 +1539,23 @@
       },
       "contain-intrinsic-block-size": {
         "grammar": "77b8dad94a98196c141cc31e1bba726977ebd6575cccefa59f6a0f21c07aaa3d",
-        "status": "deferred"
+        "status": "partial"
       },
       "contain-intrinsic-height": {
         "grammar": "b277df56b1653e7138400b310d9afb9d0b70e30208c6ce8d30f75f043f0e57ff",
-        "status": "deferred"
+        "status": "partial"
       },
       "contain-intrinsic-inline-size": {
         "grammar": "662ec0f9bae10486a1d434f29a9f5245a513a359f40b9ede58b7d67eb08db4da",
-        "status": "deferred"
+        "status": "partial"
       },
       "contain-intrinsic-size": {
         "grammar": "329654918daecba66bb552fa08f6d24a2b9fe97015cfe22812e4f631059cd982",
-        "status": "deferred"
+        "status": "partial"
       },
       "contain-intrinsic-width": {
         "grammar": "7b35e91752552e6ed1f32331827ecb18db7e490b3fc2f17f162509127198f155",
-        "status": "deferred"
+        "status": "partial"
       },
       "container": {
         "grammar": "046222831e94731afb1fcf333d0b76372db7757e74f5468c9de34a5beae4e6ae",
@@ -1791,7 +1791,7 @@
       },
       "font-size-adjust": {
         "grammar": "6968d88a9b395d3805a9f1b73e94655f1a8d31b1565e5d70ea26112bb9baaccd",
-        "status": "deferred"
+        "status": "partial"
       },
       "font-smooth": {
         "grammar": "a4d914fd9e58c5aaaaa95ef3eaf58ea990741bd3f616f68c5740708280b1fc3f",

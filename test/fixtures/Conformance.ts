@@ -49,7 +49,25 @@ export function cases(): readonly Case[] {
       }
       if (atoms.includes('length')) values.push(0, '1px', 'calc(1px + 2px)')
       if (atoms.includes('number') || atoms.includes('integer'))
-        values.push(0, 2, '1 2', '1 2 3', 'calc(1 + 2)')
+        values.push(0, 2, 'calc(1 + 2)')
+      if (
+        (atoms.includes('number') || atoms.includes('integer')) &&
+        rule.max > 1
+      )
+        values.push('1 2')
+      if (
+        (atoms.includes('number') || atoms.includes('integer')) &&
+        rule.max > 2
+      )
+        values.push('1 2 3')
+      if ('prefixes' in rule) {
+        for (const prefix of rule.prefixes) {
+          values.push(`${prefix} ${atoms.includes('length') ? '10px' : '.5'}`)
+          for (const keyword of rule.keywords)
+            values.push(`${prefix} ${keyword}`)
+        }
+        if (rule.max > 1) values.push('auto 10px auto 20px', 'none auto 20px')
+      }
       if (atoms.includes('percentage')) values.push('10%', '10% 20%')
       if (atoms.includes('length') && atoms.includes('number'))
         values.push('1px 2 3px 4')

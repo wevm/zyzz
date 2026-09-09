@@ -16,11 +16,138 @@ import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
+import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('scroll spacing preserves token domains, priority, and source maps', () => {
+    const output = Transform.compile({
+      moduleId: 'example/scrolling.ts',
+      source: Scrolling.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-1567lwky4x5t8-zyzz-theme{--z-t1567lwky4x5t8-zyzz-spacing_2e_offset:20px;--z-t1567lwky4x5t8-zyzz-spacing_2e_auto:24px;}
+      .z-1567lwky4x5t8-base0{overflow:auto;width:100px;overscroll-behavior:auto;overscroll-behavior:contain!important;overscroll-behavior-x:none;}
+      .z-style-1567lwky4x5t8-136{height:100px;scroll-behavior:auto;scroll-padding-top:10px;scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px);scroll-padding-inline:auto;}
+      .z-1567lwky4x5t8-base1{scroll-margin-top:10px;}
+      .z-style-1567lwky4x5t8-402{height:20px;}
+      .z-style-1567lwky4x5t8-473{scroll-padding-top:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_auto,24px);}
+      .z-style-1567lwky4x5t8-557{scroll-padding-block-start:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px)!important;}
+      .z-style-1567lwky4x5t8-628{scroll-behavior:smooth;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) =>
+      line.includes('scroll-padding-top:var('),
+    )
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('scroll-padding-top:var('),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 27,
+        "line": 5,
+        "name": "scrollPaddingTop",
+        "source": "example/scrolling.ts",
+      }
+    `)
+  })
+
+  test('scroll spacing rejects invalid values and incompatible token domains', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import { css } from 'zyzz'; css({scrollMargin:'10%',scrollMarginTop:'auto',scrollPadding:'-1px',scrollBehavior:'instant',overscrollBehavior:'hidden',scrollPaddingInline:'1px 2px'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: invalid.ts:46: Expected a literal length or numeric zero.
+      invalid.ts:68: Expected a literal length or numeric zero.
+      invalid.ts:89: Expected a nonnegative literal length, auto, or numeric zero.
+      invalid.ts:111: Expected one of: auto, smooth (or a CSS-wide keyword).
+      invalid.ts:140: Expected one of: auto, contain, none (or a CSS-wide keyword).
+      invalid.ts:169: Expected a nonnegative literal length, auto, or numeric zero.]
+    `)
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid-token.ts',
+        source: `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{spacing:{portion:'10%'}}}); zyzz.css({scrollMarginTop:zyzz.theme.tokens.spacing.portion});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid-token.ts:120: Token group is incompatible with this property.]`,
+    )
+  })
+
+  test('scroll spacing offsets scroll-into-view in the browser', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/scrolling.ts',
+      source: Scrolling.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      loader: 'ts',
+      format: 'esm',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      const contents = (target: string) =>
+        `<div style="height:300px"></div><div ${target}></div><div style="height:300px"></div>`
+      await page.setContent(
+        `<style>${output.css}</style><div id="actual" class="${module.container.className}">${contents(`class="${module.target.className}"`)}</div><div id="control" style="overflow:auto;height:100px;width:100px;scroll-padding-top:20px;scroll-behavior:auto">${contents('style="scroll-margin-top:10px;height:20px"')}</div><div id="smooth" class="${module.smooth.className}" style="overflow:auto;height:100px"><div style="height:500px"></div></div>`,
+      )
+      expect(
+        await page.evaluate(() => {
+          const actual = document.getElementById('actual')!
+          const control = document.getElementById('control')!
+          actual.children[1]!.scrollIntoView({ block: 'start' })
+          control.children[1]!.scrollIntoView({ block: 'start' })
+          const style = getComputedStyle(actual)
+          return {
+            actual: actual.scrollTop,
+            control: control.scrollTop,
+            overscrollX: style.overscrollBehaviorX,
+            overscrollY: style.overscrollBehaviorY,
+            paddingInline: style.scrollPaddingInline,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "actual": 270,
+          "control": 270,
+          "overscrollX": "contain",
+          "overscrollY": "contain",
+          "paddingInline": "auto",
+        }
+      `)
+      await page
+        .locator('#smooth')
+        .evaluate((element) => element.scrollTo({ top: 100 }))
+      await page.waitForFunction(
+        () => document.getElementById('smooth')!.scrollTop === 100,
+        undefined,
+        { timeout: 5000 },
+      )
+      expect(
+        await page.locator('#smooth').evaluate((element) => ({
+          behavior: getComputedStyle(element).scrollBehavior,
+          position: element.scrollTop,
+        })),
+      ).toMatchInlineSnapshot(`
+        {
+          "behavior": "smooth",
+          "position": 100,
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('intrinsic sizing preserves keyword precedence, explicit tokens, and maps', () => {
     const output = Transform.compile({
       moduleId: 'example/sizing.ts',

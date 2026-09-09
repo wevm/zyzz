@@ -6,7 +6,39 @@ import { expectTypeOf } from 'vite-plus/test'
 import { Config, css, Style, Theme } from 'zyzz'
 import * as Borders from '../test/fixtures/Borders.js'
 import * as Logical from '../test/fixtures/Logical.js'
+import * as Scrolling from '../test/fixtures/Scrolling.js'
 import { components } from '../test/fixtures/components.js'
+
+Style.define(Scrolling.styles)
+css({ scrollMargin: '-2px!', scrollPaddingInline: ['auto', '10%'] })
+const scrollTheme = Theme.define({
+  spacing: { offset: '20px', portion: '10%' },
+})
+scrollTheme.css({ scrollPaddingTop: 'offset!' })
+Config.create({ theme: scrollTheme }).css({
+  scrollPaddingBlock: ['auto', scrollTheme.tokens.spacing.portion],
+})
+Style.define({ box: { scrollPadding: scrollTheme.tokens.spacing.offset } })
+// @ts-expect-error Scroll margin excludes percentages.
+css({ scrollMarginTop: '10%!' })
+// @ts-expect-error Scroll margin does not accept auto.
+css({ scrollMarginInline: 'auto' })
+// @ts-expect-error Scroll padding is not an intrinsic size.
+css({ scrollPadding: 'min-content' })
+// @ts-expect-error Root scroll padding remains token-free.
+css({ scrollPadding: 'offset' })
+// @ts-expect-error Unconstrained spacing tokens can contain percentages.
+scrollTheme.css({ scrollMargin: scrollTheme.tokens.spacing.portion })
+// @ts-expect-error Scroll margin token mapping awaits a length-only token domain.
+scrollTheme.css({ scrollMargin: 'offset' })
+// @ts-expect-error Overflow keywords are not overscroll behavior.
+css({ overscrollBehavior: 'hidden' })
+// @ts-expect-error Instant is a scrolling API option, not a CSS scroll-behavior value.
+css({ scrollBehavior: 'instant' })
+// @ts-expect-error Multi-value shorthands remain unsupported.
+css({ overscrollBehavior: 'none contain' })
+// @ts-expect-error Numeric spellings are checked inside fallback arrays.
+css({ scrollPadding: ['auto', '0x10px!'] })
 
 Style.define({ box: Borders.styles })
 const borderTheme = Theme.define({

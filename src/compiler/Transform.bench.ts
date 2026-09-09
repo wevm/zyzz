@@ -13,6 +13,7 @@ import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
+import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Compilation from '../../bench/Compilation.js'
 
@@ -161,6 +162,12 @@ const workloads = {
       `export const box${index} = css({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`,
     source: Logical.source,
     title: 'logical box',
+  },
+  scrolling: {
+    declaration: (index: number) =>
+      `export const box${index} = css({scrollMarginBlockStart:'${index}px',scrollPadding:['10%','20px!'],overscrollBehavior:'contain',scrollBehavior:'smooth'})();`,
+    source: Scrolling.source,
+    title: 'scroll spacing',
   },
   sizing: {
     declaration: (index: number) =>

@@ -5,32 +5,12 @@
 </p>
 
 <p align="center">
-  <a href="#overview">Overview</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="#comparison">Comparison</a>
+  <a href="#overview">Overview</a> · <a href="#getting-started">Getting Started</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="#comparison">Comparison</a>
 </p>
 
 ## Overview
 
-Define styles with `css`, call them, and spread the resulting props onto a component. Styles compile into CSS ahead of time.
-
-Install Zyzz in an existing application:
-
-```sh
-pnpm add zyzz
-```
-
-For Vite, add `zyzz()` to the existing plugins array, alongside the application's framework plugin:
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite'
-import { zyzz } from 'zyzz/vite'
-
-export default defineConfig({
-  plugins: [zyzz()],
-})
-```
-
-Define and apply a style:
+Zyzz combines typed CSS, design tokens, themes, and variants with ahead-of-time compilation. Define styles with `css`, call them, and spread the resulting props onto a component.
 
 ```tsx
 import { css } from 'zyzz'
@@ -42,9 +22,60 @@ export function Button() {
 }
 ```
 
-The Vite plugin transforms source modules and delivers CSS automatically. See [Next.js Setup](docs/introduction/next.md) or [CLI Setup](docs/introduction/cli.md) for other build paths.
+## Getting Started
 
-[Getting Started](docs/introduction/getting-started.md) · [Guides](docs/guides/README.md) · [Concepts](docs/concepts.md) · [API Reference](docs/api/README.md)
+### Install
+
+```sh
+pnpm add zyzz
+```
+
+Choose Vite, the CLI, or the compiler API to compile styles.
+
+### Setup with Vite
+
+Add `zyzz()` to the existing plugins array, alongside the application's framework plugin:
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import { zyzz } from 'zyzz/vite'
+
+export default defineConfig({
+  plugins: [zyzz()],
+})
+```
+
+Import components normally. The plugin transforms source modules and delivers CSS automatically during development and production builds. See [Vite Setup](docs/introduction/vite.md).
+
+### Setup with CLI
+
+Compile source modules and CSS before the application build:
+
+```sh
+pnpm exec zyzz src --out-dir dist --css dist/styles.css
+pnpm exec zyzz src --out-dir dist --css dist/styles.css --watch
+```
+
+Point the downstream build at the rewritten `dist` tree and load `dist/styles.css`. The downstream build handles TypeScript/JSX lowering. See [CLI Setup](docs/introduction/cli.md).
+
+### Use Compiler API
+
+Transform source directly for a custom integration or library build:
+
+```ts
+import { Transform } from 'zyzz/compiler'
+
+const output = Transform.compile({
+  moduleId: 'src/button.ts',
+  source: `import { css } from 'zyzz';
+export const button = css({ color: '#06c', padding: '1rem' });`,
+})
+```
+
+Bundle `output.code` and load its matching `output.css`; retain `output.map` and `output.cssMap` for source mapping. See [Build & Delivery](docs/guides/compilation.md).
+
+[Guides](docs/guides/README.md) · [Concepts](docs/concepts.md) · [API Reference](docs/api/README.md)
 
 ## Philosophy
 

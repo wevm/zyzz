@@ -24,7 +24,7 @@ const theme = Theme.define({
 
 Token palettes. Palettes must be nonempty data records with dot-free keys.
 
-Current color leaves accept 3/4/6/8-digit hex, `black`, `white`, `transparent`, or `currentColor`, optionally paired as `{ dark, light }`. Other named or functional colors are unsupported. Spacing and radius leaves accept nonnegative literal lengths or zero, without scheme pairs.
+Current color leaves accept 3/4/6/8-digit hex, the 148 canonical lowercase CSS named colors, 19 canonical system-color keywords, `transparent`, or `currentColor`, optionally paired as `{ dark, light }`. Noncanonical case spellings and functional colors remain unsupported. Spacing and radius leaves accept nonnegative literal lengths or zero, without scheme pairs.
 
 ```ts
 Theme.define({ spacing: { md: '1rem' } })

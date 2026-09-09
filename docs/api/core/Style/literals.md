@@ -40,7 +40,7 @@ The property surface is intentionally finite. No catch-all string index permits 
 - **Shorthands:** scalar values only; no multi-value strings yet.
 - **Units:** preserve spelling without implicit pixel conversion.
 
-- **Colors:** 3/4/6/8-digit hex, `transparent`, `currentColor`, `black`, or `white`.
+- **Colors:** 3/4/6/8-digit hex, `transparent`, `currentColor`, any of the 148 canonical lowercase CSS named colors, or the 19 canonical system-color keywords.
 - **CSS-wide values:** every property accepts `inherit`, `initial`, `revert`, `revert-layer`, and `unset`.
 - **Numbers:** finite values only; opacity 0–1, font weight 1–1000, line height/flex factors nonnegative.
 
@@ -51,7 +51,7 @@ This boundary rejects:
 - Arbitrary variable objects and explicit `undefined`.
 - Callbacks, selectors, and queries.
 - CSS functions and nested fallback arrays.
-- Unsupported properties and other named colors.
+- Unsupported properties and noncanonical color spellings.
 
 ## Length Units
 
@@ -461,3 +461,7 @@ Background position and its X/Y longhands share a conflict domain to preserve au
 Thirteen properties add common list marker styles and placement, appearance keywords, touch actions, scrollbar width, overflow anchoring, logical overscroll axes, integer tab sizes, bidi controls, line breaking, text autoscaling keywords, and spacing trim. Touch action enumerates all 94 combinations of the supported gesture keywords, preserving permutations without allowing conflicting directions.
 
 Tab sizes are nonnegative safe integers. Custom counter styles/strings, length-based tab stops, text-size percentages, and broader appearance syntax remain deferred. Chromium fixtures compare native marker pixels, tab layout, and computed controls; touch gesture dispatch, rubber-banding, bidi visual ordering, and text autoscaling behavior remain separate gates.
+
+## Color Keywords
+
+All 148 canonical lowercase CSS named colors and 19 canonical system-color keywords are accepted by color properties and theme values, including paired schemes. Literal names take precedence over inferred token names; explicit theme.tokens references retain access to colliding tokens. The independent MDN corpus exhausts every named color across each color property and consumer type. Browser fixtures verify named RGB values, explicit references, importance, and light/dark scheme changes. Noncanonical case spellings and functional color syntax remain deferred.

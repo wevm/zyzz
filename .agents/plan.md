@@ -445,3 +445,5 @@ Continue opening coherent property/value PRs against the pinned MDN inventory. E
 - Masks and image positioning: 16 additional properties, scalar position domains, background axis conflict handling, independent grammar/type checks, source maps, and masked-pixel comparisons. Image sources, lists, and complex functions remain deferred.
 
 - Lists and input controls: 13 additional properties, 94 finite touch-action forms, independent grammar/type probes, source maps, and native list-marker/tab comparisons. Custom counter styles and gesture behavior remain deferred.
+
+- Color keywords: expands the existing color domains to all 148 canonical lowercase names and 19 system colors with independent exhaustive grammar/type probes and native scheme comparisons. Functional colors remain deferred.

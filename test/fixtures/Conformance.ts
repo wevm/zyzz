@@ -23,6 +23,13 @@ export function cases(): readonly Case[] {
     units: Record<string, readonly string[]>
   }
   const units: Record<string, unknown> = require('mdn-data/css/units.json')
+  const syntaxes: Record<
+    string,
+    { syntax: string }
+  > = require('mdn-data/css/syntaxes.json')
+  const colors = ['named-color', 'system-color'].flatMap((name) =>
+    syntaxes[name]!.syntax.split('|').map((value) => value.trim()),
+  )
   for (const [property, rule] of Object.entries(Literal.rules)) {
     const values: (string | number)[] = [
       'inherit',
@@ -35,6 +42,7 @@ export function cases(): readonly Case[] {
     if (rule.kind === 'color') {
       if ('keywords' in rule) values.push(...rule.keywords)
       values.push(
+        ...colors,
         '#123',
         '#1234',
         '#123456',
@@ -119,7 +127,7 @@ export const rejected = [
   { property: 'animationDuration', value: '1px' },
   { property: 'animationTimingFunction', value: 'cubic-bezier(0,0,1,1)' },
   { property: 'appearance', value: 'native' },
-  { property: 'color', value: 'red' },
+  { property: 'color', value: 'not-a-color' },
   { property: 'color', value: 'rgb(0 0 0)' },
   { property: 'display', value: 'fleex' },
   { property: 'fill', value: 'url(#gradient)' },

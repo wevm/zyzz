@@ -4639,7 +4639,7 @@
       },
       "named-color": {
         "grammar": "bf0252b4186a5f5c02f3b223cdf9bb335690aeab740fbc90ecd4d16c64a530a9",
-        "status": "deferred"
+        "status": "partial"
       },
       "namespace-prefix": {
         "grammar": "5e902aba16d4451f5b2c328048f07656b2d5b83e739e34096213f2bf719931b4",
@@ -5147,7 +5147,7 @@
       },
       "system-color": {
         "grammar": "c0bb38f9877c8ac9b74c8896cb7d8aa4c2a2bc9a904c274b3051afde6d593098",
-        "status": "deferred"
+        "status": "partial"
       },
       "system-family-name": {
         "grammar": "ac753cfc235359e05d35736df370d4f77b0a6a528cc1e1489cb536957d941395",

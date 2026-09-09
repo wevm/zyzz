@@ -595,14 +595,14 @@ describe('compile', () => {
     expect(() =>
       Style.define({ card: { color: ['#fff', ['#000']] } } as never),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","color","1"]: Expected a hex color, transparent, currentColor, black, or white.]`,
+      `[Style.InvalidError: ["card","color","1"]: Expected a named color, system color, hex color, transparent, or currentColor.]`,
     )
     expect(() =>
       Style.define({
         card: { color: '#fff!!', opacity: '2!', padding: "'8px!'" },
       } as never),
     ).toThrowErrorMatchingInlineSnapshot(`
-      [Style.InvalidError: ["card","color"]: Expected a hex color, transparent, currentColor, black, or white.
+      [Style.InvalidError: ["card","color"]: Expected a named color, system color, hex color, transparent, or currentColor.
       ["card","opacity"]: Expected a finite number from 0 to 1.
       ["card","padding"]: Expected a nonnegative literal length or numeric zero.]
     `)

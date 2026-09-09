@@ -927,3 +927,16 @@ describe('css', () => {
     css({ interpolateSize: true })
   })
 })
+
+describe('css', () => {
+  test('accepts reading flow modes and numeric order fallbacks', () => {
+    css({ readingFlow: ['normal', 'flex-visual!'], readingOrder: [0, '-1!'] })
+    css({ readingFlow: 'source-order', readingOrder: 2 })
+    // @ts-expect-error Reading flow is one mode.
+    css({ readingFlow: 'flex-flow grid-rows' })
+    // @ts-expect-error Reading order is not a dimension.
+    css({ readingOrder: '2px' })
+    // @ts-expect-error Reading order has no auto keyword.
+    css({ readingOrder: 'auto' })
+  })
+})

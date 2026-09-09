@@ -2567,11 +2567,11 @@
       },
       "reading-flow": {
         "grammar": "b54160b888fe71c8623fa4fc8bad9ce4d5c587495b0b94fa212d5db629d7e5d2",
-        "status": "deferred"
+        "status": "partial"
       },
       "reading-order": {
         "grammar": "ad253ddfa663afc67ab41678656ab6dc6cd2b2310c8df95baea7a78a9339b7fd",
-        "status": "deferred"
+        "status": "partial"
       },
       "resize": {
         "grammar": "c397aaa23fe8535567232bc3c806cf914cdb2f0a5f5428602db2de2caff207ee",

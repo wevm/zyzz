@@ -1096,6 +1096,24 @@ export const rules = {
     values: ['absolute', 'fixed', 'relative', 'static', 'sticky'],
   },
   printColorAdjust: { kind: 'enum', values: ['economy', 'exact'] },
+  readingFlow: {
+    kind: 'enum',
+    values: [
+      'flex-flow',
+      'flex-visual',
+      'grid-columns',
+      'grid-order',
+      'grid-rows',
+      'normal',
+      'source-order',
+    ],
+  },
+  readingOrder: {
+    integer: true,
+    kind: 'number',
+    max: Number.MAX_SAFE_INTEGER,
+    min: Number.MIN_SAFE_INTEGER,
+  },
   resize: {
     kind: 'enum',
     values: ['block', 'both', 'horizontal', 'inline', 'none', 'vertical'],

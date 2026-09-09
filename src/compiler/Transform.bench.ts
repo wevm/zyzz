@@ -24,6 +24,7 @@ import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 import * as Masks from '../../test/fixtures/Masks.js'
 import * as Motion from '../../test/fixtures/Motion.js'
+import * as Reading from '../../test/fixtures/Reading.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
@@ -238,6 +239,12 @@ const workloads = {
       `export const box${index} = css({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`,
     source: Logical.source,
     title: 'logical box',
+  },
+  reading: {
+    declaration: (index: number) =>
+      `export const item${index} = css({readingFlow:'source-order',readingOrder:${index}})();`,
+    source: Reading.source,
+    title: 'reading order',
   },
   masks: {
     declaration: (index: number) =>

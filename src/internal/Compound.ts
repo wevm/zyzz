@@ -53,6 +53,7 @@ type Track =
   | `repeat(${string})${string}`
   | `[${string}`
   | 'subgrid'
+  | 'none'
 type Variant =
   | 'normal'
   | 'none'
@@ -74,11 +75,11 @@ export type Properties = {
   readonly alignTracks: List<
     Exclude<Literal.Properties['alignContent'], undefined>
   >
-  readonly animation: string
+  readonly animation: string | number
   readonly animationRange: List<
     Chain<Exclude<Literal.Properties['animationRangeStart'], undefined>>
   >
-  readonly animationTrigger: 'none' | List<`--${string}`>
+  readonly animationTrigger: List<Chain<'none' | `--${string}`>>
   readonly backdropFilter: 'none' | Chain<Filter | Literal.Url>
   readonly background: List<
     Chain<
@@ -98,18 +99,36 @@ export type Properties = {
       | Box
     >
   >
-  readonly borderImage:
+  readonly backgroundPosition: List<Position>
+  readonly backgroundPositionX: List<
+    | Dimension
+    | 'center'
+    | 'left'
+    | 'right'
+    | 'x-start'
+    | 'x-end'
+    | `${'left' | 'right' | 'x-start' | 'x-end'} ${Dimension}`
+  >
+  readonly backgroundPositionY: List<
+    | Dimension
+    | 'center'
+    | 'top'
+    | 'bottom'
+    | 'y-start'
+    | 'y-end'
+    | `${'top' | 'bottom' | 'y-start' | 'y-end'} ${Dimension}`
+  >
+  readonly borderImage: Chain<
     | 'none'
-    | Chain<
-        | Literal.Image
-        | Exclude<Dimension, 0>
-        | number
-        | 'fill'
-        | 'repeat'
-        | 'round'
-        | 'space'
-        | 'stretch'
-      >
+    | Literal.Image
+    | Exclude<Dimension, 0>
+    | number
+    | 'fill'
+    | 'repeat'
+    | 'round'
+    | 'space'
+    | 'stretch'
+  >
   readonly borderShape: 'none' | Chain<Shape>
   readonly boxShadow: 'none' | List<Shadow>
   readonly caret: Chain<
@@ -159,6 +178,7 @@ export type Properties = {
     | 'message-box'
     | 'small-caption'
     | 'status-bar'
+    | 'math'
     | 'italic'
     | 'oblique'
     | 'normal'
@@ -188,6 +208,7 @@ export type Properties = {
   readonly fontFamily: string
   readonly fontFeatureSettings: 'normal' | List<Chain<Quoted>>
   readonly fontLanguageOverride: 'normal' | Quoted
+  readonly fontStyle: 'normal' | 'italic' | 'oblique' | `oblique ${Angle}`
   readonly fontVariant: Variant
   readonly fontVariantAlternates:
     | 'normal'
@@ -204,11 +225,13 @@ export type Properties = {
   readonly gridTemplateAreas: 'none' | Chain<Quoted>
   readonly hyphenateCharacter: 'auto' | Quoted
   readonly imageOrientation: 'from-image' | Angle | Chain<Angle | 'flip'>
-  readonly imageResolution: Chain<
-    | `${number}${'dpi' | 'dpcm' | 'dppx' | 'x'}`
-    | Literal.Calculation
-    | 'from-image'
-  >
+  readonly imageResolution:
+    | Chain<
+        | `${number}${'dpi' | 'dpcm' | 'dppx' | 'x'}`
+        | Literal.Calculation
+        | 'from-image'
+      >
+    | `snap ${string}`
   readonly initialLetter: 'normal' | Chain<number | Literal.Calculation>
   readonly justifyTracks: List<
     Exclude<Literal.Properties['justifyContent'], undefined>
@@ -251,6 +274,7 @@ export type Properties = {
     | 'alpha'
     | 'luminance'
   >
+  readonly maskPosition: List<Position>
   readonly mathDepth:
     | number
     | 'auto-add'
@@ -286,6 +310,7 @@ export type Properties = {
     | `snapList(${string})`
   readonly MsScrollSnapX: `${'none' | 'mandatory' | 'proximity'} ${Properties['MsScrollSnapPointsX']}`
   readonly MsScrollSnapY: `${'none' | 'mandatory' | 'proximity'} ${Properties['MsScrollSnapPointsY']}`
+  readonly objectPosition: Position
   readonly objectViewBox: 'none' | `${'inset' | 'rect' | 'xywh'}(${string})`
   readonly offset: Chain<
     | Position
@@ -320,6 +345,7 @@ export type Properties = {
     | 'none'
     | Exclude<Literal.Length, `${number}%`>
     | Literal.Calculation
+  readonly perspectiveOrigin: Position
   readonly placeContent: Chain<
     Exclude<Literal.Properties['alignContent'], undefined>
   >
@@ -382,6 +408,11 @@ export type Properties = {
         | 'ideographic'
         | 'ideographic-ink'
       >
+  readonly textCombineUpright:
+    | 'none'
+    | 'all'
+    | 'digits'
+    | `digits ${2 | 3 | 4 | Literal.Calculation}`
   readonly textDecoration: Chain<
     | Literal.Color
     | Dimension
@@ -425,7 +456,7 @@ export type Properties = {
     | `${Dimension} ${string}`
     | `${'hanging' | 'each-line'} ${string}`
   readonly textShadow: 'none' | List<Chain<Dimension | Literal.Color>>
-  readonly timelineTrigger: 'none' | List<`--${string}`>
+  readonly timelineTrigger: List<Chain<'none' | `--${string}`>>
   readonly timelineTriggerActivationRange: List<
     Chain<
       Exclude<
@@ -439,6 +470,7 @@ export type Properties = {
       Exclude<Literal.Properties['timelineTriggerActiveRangeStart'], undefined>
     >
   >
+  readonly transformOrigin: Position
   readonly transition: string
   readonly viewTimeline: string
   readonly WebkitBoxReflect: Chain<
@@ -446,7 +478,7 @@ export type Properties = {
   >
   readonly WebkitMask:
     | Properties['mask']
-    | Chain<'border' | 'content' | 'padding' | 'text'>
+    | List<Chain<'border' | 'content' | 'padding' | 'text'>>
   readonly WebkitMaskPosition: List<Position>
   readonly WebkitMaskRepeat: List<
     Exclude<Literal.Properties['maskRepeat'], undefined>
@@ -455,4 +487,11 @@ export type Properties = {
   readonly WebkitTextStroke: Chain<
     Dimension | Literal.Color | 'thin' | 'medium' | 'thick'
   >
+  readonly zoom:
+    | 'normal'
+    | 'reset'
+    | number
+    | `${number}%`
+    | `${number} ${number}%`
+    | `${number}% ${number}`
 }

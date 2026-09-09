@@ -1,6 +1,6 @@
 /** Verifies compound and custom-property authoring through the public API. @module */
 import { describe, test } from 'vite-plus/test'
-import { css, Style } from 'zyzz'
+import { Config, css, Style, Theme } from 'zyzz'
 
 describe('css', () => {
   test('accepts every compound fixture through public style definitions', () => {
@@ -13,6 +13,8 @@ describe('css', () => {
       grid: '100px / 1fr 2fr',
       maskSize: '10px 20px, contain',
       transition: 'opacity 200ms ease-in',
+      shapeImageThreshold: [-1, 2, '50%'],
+      strokeDashoffset: -2,
     })
   })
 
@@ -32,6 +34,39 @@ describe('css', () => {
     css({ backgroundColour: 'red' })
     // @ts-expect-error Ordinary property validation is retained beside custom properties.
     css({ '--accent': 'red', padding: 'red' })
+  })
+
+  test('accepts case-insensitive literals while keeping tokens case-sensitive', () => {
+    css({
+      color: 'ReD',
+      display: 'FlEx',
+      padding: '2PX',
+      transform: 'RoTaTe(45DEG)',
+    })
+    Style.define({
+      card: { color: ['BLUE', 'ReD!', '#ABC!ImPoRtAnT'], margin: '1EM' },
+    })
+    const theme = Theme.define({
+      color: { Brand: 'blue' },
+      spacing: { Gap: '2px' },
+    })
+    theme.css({ color: 'ReD', padding: '2PX' })
+    theme.css({ color: 'Brand', padding: 'Gap' })
+    Config.create({ theme, layers: ['components'] }).css({
+      '@layer components': { color: 'ReD', padding: '2PX' },
+    })
+    // @ts-expect-error Case folding cannot make an unknown keyword valid.
+    css({ display: 'FleEx' })
+    // @ts-expect-error Hex checks still apply to mixed-case authoring.
+    css({ color: '#ABG' })
+    // @ts-expect-error Unit case does not bypass nonnegative dimensions.
+    css({ padding: '-1PX' })
+    // @ts-expect-error Keyword case does not bypass integer grid spans.
+    css({ gridColumnStart: 'SPAN 1.5' })
+    // @ts-expect-error Named theme tokens retain their original case.
+    theme.css({ color: 'brand' })
+    // @ts-expect-error Case-insensitive literals do not change token domains.
+    theme.css({ padding: 'Brand' })
   })
 
   test('rejects wrong compound domains through fallbacks and importance', () => {

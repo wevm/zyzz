@@ -6,6 +6,7 @@ import * as CssTree from 'css-tree'
 import * as Module from 'node:module'
 import * as Literal from '../../src/internal/Literal.js'
 import * as Compound from './Compound.js'
+import * as Grammar from './Grammar.js'
 
 /** One scalar declaration accepted by the public authoring boundary. */
 export type Case = {
@@ -40,9 +41,16 @@ export function cases(): readonly Case[] {
       'revert-layer',
       'unset',
     ]
-    for (const value of [0, 1, -1, 0.5, '1px', '1%', '1deg', '1s', '1dppx'])
-      if (!grammar.matchProperty(name(property), String(value)).error) values.push(value)
+    // Positive scalar probes distinguish dimensional domains; range semantics have separate fixtures.
+    for (const value of [1, '1px', '1%', '1deg', '1s', '1dppx'])
+      if (!grammar.matchProperty(name(property), String(value)).error)
+        values.push(value)
     for (const value of keywords(grammar, name(property))) values.push(value)
+    values.push(
+      ...Grammar.values(grammar, name(property)).map((value) =>
+        /^[-+]?(?:\d+|\d*\.\d+)$/.test(value) ? Number(value) : value,
+      ),
+    )
     if (rule.kind === 'compound') values.push(...Compound.values[rule.property])
     if (rule.kind === 'image' || rule.kind === 'url') {
       values.push('none', 'url("#paint")', 'url(#paint)')
@@ -337,7 +345,11 @@ export function lexer() {
       Object.entries(properties).map(([name, entry]) => [
         name,
         // SVG 2 places the range after the production; normalize its grammar notation.
-        name === 'path-length' ? 'none | <length [0,∞]>' : entry.syntax,
+        name === 'path-length'
+          ? 'none | <length [0,∞]>'
+          : name === 'text-combine-upright'
+            ? 'none | all | [ digits <integer [2,4]>? ]'
+            : entry.syntax,
       ]),
     ),
     types: {
@@ -359,6 +371,7 @@ export function lexer() {
 
 /** Converts public property spelling to its standard CSS name. */
 export function name(property: string): string {
+  if (property.startsWith('--')) return property
   if (property === 'MsScrollbar3dlightColor')
     return '-ms-scrollbar-3dlight-color'
   return property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)
@@ -434,4 +447,20 @@ function keywords(grammar: CssTree.Lexer, property: string): readonly string[] {
   return [...found].filter(
     (value) => !grammar.matchProperty(property, value).error,
   )
+}
+
+/** Enumerates pinned properties independently, with one case-sensitive custom-property representative. */
+export function properties(): readonly string[] {
+  const require = Module.createRequire(import.meta.url)
+  const entries: Record<
+    string,
+    unknown
+  > = require('mdn-data/css/properties.json')
+  return Object.keys(entries).map((name) => {
+    if (name === '--*') return '--Probe'
+    if (name === '-ms-scrollbar-3dlight-color') return 'MsScrollbar3dlightColor'
+    return name.replace(/-([a-z])/g, (_, letter: string) =>
+      letter.toUpperCase(),
+    )
+  })
 }

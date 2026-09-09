@@ -8,6 +8,9 @@ export const values = {
   animationTrigger: ['--trigger play', 'none'],
   backdropFilter: ['blur(4px)', 'contrast(150%) brightness(1.2)'],
   background: ['red', 'linear-gradient(red, blue) center / cover no-repeat'],
+  backgroundPosition: ['left 10px top 20px', 'center, right bottom'],
+  backgroundPositionX: ['left 10px', '20%, right'],
+  backgroundPositionY: ['top 10px', '20%, bottom'],
   borderImage: [
     'url("border.png") 30 / 10px / 2px round',
     'linear-gradient(red, blue) 1',
@@ -34,6 +37,7 @@ export const values = {
   fontFamily: ['"Example", sans-serif', 'system-ui'],
   fontFeatureSettings: ['"kern" 1, "liga" off', 'normal'],
   fontLanguageOverride: ['"TRK"', 'normal'],
+  fontStyle: ['oblique 14deg', 'italic'],
   fontVariant: ['small-caps oldstyle-nums', 'historical-forms styleset(alt)'],
   fontVariantAlternates: ['stylistic(alt) swash(fancy)', 'historical-forms'],
   fontVariationSettings: ['"wght" 650, "wdth" 90', 'normal'],
@@ -55,6 +59,7 @@ export const values = {
     'linear-gradient(black, transparent) alpha',
   ],
   maskBorder: ['url("mask.png") 30 / 10px / 2px repeat alpha', 'none'],
+  maskPosition: ['left top', '20% 30%, center'],
   mathDepth: [2, 'add(1)', 'auto-add'],
   MozContextProperties: ['fill, stroke', 'none'],
   MozForceBrokenImageIcon: [0, 1],
@@ -72,6 +77,7 @@ export const values = {
   MsScrollSnapPointsY: ['snapInterval(0px, 100%)', 'snapList(0px, 100px)'],
   MsScrollSnapX: ['mandatory snapInterval(0px, 100%)'],
   MsScrollSnapY: ['proximity snapList(0px, 100px)'],
+  objectPosition: ['left top', 'right 10px bottom 20px'],
   objectViewBox: ['inset(10%)', 'xywh(0 0 100% 100%)'],
   offset: ['path("M0 0 L100 100") 50% auto', 'center ray(45deg) 10px / center'],
   offsetAnchor: ['left top', '20% 30%', 'auto'],
@@ -80,6 +86,7 @@ export const values = {
   offsetRotate: ['auto 45deg', '45deg reverse'],
   overflowClipMargin: ['content-box 10px', '5px'],
   pathLength: ['none', '10px', 0],
+  perspectiveOrigin: ['left top', '20% 30%'],
   placeContent: ['center space-between', 'start end'],
   placeItems: ['center stretch', 'baseline start'],
   placeSelf: ['auto center', 'start end'],
@@ -96,6 +103,7 @@ export const values = {
   strokeDasharray: ['2 4', '2px, 4px, 8%'],
   textAutospace: ['normal', 'ideograph-alpha ideograph-numeric'],
   textBox: ['trim-both cap alphabetic', 'normal'],
+  textCombineUpright: ['digits 2', 'digits 4', 'all'],
   textDecoration: ['underline wavy red 2px', 'overline blue'],
   textDecorationSkip: ['objects edges', 'leading-spaces trailing-spaces'],
   textEmphasis: ['open sesame red', '"*" blue'],
@@ -105,6 +113,7 @@ export const values = {
   timelineTrigger: ['--trigger scroll() entry 0% exit 100% / normal', 'none'],
   timelineTriggerActivationRange: ['entry 10% exit 90%', 'normal'],
   timelineTriggerActiveRange: ['entry 10% exit 90%', 'auto'],
+  transformOrigin: ['left top', '20% 30% 10px'],
   transition: ['opacity 1s ease', 'opacity 1s, transform 2s ease-in 250ms'],
   viewTimeline: ['--view block auto', '--first x, --second y 10% 20%'],
   WebkitBoxReflect: [
@@ -116,6 +125,7 @@ export const values = {
   WebkitMaskRepeat: ['repeat-x', 'no-repeat, repeat'],
   WebkitMaskSize: ['contain', '10px 20px, cover'],
   WebkitTextStroke: ['2px red', 'blue 1px'],
+  zoom: [1, '150%', '1 100%'],
 } as const satisfies {
   readonly [property in keyof Compound.Properties]: readonly Compound.Properties[property][]
 }

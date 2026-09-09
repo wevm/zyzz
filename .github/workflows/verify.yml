@@ -98,3 +98,10 @@ jobs:
           name: css-browser-capabilities
           path: test-results/css-browser-capabilities.json
           retention-days: 30
+      - if: ${{ failure() && hashFiles('test-results/css-consumer.test-d.ts') != '' }}
+        name: Upload failing CSS consumer
+        uses: actions/upload-artifact@v4
+        with:
+          name: css-consumer
+          path: test-results/css-consumer.test-d.ts
+          retention-days: 30

@@ -154,7 +154,7 @@ describe('compile', () => {
     try {
       const cases = Conformance.cases()
       const groups = new Map<string, string>()
-      const declarations = Object.keys(Literal.rules).map((property) => {
+      const declarations = Conformance.properties().map((property) => {
         const values = [
           ...cases
             .filter((entry) => entry.property === property)
@@ -169,7 +169,7 @@ describe('compile', () => {
           group = `values${groups.size}`
           groups.set(key, group)
         }
-        return `${group} satisfies readonly Style.Properties['${property}'][];\ncss({${property}: [${values
+        return `${group} satisfies readonly Style.Properties['${property}'][];\ncss({${JSON.stringify(property)}: [${values
           .slice(0, 16)
           .map((value) => JSON.stringify(value))
           .join(',')}]});`
@@ -178,9 +178,9 @@ describe('compile', () => {
         ({ property, value }) =>
           `// @ts-expect-error Invalid or deliberately unsupported scalar.\ncss({${property}: ${JSON.stringify(value)}});\n// @ts-expect-error Importance must preserve rejection.\ncss({${property}: ${JSON.stringify(`${value}!`)}});`,
       )
-      const booleans = Object.keys(Literal.rules).map(
+      const booleans = Conformance.properties().map(
         (property) =>
-          `// @ts-expect-error Booleans are outside every CSS scalar domain.\ncss({${property}: true});`,
+          `css({${JSON.stringify(property)}: 'InHeRiT!ImPoRtAnT'});\n// @ts-expect-error Booleans are outside every CSS scalar domain.\ncss({${JSON.stringify(property)}: true});`,
       )
       const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { css, type Style } from 'zyzz';\ndescribe('css', () => {\n  test('validates generated conformance probes', () => {\n${[...[...groups].map(([values, group]) => `const ${group} = ${values} as const;`), ...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
       await Fs.writeFile(Path.join(directory, 'consumer.test-d.ts'), source)
@@ -201,7 +201,12 @@ describe('compile', () => {
           Path.join(directory, 'tsconfig.json'),
         ],
         { cwd: root, maxBuffer: 1024 * 1024, timeout: 300_000 },
-      ).catch((error: unknown) => {
+      ).catch(async (error: unknown) => {
+        await Fs.mkdir(Path.join(root, 'test-results'), { recursive: true })
+        await Fs.writeFile(
+          Path.join(root, 'test-results/css-consumer.test-d.ts'),
+          source,
+        )
         if (error && typeof error === 'object' && 'stdout' in error)
           throw new Error(
             String(error.stdout) ||

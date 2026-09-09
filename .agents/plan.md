@@ -4,7 +4,7 @@
 
 CSS property/value validation is static only. Remove runtime CSS validators rather than adding a development mode. Retain source extraction, ordered-data, and theme graph structural diagnostics. Browser parsing owns value semantics beyond the static types.
 
-The consolidated PR currently maps 572/670 properties: 572 partial, 98 deferred, and zero promoted to fully supported. The strict 100% gate remains active. Static hex/integer/nonnegative literal checks and image/URL declarations extend the independent grammar and public consumer corpus. Browser evidence remains required for applicable properties.
+The consolidated PR currently maps 670/670 properties: 670 partial, 0 deferred, and zero promoted to fully supported. The strict 100% gate remains active. Static hex/integer/nonnegative literal checks and image/URL declarations extend the independent grammar and public consumer corpus. Browser evidence remains required for applicable properties.
 
 ## Goal
 
@@ -579,3 +579,5 @@ All 670 pinned property entries now have static authoring mappings, including 98
 A browser matrix compares emitted declarations with native CSS for every engine-supported property and records unavailable browser spellings separately. A second matrix exercises repeated shorthand/longhand overrides, including reset-only relationships. Conditional shorthand conflict groups restore the existing grid workload to 770 gzip CSS bytes while preserving grid-area conflicts. These browser additions require CI because the local Chromium download is unavailable.
 
 The pinned oracle now supplements the missing Linked Parameters production, corrects circle percentage sizing from CSS Shapes, and normalizes SVG 2 path-length range notation. Its upstream fingerprints and the exact 100% completion gate remain unchanged.
+
+The all-property browser and shorthand reset matrices passed on e301d9c, and the benchmark workflow passed with grid CSS at its 770-byte gzip baseline. Follow-up work adds case-insensitive authoring, escaped importance preservation, complete custom-property type probes, and independent compositional grammar samples. These samples exposed additional alignment, image, sizing, font, and keyword combinations; completion remains subject to the expanded checks.

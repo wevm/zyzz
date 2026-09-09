@@ -14,20 +14,28 @@ export type Color =
   | { readonly dark: Literal.Color; readonly light: Literal.Color }
 
 /** Theme-bound authoring signature; execution requires source rewriting. */
-export type Css<tokens extends Tokens> = <
-  const styles extends Style.Properties<tokens>,
->(
-  styles: styles &
-    NoInfer<
-      Record<Exclude<Keys<styles>, keyof Style.Properties>, never> &
-        (Style.Properties<tokens> extends styles
-          ? unknown
-          : (Extract<styles, (...args: never[]) => unknown> extends never
-              ? unknown
-              : never) &
-              Value.Checked<styles, tokens>)
-    >,
-) => css.ReturnType
+export type Css<tokens extends Tokens> = {
+  <const styles extends Record<string, unknown>>(
+    styles: styles &
+      NoInfer<
+        Value.Accepted<styles, Style.Properties<tokens>> &
+          Record<Exclude<Keys<styles>, keyof Style.Properties>, never> &
+          Value.Checked<styles, tokens>
+      >,
+  ): css.ReturnType
+  <const styles extends Style.Properties<tokens>>(
+    styles: styles &
+      NoInfer<
+        Record<Exclude<Keys<styles>, keyof Style.Properties>, never> &
+          (Style.Properties<tokens> extends styles
+            ? unknown
+            : (Extract<styles, (...args: never[]) => unknown> extends never
+                ? unknown
+                : never) &
+                Value.Checked<styles, tokens>)
+      >,
+  ): css.ReturnType
+}
 
 /**
  * Defines scalar tokens without metadata, defaults, or environment access.

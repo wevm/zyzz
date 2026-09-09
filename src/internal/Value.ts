@@ -11,6 +11,29 @@ export type Atom<value> =
   | value
   | `${Extract<value, string | number>}${'!' | ' !' | '!important' | ' !important'}`
 
+/** Accepts canonical values and case-insensitive CSS literals without folding token names or emitted data. */
+export type Accepted<style, properties> = style extends properties
+  ? properties
+  : {
+      [property in keyof style]: property extends keyof properties
+        ? style[property] extends Exclude<properties[property], undefined>
+          ? Exclude<properties[property], undefined>
+          : property extends keyof Literal.Properties
+            ? Fold<style[property]> extends Input<
+                Fold<Exclude<Literal.Properties[property], undefined>>
+              >
+              ? style[property]
+              : Exclude<properties[property], undefined>
+            : Exclude<properties[property], undefined>
+        : never
+    }
+
+type Fold<value> = value extends string
+  ? Lowercase<value>
+  : value extends readonly unknown[]
+    ? { [key in keyof value]: Fold<value[key]> }
+    : value
+
 /** Refines concrete scalar spellings; already-broad property contracts need no literal refinement. */
 export type Checked<style, tokens = {}> = {
   [property in keyof style]: Literal.Properties extends style
@@ -24,7 +47,9 @@ export type Checked<style, tokens = {}> = {
           | 'gridRow'
           | 'gridRowEnd'
           | 'gridRowStart'
-          ? Grid.Checked<style[property]>
+          ? Fold<style[property]> extends Grid.Checked<Fold<style[property]>>
+            ? unknown
+            : never
           : unknown) &
           Check<
             style[property],
@@ -43,9 +68,9 @@ type Check<input, names, rule> = input extends readonly unknown[]
     : input extends string
       ? Plain<input> extends names
         ? input
-        : Literal.Checked<Plain<input>> extends never
+        : Literal.Checked<Lowercase<Plain<input>>> extends never
           ? never
-          : Numeric<Plain<input>, rule> extends never
+          : Numeric<Lowercase<Plain<input>>, rule> extends never
             ? never
             : input
       : Numeric<input, rule>
@@ -78,10 +103,10 @@ type Range<input, rule> = rule extends
     : input
   : input
 
-type Plain<value extends string> = value extends
-  | `${infer body}!important`
-  | `${infer body}!`
-  ? Trim<body>
+type Plain<value extends string> = value extends `${infer body}!${infer suffix}`
+  ? Lowercase<suffix> extends '' | 'important'
+    ? Trim<body>
+    : `${body}!${Plain<suffix>}`
   : value
 type Trim<value extends string> =
   value extends `${infer body}${' ' | '\n' | '\r' | '\t' | '\f'}`
@@ -97,9 +122,21 @@ export type Input<value> = Fallbacks<Atom<Exclude<value, undefined>>>
 /** Splits a trailing importance marker without interpreting quoted or escaped text. */
 export function parse(input: unknown, property: keyof Literal.Properties) {
   if (typeof input !== 'string') return undefined
-  const match = /\s*!(?:important)?$/i.exec(input)
+  const match = /!(?:important)?$/i.exec(input)
   if (!match) return undefined
-  const text = input.slice(0, match.index).trimEnd()
+  const valueText = input
+  function escaped(index: number): boolean {
+    let count = 0
+    while (index > 0 && valueText[index - 1] === '\\') {
+      count++
+      index--
+    }
+    return count % 2 === 1
+  }
+  if (escaped(match.index)) return undefined
+  let end = match.index
+  while (end > 0 && /\s/.test(input[end - 1]!) && !escaped(end - 1)) end--
+  const text = input.slice(0, end)
   const numeric =
     Literal.rule(property)?.kind === 'number' ||
     Literal.rule(property)?.kind === 'grid-line'

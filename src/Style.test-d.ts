@@ -434,7 +434,6 @@ describe('css', () => {
     css({ overscrollBehavior: 'hidden' })
     // @ts-expect-error Instant is a scrolling API option, not a CSS scroll-behavior value.
     css({ scrollBehavior: 'instant' })
-    // @ts-expect-error Multi-value shorthands remain unsupported.
     css({ overscrollBehavior: 'none contain' })
     // @ts-expect-error Numeric spellings are checked inside fallback arrays.
     css({ scrollPadding: ['auto', '0x10px!'] })
@@ -545,7 +544,6 @@ describe('css', () => {
     css({ inlineSize: 'content' })
     // @ts-expect-error Intrinsic keywords do not become spacing values.
     css({ padding: 'min-content' })
-    // @ts-expect-error Function parsing remains a separate capability.
     css({ width: 'fit-content(10px)' })
     // @ts-expect-error Theme spacing remains a literal length domain.
     Theme.define({ spacing: { small: 'min-content' } })
@@ -1095,7 +1093,6 @@ describe('css', () => {
     })
     // @ts-expect-error Unknown color names remain outside the domain.
     css({ color: 'not-a-color' })
-    // @ts-expect-error Mixed-case keyword spellings remain deferred.
     css({ color: 'rEbEcCaPuRpLe' })
   })
 })

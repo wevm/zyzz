@@ -2,6 +2,8 @@
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
 import { Transform } from 'zyzz/compiler'
 
 const source = `import { css } from 'zyzz';
@@ -15,6 +17,20 @@ describe('compile', () => {
       ".z-nhoi651v8vyx9-base0{--Accent:red;--accent:blue;--data:"a;b:c";--count:2;}
       .z-nhoi651v8vyx9-base1{all:initial;color:var(--Accent);background-color:var(--accent);--choice:red;--choice:blue!important;}"
     `)
+  })
+
+  test('escaped punctuation retains custom-property data and importance', () => {
+    const styles = Style.define({
+      punctuation: {
+        '--escaped': 'hello\\!',
+        '--escapedWord': 'hello\\!important',
+        '--even': 'hello\\\\!',
+        '--space': 'hello\\ !',
+      },
+    })
+    expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
+      `".z_base0{--escaped:hello\\!;--escapedWord:hello\\!important;--even:hello\\\\!important;--space:hello\\ !important;}"`,
+    )
   })
 
   test('all preserves inherited custom properties and direction', async () => {

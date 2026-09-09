@@ -17,7 +17,7 @@ type Keys<value> = value extends unknown ? keyof value : never
 export function css<const styles extends Record<string, unknown>>(
   styles: styles &
     NoInfer<
-      Style.LiteralProperties &
+      Value.Accepted<styles, Style.LiteralProperties> &
         Value.Checked<styles> &
         Record<Exclude<Keys<styles>, keyof Literal.Properties>, never>
     >,

@@ -12,20 +12,21 @@ import * as Substitution from '../../test/fixtures/Substitution.js'
 
 describe('compile', () => {
   test('variable expressions compile for every mapped property and parse independently', () => {
-    for (const property of new Set(
-      Conformance.cases().map((entry) => entry.property),
-    )) {
+    for (const property of Conformance.properties()) {
       const output = Transform.compile({
         moduleId: 'variable.ts',
-        source: `import { css } from 'zyzz'; css({${property}:'var(--probe)'});`,
+        source: `import { css } from 'zyzz'; css({${JSON.stringify(property)}:'var(--probe)'});`,
       })
       expect(
         output.css.includes(`${Conformance.name(property)}:var(--probe)`),
       ).toMatchInlineSnapshot(`true`)
       const functions: string[] = []
-      CssTree.walk(CssTree.parse(output.css), (node) => {
-        if (node.type === 'Function') functions.push(node.name)
-      })
+      CssTree.walk(
+        CssTree.parse(output.css, { parseCustomProperty: true }),
+        (node) => {
+          if (node.type === 'Function') functions.push(node.name)
+        },
+      )
       expect(functions).toMatchInlineSnapshot(`
         [
           "var",
@@ -109,11 +110,7 @@ describe('compile', () => {
           .locator('#actual')
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
-      const properties = [
-        ...new Set(
-          Conformance.cases().map((entry) => Conformance.name(entry.property)),
-        ),
-      ]
+      const properties = Conformance.properties().map(Conformance.name)
       expect(
         await page.evaluate(
           (properties) =>

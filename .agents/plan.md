@@ -440,7 +440,7 @@ Continue all property/value work in the single consolidated CSS conformance PR a
 
 - Motion controls: 11 additional properties and a finite time dimension domain, independent grammar/type probes, invalid duration checks, source maps, and native paused-animation timing. Lists, easing functions, keyframes, and timelines remain deferred.
 
-- Grid tracks: nine additional properties, bounded fr dimensions and grid-line domains, independent grammar/type probes, source maps, and implicit-track/span geometry. Lists, functions, named lines, and areas remain deferred.
+- Grid tracks: nine additional properties, bounded fr dimensions and grid-line domains, independent grammar/type probes, source maps, and implicit-track/span geometry. Structural track lists are implemented below; named-line placement and areas remain deferred.
 
 - Masks and image positioning: 16 additional properties, scalar position domains, background axis conflict handling, independent grammar/type checks, source maps, and masked-pixel comparisons. Image sources, lists, and complex functions remain deferred.
 
@@ -461,3 +461,9 @@ Continue all property/value work in the single consolidated CSS conformance PR a
 Keep the remaining CSS property implementation in one PR. The required CI job fails unless all 670 pinned MDN properties are fully supported; partial entries never count toward 100%. Retain independent grammar checks, public type probes, emission checks, browser evidence, and performance gates. Do not promote inventory statuses to make CI green before the implementation and evidence exist.
 
 Outstanding work includes the 367 deferred properties and completion of all 303 partial domains: CSS tokenization/escaping and case handling; compositional value grammars, lists, functions and custom identifiers; property-specific numeric rules; shorthand/longhand cascade interactions; and independent browser/type evidence. The threshold remains red while these gaps exist. The property gate does not claim full support for the separately tracked selectors and at-rule families.
+
+### Structured Grid Tracks
+
+Explicit and implicit grid tracks accept size lists, `minmax()` and `fit-content()`. Explicit tracks also accept line-name groups and integer or automatic `repeat()`, including fixed-size restrictions for auto-repeat. Repetitions remain compact CSS rather than being expanded by the compiler. The compiler rejects invalid argument counts, flexible minima, nested repetition, and multiple auto-repeat groups. Consumer types constrain the outer value shape; nested grammar is checked during compilation.
+
+Independent MDN grammar probes and native responsive-grid fixtures cover these additions. Math functions, variable references, escaped identifiers, and subgrid name repetition remain incomplete; property completion stays partial.

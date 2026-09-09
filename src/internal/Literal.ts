@@ -2,6 +2,8 @@
  * Defines and validates the supported primitive CSS property and value domains.
  * @module
  */
+import * as Grid from './Grid.js'
+
 /** Refines inferred dimension strings where TypeScript's number template is broader than CSS. */
 export type Checked<value> = value extends Fraction | Length | Time
   ? value extends
@@ -21,6 +23,17 @@ export type Color =
 
 /** Flexible grid track dimensions. */
 export type Fraction = `${number}fr`
+
+/** Structured track values; nested argument semantics are checked by the compiler. */
+export type GridTracks =
+  | Length
+  | Fraction
+  | 'auto'
+  | 'min-content'
+  | 'max-content'
+  | `${Length | Fraction | 'auto' | 'min-content' | 'max-content'} ${string}`
+  | `minmax(${string})${string}`
+  | `fit-content(${string})${string}`
 
 /** CSS-wide keywords accepted by every supported property. */
 export type Global = 'inherit' | 'initial' | 'revert-layer' | 'revert' | 'unset'
@@ -53,6 +66,7 @@ type Rule =
       readonly values: readonly string[]
     }
   | { readonly kind: 'grid-line' }
+  | { readonly kind: 'grid-tracks'; readonly explicit: boolean }
   | {
       readonly integer?: boolean
       readonly keywords?: readonly string[]
@@ -92,19 +106,29 @@ type Value<rule extends Rule> =
               values: readonly (infer value)[]
             }
           ? value
-          : rule extends { kind: 'grid-line' }
-            ? number | 'auto' | `span ${bigint}`
-            : rule extends { kind: 'time' }
-              ?
-                  | Time
-                  | (rule extends { keywords: readonly (infer keyword)[] }
-                      ? keyword
-                      : never)
-              :
-                  | Color
-                  | (rule extends { keywords: readonly (infer keyword)[] }
-                      ? keyword
-                      : never))
+          : rule extends { kind: 'grid-tracks' }
+            ?
+                | GridTracks
+                | (rule extends { explicit: true }
+                    ?
+                        | 'none'
+                        | 'subgrid'
+                        | `repeat(${string})${string}`
+                        | `[${string}`
+                    : never)
+            : rule extends { kind: 'grid-line' }
+              ? number | 'auto' | `span ${bigint}`
+              : rule extends { kind: 'time' }
+                ?
+                    | Time
+                    | (rule extends { keywords: readonly (infer keyword)[] }
+                        ? keyword
+                        : never)
+                :
+                    | Color
+                    | (rule extends { keywords: readonly (infer keyword)[] }
+                        ? keyword
+                        : never))
   | Global
 const blend = {
   kind: 'enum',
@@ -428,12 +452,7 @@ const textSpacing = {
   negative: true,
 } as const
 
-const track = {
-  ...length,
-  auto: true,
-  fraction: true,
-  keywords: ['max-content', 'min-content'],
-} as const
+const track = { explicit: false, kind: 'grid-tracks' } as const
 
 /** Single source of truth for the supported literal properties and domains. */
 export const rules = {
@@ -866,11 +885,11 @@ export const rules = {
   gridRowStart: { kind: 'grid-line' },
   gridTemplateColumns: {
     ...track,
-    keywords: ['max-content', 'min-content', 'none', 'subgrid'],
+    explicit: true,
   },
   gridTemplateRows: {
     ...track,
-    keywords: ['max-content', 'min-content', 'none', 'subgrid'],
+    explicit: true,
   },
   height: size,
   hyphens: { kind: 'enum', values: ['auto', 'manual', 'none'] },
@@ -1538,6 +1557,10 @@ export function validate(
       }
       return `Expected a finite ${rule.integer ? 'integer' : 'number'} from ${rule.min} to ${rule.max}.`
     })()
+  if (rule.kind === 'grid-tracks')
+    return Grid.tracks(value, { explicit: rule.explicit, units: lengthUnits })
+      ? undefined
+      : 'Expected a valid grid track list with nonnegative sizes and valid repetition constraints.'
   if (rule.kind === 'grid-line') {
     if (value === 'auto') return undefined
     if (typeof value === 'number' && Number.isSafeInteger(value) && value !== 0)

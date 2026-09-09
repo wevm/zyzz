@@ -784,7 +784,6 @@ describe('grid tracks and placement', () => {
       gridRowStart: -1,
       gridRowEnd: 'auto',
     })
-    // @ts-expect-error Track lists require structural grammar support.
     css({ gridTemplateColumns: '1fr 2fr' })
     // @ts-expect-error Flexible units are limited to grid tracks.
     css({ width: '1fr' })
@@ -938,5 +937,22 @@ describe('css', () => {
     css({ readingOrder: '2px' })
     // @ts-expect-error Reading order has no auto keyword.
     css({ readingOrder: 'auto' })
+  })
+})
+
+describe('css', () => {
+  test('accepts structural grid tracks through public authoring', () => {
+    css({
+      gridTemplateColumns: '[start] repeat(3, minmax(0, 1fr)) [end]',
+      gridTemplateRows: 'fit-content(40px) 1fr',
+      gridAutoRows: '20px 30px',
+    })
+    css({
+      gridTemplateColumns: ['1fr 2fr', 'repeat(auto-fit, minmax(80px, 1fr))!'],
+    })
+    // @ts-expect-error Implicit tracks cannot repeat.
+    css({ gridAutoColumns: 'repeat(2, 1fr)' })
+    // @ts-expect-error Grid functions are not ordinary dimensions.
+    css({ width: 'minmax(0, 1fr)' })
   })
 })

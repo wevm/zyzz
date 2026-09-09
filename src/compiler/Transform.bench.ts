@@ -18,6 +18,7 @@ import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Fonts from '../../test/fixtures/Fonts.js'
 import * as Grid from '../../test/fixtures/Grid.js'
+import * as GridLists from '../../test/fixtures/GridLists.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
 import * as Layout from '../../test/fixtures/Layout.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
@@ -215,6 +216,12 @@ const workloads = {
       `export const text${index} = css({fontKerning:'normal',fontVariantNumeric:'tabular-nums',textEmphasisStyle:'open circle',textEmphasisColor:'#06c',letterSpacing:'${index}px'})();`,
     source: Fonts.source,
     title: 'font',
+  },
+  gridLists: {
+    declaration: (index: number) =>
+      `export const tracks${index} = css({gridTemplateColumns:'repeat(3, minmax(0, 1fr))',gridAutoRows:'${index}px 40px'})();`,
+    source: GridLists.source,
+    title: 'grid list',
   },
   grid: {
     declaration: (index: number) =>

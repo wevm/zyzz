@@ -59,6 +59,24 @@ export function cases(): readonly Case[] {
       if (Number.isFinite(rule.max)) values.push(rule.max)
       if (!('integer' in rule)) values.push(Math.max(rule.min, 0.5))
     }
+    if (rule.kind === 'grid-tracks') {
+      values.push(
+        0,
+        '1fr',
+        '1fr 2fr',
+        'minmax(0, 1fr)',
+        'fit-content(40%)',
+        'minmax(min-content, 100px) 2fr',
+      )
+      if (rule.explicit)
+        values.push(
+          'none',
+          'subgrid',
+          '[start] repeat(3, minmax(0, 1fr)) [end]',
+          'repeat(auto-fill, minmax(20px, 1fr))',
+          '10px repeat(auto-fit, 20px) 30px',
+        )
+    }
     if (rule.kind === 'grid-line')
       values.push('auto', 1, -1, 2, 'span 1', 'span 2')
     if (rule.kind === 'time') {
@@ -143,7 +161,6 @@ export const rejected = [
   { property: 'gridAutoColumns', value: '0x10fr' },
   { property: 'gridAutoFlow', value: 'row column' },
   { property: 'gridColumnStart', value: 'span 1.5' },
-  { property: 'gridTemplateColumns', value: '1fr 2fr' },
   { property: 'letterSpacing', value: '10%' },
   { property: 'margin', value: '1px 2px' },
   { property: 'maskMode', value: 'normal' },

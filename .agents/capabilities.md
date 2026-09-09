@@ -128,7 +128,7 @@ Comma-separated lists, easing functions, animation names, timeline syntax, and k
 
 Nine properties cover implicit tracks, scalar explicit tracks, auto-placement, and row/column start/end lines. Tracks accept nonnegative lengths, percentages, fr dimensions, auto, min-content, and max-content. Explicit tracks also accept none and subgrid. Auto flow accepts row/column with optional dense in either order.
 
-Grid lines accept auto, nonzero safe integers, and span followed by a canonical positive safe integer. Important numeric fallbacks preserve their number domain. Track lists, repeat/minmax functions, named lines, areas, and grid shorthands remain deferred. Browser fixtures compare independent CSS and verify fractional implicit tracks and a two-column span; subgrid layout remains a separate gate.
+Grid lines accept auto, nonzero safe integers, and span followed by a canonical positive safe integer. Important numeric fallbacks preserve their number domain. Track lists, repeat/minmax/fit-content functions, and track line-name groups are supported as described below. Named-line placement, areas, and grid shorthands remain deferred. Browser fixtures compare independent CSS and verify fractional implicit tracks and a two-column span; subgrid layout remains a separate gate.
 
 ## Masks and Positioning
 
@@ -153,3 +153,9 @@ All 148 canonical lowercase CSS named colors and 19 canonical system-color keywo
 ## Reading Order
 
 `readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 303 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
+
+### Structured Grid Tracks
+
+Explicit and implicit grid tracks accept size lists, `minmax()` and `fit-content()`. Explicit tracks also accept line-name groups and integer or automatic `repeat()`, including fixed-size restrictions for auto-repeat. Repetitions remain compact CSS rather than being expanded by the compiler. The compiler rejects invalid argument counts, flexible minima, nested repetition, and multiple auto-repeat groups. Consumer types constrain the outer value shape; nested grammar is checked during compilation.
+
+Independent MDN grammar probes and native responsive-grid fixtures cover these additions. Math functions, variable references, escaped identifiers, and subgrid name repetition remain incomplete; property completion stays partial.

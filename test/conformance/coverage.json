@@ -197,7 +197,7 @@
       },
       "fit-content()": {
         "grammar": "45a2a186bb785c60fb37645d096811d48be833e98e3b0a4a544f7b8f8449bb45",
-        "status": "deferred"
+        "status": "partial"
       },
       "grayscale()": {
         "grammar": "b43fe444cc6410d2540f18fb2f451404cac2e55bc8a8c9d1eabed988dc898895",
@@ -289,7 +289,7 @@
       },
       "minmax()": {
         "grammar": "1a4ecf2af75190910eec9c24bc62150d3a6b4eb82d3b6458aa61f1c2adccbbf0",
-        "status": "deferred"
+        "status": "partial"
       },
       "mod()": {
         "grammar": "bd83b58bd6e5c17976b7d88507cadce0387bcf5ed5200bfa1cf8fb304a6ba32b",
@@ -3875,7 +3875,7 @@
       },
       "auto-track-list": {
         "grammar": "6a3fcd1e14172689186e6ae7dab929747af4e78305e14b1e77084c1ae487171d",
-        "status": "deferred"
+        "status": "partial"
       },
       "axis": {
         "grammar": "54e9c4e0d890809fa41fdfc8e6e2af52397648ab6a6a3ae17c791f5c072d2aec",
@@ -4291,7 +4291,7 @@
       },
       "fit-content()": {
         "grammar": "e7899946d3cadcaf6eb91e17e89f5360e2472511b9dee4ec9d110a872c42accd",
-        "status": "deferred"
+        "status": "partial"
       },
       "fixed-breadth": {
         "grammar": "cd2cdc4fbf70280b613808caa8c2dd794bcb9c287659546ad8dc21f8f48d3c4a",
@@ -4623,7 +4623,7 @@
       },
       "minmax()": {
         "grammar": "2ac9bd8e006bed95338b067c4bf53690fec5ba2070e723248cf8cd5b4577860c",
-        "status": "deferred"
+        "status": "partial"
       },
       "mod()": {
         "grammar": "25e3ee619aeb7cac127b34c792412025de012f1c85d2f06d19da86f4b2dc4564",
@@ -5191,7 +5191,7 @@
       },
       "track-list": {
         "grammar": "6259dc1f9946740fa543600f21f65700f2b4d1287cebdc16864099c9f7282c92",
-        "status": "deferred"
+        "status": "partial"
       },
       "track-repeat": {
         "grammar": "25926afda001110f2f0f3dc1e2bc1cc5a06b63160b688e781900a7a814f844b3",
@@ -5199,7 +5199,7 @@
       },
       "track-size": {
         "grammar": "c235b90d00197f248c0ecdd2b0b5af76aacbbcb836172b15588d53f68dc1f5ac",
-        "status": "deferred"
+        "status": "partial"
       },
       "transform-function": {
         "grammar": "37bbf241b4a326d7952b91ef6f08463044e2035c39e4f544117400aa74850417",

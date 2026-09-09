@@ -16,10 +16,112 @@ import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
+import * as Sizing from '../../test/fixtures/Sizing.js'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('intrinsic sizing preserves keyword precedence, explicit tokens, and maps', () => {
+    const output = Transform.compile({
+      moduleId: 'example/sizing.ts',
+      source: Sizing.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-flktdz142jfd9-zyzz-theme{--z-tflktdz142jfd9-zyzz-spacing_2e_min-content:24px;--z-tflktdz142jfd9-zyzz-spacing_2e_narrow:40px;}
+      .z-style-flktdz142jfd9-143{inline-size:min-content;}
+      .z-style-flktdz142jfd9-206{inline-size:max-content;}
+      .z-style-flktdz142jfd9-260{inline-size:100%;inline-size:fit-content!important;min-width:auto;max-width:none;}
+      .z-style-flktdz142jfd9-361{width:var(--z-tflktdz142jfd9-zyzz-spacing_2e_min-content,24px);}
+      .z-style-flktdz142jfd9-450{min-inline-size:var(--z-tflktdz142jfd9-zyzz-spacing_2e_narrow,40px);max-inline-size:max-content;block-size:fit-content;min-block-size:auto;max-block-size:none;}
+      .z-flktdz142jfd9-base0{flex-shrink:0;}
+      .z-style-flktdz142jfd9-603{flex-basis:content;width:5px;min-width:0;}
+      .z-style-flktdz142jfd9-694{flex-basis:auto;width:5px;min-width:0;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) =>
+      line.includes('inline-size:fit-content'),
+    )
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('inline-size:fit-content'),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 43,
+        "line": 5,
+        "name": "inlineSize",
+        "source": "example/sizing.ts",
+      }
+    `)
+  })
+
+  test('intrinsic sizing rejects keywords outside their property domains', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import { css } from 'zyzz'; css({width:'none',maxHeight:'auto',minWidth:'none',padding:'min-content',height:'content'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: invalid.ts:39: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
+      invalid.ts:56: Expected a nonnegative literal length or numeric zero. Also accepts: fit-content, max-content, min-content, none.
+      invalid.ts:72: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
+      invalid.ts:87: Expected a nonnegative literal length or numeric zero.
+      invalid.ts:108: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.]
+    `)
+  })
+
+  test('intrinsic sizing and flex content resolve native browser widths', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/sizing.ts',
+      source: Sizing.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      loader: 'ts',
+      format: 'esm',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      const content =
+        '<span style="display:inline-block;width:40px;height:10px"></span><wbr><span style="display:inline-block;width:40px;height:10px"></span>'
+      await page.setContent(
+        `<style>${output.css}</style><main style="width:60px">${['minimum', 'maximum', 'fit'].map((name) => `<div id="${name}" class="${module[name].className}">${content}</div>`).join('')}<div id="explicit" class="${module.explicit.className}"></div></main><section style="display:flex;width:200px"><div id="content" class="${module.content.className}">${content}</div><div id="automatic" class="${module.automatic.className}">${content}</div></section>`,
+      )
+      expect(
+        await page.evaluate(() =>
+          Object.fromEntries(
+            [
+              'minimum',
+              'maximum',
+              'fit',
+              'explicit',
+              'content',
+              'automatic',
+            ].map((id) => [
+              id,
+              document.getElementById(id)!.getBoundingClientRect().width,
+            ]),
+          ),
+        ),
+      ).toMatchInlineSnapshot(`
+        {
+          "automatic": 5,
+          "content": 80,
+          "explicit": 24,
+          "fit": 60,
+          "maximum": 80,
+          "minimum": 40,
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('border source tokens and mixed physical/logical priority render in the browser', async () => {
     const output = Transform.compile({
       moduleId: 'example/borders.ts',
@@ -168,7 +270,7 @@ describe('compile', () => {
       }),
     ).toThrowErrorMatchingInlineSnapshot(`
       [Source.ExtractError: invalid.ts:39: Expected a finite integer from -9007199254740991 to 9007199254740991.
-      invalid.ts:53: Expected a nonnegative literal length, auto, or numeric zero.
+      invalid.ts:53: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: content, fit-content, max-content, min-content.
       invalid.ts:70: Expected one of: auto, baseline, center, end, flex-end, flex-start, normal, self-end, self-start, start, stretch (or a CSS-wide keyword).
       invalid.ts:95: Expected one of: auto, clip, hidden, scroll, visible (or a CSS-wide keyword).]
     `)
@@ -330,7 +432,7 @@ describe('compile', () => {
     expect(diagnostics).toMatchInlineSnapshot(`
       [
         "invalid.ts:47: Expected a nonnegative literal length or numeric zero.",
-        "invalid.ts:43: Expected a nonnegative literal length, auto, or numeric zero.",
+        "invalid.ts:43: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.",
         "invalid.ts:39: Expected a literal length, auto, or numeric zero.",
         "invalid.ts:45: Expected one of: horizontal-tb, vertical-lr, vertical-rl (or a CSS-wide keyword).",
       ]
@@ -489,7 +591,7 @@ export const props = theme.css({
         source: `import { css } from 'zyzz'; export const props = css({width:'0x10dvh'})();`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid-length.ts:60: Expected a nonnegative literal length, auto, or numeric zero.]`,
+      `[Source.ExtractError: invalid-length.ts:60: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.]`,
     )
     expect(() =>
       Transform.compile({

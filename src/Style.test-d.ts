@@ -71,8 +71,8 @@ Config.create({ theme: logicalTheme }).css({
 css({ inlineSize: 'md' })
 // @ts-expect-error Padding cannot accept auto.
 css({ paddingInline: 'auto' })
-// @ts-expect-error Minimum sizes retain the bounded length grammar.
-css({ minBlockSize: 'auto' })
+// @ts-expect-error None is exclusive to maximum dimensions.
+css({ minBlockSize: 'none' })
 // @ts-expect-error Color tokens cannot become dimensions.
 logicalTheme.css({ blockSize: logicalTheme.tokens.color.brand })
 // @ts-expect-error Invalid numeric spellings remain rejected on logical lengths.
@@ -83,6 +83,37 @@ css({ marginInline: '1px 2px' })
 css({ writingMode: 'diagonal' })
 
 const definition = Style.define(components)
+css({
+  width: 'min-content',
+  height: 'max-content',
+  inlineSize: 'fit-content!',
+  blockSize: 'max-content',
+  minWidth: 'auto',
+  minHeight: 'fit-content',
+  minInlineSize: 'min-content',
+  minBlockSize: 'auto',
+  maxWidth: 'none',
+  maxHeight: 'max-content',
+  maxInlineSize: 'none',
+  maxBlockSize: 'fit-content',
+  flexBasis: 'content',
+})
+const sizingTheme = Theme.define({ spacing: { 'min-content': '24px' } })
+Config.create({ theme: sizingTheme }).css({
+  width: ['min-content', sizingTheme.tokens.spacing['min-content']],
+})
+// @ts-expect-error None is not a preferred dimension.
+css({ width: 'none' })
+// @ts-expect-error Maximum dimensions do not accept auto.
+css({ maxWidth: 'auto' })
+// @ts-expect-error Content is exclusive to flex basis.
+css({ inlineSize: 'content' })
+// @ts-expect-error Intrinsic keywords do not become spacing values.
+css({ padding: 'min-content' })
+// @ts-expect-error Function parsing remains a separate capability.
+css({ width: 'fit-content(10px)' })
+// @ts-expect-error Theme spacing remains a literal length domain.
+Theme.define({ spacing: { small: 'min-content' } })
 css({
   alignContent: 'space-between',
   alignSelf: 'auto',

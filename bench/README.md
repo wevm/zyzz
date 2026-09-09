@@ -145,3 +145,7 @@ Benchmarks without timing samples are marked unavailable in reports and excluded
 ## Borders and Outlines
 
 `Transform.bench.ts` includes 10/100 additional border styles with logical/physical conflicts, corners, outlines, token colors/radii, and important fallbacks. Timings cover the source pipeline; setup records CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli transfer in `bench/results/transform/borders-*.json`. Browser fixtures compare every added property with native CSS and verify repeated whole-border overrides.
+
+## Intrinsic Sizing
+
+`Transform.bench.ts` measures 10/100 additional intrinsic sizing styles with minimum/maximum constraints, flex content, and important fallbacks. Setup writes CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli delivery to `bench/results/transform/sizing-*.json`. Browser fixtures verify min/max/fit-content widths and the distinction between content and auto flex basis.

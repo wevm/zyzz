@@ -61,19 +61,35 @@ By default, compile `src` into `dist` and emit `dist/styles.css`. Point the down
 
 ### Use Compiler API
 
-Transform source directly for a custom integration or library build:
+Build source files programmatically with `Host` from `zyzz/node`:
 
 ```ts
-import { Transform } from 'zyzz/compiler'
+import { Host } from 'zyzz/node'
 
-const output = Transform.compile({
-  moduleId: 'src/button.ts',
-  source: `import { css } from 'zyzz';
-export const button = css({ color: '#06c', padding: '1rem' });`,
+const host = await Host.create({
+  outDir: 'dist',
+  packageId: 'my-app',
+  root: 'src',
+})
+
+try {
+  await host.build()
+} finally {
+  await host.close()
+}
+```
+
+The host writes rewritten modules, CSS sidecars, and source maps to `dist`. Downstream tooling handles TypeScript/JSX lowering and stylesheet loading.
+
+For watching, replace the build-and-close block with:
+
+```ts
+host.watch({
+  onResult: (event) => console.log(event),
 })
 ```
 
-Bundle `output.code` and load its matching `output.css`; retain `output.map` and `output.cssMap` for source mapping. See [Build & Delivery](docs/guides/compilation.md).
+Watching performs an initial build, then reports rebuilds and errors. Call `await host.close()` when the owning process or integration shuts down. See [Host.create](docs/api/node/Host/create.md).
 
 [Guides](docs/guides/README.md) · [Concepts](docs/concepts.md) · [API Reference](docs/api/README.md)
 
@@ -172,21 +188,23 @@ Use [`Theme.define`](docs/api/core/Theme/define.md) for reusable definitions out
 
 ### Dark Mode
 
-Color pairs compile to `light-dark()`. CSS selects the scheme independently of the theme, including system preference without a JavaScript listener.
+Color pairs compile to `light-dark()`. Set `colorScheme` through an ancestor's `style` prop to select the scheme for its descendants:
 
-```css
-:root {
-  color-scheme: light dark;
-}
-.light {
-  color-scheme: light;
-}
-.dark {
-  color-scheme: dark;
+```tsx
+import { zyzz } from './zyzz.config.js'
+
+const card = zyzz.css({ color: 'text', padding: 'sm' })
+
+export function App() {
+  return (
+    <main className={zyzz.theme.className} style={{ colorScheme: 'dark' }}>
+      <article {...card()}>Dark mode</article>
+    </main>
+  )
 }
 ```
 
-The custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode.
+Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` to follow system preference without a JavaScript listener. The custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode.
 
 ### Variants
 

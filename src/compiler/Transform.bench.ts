@@ -25,6 +25,7 @@ import * as Grid from '../../test/fixtures/Grid.js'
 import * as GridLists from '../../test/fixtures/GridLists.js'
 import * as Prefixed from '../../test/fixtures/Prefixed.js'
 import * as Percentage from '../../test/fixtures/Percentage.js'
+import * as Tuples from '../../test/fixtures/Tuples.js'
 import * as Corners from '../../test/fixtures/Corners.js'
 import * as Geometry from '../../test/fixtures/Geometry.js'
 import * as Identifiers from '../../test/fixtures/Identifiers.js'
@@ -279,6 +280,12 @@ const workloads = {
       `export const percentage${index} = css({fontWidth:'${100 + index}%',textSizeAdjust:'110%',opacity:'${index}%',zoom:'125%'})();`,
     source: Percentage.source,
     title: 'percentage',
+  },
+  tuples: {
+    declaration: (index: number) =>
+      `export const tuple${index} = css({borderImageSlice:'25% fill',borderImageWidth:'1 2 3 4',borderImageOutset:'${index}px 2px',scrollbarColor:'red blue'})();`,
+    source: Tuples.source,
+    title: 'scalar tuple',
   },
   corners: {
     declaration: (index: number) =>

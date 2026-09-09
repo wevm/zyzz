@@ -38,6 +38,30 @@ export function cases(): readonly Case[] {
       'revert-layer',
       'unset',
     ]
+    if (rule.kind === 'tuple') {
+      const atoms: readonly string[] = rule.atoms
+      if ('standalone' in rule) values.push(...rule.standalone)
+      if ('keywords' in rule) values.push(...rule.keywords)
+      if (atoms.includes('color')) {
+        values.push('red blue', 'rgb(0 0 0) oklch(60% .1 240)')
+        if (rule.min === 1) values.push('red')
+        if (rule.max > 2) values.push('red blue green yellow black white')
+      }
+      if (atoms.includes('length')) values.push(0, '1px', 'calc(1px + 2px)')
+      if (atoms.includes('number') || atoms.includes('integer'))
+        values.push(0, 2, '1 2', '1 2 3', 'calc(1 + 2)')
+      if (atoms.includes('percentage')) values.push('10%', '10% 20%')
+      if (atoms.includes('length') && atoms.includes('number'))
+        values.push('1px 2 3px 4')
+      if (atoms.includes('time')) values.push('1s', '1s 200ms', 'normal 200ms')
+      if ('marker' in rule) {
+        values.push('1 2 3 4 fill')
+        if (rule.markerPosition === 'any') values.push('fill 10% 20%')
+      }
+      if (atoms.includes('integer') && 'keywords' in rule)
+        values.push('auto 2 3')
+      if ('list' in rule) values.push('auto 10%, 20px')
+    }
     if (rule.kind === 'corner') {
       values.push(
         'bevel',

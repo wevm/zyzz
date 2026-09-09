@@ -44,7 +44,7 @@ The dedicated **CSS Property Conformance (100%)** CI job publishes a summary and
 
 The status inventory is a reviewed completion ledger, not a browser certification or proof derived from test counts. A property may be promoted only after its grammar, public typing, emitted declarations, and browser behavior have been reviewed against independent evidence. Relabeling entries does not implement them. The existing grammar/type/browser integration jobs must also pass.
 
-Current completion is 0/670 (0%): 531 partial and 139 deferred. This intentionally leaves the consolidated implementation PR blocked. All remaining implementation and evidence work stays in that PR until the full gate passes.
+Current completion is 0/670 (0%): 546 partial and 124 deferred. This intentionally leaves the consolidated implementation PR blocked. All remaining implementation and evidence work stays in that PR until the full gate passes.
 
 Motion lists preserve comma grouping inside `cubic-bezier()`, `steps()`, and `linear()`. Independent grammar probes, consumer types, and browser comparisons cover numeric restrictions, list ordering, importance, and paused animation output. Substitution, comments, and escaped spellings remain incomplete. Easing semantics follow [CSS Easing Functions](https://www.w3.org/TR/css-easing-2/).
 
@@ -95,3 +95,7 @@ Seventeen corner-shape properties accept canonical curvature keywords, finite su
 Source and type probes retain arity and dimension restrictions. Browser fixtures compare bevel hit testing with an independent polygon and verify A/B/A declarations around an all reset. These entries remain partial. Contracts follow [CSS Borders](https://www.w3.org/TR/css-borders-4/#corner-shaping).
 
 Path-length remains deferred: the pinned grammar places its range outside the length production, while [the MDN examples](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/path-length) describe unitless numbers. The independent grammar oracle is unchanged pending clarification of that experimental property.
+
+Fifteen compound-value properties add border/mask image slices, widths and outsets; two scrollbar colors; unbounded legacy Mozilla color lists; hyphenation limits; interest-delay pairs; and comma-separated view-timeline insets. Domains distinguish numeric factors, lengths, percentages, colors, integer counts, and times, with explicit arity and fill-marker placement.
+
+Interest-delay shorthands share conflict domains with start/end longhands. Independent source and consumer probes cover repeated scalar grammar; native controls compare border-image painting and computed scrollbar colors. These entries remain partial. See [CSS Backgrounds](https://www.w3.org/TR/css-backgrounds-3/#border-images), [CSS Masking](https://www.w3.org/TR/css-masking-1/#mask-borders), and [CSS Scrollbars](https://www.w3.org/TR/css-scrollbars-1/#scrollbar-color).

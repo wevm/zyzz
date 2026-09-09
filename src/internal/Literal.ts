@@ -9,6 +9,7 @@ import * as Grid from './Grid.js'
 import * as Geometry from './Geometry.js'
 import * as Identifier from './Identifier.js'
 import * as Motion from './Motion.js'
+import * as Tuple from './Tuple.js'
 import * as Substitution from './Substitution.js'
 import * as MathExpression from './Math.js'
 
@@ -66,6 +67,7 @@ type Rule = { readonly list?: true } & (
   | ({ readonly kind: 'identifier' } & Identifier.valid.Options)
   | { readonly kind: 'line'; readonly outline?: true }
   | { readonly kind: 'corner'; readonly items?: 2 | 4 }
+  | ({ readonly kind: 'tuple' } & Omit<Tuple.valid.Options, 'color' | 'units'>)
   | {
       readonly auto: boolean
       readonly axes?: true
@@ -141,6 +143,30 @@ type Keywords<rule> = rule extends {
 type Listed<value extends string | number, rule> =
   | value
   | (rule extends { list: true } ? `${value},${string}` : never)
+type TupleAtom<rule extends Rule> = rule extends {
+  atoms: readonly (infer atom)[]
+}
+  ?
+      | (Extract<atom, 'number' | 'integer'> extends never
+          ? never
+          : number | `${number}` | Calculation)
+      | ('length' extends atom
+          ? Exclude<Length, `${number}%`> | Calculation
+          : never)
+      | ('percentage' extends atom ? `${number}%` | Calculation : never)
+      | ('time' extends atom ? Time | Calculation : never)
+      | ('color' extends atom ? Color : never)
+      | Keywords<rule>
+  : never
+type TupleValue<rule extends Rule> =
+  | (rule extends { standalone: readonly (infer keyword extends string)[] }
+      ? keyword
+      : never)
+  | (rule extends { min: 1 } ? TupleAtom<rule> : never)
+  | `${TupleAtom<rule>} ${string}`
+  | (rule extends { marker: 'fill'; markerPosition: 'any' }
+      ? `fill ${string}`
+      : never)
 type Value<rule extends Rule> =
   | `${string}var(--${string})${string}`
   | Global
@@ -187,77 +213,79 @@ type Value<rule extends Rule> =
                       | (rule extends { items: number }
                           ? `${Corner.Value} ${string}`
                           : never)
-                  : rule extends { kind: 'identifier' }
-                    ? string
-                    : rule extends { kind: 'length' }
-                      ?
-                          | Listed<
-                              Extract<LengthValue<rule>, string | number>,
+                  : rule extends { kind: 'tuple' }
+                    ? Listed<TupleValue<rule>, rule>
+                    : rule extends { kind: 'identifier' }
+                      ? string
+                      : rule extends { kind: 'length' }
+                        ?
+                            | Listed<
+                                Extract<LengthValue<rule>, string | number>,
+                                rule
+                              >
+                            | (rule extends { items: number }
+                                ? `${Extract<LengthValue<rule>, string | number>} ${string}`
+                                : never)
+                            | (rule extends { axes: true }
+                                ? `${Length | Calculation}/${string}`
+                                : never)
+                        : rule extends { kind: 'number' }
+                          ? Listed<
+                              | Calculation
+                              | number
+                              | Keywords<rule>
+                              | (rule extends { percentage: true }
+                                  ? `${number}%`
+                                  : never),
                               rule
                             >
-                          | (rule extends { items: number }
-                              ? `${Extract<LengthValue<rule>, string | number>} ${string}`
-                              : never)
-                          | (rule extends { axes: true }
-                              ? `${Length | Calculation}/${string}`
-                              : never)
-                      : rule extends { kind: 'number' }
-                        ? Listed<
-                            | Calculation
-                            | number
-                            | Keywords<rule>
-                            | (rule extends { percentage: true }
-                                ? `${number}%`
-                                : never),
-                            rule
-                          >
-                        : rule extends { kind: 'percentage' }
-                          ? Calculation | `${number}%` | Keywords<rule>
-                          : rule extends {
-                                kind: 'enum'
-                                values: readonly (infer keyword extends
-                                  string)[]
-                              }
-                            ?
-                                | Listed<
-                                    | keyword
-                                    | (rule extends { easing: true }
-                                        ? Easing
-                                        : never),
-                                    rule
-                                  >
-                                | (rule extends { items: number }
-                                    ? `${keyword} ${string}`
-                                    : never)
-                                | (rule extends {
-                                    groups: readonly (readonly (infer component extends
-                                      string)[])[]
-                                  }
-                                    ? `${component} ${string}`
-                                    : never)
-                            : rule extends { kind: 'grid-tracks' }
+                          : rule extends { kind: 'percentage' }
+                            ? Calculation | `${number}%` | Keywords<rule>
+                            : rule extends {
+                                  kind: 'enum'
+                                  values: readonly (infer keyword extends
+                                    string)[]
+                                }
                               ?
-                                  | GridTracks
-                                  | (rule extends { explicit: true }
-                                      ?
-                                          | 'none'
-                                          | 'subgrid'
-                                          | `repeat(${string})${string}`
-                                          | `[${string}`
-                                      : never)
-                              : rule extends { kind: 'grid-line' }
-                                ? number | 'auto' | `span ${bigint}`
-                                : rule extends { kind: 'time' }
-                                  ? Listed<
-                                      Calculation | Time | Keywords<rule>,
+                                  | Listed<
+                                      | keyword
+                                      | (rule extends { easing: true }
+                                          ? Easing
+                                          : never),
                                       rule
                                     >
-                                  :
-                                      | Color
-                                      | Keywords<rule>
-                                      | (rule extends { items: number }
-                                          ? `${Color} ${string}`
-                                          : never))
+                                  | (rule extends { items: number }
+                                      ? `${keyword} ${string}`
+                                      : never)
+                                  | (rule extends {
+                                      groups: readonly (readonly (infer component extends
+                                        string)[])[]
+                                    }
+                                      ? `${component} ${string}`
+                                      : never)
+                              : rule extends { kind: 'grid-tracks' }
+                                ?
+                                    | GridTracks
+                                    | (rule extends { explicit: true }
+                                        ?
+                                            | 'none'
+                                            | 'subgrid'
+                                            | `repeat(${string})${string}`
+                                            | `[${string}`
+                                        : never)
+                                : rule extends { kind: 'grid-line' }
+                                  ? number | 'auto' | `span ${bigint}`
+                                  : rule extends { kind: 'time' }
+                                    ? Listed<
+                                        Calculation | Time | Keywords<rule>,
+                                        rule
+                                      >
+                                    :
+                                        | Color
+                                        | Keywords<rule>
+                                        | (rule extends { items: number }
+                                            ? `${Color} ${string}`
+                                            : never))
 const blend = {
   kind: 'enum',
   values: [
@@ -858,10 +886,34 @@ export const rules = {
   borderColor: { ...color, items: 4 },
   borderEndEndRadius: { ...length, items: 2 },
   borderEndStartRadius: { ...length, items: 2 },
+  borderImageOutset: {
+    kind: 'tuple',
+    atoms: ['length', 'number'],
+    min: 1,
+    max: 4,
+    negative: false,
+  },
   borderImageRepeat: {
     items: 2,
     kind: 'enum',
     values: ['repeat', 'round', 'space', 'stretch'],
+  },
+  borderImageSlice: {
+    kind: 'tuple',
+    atoms: ['number', 'percentage'],
+    marker: 'fill',
+    markerPosition: 'any',
+    min: 1,
+    max: 4,
+    negative: false,
+  },
+  borderImageWidth: {
+    kind: 'tuple',
+    atoms: ['length', 'number', 'percentage'],
+    keywords: ['auto'],
+    min: 1,
+    max: 4,
+    negative: false,
   },
   borderInline: { kind: 'line' },
   borderInlineColor: { ...color, items: 2 },
@@ -1316,6 +1368,14 @@ export const rules = {
     values: ['allow-end', 'first', 'force-end', 'last', 'none'],
   },
   height: size,
+  hyphenateLimitChars: {
+    kind: 'tuple',
+    atoms: ['integer'],
+    keywords: ['auto'],
+    min: 1,
+    max: 3,
+    negative: false,
+  },
   hyphens: { kind: 'enum', values: ['auto', 'manual', 'none'] },
   imageRendering: {
     kind: 'enum',
@@ -1338,6 +1398,14 @@ export const rules = {
   insetInlineEnd: margin,
   insetInlineStart: margin,
   interactivity: { kind: 'enum', values: ['auto', 'inert'] },
+  interestDelay: {
+    kind: 'tuple',
+    atoms: ['time'],
+    keywords: ['normal'],
+    min: 1,
+    max: 2,
+    negative: false,
+  },
   interestDelayEnd: { keywords: ['normal'], kind: 'time', negative: true },
   interestDelayStart: { keywords: ['normal'], kind: 'time', negative: true },
   interpolateSize: { kind: 'enum', values: ['allow-keywords', 'numeric-only'] },
@@ -1498,10 +1566,34 @@ export const rules = {
   marginTop: margin,
   marginTrim: { kind: 'enum', values: ['all', 'in-flow', 'none'] },
   maskBorderMode: { kind: 'enum', values: ['alpha', 'luminance'] },
+  maskBorderOutset: {
+    kind: 'tuple',
+    atoms: ['length', 'number'],
+    min: 1,
+    max: 4,
+    negative: false,
+  },
   maskBorderRepeat: {
     items: 2,
     kind: 'enum',
     values: ['repeat', 'round', 'space', 'stretch'],
+  },
+  maskBorderSlice: {
+    kind: 'tuple',
+    atoms: ['number', 'percentage'],
+    marker: 'fill',
+    markerPosition: 'last',
+    min: 1,
+    max: 4,
+    negative: false,
+  },
+  maskBorderWidth: {
+    kind: 'tuple',
+    atoms: ['length', 'number', 'percentage'],
+    keywords: ['auto'],
+    min: 1,
+    max: 4,
+    negative: false,
   },
   maskClip: {
     kind: 'enum',
@@ -1705,6 +1797,38 @@ export const rules = {
       'treeview',
     ],
   },
+  MozBorderBottomColors: {
+    kind: 'tuple',
+    atoms: ['color'],
+    standalone: ['none'],
+    min: 1,
+    max: Infinity,
+    negative: false,
+  },
+  MozBorderLeftColors: {
+    kind: 'tuple',
+    atoms: ['color'],
+    standalone: ['none'],
+    min: 1,
+    max: Infinity,
+    negative: false,
+  },
+  MozBorderRightColors: {
+    kind: 'tuple',
+    atoms: ['color'],
+    standalone: ['none'],
+    min: 1,
+    max: Infinity,
+    negative: false,
+  },
+  MozBorderTopColors: {
+    kind: 'tuple',
+    atoms: ['color'],
+    standalone: ['none'],
+    min: 1,
+    max: Infinity,
+    negative: false,
+  },
   MozFloatEdge: {
     kind: 'enum',
     values: ['border-box', 'content-box', 'margin-box', 'padding-box'],
@@ -1757,6 +1881,14 @@ export const rules = {
     values: ['mandatory', 'none', 'proximity'],
   },
   MsHighContrastAdjust: { kind: 'enum', values: ['auto', 'none'] },
+  MsHyphenateLimitChars: {
+    kind: 'tuple',
+    atoms: ['integer'],
+    standalone: ['auto'],
+    min: 1,
+    max: 3,
+    negative: false,
+  },
   MsHyphenateLimitZone: length,
   MsImeAlign: { kind: 'enum', values: ['after', 'auto'] },
   MsOverflowStyle: {
@@ -1969,6 +2101,14 @@ export const rules = {
   rx: { ...length, auto: true },
   ry: { ...length, auto: true },
   scale: { kind: 'scale' },
+  scrollbarColor: {
+    kind: 'tuple',
+    atoms: ['color'],
+    standalone: ['auto'],
+    min: 2,
+    max: 2,
+    negative: false,
+  },
   scrollbarGutter: {
     kind: 'enum',
     values: ['auto', 'both-edges stable', 'stable', 'stable both-edges'],
@@ -2478,6 +2618,15 @@ export const rules = {
     list: true,
     values: ['block', 'inline', 'x', 'y'],
   },
+  viewTimelineInset: {
+    kind: 'tuple',
+    atoms: ['length', 'percentage'],
+    keywords: ['auto'],
+    list: true,
+    min: 1,
+    max: 2,
+    negative: true,
+  },
   viewTimelineName: {
     dashed: true,
     keywords: ['none'],
@@ -2892,6 +3041,15 @@ export function validate(
         Colors.functional(value))
       ? undefined
       : 'Expected a named color, system color, hex color, transparent, or currentColor.'
+  if (rule.kind === 'tuple')
+    return Tuple.valid(value, {
+      ...rule,
+      color: (part) =>
+        !globals.has(part) && validate('color', part) === undefined,
+      units: lengthUnits,
+    })
+      ? undefined
+      : 'Expected a valid scalar tuple with the required units, component count, and marker placement.'
   if (rule.kind === 'corner') {
     const parts =
       typeof value === 'string'

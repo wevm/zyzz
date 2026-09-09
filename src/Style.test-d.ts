@@ -19,6 +19,31 @@ import * as TextTimeline from '../test/fixtures/TextTimeline.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
+describe('compound scalar declarations', () => {
+  test('typed tuples preserve scalar domains', () => {
+    css({
+      borderImageSlice: 'fill 10% 20%',
+      borderImageWidth: '1 auto 20% 3px',
+      borderImageOutset: '1 2px',
+      scrollbarColor: 'red blue',
+      MozBorderTopColors: 'red blue green yellow black white',
+      interestDelay: '1s 200ms',
+      viewTimelineInset: 'auto 10%, 20px',
+      hyphenateLimitChars: 'auto 3 2',
+    })
+    // @ts-expect-error Scrollbar colors require two colors or auto.
+    css({ scrollbarColor: 'red' })
+    // @ts-expect-error Border image slices exclude lengths.
+    css({ borderImageSlice: '1px' })
+    // @ts-expect-error Outset excludes percentages.
+    css({ borderImageOutset: '10%' })
+    // @ts-expect-error Interest delays use time dimensions.
+    css({ interestDelay: '1px' })
+    // @ts-expect-error A fill marker needs numeric components.
+    css({ borderImageSlice: 'fill' })
+  })
+})
+
 describe('corner and layout declarations', () => {
   test('typed curvature and reset values preserve property domains', () => {
     css({

@@ -119,6 +119,7 @@ export function compile<
           domain: ((property: string) => {
             if (resets) return 'all'
             if (property.startsWith('corner')) return 'cornerShape'
+            if (property.startsWith('interestDelay')) return 'interestDelay'
             if (property.startsWith('backgroundPosition'))
               return 'backgroundPosition'
             if (

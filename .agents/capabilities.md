@@ -1,6 +1,6 @@
 # CSS Capability Inventory
 
-Version 3. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
+Version 4. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
 
 ## Current Web Surface
 
@@ -21,6 +21,8 @@ Standard length units share one vocabulary for types and runtime validation. Sou
 Logical box properties add dimensions, min/max dimensions, block/inline margins and padding, and logical/physical inset offsets. Direction and horizontal/vertical writing-mode enums control browser mapping. `Logical` fixtures cover every added property, source maps, token fallbacks/importance, inherited modes, and ordered A/B/A conflicts; browser validation runs in CI. A logical-box transform benchmark covers 10/100 additional styles.
 
 Logical/physical dimensions share conflict domains only when logical dimensions are authored. Insets share one domain; existing margin/padding domains include their logical forms. Scalar shorthands retain authored order. Multi-value shorthands, intrinsic sizing keywords, sideways writing modes, and logical borders remain deferred.
+
+Flex layout adds `flexBasis`, `order`, `alignSelf`, and `alignContent`; overflow adds `overflow`/`overflowX`/`overflowY`. Safe integer order is checked at runtime. Flex basis uses the existing length/auto domain and spacing tokens. Overflow declarations share one conflict domain. Source, type, map, browser-layout/scroll, and A/B/A fixtures accompany a 10/100-style transform and delivery benchmark.
 
 ## Targets
 

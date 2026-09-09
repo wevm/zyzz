@@ -45,6 +45,7 @@ type Rule =
       readonly values: readonly string[]
     }
   | {
+      readonly integer?: boolean
       readonly kind: 'number'
       readonly max: number
       readonly min: number
@@ -137,10 +138,30 @@ const lengthPattern = new RegExp(
   `^([+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?)(${lengthUnits.join('|')})$`,
 )
 const margin = { auto: true, kind: 'length', negative: true } as const
+const overflow = {
+  kind: 'enum',
+  values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
+} as const
 const size = { auto: true, kind: 'length', negative: false } as const
 
 /** Single source of truth for the supported literal properties and domains. */
 export const rules = {
+  alignContent: {
+    kind: 'enum',
+    values: [
+      'baseline',
+      'center',
+      'end',
+      'flex-end',
+      'flex-start',
+      'normal',
+      'space-around',
+      'space-between',
+      'space-evenly',
+      'start',
+      'stretch',
+    ],
+  },
   alignItems: {
     kind: 'enum',
     values: [
@@ -150,6 +171,22 @@ export const rules = {
       'flex-end',
       'flex-start',
       'normal',
+      'start',
+      'stretch',
+    ],
+  },
+  alignSelf: {
+    kind: 'enum',
+    values: [
+      'auto',
+      'baseline',
+      'center',
+      'end',
+      'flex-end',
+      'flex-start',
+      'normal',
+      'self-end',
+      'self-start',
       'start',
       'stretch',
     ],
@@ -178,6 +215,7 @@ export const rules = {
       'none',
     ],
   },
+  flexBasis: size,
   flexDirection: {
     kind: 'enum',
     values: ['column', 'column-reverse', 'row', 'row-reverse'],
@@ -234,6 +272,16 @@ export const rules = {
   minInlineSize: length,
   minWidth: length,
   opacity: { kind: 'number', max: 1, min: 0 },
+  // Safe integers serialize without exponential notation in CSS integer positions.
+  order: {
+    integer: true,
+    kind: 'number',
+    max: Number.MAX_SAFE_INTEGER,
+    min: Number.MIN_SAFE_INTEGER,
+  },
+  overflow,
+  overflowX: overflow,
+  overflowY: overflow,
   padding: length,
   paddingBlock: length,
   paddingBlockEnd: length,
@@ -283,10 +331,11 @@ export function validate(
   if (rule.kind === 'number')
     return typeof value === 'number' &&
       Number.isFinite(value) &&
+      (!rule.integer || Number.isInteger(value)) &&
       value >= rule.min &&
       value <= rule.max
       ? undefined
-      : `Expected a finite number from ${rule.min} to ${rule.max}.`
+      : `Expected a finite ${rule.integer ? 'integer' : 'number'} from ${rule.min} to ${rule.max}.`
   if (value === 0 || (rule.auto && value === 'auto')) return undefined
   const match = typeof value === 'string' ? lengthPattern.exec(value) : null
   const amount = match ? Number(match[1]) : NaN

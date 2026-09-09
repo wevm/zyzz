@@ -96,20 +96,24 @@ export function compile<
             ? 'margin'
             : property.startsWith('padding')
               ? 'padding'
-              : ['columnGap', 'gap', 'rowGap'].includes(property)
-                ? 'gap'
-                : /^(inset|top$|right$|bottom$|left$)/.test(property)
-                  ? 'inset'
-                  : logicalSizing &&
-                      /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(
-                        property,
-                      )
-                    ? property.startsWith('min')
-                      ? 'min-size'
-                      : property.startsWith('max')
-                        ? 'max-size'
-                        : 'size'
-                    : property,
+              : property === 'overflow' ||
+                  property === 'overflowX' ||
+                  property === 'overflowY'
+                ? 'overflow'
+                : ['columnGap', 'gap', 'rowGap'].includes(property)
+                  ? 'gap'
+                  : /^(inset|top$|right$|bottom$|left$)/.test(property)
+                    ? 'inset'
+                    : logicalSizing &&
+                        /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(
+                          property,
+                        )
+                      ? property.startsWith('min')
+                        ? 'min-size'
+                        : property.startsWith('max')
+                          ? 'max-size'
+                          : 'size'
+                      : property,
           message,
         }
         values.set(value, entry)

@@ -10,6 +10,51 @@ import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 
 describe('compile', () => {
+  test('overflow shorthand sharing retains repeated overrides in the browser', async () => {
+    const output = Css.compile({
+      styles: Style.define({
+        a: { overflow: 'hidden' },
+        b: { overflowX: 'scroll' },
+        c: { overflow: 'hidden' },
+      }),
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-a{overflow:hidden;}
+      .z-b{overflow-x:scroll;}
+      .z-c{overflow:hidden;}"
+    `)
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.a} ${output.classes.b} ${output.classes.c}"></div>`,
+      )
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).overflowX),
+      ).toMatchInlineSnapshot(`"hidden"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('order rejects nonfinite values at the public declaration boundary', () => {
+    expect(() =>
+      Css.compile({
+        styles: Style.define({
+          item: { order: Infinity },
+          unsafe: { order: 1e21 },
+        }),
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `
+      [Style.InvalidError: ["item","order"]: Expected a finite integer from -9007199254740991 to 9007199254740991.
+      ["unsafe","order"]: Expected a finite integer from -9007199254740991 to 9007199254740991.]
+    `,
+    )
+  })
+
   test('logical boxes match native controls across authored writing modes in the browser', async () => {
     const output = Css.compile({
       styles: Style.define({

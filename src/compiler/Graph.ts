@@ -95,13 +95,17 @@ function build(options: compile.Options, cache?: Cache): Cache {
     ]),
   )
   // File-set changes can alter extensionless resolution even without source edits.
-  const previous =
-    cache &&
-    cache.contracts === contracts &&
-    ids.length === Object.keys(cache.sources).length &&
-    ids.every((id) => Object.hasOwn(cache.sources, id))
-      ? cache
-      : undefined
+  const previous = (() => {
+    if (
+      cache &&
+      cache.contracts === contracts &&
+      ids.length === Object.keys(cache.sources).length &&
+      ids.every((id) => Object.hasOwn(cache.sources, id))
+    ) {
+      return cache
+    }
+    return undefined
+  })()
   if (
     previous &&
     ids.every(
@@ -319,12 +323,15 @@ function build(options: compile.Options, cache?: Cache): Cache {
             specifier.importKind === 'type'
           )
             continue
-          const name =
-            specifier.type === 'ImportDefaultSpecifier'
-              ? 'default'
-              : specifier.imported.type === 'Identifier'
-                ? specifier.imported.name
-                : specifier.imported.value
+          const name = (() => {
+            if (specifier.type === 'ImportDefaultSpecifier') {
+              return 'default'
+            }
+            if (specifier.imported.type === 'Identifier') {
+              return specifier.imported.name
+            }
+            return specifier.imported.value
+          })()
           if (Object.hasOwn(contracts, name))
             links[specifier.local.name] = contracts[name]!
         }

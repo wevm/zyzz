@@ -150,12 +150,15 @@ export function extract(options: extract.Options): extract.ReturnType {
       const specifier = binding.node
       if (specifier.type === 'ImportNamespaceSpecifier') {
         if (parent.type === 'MemberExpression' && parent.object === node) {
-          const name =
-            parent.property.type === 'Identifier' && !parent.computed
-              ? parent.property.name
-              : parent.property.type === 'Literal'
-                ? parent.property.value
-                : undefined
+          const name = (() => {
+            if (parent.property.type === 'Identifier' && !parent.computed) {
+              return parent.property.name
+            }
+            if (parent.property.type === 'Literal') {
+              return parent.property.value
+            }
+            return undefined
+          })()
           if (name === 'Config' || name === 'css' || name === 'Theme')
             report(
               'unsupported_syntax',

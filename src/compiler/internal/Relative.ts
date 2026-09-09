@@ -22,33 +22,34 @@ export function resolve(options: resolve.Options): string | undefined {
   }
   const path = parts.join('/')
   if (Object.hasOwn(options.modules, path)) return path
-  const candidates = /\.[cm]?jsx?$/.test(path)
-    ? [
+  const candidates = (() => {
+    if (/\.[cm]?jsx?$/.test(path)) {
+      return [
         path.replace(/\.js$/, '.ts'),
         path.replace(/\.js$/, '.tsx'),
         path.replace(/\.jsx$/, '.tsx'),
         path.replace(/\.mjs$/, '.mts'),
         path.replace(/\.cjs$/, '.cts'),
       ]
-    : !/\.[^/]+$/.test(path)
-      ? [
-          '.cjs',
-          '.cjsx',
-          '.cts',
-          '.ctsx',
-          '.js',
-          '.jsx',
-          '.mjs',
-          '.mjsx',
-          '.mts',
-          '.mtsx',
-          '.ts',
-          '.tsx',
-        ].flatMap((extension) => [
-          path + extension,
-          path + '/index' + extension,
-        ])
-      : []
+    }
+    if (!/\.[^/]+$/.test(path)) {
+      return [
+        '.cjs',
+        '.cjsx',
+        '.cts',
+        '.ctsx',
+        '.js',
+        '.jsx',
+        '.mjs',
+        '.mjsx',
+        '.mts',
+        '.mtsx',
+        '.ts',
+        '.tsx',
+      ].flatMap((extension) => [path + extension, path + '/index' + extension])
+    }
+    return []
+  })()
   const matches = [...new Set(candidates)].filter((candidate) =>
     Object.hasOwn(options.modules, candidate),
   )

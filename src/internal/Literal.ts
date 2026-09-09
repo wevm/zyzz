@@ -400,13 +400,18 @@ export function validate(
       ? undefined
       : 'Expected a hex color, transparent, currentColor, black, or white.'
   if (rule.kind === 'number')
-    return typeof value === 'number' &&
-      Number.isFinite(value) &&
-      (!rule.integer || Number.isInteger(value)) &&
-      value >= rule.min &&
-      value <= rule.max
-      ? undefined
-      : `Expected a finite ${rule.integer ? 'integer' : 'number'} from ${rule.min} to ${rule.max}.`
+    return (() => {
+      if (
+        typeof value === 'number' &&
+        Number.isFinite(value) &&
+        (!rule.integer || Number.isInteger(value)) &&
+        value >= rule.min &&
+        value <= rule.max
+      ) {
+        return undefined
+      }
+      return `Expected a finite ${rule.integer ? 'integer' : 'number'} from ${rule.min} to ${rule.max}.`
+    })()
   if (value === 0 || (rule.auto && value === 'auto')) return undefined
   const match = typeof value === 'string' ? lengthPattern.exec(value) : null
   const amount = match ? Number(match[1]) : NaN

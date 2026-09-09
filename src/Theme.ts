@@ -175,12 +175,15 @@ function build(
           path,
           'Extensions cannot add or replace token paths.',
         )
-      const property =
-        group === 'spacing'
-          ? 'padding'
-          : group === 'textColor'
-            ? 'color'
-            : group
+      const property = (() => {
+        if (group === 'spacing') {
+          return 'padding'
+        }
+        if (group === 'textColor') {
+          return 'color'
+        }
+        return group
+      })()
       if (pair) {
         if (
           group === 'spacing' ||

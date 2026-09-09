@@ -21,8 +21,33 @@ for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
       kind !== 'literal'
         ? `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#fff' } }); const alternate = Theme.extend(theme, { color: { brand: '#000' } }); export const scope = alternate.className;`
         : `import { css } from 'zyzz';`
-    const source = `${header}\n${kind === 'alias' ? 'const { css } = theme;' : ''}\n${Array.from({ length: count }, (_, index) => `export const card${index} = ${kind === 'theme' || kind === 'tokens' ? 'theme.css' : 'css'}({ color: ${kind === 'tokens' ? 'theme.tokens.color.brand' : kind !== 'literal' ? "'brand'" : "'#fff'"}, padding: '${index}px' });`).join('\n')}`
-    describe(`${kind === 'tokens' ? 'theme token transform' : kind === 'alias' ? 'theme alias transform' : kind === 'theme' ? 'theme source transform' : 'module transform'} / ${count} styles`, () => {
+    const color = (() => {
+      if (kind === 'tokens') {
+        return 'theme.tokens.color.brand'
+      }
+      if (kind !== 'literal') {
+        return "'brand'"
+      }
+      return "'#fff'"
+    })()
+    const source = `${header}\n${kind === 'alias' ? 'const { css } = theme;' : ''}\n${Array.from(
+      { length: count },
+      (_, index) =>
+        `export const card${index} = ${kind === 'theme' || kind === 'tokens' ? 'theme.css' : 'css'}({ color: ${color}, padding: '${index}px' });`,
+    ).join('\n')}`
+    const name = (() => {
+      if (kind === 'tokens') {
+        return 'theme token transform'
+      }
+      if (kind === 'alias') {
+        return 'theme alias transform'
+      }
+      if (kind === 'theme') {
+        return 'theme source transform'
+      }
+      return 'module transform'
+    })()
+    describe(`${name} / ${count} styles`, () => {
       bench(
         'extract + emit + rewrite + maps',
         () => {
@@ -120,19 +145,36 @@ for (const count of [10, 100]) {
 for (const kind of ['borders', 'flex', 'logical'] as const)
   for (const count of [10, 100]) {
     const source =
-      (kind === 'logical'
-        ? Logical.source
-        : kind === 'borders'
-          ? Borders.source
-          : Flex.source) +
+      (() => {
+        if (kind === 'logical') {
+          return Logical.source
+        }
+        if (kind === 'borders') {
+          return Borders.source
+        }
+        return Flex.source
+      })() +
       Array.from({ length: count }, (_, index) =>
-        kind === 'borders'
-          ? `export const box${index} = css({borderStyle:'solid',borderWidth:'2px',borderInlineStartWidth:'${index}px',borderStartStartRadius:'8px',outlineWidth:'1px'})();`
-          : kind === 'logical'
-            ? `export const box${index} = css({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`
-            : `export const box${index} = css({flexBasis:'${index}px',alignSelf:'center',order:${index},overflow:['hidden','clip!'],overflowX:'auto'})();`,
+        (() => {
+          if (kind === 'borders') {
+            return `export const box${index} = css({borderStyle:'solid',borderWidth:'2px',borderInlineStartWidth:'${index}px',borderStartStartRadius:'8px',outlineWidth:'1px'})();`
+          }
+          if (kind === 'logical') {
+            return `export const box${index} = css({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`
+          }
+          return `export const box${index} = css({flexBasis:'${index}px',alignSelf:'center',order:${index},overflow:['hidden','clip!'],overflowX:'auto'})();`
+        })(),
       ).join('\n')
-    describe(`${kind === 'logical' ? 'logical box' : kind === 'borders' ? 'border' : 'flex layout'} transform / ${count} additional styles`, () => {
+    const name = (() => {
+      if (kind === 'logical') {
+        return 'logical box'
+      }
+      if (kind === 'borders') {
+        return 'border'
+      }
+      return 'flex layout'
+    })()
+    describe(`${name} transform / ${count} additional styles`, () => {
       bench(
         'extract + emit + rewrite + maps',
         () => {

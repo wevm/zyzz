@@ -156,7 +156,7 @@ for (const workload of workloads) {
     console.log('| --- | ---: | ---: | ---: | ---: |')
     for (const [library, result] of measurements) {
       const status = (() => {
-        if (!workload.lanes.includes(library)) return { speed: '', size: '' }
+        if (!workload.lanes.includes(library)) return ''
         const faster = competitors.every(
           (name) => result.mean < measurements.get(name)!.mean,
         )
@@ -164,10 +164,10 @@ for (const workload of workloads) {
           (name) => result.size < measurements.get(name)!.size,
         )
         if (!faster || !smaller) process.exitCode = 1
-        return { speed: faster ? '🟢 ' : '🔴 ', size: smaller ? '🟢 ' : '🔴 ' }
+        return faster && smaller ? '🟢 ' : '🔴 '
       })()
       console.log(
-        `| ${names[library]} | ${status.speed}${result.mean.toFixed(3)} | ${result.sizes.css.gzip} B | ${result.sizes.javascript.gzip} B | ${status.size}${result.size} B |`,
+        `| ${status}${names[library]} | ${result.mean.toFixed(3)} | ${result.sizes.css.gzip} B | ${result.sizes.javascript.gzip} B | ${result.size} B |`,
       )
     }
     console.log('\n<details>\n<summary>Full Measurements</summary>\n')

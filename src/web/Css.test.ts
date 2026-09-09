@@ -12,6 +12,30 @@ import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 
 describe('compile', () => {
+  test('scroll snap sharing retains A/B/A keyword and priority order', () => {
+    const a = {
+      scrollSnapAlign: 'start end',
+      scrollSnapStop: 'normal',
+      scrollSnapType: 'x proximity',
+    } as const
+    const output = Css.compile({
+      styles: Style.define({
+        a,
+        b: {
+          scrollSnapAlign: ['center', 'none start!'],
+          scrollSnapStop: 'always',
+          scrollSnapType: 'both mandatory',
+        },
+        c: a,
+      }),
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-a{scroll-snap-align:start end;scroll-snap-stop:normal;scroll-snap-type:x proximity;}
+      .z-b{scroll-snap-align:center;scroll-snap-align:none start!important;scroll-snap-stop:always;scroll-snap-type:both mandatory;}
+      .z-c{scroll-snap-align:start end;scroll-snap-stop:normal;scroll-snap-type:x proximity;}"
+    `)
+  })
+
   test('scroll spacing sharing preserves shorthand and logical A/B/A order', () => {
     const a = {
       scrollMargin: '4px',

@@ -7,7 +7,37 @@ import { Config, css, Style, Theme } from 'zyzz'
 import * as Borders from '../test/fixtures/Borders.js'
 import * as Logical from '../test/fixtures/Logical.js'
 import * as Scrolling from '../test/fixtures/Scrolling.js'
+import * as Snapping from '../test/fixtures/Snapping.js'
 import { components } from '../test/fixtures/components.js'
+
+Style.define(Snapping.styles)
+css({
+  scrollSnapType: ['both proximity', 'both mandatory!'],
+  scrollSnapAlign: 'center end',
+  scrollSnapStop: 'normal',
+})
+const snapTheme = Theme.define({ spacing: { edge: '10px' } })
+snapTheme.css({ scrollPadding: 'edge', scrollSnapType: 'inline mandatory' })
+Config.create({ theme: snapTheme }).css({
+  scrollSnapType: 'block proximity',
+  scrollSnapAlign: 'none start',
+})
+// @ts-expect-error Strictness needs an axis.
+css({ scrollSnapType: 'mandatory' })
+// @ts-expect-error None cannot be combined with strictness.
+css({ scrollSnapType: 'none mandatory' })
+// @ts-expect-error Snap axes are finite.
+css({ scrollSnapType: 'horizontal mandatory' })
+// @ts-expect-error Alignment accepts at most two keywords.
+css({ scrollSnapAlign: 'start center end' })
+// @ts-expect-error CSS-wide keywords apply to the whole value.
+css({ scrollSnapAlign: 'inherit center' })
+// @ts-expect-error Stop values are not snap strictness values.
+css({ scrollSnapStop: 'mandatory' })
+// @ts-expect-error Token groups do not map to snap keyword domains.
+snapTheme.css({ scrollSnapType: snapTheme.tokens.spacing.edge })
+// @ts-expect-error Invalid entries remain invalid inside fallbacks.
+css({ scrollSnapType: ['x', 'mandatory!'] })
 
 Style.define(Scrolling.styles)
 css({ scrollMargin: '-2px!', scrollPaddingInline: ['auto', '10%'] })

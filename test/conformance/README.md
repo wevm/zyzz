@@ -19,7 +19,7 @@ Consumer probes cover property names, token domains, units, hex literals, intege
 | Deferred     | Tracked without an implemented property mapping                                       |
 | Unclassified | Requires review; CI fails                                                             |
 
-Current property coverage is **7 partial, 0 deferred, and 663 supported** out of 670. Removing runtime validation does not promote entries. A partial property receives no completion credit.
+Current property coverage is **0 partial, 0 deferred, and 670 supported** out of 670. Removing runtime validation does not promote entries. A partial property receives no completion credit.
 
 ## Evidence
 
@@ -33,7 +33,7 @@ Image and URL mappings include background-image, border-image-source, list-style
 
 `pnpm check:css:full` requires all 670 pinned MDN properties, including vendor and obsolete entries, to be reviewed as supported. Partial, deferred, and unclassified entries receive zero credit. The threshold uses exact counts, not rounded percentages. Grammar drift still fails, and `--update` cannot be combined with the full gate.
 
-The **CSS Property Conformance (100%)** CI job publishes a report even when it fails. Type, grammar, build, and browser checks run alongside it. The ledger records reviewed implementation status; it is not a browser certification. The full gate intentionally remains failing until the outstanding work is complete.
+The **CSS Property Conformance (100%)** CI job publishes a report even when it fails. Type, grammar, build, and browser checks run alongside it. The ledger records reviewed implementation status; it is not a browser certification. The full gate passes with the reviewed inventory; grammar drift and incomplete future entries still fail.
 
 ## Upstream Updates
 
@@ -62,8 +62,10 @@ Compact serialization expands the corpus to 63,752 independently accepted values
 
 ## Reviewed Evidence
 
-[bc6e1ca CI](https://github.com/wevm/zyzz/actions/runs/34417051637) passed all 315 integrations, including every engine-accepted corpus value, shorthand resets, escaped literals, and theme/cascade controls. Build, native checks, ordinary TypeScript, macOS host checks, and the benchmark workflow passed. Seven grid-placement entries await the additional integer and slash-limit regression run.
+[bc6e1ca CI](https://github.com/wevm/zyzz/actions/runs/34417051637) passed all 315 integrations, including every engine-accepted corpus value, shorthand resets, escaped literals, and theme/cascade controls. Build, native checks, ordinary TypeScript, macOS host checks, and the benchmark workflow passed. [d2a78d9 CI](https://github.com/wevm/zyzz/actions/runs/34417846641) additionally passed the grid integer and slash-limit type probes, browser regressions, full corpus, and benchmarks. Two unrelated subprocess integrations hit their five-second test limit; the follow-up adds bounded compiler deadlines and an explicit integration-test budget.
 
 The review covers finite keywords and combinations, upstream dimensional units, CSS numeric/hex spelling, scalar ranges, compound entry shapes, token domains, fallbacks, importance, emitted declaration order, and applicable computed styles. Supported means the documented static authoring and emission contract; recursive function arguments, arbitrary identifiers, and browser feature availability retain their stated boundaries.
 
 Grid indexes use nonzero integers, and span counts use positive integers, including signed and zero-padded spellings. The restrictions follow [CSS Grid line placement](https://www.w3.org/TR/css-grid-2/#line-placement); the pinned grammar alone does not exclude zero.
+
+The matched theme/graph integrations took 8.43 seconds before the grid change and 8.38 seconds after it on the same machine. Each TypeScript subprocess now has a ten-second deadline inside a fifteen-second integration budget. The full-coverage arithmetic still rejects 669/670 and stale fingerprints.

@@ -1887,7 +1887,7 @@
       },
       "grid-area": {
         "grammar": "4030da447b5f2a6ad55a7b76c5f60559ba4817b274dd5b2abe74e8507ef4a64d",
-        "status": "partial"
+        "status": "supported"
       },
       "grid-auto-columns": {
         "grammar": "86d669445e5769e444244b97e532726d9cd51ed34f5789d32296aa5799751673",
@@ -1903,11 +1903,11 @@
       },
       "grid-column": {
         "grammar": "c9e70f2feaaeff55bd9fffc0f2d4eda2b088491eeb3744c6732a21a8cd7b4b09",
-        "status": "partial"
+        "status": "supported"
       },
       "grid-column-end": {
         "grammar": "1c920deb0a0e54b934851a02e52ed4efd01030b566fc66ad065f0daa66b77812",
-        "status": "partial"
+        "status": "supported"
       },
       "grid-column-gap": {
         "grammar": "6a70b851aa48430f56d663492a95e7c119b2e633583f15cf9cb13f7aa1de1998",
@@ -1915,7 +1915,7 @@
       },
       "grid-column-start": {
         "grammar": "3459721b2b04076fa2e9bc6195815832d748ce5832f06aa3da23f25b0589dc4b",
-        "status": "partial"
+        "status": "supported"
       },
       "grid-gap": {
         "grammar": "5b5a38af597536ca0f9376bc87ca1b3e0d3d1cfcca1dbe58c273186d26ee05e1",
@@ -1923,11 +1923,11 @@
       },
       "grid-row": {
         "grammar": "856e7caae6d7141bdb4ac9ee54f502383f9e2faed7f686edbadff06d676468b6",
-        "status": "partial"
+        "status": "supported"
       },
       "grid-row-end": {
         "grammar": "9b5679180e1af1b3a1a20e11e5cbffeefc701962eee1ce6a829fb059703b1eb0",
-        "status": "partial"
+        "status": "supported"
       },
       "grid-row-gap": {
         "grammar": "1681fcbe8fab2700f78975c7f81bcad387d9f44d75f77671ba6682058f37b65b",
@@ -1935,7 +1935,7 @@
       },
       "grid-row-start": {
         "grammar": "349596ddaf68f72b0d16032f8734e740d587bc198a0a7929753ec1f10d74cc8a",
-        "status": "partial"
+        "status": "supported"
       },
       "grid-template": {
         "grammar": "6962846050601f534139668de31058b54ccf3fcfe2c6cc6c550d4eac05436664",

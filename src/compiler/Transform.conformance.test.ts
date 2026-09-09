@@ -8,7 +8,7 @@ import * as Path from 'node:path'
 import { describe, expect, test } from 'vite-plus/test'
 
 describe('compile', () => {
-  test('CSS conformance rejects partial coverage and exact threshold misses', async () => {
+  test('CSS conformance enforces full coverage and exact threshold misses', async () => {
     const root = Path.resolve(import.meta.dirname, '../..')
     const inventory = JSON.parse(
       await Fs.readFile(
@@ -25,10 +25,8 @@ describe('compile', () => {
       ['scripts/css-conformance.ts', '--require-full'],
       { cwd: root, encoding: 'utf8', timeout: 10_000 },
     )
-    expect(current.status).toMatchInlineSnapshot(`1`)
-    expect(current.stderr).toMatchInlineSnapshot(
-      `"CSS property conformance is below 100%: 663/670 fully supported; 7 incomplete.\n"`,
-    )
+    expect(current.status).toMatchInlineSnapshot(`0`)
+    expect(current.stderr).toMatchInlineSnapshot(`""`)
     expect(
       current.stdout.includes(
         'Partial properties receive no completion credit.',

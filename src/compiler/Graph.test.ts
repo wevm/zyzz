@@ -475,12 +475,13 @@ export const scope = mint.className;`,
           '--noEmit',
           Path.join(directory, 'pkg/card.ts'),
         ],
+        { timeout: 10_000 },
       )
       expect(checked.stdout).toMatchInlineSnapshot(`""`)
     } finally {
       await Fs.rm(directory, { recursive: true, force: true })
     }
-  })
+  }, 15_000)
 
   test('token edits preserve identities and removing the last use removes declarations', () => {
     const before = Graph.compile({ modules })

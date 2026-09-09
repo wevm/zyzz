@@ -4,7 +4,7 @@
 
 CSS property/value validation is static only. Remove runtime CSS validators rather than adding a development mode. Retain source extraction, ordered-data, and theme graph structural diagnostics. Browser parsing owns value semantics beyond the static types.
 
-The consolidated PR maps 670/670 properties: 663 reviewed as supported, 7 grid-placement entries partial, and 0 deferred. The strict 100% gate remains active. Static hex/integer/nonnegative literal checks and image/URL declarations extend the independent grammar and public consumer corpus. Browser evidence remains required for applicable properties.
+The consolidated PR maps 670/670 properties: 670 reviewed as supported, 0 partial, and 0 deferred. The strict 100% gate remains active. Static hex/integer/nonnegative literal checks and image/URL declarations extend the independent grammar and public consumer corpus. Browser evidence remains required for applicable properties.
 
 ## Goal
 
@@ -587,3 +587,5 @@ The f9552bb corpus passes 60,892 declaration probes and the new browser matrices
 Compact serialization probes cover 63,738 values and 127,476 declarations. Shared static normalization accepts CSS comments, identifier escapes, whitespace, and zero spellings while retaining numeric token boundaries and ASCII-only keyword folding. Browser conformance now selects every engine-accepted corpus value. The extractor uses the existing structural Style.define call without instantiating the public generic authoring contract for untyped JavaScript; the measured package build fell from 36 seconds to 5 seconds and both previously timed-out integrations pass locally. Native lint/types and ordinary TypeScript with a 2 GB heap pass; complete corpus and browser CI remain required before final coverage promotion.
 
 The bc6e1ca head passed all 315 integrations, including the complete engine-accepted property corpus and escaped CSS controls, plus build, native/ordinary TypeScript, and macOS host checks. These results complete the review for 663 properties under the static authoring contract. Seven grid-placement entries remain partial for the additional signed-integer, named-span, nonzero-index, and slash-limit regressions. The exact full gate remains active.
+
+All 670 property entries are reviewed as supported under the documented static authoring and emission contract. The d2a78d9 head passed grid browser/type regressions, the 63,752-value corpus, build, checks, macOS, and benchmarks. Two unrelated compiler subprocess integrations exceeded the default five-second test budget; matched before/after runs took 8.43/8.38 seconds combined. Explicit ten-second subprocess deadlines within fifteen-second tests bound that work without removing assertions. Final CI must verify the complete inventory and unchanged exact 100% gate.

@@ -166,6 +166,10 @@ jobs:
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/themes/*.json >> bench/results/report.md
           printf '\nBuild timings use warm host processes and fresh compiler state. Compiler workflows have different scopes; see bench/README.md in the repository for measurement boundaries.\n' >> bench/results/report.md
+      - name: Check framework performance
+        id: frameworks
+        continue-on-error: true
+        run: node bench/Check.ts bench/results > bench/results/frameworks.md
       - name: Prepare benchmark comparisons
         id: comparison
         env:
@@ -173,7 +177,7 @@ jobs:
           BASELINE_DIRECTORY: ${{ steps.baseline.outcome == 'success' && format('{0}/benchmark-baseline', runner.temp) || '' }}
         run: |
           node bench/Compare.ts bench/results "$BASELINE_DIRECTORY" "$RUNNER_TEMP/benchmark-action" > "$RUNNER_TEMP/benchmark-comparison.md"
-          cat "$RUNNER_TEMP/benchmark-comparison.md" bench/results/report.md > "$RUNNER_TEMP/benchmark-report.md"
+          cat bench/results/frameworks.md "$RUNNER_TEMP/benchmark-comparison.md" bench/results/report.md > "$RUNNER_TEMP/benchmark-report.md"
           mv "$RUNNER_TEMP/benchmark-report.md" bench/results/report.md
           cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Comment benchmark results
@@ -222,6 +226,9 @@ jobs:
           output-file-path: ${{ runner.temp }}/benchmark-action/size.json
           save-data-file: false
           tool: customSmallerIsBetter
+      - name: Enforce framework performance
+        if: ${{ !cancelled() && steps.frameworks.outcome == 'failure' }}
+        run: exit 1
     timeout-minutes: 30
 permissions:
   contents: read

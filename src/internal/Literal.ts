@@ -254,6 +254,7 @@ export const rules = {
       'stretch',
     ],
   },
+  backfaceVisibility: { kind: 'enum', values: ['hidden', 'visible'] },
   backgroundColor: color,
   blockSize: size,
   borderBlockColor: color,
@@ -301,6 +302,7 @@ export const rules = {
   borderTopWidth: stroke,
   borderWidth: stroke,
   bottom: margin,
+  boxDecorationBreak: { kind: 'enum', values: ['clone', 'slice'] },
   boxSizing: { kind: 'enum', values: ['border-box', 'content-box'] },
   breakAfter: fragmentation,
   breakBefore: fragmentation,
@@ -309,6 +311,10 @@ export const rules = {
     values: ['auto', 'avoid', 'avoid-column', 'avoid-page'],
   },
   captionSide: { kind: 'enum', values: ['bottom', 'top'] },
+  clear: {
+    kind: 'enum',
+    values: ['both', 'inline-end', 'inline-start', 'left', 'none', 'right'],
+  },
   color,
   columnCount: { ...positiveInteger, keywords: ['auto'] },
   columnFill: { kind: 'enum', values: ['auto', 'balance'] },
@@ -318,6 +324,20 @@ export const rules = {
   columnRuleWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
   columnSpan: { kind: 'enum', values: ['all', 'none'] },
   columnWidth: { ...stroke, auto: true },
+  contain: {
+    kind: 'enum',
+    values: [
+      'content',
+      'inline-size',
+      'layout',
+      'none',
+      'paint',
+      'size',
+      'strict',
+      'style',
+    ],
+  },
+  contentVisibility: { kind: 'enum', values: ['auto', 'hidden', 'visible'] },
   cursor: {
     kind: 'enum',
     values: [
@@ -364,13 +384,26 @@ export const rules = {
     kind: 'enum',
     values: [
       'block',
+      'contents',
       'flex',
+      'flow-root',
       'grid',
       'inline',
       'inline-block',
       'inline-flex',
       'inline-grid',
+      'inline-table',
+      'list-item',
       'none',
+      'table',
+      'table-caption',
+      'table-cell',
+      'table-column',
+      'table-column-group',
+      'table-footer-group',
+      'table-header-group',
+      'table-row',
+      'table-row-group',
     ],
   },
   emptyCells: { kind: 'enum', values: ['hide', 'show'] },
@@ -382,6 +415,10 @@ export const rules = {
   flexGrow: { kind: 'number', max: Infinity, min: 0 },
   flexShrink: { kind: 'number', max: Infinity, min: 0 },
   flexWrap: { kind: 'enum', values: ['nowrap', 'wrap', 'wrap-reverse'] },
+  float: {
+    kind: 'enum',
+    values: ['inline-end', 'inline-start', 'left', 'none', 'right'],
+  },
   fontSize: length,
   fontStyle: { kind: 'enum', values: ['italic', 'normal', 'oblique'] },
   fontWeight: { kind: 'number', max: 1000, min: 1 },
@@ -396,6 +433,7 @@ export const rules = {
   insetInline: margin,
   insetInlineEnd: margin,
   insetInlineStart: margin,
+  isolation: { kind: 'enum', values: ['auto', 'isolate'] },
   justifyContent: {
     kind: 'enum',
     values: [
@@ -432,6 +470,10 @@ export const rules = {
   minHeight: size,
   minInlineSize: size,
   minWidth: size,
+  objectFit: {
+    kind: 'enum',
+    values: ['contain', 'cover', 'fill', 'none', 'scale-down'],
+  },
   opacity: { kind: 'number', max: 1, min: 0 },
   // Safe integers serialize without exponential notation in CSS integer positions.
   order: {
@@ -603,6 +645,7 @@ export const rules = {
   },
   textUnderlineOffset: { ...length, auto: true, negative: true },
   top: margin,
+  transformStyle: { kind: 'enum', values: ['flat', 'preserve-3d'] },
   userSelect: { kind: 'enum', values: ['all', 'auto', 'none', 'text'] },
   visibility: { kind: 'enum', values: ['collapse', 'hidden', 'visible'] },
   whiteSpace: {
@@ -616,6 +659,13 @@ export const rules = {
   writingMode: {
     kind: 'enum',
     values: ['horizontal-tb', 'vertical-lr', 'vertical-rl'],
+  },
+  zIndex: {
+    integer: true,
+    keywords: ['auto'],
+    kind: 'number',
+    max: Number.MAX_SAFE_INTEGER,
+    min: Number.MIN_SAFE_INTEGER,
   },
 } as const satisfies Record<string, Rule>
 

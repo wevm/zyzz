@@ -532,3 +532,37 @@ describe('css', () => {
     css({ breakAfter: 'region' })
   })
 })
+
+describe('css', () => {
+  test('layout and containment accept finite CSS domains', () => {
+    css({
+      backfaceVisibility: 'hidden',
+      boxDecorationBreak: 'slice',
+      clear: 'inline-end',
+      contain: 'paint',
+      contentVisibility: 'auto',
+    })
+    css({
+      display: 'table-cell',
+      float: 'inline-start',
+      isolation: 'isolate',
+      objectFit: 'scale-down',
+      transformStyle: 'preserve-3d',
+      zIndex: ['auto', '-1!'],
+    })
+    Config.create().css({ zIndex: 2, display: 'flow-root' })
+    Theme.define({}).css({ contain: 'strict', objectFit: 'contain' })
+    // @ts-expect-error Containment combinations are a later grammar expansion.
+    css({ contain: 'layout paint' })
+    // @ts-expect-error Floats are not centering controls.
+    css({ float: 'center' })
+    // @ts-expect-error Object fit has no auto keyword.
+    css({ objectFit: 'auto' })
+    // @ts-expect-error Stacking accepts unitless integers, not lengths.
+    css({ zIndex: '2px' })
+    // @ts-expect-error Isolation does not accept blend modes.
+    css({ isolation: 'multiply' })
+    // @ts-expect-error Multi-keyword display remains deferred.
+    css({ display: 'inline flow-root' })
+  })
+})

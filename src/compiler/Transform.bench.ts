@@ -13,6 +13,7 @@ import * as Columns from '../../test/fixtures/Columns.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
+import * as Layout from '../../test/fixtures/Layout.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
@@ -180,6 +181,12 @@ const workloads = {
       `export const control${index} = css({width:'${index}px',cursor:'pointer',pointerEvents:['auto','none!'],resize:'inline',userSelect:'all',visibility:'visible'})();`,
     source: Interaction.source,
     title: 'interaction',
+  },
+  layout: {
+    declaration: (index: number) =>
+      `export const box${index} = css({display:'flow-root',contain:'layout',isolation:'isolate',zIndex:${index},objectFit:'cover'})();`,
+    source: Layout.source,
+    title: 'layout containment',
   },
   logical: {
     declaration: (index: number) =>

@@ -4,7 +4,7 @@ Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the ca
 
 **Partial** means only the stated subset works today. **Planned** means an existing architecture contract awaits implementation. **Proposal** means an API shape is offered for review. **Deferred** means a later capability; external CSS examples demonstrate interoperability, not implemented Zyzz authoring support. Examples are independent unless they explicitly share a definition.
 
-Current implementation: 187 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
+Current implementation: 197 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
 
 ## 01. Typed Styles and Inline Authoring
 
@@ -714,3 +714,5 @@ Validate semantic equivalence before benchmarking the existing library set. Cove
 Every source API group above maps to an existing contract, a proposal, an external-CSS interoperability target, or an explicit non-goal. That classification does not make deferred APIs implemented or turn this union into a promise to duplicate each library's facade.
 
 Column properties support `css({ columnCount: 2, columnGap: 'normal', columnRuleStyle: 'solid', columnRuleWidth: 'thin', breakInside: 'avoid-column' })`. Shared colors map to column rule colors; widths remain literal lengths. Columns and column-rule shorthands remain deferred.
+
+Layout supports `css({ display: 'flow-root', contain: 'layout', isolation: 'isolate', zIndex: 2 })`. Float/clear include logical keywords. Image fitting and 3D layout flags accept their finite standard keywords; broader value combinations remain deferred.

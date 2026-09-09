@@ -68,6 +68,7 @@ describe('compile', () => {
       card: {
         color: ' #AbC\t! ImPoRtAnT  ',
         display: 'BlOcK\tFlow',
+        gridColumnEnd: 'span +01',
         height: '+.5PX',
         margin: '-0px',
         order: '+01!',
@@ -81,7 +82,7 @@ describe('compile', () => {
     try {
       const page = await browser.newPage()
       await page.setContent(
-        `<style>${output.css}</style><div id="actual" class="${output.classes.card}"></div><div id="control" style="color:#abc!important;display:block flow;height:.5px;margin:0;order:1!important;padding:0!important;transform:rotate(45deg);width:100px"></div>`,
+        `<style>${output.css}</style><div id="actual" class="${output.classes.card}"></div><div id="control" style="color:#abc!important;display:block flow;grid-column-end:span 1;height:.5px;margin:0;order:1!important;padding:0!important;transform:rotate(45deg);width:100px"></div>`,
       )
       expect(
         await page.evaluate(() => {
@@ -90,6 +91,7 @@ describe('compile', () => {
           return [
             'color',
             'display',
+            'grid-column-end',
             'height',
             'margin',
             'order',

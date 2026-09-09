@@ -127,6 +127,33 @@ describe('css', () => {
     css({ opacity: '1.!' })
   })
 
+  test('retains CSS integer spelling in grid indexes and named spans', () => {
+    css({
+      gridColumnEnd: 'span +01',
+      gridColumn: '-01 / span 02 content',
+      gridRow: 'header 2 / footer -1',
+    })
+    css({ gridColumnStart: 'calc(1 + 2)', gridColumnEnd: 'span calc(1 + 2)' })
+    // @ts-expect-error Grid indexes are nonzero integers.
+    css({ gridRowStart: 0 })
+    // @ts-expect-error Named spans retain integer constraints.
+    css({ gridColumnEnd: 'span 1.5 content' })
+    // @ts-expect-error Span counts must be positive even when a name comes first.
+    css({ gridColumnEnd: 'content span -1' })
+    // @ts-expect-error Every slash-separated index retains its constraints.
+    css({ gridArea: '1 / 0 / 2 / 3' })
+    // @ts-expect-error Placement longhands accept one line.
+    css({ gridRowStart: '1 / 2' })
+    // @ts-expect-error Row and column shorthands accept at most two lines.
+    css({ gridColumn: '1 / 2 / 3' })
+    // @ts-expect-error Area shorthands accept at most four lines.
+    css({ gridArea: '1 / 2 / 3 / 4 / 5' })
+    // @ts-expect-error Dimension tokens cannot be grid line indexes.
+    css({ gridRowStart: '1px' })
+    // @ts-expect-error Exponent tokens do not become CSS integer tokens.
+    css({ gridColumnEnd: 'span 1e0 content' })
+  })
+
   test('rejects wrong compound domains through fallbacks and importance', () => {
     // @ts-expect-error Shadows require dimensions or colors.
     css({ boxShadow: 'wobbly' })

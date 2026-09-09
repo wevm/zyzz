@@ -19,7 +19,7 @@ Consumer probes cover property names, token domains, units, hex literals, intege
 | Deferred     | Tracked without an implemented property mapping                                       |
 | Unclassified | Requires review; CI fails                                                             |
 
-Current property coverage is **670 partial, 0 deferred, and 0 fully supported** out of 670. Removing runtime validation does not promote entries. A partial property receives no completion credit.
+Current property coverage is **7 partial, 0 deferred, and 663 supported** out of 670. Removing runtime validation does not promote entries. A partial property receives no completion credit.
 
 ## Evidence
 
@@ -27,7 +27,7 @@ The Transform conformance suite walks the independent grammar and referenced pro
 
 Every accepted probe checks emitted CSS against independent grammar and compiles a public TypeScript consumer. Invalid probes check expected TypeScript errors, including importance; booleans are rejected for every mapped property. Dedicated fixtures verify browser layout, painting, cascade, inheritance, and theme behavior. The property browser matrix checks every engine-accepted value in the corpus and records counts per property and unsupported spellings in a CI capability artifact. A separate matrix checks shorthand/longhand repeated overrides and reset-only relationships.
 
-Image and URL mappings include background-image, border-image-source, list-style-image, mask-border-source, mask-image, -webkit-mask-image, marker and its longhands, and -moz-binding. Quoted URL fallbacks retain importance. Marker shorthand/longhand conflicts preserve declaration order. Legacy browser behavior and complete image-function grammar remain partial.
+Image and URL mappings include background-image, border-image-source, list-style-image, mask-border-source, mask-image, -webkit-mask-image, marker and its longhands, and -moz-binding. Quoted URL fallbacks retain importance. Marker shorthand/longhand conflicts preserve declaration order. Legacy spellings retain static declaration support; unavailable engines are recorded separately. Image-function arguments remain CSS text under the validation contract.
 
 ## Completion Gate
 
@@ -50,7 +50,7 @@ Sources: [MDN data](https://github.com/mdn/data), [CSS Tree](https://github.com/
 
 Every pinned property now has an authoring type, including custom properties, shorthands, font settings, filters, shadows, motion paths, timelines, and legacy spellings. Custom-property case and arbitrary scalar data are preserved. Named CSS properties still reject unknown names, wrong scalar domains, and invalid finite keywords.
 
-The new compound fixture records positive declarations independently of the emitter. Recursive function arguments and open custom identifiers retain CSS text. These types do not prove argument semantics or every possible compound permutation; the ledger remains partial pending that review and applicable browser evidence.
+The new compound fixture records positive declarations independently of the emitter. Recursive function arguments and open custom identifiers retain CSS text. Argument semantics and open custom identifiers remain browser-owned under the static validation contract. Bounded grammar probes and the complete engine-accepted corpus provide evidence for the modeled property surface.
 
 The grammar oracle supplements the missing `param()` production from CSS Linked Parameters. It corrects the pinned circle production's use of radial-gradient sizing and normalizes SVG 2's path-length range notation. These exceptions are test-only; upstream fingerprints remain checked.
 
@@ -58,4 +58,12 @@ Compositional probes sample upstream grammar alternatives, repetition counts, an
 
 Authoring helpers accept mixed-case CSS literals and surrounding CSS whitespace while retaining case-sensitive token names. Numeric refinements distinguish CSS decimal and integer tokens from JavaScript radix spellings, preserve signed zero, and retain nonnegative and positive constraints. These refinements exist only in TypeScript.
 
-Compact serialization expands the corpus to 63,738 independently accepted values, each emitted normally and with importance (127,476 declarations). Static lexical probes cover CSS comments, identifier escapes, ASCII keyword folding, and numeric token boundaries. Browser fixtures verify escaped literals and commented importance; CSS Tree does not resolve these escape spellings itself.
+Compact serialization expands the corpus to 63,752 independently accepted values, each emitted normally and with importance (127,504 declarations). Static lexical probes cover CSS comments, identifier escapes, ASCII keyword folding, and numeric token boundaries. Browser fixtures verify escaped literals and commented importance; CSS Tree does not resolve these escape spellings itself.
+
+## Reviewed Evidence
+
+[bc6e1ca CI](https://github.com/wevm/zyzz/actions/runs/34417051637) passed all 315 integrations, including every engine-accepted corpus value, shorthand resets, escaped literals, and theme/cascade controls. Build, native checks, ordinary TypeScript, macOS host checks, and the benchmark workflow passed. Seven grid-placement entries await the additional integer and slash-limit regression run.
+
+The review covers finite keywords and combinations, upstream dimensional units, CSS numeric/hex spelling, scalar ranges, compound entry shapes, token domains, fallbacks, importance, emitted declaration order, and applicable computed styles. Supported means the documented static authoring and emission contract; recursive function arguments, arbitrary identifiers, and browser feature availability retain their stated boundaries.
+
+Grid indexes use nonzero integers, and span counts use positive integers, including signed and zero-padded spellings. The restrictions follow [CSS Grid line placement](https://www.w3.org/TR/css-grid-2/#line-placement); the pinned grammar alone does not exclude zero.

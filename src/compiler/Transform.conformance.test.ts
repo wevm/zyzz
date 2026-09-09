@@ -27,7 +27,7 @@ describe('compile', () => {
     )
     expect(current.status).toMatchInlineSnapshot(`1`)
     expect(current.stderr).toMatchInlineSnapshot(
-      `"CSS property conformance is below 100%: 0/670 fully supported; 670 incomplete.\n"`,
+      `"CSS property conformance is below 100%: 663/670 fully supported; 7 incomplete.\n"`,
     )
     expect(
       current.stdout.includes(

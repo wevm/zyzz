@@ -56,7 +56,14 @@ export type Checked<style, tokens = {}> = {
           | 'gridRow'
           | 'gridRowEnd'
           | 'gridRowStart'
-          ? Fold<style[property]> extends Grid.Checked<Fold<style[property]>>
+          ? Fold<style[property]> extends Grid.Checked<
+              Fold<style[property]>,
+              property extends 'gridArea'
+                ? 4
+                : property extends 'gridColumn' | 'gridRow'
+                  ? 2
+                  : 1
+            >
             ? unknown
             : never
           : unknown) &

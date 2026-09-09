@@ -678,3 +678,31 @@ describe('font and text controls', () => {
     css({ textEmphasisStyle: 'open filled' })
   })
 })
+
+describe('animation and transition controls', () => {
+  test('supports dimensioned times and finite motion keywords', () => {
+    css({
+      animationDelay: '-.5s',
+      animationDuration: ['auto', '250ms!'],
+      animationDirection: 'alternate',
+      animationFillMode: 'both',
+      animationIterationCount: [2.5, 'infinite'],
+      animationPlayState: 'paused',
+      animationTimingFunction: 'ease-in-out',
+      transitionDelay: '-1e2ms',
+      transitionDuration: '0s',
+      transitionTimingFunction: 'linear',
+      transitionBehavior: 'allow-discrete',
+    })
+    // @ts-expect-error Even zero times require a unit.
+    css({ animationDuration: 0 })
+    // @ts-expect-error Times cannot use length units.
+    css({ transitionDelay: '2px' })
+    // @ts-expect-error Nondecimal times are not CSS dimensions.
+    css({ animationDelay: '0x10s' })
+    // @ts-expect-error Multiple transitions require list support.
+    css({ transitionDuration: '1s, 2s' })
+    // @ts-expect-error Transition duration has no auto keyword.
+    css({ transitionDuration: 'auto' })
+  })
+})

@@ -1003,23 +1003,23 @@
       },
       "animation-delay": {
         "grammar": "e4a4c59b642a2691ff098892d1f92a76fb16f4245556bf4da398a75ebfffb9d3",
-        "status": "deferred"
+        "status": "partial"
       },
       "animation-direction": {
         "grammar": "02da17d25ba10fff1811c249ab7b667bc894cb3700d9c80fe3094b5099c39ad0",
-        "status": "deferred"
+        "status": "partial"
       },
       "animation-duration": {
         "grammar": "84d32e34e5ee648fa664591d0084cfe5e88a7f1489593e89f56de08b25c6dd0a",
-        "status": "deferred"
+        "status": "partial"
       },
       "animation-fill-mode": {
         "grammar": "4b4d1c72dd0cd098b9f671cf479405b8718d3934a44cac6cabb7b5339acac7c7",
-        "status": "deferred"
+        "status": "partial"
       },
       "animation-iteration-count": {
         "grammar": "0bd965e8559be38390284a662a2a221e6ca01372034786cd8003b8f4cf479eea",
-        "status": "deferred"
+        "status": "partial"
       },
       "animation-name": {
         "grammar": "ec09cdadc6a7f2d34b7f46e2cae84dc1265e58a81aa9c3de74879874767fe4d4",
@@ -1027,7 +1027,7 @@
       },
       "animation-play-state": {
         "grammar": "b00d910d983d1a8129029ade7d50d7cad914958d33a399f4413c67ba5496d269",
-        "status": "deferred"
+        "status": "partial"
       },
       "animation-range": {
         "grammar": "582ab5e0d57eec12ac6a596b53b2229d9a1a4f6764777ab3a3b19234d3942b7f",
@@ -1047,7 +1047,7 @@
       },
       "animation-timing-function": {
         "grammar": "beef5395778a1396e559aa8ae524e16d414b2afd4aee16ca40fd70c10c34854d",
-        "status": "deferred"
+        "status": "partial"
       },
       "animation-trigger": {
         "grammar": "5bfd8ef8aa9577ea1c0f6f78b59d266b2add2e8cbb62b80034bbcb13ceb292fc",
@@ -3063,15 +3063,15 @@
       },
       "transition-behavior": {
         "grammar": "8fd9b60231aaf833de6844ae5de1d095f591d2659fa90596c778845693e494d5",
-        "status": "deferred"
+        "status": "partial"
       },
       "transition-delay": {
         "grammar": "e908a7809ed4e2063b9c216202983a34a8332a9535c4ab95c769a389a906afeb",
-        "status": "deferred"
+        "status": "partial"
       },
       "transition-duration": {
         "grammar": "67befbd7e0785563957b30fb8b747402b11325000d6858058a6461f10df8abe5",
-        "status": "deferred"
+        "status": "partial"
       },
       "transition-property": {
         "grammar": "e33093a3c4cc067403f2871b35ad05eb362e0d0d1ac96525f5ff6bb960904402",
@@ -3079,7 +3079,7 @@
       },
       "transition-timing-function": {
         "grammar": "8592fb7c2fd524c3c5cf62945f6c792b519109a8b6ebae74c8c72cc150013880",
-        "status": "deferred"
+        "status": "partial"
       },
       "translate": {
         "grammar": "13447f26d1138a4bef4502289bc7f8ac9c0ccbf594a318bf79cd97ef1e5121b0",

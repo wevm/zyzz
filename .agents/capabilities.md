@@ -1,6 +1,6 @@
 # CSS Capability Inventory
 
-Version 10. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
+Version 11. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
 
 ## Current Web Surface
 
@@ -49,6 +49,10 @@ Source/map fixtures cover fallback importance, indentation tokens, and rejected 
 Text decorations add six properties: decoration color, line, style, thickness, ink skipping, and underline offset. Line values allow distinct underline/overline/line-through combinations in any order or standalone none. Shared colors map to decoration color; spacing tokens map to thickness and offset. The supported thickness subset is nonnegative; offsets accept signed lengths and percentages.
 
 Source/map and type fixtures cover token domains, line combinations, and fallback importance. Browser fixtures compare all six computed declarations against independent CSS controls across three writing modes and both directions; decoration painting remains browser-owned. A 10/100-style transform lane records timing and delivery. Combined shorthands, underline position, emphasis, shadows, and native rendering remain deferred.
+
+Tables add `borderCollapse`, `borderSpacing`, `captionSide`, `emptyCells`, and `tableLayout`. Shared finite rules preserve keyword domains, nonnegative scalar lengths, fallback priority, and source maps. Border spacing excludes percentages and unconstrained spacing tokens. Two-length spacing, extended caption placement, and native rendering remain deferred.
+
+Browser fixtures compare real table/caption/cell geometry and computed declarations against independent CSS controls in both directions. Explicit checks cover spacing priority, caption placement, and inherited empty-cell visibility. A 10/100-style transform lane measures timing and delivery. Property contracts follow [CSS Tables](https://www.w3.org/TR/CSS22/tables.html).
 
 ## Targets
 

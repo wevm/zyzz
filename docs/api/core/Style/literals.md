@@ -18,21 +18,22 @@ styles.styles[0]?.declarations
 
 The property surface is intentionally finite. No catch-all string index permits misspelled properties. The exact enum members and property list live together in `src/internal/Literal.ts`; the public `Style.Properties` type derives from that list.
 
-| Group       | Supported Properties                                                                                                                                                                                       |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Layout      | `display`, `position`, `boxSizing`, `flexDirection`, `flexWrap`, `alignItems`, `justifyContent`, `gap`, `rowGap`, `columnGap`, `flexGrow`, `flexShrink`, `flexBasis`, `order`, `alignSelf`, `alignContent` |
-| Spacing     | `padding`, `margin`, and their physical top/right/bottom/left and logical block/inline start/end longhands                                                                                                 |
-| Sizing      | `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, plus `inlineSize`, `blockSize`, and their `min`/`max` forms                                                                           |
-| Colors      | `color`, `backgroundColor`, `borderColor`                                                                                                                                                                  |
-| Borders     | `borderWidth`, `borderStyle`, `borderColor`, their physical/logical side forms, and physical/logical corner radii                                                                                          |
-| Decorations | `textDecorationColor`, `textDecorationLine`, `textDecorationSkipInk`, `textDecorationStyle`, `textDecorationThickness`, `textUnderlineOffset` |
-| Typography  | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`, `textAlignLast`, `textIndent`, `letterSpacing`, `wordSpacing`, `hyphens`, `overflowWrap`, `wordBreak`, `whiteSpace`, `textTransform`, `textOverflow`                                                                                                                                           |
-| Positioning | `inset`, `insetBlock`, `insetInline`, their start/end longhands, and `top`, `right`, `bottom`, `left`                                                                                                      |
-| Writing     | `direction` (`ltr`, `rtl`), `writingMode` (`horizontal-tb`, `vertical-lr`, `vertical-rl`)                                                                                                                  |
-| Outlines    | `outlineColor`, `outlineWidth`, `outlineStyle`, `outlineOffset`                                                                                                                                            |
-| Overflow    | `overflow`, `overflowX`, `overflowY`                                                                                                                                                                       |
-| Scrolling   | `scrollMargin`/`scrollPadding` and physical/logical longhands, `scrollBehavior`, `scrollSnapType`/`scrollSnapAlign`/`scrollSnapStop`, `overscrollBehavior`/`overscrollBehaviorX`/`overscrollBehaviorY` |
-| Other       | `opacity`                                                                                                                                                                                                  |
+| Group       | Supported Properties                                                                                                                                                                                                   |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layout      | `display`, `position`, `boxSizing`, `flexDirection`, `flexWrap`, `alignItems`, `justifyContent`, `gap`, `rowGap`, `columnGap`, `flexGrow`, `flexShrink`, `flexBasis`, `order`, `alignSelf`, `alignContent`             |
+| Spacing     | `padding`, `margin`, and their physical top/right/bottom/left and logical block/inline start/end longhands                                                                                                             |
+| Sizing      | `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, plus `inlineSize`, `blockSize`, and their `min`/`max` forms                                                                                       |
+| Colors      | `color`, `backgroundColor`, `borderColor`                                                                                                                                                                              |
+| Borders     | `borderWidth`, `borderStyle`, `borderColor`, their physical/logical side forms, and physical/logical corner radii                                                                                                      |
+| Decorations | `textDecorationColor`, `textDecorationLine`, `textDecorationSkipInk`, `textDecorationStyle`, `textDecorationThickness`, `textUnderlineOffset`                                                                          |
+| Typography  | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`, `textAlignLast`, `textIndent`, `letterSpacing`, `wordSpacing`, `hyphens`, `overflowWrap`, `wordBreak`, `whiteSpace`, `textTransform`, `textOverflow` |
+| Positioning | `inset`, `insetBlock`, `insetInline`, their start/end longhands, and `top`, `right`, `bottom`, `left`                                                                                                                  |
+| Writing     | `direction` (`ltr`, `rtl`), `writingMode` (`horizontal-tb`, `vertical-lr`, `vertical-rl`)                                                                                                                              |
+| Outlines    | `outlineColor`, `outlineWidth`, `outlineStyle`, `outlineOffset`                                                                                                                                                        |
+| Overflow    | `overflow`, `overflowX`, `overflowY`                                                                                                                                                                                   |
+| Scrolling   | `scrollMargin`/`scrollPadding` and physical/logical longhands, `scrollBehavior`, `scrollSnapType`/`scrollSnapAlign`/`scrollSnapStop`, `overscrollBehavior`/`overscrollBehaviorX`/`overscrollBehaviorY`                 |
+| Tables      | `borderCollapse`, `borderSpacing`, `captionSide`, `emptyCells`, `tableLayout`                                                                                                                                          |
+| Other       | `opacity`                                                                                                                                                                                                              |
 
 - **Lengths:** finite absolute, font-relative, viewport-relative, and container-relative lengths, percentages, or numeric zero. Border and outline widths, outline offsets, and scroll margins exclude percentages.
 - **Margins:** allow negative lengths. Margins, inset offsets, and width/height/inlineSize/blockSize also accept `auto`. Offsets accept negative lengths.
@@ -82,12 +83,12 @@ Container units can refer to containment established by ordinary CSS. Zyzz does 
 
 [Scroll margins and padding](https://www.w3.org/TR/css-scroll-snap-1/#scroll-padding) adjust scroll-into-view alignment without changing layout spacing. Physical sides, logical block/inline shorthands, and logical start/end longhands retain authored order.
 
-| Properties | Values |
-| --- | --- |
-| `scrollMargin*` | Signed lengths or zero; no percentages or `auto` |
-| `scrollPadding*` | Nonnegative lengths, percentages, zero, or `auto` |
-| `scrollBehavior` | `auto`, `smooth` |
-| `overscrollBehavior`, `overscrollBehaviorX`, `overscrollBehaviorY` | `auto`, `contain`, `none` |
+| Properties                                                         | Values                                            |
+| ------------------------------------------------------------------ | ------------------------------------------------- |
+| `scrollMargin*`                                                    | Signed lengths or zero; no percentages or `auto`  |
+| `scrollPadding*`                                                   | Nonnegative lengths, percentages, zero, or `auto` |
+| `scrollBehavior`                                                   | `auto`, `smooth`                                  |
+| `overscrollBehavior`, `overscrollBehaviorX`, `overscrollBehaviorY` | `auto`, `contain`, `none`                         |
 
 ```ts
 import { Config, css } from 'zyzz'
@@ -109,17 +110,25 @@ Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, a
 
 [Scroll snap properties](https://www.w3.org/TR/css-scroll-snap-1/#scroll-snap-type) align items within a scroll container. Values use the listed lowercase keywords and single-space combinations; arrays remain ordered declaration fallbacks.
 
-| Property | Values |
-| --- | --- |
-| `scrollSnapType` | `none`; `x`, `y`, `block`, `inline`, or `both`, optionally followed by `mandatory` or `proximity` |
-| `scrollSnapAlign` | One or two of `none`, `start`, `end`, `center`; paired values select block then inline alignment |
-| `scrollSnapStop` | `normal`, `always` |
+| Property          | Values                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------- |
+| `scrollSnapType`  | `none`; `x`, `y`, `block`, `inline`, or `both`, optionally followed by `mandatory` or `proximity` |
+| `scrollSnapAlign` | One or two of `none`, `start`, `end`, `center`; paired values select block then inline alignment  |
+| `scrollSnapStop`  | `normal`, `always`                                                                                |
 
 ```ts
 import { css } from 'zyzz'
 
-const carousel = css({ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory' })
-const slide = css({ flexShrink: 0, scrollSnapAlign: 'start', scrollSnapStop: 'always' })
+const carousel = css({
+  display: 'flex',
+  overflowX: 'auto',
+  scrollSnapType: 'x mandatory',
+})
+const slide = css({
+  flexShrink: 0,
+  scrollSnapAlign: 'start',
+  scrollSnapStop: 'always',
+})
 ```
 
 Snap declarations accept CSS-wide keywords, fallback arrays, and importance in root, theme, and Config authoring. Theme tokens do not map to snap keywords. Scroll margins and padding adjust the alignment area. The browser owns proximity thresholds, motion, and gesture physics; native snapping remains deferred.
@@ -128,14 +137,14 @@ Snap declarations accept CSS-wide keywords, fallback arrays, and importance in r
 
 [Text decorations](https://www.w3.org/TR/css-text-decor-4/) use separate properties with ordered fallbacks and importance. Shared `color` tokens apply to decoration colors; `textColor` tokens remain specific to text color. Thickness and underline offset accept spacing tokens.
 
-| Property | Supported Values |
-| --- | --- |
-| `textDecorationColor` | Supported colors and shared color tokens |
-| `textDecorationLine` | `none`, or any single-space ordering of distinct `underline`, `overline`, and `line-through` |
-| `textDecorationSkipInk` | `auto`, `none` |
-| `textDecorationStyle` | `dashed`, `dotted`, `double`, `solid`, `wavy` |
-| `textDecorationThickness` | Nonnegative lengths, percentages, zero, `auto`, `from-font` |
-| `textUnderlineOffset` | Signed lengths, percentages, zero, `auto` |
+| Property                  | Supported Values                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------- |
+| `textDecorationColor`     | Supported colors and shared color tokens                                                     |
+| `textDecorationLine`      | `none`, or any single-space ordering of distinct `underline`, `overline`, and `line-through` |
+| `textDecorationSkipInk`   | `auto`, `none`                                                                               |
+| `textDecorationStyle`     | `dashed`, `dotted`, `double`, `solid`, `wavy`                                                |
+| `textDecorationThickness` | Nonnegative lengths, percentages, zero, `auto`, `from-font`                                  |
+| `textUnderlineOffset`     | Signed lengths, percentages, zero, `auto`                                                    |
 
 ```ts
 import { css } from 'zyzz'
@@ -154,23 +163,27 @@ Thickness supports a bounded nonnegative subset of CSS. Percentages use font-rel
 
 [Text spacing and line breaking](https://www.w3.org/TR/css-text-3/) use explicit scalar domains. Indentation accepts spacing tokens; letter and word spacing remain literal-only because the shared spacing token contract permits percentages.
 
-| Properties | Supported Values |
-| --- | --- |
-| `letterSpacing`, `wordSpacing` | Signed lengths, zero, `normal`; percentages excluded |
-| `textIndent` | Signed lengths, percentages, zero, or spacing tokens |
-| `hyphens` | `auto`, `manual`, `none` |
-| `overflowWrap` | `anywhere`, `break-word`, `normal` |
-| `wordBreak` | `break-all`, `keep-all`, `normal` |
-| `whiteSpace` | `break-spaces`, `normal`, `nowrap`, `pre`, `pre-line`, `pre-wrap` |
-| `textAlignLast` | `auto`, `center`, `end`, `justify`, `left`, `right`, `start` |
-| `textTransform` | `capitalize`, `lowercase`, `none`, `uppercase` |
-| `textOverflow` | `clip`, `ellipsis` |
+| Properties                     | Supported Values                                                  |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `letterSpacing`, `wordSpacing` | Signed lengths, zero, `normal`; percentages excluded              |
+| `textIndent`                   | Signed lengths, percentages, zero, or spacing tokens              |
+| `hyphens`                      | `auto`, `manual`, `none`                                          |
+| `overflowWrap`                 | `anywhere`, `break-word`, `normal`                                |
+| `wordBreak`                    | `break-all`, `keep-all`, `normal`                                 |
+| `whiteSpace`                   | `break-spaces`, `normal`, `nowrap`, `pre`, `pre-line`, `pre-wrap` |
+| `textAlignLast`                | `auto`, `center`, `end`, `justify`, `left`, `right`, `start`      |
+| `textTransform`                | `capitalize`, `lowercase`, `none`, `uppercase`                    |
+| `textOverflow`                 | `clip`, `ellipsis`                                                |
 
 ```ts
 import { css } from 'zyzz'
 
 const title = css({ letterSpacing: '-.02em', textTransform: 'uppercase' })
-const excerpt = css({ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' })
+const excerpt = css({
+  overflow: 'hidden',
+  whiteSpace: 'nowrap',
+  textOverflow: 'ellipsis',
+})
 const paragraph = css({ overflowWrap: 'anywhere', textIndent: '1em' })
 ```
 
@@ -329,3 +342,26 @@ Treat generated identifiers as opaque. Always consume the returned class map and
 `Css.CompileError` aggregates invalid declarations and empty or duplicate names without returning partial CSS. Pass ordered `Style.define` data to the compiler.
 
 See [In-Memory Themes](../../../guides/themes.md#compile-themes) for token compilation. Nested conditions, callbacks, and source parsing are outside this API. Declaration and rule order control CSS precedence; class-attribute order does not.
+
+## Tables
+
+| Property         | Values                                                 |
+| ---------------- | ------------------------------------------------------ |
+| `borderCollapse` | `collapse`, `separate`                                 |
+| `borderSpacing`  | One nonnegative length or numeric zero; no percentages |
+| `captionSide`    | `bottom`, `top`                                        |
+| `emptyCells`     | `hide`, `show`                                         |
+| `tableLayout`    | `auto`, `fixed`                                        |
+
+CSS-wide keywords, ordered fallbacks, and importance are supported. Border spacing applies to separated borders; caption placement and empty-cell visibility follow native table behavior. Two-length spacing and spacing tokens remain deferred because the current token domain permits percentages.
+
+```ts
+css({
+  borderCollapse: 'separate',
+  borderSpacing: '8px',
+  captionSide: 'bottom',
+  emptyCells: 'hide',
+  tableLayout: 'fixed',
+  width: '100%',
+})
+```

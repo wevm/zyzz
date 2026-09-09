@@ -13,6 +13,7 @@ import * as Borders from '../../test/fixtures/Borders.js'
 import * as Columns from '../../test/fixtures/Columns.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
+import * as Fonts from '../../test/fixtures/Fonts.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
 import * as Layout from '../../test/fixtures/Layout.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
@@ -183,6 +184,12 @@ const workloads = {
       `export const box${index} = css({flexBasis:'${index}px',alignSelf:'center',order:${index},overflow:['hidden','clip!'],overflowX:'auto'})();`,
     source: Flex.source,
     title: 'flex layout',
+  },
+  fonts: {
+    declaration: (index: number) =>
+      `export const text${index} = css({fontKerning:'normal',fontVariantNumeric:'tabular-nums',textEmphasisStyle:'open circle',textEmphasisColor:'#06c',letterSpacing:'${index}px'})();`,
+    source: Fonts.source,
+    title: 'font',
   },
   interaction: {
     declaration: (index: number) =>

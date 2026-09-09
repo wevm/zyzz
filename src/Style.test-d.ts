@@ -8,8 +8,49 @@ import * as Borders from '../test/fixtures/Borders.js'
 import * as Logical from '../test/fixtures/Logical.js'
 import * as Scrolling from '../test/fixtures/Scrolling.js'
 import * as Snapping from '../test/fixtures/Snapping.js'
+import * as TextDecoration from '../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
+
+Style.define(TextDecoration.styles)
+css({
+  textDecorationLine: ['overline underline', 'line-through!'],
+  textDecorationThickness: '10%',
+  textUnderlineOffset: '-.2em',
+})
+const decorationTheme = Theme.define({
+  color: { ink: '#06c' },
+  textColor: { ink: '#f00' },
+  spacing: { stroke: '2px' },
+})
+decorationTheme.css({
+  textDecorationColor: 'ink',
+  textDecorationThickness: 'stroke',
+})
+Config.create({ theme: decorationTheme }).css({
+  textUnderlineOffset: decorationTheme.tokens.spacing.stroke,
+})
+Style.define({
+  link: { textDecorationColor: decorationTheme.tokens.color.ink },
+})
+decorationTheme.css({
+  // @ts-expect-error Text-only color groups do not map to decoration colors.
+  textDecorationColor: decorationTheme.tokens.textColor.ink,
+})
+// @ts-expect-error Root decoration lengths remain token-free.
+css({ textDecorationThickness: 'stroke' })
+// @ts-expect-error None cannot be combined with line flags.
+css({ textDecorationLine: 'none underline' })
+// @ts-expect-error Line flags cannot be repeated.
+css({ textDecorationLine: 'underline underline' })
+// @ts-expect-error Decoration style is not a border style.
+css({ textDecorationStyle: 'groove' })
+// @ts-expect-error From-font is a thickness keyword, not an underline offset.
+css({ textUnderlineOffset: 'from-font' })
+// @ts-expect-error Combined decoration shorthand remains deferred.
+css({ textDecoration: 'underline solid' })
+// @ts-expect-error Invalid numeric spellings remain checked in importance strings.
+css({ textDecorationThickness: '0x10px!' })
 
 Style.define(TextFlow.styles)
 css({

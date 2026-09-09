@@ -19,11 +19,151 @@ import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../../test/fixtures/TextFlow.js'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('text decorations preserve color domains, spacing tokens, priority, and maps', () => {
+    const output = Transform.compile({
+      moduleId: 'example/decoration.ts',
+      source: TextDecoration.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-aauzfj1an5ia3-zyzz-theme{--z-taauzfj1an5ia3-zyzz-color_2e_brand:#06c;--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke:2px;--z-taauzfj1an5ia3-zyzz-spacing_2e_offset:4px;}
+      .z-style-aauzfj1an5ia3-182{text-decoration-line:underline;text-decoration-thickness:from-font;text-underline-offset:auto;text-decoration-skip-ink:auto;}
+      .z-aauzfj1an5ia3-base0{text-decoration-color:var(--z-taauzfj1an5ia3-zyzz-color_2e_brand,#06c);text-decoration-style:wavy;}
+      .z-style-aauzfj1an5ia3-340{text-decoration-line:underline;text-decoration-line:underline overline!important;text-decoration-thickness:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke,2px);text-underline-offset:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_offset,4px);text-decoration-skip-ink:none;}
+      .z-style-aauzfj1an5ia3-616{text-decoration-line:line-through;text-decoration-thickness:10%;text-underline-offset:-10%;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) =>
+      line.includes('text-decoration-line:underline overline'),
+    )
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('text-decoration-line:underline overline'),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 34,
+        "line": 5,
+        "name": "textDecorationLine",
+        "source": "example/decoration.ts",
+      }
+    `)
+  })
+
+  test('text decorations reject invalid line combinations and value domains', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import { css } from 'zyzz'; css({textDecorationLine:'none underline',textDecorationStyle:'groove',textDecorationThickness:'thin',textUnderlineOffset:'from-font',textDecorationSkipInk:'always'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: invalid.ts:52: Expected one of: line-through, line-through overline, line-through overline underline, line-through underline, line-through underline overline, none, overline, overline line-through, overline line-through underline, overline underline, overline underline line-through, underline, underline line-through, underline line-through overline, underline overline, underline overline line-through (or a CSS-wide keyword).
+      invalid.ts:89: Expected one of: dashed, dotted, double, solid, wavy (or a CSS-wide keyword).
+      invalid.ts:122: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: from-font.
+      invalid.ts:149: Expected a literal length, auto, or numeric zero.
+      invalid.ts:183: Expected one of: auto, none (or a CSS-wide keyword).]
+    `)
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid-token.ts',
+        source: `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{textColor:{ink:'#06c'}}}); zyzz.css({textDecorationColor:zyzz.theme.tokens.textColor.ink});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid-token.ts:123: Token group is incompatible with this property.]`,
+    )
+  })
+
+  test('text decorations match native browser controls across writing modes', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/decoration.ts',
+      source: TextDecoration.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      loader: 'ts',
+      format: 'esm',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>body{font:24px/2 monospace}${output.css}</style><main>${Object.entries(
+          TextDecoration.controls,
+        )
+          .map(
+            ([name, css]) =>
+              `<div id="${name}" class="${module[name].className}">Typography</div><div id="${name}-control" style="${css}">Typography</div>`,
+          )
+          .join('')}</main>`,
+      )
+      for (const writingMode of ['horizontal-tb', 'vertical-lr', 'vertical-rl'])
+        for (const direction of ['ltr', 'rtl']) {
+          await page.locator('main').evaluate(
+            (element, mode) => {
+              element.style.direction = mode.direction
+              element.style.writingMode = mode.writingMode
+            },
+            { direction, writingMode },
+          )
+          expect(
+            await page.evaluate((names) => {
+              const properties = [
+                'text-decoration-color',
+                'text-decoration-line',
+                'text-decoration-style',
+                'text-decoration-thickness',
+                'text-decoration-skip-ink',
+                'text-underline-offset',
+              ]
+              return names.filter((name) => {
+                const actual = getComputedStyle(document.getElementById(name)!)
+                const control = getComputedStyle(
+                  document.getElementById(`${name}-control`)!,
+                )
+                return properties.some(
+                  (property) =>
+                    actual.getPropertyValue(property) !==
+                    control.getPropertyValue(property),
+                )
+              })
+            }, Object.keys(TextDecoration.controls)),
+          ).toMatchInlineSnapshot(`[]`)
+        }
+      expect(
+        await page.locator('#decorated').evaluate((element) => {
+          const style = getComputedStyle(element)
+          return {
+            color: style.textDecorationColor,
+            line: style.textDecorationLine,
+            offset: style.textUnderlineOffset,
+            skip: style.textDecorationSkipInk,
+            style: style.textDecorationStyle,
+            thickness: style.textDecorationThickness,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 102, 204)",
+          "line": "underline overline",
+          "offset": "4px",
+          "skip": "none",
+          "style": "wavy",
+          "thickness": "2px",
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('text flow preserves indentation tokens, fallback priority, and maps', () => {
     const output = Transform.compile({
       moduleId: 'example/text.ts',
@@ -82,7 +222,9 @@ describe('compile', () => {
         moduleId: 'invalid-token.ts',
         source: `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{spacing:{portion:'10%'}}}); zyzz.css({wordSpacing:zyzz.theme.tokens.spacing.portion});`,
       }),
-    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: invalid-token.ts:116: Token group is incompatible with this property.]`)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid-token.ts:116: Token group is incompatible with this property.]`,
+    )
   })
 
   test('text flow wraps and spaces text like native CSS in the browser', async () => {

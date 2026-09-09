@@ -25,6 +25,7 @@ The property surface is intentionally finite. No catch-all string index permits 
 | Sizing      | `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, plus `inlineSize`, `blockSize`, and their `min`/`max` forms                                                                           |
 | Colors      | `color`, `backgroundColor`, `borderColor`                                                                                                                                                                  |
 | Borders     | `borderWidth`, `borderStyle`, `borderColor`, their physical/logical side forms, and physical/logical corner radii                                                                                          |
+| Decorations | `textDecorationColor`, `textDecorationLine`, `textDecorationSkipInk`, `textDecorationStyle`, `textDecorationThickness`, `textUnderlineOffset` |
 | Typography  | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`, `textAlignLast`, `textIndent`, `letterSpacing`, `wordSpacing`, `hyphens`, `overflowWrap`, `wordBreak`, `whiteSpace`, `textTransform`, `textOverflow`                                                                                                                                           |
 | Positioning | `inset`, `insetBlock`, `insetInline`, their start/end longhands, and `top`, `right`, `bottom`, `left`                                                                                                      |
 | Writing     | `direction` (`ltr`, `rtl`), `writingMode` (`horizontal-tb`, `vertical-lr`, `vertical-rl`)                                                                                                                  |
@@ -122,6 +123,32 @@ const slide = css({ flexShrink: 0, scrollSnapAlign: 'start', scrollSnapStop: 'al
 ```
 
 Snap declarations accept CSS-wide keywords, fallback arrays, and importance in root, theme, and Config authoring. Theme tokens do not map to snap keywords. Scroll margins and padding adjust the alignment area. The browser owns proximity thresholds, motion, and gesture physics; native snapping remains deferred.
+
+## Text Decorations
+
+[Text decorations](https://www.w3.org/TR/css-text-decor-4/) use separate properties with ordered fallbacks and importance. Shared `color` tokens apply to decoration colors; `textColor` tokens remain specific to text color. Thickness and underline offset accept spacing tokens.
+
+| Property | Supported Values |
+| --- | --- |
+| `textDecorationColor` | Supported colors and shared color tokens |
+| `textDecorationLine` | `none`, or any single-space ordering of distinct `underline`, `overline`, and `line-through` |
+| `textDecorationSkipInk` | `auto`, `none` |
+| `textDecorationStyle` | `dashed`, `dotted`, `double`, `solid`, `wavy` |
+| `textDecorationThickness` | Nonnegative lengths, percentages, zero, `auto`, `from-font` |
+| `textUnderlineOffset` | Signed lengths, percentages, zero, `auto` |
+
+```ts
+import { css } from 'zyzz'
+
+const link = css({
+  textDecorationLine: ['underline', 'underline overline!'],
+  textDecorationStyle: 'wavy',
+  textDecorationThickness: '2px',
+  textUnderlineOffset: '.2em',
+})
+```
+
+Thickness supports a bounded nonnegative subset of CSS. Percentages use font-relative browser semantics. Combined `textDecoration` shorthands, underline position, additional ink-skipping values, emphasis, shadows, and native conversion remain deferred. The browser owns line placement and painting.
 
 ## Text Flow
 

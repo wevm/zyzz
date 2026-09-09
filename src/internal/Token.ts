@@ -36,7 +36,9 @@ export function accepts(
         'minWidth',
         'right',
         'rowGap',
+        'textDecorationThickness',
         'textIndent',
+        'textUnderlineOffset',
         'top',
         'width',
       ].includes(property)
@@ -171,7 +173,9 @@ export type Properties<group extends Group> = group extends 'spacing'
       | `right`
       | `rowGap`
       | `scrollPadding${string}`
+      | `textDecorationThickness`
       | `textIndent`
+      | `textUnderlineOffset`
       | `top`
       | `width`
     >

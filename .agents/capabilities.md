@@ -1,6 +1,6 @@
 # CSS Capability Inventory
 
-Version 9. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
+Version 10. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
 
 ## Current Web Surface
 
@@ -45,6 +45,10 @@ Source/map and A/B/A fixtures cover extraction and emission. A real browser fixt
 Text flow adds ten properties: letter/word spacing, indentation, last-line alignment, text transformation/overflow, whitespace, word breaking, overflow wrapping, and hyphenation. Types and runtime share finite keyword/length domains. Indentation accepts spacing tokens; letter/word spacing exclude percentages and unconstrained spacing references.
 
 Source/map fixtures cover fallback importance, indentation tokens, and rejected domains. Browser fixtures compare emitted declarations with independent CSS controls and check wrapping height, spacing width, overflow, and indentation. A 10/100-style transform lane records delivery and timing. Language dictionaries, extended grammar, typography token scales, and native rendering remain deferred.
+
+Text decorations add six properties: decoration color, line, style, thickness, ink skipping, and underline offset. Line values allow distinct underline/overline/line-through combinations in any order or standalone none. Shared colors map to decoration color; spacing tokens map to thickness and offset. The supported thickness subset is nonnegative; offsets accept signed lengths and percentages.
+
+Source/map and type fixtures cover token domains, line combinations, and fallback importance. Browser fixtures compare all six computed declarations against independent CSS controls across three writing modes and both directions; decoration painting remains browser-owned. A 10/100-style transform lane records timing and delivery. Combined shorthands, underline position, emphasis, shadows, and native rendering remain deferred.
 
 ## Targets
 

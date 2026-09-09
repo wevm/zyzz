@@ -16,6 +16,7 @@ import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../../test/fixtures/TextFlow.js'
 import * as Compilation from '../../bench/Compilation.js'
 
@@ -152,6 +153,12 @@ const workloads = {
       `export const box${index} = css({borderStyle:'solid',borderWidth:'2px',borderInlineStartWidth:'${index}px',borderStartStartRadius:'8px',outlineWidth:'1px'})();`,
     source: Borders.source,
     title: 'border',
+  },
+  decoration: {
+    declaration: (index: number) =>
+      `export const link${index} = css({textDecorationLine:['underline','underline overline!'],textDecorationStyle:'dotted',textDecorationThickness:'2px',textUnderlineOffset:'${index}px'})();`,
+    source: TextDecoration.source,
+    title: 'text decoration',
   },
   flex: {
     declaration: (index: number) =>

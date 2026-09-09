@@ -3,15 +3,19 @@
  * @module
  */
 import * as Trace from '@jridgewell/trace-mapping'
+import * as CssTree from 'css-tree'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
+import * as Module from 'node:module'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
+import * as Literal from '../internal/Literal.js'
 import { Transform } from 'zyzz/compiler'
 import * as Borders from '../../test/fixtures/Borders.js'
+import * as Conformance from '../../test/fixtures/Conformance.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
@@ -27,6 +31,200 @@ import * as TextFlow from '../../test/fixtures/TextFlow.js'
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('CSS conformance covers every implemented property and pinned upstream grammar', async () => {
+    const inventory = JSON.parse(
+      await Fs.readFile(
+        Path.join(root, 'test/conformance/coverage.json'),
+        'utf8',
+      ),
+    ) as {
+      families: { properties: Record<string, { status: string }> }
+    }
+    const implemented = Object.keys(Literal.rules).map(Conformance.name).sort()
+    const classified = Object.entries(inventory.families.properties)
+      .filter(
+        ([, entry]) =>
+          entry.status === 'partial' || entry.status === 'supported',
+      )
+      .map(([name]) => name)
+      .sort()
+    expect(
+      classified.filter((name) => !implemented.includes(name)),
+    ).toMatchInlineSnapshot(`[]`)
+    expect(
+      implemented.filter((name) => !classified.includes(name)),
+    ).toMatchInlineSnapshot(`[]`)
+    const { stderr } = await Util.promisify(ChildProcess.execFile)(
+      process.execPath,
+      ['scripts/css-conformance.ts'],
+      { cwd: root },
+    )
+    expect(stderr).toMatchInlineSnapshot(`""`)
+  })
+
+  test('CSS conformance fails stale grammars and unclassified upstream properties', async () => {
+    const directory = await Fs.mkdtemp(
+      Path.join(root, '.fixture-css-inventory-'),
+    )
+    try {
+      const inventory = JSON.parse(
+        await Fs.readFile(
+          Path.join(root, 'test/conformance/coverage.json'),
+          'utf8',
+        ),
+      ) as {
+        families: {
+          properties: Record<string, { grammar: string; status: string }>
+        }
+      }
+      delete inventory.families.properties['display']
+      inventory.families.properties['color']!.grammar = 'unreviewed'
+      const file = Path.join(directory, 'coverage.json')
+      await Fs.writeFile(file, JSON.stringify(inventory))
+      const result = ChildProcess.spawnSync(
+        process.execPath,
+        ['scripts/css-conformance.ts', '--inventory', file],
+        { cwd: root, encoding: 'utf8', timeout: 10_000 },
+      )
+      expect(result.status).toMatchInlineSnapshot(`1`)
+      expect(result.stderr).toMatchInlineSnapshot(`
+        "
+        Changed properties: color
+        Added properties: display
+        Unclassified properties: display
+        Review upstream changes with pnpm update:css, then classify coverage.json entries.
+        "
+      `)
+      const update = ChildProcess.spawnSync(
+        process.execPath,
+        ['scripts/css-conformance.ts', '--inventory', file, '--update'],
+        { cwd: root, encoding: 'utf8', timeout: 10_000 },
+      )
+      expect(update.status).toMatchInlineSnapshot(`0`)
+      const check = ChildProcess.spawnSync(
+        process.execPath,
+        ['scripts/css-conformance.ts', '--inventory', file],
+        { cwd: root, encoding: 'utf8', timeout: 10_000 },
+      )
+      expect(check.status).toMatchInlineSnapshot(`1`)
+      expect(check.stderr).toMatchInlineSnapshot(`
+        "
+        Unclassified properties: display
+        Review upstream changes with pnpm update:css, then classify coverage.json entries.
+        "
+      `)
+    } finally {
+      await Fs.rm(directory, { force: true, recursive: true })
+    }
+  })
+
+  test('CSS conformance validates emitted values against independent MDN grammar', () => {
+    const cases = Conformance.cases()
+    const lexer = Conformance.lexer()
+    const failures: string[] = []
+    // Batches bound compiler input size while still exercising fallback and importance rewriting.
+    for (let start = 0; start < cases.length; start += 100) {
+      const batch = cases.slice(start, start + 100)
+      const source = `import { css } from 'zyzz';\n${batch
+        .map(
+          ({ property, value }, index) =>
+            `export const case${index} = css({${property}: [${JSON.stringify(value)}, ${JSON.stringify(`${value}!`)}]})();`,
+        )
+        .join('\n')}`
+      const output = Transform.compile({ moduleId: 'conformance.ts', source })
+      let count = 0
+      CssTree.walk(CssTree.parse(output.css), (node) => {
+        if (node.type !== 'Declaration') return
+        count++
+        const value = CssTree.generate(node.value)
+        const error = lexer.matchProperty(node.property, value).error
+        if (error) failures.push(`${node.property}: ${value}: ${error.message}`)
+      })
+      if (count !== batch.length * 2)
+        failures.push(`Declaration count: ${count} != ${batch.length * 2}`)
+    }
+    expect(failures).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('CSS conformance rejects invalid and unsupported values through source authoring', () => {
+    const accepted: string[] = []
+    const rejected = [
+      ...Conformance.rejected,
+      { property: 'color', value: '#12' },
+      { property: 'fontWeight', value: 1001 },
+      { property: 'opacity', value: -1 },
+      { property: 'opacity', value: 1.1 },
+      { property: 'order', value: 0.5 },
+      { property: 'padding', value: '-1px' },
+    ]
+    for (const { property, value } of rejected)
+      for (const scalar of [value, `${value}!`]) {
+        try {
+          Transform.compile({
+            moduleId: 'invalid.ts',
+            source: `import { css } from 'zyzz'; css({${property}: ${JSON.stringify(scalar)}});`,
+          })
+          accepted.push(`${property}: ${scalar}`)
+        } catch (error) {
+          if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
+            throw error
+        }
+      }
+    expect(accepted).toMatchInlineSnapshot(`[]`)
+  })
+
+  test('CSS conformance preserves consumer types for every accepted probe', async () => {
+    const directory = await Fs.mkdtemp(Path.join(root, '.fixture-css-types-'))
+    try {
+      const cases = Conformance.cases()
+      const declarations = Object.keys(Literal.rules).map((property) => {
+        const values = cases
+          .filter((entry) => entry.property === property)
+          .flatMap(({ value }) => [value, `${value}!`])
+        return `[${values.map((value) => JSON.stringify(value)).join(',')}] as const satisfies readonly Style.Properties['${property}'][];\ncss({${property}: [${values
+          .slice(0, 16)
+          .map((value) => JSON.stringify(value))
+          .join(',')}]});`
+      })
+      const rejections = Conformance.rejected.map(
+        ({ property, value }) =>
+          `// @ts-expect-error Invalid or deliberately unsupported scalar.\ncss({${property}: ${JSON.stringify(value)}});\n// @ts-expect-error Importance must preserve rejection.\ncss({${property}: ${JSON.stringify(`${value}!`)}});`,
+      )
+      const booleans = Object.keys(Literal.rules).map(
+        (property) =>
+          `// @ts-expect-error Booleans are outside every CSS scalar domain.\ncss({${property}: true});`,
+      )
+      const source = `/** Checks generated consumer declarations. @module */\nimport { css, type Style } from 'zyzz';\n${[...declarations, ...rejections, ...booleans].join('\n')}`
+      await Fs.writeFile(Path.join(directory, 'consumer.test-d.ts'), source)
+      await Fs.writeFile(
+        Path.join(directory, 'tsconfig.json'),
+        JSON.stringify({
+          extends: '../tsconfig.json',
+          include: ['./consumer.test-d.ts'],
+        }),
+      )
+      const require = Module.createRequire(import.meta.url)
+      const { stderr, stdout } = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          '--max-old-space-size=2048',
+          require.resolve('typescript/bin/tsc'),
+          '--project',
+          Path.join(directory, 'tsconfig.json'),
+        ],
+        { cwd: root, maxBuffer: 1024 * 1024, timeout: 110_000 },
+      ).catch((error: unknown) => {
+        if (error && typeof error === 'object' && 'stdout' in error)
+          throw new Error(String(error.stdout))
+        throw error
+      })
+      expect(stderr).toMatchInlineSnapshot(`""`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+    } finally {
+      await Fs.rm(directory, { force: true, recursive: true })
+    }
+  }, 120_000)
+
   test('interaction declarations preserve importance and source maps', () => {
     const output = Transform.compile({
       moduleId: 'example/interaction.ts',

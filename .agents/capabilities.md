@@ -58,6 +58,12 @@ Interaction adds `cursor`, `pointerEvents`, `resize`, `userSelect`, and `visibil
 
 Browser fixtures compare computed declarations with independent CSS controls, exercise pointer hit testing, verify hidden layout preservation, and test text selection. Resize and cursor checks cover computed declarations; platform resize gestures and cursor artwork remain browser-owned. A 10/100-style transform lane measures timing and delivery. Contracts follow [CSS UI](https://www.w3.org/TR/css-ui-4/).
 
+## Upstream Conformance
+
+[CSS conformance](../test/conformance/README.md) pins MDN grammar and tracks every upstream property, function, selector, at-rule, syntax, type, and unit. CI rejects unclassified additions, removals, and changed fingerprints, including indirect grammar changes. Weekly dependency PRs surface upstream updates without live-network checks in normal CI.
+
+Compiler probes exhaust finite keywords and sample scalar boundaries against CSS Tree using current pinned MDN grammar. The same accepted corpus checks public TypeScript property types, with representative inference probes; independent rejected inputs exercise type and source diagnostics. Partial coverage remains explicit. These checks complement browser fixtures and do not establish complete CSS or native support.
+
 ## Targets
 
 The pure core validates ordered declarations. The web compiler emits standard CSS and leaves browser lowering to the host. Chromium integration verifies fallback order, priority, shorthand/longhand precedence, and inherited tokens. Vite and Lightning CSS retain ownership of configured browser targets; existing native `light-dark()` fixtures use Chrome 123, Firefox 128, and Safari 17.5 targets.

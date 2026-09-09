@@ -1,0 +1,93 @@
+/**
+ * Compares reviewed CSS coverage with pinned upstream grammars and prints CI evidence.
+ * @module
+ */
+import * as Crypto from 'node:crypto'
+import * as Fs from 'node:fs'
+import * as Module from 'node:module'
+import * as Path from 'node:path'
+
+const require = Module.createRequire(import.meta.url)
+const directory = Path.resolve(import.meta.dirname, '../test/conformance')
+const inventoryIndex = process.argv.indexOf('--inventory')
+const file =
+  inventoryIndex === -1
+    ? Path.join(directory, 'coverage.json')
+    : Path.resolve(process.argv[inventoryIndex + 1] ?? '')
+if (inventoryIndex !== -1 && !process.argv[inventoryIndex + 1])
+  throw new Error('--inventory requires a path')
+const families = [
+  'at-rules',
+  'functions',
+  'properties',
+  'selectors',
+  'syntaxes',
+  'types',
+  'units',
+] as const
+
+type Entry = {
+  grammar: string
+  status: 'deferred' | 'partial' | 'supported' | 'unclassified'
+}
+type Inventory = {
+  families: Record<string, Record<string, Entry>>
+  version: string
+}
+const previous: Inventory = JSON.parse(Fs.readFileSync(file, 'utf8'))
+const version: string = require('mdn-data/package.json').version
+const current: Inventory = { families: {}, version }
+const changes: string[] = []
+for (const family of families) {
+  const data: Record<string, unknown> = require(`mdn-data/css/${family}.json`)
+  const entries: Record<string, Entry> = {}
+  current.families[family] = entries
+  for (const name of Object.keys(data).sort()) {
+    const old = previous.families[family]?.[name]
+    const grammar = Crypto.createHash('sha256')
+      .update(JSON.stringify(data[name]))
+      .digest('hex')
+    entries[name] = { grammar, status: old?.status ?? 'unclassified' }
+    if (!old) changes.push(`Added ${family}: ${name}`)
+    else if (old.grammar !== grammar) changes.push(`Changed ${family}: ${name}`)
+  }
+  for (const name of Object.keys(previous.families[family] ?? {}))
+    if (!(name in data)) changes.push(`Removed ${family}: ${name}`)
+}
+if (previous.version !== version)
+  changes.unshift(`MDN data ${previous.version} → ${version}`)
+if (process.argv.includes('--update')) {
+  Fs.writeFileSync(file, `${JSON.stringify(current, null, 2)}\n`)
+  console.log(changes.join('\n') || 'No upstream changes.')
+  console.log(
+    'Updated grammar snapshot. Review the diff and classify new entries before committing.',
+  )
+} else {
+  console.log('# CSS Conformance Report\n')
+  console.log(
+    `MDN data: ${version}. Grammar drift includes referenced syntaxes and metadata.\n`,
+  )
+  console.log(
+    '| Family | 🟢 Supported | 🟡 Partial | ⚪ Deferred | 🔴 Unclassified |',
+  )
+  console.log('| --- | ---: | ---: | ---: | ---: |')
+  for (const [family, entries] of Object.entries(current.families)) {
+    const counts = { deferred: 0, partial: 0, supported: 0, unclassified: 0 }
+    for (const [name, entry] of Object.entries(entries)) {
+      if (!Object.hasOwn(counts, entry.status))
+        changes.push(`Invalid status ${family}: ${name}`)
+      else counts[entry.status]++
+      if (entry.status === 'unclassified')
+        changes.push(`Unclassified ${family}: ${name}`)
+    }
+    console.log(
+      `| ${family} | ${counts.supported} | ${counts.partial} | ${counts.deferred} | ${counts.unclassified} |`,
+    )
+  }
+  if (changes.length) {
+    console.error(
+      `\n${changes.join('\n')}\nReview upstream changes with pnpm update:css, then classify coverage.json entries.`,
+    )
+    process.exitCode = 1
+  }
+}

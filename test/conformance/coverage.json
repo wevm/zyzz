@@ -1471,7 +1471,7 @@
       },
       "clip-rule": {
         "grammar": "41d91188cc099924d16d052b6cc947b87c6fbd141493b57c3b1a95b419b22667",
-        "status": "deferred"
+        "status": "partial"
       },
       "color": {
         "grammar": "37ca39388e022374aeb44a7e5c3dc384fbfad0e6c03f95b2d3609c0c795f040d",
@@ -1479,7 +1479,7 @@
       },
       "color-interpolation-filters": {
         "grammar": "d195b942ccd4fbb993996dcfc9544a27c7fb82c39c2265f3e7c34002df820a01",
-        "status": "deferred"
+        "status": "partial"
       },
       "color-scheme": {
         "grammar": "3551b430ad1c94da36b825c11ee0e63e54c3354f3b130b89f0d49dd52f875bd3",
@@ -1699,15 +1699,15 @@
       },
       "fill": {
         "grammar": "931ed37f2196c2c2f18000610bc942f8b43cbda02f705b9e4079c94bf921b25a",
-        "status": "deferred"
+        "status": "partial"
       },
       "fill-opacity": {
         "grammar": "1365b36291d960e336743a681b2ebfa86d4ee1889c2f801949f2d69a46046d05",
-        "status": "deferred"
+        "status": "partial"
       },
       "fill-rule": {
         "grammar": "d475a1b6e7d19c29b61a0a99ee134eb406645d78229e55a89c32d1fb12a354c5",
-        "status": "deferred"
+        "status": "partial"
       },
       "filter": {
         "grammar": "fd9d1377d7e55fe3abb72a86993abdb467dabf7a0e0efab9e7d20bed6c20d109",
@@ -1751,11 +1751,11 @@
       },
       "flood-color": {
         "grammar": "9b1005c1a90345db27e799fa2db491fba3181bd699e4938a419526ed157836c5",
-        "status": "deferred"
+        "status": "partial"
       },
       "flood-opacity": {
         "grammar": "91a572cfda4012d1056a66007c1a0689d5605fb04d855f9ae77d5f0fdb7f1a39",
-        "status": "deferred"
+        "status": "partial"
       },
       "font": {
         "grammar": "3f1c081c33d1229756664dcf97c7bb0bc20c6a62b2d4b3bfecec490c6d4adbc2",
@@ -2079,7 +2079,7 @@
       },
       "lighting-color": {
         "grammar": "9b5caab2c3d581f734d98ab24eacfb5fc8893b2a047561c2361c01718661a630",
-        "status": "deferred"
+        "status": "partial"
       },
       "line-break": {
         "grammar": "a6ce6239a2a1fae16aae6b71c8eb381d9b2e815b4ac3eec0c750b3e1181e08e4",
@@ -2495,7 +2495,7 @@
       },
       "paint-order": {
         "grammar": "8deeac161ff17b40f348ba7ab603f78406b11f84f53bb0c23db3d2ce3d5084d4",
-        "status": "deferred"
+        "status": "partial"
       },
       "path-length": {
         "grammar": "25d6842c8d7391c6dc2fbf7014e922650b74923799490171e2600b1657c58eba",
@@ -2795,7 +2795,7 @@
       },
       "shape-rendering": {
         "grammar": "cf4e53d166bf72a28dfe641165b4ace36346c6469110996e98c308b46d36c703",
-        "status": "deferred"
+        "status": "partial"
       },
       "speak-as": {
         "grammar": "4873a6dba5f96800922ac393e074a7855cdbd29f5af94df6a823f8dafac8ae3b",
@@ -2811,7 +2811,7 @@
       },
       "stroke": {
         "grammar": "44f4894513a2eac1ed2b421e27784e5717b9ae52d4a8bc2f28318a19b99f2ddd",
-        "status": "deferred"
+        "status": "partial"
       },
       "stroke-color": {
         "grammar": "af6331b7d152bc3e26f1b6f07017dc50a413799aabd0c894b5064684b38b2f97",
@@ -2823,27 +2823,27 @@
       },
       "stroke-dashoffset": {
         "grammar": "072a01ad747a13f4c694cc5c2ad5dd37cbbb505dbea452234151a7abaaee2865",
-        "status": "deferred"
+        "status": "partial"
       },
       "stroke-linecap": {
         "grammar": "28f5e97d02c02ccc64d118ef85c128db9b5d8b6045ab1dc4eda9a14e921dc651",
-        "status": "deferred"
+        "status": "partial"
       },
       "stroke-linejoin": {
         "grammar": "445db21c49cd96e612e8728671945c8cc6c624e635579303c14ef4f4617fd40d",
-        "status": "deferred"
+        "status": "partial"
       },
       "stroke-miterlimit": {
         "grammar": "fe9e5f0d70d8702110b5690f8f42be8c307f52a552a10d0a4d47661ad04ee04e",
-        "status": "deferred"
+        "status": "partial"
       },
       "stroke-opacity": {
         "grammar": "55f2a764e1e1151f65d855f50929094cab69e2da8d2701b9cee6b4c3ec4b3b32",
-        "status": "deferred"
+        "status": "partial"
       },
       "stroke-width": {
         "grammar": "cabcd321ee054c58517652700af81f85261e8bcbe317f5ef51c4c27a794c41a4",
-        "status": "deferred"
+        "status": "partial"
       },
       "tab-size": {
         "grammar": "f8d50fc7bdc7b22b914be44ce7746bab9df984c5dcb95645184b0236c74f53ea",
@@ -2955,7 +2955,7 @@
       },
       "text-rendering": {
         "grammar": "ed574674a91958acf25174c5f034adc8ede87f14bf64e01d3fabb93f7079818f",
-        "status": "deferred"
+        "status": "partial"
       },
       "text-shadow": {
         "grammar": "1490ae8128695618f6b1df30489696092477661d08c0d216d4f53bd796fc8ddd",
@@ -3099,7 +3099,7 @@
       },
       "vector-effect": {
         "grammar": "1dde1c4ad057499eb99bb086c1af41fc3f657a3f7a316d9651406e846e795ab1",
-        "status": "deferred"
+        "status": "partial"
       },
       "vertical-align": {
         "grammar": "c3a2a723cc9fe2efa5a8abe670ee0f6fb83a2f23c1bbb8342f0448fb9b1e76c6",

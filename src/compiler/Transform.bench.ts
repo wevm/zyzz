@@ -20,6 +20,7 @@ import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as Svg from '../../test/fixtures/Svg.js'
 import * as Tables from '../../test/fixtures/Tables.js'
 import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../../test/fixtures/TextFlow.js'
@@ -218,6 +219,12 @@ const workloads = {
       `export const slide${index} = css({scrollMarginInlineStart:'${index}px',scrollSnapAlign:'start center',scrollSnapStop:'always',scrollSnapType:['inline proximity','inline mandatory!']})();`,
     source: Snapping.source,
     title: 'scroll snap',
+  },
+  svg: {
+    declaration: (index: number) =>
+      `export const path${index} = css({fill:'#06c',stroke:'black',strokeWidth:'${index}px',fillRule:'evenodd',strokeLinecap:'round'})();`,
+    source: Svg.source,
+    title: 'SVG',
   },
   tables: {
     declaration: (index: number) =>

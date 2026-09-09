@@ -433,3 +433,5 @@ Continue opening coherent property/value PRs against the pinned MDN inventory. E
 - Layout and containment: 10 additional properties and 13 display keywords, with finite containment, safe stacking integers, independent grammar/type checks, and float/stacking browser fixtures. Broad syntax remains partial in the inventory.
 
 - Backgrounds and color controls: 14 additional scalar properties, color-token/auto disambiguation, independent grammar/type probes, and browser computed-style comparisons. Images, gradients, lists, and paired values remain deferred.
+
+- SVG paint: 19 additional properties with shared color tokens, bounded scalar domains, source maps, independent grammar/type probes, and evenodd path geometry in Chromium. Broad paint syntax and filter rendering remain deferred.

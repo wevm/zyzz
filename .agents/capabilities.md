@@ -1,6 +1,6 @@
 # CSS Capability Inventory
 
-Version 7. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
+Version 8. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
 
 ## Current Web Surface
 
@@ -36,7 +36,11 @@ Scroll spacing adds 26 properties: physical/logical scroll margins and padding, 
 
 Separate margin, padding, and overscroll conflict domains preserve A/B/A composition. Source/map fixtures cover literal/token precedence and mixed importance. Browser fixtures compare all properties with independent CSS across six writing-mode/direction combinations and exercise scroll-into-view offsets and smooth scrolling. A 10/100-style lane measures full transforms and delivery.
 
-Scroll snapping, logical overscroll axes, multi-value shorthands, and native conversion remain deferred. Overscroll checks establish computed declarations; device-specific boundary gestures remain browser behavior.
+Logical overscroll axes, multi-value shorthands, and native conversion remain deferred. Overscroll checks establish computed declarations; device-specific boundary gestures remain browser behavior.
+
+Scroll snapping adds `scrollSnapType`, `scrollSnapAlign`, and `scrollSnapStop`. Finite enums share type/runtime validation for axes, strictness, and one/two-keyword alignment. Canonical single-space combinations, CSS-wide keywords, fallbacks, and importance retain source locations and authored order; theme tokens do not map to these keyword domains.
+
+Source/map and A/B/A fixtures cover extraction and emission. A real browser fixture compares physical-axis snap positions and always-stop behavior with independent CSS controls, plus computed paired alignment. A 10/100-style lane records complete transform timing and delivery. Proximity heuristics, gesture physics, and native snapping are outside this compiler proof.
 
 ## Targets
 

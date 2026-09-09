@@ -30,7 +30,7 @@ The property surface is intentionally finite. No catch-all string index permits 
 | Writing     | `direction` (`ltr`, `rtl`), `writingMode` (`horizontal-tb`, `vertical-lr`, `vertical-rl`)                                                                                                                  |
 | Outlines    | `outlineColor`, `outlineWidth`, `outlineStyle`, `outlineOffset`                                                                                                                                            |
 | Overflow    | `overflow`, `overflowX`, `overflowY`                                                                                                                                                                       |
-| Scrolling   | `scrollMargin`/`scrollPadding` and physical/logical longhands, `scrollBehavior`, `overscrollBehavior`/`overscrollBehaviorX`/`overscrollBehaviorY` |
+| Scrolling   | `scrollMargin`/`scrollPadding` and physical/logical longhands, `scrollBehavior`, `scrollSnapType`/`scrollSnapAlign`/`scrollSnapStop`, `overscrollBehavior`/`overscrollBehaviorX`/`overscrollBehaviorY` |
 | Other       | `opacity`                                                                                                                                                                                                  |
 
 - **Lengths:** finite absolute, font-relative, viewport-relative, and container-relative lengths, percentages, or numeric zero. Border and outline widths, outline offsets, and scroll margins exclude percentages.
@@ -102,7 +102,26 @@ const section = css({ scrollMarginBlockStart: '1rem' })
 
 Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, and importance. Scroll margins remain literal-only because the shared spacing token contract permits percentages. Negative scroll padding fails validation. Shorthands accept one scalar per fallback entry.
 
-[Scroll behavior](https://www.w3.org/TR/css-overflow-3/#scroll-behavior-property) controls navigation/API scrolling; [overscroll behavior](https://www.w3.org/TR/css-overscroll-1/#overscroll-behavior-properties) controls boundary actions. Smooth-scroll timing remains browser-owned. Scroll snapping, logical overscroll axes, multi-value shorthands, and native scrolling conversion remain deferred.
+[Scroll behavior](https://www.w3.org/TR/css-overflow-3/#scroll-behavior-property) controls navigation/API scrolling; [overscroll behavior](https://www.w3.org/TR/css-overscroll-1/#overscroll-behavior-properties) controls boundary actions. Smooth-scroll timing remains browser-owned. Logical overscroll axes, multi-value shorthands, and native scrolling conversion remain deferred.
+
+## Scroll Snapping
+
+[Scroll snap properties](https://www.w3.org/TR/css-scroll-snap-1/#scroll-snap-type) align items within a scroll container. Values use the listed lowercase keywords and single-space combinations; arrays remain ordered declaration fallbacks.
+
+| Property | Values |
+| --- | --- |
+| `scrollSnapType` | `none`; `x`, `y`, `block`, `inline`, or `both`, optionally followed by `mandatory` or `proximity` |
+| `scrollSnapAlign` | One or two of `none`, `start`, `end`, `center`; paired values select block then inline alignment |
+| `scrollSnapStop` | `normal`, `always` |
+
+```ts
+import { css } from 'zyzz'
+
+const carousel = css({ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory' })
+const slide = css({ flexShrink: 0, scrollSnapAlign: 'start', scrollSnapStop: 'always' })
+```
+
+Snap declarations accept CSS-wide keywords, fallback arrays, and importance in root, theme, and Config authoring. Theme tokens do not map to snap keywords. Scroll margins and padding adjust the alignment area. The browser owns proximity thresholds, motion, and gesture physics; native snapping remains deferred.
 
 ## Intrinsic Sizing
 

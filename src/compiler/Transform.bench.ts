@@ -15,6 +15,7 @@ import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
+import * as Snapping from '../../test/fixtures/Snapping.js'
 import * as Compilation from '../../bench/Compilation.js'
 
 for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
@@ -174,6 +175,12 @@ const workloads = {
       `export const box${index} = css({width:['${index}px','fit-content!'],minInlineSize:'min-content',maxInlineSize:'none',flexBasis:'content'})();`,
     source: Sizing.source,
     title: 'intrinsic sizing',
+  },
+  snapping: {
+    declaration: (index: number) =>
+      `export const slide${index} = css({scrollMarginInlineStart:'${index}px',scrollSnapAlign:'start center',scrollSnapStop:'always',scrollSnapType:['inline proximity','inline mandatory!']})();`,
+    source: Snapping.source,
+    title: 'scroll snap',
   },
 }
 for (const [kind, workload] of Object.entries(workloads))

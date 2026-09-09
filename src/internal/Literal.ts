@@ -175,6 +175,11 @@ const size = {
   negative: false,
 } as const
 const stroke = { ...length, percentage: false } as const
+const textSpacing = {
+  ...stroke,
+  keywords: ['normal'],
+  negative: true,
+} as const
 
 /** Single source of truth for the supported literal properties and domains. */
 export const rules = {
@@ -298,6 +303,7 @@ export const rules = {
   fontWeight: { kind: 'number', max: 1000, min: 1 },
   gap: length,
   height: size,
+  hyphens: { kind: 'enum', values: ['auto', 'manual', 'none'] },
   inlineSize: size,
   inset: margin,
   insetBlock: margin,
@@ -321,6 +327,7 @@ export const rules = {
     ],
   },
   left: margin,
+  letterSpacing: textSpacing,
   lineHeight: { kind: 'number', max: Infinity, min: 0 },
   margin,
   marginBlock: margin,
@@ -368,6 +375,7 @@ export const rules = {
   },
   outlineWidth: stroke,
   overflow,
+  overflowWrap: { kind: 'enum', values: ['anywhere', 'break-word', 'normal'] },
   overflowX: overflow,
   overflowY: overflow,
   overscrollBehavior: overscroll,
@@ -464,8 +472,24 @@ export const rules = {
     kind: 'enum',
     values: ['center', 'end', 'justify', 'left', 'right', 'start'],
   },
+  textAlignLast: {
+    kind: 'enum',
+    values: ['auto', 'center', 'end', 'justify', 'left', 'right', 'start'],
+  },
+  textIndent: { ...length, negative: true },
+  textOverflow: { kind: 'enum', values: ['clip', 'ellipsis'] },
+  textTransform: {
+    kind: 'enum',
+    values: ['capitalize', 'lowercase', 'none', 'uppercase'],
+  },
   top: margin,
+  whiteSpace: {
+    kind: 'enum',
+    values: ['break-spaces', 'normal', 'nowrap', 'pre', 'pre-line', 'pre-wrap'],
+  },
   width: size,
+  wordBreak: { kind: 'enum', values: ['break-all', 'keep-all', 'normal'] },
+  wordSpacing: textSpacing,
   writingMode: {
     kind: 'enum',
     values: ['horizontal-tb', 'vertical-lr', 'vertical-rl'],

@@ -25,7 +25,7 @@ The property surface is intentionally finite. No catch-all string index permits 
 | Sizing      | `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, plus `inlineSize`, `blockSize`, and their `min`/`max` forms                                                                           |
 | Colors      | `color`, `backgroundColor`, `borderColor`                                                                                                                                                                  |
 | Borders     | `borderWidth`, `borderStyle`, `borderColor`, their physical/logical side forms, and physical/logical corner radii                                                                                          |
-| Typography  | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`                                                                                                                                           |
+| Typography  | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`, `textAlignLast`, `textIndent`, `letterSpacing`, `wordSpacing`, `hyphens`, `overflowWrap`, `wordBreak`, `whiteSpace`, `textTransform`, `textOverflow`                                                                                                                                           |
 | Positioning | `inset`, `insetBlock`, `insetInline`, their start/end longhands, and `top`, `right`, `bottom`, `left`                                                                                                      |
 | Writing     | `direction` (`ltr`, `rtl`), `writingMode` (`horizontal-tb`, `vertical-lr`, `vertical-rl`)                                                                                                                  |
 | Outlines    | `outlineColor`, `outlineWidth`, `outlineStyle`, `outlineOffset`                                                                                                                                            |
@@ -122,6 +122,34 @@ const slide = css({ flexShrink: 0, scrollSnapAlign: 'start', scrollSnapStop: 'al
 ```
 
 Snap declarations accept CSS-wide keywords, fallback arrays, and importance in root, theme, and Config authoring. Theme tokens do not map to snap keywords. Scroll margins and padding adjust the alignment area. The browser owns proximity thresholds, motion, and gesture physics; native snapping remains deferred.
+
+## Text Flow
+
+[Text spacing and line breaking](https://www.w3.org/TR/css-text-3/) use explicit scalar domains. Indentation accepts spacing tokens; letter and word spacing remain literal-only because the shared spacing token contract permits percentages.
+
+| Properties | Supported Values |
+| --- | --- |
+| `letterSpacing`, `wordSpacing` | Signed lengths, zero, `normal`; percentages excluded |
+| `textIndent` | Signed lengths, percentages, zero, or spacing tokens |
+| `hyphens` | `auto`, `manual`, `none` |
+| `overflowWrap` | `anywhere`, `break-word`, `normal` |
+| `wordBreak` | `break-all`, `keep-all`, `normal` |
+| `whiteSpace` | `break-spaces`, `normal`, `nowrap`, `pre`, `pre-line`, `pre-wrap` |
+| `textAlignLast` | `auto`, `center`, `end`, `justify`, `left`, `right`, `start` |
+| `textTransform` | `capitalize`, `lowercase`, `none`, `uppercase` |
+| `textOverflow` | `clip`, `ellipsis` |
+
+```ts
+import { css } from 'zyzz'
+
+const title = css({ letterSpacing: '-.02em', textTransform: 'uppercase' })
+const excerpt = css({ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' })
+const paragraph = css({ overflowWrap: 'anywhere', textIndent: '1em' })
+```
+
+[Text overflow](https://www.w3.org/TR/css-overflow-3/#text-overflow) does not create overflow by itself. Use a constrained container with hidden overflow and the appropriate wrapping behavior. All listed properties accept CSS-wide keywords, ordered fallback arrays, and importance.
+
+Hyphenation dictionaries and language-sensitive casing remain browser-owned. Indentation modifiers, custom overflow strings, extended transformation keywords, whitespace longhands, font families, composite typography tokens, and native text conversion remain deferred.
 
 ## Intrinsic Sizing
 

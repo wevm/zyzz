@@ -42,7 +42,7 @@ The property surface is intentionally finite. No catch-all string index permits 
 
 - **Colors:** 3/4/6/8-digit hex, `transparent`, `currentColor`, any of the 148 canonical lowercase CSS named colors, or the 19 canonical system-color keywords.
 - **CSS-wide values:** every property accepts `inherit`, `initial`, `revert`, `revert-layer`, and `unset`.
-- **Numbers:** finite values only; opacity 0–1, font weight 1–1000, line height/flex factors nonnegative.
+- **Numbers:** finite values only; opacity numbers/percentages (browser-clamped), font weight 1–1000, line height/flex factors nonnegative.
 
 Inferred authoring values reject hexadecimal, binary, octal, and whitespace-separated numeric lengths. Valid token names remain usable even when their spelling resembles an invalid CSS value. Types check units and token names; runtime validation checks numeric bounds and hex digits.
 
@@ -428,9 +428,9 @@ Accent and caret colors accept the shared color domain, color tokens, and auto. 
 
 ## SVG Paint
 
-Nineteen properties cover fill/stroke paints, opacity, fill/clip rules, line caps/joins, stroke lengths and miter limits, filter colors, paint order, rendering hints, and non-scaling strokes. Fill and stroke accept scalar colors, shared color tokens, none, context-fill, and context-stroke. Opacities accept numbers from zero to one; miter limits accept finite numbers at least one. Stroke widths use nonnegative lengths/percentages; dash offsets also allow negative values.
+Nineteen properties cover fill/stroke paints, opacity, fill/clip rules, line caps/joins, stroke lengths and miter limits, filter colors, paint order, rendering hints, and non-scaling strokes. Fill and stroke accept scalar colors, shared color tokens, none, context-fill, and context-stroke. Opacities accept finite numbers and percentages, clamped by the browser; miter limits accept finite numbers at least one. Stroke widths use nonnegative lengths/percentages; dash offsets also allow negative values.
 
-Paint order currently accepts normal or a single fill/stroke/markers keyword. Unitless nonzero SVG lengths, paint servers, dash arrays, opacity percentages, multi-keyword paint order, and other vector effects remain deferred. Browser evidence compares independent computed styles and verifies evenodd path geometry; it does not prove filter pixels, hint quality, or vector-effect rendering.
+Paint order currently accepts normal or a single fill/stroke/markers keyword. Unitless nonzero SVG lengths, paint servers, dash arrays, multi-keyword paint order, and other vector effects remain deferred. Browser evidence compares independent computed styles and verifies evenodd path geometry; it does not prove filter pixels, hint quality, or vector-effect rendering.
 
 ## Font Controls
 
@@ -510,11 +510,11 @@ Quotes, escapes, comments, braces, URL tokens, and nesting beyond 128 levels rem
 
 SVG geometry, baseline, caret, emoji, font-synthesis-position, logical overflow, scrolling axes, text wrapping, and additional scalar keywords add 38 partial property mappings. Positions allow signed lengths; radii retain nonnegative bounds. Animation composition and scroll timeline axes accept comma lists. Related shorthand and alias domains preserve A/B/A declaration order.
 
-Zoom currently accepts nonnegative numbers and normal/reset; percentage values remain deferred. Stop opacity retains the existing bounded scalar subset. Experimental properties may lack browser implementation; grammar and type coverage do not imply browser support. New SVG geometry and text fixtures compare native computed values and rendered bounds.
+Zoom accepts nonnegative numbers/percentages and normal/reset. Stop opacity accepts finite numbers/percentages with browser clamping. Experimental properties may lack browser implementation; grammar and type coverage do not imply browser support. New SVG geometry and text fixtures compare native computed values and rendered bounds.
 
 Text wrapping, underline position, hanging punctuation, flex flow, position visibility, masonry flow, and speech keywords validate compatible groups. Border/mask image repetition accepts pairs. Timeline axes accept comma lists; interest delays remain scalar. Further baseline, offset, column, fragmentation, and legacy mappings add 44 partial properties. Shorthand and alias domains preserve authored cascade order.
 
-Independent grammar and generated consumer probes cover the expanded map. Browser controls exercise text and flex output; obsolete and experimental declarations retain separate browser limitations. Percentage opacity, complete range rules, lexical forms, and associated functional/shorthand grammars remain incomplete.
+Independent grammar and generated consumer probes cover the expanded map. Browser controls exercise text and flex output; obsolete and experimental declarations retain separate browser limitations. Complete range rules, lexical forms, and associated functional/shorthand grammars remain incomplete.
 
 Eighteen named-value properties add unescaped custom identifiers, dashed names, and comma/space lists. Names preserve case; validation excludes CSS-wide and property-reserved words, enforces standalone keywords, and rejects malformed prefixes or list boundaries. Public string types defer lexical validation to compilation. Quoted names, escaping, comments, and timeline functions remain incomplete.
 
@@ -527,3 +527,7 @@ Browser controls compare both text directions and three writing modes, A/B/A ove
 Aspect ratios and transform/translate/rotate/scale add five partial properties. Transform functions validate arity and component dimensions while preserving authored order. Individual transforms accept their respective vector forms. Angle math extends calc/min/max/clamp dimensional checks; percentage depth translations and malformed matrices are rejected.
 
 Browser fixtures compare individual transforms with equivalent function lists, native 3D matrices, rendered bounds, and aspect-ratio sizing. Constants, dimension cancellation, full escaping, and broader numeric spellings remain incomplete. See [CSS Transforms](https://www.w3.org/TR/css-transforms-2/) and [CSS Sizing](https://www.w3.org/TR/css-sizing-4/#aspect-ratio).
+
+Percentage domains support fontWidth, its fontStretch alias, and textSizeAdjust, including nonnegative literals and dimensionally valid math. Zoom accepts percentages. Opacity, fillOpacity, strokeOpacity, floodOpacity, and stopOpacity preserve finite numbers and percentages outside 0–1 for browser clamping. Number/percentage addition remains invalid.
+
+Public source, grammar, type, and browser fixtures cover percentage units, alpha clamping, aliases, importance, and rejection paths. These properties remain partial: escaped numeric spellings, complete tokenization, and broader math still need coverage. See [CSS Color](https://www.w3.org/TR/css-color-4/#transparency), [CSS Fonts](https://www.w3.org/TR/css-fonts-4/#font-width-prop), and [CSS Values](https://www.w3.org/TR/css-values-4/#percentages).

@@ -19,11 +19,13 @@ export type Css<tokens extends Tokens> = <
 >(
   styles: styles &
     NoInfer<
-      (Extract<styles, (...args: never[]) => unknown> extends never
-        ? unknown
-        : never) &
-        Value.Checked<styles, tokens> &
-        Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
+      Record<Exclude<Keys<styles>, keyof Style.Properties>, never> &
+        (Style.Properties<tokens> extends styles
+          ? unknown
+          : (Extract<styles, (...args: never[]) => unknown> extends never
+              ? unknown
+              : never) &
+              Value.Checked<styles, tokens>)
     >,
 ) => css.ReturnType
 

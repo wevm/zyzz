@@ -23,6 +23,7 @@ import * as Fonts from '../../test/fixtures/Fonts.js'
 import * as FunctionalColors from '../../test/fixtures/FunctionalColors.js'
 import * as Grid from '../../test/fixtures/Grid.js'
 import * as GridLists from '../../test/fixtures/GridLists.js'
+import * as Percentage from '../../test/fixtures/Percentage.js'
 import * as Geometry from '../../test/fixtures/Geometry.js'
 import * as Identifiers from '../../test/fixtures/Identifiers.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
@@ -264,6 +265,12 @@ const workloads = {
       `export const cell${index} = css({display:'grid',gridAutoColumns:'1fr',gridAutoRows:'${index}px',gridAutoFlow:'column',gridColumnEnd:'span 2'})();`,
     source: Grid.source,
     title: 'grid',
+  },
+  percentage: {
+    declaration: (index: number) =>
+      `export const percentage${index} = css({fontWidth:'${100 + index}%',textSizeAdjust:'110%',opacity:'${index}%',zoom:'125%'})();`,
+    source: Percentage.source,
+    title: 'percentage',
   },
   geometry: {
     declaration: (index: number) =>

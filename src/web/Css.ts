@@ -135,6 +135,8 @@ export function compile<
               return 'flexFlow'
             if (/^(pageBreak|break)(After|Before|Inside)$/.test(property))
               return property.replace('pageBreak', 'break')
+            if (['fontStretch', 'fontWidth'].includes(property))
+              return 'fontWidth'
             if (property.startsWith('fontSynthesis')) return 'fontSynthesis'
             if (
               [

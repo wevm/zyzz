@@ -1867,7 +1867,7 @@
       },
       "font-width": {
         "grammar": "806f57a18e7442d024ad256d8b7770d6430e0a1434a45abc863a1b8d51a88120",
-        "status": "deferred"
+        "status": "partial"
       },
       "forced-color-adjust": {
         "grammar": "4dfce0da29b97992ba530459580341fd17c130801992163892463d371c05d4b9",

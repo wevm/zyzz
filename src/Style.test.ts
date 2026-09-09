@@ -378,7 +378,7 @@ describe('define', () => {
             },
             {
               "code": "invalid_value",
-              "message": "Expected a finite number from 0 to 1.",
+              "message": "Expected a finite number or percentage.",
               "path": [
                 "card",
                 "opacity",
@@ -574,7 +574,7 @@ describe('define', () => {
       { padding: '1e999px' },
       { borderWidth: '10%' },
       { opacity: NaN },
-      { opacity: 2 },
+      { opacity: -Infinity },
       { color: '#abcdz' },
       { color: 'blue.700' },
       { fontWeight: 0 },
@@ -683,7 +683,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected a finite number from 0 to 1.",
+                "message": "Expected a finite number or percentage.",
                 "path": [
                   "card",
                   "opacity",
@@ -696,7 +696,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected a finite number from 0 to 1.",
+                "message": "Expected a finite number or percentage.",
                 "path": [
                   "card",
                   "opacity",

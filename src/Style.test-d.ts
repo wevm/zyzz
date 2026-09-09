@@ -19,6 +19,28 @@ import * as TextTimeline from '../test/fixtures/TextTimeline.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
+describe('percentage values', () => {
+  test('percentages retain their property dimensions', () => {
+    css({
+      fontWidth: '125%',
+      fontStretch: '120%',
+      textSizeAdjust: '110%',
+      zoom: '125%',
+      opacity: '-20%',
+      fillOpacity: '150%',
+      strokeOpacity: 2,
+      floodOpacity: '-25%',
+      stopOpacity: 'calc(50% + 25%)',
+    })
+    // @ts-expect-error A percentage requires its unit even for zero.
+    css({ fontWidth: 0 })
+    // @ts-expect-error Font width excludes lengths.
+    css({ fontWidth: '125px' })
+    // @ts-expect-error Hexadecimal percentages are not CSS numeric tokens.
+    css({ fontWidth: '0x10%' })
+  })
+})
+
 describe('css', () => {
   test('geometric values expose structured transform shapes', () => {
     Style.define(Geometry.styles)
@@ -121,8 +143,8 @@ describe('css', () => {
     css({ r: 12 })
     // @ts-expect-error Caret keywords cannot be combined.
     css({ caretShape: 'bar block' })
-    // @ts-expect-error Raw percentages for zoom remain outside the typed subset.
-    css({ zoom: '150%' })
+    // @ts-expect-error Zoom excludes length units.
+    css({ zoom: '150px' })
   })
 
   test('interaction properties', () => {
@@ -842,8 +864,8 @@ describe('css', () => {
     css({ fontVariantNumeric: 'tabular-nums slashed-zero' })
     // @ts-expect-error Custom emphasis strings remain deferred.
     css({ textEmphasisStyle: '"*"' })
-    // @ts-expect-error Font stretch percentages remain deferred.
-    css({ fontStretch: '120%' })
+    // @ts-expect-error Font stretch excludes length units.
+    css({ fontStretch: '120px' })
     // @ts-expect-error Conflicting emphasis fill keywords are invalid.
     css({ textEmphasisStyle: 'open filled' })
   })
@@ -957,8 +979,8 @@ describe('list and input controls', () => {
     css({ listStyleType: 'custom-counter' })
     // @ts-expect-error Length-based tab stops remain deferred.
     css({ tabSize: '20px' })
-    // @ts-expect-error Text autoscaling percentages remain deferred.
-    css({ textSizeAdjust: '100%' })
+    // @ts-expect-error Text autoscaling excludes length units.
+    css({ textSizeAdjust: '100px' })
   })
 })
 

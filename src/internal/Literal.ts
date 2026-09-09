@@ -87,12 +87,19 @@ type Rule = { readonly list?: true } & (
       readonly kind: 'enum'
       readonly values: readonly string[]
     }
+  | {
+      readonly kind: 'percentage'
+      readonly keywords?: readonly string[]
+      readonly min: number
+      readonly max: number
+    }
   | { readonly kind: 'grid-line' }
   | { readonly kind: 'grid-tracks'; readonly explicit: boolean }
   | {
       readonly integer?: boolean
       readonly keywords?: readonly string[]
       readonly kind: 'number'
+      readonly percentage?: true
       readonly max: number
       readonly min: number
     }
@@ -184,51 +191,61 @@ type Value<rule extends Rule> =
                             ? `${Length | Calculation}/${string}`
                             : never)
                     : rule extends { kind: 'number' }
-                      ? Listed<Calculation | number | Keywords<rule>, rule>
-                      : rule extends {
-                            kind: 'enum'
-                            values: readonly (infer keyword extends string)[]
-                          }
-                        ?
-                            | Listed<
-                                | keyword
-                                | (rule extends { easing: true }
-                                    ? Easing
-                                    : never),
-                                rule
-                              >
-                            | (rule extends { items: number }
-                                ? `${keyword} ${string}`
-                                : never)
-                            | (rule extends {
-                                groups: readonly (readonly (infer component extends
-                                  string)[])[]
-                              }
-                                ? `${component} ${string}`
-                                : never)
-                        : rule extends { kind: 'grid-tracks' }
+                      ? Listed<
+                          | Calculation
+                          | number
+                          | Keywords<rule>
+                          | (rule extends { percentage: true }
+                              ? `${number}%`
+                              : never),
+                          rule
+                        >
+                      : rule extends { kind: 'percentage' }
+                        ? Calculation | `${number}%` | Keywords<rule>
+                        : rule extends {
+                              kind: 'enum'
+                              values: readonly (infer keyword extends string)[]
+                            }
                           ?
-                              | GridTracks
-                              | (rule extends { explicit: true }
-                                  ?
-                                      | 'none'
-                                      | 'subgrid'
-                                      | `repeat(${string})${string}`
-                                      | `[${string}`
-                                  : never)
-                          : rule extends { kind: 'grid-line' }
-                            ? number | 'auto' | `span ${bigint}`
-                            : rule extends { kind: 'time' }
-                              ? Listed<
-                                  Calculation | Time | Keywords<rule>,
+                              | Listed<
+                                  | keyword
+                                  | (rule extends { easing: true }
+                                      ? Easing
+                                      : never),
                                   rule
                                 >
-                              :
-                                  | Color
-                                  | Keywords<rule>
-                                  | (rule extends { items: number }
-                                      ? `${Color} ${string}`
-                                      : never))
+                              | (rule extends { items: number }
+                                  ? `${keyword} ${string}`
+                                  : never)
+                              | (rule extends {
+                                  groups: readonly (readonly (infer component extends
+                                    string)[])[]
+                                }
+                                  ? `${component} ${string}`
+                                  : never)
+                          : rule extends { kind: 'grid-tracks' }
+                            ?
+                                | GridTracks
+                                | (rule extends { explicit: true }
+                                    ?
+                                        | 'none'
+                                        | 'subgrid'
+                                        | `repeat(${string})${string}`
+                                        | `[${string}`
+                                    : never)
+                            : rule extends { kind: 'grid-line' }
+                              ? number | 'auto' | `span ${bigint}`
+                              : rule extends { kind: 'time' }
+                                ? Listed<
+                                    Calculation | Time | Keywords<rule>,
+                                    rule
+                                  >
+                                :
+                                    | Color
+                                    | Keywords<rule>
+                                    | (rule extends { items: number }
+                                        ? `${Color} ${string}`
+                                        : never))
 const blend = {
   kind: 'enum',
   values: [
@@ -250,6 +267,30 @@ const blend = {
     'soft-light',
   ],
 } as const
+const alpha = {
+  kind: 'number',
+  min: -Infinity,
+  max: Infinity,
+  percentage: true,
+} as const
+
+const fontWidth = {
+  kind: 'percentage',
+  min: 0,
+  max: Infinity,
+  keywords: [
+    'condensed',
+    'expanded',
+    'extra-condensed',
+    'extra-expanded',
+    'normal',
+    'semi-condensed',
+    'semi-expanded',
+    'ultra-condensed',
+    'ultra-expanded',
+  ],
+} as const
+
 const border = {
   kind: 'enum',
   values: [
@@ -1005,7 +1046,7 @@ export const rules = {
   emptyCells: { kind: 'enum', values: ['hide', 'show'] },
   fieldSizing: { kind: 'enum', values: ['content', 'fixed'] },
   fill: { ...color, keywords: ['context-fill', 'context-stroke', 'none'] },
-  fillOpacity: { kind: 'number', max: 1, min: 0 },
+  fillOpacity: alpha,
   fillRule: { kind: 'enum', values: ['evenodd', 'nonzero'] },
   flexBasis: { ...size, keywords: ['content', ...intrinsic] },
   flexDirection: {
@@ -1042,7 +1083,7 @@ export const rules = {
     values: ['inline-end', 'inline-start', 'left', 'none', 'right'],
   },
   floodColor: color,
-  floodOpacity: { kind: 'number', max: 1, min: 0 },
+  floodOpacity: alpha,
   fontKerning: { kind: 'enum', values: ['auto', 'none', 'normal'] },
   fontOpticalSizing: { kind: 'enum', values: ['auto', 'none'] },
   fontPalette: {
@@ -1051,20 +1092,7 @@ export const rules = {
     kind: 'identifier',
   },
   fontSize: length,
-  fontStretch: {
-    kind: 'enum',
-    values: [
-      'condensed',
-      'expanded',
-      'extra-condensed',
-      'extra-expanded',
-      'normal',
-      'semi-condensed',
-      'semi-expanded',
-      'ultra-condensed',
-      'ultra-expanded',
-    ],
-  },
+  fontStretch: fontWidth,
   fontStyle: { kind: 'enum', values: ['italic', 'normal', 'oblique'] },
   fontSynthesis: {
     groups: [['position'], ['small-caps'], ['style'], ['weight']],
@@ -1154,6 +1182,7 @@ export const rules = {
     ],
   },
   fontVariantPosition: { kind: 'enum', values: ['normal', 'sub', 'super'] },
+  fontWidth,
   fontWeight: { kind: 'number', max: 1000, min: 1 },
   forcedColorAdjust: {
     kind: 'enum',
@@ -1402,7 +1431,7 @@ export const rules = {
     negative: true,
   },
   offsetDistance: { ...length, negative: true },
-  opacity: { kind: 'number', max: 1, min: 0 },
+  opacity: alpha,
   // Safe integers serialize without exponential notation in CSS integer positions.
   order: {
     integer: true,
@@ -1661,7 +1690,7 @@ export const rules = {
     ],
   },
   stopColor: color,
-  stopOpacity: { kind: 'number', max: 1, min: 0 },
+  stopOpacity: alpha,
   stroke: { ...color, keywords: ['context-fill', 'context-stroke', 'none'] },
   strokeColor: color,
   strokeDashoffset: { ...length, negative: true },
@@ -1671,7 +1700,7 @@ export const rules = {
     values: ['arcs', 'bevel', 'miter', 'miter-clip', 'round'],
   },
   strokeMiterlimit: { kind: 'number', max: Infinity, min: 1 },
-  strokeOpacity: { kind: 'number', max: 1, min: 0 },
+  strokeOpacity: alpha,
   strokeWidth: length,
   tableLayout: { kind: 'enum', values: ['auto', 'fixed'] },
   tabSize: {
@@ -1795,7 +1824,12 @@ export const rules = {
       'optimizeSpeed',
     ],
   },
-  textSizeAdjust: { kind: 'enum', values: ['auto', 'none'] },
+  textSizeAdjust: {
+    kind: 'percentage',
+    min: 0,
+    max: Infinity,
+    keywords: ['auto', 'none'],
+  },
   textSpacingTrim: {
     kind: 'enum',
     values: ['normal', 'space-all', 'space-first', 'trim-start'],
@@ -2081,6 +2115,7 @@ export const rules = {
   },
   zoom: {
     kind: 'number',
+    percentage: true,
     keywords: ['normal', 'reset'],
     max: Infinity,
     min: 0,
@@ -2243,6 +2278,7 @@ export function validate(
     typeof value === 'string' &&
     (rule.kind === 'length' ||
       rule.kind === 'number' ||
+      rule.kind === 'percentage' ||
       rule.kind === 'time') &&
     /^(calc|clamp|max|min)\(/i.test(value)
   ) {
@@ -2250,7 +2286,14 @@ export function validate(
       kind: rule.kind,
       percentage: rule.kind === 'length' && rule.percentage !== false,
       units: lengthUnits,
-    })
+    }) ||
+      (rule.kind === 'number' &&
+        rule.percentage &&
+        MathExpression.valid(value, {
+          kind: 'percentage',
+          percentage: false,
+          units: lengthUnits,
+        }))
       ? undefined
       : 'Expected a valid math expression with compatible numeric dimensions.'
   }
@@ -2269,20 +2312,43 @@ export function validate(
         Colors.functional(value))
       ? undefined
       : 'Expected a named color, system color, hex color, transparent, or currentColor.'
-  if (rule.kind === 'number')
+  if (rule.kind === 'percentage' || rule.kind === 'number')
     return (() => {
       if (typeof value === 'string' && rule.keywords?.includes(value))
         return undefined
+      const amount = (() => {
+        if (rule.kind === 'number' && typeof value === 'number') return value
+        if (rule.kind === 'percentage' || rule.percentage) {
+          const match =
+            typeof value === 'string'
+              ? /^([+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?)%$/.exec(value)
+              : null
+          if (match)
+            return Number(match[1]) / (rule.kind === 'number' ? 100 : 1)
+        }
+        return NaN
+      })()
       if (
-        typeof value === 'number' &&
-        Number.isFinite(value) &&
-        (!rule.integer || Number.isInteger(value)) &&
-        value >= rule.min &&
-        value <= rule.max
+        Number.isFinite(amount) &&
+        (!(rule.kind === 'number' && rule.integer) ||
+          Number.isInteger(amount)) &&
+        amount >= rule.min &&
+        amount <= rule.max
       ) {
         return undefined
       }
-      return `Expected a finite ${rule.integer ? 'integer' : 'number'} from ${rule.min} to ${rule.max}.`
+      if (
+        rule.kind === 'number' &&
+        rule.percentage &&
+        rule.min === -Infinity &&
+        rule.max === Infinity
+      )
+        return 'Expected a finite number or percentage.'
+      const kind = (() => {
+        if (rule.kind === 'percentage') return 'percentage'
+        return rule.integer ? 'integer' : 'number'
+      })()
+      return `Expected a finite ${kind} from ${rule.min} to ${rule.max}.`
     })()
   if (rule.kind === 'grid-tracks')
     return Grid.tracks(value, { explicit: rule.explicit, units: lengthUnits })

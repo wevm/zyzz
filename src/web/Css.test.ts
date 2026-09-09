@@ -599,11 +599,11 @@ describe('compile', () => {
     )
     expect(() =>
       Style.define({
-        card: { color: '#fff!!', opacity: '2!', padding: "'8px!'" },
+        card: { color: '#fff!!', opacity: '2px!', padding: "'8px!'" },
       } as never),
     ).toThrowErrorMatchingInlineSnapshot(`
       [Style.InvalidError: ["card","color"]: Expected a named color, system color, hex color, transparent, or currentColor.
-      ["card","opacity"]: Expected a finite number from 0 to 1.
+      ["card","opacity"]: Expected a finite number or percentage.
       ["card","padding"]: Expected a nonnegative literal length or numeric zero.]
     `)
     const sparse = ['8px']
@@ -788,7 +788,7 @@ describe('compile', () => {
             },
             {
               "code": "invalid_declaration",
-              "message": "Expected a finite number from 0 to 1.",
+              "message": "Expected a finite number or percentage.",
               "path": [
                 "numeric",
                 "opacity",
@@ -796,7 +796,7 @@ describe('compile', () => {
             },
             {
               "code": "invalid_declaration",
-              "message": "Expected a finite number from 0 to 1.",
+              "message": "Expected a finite number or percentage.",
               "path": [
                 "numericAgain",
                 "opacity",

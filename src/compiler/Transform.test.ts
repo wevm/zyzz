@@ -150,14 +150,14 @@ describe('compile', () => {
     const accepted: string[] = []
     const rejected = [
       ...Conformance.rejected,
-      { property: 'fillOpacity', value: -0.1 },
+      { property: 'fillOpacity', value: '1px' },
       { property: 'strokeMiterlimit', value: 0.5 },
-      { property: 'strokeOpacity', value: 1.1 },
+      { property: 'strokeOpacity', value: '1deg' },
       { property: 'strokeWidth', value: '-2px' },
       { property: 'color', value: '#12' },
       { property: 'fontWeight', value: 1001 },
-      { property: 'opacity', value: -1 },
-      { property: 'opacity', value: 1.1 },
+      { property: 'opacity', value: '1s' },
+      { property: 'opacity', value: 'calc(1 + 1%)' },
       { property: 'order', value: 0.5 },
       { property: 'padding', value: '-1px' },
     ]

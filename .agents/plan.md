@@ -476,7 +476,7 @@ Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthan
 
 Motion lists preserve easing-function commas and validate cubic-bezier(), steps(), and linear() constraints. Absolute functional colors preserve color spaces and browser clamping. Border color/style lists and elliptical radii preserve logical overrides and importance. Compatible font variant and containment groups reject conflicts; font-synthesis adds one partially implemented property.
 
-The completion count remains 0/670: 422 partial and 248 deferred (136 standard, 112 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
+The completion count remains 0/670: 423 partial and 247 deferred (136 standard, 112 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
 
 ### Dimensional Math
 
@@ -488,11 +488,11 @@ All mapped property types admit unquoted var() expressions. The web emitter vali
 
 SVG geometry, baseline, caret, emoji, font-synthesis-position, logical overflow, scrolling axes, text wrapping, and additional scalar keywords add 38 partial property mappings. Positions allow signed lengths; radii retain nonnegative bounds. Animation composition and scroll timeline axes accept comma lists. Related shorthand and alias domains preserve A/B/A declaration order.
 
-Zoom currently accepts nonnegative numbers and normal/reset; percentage values remain deferred. Stop opacity retains the existing bounded scalar subset. Experimental properties may lack browser implementation; grammar and type coverage do not imply browser support. New SVG geometry and text fixtures compare native computed values and rendered bounds.
+Zoom accepts nonnegative numbers/percentages and normal/reset. Stop opacity accepts finite numbers/percentages with browser clamping. Experimental properties may lack browser implementation; grammar and type coverage do not imply browser support. New SVG geometry and text fixtures compare native computed values and rendered bounds.
 
 Text wrapping, underline position, hanging punctuation, flex flow, position visibility, masonry flow, and speech keywords validate compatible groups. Border/mask image repetition accepts pairs. Timeline axes accept comma lists; interest delays remain scalar. Further baseline, offset, column, fragmentation, and legacy mappings add 44 partial properties. Shorthand and alias domains preserve authored cascade order.
 
-Independent grammar and generated consumer probes cover the expanded map. Browser controls exercise text and flex output; obsolete and experimental declarations retain separate browser limitations. Percentage opacity, complete range rules, lexical forms, and associated functional/shorthand grammars remain incomplete.
+Independent grammar and generated consumer probes cover the expanded map. Browser controls exercise text and flex output; obsolete and experimental declarations retain separate browser limitations. Complete range rules, lexical forms, and associated functional/shorthand grammars remain incomplete.
 
 Eighteen named-value properties add unescaped custom identifiers, dashed names, and comma/space lists. Names preserve case; validation excludes CSS-wide and property-reserved words, enforces standalone keywords, and rejects malformed prefixes or list boundaries. Public string types defer lexical validation to compilation. Quoted names, escaping, comments, and timeline functions remain incomplete.
 
@@ -507,3 +507,11 @@ Aspect ratios and transform/translate/rotate/scale add five partial properties. 
 Browser fixtures compare individual transforms with equivalent function lists, native 3D matrices, rendered bounds, and aspect-ratio sizing. Constants, dimension cancellation, full escaping, and broader numeric spellings remain incomplete. See [CSS Transforms](https://www.w3.org/TR/css-transforms-2/) and [CSS Sizing](https://www.w3.org/TR/css-sizing-4/#aspect-ratio).
 
 Theme authoring constrains its generic to the property contract before refining concrete literals. Extracted Parameters remain usable without comparing an impossible arbitrary-key intersection. A standalone consumer probe fell from 14.81 seconds to 5.97 seconds; the alias integration passed in 7.28 seconds. Its 10-second subprocess and 15-second integration limits remain unchanged.
+
+Percentage domains support fontWidth, its fontStretch alias, and textSizeAdjust, including nonnegative literals and dimensionally valid math. Zoom accepts percentages. Opacity, fillOpacity, strokeOpacity, floodOpacity, and stopOpacity preserve finite numbers and percentages outside 0–1 for browser clamping. Number/percentage addition remains invalid.
+
+Public source, grammar, type, and browser fixtures cover percentage units, alpha clamping, aliases, importance, and rejection paths. These properties remain partial: escaped numeric spellings, complete tokenization, and broader math still need coverage. See [CSS Color](https://www.w3.org/TR/css-color-4/#transparency), [CSS Fonts](https://www.w3.org/TR/css-fonts-4/#font-width-prop), and [CSS Values](https://www.w3.org/TR/css-values-4/#percentages).
+
+The theme signature now skips redundant whole-map literal refinement at its already-constrained broad boundary, while retaining exact-key checks. Both real theme subprocess integrations pass in 3.36 seconds combined without timeout increases; arbitrary records, callable declarations, undeclared numeric tokens, and malformed literal spellings remain rejected.
+
+Percentage benchmark: the unchanged 100-style module measured 4.3502 ms ±6.01% before and 4.1858 ms ±6.48% after on the same machine without competing heavy work. New percentage lanes measured 0.9308 ms (10 additional styles) and 5.5985 ms (100). Full TypeScript, generated conformance probes, lint, and non-browser integration checks pass. Percentage browser assertions await CI.

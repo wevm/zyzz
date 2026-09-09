@@ -145,11 +145,17 @@ export function cases(): readonly Case[] {
         ].map((space) => `color(${space} .1 .2 .3)`),
       )
     }
+    if (rule.kind === 'percentage') {
+      values.push('0%', '120%', 'calc(50% + 25%)')
+      if ('keywords' in rule) values.push(...rule.keywords)
+    }
     if (rule.kind === 'number') {
       values.push('calc(1 + 1)', 'clamp(1, 2, 3)')
       if ('keywords' in rule) values.push(...rule.keywords)
       if ('list' in rule) values.push('0, 2.5, infinite')
-      values.push(rule.min, Math.max(1, rule.min))
+      if (Number.isFinite(rule.min)) values.push(rule.min)
+      values.push(Math.max(1, rule.min))
+      if ('percentage' in rule) values.push('50%', '120%', 'calc(50% + 25%)')
       if (Number.isFinite(rule.max)) values.push(rule.max)
       if (!('integer' in rule)) values.push(Math.max(rule.min, 0.5))
     }
@@ -258,7 +264,7 @@ export const rejected = [
   { property: 'fill', value: 'url(#gradient)' },
   { property: 'fillRule', value: 'winding' },
   { property: 'floodColor', value: 'none' },
-  { property: 'fontStretch', value: '120%' },
+  { property: 'fontStretch', value: '120px' },
   { property: 'gridAutoColumns', value: '0x10fr' },
   { property: 'gridAutoFlow', value: 'row column' },
   { property: 'gridColumnStart', value: 'span 1.5' },

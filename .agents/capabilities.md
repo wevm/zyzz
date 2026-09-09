@@ -50,6 +50,12 @@ Text decorations add six properties: decoration color, line, style, thickness, i
 
 Source/map and type fixtures cover token domains, line combinations, and fallback importance. Browser fixtures compare all six computed declarations against independent CSS controls across three writing modes and both directions; decoration painting remains browser-owned. A 10/100-style transform lane records timing and delivery. Combined shorthands, underline position, emphasis, shadows, and native rendering remain deferred.
 
+## Upstream Conformance
+
+[CSS conformance](../test/conformance/README.md) pins MDN grammar and tracks every upstream property, function, selector, at-rule, syntax, type, and unit. CI rejects unclassified additions, removals, and changed fingerprints, including indirect grammar changes. Weekly dependency PRs surface upstream updates without live-network checks in normal CI.
+
+Compiler probes exhaust finite keywords and sample scalar boundaries against CSS Tree using current pinned MDN grammar. The same accepted corpus checks public TypeScript property types, with representative inference probes; independent rejected inputs exercise type and source diagnostics. Partial coverage remains explicit. These checks complement browser fixtures and do not establish complete CSS or native support.
+
 ## Targets
 
 The pure core validates ordered declarations. The web compiler emits standard CSS and leaves browser lowering to the host. Chromium integration verifies fallback order, priority, shorthand/longhand precedence, and inherited tokens. Vite and Lightning CSS retain ownership of configured browser targets; existing native `light-dark()` fixtures use Chrome 123, Firefox 128, and Safari 17.5 targets.

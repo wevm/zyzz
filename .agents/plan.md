@@ -187,6 +187,8 @@ Local 2.3h evidence: 106 integration scenarios, consumer types, lint, and build 
 
 Local 2.3i evidence: 108 integration scenarios, consumer types, lint, and build pass. Sequential 100-style transforms measured 3.8911 ms ±6.01% before and 3.7739 ms ±5.58% after, with identical CSS/JavaScript/map sizes. Text lanes measured 1.2082/6.5039 ms for 10/100 additional styles. Browser fixtures run in CI; reports remain under `bench/results/text-*.json`.
 
+CSS conformance follow-up: retain Zyzz-owned mappings, with pinned MDN/CSS Tree development tooling. A reviewed upstream inventory and weekly update PRs catch property/feature additions and grammar changes. Compiler and consumer-type probes validate the supported subset independently; native browser fixtures remain the rendering gate. See [conformance workflow](../test/conformance/README.md).
+
 Local 2.3j evidence: 110 selected integration scenarios, consumer types, lint, and build pass. Sequential 100-style transforms measured 4.0875 ms ±5.88% before and 3.9494 ms ±5.85% after, with identical CSS/JavaScript/map sizes; overlapping uncertainty does not establish a speed improvement. Decoration lanes measured 1.2961 ms ±5.40% / 7.2680 ms ±12.88% for 10/100 additional styles. Browser fixtures run in CI; reports remain under `bench/results/decoration-*.json`.
 
 PR 2.1 uses opaque object references for contracts within one in-memory graph. Compiler-local token slots do not depend on values or theme-map labels. Separate source graphs and persistent identities remain PR 2.2b; do not publish these graph-local artifacts as independently composable theme libraries.

@@ -1,31 +1,62 @@
 /**
- * Defines and validates the supported primitive CSS property and value domains.
+ * Defines the supported primitive CSS property and value domains.
  * @module
  */
-import * as Colors from './Color.js'
-import * as Corner from './Corner.js'
-import * as Component from './Component.js'
-import * as Grid from './Grid.js'
-import * as Geometry from './Geometry.js'
-import * as Identifier from './Identifier.js'
-import * as Motion from './Motion.js'
-import * as Tuple from './Tuple.js'
-import * as Substitution from './Substitution.js'
-import * as MathExpression from './Math.js'
+import type * as Corner from './Corner.js'
+import type * as Geometry from './Geometry.js'
+import type * as Identifier from './Identifier.js'
+import type * as Tuple from './Tuple.js'
 
 /** Refines inferred dimension strings where TypeScript's number template is broader than CSS. */
-export type Checked<value> = value extends
-  | `${'0x' | '0X' | '0b' | '0B' | '0o' | '0O'}${string}`
-  | `${string}${' ' | '\n' | '\r' | '\t' | '\f'}${string}`
-  ? value extends Fraction | Length | Time
-    ? never
+export type Checked<value> = value extends `#${infer hex}`
+  ? string extends hex
+    ? value
+    : Hex<hex> extends true
+      ? value
+      : never
+  : value extends
+        | `${'0x' | '0X' | '0b' | '0B' | '0o' | '0O'}${string}`
+        | `${string}${' ' | '\n' | '\r' | '\t' | '\f'}${string}`
+    ? value extends Fraction | Length | Time
+      ? never
+      : value
     : value
-  : value
 
-/** Math function shapes; dimensional compatibility is validated during compilation. */
+type Hex<
+  value extends string,
+  digits extends readonly unknown[] = [],
+> = value extends ''
+  ? digits['length'] extends 3 | 4 | 6 | 8
+    ? true
+    : false
+  : digits['length'] extends 8
+    ? false
+    : value extends `${infer first}${infer rest}`
+      ? Lowercase<first> extends
+          | '0'
+          | '1'
+          | '2'
+          | '3'
+          | '4'
+          | '5'
+          | '6'
+          | '7'
+          | '8'
+          | '9'
+          | 'a'
+          | 'b'
+          | 'c'
+          | 'd'
+          | 'e'
+          | 'f'
+        ? Hex<rest, readonly [...digits, unknown]>
+        : false
+      : false
+
+/** Math function shapes; dimensional evaluation belongs to the browser. */
 export type Calculation = `${'calc' | 'clamp' | 'max' | 'min'}(${string})`
 
-/** Named, hexadecimal, and absolute functional colors; arguments are checked at compilation. */
+/** Named, hexadecimal, and absolute functional colors; arguments retain their authored CSS syntax. */
 export type Color =
   | (typeof namedColors)[number]
   | (typeof systemColors)[number]
@@ -37,7 +68,7 @@ export type Color =
 /** Flexible grid track dimensions. */
 export type Fraction = `${number}fr`
 
-/** Structured track values; nested argument semantics are checked by the compiler. */
+/** Structured track values; nested argument semantics belong to the browser. */
 export type GridTracks =
   | Calculation
   | Length
@@ -52,8 +83,19 @@ export type GridTracks =
 /** CSS-wide keywords accepted by every supported property. */
 export type Global = 'inherit' | 'initial' | 'revert-layer' | 'revert' | 'unset'
 
+/** CSS image functions retain their authored arguments and URL spelling. */
+export type Image =
+  | Url
+  | `${'conic-gradient' | 'cross-fade' | 'element' | 'image' | 'image-set' | 'linear-gradient' | 'radial-gradient' | 'repeating-conic-gradient' | 'repeating-linear-gradient' | 'repeating-radial-gradient'}(${string})`
+
+/** CSS URLs may be quoted or unquoted. */
+export type Url = `url(${string})`
+
 /** Finite CSS lengths and percentages; numeric zero needs no unit. */
 export type Length = `${number}${(typeof lengthUnits)[number]}` | 0
+
+/** Length and percentage units used by scalar type refinements. */
+export type Unit = (typeof lengthUnits)[number]
 
 /** Finite property surface with no arbitrary string index signature. */
 export type Properties = {
@@ -63,11 +105,12 @@ export type Properties = {
 export type Time = `${number}${'ms' | 's'}`
 
 type Rule = { readonly list?: true } & (
+  | { readonly kind: 'image' | 'url' }
   | { [kind in Geometry.Kind]: { readonly kind: kind } }[Geometry.Kind]
-  | ({ readonly kind: 'identifier' } & Identifier.valid.Options)
+  | ({ readonly kind: 'identifier' } & Identifier.Options)
   | { readonly kind: 'line'; readonly outline?: true }
   | { readonly kind: 'corner'; readonly items?: 2 | 4 }
-  | ({ readonly kind: 'tuple' } & Omit<Tuple.valid.Options, 'color' | 'units'>)
+  | ({ readonly kind: 'tuple' } & Tuple.Options)
   | {
       readonly auto: boolean
       readonly axes?: true
@@ -173,122 +216,127 @@ type TupleValue<rule extends Rule> =
 type Value<rule extends Rule> =
   | `${string}var(--${string})${string}`
   | Global
-  | (rule extends { kind: 'ratio' }
-      ?
-          | number
-          | Calculation
-          | 'auto'
-          | `auto ${string}`
-          | `${number}${'/' | ' '}${string}`
-          | `${Calculation}${'/' | ' '}${string}`
-      : rule extends { kind: 'transform' }
-        ? 'none' | `${Geometry.FunctionName}(${string})${string}`
-        : rule extends { kind: 'rotate' }
-          ?
-              | 'none'
-              | 0
-              | Geometry.Angle
-              | Calculation
-              | `${Geometry.Angle | Calculation | number | 'x' | 'y' | 'z'} ${string}`
-          : rule extends { kind: 'scale' }
+  | (rule extends { kind: 'image' | 'url' }
+      ? Listed<
+          'none' | Url | (rule extends { kind: 'image' } ? Image : never),
+          rule
+        >
+      : rule extends { kind: 'ratio' }
+        ?
+            | number
+            | Calculation
+            | 'auto'
+            | `auto ${string}`
+            | `${number}${'/' | ' '}${string}`
+            | `${Calculation}${'/' | ' '}${string}`
+        : rule extends { kind: 'transform' }
+          ? 'none' | `${Geometry.FunctionName}(${string})${string}`
+          : rule extends { kind: 'rotate' }
             ?
                 | 'none'
-                | number
-                | `${number}%`
+                | 0
+                | Geometry.Angle
                 | Calculation
-                | `${number | `${number}%` | Calculation} ${string}`
-            : rule extends { kind: 'translate' }
+                | `${Geometry.Angle | Calculation | number | 'x' | 'y' | 'z'} ${string}`
+            : rule extends { kind: 'scale' }
               ?
                   | 'none'
-                  | Length
+                  | number
+                  | `${number}%`
                   | Calculation
-                  | `${Length | Calculation} ${string}`
-              : rule extends { kind: 'line' }
+                  | `${number | `${number}%` | Calculation} ${string}`
+              : rule extends { kind: 'translate' }
                 ?
-                    | LinePart
-                    | `${LinePart} ${string}`
-                    | (rule extends { outline: true }
-                        ? 'auto' | `auto ${string}`
-                        : never)
-                : rule extends { kind: 'corner' }
+                    | 'none'
+                    | Length
+                    | Calculation
+                    | `${Length | Calculation} ${string}`
+                : rule extends { kind: 'line' }
                   ?
-                      | Corner.Value
-                      | (rule extends { items: number }
-                          ? `${Corner.Value} ${string}`
+                      | LinePart
+                      | `${LinePart} ${string}`
+                      | (rule extends { outline: true }
+                          ? 'auto' | `auto ${string}`
                           : never)
-                  : rule extends { kind: 'tuple' }
-                    ? Listed<TupleValue<rule>, rule>
-                    : rule extends { kind: 'identifier' }
-                      ? string
-                      : rule extends { kind: 'length' }
-                        ?
-                            | Listed<
-                                Extract<LengthValue<rule>, string | number>,
+                  : rule extends { kind: 'corner' }
+                    ?
+                        | Corner.Value
+                        | (rule extends { items: number }
+                            ? `${Corner.Value} ${string}`
+                            : never)
+                    : rule extends { kind: 'tuple' }
+                      ? Listed<TupleValue<rule>, rule>
+                      : rule extends { kind: 'identifier' }
+                        ? string
+                        : rule extends { kind: 'length' }
+                          ?
+                              | Listed<
+                                  Extract<LengthValue<rule>, string | number>,
+                                  rule
+                                >
+                              | (rule extends { items: number }
+                                  ? `${Extract<LengthValue<rule>, string | number>} ${string}`
+                                  : never)
+                              | (rule extends { axes: true }
+                                  ? `${Length | Calculation}/${string}`
+                                  : never)
+                          : rule extends { kind: 'number' }
+                            ? Listed<
+                                | Calculation
+                                | number
+                                | Keywords<rule>
+                                | (rule extends { percentage: true }
+                                    ? `${number}%`
+                                    : never),
                                 rule
                               >
-                            | (rule extends { items: number }
-                                ? `${Extract<LengthValue<rule>, string | number>} ${string}`
-                                : never)
-                            | (rule extends { axes: true }
-                                ? `${Length | Calculation}/${string}`
-                                : never)
-                        : rule extends { kind: 'number' }
-                          ? Listed<
-                              | Calculation
-                              | number
-                              | Keywords<rule>
-                              | (rule extends { percentage: true }
-                                  ? `${number}%`
-                                  : never),
-                              rule
-                            >
-                          : rule extends { kind: 'percentage' }
-                            ? Calculation | `${number}%` | Keywords<rule>
-                            : rule extends {
-                                  kind: 'enum'
-                                  values: readonly (infer keyword extends
-                                    string)[]
-                                }
-                              ?
-                                  | Listed<
-                                      | keyword
-                                      | (rule extends { easing: true }
-                                          ? Easing
-                                          : never),
-                                      rule
-                                    >
-                                  | (rule extends { items: number }
-                                      ? `${keyword} ${string}`
-                                      : never)
-                                  | (rule extends {
-                                      groups: readonly (readonly (infer component extends
-                                        string)[])[]
-                                    }
-                                      ? `${component} ${string}`
-                                      : never)
-                              : rule extends { kind: 'grid-tracks' }
+                            : rule extends { kind: 'percentage' }
+                              ? Calculation | `${number}%` | Keywords<rule>
+                              : rule extends {
+                                    kind: 'enum'
+                                    values: readonly (infer keyword extends
+                                      string)[]
+                                  }
                                 ?
-                                    | GridTracks
-                                    | (rule extends { explicit: true }
-                                        ?
-                                            | 'none'
-                                            | 'subgrid'
-                                            | `repeat(${string})${string}`
-                                            | `[${string}`
-                                        : never)
-                                : rule extends { kind: 'grid-line' }
-                                  ? number | string
-                                  : rule extends { kind: 'time' }
-                                    ? Listed<
-                                        Calculation | Time | Keywords<rule>,
+                                    | Listed<
+                                        | keyword
+                                        | (rule extends { easing: true }
+                                            ? Easing
+                                            : never),
                                         rule
                                       >
-                                    :
-                                        | Color
-                                        | Keywords<rule>
-                                        | (rule extends { items: number }
-                                            ? `${Color} ${string}`
-                                            : never))
+                                    | (rule extends { items: number }
+                                        ? `${keyword} ${string}`
+                                        : never)
+                                    | (rule extends {
+                                        groups: readonly (readonly (infer component extends
+                                          string)[])[]
+                                      }
+                                        ? `${component} ${string}`
+                                        : never)
+                                : rule extends { kind: 'grid-tracks' }
+                                  ?
+                                      | GridTracks
+                                      | (rule extends { explicit: true }
+                                          ?
+                                              | 'none'
+                                              | 'subgrid'
+                                              | `repeat(${string})${string}`
+                                              | `[${string}`
+                                          : never)
+                                  : rule extends { kind: 'grid-line' }
+                                    ? number | string
+                                    : rule extends { kind: 'time' }
+                                      ? Listed<
+                                          Calculation | Time | Keywords<rule>,
+                                          rule
+                                        >
+                                      :
+                                          | Color
+                                          | Keywords<rule>
+                                          | (rule extends { items: number }
+                                              ? `${Color} ${string}`
+                                              : never))
 const blend = {
   kind: 'enum',
   values: [
@@ -453,9 +501,6 @@ const lengthUnits = [
   'vmin',
   'vw',
 ] as const
-const lengthPattern = new RegExp(
-  `^([+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?)(${lengthUnits.join('|')})$`,
-)
 const margin = { auto: true, kind: 'length', negative: true } as const
 const maximum = { ...length, keywords: [...intrinsic, 'none'] } as const
 const namedColors = [
@@ -688,6 +733,35 @@ export const aliases = {
   WebkitUserSelect: 'userSelect',
 } as const
 
+/** Resolves literal/token ambiguity without validating CSS values. */
+export function isLiteral(
+  property: keyof Properties,
+  value: string | number,
+): boolean {
+  if (value === 0 || globals.has(String(value))) return true
+  const rule: Rule = rules[property]
+  if (!rule) return false
+  if (typeof value === 'string') {
+    if (
+      rule.kind === 'color' &&
+      (colorKeywordSet.has(value) ||
+        value === 'transparent' ||
+        value === 'currentColor')
+    )
+      return true
+    if ('keywords' in rule && rule.keywords?.includes(value)) return true
+    if (rule.kind === 'enum' && rule.values.includes(value)) return true
+    if ('auto' in rule && rule.auto && value === 'auto') return true
+    // Dimension and expression spellings always retain literal precedence.
+    if (
+      /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?(?:[a-zA-Z]+|%)$/.test(value) ||
+      /[#()]/.test(value)
+    )
+      return true
+  }
+  return rule.kind === 'number' && typeof value === 'number'
+}
+
 /** Serializes public camel-case property names, including numeric legacy spellings. */
 export function name(property: string): string {
   if (property === 'MsScrollbar3dlightColor')
@@ -858,6 +932,7 @@ export const rules = {
     values: ['border-box', 'content-box', 'padding-box', 'text'],
   },
   backgroundColor: color,
+  backgroundImage: { kind: 'image', list: true },
   backgroundOrigin: {
     kind: 'enum',
     values: ['border-box', 'content-box', 'padding-box'],
@@ -937,6 +1012,7 @@ export const rules = {
     max: 4,
     negative: false,
   },
+  borderImageSource: { kind: 'image' },
   borderImageWidth: {
     kind: 'tuple',
     atoms: ['length', 'number', 'percentage'],
@@ -1612,6 +1688,7 @@ export const rules = {
   },
   lineHeight: { kind: 'number', max: Infinity, min: 0 },
   lineHeightStep: { ...length, percentage: false },
+  listStyleImage: { kind: 'image' },
   listStylePosition: { kind: 'enum', values: ['inside', 'outside'] },
   listStyleType: {
     kind: 'enum',
@@ -1653,6 +1730,10 @@ export const rules = {
   marginRight: margin,
   marginTop: margin,
   marginTrim: { kind: 'enum', values: ['all', 'in-flow', 'none'] },
+  marker: { kind: 'url' },
+  markerEnd: { kind: 'url' },
+  markerMid: { kind: 'url' },
+  markerStart: { kind: 'url' },
   maskBorderMode: { kind: 'enum', values: ['alpha', 'luminance'] },
   maskBorderOutset: {
     kind: 'tuple',
@@ -1675,6 +1756,7 @@ export const rules = {
     max: 4,
     negative: false,
   },
+  maskBorderSource: { kind: 'image' },
   maskBorderWidth: {
     kind: 'tuple',
     atoms: ['length', 'number', 'percentage'],
@@ -1699,6 +1781,7 @@ export const rules = {
     kind: 'enum',
     values: ['add', 'exclude', 'intersect', 'subtract'],
   },
+  maskImage: { kind: 'image', list: true },
   maskMode: { kind: 'enum', values: ['alpha', 'luminance', 'match-source'] },
   maskOrigin: {
     kind: 'enum',
@@ -1885,6 +1968,7 @@ export const rules = {
       'treeview',
     ],
   },
+  MozBinding: { kind: 'url' },
   MozBorderBottomColors: {
     kind: 'tuple',
     atoms: ['color'],
@@ -2854,6 +2938,7 @@ export const rules = {
       'xor',
     ],
   },
+  WebkitMaskImage: { kind: 'image', list: true },
   WebkitMaskOrigin: {
     kind: 'enum',
     list: true,
@@ -2947,289 +3032,3 @@ export const rules = {
     min: 0,
   },
 } as const satisfies Record<string, Rule>
-
-/** Returns a domain explanation when a literal is unsupported. */
-export function validate(
-  property: keyof typeof rules,
-  value: unknown,
-): string | undefined {
-  const rule: Rule = rules[property]
-  if (typeof value === 'string' && globals.has(value)) return undefined
-  if (typeof value === 'string' && value.includes('(') && /var\(/i.test(value))
-    return Substitution.valid(value)
-      ? undefined
-      : 'Expected balanced var() expressions with valid custom-property names.'
-  if (
-    rule.kind === 'ratio' ||
-    rule.kind === 'rotate' ||
-    rule.kind === 'scale' ||
-    rule.kind === 'transform' ||
-    rule.kind === 'translate'
-  )
-    return Geometry.valid(value, { kind: rule.kind, units: lengthUnits })
-      ? undefined
-      : 'Expected a valid geometric value with compatible dimensions and argument counts.'
-  if (rule.kind === 'line') {
-    const parts = (() => {
-      if (typeof value === 'string')
-        return Component.split(value, { separator: 'space' })
-      if (value === 0) return ['0']
-      return undefined
-    })()
-    if (!parts || parts.length === 0 || parts.length > 3)
-      return 'Expected at most one line width, style, and color in any order.'
-    const used = new Set<string>()
-    for (const part of parts) {
-      if (!part || globals.has(part))
-        return 'CSS-wide keywords must stand alone.'
-      const width = /^[+-]?(?:0*\.0+|0+)(?:[eE][+-]?\d+)?$/.test(part)
-        ? 0
-        : part
-      const domain = (() => {
-        if (
-          validate(rule.outline ? 'outlineStyle' : 'borderTopStyle', part) ===
-          undefined
-        )
-          return 'style'
-        if (validate('borderTopWidth', width) === undefined) return 'width'
-        if (validate('color', part) === undefined) return 'color'
-        return undefined
-      })()
-      if (!domain || used.has(domain))
-        return 'Expected at most one line width, style, and color in any order.'
-      used.add(domain)
-    }
-    return undefined
-  }
-  if (rule.kind === 'identifier')
-    return Identifier.valid(value, rule)
-      ? undefined
-      : 'Expected valid CSS identifiers with the required prefix, reserved-word exclusions, and list boundaries.'
-  if (rule.list && typeof value === 'string' && value.includes(',')) {
-    const parts = Component.comma(value)
-    if (!parts) return 'Expected a nonempty comma-separated list.'
-    if (parts.length > 1) {
-      for (const part of parts) {
-        if (globals.has(part)) return 'CSS-wide keywords must stand alone.'
-        const component =
-          (rule.kind === 'number' ||
-            (rule.kind === 'length' && Number(part) === 0)) &&
-          /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(part)
-            ? Number(part)
-            : part
-        const error = validate(property, component)
-        if (error) return error
-      }
-      return undefined
-    }
-  }
-  if (
-    typeof value === 'string' &&
-    rule.kind === 'length' &&
-    rule.axes &&
-    value.includes('/')
-  ) {
-    const axes = Component.split(value, { separator: 'slash' })
-    if (!axes) return 'Expected balanced radius axes.'
-    if (axes.length > 1)
-      return axes.length === 2 &&
-        axes.every(
-          (axis) =>
-            axis &&
-            !globals.has(axis) &&
-            validate(property, axis === '0' ? 0 : axis) === undefined,
-        )
-        ? undefined
-        : 'Expected one to four nonnegative radii on each side of a single slash.'
-  }
-  if (
-    typeof value === 'string' &&
-    (rule.kind === 'color' || rule.kind === 'enum') &&
-    rule.items
-  ) {
-    const parts = Component.split(value, { separator: 'space' })
-    if (!parts || parts.length > rule.items)
-      return `Expected one to ${rule.items} valid space-separated values.`
-    if (parts.length > 1) {
-      return parts.every(
-        (part) => !globals.has(part) && validate(property, part) === undefined,
-      )
-        ? undefined
-        : `Expected one to ${rule.items} valid space-separated values.`
-    }
-  }
-  if (
-    rule.kind === 'enum' &&
-    rule.groups &&
-    typeof value === 'string' &&
-    /[ \t\n\r\f]/.test(value)
-  ) {
-    const words = value
-      .replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
-      .split(/[ \t\n\r\f]+/)
-    const used = new Set<number>()
-    for (const word of words) {
-      const group = rule.groups.findIndex((group) => group.includes(word))
-      if (group < 0 || used.has(group))
-        return 'Expected compatible keywords with at most one choice from each group.'
-      used.add(group)
-    }
-    return undefined
-  }
-  if (
-    rule.kind === 'length' &&
-    rule.items &&
-    typeof value === 'string' &&
-    /[ \t\n\r\f]/.test(value)
-  ) {
-    const parts = Component.split(value, { separator: 'space' })
-    if (!parts) return 'Expected a balanced list of length components.'
-    if (parts.length > 1) {
-      if (
-        parts.length <= rule.items &&
-        parts.every(
-          (part) =>
-            !globals.has(part) &&
-            !rule.standalone?.includes(part) &&
-            validate(
-              property,
-              /^[+-]?(?:0*\.0+|0+)(?:[eE][+-]?\d+)?$/.test(part) ? 0 : part,
-            ) === undefined,
-        )
-      )
-        return undefined
-      return `Expected one to ${rule.items} valid space-separated values; CSS-wide keywords must stand alone.`
-    }
-  }
-  if (
-    typeof value === 'string' &&
-    (rule.kind === 'length' ||
-      rule.kind === 'number' ||
-      rule.kind === 'percentage' ||
-      rule.kind === 'time') &&
-    /^(calc|clamp|max|min)\(/i.test(value)
-  ) {
-    return MathExpression.valid(value, {
-      kind: rule.kind,
-      percentage: rule.kind === 'length' && rule.percentage !== false,
-      units: lengthUnits,
-    }) ||
-      (rule.kind === 'number' &&
-        rule.percentage &&
-        MathExpression.valid(value, {
-          kind: 'percentage',
-          percentage: false,
-          units: lengthUnits,
-        }))
-      ? undefined
-      : 'Expected a valid math expression with compatible numeric dimensions.'
-  }
-  if (rule.kind === 'enum')
-    return typeof value === 'string' &&
-      (rule.values.includes(value) || (rule.easing && Motion.easing(value)))
-      ? undefined
-      : `Expected one of: ${rule.values.join(', ')} (or a CSS-wide keyword).`
-  if (rule.kind === 'color')
-    return typeof value === 'string' &&
-      (rule.keywords?.includes(value) ||
-        /^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(value) ||
-        colorKeywordSet.has(value) ||
-        value === 'currentColor' ||
-        value === 'transparent' ||
-        Colors.functional(value))
-      ? undefined
-      : 'Expected a named color, system color, hex color, transparent, or currentColor.'
-  if (rule.kind === 'tuple')
-    return Tuple.valid(value, {
-      ...rule,
-      color: (part) =>
-        !globals.has(part) && validate('color', part) === undefined,
-      units: lengthUnits,
-    })
-      ? undefined
-      : 'Expected a valid scalar tuple with the required units, component count, and marker placement.'
-  if (rule.kind === 'corner') {
-    const parts =
-      typeof value === 'string'
-        ? Component.split(value, { separator: 'space' })
-        : undefined
-    return parts &&
-      parts.length <= (rule.items ?? 1) &&
-      parts.every(Corner.valid)
-      ? undefined
-      : 'Expected corner shape keywords or numeric superellipse functions with the required arity.'
-  }
-  if (rule.kind === 'percentage' || rule.kind === 'number')
-    return (() => {
-      if (typeof value === 'string' && rule.keywords?.includes(value))
-        return undefined
-      const amount = (() => {
-        if (rule.kind === 'number' && typeof value === 'number') return value
-        if (rule.kind === 'percentage' || rule.percentage) {
-          const match =
-            typeof value === 'string'
-              ? /^([+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?)%$/.exec(value)
-              : null
-          if (match)
-            return Number(match[1]) / (rule.kind === 'number' ? 100 : 1)
-        }
-        return NaN
-      })()
-      if (
-        Number.isFinite(amount) &&
-        (!(rule.kind === 'number' && rule.integer) ||
-          Number.isInteger(amount)) &&
-        amount >= rule.min &&
-        amount <= rule.max
-      ) {
-        return undefined
-      }
-      if (
-        rule.kind === 'number' &&
-        rule.percentage &&
-        rule.min === -Infinity &&
-        rule.max === Infinity
-      )
-        return 'Expected a finite number or percentage.'
-      const kind = (() => {
-        if (rule.kind === 'percentage') return 'percentage'
-        return rule.integer ? 'integer' : 'number'
-      })()
-      return `Expected a finite ${kind} from ${rule.min} to ${rule.max}.`
-    })()
-  if (rule.kind === 'grid-tracks')
-    return Grid.tracks(value, { explicit: rule.explicit, units: lengthUnits })
-      ? undefined
-      : 'Expected a valid grid track list with nonnegative sizes and valid repetition constraints.'
-  if (rule.kind === 'grid-line')
-    return Grid.line(value, rule)
-      ? undefined
-      : 'Expected valid named or numbered grid lines with nonzero indices, positive spans, and the required slash arity.'
-  if (rule.kind === 'time') {
-    if (typeof value === 'string' && rule.keywords?.includes(value))
-      return undefined
-    const match =
-      typeof value === 'string'
-        ? /^([+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?)(?:ms|s)$/.exec(value)
-        : null
-    const amount = match ? Number(match[1]) : NaN
-    if (Number.isFinite(amount) && (rule.negative || amount >= 0))
-      return undefined
-    return `Expected ${rule.negative ? 'a' : 'a nonnegative'} finite time in s or ms.${rule.keywords ? ` Also accepts: ${rule.keywords.join(', ')}.` : ''}`
-  }
-  if (value === 0 || (rule.auto && value === 'auto')) return undefined
-  const match = (() => {
-    if (typeof value !== 'string') return null
-    const dimension = lengthPattern.exec(value)
-    if (dimension || !rule.fraction) return dimension
-    return /^([+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?)(fr)$/.exec(value)
-  })()
-  const amount = match ? Number(match[1]) : NaN
-  if (Number.isFinite(amount) && (rule.negative || amount >= 0)) {
-    // Length-only domains exclude percentages.
-    if (rule.percentage !== false || match?.[2] !== '%') return undefined
-  }
-  if (typeof value === 'string' && rule.keywords?.includes(value))
-    return undefined
-  return `Expected ${rule.negative ? 'a' : 'a nonnegative'} literal length${rule.auto ? ', auto,' : ''} or numeric zero.${rule.keywords ? ` Also accepts: ${rule.keywords.join(', ')}.` : ''}`
-}

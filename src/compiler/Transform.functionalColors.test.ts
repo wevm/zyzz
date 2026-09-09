@@ -5,7 +5,6 @@
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
 import { Transform } from 'zyzz/compiler'
 import * as Conformance from '../../test/fixtures/Conformance.js'
 import * as FunctionalColors from '../../test/fixtures/FunctionalColors.js'
@@ -95,17 +94,5 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
-})
-
-describe('define', () => {
-  test('rejects malformed functional colors through public authoring', () => {
-    for (const color of FunctionalColors.invalid)
-      expect(() =>
-        // @ts-expect-error Exercise invalid JavaScript inputs through the public API.
-        Style.define({ box: { color } }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Style.InvalidError: ["box","color"]: Expected a named color, system color, hex color, transparent, or currentColor.]`,
-      )
   })
 })

@@ -34,32 +34,6 @@ describe('compile', () => {
       .z-c{border:2px solid red;outline:1px dotted black;column-rule:3px dashed blue;}"
     `)
   })
-  test('rejects duplicate line components and illegal dimensions', () => {
-    const accepted: string[] = []
-    for (const [property, value] of [
-      ['border', 'red blue'],
-      ['border', 'solid dashed'],
-      ['border', '1px 2px'],
-      ['border', '-1px solid red'],
-      ['border', '20% solid red'],
-      ['border', 'inherit solid'],
-      ['border', 'solid red 1px thin'],
-      ['outline', 'hidden'],
-      ['columnRule', 'auto'],
-    ]) {
-      try {
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
-        })
-        accepted.push(`${property}:${value}`)
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
-          throw error
-      }
-    }
-    expect(accepted).toMatchInlineSnapshot(`[]`)
-  })
   test('combined borders match native declarations across writing modes', async () => {
     const output = Transform.compile({
       moduleId: 'border-shorthand.ts',

@@ -5,7 +5,6 @@
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
 import { Transform } from 'zyzz/compiler'
 import * as Conformance from '../../test/fixtures/Conformance.js'
 import * as MotionLists from '../../test/fixtures/MotionLists.js'
@@ -110,33 +109,5 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
-})
-
-describe('define', () => {
-  test('rejects malformed motion lists and invalid easing constraints', () => {
-    for (const value of MotionLists.invalid) {
-      let accepted = false
-      try {
-        // @ts-expect-error Exercise untyped JavaScript input through the public validator.
-        Style.define({ motion: { animationTimingFunction: value } })
-        accepted = true
-      } catch (error) {
-        expect(error instanceof Style.InvalidError).toMatchInlineSnapshot(
-          `true`,
-        )
-      }
-      expect(accepted).toMatchInlineSnapshot(`false`)
-    }
-    expect(() =>
-      Style.define({ motion: { animationDuration: '1s, -2s' } }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["motion","animationDuration"]: Expected a nonnegative finite time in s or ms. Also accepts: auto.]`,
-    )
-    expect(() =>
-      Style.define({ motion: { animationIterationCount: '2, -1' } }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["motion","animationIterationCount"]: Expected a finite number from 0 to Infinity.]`,
-    )
   })
 })

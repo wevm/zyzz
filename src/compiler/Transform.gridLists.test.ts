@@ -5,7 +5,6 @@
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
 import { Transform } from 'zyzz/compiler'
 import * as Conformance from '../../test/fixtures/Conformance.js'
 import * as GridLists from '../../test/fixtures/GridLists.js'
@@ -92,24 +91,5 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
-})
-
-describe('define', () => {
-  test('rejects invalid track functions, repetition, and declaration injection', () => {
-    for (const value of GridLists.invalid) {
-      expect(() =>
-        // @ts-expect-error JavaScript callers can supply invalid source values.
-        Style.define({ grid: { gridTemplateColumns: value } }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Style.InvalidError: ["grid","gridTemplateColumns"]: Expected a valid grid track list with nonnegative sizes and valid repetition constraints.]`,
-      )
-    }
-    expect(() =>
-      // @ts-expect-error Implicit grids reject repeat at runtime as well.
-      Style.define({ grid: { gridAutoColumns: 'repeat(2, 1fr)' } }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["grid","gridAutoColumns"]: Expected a valid grid track list with nonnegative sizes and valid repetition constraints.]`,
-    )
   })
 })

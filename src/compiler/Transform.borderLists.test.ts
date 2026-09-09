@@ -5,7 +5,6 @@
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
 import { Transform } from 'zyzz/compiler'
 import * as BorderLists from '../../test/fixtures/BorderLists.js'
 import * as Conformance from '../../test/fixtures/Conformance.js'
@@ -89,37 +88,5 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
-})
-
-describe('define', () => {
-  test('rejects excess border components and invalid radius axes', () => {
-    expect(() =>
-      Style.define({ box: { borderColor: 'red green blue gold purple' } }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["box","borderColor"]: Expected one to 4 valid space-separated values.]`,
-    )
-    expect(() =>
-      Style.define({ box: { borderBlockStyle: 'solid dashed dotted' } }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["box","borderBlockStyle"]: Expected one to 2 valid space-separated values.]`,
-    )
-    for (const borderRadius of [
-      '1px / -2px',
-      '1px / 2px / 3px',
-      '1px / inherit',
-      '1px / 1px 2px 3px 4px 5px',
-    ])
-      expect(() =>
-        // @ts-expect-error Invalid JavaScript strings are checked at the public boundary.
-        Style.define({ box: { borderRadius } }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Style.InvalidError: ["box","borderRadius"]: Expected one to four nonnegative radii on each side of a single slash.]`,
-      )
-    expect(() =>
-      Style.define({ box: { borderColor: 'red inherit' } }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["box","borderColor"]: Expected one to 4 valid space-separated values.]`,
-    )
   })
 })

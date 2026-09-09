@@ -195,13 +195,6 @@ describe('create', () => {
       `[Config.InvalidError: defaultTheme requires a named themes catalog.]`,
     )
   })
-  test('rejects invalid token domain before CSS emission', () => {
-    expect(() =>
-      emit({ theme: { spacing: { md: '#fff' } } }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Config.InvalidError: ["spacing","md"]: Expected a nonnegative literal length or numeric zero.]`,
-    )
-  })
   test('rejects duplicate layers before CSS emission', () => {
     expect(() =>
       emit({ layers: ['base', 'base'] }),

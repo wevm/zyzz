@@ -1,5 +1,11 @@
 # Implementation plan
 
+## Current CSS Conformance Contract
+
+CSS property/value validation is static only. Remove runtime CSS validators rather than adding a development mode. Retain source extraction, ordered-data, and theme graph structural diagnostics. Browser parsing owns value semantics beyond the static types.
+
+The consolidated PR currently maps 572/670 properties: 572 partial, 98 deferred, and zero promoted to fully supported. The strict 100% gate remains active. Static hex/integer/nonnegative literal checks and image/URL declarations extend the independent grammar and public consumer corpus. Browser evidence remains required for applicable properties.
+
 ## Goal
 
 A minimal, type-safe styling system with an environment-independent core, shared web/native authoring, modular extensions, and optional integration adapters. Styles compile ahead of time. Core `css` and `variants` have no tokens; bundled themes are opt-in through `zyzz/themes/default`. Color tokens accept shared values or light/dark pairs.

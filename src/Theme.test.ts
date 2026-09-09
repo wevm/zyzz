@@ -190,11 +190,8 @@ describe('define', () => {
       { color: { brand: { light: '#fff' } } },
       { color: { brand: { dark: '#000', light: '#fff', system: '#ccc' } } },
       { color: { 'blue.500': '#fff' } },
-      { color: { brand: '#fff;display:none' } },
-      { spacing: { md: '-1px' } },
       { spacing: { md: { dark: '1rem', light: '2rem' } } },
       { color: {} },
-      { color: { brand: 'inherit' } },
     ]
     for (const input of invalid) {
       let error: unknown
@@ -221,31 +218,6 @@ describe('define', () => {
       `[Theme.InvalidError: ["color"]: Expected nonempty keys without dots and enumerable data properties.]`,
     )
     expect(reads).toMatchInlineSnapshot('0')
-
-    const theme = Theme.define(tokens)
-    expect(() =>
-      Reflect.apply(Style.define, undefined, [
-        { button: { padding: theme.tokens.color.brand } },
-      ]),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["button","padding"]: Token group is incompatible with this property.]`,
-    )
-    expect(() =>
-      Css.compile({
-        styles: {
-          styles: [
-            {
-              declarations: [
-                { property: 'padding', value: theme.tokens.color.brand },
-              ],
-              name: 'button',
-            },
-          ],
-        },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Css.CompileError: ["button","padding"]: Token group is incompatible with this property.]`,
-    )
   })
 })
 

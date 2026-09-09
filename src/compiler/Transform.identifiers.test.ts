@@ -9,40 +9,6 @@ import { Transform } from 'zyzz/compiler'
 import * as Identifiers from '../../test/fixtures/Identifiers.js'
 
 describe('compile', () => {
-  test('rejects malformed identifiers, reserved names, and invalid list boundaries', () => {
-    const accepted: string[] = []
-    for (const [property, value] of [
-      ['anchorName', 'Anchor'],
-      ['anchorName', '--'],
-      ['anchorName', 'none, --Anchor'],
-      ['animationName', '123name'],
-      ['animationName', 'Default'],
-      ['animationName', 'Fade, inherit'],
-      ['containerName', 'Card NOT'],
-      ['containerName', 'none Card'],
-      ['containerName', 'Card, Secondary'],
-      ['transitionProperty', 'none, opacity'],
-      ['viewTransitionName', 'auto'],
-      ['willChange', 'will-change'],
-      ['willChange', 'all'],
-      ['willChange', 'auto, opacity'],
-      ['animationTimeline', '--scroll,'],
-      ['page', 'a;b'],
-      ['fontPalette', 'palette'],
-    ]) {
-      try {
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
-        })
-        accepted.push(`${property}:${value}`)
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
-          throw error
-      }
-    }
-    expect(accepted).toMatchInlineSnapshot(`[]`)
-  })
   test('native names resolve case-sensitive keyframes and named container queries', async () => {
     const output = Transform.compile({
       moduleId: 'identifiers.ts',

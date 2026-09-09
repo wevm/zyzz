@@ -5,7 +5,6 @@
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
 import { Transform } from 'zyzz/compiler'
 import * as Conformance from '../../test/fixtures/Conformance.js'
 import * as KeywordGroups from '../../test/fixtures/KeywordGroups.js'
@@ -73,35 +72,5 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
-})
-
-describe('define', () => {
-  test('rejects duplicate, incompatible, and standalone keyword combinations', () => {
-    for (const fontVariantNumeric of [
-      'lining-nums oldstyle-nums',
-      'tabular-nums tabular-nums',
-      'diagonal-fractions stacked-fractions',
-      'normal ordinal',
-      'ordinal inherit',
-    ])
-      expect(() =>
-        // @ts-expect-error Exercise untyped malformed keyword combinations.
-        Style.define({ text: { fontVariantNumeric } }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Style.InvalidError: ["text","fontVariantNumeric"]: Expected compatible keywords with at most one choice from each group.]`,
-      )
-    expect(() =>
-      Style.define({
-        text: { fontVariantLigatures: 'common-ligatures no-common-ligatures' },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["text","fontVariantLigatures"]: Expected compatible keywords with at most one choice from each group.]`,
-    )
-    expect(() =>
-      Style.define({ text: { contain: 'size inline-size' } }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["text","contain"]: Expected compatible keywords with at most one choice from each group.]`,
-    )
   })
 })

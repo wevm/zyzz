@@ -5,7 +5,6 @@
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
 import { Transform } from 'zyzz/compiler'
 import * as Conformance from '../../test/fixtures/Conformance.js'
 import * as MathExpressions from '../../test/fixtures/MathExpressions.js'
@@ -95,36 +94,5 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
-})
-
-describe('define', () => {
-  test('rejects incompatible math dimensions and malformed arithmetic', () => {
-    for (const width of [
-      'calc(1px + 1s)',
-      'calc(1px+2px)',
-      'calc(1px + 2)',
-      'calc(1px * 2px)',
-      'calc(1px / 1px)',
-      'clamp(1px, 2px)',
-      'min()',
-      'calc(1px);color:red',
-    ])
-      expect(() =>
-        // @ts-expect-error Untyped invalid function strings reach the public validator.
-        Style.define({ box: { width } }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Style.InvalidError: ["box","width"]: Expected a valid math expression with compatible numeric dimensions.]`,
-      )
-    expect(() =>
-      Style.define({ box: { borderWidth: 'calc(10% + 1px)' } }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["box","borderWidth"]: Expected a valid math expression with compatible numeric dimensions.]`,
-    )
-    expect(() =>
-      Style.define({ box: { opacity: 'calc(1px + 2px)' } }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["box","opacity"]: Expected a valid math expression with compatible numeric dimensions.]`,
-    )
   })
 })

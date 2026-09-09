@@ -28,7 +28,6 @@ export function compile<
   type Cached = {
     declaration: string
     domain: string
-    message: string | undefined
   }
   const cache = new Map<string, Map<number | string, Cached>>()
   const references = new Map<object, boolean>()
@@ -73,19 +72,11 @@ export function compile<
     let body = ''
     const declarations: Cached[] = []
     for (const { important, property, value: input } of style.declarations) {
-      if (important !== undefined && typeof important !== 'boolean') {
-        diagnostics.push({
-          code: 'invalid_declaration',
-          message: 'Declaration importance must be boolean.',
-          path: [style.name, property],
-        })
-        continue
-      }
       const token = isReference(input)
       let value: number | string
       try {
         value = token
-          ? (theme ??= Themes.create()).serialize(input, property)
+          ? (theme ??= Themes.create()).serialize(input)
           : (input as number | string)
       } catch (error) {
         diagnostics.push({
@@ -103,21 +94,11 @@ export function compile<
       }
       let entry = values.get(value)
       if (!entry) {
-        const message = (() => {
-          if (Object.hasOwn(Literal.rules, property)) {
-            if (token) {
-              return undefined
-            }
-            return Literal.validate(property, value)
-          }
-          return 'Unsupported literal property.'
-        })()
         entry = {
-          declaration: message
-            ? ''
-            : `${Literal.name(property)}:${value}${important ? '!important' : ''};`,
+          declaration: `${Literal.name(property)}:${value}${important ? '!important' : ''};`,
           domain: ((property: string) => {
             if (resets) return 'all'
+            if (/^marker(?:Start|Mid|End)?$/.test(property)) return 'marker'
             if (
               /^grid(?:Area|Column(?:Start|End)?|Row(?:Start|End)?)$/.test(
                 property,
@@ -217,19 +198,10 @@ export function compile<
               ? Literal.aliases[property as keyof typeof Literal.aliases]
               : property,
           ),
-          message,
         }
         values.set(value, entry)
       }
-      const { declaration, message } = entry
-      if (message) {
-        diagnostics.push({
-          code: 'invalid_declaration',
-          message,
-          path: [style.name, property],
-        })
-        continue
-      }
+      const { declaration } = entry
       body += declaration
       declarations.push(entry)
     }

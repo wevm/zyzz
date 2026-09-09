@@ -66,18 +66,6 @@ describe('compile', () => {
     `)
   })
 
-  test('column counts reject fractional, zero, negative, and unsafe integers', () => {
-    for (const value of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])
-      expect(() =>
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({columnCount:${value}});`,
-        }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:45: Expected a finite integer from 1 to 9007199254740991.]`,
-      )
-  })
-
   test('columns match browser rules and forced fragmentation', async () => {
     const output = Transform.compile({
       moduleId: 'columns.ts',

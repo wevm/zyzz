@@ -26,21 +26,58 @@ export type Checked<style, tokens = {}> = {
           | 'gridRowStart'
           ? Grid.Checked<style[property]>
           : unknown) &
-          Check<style[property], Token.Names<tokens, property>>
+          Check<
+            style[property],
+            Token.Names<tokens, property>,
+            (typeof Literal.rules)[property]
+          >
         ? unknown
         : never
       : unknown
 }
 
-type Check<input, names> = input extends readonly unknown[]
-  ? { [key in keyof input]: Check<input[key], names> }
-  : input extends string
-    ? Plain<input> extends names
-      ? input
-      : Literal.Checked<Plain<input>> extends never
+type Check<input, names, rule> = input extends readonly unknown[]
+  ? { [key in keyof input]: Check<input[key], names, rule> }
+  : input extends names
+    ? input
+    : input extends string
+      ? Plain<input> extends names
+        ? input
+        : Literal.Checked<Plain<input>> extends never
+          ? never
+          : Numeric<Plain<input>, rule> extends never
+            ? never
+            : input
+      : Numeric<input, rule>
+
+type Numeric<input, rule> = number extends input
+  ? input
+  : input extends number | `${number}`
+    ? rule extends { integer: true }
+      ? `${input}` extends `${bigint}`
+        ? Range<input, rule>
+        : never
+      : Range<input, rule>
+    : input extends `${infer amount extends number}${Literal.Unit | 'ms' | 's'}`
+      ? Range<amount, rule> extends never
         ? never
         : input
+      : input
+
+type Range<input, rule> = rule extends
+  | { kind: 'number' | 'percentage'; min: 0 | 1 }
+  | { negative: false }
+  ? input extends number | string
+    ? `${input}` extends `-${string}`
+      ? never
+      : rule extends { kind: 'number'; min: 1 }
+        ? `${input}` extends '0'
+          ? never
+          : input
+        : input
     : input
+  : input
+
 type Plain<value extends string> = value extends
   | `${infer body}!important`
   | `${infer body}!`
@@ -63,11 +100,9 @@ export function parse(input: unknown, property: keyof Literal.Properties) {
   const match = /\s*!(?:important)?$/i.exec(input)
   if (!match) return undefined
   const text = input.slice(0, match.index).trimEnd()
-  // Quotes and escapes belong to future CSS expression parsing, not this scalar grammar.
-  if (/["'\\!]/.test(text)) return undefined
   const numeric =
-    Literal.rules[property].kind === 'number' ||
-    Literal.rules[property].kind === 'grid-line'
+    Literal.rules[property]?.kind === 'number' ||
+    Literal.rules[property]?.kind === 'grid-line'
   const value =
     numeric && /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(text)
       ? Number(text)

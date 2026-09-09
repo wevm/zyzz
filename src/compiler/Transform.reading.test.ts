@@ -5,7 +5,6 @@
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
 import { Transform } from 'zyzz/compiler'
 import * as Reading from '../../test/fixtures/Reading.js'
 
@@ -81,21 +80,5 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
-})
-
-describe('define', () => {
-  test('rejects reading order values outside its integer domain', () => {
-    for (const value of [
-      0.5,
-      Number.MAX_SAFE_INTEGER + 1,
-      Number.NaN,
-      Number.POSITIVE_INFINITY,
-    ])
-      expect(() =>
-        Style.define({ item: { readingOrder: value } }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Style.InvalidError: ["item","readingOrder"]: Expected a finite integer from -9007199254740991 to 9007199254740991.]`,
-      )
   })
 })

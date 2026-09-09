@@ -44,7 +44,7 @@ The property surface is intentionally finite. No catch-all string index permits 
 - **CSS-wide values:** every property accepts `inherit`, `initial`, `revert`, `revert-layer`, and `unset`.
 - **Numbers:** finite values only; opacity numbers/percentages (browser-clamped), font weight 1–1000, line height/flex factors nonnegative.
 
-Inferred authoring values reject hexadecimal, binary, octal, and whitespace-separated numeric lengths. Valid token names remain usable even when their spelling resembles an invalid CSS value. Types check units and token names; runtime validation checks numeric bounds and hex digits.
+Inferred authoring values reject hexadecimal, binary, octal, and whitespace-separated numeric lengths. Valid token names remain usable even when their spelling resembles an invalid CSS value. Types check units, token names, concrete hex digits, integer literals, and nonnegative scalar literals. Runtime CSS value validation is not performed. Broad numeric values and complex function arguments remain subject to browser CSS parsing.
 
 This boundary rejects:
 
@@ -283,7 +283,7 @@ Nonempty arrays emit repeated declarations in authored order. Each entry is inde
 
 Token keys cannot contain `!`, including nested palette keys. This reserves importance syntax and prevents a shorthand such as `md!` from naming both a token and an important `md` declaration. `Theme.define` and inline Config themes reject these keys in types and runtime validation.
 
-Importance is stored separately on `Style.Declaration.important`. Numeric importance uses a string, such as `'0.5!'` or `'0!'`. Empty, sparse, nested, accessor-backed, and invalid arrays fail before emission. Quoted or escaped exclamation marks are not suffixes; unsupported string-content syntax still fails scalar validation.
+Importance is stored separately on `Style.Declaration.important`. Numeric importance uses a string, such as `'0.5!'` or `'0!'`. Empty, sparse, and accessor-backed fallbacks fail structurally. Value validity is checked statically. Quoted image URLs retain their contents when a trailing importance marker is separated.
 
 ## Ordering and Ownership
 
@@ -293,7 +293,7 @@ Plain and null-prototype objects are accepted. Accessors, symbols, non-enumerabl
 
 ## Diagnostics
 
-`Style.InvalidError` aggregates errors in traversal order. Each diagnostic has a stable code, component path array, and message. Codes are `invalid_structure`, `unsupported_property`, and `invalid_value`. Paths remain unambiguous when names contain dots.
+`Style.InvalidError` aggregates errors in traversal order. Each diagnostic has a stable code, component path array, and message. Structural errors use `invalid_structure`; empty fallback arrays use `invalid_value`. CSS property and value errors are static TypeScript diagnostics. Paths remain unambiguous when names contain dots.
 
 `Style.define(input, { locations })` can attach caller-owned `{ path, source, start, end }` spans to errors at exactly matching paths. Source offsets are metadata supplied by a caller; this API does not parse source text. Locations are copied so input mutations do not alter emitted diagnostics.
 
@@ -476,7 +476,7 @@ All 148 canonical lowercase CSS named colors and 19 canonical system-color keywo
 
 ### Structured Grid Tracks
 
-Explicit and implicit grid tracks accept size lists, `minmax()` and `fit-content()`. Explicit tracks also accept line-name groups and integer or automatic `repeat()`, including fixed-size restrictions for auto-repeat. Repetitions remain compact CSS rather than being expanded by the compiler. The compiler rejects invalid argument counts, flexible minima, nested repetition, and multiple auto-repeat groups. Consumer types constrain the outer value shape; nested grammar is checked during compilation.
+Explicit and implicit grid tracks accept size lists, `minmax()` and `fit-content()`. Explicit tracks also accept line-name groups and integer or automatic `repeat()`, including fixed-size restrictions for auto-repeat. Repetitions remain compact CSS rather than being expanded by the compiler. Consumer types constrain the outer value shape. Nested grammar and computed values are interpreted by the browser; compilation preserves the authored expression.
 
 Independent MDN grammar probes and native responsive-grid fixtures cover these additions. Additional math functions, variable references, escaped identifiers, and subgrid name repetition remain incomplete; property completion stays partial.
 
@@ -500,7 +500,7 @@ Bézier x coordinates must fall within zero and one; y coordinates may overshoot
 
 Numeric, length, and time properties accept literal calc(), min(), max(), and clamp() expressions. Grid track sizes and length lists retain nested function arguments. Addition requires compatible dimensions; multiplication and division accept scalar factors. Length-percentage mixtures are restricted to properties accepting percentages. Browser evaluation owns range clamping, integer rounding, and unit resolution.
 
-Quoted or escaped substitution, escaped tokens, numeric constants, dimension cancellation, additional math functions, and expressions beyond 128 nested levels remain unsupported. Function names and outer shapes are typed; argument dimensions are checked during compilation. Browser comparisons cover responsive dimensions, radius axes, integer rounding, opacity, and durations.
+Function names and outer shapes are typed. Argument syntax, dimensions, substitutions, and calculation results are interpreted by the browser. Compilation does not impose a parser nesting limit. Browser comparisons cover responsive dimensions, radius axes, integer rounding, opacity, and durations.
 
 ### Custom-Property References
 

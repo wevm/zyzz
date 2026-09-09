@@ -25,45 +25,6 @@ describe('compile', () => {
       ).toMatchInlineSnapshot(`null`)
     }
   })
-  test('rejects geometric arity errors and incompatible dimensions', () => {
-    const accepted: string[] = []
-    for (const [property, value] of [
-      ['aspectRatio', '-1/2'],
-      ['aspectRatio', '1/2/3'],
-      ['aspectRatio', 'auto auto'],
-      ['aspectRatio', '1px/2'],
-      ['rotate', '1px'],
-      ['rotate', '1 2 30deg'],
-      ['rotate', 'x y 30deg'],
-      ['translate', '1px 2px 3%'],
-      ['translate', '1px 2px 3px 4px'],
-      ['scale', '2px'],
-      ['scale', '1 2 3 4'],
-      ['transform', 'matrix(1,0,0,1,20)'],
-      ['transform', 'translate(1px,)'],
-      ['transform', 'translateZ(10%)'],
-      ['transform', 'rotate(10px)'],
-      ['transform', 'rotate3d(0,1,45deg)'],
-      ['transform', 'perspective(-1px)'],
-      ['transform', 'skew(1deg,2deg,3deg)'],
-      ['transform', 'scale()'],
-      ['transform', 'none rotate(0)'],
-      ['transform', 'rotate(calc(1deg + 2px))'],
-      ['transform', 'translateX(calc(2s))'],
-    ]) {
-      try {
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
-        })
-        accepted.push(`${property}:${value}`)
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
-          throw error
-      }
-    }
-    expect(accepted).toMatchInlineSnapshot(`[]`)
-  })
   test('ratios and ordered transforms match native rendered bounds', async () => {
     const output = Transform.compile({
       moduleId: 'geometry.ts',

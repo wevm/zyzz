@@ -5,7 +5,6 @@
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
 import { Transform } from 'zyzz/compiler'
 import * as BoxLists from '../../test/fixtures/BoxLists.js'
 
@@ -88,28 +87,5 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
-})
-
-describe('define', () => {
-  test('rejects excess box items and invalid component domains', () => {
-    for (const padding of [
-      '1px 2px 3px 4px 5px',
-      '1px -2px',
-      '1px auto',
-      'inherit 2px',
-      '1px 2px; color:red',
-    ])
-      expect(() =>
-        // @ts-expect-error JavaScript callers can supply arbitrary malformed strings.
-        Style.define({ box: { padding } }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Style.InvalidError: ["box","padding"]: Expected one to 4 valid space-separated values; CSS-wide keywords must stand alone.]`,
-      )
-    expect(() =>
-      Style.define({ box: { marginInline: '1px 2px 3px' } }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["box","marginInline"]: Expected one to 2 valid space-separated values; CSS-wide keywords must stand alone.]`,
-    )
   })
 })

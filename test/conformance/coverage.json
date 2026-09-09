@@ -519,7 +519,7 @@
       },
       "-moz-binding": {
         "grammar": "1cd2c1eeb6aead01ec48b09e45f1aaa31c8d674e9e9473da0c1026dcb0daa65b",
-        "status": "deferred"
+        "status": "partial"
       },
       "-moz-border-bottom-colors": {
         "grammar": "9ecd48ff12de47422436a1ce585344f176b6fb372f2eb5a4b0c34e275fc49d5c",
@@ -887,7 +887,7 @@
       },
       "-webkit-mask-image": {
         "grammar": "bcc288878b290971978509986c2adbf24770fa253f34a676456aa01915639fe2",
-        "status": "deferred"
+        "status": "partial"
       },
       "-webkit-mask-origin": {
         "grammar": "b09f15ad86ff63fc7b920e5a095f66fd79de1fc676e710708391f2ff3adfdcad",
@@ -1091,7 +1091,7 @@
       },
       "background-image": {
         "grammar": "444dbba2ece14b1972d77b61d93ecf7ef9b380e7de156395fd17dba27ecb1013",
-        "status": "deferred"
+        "status": "partial"
       },
       "background-origin": {
         "grammar": "4154755b03a783c2a2bd548fce670c66e9afce08af055e9adaef14deb830e311",
@@ -1239,7 +1239,7 @@
       },
       "border-image-source": {
         "grammar": "4483cccb95126a532b5097e640bd334fdba2de208906a51b773a3f642f113e8f",
-        "status": "deferred"
+        "status": "partial"
       },
       "border-image-width": {
         "grammar": "606fb5d52bfb2abbf51a39faf84bdb42fe4a1822d4f0ec8fd72ab2abd9b92886",
@@ -2107,7 +2107,7 @@
       },
       "list-style-image": {
         "grammar": "0461e6a01e84e98fd06b665b85c6083ffd2ae084076a8ee996650750d6ab71b8",
-        "status": "deferred"
+        "status": "partial"
       },
       "list-style-position": {
         "grammar": "7107884baf040cbdeaec7f2a1a59d688482c1350a01c02718558c3ae98939710",
@@ -2167,19 +2167,19 @@
       },
       "marker": {
         "grammar": "b2a9be0223ea7628050d5c8f98ce49e51df0ac77d584938acce6cadc8a4c4fa7",
-        "status": "deferred"
+        "status": "partial"
       },
       "marker-end": {
         "grammar": "6736d6b57825a4801fa740dd1971db202c244555e2c62d352a9f15ad51a473ef",
-        "status": "deferred"
+        "status": "partial"
       },
       "marker-mid": {
         "grammar": "3dc8a5fe2627b095b8698cfa204db2f3f663ac88d3858278296c700e0938b879",
-        "status": "deferred"
+        "status": "partial"
       },
       "marker-start": {
         "grammar": "efbfa25a224cba228a3feec197ca6272229176f08092f9de6301d927943972d9",
-        "status": "deferred"
+        "status": "partial"
       },
       "mask": {
         "grammar": "01a0a41b90055d2ed64ca6e5d0d85108886b6f7d797ca535954cf97939ce58fa",
@@ -2207,7 +2207,7 @@
       },
       "mask-border-source": {
         "grammar": "99459ea194a284ffd47fa0caacb5d96710eaee7b552267719b729d866f67db74",
-        "status": "deferred"
+        "status": "partial"
       },
       "mask-border-width": {
         "grammar": "2ea8fe572988e8beacaf8644b9a14834915628227c1cc88f97c2db141a3bdf22",
@@ -2223,7 +2223,7 @@
       },
       "mask-image": {
         "grammar": "3520e619823baed3d393e777efa1659ea5b82e8ecd314c992b4706c62ea8f60c",
-        "status": "deferred"
+        "status": "partial"
       },
       "mask-mode": {
         "grammar": "43d79b145c3256f3a77e6b47ffa9ea106936068eaeae4bfd589c9474cf5971e9",

@@ -33,36 +33,6 @@ describe('compile', () => {
       }
     }
   })
-  test('prefixed values retain scalar dimensions and exact keyword domains', () => {
-    const accepted: string[] = []
-    for (const [property, value] of [
-      ['MsAccelerator', true],
-      ['MozAppearance', 'invented'],
-      ['MsScrollLimitXMin', '20%'],
-      ['MsContentZoomLimitMax', '20px'],
-      ['WebkitBorderBefore', '1px 2px solid'],
-      ['WebkitTextStrokeWidth', '-1px'],
-      ['WebkitUserSelect', 'element'],
-      ['MsUserSelect', 'all'],
-      ['WebkitMaskComposite', 'add'],
-      ['WebkitMaskPositionX', 'top'],
-      ['WebkitMaskPositionY', 'left'],
-      ['WebkitLineClamp', 0],
-      ['WebkitLineClamp', 1.5],
-    ]) {
-      try {
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
-        })
-        accepted.push(`${property}:${value}`)
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
-          throw error
-      }
-    }
-    expect(accepted).toMatchInlineSnapshot(`[]`)
-  })
   test('prefixed aliases match native borders and preserve repeated overrides', async () => {
     const output = Transform.compile({
       moduleId: 'prefixed.ts',

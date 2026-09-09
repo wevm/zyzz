@@ -34,33 +34,6 @@ describe('compile', () => {
       .z-c{flex-flow:row nowrap;text-wrap:wrap balance;page-break-before:avoid;}"
     `)
   })
-  test('rejects incompatible groups and invalid list components', () => {
-    const accepted: string[] = []
-    for (const [property, value] of [
-      ['flexFlow', 'row column'],
-      ['textWrap', 'balance pretty'],
-      ['textUnderlinePosition', 'left right'],
-      ['hangingPunctuation', 'allow-end force-end'],
-      ['positionVisibility', 'always no-overflow'],
-      ['borderImageRepeat', 'round stretch repeat'],
-      ['textDecorationInset', 'auto 2px'],
-      ['textDecorationInset', '2px auto'],
-      ['interestDelayStart', '1s, 2s'],
-      ['viewTimelineAxis', 'block,'],
-    ]) {
-      try {
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
-        })
-        accepted.push(`${property}:${value}`)
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
-          throw error
-      }
-    }
-    expect(accepted).toMatchInlineSnapshot(`[]`)
-  })
   test('text and flex values match native browser controls', async () => {
     const output = Transform.compile({
       moduleId: 'text-timeline.ts',

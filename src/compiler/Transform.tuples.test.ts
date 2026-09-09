@@ -38,57 +38,6 @@ describe('compile', () => {
       output.css.match(/interest-delay:100ms 200ms;/g)?.length,
     ).toMatchInlineSnapshot(`2`)
   })
-  test('scalar tuples reject invalid arity, domains, and marker placement', () => {
-    const accepted: string[] = []
-    for (const [property, value] of [
-      ['containIntrinsicSize', 'auto'],
-      ['containIntrinsicSize', 'auto auto 20px'],
-      ['containIntrinsicSize', '10px auto'],
-      ['containIntrinsicSize', '10px 20px 30px'],
-      ['containIntrinsicWidth', '10px 20px'],
-      ['containIntrinsicHeight', '-1px'],
-      ['containIntrinsicBlockSize', '10%'],
-      ['fontSizeAdjust', 'cap-height'],
-      ['fontSizeAdjust', 'cap-height ex-height .5'],
-      ['fontSizeAdjust', '.5 cap-height'],
-      ['fontSizeAdjust', 'cap-height none'],
-      ['fontSizeAdjust', '-.5'],
-      ['fontSizeAdjust', '10%'],
-      ['borderImageSlice', 'fill'],
-      ['borderImageSlice', '1 fill fill'],
-      ['borderImageSlice', '1px'],
-      ['borderImageWidth', '-1'],
-      ['borderImageWidth', '1 2 3 4 5'],
-      ['borderImageOutset', '10%'],
-      ['maskBorderSlice', 'fill 1 2'],
-      ['maskBorderWidth', '1px red'],
-      ['maskBorderOutset', '1deg'],
-      ['scrollbarColor', 'red'],
-      ['scrollbarColor', 'auto red'],
-      ['scrollbarColor', 'red blue green'],
-      ['MozBorderTopColors', 'none red'],
-      ['MozBorderTopColors', 'red inherit'],
-      ['hyphenateLimitChars', '2 3.5'],
-      ['MsHyphenateLimitChars', 'auto 2'],
-      ['interestDelay', '1px'],
-      ['interestDelay', '1s 2s 3s'],
-      ['interestDelay', '-1s'],
-      ['viewTimelineInset', 'auto,'],
-      ['viewTimelineInset', '1px 2px 3px'],
-    ]) {
-      try {
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
-        })
-        accepted.push(`${property}:${value}`)
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
-          throw error
-      }
-    }
-    expect(accepted).toMatchInlineSnapshot(`[]`)
-  })
   test('border-image tuples match native painting and scrollbar colors', async () => {
     const output = Transform.compile({
       moduleId: 'tuples.ts',

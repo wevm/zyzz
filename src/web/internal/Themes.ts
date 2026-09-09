@@ -2,7 +2,6 @@
  * Collects live theme references and emits graph-local variables and scope rules.
  * @module
  */
-import * as Literal from '../../internal/Literal.js'
 import * as Token from '../../internal/Token.js'
 import type * as Theme from '../../Theme.js'
 
@@ -15,19 +14,8 @@ export function create() {
     { identity: string | undefined; paths: Map<string, string> }
   >()
 
-  function serialize(
-    token: Token.Reference,
-    property: keyof Literal.Properties,
-  ): string {
-    if (!Token.accepts(token.group, property))
-      throw new Error('Token group is incompatible with this property.')
+  function serialize(token: Token.Reference): string {
     const value = token.value
-    const values =
-      typeof value === 'object' ? [value.dark, value.light] : [value]
-    for (const value of values) {
-      const message = Literal.validate(property, value)
-      if (message) throw new Error(message)
-    }
     let contract = contracts.get(token.contract)
     if (!contract) {
       contract = {

@@ -6,7 +6,6 @@ import * as CssTree from 'css-tree'
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
 import { Transform } from 'zyzz/compiler'
 import * as Conformance from '../../test/fixtures/Conformance.js'
 import * as Substitution from '../../test/fixtures/Substitution.js'
@@ -129,28 +128,5 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
-  })
-})
-
-describe('define', () => {
-  test('rejects malformed variable names, delimiters, and declaration injection', () => {
-    for (const color of [
-      'var(name)',
-      'var(--)',
-      'var(--a --b)',
-      'var(--x',
-      'var(--x))',
-      'var(--x, var(invalid))',
-      'var(--x); color:red',
-      'var(--x, !important)',
-      'var(--x, url(bad value))',
-      '#var(--x)',
-    ])
-      expect(() =>
-        // @ts-expect-error Invalid JavaScript expressions reach the public declaration boundary.
-        Style.define({ box: { color } }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Style.InvalidError: ["box","color"]: Expected balanced var() expressions with valid custom-property names.]`,
-      )
   })
 })

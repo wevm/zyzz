@@ -206,11 +206,11 @@ export type Reference<group extends Group = Group> = {
 
 const reference = Symbol('zyzz.token')
 
-/** Resolves shorthand tokens after literal validation, with specific colors first. */
+/** Resolves shorthand tokens with literal precedence, with specific colors first. */
 export function resolve(value: unknown, options: resolve.Options): unknown {
   if (
     (typeof value !== 'string' && typeof value !== 'number') ||
-    !Literal.validate(options.property, value)
+    Literal.isLiteral(options.property, value)
   )
     return value
 

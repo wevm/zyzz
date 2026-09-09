@@ -33,38 +33,6 @@ describe('compile', () => {
       output.css.match(/grid-column:1 \/ 3;/g)?.length,
     ).toMatchInlineSnapshot(`2`)
   })
-  test('grid placement rejects invalid indices and slash components', () => {
-    const accepted: string[] = []
-    for (const [property, value] of [
-      ['gridColumn', '1 / 2 / 3'],
-      ['gridArea', '1 / 2 / 3 / 4 / 5'],
-      ['gridRow', '1 /'],
-      ['gridArea', '/ 1'],
-      ['gridRowStart', '0'],
-      ['gridColumnStart', 'span'],
-      ['gridColumnStart', 'span 0'],
-      ['gridColumnStart', 'span -1'],
-      ['gridColumnStart', 'span 1.5'],
-      ['gridColumnEnd', 'auto header'],
-      ['gridColumnEnd', 'header footer'],
-      ['gridColumnEnd', '1 2'],
-      ['gridColumnEnd', 'span span header'],
-      ['gridRow', 'inherit / 2'],
-      ['gridRowStart', '1px'],
-    ]) {
-      try {
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
-        })
-        accepted.push(`${property}:${value}`)
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
-          throw error
-      }
-    }
-    expect(accepted).toMatchInlineSnapshot(`[]`)
-  })
   test('grid placement matches native named and numbered layout', async () => {
     const output = Transform.compile({
       moduleId: 'grid.ts',

@@ -28,37 +28,6 @@ describe('compile', () => {
       }
     }
   })
-  test('corner shapes reject invalid dimensions, keywords, and arity', () => {
-    const accepted: string[] = []
-    for (const [property, value] of [
-      ['cornerShape', 'bevel notch scoop square round'],
-      ['cornerTopLeftShape', 'round bevel'],
-      ['cornerShape', 'superellipse(1px)'],
-      ['cornerShape', 'superellipse(1%)'],
-      ['cornerShape', 'superellipse(1, 2)'],
-      ['cornerShape', 'superellipse(1e999)'],
-      ['cornerShape', 'superellipse(calc(1px + 2px))'],
-      ['cornerShape', 'superellipse(\u00a02)'],
-      ['cornerTopShape', 'round inherit'],
-      ['all', 'red'],
-      ['gridGap', '-1px'],
-      ['justifySelf', 'legacy'],
-      ['justifyItems', 'safe legacy'],
-      ['textBoxEdge', 'cap ex'],
-    ]) {
-      try {
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
-        })
-        accepted.push(`${property}:${value}`)
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
-          throw error
-      }
-    }
-    expect(accepted).toMatchInlineSnapshot(`[]`)
-  })
   test('bevel clipping matches a native polygon and all preserves authored overrides', async () => {
     const output = Transform.compile({
       moduleId: 'corners.ts',

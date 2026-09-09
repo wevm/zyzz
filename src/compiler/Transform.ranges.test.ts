@@ -26,34 +26,6 @@ describe('compile', () => {
       )
     }
   })
-  test('timeline ranges reject misplaced names and invalid offsets', () => {
-    const accepted: string[] = []
-    for (const [property, value] of [
-      ['animationRangeStart', 'auto'],
-      ['animationRangeEnd', 'entry exit'],
-      ['animationRangeStart', '20% entry'],
-      ['animationRangeStart', 'entry 20% 30%'],
-      ['animationRangeEnd', 'normal 20%'],
-      ['animationRangeEnd', 'entry 1s'],
-      ['animationRangeEnd', 'cover,'],
-      ['animationRangeEnd', ',cover'],
-      ['timelineTriggerActivationRangeStart', 'auto'],
-      ['timelineTriggerActiveRangeStart', 'auto 20%'],
-      ['timelineTriggerActiveRangeEnd', 'entry entry 20%'],
-    ]) {
-      try {
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
-        })
-        accepted.push(`${property}:${value}`)
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
-          throw error
-      }
-    }
-    expect(accepted).toMatchInlineSnapshot(`[]`)
-  })
   test('timeline ranges match native view-animation progress', async () => {
     const output = Transform.compile({
       moduleId: 'ranges.ts',

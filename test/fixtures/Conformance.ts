@@ -17,6 +17,7 @@ export type Case = {
 /** Exhausts finite keywords and samples numeric, color, and unit boundaries. */
 export function cases(): readonly Case[] {
   const output: Case[] = []
+  const grammar = lexer()
   const require = Module.createRequire(import.meta.url)
   // CSS Tree exposes units at runtime; its declaration file omits this field.
   const upstream = CssTree.lexer as CssTree.Lexer & {
@@ -38,6 +39,11 @@ export function cases(): readonly Case[] {
       'revert-layer',
       'unset',
     ]
+    if (rule.kind === 'image' || rule.kind === 'url') {
+      values.push('none', 'url("#paint")', 'url(#paint)')
+      if (rule.kind === 'image') values.push('linear-gradient(red, blue)')
+      if ('list' in rule) values.push('url("#paint"), none')
+    }
     if (rule.kind === 'tuple') {
       const atoms: readonly string[] = rule.atoms
       if ('standalone' in rule) values.push(...rule.standalone)
@@ -269,7 +275,7 @@ export function cases(): readonly Case[] {
       for (const unit of Object.keys(units))
         for (const number of ['0', '1', '.5', '1e2', '-1']) {
           const value = `${number}${unit}`
-          if (!Literal.validate(property as Case['property'], value))
+          if (!grammar.matchProperty(name(property), value).error)
             values.push(value)
         }
     }
@@ -294,7 +300,7 @@ export function cases(): readonly Case[] {
       ]))
         for (const number of ['0', '1', '.5', '1e2', '-1']) {
           const value = `${number}${unit}`
-          if (!Literal.validate(property as Case['property'], value))
+          if (!grammar.matchProperty(name(property), value).error)
             values.push(value)
         }
     }
@@ -332,7 +338,7 @@ export function name(property: string): string {
   return property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)
 }
 
-/** Independent invalid and intentionally unsupported inputs shared by runtime and type probes. */
+/** Independent invalid and intentionally unsupported inputs checked by public type probes. */
 export const rejected = [
   { property: 'alignItems', value: 'middle' },
   { property: 'animationDelay', value: '0x10s' },
@@ -340,6 +346,14 @@ export const rejected = [
   { property: 'animationDuration', value: '1px' },
   { property: 'appearance', value: 'native' },
   { property: 'color', value: 'not-a-color' },
+  { property: 'color', value: '#12' },
+  { property: 'color', value: '#12345g' },
+  { property: 'columnCount', value: 0 },
+  { property: 'order', value: 0.5 },
+  { property: 'padding', value: '-1px' },
+  { property: 'animationDuration', value: '-1s' },
+  { property: 'marker', value: 'linear-gradient(red, blue)' },
+  { property: 'backgroundImage', value: 'red' },
   { property: 'containerType', value: 'normal size' },
   { property: 'containerType', value: 'size inline-size' },
   { property: 'containerType', value: 'scroll-state scroll-state' },

@@ -41,18 +41,6 @@ describe('compile', () => {
     `)
   })
 
-  test('motion rejects negative durations and nonfinite time dimensions', () => {
-    for (const value of ['-1s', '1e999s', 'Infinitys', '0', '1 s', '0x10ms'])
-      expect(() =>
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({transitionDuration:'${value}'});`,
-        }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:52: Expected a nonnegative finite time in s or ms.]`,
-      )
-  })
-
   test('motion controls drive native paused animation timing', async () => {
     const output = Transform.compile({
       moduleId: 'motion.ts',

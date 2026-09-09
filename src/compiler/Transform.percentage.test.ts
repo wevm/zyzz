@@ -31,35 +31,6 @@ describe('compile', () => {
       }
     }
   })
-  test('percentages reject units, negative constrained ranges, and mixed number arithmetic', () => {
-    const accepted: string[] = []
-    for (const [property, value] of [
-      ['fontWidth', '-1%'],
-      ['fontStretch', '1px'],
-      ['textSizeAdjust', 0],
-      ['textSizeAdjust', '-1%'],
-      ['zoom', '-1%'],
-      ['opacity', '1px'],
-      ['opacity', '1e999%'],
-      ['opacity', 'calc(1 + 50%)'],
-      ['fillOpacity', 'calc(1s)'],
-      ['fontWidth', 'calc(1 + 50%)'],
-      ['fontWidth', '0x10%'],
-      ['textSizeAdjust', '1 %'],
-    ]) {
-      try {
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
-        })
-        accepted.push(`${property}:${value}`)
-      } catch (error) {
-        if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
-          throw error
-      }
-    }
-    expect(accepted).toMatchInlineSnapshot(`[]`)
-  })
   test('alpha values clamp in the browser and preserve important fallbacks', async () => {
     const output = Transform.compile({
       moduleId: 'percentage.ts',

@@ -173,15 +173,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
     const path: string[] = []
     let root: Ast.Node = node
     while (root.type === 'MemberExpression') {
-      const key =
-        root.property.type === 'Identifier' && !root.computed
-          ? root.property.name
-          : root.property.type === 'Literal' &&
-              root.computed &&
-              (typeof root.property.value === 'string' ||
-                typeof root.property.value === 'number')
-            ? String(root.property.value)
-            : undefined
+      const key = (() => {
+        if (root.property.type === 'Identifier' && !root.computed) {
+          return root.property.name
+        }
+        if (
+          root.property.type === 'Literal' &&
+          root.computed &&
+          (typeof root.property.value === 'string' ||
+            typeof root.property.value === 'number')
+        ) {
+          return String(root.property.value)
+        }
+        return undefined
+      })()
       if (root.optional || key === undefined) return undefined
       path.unshift(key)
       root = root.object
@@ -224,14 +229,19 @@ export function collect(program: Ast.Program, options: collect.Options) {
           'Theme data requires explicit properties without spreads, methods, or computed keys.',
           property,
         )
-      const key =
-        property.key.type === 'Identifier'
-          ? property.key.name
-          : property.key.type === 'Literal' &&
-              (typeof property.key.value === 'string' ||
-                typeof property.key.value === 'number')
-            ? String(property.key.value)
-            : undefined
+      const key = (() => {
+        if (property.key.type === 'Identifier') {
+          return property.key.name
+        }
+        if (
+          property.key.type === 'Literal' &&
+          (typeof property.key.value === 'string' ||
+            typeof property.key.value === 'number')
+        ) {
+          return String(property.key.value)
+        }
+        return undefined
+      })()
       if (key === undefined || Object.hasOwn(result, key))
         return fail('Theme data requires unique literal keys.', property)
       result[key] = data(property.value)
@@ -251,12 +261,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
       .map((property) => {
         if (property.type !== 'Property')
           return fail('Expected validated theme properties.', property)
-        const key =
-          property.key.type === 'Identifier'
-            ? JSON.stringify(property.key.name)
-            : property.key.type === 'Literal'
-              ? JSON.stringify(property.key.value)
-              : fail('Expected a literal theme key.', property.key)
+        const key = (() => {
+          if (property.key.type === 'Identifier') {
+            return JSON.stringify(property.key.name)
+          }
+          if (property.key.type === 'Literal') {
+            return JSON.stringify(property.key.value)
+          }
+          return fail('Expected a literal theme key.', property.key)
+        })()
         return `readonly ${key}:${type(property.value)}`
       })
       .join(';')}}`
@@ -419,25 +432,32 @@ export function collect(program: Ast.Program, options: collect.Options) {
         exports[variable.id.name] = linked
       return
     }
-    const member =
-      expression.type === 'MemberExpression' &&
-      !expression.computed &&
-      !expression.optional &&
-      expression.property.type === 'Identifier' &&
-      expression.property.name === 'css'
-        ? expression.object
-        : undefined
+    const member = (() => {
+      if (
+        expression.type === 'MemberExpression' &&
+        !expression.computed &&
+        !expression.optional &&
+        expression.property.type === 'Identifier' &&
+        expression.property.name === 'css'
+      ) {
+        return expression.object
+      }
+      return undefined
+    })()
     const destructured =
       variable.id.type === 'ObjectPattern' && expression.type === 'Identifier'
     const source =
       member ?? (expression.type === 'Identifier' ? expression : undefined)
     if (!source) return
-    const theme =
-      member || destructured
-        ? resolve(source)?.call
-        : source.type === 'Identifier'
-          ? aliasNames.get(source.name)
-          : undefined
+    const theme = (() => {
+      if (member || destructured) {
+        return resolve(source)?.call
+      }
+      if (source.type === 'Identifier') {
+        return aliasNames.get(source.name)
+      }
+      return undefined
+    })()
     if (!theme) return
     let id = variable.id
     if (destructured && id.type === 'ObjectPattern') {
@@ -592,15 +612,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
           member.optional
         )
           break
-        const key =
-          member.property.type === 'Identifier' && !member.computed
-            ? member.property.name
-            : member.property.type === 'Literal' &&
-                member.computed &&
-                (typeof member.property.value === 'string' ||
-                  typeof member.property.value === 'number')
-              ? String(member.property.value)
-              : undefined
+        const key = (() => {
+          if (member.property.type === 'Identifier' && !member.computed) {
+            return member.property.name
+          }
+          if (
+            member.property.type === 'Literal' &&
+            member.computed &&
+            (typeof member.property.value === 'string' ||
+              typeof member.property.value === 'number')
+          ) {
+            return String(member.property.value)
+          }
+          return undefined
+        })()
         if (key === undefined) break
         path.push(key)
         target = member
@@ -679,15 +704,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
         const ancestor = ancestors[index]!
         if (ancestor.type !== 'MemberExpression' || ancestor.object !== target)
           break
-        const key =
-          ancestor.property.type === 'Identifier' && !ancestor.computed
-            ? ancestor.property.name
-            : ancestor.property.type === 'Literal' &&
-                ancestor.computed &&
-                (typeof ancestor.property.value === 'string' ||
-                  typeof ancestor.property.value === 'number')
-              ? String(ancestor.property.value)
-              : undefined
+        const key = (() => {
+          if (ancestor.property.type === 'Identifier' && !ancestor.computed) {
+            return ancestor.property.name
+          }
+          if (
+            ancestor.property.type === 'Literal' &&
+            ancestor.computed &&
+            (typeof ancestor.property.value === 'string' ||
+              typeof ancestor.property.value === 'number')
+          ) {
+            return String(ancestor.property.value)
+          }
+          return undefined
+        })()
         if (ancestor.optional || key === undefined)
           fail(
             'Token paths require static property names without optional access.',

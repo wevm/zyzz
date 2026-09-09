@@ -41,6 +41,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Group a module's Zod schemas in a `schema` namespace, and derive their types beside them (`schema.Document`). Export the namespace only when another module validates against the same shape.
 - Let declared return types constrain intermediate expressions. Avoid redundant local annotations.
 - Return values directly unless a binding is reused or gives a complex expression a useful name.
+- Prefer immediately invoked function expressions (IIFEs) with explicit branches and early returns over nested or complex ternary expressions. Keep simple two-way ternaries when both branches are easy to scan. This applies to executable code, not TypeScript conditional types.
 - For a fallible local derivation, prefer an IIFE expression over a mutable variable assigned across `try` and `catch` blocks.
 - Destructure when reading several properties. When normalizing one field, read `options.field` directly instead of creating a second name.
 - Prefer short names whose meaning is clear from local context, such as `options`, `client`, `entry`, and `fn`.

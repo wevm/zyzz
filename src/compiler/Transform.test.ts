@@ -12,12 +12,164 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import * as Declarations from '../../test/fixtures/Declarations.js'
+import * as Flex from '../../test/fixtures/Flex.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('flex sizing and overflow preserve tokens, importance, and maps', () => {
+    const output = Transform.compile({
+      moduleId: 'example/flex.ts',
+      source: Flex.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-bjw6jw1i067e2-zyzz-theme{--z-tbjw6jw1i067e2-zyzz-spacing_2e_item:60px;}
+      .z-bjw6jw1i067e2-base0{display:flex;flex-wrap:wrap;align-content:space-between;align-items:flex-start;}
+      .z-style-bjw6jw1i067e2-122{width:180px;height:100px;}
+      .z-bjw6jw1i067e2-base1{flex-basis:40px;flex-basis:var(--z-tbjw6jw1i067e2-zyzz-spacing_2e_item,60px);flex-grow:0;flex-shrink:0;align-self:flex-end;order:-1!important;}
+      .z-style-bjw6jw1i067e2-265{height:20px;}
+      .z-style-bjw6jw1i067e2-421{width:40px;height:40px;overflow:hidden;overflow:clip!important;overflow-x:visible;}
+      .z-style-bjw6jw1i067e2-528{width:40px;height:40px;overflow-x:clip;overflow:hidden;overflow-y:scroll;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) => line.includes('flex-basis:var('))
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('flex-basis:var('),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 48,
+        "line": 4,
+        "name": "flexBasis",
+        "source": "example/flex.ts",
+      }
+    `)
+  })
+
+  test('flex and overflow diagnostics retain scalar bounds and integer order', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import { css } from 'zyzz'; css({order:1.5,flexBasis:'-1px',alignSelf:'space-between',overflow:'none'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: invalid.ts:39: Expected a finite integer from -9007199254740991 to 9007199254740991.
+      invalid.ts:53: Expected a nonnegative literal length, auto, or numeric zero.
+      invalid.ts:70: Expected one of: auto, baseline, center, end, flex-end, flex-start, normal, self-end, self-start, start, stretch (or a CSS-wide keyword).
+      invalid.ts:95: Expected one of: auto, clip, hidden, scroll, visible (or a CSS-wide keyword).]
+    `)
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import { css } from 'zyzz'; css({order:'1.5!'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: invalid.ts:39: Expected a finite integer from -9007199254740991 to 9007199254740991.]`)
+  })
+
+  test('flex sizing, line alignment, and overflow match native browser layout', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/flex.ts',
+      source: Flex.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      loader: 'ts',
+      format: 'esm',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      const children = (item: string) =>
+        `<div style="width:60px;height:40px;flex-shrink:0"></div><div ${item}></div><div style="width:60px;height:20px;flex-shrink:0"></div><div style="width:60px;height:20px;flex-shrink:0"></div>`
+      await page.setContent(
+        `<style>${output.css}</style><main id="actual" class="${module.container.className}">${children(`class="${module.item.className}"`)}</main><main id="expected" style="display:flex;flex-wrap:wrap;width:180px;height:100px;align-content:space-between;align-items:flex-start">${children('style="flex-basis:60px;flex-grow:0;flex-shrink:0;height:20px;align-self:flex-end;order:-1!important"')}</main><div id="clip" class="${module.clip.className}"><div style="width:200px;height:200px"></div></div><div id="scroll" class="${module.scroll.className}"><div style="width:200px;height:200px"></div></div>`,
+      )
+      expect(
+        await page.evaluate(() => {
+          const layout = (id: string) => {
+            const parent = document.getElementById(id)!
+            const origin = parent.getBoundingClientRect()
+            return Array.from(parent.children, (child) => {
+              const box = child.getBoundingClientRect()
+              return {
+                height: box.height,
+                width: box.width,
+                x: box.x - origin.x,
+                y: box.y - origin.y,
+              }
+            })
+          }
+          return (
+            JSON.stringify(layout('actual')) ===
+            JSON.stringify(layout('expected'))
+          )
+        }),
+      ).toMatchInlineSnapshot(`true`)
+      expect(
+        await page.locator('#actual').evaluate((parent) => {
+          const child = parent.children[1]!
+          const box = child.getBoundingClientRect()
+          const origin = parent.getBoundingClientRect()
+          return {
+            height: box.height,
+            width: box.width,
+            x: box.x - origin.x,
+            y: box.y - origin.y,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "height": 20,
+          "width": 60,
+          "x": 0,
+          "y": 20,
+        }
+      `)
+      expect(
+        await page.locator('#clip').evaluate((element) => {
+          element.scrollTop = 10
+          const style = getComputedStyle(element)
+          return {
+            overflowX: style.overflowX,
+            overflowY: style.overflowY,
+            scrollTop: element.scrollTop,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "overflowX": "clip",
+          "overflowY": "clip",
+          "scrollTop": 0,
+        }
+      `)
+      expect(
+        await page.locator('#scroll').evaluate((element) => {
+          element.scrollTop = 10
+          const style = getComputedStyle(element)
+          return {
+            overflowX: style.overflowX,
+            overflowY: style.overflowY,
+            scrollTop: element.scrollTop,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "overflowX": "hidden",
+          "overflowY": "scroll",
+          "scrollTop": 10,
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('logical boxes preserve tokens, importance, and fallback source maps', () => {
     const output = Transform.compile({
       moduleId: 'example/logical.ts',

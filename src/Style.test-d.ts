@@ -51,6 +51,34 @@ css({ marginInline: '1px 2px' })
 css({ writingMode: 'diagonal' })
 
 const definition = Style.define(components)
+css({
+  alignContent: 'space-between',
+  alignSelf: 'auto',
+  flexBasis: '25%',
+  order: -2,
+  overflow: ['hidden', 'clip!'],
+  overflowX: 'auto',
+  overflowY: 'scroll',
+})
+const flexTheme = Theme.define({
+  spacing: { basis: '60px' },
+  color: { brand: '#fff' },
+})
+flexTheme.css({ flexBasis: 'basis!' })
+Style.define({ item: { flexBasis: flexTheme.tokens.spacing.basis } })
+Config.create({ theme: flexTheme }).css({ flexBasis: ['auto', 'basis'] })
+// @ts-expect-error Root sizing has no token names.
+css({ flexBasis: 'basis' })
+// @ts-expect-error Flex basis cannot use color tokens.
+flexTheme.css({ flexBasis: flexTheme.tokens.color.brand })
+// @ts-expect-error Item alignment does not accept line-distribution keywords.
+css({ alignSelf: 'space-between' })
+// @ts-expect-error Overflow accepts only its standard scalar keywords.
+css({ overflow: 'none' })
+// @ts-expect-error Order is numeric, including its importance-string form.
+css({ order: '2' })
+// @ts-expect-error Sizing spellings remain checked through importance.
+css({ flexBasis: '0x10px!' })
 expectTypeOf(definition.styles[0]!.name).toEqualTypeOf<
   'card' | 'hidden' | 'label'
 >()

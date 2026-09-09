@@ -137,3 +137,7 @@ Benchmarks without timing samples are marked unavailable in reports and excluded
 ## Logical Boxes
 
 `Transform.bench.ts` includes 10/100 additional logical-box styles with mixed axes, token references, fallbacks, and importance. Timings cover extraction, emission, rewriting, and maps. Setup separately records minified CSS, bundled client JavaScript, map sizes, and combined raw/gzip/Brotli transfer under `bench/results/transform/logical-*.json`. Browser fixtures compare native logical CSS across writing modes and verify ordered physical/logical conflicts.
+
+## Flex Layout and Overflow
+
+`Transform.bench.ts` includes 10/100 additional flex styles with token sizing, integer order, alignment, and overflow fallbacks. Timings cover the complete source pipeline; setup records CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli delivery under `bench/results/transform/flex-*.json`. Browser fixtures compare native flex layout and distinguish clipping from scrolling.

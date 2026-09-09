@@ -20,6 +20,7 @@ export function accepts(
         'blockSize',
         'bottom',
         'columnGap',
+        'flexBasis',
         'gap',
         'height',
         'inlineSize',
@@ -155,6 +156,7 @@ export type Properties<group extends Group> = group extends 'spacing'
       | `blockSize`
       | `bottom`
       | `columnGap`
+      | `flexBasis`
       | `gap`
       | `height`
       | `inlineSize`

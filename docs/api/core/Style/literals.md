@@ -18,17 +18,18 @@ styles.styles[0]?.declarations
 
 The property surface is intentionally finite. No catch-all string index permits misspelled properties. The exact enum members and property list live together in `src/internal/Literal.ts`; the public `Style.Properties` type derives from that list.
 
-| Group       | Supported Properties                                                                                                                                    |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Layout      | `display`, `position`, `boxSizing`, `flexDirection`, `flexWrap`, `alignItems`, `justifyContent`, `gap`, `rowGap`, `columnGap`, `flexGrow`, `flexShrink` |
-| Spacing     | `padding`, `margin`, and their physical top/right/bottom/left and logical block/inline start/end longhands                                              |
-| Sizing      | `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, plus `inlineSize`, `blockSize`, and their `min`/`max` forms                        |
-| Colors      | `color`, `backgroundColor`, `borderColor`                                                                                                               |
-| Borders     | `borderWidth`, `borderStyle`, `borderRadius`                                                                                                            |
-| Typography  | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`                                                                                        |
-| Positioning | `inset`, `insetBlock`, `insetInline`, their start/end longhands, and `top`, `right`, `bottom`, `left`                                                   |
-| Writing     | `direction` (`ltr`, `rtl`), `writingMode` (`horizontal-tb`, `vertical-lr`, `vertical-rl`)                                                               |
-| Other       | `opacity`                                                                                                                                               |
+| Group       | Supported Properties                                                                                                                                                                                       |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Layout      | `display`, `position`, `boxSizing`, `flexDirection`, `flexWrap`, `alignItems`, `justifyContent`, `gap`, `rowGap`, `columnGap`, `flexGrow`, `flexShrink`, `flexBasis`, `order`, `alignSelf`, `alignContent` |
+| Spacing     | `padding`, `margin`, and their physical top/right/bottom/left and logical block/inline start/end longhands                                                                                                 |
+| Sizing      | `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, plus `inlineSize`, `blockSize`, and their `min`/`max` forms                                                                           |
+| Colors      | `color`, `backgroundColor`, `borderColor`                                                                                                                                                                  |
+| Borders     | `borderWidth`, `borderStyle`, `borderRadius`                                                                                                                                                               |
+| Typography  | `fontSize`, `fontWeight`, `fontStyle`, `lineHeight`, `textAlign`                                                                                                                                           |
+| Positioning | `inset`, `insetBlock`, `insetInline`, their start/end longhands, and `top`, `right`, `bottom`, `left`                                                                                                      |
+| Writing     | `direction` (`ltr`, `rtl`), `writingMode` (`horizontal-tb`, `vertical-lr`, `vertical-rl`)                                                                                                                  |
+| Overflow    | `overflow`, `overflowX`, `overflowY`                                                                                                                                                                       |
+| Other       | `opacity`                                                                                                                                                                                                  |
 
 - **Lengths:** finite absolute, font-relative, viewport-relative, and container-relative lengths, percentages, or numeric zero. Border width excludes percentages.
 - **Margins:** allow negative lengths. Margins, inset offsets, and width/height/inlineSize/blockSize also accept `auto`. Offsets accept negative lengths.
@@ -73,6 +74,23 @@ const panel = css({
 ```
 
 Container units can refer to containment established by ordinary CSS. Zyzz does not yet author containment declarations or container conditions. Browser support for newer units depends on the deployment target; ordered fallback declarations can retain an older unit. Native unit conversion remains unimplemented.
+
+## Flex and Overflow
+
+```ts
+const row = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignContent: 'space-between',
+  overflow: 'hidden',
+  overflowY: 'auto',
+})
+const item = css({ flexBasis: '12rem', alignSelf: 'center', order: -1 })
+```
+
+[Flex basis](https://www.w3.org/TR/css-flexbox-1/#flex-basis-property) accepts nonnegative lengths, percentages, zero, or `auto`, including spacing tokens in bound styles. `order` accepts safe integers; fractional values fail validation. Visual ordering does not change DOM or keyboard order. Intrinsic sizing keywords and the multi-value `flex` shorthand remain deferred.
+
+[Overflow](https://www.w3.org/TR/css-overflow-3/#overflow-properties) accepts `auto`, `clip`, `hidden`, `scroll`, or `visible`. The scalar shorthand sets both axes; later longhands retain precedence, including mixed importance. Arrays remain declaration fallbacks. The browser owns axis coupling and scrolling behavior; `clip` does not create a scroll container.
 
 ## Logical Boxes
 
@@ -141,7 +159,7 @@ const { classes, css, themes } = Css.compile({ styles })
 Compilation is pure. Sharing follows property overlap:
 
 - **Independent properties:** each forms its own domain.
-- **Overlapping properties:** padding, margin, inset, and gap group with their supported longhands. Logical sizes group with both physical axes of the corresponding size/minimum/maximum family when present.
+- **Overlapping properties:** padding, margin, inset, overflow, and gap group with their supported longhands. Logical sizes group with both physical axes of the corresponding size/minimum/maximum family when present.
 - **Shared domains:** every participating style must have identical ordered declarations.
 
 Conflicting domains retain distinct rules, including repeated A/B/A overrides.

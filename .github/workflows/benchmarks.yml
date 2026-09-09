@@ -19,7 +19,7 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - name: Clone main baseline
+      - name: Clone comparison baseline
         if: github.event_name != 'push'
         uses: actions/checkout@v4
         with:
@@ -27,7 +27,7 @@ jobs:
       - name: Install baseline dependencies
         if: github.event_name != 'push'
         uses: ./.github/actions/install-dependencies
-      - name: Benchmark main on this runner
+      - name: Benchmark baseline on this runner
         if: github.event_name != 'push'
         id: baseline
         run: |
@@ -60,6 +60,16 @@ jobs:
       - name: Summarize benchmarks
         run: |
           printf '## Benchmarks\n\n[Workflow run](%s/%s/actions/runs/%s)\n\nZyzz uses its in-memory literal compiler with independent composition for these separate component applications; source extraction and runtime composition are excluded. Ordered class combinations are tested separately.\n\n## Compiler Comparisons\n\nSizes are bytes. Total gzip includes CSS + required client JavaScript. Literal comparisons use shared Lightning CSS final processing (Chrome 120, Firefox 128, Safari 17); upstream compiler processing differs.\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > bench/results/report.md
+          jq '
+            .files |= map(.groups |= map(.benchmarks |= map(select(
+              (.mean | type) == "number" and (.rme | type) == "number" and .sampleCount > 0
+            ))))
+          ' bench/results/timings.json > bench/results/timings-measured.json
+          jq -r '
+            .files[].groups[] | . as $group | .benchmarks[] |
+            select((.mean | type) != "number" or (.rme | type) != "number" or (.sampleCount // 0) <= 0) |
+            "Unavailable timing (no samples): " + $group.fullName + " / " + .name + "\n"
+          ' bench/results/timings.json >> bench/results/report.md
           for workload in small repeated unique partial palette independent sparse components; do
             case "$workload" in
               small) title='3 Components' ;;
@@ -72,7 +82,7 @@ jobs:
               components) title='60 Components — Mixed Shapes' ;;
             esac
             printf '\n### %s\n\n| Library | Build (ms) | CSS gzip | Total gzip |\n| --- | ---: | ---: | ---: |\n' "$title" >> bench/results/report.md
-            jq -rs --arg workload "$workload" --slurpfile timings bench/results/timings.json '
+            jq -rs --arg workload "$workload" --slurpfile timings bench/results/timings-measured.json '
               sort_by(.library)[] as $size |
               $timings[0].files[].groups[] | select(.fullName | endswith(" / " + $workload)) |
               .benchmarks[] | select(.name == $size.library) |
@@ -81,7 +91,7 @@ jobs:
               "| " + (map(tostring) | join(" | ")) + " |"
             ' bench/results/"$workload"/*.json >> bench/results/report.md
             printf '\n<details>\n<summary>Full Measurements</summary>\n\n| Library | Error (±%%) | Samples | CSS raw | CSS Brotli | JS gzip |\n| --- | ---: | ---: | ---: | ---: | ---: |\n' >> bench/results/report.md
-            jq -rs --arg workload "$workload" --slurpfile timings bench/results/timings.json '
+            jq -rs --arg workload "$workload" --slurpfile timings bench/results/timings-measured.json '
               sort_by(.library)[] as $size |
               $timings[0].files[].groups[] | select(.fullName | endswith(" / " + $workload)) |
               .benchmarks[] | select(.name == $size.library) |
@@ -94,7 +104,7 @@ jobs:
           printf '\n## Theme Comparisons\n\nTwo compatible scopes, light/dark values, and independent components. Theme CSS uses shared final minification targeting native light-dark support (Chrome 123, Firefox 128, Safari 17.5). Total delivery includes CSS and actual component/scope JavaScript exports. zyzz starts from validated references; zyzz-tokens includes shorthand validation and resolution before the same emission and bundling. Neither Zyzz lane includes source parsing. Other compiler boundaries are documented in bench/README.md.\n' >> bench/results/report.md
           for count in 10 100; do
             printf '\n### %s Components\n\n| Library | Build (ms) | CSS gzip | JS gzip | Total gzip |\n| --- | ---: | ---: | ---: | ---: |\n' "$count" >> bench/results/report.md
-            jq -rs --arg count "$count" --slurpfile timings bench/results/timings.json '
+            jq -rs --arg count "$count" --slurpfile timings bench/results/timings-measured.json '
               sort_by(.library)[] as $size |
               $timings[0].files[].groups[] | select(.fullName | endswith("theme comparison / " + $count + " styles")) |
               .benchmarks[] | select(.name == $size.library) |
@@ -102,7 +112,7 @@ jobs:
               "| " + (map(tostring) | join(" | ")) + " |"
             ' bench/results/theme-comparison/"$count"/*.json >> bench/results/report.md
             printf '\n<details>\n<summary>Full Measurements</summary>\n\n| Library | Error (±%%) | Samples | CSS raw | CSS Brotli | JS raw | JS Brotli | Total raw | Total Brotli |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n' >> bench/results/report.md
-            jq -rs --arg count "$count" --slurpfile timings bench/results/timings.json '
+            jq -rs --arg count "$count" --slurpfile timings bench/results/timings-measured.json '
               sort_by(.library)[] as $size |
               $timings[0].files[].groups[] | select(.fullName | endswith("theme comparison / " + $count + " styles")) |
               .benchmarks[] | select(.name == $size.library) |
@@ -117,7 +127,7 @@ jobs:
             . as $group | .benchmarks[] |
             [($group.fullName | split(" / ") | last), ((.mean * 1000 | round) / 1000), ((.rme * 100 | round) / 100), .sampleCount] |
             "| " + (map(tostring) | join(" | ")) + " |"
-          ' bench/results/timings.json >> bench/results/report.md
+          ' bench/results/timings-measured.json >> bench/results/report.md
           printf '\n## Module Transforms\n\nOrdered source compilation, rewriting, and maps. Final minification and browser bundling are outside timing; sizes include the bundled callable runtime. Local themes include literal token extraction, resolution, and two scalar scopes.\n' >> bench/results/report.md
           for kind in literal theme alias tokens; do
             case "$kind" in
@@ -127,7 +137,7 @@ jobs:
               tokens) title='Explicit Theme Tokens'; group='theme token transform' ;;
             esac
             printf '\n### %s\n\n| Styles | Time (ms) | CSS gzip | JS gzip | Total gzip |\n| --- | ---: | ---: | ---: | ---: |\n' "$title" >> bench/results/report.md
-            jq -rs --arg kind "$kind" --arg group "$group" --slurpfile timings bench/results/timings.json '
+            jq -rs --arg kind "$kind" --arg group "$group" --slurpfile timings bench/results/timings-measured.json '
               sort_by(.count)[] | select(.kind == $kind) | . as $size |
               $timings[0].files[].groups[] | select(.fullName | endswith($group + " / " + ($size.count | tostring) + " styles")) |
               .benchmarks[] |
@@ -140,15 +150,15 @@ jobs:
             .files[].groups[] | select(.fullName | contains("static props binding")) | .benchmarks[] |
             [.name, (.mean * 1000000 | round), ((.rme * 100 | round) / 100), .sampleCount] |
             "| " + (map(tostring) | join(" | ")) + " |"
-          ' bench/results/timings.json >> bench/results/report.md
+          ' bench/results/timings-measured.json >> bench/results/report.md
           printf '\n## File Host — 100 Styles\n\nCold process includes startup; watch edits include the source write through artifact publication.\n\n| Operation | Time (ms) | Error (±%%) | Samples |\n| --- | ---: | ---: | ---: |\n' >> bench/results/report.md
           jq -r '
             .files[].groups[] | select(.fullName | contains("file host / ")) | .benchmarks[] |
             [.name, ((.mean * 1000 | round) / 1000), ((.rme * 100 | round) / 100), .sampleCount] |
             "| " + (map(tostring) | join(" | ")) + " |"
-          ' bench/results/timings.json >> bench/results/report.md
+          ' bench/results/timings-measured.json >> bench/results/report.md
           printf '\n## Theme Compilation\n\nIn-memory emission with two scopes and light/dark pairs; no source rewriting or client bundling. Sizes are emitted CSS before final minification.\n\n| Styles | Time (ms) | CSS raw | CSS gzip | CSS Brotli |\n| --- | ---: | ---: | ---: | ---: |\n' >> bench/results/report.md
-          jq -r --slurpfile timings bench/results/timings.json '
+          jq -r --slurpfile timings bench/results/timings-measured.json '
             . as $size |
             $timings[0].files[].groups[] | select(.fullName | endswith("theme compilation / " + ($size.count | tostring) + " styles")) |
             .benchmarks[] |

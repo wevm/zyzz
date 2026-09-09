@@ -8,6 +8,7 @@ import * as Path from 'node:path'
 import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
+import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Compilation from '../../bench/Compilation.js'
 
 for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
@@ -92,3 +93,22 @@ for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
       )
     })
   }
+
+for (const count of [10, 100]) {
+  const source =
+    Declarations.source +
+    Array.from(
+      { length: count },
+      (_, index) =>
+        `export const fallback${index} = css({color:['#000','brand!'],padding:['0px','${index}px']})();`,
+    ).join('\n')
+  describe(`fallback transform / ${count} additional styles`, () => {
+    bench(
+      'extract + emit + rewrite + maps',
+      () => {
+        Transform.compile({ moduleId: 'example/fallbacks.ts', source })
+      },
+      { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
+    )
+  })
+}

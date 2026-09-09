@@ -37,7 +37,15 @@ export function compile<
   const prepared = options.styles.styles.map((style) => {
     const declarations: string[] = []
     const domains = new Map<string, string[]>()
-    for (const { property, value: input } of style.declarations) {
+    for (const { important, property, value: input } of style.declarations) {
+      if (important !== undefined && typeof important !== 'boolean') {
+        diagnostics.push({
+          code: 'invalid_declaration',
+          message: 'Declaration importance must be boolean.',
+          path: [style.name, property],
+        })
+        continue
+      }
       const token = Token.is(input)
       let value: number | string
       try {
@@ -60,10 +68,11 @@ export function compile<
         })
         continue
       }
-      let values = cache.get(property)
+      const key = `${important ? 1 : 0}:${property}`
+      let values = cache.get(key)
       if (!values) {
         values = new Map()
-        cache.set(property, values)
+        cache.set(key, values)
       }
       let entry = values.get(value)
       if (!entry) {
@@ -75,7 +84,7 @@ export function compile<
         entry = {
           declaration: message
             ? ''
-            : `${property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value};`,
+            : `${property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}${important ? '!important' : ''};`,
           domain: property.startsWith('margin')
             ? 'margin'
             : property.startsWith('padding')

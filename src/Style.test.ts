@@ -579,8 +579,8 @@ describe('define', () => {
       { color: 'blue.700' },
       { fontWeight: 0 },
       { padding: undefined },
-      { display: ['block', 'grid'] },
-      { color: '#fff!' },
+      { display: { fallback: 'block' } },
+      { color: '#fff!!' },
       { width: 'calc(100% - 1rem)' },
       { padding: { token: 'sm' } },
     ]

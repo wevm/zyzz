@@ -4,6 +4,7 @@
  */
 import * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
+import * as Value from './internal/Value.js'
 import type * as Theme from './Theme.js'
 type Exact<
   styles extends Record<string, unknown>,
@@ -21,6 +22,8 @@ type Keys<value> = value extends unknown ? keyof value : never
 
 /** A validated declaration; order is significant for future cascade processing. */
 export type Declaration = {
+  /** Whether this declaration overrides normal declarations in the cascade. */
+  readonly important?: boolean | undefined
   /** Supported CSS property in camelCase. */
   readonly property: keyof Properties
   /** Validated primitive or immutable, domain-checked theme reference. */
@@ -140,22 +143,62 @@ export function define(
         continue
       }
       const key = property as keyof Properties
-      const value = options.theme
-        ? Token.resolve(input, { property: key, theme: options.theme })
-        : input
-      const message = Token.is(value)
-        ? Token.accepts(value.group, key)
-          ? undefined
-          : 'Token group is incompatible with this property.'
-        : Literal.validate(key, value)
-      if (message) report('invalid_value', [name, property], message)
-      else
-        declarations.push(
-          Object.freeze({
-            property: key,
-            value: value as number | string | Token.Reference,
-          }),
-        )
+      const inputs: unknown[] = []
+      if (Array.isArray(input)) {
+        if (!input.length) {
+          report(
+            'invalid_value',
+            [name, property],
+            'Fallback arrays must be nonempty.',
+          )
+          continue
+        }
+        for (let index = 0; index < input.length; index++) {
+          const descriptor = Object.getOwnPropertyDescriptor(
+            input,
+            String(index),
+          )
+          if (!descriptor || !('value' in descriptor)) {
+            report(
+              'invalid_structure',
+              [name, property, String(index)],
+              'Fallback arrays require dense data entries without accessors.',
+            )
+            continue
+          }
+          inputs.push(descriptor.value)
+        }
+        if (inputs.length !== input.length) continue
+      } else inputs.push(input)
+      for (const [index, entry] of inputs.entries()) {
+        const parsed = Value.parse(entry, key)
+        const scalar = parsed ? parsed.value : entry
+        const resolved = options.theme
+          ? Token.resolve(scalar, { property: key, theme: options.theme })
+          : scalar
+        const value = parsed && resolved === '0' ? 0 : resolved
+        const message = Token.is(value)
+          ? Token.accepts(value.group, key)
+            ? undefined
+            : 'Token group is incompatible with this property.'
+          : Literal.validate(key, value)
+        if (message)
+          report(
+            'invalid_value',
+            Array.isArray(input)
+              ? [name, property, String(index)]
+              : [name, property],
+            message,
+          )
+        else
+          declarations.push(
+            Object.freeze({
+              ...(parsed?.important ? { important: true } : {}),
+              property: key,
+              value: value as number | string | Token.Reference,
+            }),
+          )
+      }
     }
     output.push(
       Object.freeze({ declarations: Object.freeze(declarations), name }),
@@ -221,7 +264,11 @@ export class InvalidError extends Error {
 }
 
 /** Supported primitive CSS declarations without theme references. */
-export type LiteralProperties = Literal.Properties
+export type LiteralProperties = {
+  readonly [property in keyof Literal.Properties]: Value.Input<
+    Literal.Properties[property]
+  >
+}
 
 /** A named group of ordered declarations. */
 export type NamedStyle<name extends string = string> = {
@@ -233,7 +280,7 @@ export type NamedStyle<name extends string = string> = {
 
 /** Supported literal and token declarations. Unknown properties and undefined values are rejected. */
 export type Properties<tokens extends Theme.Tokens = {}> = {
-  readonly [property in keyof Literal.Properties]:
+  readonly [property in keyof Literal.Properties]: Value.Input<
     | Literal.Properties[property]
     | Token.Names<tokens, property>
     | {
@@ -241,6 +288,7 @@ export type Properties<tokens extends Theme.Tokens = {}> = {
           ? Token.Reference<group>
           : never
       }[Token.Group]
+  >
 }
 
 /** A source span optionally attached to a diagnostic by a caller. */

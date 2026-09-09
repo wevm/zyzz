@@ -715,6 +715,27 @@ export function collect(program: Ast.Program, options: collect.Options) {
           target = ancestor
         else break
       }
+      const valueTarget = target
+      const array = ancestors[index]
+      if (
+        array?.type === 'ArrayExpression' &&
+        array.elements.includes(target as Ast.Expression)
+      ) {
+        target = array
+        index--
+        for (; index >= 0; index--) {
+          const ancestor = ancestors[index]!
+          if (
+            (ancestor.type === 'TSAsExpression' ||
+              ancestor.type === 'TSSatisfiesExpression' ||
+              ancestor.type === 'TSNonNullExpression' ||
+              ancestor.type === 'TSTypeAssertion') &&
+            ancestor.expression === target
+          )
+            target = ancestor
+          else break
+        }
+      }
       const property = ancestors[index]
       const object = ancestors[index - 1]
       let argument: Ast.Node | undefined = object
@@ -742,7 +763,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
           'Token references must be direct property values in bound theme css calls.',
           target,
         )
-      tokens.set(target.start, { end: target.end, reference })
+      tokens.set(valueTarget.start, { end: valueTarget.end, reference })
       return true
     }
     if (

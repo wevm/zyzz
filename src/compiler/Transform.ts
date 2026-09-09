@@ -2,6 +2,7 @@
  * Rewrites extracted style calls into executable modules with CSS and source maps.
  * @module
  */
+import * as Expression from './internal/Expression.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import type * as Ast from '@oxc-project/types'
 import MagicString from 'magic-string'
@@ -346,6 +347,12 @@ export function compile(options: compile.Options): compile.ReturnType {
       const body = rule.slice(brace)
       const style = styles.get(call.name)!
       const properties = definitions.get(call.start)!.properties
+      const fallbacks = properties.some(
+        (property) =>
+          property.type === 'Property' &&
+          Expression.unwrap(property.value).type === 'ArrayExpression',
+      )
+      const occurrences = new Map<string, number>()
       let cursor = 1
       for (
         let propertyIndex = 0;
@@ -357,11 +364,31 @@ export function compile(options: compile.Options): compile.ReturnType {
         const start = body.indexOf(text, cursor)
         if (start < 0) continue
 
-        const property = properties[propertyIndex]!
+        const property = fallbacks
+          ? properties.find(
+              (property) =>
+                property.type === 'Property' &&
+                (property.key.type === 'Identifier'
+                  ? property.key.name
+                  : property.key.type === 'Literal'
+                    ? property.key.value
+                    : undefined) === declaration.property,
+            )!
+          : properties[propertyIndex]!
+        const occurrence = occurrences.get(declaration.property) ?? 0
+        occurrences.set(declaration.property, occurrence + 1)
+        const value =
+          property.type === 'Property'
+            ? Expression.unwrap(property.value)
+            : undefined
+        const location =
+          value?.type === 'ArrayExpression'
+            ? value.elements[occurrence]!
+            : property
         Mapping.addMapping(cssMap, {
           generated: { column: selector.length + start, line },
           name: declaration.property,
-          original: position(property.start),
+          original: position(location.start),
           source: options.moduleId,
         })
         cursor = start + text.length

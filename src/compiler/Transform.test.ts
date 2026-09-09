@@ -11,10 +11,154 @@ import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
+import * as Declarations from '../../test/fixtures/Declarations.js'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('compile', () => {
+  test('important zero shorthands retain token identity before literal coercion', () => {
+    const output = Transform.compile({
+      moduleId: 'zero.ts',
+      source: `import { Theme, css } from 'zyzz';
+const theme = Theme.define({spacing:{0:'8px'}});
+export const token = theme.css({padding:'0!'})();
+export const literal = css({padding:'0!'})();
+export const plain = theme.css({padding:0})();`,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-1s1gwcevjtf8w-theme{--z-t1s1gwcevjtf8w-theme-spacing_2e_0:8px;}
+      .z-style-1s1gwcevjtf8w-105{padding:var(--z-t1s1gwcevjtf8w-theme-spacing_2e_0,8px)!important;}
+      .z-style-1s1gwcevjtf8w-157{padding:0!important;}
+      .z-style-1s1gwcevjtf8w-201{padding:0;}"
+    `)
+  })
+
+  test('asserted fallback arrays retain token references and entry source maps', () => {
+    const output = Transform.compile({
+      moduleId: 'assertions.ts',
+      source: `import { Theme } from 'zyzz';
+const theme = Theme.define({color:{brand:'#06c'}});
+export const props = theme.css({
+  display: ['block','flex'] as const,
+  color: ((['#000',theme.tokens.color.brand] as const) satisfies readonly unknown[])!,
+})();`,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-color_2e_brand:#06c;}
+      .z-1jvt0134f5zz3-base0{display:block;display:flex;color:#000;color:var(--z-t1jvt0134f5zz3-theme-color_2e_brand,#06c);}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) => line.includes('color:var('))
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('color:var('),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 19,
+        "line": 5,
+        "name": "color",
+        "source": "assertions.ts",
+      }
+    `)
+  })
+
+  test('importance syntax cannot collide with theme token names', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/reserved.ts',
+        source: `import { Theme } from 'zyzz';
+const theme = Theme.define({spacing:{md:'4px','md!':'8px'}});
+export const props = theme.css({padding:'md!'})();`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/reserved.ts:44: ["spacing","md!"]: Token keys cannot contain !; it is reserved for declaration importance.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/reserved-config.ts',
+        source: `import { Config } from 'zyzz';
+const zyzz = Config.create({theme:{spacing:{'nested!':{md:'8px'}}}});
+export const props = zyzz.css({padding:'nested!.md'})();`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/reserved-config.ts:44: ["spacing","nested!"]: Token keys cannot contain !; it is reserved for declaration importance.]`,
+    )
+  })
+
+  test('fallback declarations retain importance, token identity, and element source maps', () => {
+    const output = Transform.compile({
+      moduleId: 'example/fallbacks.ts',
+      source: Declarations.source,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z_theme-1ne2r2w17wkfe-theme{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#06c;}
+      .z_theme-1ne2r2w17wkfe-mint{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#175;}
+      .z-1ne2r2w17wkfe-base0{display:block;display:flex;opacity:0.25!important;opacity:0.75;}
+      .z-style-1ne2r2w17wkfe-183{color:#000;color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c);color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c)!important;padding:4px!important;padding:8px;padding-left:12px;}
+      .z-style-1ne2r2w17wkfe-390{color:#fff;padding:20px;}"
+    `)
+    const lines = output.css.split('\n')
+    const line = lines.findIndex((line) => line.includes('color:var('))
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: line + 1,
+        column: lines[line]!.indexOf('color:var('),
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 18,
+        "line": 6,
+        "name": "color",
+        "source": "example/fallbacks.ts",
+      }
+    `)
+  })
+
+  test('fallback order and importance select browser styles with inherited tokens', async () => {
+    const output = Transform.compile({
+      moduleId: 'example/fallbacks.ts',
+      source: Declarations.source,
+    })
+    const js = await Esbuild.transform(output.code, {
+      loader: 'ts',
+      format: 'esm',
+    })
+    const module = await import(
+      `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><main class="${module.scope}"><div id="card" class="${module.props.className} ${module.later.className}"></div></main>`,
+      )
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).opacity),
+      ).toMatchInlineSnapshot(`"0.25"`)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).paddingLeft),
+      ).toMatchInlineSnapshot(`"4px"`)
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((element) => getComputedStyle(element).display),
+      ).toMatchInlineSnapshot(`"flex"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('explicit token paths compile through bound aliases with defining fallbacks', async () => {
     const result = Transform.compile({
       moduleId: 'example/tokens.ts',

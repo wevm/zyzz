@@ -131,3 +131,5 @@ Custom target profiles must retain native `light-dark()`. Fixture creation rejec
 `src/compiler/Graph.bench.ts` includes 10/100-style consumers compiled from serialized library contracts. Timings include JSON validation, linking, extraction, CSS emission, rewriting, and maps; package building and filesystem resolution are outside this lane. Existing source-graph timings now include contract serialization.
 
 Contract sidecars are compiler inputs, not client JavaScript. Imported contracts retain complete token scopes so app extensions can style independently compiled library components. This can retain more CSS than closed-graph token liveness; report that cost separately from metadata download size.
+
+Benchmarks without timing samples are marked unavailable in reports and excluded from timing-action input. Their absence does not become a zero-duration result or suppress valid framework/size measurements. Pull requests compare with their base commit, including stacked PRs.

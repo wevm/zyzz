@@ -54,6 +54,7 @@ export type Time = `${number}${'ms' | 's'}`
 type Rule = { readonly list?: true } & (
   | {
       readonly auto: boolean
+      readonly axes?: true
       readonly fraction?: boolean
       readonly items?: 2 | 4
       readonly keywords?: readonly string[]
@@ -62,11 +63,13 @@ type Rule = { readonly list?: true } & (
       readonly percentage?: boolean
     }
   | {
+      readonly items?: 2 | 4
       readonly keywords?: readonly string[]
       readonly kind: 'color'
     }
   | {
       readonly easing?: true
+      readonly items?: 2 | 4
       readonly kind: 'enum'
       readonly values: readonly string[]
     }
@@ -95,6 +98,16 @@ type LengthValue<rule extends Rule> =
 
 type Value<rule extends Rule> =
   | Scalar<rule>
+  | (rule extends { items: number; kind: 'color' }
+      ? `${Color} ${string}`
+      : rule extends {
+            items: number
+            kind: 'enum'
+            values: readonly (infer keyword)[]
+          }
+        ? `${Extract<keyword, string>} ${string}`
+        : never)
+  | (rule extends { axes: true } ? `${Length}/${string}` : never)
   | (rule extends { list: true }
       ? `${Extract<Exclude<Scalar<rule>, Global>, string | number>},${string}`
       : never)
@@ -616,50 +629,58 @@ export const rules = {
   },
   backgroundSize: { ...length, auto: true, keywords: ['contain', 'cover'] },
   blockSize: size,
-  borderBlockColor: color,
+  borderBlockColor: { ...color, items: 2 },
   borderBlockEndColor: color,
   borderBlockEndStyle: border,
-  borderBlockEndWidth: stroke,
+  borderBlockEndWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
   borderBlockStartColor: color,
   borderBlockStartStyle: border,
-  borderBlockStartWidth: stroke,
-  borderBlockStyle: border,
-  borderBlockWidth: { ...stroke, items: 2 },
+  borderBlockStartWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
+  borderBlockStyle: { ...border, items: 2 },
+  borderBlockWidth: {
+    ...stroke,
+    items: 2,
+    keywords: ['medium', 'thick', 'thin'],
+  },
   borderBottomColor: color,
-  borderBottomLeftRadius: length,
-  borderBottomRightRadius: length,
+  borderBottomLeftRadius: { ...length, items: 2 },
+  borderBottomRightRadius: { ...length, items: 2 },
   borderBottomStyle: border,
-  borderBottomWidth: stroke,
+  borderBottomWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
   borderCollapse: { kind: 'enum', values: ['collapse', 'separate'] },
-  borderColor: color,
-  borderEndEndRadius: length,
-  borderEndStartRadius: length,
-  borderInlineColor: color,
+  borderColor: { ...color, items: 4 },
+  borderEndEndRadius: { ...length, items: 2 },
+  borderEndStartRadius: { ...length, items: 2 },
+  borderInlineColor: { ...color, items: 2 },
   borderInlineEndColor: color,
   borderInlineEndStyle: border,
-  borderInlineEndWidth: stroke,
+  borderInlineEndWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
   borderInlineStartColor: color,
   borderInlineStartStyle: border,
-  borderInlineStartWidth: stroke,
-  borderInlineStyle: border,
-  borderInlineWidth: { ...stroke, items: 2 },
+  borderInlineStartWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
+  borderInlineStyle: { ...border, items: 2 },
+  borderInlineWidth: {
+    ...stroke,
+    items: 2,
+    keywords: ['medium', 'thick', 'thin'],
+  },
   borderLeftColor: color,
   borderLeftStyle: border,
-  borderLeftWidth: stroke,
-  borderRadius: length,
+  borderLeftWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
+  borderRadius: { ...length, axes: true, items: 4 },
   borderRightColor: color,
   borderRightStyle: border,
-  borderRightWidth: stroke,
+  borderRightWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
   borderSpacing: stroke,
-  borderStartEndRadius: length,
-  borderStartStartRadius: length,
-  borderStyle: border,
+  borderStartEndRadius: { ...length, items: 2 },
+  borderStartStartRadius: { ...length, items: 2 },
+  borderStyle: { ...border, items: 4 },
   borderTopColor: color,
-  borderTopLeftRadius: length,
-  borderTopRightRadius: length,
+  borderTopLeftRadius: { ...length, items: 2 },
+  borderTopRightRadius: { ...length, items: 2 },
   borderTopStyle: border,
-  borderTopWidth: stroke,
-  borderWidth: { ...stroke, items: 4 },
+  borderTopWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
+  borderWidth: { ...stroke, items: 4, keywords: ['medium', 'thick', 'thin'] },
   bottom: margin,
   boxDecorationBreak: { kind: 'enum', values: ['clone', 'slice'] },
   boxSizing: { kind: 'enum', values: ['border-box', 'content-box'] },
@@ -1108,7 +1129,7 @@ export const rules = {
       'solid',
     ],
   },
-  outlineWidth: stroke,
+  outlineWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
   overflow,
   overflowAnchor: { kind: 'enum', values: ['auto', 'none'] },
   overflowWrap: { kind: 'enum', values: ['anywhere', 'break-word', 'normal'] },
@@ -1584,6 +1605,41 @@ export function validate(
         if (error) return error
       }
       return undefined
+    }
+  }
+  if (
+    typeof value === 'string' &&
+    rule.kind === 'length' &&
+    rule.axes &&
+    value.includes('/')
+  ) {
+    const axes = value
+      .split('/')
+      .map((axis) => axis.replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, ''))
+    return axes.length === 2 &&
+      axes.every(
+        (axis) =>
+          axis &&
+          !globals.has(axis) &&
+          validate(property, axis === '0' ? 0 : axis) === undefined,
+      )
+      ? undefined
+      : 'Expected one to four nonnegative radii on each side of a single slash.'
+  }
+  if (
+    typeof value === 'string' &&
+    (rule.kind === 'color' || rule.kind === 'enum') &&
+    rule.items
+  ) {
+    const parts = Colors.list(value)
+    if (!parts || parts.length > rule.items)
+      return `Expected one to ${rule.items} valid space-separated values.`
+    if (parts.length > 1) {
+      return parts.every(
+        (part) => !globals.has(part) && validate(property, part) === undefined,
+      )
+        ? undefined
+        : `Expected one to ${rule.items} valid space-separated values.`
     }
   }
   if (rule.kind === 'enum')

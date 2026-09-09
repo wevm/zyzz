@@ -76,7 +76,7 @@ export async function create(
       const styles = stylex.create(${JSON.stringify(Object.fromEntries(styles.map((style, index) => [names[index], style])))});
       export const classes = [${names.map((name) => `stylex.props(styles.${name}).className`).join(',')}];`,
     tailwind: styles.map((style) =>
-      Object.entries(style)
+      Object.entries<unknown>(style)
         .map(([key, value]) => {
           if (typeof value !== 'string' && typeof value !== 'number')
             throw new Error('Comparison fixtures require scalar values.')

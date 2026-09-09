@@ -1017,3 +1017,26 @@ describe('css', () => {
     css({ color: 'rgb(0 0 0' })
   })
 })
+
+describe('css', () => {
+  test('supports border shorthand lists and elliptical radii', () => {
+    css({
+      borderBlockColor: 'red rgb(0 0 255)',
+      borderColor: 'red green blue gold',
+      borderInlineStyle: 'solid dashed',
+      borderRadius: ['10px/20%', '1px 2px / 3px 4px 5px 6px!'],
+      borderStyle: 'solid dashed dotted double',
+      borderTopLeftRadius: '10px 20%',
+      borderWidth: 'thin medium thick 2px',
+      outlineWidth: 'thin',
+    })
+    // @ts-expect-error Individual border color longhands take one color.
+    css({ borderLeftColor: 'red blue' })
+    // @ts-expect-error Individual border style longhands take one style.
+    css({ borderTopStyle: 'solid dashed' })
+    // @ts-expect-error Radius longhands use space-separated axes without a slash.
+    css({ borderTopLeftRadius: '10px/20px' })
+    // @ts-expect-error SVG stroke widths do not accept border width keywords.
+    css({ strokeWidth: 'thin' })
+  })
+})

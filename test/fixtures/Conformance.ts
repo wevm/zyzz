@@ -40,6 +40,11 @@ export function cases(): readonly Case[] {
     ]
     if (rule.kind === 'enum') {
       values.push(...rule.values)
+      if ('items' in rule)
+        values.push(
+          'solid dashed',
+          ...(rule.items === 4 ? ['solid dashed dotted double'] : []),
+        )
       if ('list' in rule) values.push(`${rule.values[0]}, ${rule.values[1]}`)
       if ('easing' in rule)
         values.push(
@@ -50,6 +55,11 @@ export function cases(): readonly Case[] {
         )
     }
     if (rule.kind === 'color') {
+      if ('items' in rule)
+        values.push(
+          'red rgb(0 0 255)',
+          ...(rule.items === 4 ? ['red green blue gold'] : []),
+        )
       if ('keywords' in rule) values.push(...rule.keywords)
       values.push(
         ...colors,
@@ -120,6 +130,7 @@ export function cases(): readonly Case[] {
         }
     }
     if (rule.kind === 'length') {
+      if ('axes' in rule) values.push('10px/20%', '1px 2px / 3px 4px 5px 6px')
       if ('items' in rule)
         values.push(
           '1px 2px',

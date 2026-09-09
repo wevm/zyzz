@@ -9,6 +9,7 @@ import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import * as Backgrounds from '../../test/fixtures/Backgrounds.js'
+import * as BorderLists from '../../test/fixtures/BorderLists.js'
 import * as Borders from '../../test/fixtures/Borders.js'
 import * as BoxLists from '../../test/fixtures/BoxLists.js'
 import * as Colors from '../../test/fixtures/Colors.js'
@@ -171,6 +172,12 @@ const workloads = {
       `export const bg${index} = css({backgroundPositionX:'${index}px',backgroundPositionY:'50%',backgroundSize:'cover',backgroundRepeat:'no-repeat',accentColor:'auto'})();`,
     source: Backgrounds.source,
     title: 'background',
+  },
+  borderLists: {
+    declaration: (index: number) =>
+      `export const borderList${index} = css({borderColor:'red rgb(0 128 0) blue gold',borderRadius:'${index}px 20px / 30px 40px'})();`,
+    source: BorderLists.source,
+    title: 'border list',
   },
   borders: {
     declaration: (index: number) =>

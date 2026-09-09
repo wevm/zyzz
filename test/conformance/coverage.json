@@ -4491,11 +4491,11 @@
       },
       "line-style": {
         "grammar": "9e23380c18b26af261d6623c2bb568b05c8bb7b1d7fea510bfadcf29fe83a758",
-        "status": "deferred"
+        "status": "partial"
       },
       "line-width": {
         "grammar": "a0eef4aae96203751c64cc12e548944fb60929a2a4f1e146d6e9ab025a294b65",
-        "status": "deferred"
+        "status": "partial"
       },
       "linear()": {
         "grammar": "dd462df66ff4c13642bd0d3b8537199301d53a4c1d109a7ef5b89815b55b328c",

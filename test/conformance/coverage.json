@@ -1891,15 +1891,15 @@
       },
       "grid-auto-columns": {
         "grammar": "86d669445e5769e444244b97e532726d9cd51ed34f5789d32296aa5799751673",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-auto-flow": {
         "grammar": "d544e6ca7469163175284a923514c3d54f525e9e1e1e7996a392c965453311cc",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-auto-rows": {
         "grammar": "2574eae0dddc9e703aa6dcc44adeb9bbca821857cd2b57fbf7cc77cffc395b23",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-column": {
         "grammar": "c9e70f2feaaeff55bd9fffc0f2d4eda2b088491eeb3744c6732a21a8cd7b4b09",
@@ -1907,7 +1907,7 @@
       },
       "grid-column-end": {
         "grammar": "1c920deb0a0e54b934851a02e52ed4efd01030b566fc66ad065f0daa66b77812",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-column-gap": {
         "grammar": "6a70b851aa48430f56d663492a95e7c119b2e633583f15cf9cb13f7aa1de1998",
@@ -1915,7 +1915,7 @@
       },
       "grid-column-start": {
         "grammar": "3459721b2b04076fa2e9bc6195815832d748ce5832f06aa3da23f25b0589dc4b",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-gap": {
         "grammar": "5b5a38af597536ca0f9376bc87ca1b3e0d3d1cfcca1dbe58c273186d26ee05e1",
@@ -1927,7 +1927,7 @@
       },
       "grid-row-end": {
         "grammar": "9b5679180e1af1b3a1a20e11e5cbffeefc701962eee1ce6a829fb059703b1eb0",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-row-gap": {
         "grammar": "1681fcbe8fab2700f78975c7f81bcad387d9f44d75f77671ba6682058f37b65b",
@@ -1935,7 +1935,7 @@
       },
       "grid-row-start": {
         "grammar": "349596ddaf68f72b0d16032f8734e740d587bc198a0a7929753ec1f10d74cc8a",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-template": {
         "grammar": "6962846050601f534139668de31058b54ccf3fcfe2c6cc6c550d4eac05436664",
@@ -1947,11 +1947,11 @@
       },
       "grid-template-columns": {
         "grammar": "78a16f05937454b9541f9da7eba6825552c0a4c45819e6f89390e5df6782a032",
-        "status": "deferred"
+        "status": "partial"
       },
       "grid-template-rows": {
         "grammar": "3f276c7b44ccb1066b7dc14c64abbc2223a1867da0b2f2c8d3dba4a7d0b52e9d",
-        "status": "deferred"
+        "status": "partial"
       },
       "hanging-punctuation": {
         "grammar": "c8ef3f224caeee55fcabeb0af5fb5c1af4f04904fb563d7f68881df59c537ac5",

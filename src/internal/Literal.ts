@@ -3,7 +3,7 @@
  * @module
  */
 /** Refines inferred dimension strings where TypeScript's number template is broader than CSS. */
-export type Checked<value> = value extends Length | Time
+export type Checked<value> = value extends Fraction | Length | Time
   ? value extends
       | `${'0x' | '0X' | '0b' | '0B' | '0o' | '0O'}${string}`
       | `${string}${' ' | '\n' | '\r' | '\t' | '\f'}${string}`
@@ -18,6 +18,9 @@ export type Color =
   | 'transparent'
   | 'white'
   | `#${string}`
+
+/** Flexible grid track dimensions. */
+export type Fraction = `${number}fr`
 
 /** CSS-wide keywords accepted by every supported property. */
 export type Global = 'inherit' | 'initial' | 'revert-layer' | 'revert' | 'unset'
@@ -35,6 +38,7 @@ export type Time = `${number}${'ms' | 's'}`
 type Rule =
   | {
       readonly auto: boolean
+      readonly fraction?: boolean
       readonly keywords?: readonly string[]
       readonly kind: 'length'
       readonly negative: boolean
@@ -48,6 +52,7 @@ type Rule =
       readonly kind: 'enum'
       readonly values: readonly string[]
     }
+  | { readonly kind: 'grid-line' }
   | {
       readonly integer?: boolean
       readonly keywords?: readonly string[]
@@ -67,6 +72,7 @@ type Value<rule extends Rule> =
     }
       ?
           | (auto extends true ? 'auto' : never)
+          | (rule extends { fraction: true } ? Fraction : never)
           | (rule extends { keywords: readonly (infer keyword)[] }
               ? keyword
               : never)
@@ -86,17 +92,19 @@ type Value<rule extends Rule> =
               values: readonly (infer value)[]
             }
           ? value
-          : rule extends { kind: 'time' }
-            ?
-                | Time
-                | (rule extends { keywords: readonly (infer keyword)[] }
-                    ? keyword
-                    : never)
-            :
-                | Color
-                | (rule extends { keywords: readonly (infer keyword)[] }
-                    ? keyword
-                    : never))
+          : rule extends { kind: 'grid-line' }
+            ? number | 'auto' | `span ${bigint}`
+            : rule extends { kind: 'time' }
+              ?
+                  | Time
+                  | (rule extends { keywords: readonly (infer keyword)[] }
+                      ? keyword
+                      : never)
+              :
+                  | Color
+                  | (rule extends { keywords: readonly (infer keyword)[] }
+                      ? keyword
+                      : never))
   | Global
 const blend = {
   kind: 'enum',
@@ -245,6 +253,13 @@ const textSpacing = {
   ...stroke,
   keywords: ['normal'],
   negative: true,
+} as const
+
+const track = {
+  ...length,
+  auto: true,
+  fraction: true,
+  keywords: ['max-content', 'min-content'],
 } as const
 
 /** Single source of truth for the supported literal properties and domains. */
@@ -621,6 +636,32 @@ export const rules = {
     values: ['auto', 'none', 'preserve-parent-color'],
   },
   gap: length,
+  gridAutoColumns: track,
+  gridAutoFlow: {
+    kind: 'enum',
+    values: [
+      'column',
+      'column dense',
+      'dense',
+      'dense column',
+      'dense row',
+      'row',
+      'row dense',
+    ],
+  },
+  gridAutoRows: track,
+  gridColumnEnd: { kind: 'grid-line' },
+  gridColumnStart: { kind: 'grid-line' },
+  gridRowEnd: { kind: 'grid-line' },
+  gridRowStart: { kind: 'grid-line' },
+  gridTemplateColumns: {
+    ...track,
+    keywords: ['max-content', 'min-content', 'none', 'subgrid'],
+  },
+  gridTemplateRows: {
+    ...track,
+    keywords: ['max-content', 'min-content', 'none', 'subgrid'],
+  },
   height: size,
   hyphens: { kind: 'enum', values: ['auto', 'manual', 'none'] },
   inlineSize: size,
@@ -1038,6 +1079,16 @@ export function validate(
       }
       return `Expected a finite ${rule.integer ? 'integer' : 'number'} from ${rule.min} to ${rule.max}.`
     })()
+  if (rule.kind === 'grid-line') {
+    if (value === 'auto') return undefined
+    if (typeof value === 'number' && Number.isSafeInteger(value) && value !== 0)
+      return undefined
+    const match =
+      typeof value === 'string' ? /^span ([1-9]\d*)$/.exec(value) : null
+    const count = match ? Number(match[1]) : NaN
+    if (Number.isSafeInteger(count) && count > 0) return undefined
+    return 'Expected auto, a nonzero safe integer, or span followed by a positive safe integer.'
+  }
   if (rule.kind === 'time') {
     if (typeof value === 'string' && rule.keywords?.includes(value))
       return undefined
@@ -1051,7 +1102,12 @@ export function validate(
     return `Expected ${rule.negative ? 'a' : 'a nonnegative'} finite time in s or ms.${rule.keywords ? ` Also accepts: ${rule.keywords.join(', ')}.` : ''}`
   }
   if (value === 0 || (rule.auto && value === 'auto')) return undefined
-  const match = typeof value === 'string' ? lengthPattern.exec(value) : null
+  const match = (() => {
+    if (typeof value !== 'string') return null
+    const dimension = lengthPattern.exec(value)
+    if (dimension || !rule.fraction) return dimension
+    return /^([+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?)(fr)$/.exec(value)
+  })()
   const amount = match ? Number(match[1]) : NaN
   if (Number.isFinite(amount) && (rule.negative || amount >= 0)) {
     // Length-only domains exclude percentages.

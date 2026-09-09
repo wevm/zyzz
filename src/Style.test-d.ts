@@ -827,3 +827,33 @@ describe('mask and image properties', () => {
     css({ transformOrigin: 'left top' })
   })
 })
+
+describe('list and input controls', () => {
+  test('supports list markers, logical overscroll, and touch combinations', () => {
+    css({
+      appearance: 'none',
+      lineBreak: 'strict',
+      listStylePosition: 'inside',
+      listStyleType: 'upper-roman',
+      overflowAnchor: 'none',
+      overscrollBehaviorBlock: 'contain',
+      overscrollBehaviorInline: 'none',
+      scrollbarWidth: 'thin',
+      tabSize: 4,
+      textSizeAdjust: 'none',
+      textSpacingTrim: 'space-all',
+      touchAction: 'pinch-zoom pan-left pan-up',
+      unicodeBidi: 'plaintext',
+    })
+    // @ts-expect-error Conflicting directions cannot share a touch-action group.
+    css({ touchAction: 'pan-left pan-right' })
+    // @ts-expect-error Auto does not combine with gestures.
+    css({ touchAction: 'auto pinch-zoom' })
+    // @ts-expect-error Custom counter styles remain deferred.
+    css({ listStyleType: 'custom-counter' })
+    // @ts-expect-error Length-based tab stops remain deferred.
+    css({ tabSize: '20px' })
+    // @ts-expect-error Text autoscaling percentages remain deferred.
+    css({ textSizeAdjust: '100%' })
+  })
+})

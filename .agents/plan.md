@@ -443,3 +443,5 @@ Continue opening coherent property/value PRs against the pinned MDN inventory. E
 - Grid tracks: nine additional properties, bounded fr dimensions and grid-line domains, independent grammar/type probes, source maps, and implicit-track/span geometry. Lists, functions, named lines, and areas remain deferred.
 
 - Masks and image positioning: 16 additional properties, scalar position domains, background axis conflict handling, independent grammar/type checks, source maps, and masked-pixel comparisons. Image sources, lists, and complex functions remain deferred.
+
+- Lists and input controls: 13 additional properties, 94 finite touch-action forms, independent grammar/type probes, source maps, and native list-marker/tab comparisons. Custom counter styles and gesture behavior remain deferred.

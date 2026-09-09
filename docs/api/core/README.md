@@ -3,7 +3,7 @@
 Typed style definitions, themes, configuration, and callable authoring.
 
 > [!NOTE]
-> `Config`, `cx`, `variants`, and `Vars` are preview APIs and are not exported at this baseline. Only `css`, `Style`, and `Theme` are implemented root exports.
+> `Config`, `css`, `Style`, and `Theme` are exported. Config source extraction is still planned. `cx`, `variants`, and `Vars` remain preview APIs and are not exported.
 
 | API                        | Description                                                            |
 | -------------------------- | ---------------------------------------------------------------------- |

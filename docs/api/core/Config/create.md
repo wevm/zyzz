@@ -1,7 +1,7 @@
 # Config.create
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> The factory and inferred authoring contracts are implemented. Config source extraction, executable `zyzz.css` calls, `vars`, `variants`, and layer emission remain planned. Use normalized handles with `Style.define` and `Css.compile` for in-memory compilation.
 
 Bind style authoring to explicit theme and layer contracts. Export the config as `zyzz` from `zyzz.config.ts` and consume its members through a named import.
 
@@ -16,7 +16,7 @@ export const zyzz = Config.create({
 
 ## Signature
 
-`Config.create(options)`
+`Config.create(options = {})`
 
 ## Parameters
 
@@ -39,7 +39,7 @@ Config.create({
 - Type: `readonly string[]` (literal names inferred)
 - Default: No configured layers.
 
-Ordered layer names defining cascade order and exact bound `@layer <name>` keys.
+Ordered plain or dotted CSS identifiers, without duplicates or CSS-wide keywords. The tuple infers exact bound `@layer <name>` keys. Unicode/escaped layer identifiers and layer emission remain planned.
 
 ```ts
 Config.create({ layers: ['base', 'components'] })
@@ -72,13 +72,13 @@ Config.create({
 
 ## Returns
 
-The preview contract returns bound helpers plus `theme` or `themes`, according to the input form. Public type names remain to be finalized.
+Returns `Config.create.ReturnType<options>`: a frozen object with typed `css` and either `theme` or `themes`. Omission returns only token-free `css`. Separate calls own isolated contracts and leave supplied definitions unchanged.
 
 ### css
 
-- Type: Bound callable style authoring
+- Type: Inferred callable authoring returning `css.ReturnType`
 
-Infers configured token and layer names. Without a theme, authoring remains token-free.
+Infers configured token and layer names, retaining property checking inside layer bodies. Without a theme, authoring remains token-free. Calling this authoring helper currently throws the missing-transform error; config source integration follows separately.
 
 ```ts
 const card = zyzz.css({ padding: 'md' })
@@ -88,10 +88,10 @@ const card = zyzz.css({ padding: 'md' })
 
 - Type: Normalized single-theme definition
 
-Present for single-theme configuration. Access typed CSS references through `zyzz.theme.vars`.
+Present for single-theme configuration. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
 
 ```ts
-zyzz.theme.vars.spacing.md
+zyzz.theme.tokens.spacing.md
 ```
 
 ### themes
@@ -105,12 +105,15 @@ const zyzz = Config.create({
   defaultTheme: 'base',
   themes: { base: { spacing: { md: '1rem' } } },
 })
-const scope = zyzz.themes.base.className
+const token = zyzz.themes.base.tokens.spacing.md
 ```
 
 ### variants
 
-- Type: Bound variant authoring
+> [!NOTE]
+> Planned for Phase 3; not currently returned.
+
+- Type: Bound variant authoring (planned)
 
 Infers the same theme and layer contract as bound css.
 
@@ -122,7 +125,7 @@ const button = zyzz.variants({
 
 ## Errors
 
-Reject missing/extra token paths, incompatible domains, invalid defaults, and invalid layer names. Exact diagnostic types remain part of implementation.
+`Config.InvalidError` rejects missing/extra token paths, incompatible domains, invalid defaults, unknown options, accessor records, and invalid or duplicate layer names. Named alternatives can mix scalar colors and complete light/dark pairs for the same paths.
 
 Named alternatives share config identity without mutating independent definitions. See [Configuration](../../../concepts.md#configuration).
 
@@ -130,4 +133,17 @@ See [Config](README.md) for related methods and types.
 
 ## Named Exports
 
-Export `const zyzz = Config.create(...)` and import `{ zyzz }` in consuming modules. Use `zyzz.css` and `zyzz.variants`; access `zyzz.theme` for single themes or `zyzz.themes` for named catalogs. Integrations follow the named instance without requiring a default export.
+Export `const zyzz = Config.create(...)` and import `{ zyzz }` in consuming modules. Use `zyzz.css`; access `zyzz.theme` for single themes or `zyzz.themes` for named catalogs. Source integrations will follow this named instance without requiring a default export. `zyzz.variants` remains planned.
+
+## In-Memory Compilation
+
+```ts
+import { Config, Style } from 'zyzz'
+import { Css } from 'zyzz/web'
+
+const zyzz = Config.create({ theme: { spacing: { md: '1rem' } } })
+const output = Css.compile({
+  styles: Style.define({ card: { padding: zyzz.theme.tokens.spacing.md } }),
+  themes: { base: zyzz.theme },
+})
+```

@@ -7,7 +7,6 @@ import type * as Walker from 'oxc-walker'
 import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
 import type * as Source from '../Source.js'
-import * as Contract from './Contract.js'
 
 /** Local bound-authoring initializer replaced while retaining its inferred type. */
 export type Alias = Call & {
@@ -225,7 +224,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
           const input = data(expression.arguments[0]!)
           tokenType = type(expression.arguments[0]!)
           const original = Theme.define(input as Theme.Tokens)
-          definition = Contract.bind(
+          definition = Token.bind(
             original,
             Object.freeze({ [Token.identity]: name }),
           )

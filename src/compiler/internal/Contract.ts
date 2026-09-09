@@ -6,44 +6,6 @@ import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
 import type * as Themes from './Themes.js'
 
-/** Rebinds validated scalar references to a source-owned contract identity. */
-export function bind(
-  original: Theme.Definition,
-  contract: Token.Contract,
-): Theme.Definition {
-  type Tree = { [key: string]: Token.Reference | Tree }
-  function rebind(tree: Theme.References<Theme.Tokens>): Tree {
-    return Object.freeze(
-      Object.fromEntries(
-        Object.entries(tree).map(([key, value]) => [
-          key,
-          Token.is(value)
-            ? Token.create({
-                contract,
-                group: value.group,
-                path: value.path,
-                value: value.value,
-              })
-            : rebind(value as Theme.References<Theme.Tokens>),
-        ]),
-      ),
-    )
-  }
-  return Object.freeze(
-    Object.defineProperty(
-      {
-        get className() {
-          return original.className
-        },
-        css: original.css,
-        tokens: rebind(original.tokens),
-      },
-      Token.definition,
-      { value: Object.freeze({ ...original[Token.definition], contract }) },
-    ),
-  ) as Theme.Definition
-}
-
 /** Reads versioned JSON as validated data; never evaluates package code. */
 export function read(source: string, identities: Map<string, Token.Contract>) {
   const data = record(JSON.parse(source))
@@ -62,7 +24,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
       identities.set(identity, contract)
     }
     const definition = Theme.define(record(entry.tokens) as Theme.Tokens)
-    themes[name] = bind(definition, contract)
+    themes[name] = Token.bind(definition, contract)
     types[name] = type(tokens(definition.tokens))
   }
   const links: Record<string, Themes.Link> = Object.create(null)

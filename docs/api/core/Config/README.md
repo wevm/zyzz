@@ -1,7 +1,7 @@
 # Config
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> The pure factory, normalized themes, and token/layer inference are implemented. Config source extraction and layer emission remain planned; bound `css` execution still requires that integration.
 
 Configuration-bound authoring and compatible theme scopes.
 

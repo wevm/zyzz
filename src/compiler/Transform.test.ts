@@ -100,6 +100,29 @@ describe('compile', () => {
     }
   })
 
+  test('importance syntax cannot collide with theme token names', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/reserved.ts',
+        source: `import { Theme } from 'zyzz';
+const theme = Theme.define({spacing:{md:'4px','md!':'8px'}});
+export const props = theme.css({padding:'md!'})();`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/reserved.ts:44: ["spacing","md!"]: Token keys cannot contain !; it is reserved for declaration importance.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'example/reserved-config.ts',
+        source: `import { Config } from 'zyzz';
+const zyzz = Config.create({theme:{spacing:{'nested!':{md:'8px'}}}});
+export const props = zyzz.css({padding:'nested!.md'})();`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: example/reserved-config.ts:44: ["spacing","nested!"]: Token keys cannot contain !; it is reserved for declaration importance.]`,
+    )
+  })
+
   test('fallback declarations retain importance, token identity, and element source maps', () => {
     const output = Transform.compile({
       moduleId: 'example/fallbacks.ts',

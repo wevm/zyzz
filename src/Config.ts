@@ -166,9 +166,11 @@ type Properties<
 > = Style.Properties<tokens> & {
   [key in `@layer ${layers}`]?: Properties<tokens, layers>
 }
+// Properties validates declaration values; this traversal only rejects unknown keys.
+// Intersecting the value unions twice multiplies fallback tuple alternatives.
 type Body<styles, tokens extends Theme.Tokens, layers extends string> = {
   [key in keyof styles]: key extends keyof Style.Properties<tokens>
-    ? Style.Properties<tokens>[key]
+    ? unknown
     : key extends `@layer ${layers}`
       ? styles[key] extends Record<string, unknown>
         ? Body<styles[key], tokens, layers>

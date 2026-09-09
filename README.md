@@ -41,9 +41,6 @@ export function Button() {
 
 Standard CSS properties and values carry TypeScript inference into each definition. Styles can live beside components or in shared modules; applying them returns ordinary styling props without a provider or component wrapper.
 
-> [!NOTE]
-> Nested selectors and queries below are preview syntax; literal declarations are supported by the source compiler.
-
 ```tsx
 import { css } from 'zyzz'
 
@@ -59,9 +56,6 @@ const example = <button {...button()}>Continue</button>
 ### Themes
 
 Token names infer by property, and compatible theme scopes change inherited values without changing component styles. Core imports remain token-free.
-
-> [!NOTE]
-> Bundled themes and `Config.create` below are previews. Current compilation supports [authored theme definitions and extensions](docs/guides/themes.md#compile-local-theme-source).
 
 #### Default Theme
 
@@ -87,7 +81,11 @@ export const zyzz = Config.create({
 })
 ```
 
-`Theme.extend` accepts existing paths only. Define a custom theme for a different token vocabulary.
+```ts
+import { zyzz } from './zyzz.config.js'
+
+const button = zyzz.css({ color: 'blue.700', padding: 4 })
+```
 
 #### Custom Theme
 
@@ -133,9 +131,6 @@ The custom theme's `text` token resolves to `#111` in light mode and `#eee` in d
 
 ### Variants
 
-> [!NOTE]
-> Variant authoring is a preview; not yet implemented.
-
 Describe component choices with inferred props, defaults, and compound rules. Use `zyzz.variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
 
 ```tsx
@@ -158,9 +153,6 @@ const example = <button {...button({ size: 'sm' })}>Continue</button>
 
 ### Dynamic Styles
 
-> [!NOTE]
-> Callback authoring is a preview; not yet implemented.
-
 A callback receives typed runtime values. Call the style with those values and optional `className`/`style` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
 
 ```tsx
@@ -179,9 +171,6 @@ export function Bar() {
 
 ### Value Syntax
 
-> [!NOTE]
-> Config-bound expressions and `theme.vars` below are previews.
-
 Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
 
 ```ts
@@ -196,9 +185,6 @@ const panel = zyzz.css({
 ```
 
 ### Composition
-
-> [!NOTE]
-> `cx` is a preview; not yet implemented.
 
 Prefer state attributes for conditional styling. Calls accept `className` and `style` overrides. Classes are retained and inline styles merge. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
 
@@ -220,9 +206,6 @@ const example = (
 Styles compile ahead of time into CSS and executable modules with source maps. Direct applications become props; exported definitions remain callable. Generated functions never create CSS rules, and unused theme tokens emit no declarations.
 
 Use the [Vite plugin](docs/introduction/vite.md) for source transformation and CSS delivery, or the [compiler APIs](docs/guides/compilation.md) for standalone builds and library distribution.
-
-> [!NOTE]
-> [CLI](docs/introduction/cli.md) and [Next.js](docs/introduction/next.md) integrations are previews.
 
 See [Benchmarks](docs/introduction/benchmarks.md) for measured compilation, runtime, and output-size comparisons.
 

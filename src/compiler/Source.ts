@@ -155,7 +155,7 @@ export function extract(options: extract.Options): extract.ReturnType {
               : parent.property.type === 'Literal'
                 ? parent.property.value
                 : undefined
-          if (name === 'css' || name === 'Theme')
+          if (name === 'Config' || name === 'css' || name === 'Theme')
             report(
               'unsupported_syntax',
               `Import ${name} by name; namespace authoring calls are not supported yet.`,

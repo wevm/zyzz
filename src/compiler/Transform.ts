@@ -111,15 +111,41 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   for (const call of extracted.themeCalls) {
-    const props = `{className:${JSON.stringify(emitted.themes[call.name])}}`
+    const scope = (name: string) => ({ className: emitted.themes[name] })
+    const props = call.members
+      ? JSON.stringify(
+          Object.hasOwn(call.members, '["theme"]')
+            ? { theme: scope(call.members['["theme"]']!) }
+            : Object.keys(call.members).length
+              ? {
+                  themes: Object.fromEntries(
+                    Object.entries(call.members).map(([key, name]) => [
+                      (JSON.parse(key) as readonly string[])[1]!,
+                      scope(name),
+                    ]),
+                  ),
+                }
+              : {},
+        )
+      : `{className:${JSON.stringify(emitted.themes[call.name])}}`
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
-      ? ` as import('zyzz').Theme.Definition<${call.tokenType}>`
+      ? ` as ${call.type ?? `import('zyzz').Theme.Definition<${call.tokenType}>`}`
       : ''
     module.overwrite(call.start, call.end, `(${props}${assertion})`)
   }
   for (const alias of extracted.themeAliases) {
+    if (alias.retained) {
+      if (/\.[cm]?tsx?$/.test(options.moduleId))
+        module.overwrite(
+          alias.start,
+          alias.end,
+          `(${options.source.slice(alias.start, alias.end)} as ${alias.type ?? `import('zyzz').Theme.Definition<${alias.tokenType}>`})`,
+        )
+      continue
+    }
     const value = alias.destructured ? '{css:undefined}' : 'undefined'
-    const type = `import('zyzz').Theme.Definition<${alias.tokenType}>`
+    const type =
+      alias.type ?? `import('zyzz').Theme.Definition<${alias.tokenType}>`
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
       ? ` as unknown as ${alias.destructured ? `{readonly css:${type}['css']}` : `${type}['css']`}`
       : ''
@@ -164,7 +190,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         node.importKind === 'type' ||
         specifier.type !== 'ImportSpecifier' ||
         specifier.importKind === 'type' ||
-        !['css', 'Theme'].includes(
+        !['Config', 'css', 'Theme'].includes(
           specifier.imported.type === 'Identifier'
             ? specifier.imported.name
             : specifier.imported.value,
@@ -256,7 +282,11 @@ export function compile(options: compile.Options): compile.ReturnType {
   )
 
   const themeOwners = new Map(
-    extracted.themeCalls.map((call) => [emitted.themes[call.name], call]),
+    extracted.themeCalls.flatMap((call) =>
+      [...new Set([call.name, ...Object.values(call.members ?? {})])].map(
+        (name) => [emitted.themes[name], { ...call, name }] as const,
+      ),
+    ),
   )
 
   const linkedOwners = new Map(

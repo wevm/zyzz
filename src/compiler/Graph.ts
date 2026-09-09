@@ -387,7 +387,15 @@ function build(options: compile.Options, cache?: Cache): Cache {
     extracted.set(moduleId, result)
     dependencies[moduleId] = imports
     for (const call of result.themeCalls)
-      owners[call.name] = { call, moduleId, source: options.modules[moduleId]! }
+      for (const name of new Set([
+        call.name,
+        ...Object.values(call.members ?? {}),
+      ]))
+        owners[name] = {
+          call: { ...call, name },
+          moduleId,
+          source: options.modules[moduleId]!,
+        }
     Object.assign(themes, result.themes)
     visiting.delete(moduleId)
     return result

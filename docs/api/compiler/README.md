@@ -1,6 +1,6 @@
 # zyzz/compiler
 
-Extract style definitions and rewrite source with matching CSS and source maps.
+Extract style definitions, link named theme/configuration contracts, and rewrite source with matching CSS and source maps.
 
 | API                              | Description                                         |
 | -------------------------------- | --------------------------------------------------- |

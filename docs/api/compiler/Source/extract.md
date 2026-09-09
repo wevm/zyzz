@@ -87,6 +87,12 @@ Explicit `theme.tokens` paths are supported as scalar property values in bound c
 
 Pass both `styles` and `themes` to `Css.compile` when using extraction without rewriting. Scope-map keys derive from module/binding identity.
 
+## Configuration Source
+
+`Config.create` accepts literal options with preceding reusable themes or inline token data. Config-bound `css`, static `theme`/`themes.<name>` token and class reads, and immutable aliases share the theme compiler. `defaultTheme` selects shorthand fallbacks; each configuration retains an isolated identity.
+
+Use the source graph for named config imports and re-exports. Dynamic access, object escapes, mutation, layer bodies, and variants produce diagnostics. Source is never evaluated.
+
 ## Errors
 
 `Source.ExtractError` aggregates located source failures without a partial result.

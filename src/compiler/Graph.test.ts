@@ -11,12 +11,191 @@ import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
+import * as ConfigFixture from '../../test/fixtures/ConfigGraph.js'
 import * as Fixture from '../../test/fixtures/ThemeGraph.js'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
 
 describe('compile', () => {
+  test('preceding handle aliases feed later theme and configuration factories', () => {
+    const output = Graph.compile({
+      modules: {
+        'pkg/config.ts': `import { Config, Theme } from 'zyzz';
+const zyzz = Config.create({theme:{color:{brand:'#06c'}}});
+const instance = zyzz;
+const theme = instance.theme, alias = theme;
+const mint = Theme.extend(alias,{color:{brand:'#175'}});
+const other = Config.create({theme:alias});
+export const original = zyzz.css({color:'brand'})();
+export const props = other.css({color:'brand'})();
+export const scope = mint.className;`,
+      },
+    })
+    expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1g1qfxjzbnv3-zyzz-theme{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand:#06c;}
+      .z_theme-1g1qfxjzbnv3-mint{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand:#175;}
+      .z_theme-1g1qfxjzbnv3-other-theme{--z-t1g1qfxjzbnv3-other-color_2e_brand:#06c;}
+      .z-style-1g1qfxjzbnv3-291{color:var(--z-t1g1qfxjzbnv3-zyzz-color_2e_brand,#06c);}
+      .z-style-1g1qfxjzbnv3-341{color:var(--z-t1g1qfxjzbnv3-other-color_2e_brand,#06c);}"
+    `)
+    expect(
+      output.modules['pkg/config.ts']!.code.includes('Config.create('),
+    ).toMatchInlineSnapshot(`false`)
+  })
+
+  test('numeric configuration keys retain tokens and reject string-equivalent duplicates', () => {
+    const output = Graph.compile({
+      modules: {
+        'pkg/config.ts': `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{color:{brand:{500:'#06c'}},spacing:{2:'8px'}}}); export const props = zyzz.css({color:'brand.500',padding:zyzz.theme.tokens.spacing[2]})();`,
+      },
+    })
+    expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1g1qfxjzbnv3-zyzz-theme{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand_2e_500:#06c;--z-t1g1qfxjzbnv3-zyzz-spacing_2e_2:8px;}
+      .z-1g1qfxjzbnv3-base0{color:var(--z-t1g1qfxjzbnv3-zyzz-color_2e_brand_2e_500,#06c);padding:var(--z-t1g1qfxjzbnv3-zyzz-spacing_2e_2,8px);}"
+    `)
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'pkg/config.ts': `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{spacing:{2:'8px','2':'12px'}}});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: pkg/config.ts:44: Configuration requires unique literal keys.]`)
+  })
+
+  test('dotted catalog keys retain member boundaries in source and packed libraries', () => {
+    const library = Graph.compile({
+      modules: {
+        'pkg/config.js': `import { Config } from 'zyzz'; export const zyzz = Config.create({defaultTheme:'brand.dark',themes:{'brand.dark':{color:{brand:'#06c'}}}}); export const props = zyzz.css({color:'brand'})(); export const scope = zyzz.themes['brand.dark'].className;`,
+      },
+    })
+    expect(library.modules['pkg/config.js']!.code).toMatchInlineSnapshot(`" export const zyzz = ({"themes":{"brand.dark":{"className":"z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"}}}); export const props = ({className:"z-1fzmg4ts3ctu1-base0"}); export const scope = "z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark";"`)
+    const options = {
+      contracts: { 'library/index.js': library.contracts['pkg/config.js']! },
+      imports: { 'app/card.js': { '@acme/theme': 'library/index.js' } },
+      modules: {
+        'app/card.js': `import { zyzz } from '@acme/theme'; export const props = zyzz.css({color:zyzz.themes['brand.dark'].tokens.color.brand})(); export const scope = zyzz.themes['brand.dark'].className;`,
+      },
+    }
+    expect(
+      Graph.compile(options).modules['app/card.js']!.css,
+    ).toMatchInlineSnapshot(`
+      ".z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark{--z-t1fzmg4ts3ctu1-zyzz-color_2e_brand:#06c;}
+      .z-115845g13hgi1q-base0{color:var(--z-t1fzmg4ts3ctu1-zyzz-color_2e_brand,#06c);}"
+    `)
+    expect(() =>
+      Graph.compile({
+        ...options,
+        modules: {
+          'app/card.js': options.modules['app/card.js'].replaceAll(
+            "['brand.dark']",
+            '.brand.dark',
+          ),
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: app/card.js:73: Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.
+      app/card.js:73: Expected a literal string or number; expressions are not evaluated.
+      app/card.js:141: Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.]
+    `)
+  })
+
+  test('configuration defaults, aliases, edits, and packed metadata retain the same contract', () => {
+    const compiler = Graph.create()
+    const output = compiler.compile({ modules: ConfigFixture.modules })
+    expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-69adjg15dlzyu-zyzz-mint{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#175,#afa);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:12px;}
+      .z_theme-69adjg15dlzyu-zyzz-base{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#06c,#9cf);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:8px;}
+      .z-5ngs574r5xr9-base0{color:var(--z-t69adjg15dlzyu-zyzz-color_2e_brand,light-dark(#06c,#9cf));padding:var(--z-t69adjg15dlzyu-zyzz-spacing_2e_md,8px);}"
+    `)
+    expect(output.modules['pkg/zyzz.config.ts']!.code).toMatchInlineSnapshot(
+      `" import { base } from './base.js'; export const zyzz = ({"themes":{"mint":{"className":"z_theme-69adjg15dlzyu-zyzz-mint"},"base":{"className":"z_theme-69adjg15dlzyu-zyzz-base"}}} as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>);"`,
+    )
+    expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
+      `"import { design } from './index.js'; const zyzz = (design as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); const { css } = ({css:undefined} as unknown as {readonly css:import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>['css']}); export const props = ({className:"z-5ngs574r5xr9-base0"}); export const scope = "z_theme-69adjg15dlzyu-zyzz-mint";"`,
+    )
+    const updated = compiler.compile({
+      modules: {
+        ...ConfigFixture.modules,
+        'pkg/zyzz.config.ts': ConfigFixture.modules[
+          'pkg/zyzz.config.ts'
+        ].replace("'#175'", "'#f00'"),
+      },
+    })
+    expect(updated.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-69adjg15dlzyu-zyzz-mint{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#f00,#afa);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:12px;}
+      .z_theme-69adjg15dlzyu-zyzz-base{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#06c,#9cf);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:8px;}
+      .z-5ngs574r5xr9-base0{color:var(--z-t69adjg15dlzyu-zyzz-color_2e_brand,light-dark(#06c,#9cf));padding:var(--z-t69adjg15dlzyu-zyzz-spacing_2e_md,8px);}"
+    `)
+    const mapping = new Trace.TraceMap(output.modules['pkg/card.ts']!.cssMap)
+    expect(
+      Trace.originalPositionFor(mapping, { line: 1, column: 0 }).source,
+    ).toMatchInlineSnapshot(`"pkg/zyzz.config.ts"`)
+    const packed = Graph.compile({
+      contracts: { 'library/index.js': output.contracts['pkg/index.ts']! },
+      imports: { 'app/card.ts': { '@acme/theme': 'library/index.js' } },
+      modules: {
+        'app/card.ts': `import { design as zyzz } from '@acme/theme'; export const props = zyzz.css({color:'brand',padding:'md'})(); export const scope = zyzz.themes.mint.className;`,
+      },
+    })
+    expect(packed.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1h7j9xm1yzxb90-base{--z-t1h7j9xm1yzxb90-base-color_2e_brand:light-dark(#06c,#9cf);--z-t1h7j9xm1yzxb90-base-spacing_2e_md:8px;}
+      .z_theme-69adjg15dlzyu-zyzz-mint{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#175,#afa);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:12px;}
+      .z_theme-69adjg15dlzyu-zyzz-base{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#06c,#9cf);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:8px;}
+      .z-ujlnau19561g8-base0{color:var(--z-t69adjg15dlzyu-zyzz-color_2e_brand,light-dark(#06c,#9cf));padding:var(--z-t69adjg15dlzyu-zyzz-spacing_2e_md,8px);}"
+    `)
+    expect(packed.modules['app/card.ts']!.code).toMatchInlineSnapshot(
+      `"import { design as zyzz } from '@acme/theme'; export const props = ({className:"z-ujlnau19561g8-base0"}); export const scope = "z_theme-69adjg15dlzyu-zyzz-mint";"`,
+    )
+  })
+
+  test('single and token-free configuration calls compile without runtime factories', () => {
+    const output = Graph.compile({
+      modules: {
+        'pkg/config.ts': `import { Config, Theme } from 'zyzz'; export const empty = Config.create(); const base = Theme.define({color:{brand:'#06c'}}); export const zyzz = Config.create({theme:base}); const theme = zyzz.theme; export const mint = Theme.extend(zyzz.theme,{color:{brand:'#175'}}); export const props = zyzz.css({color:theme.tokens.color.brand})(); export const plain = empty.css({padding:'8px'})();`,
+      },
+    })
+    expect(output.modules['pkg/config.ts']!.code).toMatchInlineSnapshot(
+      `" export const empty = ({} as import('zyzz').Config.create.ReturnType<{}>); const base = ({className:"z_theme-1g1qfxjzbnv3-base"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const zyzz = ({"theme":{"className":"z_theme-1g1qfxjzbnv3-zyzz-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"#06c"}}}>); const theme = (zyzz.theme as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const mint = ({className:"z_theme-1g1qfxjzbnv3-mint"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const props = ({className:"z-1g1qfxjzbnv3-base0"}); export const plain = ({className:"z-1g1qfxjzbnv3-base1"});"`,
+    )
+    expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1g1qfxjzbnv3-zyzz-theme{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand:#06c;}
+      .z_theme-1g1qfxjzbnv3-mint{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand:#175;}
+      .z-1g1qfxjzbnv3-base0{color:var(--z-t1g1qfxjzbnv3-zyzz-color_2e_brand,#06c);}
+      .z-1g1qfxjzbnv3-base1{padding:8px;}"
+    `)
+  })
+
+  test('configuration dynamic access and escaping fail before emission', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'pkg/config.ts': `import { Config } from 'zyzz'; const zyzz = Config.create(); console.log(zyzz);`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/config.ts:73: Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'pkg/config.ts': `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{color:{brand:'#06c'}}}); const key = 'theme'; export const scope = zyzz[key].className;`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/config.ts:133: Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'pkg/config.ts': `import { Config } from 'zyzz'; const zyzz = Config.create({themes:{base:{color:{brand:'#06c'}}},defaultTheme:'missing'});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/config.ts:44: defaultTheme must name a theme in the catalog.]`,
+    )
+  })
+
   test('serialized library contracts link aliases, extensions, and consumer scopes', () => {
     const library = Graph.compile({
       modules: {
@@ -67,7 +246,7 @@ describe('compile', () => {
     expect(() =>
       compiler.compile({
         ...options,
-        contracts: { 'library/index.js': '{"version":2}' },
+        contracts: { 'library/index.js': '{"version":999}' },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[Source.ExtractError: library/index.js:0: Invalid library contract: Unsupported Zyzz contract version.]`,

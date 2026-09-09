@@ -2,6 +2,7 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
+import * as Cascade from '../internal/Cascade.js'
 import * as Literal from '../internal/Literal.js'
 import * as Token from '../internal/Token.js'
 import type * as Style from '../Style.js'
@@ -55,13 +56,136 @@ export function compile<
   const combinedLines = new Set<string>()
   for (const style of options.styles.styles)
     for (const { property } of style.declarations)
-      if (Literal.rules[property]?.kind === 'line') {
+      if (Literal.rule(property)?.kind === 'line') {
         const canonical =
           property in Literal.aliases
             ? Literal.aliases[property as keyof typeof Literal.aliases]
             : property
         combinedLines.add(canonical.startsWith('border') ? 'border' : canonical)
       }
+  function canonical(property: string): string {
+    return property in Literal.aliases
+      ? Literal.aliases[property as keyof typeof Literal.aliases]
+      : property
+  }
+  function domain(property: string): string {
+    if (
+      resets &&
+      !property.startsWith('--') &&
+      property !== 'direction' &&
+      property !== 'unicodeBidi'
+    )
+      return 'all'
+    if (/^marker(?:Start|Mid|End)?$/.test(property)) return 'marker'
+    if (property.startsWith('corner')) return 'cornerShape'
+    if (property.startsWith('containIntrinsic')) return 'containIntrinsicSize'
+    if (property.startsWith('interestDelay')) return 'interestDelay'
+    if (property.startsWith('backgroundPosition')) return 'backgroundPosition'
+    if (combinedLines.has('columnRule') && property.startsWith('columnRule'))
+      return 'columnRule'
+    if (combinedLines.has('outline') && property.startsWith('outline'))
+      return 'outline'
+    if (property.startsWith('borderImage')) return 'borderImage'
+    if (property.startsWith('border')) {
+      if (combinedLines.has('border')) return 'border'
+      if (property.endsWith('Color')) {
+        return 'borderColor'
+      }
+      if (property.endsWith('Style')) {
+        return 'borderStyle'
+      }
+      if (property.endsWith('Width')) {
+        return 'borderWidth'
+      }
+      return 'borderRadius'
+    }
+    if (['flexDirection', 'flexFlow', 'flexWrap'].includes(property))
+      return 'flexFlow'
+    if (/^(pageBreak|break)(After|Before|Inside)$/.test(property))
+      return property.replace('pageBreak', 'break')
+    if (['fontStretch', 'fontWidth'].includes(property)) return 'fontWidth'
+    if (property.startsWith('fontSynthesis')) return 'fontSynthesis'
+    if (
+      [
+        'whiteSpace',
+        'whiteSpaceCollapse',
+        'textWrap',
+        'textWrapMode',
+        'textWrapStyle',
+      ].includes(property)
+    )
+      return 'whiteSpace'
+    if (['wordWrap', 'overflowWrap'].includes(property)) return 'overflowWrap'
+    if (property.startsWith('margin')) {
+      return 'margin'
+    }
+    if (property.startsWith('padding')) {
+      return 'padding'
+    }
+    if (
+      property === 'overflow' ||
+      property === 'overflowX' ||
+      property === 'overflowY' ||
+      property === 'overflowBlock' ||
+      property === 'overflowInline'
+    ) {
+      return 'overflow'
+    }
+    if (property.startsWith('overscrollBehavior')) {
+      return 'overscrollBehavior'
+    }
+    if (property.startsWith('scrollMargin')) {
+      return 'scrollMargin'
+    }
+    if (property.startsWith('scrollPadding')) {
+      return 'scrollPadding'
+    }
+    if (['columnGap', 'gap', 'rowGap'].includes(property)) {
+      return 'gap'
+    }
+    if (/^(inset|top$|right$|bottom$|left$)/.test(property)) {
+      return 'inset'
+    }
+    if (
+      logicalSizing &&
+      /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(property)
+    ) {
+      if (property.startsWith('min')) {
+        return 'min-size'
+      }
+      if (property.startsWith('max')) {
+        return 'max-size'
+      }
+      return 'size'
+    }
+    return property
+  }
+  const parents = new Map<string, string>()
+  function root(domain: string): string {
+    const parent = parents.get(domain)
+    if (!parent) return domain
+    const result = root(parent)
+    parents.set(domain, result)
+    return result
+  }
+  // Union only authored shorthands. Unrelated axes retain their original factoring.
+  // Recursion includes nested and reset-only shorthands without parsing CSS values.
+  function join(property: string, target: string, visited = new Set<string>()) {
+    if (visited.has(property)) return
+    visited.add(property)
+    const current = root(domain(canonical(property)))
+    const group = root(target)
+    if (current !== group) parents.set(current, group)
+    if (Object.hasOwn(Cascade.shorthands, property))
+      for (const child of Cascade.shorthands[
+        property as keyof typeof Cascade.shorthands
+      ])
+        join(child, target, visited)
+  }
+  for (const style of options.styles.styles)
+    for (const { property } of style.declarations)
+      if (Object.hasOwn(Cascade.shorthands, canonical(property)))
+        join(canonical(property), domain(canonical(property)))
   type Prepared = {
     declarations: readonly Cached[]
     ordered: string
@@ -96,108 +220,7 @@ export function compile<
       if (!entry) {
         entry = {
           declaration: `${Literal.name(property)}:${value}${important ? '!important' : ''};`,
-          domain: ((property: string) => {
-            if (resets) return 'all'
-            if (/^marker(?:Start|Mid|End)?$/.test(property)) return 'marker'
-            if (
-              /^grid(?:Area|Column(?:Start|End)?|Row(?:Start|End)?)$/.test(
-                property,
-              )
-            )
-              return 'gridArea'
-            if (property.startsWith('corner')) return 'cornerShape'
-            if (property.startsWith('containIntrinsic'))
-              return 'containIntrinsicSize'
-            if (property.startsWith('interestDelay')) return 'interestDelay'
-            if (property.startsWith('backgroundPosition'))
-              return 'backgroundPosition'
-            if (
-              combinedLines.has('columnRule') &&
-              property.startsWith('columnRule')
-            )
-              return 'columnRule'
-            if (combinedLines.has('outline') && property.startsWith('outline'))
-              return 'outline'
-            if (property.startsWith('border')) {
-              if (combinedLines.has('border')) return 'border'
-              if (property.endsWith('Color')) {
-                return 'borderColor'
-              }
-              if (property.endsWith('Style')) {
-                return 'borderStyle'
-              }
-              if (property.endsWith('Width')) {
-                return 'borderWidth'
-              }
-              return 'borderRadius'
-            }
-            if (['flexDirection', 'flexFlow', 'flexWrap'].includes(property))
-              return 'flexFlow'
-            if (/^(pageBreak|break)(After|Before|Inside)$/.test(property))
-              return property.replace('pageBreak', 'break')
-            if (['fontStretch', 'fontWidth'].includes(property))
-              return 'fontWidth'
-            if (property.startsWith('fontSynthesis')) return 'fontSynthesis'
-            if (
-              [
-                'whiteSpace',
-                'whiteSpaceCollapse',
-                'textWrap',
-                'textWrapMode',
-                'textWrapStyle',
-              ].includes(property)
-            )
-              return 'whiteSpace'
-            if (['wordWrap', 'overflowWrap'].includes(property))
-              return 'overflowWrap'
-            if (property.startsWith('margin')) {
-              return 'margin'
-            }
-            if (property.startsWith('padding')) {
-              return 'padding'
-            }
-            if (
-              property === 'overflow' ||
-              property === 'overflowX' ||
-              property === 'overflowY' ||
-              property === 'overflowBlock' ||
-              property === 'overflowInline'
-            ) {
-              return 'overflow'
-            }
-            if (property.startsWith('overscrollBehavior')) {
-              return 'overscrollBehavior'
-            }
-            if (property.startsWith('scrollMargin')) {
-              return 'scrollMargin'
-            }
-            if (property.startsWith('scrollPadding')) {
-              return 'scrollPadding'
-            }
-            if (['columnGap', 'gap', 'rowGap'].includes(property)) {
-              return 'gap'
-            }
-            if (/^(inset|top$|right$|bottom$|left$)/.test(property)) {
-              return 'inset'
-            }
-            if (
-              logicalSizing &&
-              /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(property)
-            ) {
-              if (property.startsWith('min')) {
-                return 'min-size'
-              }
-              if (property.startsWith('max')) {
-                return 'max-size'
-              }
-              return 'size'
-            }
-            return property
-          })(
-            property in Literal.aliases
-              ? Literal.aliases[property as keyof typeof Literal.aliases]
-              : property,
-          ),
+          domain: root(domain(canonical(property))),
         }
         values.set(value, entry)
       }
@@ -223,8 +246,7 @@ export function compile<
     }
     return { content, name: style.name }
   })
-  // Equivalent validated bodies share factoring work, including repeated tokens.
-  // Validation still visits every input to retain diagnostics and live contracts.
+  // Equivalent bodies share factoring work, including repeated tokens.
   for (const content of unique.values())
     for (const { declaration, domain } of content.declarations) {
       if (groups.get(domain) === false) content.ordered += declaration

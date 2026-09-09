@@ -2,6 +2,7 @@
  * Defines the supported primitive CSS property and value domains.
  * @module
  */
+import type * as Compound from './Compound.js'
 import type * as Corner from './Corner.js'
 import type * as Geometry from './Geometry.js'
 import type * as Identifier from './Identifier.js'
@@ -54,16 +55,18 @@ type Hex<
       : false
 
 /** Math function shapes; dimensional evaluation belongs to the browser. */
-export type Calculation = `${'calc' | 'clamp' | 'max' | 'min'}(${string})`
+export type Calculation =
+  `${'abs' | 'acos' | 'asin' | 'atan' | 'atan2' | 'calc' | 'clamp' | 'cos' | 'exp' | 'hypot' | 'log' | 'max' | 'min' | 'mod' | 'pow' | 'rem' | 'round' | 'sign' | 'sin' | 'sqrt' | 'tan'}(${string})`
 
 /** Named, hexadecimal, and absolute functional colors; arguments retain their authored CSS syntax. */
 export type Color =
   | (typeof namedColors)[number]
   | (typeof systemColors)[number]
   | 'currentColor'
+  | 'currentcolor'
   | 'transparent'
   | `#${string}`
-  | `${'color' | 'hsl' | 'hsla' | 'hwb' | 'lab' | 'lch' | 'oklab' | 'oklch' | 'rgb' | 'rgba'}(${string})`
+  | `${'color' | 'color-mix' | 'contrast-color' | 'light-dark' | 'hsl' | 'hsla' | 'hwb' | 'lab' | 'lch' | 'oklab' | 'oklch' | 'rgb' | 'rgba'}(${string})`
 
 /** Flexible grid track dimensions. */
 export type Fraction = `${number}fr`
@@ -92,7 +95,7 @@ export type Image =
 export type Url = `url(${string})`
 
 /** Finite CSS lengths and percentages; numeric zero needs no unit. */
-export type Length = `${number}${(typeof lengthUnits)[number]}` | 0
+export type Length = `${number}${(typeof lengthUnits)[number]}` | 0 | '0'
 
 /** Length and percentage units used by scalar type refinements. */
 export type Unit = (typeof lengthUnits)[number]
@@ -100,11 +103,17 @@ export type Unit = (typeof lengthUnits)[number]
 /** Finite property surface with no arbitrary string index signature. */
 export type Properties = {
   readonly [key in keyof typeof rules]?: Value<(typeof rules)[key]>
+} & { readonly [property: `--${string}`]: number | string }
+
+/** Domain metadata for known properties; custom properties accept scalar values. */
+export function rule(property: keyof Properties): Rule | undefined {
+  return rules[property as keyof typeof rules]
 }
 /** Finite seconds and milliseconds; CSS times always require units. */
 export type Time = `${number}${'ms' | 's'}`
 
 type Rule = { readonly list?: true } & (
+  | { readonly kind: 'compound'; readonly property: keyof Compound.Properties }
   | { readonly kind: 'image' | 'url' }
   | { [kind in Geometry.Kind]: { readonly kind: kind } }[Geometry.Kind]
   | ({ readonly kind: 'identifier' } & Identifier.Options)
@@ -113,6 +122,7 @@ type Rule = { readonly list?: true } & (
   | ({ readonly kind: 'tuple' } & Tuple.Options)
   | {
       readonly auto: boolean
+      readonly numeric?: true
       readonly axes?: true
       readonly fraction?: boolean
       readonly items?: 2 | 4
@@ -126,9 +136,12 @@ type Rule = { readonly list?: true } & (
       readonly items?: 2 | 4
       readonly keywords?: readonly string[]
       readonly kind: 'color'
+      readonly paint?: true
     }
   | {
       readonly easing?: true
+      readonly quoted?: true
+      readonly urls?: true
       readonly groups?: readonly (readonly string[])[]
       readonly items?: 2 | 4
       readonly kind: 'enum'
@@ -144,6 +157,7 @@ type Rule = { readonly list?: true } & (
   | { readonly kind: 'grid-tracks'; readonly explicit: boolean }
   | {
       readonly integer?: boolean
+      readonly length?: true
       readonly keywords?: readonly string[]
       readonly kind: 'number'
       readonly percentage?: true
@@ -157,6 +171,7 @@ type Rule = { readonly list?: true } & (
     }
 )
 type LengthValue<rule extends Rule> =
+  | (rule extends { numeric: true } ? number : never)
   | Calculation
   | (rule extends { auto: true } ? 'auto' : never)
   | (rule extends { fraction: true } ? Fraction : never)
@@ -216,127 +231,146 @@ type TupleValue<rule extends Rule> =
 type Value<rule extends Rule> =
   | `${string}var(--${string})${string}`
   | Global
-  | (rule extends { kind: 'image' | 'url' }
-      ? Listed<
-          'none' | Url | (rule extends { kind: 'image' } ? Image : never),
-          rule
-        >
-      : rule extends { kind: 'ratio' }
-        ?
-            | number
-            | Calculation
-            | 'auto'
-            | `auto ${string}`
-            | `${number}${'/' | ' '}${string}`
-            | `${Calculation}${'/' | ' '}${string}`
-        : rule extends { kind: 'transform' }
-          ? 'none' | `${Geometry.FunctionName}(${string})${string}`
-          : rule extends { kind: 'rotate' }
-            ?
-                | 'none'
-                | 0
-                | Geometry.Angle
-                | Calculation
-                | `${Geometry.Angle | Calculation | number | 'x' | 'y' | 'z'} ${string}`
-            : rule extends { kind: 'scale' }
+  | (rule extends {
+      kind: 'compound'
+      property: infer property extends keyof Compound.Properties
+    }
+      ? Compound.Properties[property]
+      : rule extends { kind: 'image' | 'url' }
+        ? Listed<
+            'none' | Url | (rule extends { kind: 'image' } ? Image : never),
+            rule
+          >
+        : rule extends { kind: 'ratio' }
+          ?
+              | number
+              | Calculation
+              | 'auto'
+              | `auto ${string}`
+              | `${number}${'/' | ' '}${string}`
+              | `${Calculation}${'/' | ' '}${string}`
+          : rule extends { kind: 'transform' }
+            ? 'none' | `${Geometry.FunctionName}(${string})${string}`
+            : rule extends { kind: 'rotate' }
               ?
                   | 'none'
-                  | number
-                  | `${number}%`
+                  | 0
+                  | Geometry.Angle
                   | Calculation
-                  | `${number | `${number}%` | Calculation} ${string}`
-              : rule extends { kind: 'translate' }
+                  | `${Geometry.Angle | Calculation | number | 'x' | 'y' | 'z'} ${string}`
+              : rule extends { kind: 'scale' }
                 ?
                     | 'none'
-                    | Length
+                    | number
+                    | `${number}%`
                     | Calculation
-                    | `${Length | Calculation} ${string}`
-                : rule extends { kind: 'line' }
+                    | `${number | `${number}%` | Calculation} ${string}`
+                : rule extends { kind: 'translate' }
                   ?
-                      | LinePart
-                      | `${LinePart} ${string}`
-                      | (rule extends { outline: true }
-                          ? 'auto' | `auto ${string}`
-                          : never)
-                  : rule extends { kind: 'corner' }
+                      | 'none'
+                      | Length
+                      | Calculation
+                      | `${Length | Calculation} ${string}`
+                  : rule extends { kind: 'line' }
                     ?
-                        | Corner.Value
-                        | (rule extends { items: number }
-                            ? `${Corner.Value} ${string}`
+                        | LinePart
+                        | `${LinePart} ${string}`
+                        | (rule extends { outline: true }
+                            ? 'auto' | `auto ${string}`
                             : never)
-                    : rule extends { kind: 'tuple' }
-                      ? Listed<TupleValue<rule>, rule>
-                      : rule extends { kind: 'identifier' }
-                        ? string
-                        : rule extends { kind: 'length' }
-                          ?
-                              | Listed<
-                                  Extract<LengthValue<rule>, string | number>,
+                    : rule extends { kind: 'corner' }
+                      ?
+                          | Corner.Value
+                          | (rule extends { items: number }
+                              ? `${Corner.Value} ${string}`
+                              : never)
+                      : rule extends { kind: 'tuple' }
+                        ? Listed<TupleValue<rule>, rule>
+                        : rule extends { kind: 'identifier' }
+                          ? string
+                          : rule extends { kind: 'length' }
+                            ?
+                                | Listed<
+                                    Extract<LengthValue<rule>, string | number>,
+                                    rule
+                                  >
+                                | (rule extends { items: number }
+                                    ? `${Extract<LengthValue<rule>, string | number>} ${string}`
+                                    : never)
+                                | (rule extends { axes: true }
+                                    ? `${Length | Calculation}/${string}`
+                                    : never)
+                            : rule extends { kind: 'number' }
+                              ? Listed<
+                                  | Calculation
+                                  | number
+                                  | Keywords<rule>
+                                  | (rule extends { length: true }
+                                      ? Length
+                                      : never)
+                                  | (rule extends { percentage: true }
+                                      ? `${number}%`
+                                      : never),
                                   rule
                                 >
-                              | (rule extends { items: number }
-                                  ? `${Extract<LengthValue<rule>, string | number>} ${string}`
-                                  : never)
-                              | (rule extends { axes: true }
-                                  ? `${Length | Calculation}/${string}`
-                                  : never)
-                          : rule extends { kind: 'number' }
-                            ? Listed<
-                                | Calculation
-                                | number
-                                | Keywords<rule>
-                                | (rule extends { percentage: true }
-                                    ? `${number}%`
-                                    : never),
-                                rule
-                              >
-                            : rule extends { kind: 'percentage' }
-                              ? Calculation | `${number}%` | Keywords<rule>
-                              : rule extends {
-                                    kind: 'enum'
-                                    values: readonly (infer keyword extends
-                                      string)[]
-                                  }
-                                ?
-                                    | Listed<
-                                        | keyword
-                                        | (rule extends { easing: true }
-                                            ? Easing
-                                            : never),
-                                        rule
-                                      >
-                                    | (rule extends { items: number }
-                                        ? `${keyword} ${string}`
-                                        : never)
-                                    | (rule extends {
-                                        groups: readonly (readonly (infer component extends
-                                          string)[])[]
-                                      }
-                                        ? `${component} ${string}`
-                                        : never)
-                                : rule extends { kind: 'grid-tracks' }
+                              : rule extends { kind: 'percentage' }
+                                ? Calculation | `${number}%` | Keywords<rule>
+                                : rule extends {
+                                      kind: 'enum'
+                                      values: readonly (infer keyword extends
+                                        string)[]
+                                    }
                                   ?
-                                      | GridTracks
-                                      | (rule extends { explicit: true }
-                                          ?
-                                              | 'none'
-                                              | 'subgrid'
-                                              | `repeat(${string})${string}`
-                                              | `[${string}`
-                                          : never)
-                                  : rule extends { kind: 'grid-line' }
-                                    ? number | string
-                                    : rule extends { kind: 'time' }
-                                      ? Listed<
-                                          Calculation | Time | Keywords<rule>,
+                                      | Listed<
+                                          | keyword
+                                          | (rule extends { quoted: true }
+                                              ? `"${string}"` | `'${string}'`
+                                              : never)
+                                          | (rule extends { urls: true }
+                                              ? `${Url}${string}`
+                                              : never)
+                                          | (rule extends { easing: true }
+                                              ? Easing
+                                              : never),
                                           rule
                                         >
-                                      :
-                                          | Color
-                                          | Keywords<rule>
-                                          | (rule extends { items: number }
-                                              ? `${Color} ${string}`
-                                              : never))
+                                      | (rule extends { items: number }
+                                          ? `${keyword} ${string}`
+                                          : never)
+                                      | (rule extends {
+                                          groups: readonly (readonly (infer component extends
+                                            string)[])[]
+                                        }
+                                          ? `${component} ${string}`
+                                          : never)
+                                  : rule extends { kind: 'grid-tracks' }
+                                    ?
+                                        | GridTracks
+                                        | (rule extends { explicit: true }
+                                            ?
+                                                | 'none'
+                                                | 'subgrid'
+                                                | `repeat(${string})${string}`
+                                                | `[${string}`
+                                            : never)
+                                    : rule extends { kind: 'grid-line' }
+                                      ? number | string
+                                      : rule extends { kind: 'time' }
+                                        ? Listed<
+                                            Calculation | Time | Keywords<rule>,
+                                            rule
+                                          >
+                                        :
+                                            | Color
+                                            | (rule extends { paint: true }
+                                                ?
+                                                    | Url
+                                                    | `${Url} ${Color | 'none'}`
+                                                : never)
+                                            | Keywords<rule>
+                                            | (rule extends { items: number }
+                                                ? `${Color} ${string}`
+                                                : never))
 const blend = {
   kind: 'enum',
   values: [
@@ -426,6 +460,8 @@ const color = { kind: 'color' } as const
 const fragmentation = {
   kind: 'enum',
   values: [
+    'region',
+    'avoid-region',
     'auto',
     'avoid',
     'avoid-column',
@@ -654,6 +690,30 @@ const namedColors = [
   'yellowgreen',
 ] as const
 const systemColors = [
+  'ActiveBorder',
+  'ActiveCaption',
+  'AppWorkspace',
+  'Background',
+  'ButtonHighlight',
+  'ButtonShadow',
+  'CaptionText',
+  'InactiveBorder',
+  'InactiveCaption',
+  'InactiveCaptionText',
+  'InfoBackground',
+  'InfoText',
+  'Menu',
+  'MenuText',
+  'Scrollbar',
+  'ThreeDDarkShadow',
+  'ThreeDFace',
+  'ThreeDHighlight',
+  'ThreeDLightShadow',
+  'ThreeDShadow',
+  'Window',
+  'WindowFrame',
+  'WindowText',
+
   'AccentColor',
   'AccentColorText',
   'ActiveText',
@@ -739,7 +799,7 @@ export function isLiteral(
   value: string | number,
 ): boolean {
   if (value === 0 || globals.has(String(value))) return true
-  const rule: Rule = rules[property]
+  const rule: Rule | undefined = rules[property as keyof typeof rules]
   if (!rule) return false
   if (typeof value === 'string') {
     if (
@@ -764,6 +824,7 @@ export function isLiteral(
 
 /** Serializes public camel-case property names, including numeric legacy spellings. */
 export function name(property: string): string {
+  if (property.startsWith('--')) return property
   if (property === 'MsScrollbar3dlightColor')
     return '-ms-scrollbar-3dlight-color'
   return property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)
@@ -791,12 +852,15 @@ export const rules = {
   alignItems: {
     kind: 'enum',
     values: [
+      'anchor-center',
       'baseline',
       'center',
       'end',
       'flex-end',
       'flex-start',
       'normal',
+      'self-end',
+      'self-start',
       'start',
       'stretch',
     ],
@@ -817,6 +881,7 @@ export const rules = {
   alignSelf: {
     kind: 'enum',
     values: [
+      'anchor-center',
       'auto',
       'baseline',
       'center',
@@ -830,6 +895,7 @@ export const rules = {
       'stretch',
     ],
   },
+  alignTracks: { kind: 'compound', property: 'alignTracks' },
   all: {
     kind: 'enum',
     values: ['inherit', 'initial', 'revert', 'revert-layer', 'unset'],
@@ -848,6 +914,7 @@ export const rules = {
     separator: 'comma',
     standalone: ['all', 'none'],
   },
+  animation: { kind: 'compound', property: 'animation' },
   animationComposition: {
     kind: 'enum',
     list: true,
@@ -883,6 +950,7 @@ export const rules = {
     list: true,
     values: ['paused', 'running'],
   },
+  animationRange: { kind: 'compound', property: 'animationRange' },
   animationTimeline: {
     dashed: true,
     keywords: ['auto', 'none'],
@@ -905,6 +973,7 @@ export const rules = {
       'step-start',
     ],
   },
+  animationTrigger: { kind: 'compound', property: 'animationTrigger' },
   appearance: {
     kind: 'enum',
     values: [
@@ -924,17 +993,23 @@ export const rules = {
     ],
   },
   aspectRatio: { kind: 'ratio' },
+  backdropFilter: { kind: 'compound', property: 'backdropFilter' },
   backfaceVisibility: { kind: 'enum', values: ['hidden', 'visible'] },
-  backgroundAttachment: { kind: 'enum', values: ['fixed', 'local', 'scroll'] },
+  background: { kind: 'compound', property: 'background' },
+  backgroundAttachment: {
+    kind: 'enum',
+    list: true,
+    values: ['fixed', 'local', 'scroll'],
+  },
   backgroundBlendMode: blend,
   backgroundClip: {
-    kind: 'enum',
-    values: ['border-box', 'content-box', 'padding-box', 'text'],
+    kind: 'enum', list: true,
+    values: ['border-area', 'border-box', 'content-box', 'padding-box', 'text'],
   },
   backgroundColor: color,
   backgroundImage: { kind: 'image', list: true },
   backgroundOrigin: {
-    kind: 'enum',
+    kind: 'enum', list: true,
     values: ['border-box', 'content-box', 'padding-box'],
   },
   backgroundPosition: {
@@ -944,19 +1019,25 @@ export const rules = {
   },
   backgroundPositionX: {
     ...length,
-    keywords: ['center', 'left', 'right'],
+    keywords: ['center', 'left', 'right', 'x-end', 'x-start'],
     negative: true,
   },
   backgroundPositionY: {
     ...length,
-    keywords: ['bottom', 'center', 'top'],
+    keywords: ['bottom', 'center', 'top', 'y-end', 'y-start'],
     negative: true,
   },
   backgroundRepeat: {
-    kind: 'enum',
+    kind: 'enum', items: 2, list: true,
     values: ['no-repeat', 'repeat', 'repeat-x', 'repeat-y', 'round', 'space'],
   },
-  backgroundSize: { ...length, auto: true, keywords: ['contain', 'cover'] },
+  backgroundSize: {
+    ...length,
+    auto: true,
+    items: 2,
+    list: true,
+    keywords: ['contain', 'cover'],
+  },
   baselineShift: {
     ...length,
     keywords: ['baseline', 'sub', 'super'],
@@ -991,6 +1072,7 @@ export const rules = {
   borderColor: { ...color, items: 4 },
   borderEndEndRadius: { ...length, items: 2 },
   borderEndStartRadius: { ...length, items: 2 },
+  borderImage: { kind: 'compound', property: 'borderImage' },
   borderImageOutset: {
     kind: 'tuple',
     atoms: ['length', 'number'],
@@ -1046,7 +1128,8 @@ export const rules = {
   borderRightColor: color,
   borderRightStyle: border,
   borderRightWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
-  borderSpacing: stroke,
+  borderShape: { kind: 'compound', property: 'borderShape' },
+  borderSpacing: { ...stroke, items: 2 },
   borderStartEndRadius: { ...length, items: 2 },
   borderStartStartRadius: { ...length, items: 2 },
   borderStyle: { ...border, items: 4 },
@@ -1083,14 +1166,52 @@ export const rules = {
     values: ['block-axis', 'horizontal', 'inline-axis', 'vertical'],
   },
   boxPack: { kind: 'enum', values: ['center', 'end', 'justify', 'start'] },
+  boxShadow: { kind: 'compound', property: 'boxShadow' },
   boxSizing: { kind: 'enum', values: ['border-box', 'content-box'] },
-  breakAfter: fragmentation,
-  breakBefore: fragmentation,
+  breakAfter: {
+    ...fragmentation,
+    values: [
+      'all',
+      'always',
+      'auto',
+      'avoid',
+      'avoid-column',
+      'avoid-page',
+      'avoid-region',
+      'column',
+      'left',
+      'page',
+      'recto',
+      'region',
+      'right',
+      'verso',
+    ],
+  },
+  breakBefore: {
+    ...fragmentation,
+    values: [
+      'all',
+      'always',
+      'auto',
+      'avoid',
+      'avoid-column',
+      'avoid-page',
+      'avoid-region',
+      'column',
+      'left',
+      'page',
+      'recto',
+      'region',
+      'right',
+      'verso',
+    ],
+  },
   breakInside: {
     kind: 'enum',
-    values: ['auto', 'avoid', 'avoid-column', 'avoid-page'],
+    values: ['avoid-region', 'auto', 'avoid', 'avoid-column', 'avoid-page'],
   },
   captionSide: { kind: 'enum', values: ['bottom', 'top'] },
+  caret: { kind: 'compound', property: 'caret' },
   caretAnimation: { kind: 'enum', values: ['auto', 'manual'] },
   caretColor: { ...color, keywords: ['auto'] },
   caretShape: { kind: 'enum', values: ['auto', 'bar', 'block', 'underscore'] },
@@ -1098,6 +1219,8 @@ export const rules = {
     kind: 'enum',
     values: ['both', 'inline-end', 'inline-start', 'left', 'none', 'right'],
   },
+  clip: { kind: 'compound', property: 'clip' },
+  clipPath: { kind: 'compound', property: 'clipPath' },
   clipRule: { kind: 'enum', values: ['evenodd', 'nonzero'] },
   color,
   colorInterpolationFilters: {
@@ -1124,6 +1247,7 @@ export const rules = {
   columnRuleColor: color,
   columnRuleStyle: border,
   columnRuleWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
+  columns: { kind: 'compound', property: 'columns' },
   columnSpan: { kind: 'enum', values: ['all', 'none'] },
   columnWidth: { ...stroke, auto: true },
   columnWrap: { kind: 'enum', values: ['auto', 'nowrap', 'wrap'] },
@@ -1141,6 +1265,7 @@ export const rules = {
       'style',
     ],
   },
+  container: { kind: 'compound', property: 'container' },
   containIntrinsicBlockSize: {
     atoms: ['length'],
     keywords: ['none'],
@@ -1206,6 +1331,7 @@ export const rules = {
       'size scroll-state',
     ],
   },
+  content: { kind: 'compound', property: 'content' },
   contentVisibility: { kind: 'enum', values: ['auto', 'hidden', 'visible'] },
   cornerBlockEndShape: { kind: 'corner', items: 2 },
   cornerBlockStartShape: { kind: 'corner', items: 2 },
@@ -1224,8 +1350,12 @@ export const rules = {
   cornerTopLeftShape: { kind: 'corner' },
   cornerTopRightShape: { kind: 'corner' },
   cornerTopShape: { kind: 'corner', items: 2 },
+  counterIncrement: { kind: 'compound', property: 'counterIncrement' },
+  counterReset: { kind: 'compound', property: 'counterReset' },
+  counterSet: { kind: 'compound', property: 'counterSet' },
   cursor: {
     kind: 'enum',
+    urls: true,
     values: [
       'alias',
       'all-scroll',
@@ -1267,22 +1397,35 @@ export const rules = {
   },
   cx: { ...length, negative: true },
   cy: { ...length, negative: true },
+  d: { kind: 'compound', property: 'd' },
   direction: { kind: 'enum', values: ['ltr', 'rtl'] },
   display: {
     kind: 'enum',
+    groups: [
+      ['block', 'inline', 'run-in'],
+      ['flow', 'flow-root', 'flex', 'grid', 'table', 'ruby', 'math'],
+    ],
     values: [
       'block',
       'contents',
       'flex',
+      'flow',
       'flow-root',
       'grid',
       'inline',
       'inline-block',
       'inline-flex',
       'inline-grid',
+      'inline-list-item',
       'inline-table',
       'list-item',
       'none',
+      'ruby',
+      'ruby-base',
+      'ruby-base-container',
+      'ruby-text',
+      'ruby-text-container',
+      'run-in',
       'table',
       'table-caption',
       'table-cell',
@@ -1314,9 +1457,15 @@ export const rules = {
   },
   emptyCells: { kind: 'enum', values: ['hide', 'show'] },
   fieldSizing: { kind: 'enum', values: ['content', 'fixed'] },
-  fill: { ...color, keywords: ['context-fill', 'context-stroke', 'none'] },
+  fill: {
+    ...color,
+    keywords: ['context-fill', 'context-stroke', 'none'],
+    paint: true,
+  },
   fillOpacity: alpha,
   fillRule: { kind: 'enum', values: ['evenodd', 'nonzero'] },
+  filter: { kind: 'compound', property: 'filter' },
+  flex: { kind: 'compound', property: 'flex' },
   flexBasis: { ...size, keywords: ['content', ...intrinsic] },
   flexDirection: {
     kind: 'enum',
@@ -1329,6 +1478,7 @@ export const rules = {
     ],
     kind: 'enum',
     values: [
+      'balance',
       'column',
       'column-reverse',
       'nowrap',
@@ -1346,21 +1496,43 @@ export const rules = {
     min: 1,
   },
   flexShrink: { kind: 'number', max: Infinity, min: 0 },
-  flexWrap: { kind: 'enum', values: ['nowrap', 'wrap', 'wrap-reverse'] },
+  flexWrap: {
+    kind: 'enum',
+    values: ['balance', 'nowrap', 'wrap', 'wrap-reverse'],
+  },
   float: {
     kind: 'enum',
     values: ['inline-end', 'inline-start', 'left', 'none', 'right'],
   },
   floodColor: color,
   floodOpacity: alpha,
+  font: { kind: 'compound', property: 'font' },
+  fontFamily: { kind: 'compound', property: 'fontFamily' },
+  fontFeatureSettings: { kind: 'compound', property: 'fontFeatureSettings' },
   fontKerning: { kind: 'enum', values: ['auto', 'none', 'normal'] },
+  fontLanguageOverride: { kind: 'compound', property: 'fontLanguageOverride' },
   fontOpticalSizing: { kind: 'enum', values: ['auto', 'none'] },
   fontPalette: {
     dashed: true,
     keywords: ['dark', 'light', 'normal'],
     kind: 'identifier',
   },
-  fontSize: length,
+  fontSize: {
+    ...length,
+    keywords: [
+      'large',
+      'larger',
+      'math',
+      'medium',
+      'small',
+      'smaller',
+      'x-large',
+      'x-small',
+      'xx-large',
+      'xx-small',
+      'xxx-large',
+    ],
+  },
   fontSizeAdjust: {
     atoms: ['number'],
     keywords: ['from-font'],
@@ -1398,6 +1570,11 @@ export const rules = {
   fontSynthesisSmallCaps: { kind: 'enum', values: ['auto', 'none'] },
   fontSynthesisStyle: { kind: 'enum', values: ['auto', 'none'] },
   fontSynthesisWeight: { kind: 'enum', values: ['auto', 'none'] },
+  fontVariant: { kind: 'compound', property: 'fontVariant' },
+  fontVariantAlternates: {
+    kind: 'compound',
+    property: 'fontVariantAlternates',
+  },
   fontVariantCaps: {
     kind: 'enum',
     values: [
@@ -1477,7 +1654,16 @@ export const rules = {
     ],
   },
   fontVariantPosition: { kind: 'enum', values: ['normal', 'sub', 'super'] },
-  fontWeight: { kind: 'number', max: 1000, min: 1 },
+  fontVariationSettings: {
+    kind: 'compound',
+    property: 'fontVariationSettings',
+  },
+  fontWeight: {
+    kind: 'number',
+    max: 1000,
+    min: 1,
+    keywords: ['bold', 'bolder', 'lighter', 'normal'],
+  },
   fontWidth,
   forcedColorAdjust: {
     kind: 'enum',
@@ -1493,7 +1679,8 @@ export const rules = {
       'content-width',
     ],
   },
-  gap: { ...length, items: 2 },
+  gap: { ...length, items: 2, keywords: ['normal'] },
+  grid: { kind: 'compound', property: 'grid' },
   gridArea: { kind: 'grid-line', items: 4 },
   gridAutoColumns: track,
   gridAutoFlow: {
@@ -1518,6 +1705,8 @@ export const rules = {
   gridRowEnd: { kind: 'grid-line' },
   gridRowGap: length,
   gridRowStart: { kind: 'grid-line' },
+  gridTemplate: { kind: 'compound', property: 'gridTemplate' },
+  gridTemplateAreas: { kind: 'compound', property: 'gridTemplateAreas' },
   gridTemplateColumns: {
     ...track,
     explicit: true,
@@ -1532,6 +1721,7 @@ export const rules = {
     values: ['allow-end', 'first', 'force-end', 'last', 'none'],
   },
   height: size,
+  hyphenateCharacter: { kind: 'compound', property: 'hyphenateCharacter' },
   hyphenateLimitChars: {
     kind: 'tuple',
     atoms: ['integer'],
@@ -1541,14 +1731,17 @@ export const rules = {
     negative: false,
   },
   hyphens: { kind: 'enum', values: ['auto', 'manual', 'none'] },
+  imageOrientation: { kind: 'compound', property: 'imageOrientation' },
   imageRendering: {
     kind: 'enum',
     values: ['auto', 'crisp-edges', 'pixelated', 'smooth'],
   },
+  imageResolution: { kind: 'compound', property: 'imageResolution' },
   imeMode: {
     kind: 'enum',
     values: ['active', 'auto', 'disabled', 'inactive', 'normal'],
   },
+  initialLetter: { kind: 'compound', property: 'initialLetter' },
   initialLetterAlign: {
     kind: 'enum',
     values: ['alphabetic', 'auto', 'hanging', 'ideographic'],
@@ -1581,11 +1774,14 @@ export const rules = {
       'end',
       'flex-end',
       'flex-start',
+      'left',
       'normal',
+      'right',
       'space-around',
       'space-between',
       'space-evenly',
       'start',
+      'stretch',
     ],
   },
   justifyItems: {
@@ -1672,6 +1868,7 @@ export const rules = {
       'unsafe start',
     ],
   },
+  justifyTracks: { kind: 'compound', property: 'justifyTracks' },
   left: margin,
   letterSpacing: textSpacing,
   lightingColor: color,
@@ -1686,13 +1883,15 @@ export const rules = {
     max: Number.MAX_SAFE_INTEGER,
     min: 1,
   },
-  lineHeight: { kind: 'number', max: Infinity, min: 0 },
+  lineHeight: { kind: 'number', length: true, percentage: true, max: Infinity, min: 0, keywords: ['normal'] },
   lineHeightStep: { ...length, percentage: false },
+  linkParameters: { kind: 'compound', property: 'linkParameters' },
+  listStyle: { kind: 'compound', property: 'listStyle' },
   listStyleImage: { kind: 'image' },
   listStylePosition: { kind: 'enum', values: ['inside', 'outside'] },
   listStyleType: {
-    kind: 'enum',
-    values: [
+    kind: 'identifier',
+    keywords: [
       'armenian',
       'circle',
       'cjk-ideographic',
@@ -1734,6 +1933,8 @@ export const rules = {
   markerEnd: { kind: 'url' },
   markerMid: { kind: 'url' },
   markerStart: { kind: 'url' },
+  mask: { kind: 'compound', property: 'mask' },
+  maskBorder: { kind: 'compound', property: 'maskBorder' },
   maskBorderMode: { kind: 'enum', values: ['alpha', 'luminance'] },
   maskBorderOutset: {
     kind: 'tuple',
@@ -1766,7 +1967,7 @@ export const rules = {
     negative: false,
   },
   maskClip: {
-    kind: 'enum',
+    kind: 'enum', list: true,
     values: [
       'border-box',
       'content-box',
@@ -1778,13 +1979,17 @@ export const rules = {
     ],
   },
   maskComposite: {
-    kind: 'enum',
+    kind: 'enum', list: true,
     values: ['add', 'exclude', 'intersect', 'subtract'],
   },
   maskImage: { kind: 'image', list: true },
-  maskMode: { kind: 'enum', values: ['alpha', 'luminance', 'match-source'] },
-  maskOrigin: {
+  maskMode: {
     kind: 'enum',
+    list: true,
+    values: ['alpha', 'luminance', 'match-source'],
+  },
+  maskOrigin: {
+    kind: 'enum', list: true,
     values: [
       'border-box',
       'content-box',
@@ -1800,10 +2005,16 @@ export const rules = {
     negative: true,
   },
   maskRepeat: {
-    kind: 'enum',
+    kind: 'enum', items: 2, list: true,
     values: ['no-repeat', 'repeat', 'repeat-x', 'repeat-y', 'round', 'space'],
   },
-  maskSize: { ...length, auto: true, keywords: ['contain', 'cover'] },
+  maskSize: {
+    ...length,
+    auto: true,
+    items: 2,
+    list: true,
+    keywords: ['contain', 'cover'],
+  },
   maskType: { kind: 'enum', values: ['alpha', 'luminance'] },
   masonryAutoFlow: {
     groups: [
@@ -1813,6 +2024,7 @@ export const rules = {
     kind: 'enum',
     values: ['definite-first', 'next', 'ordered', 'pack'],
   },
+  mathDepth: { kind: 'compound', property: 'mathDepth' },
   mathShift: { kind: 'enum', values: ['compact', 'normal'] },
   mathStyle: { kind: 'enum', values: ['compact', 'normal'] },
   maxBlockSize: maximum,
@@ -2001,9 +2213,14 @@ export const rules = {
     max: Infinity,
     negative: false,
   },
+  MozContextProperties: { kind: 'compound', property: 'MozContextProperties' },
   MozFloatEdge: {
     kind: 'enum',
     values: ['border-box', 'content-box', 'margin-box', 'padding-box'],
+  },
+  MozForceBrokenImageIcon: {
+    kind: 'compound',
+    property: 'MozForceBrokenImageIcon',
   },
   MozOrient: {
     kind: 'enum',
@@ -2046,12 +2263,23 @@ export const rules = {
   MsBlockProgression: { kind: 'enum', values: ['bt', 'lr', 'rl', 'tb'] },
   MsContentZoomChaining: { kind: 'enum', values: ['chained', 'none'] },
   MsContentZooming: { kind: 'enum', values: ['none', 'zoom'] },
+  MsContentZoomLimit: { kind: 'compound', property: 'MsContentZoomLimit' },
   MsContentZoomLimitMax: { kind: 'percentage', min: 0, max: Infinity },
   MsContentZoomLimitMin: { kind: 'percentage', min: 0, max: Infinity },
+  MsContentZoomSnap: { kind: 'compound', property: 'MsContentZoomSnap' },
+  MsContentZoomSnapPoints: {
+    kind: 'compound',
+    property: 'MsContentZoomSnapPoints',
+  },
   MsContentZoomSnapType: {
     kind: 'enum',
     values: ['mandatory', 'none', 'proximity'],
   },
+  MsFilter: { kind: 'compound', property: 'MsFilter' },
+  MsFlowFrom: { kind: 'compound', property: 'MsFlowFrom' },
+  MsFlowInto: { kind: 'compound', property: 'MsFlowInto' },
+  MsGridColumns: { kind: 'compound', property: 'MsGridColumns' },
+  MsGridRows: { kind: 'compound', property: 'MsGridRows' },
   MsHighContrastAdjust: { kind: 'enum', values: ['auto', 'none'] },
   MsHyphenateLimitChars: {
     kind: 'tuple',
@@ -2060,6 +2288,10 @@ export const rules = {
     min: 1,
     max: 3,
     negative: false,
+  },
+  MsHyphenateLimitLines: {
+    kind: 'compound',
+    property: 'MsHyphenateLimitLines',
   },
   MsHyphenateLimitZone: length,
   MsImeAlign: { kind: 'enum', values: ['after', 'auto'] },
@@ -2076,15 +2308,20 @@ export const rules = {
   MsScrollbarShadowColor: color,
   MsScrollbarTrackColor: color,
   MsScrollChaining: { kind: 'enum', values: ['chained', 'none'] },
+  MsScrollLimit: { kind: 'compound', property: 'MsScrollLimit' },
   MsScrollLimitXMax: { ...stroke, auto: true },
   MsScrollLimitXMin: stroke,
   MsScrollLimitYMax: { ...stroke, auto: true },
   MsScrollLimitYMin: stroke,
   MsScrollRails: { kind: 'enum', values: ['none', 'railed'] },
+  MsScrollSnapPointsX: { kind: 'compound', property: 'MsScrollSnapPointsX' },
+  MsScrollSnapPointsY: { kind: 'compound', property: 'MsScrollSnapPointsY' },
   MsScrollSnapType: {
     kind: 'enum',
     values: ['mandatory', 'none', 'proximity'],
   },
+  MsScrollSnapX: { kind: 'compound', property: 'MsScrollSnapX' },
+  MsScrollSnapY: { kind: 'compound', property: 'MsScrollSnapY' },
   MsScrollTranslation: {
     kind: 'enum',
     values: ['none', 'vertical-to-horizontal'],
@@ -2116,7 +2353,13 @@ export const rules = {
     keywords: ['bottom', 'center', 'left', 'right', 'top'],
     negative: true,
   },
+  objectViewBox: { kind: 'compound', property: 'objectViewBox' },
+  offset: { kind: 'compound', property: 'offset' },
+  offsetAnchor: { kind: 'compound', property: 'offsetAnchor' },
   offsetDistance: { ...length, negative: true },
+  offsetPath: { kind: 'compound', property: 'offsetPath' },
+  offsetPosition: { kind: 'compound', property: 'offsetPosition' },
+  offsetRotate: { kind: 'compound', property: 'offsetRotate' },
   opacity: alpha,
   // Safe integers serialize without exponential notation in CSS integer positions.
   order: {
@@ -2127,7 +2370,7 @@ export const rules = {
   },
   orphans: positiveInteger,
   outline: { kind: 'line', outline: true },
-  outlineColor: color,
+  outlineColor: { ...color, keywords: ['auto'] },
   outlineOffset: { ...stroke, negative: true },
   outlineStyle: {
     kind: 'enum',
@@ -2152,6 +2395,7 @@ export const rules = {
     values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
   },
   overflowClipBox: { kind: 'enum', values: ['content-box', 'padding-box'] },
+  overflowClipMargin: { kind: 'compound', property: 'overflowClipMargin' },
   overflowInline: {
     kind: 'enum',
     values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
@@ -2192,14 +2436,37 @@ export const rules = {
     values: ['always', 'auto', 'avoid', 'left', 'recto', 'right', 'verso'],
   },
   pageBreakInside: { kind: 'enum', values: ['auto', 'avoid'] },
-  paintOrder: { kind: 'enum', values: ['fill', 'markers', 'normal', 'stroke'] },
+  paintOrder: {
+    kind: 'enum',
+    groups: [['fill'], ['stroke'], ['markers']],
+    values: ['fill', 'markers', 'normal', 'stroke'],
+  },
+  pathLength: { kind: 'compound', property: 'pathLength' },
   perspective: { ...length, keywords: ['none'], percentage: false },
   perspectiveOrigin: {
     ...length,
     keywords: ['bottom', 'center', 'left', 'right', 'top'],
     negative: true,
   },
-  pointerEvents: { kind: 'enum', values: ['auto', 'none'] },
+  placeContent: { kind: 'compound', property: 'placeContent' },
+  placeItems: { kind: 'compound', property: 'placeItems' },
+  placeSelf: { kind: 'compound', property: 'placeSelf' },
+  pointerEvents: {
+    kind: 'enum',
+    values: [
+      'all',
+      'auto',
+
+      'fill',
+      'none',
+      'painted',
+      'stroke',
+      'visible',
+      'visibleFill',
+      'visiblePainted',
+      'visibleStroke',
+    ],
+  },
   position: {
     kind: 'enum',
     values: ['absolute', 'fixed', 'relative', 'static', 'sticky'],
@@ -2209,6 +2476,9 @@ export const rules = {
     keywords: ['auto', 'match-parent', 'none', 'normal'],
     kind: 'identifier',
   },
+  positionArea: { kind: 'compound', property: 'positionArea' },
+  positionTry: { kind: 'compound', property: 'positionTry' },
+  positionTryFallbacks: { kind: 'compound', property: 'positionTryFallbacks' },
   positionTryOrder: {
     kind: 'enum',
     values: [
@@ -2225,6 +2495,7 @@ export const rules = {
     values: ['always', 'anchors-valid', 'anchors-visible', 'no-overflow'],
   },
   printColorAdjust: { kind: 'enum', values: ['economy', 'exact'] },
+  quotes: { kind: 'compound', property: 'quotes' },
   r: length,
   readingFlow: {
     kind: 'enum',
@@ -2250,7 +2521,7 @@ export const rules = {
   },
   right: margin,
   rotate: { kind: 'rotate' },
-  rowGap: length,
+  rowGap: { ...length, keywords: ['normal'] },
   rubyAlign: {
     kind: 'enum',
     values: ['center', 'space-around', 'space-between', 'start'],
@@ -2336,6 +2607,13 @@ export const rules = {
       'start start',
     ],
   },
+  scrollSnapCoordinate: { kind: 'compound', property: 'scrollSnapCoordinate' },
+  scrollSnapDestination: {
+    kind: 'compound',
+    property: 'scrollSnapDestination',
+  },
+  scrollSnapPointsX: { kind: 'compound', property: 'scrollSnapPointsX' },
+  scrollSnapPointsY: { kind: 'compound', property: 'scrollSnapPointsY' },
   scrollSnapStop: { kind: 'enum', values: ['always', 'normal'] },
   scrollSnapType: {
     kind: 'enum',
@@ -2361,6 +2639,7 @@ export const rules = {
   scrollSnapTypeX: { kind: 'enum', values: ['mandatory', 'none', 'proximity'] },
   scrollSnapTypeY: { kind: 'enum', values: ['mandatory', 'none', 'proximity'] },
   scrollTargetGroup: { kind: 'enum', values: ['auto', 'none'] },
+  scrollTimeline: { kind: 'compound', property: 'scrollTimeline' },
   scrollTimelineAxis: {
     kind: 'enum',
     list: true,
@@ -2374,6 +2653,7 @@ export const rules = {
   },
   shapeImageThreshold: { kind: 'number', min: 0, max: 1 },
   shapeMargin: length,
+  shapeOutside: { kind: 'compound', property: 'shapeOutside' },
   shapeRendering: {
     kind: 'enum',
     values: ['auto', 'crispEdges', 'geometricPrecision', 'optimizeSpeed'],
@@ -2395,8 +2675,13 @@ export const rules = {
   },
   stopColor: color,
   stopOpacity: alpha,
-  stroke: { ...color, keywords: ['context-fill', 'context-stroke', 'none'] },
+  stroke: {
+    ...color,
+    keywords: ['context-fill', 'context-stroke', 'none'],
+    paint: true,
+  },
   strokeColor: color,
+  strokeDasharray: { kind: 'compound', property: 'strokeDasharray' },
   strokeDashoffset: { ...length, negative: true },
   strokeLinecap: { kind: 'enum', values: ['butt', 'round', 'square'] },
   strokeLinejoin: {
@@ -2405,23 +2690,34 @@ export const rules = {
   },
   strokeMiterlimit: { kind: 'number', max: Infinity, min: 1 },
   strokeOpacity: alpha,
-  strokeWidth: length,
+  strokeWidth: { ...length, numeric: true },
   tableLayout: { kind: 'enum', values: ['auto', 'fixed'] },
   tabSize: {
     integer: true,
+    length: true,
     kind: 'number',
     max: Number.MAX_SAFE_INTEGER,
     min: 0,
   },
   textAlign: {
     kind: 'enum',
-    values: ['center', 'end', 'justify', 'left', 'right', 'start'],
+    values: [
+      'center',
+      'end',
+      'justify',
+      'left',
+      'match-parent',
+      'right',
+      'start',
+    ],
   },
   textAlignLast: {
     kind: 'enum',
     values: ['auto', 'center', 'end', 'justify', 'left', 'right', 'start'],
   },
   textAnchor: { kind: 'enum', values: ['end', 'middle', 'start'] },
+  textAutospace: { kind: 'compound', property: 'textAutospace' },
+  textBox: { kind: 'compound', property: 'textBox' },
   textBoxEdge: {
     kind: 'enum',
     values: [
@@ -2457,7 +2753,8 @@ export const rules = {
     kind: 'enum',
     values: ['none', 'trim-both', 'trim-end', 'trim-start'],
   },
-  textCombineUpright: { kind: 'enum', values: ['all', 'none'] },
+  textCombineUpright: { kind: 'enum', values: ['all', 'digits', 'none'] },
+  textDecoration: { kind: 'compound', property: 'textDecoration' },
   textDecorationColor: color,
   textDecorationInset: {
     ...length,
@@ -2469,6 +2766,8 @@ export const rules = {
   textDecorationLine: {
     kind: 'enum',
     values: [
+      'blink',
+      'grammar-error',
       'line-through',
       'line-through overline',
       'line-through overline underline',
@@ -2480,6 +2779,7 @@ export const rules = {
       'overline line-through underline',
       'overline underline',
       'overline underline line-through',
+      'spelling-error',
       'underline',
       'underline line-through',
       'underline line-through overline',
@@ -2487,12 +2787,14 @@ export const rules = {
       'underline overline line-through',
     ],
   },
-  textDecorationSkipInk: { kind: 'enum', values: ['auto', 'none'] },
+  textDecorationSkip: { kind: 'compound', property: 'textDecorationSkip' },
+  textDecorationSkipInk: { kind: 'enum', values: ['all', 'auto', 'none'] },
   textDecorationStyle: {
     kind: 'enum',
     values: ['dashed', 'dotted', 'double', 'solid', 'wavy'],
   },
   textDecorationThickness: { ...length, auto: true, keywords: ['from-font'] },
+  textEmphasis: { kind: 'compound', property: 'textEmphasis' },
   textEmphasisColor: color,
   textEmphasisPosition: {
     kind: 'enum',
@@ -2512,6 +2814,7 @@ export const rules = {
   },
   textEmphasisStyle: {
     kind: 'enum',
+    quoted: true,
     values: [
       'circle',
       'circle filled',
@@ -2543,13 +2846,19 @@ export const rules = {
       'triangle open',
     ],
   },
-  textIndent: { ...length, negative: true },
+  textFit: { kind: 'compound', property: 'textFit' },
+  textIndent: { kind: 'compound', property: 'textIndent' },
   textJustify: {
     kind: 'enum',
     values: ['auto', 'inter-character', 'inter-word', 'none'],
   },
   textOrientation: { kind: 'enum', values: ['mixed', 'sideways', 'upright'] },
-  textOverflow: { kind: 'enum', values: ['clip', 'ellipsis'] },
+  textOverflow: {
+    kind: 'enum',
+    quoted: true,
+    items: 2,
+    values: ['clip', 'ellipsis'],
+  },
   textRendering: {
     kind: 'enum',
     values: [
@@ -2559,6 +2868,7 @@ export const rules = {
       'optimizeSpeed',
     ],
   },
+  textShadow: { kind: 'compound', property: 'textShadow' },
   textSizeAdjust: {
     kind: 'percentage',
     min: 0,
@@ -2571,7 +2881,15 @@ export const rules = {
   },
   textTransform: {
     kind: 'enum',
-    values: ['capitalize', 'lowercase', 'none', 'uppercase'],
+    values: [
+      'capitalize',
+      'full-size-kana',
+      'full-width',
+      'lowercase',
+      'math-auto',
+      'none',
+      'uppercase',
+    ],
   },
   textUnderlineOffset: { ...length, auto: true, negative: true },
   textUnderlinePosition: {
@@ -2599,8 +2917,17 @@ export const rules = {
     separator: 'comma',
     standalone: ['none'],
   },
+  timelineTrigger: { kind: 'compound', property: 'timelineTrigger' },
+  timelineTriggerActivationRange: {
+    kind: 'compound',
+    property: 'timelineTriggerActivationRange',
+  },
   timelineTriggerActivationRangeEnd: attachmentRange,
   timelineTriggerActivationRangeStart: attachmentRange,
+  timelineTriggerActiveRange: {
+    kind: 'compound',
+    property: 'timelineTriggerActiveRange',
+  },
   timelineTriggerActiveRangeEnd: {
     ...attachmentRange,
     standalone: [...attachmentRange.standalone, 'auto'],
@@ -2729,10 +3056,12 @@ export const rules = {
   },
   transformOrigin: {
     ...length,
+    items: 2,
     keywords: ['bottom', 'center', 'left', 'right', 'top'],
     negative: true,
   },
   transformStyle: { kind: 'enum', values: ['flat', 'preserve-3d'] },
+  transition: { kind: 'compound', property: 'transition' },
   transitionBehavior: {
     kind: 'enum',
     list: true,
@@ -2779,8 +3108,20 @@ export const rules = {
       'plaintext',
     ],
   },
-  userSelect: { kind: 'enum', values: ['all', 'auto', 'none', 'text'] },
-  vectorEffect: { kind: 'enum', values: ['none', 'non-scaling-stroke'] },
+  userSelect: {
+    kind: 'enum',
+    values: ['all', 'auto', 'none', 'text'],
+  },
+  vectorEffect: {
+    kind: 'enum',
+    values: [
+      'fixed-position',
+      'non-rotation',
+      'non-scaling-size',
+      'non-scaling-stroke',
+      'none',
+    ],
+  },
   verticalAlign: {
     ...length,
     keywords: [
@@ -2795,6 +3136,7 @@ export const rules = {
     ],
     negative: true,
   },
+  viewTimeline: { kind: 'compound', property: 'viewTimeline' },
   viewTimelineAxis: {
     kind: 'enum',
     list: true,
@@ -2898,7 +3240,9 @@ export const rules = {
   WebkitBorderStartColor: color,
   WebkitBorderStartStyle: border,
   WebkitBorderStartWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
+  WebkitBoxReflect: { kind: 'compound', property: 'WebkitBoxReflect' },
   WebkitLineClamp: { ...positiveInteger, keywords: ['none'] },
+  WebkitMask: { kind: 'compound', property: 'WebkitMask' },
   WebkitMaskAttachment: {
     kind: 'enum',
     list: true,
@@ -2954,6 +3298,7 @@ export const rules = {
       'view-box',
     ],
   },
+  WebkitMaskPosition: { kind: 'compound', property: 'WebkitMaskPosition' },
   WebkitMaskPositionX: {
     ...length,
     negative: true,
@@ -2966,6 +3311,7 @@ export const rules = {
     keywords: ['bottom', 'center', 'top'],
     list: true,
   },
+  WebkitMaskRepeat: { kind: 'compound', property: 'WebkitMaskRepeat' },
   WebkitMaskRepeatX: {
     kind: 'enum',
     values: ['no-repeat', 'repeat', 'round', 'space'],
@@ -2974,9 +3320,11 @@ export const rules = {
     kind: 'enum',
     values: ['no-repeat', 'repeat', 'round', 'space'],
   },
+  WebkitMaskSize: { kind: 'compound', property: 'WebkitMaskSize' },
   WebkitOverflowScrolling: { kind: 'enum', values: ['auto', 'touch'] },
   WebkitTapHighlightColor: color,
   WebkitTextFillColor: color,
+  WebkitTextStroke: { kind: 'compound', property: 'WebkitTextStroke' },
   WebkitTextStrokeColor: color,
   WebkitTextStrokeWidth: stroke,
   WebkitTouchCallout: { kind: 'enum', values: ['default', 'none'] },
@@ -2987,7 +3335,19 @@ export const rules = {
   WebkitUserSelect: { kind: 'enum', values: ['all', 'auto', 'none', 'text'] },
   whiteSpace: {
     kind: 'enum',
-    values: ['break-spaces', 'normal', 'nowrap', 'pre', 'pre-line', 'pre-wrap'],
+    values: [
+      'break-spaces',
+      'collapse',
+      'normal',
+      'nowrap',
+      'pre',
+      'pre-line',
+      'pre-wrap',
+      'preserve',
+      'preserve-breaks',
+      'preserve-spaces',
+      'wrap',
+    ],
   },
   whiteSpaceCollapse: {
     kind: 'enum',
@@ -3008,12 +3368,21 @@ export const rules = {
     standalone: ['auto'],
     excluded: ['all', 'none', 'will-change'],
   },
-  wordBreak: { kind: 'enum', values: ['break-all', 'keep-all', 'normal'] },
+  wordBreak: {
+    kind: 'enum',
+    values: ['auto-phrase', 'break-all', 'break-word', 'keep-all', 'normal'],
+  },
   wordSpacing: textSpacing,
   wordWrap: { kind: 'enum', values: ['break-word', 'normal'] },
   writingMode: {
     kind: 'enum',
-    values: ['horizontal-tb', 'vertical-lr', 'vertical-rl'],
+    values: [
+      'horizontal-tb',
+      'sideways-lr',
+      'sideways-rl',
+      'vertical-lr',
+      'vertical-rl',
+    ],
   },
   x: { ...length, negative: true },
   y: { ...length, negative: true },

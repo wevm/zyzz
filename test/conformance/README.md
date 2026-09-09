@@ -19,13 +19,13 @@ Consumer probes cover property names, token domains, units, hex literals, intege
 | Deferred     | Tracked without an implemented property mapping                                       |
 | Unclassified | Requires review; CI fails                                                             |
 
-Current property coverage is **572 partial, 98 deferred, and 0 fully supported** out of 670. Removing runtime validation does not promote entries. A partial property receives no completion credit.
+Current property coverage is **670 partial, 0 deferred, and 0 fully supported** out of 670. Removing runtime validation does not promote entries. A partial property receives no completion credit.
 
 ## Evidence
 
-The Transform conformance suite exhausts finite mapped keywords and samples numeric, color, image, URL, and dimensional domains. Candidate units come from upstream data and are selected by the independent MDN/CSS Tree grammar, never a Zyzz runtime validator.
+The Transform conformance suite walks the independent grammar and referenced productions to enumerate accepted keywords and samples numeric, color, image, URL, and dimensional domains. Candidate units come from upstream data and are selected by the independent MDN/CSS Tree grammar, never a Zyzz runtime validator.
 
-Every accepted probe checks emitted CSS against independent grammar and compiles a public TypeScript consumer. Invalid probes check expected TypeScript errors, including importance; booleans are rejected for every mapped property. Dedicated fixtures verify browser layout, painting, cascade, inheritance, and theme behavior.
+Every accepted probe checks emitted CSS against independent grammar and compiles a public TypeScript consumer. Invalid probes check expected TypeScript errors, including importance; booleans are rejected for every mapped property. Dedicated fixtures verify browser layout, painting, cascade, inheritance, and theme behavior. The property browser matrix samples every property supported by the installed engine and records unsupported spellings in a CI capability artifact. A separate matrix checks shorthand/longhand repeated overrides and reset-only relationships.
 
 Image and URL mappings include background-image, border-image-source, list-style-image, mask-border-source, mask-image, -webkit-mask-image, marker and its longhands, and -moz-binding. Quoted URL fallbacks retain importance. Marker shorthand/longhand conflicts preserve declaration order. Legacy browser behavior and complete image-function grammar remain partial.
 
@@ -45,3 +45,11 @@ The **CSS Property Conformance (100%)** CI job publishes a report even when it f
 Refreshing fingerprints acknowledges upstream changes; it does not implement features or promote coverage. Normal CI uses the lockfile and does not fetch live grammar.
 
 Sources: [MDN data](https://github.com/mdn/data), [CSS Tree](https://github.com/csstree/csstree), [CSS Images](https://www.w3.org/TR/css-images-4/), [SVG Markers](https://www.w3.org/TR/svg-markers/).
+
+## Compound Properties
+
+Every pinned property now has an authoring type, including custom properties, shorthands, font settings, filters, shadows, motion paths, timelines, and legacy spellings. Custom-property case and arbitrary scalar data are preserved. Named CSS properties still reject unknown names, wrong scalar domains, and invalid finite keywords.
+
+The new compound fixture records positive declarations independently of the emitter. Recursive function arguments and open custom identifiers retain CSS text. These types do not prove argument semantics or every possible compound permutation; the ledger remains partial pending that review and applicable browser evidence.
+
+The grammar oracle supplements the missing `param()` production from CSS Linked Parameters. It corrects the pinned circle production's use of radial-gradient sizing and normalizes SVG 2's path-length range notation. These exceptions are test-only; upstream fingerprints remain checked.

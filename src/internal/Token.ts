@@ -10,7 +10,7 @@ export function accepts(
   group: Group,
   property: keyof Literal.Properties,
 ): boolean {
-  if (group === 'color') return Literal.rules[property]?.kind === 'color'
+  if (group === 'color') return Literal.rule(property)?.kind === 'color'
   if (group === 'borderColor') return /^border.*Color$/.test(property)
   if (group === 'borderRadius') return /^border.*Radius$/.test(property)
   if (group === 'textColor') return property === 'color'

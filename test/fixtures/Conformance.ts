@@ -5,6 +5,7 @@
 import * as CssTree from 'css-tree'
 import * as Module from 'node:module'
 import * as Literal from '../../src/internal/Literal.js'
+import * as Compound from './Compound.js'
 
 /** One scalar declaration accepted by the public authoring boundary. */
 export type Case = {
@@ -39,6 +40,10 @@ export function cases(): readonly Case[] {
       'revert-layer',
       'unset',
     ]
+    for (const value of [0, 1, -1, 0.5, '1px', '1%', '1deg', '1s', '1dppx'])
+      if (!grammar.matchProperty(name(property), String(value)).error) values.push(value)
+    for (const value of keywords(grammar, name(property))) values.push(value)
+    if (rule.kind === 'compound') values.push(...Compound.values[rule.property])
     if (rule.kind === 'image' || rule.kind === 'url') {
       values.push('none', 'url("#paint")', 'url(#paint)')
       if (rule.kind === 'image') values.push('linear-gradient(red, blue)')
@@ -181,6 +186,12 @@ export function cases(): readonly Case[] {
         )
     }
     if (rule.kind === 'color') {
+      if ('paint' in rule)
+        values.push(
+          'url(#gradient)',
+          'url(#gradient) red',
+          'url(#gradient) none',
+        )
       if ('items' in rule)
         values.push(
           'red rgb(0 0 255)',
@@ -323,11 +334,26 @@ export function lexer() {
   > = require('mdn-data/css/syntaxes.json')
   return CssTree.fork({
     properties: Object.fromEntries(
-      Object.entries(properties).map(([name, entry]) => [name, entry.syntax]),
+      Object.entries(properties).map(([name, entry]) => [
+        name,
+        // SVG 2 places the range after the production; normalize its grammar notation.
+        name === 'path-length' ? 'none | <length [0,∞]>' : entry.syntax,
+      ]),
     ),
-    types: Object.fromEntries(
-      Object.entries(syntaxes).map(([name, entry]) => [name, entry.syntax]),
-    ),
+    types: {
+      ...Object.fromEntries(
+        Object.entries(syntaxes).map(([name, entry]) => [name, entry.syntax]),
+      ),
+      // Missing from pinned MDN syntaxes; CSS Linked Parameters §2.1 defines this production.
+      // https://www.w3.org/TR/2026/FPWD-css-link-params-1-20260819/#link-parameters
+      ...(!syntaxes['param()']
+        ? { 'param()': 'param( <dashed-ident> , <declaration-value>? )' }
+        : {}),
+      // MDN incorrectly reuses radial-gradient sizing for circle percentages.
+      // https://drafts.csswg.org/css-shapes-1/#funcdef-basic-shape-circle
+      'circle()':
+        'circle( [ <length-percentage [0,∞]> | closest-side | farthest-side ]? [ at <position> ]? )',
+    },
   }).lexer
 }
 
@@ -360,7 +386,6 @@ export const rejected = [
   { property: 'fieldSizing', value: 'auto' },
   { property: 'interpolateSize', value: 'auto' },
   { property: 'display', value: 'fleex' },
-  { property: 'fill', value: 'url(#gradient)' },
   { property: 'fillRule', value: 'winding' },
   { property: 'floodColor', value: 'none' },
   { property: 'fontStretch', value: '120px' },
@@ -369,7 +394,6 @@ export const rejected = [
   { property: 'gridColumnStart', value: 'span 1.5' },
   { property: 'letterSpacing', value: '10%' },
   { property: 'maskMode', value: 'normal' },
-  { property: 'maskSize', value: '1px 2px' },
   { property: 'padding', value: '0x10px' },
   { property: 'perspective', value: '50%' },
   { property: 'padding', value: '1 px' },
@@ -387,3 +411,27 @@ export const rejected = [
   { property: 'touchAction', value: 'auto pinch-zoom' },
   { property: 'textUnderlineOffset', value: 'from-font' },
 ] as const
+
+/** Enumerates upstream keyword alternatives, including recursively referenced productions. */
+function keywords(grammar: CssTree.Lexer, property: string): readonly string[] {
+  const found = new Set<string>()
+  const visited = new Set<string>()
+  function visit(kind: 'Property' | 'Type', name: string) {
+    const key = `${kind}:${name}`
+    if (visited.has(key)) return
+    visited.add(key)
+    const syntax = (
+      kind === 'Property' ? grammar.getProperty(name) : grammar.getType(name)
+    )?.syntax
+    if (!syntax || typeof syntax === 'function') return
+    CssTree.definitionSyntax.walk(syntax, (node) => {
+      if (node.type === 'Keyword') found.add(node.name)
+      if (node.type === 'Property' || node.type === 'Type')
+        visit(node.type, node.name)
+    })
+  }
+  visit('Property', property)
+  return [...found].filter(
+    (value) => !grammar.matchProperty(property, value).error,
+  )
+}

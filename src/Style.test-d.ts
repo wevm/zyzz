@@ -256,13 +256,11 @@ describe('css', () => {
     css({ resize: 'vertical', visibility: 'revert-layer' })
     Config.create().css({ cursor: 'zoom-in', pointerEvents: 'auto' })
     Theme.define({}).css({ userSelect: 'text', resize: 'both' })
-    // @ts-expect-error Cursor URL lists remain deferred.
     css({ cursor: 'url(cursor.png), pointer' })
-    // @ts-expect-error Pointer-events SVG keywords remain deferred.
     css({ pointerEvents: 'visiblePainted' })
     // @ts-expect-error Resize axes cannot be combined.
     css({ resize: 'horizontal vertical' })
-    // @ts-expect-error Selection containment remains deferred.
+    // @ts-expect-error Containment is outside the pinned user-select grammar.
     css({ userSelect: 'contain' })
     // @ts-expect-error Visibility is not opacity.
     css({ visibility: 0 })
@@ -285,7 +283,6 @@ describe('css', () => {
     Theme.define({}).css({ borderSpacing: '1rem', captionSide: 'bottom' })
     // @ts-expect-error Border spacing does not accept percentages.
     css({ borderSpacing: '10%' })
-    // @ts-expect-error Paired border spacing remains deferred.
     css({ borderSpacing: '1px 2px' })
     // @ts-expect-error Table layout has a finite keyword domain.
     css({ tableLayout: 'flex' })
@@ -338,7 +335,6 @@ describe('css', () => {
     css({ textDecorationStyle: 'groove' })
     // @ts-expect-error From-font is a thickness keyword, not an underline offset.
     css({ textUnderlineOffset: 'from-font' })
-    // @ts-expect-error Combined decoration shorthand remains deferred.
     css({ textDecoration: 'underline solid' })
     // @ts-expect-error Invalid numeric spellings remain checked in importance strings.
     css({ textDecorationThickness: '0x10px!' })
@@ -371,11 +367,9 @@ describe('css', () => {
     textTheme.css({ whiteSpace: textTheme.tokens.spacing.indent })
     // @ts-expect-error Root indentation remains token-free.
     css({ textIndent: 'indent' })
-    // @ts-expect-error Indentation modifiers remain deferred.
     css({ textIndent: '2em hanging' })
     // @ts-expect-error Unknown wrapping values do not widen the finite domain.
     css({ overflowWrap: 'all' })
-    // @ts-expect-error Custom text-overflow strings remain deferred.
     css({ textOverflow: '"..."' })
     css({ whiteSpaceCollapse: 'preserve' })
     // @ts-expect-error Numeric spellings remain checked through fallback importance.
@@ -821,7 +815,6 @@ describe('css', () => {
     css({ breakInside: 'column' })
     // @ts-expect-error Column widths do not accept percentage-capable spacing tokens.
     theme.css({ columnWidth: theme.tokens.spacing.gutter })
-    // @ts-expect-error Legacy regions remain deferred.
     css({ breakAfter: 'region' })
   })
 })
@@ -854,7 +847,6 @@ describe('css', () => {
     css({ zIndex: '2px' })
     // @ts-expect-error Isolation does not accept blend modes.
     css({ isolation: 'multiply' })
-    // @ts-expect-error Multi-keyword display remains deferred.
     css({ display: 'inline flow-root' })
   })
 })
@@ -886,9 +878,7 @@ describe('css', () => {
     })
     // @ts-expect-error Background position axes use different side keywords.
     css({ backgroundPositionX: 'top' })
-    // @ts-expect-error Image lists remain deferred.
     css({ backgroundAttachment: 'scroll, fixed' })
-    // @ts-expect-error Two-axis background sizes remain deferred.
     css({ backgroundSize: '10px 20px' })
     // @ts-expect-error Color controls do not accept length tokens.
     theme.css({ accentColor: theme.tokens.spacing.gap })
@@ -924,11 +914,8 @@ describe('css', () => {
     })
     const zyzz = Config.create({ theme: { color: { ink: '#06c' } } })
     zyzz.css({ fill: 'ink', stroke: zyzz.theme.tokens.color.ink })
-    // @ts-expect-error Paint servers require URL syntax support.
     css({ fill: 'url(#gradient)' })
-    // @ts-expect-error Multi-keyword paint order remains deferred.
     css({ paintOrder: 'stroke fill' })
-    // @ts-expect-error Widths require units except for zero.
     css({ strokeWidth: 2 })
     // @ts-expect-error Scalar paint keywords do not apply to filter colors.
     css({ floodColor: 'none' })
@@ -961,7 +948,6 @@ describe('css', () => {
     const zyzz = Config.create({ theme: { color: { accent: '#06c' } } })
     zyzz.css({ textEmphasisColor: 'accent' })
     css({ fontVariantNumeric: 'tabular-nums slashed-zero' })
-    // @ts-expect-error Custom emphasis strings remain deferred.
     css({ textEmphasisStyle: '"*"' })
     // @ts-expect-error Font stretch excludes length units.
     css({ fontStretch: '120px' })
@@ -1047,13 +1033,10 @@ describe('mask and image properties', () => {
       transformBox: 'border-box',
       transformOrigin: '-5px',
     })
-    // @ts-expect-error Mask lists remain deferred.
     css({ maskMode: 'alpha, luminance' })
     // @ts-expect-error Perspective distances exclude percentages.
     css({ perspective: '50%' })
-    // @ts-expect-error Paired mask sizes remain deferred.
     css({ maskSize: '50% 100%' })
-    // @ts-expect-error Multi-axis origin positions remain deferred.
     css({ transformOrigin: 'left top' })
   })
 })
@@ -1079,9 +1062,7 @@ describe('list and input controls', () => {
     css({ touchAction: 'pan-left pan-right' })
     // @ts-expect-error Auto does not combine with gestures.
     css({ touchAction: 'auto pinch-zoom' })
-    // @ts-expect-error Custom counter styles remain deferred.
     css({ listStyleType: 'custom-counter' })
-    // @ts-expect-error Length-based tab stops remain deferred.
     css({ tabSize: '20px' })
     // @ts-expect-error Text autoscaling excludes length units.
     css({ textSizeAdjust: '100px' })

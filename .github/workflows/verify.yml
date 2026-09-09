@@ -91,3 +91,10 @@ jobs:
           name: coverage
           path: coverage/
           retention-days: 30
+      - if: ${{ !cancelled() && hashFiles('test-results/css-browser-capabilities.json') != '' }}
+        name: Upload CSS browser capabilities
+        uses: actions/upload-artifact@v4
+        with:
+          name: css-browser-capabilities
+          path: test-results/css-browser-capabilities.json
+          retention-days: 30

@@ -40,7 +40,10 @@ describe('compile', () => {
     ) as {
       families: { properties: Record<string, { status: string }> }
     }
-    const implemented = Object.keys(Literal.rules).map(Conformance.name).sort()
+    const implemented = [
+      ...Object.keys(Literal.rules).map(Conformance.name),
+      '--*',
+    ].sort()
     const classified = Object.entries(inventory.families.properties)
       .filter(
         ([, entry]) =>
@@ -150,6 +153,7 @@ describe('compile', () => {
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-css-types-'))
     try {
       const cases = Conformance.cases()
+      const groups = new Map<string, string>()
       const declarations = Object.keys(Literal.rules).map((property) => {
         const values = [
           ...cases
@@ -159,7 +163,13 @@ describe('compile', () => {
           'var(--probe,)',
           'calc(1px + var(--probe))',
         ].flatMap((value) => [value, `${value}!`])
-        return `[${values.map((value) => JSON.stringify(value)).join(',')}] as const satisfies readonly Style.Properties['${property}'][];\ncss({${property}: [${values
+        const key = JSON.stringify(values)
+        let group = groups.get(key)
+        if (!group) {
+          group = `values${groups.size}`
+          groups.set(key, group)
+        }
+        return `${group} satisfies readonly Style.Properties['${property}'][];\ncss({${property}: [${values
           .slice(0, 16)
           .map((value) => JSON.stringify(value))
           .join(',')}]});`
@@ -172,7 +182,7 @@ describe('compile', () => {
         (property) =>
           `// @ts-expect-error Booleans are outside every CSS scalar domain.\ncss({${property}: true});`,
       )
-      const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { css, type Style } from 'zyzz';\ndescribe('css', () => {\n  test('validates generated conformance probes', () => {\n${[...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
+      const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { css, type Style } from 'zyzz';\ndescribe('css', () => {\n  test('validates generated conformance probes', () => {\n${[...[...groups].map(([values, group]) => `const ${group} = ${values} as const;`), ...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
       await Fs.writeFile(Path.join(directory, 'consumer.test-d.ts'), source)
       await Fs.writeFile(
         Path.join(directory, 'tsconfig.json'),
@@ -185,15 +195,18 @@ describe('compile', () => {
       const { stderr, stdout } = await Util.promisify(ChildProcess.execFile)(
         process.execPath,
         [
-          '--max-old-space-size=2048',
+          '--max-old-space-size=6144',
           require.resolve('typescript/bin/tsc'),
           '--project',
           Path.join(directory, 'tsconfig.json'),
         ],
-        { cwd: root, maxBuffer: 1024 * 1024, timeout: 110_000 },
+        { cwd: root, maxBuffer: 1024 * 1024, timeout: 300_000 },
       ).catch((error: unknown) => {
         if (error && typeof error === 'object' && 'stdout' in error)
-          throw new Error(String(error.stdout))
+          throw new Error(
+            String(error.stdout) ||
+              String('stderr' in error ? error.stderr : error),
+          )
         throw error
       })
       expect(stderr).toMatchInlineSnapshot(`""`)
@@ -201,7 +214,7 @@ describe('compile', () => {
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })
     }
-  }, 120_000)
+  }, 310_000)
 
   test('interaction declarations preserve importance and source maps', () => {
     const output = Transform.compile({

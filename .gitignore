@@ -5,3 +5,4 @@ bench/results/
 coverage/
 dist/
 node_modules/
+test-results/

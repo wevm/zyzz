@@ -571,3 +571,11 @@ Six animation/trigger range endpoints accept named ranges with optional signed l
 Range endpoint validation passes full TypeScript, generated consumers, source/grammar checks, lint, and the package build. The 100-style transform measured 4.2752 ms ±6.08% before and 4.1974 ms ±6.99% after; range lanes measured 0.6734/4.1274 ms for 10/100 styles. Browser progress controls await CI.
 
 The intrinsic-sizing benchmark workflow passed. Grid CI passed native layout controls but found an older rejection diagnostic snapshot; the updated diagnostic passes all retained invalid-count cases locally. Both theme consumer integrations passed in 3.70 seconds combined without changed timeouts.
+
+### Complete Property Mapping and Broader Conformance Evidence
+
+All 670 pinned property entries now have static authoring mappings, including 98 formerly deferred entries. The independent corpus traverses upstream keyword productions and adds compound, custom-property, SVG paint, and paired image-size probes. Runtime CSS value validation remains removed. All entries remain partial until remaining grammar and evidence gaps are reviewed.
+
+A browser matrix compares emitted declarations with native CSS for every engine-supported property and records unavailable browser spellings separately. A second matrix exercises repeated shorthand/longhand overrides, including reset-only relationships. Conditional shorthand conflict groups restore the existing grid workload to 770 gzip CSS bytes while preserving grid-area conflicts. These browser additions require CI because the local Chromium download is unavailable.
+
+The pinned oracle now supplements the missing Linked Parameters production, corrects circle percentage sizing from CSS Shapes, and normalizes SVG 2 path-length range notation. Its upstream fingerprints and the exact 100% completion gate remain unchanged.

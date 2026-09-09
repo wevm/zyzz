@@ -15,7 +15,7 @@ export type Atom<value> =
 export type Checked<style, tokens = {}> = {
   [property in keyof style]: Literal.Properties extends style
     ? unknown
-    : property extends keyof Literal.Properties
+    : property extends keyof typeof Literal.rules
       ? style[property] extends (property extends
           | 'gridArea'
           | 'gridColumn'
@@ -101,8 +101,8 @@ export function parse(input: unknown, property: keyof Literal.Properties) {
   if (!match) return undefined
   const text = input.slice(0, match.index).trimEnd()
   const numeric =
-    Literal.rules[property]?.kind === 'number' ||
-    Literal.rules[property]?.kind === 'grid-line'
+    Literal.rule(property)?.kind === 'number' ||
+    Literal.rule(property)?.kind === 'grid-line'
   const value =
     numeric && /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(text)
       ? Number(text)

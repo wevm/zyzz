@@ -157,7 +157,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       expect((await host.build()).changed).toMatchInlineSnapshot('[]')
       await Fs.writeFile(path, input.replace("'#ff0000'", "'rgb('"))
       await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: example/card.ts:78: Expected a hex color, transparent, currentColor, black, or white.]`,
+        `[Source.ExtractError: example/card.ts:78: Expected a named color, system color, hex color, transparent, or currentColor.]`,
       )
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),

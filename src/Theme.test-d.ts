@@ -71,9 +71,9 @@ describe('define', () => {
     }
     Theme.extend(Theme.define(annotated), overrides)
     // @ts-expect-error Unsupported scalar colors fail at authoring time.
-    Theme.define({ color: { brand: 'red' } })
+    Theme.define({ color: { brand: 'not-a-color' } })
     // @ts-expect-error Both scheme values use the supported color grammar.
-    Theme.define({ color: { brand: { dark: 'red', light: '#fff' } } })
+    Theme.define({ color: { brand: { dark: 'not-a-color', light: '#fff' } } })
   })
 
   test('omits explicitly undefined token groups', () => {
@@ -129,7 +129,7 @@ describe('extend', () => {
     // @ts-expect-error Unknown nested paths are invalid.
     Theme.extend(theme, { color: { blue: { 600: '#fff' } } })
     // @ts-expect-error Extended colors use the same grammar.
-    Theme.extend(theme, { color: { blue: { 500: 'red' } } })
+    Theme.extend(theme, { color: { blue: { 500: 'not-a-color' } } })
     const extraOverride = {
       backgroundColor: {
         surface: { dark: '#000', light: '#fff', system: '#ccc' },

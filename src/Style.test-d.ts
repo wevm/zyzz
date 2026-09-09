@@ -857,3 +857,50 @@ describe('list and input controls', () => {
     css({ textSizeAdjust: '100%' })
   })
 })
+
+describe('css', () => {
+  test('accepts canonical named colors throughout color and token domains', () => {
+    css({
+      color: 'rebeccapurple',
+      backgroundColor: 'aliceblue',
+      borderColor: 'red',
+      accentColor: 'coral',
+      caretColor: 'tomato',
+      fill: 'gold',
+      stroke: 'navy',
+      columnRuleColor: 'gray',
+      textDecorationColor: 'grey',
+      textEmphasisColor: 'papayawhip',
+    })
+    const zyzz = Config.create({
+      theme: {
+        color: { red: 'blue', accent: { dark: 'gold', light: 'navy' } },
+      },
+    })
+    zyzz.css({
+      color: 'red',
+      backgroundColor: zyzz.theme.tokens.color.red,
+      fill: 'accent',
+    })
+    // @ts-expect-error Unknown color names remain outside the domain.
+    css({ color: 'not-a-color' })
+    // @ts-expect-error Mixed-case keyword spellings remain deferred.
+    css({ color: 'rEbEcCaPuRpLe' })
+  })
+})
+
+describe('css', () => {
+  test('accepts canonical system colors in literals and theme schemes', () => {
+    css({
+      color: 'CanvasText',
+      backgroundColor: 'Canvas',
+      borderColor: 'ButtonBorder',
+      accentColor: 'AccentColor',
+      caretColor: 'Highlight',
+      fill: 'SelectedItem',
+    })
+    Config.create({
+      theme: { color: { ink: { dark: 'CanvasText', light: 'FieldText' } } },
+    })
+  })
+})

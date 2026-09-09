@@ -112,10 +112,10 @@ describe('define', () => {
     expect(() =>
       compile({ color: 'missing' }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","color"]: Expected a hex color, transparent, currentColor, black, or white.]`,
+      `[Style.InvalidError: ["card","color"]: Expected a named color, system color, hex color, transparent, or currentColor.]`,
     )
     expect(() => compile({ color: 'md' })).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","color"]: Expected a hex color, transparent, currentColor, black, or white.]`,
+      `[Style.InvalidError: ["card","color"]: Expected a named color, system color, hex color, transparent, or currentColor.]`,
     )
     expect(() =>
       compile({ padding: 'brand' }),
@@ -709,7 +709,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected a hex color, transparent, currentColor, black, or white.",
+                "message": "Expected a named color, system color, hex color, transparent, or currentColor.",
                 "path": [
                   "card",
                   "color",
@@ -722,7 +722,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected a hex color, transparent, currentColor, black, or white.",
+                "message": "Expected a named color, system color, hex color, transparent, or currentColor.",
                 "path": [
                   "card",
                   "color",
@@ -774,7 +774,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected a hex color, transparent, currentColor, black, or white.",
+                "message": "Expected a named color, system color, hex color, transparent, or currentColor.",
                 "path": [
                   "card",
                   "color",

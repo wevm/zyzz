@@ -149,3 +149,9 @@ Benchmarks without timing samples are marked unavailable in reports and excluded
 ## Intrinsic Sizing
 
 `Transform.bench.ts` measures 10/100 additional intrinsic sizing styles with minimum/maximum constraints, flex content, and important fallbacks. Setup writes CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli delivery to `bench/results/transform/sizing-*.json`. Browser fixtures verify min/max/fit-content widths and the distinction between content and auto flex basis.
+
+## Scroll Spacing
+
+`Transform.bench.ts` adds 10/100-style scrolling workloads with physical/logical scroll offsets, spacing-token padding, ordered fallbacks, importance, and scroll/overscroll behavior. The shared fixture also exercises source maps and real browser scroll-into-view alignment.
+
+Run `pnpm exec vp test bench src/compiler/Transform.bench.ts --run --no-file-parallelism -t 'scroll spacing transform' --outputJson bench/results/scrolling.json`. Delivery reports under `bench/results/transform/scrolling-*.json` separate CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli transfer. Device gesture latency and smooth-scroll duration are not compiler timings.

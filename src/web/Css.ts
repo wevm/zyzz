@@ -122,6 +122,15 @@ export function compile<
             ) {
               return 'overflow'
             }
+            if (property.startsWith('overscrollBehavior')) {
+              return 'overscrollBehavior'
+            }
+            if (property.startsWith('scrollMargin')) {
+              return 'scrollMargin'
+            }
+            if (property.startsWith('scrollPadding')) {
+              return 'scrollPadding'
+            }
             if (['columnGap', 'gap', 'rowGap'].includes(property)) {
               return 'gap'
             }

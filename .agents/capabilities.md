@@ -1,6 +1,6 @@
 # CSS Capability Inventory
 
-Version 6. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
+Version 7. This inventory separates accepted authoring from rendered support. The exact property and scalar grammar is owned by `src/internal/Literal.ts`; declarations share that grammar across root, theme, and Config authoring.
 
 ## Current Web Surface
 
@@ -31,6 +31,12 @@ Type, source/map, native-control browser fixtures, A/B/A composition, and 10/100
 Intrinsic sizing adds `fit-content`, `min-content`, and `max-content` to physical/logical dimensions, minimum/maximum dimensions, and flex basis. Minimum dimensions accept `auto`; maximum dimensions accept `none`; flex basis additionally accepts `content`. Types and runtime derive keyword domains from the same rule table. Source/map fixtures cover fallback importance and literal/token precedence; browser fixtures verify content-based widths and flex basis. A 10/100-style transform lane records timing and delivery.
 
 Function forms, `stretch`, and native intrinsic sizing remain deferred. Shared spacing tokens remain lengths and explicit references retain access to keyword-shaped names.
+
+Scroll spacing adds 26 properties: physical/logical scroll margins and padding, scroll behavior, and physical overscroll behavior axes. Scroll margins accept signed lengths without percentages; padding accepts nonnegative lengths/percentages, zero, auto, and spacing tokens. Margin tokens await a length-only domain.
+
+Separate margin, padding, and overscroll conflict domains preserve A/B/A composition. Source/map fixtures cover literal/token precedence and mixed importance. Browser fixtures compare all properties with independent CSS across six writing-mode/direction combinations and exercise scroll-into-view offsets and smooth scrolling. A 10/100-style lane measures full transforms and delivery.
+
+Scroll snapping, logical overscroll axes, multi-value shorthands, and native conversion remain deferred. Overscroll checks establish computed declarations; device-specific boundary gestures remain browser behavior.
 
 ## Targets
 

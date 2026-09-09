@@ -162,6 +162,12 @@ const overflow = {
   kind: 'enum',
   values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
 } as const
+const overscroll = {
+  kind: 'enum',
+  values: ['auto', 'contain', 'none'],
+} as const
+const scrollMargin = { ...length, negative: true, percentage: false } as const
+const scrollPadding = { ...length, auto: true } as const
 const size = {
   auto: true,
   keywords: intrinsic,
@@ -364,6 +370,9 @@ export const rules = {
   overflow,
   overflowX: overflow,
   overflowY: overflow,
+  overscrollBehavior: overscroll,
+  overscrollBehaviorX: overscroll,
+  overscrollBehaviorY: overscroll,
   padding: length,
   paddingBlock: length,
   paddingBlockEnd: length,
@@ -381,6 +390,29 @@ export const rules = {
   },
   right: margin,
   rowGap: length,
+  scrollBehavior: { kind: 'enum', values: ['auto', 'smooth'] },
+  scrollMargin,
+  scrollMarginBlock: scrollMargin,
+  scrollMarginBlockEnd: scrollMargin,
+  scrollMarginBlockStart: scrollMargin,
+  scrollMarginBottom: scrollMargin,
+  scrollMarginInline: scrollMargin,
+  scrollMarginInlineEnd: scrollMargin,
+  scrollMarginInlineStart: scrollMargin,
+  scrollMarginLeft: scrollMargin,
+  scrollMarginRight: scrollMargin,
+  scrollMarginTop: scrollMargin,
+  scrollPadding,
+  scrollPaddingBlock: scrollPadding,
+  scrollPaddingBlockEnd: scrollPadding,
+  scrollPaddingBlockStart: scrollPadding,
+  scrollPaddingBottom: scrollPadding,
+  scrollPaddingInline: scrollPadding,
+  scrollPaddingInlineEnd: scrollPadding,
+  scrollPaddingInlineStart: scrollPadding,
+  scrollPaddingLeft: scrollPadding,
+  scrollPaddingRight: scrollPadding,
+  scrollPaddingTop: scrollPadding,
   textAlign: {
     kind: 'enum',
     values: ['center', 'end', 'justify', 'left', 'right', 'start'],
@@ -427,7 +459,7 @@ export function validate(
   const match = typeof value === 'string' ? lengthPattern.exec(value) : null
   const amount = match ? Number(match[1]) : NaN
   if (Number.isFinite(amount) && (rule.negative || amount >= 0)) {
-    // Stroke widths and outline offsets do not accept percentages.
+    // Length-only domains exclude percentages.
     if (rule.percentage !== false || match?.[2] !== '%') return undefined
   }
   if (typeof value === 'string' && rule.keywords?.includes(value))

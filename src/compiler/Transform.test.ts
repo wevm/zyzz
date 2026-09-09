@@ -1032,7 +1032,7 @@ describe('compile', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({scrollMargin:'10%',scrollMarginTop:'auto',scrollPadding:'-1px',scrollBehavior:'instant',overscrollBehavior:'hidden',scrollPaddingInline:'1px 2px'});`,
+        source: `import { css } from 'zyzz'; css({scrollMargin:'10%',scrollMarginTop:'auto',scrollPadding:'-1px',scrollBehavior:'instant',overscrollBehavior:'hidden',scrollPaddingInline:'-1px 2px'});`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(`
       [Source.ExtractError: invalid.ts:46: Expected a literal length or numeric zero.
@@ -1040,7 +1040,7 @@ describe('compile', () => {
       invalid.ts:89: Expected a nonnegative literal length, auto, or numeric zero.
       invalid.ts:111: Expected one of: auto, smooth (or a CSS-wide keyword).
       invalid.ts:140: Expected one of: auto, contain, none (or a CSS-wide keyword).
-      invalid.ts:169: Expected a nonnegative literal length, auto, or numeric zero.]
+      invalid.ts:169: Expected one to 2 valid space-separated values; CSS-wide keywords must stand alone.]
     `)
     expect(() =>
       Transform.compile({
@@ -1511,11 +1511,11 @@ describe('compile', () => {
     `)
   })
 
-  test('logical boxes reject invalid scalar values with source locations', () => {
+  test('logical boxes reject invalid values with source locations', () => {
     const diagnostics = [
       "paddingInline:'-1px'",
       "blockSize:'-1px'",
-      "inset:'1px 2px'",
+      "inset:'1px 2px 3px 4px 5px'",
       "writingMode:'diagonal'",
     ].map((declaration) => {
       try {
@@ -1532,7 +1532,7 @@ describe('compile', () => {
       [
         "invalid.ts:47: Expected a nonnegative literal length or numeric zero.",
         "invalid.ts:43: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.",
-        "invalid.ts:39: Expected a literal length, auto, or numeric zero.",
+        "invalid.ts:39: Expected one to 4 valid space-separated values; CSS-wide keywords must stand alone.",
         "invalid.ts:45: Expected one of: horizontal-tb, vertical-lr, vertical-rl (or a CSS-wide keyword).",
       ]
     `)

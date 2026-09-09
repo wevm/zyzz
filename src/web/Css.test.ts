@@ -552,7 +552,7 @@ describe('compile', () => {
       ["card","borderWidth"]: Expected a nonnegative literal length or numeric zero.
       ["card","width"]: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
       ["card","height"]: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
-      ["card","margin"]: Expected a literal length, auto, or numeric zero.
+      ["card","margin"]: Expected one to 4 valid space-separated values; CSS-wide keywords must stand alone.
       ["card","fontSize"]: Expected a nonnegative literal length or numeric zero.]
     `)
     expect(
@@ -780,7 +780,7 @@ describe('compile', () => {
           "diagnostics": [
             {
               "code": "invalid_declaration",
-              "message": "Expected a nonnegative literal length or numeric zero.",
+              "message": "Expected one to 4 valid space-separated values; CSS-wide keywords must stand alone.",
               "path": [
                 "injection",
                 "padding",

@@ -7,9 +7,8 @@ import { theme } from './zyzz.config.js'
 
 export function Document() {
   return (
-    <html style={theme}>
+    <html style={{ ...theme, colorScheme: 'light dark' }}>
       <head>
-        <meta name="color-scheme" content="light dark" />
         <title>My App</title>
       </head>
       <body>Content</body>
@@ -24,8 +23,8 @@ Use `style={themes.mint}` for a named config theme. Nested elements can select c
 
 ## Color Schemes
 
-Declare `light dark` in the meta tag to follow system preference, or `light` / `dark` to select explicitly. Set `document.documentElement.style.colorScheme` when a user changes their preference. Color pairs compile to `light-dark()`.
+Declare `light dark` for `colorScheme` to follow system preference, or `light` / `dark` to select explicitly. Set `document.documentElement.style.colorScheme` when a user changes their preference. Color pairs compile to `light-dark()`.
 
 ## Compilation
 
-Local definitions, imported themes, and named config members support direct JSX `style` application. Dynamic catalog selection remains a preview. `theme.className` remains available for integrations that explicitly need the generated class.
+Local definitions, imported themes, and named config members support direct JSX `style` application and inline overrides with `style={{ ...theme, colorScheme: 'dark' }}`. Dynamic catalog selection remains a preview. `theme.className` remains available for integrations that explicitly need the generated class.

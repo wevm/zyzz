@@ -14,7 +14,7 @@ const props = () => { evaluations++; return { id: 'button', className: 'external
 export function Example() { return (<>
   <Button style={alias} {...props()}>Continue</Button>
   <Label id="label" style={{ ...styles.button, padding: '24px' }}>Label</Label>
-  <section id="theme" style={theme}>Themed</section>
+  <section id="theme" style={{ ...theme, colorScheme: 'light dark' }}>Themed</section>
   <div id="plain" style={{ padding: '3px' }} title="A &amp; B" />
   <div id="conditional" style={true ? styles.button : undefined} />
   <div id="inline" style={define({ opacity: 0.5 })} />

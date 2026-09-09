@@ -3091,7 +3091,7 @@ describe('compile', () => {
       await Fs.writeFile(file, built.outputFiles[0]!.text)
       const module = Module.createRequire(import.meta.url)(file)
       expect(module.html).toMatchInlineSnapshot(
-        `"<button id="button" class="z-15arqxi1nuwkvq-base0 external" title="forwarded">Continue</button><span style="padding:24px" id="label" class="z-15arqxi1nuwkvq-base0">Label</span><section id="theme" class="z_theme-15arqxi1nuwkvq-theme">Themed</section><div id="plain" style="padding:3px" title="A &amp; B"></div><div id="conditional" class="z-15arqxi1nuwkvq-base0"></div><div id="inline" class="z-15arqxi1nuwkvq-base1"></div><div id="count" data-count="1"></div>"`,
+        `"<button id="button" class="z-15arqxi1nuwkvq-base0 external" title="forwarded">Continue</button><span style="padding:24px" id="label" class="z-15arqxi1nuwkvq-base0">Label</span><section id="theme" style="color-scheme:light dark" class="z_theme-15arqxi1nuwkvq-theme">Themed</section><div id="plain" style="padding:3px" title="A &amp; B"></div><div id="conditional" class="z-15arqxi1nuwkvq-base0"></div><div id="inline" class="z-15arqxi1nuwkvq-base1"></div><div id="count" data-count="1"></div>"`,
       )
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })

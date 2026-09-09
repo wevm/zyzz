@@ -72,9 +72,8 @@ Apply the single theme's scope to the document root:
 import { theme } from './zyzz.config.js'
 
 const example = (
-  <html style={theme}>
+  <html style={{ ...theme, colorScheme: 'light dark' }}>
     <head>
-      <meta name="color-scheme" content="light dark" />
       <title>My App</title>
     </head>
     <body>Content</body>
@@ -110,7 +109,6 @@ function App({ appearance }: { appearance: 'base' | 'mint' }) {
   return (
     <html style={themes[appearance]}>
       <head>
-        <meta name="color-scheme" content="light dark" />
         <title>My App</title>
       </head>
       <body>
@@ -129,15 +127,14 @@ Config authoring is a preview.
 
 ### Color Schemes
 
-Color tokens accept a shared string or a `{ dark, light }` pair, as in [Use Themes](#use-themes). Apply the theme through `style` and declare supported schemes in `<head>`:
+Color tokens accept a shared string or a `{ dark, light }` pair, as in [Use Themes](#use-themes). Apply the theme and color scheme through `style`:
 
 ```tsx
 import { theme } from './zyzz.config.js'
 
 const example = (
-  <html style={theme}>
+  <html style={{ ...theme, colorScheme: 'light dark' }}>
     <head>
-      <meta name="color-scheme" content="light dark" />
       <title>My App</title>
     </head>
     <body>Content</body>
@@ -160,9 +157,11 @@ const initialization = script()
 
 export function Document({ nonce }: { nonce?: string }) {
   return (
-    <html style={themes.base} suppressHydrationWarning>
+    <html
+      style={{ ...themes.base, colorScheme: 'light dark' }}
+      suppressHydrationWarning
+    >
       <head>
-        <meta name="color-scheme" content="light dark" />
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{ __html: initialization }}

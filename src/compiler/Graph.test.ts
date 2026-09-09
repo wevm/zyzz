@@ -1074,13 +1074,13 @@ describe('compile', () => {
       contracts: { 'config.js': output.contracts['config.ts']! },
       imports: { 'app.tsx': { './config.js': 'config.js' } },
       modules: {
-        'app.tsx': `import { themes } from './config.js'; const catalog = themes; export const App = () => <html style={catalog.base}/>;`,
+        'app.tsx': `import { themes } from './config.js'; const catalog = themes; export const App = () => <html style={{ ...catalog.base, colorScheme: 'dark' }}/>;`,
       },
     })
     expect(packed.modules['app.tsx']!.code).toMatchInlineSnapshot(`
       "
       import { Style as __zyzzStyle } from 'zyzz/runtime';
-      import { themes } from './config.js'; const catalog = (themes as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "base":{readonly "color":{readonly "brand":"#06c"}};readonly "mint":{readonly "color":{readonly "brand":"#175"}}}}>['themes']); export const App = () => <html {...__zyzzStyle.resolve({"style":__zyzzStyle.value({className:"z_theme-u8smm21l81sow-config-base"}),})}/>;"
+      import { themes } from './config.js'; const catalog = (themes as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "base":{readonly "color":{readonly "brand":"#06c"}};readonly "mint":{readonly "color":{readonly "brand":"#175"}}}}>['themes']); export const App = () => <html {...__zyzzStyle.resolve({"style":{ ...__zyzzStyle.value({className:"z_theme-u8smm21l81sow-config-base"}), colorScheme: 'dark' },})}/>;"
     `)
   })
 })

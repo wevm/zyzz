@@ -194,7 +194,7 @@ Use [`Theme.define`](docs/api/core/Theme/define.md) for reusable definitions out
 
 ### Color Schemes (Light/Dark Mode)
 
-Apply the theme to `<html>` and declare supported color schemes in `<head>`:
+Apply the theme to `<html>` and set the color scheme through `style`:
 
 ```tsx
 import { style, theme } from './zyzz.config.js'
@@ -205,9 +205,8 @@ const styles = {
 
 export function Document() {
   return (
-    <html style={theme}>
+    <html style={{ ...theme, colorScheme: 'light dark' }}>
       <head>
-        <meta name="color-scheme" content="light dark" />
         <title>My App</title>
       </head>
       <body>
@@ -218,7 +217,7 @@ export function Document() {
 }
 ```
 
-The compiler applies the theme's generated scope class. Use `light` or `dark` in the meta tag for an explicit scheme, or `light dark` for system preference. Named themes can be applied with `style={themes.mint}`.
+The compiler applies the theme's generated scope class. Use `light` or `dark` for `colorScheme` for an explicit scheme, or `light dark` for system preference. Named themes can be applied with `style={themes.mint}`.
 
 Color pairs compile to `light-dark()`; the custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme values can scope a subtree independently.
 

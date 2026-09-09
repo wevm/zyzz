@@ -801,11 +801,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (aliasReferences.has(node.start)) return true
     if (node.start < theme.end)
       fail('Theme references must follow their local definition.', node)
+    const attribute = (() => {
+      if (parent.type === 'JSXExpressionContainer') return grandparent
+      if (
+        parent.type === 'SpreadElement' &&
+        grandparent?.type === 'ObjectExpression' &&
+        ancestors.at(-4)?.type === 'JSXExpressionContainer'
+      )
+        return ancestors.at(-5)
+      return undefined
+    })()
     if (
-      parent.type === 'JSXExpressionContainer' &&
-      grandparent?.type === 'JSXAttribute' &&
-      grandparent.name.type === 'JSXIdentifier' &&
-      grandparent.name.name === 'style'
+      attribute?.type === 'JSXAttribute' &&
+      attribute.name.type === 'JSXIdentifier' &&
+      attribute.name.name === 'style'
     ) {
       references.push({
         start: node.start,

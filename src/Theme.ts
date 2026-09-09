@@ -306,6 +306,11 @@ function record(
   const entries: [string, unknown][] = []
   for (const key of Reflect.ownKeys(value)) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key)!
+    if (typeof key === 'string' && key.includes('!'))
+      throw new InvalidError(
+        [...path, key],
+        'Token keys cannot contain !; it is reserved for declaration importance.',
+      )
     if (
       typeof key !== 'string' ||
       !key ||
@@ -329,14 +334,22 @@ type Validated<tokens> = {
 }
 type ValidPalette<palette, group> = palette extends undefined
   ? undefined
-  : { [key in keyof palette]: ValidTree<palette[key], group> }
+  : {
+      [key in keyof palette]: key extends `${string}!${string}`
+        ? never
+        : ValidTree<palette[key], group>
+    }
 
 type ValidTree<tree, group> = tree extends string | number
   ? group extends 'borderRadius' | 'spacing'
     ? Literal.Length
     : Literal.Color
   : Extract<keyof tree, 'dark' | 'light'> extends never
-    ? { [key in keyof tree]: ValidTree<tree[key], group> }
+    ? {
+        [key in keyof tree]: key extends `${string}!${string}`
+          ? never
+          : ValidTree<tree[key], group>
+      }
     : group extends 'borderRadius' | 'spacing'
       ? never
       : {

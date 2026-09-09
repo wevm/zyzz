@@ -3,7 +3,7 @@
  * @module
  */
 import { expectTypeOf } from 'vite-plus/test'
-import { css, Style, Theme } from 'zyzz'
+import { Config, css, Style, Theme } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const theme = Theme.define({
@@ -167,3 +167,15 @@ omitted.css({ color: 'brand', padding: '1rem' })
 omitted.css({ padding: 'missing' })
 // @ts-expect-error Undefined groups do not enable shorthand in named styles.
 Style.define({ card: { padding: 'missing' } }, { theme: omitted })
+
+// @ts-expect-error Exclamation marks are reserved for declaration importance.
+Theme.define({ spacing: { 'md!': '8px' } })
+// @ts-expect-error Nested palette keys cannot use importance syntax.
+Theme.define({ spacing: { 'nested!': { md: '8px' } } })
+// @ts-expect-error Config inline themes use the same token-key contract.
+Config.create({ theme: { spacing: { 'md!important': '8px' } } })
+Config.create({
+  defaultTheme: 'light',
+  // @ts-expect-error Named theme alternatives also reject reserved keys.
+  themes: { light: { spacing: { 'md!IMPORTANT': '8px' } } },
+})

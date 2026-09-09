@@ -60,6 +60,8 @@ Style.define({
 
 Nonempty arrays emit repeated declarations in authored order. Each entry is independently validated and may use a trailing `!` or `!important`. Normal entries cannot override important entries; later important entries win. Token names resolve after suffix parsing, and explicit token references remain valid fallback entries.
 
+Token keys cannot contain `!`, including nested palette keys. This reserves importance syntax and prevents a shorthand such as `md!` from naming both a token and an important `md` declaration. `Theme.define` and inline Config themes reject these keys in types and runtime validation.
+
 Importance is stored separately on `Style.Declaration.important`. Numeric importance uses a string, such as `'0.5!'` or `'0!'`. Empty, sparse, nested, accessor-backed, and invalid arrays fail before emission. Quoted or escaped exclamation marks are not suffixes; unsupported string-content syntax still fails scalar validation.
 
 ## Ordering and Ownership

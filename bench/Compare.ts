@@ -22,9 +22,10 @@ type Timings = {
   files: readonly {
     groups: readonly {
       benchmarks: readonly {
-        mean: number
+        mean?: number
         name: string
-        rme: number
+        rme?: number
+        sampleCount?: number
       }[]
       fullName: string
     }[]
@@ -42,12 +43,19 @@ if (!candidate || !output)
     'Usage: node bench/Compare.ts <results> <baseline-or-empty> <action-output>',
   )
 
-const current = read(candidate)
+const currentReport = read(candidate)
+const current = currentReport.measurements
 const hasBaseline = Boolean(
   baseline && Fs.existsSync(Path.join(baseline, 'timings.json')),
 )
-const previous =
-  hasBaseline && baseline ? read(baseline) : new Map<string, Measurement>()
+const previousReport =
+  hasBaseline && baseline
+    ? read(baseline)
+    : {
+        measurements: new Map<string, Measurement>(),
+        unavailable: new Set<string>(),
+      }
+const previous = previousReport.measurements
 const commit =
   hasBaseline && baseline
     ? Fs.readFileSync(Path.join(baseline, 'commit.txt'), 'utf8').trim()
@@ -93,30 +101,44 @@ if (output) {
   }
 }
 
-console.log('## Compared with main\n')
+console.log('## Compared with baseline\n')
 if (!hasBaseline) {
   console.log('No baseline available.\n')
 } else {
   const repository = process.env.GITHUB_REPOSITORY ?? 'wevm/zyzz'
   console.log(
-    `Baseline: [main @ ${commit.slice(0, 7)}](https://github.com/${repository}/commit/${commit})\n`,
+    `Baseline: [${commit.slice(0, 7)}](https://github.com/${repository}/commit/${commit})\n`,
   )
   console.log(
     '🟢 Improved · 🟡 Within tolerance / unchanged · 🔴 Regression above threshold\n',
   )
   console.log(
-    `Timing changes above ${thresholds.ms - 100}% are advisory. Gzip growth above ${thresholds.B - 100}% fails PR/manual checks. Zyzz measurements only; ${process.env.BENCH_BASELINE_MODE === 'same-runner' ? 'main and candidate ran sequentially on the same runner' : 'saved artifacts may come from different runners'}. Reported timing errors are informational.\n`,
+    `Timing changes above ${thresholds.ms - 100}% are advisory. Gzip growth above ${thresholds.B - 100}% fails PR/manual checks. Zyzz measurements only; ${process.env.BENCH_BASELINE_MODE === 'same-runner' ? 'baseline and candidate ran sequentially on the same runner' : 'saved artifacts may come from different runners'}. Reported timing errors are informational.\n`,
   )
-  console.log('| Benchmark | Main | PR / current | Change |')
+  console.log('| Benchmark | Baseline | PR / current | Change |')
   console.log('| --- | ---: | ---: | ---: |')
 
-  for (const key of new Set([...current.keys(), ...previous.keys()])) {
+  for (const key of new Set([
+    ...current.keys(),
+    ...previous.keys(),
+    ...currentReport.unavailable,
+    ...previousReport.unavailable,
+  ])) {
     const before = previous.get(key)
     const after = current.get(key)
     const name = key
       .replace(/^.*? > /, '')
       .replaceAll('|', '\\|')
       .replaceAll(/\r?\n/g, ' ')
+    if (
+      currentReport.unavailable.has(key) ||
+      previousReport.unavailable.has(key)
+    ) {
+      console.log(
+        `| ${name} | ${previousReport.unavailable.has(key) ? 'Unavailable' : before ? format(before) : '—'} | ${currentReport.unavailable.has(key) ? 'Unavailable' : after ? format(after) : '—'} | No timing samples |`,
+      )
+      continue
+    }
     if (!before || !after) {
       console.log(
         `| ${name} | ${before ? format(before) : '—'} | ${after ? format(after) : '—'} | ${after ? 'New' : 'Removed'} |`,
@@ -155,6 +177,7 @@ function format(measurement: Measurement) {
 
 function read(directory: string) {
   const measurements = new Map<string, Measurement>()
+  const unavailable = new Set<string>()
   const timings: Timings = JSON.parse(
     Fs.readFileSync(Path.join(directory, 'timings.json'), 'utf8'),
   )
@@ -162,7 +185,20 @@ function read(directory: string) {
     for (const group of file.groups) {
       for (const benchmark of group.benchmarks) {
         if (competitors.has(benchmark.name)) continue
-        measurements.set(`${group.fullName} / ${benchmark.name}`, {
+        const key = `${group.fullName} / ${benchmark.name}`
+        if (
+          typeof benchmark.mean !== 'number' ||
+          !Number.isFinite(benchmark.mean) ||
+          benchmark.mean < 0 ||
+          typeof benchmark.rme !== 'number' ||
+          !Number.isFinite(benchmark.rme) ||
+          !benchmark.sampleCount ||
+          benchmark.sampleCount < 1
+        ) {
+          unavailable.add(key)
+          continue
+        }
+        measurements.set(key, {
           error: benchmark.rme,
           unit: 'ms',
           // Tinybench means are already milliseconds; the summary only rounds them.
@@ -188,7 +224,7 @@ function read(directory: string) {
       measurements.set(`${name} / ${metric}`, { error: 0, unit: 'B', value })
     }
   }
-  return measurements
+  return { measurements, unavailable }
 }
 function threshold(name: string, fallback: number) {
   const input = process.env[name]

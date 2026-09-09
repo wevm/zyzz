@@ -157,7 +157,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       expect((await host.build()).changed).toMatchInlineSnapshot('[]')
       await Fs.writeFile(path, input.replace("'#ff0000'", "'rgb('"))
       await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: example/card.ts:78: Expected a hex color, transparent, currentColor, black, or white.]`,
+        `[Source.ExtractError: example/card.ts:78: Expected a named color, system color, hex color, transparent, or currentColor.]`,
       )
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
@@ -696,7 +696,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
     const root = await Fs.mkdtemp(
       Path.join(project, '.fixture-host-notifications-'),
     )
-    const host = await Host.create({
+    let host = await Host.create({
       outDir: Path.join(root, 'output'),
       packageId: 'example',
       root,
@@ -714,17 +714,28 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
 
       await expect(
         notifications.next(() =>
-          Fs.writeFile(
-            Path.join(root, 'cards.ts'),
-            `import { css } from 'zyzz'; css({ padding: unknown });`,
-          ),
+          Watch.write({
+            path: Path.join(root, 'cards.ts'),
+            source: `import { css } from 'zyzz'; css({ padding: unknown });`,
+          }),
         ),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Source.ExtractError: example/cards.ts:43: Expected a literal string or number; expressions are not evaluated.]`,
       )
-      await notifications.next(() =>
-        Fs.writeFile(Path.join(root, 'cards.ts'), source.replace('8px', '4px')),
-      )
+      // Drain failed builds before observing a fresh watch lifecycle.
+      await host.close()
+      await Watch.write({
+        path: Path.join(root, 'cards.ts'),
+        source: source.replace('8px', '4px'),
+      })
+      host = await Host.create({
+        outDir: Path.join(root, 'output'),
+        packageId: 'example',
+        root,
+      })
+      const recovery = notifications.next()
+      host.watch({ onResult: notifications.onResult })
+      await recovery
       await expect(
         notifications.next(),
       ).rejects.toThrowErrorMatchingInlineSnapshot(

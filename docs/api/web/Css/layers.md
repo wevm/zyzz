@@ -1,8 +1,5 @@
 # Css.layers
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Contribute an ordered set of cascade layer names.
 
 ```ts
@@ -10,6 +7,8 @@ import { Css } from 'zyzz/web'
 
 Css.layers(['reset', 'base', 'components'])
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 

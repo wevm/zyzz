@@ -1,8 +1,5 @@
 # Vars.define
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Create a shared contract for explicit CSS variable bindings.
 
 ```ts
@@ -10,6 +7,8 @@ import { Vars } from 'zyzz'
 
 const progress = Vars.define({ amount: 'percentage' })
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 

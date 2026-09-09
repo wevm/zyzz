@@ -145,12 +145,16 @@ describe('compile', () => {
         failures.push(`Declaration count: ${count} != ${batch.length * 2}`)
     }
     expect(failures).toMatchInlineSnapshot(`[]`)
-  })
+  }, 30_000)
 
   test('CSS conformance rejects invalid and unsupported values through source authoring', () => {
     const accepted: string[] = []
     const rejected = [
       ...Conformance.rejected,
+      { property: 'fillOpacity', value: -0.1 },
+      { property: 'strokeMiterlimit', value: 0.5 },
+      { property: 'strokeOpacity', value: 1.1 },
+      { property: 'strokeWidth', value: '-2px' },
       { property: 'color', value: '#12' },
       { property: 'fontWeight', value: 1001 },
       { property: 'opacity', value: -1 },
@@ -3087,7 +3091,7 @@ describe('compile', () => {
       await Fs.writeFile(file, built.outputFiles[0]!.text)
       const module = Module.createRequire(import.meta.url)(file)
       expect(module.html).toMatchInlineSnapshot(
-        `"<button id="button" class="z-15arqxi1nuwkvq-base0 external" title="forwarded">Continue</button><span style="padding:24px" id="label" class="z-15arqxi1nuwkvq-base0">Label</span><div id="plain" style="padding:3px" title="A &amp; B"></div><div id="conditional" class="z-15arqxi1nuwkvq-base0"></div><div id="inline" class="z-15arqxi1nuwkvq-base1"></div><div id="count" data-count="1"></div>"`,
+        `"<button id="button" class="z-15arqxi1nuwkvq-base0 external" title="forwarded">Continue</button><span style="padding:24px" id="label" class="z-15arqxi1nuwkvq-base0">Label</span><section id="theme" class="z_theme-15arqxi1nuwkvq-theme">Themed</section><div id="plain" style="padding:3px" title="A &amp; B"></div><div id="conditional" class="z-15arqxi1nuwkvq-base0"></div><div id="inline" class="z-15arqxi1nuwkvq-base1"></div><div id="count" data-count="1"></div>"`,
       )
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })

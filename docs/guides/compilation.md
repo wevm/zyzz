@@ -58,9 +58,6 @@ Libraries expose compiled modules through package exports and document styleshee
 
 ### Server Rendering
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Apply compiled styles during server rendering and deliver their stylesheet before styled content paints. Use the same compiled identities on server and client.
 
 ```tsx
@@ -80,3 +77,5 @@ export function Card() {
 - **Runtime:** generated functions bind values without inserting stylesheets.
 
 SSR, streaming, route splitting, and framework-specific delivery still require integration proof. Config importing does not provide that integration by itself.
+
+Preview API; not yet implemented.

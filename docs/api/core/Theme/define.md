@@ -24,7 +24,7 @@ const theme = Theme.define({
 
 Token palettes. Palettes must be nonempty data records with dot-free keys.
 
-Current color leaves accept 3/4/6/8-digit hex, `black`, `white`, `transparent`, or `currentColor`, optionally paired as `{ dark, light }`. Other named or functional colors are unsupported. Spacing and radius leaves accept nonnegative literal lengths or zero, without scheme pairs.
+Current color leaves accept 3/4/6/8-digit hex, the 148 canonical lowercase CSS named colors, 19 canonical system-color keywords, `transparent`, or `currentColor`, optionally paired as `{ dark, light }`. Noncanonical case spellings and functional colors remain unsupported. Spacing and radius leaves accept nonnegative literal lengths or zero, without scheme pairs.
 
 ```ts
 Theme.define({ spacing: { md: '1rem' } })
@@ -117,9 +117,7 @@ const scope = theme.className
 Bound static authoring with inferred token names. Same-module source compilation is supported; untransformed execution throws an error named `style.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
 
 ```ts
-const styles = {
-  card: theme.style({ padding: 'md' }),
-}
+const card = theme.style({ padding: 'md' })
 ```
 
 ### tokens
@@ -136,7 +134,6 @@ theme.tokens.spacing.md
 
 `Theme.InvalidError` identifies invalid groups, paths, records, values, or cycles. Palettes must be nonempty and keys dot-free.
 
-> [!NOTE]
-> Same-module `theme.style` and `theme.className` are supported by `Transform.compile`. Cross-module linking, `theme.vars`, bound `variants`, and broader groups remain previews. See [Compile Local Theme Source](../../../guides/themes.md#compile-local-theme-source).
-
 See [Theme](README.md) for related methods and types.
+
+Same-module `theme.style` and `theme.className` are supported by `Transform.compile`. Cross-module linking, `theme.vars`, bound `variants`, and broader groups remain previews. See [Compile Local Theme Source](../../../guides/themes.md#compile-local-theme-source).

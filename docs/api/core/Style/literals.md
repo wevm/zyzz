@@ -40,7 +40,7 @@ The property surface is intentionally finite. No catch-all string index permits 
 - **Shorthands:** scalar values only; no multi-value strings yet.
 - **Units:** preserve spelling without implicit pixel conversion.
 
-- **Colors:** 3/4/6/8-digit hex, `transparent`, `currentColor`, `black`, or `white`.
+- **Colors:** 3/4/6/8-digit hex, `transparent`, `currentColor`, any of the 148 canonical lowercase CSS named colors, or the 19 canonical system-color keywords.
 - **CSS-wide values:** every property accepts `inherit`, `initial`, `revert`, `revert-layer`, and `unset`.
 - **Numbers:** finite values only; opacity 0–1, font weight 1–1000, line height/flex factors nonnegative.
 
@@ -51,7 +51,7 @@ This boundary rejects:
 - Arbitrary variable objects and explicit `undefined`.
 - Callbacks, selectors, and queries.
 - CSS functions and nested fallback arrays.
-- Unsupported properties and other named colors.
+- Unsupported properties and noncanonical color spellings.
 
 ## Length Units
 
@@ -70,13 +70,11 @@ Units use the listed spellings. Signed decimals and finite scientific notation a
 ```ts
 import { style } from 'zyzz'
 
-const styles = {
-  panel: style({
-    width: ['80vw', '80cqi'],
-    height: '100dvh',
-    padding: '1lh!',
-  }),
-}
+const panel = style({
+  width: ['80vw', '80cqi'],
+  height: '100dvh',
+  padding: '1lh!',
+})
 ```
 
 Container units can refer to containment established by ordinary CSS. Zyzz does not yet author containment declarations or container conditions. Browser support for newer units depends on the deployment target; ordered fallback declarations can retain an older unit. Native unit conversion remains unimplemented.
@@ -95,19 +93,15 @@ Container units can refer to containment established by ordinary CSS. Zyzz does 
 ```ts
 import { Config, style } from 'zyzz'
 
-const config = Config.create({ theme: { spacing: { header: '4rem' } } })
+const { style } = Config.create({ theme: { spacing: { header: '4rem' } } })
 
-const style = config.style
+const scroller = style({
+  overflow: 'auto',
+  scrollPaddingBlockStart: 'header',
+  overscrollBehavior: 'contain',
+})
 
-const styles = {
-  scroller: style({
-    overflow: 'auto',
-    scrollPaddingBlockStart: 'header',
-    overscrollBehavior: 'contain',
-  }),
-
-  section: style({ scrollMarginBlockStart: '1rem' }),
-}
+const section = style({ scrollMarginBlockStart: '1rem' })
 ```
 
 Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, and importance. Scroll margins remain literal-only because the shared spacing token contract permits percentages. Negative scroll padding fails validation. Shorthands accept one scalar per fallback entry.
@@ -127,19 +121,17 @@ Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, a
 ```ts
 import { style } from 'zyzz'
 
-const styles = {
-  carousel: style({
-    display: 'flex',
-    overflowX: 'auto',
-    scrollSnapType: 'x mandatory',
-  }),
+const carousel = style({
+  display: 'flex',
+  overflowX: 'auto',
+  scrollSnapType: 'x mandatory',
+})
 
-  slide: style({
-    flexShrink: 0,
-    scrollSnapAlign: 'start',
-    scrollSnapStop: 'always',
-  }),
-}
+const slide = style({
+  flexShrink: 0,
+  scrollSnapAlign: 'start',
+  scrollSnapStop: 'always',
+})
 ```
 
 Snap declarations accept CSS-wide keywords, fallback arrays, and importance in root, theme, and Config authoring. Theme tokens do not map to snap keywords. Scroll margins and padding adjust the alignment area. The browser owns proximity thresholds, motion, and gesture physics; native snapping remains deferred.
@@ -160,14 +152,12 @@ Snap declarations accept CSS-wide keywords, fallback arrays, and importance in r
 ```ts
 import { style } from 'zyzz'
 
-const styles = {
-  link: style({
-    textDecorationLine: ['underline', 'underline overline!'],
-    textDecorationStyle: 'wavy',
-    textDecorationThickness: '2px',
-    textUnderlineOffset: '.2em',
-  }),
-}
+const link = style({
+  textDecorationLine: ['underline', 'underline overline!'],
+  textDecorationStyle: 'wavy',
+  textDecorationThickness: '2px',
+  textUnderlineOffset: '.2em',
+})
 ```
 
 Thickness supports a bounded nonnegative subset of CSS. Percentages use font-relative browser semantics. Combined `textDecoration` shorthands, underline position, additional ink-skipping values, emphasis, shadows, and native conversion remain deferred. The browser owns line placement and painting.
@@ -191,17 +181,15 @@ Thickness supports a bounded nonnegative subset of CSS. Percentages use font-rel
 ```ts
 import { style } from 'zyzz'
 
-const styles = {
-  title: style({ letterSpacing: '-.02em', textTransform: 'uppercase' }),
+const title = style({ letterSpacing: '-.02em', textTransform: 'uppercase' })
 
-  excerpt: style({
-    overflow: 'hidden',
-    whiteSpace: 'nowrap',
-    textOverflow: 'ellipsis',
-  }),
+const excerpt = style({
+  overflow: 'hidden',
+  whiteSpace: 'nowrap',
+  textOverflow: 'ellipsis',
+})
 
-  paragraph: style({ overflowWrap: 'anywhere', textIndent: '1em' }),
-}
+const paragraph = style({ overflowWrap: 'anywhere', textIndent: '1em' })
 ```
 
 [Text overflow](https://www.w3.org/TR/css-overflow-3/#text-overflow) does not create overflow by itself. Use a constrained container with hidden overflow and the appropriate wrapping behavior. All listed properties accept CSS-wide keywords, ordered fallback arrays, and importance.
@@ -254,17 +242,15 @@ Border styles include `dashed`, `dotted`, `double`, `groove`, `hidden`, `inset`,
 ## Flex and Overflow
 
 ```ts
-const styles = {
-  row: style({
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignContent: 'space-between',
-    overflow: 'hidden',
-    overflowY: 'auto',
-  }),
+const row = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignContent: 'space-between',
+  overflow: 'hidden',
+  overflowY: 'auto',
+})
 
-  item: style({ flexBasis: '12rem', alignSelf: 'center', order: -1 }),
-}
+const item = style({ flexBasis: '12rem', alignSelf: 'center', order: -1 })
 ```
 
 [Flex basis](https://www.w3.org/TR/css-flexbox-1/#flex-basis-property) accepts nonnegative lengths, percentages, zero, `auto`, `content`, or intrinsic sizing keywords, including spacing tokens in bound styles. `order` accepts safe integers; fractional values fail validation. Visual ordering does not change DOM or keyboard order. The multi-value `flex` shorthand remains deferred.
@@ -274,15 +260,13 @@ const styles = {
 ## Logical Boxes
 
 ```ts
-const styles = {
-  panel: style({
-    inlineSize: '20rem',
-    paddingInline: '1rem',
-    marginBlockEnd: '0.5rem!',
-    position: 'relative',
-    insetInlineStart: '-2px',
-  }),
-}
+const panel = style({
+  inlineSize: '20rem',
+  paddingInline: '1rem',
+  marginBlockEnd: '0.5rem!',
+  position: 'relative',
+  insetInlineStart: '-2px',
+})
 ```
 
 [Logical dimensions, spacing, and offsets](https://www.w3.org/TR/css-logical-1/) follow the element's writing mode and direction. Emission retains logical property names and authored order relative to physical properties. Spacing tokens work in every new length property, including explicit references and fallback arrays.
@@ -408,3 +392,90 @@ style({
   userSelect: 'text',
 })
 ```
+
+## Columns
+
+`columnCount` accepts positive safe integers or `auto`; `columnWidth` accepts nonnegative lengths, zero, or `auto`. `columnFill` accepts `auto`/`balance`, `columnSpan` accepts `none`/`all`, and `columnGap` also accepts `normal`.
+
+Column rule color/style/width follow scalar color, line-style, and nonnegative length domains; widths also accept thin/medium/thick. Shared color tokens apply to rule colors. Break-before/after/inside keywords control fragmentation; orphan/widow counts are positive safe integers. Percentages in column widths, shorthands, and regions remain deferred.
+
+```ts
+style({
+  columnCount: 2,
+  columnGap: '1rem',
+  columnRuleStyle: 'solid',
+  columnRuleWidth: 'thin',
+  breakInside: 'avoid-column',
+})
+```
+
+## Layout and Containment
+
+`display` includes `contents`, `flow-root`, `list-item`, `inline-table`, and table roles. `float` and `clear` accept physical and logical sides; clear also accepts `both`. `zIndex` accepts `auto` or safe integers, including negatives. `isolation` accepts `auto`/`isolate`.
+
+`contain` accepts single `none`, `strict`, `content`, `size`, `inline-size`, `layout`, `style`, or `paint` keywords. `contentVisibility` accepts `auto`, `hidden`, or `visible`. Combined containment and multi-keyword display values remain deferred.
+
+`objectFit` accepts `fill`, `contain`, `cover`, `none`, or `scale-down`; `boxDecorationBreak` accepts `slice`/`clone`. `backfaceVisibility` accepts `hidden`/`visible` and `transformStyle` accepts `flat`/`preserve-3d`. Transform functions remain a separate capability. These keyword domains do not map theme tokens.
+
+```ts
+style({
+  display: 'flow-root',
+  contain: 'layout',
+  isolation: 'isolate',
+  zIndex: 2,
+})
+```
+
+## Backgrounds and color controls
+
+Background attachment, blend mode, clipping, origin, repeat, axis positions, and size accept bounded scalar values. Axis positions accept signed lengths/percentages and the corresponding axis keywords; size accepts nonnegative lengths/percentages, auto, contain, or cover. Lists, position pairs, size pairs, images, and gradients remain deferred.
+
+Accent and caret colors accept the shared color domain, color tokens, and auto. Explicit token references disambiguate a color token named auto. Color schemes accept normal, light, dark, light dark, dark light, only light, and only dark. Forced-color adjustment, print-color adjustment, and mix blending use finite keywords. Grammar and type probes cover these domains; browser fixtures compare computed styles with independent CSS. Computed styles do not establish pixel-level blending, clipping, or forced-color rendering.
+
+## SVG Paint
+
+Nineteen properties cover fill/stroke paints, opacity, fill/clip rules, line caps/joins, stroke lengths and miter limits, filter colors, paint order, rendering hints, and non-scaling strokes. Fill and stroke accept scalar colors, shared color tokens, none, context-fill, and context-stroke. Opacities accept numbers from zero to one; miter limits accept finite numbers at least one. Stroke widths use nonnegative lengths/percentages; dash offsets also allow negative values.
+
+Paint order currently accepts normal or a single fill/stroke/markers keyword. Unitless nonzero SVG lengths, paint servers, dash arrays, opacity percentages, multi-keyword paint order, and other vector effects remain deferred. Browser evidence compares independent computed styles and verifies evenodd path geometry; it does not prove filter pixels, hint quality, or vector-effect rendering.
+
+## Font Controls
+
+Nineteen properties add font kerning, optical sizing, stretch keywords, synthesis controls, caps/position/east-Asian/ligature/numeric variants, ruby placement/alignment, vertical orientation, text combination, justification, and emphasis. Emphasis colors accept shared color tokens; emphasis shapes support filled/open combinations in either order. Emphasis positioning and ruby positioning use finite keyword combinations.
+
+Font variants currently accept individual keywords. Combined variants, stretch percentages, custom emphasis strings, digit-combination counts, and font feature settings remain deferred. Browser fixtures compare independent computed styles and verify ruby annotation placement and upright vertical text geometry; they do not establish font-specific glyph selection or justification quality.
+
+## Motion Controls
+
+Eleven animation and transition properties support scalar durations/delays, easing keywords, iteration counts, direction, fill mode, play state, and discrete transition behavior. Times use finite decimal or exponent values with s/ms units, including zero; negative delays are accepted, while negative durations are rejected. Animation duration also accepts auto. Iteration counts accept nonnegative numbers or infinite.
+
+Comma-separated lists, easing functions, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
+
+## Grid Tracks
+
+Nine properties cover implicit tracks, scalar explicit tracks, auto-placement, and row/column start/end lines. Tracks accept nonnegative lengths, percentages, fr dimensions, auto, min-content, and max-content. Explicit tracks also accept none and subgrid. Auto flow accepts row/column with optional dense in either order.
+
+Grid lines accept auto, nonzero safe integers, and span followed by a canonical positive safe integer. Important numeric fallbacks preserve their number domain. Track lists, repeat/minmax functions, named lines, areas, and grid shorthands remain deferred. Browser fixtures compare independent CSS and verify fractional implicit tracks and a two-column span; subgrid layout remains a separate gate.
+
+## Masks and Positioning
+
+Sixteen properties add mask geometry/mode/composition, scalar mask sizing and positioning, image rendering, object/background positioning, perspective, transform boxes/origins, and shape margins. Scalar positions accept signed lengths/percentages or one bottom/center/left/right/top keyword. Perspective accepts none or nonnegative lengths without percentages. Mask sizing accepts nonnegative lengths/percentages, auto, contain, or cover.
+
+Background position and its X/Y longhands share a conflict domain to preserve authored precedence during CSS factoring. Mask images can be supplied by ordinary CSS; a Chromium fixture compares masked pixels with independent declarations and an unmasked control. Lists, image sources, paired positions/sizes, gradients, filter functions, and 3D transform rendering remain deferred.
+
+## Lists and Input
+
+Thirteen properties add common list marker styles and placement, appearance keywords, touch actions, scrollbar width, overflow anchoring, logical overscroll axes, integer tab sizes, bidi controls, line breaking, text autoscaling keywords, and spacing trim. Touch action enumerates all 94 combinations of the supported gesture keywords, preserving permutations without allowing conflicting directions.
+
+Tab sizes are nonnegative safe integers. Custom counter styles/strings, length-based tab stops, text-size percentages, and broader appearance syntax remain deferred. Chromium fixtures compare native marker pixels, tab layout, and computed controls; touch gesture dispatch, rubber-banding, bidi visual ordering, and text autoscaling behavior remain separate gates.
+
+## Color Keywords
+
+All 148 canonical lowercase CSS named colors and 19 canonical system-color keywords are accepted by color properties and theme values, including paired schemes. Literal names take precedence over inferred token names; explicit theme.tokens references retain access to colliding tokens. The independent MDN corpus exhausts every named color across each color property and consumer type. Browser fixtures verify named RGB values, explicit references, importance, and light/dark scheme changes. Noncanonical case spellings and functional color syntax remain deferred.
+
+## Container and Field Sizing
+
+`containerType` accepts `normal`, `size`, `inline-size`, `scroll-state`, and either size mode combined with `scroll-state` in either order. `fieldSizing` accepts `content` or `fixed`; `interpolateSize` accepts `allow-keywords` or `numeric-only`. Fallbacks and importance use the shared literal pipeline. The inventory tracks 301 partially implemented properties; container names, query authoring, and interpolation functions remain deferred. Browser evidence covers native container-query responses and content-sized inputs; scroll-state queries and animated intrinsic-size interpolation remain separate gates.
+
+## Reading Order
+
+`readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 303 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).

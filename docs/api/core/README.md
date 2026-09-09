@@ -2,9 +2,6 @@
 
 Typed style values, themes, and configuration.
 
-> [!NOTE]
-> `Config`, `style`, `Style`, and `Theme` are exported. Config source extraction and named bound `style` exports are implemented. `cx`, `variants`, and `Vars` remain preview APIs and are not exported.
-
 | API                        | Description                                                            |
 | -------------------------- | ---------------------------------------------------------------------- |
 | [Config](Config/README.md) | Configuration-bound authoring and compatible theme scopes.             |
@@ -17,3 +14,5 @@ Typed style values, themes, and configuration.
 | [Vars](Vars/README.md)     | Explicit shared variable contracts.                                    |
 
 Style declarations support ordered nonempty fallback arrays and trailing `!`/`!important`; see [Literal Values](Style/literals.md).
+
+`Config`, `style`, `Style`, and `Theme` are exported. Config source extraction and named bound `style` exports are implemented. `cx`, `variants`, and `Vars` remain preview APIs and are not exported.

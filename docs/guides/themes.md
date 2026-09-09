@@ -6,24 +6,18 @@ Define shared tokens, apply theme scopes, and choose light or dark mode. See [Ge
 
 ### Use Themes
 
-> [!NOTE]
-> Config authoring is a preview. For current support, see [Compile Local Theme Source](#compile-local-theme-source).
-
-Export a named config instance and use its bound styles:
+Export named helpers and use their bound styles:
 
 ```ts
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const { style, theme } = Config.create({
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
     spacing: { md: '1rem' },
   },
 })
-
-export const style = config.style
-export const theme = config.theme
 ```
 
 ```tsx
@@ -38,6 +32,8 @@ const example = <button style={styles.button}>Save</button>
 
 Token names are inferred from the config. Nested palettes use dotted paths; CSS literals win over colliding token names. See [Theme.define](../api/core/Theme/define.md) for supported groups and values.
 
+Config authoring is a preview. For current support, see [Compile Local Theme Source](#compile-local-theme-source).
+
 ### Property Mappings
 
 Define custom property names with `shorthands` and separate token scales by property:
@@ -45,7 +41,7 @@ Define custom property names with `shorthands` and separate token scales by prop
 ```ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const { style, theme } = Config.create({
   shorthands: {
     px: ['paddingLeft', 'paddingRight'],
     paddingX: ['paddingLeft', 'paddingRight'],
@@ -59,12 +55,7 @@ const config = Config.create({
   },
 })
 
-export const style = config.style
-export const theme = config.theme
-
-const styles = {
-  card: style({ px: 'sm', margin: 'gutter', color: 'primary' }),
-}
+const card = style({ px: 'sm', margin: 'gutter', color: 'primary' })
 ```
 
 `px`, `paddingX`, and `paddingHorizontal` each set left/right padding. Use logical targets such as `paddingInlineStart` and `paddingInlineEnd` for writing-direction-aware aliases. Aliases are optional and local to the config.
@@ -75,17 +66,15 @@ The example uses `padding.sm` for `px`, `margin.gutter` for margin, and `textCol
 
 ### Selecting a Theme
 
-> [!NOTE]
-> Config authoring is a preview.
-
 Apply the single theme's scope to the document root:
 
 ```tsx
 import { theme } from './zyzz.config.js'
 
 const example = (
-  <html {...theme()}>
+  <html style={theme}>
     <head>
+      <meta name="color-scheme" content="light dark" />
       <title>My App</title>
     </head>
     <body>Content</body>
@@ -101,16 +90,13 @@ import { Config, Theme } from 'zyzz'
 
 const base = Theme.define({ color: { brand: '#06c' } })
 
-const config = Config.create({
+export const { style, themes } = Config.create({
   defaultTheme: 'base',
   themes: {
     base,
     mint: Theme.extend(base, { color: { brand: '#175' } }),
   },
 })
-
-export const style = config.style
-export const themes = config.themes
 ```
 
 ```tsx
@@ -122,8 +108,9 @@ const styles = {
 
 function App({ appearance }: { appearance: 'base' | 'mint' }) {
   return (
-    <html {...themes[appearance]()}>
+    <html style={themes[appearance]}>
       <head>
+        <meta name="color-scheme" content="light dark" />
         <title>My App</title>
       </head>
       <body>
@@ -134,20 +121,23 @@ function App({ appearance }: { appearance: 'base' | 'mint' }) {
 }
 ```
 
-Changing the scope updates inherited token values while component styles stay the same. Single-theme configs expose `zyzz.theme`; named catalogs expose `zyzz.themes`. Independently defined themes do not share a contract merely because their token names match.
+Changing the scope updates inherited token values while component styles stay the same. Single-theme configs expose `theme`; named catalogs expose `themes`. Independently defined themes do not share a contract merely because their token names match.
 
 <a id="dark-mode"></a>
 
+Config authoring is a preview.
+
 ### Color Schemes
 
-Color tokens accept a shared string or a `{ dark, light }` pair, as in [Use Themes](#use-themes). Pass the scheme when applying the theme:
+Color tokens accept a shared string or a `{ dark, light }` pair, as in [Use Themes](#use-themes). Apply the theme through `style` and declare supported schemes in `<head>`:
 
 ```tsx
 import { theme } from './zyzz.config.js'
 
 const example = (
-  <html {...theme({ colorScheme: 'light dark' })}>
+  <html style={theme}>
     <head>
+      <meta name="color-scheme" content="light dark" />
       <title>My App</title>
     </head>
     <body>Content</body>
@@ -155,7 +145,7 @@ const example = (
 )
 ```
 
-Use `light dark` for system preference, or `light` / `dark` to force a scheme. The call returns the scope class and an inline `colorScheme` style. Omitting `colorScheme` preserves inherited CSS behavior. Nested scopes can select a different theme, scheme, or both.
+Use `light dark` for system preference, or `light` / `dark` to force a scheme. The compiler applies the theme scope class. Change `document.documentElement.style.colorScheme` to update the scheme at runtime. Nested elements can apply a different theme through their `style` prop.
 
 ### Restore Preferences
 
@@ -170,11 +160,9 @@ const initialization = script()
 
 export function Document({ nonce }: { nonce?: string }) {
   return (
-    <html
-      {...themes.base({ colorScheme: 'light dark' })}
-      suppressHydrationWarning
-    >
+    <html style={themes.base} suppressHydrationWarning>
       <head>
+        <meta name="color-scheme" content="light dark" />
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{ __html: initialization }}
@@ -204,9 +192,6 @@ React's `suppressHydrationWarning` is limited to the root attributes changed bef
 
 ### Shared Configuration
 
-> [!NOTE]
-> Cross-module config authoring is a preview.
-
 Keep reusable tokens in a shared module and pass them into each application's config:
 
 ```ts
@@ -221,12 +206,12 @@ export const theme = Theme.define({ spacing: { md: '1rem' } })
 import { Config } from 'zyzz'
 import { theme } from './tokens.js'
 
-const config = Config.create({ theme })
-
-export const style = config.style
+export const { style } = Config.create({ theme })
 ```
 
 Consumers import named helpers such as `{ style, theme }` from the config's stable exports. See [Publish Libraries](compilation.md#publish-libraries) for distributing precompiled components.
+
+Cross-module config authoring is a preview.
 
 ### Compile Local Theme Source
 

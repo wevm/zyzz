@@ -1,8 +1,5 @@
 # StyleSheet.compile
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Compile shared definitions into static native tables.
 
 ```ts
@@ -13,6 +10,8 @@ const theme = Theme.define({ color: { text: '#111' } })
 const styles = Style.define({ text: { color: theme.tokens.color.text } })
 const output = StyleSheet.compile({ styles, themes: { base: theme } })
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 

@@ -164,12 +164,16 @@ export function compile(options: compile.Options): compile.ReturnType {
       : ''
     module.overwrite(alias.start, alias.end, `(${value}${assertion})`)
   }
-  for (const reference of extracted.themeReferences)
+  for (const reference of extracted.themeReferences) {
+    if (reference.value) styled = true
     module.overwrite(
       reference.start,
       reference.end,
-      JSON.stringify(emitted.themes[reference.name]),
+      reference.value
+        ? `${transport}.value({className:${JSON.stringify(emitted.themes[reference.name])}})`
+        : JSON.stringify(emitted.themes[reference.name]),
     )
+  }
 
   const replacements = [
     ...extracted.calls.map((call) => ({

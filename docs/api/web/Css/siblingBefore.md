@@ -1,8 +1,5 @@
 # Css.siblingBefore
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 A qualifying marked sibling preceding the styled element.
 
 ```ts
@@ -10,12 +7,12 @@ import { style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const target = Css.marker({ state: ['closed', 'open'] })
-const styles = {
-  style: style({
-    [Css.siblingBefore(target, { data: { state: 'open' } })]: { opacity: 1 },
-  }),
-}
+const style = style({
+  [Css.siblingBefore(target, { data: { state: 'open' } })]: { opacity: 1 },
+})
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 

@@ -2,8 +2,7 @@
 
 Import named styling helpers and apply their values through the `style` prop. Imports always refer to authored source files.
 
-> [!NOTE]
-> Static style values and config token imports compile through Vite and the source compiler. Next.js, dynamic callbacks, and variants remain previews.
+Static style values and config token imports compile through Vite and the source compiler. Next.js, dynamic callbacks, and variants remain previews.
 
 ## Install
 
@@ -17,15 +16,12 @@ pnpm add zyzz
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const { style, theme } = Config.create({
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
     spacing: { md: '1rem' },
   },
 })
-
-export const style = config.style
-export const theme = config.theme
 ```
 
 ## Style a Component

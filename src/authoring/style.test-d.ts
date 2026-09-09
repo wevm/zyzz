@@ -12,6 +12,7 @@ describe('style', () => {
     expectTypeOf(styles.button).toExtend<React.CSSProperties>()
     expectTypeOf(styles.button).toEqualTypeOf<style.ReturnType>()
     const config = Config.create({ theme: { color: { brand: '#06c' } } })
+    expectTypeOf(config.theme).toExtend<React.CSSProperties>()
     expectTypeOf(
       config.style({ color: 'brand' }),
     ).toEqualTypeOf<style.ReturnType>()

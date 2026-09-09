@@ -1,21 +1,17 @@
 # Config.create
 
-> [!NOTE]
-> The factory, source extraction, and direct `style` calls are implemented. `vars`, `variants`, and layer emission remain planned. Layer keys are inferred but are not yet accepted by source compilation.
-
-Bind style authoring to explicit theme and layer contracts. Export `const style = config.style` from `zyzz.config.ts`; consumers import `{ style }`.
+Bind style authoring to explicit theme and layer contracts. Use `export const { style, theme } = Config.create(...)` from `zyzz.config.ts`; consumers import `{ style }`.
 
 ```ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const { style, theme } = Config.create({
   layers: ['base', 'components'],
   theme: { spacing: { md: '1rem' } },
 })
-
-export const style = config.style
-export const theme = config.theme
 ```
+
+The factory, source extraction, and direct `style` calls are implemented. `vars`, `variants`, and layer emission remain planned. Layer keys are inferred but are not yet accepted by source compilation.
 
 ## Signature
 
@@ -56,16 +52,12 @@ Config.create({ layers: ['base', 'components'] })
 Map custom names to one or more properties. Values infer from all targets; tokens resolve separately for each property. Expansion preserves declaration order. Targets must be supported standard properties, and alias names cannot replace existing properties or reserved keys.
 
 ```ts
-const config = Config.create({
+const { style } = Config.create({
   shorthands: { px: ['paddingLeft', 'paddingRight'] },
   theme: { padding: { md: '1rem' } },
 })
 
-const style = config.style
-
-const styles = {
-  card: style({ px: 'md' }),
-}
+const card = style({ px: 'md' })
 ```
 
 See [Property Mappings](../../../guides/themes.md#property-mappings) for aliases and property-specific token scales.
@@ -106,16 +98,14 @@ Returns `Config.create.ReturnType<options>`: a frozen object with typed `style`,
 Infers configured token and layer names, retaining property checking inside layer bodies. Without a theme, authoring remains token-free. Direct literal calls compile through Vite or the source graph/file host. Untransformed calls throw the missing-transform error.
 
 ```ts
-const styles = {
-  card: style({ padding: 'md' }),
-}
+const card = style({ padding: 'md' })
 ```
 
 ### theme
 
-- Type: Normalized callable single-theme definition
+- Type: Normalized single-theme definition
 
-Present for single-theme configuration. Call `zyzz.theme({ colorScheme: 'light dark' })` to spread root props onto `<html>`. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
+Present for single-theme configuration. Apply the scope with `<html style={theme}>`. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
 
 ```ts
 theme.tokens.spacing.md
@@ -125,17 +115,15 @@ theme.tokens.spacing.md
 
 - Type: Normalized named theme catalog
 
-Present for named catalogs. Call `zyzz.themes.mint({ colorScheme: 'dark' })` to apply a named scope. Compatible alternatives share config identity without mutating independent definitions.
+Present for named catalogs. Use `style={themes.mint}` to apply a named scope. Compatible alternatives share config identity without mutating independent definitions.
 
 ```ts
-const config = Config.create({
+const { style, themes } = Config.create({
   defaultTheme: 'base',
   themes: { base: { spacing: { md: '1rem' } } },
 })
 
-const style = config.style
-
-const token = config.themes.base.tokens.spacing.md
+const token = themes.base.tokens.spacing.md
 ```
 
 ### script
@@ -153,20 +141,17 @@ See [Config Script](script.md) for storage, CSP, and hydration behavior.
 
 ### variants
 
-> [!NOTE]
-> Planned for Phase 3; not currently returned.
-
 - Type: Bound variant authoring (planned)
 
 Infers the same theme and layer contract as bound `style`.
 
 ```ts
-const styles = {
-  button: variants({
-    variants: { size: { md: { padding: 'md' } } },
-  }),
-}
+const button = variants({
+  variants: { size: { md: { padding: 'md' } } },
+})
 ```
+
+Planned for Phase 3; not currently returned.
 
 ## Errors
 
@@ -178,7 +163,7 @@ See [Config](README.md) for related methods and types.
 
 ## Named Exports
 
-Create `const config = Config.create(...)` and export `const style = config.style` for named consumer imports in consuming modules. Use `style`; access `zyzz.theme` for single themes or `zyzz.themes` for named catalogs. Source integrations follow this named instance without requiring a default export. Immutable aliases, named re-exports, and packed declarations retain its contract. `variants` remains planned.
+Use `export const { style, theme } = Config.create(...)` for named consumer imports in consuming modules. Use `style`; access `theme` for single themes or `themes` for named catalogs. Source integrations follow this named instance without requiring a default export. Immutable aliases, named re-exports, and packed declarations retain its contract. `variants` remains planned.
 
 ## In-Memory Compilation
 
@@ -186,9 +171,7 @@ Create `const config = Config.create(...)` and export `const style = config.styl
 import { Config, Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
-const config = Config.create({ theme: { spacing: { md: '1rem' } } })
-
-const style = config.style
+const { style } = Config.create({ theme: { spacing: { md: '1rem' } } })
 
 const output = Css.compile({
   styles: Style.define({ card: { padding: theme.tokens.spacing.md } }),

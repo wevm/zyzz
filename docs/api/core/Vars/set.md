@@ -1,8 +1,5 @@
 # Vars.set
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Assign values to an explicit shared variable contract.
 
 ```ts
@@ -11,6 +8,8 @@ import { Vars } from 'zyzz'
 const progress = Vars.define({ amount: 'percentage' })
 const style = Vars.set(progress, { amount: '42%' })
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 

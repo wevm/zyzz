@@ -1,61 +1,31 @@
 # Theme Application
 
-Call a theme to obtain web props without generating CSS or accessing the DOM.
+Apply a theme through the `style` prop. The compiler supplies its generated scope class and CSS variables.
 
 ```tsx
-<html {...theme({ colorScheme: 'light dark' })}>
-  <head>
-    <title>My App</title>
-  </head>
-  <body>Content</body>
-</html>
+import { theme } from './zyzz.config.js'
+
+export function Document() {
+  return (
+    <html style={theme}>
+      <head>
+        <meta name="color-scheme" content="light dark" />
+        <title>My App</title>
+      </head>
+      <body>Content</body>
+    </html>
+  )
+}
 ```
 
-## Signature
+## Named Themes
 
-`theme(options = {})`
+Use `style={themes.mint}` for a named config theme. Nested elements can select compatible alternatives without changing component classes. Apply one compatible theme per element.
 
-The callable retains `className`, `style`, `tokens`, and other theme members. Named config themes use the same contract: `zyzz.themes.mint(options)`. Source compilation supplies the scope identity.
+## Color Schemes
 
-## Parameters
+Declare `light dark` in the meta tag to follow system preference, or `light` / `dark` to select explicitly. Set `document.documentElement.style.colorScheme` when a user changes their preference. Color pairs compile to `light-dark()`.
 
-### options.colorScheme
+## Compilation
 
-- Type: `'light' | 'dark' | 'light dark' | undefined`
-- Default: Omitted.
-
-Choose an explicit scheme or follow system preference. Omission emits no style property, preserving inherited CSS behavior.
-
-```ts
-theme({ colorScheme: 'dark' })
-```
-
-## Returns
-
-### className
-
-- Type: `string`
-
-Generated, isolated theme scope class. Identical to `theme.className`.
-
-```ts
-theme().className
-```
-
-### style
-
-- Type: `{ colorScheme: 'light' | 'dark' | 'light dark' }`, when supplied.
-
-Inline color-scheme selection. No `style` key is emitted when the option is omitted.
-
-```ts
-theme({ colorScheme: 'dark' }).style
-```
-
-## Errors
-
-Reject unsupported schemes and unknown options. Untransformed authoring throws the missing-transform error. Calls do not read storage, persist preferences, or mutate their theme.
-
-## Composition
-
-The application handles merging unrelated root classes and inline styles, as with other JSX spreads. Apply one theme from a compatible catalog per element. Nested elements can select compatible alternatives without changing component classes.
+Local definitions, imported themes, and named config members support direct JSX `style` application. Dynamic catalog selection remains a preview. `theme.className` remains available for integrations that explicitly need the generated class.

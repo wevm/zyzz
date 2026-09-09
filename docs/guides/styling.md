@@ -29,24 +29,21 @@ Put `className` on the element. Spread one compiled value into an inline style o
 
 #### Add Hover and Responsive Styles
 
-> [!NOTE]
-> Conditions are not yet implemented.
-
 ```ts
 import { style } from 'zyzz'
 
-const styles = {
-  card: style({
-    padding: '1rem',
-    ':hover': { opacity: 0.8 },
-    '@media (min-width: 48rem)': { padding: '2rem' },
-  }),
-}
+const card = style({
+  padding: '1rem',
+  ':hover': { opacity: 0.8 },
+  '@media (min-width: 48rem)': { padding: '2rem' },
+})
 ```
 
 Nest pseudo styles and queries inside a definition. Nested conditions combine with AND. See [relationships](conditions.md#style-relationships) for styling based on other elements.
 
 Use [Dynamic Values](styling.md#dynamic-values) for typed per-instance bindings.
+
+Conditions are not yet implemented.
 
 ### Share Styles
 
@@ -57,15 +54,15 @@ import { style } from './zyzz.config.js'
 
 // button.styles.ts
 
-export const styles = { button: style({ padding: 'md' }) }
+export const button = style({ padding: 'md' })
 ```
 
 ```tsx
 // Button.tsx
-import { styles } from './button.styles.js'
+import { button } from './button.styles.js'
 
 export function Button() {
-  return <button style={styles.button}>Save</button>
+  return <button style={button}>Save</button>
 }
 ```
 
@@ -74,9 +71,6 @@ The bundler integration resolves and transforms source imports. Consumers never 
 ### Override Styles
 
 Spread one compiled value into a native inline style object. Compose generated declarations through `cx` when one generated style must override another.
-
-> [!NOTE]
-> `cx` composition is not yet implemented. Native inline overrides are supported through `style={{ ...styles.button, opacity: 0.5 }}`.
 
 ```tsx
 import { style, cx } from 'zyzz'
@@ -97,10 +91,9 @@ const custom = <button style={{ ...styles.base, padding: '2rem' }}>Save</button>
 
 Keep events and accessibility props on the component. Multiple JSX spreads replace fields instead of composing styles.
 
-### Dynamic Values
+`cx` composition is not yet implemented. Native inline overrides are supported through `style={{ ...styles.button, opacity: 0.5 }}`.
 
-> [!NOTE]
-> Preview API; not yet implemented.
+### Dynamic Values
 
 ```tsx
 import { style } from 'zyzz'
@@ -116,24 +109,22 @@ const example = <div style={styles.bar({ width: '50%' })} />
 Callbacks bind values without generating CSS. Use `Vars` only when a shared variable contract is needed.
 
 ```ts
-const styles = {
-  label: style({
-    color: 'black!',
-    display: ['block', 'flex'],
-  }),
-}
+const label = style({
+  color: 'black!',
+  display: ['block', 'flex'],
+})
 ```
 
 Arrays preserve fallback order; a trailing `!` marks importance.
+
+Preview API; not yet implemented.
 
 #### Theme Expressions
 
 ```ts
 import { style, theme } from './zyzz.config.js'
 
-const styles = {
-  panel: style({ width: `calc(100% - ${theme.vars.spacing.md})` }),
-}
+const panel = style({ width: `calc(100% - ${theme.vars.spacing.md})` })
 ```
 
 Import `{ theme }` from the [config module](../concepts.md#configuration) to access `theme.vars`. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `Vars` defines independent shared contracts.

@@ -54,6 +54,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
       binding: string(entry.binding),
       call: {
         ...(entry.value === true ? { value: true } : {}),
+        ...(entry.catalog === true ? { catalog: true } : {}),
         end: -1,
         name: theme,
         start: -1,
@@ -61,7 +62,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
         ...(options
           ? {
               options,
-              type: `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`,
+              type: `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>${entry.catalog === true ? "['themes']" : ''}`,
             }
           : {}),
         ...(members
@@ -127,6 +128,7 @@ export function write(
   function entry(link: Themes.Link): Record<string, unknown> {
     return {
       ...(link.call.value ? { value: true } : {}),
+      ...(link.call.catalog ? { catalog: true } : {}),
       binding: link.binding,
       kind: link.kind,
       theme: link.call.name,
@@ -157,7 +159,12 @@ export function write(
       ]),
     ),
     version: (() => {
-      if (Object.values(links).some((link) => link.call.value)) return 3
+      if (
+        Object.values(links).some(
+          (link) => link.call.value || link.call.catalog,
+        )
+      )
+        return 3
       if (
         Object.values(links).some(
           (link) => link.kind === 'config' || link.call.type,

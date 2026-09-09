@@ -1,13 +1,12 @@
 # StyleSheet
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Native table compilation and selection.
 
 ```ts
 import { StyleSheet } from 'zyzz/react-native'
 ```
+
+Preview API; not yet implemented.
 
 ## Methods
 

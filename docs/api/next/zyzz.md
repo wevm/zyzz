@@ -1,8 +1,5 @@
 # zyzz
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Wrap Next.js configuration with source transformation, CSS delivery, and dependency watching. Configure Webpack and Turbopack internally through the same public setup.
 
 ```ts
@@ -12,6 +9,8 @@ export default zyzz({
   reactStrictMode: true,
 })
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 

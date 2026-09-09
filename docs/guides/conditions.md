@@ -6,16 +6,13 @@ Respond to viewport size, browser state, and related elements. Begin with [Getti
 
 ### Responsive Styles
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Define typed thresholds in config, then reference them in media and container conditions.
 
 ```ts
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const { style, theme } = Config.create({
   theme: {
     breakpoints: { tablet: '48rem' },
     containerNames: ['sidebar'],
@@ -23,9 +20,6 @@ const config = Config.create({
     spacing: { md: '1rem', sm: '0.5rem' },
   },
 })
-
-export const style = config.style
-export const theme = config.theme
 ```
 
 ```tsx
@@ -52,10 +46,9 @@ const example = (
 
 Media thresholds measure the viewport; container thresholds measure the eligible ancestor. Aliases compile to literals, so switching theme scopes does not change them. Raw CSS queries and `@supports` remain supported design paths.
 
-### Style States
+Preview API; not yet implemented.
 
-> [!NOTE]
-> Preview API; not yet implemented.
+### Style States
 
 Use pseudo styles for browser state and data attributes for application state. Keep accessibility attributes on the real control.
 
@@ -79,12 +72,11 @@ const example = (
 
 Do not concatenate classes to establish override priority. See [Style Relationships](conditions.md#style-relationships) when state belongs to another element.
 
+Preview API; not yet implemented.
+
 ### Style Relationships
 
 Use a typed marker to style an element when an ancestor has a matching data state.
-
-> [!NOTE]
-> Preview API; not yet implemented.
 
 ```tsx
 import { style } from 'zyzz'
@@ -106,3 +98,5 @@ const example = (
 ```
 
 This deliberately includes an intermediate element: the marker is an ancestor, not the span's immediate parent. `Css.descendant` checks descendants of the styled element. Helper names describe direction and depth; they do not verify DOM structure through TypeScript.
+
+Preview API; not yet implemented.

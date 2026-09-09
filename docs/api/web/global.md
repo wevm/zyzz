@@ -1,8 +1,5 @@
 # global
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Contribute eager global selectors and nested stylesheet rules.
 
 ```ts
@@ -10,6 +7,8 @@ import { global } from 'zyzz/web'
 
 global({ '@layer base': { body: { margin: 0 } } })
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 

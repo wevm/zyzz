@@ -115,7 +115,7 @@ export const scope = mint.className;`,
       `" import { base } from './base.js'; export const zyzz = ({"themes":{"mint":{"className":"z_theme-69adjg15dlzyu-zyzz-mint"},"base":{"className":"z_theme-69adjg15dlzyu-zyzz-base"}}} as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>);"`,
     )
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { design } from './index.js'; const zyzz = (design as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); const { css } = ({css:undefined} as unknown as {readonly css:import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>['css']}); export const props = ({className:"z-5ngs574r5xr9-base0"}); export const scope = "z_theme-69adjg15dlzyu-zyzz-mint";"`,
+      `"import { design } from './index.js'; const zyzz = (design as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); const { css } = (zyzz as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); export const props = ({className:"z-5ngs574r5xr9-base0"}); export const scope = "z_theme-69adjg15dlzyu-zyzz-mint";"`,
     )
     const updated = compiler.compile({
       modules: {
@@ -1026,5 +1026,61 @@ describe('compile', () => {
     expect(output.modules['pkg/config.ts']!.code).toMatchInlineSnapshot(
       `" const config = ({"theme":{"className":"z_theme-1g1qfxjzbnv3-config-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"#06c"}}}>); export const style = (undefined as unknown as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"#06c"}}}>['style']);"`,
     )
+  })
+})
+
+describe('compile', () => {
+  test('destructured config exports and theme style props compile across modules', () => {
+    const output = Graph.compile({
+      modules: {
+        'config.ts': `import { Config } from 'zyzz'; export const { style, theme } = Config.create({theme:{color:{brand:'#06c'}}});`,
+        'app.tsx': `import { style, theme } from './config.js'; const button = style({color:'brand'}); export const App = () => <html style={theme}><button style={button}/></html>;`,
+      },
+    })
+    expect(output.modules['app.tsx']!.code).toMatchInlineSnapshot(`
+      "
+      import { Style as __zyzzStyle } from 'zyzz/runtime';
+      import { style, theme } from './config.js'; const button = __zyzzStyle.value({className:"z-10d85mt1xufjiz-base0"}); export const App = () => <html {...__zyzzStyle.resolve({"style":__zyzzStyle.value({className:"z_theme-u8smm21l81sow-config-44-theme"}),})}><button {...__zyzzStyle.resolve({"style":button,})}/></html>;"
+    `)
+    const packed = Graph.compile({
+      contracts: { 'config.js': output.contracts['config.ts']! },
+      imports: { 'app.tsx': { './config.js': 'config.js' } },
+      modules: {
+        'app.tsx': `import { theme } from './config.js'; export const App = () => <html style={theme}/>;`,
+      },
+    })
+    expect(packed.modules['app.tsx']!.code).toMatchInlineSnapshot(`
+      "
+      import { Style as __zyzzStyle } from 'zyzz/runtime';
+      import { theme } from './config.js'; export const App = () => <html {...__zyzzStyle.resolve({"style":__zyzzStyle.value({className:"z_theme-u8smm21l81sow-config-44-theme"}),})}/>;"
+    `)
+  })
+})
+
+describe('compile', () => {
+  test('destructured config aliases and named catalogs preserve scopes', () => {
+    const output = Graph.compile({
+      modules: {
+        'config.ts': `import { Config } from 'zyzz'; const config = Config.create({defaultTheme:'base',themes:{base:{color:{brand:'#06c'}},mint:{color:{brand:'#175'}}}}); export const { style: define, themes } = config;`,
+        'app.tsx': `import { define, themes } from './config.js'; const button = define({color:'brand'}); export const App = () => <html style={themes.mint}><button style={button}/></html>;`,
+      },
+    })
+    expect(output.modules['app.tsx']!.code).toMatchInlineSnapshot(`
+      "
+      import { Style as __zyzzStyle } from 'zyzz/runtime';
+      import { define, themes } from './config.js'; const button = __zyzzStyle.value({className:"z-10d85mt1xufjiz-base0"}); export const App = () => <html {...__zyzzStyle.resolve({"style":__zyzzStyle.value({className:"z_theme-u8smm21l81sow-config-mint"}),})}><button {...__zyzzStyle.resolve({"style":button,})}/></html>;"
+    `)
+    const packed = Graph.compile({
+      contracts: { 'config.js': output.contracts['config.ts']! },
+      imports: { 'app.tsx': { './config.js': 'config.js' } },
+      modules: {
+        'app.tsx': `import { themes } from './config.js'; const catalog = themes; export const App = () => <html style={catalog.base}/>;`,
+      },
+    })
+    expect(packed.modules['app.tsx']!.code).toMatchInlineSnapshot(`
+      "
+      import { Style as __zyzzStyle } from 'zyzz/runtime';
+      import { themes } from './config.js'; const catalog = (themes as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "base":{readonly "color":{readonly "brand":"#06c"}};readonly "mint":{readonly "color":{readonly "brand":"#175"}}}}>['themes']); export const App = () => <html {...__zyzzStyle.resolve({"style":__zyzzStyle.value({className:"z_theme-u8smm21l81sow-config-base"}),})}/>;"
+    `)
   })
 })

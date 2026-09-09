@@ -555,3 +555,388 @@ describe('css', () => {
     css({ height: '0b10dvh' })
   })
 })
+
+describe('css', () => {
+  test('columns and fragmentation preserve property domains', () => {
+    css({
+      columnCount: ['auto', '2!'],
+      columnWidth: '12rem',
+      columnGap: 'normal',
+      columnFill: 'balance',
+    })
+    css({
+      breakAfter: 'page',
+      breakBefore: 'column',
+      breakInside: 'avoid',
+      columnSpan: 'all',
+      orphans: 2,
+      widows: 3,
+    })
+    const theme = Theme.define({
+      color: { rule: '#06c' },
+      spacing: { gutter: '8px' },
+    })
+    theme.css({
+      columnRuleColor: 'rule',
+      columnRuleStyle: 'solid',
+      columnRuleWidth: 'thin',
+    })
+    Config.create({ theme }).css({ columnRuleColor: theme.tokens.color.rule })
+    // @ts-expect-error Column widths exclude percentages.
+    css({ columnWidth: '10%' })
+    // @ts-expect-error Counts cannot use arbitrary keywords.
+    css({ columnCount: 'none' })
+    // @ts-expect-error Rule widths exclude percentages.
+    css({ columnRuleWidth: '5%' })
+    // @ts-expect-error Inside breaks cannot force a new column.
+    css({ breakInside: 'column' })
+    // @ts-expect-error Column widths do not accept percentage-capable spacing tokens.
+    theme.css({ columnWidth: theme.tokens.spacing.gutter })
+    // @ts-expect-error Legacy regions remain deferred.
+    css({ breakAfter: 'region' })
+  })
+})
+
+describe('css', () => {
+  test('layout and containment accept finite CSS domains', () => {
+    css({
+      backfaceVisibility: 'hidden',
+      boxDecorationBreak: 'slice',
+      clear: 'inline-end',
+      contain: 'paint',
+      contentVisibility: 'auto',
+    })
+    css({
+      display: 'table-cell',
+      float: 'inline-start',
+      isolation: 'isolate',
+      objectFit: 'scale-down',
+      transformStyle: 'preserve-3d',
+      zIndex: ['auto', '-1!'],
+    })
+    Config.create().css({ zIndex: 2, display: 'flow-root' })
+    Theme.define({}).css({ contain: 'strict', objectFit: 'contain' })
+    // @ts-expect-error Containment combinations are a later grammar expansion.
+    css({ contain: 'layout paint' })
+    // @ts-expect-error Floats are not centering controls.
+    css({ float: 'center' })
+    // @ts-expect-error Object fit has no auto keyword.
+    css({ objectFit: 'auto' })
+    // @ts-expect-error Stacking accepts unitless integers, not lengths.
+    css({ zIndex: '2px' })
+    // @ts-expect-error Isolation does not accept blend modes.
+    css({ isolation: 'multiply' })
+    // @ts-expect-error Multi-keyword display remains deferred.
+    css({ display: 'inline flow-root' })
+  })
+})
+
+describe('css', () => {
+  test('background and color controls preserve token and keyword domains', () => {
+    css({
+      backgroundAttachment: 'fixed',
+      backgroundBlendMode: 'multiply',
+      backgroundClip: 'text',
+      backgroundOrigin: 'content-box',
+    })
+    css({
+      backgroundPositionX: '-2px',
+      backgroundPositionY: '40%',
+      backgroundRepeat: 'repeat-x',
+      backgroundSize: ['auto', 'cover!'],
+      mixBlendMode: 'plus-lighter',
+    })
+    const theme = Theme.define({
+      color: { auto: '#06c' },
+      spacing: { gap: '2px' },
+    })
+    theme.css({ accentColor: 'auto', caretColor: theme.tokens.color.auto })
+    Config.create({ theme }).css({
+      colorScheme: 'only dark',
+      forcedColorAdjust: 'none',
+      printColorAdjust: 'exact',
+    })
+    // @ts-expect-error Background position axes use different side keywords.
+    css({ backgroundPositionX: 'top' })
+    // @ts-expect-error Image lists remain deferred.
+    css({ backgroundAttachment: 'scroll, fixed' })
+    // @ts-expect-error Two-axis background sizes remain deferred.
+    css({ backgroundSize: '10px 20px' })
+    // @ts-expect-error Color controls do not accept length tokens.
+    theme.css({ accentColor: theme.tokens.spacing.gap })
+    // @ts-expect-error A blend mode is not a color value.
+    css({ caretColor: 'multiply' })
+    // @ts-expect-error Background geometry does not map spacing tokens.
+    theme.css({ backgroundPositionX: theme.tokens.spacing.gap })
+  })
+})
+
+describe('css', () => {
+  test('supports paint tokens and bounded SVG domains', () => {
+    css({
+      fill: 'none',
+      stroke: '#06c',
+      fillOpacity: 0.5,
+      strokeWidth: '2px',
+      strokeDashoffset: '-5%',
+      strokeLinecap: 'round',
+      strokeLinejoin: 'bevel',
+      strokeMiterlimit: 2,
+      fillRule: 'evenodd',
+      clipRule: 'nonzero',
+      paintOrder: 'stroke',
+      shapeRendering: 'crispEdges',
+      textRendering: 'optimizeLegibility',
+      vectorEffect: 'non-scaling-stroke',
+      colorInterpolationFilters: 'linearRGB',
+      floodColor: 'black',
+      floodOpacity: 0.2,
+      lightingColor: 'white',
+      strokeOpacity: 0.5,
+    })
+    const zyzz = Config.create({ theme: { color: { ink: '#06c' } } })
+    zyzz.css({ fill: 'ink', stroke: zyzz.theme.tokens.color.ink })
+    // @ts-expect-error Paint servers require URL syntax support.
+    css({ fill: 'url(#gradient)' })
+    // @ts-expect-error Multi-keyword paint order remains deferred.
+    css({ paintOrder: 'stroke fill' })
+    // @ts-expect-error Widths require units except for zero.
+    css({ strokeWidth: 2 })
+    // @ts-expect-error Scalar paint keywords do not apply to filter colors.
+    css({ floodColor: 'none' })
+  })
+})
+
+describe('css', () => {
+  test('supports bounded typography and emphasis tokens', () => {
+    css({
+      fontKerning: 'normal',
+      fontOpticalSizing: 'auto',
+      fontStretch: 'semi-expanded',
+      fontSynthesisSmallCaps: 'none',
+      fontSynthesisStyle: 'auto',
+      fontSynthesisWeight: 'none',
+      fontVariantCaps: 'all-small-caps',
+      fontVariantEastAsian: 'jis04',
+      fontVariantLigatures: 'no-common-ligatures',
+      fontVariantNumeric: 'tabular-nums',
+      fontVariantPosition: 'super',
+      rubyAlign: 'space-around',
+      rubyPosition: 'alternate over',
+      textCombineUpright: 'all',
+      textEmphasisColor: '#06c',
+      textEmphasisPosition: 'over right',
+      textEmphasisStyle: 'open sesame',
+      textJustify: 'inter-character',
+      textOrientation: 'upright',
+    })
+    const zyzz = Config.create({ theme: { color: { accent: '#06c' } } })
+    zyzz.css({ textEmphasisColor: 'accent' })
+    // @ts-expect-error Combined font variants remain deferred.
+    css({ fontVariantNumeric: 'tabular-nums slashed-zero' })
+    // @ts-expect-error Custom emphasis strings remain deferred.
+    css({ textEmphasisStyle: '"*"' })
+    // @ts-expect-error Font stretch percentages remain deferred.
+    css({ fontStretch: '120%' })
+    // @ts-expect-error Conflicting emphasis fill keywords are invalid.
+    css({ textEmphasisStyle: 'open filled' })
+  })
+})
+
+describe('css', () => {
+  test('supports dimensioned times and finite motion keywords', () => {
+    css({
+      animationDelay: '-.5s',
+      animationDuration: ['auto', '250ms!'],
+      animationDirection: 'alternate',
+      animationFillMode: 'both',
+      animationIterationCount: [2.5, 'infinite'],
+      animationPlayState: 'paused',
+      animationTimingFunction: 'ease-in-out',
+      transitionDelay: '-1e2ms',
+      transitionDuration: '0s',
+      transitionTimingFunction: 'linear',
+      transitionBehavior: 'allow-discrete',
+    })
+    // @ts-expect-error Even zero times require a unit.
+    css({ animationDuration: 0 })
+    // @ts-expect-error Times cannot use length units.
+    css({ transitionDelay: '2px' })
+    // @ts-expect-error Nondecimal times are not CSS dimensions.
+    css({ animationDelay: '0x10s' })
+    // @ts-expect-error Multiple transitions require list support.
+    css({ transitionDuration: '1s, 2s' })
+    // @ts-expect-error Transition duration has no auto keyword.
+    css({ transitionDuration: 'auto' })
+  })
+})
+
+describe('grid tracks and placement', () => {
+  test('supports flexible tracks and bounded line placement', () => {
+    css({
+      gridAutoColumns: '1fr',
+      gridAutoRows: '40px',
+      gridAutoFlow: 'column dense',
+      gridTemplateColumns: 'min-content',
+      gridTemplateRows: 'subgrid',
+      gridColumnStart: [1, '2!'],
+      gridColumnEnd: 'span 2',
+      gridRowStart: -1,
+      gridRowEnd: 'auto',
+    })
+    // @ts-expect-error Track lists require structural grammar support.
+    css({ gridTemplateColumns: '1fr 2fr' })
+    // @ts-expect-error Flexible units are limited to grid tracks.
+    css({ width: '1fr' })
+    // @ts-expect-error Spans cannot contain fractional counts.
+    css({ gridColumnStart: 'span 1.5' })
+    // @ts-expect-error Nondecimal fractional units are not CSS dimensions.
+    css({ gridAutoColumns: '0x10fr' })
+    // @ts-expect-error Named grid lines remain deferred.
+    css({ gridRowStart: 'header' })
+  })
+})
+
+describe('mask and image properties', () => {
+  test('supports bounded masks and scalar positioning', () => {
+    css({
+      backgroundPosition: 'right',
+      imageRendering: 'pixelated',
+      maskClip: 'padding-box',
+      maskComposite: 'exclude',
+      maskMode: 'alpha',
+      maskOrigin: 'content-box',
+      maskPosition: '50%',
+      maskRepeat: 'no-repeat',
+      maskSize: 'cover',
+      maskType: 'luminance',
+      objectPosition: 'bottom',
+      perspective: '300px',
+      perspectiveOrigin: 'center',
+      shapeMargin: '5%',
+      transformBox: 'border-box',
+      transformOrigin: '-5px',
+    })
+    // @ts-expect-error Mask lists remain deferred.
+    css({ maskMode: 'alpha, luminance' })
+    // @ts-expect-error Perspective distances exclude percentages.
+    css({ perspective: '50%' })
+    // @ts-expect-error Paired mask sizes remain deferred.
+    css({ maskSize: '50% 100%' })
+    // @ts-expect-error Multi-axis origin positions remain deferred.
+    css({ transformOrigin: 'left top' })
+  })
+})
+
+describe('list and input controls', () => {
+  test('supports list markers, logical overscroll, and touch combinations', () => {
+    css({
+      appearance: 'none',
+      lineBreak: 'strict',
+      listStylePosition: 'inside',
+      listStyleType: 'upper-roman',
+      overflowAnchor: 'none',
+      overscrollBehaviorBlock: 'contain',
+      overscrollBehaviorInline: 'none',
+      scrollbarWidth: 'thin',
+      tabSize: 4,
+      textSizeAdjust: 'none',
+      textSpacingTrim: 'space-all',
+      touchAction: 'pinch-zoom pan-left pan-up',
+      unicodeBidi: 'plaintext',
+    })
+    // @ts-expect-error Conflicting directions cannot share a touch-action group.
+    css({ touchAction: 'pan-left pan-right' })
+    // @ts-expect-error Auto does not combine with gestures.
+    css({ touchAction: 'auto pinch-zoom' })
+    // @ts-expect-error Custom counter styles remain deferred.
+    css({ listStyleType: 'custom-counter' })
+    // @ts-expect-error Length-based tab stops remain deferred.
+    css({ tabSize: '20px' })
+    // @ts-expect-error Text autoscaling percentages remain deferred.
+    css({ textSizeAdjust: '100%' })
+  })
+})
+
+describe('css', () => {
+  test('accepts canonical named colors throughout color and token domains', () => {
+    css({
+      color: 'rebeccapurple',
+      backgroundColor: 'aliceblue',
+      borderColor: 'red',
+      accentColor: 'coral',
+      caretColor: 'tomato',
+      fill: 'gold',
+      stroke: 'navy',
+      columnRuleColor: 'gray',
+      textDecorationColor: 'grey',
+      textEmphasisColor: 'papayawhip',
+    })
+    const zyzz = Config.create({
+      theme: {
+        color: { red: 'blue', accent: { dark: 'gold', light: 'navy' } },
+      },
+    })
+    zyzz.css({
+      color: 'red',
+      backgroundColor: zyzz.theme.tokens.color.red,
+      fill: 'accent',
+    })
+    // @ts-expect-error Unknown color names remain outside the domain.
+    css({ color: 'not-a-color' })
+    // @ts-expect-error Mixed-case keyword spellings remain deferred.
+    css({ color: 'rEbEcCaPuRpLe' })
+  })
+})
+
+describe('css', () => {
+  test('accepts canonical system colors in literals and theme schemes', () => {
+    css({
+      color: 'CanvasText',
+      backgroundColor: 'Canvas',
+      borderColor: 'ButtonBorder',
+      accentColor: 'AccentColor',
+      caretColor: 'Highlight',
+      fill: 'SelectedItem',
+    })
+    Config.create({
+      theme: { color: { ink: { dark: 'CanvasText', light: 'FieldText' } } },
+    })
+  })
+})
+
+describe('css', () => {
+  test('accepts container and intrinsic field sizing controls', () => {
+    css({
+      containerType: ['normal', 'inline-size scroll-state!'],
+      fieldSizing: 'content',
+      interpolateSize: 'allow-keywords',
+    })
+    css({
+      containerType: 'scroll-state size',
+      fieldSizing: 'fixed',
+      interpolateSize: 'numeric-only',
+    })
+    // @ts-expect-error Size modes are mutually exclusive.
+    css({ containerType: 'size inline-size' })
+    // @ts-expect-error Normal cannot be combined with containment modes.
+    css({ containerType: 'normal scroll-state' })
+    // @ts-expect-error Field sizing has no auto keyword.
+    css({ fieldSizing: 'auto' })
+    // @ts-expect-error Interpolation is an explicit keyword policy.
+    css({ interpolateSize: true })
+  })
+})
+
+describe('css', () => {
+  test('accepts reading flow modes and numeric order fallbacks', () => {
+    css({ readingFlow: ['normal', 'flex-visual!'], readingOrder: [0, '-1!'] })
+    css({ readingFlow: 'source-order', readingOrder: 2 })
+    // @ts-expect-error Reading flow is one mode.
+    css({ readingFlow: 'flex-flow grid-rows' })
+    // @ts-expect-error Reading order is not a dimension.
+    css({ readingOrder: '2px' })
+    // @ts-expect-error Reading order has no auto keyword.
+    css({ readingOrder: 'auto' })
+  })
+})

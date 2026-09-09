@@ -1,8 +1,5 @@
 # Vite Setup
 
-> [!NOTE]
-> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. Named `Config.create` instances are supported. Cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
-
 Add the adapter to the existing Vite configuration. Retain the application's framework plugin.
 
 ```ts
@@ -25,6 +22,8 @@ Theme edits update generated CSS through Vite HMR. Missing source files report e
 
 See [Vite's plugin setup](https://vite.dev/guide/using-plugins) for the host configuration format.
 
+Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. Named `Config.create` instances are supported. Cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
+
 ## Lazy Modules
 
 Vite loads and transforms lazy modules, including their CSS. Production builds retain Vite's CSS code splitting. Theme bindings inside each module must use static imports; dynamically loading an authoring theme for use in `style` is unsupported.
@@ -45,12 +44,9 @@ export function Card() {
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const { style, theme } = Config.create({
   theme: { color: { brand: '#06c' } },
 })
-
-export const style = config.style
-export const theme = config.theme
 ```
 
 ```tsx
@@ -58,10 +54,10 @@ export const theme = config.theme
 import { style, theme } from './zyzz.config.js'
 
 const styles = { card: style({ color: 'brand' }) }
-const example = <article className={theme.className} style={styles.card} />
+const example = <article style={theme} style={styles.card} />
 ```
 
-Named catalogs use `zyzz.themes.<name>.className`; `defaultTheme` selects shorthand token fallbacks. Config edits rebuild dependent styles. Direct literal calls, immutable aliases, and named re-exports are supported. Dynamic member access, escaping config objects, variants, and layer bodies remain unsupported.
+Named catalogs use `themes.<name>.className`; `defaultTheme` selects shorthand token fallbacks. Config edits rebuild dependent styles. Direct literal calls, immutable aliases, and named re-exports are supported. Dynamic member access, escaping config objects, variants, and layer bodies remain unsupported.
 
 ## Theme Libraries
 

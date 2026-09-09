@@ -1,13 +1,12 @@
 # Vars
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Explicit shared variable contracts.
 
 ```ts
 import { Vars } from 'zyzz'
 ```
+
+Preview API; not yet implemented.
 
 ## Methods
 

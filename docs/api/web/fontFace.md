@@ -1,8 +1,5 @@
 # fontFace
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Contribute a static font-face rule.
 
 ```ts
@@ -14,6 +11,8 @@ fontFace({
   src: 'url("./app.woff2") format("woff2")',
 })
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 

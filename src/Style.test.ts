@@ -112,10 +112,10 @@ describe('define', () => {
     expect(() =>
       compile({ color: 'missing' }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","color"]: Expected a hex color, transparent, currentColor, black, or white.]`,
+      `[Style.InvalidError: ["card","color"]: Expected a named color, system color, hex color, transparent, or currentColor.]`,
     )
     expect(() => compile({ color: 'md' })).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","color"]: Expected a hex color, transparent, currentColor, black, or white.]`,
+      `[Style.InvalidError: ["card","color"]: Expected a named color, system color, hex color, transparent, or currentColor.]`,
     )
     expect(() =>
       compile({ padding: 'brand' }),
@@ -709,7 +709,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected a hex color, transparent, currentColor, black, or white.",
+                "message": "Expected a named color, system color, hex color, transparent, or currentColor.",
                 "path": [
                   "card",
                   "color",
@@ -722,7 +722,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected a hex color, transparent, currentColor, black, or white.",
+                "message": "Expected a named color, system color, hex color, transparent, or currentColor.",
                 "path": [
                   "card",
                   "color",
@@ -761,7 +761,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected one of: block, flex, grid, inline, inline-block, inline-flex, inline-grid, none (or a CSS-wide keyword).",
+                "message": "Expected one of: block, contents, flex, flow-root, grid, inline, inline-block, inline-flex, inline-grid, inline-table, list-item, none, table, table-caption, table-cell, table-column, table-column-group, table-footer-group, table-header-group, table-row, table-row-group (or a CSS-wide keyword).",
                 "path": [
                   "card",
                   "display",
@@ -774,7 +774,7 @@ describe('define', () => {
             "diagnostics": [
               {
                 "code": "invalid_value",
-                "message": "Expected a hex color, transparent, currentColor, black, or white.",
+                "message": "Expected a named color, system color, hex color, transparent, or currentColor.",
                 "path": [
                   "card",
                   "color",

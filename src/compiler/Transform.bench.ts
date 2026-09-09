@@ -8,15 +8,27 @@ import * as Path from 'node:path'
 import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
+import * as Backgrounds from '../../test/fixtures/Backgrounds.js'
 import * as Borders from '../../test/fixtures/Borders.js'
+import * as Colors from '../../test/fixtures/Colors.js'
+import * as Columns from '../../test/fixtures/Columns.js'
+import * as ContainerSizing from '../../test/fixtures/ContainerSizing.js'
+import * as Controls from '../../test/fixtures/Controls.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
+import * as Fonts from '../../test/fixtures/Fonts.js'
+import * as Grid from '../../test/fixtures/Grid.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
+import * as Layout from '../../test/fixtures/Layout.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
+import * as Masks from '../../test/fixtures/Masks.js'
+import * as Motion from '../../test/fixtures/Motion.js'
+import * as Reading from '../../test/fixtures/Reading.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as Svg from '../../test/fixtures/Svg.js'
 import * as Tables from '../../test/fixtures/Tables.js'
 import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
 import * as TextFlow from '../../test/fixtures/TextFlow.js'
@@ -150,11 +162,29 @@ for (const count of [10, 100]) {
 }
 
 const workloads = {
+  backgrounds: {
+    declaration: (index: number) =>
+      `export const bg${index} = css({backgroundPositionX:'${index}px',backgroundPositionY:'50%',backgroundSize:'cover',backgroundRepeat:'no-repeat',accentColor:'auto'})();`,
+    source: Backgrounds.source,
+    title: 'background',
+  },
   borders: {
     declaration: (index: number) =>
       `export const box${index} = css({borderStyle:'solid',borderWidth:'2px',borderInlineStartWidth:'${index}px',borderStartStartRadius:'8px',outlineWidth:'1px'})();`,
     source: Borders.source,
     title: 'border',
+  },
+  colors: {
+    declaration: (index: number) =>
+      `export const named${index} = css({color:'rebeccapurple',backgroundColor:'aliceblue',fill:'gold',stroke:'navy',padding:'${index}px'})();`,
+    source: Colors.source,
+    title: 'named color',
+  },
+  columns: {
+    declaration: (index: number) =>
+      `export const col${index} = css({columnWidth:'${index}px',columnCount:2,columnFill:'balance',breakInside:'avoid-column'})();`,
+    source: Columns.source,
+    title: 'column',
   },
   decoration: {
     declaration: (index: number) =>
@@ -162,11 +192,35 @@ const workloads = {
     source: TextDecoration.source,
     title: 'text decoration',
   },
+  containerSizing: {
+    declaration: (index: number) =>
+      `export const field${index} = css({containerType:'inline-size',fieldSizing:'content',interpolateSize:'allow-keywords',padding:'${index}px'})();`,
+    source: ContainerSizing.source,
+    title: 'container sizing',
+  },
+  controls: {
+    declaration: (index: number) =>
+      `export const control${index} = css({tabSize:${index},touchAction:'pan-x pinch-zoom',listStyleType:'upper-roman',scrollbarWidth:'thin'})();`,
+    source: Controls.source,
+    title: 'control',
+  },
   flex: {
     declaration: (index: number) =>
       `export const box${index} = css({flexBasis:'${index}px',alignSelf:'center',order:${index},overflow:['hidden','clip!'],overflowX:'auto'})();`,
     source: Flex.source,
     title: 'flex layout',
+  },
+  fonts: {
+    declaration: (index: number) =>
+      `export const text${index} = css({fontKerning:'normal',fontVariantNumeric:'tabular-nums',textEmphasisStyle:'open circle',textEmphasisColor:'#06c',letterSpacing:'${index}px'})();`,
+    source: Fonts.source,
+    title: 'font',
+  },
+  grid: {
+    declaration: (index: number) =>
+      `export const cell${index} = css({display:'grid',gridAutoColumns:'1fr',gridAutoRows:'${index}px',gridAutoFlow:'column',gridColumnEnd:'span 2'})();`,
+    source: Grid.source,
+    title: 'grid',
   },
   interaction: {
     declaration: (index: number) =>
@@ -174,11 +228,35 @@ const workloads = {
     source: Interaction.source,
     title: 'interaction',
   },
+  layout: {
+    declaration: (index: number) =>
+      `export const box${index} = css({display:'flow-root',contain:'layout',isolation:'isolate',zIndex:${index},objectFit:'cover'})();`,
+    source: Layout.source,
+    title: 'layout containment',
+  },
   logical: {
     declaration: (index: number) =>
       `export const box${index} = css({inlineSize:'${index}px',paddingInline:['1px','2px!'],marginBlock:'-1px',insetBlockStart:0})();`,
     source: Logical.source,
     title: 'logical box',
+  },
+  reading: {
+    declaration: (index: number) =>
+      `export const item${index} = css({readingFlow:'source-order',readingOrder:${index}})();`,
+    source: Reading.source,
+    title: 'reading order',
+  },
+  masks: {
+    declaration: (index: number) =>
+      `export const mask${index} = css({maskPosition:'${index}px',maskSize:'50%',maskRepeat:'no-repeat',maskMode:'alpha',transformOrigin:'center'})();`,
+    source: Masks.source,
+    title: 'mask',
+  },
+  motion: {
+    declaration: (index: number) =>
+      `export const motion${index} = css({animationDelay:'-${index}ms',animationDuration:'1s',animationIterationCount:'infinite',animationTimingFunction:'linear',transitionDuration:'250ms'})();`,
+    source: Motion.source,
+    title: 'motion',
   },
   scrolling: {
     declaration: (index: number) =>
@@ -197,6 +275,12 @@ const workloads = {
       `export const slide${index} = css({scrollMarginInlineStart:'${index}px',scrollSnapAlign:'start center',scrollSnapStop:'always',scrollSnapType:['inline proximity','inline mandatory!']})();`,
     source: Snapping.source,
     title: 'scroll snap',
+  },
+  svg: {
+    declaration: (index: number) =>
+      `export const path${index} = css({fill:'#06c',stroke:'black',strokeWidth:'${index}px',fillRule:'evenodd',strokeLinecap:'round'})();`,
+    source: Svg.source,
+    title: 'SVG',
   },
   tables: {
     declaration: (index: number) =>

@@ -1,8 +1,5 @@
 # Css.marker
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Define a typed identity and finite data states for element relationships.
 
 ```ts
@@ -11,6 +8,8 @@ import { Css } from 'zyzz/web'
 const card = Css.marker({ state: ['closed', 'open'] })
 const attributes = card({ state: 'open' })
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 

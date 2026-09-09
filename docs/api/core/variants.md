@@ -1,21 +1,18 @@
 # variants
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Define finite style choices for one element.
 
 ```ts
 import { variants } from 'zyzz'
 
-const styles = {
-  button: variants({
-    defaultVariants: { size: 'sm' },
-    variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
-  }),
-}
-const selected = styles.button({ size: 'md' })
+const button = variants({
+  defaultVariants: { size: 'sm' },
+  variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
+})
+const selected = button({ size: 'md' })
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 
@@ -78,10 +75,10 @@ variants({ variants: { size: { md: { padding: '1rem' } } } })
 A callable that accepts inferred selections and returns one opaque style value for the `style` prop. The compiler carries generated classes, recipe attributes, and dynamic bindings to the intrinsic element. Exact preview type names remain to be finalized.
 
 ```tsx
-const example = <button style={styles.button({ size: 'md' })} />
+const example = <button style={button({ size: 'md' })} />
 ```
 
-Infer selections with `NonNullable<Parameters<typeof styles.button>[0]>`. Keep external classes and unrelated component props on the element.
+Infer selections with `NonNullable<Parameters<typeof button>[0]>`. Keep external classes and unrelated component props on the element.
 
 ## Errors
 

@@ -39,7 +39,7 @@ export function define<const tokens extends Tokens>(
 }
 
 /** A theme contract with immutable, property-aware portable token references. */
-export type Definition<tokens extends Tokens = Tokens> = {
+export type Definition<tokens extends Tokens = Tokens> = style.ReturnType & {
   /** Compiled scope class; reading untransformed authoring throws. */
   readonly className: string
   /** Token-aware callable authoring boundary, replaced by the source compiler. */

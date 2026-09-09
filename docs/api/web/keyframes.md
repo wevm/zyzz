@@ -1,8 +1,5 @@
 # keyframes
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Define an animation with a stable typed name reference.
 
 ```ts
@@ -10,6 +7,8 @@ import { keyframes } from 'zyzz/web'
 
 const enter = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 
@@ -37,9 +36,7 @@ keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })
 Reachable definitions preserve stable imported identity.
 
 ```ts
-const styles = {
-  notice: style({ animationName: enter }),
-}
+const notice = style({ animationName: enter })
 ```
 
 ## Errors

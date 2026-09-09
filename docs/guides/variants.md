@@ -8,9 +8,6 @@ Define finite choices, defaults, and compound matches for one element. Begin wit
 
 Add typed choices to a component. This example imports `{ variants }` from the [theme config](themes.md#use-themes); import from `zyzz` for token-free recipes.
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 ```tsx
 import { variants } from './zyzz.config.js'
 
@@ -33,3 +30,5 @@ const example = <button style={styles.button({ size: 'md' })}>Save</button>
 ```
 
 Each recipe call returns one value for the element's `style` prop. Defaults apply to omitted selections; null suppresses a choice and its default. Compounds combine matching choice names. Finite choices compile ahead of time.
+
+Preview API; not yet implemented.

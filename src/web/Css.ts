@@ -112,6 +112,8 @@ export function compile<
             ? ''
             : `${property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}${important ? '!important' : ''};`,
           domain: (() => {
+            if (property.startsWith('backgroundPosition'))
+              return 'backgroundPosition'
             if (property.startsWith('border')) {
               if (property.endsWith('Color')) {
                 return 'borderColor'

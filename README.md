@@ -138,17 +138,12 @@ Token names infer by property, and compatible theme scopes change inherited valu
 
 #### Default Theme
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Import the default theme's `style` for inferred colors, typography, spacing, and radius tokens. `zyzz/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
 
 ```ts
 import { style } from 'zyzz/themes/default'
 
-const styles = {
-  button: style({ color: 'blue.700', padding: 4 }),
-}
+const button = style({ color: 'blue.700', padding: 4 })
 ```
 
 Extend the default theme with [`Theme.extend`](docs/api/core/Theme/extend.md) to override existing tokens while retaining all other values and the same token contract.
@@ -158,22 +153,20 @@ Extend the default theme with [`Theme.extend`](docs/api/core/Theme/extend.md) to
 import { Config, Theme } from 'zyzz'
 import { theme as defaultTheme } from 'zyzz/themes/default'
 
-const config = Config.create({
+export const { style } = Config.create({
   theme: Theme.extend(defaultTheme, {
     color: { blue: { 700: '#175' } },
   }),
 })
-
-export const style = config.style
 ```
 
 ```ts
 import { style } from './zyzz.config.js'
 
-const styles = {
-  button: style({ color: 'blue.700', padding: 4 }),
-}
+const button = style({ color: 'blue.700', padding: 4 })
 ```
+
+Preview API; not yet implemented.
 
 #### Custom Theme
 
@@ -183,30 +176,25 @@ Export named helpers from a config with application tokens. Colors accept a shar
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const { style, theme } = Config.create({
   theme: {
     color: { brand: '#06c', text: { dark: '#eee', light: '#111' } },
     spacing: { md: '1rem', sm: '0.5rem' },
   },
 })
-
-export const style = config.style
-export const theme = config.theme
 ```
 
 ```ts
 import { style } from './zyzz.config.js'
 
-const styles = {
-  card: style({ color: 'text', padding: 'sm' }),
-}
+const card = style({ color: 'text', padding: 'sm' })
 ```
 
 Use [`Theme.define`](docs/api/core/Theme/define.md) for reusable definitions outside config. See [Themes & Tokens](docs/guides/themes.md) for nested scopes and named alternatives.
 
 ### Color Schemes (Light/Dark Mode)
 
-Apply the theme to `<html>` and select a color scheme through its callable props:
+Apply the theme to `<html>` and declare supported color schemes in `<head>`:
 
 ```tsx
 import { style, theme } from './zyzz.config.js'
@@ -217,8 +205,9 @@ const styles = {
 
 export function Document() {
   return (
-    <html {...theme({ colorScheme: 'light dark' })}>
+    <html style={theme}>
       <head>
+        <meta name="color-scheme" content="light dark" />
         <title>My App</title>
       </head>
       <body>
@@ -229,16 +218,13 @@ export function Document() {
 }
 ```
 
-The theme returns its generated `className` and `style.colorScheme`. Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` for system preference. Named themes use `zyzz.themes.mint({ colorScheme: 'dark' })`.
+The compiler applies the theme's generated scope class. Use `light` or `dark` in the meta tag for an explicit scheme, or `light dark` for system preference. Named themes can be applied with `style={themes.mint}`.
 
-Color pairs compile to `light-dark()`; the custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme calls can scope a subtree independently.
+Color pairs compile to `light-dark()`; the custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme values can scope a subtree independently.
 
 For saved preferences, `zyzz.script()` generates an optional [initialization script](docs/guides/themes.md#restore-preferences) for `<head>`. It restores the theme and scheme from localStorage before first paint. System preference needs no script or provider.
 
 ### Variants
-
-> [!NOTE]
-> Preview API; not yet implemented.
 
 Describe component choices with inferred props, defaults, and compound rules. Use `variants` for theme tokens or import token-free `variants` from `zyzz`. Web variants select styles through data attributes.
 
@@ -262,10 +248,9 @@ type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
 const example = <button style={styles.button({ size: 'sm' })}>Continue</button>
 ```
 
-### Dynamic Styles
+Preview API; not yet implemented.
 
-> [!NOTE]
-> Preview API; not yet implemented.
+### Dynamic Styles
 
 Mix static declarations with typed runtime values in the same callback. Call the dynamic style with those values; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
 
@@ -292,6 +277,8 @@ export function Bar() {
 }
 ```
 
+Preview API; not yet implemented.
+
 ### Value Syntax
 
 Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
@@ -299,20 +286,15 @@ Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` p
 ```ts
 import { style, theme } from './zyzz.config.js'
 
-const styles = {
-  panel: style({
-    display: ['block', 'grid'],
-    color: 'brand!',
-    borderColor: theme.vars.color.brand,
-    width: `calc(100% - ${theme.vars.spacing.md})`,
-  }),
-}
+const panel = style({
+  display: ['block', 'grid'],
+  color: 'brand!',
+  borderColor: theme.vars.color.brand,
+  width: `calc(100% - ${theme.vars.spacing.md})`,
+})
 ```
 
 ### Composition
-
-> [!NOTE]
-> Preview API; not yet implemented.
 
 Prefer state attributes for conditional styling. Put external classes on the element and inline overrides alongside one spread style value. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
 
@@ -331,6 +313,8 @@ const example = (
   </button>
 )
 ```
+
+Preview API; not yet implemented.
 
 ### Static CSS
 

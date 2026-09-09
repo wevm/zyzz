@@ -2,8 +2,8 @@
  * Defines and validates the supported primitive CSS property and value domains.
  * @module
  */
-/** Refines inferred length strings where TypeScript's number template is broader than CSS. */
-export type Checked<value> = value extends Length
+/** Refines inferred dimension strings where TypeScript's number template is broader than CSS. */
+export type Checked<value> = value extends Fraction | Length | Time
   ? value extends
       | `${'0x' | '0X' | '0b' | '0B' | '0o' | '0O'}${string}`
       | `${string}${' ' | '\n' | '\r' | '\t' | '\f'}${string}`
@@ -13,11 +13,14 @@ export type Checked<value> = value extends Length
 
 /** Deliberately bounded color syntax; functional colors arrive with CSS parsing. */
 export type Color =
-  | 'black'
+  | (typeof namedColors)[number]
+  | (typeof systemColors)[number]
   | 'currentColor'
   | 'transparent'
-  | 'white'
   | `#${string}`
+
+/** Flexible grid track dimensions. */
+export type Fraction = `${number}fr`
 
 /** CSS-wide keywords accepted by every supported property. */
 export type Global = 'inherit' | 'initial' | 'revert-layer' | 'revert' | 'unset'
@@ -29,26 +32,38 @@ export type Length = `${number}${(typeof lengthUnits)[number]}` | 0
 export type Properties = {
   readonly [key in keyof typeof rules]?: Value<(typeof rules)[key]>
 }
+/** Finite seconds and milliseconds; CSS times always require units. */
+export type Time = `${number}${'ms' | 's'}`
+
 type Rule =
   | {
       readonly auto: boolean
+      readonly fraction?: boolean
       readonly keywords?: readonly string[]
       readonly kind: 'length'
       readonly negative: boolean
       readonly percentage?: boolean
     }
   | {
+      readonly keywords?: readonly string[]
       readonly kind: 'color'
     }
   | {
       readonly kind: 'enum'
       readonly values: readonly string[]
     }
+  | { readonly kind: 'grid-line' }
   | {
       readonly integer?: boolean
+      readonly keywords?: readonly string[]
       readonly kind: 'number'
       readonly max: number
       readonly min: number
+    }
+  | {
+      readonly keywords?: readonly string[]
+      readonly kind: 'time'
+      readonly negative: boolean
     }
 type Value<rule extends Rule> =
   | (rule extends {
@@ -57,6 +72,7 @@ type Value<rule extends Rule> =
     }
       ?
           | (auto extends true ? 'auto' : never)
+          | (rule extends { fraction: true } ? Fraction : never)
           | (rule extends { keywords: readonly (infer keyword)[] }
               ? keyword
               : never)
@@ -66,14 +82,51 @@ type Value<rule extends Rule> =
       : rule extends {
             kind: 'number'
           }
-        ? number
+        ?
+            | number
+            | (rule extends { keywords: readonly (infer keyword)[] }
+                ? keyword
+                : never)
         : rule extends {
               kind: 'enum'
               values: readonly (infer value)[]
             }
           ? value
-          : Color)
+          : rule extends { kind: 'grid-line' }
+            ? number | 'auto' | `span ${bigint}`
+            : rule extends { kind: 'time' }
+              ?
+                  | Time
+                  | (rule extends { keywords: readonly (infer keyword)[] }
+                      ? keyword
+                      : never)
+              :
+                  | Color
+                  | (rule extends { keywords: readonly (infer keyword)[] }
+                      ? keyword
+                      : never))
   | Global
+const blend = {
+  kind: 'enum',
+  values: [
+    'color',
+    'color-burn',
+    'color-dodge',
+    'darken',
+    'difference',
+    'exclusion',
+    'hard-light',
+    'hue',
+    'lighten',
+    'luminosity',
+    'multiply',
+    'normal',
+    'overlay',
+    'saturation',
+    'screen',
+    'soft-light',
+  ],
+} as const
 const border = {
   kind: 'enum',
   values: [
@@ -90,6 +143,21 @@ const border = {
   ],
 } as const
 const color = { kind: 'color' } as const
+const fragmentation = {
+  kind: 'enum',
+  values: [
+    'auto',
+    'avoid',
+    'avoid-column',
+    'avoid-page',
+    'column',
+    'left',
+    'page',
+    'recto',
+    'right',
+    'verso',
+  ],
+} as const
 const globals = new Set<string>([
   'inherit',
   'initial',
@@ -158,6 +226,179 @@ const lengthPattern = new RegExp(
 )
 const margin = { auto: true, kind: 'length', negative: true } as const
 const maximum = { ...length, keywords: [...intrinsic, 'none'] } as const
+const namedColors = [
+  'aliceblue',
+  'antiquewhite',
+  'aqua',
+  'aquamarine',
+  'azure',
+  'beige',
+  'bisque',
+  'black',
+  'blanchedalmond',
+  'blue',
+  'blueviolet',
+  'brown',
+  'burlywood',
+  'cadetblue',
+  'chartreuse',
+  'chocolate',
+  'coral',
+  'cornflowerblue',
+  'cornsilk',
+  'crimson',
+  'cyan',
+  'darkblue',
+  'darkcyan',
+  'darkgoldenrod',
+  'darkgray',
+  'darkgreen',
+  'darkgrey',
+  'darkkhaki',
+  'darkmagenta',
+  'darkolivegreen',
+  'darkorange',
+  'darkorchid',
+  'darkred',
+  'darksalmon',
+  'darkseagreen',
+  'darkslateblue',
+  'darkslategray',
+  'darkslategrey',
+  'darkturquoise',
+  'darkviolet',
+  'deeppink',
+  'deepskyblue',
+  'dimgray',
+  'dimgrey',
+  'dodgerblue',
+  'firebrick',
+  'floralwhite',
+  'forestgreen',
+  'fuchsia',
+  'gainsboro',
+  'ghostwhite',
+  'gold',
+  'goldenrod',
+  'gray',
+  'green',
+  'greenyellow',
+  'grey',
+  'honeydew',
+  'hotpink',
+  'indianred',
+  'indigo',
+  'ivory',
+  'khaki',
+  'lavender',
+  'lavenderblush',
+  'lawngreen',
+  'lemonchiffon',
+  'lightblue',
+  'lightcoral',
+  'lightcyan',
+  'lightgoldenrodyellow',
+  'lightgray',
+  'lightgreen',
+  'lightgrey',
+  'lightpink',
+  'lightsalmon',
+  'lightseagreen',
+  'lightskyblue',
+  'lightslategray',
+  'lightslategrey',
+  'lightsteelblue',
+  'lightyellow',
+  'lime',
+  'limegreen',
+  'linen',
+  'magenta',
+  'maroon',
+  'mediumaquamarine',
+  'mediumblue',
+  'mediumorchid',
+  'mediumpurple',
+  'mediumseagreen',
+  'mediumslateblue',
+  'mediumspringgreen',
+  'mediumturquoise',
+  'mediumvioletred',
+  'midnightblue',
+  'mintcream',
+  'mistyrose',
+  'moccasin',
+  'navajowhite',
+  'navy',
+  'oldlace',
+  'olive',
+  'olivedrab',
+  'orange',
+  'orangered',
+  'orchid',
+  'palegoldenrod',
+  'palegreen',
+  'paleturquoise',
+  'palevioletred',
+  'papayawhip',
+  'peachpuff',
+  'peru',
+  'pink',
+  'plum',
+  'powderblue',
+  'purple',
+  'rebeccapurple',
+  'red',
+  'rosybrown',
+  'royalblue',
+  'saddlebrown',
+  'salmon',
+  'sandybrown',
+  'seagreen',
+  'seashell',
+  'sienna',
+  'silver',
+  'skyblue',
+  'slateblue',
+  'slategray',
+  'slategrey',
+  'snow',
+  'springgreen',
+  'steelblue',
+  'tan',
+  'teal',
+  'thistle',
+  'tomato',
+  'turquoise',
+  'violet',
+  'wheat',
+  'white',
+  'whitesmoke',
+  'yellow',
+  'yellowgreen',
+] as const
+const systemColors = [
+  'AccentColor',
+  'AccentColorText',
+  'ActiveText',
+  'ButtonBorder',
+  'ButtonFace',
+  'ButtonText',
+  'Canvas',
+  'CanvasText',
+  'Field',
+  'FieldText',
+  'GrayText',
+  'Highlight',
+  'HighlightText',
+  'LinkText',
+  'Mark',
+  'MarkText',
+  'SelectedItem',
+  'SelectedItemText',
+  'VisitedText',
+] as const
+const colorKeywordSet = new Set<string>([...namedColors, ...systemColors])
+
 const overflow = {
   kind: 'enum',
   values: ['auto', 'clip', 'hidden', 'scroll', 'visible'],
@@ -165,6 +406,12 @@ const overflow = {
 const overscroll = {
   kind: 'enum',
   values: ['auto', 'contain', 'none'],
+} as const
+const positiveInteger = {
+  integer: true,
+  kind: 'number',
+  max: Number.MAX_SAFE_INTEGER,
+  min: 1,
 } as const
 const scrollMargin = { ...length, negative: true, percentage: false } as const
 const scrollPadding = { ...length, auto: true } as const
@@ -181,8 +428,16 @@ const textSpacing = {
   negative: true,
 } as const
 
+const track = {
+  ...length,
+  auto: true,
+  fraction: true,
+  keywords: ['max-content', 'min-content'],
+} as const
+
 /** Single source of truth for the supported literal properties and domains. */
 export const rules = {
+  accentColor: { ...color, keywords: ['auto'] },
   alignContent: {
     kind: 'enum',
     values: [
@@ -228,7 +483,85 @@ export const rules = {
       'stretch',
     ],
   },
+  animationDelay: { kind: 'time', negative: true },
+  animationDirection: {
+    kind: 'enum',
+    values: ['alternate', 'alternate-reverse', 'normal', 'reverse'],
+  },
+  animationDuration: { keywords: ['auto'], kind: 'time', negative: false },
+  animationFillMode: {
+    kind: 'enum',
+    values: ['backwards', 'both', 'forwards', 'none'],
+  },
+  animationIterationCount: {
+    keywords: ['infinite'],
+    kind: 'number',
+    max: Infinity,
+    min: 0,
+  },
+  animationPlayState: { kind: 'enum', values: ['paused', 'running'] },
+  animationTimingFunction: {
+    kind: 'enum',
+    values: [
+      'ease',
+      'ease-in',
+      'ease-in-out',
+      'ease-out',
+      'linear',
+      'step-end',
+      'step-start',
+    ],
+  },
+  appearance: {
+    kind: 'enum',
+    values: [
+      'auto',
+      'button',
+      'checkbox',
+      'listbox',
+      'menulist',
+      'menulist-button',
+      'meter',
+      'none',
+      'progress-bar',
+      'radio',
+      'searchfield',
+      'textarea',
+      'textfield',
+    ],
+  },
+  backfaceVisibility: { kind: 'enum', values: ['hidden', 'visible'] },
+  backgroundAttachment: { kind: 'enum', values: ['fixed', 'local', 'scroll'] },
+  backgroundBlendMode: blend,
+  backgroundClip: {
+    kind: 'enum',
+    values: ['border-box', 'content-box', 'padding-box', 'text'],
+  },
   backgroundColor: color,
+  backgroundOrigin: {
+    kind: 'enum',
+    values: ['border-box', 'content-box', 'padding-box'],
+  },
+  backgroundPosition: {
+    ...length,
+    keywords: ['bottom', 'center', 'left', 'right', 'top'],
+    negative: true,
+  },
+  backgroundPositionX: {
+    ...length,
+    keywords: ['center', 'left', 'right'],
+    negative: true,
+  },
+  backgroundPositionY: {
+    ...length,
+    keywords: ['bottom', 'center', 'top'],
+    negative: true,
+  },
+  backgroundRepeat: {
+    kind: 'enum',
+    values: ['no-repeat', 'repeat', 'repeat-x', 'repeat-y', 'round', 'space'],
+  },
+  backgroundSize: { ...length, auto: true, keywords: ['contain', 'cover'] },
   blockSize: size,
   borderBlockColor: color,
   borderBlockEndColor: color,
@@ -275,10 +608,73 @@ export const rules = {
   borderTopWidth: stroke,
   borderWidth: stroke,
   bottom: margin,
+  boxDecorationBreak: { kind: 'enum', values: ['clone', 'slice'] },
   boxSizing: { kind: 'enum', values: ['border-box', 'content-box'] },
+  breakAfter: fragmentation,
+  breakBefore: fragmentation,
+  breakInside: {
+    kind: 'enum',
+    values: ['auto', 'avoid', 'avoid-column', 'avoid-page'],
+  },
   captionSide: { kind: 'enum', values: ['bottom', 'top'] },
+  caretColor: { ...color, keywords: ['auto'] },
+  clear: {
+    kind: 'enum',
+    values: ['both', 'inline-end', 'inline-start', 'left', 'none', 'right'],
+  },
+  clipRule: { kind: 'enum', values: ['evenodd', 'nonzero'] },
   color,
-  columnGap: length,
+  colorInterpolationFilters: {
+    kind: 'enum',
+    values: ['auto', 'linearRGB', 'sRGB'],
+  },
+  colorScheme: {
+    kind: 'enum',
+    values: [
+      'dark',
+      'dark light',
+      'light',
+      'light dark',
+      'normal',
+      'only dark',
+      'only light',
+    ],
+  },
+  columnCount: { ...positiveInteger, keywords: ['auto'] },
+  columnFill: { kind: 'enum', values: ['auto', 'balance'] },
+  columnGap: { ...length, keywords: ['normal'] },
+  columnRuleColor: color,
+  columnRuleStyle: border,
+  columnRuleWidth: { ...stroke, keywords: ['medium', 'thick', 'thin'] },
+  columnSpan: { kind: 'enum', values: ['all', 'none'] },
+  columnWidth: { ...stroke, auto: true },
+  contain: {
+    kind: 'enum',
+    values: [
+      'content',
+      'inline-size',
+      'layout',
+      'none',
+      'paint',
+      'size',
+      'strict',
+      'style',
+    ],
+  },
+  containerType: {
+    kind: 'enum',
+    values: [
+      'inline-size',
+      'inline-size scroll-state',
+      'normal',
+      'scroll-state',
+      'scroll-state inline-size',
+      'scroll-state size',
+      'size',
+      'size scroll-state',
+    ],
+  },
+  contentVisibility: { kind: 'enum', values: ['auto', 'hidden', 'visible'] },
   cursor: {
     kind: 'enum',
     values: [
@@ -325,16 +721,33 @@ export const rules = {
     kind: 'enum',
     values: [
       'block',
+      'contents',
       'flex',
+      'flow-root',
       'grid',
       'inline',
       'inline-block',
       'inline-flex',
       'inline-grid',
+      'inline-table',
+      'list-item',
       'none',
+      'table',
+      'table-caption',
+      'table-cell',
+      'table-column',
+      'table-column-group',
+      'table-footer-group',
+      'table-header-group',
+      'table-row',
+      'table-row-group',
     ],
   },
   emptyCells: { kind: 'enum', values: ['hide', 'show'] },
+  fieldSizing: { kind: 'enum', values: ['content', 'fixed'] },
+  fill: { ...color, keywords: ['context-fill', 'context-stroke', 'none'] },
+  fillOpacity: { kind: 'number', max: 1, min: 0 },
+  fillRule: { kind: 'enum', values: ['evenodd', 'nonzero'] },
   flexBasis: { ...size, keywords: ['content', ...intrinsic] },
   flexDirection: {
     kind: 'enum',
@@ -343,12 +756,128 @@ export const rules = {
   flexGrow: { kind: 'number', max: Infinity, min: 0 },
   flexShrink: { kind: 'number', max: Infinity, min: 0 },
   flexWrap: { kind: 'enum', values: ['nowrap', 'wrap', 'wrap-reverse'] },
+  float: {
+    kind: 'enum',
+    values: ['inline-end', 'inline-start', 'left', 'none', 'right'],
+  },
+  floodColor: color,
+  floodOpacity: { kind: 'number', max: 1, min: 0 },
+  fontKerning: { kind: 'enum', values: ['auto', 'none', 'normal'] },
+  fontOpticalSizing: { kind: 'enum', values: ['auto', 'none'] },
   fontSize: length,
+  fontStretch: {
+    kind: 'enum',
+    values: [
+      'condensed',
+      'expanded',
+      'extra-condensed',
+      'extra-expanded',
+      'normal',
+      'semi-condensed',
+      'semi-expanded',
+      'ultra-condensed',
+      'ultra-expanded',
+    ],
+  },
   fontStyle: { kind: 'enum', values: ['italic', 'normal', 'oblique'] },
+  fontSynthesisSmallCaps: { kind: 'enum', values: ['auto', 'none'] },
+  fontSynthesisStyle: { kind: 'enum', values: ['auto', 'none'] },
+  fontSynthesisWeight: { kind: 'enum', values: ['auto', 'none'] },
+  fontVariantCaps: {
+    kind: 'enum',
+    values: [
+      'all-petite-caps',
+      'all-small-caps',
+      'normal',
+      'petite-caps',
+      'small-caps',
+      'titling-caps',
+      'unicase',
+    ],
+  },
+  fontVariantEastAsian: {
+    kind: 'enum',
+    values: [
+      'full-width',
+      'jis04',
+      'jis78',
+      'jis83',
+      'jis90',
+      'normal',
+      'proportional-width',
+      'ruby',
+      'simplified',
+      'traditional',
+    ],
+  },
+  fontVariantLigatures: {
+    kind: 'enum',
+    values: [
+      'common-ligatures',
+      'contextual',
+      'discretionary-ligatures',
+      'historical-ligatures',
+      'no-common-ligatures',
+      'no-contextual',
+      'no-discretionary-ligatures',
+      'no-historical-ligatures',
+      'none',
+      'normal',
+    ],
+  },
+  fontVariantNumeric: {
+    kind: 'enum',
+    values: [
+      'diagonal-fractions',
+      'lining-nums',
+      'normal',
+      'oldstyle-nums',
+      'ordinal',
+      'proportional-nums',
+      'slashed-zero',
+      'stacked-fractions',
+      'tabular-nums',
+    ],
+  },
+  fontVariantPosition: { kind: 'enum', values: ['normal', 'sub', 'super'] },
   fontWeight: { kind: 'number', max: 1000, min: 1 },
+  forcedColorAdjust: {
+    kind: 'enum',
+    values: ['auto', 'none', 'preserve-parent-color'],
+  },
   gap: length,
+  gridAutoColumns: track,
+  gridAutoFlow: {
+    kind: 'enum',
+    values: [
+      'column',
+      'column dense',
+      'dense',
+      'dense column',
+      'dense row',
+      'row',
+      'row dense',
+    ],
+  },
+  gridAutoRows: track,
+  gridColumnEnd: { kind: 'grid-line' },
+  gridColumnStart: { kind: 'grid-line' },
+  gridRowEnd: { kind: 'grid-line' },
+  gridRowStart: { kind: 'grid-line' },
+  gridTemplateColumns: {
+    ...track,
+    keywords: ['max-content', 'min-content', 'none', 'subgrid'],
+  },
+  gridTemplateRows: {
+    ...track,
+    keywords: ['max-content', 'min-content', 'none', 'subgrid'],
+  },
   height: size,
   hyphens: { kind: 'enum', values: ['auto', 'manual', 'none'] },
+  imageRendering: {
+    kind: 'enum',
+    values: ['auto', 'crisp-edges', 'pixelated', 'smooth'],
+  },
   inlineSize: size,
   inset: margin,
   insetBlock: margin,
@@ -357,6 +886,8 @@ export const rules = {
   insetInline: margin,
   insetInlineEnd: margin,
   insetInlineStart: margin,
+  interpolateSize: { kind: 'enum', values: ['allow-keywords', 'numeric-only'] },
+  isolation: { kind: 'enum', values: ['auto', 'isolate'] },
   justifyContent: {
     kind: 'enum',
     values: [
@@ -373,7 +904,41 @@ export const rules = {
   },
   left: margin,
   letterSpacing: textSpacing,
+  lightingColor: color,
+  lineBreak: {
+    kind: 'enum',
+    values: ['anywhere', 'auto', 'loose', 'normal', 'strict'],
+  },
   lineHeight: { kind: 'number', max: Infinity, min: 0 },
+  listStylePosition: { kind: 'enum', values: ['inside', 'outside'] },
+  listStyleType: {
+    kind: 'enum',
+    values: [
+      'armenian',
+      'circle',
+      'cjk-ideographic',
+      'decimal',
+      'decimal-leading-zero',
+      'disc',
+      'disclosure-closed',
+      'disclosure-open',
+      'georgian',
+      'hebrew',
+      'hiragana',
+      'hiragana-iroha',
+      'katakana',
+      'katakana-iroha',
+      'lower-alpha',
+      'lower-greek',
+      'lower-latin',
+      'lower-roman',
+      'none',
+      'square',
+      'upper-alpha',
+      'upper-latin',
+      'upper-roman',
+    ],
+  },
   margin,
   marginBlock: margin,
   marginBlockEnd: margin,
@@ -385,6 +950,45 @@ export const rules = {
   marginLeft: margin,
   marginRight: margin,
   marginTop: margin,
+  maskClip: {
+    kind: 'enum',
+    values: [
+      'border-box',
+      'content-box',
+      'fill-box',
+      'no-clip',
+      'padding-box',
+      'stroke-box',
+      'view-box',
+    ],
+  },
+  maskComposite: {
+    kind: 'enum',
+    values: ['add', 'exclude', 'intersect', 'subtract'],
+  },
+  maskMode: { kind: 'enum', values: ['alpha', 'luminance', 'match-source'] },
+  maskOrigin: {
+    kind: 'enum',
+    values: [
+      'border-box',
+      'content-box',
+      'fill-box',
+      'padding-box',
+      'stroke-box',
+      'view-box',
+    ],
+  },
+  maskPosition: {
+    ...length,
+    keywords: ['bottom', 'center', 'left', 'right', 'top'],
+    negative: true,
+  },
+  maskRepeat: {
+    kind: 'enum',
+    values: ['no-repeat', 'repeat', 'repeat-x', 'repeat-y', 'round', 'space'],
+  },
+  maskSize: { ...length, auto: true, keywords: ['contain', 'cover'] },
+  maskType: { kind: 'enum', values: ['alpha', 'luminance'] },
   maxBlockSize: maximum,
   maxHeight: maximum,
   maxInlineSize: maximum,
@@ -393,6 +997,38 @@ export const rules = {
   minHeight: size,
   minInlineSize: size,
   minWidth: size,
+  mixBlendMode: {
+    kind: 'enum',
+    values: [
+      'color',
+      'color-burn',
+      'color-dodge',
+      'darken',
+      'difference',
+      'exclusion',
+      'hard-light',
+      'hue',
+      'lighten',
+      'luminosity',
+      'multiply',
+      'normal',
+      'overlay',
+      'plus-darker',
+      'plus-lighter',
+      'saturation',
+      'screen',
+      'soft-light',
+    ],
+  },
+  objectFit: {
+    kind: 'enum',
+    values: ['contain', 'cover', 'fill', 'none', 'scale-down'],
+  },
+  objectPosition: {
+    ...length,
+    keywords: ['bottom', 'center', 'left', 'right', 'top'],
+    negative: true,
+  },
   opacity: { kind: 'number', max: 1, min: 0 },
   // Safe integers serialize without exponential notation in CSS integer positions.
   order: {
@@ -401,6 +1037,7 @@ export const rules = {
     max: Number.MAX_SAFE_INTEGER,
     min: Number.MIN_SAFE_INTEGER,
   },
+  orphans: positiveInteger,
   outlineColor: color,
   outlineOffset: { ...stroke, negative: true },
   outlineStyle: {
@@ -420,10 +1057,19 @@ export const rules = {
   },
   outlineWidth: stroke,
   overflow,
+  overflowAnchor: { kind: 'enum', values: ['auto', 'none'] },
   overflowWrap: { kind: 'enum', values: ['anywhere', 'break-word', 'normal'] },
   overflowX: overflow,
   overflowY: overflow,
   overscrollBehavior: overscroll,
+  overscrollBehaviorBlock: {
+    kind: 'enum',
+    values: ['auto', 'contain', 'none'],
+  },
+  overscrollBehaviorInline: {
+    kind: 'enum',
+    values: ['auto', 'contain', 'none'],
+  },
   overscrollBehaviorX: overscroll,
   overscrollBehaviorY: overscroll,
   padding: length,
@@ -437,10 +1083,36 @@ export const rules = {
   paddingLeft: length,
   paddingRight: length,
   paddingTop: length,
+  paintOrder: { kind: 'enum', values: ['fill', 'markers', 'normal', 'stroke'] },
+  perspective: { ...length, keywords: ['none'], percentage: false },
+  perspectiveOrigin: {
+    ...length,
+    keywords: ['bottom', 'center', 'left', 'right', 'top'],
+    negative: true,
+  },
   pointerEvents: { kind: 'enum', values: ['auto', 'none'] },
   position: {
     kind: 'enum',
     values: ['absolute', 'fixed', 'relative', 'static', 'sticky'],
+  },
+  printColorAdjust: { kind: 'enum', values: ['economy', 'exact'] },
+  readingFlow: {
+    kind: 'enum',
+    values: [
+      'flex-flow',
+      'flex-visual',
+      'grid-columns',
+      'grid-order',
+      'grid-rows',
+      'normal',
+      'source-order',
+    ],
+  },
+  readingOrder: {
+    integer: true,
+    kind: 'number',
+    max: Number.MAX_SAFE_INTEGER,
+    min: Number.MIN_SAFE_INTEGER,
   },
   resize: {
     kind: 'enum',
@@ -448,6 +1120,24 @@ export const rules = {
   },
   right: margin,
   rowGap: length,
+  rubyAlign: {
+    kind: 'enum',
+    values: ['center', 'space-around', 'space-between', 'start'],
+  },
+  rubyPosition: {
+    kind: 'enum',
+    values: [
+      'alternate',
+      'alternate over',
+      'alternate under',
+      'inter-character',
+      'over',
+      'over alternate',
+      'under',
+      'under alternate',
+    ],
+  },
+  scrollbarWidth: { kind: 'enum', values: ['auto', 'none', 'thin'] },
   scrollBehavior: { kind: 'enum', values: ['auto', 'smooth'] },
   scrollMargin,
   scrollMarginBlock: scrollMargin,
@@ -518,7 +1208,28 @@ export const rules = {
       'y proximity',
     ],
   },
+  shapeMargin: length,
+  shapeRendering: {
+    kind: 'enum',
+    values: ['auto', 'crispEdges', 'geometricPrecision', 'optimizeSpeed'],
+  },
+  stroke: { ...color, keywords: ['context-fill', 'context-stroke', 'none'] },
+  strokeDashoffset: { ...length, negative: true },
+  strokeLinecap: { kind: 'enum', values: ['butt', 'round', 'square'] },
+  strokeLinejoin: {
+    kind: 'enum',
+    values: ['arcs', 'bevel', 'miter', 'miter-clip', 'round'],
+  },
+  strokeMiterlimit: { kind: 'number', max: Infinity, min: 1 },
+  strokeOpacity: { kind: 'number', max: 1, min: 0 },
+  strokeWidth: length,
   tableLayout: { kind: 'enum', values: ['auto', 'fixed'] },
+  tabSize: {
+    integer: true,
+    kind: 'number',
+    max: Number.MAX_SAFE_INTEGER,
+    min: 0,
+  },
   textAlign: {
     kind: 'enum',
     values: ['center', 'end', 'justify', 'left', 'right', 'start'],
@@ -527,6 +1238,7 @@ export const rules = {
     kind: 'enum',
     values: ['auto', 'center', 'end', 'justify', 'left', 'right', 'start'],
   },
+  textCombineUpright: { kind: 'enum', values: ['all', 'none'] },
   textDecorationColor: color,
   textDecorationLine: {
     kind: 'enum',
@@ -555,26 +1267,239 @@ export const rules = {
     values: ['dashed', 'dotted', 'double', 'solid', 'wavy'],
   },
   textDecorationThickness: { ...length, auto: true, keywords: ['from-font'] },
+  textEmphasisColor: color,
+  textEmphasisPosition: {
+    kind: 'enum',
+    values: [
+      'auto',
+      'left over',
+      'left under',
+      'over',
+      'over left',
+      'over right',
+      'right over',
+      'right under',
+      'under',
+      'under left',
+      'under right',
+    ],
+  },
+  textEmphasisStyle: {
+    kind: 'enum',
+    values: [
+      'circle',
+      'circle filled',
+      'circle open',
+      'dot',
+      'dot filled',
+      'dot open',
+      'double-circle',
+      'double-circle filled',
+      'double-circle open',
+      'filled',
+      'filled circle',
+      'filled dot',
+      'filled double-circle',
+      'filled sesame',
+      'filled triangle',
+      'none',
+      'open',
+      'open circle',
+      'open dot',
+      'open double-circle',
+      'open sesame',
+      'open triangle',
+      'sesame',
+      'sesame filled',
+      'sesame open',
+      'triangle',
+      'triangle filled',
+      'triangle open',
+    ],
+  },
   textIndent: { ...length, negative: true },
+  textJustify: {
+    kind: 'enum',
+    values: ['auto', 'inter-character', 'inter-word', 'none'],
+  },
+  textOrientation: { kind: 'enum', values: ['mixed', 'sideways', 'upright'] },
   textOverflow: { kind: 'enum', values: ['clip', 'ellipsis'] },
+  textRendering: {
+    kind: 'enum',
+    values: [
+      'auto',
+      'geometricPrecision',
+      'optimizeLegibility',
+      'optimizeSpeed',
+    ],
+  },
+  textSizeAdjust: { kind: 'enum', values: ['auto', 'none'] },
+  textSpacingTrim: {
+    kind: 'enum',
+    values: ['normal', 'space-all', 'space-first', 'trim-start'],
+  },
   textTransform: {
     kind: 'enum',
     values: ['capitalize', 'lowercase', 'none', 'uppercase'],
   },
   textUnderlineOffset: { ...length, auto: true, negative: true },
   top: margin,
+  touchAction: {
+    kind: 'enum',
+    values: [
+      'auto',
+      'manipulation',
+      'none',
+      'pan-down',
+      'pan-down pan-left',
+      'pan-down pan-left pinch-zoom',
+      'pan-down pan-right',
+      'pan-down pan-right pinch-zoom',
+      'pan-down pan-x',
+      'pan-down pan-x pinch-zoom',
+      'pan-down pinch-zoom',
+      'pan-down pinch-zoom pan-left',
+      'pan-down pinch-zoom pan-right',
+      'pan-down pinch-zoom pan-x',
+      'pan-left',
+      'pan-left pan-down',
+      'pan-left pan-down pinch-zoom',
+      'pan-left pan-up',
+      'pan-left pan-up pinch-zoom',
+      'pan-left pan-y',
+      'pan-left pan-y pinch-zoom',
+      'pan-left pinch-zoom',
+      'pan-left pinch-zoom pan-down',
+      'pan-left pinch-zoom pan-up',
+      'pan-left pinch-zoom pan-y',
+      'pan-right',
+      'pan-right pan-down',
+      'pan-right pan-down pinch-zoom',
+      'pan-right pan-up',
+      'pan-right pan-up pinch-zoom',
+      'pan-right pan-y',
+      'pan-right pan-y pinch-zoom',
+      'pan-right pinch-zoom',
+      'pan-right pinch-zoom pan-down',
+      'pan-right pinch-zoom pan-up',
+      'pan-right pinch-zoom pan-y',
+      'pan-up',
+      'pan-up pan-left',
+      'pan-up pan-left pinch-zoom',
+      'pan-up pan-right',
+      'pan-up pan-right pinch-zoom',
+      'pan-up pan-x',
+      'pan-up pan-x pinch-zoom',
+      'pan-up pinch-zoom',
+      'pan-up pinch-zoom pan-left',
+      'pan-up pinch-zoom pan-right',
+      'pan-up pinch-zoom pan-x',
+      'pan-x',
+      'pan-x pan-down',
+      'pan-x pan-down pinch-zoom',
+      'pan-x pan-up',
+      'pan-x pan-up pinch-zoom',
+      'pan-x pan-y',
+      'pan-x pan-y pinch-zoom',
+      'pan-x pinch-zoom',
+      'pan-x pinch-zoom pan-down',
+      'pan-x pinch-zoom pan-up',
+      'pan-x pinch-zoom pan-y',
+      'pan-y',
+      'pan-y pan-left',
+      'pan-y pan-left pinch-zoom',
+      'pan-y pan-right',
+      'pan-y pan-right pinch-zoom',
+      'pan-y pan-x',
+      'pan-y pan-x pinch-zoom',
+      'pan-y pinch-zoom',
+      'pan-y pinch-zoom pan-left',
+      'pan-y pinch-zoom pan-right',
+      'pan-y pinch-zoom pan-x',
+      'pinch-zoom',
+      'pinch-zoom pan-down',
+      'pinch-zoom pan-down pan-left',
+      'pinch-zoom pan-down pan-right',
+      'pinch-zoom pan-down pan-x',
+      'pinch-zoom pan-left',
+      'pinch-zoom pan-left pan-down',
+      'pinch-zoom pan-left pan-up',
+      'pinch-zoom pan-left pan-y',
+      'pinch-zoom pan-right',
+      'pinch-zoom pan-right pan-down',
+      'pinch-zoom pan-right pan-up',
+      'pinch-zoom pan-right pan-y',
+      'pinch-zoom pan-up',
+      'pinch-zoom pan-up pan-left',
+      'pinch-zoom pan-up pan-right',
+      'pinch-zoom pan-up pan-x',
+      'pinch-zoom pan-x',
+      'pinch-zoom pan-x pan-down',
+      'pinch-zoom pan-x pan-up',
+      'pinch-zoom pan-x pan-y',
+      'pinch-zoom pan-y',
+      'pinch-zoom pan-y pan-left',
+      'pinch-zoom pan-y pan-right',
+      'pinch-zoom pan-y pan-x',
+    ],
+  },
+  transformBox: {
+    kind: 'enum',
+    values: ['border-box', 'content-box', 'fill-box', 'stroke-box', 'view-box'],
+  },
+  transformOrigin: {
+    ...length,
+    keywords: ['bottom', 'center', 'left', 'right', 'top'],
+    negative: true,
+  },
+  transformStyle: { kind: 'enum', values: ['flat', 'preserve-3d'] },
+  transitionBehavior: { kind: 'enum', values: ['allow-discrete', 'normal'] },
+  transitionDelay: { kind: 'time', negative: true },
+  transitionDuration: { kind: 'time', negative: false },
+  transitionTimingFunction: {
+    kind: 'enum',
+    values: [
+      'ease',
+      'ease-in',
+      'ease-in-out',
+      'ease-out',
+      'linear',
+      'step-end',
+      'step-start',
+    ],
+  },
+  unicodeBidi: {
+    kind: 'enum',
+    values: [
+      'bidi-override',
+      'embed',
+      'isolate',
+      'isolate-override',
+      'normal',
+      'plaintext',
+    ],
+  },
   userSelect: { kind: 'enum', values: ['all', 'auto', 'none', 'text'] },
+  vectorEffect: { kind: 'enum', values: ['none', 'non-scaling-stroke'] },
   visibility: { kind: 'enum', values: ['collapse', 'hidden', 'visible'] },
   whiteSpace: {
     kind: 'enum',
     values: ['break-spaces', 'normal', 'nowrap', 'pre', 'pre-line', 'pre-wrap'],
   },
+  widows: positiveInteger,
   width: size,
   wordBreak: { kind: 'enum', values: ['break-all', 'keep-all', 'normal'] },
   wordSpacing: textSpacing,
   writingMode: {
     kind: 'enum',
     values: ['horizontal-tb', 'vertical-lr', 'vertical-rl'],
+  },
+  zIndex: {
+    integer: true,
+    keywords: ['auto'],
+    kind: 'number',
+    max: Number.MAX_SAFE_INTEGER,
+    min: Number.MIN_SAFE_INTEGER,
   },
 } as const satisfies Record<string, Rule>
 
@@ -591,12 +1516,17 @@ export function validate(
       : `Expected one of: ${rule.values.join(', ')} (or a CSS-wide keyword).`
   if (rule.kind === 'color')
     return typeof value === 'string' &&
-      (/^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(value) ||
-        ['black', 'currentColor', 'transparent', 'white'].includes(value))
+      (rule.keywords?.includes(value) ||
+        /^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(value) ||
+        colorKeywordSet.has(value) ||
+        value === 'currentColor' ||
+        value === 'transparent')
       ? undefined
-      : 'Expected a hex color, transparent, currentColor, black, or white.'
+      : 'Expected a named color, system color, hex color, transparent, or currentColor.'
   if (rule.kind === 'number')
     return (() => {
+      if (typeof value === 'string' && rule.keywords?.includes(value))
+        return undefined
       if (
         typeof value === 'number' &&
         Number.isFinite(value) &&
@@ -608,8 +1538,35 @@ export function validate(
       }
       return `Expected a finite ${rule.integer ? 'integer' : 'number'} from ${rule.min} to ${rule.max}.`
     })()
+  if (rule.kind === 'grid-line') {
+    if (value === 'auto') return undefined
+    if (typeof value === 'number' && Number.isSafeInteger(value) && value !== 0)
+      return undefined
+    const match =
+      typeof value === 'string' ? /^span ([1-9]\d*)$/.exec(value) : null
+    const count = match ? Number(match[1]) : NaN
+    if (Number.isSafeInteger(count) && count > 0) return undefined
+    return 'Expected auto, a nonzero safe integer, or span followed by a positive safe integer.'
+  }
+  if (rule.kind === 'time') {
+    if (typeof value === 'string' && rule.keywords?.includes(value))
+      return undefined
+    const match =
+      typeof value === 'string'
+        ? /^([+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?)(?:ms|s)$/.exec(value)
+        : null
+    const amount = match ? Number(match[1]) : NaN
+    if (Number.isFinite(amount) && (rule.negative || amount >= 0))
+      return undefined
+    return `Expected ${rule.negative ? 'a' : 'a nonnegative'} finite time in s or ms.${rule.keywords ? ` Also accepts: ${rule.keywords.join(', ')}.` : ''}`
+  }
   if (value === 0 || (rule.auto && value === 'auto')) return undefined
-  const match = typeof value === 'string' ? lengthPattern.exec(value) : null
+  const match = (() => {
+    if (typeof value !== 'string') return null
+    const dimension = lengthPattern.exec(value)
+    if (dimension || !rule.fraction) return dimension
+    return /^([+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?)(fr)$/.exec(value)
+  })()
   const amount = match ? Number(match[1]) : NaN
   if (Number.isFinite(amount) && (rule.negative || amount >= 0)) {
     // Length-only domains exclude percentages.

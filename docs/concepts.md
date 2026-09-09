@@ -15,9 +15,7 @@ How styles, tokens, and compilation behave. Use [Guides](guides/README.md) for c
 ```ts
 import { style } from 'zyzz'
 
-const styles = {
-  card: style({ padding: '1rem' }),
-}
+const card = style({ padding: '1rem' })
 ```
 
 The [compilation model](#compilation-and-platforms) explains which boundaries are shared and which belong to platform adapters.
@@ -37,21 +35,15 @@ const example = <div style={styles.card}>Card</div>
 
 ## Configuration
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
-`Config.create` binds authoring functions to explicit tokens and layers. Create `const config = Config.create(...)` from `zyzz.config.ts` and export `const style = config.style` for named consumer imports. Integrations follow this binding to the originating config; no default export is required. The compiler reads static data without executing application code.
+`Config.create` binds authoring functions to explicit tokens and layers. Use `export const { style, theme } = Config.create(...)` in `zyzz.config.ts` for named consumer imports. Integrations follow this binding to the originating config; no default export is required. The compiler reads static data without executing application code.
 
 ```ts
 import { Config } from 'zyzz'
 
-const config = Config.create({
+export const { style, theme } = Config.create({
   layers: ['base', 'components'],
   theme: { spacing: { md: '1rem' } },
 })
-
-export const style = config.style
-export const theme = config.theme
 ```
 
 - **Layers:** infer keys such as `@layer components`; unknown names fail.
@@ -64,12 +56,12 @@ Named alternatives share the default's token paths and domains. Config returns c
 ```ts
 import { style } from './zyzz.config.js'
 
-const styles = {
-  card: style({ padding: 'md' }),
-}
+const card = style({ padding: 'md' })
 ```
 
-Named bound exports preserve the config's inferred contract. Access CSS references through `zyzz.theme.vars` or `zyzz.themes.<name>.vars`. These are CSS variable references, not runtime setters; compatible scopes change their inherited values.
+Named bound exports preserve the config's inferred contract. Access CSS references through `theme.vars` or `themes.<name>.vars`. These are CSS variable references, not runtime setters; compatible scopes change their inherited values.
+
+Preview API; not yet implemented.
 
 ## Themes & Tokens
 
@@ -91,24 +83,18 @@ const theme = Theme.define({
 
 Use [Compile Themes](guides/themes.md#compile-themes) for the current pipeline.
 
-> [!NOTE]
-> Config normalization, bundled defaults, typography/query groups, and web expression references are previews. Config returns compatible handles without mutating independently defined themes.
+Config normalization, bundled defaults, typography/query groups, and web expression references are previews. Config returns compatible handles without mutating independently defined themes.
 
 ### Theme Scopes
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
-Callable themes return generated scope classes and optional inline color-scheme props. Apply them to `<html>` for the whole document or an ancestor for a subtree. Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
+Theme values compile to generated scope classes through the `style` prop. Apply them to `<html>` for the whole document or an ancestor for a subtree. Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
 
 Use the instance handles from a [named-theme config](guides/themes.md#selecting-a-theme):
 
 ```tsx
 import { themes } from './zyzz.config.js'
 
-const example = (
-  <section {...themes.mint({ colorScheme: 'dark' })}>Content</section>
-)
+const example = <section style={themes.mint}>Content</section>
 ```
 
 - **Color pairs:** `{ dark, light }` compiles to `light-dark()`.
@@ -116,10 +102,9 @@ const example = (
 - **Extensions:** `Theme.extend` changes existing values while preserving the contract.
 - **Theme selection:** changes tokens independently of color scheme.
 
-## Composition and Overrides
+Preview API; not yet implemented.
 
-> [!NOTE]
-> Preview API; not yet implemented.
+## Composition and Overrides
 
 Use `cx` to compose generated styles with override rules. Multiple JSX spreads replace fields. External classes follow the CSS cascade; their class-string order does not establish precedence.
 
@@ -136,10 +121,9 @@ const example = <button style={cx(styles.compact, styles.roomy)}>Save</button>
 
 Later generated conflicts win within matching conditions, subject to importance. Owned variable bindings and recipe attributes stay attached. See [Override Styles](guides/styling.md#override-styles).
 
-## Variants
+Preview API; not yet implemented.
 
-> [!NOTE]
-> Preview API; not yet implemented.
+## Variants
 
 A recipe styles one element; each call returns a value for its `style` prop. Axes, defaults, and compounds select precompiled alternatives. Multipart components use separate definitions with shared inputs; there is no slots option.
 
@@ -154,31 +138,27 @@ const styles = {
 const example = <button style={styles.button({ size: 'sm' })}>Save</button>
 ```
 
-## Conditions
+Preview API; not yet implemented.
 
-> [!NOTE]
-> Preview API; not yet implemented.
+## Conditions
 
 Pseudo styles, media queries, container queries, and feature queries keep their CSS meaning. Nested conditions combine with AND while preserving property/token inference.
 
 ```ts
 import { style } from 'zyzz'
 
-const styles = {
-  button: style({
-    ':hover': { '@media (hover: hover)': { opacity: 0.8 } },
-  }),
-}
+const button = style({
+  ':hover': { '@media (hover: hover)': { opacity: 0.8 } },
+})
 ```
 
 Query aliases resolve from theme metadata to literal conditions. Theme scope changes do not change query thresholds. Container queries select the nearest eligible container; raw queries still require compiler validation.
 
 See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style States](guides/conditions.md#style-states).
 
-## Relationships
+Preview API; not yet implemented.
 
-> [!NOTE]
-> Preview API; not yet implemented.
+## Relationships
 
 Typed markers describe element identity and finite data states. Applying a marker emits attributes; another definition can reference that identity.
 
@@ -197,10 +177,9 @@ const condition = Css.ancestor(card, { data: { state: 'open' } })
 
 See [Style Relationships](guides/conditions.md#style-relationships) for application and [Css](api/web/Css/README.md) for sibling directions.
 
-## Dynamic Values
+Preview API; not yet implemented.
 
-> [!NOTE]
-> Preview API; not yet implemented.
+## Dynamic Values
 
 Token names infer by property. A text-color token cannot become a spacing token.
 
@@ -225,10 +204,9 @@ const example = <div style={styles.bar({ width: '50%' })} aria-hidden="true" />
 
 Calls accept declared inputs plus `className`/`style` overrides. Keep other component props on the element.
 
-## Layers and Stylesheets
+Preview API; not yet implemented.
 
-> [!NOTE]
-> Preview API; not yet implemented.
+## Layers and Stylesheets
 
 ```ts
 import { global } from 'zyzz/web'
@@ -245,6 +223,8 @@ global({ '@layer base': { body: { margin: 0 } } })
 
 See [stylesheet usage](guides/stylesheets.md#global-styles) for fonts and motion. Standalone globals do not widen a config's inferred layer names.
 
+Preview API; not yet implemented.
+
 ## Compilation and Platforms
 
 | Boundary        | Responsibility                             |
@@ -256,5 +236,4 @@ See [stylesheet usage](guides/stylesheets.md#global-styles) for fonts and motion
 
 CLI and build integrations share compiler semantics. Libraries distribute matching code, CSS, declarations, and required metadata. Standard downstream tooling handles minification.
 
-> [!NOTE]
-> CLI/plugins and native output are previews. Native will select precompiled styles and theme/scheme tables, with explicit errors for unsupported web selectors and stylesheet operations.
+CLI/plugins and native output are previews. Native will select precompiled styles and theme/scheme tables, with explicit errors for unsupported web selectors and stylesheet operations.

@@ -23,6 +23,13 @@ export function cases(): readonly Case[] {
     units: Record<string, readonly string[]>
   }
   const units: Record<string, unknown> = require('mdn-data/css/units.json')
+  const syntaxes: Record<
+    string,
+    { syntax: string }
+  > = require('mdn-data/css/syntaxes.json')
+  const colors = ['named-color', 'system-color'].flatMap((name) =>
+    syntaxes[name]!.syntax.split('|').map((value) => value.trim()),
+  )
   for (const [property, rule] of Object.entries(Literal.rules)) {
     const values: (string | number)[] = [
       'inherit',
@@ -32,8 +39,10 @@ export function cases(): readonly Case[] {
       'unset',
     ]
     if (rule.kind === 'enum') values.push(...rule.values)
-    if (rule.kind === 'color')
+    if (rule.kind === 'color') {
+      if ('keywords' in rule) values.push(...rule.keywords)
       values.push(
+        ...colors,
         '#123',
         '#1234',
         '#123456',
@@ -43,10 +52,23 @@ export function cases(): readonly Case[] {
         'transparent',
         'currentColor',
       )
+    }
     if (rule.kind === 'number') {
+      if ('keywords' in rule) values.push(...rule.keywords)
       values.push(rule.min, Math.max(1, rule.min))
       if (Number.isFinite(rule.max)) values.push(rule.max)
       if (!('integer' in rule)) values.push(Math.max(rule.min, 0.5))
+    }
+    if (rule.kind === 'grid-line')
+      values.push('auto', 1, -1, 2, 'span 1', 'span 2')
+    if (rule.kind === 'time') {
+      if ('keywords' in rule) values.push(...rule.keywords)
+      for (const unit of Object.keys(units))
+        for (const number of ['0', '1', '.5', '1e2', '-1']) {
+          const value = `${number}${unit}`
+          if (!Literal.validate(property as Case['property'], value))
+            values.push(value)
+        }
     }
     if (rule.kind === 'length') {
       values.push(0)
@@ -100,17 +122,46 @@ export function name(property: string): string {
 /** Independent invalid and intentionally unsupported inputs shared by runtime and type probes. */
 export const rejected = [
   { property: 'alignItems', value: 'middle' },
-  { property: 'color', value: 'red' },
+  { property: 'animationDelay', value: '0x10s' },
+  { property: 'animationDuration', value: 0 },
+  { property: 'animationDuration', value: '1px' },
+  { property: 'animationTimingFunction', value: 'cubic-bezier(0,0,1,1)' },
+  { property: 'appearance', value: 'native' },
+  { property: 'color', value: 'not-a-color' },
   { property: 'color', value: 'rgb(0 0 0)' },
+  { property: 'containerType', value: 'normal size' },
+  { property: 'containerType', value: 'size inline-size' },
+  { property: 'containerType', value: 'scroll-state scroll-state' },
+  { property: 'fieldSizing', value: 'auto' },
+  { property: 'interpolateSize', value: 'auto' },
   { property: 'display', value: 'fleex' },
+  { property: 'fill', value: 'url(#gradient)' },
+  { property: 'fillRule', value: 'winding' },
+  { property: 'floodColor', value: 'none' },
+  { property: 'fontStretch', value: '120%' },
+  { property: 'fontVariantNumeric', value: 'tabular-nums slashed-zero' },
+  { property: 'gridAutoColumns', value: '0x10fr' },
+  { property: 'gridAutoFlow', value: 'row column' },
+  { property: 'gridColumnStart', value: 'span 1.5' },
+  { property: 'gridTemplateColumns', value: '1fr 2fr' },
   { property: 'letterSpacing', value: '10%' },
   { property: 'margin', value: '1px 2px' },
+  { property: 'maskMode', value: 'normal' },
+  { property: 'maskSize', value: '1px 2px' },
   { property: 'padding', value: '0x10px' },
+  { property: 'perspective', value: '50%' },
   { property: 'padding', value: '1 px' },
   { property: 'padding', value: '1qu' },
+  { property: 'readingFlow', value: 'flex-visual grid-rows' },
+  { property: 'readingOrder', value: 'auto' },
+  { property: 'readingOrder', value: '1px' },
   { property: 'scrollSnapType', value: 'mandatory both' },
   { property: 'textDecorationLine', value: 'none underline' },
   { property: 'textDecorationLine', value: 'underline underline' },
   { property: 'textDecorationStyle', value: 'groove' },
+  { property: 'textEmphasisPosition', value: 'over under' },
+  { property: 'textEmphasisStyle', value: 'open filled' },
+  { property: 'touchAction', value: 'pan-left pan-right' },
+  { property: 'touchAction', value: 'auto pinch-zoom' },
   { property: 'textUnderlineOffset', value: 'from-font' },
 ] as const

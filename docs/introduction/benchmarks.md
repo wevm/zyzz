@@ -98,5 +98,4 @@ pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/t
 
 See the [methodology at this commit](https://github.com/wevm/zyzz/blob/9f9d42c384bcd887fff8956e70b078ee75501bc2/bench/README.md) for compiler boundaries and sample configuration. Generated reports stay ignored; this curated snapshot is intentionally committed. Update all comparison lanes from one identified run.
 
-> [!NOTE]
-> Full application, dynamic variant, SSR, and native rendering workloads require their corresponding implementation stages. Current literal results do not demonstrate those capabilities.
+Full application, dynamic variant, SSR, and native rendering workloads require their corresponding implementation stages. Current literal results do not demonstrate those capabilities.

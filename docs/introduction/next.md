@@ -1,8 +1,5 @@
 # Next.js Setup
 
-> [!NOTE]
-> Preview API; not yet implemented. Webpack and Turbopack support require separate integration verification.
-
 Wrap the existing Next.js configuration with the `zyzz` integration. The wrapper owns source transformation, CSS delivery, and dependency watching.
 
 ```ts
@@ -39,3 +36,5 @@ The integration must preserve existing Next.js options and compose with existing
 Support requires real fixtures for Server Components, client components, Fast Refresh, theme edits, route navigation, streaming, and production CSS loading. Preview notes remain until the supported Next.js versions and bundler paths pass those gates.
 
 See the [API reference](../api/next/zyzz.md) and [integration plan](../../.agents/plan.md#phase-4--integrations-and-distribution).
+
+Preview API; not yet implemented. Webpack and Turbopack support require separate integration verification.

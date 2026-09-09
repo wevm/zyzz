@@ -25,5 +25,4 @@ import { Css } from 'zyzz/web'
 
 See the [public declarations](../../../../src/web/Css.ts) for complete generic signatures and documented type properties.
 
-> [!NOTE]
-> Layer and relationship helpers are previews; `compile` implements the documented literal/scalar boundary.
+Layer and relationship helpers are previews; `compile` implements the documented literal/scalar boundary.

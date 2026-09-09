@@ -20,6 +20,8 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** A destructured named-theme catalog. */
+  readonly catalog?: boolean | undefined
   /** Static-value authoring alias, rather than legacy callable css. */
   readonly value?: boolean | undefined
   /** Validated inline configuration options retained for packed declarations. */
@@ -314,13 +316,17 @@ export function collect(program: Ast.Program, options: collect.Options) {
       if (
         (statement.type === 'ExportNamedDeclaration' && !options.linked) ||
         declaration.kind !== 'const' ||
-        variable.id.type !== 'Identifier'
+        (variable.id.type !== 'Identifier' &&
+          !(
+            variable.id.type === 'ObjectPattern' &&
+            configNamespaces.has(expression.callee.object.name)
+          ))
       )
         fail(
           'Define local themes with a module-level const; exported themes require source linking.',
           variable,
         )
-      const name = `${options.namespace}-${variable.id.name}`
+      const name = `${options.namespace}-${variable.id.type === 'Identifier' ? variable.id.name : `config-${variable.id.start}`}`
       if (configNamespaces.has(expression.callee.object.name)) {
         try {
           const link = Configurations.collect({
@@ -333,14 +339,21 @@ export function collect(program: Ast.Program, options: collect.Options) {
               return link
             },
           })
-          configs.set(variable.id.name, link)
-          configBindings.set(variable.id.start, link)
+          if (variable.id.type === 'ObjectPattern')
+            registerPattern(variable.id, link, statement)
+          else {
+            configs.set(variable.id.name, link)
+            configBindings.set(variable.id.start, link)
+          }
           calls.push(link.call)
           factories.add(expression.start)
           for (const member of Object.values(link.members ?? {}))
             themes[member.call.name] = member.definition
           themes[link.call.name] = link.definition
-          if (statement.type === 'ExportNamedDeclaration')
+          if (
+            statement.type === 'ExportNamedDeclaration' &&
+            variable.id.type === 'Identifier'
+          )
             exports[variable.id.name] = link
         } catch (error) {
           if (!(error instanceof Config.InvalidError)) throw error
@@ -348,6 +361,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
         }
         continue
       }
+      if (variable.id.type !== 'Identifier')
+        fail('Theme definitions require a named const.', variable)
       let definition: Theme.Definition
       let tokenType: string
       try {
@@ -402,6 +417,70 @@ export function collect(program: Ast.Program, options: collect.Options) {
     }
   }
 
+  function registerPattern(
+    pattern: Ast.ObjectPattern,
+    link: Link,
+    statement: Ast.Node,
+  ) {
+    for (const property of pattern.properties) {
+      if (
+        property.type !== 'Property' ||
+        property.computed ||
+        property.key.type !== 'Identifier' ||
+        property.value.type !== 'Identifier'
+      )
+        fail(
+          'Config exports require named bindings without defaults or rest properties.',
+          pattern,
+        )
+      const key = property.key.name
+      const id = property.value
+      const member = (() => {
+        if (key === 'style' || key === 'css')
+          return {
+            ...link,
+            binding: `${options.namespace}-${id.name}`,
+            call: { ...link.call, value: key === 'style' },
+            kind: 'css' as const,
+          }
+        if (key === 'themes' && link.members)
+          return {
+            ...link,
+            binding: `${options.namespace}-${id.name}`,
+            call: {
+              ...link.call,
+              catalog: true,
+              type: `${link.call.type}['themes']`,
+            },
+            members: Object.fromEntries(
+              Object.entries(link.members)
+                .filter(
+                  ([path]) => (JSON.parse(path) as string[])[0] === 'themes',
+                )
+                .map(([path, member]) => [
+                  JSON.stringify((JSON.parse(path) as string[]).slice(1)),
+                  member,
+                ]),
+            ),
+          }
+        return link.members?.[JSON.stringify([key])]
+      })()
+      if (!member)
+        fail('Destructure only style, css, or theme from a config.', property)
+      if (member.kind === 'css') {
+        aliasBindings.set(id.start, { ...member.call, destructured: false })
+        aliasNames.set(id.name, { ...member.call, destructured: false })
+      } else if (member.kind === 'config') {
+        configs.set(id.name, member)
+        configBindings.set(id.start, member)
+      } else {
+        definitions.set(id.start, member.call)
+        names.set(id.name, member.call)
+      }
+      if (statement.type === 'ExportNamedDeclaration') exports[id.name] = member
+    }
+  }
+
   function registerAlias(input: {
     declaration: Ast.VariableDeclaration
     statement: Ast.Node
@@ -411,6 +490,25 @@ export function collect(program: Ast.Program, options: collect.Options) {
     const expression = variable.init
     if (!expression) return
     const linked = resolve(expression)
+    if (linked?.kind === 'config' && variable.id.type === 'ObjectPattern') {
+      if (
+        declaration.kind !== 'const' ||
+        (statement.type === 'ExportNamedDeclaration' && !options.linked)
+      )
+        fail('Config exports require module-level const bindings.', variable)
+      if (expression.start < linked.call.end)
+        fail('Authoring aliases must follow their definition.', expression)
+      registerPattern(variable.id, linked, statement)
+      aliases.push({
+        ...linked.call,
+        start: expression.start,
+        end: expression.end,
+        destructured: false,
+        retained: true,
+      })
+      aliasReferences.add(expression.start)
+      return
+    }
     if (linked && variable.id.type === 'Identifier') {
       if (expression.start < linked.call.end)
         fail('Authoring aliases must follow their definition.', expression)
@@ -612,6 +710,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         ? configBindings.get(binding.node.start)
         : undefined
     if (config) {
+      if (node.start === binding!.node.start) return true
       if (exportReferences.has(node.start) || aliasReferences.has(node.start))
         return true
       if (
@@ -686,6 +785,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         ? definitions.get(binding.node.start)
         : undefined
     if (!theme) return false
+    if (node.start === binding!.node.start) return true
     return themeReference(node, parent, ancestors, theme)
   }
 
@@ -701,6 +801,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (aliasReferences.has(node.start)) return true
     if (node.start < theme.end)
       fail('Theme references must follow their local definition.', node)
+    if (
+      parent.type === 'JSXExpressionContainer' &&
+      grandparent?.type === 'JSXAttribute' &&
+      grandparent.name.type === 'JSXIdentifier' &&
+      grandparent.name.name === 'style'
+    ) {
+      references.push({
+        start: node.start,
+        end: node.end,
+        name: theme.name,
+        value: true,
+      })
+      return true
+    }
     if (
       parent.type === 'CallExpression' &&
       factories.has(parent.start) &&
@@ -923,4 +1037,6 @@ export class InvalidError extends Error {
 }
 
 /** Scope property read replaced with a compiled constant. */
-export type Reference = Pick<Call, 'end' | 'name' | 'start'>
+export type Reference = Pick<Call, 'end' | 'name' | 'start'> & {
+  readonly value?: boolean
+}

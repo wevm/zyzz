@@ -1,8 +1,5 @@
 # StyleSheet.select
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Select a precompiled native theme and scheme.
 
 ```ts
@@ -13,6 +10,8 @@ const selected = StyleSheet.select(output.styles, {
   theme: 'base',
 })
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 

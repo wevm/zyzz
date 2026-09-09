@@ -49,7 +49,6 @@ Custom components can forward `style` or their complete props to an intrinsic el
 
 Untransformed authoring throws `style.MissingTransformError`. Unsupported source forms fail with source diagnostics. Static values cannot be called.
 
-> [!NOTE]
-> Dynamic callbacks, conditions, and variants remain previews. Their proposed applications use the same `style` prop; static values and literal inline overrides are implemented.
-
 Types: `style.ErrorType` and `style.ReturnType`.
+
+Dynamic callbacks, conditions, and variants remain previews. Their proposed applications use the same `style` prop; static values and literal inline overrides are implemented.

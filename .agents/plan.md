@@ -427,6 +427,38 @@ Custom conflict graphs, shared-subset/biclique search, bounded beam search, MaxS
 - [ ] Verify Getting Started through real CLI and bundler consumer fixtures before removing preview notes. Source imports and the named `zyzz` instance remain identical across supported integrations.
 - [ ] Extend framework, SSR, migration, and native guides alongside integration proof; do not claim target compatibility from shared authoring types alone.
 
+## Continuing CSS Conformance
+
+Continue opening coherent property/value PRs against the pinned MDN inventory. Each batch preserves independent grammar/type validation, adds browser fixtures and benchmark evidence, and records remaining restrictions. New type fixtures use describe/test blocks. Full support requires value and rendering proof, not property-name acceptance.
+
+- Column properties: 12 additions plus normal column gaps; numeric keyword domains preserve positive count validation. Shorthands and remaining fragment grammar follow separately.
+
+- Layout and containment: 10 additional properties and 13 display keywords, with finite containment, safe stacking integers, independent grammar/type checks, and float/stacking browser fixtures. Broad syntax remains partial in the inventory.
+
+- Backgrounds and color controls: 14 additional scalar properties, color-token/auto disambiguation, independent grammar/type probes, and browser computed-style comparisons. Images, gradients, lists, and paired values remain deferred.
+
+- SVG paint: 19 additional properties with shared color tokens, bounded scalar domains, source maps, independent grammar/type probes, and evenodd path geometry in Chromium. Broad paint syntax and filter rendering remain deferred.
+
+- Font controls: 19 additional typography, emphasis, and ruby properties with bounded keyword combinations, independent grammar/type probes, and native text layout fixtures. Font-dependent glyph behavior and broader values remain deferred.
+
+- Motion controls: 11 additional properties and a finite time dimension domain, independent grammar/type probes, invalid duration checks, source maps, and native paused-animation timing. Lists, easing functions, keyframes, and timelines remain deferred.
+
+- Grid tracks: nine additional properties, bounded fr dimensions and grid-line domains, independent grammar/type probes, source maps, and implicit-track/span geometry. Lists, functions, named lines, and areas remain deferred.
+
+- Masks and image positioning: 16 additional properties, scalar position domains, background axis conflict handling, independent grammar/type checks, source maps, and masked-pixel comparisons. Image sources, lists, and complex functions remain deferred.
+
+- Lists and input controls: 13 additional properties, 94 finite touch-action forms, independent grammar/type probes, source maps, and native list-marker/tab comparisons. Custom counter styles and gesture behavior remain deferred.
+
+- Color keywords: expands the existing color domains to all 148 canonical lowercase names and 19 system colors with independent exhaustive grammar/type probes and native scheme comparisons. Functional colors remain deferred.
+
+## Container and Field Sizing
+
+`containerType` accepts `normal`, `size`, `inline-size`, `scroll-state`, and either size mode combined with `scroll-state` in either order. `fieldSizing` accepts `content` or `fixed`; `interpolateSize` accepts `allow-keywords` or `numeric-only`. Fallbacks and importance use the shared literal pipeline. The inventory tracks 301 partially implemented properties; container names, query authoring, and interpolation functions remain deferred. Browser evidence covers native container-query responses and content-sized inputs; scroll-state queries and animated intrinsic-size interpolation remain separate gates.
+
+## Reading Order
+
+`readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 303 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
+
 ## Style Prop Migration
 
 - [x] Add token-free and config/theme-bound static `style` values with named exports and exact property/token inference.

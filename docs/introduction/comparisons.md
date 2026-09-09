@@ -2,8 +2,7 @@
 
 How Zyzz, Tailwind, StyleX, and vanilla-extract approach typed styling, themes, composition, and delivery. Examples use the same small components where practical. DX means developer experience; AX means agent experience.
 
-> [!NOTE]
-> Zyzz examples include unimplemented APIs. See [Compatibility](compatibility.md) for the current boundary and [Benchmarks](benchmarks.md) for a recorded run.
+Zyzz examples include unimplemented APIs. See [Compatibility](compatibility.md) for the current boundary and [Benchmarks](benchmarks.md) for a recorded run.
 
 ## Authoring, Types, and DX/AX
 
@@ -82,13 +81,11 @@ const theme = Theme.define({
   spacing: { md: '1rem' },
 })
 
-const styles = {
-  panel: theme.style({
-    color: 'text',
-    padding: 'md',
-    colorScheme: 'light dark',
-  }),
-}
+const panel = theme.style({
+  color: 'text',
+  padding: 'md',
+  colorScheme: 'light dark',
+})
 ```
 
 Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `zyzz/themes/default` entrypoint exports bundled `style`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
@@ -168,17 +165,15 @@ const theme = Theme.define({
   containers: { card: '24rem' },
 })
 
-const styles = {
-  panel: theme.style({
-    display: ['block', 'grid'],
-    padding: 'sm',
-    ':hover': { opacity: 0.8 },
-    '&[data-loading="true"]': { cursor: 'wait' },
-    '@media tablet': { padding: 'md' },
-    '@container card': { gap: 'md' },
-    width: `calc(100% - ${theme.vars.spacing.md})`,
-  }),
-}
+const panel = theme.style({
+  display: ['block', 'grid'],
+  padding: 'sm',
+  ':hover': { opacity: 0.8 },
+  '&[data-loading="true"]': { cursor: 'wait' },
+  '@media tablet': { padding: 'md' },
+  '@container card': { gap: 'md' },
+  width: `calc(100% - ${theme.vars.spacing.md})`,
+})
 ```
 
 Arrays preserve fallback declaration order: later supported values win, subject to importance. A trailing `!` marks importance, as in `color: 'brand!'`. Ordinary strings express CSS values; `theme.tokens` disambiguates token references. Raw media/container conditions and `@supports` remain available.

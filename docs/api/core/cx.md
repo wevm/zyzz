@@ -1,20 +1,17 @@
 # cx
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Compose applied generated styles while retaining their owned bindings.
 
 ```ts
 import { style, cx } from 'zyzz'
 
-const styles = {
-  base: style({ padding: '0.5rem' }),
+const base = style({ padding: '0.5rem' })
 
-  roomy: style({ padding: '1rem' }),
-}
-const selected = cx(styles.base, styles.roomy)
+const roomy = style({ padding: '1rem' })
+const selected = cx(base, roomy)
 ```
+
+Preview API; not yet implemented.
 
 ## Signature
 

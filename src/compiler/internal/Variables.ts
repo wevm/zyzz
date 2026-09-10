@@ -167,7 +167,7 @@ export function collect(program: Ast.Program, namespace: string) {
 }
 
 function encode(value: string): string {
-  return [...value]
+  return Array.from(value)
     .map((character) => character.codePointAt(0)!.toString(16))
     .join('-')
 }

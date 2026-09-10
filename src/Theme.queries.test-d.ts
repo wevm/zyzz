@@ -4,6 +4,13 @@ import { Config, Theme } from 'zyzz'
 import { css } from './themes/default.js'
 
 describe('define', () => {
+  test('checks literal container identities', () => {
+    Theme.define({ containerNames: ['--sidebar', '-sidebar', '侧栏'] })
+    // @ts-expect-error Literal identities must be unique.
+    Theme.define({ containerNames: ['sidebar', 'sidebar'] })
+    // @ts-expect-error Container query operators cannot name containers.
+    Theme.define({ containerNames: ['and'] })
+  })
   test('rejects reserved container identities', () => {
     // @ts-expect-error Container identities exclude reserved keywords.
     Theme.define({ containerNames: ['none'] })

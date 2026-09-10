@@ -337,6 +337,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     const before = diagnostics.length
     const name = `style-${identity(options.moduleId)}-${call.start}`
     const locations: Style.SourceLocation[] = []
+    const conditionKeys: Ast.Node[] = []
     function object(
       argument: Ast.ObjectExpression,
       prefix: readonly string[] = [],
@@ -386,6 +387,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           continue
         }
         if (Condition.is(key)) {
+          conditionKeys.push(property.key)
           const input = Expression.unwrap(property.value)
           if (input.type !== 'ObjectExpression') {
             report(
@@ -479,7 +481,9 @@ export function extract(options: extract.Options): extract.ReturnType {
               ) {
                 report(
                   'unsupported_syntax',
-                  'Theme variable domain is incompatible with this property.',
+                  Binding.is(part)
+                    ? 'Variable domain is incompatible with this property.'
+                    : 'Theme variable domain is incompatible with this property.',
                   node,
                 )
                 return undefined
@@ -578,9 +582,11 @@ export function extract(options: extract.Options): extract.ReturnType {
         { [name]: values },
         { locations, theme: themes?.styles.get(call.start)?.theme },
       )
+      let conditionIndex = 0
       function validate(style: Style.NamedStyle) {
         for (const rule of style.rules ?? []) {
           if (rule.condition !== undefined) {
+            const location = conditionKeys[conditionIndex++] ?? call
             try {
               Lightning.transform({
                 filename: options.moduleId,
@@ -591,7 +597,7 @@ export function extract(options: extract.Options): extract.ReturnType {
               report(
                 'unsupported_syntax',
                 `Invalid selector or condition: ${(error as Error).message}`,
-                call,
+                location,
               )
             }
           }

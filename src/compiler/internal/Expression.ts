@@ -32,14 +32,12 @@ export function template(
         )
       )
         return undefined
-      // Substitution cannot combine a number token with adjacent unit text.
+      // var() substitutions must remain whole CSS tokens.
       if (
-        Binding.is(reference) &&
-        reference.type === 'number' &&
-        (/[%a-zA-Z_\d.-]/.test(
+        /[%a-zA-Z_\d.-]/.test(
           node.quasis[index + 1]?.value.cooked?.[0] ?? '',
         ) ||
-          /[\w.+-]$/.test(quasi.value.cooked))
+        /[\w.#@+\\-]$/.test(quasi.value.cooked)
       )
         return undefined
       parts.push(reference)

@@ -34,7 +34,7 @@ export function resolve(key: string, metadata: Metadata): string {
   if (
     text.includes('(') ||
     (kind === 'media' &&
-      /^(?:(?:only|not)\s+)?(?:all|print|screen)(?:\s|,|$)/.test(text))
+      /^(?:(?:only|not)\s+)?(?:all|print|screen)(?:\s|,|$)/i.test(text))
   )
     return key
   const pieces = text.split(' ')

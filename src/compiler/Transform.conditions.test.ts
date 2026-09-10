@@ -4,11 +4,32 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
-import { Graph, Transform } from 'zyzz/compiler'
+import { Graph, Source, Transform } from 'zyzz/compiler'
 
 const source =
   'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); export const box=theme.css({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:"100px","&[data-active]":{height:"20px"}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
 describe('compile', () => {
+  test('preserves media case and ignores selector comments for dynamic locality', () => {
+    const source =
+      'import {css} from "zyzz"; css((v:{alpha:number})=>({"&/* state, & */:hover":{opacity:v.alpha},"@media SCREEN":{color:"red"}}))'
+    const output = Transform.compile({ moduleId: 'comments.ts', source })
+    expect(output.css).toContain('@media SCREEN')
+    expect(output.css).toContain('opacity:var(')
+  })
+  test('reports invalid condition grammar at each authored key', () => {
+    const source =
+      'import {css} from "zyzz"; css({"@supports display: grid":{color:"red"},"@supports color: red":{color:"blue"}})'
+    try {
+      Transform.compile({ moduleId: 'locations.ts', source })
+      throw new Error('Expected source diagnostics')
+    } catch (error) {
+      if (!(error instanceof Source.ExtractError)) throw error
+      expect(error.diagnostics.map((diagnostic) => diagnostic.start)).toEqual([
+        source.indexOf('"@supports display'),
+        source.indexOf('"@supports color'),
+      ])
+    }
+  })
   test('scopes pseudo selectors containing ampersands in data', () => {
     const output = Transform.compile({
       moduleId: 'data.ts',

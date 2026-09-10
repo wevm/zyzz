@@ -128,7 +128,7 @@ describe('create', () => {
   })
 })
 
-describe('configured conditions', () => {
+describe('create', () => {
   test('rejects invalid union branches and empty callbacks', () => {
     const { css } = Config.create()
     const styles = {} as { color: '#fff' } | { ':hover': { colour: '#fff' } }

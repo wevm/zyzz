@@ -21,7 +21,7 @@ const output = Css.compile({ styles })
 - Type: `'independent' | 'ordered'`
 - Default: `'ordered'`
 
-Independent mode deduplicates complete applications whose composition is already resolved. CSS property/value validity relies on static authoring; emission preserves values without a CSS validator.
+Independent mode deduplicates complete applications whose composition is already resolved. CSS property/value validity relies on static authoring; emission preserves values without a CSS validator. Selector and at-rule grammar checks belong to the source compiler; direct in-memory emission does not parse CSS grammar.
 
 Independent class lists must not be composed with each other.
 
@@ -113,7 +113,7 @@ output.themes
 
 `Css.CompileError` aggregates invalid names, theme graphs, or identity collisions without returning partial CSS.
 
-CSS property/value validity relies on static authoring; emission preserves values without a CSS validator.
+CSS property/value validity relies on static authoring; emission preserves values without a CSS validator. Selector and at-rule grammar checks belong to the source compiler; direct in-memory emission does not parse CSS grammar.
 
 Independent class lists must not be composed with each other. Distribute class maps and matching CSS together. Types live under `Css.compile.Options`, `ReturnType`, and `ErrorType`.
 

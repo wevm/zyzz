@@ -1,6 +1,20 @@
 /** Checks broad condition-aware style contracts through public entrypoints. @module */
 import { describe, test } from 'vite-plus/test'
-import { Style, Theme } from 'zyzz'
+import { css, Style, Theme } from 'zyzz'
+
+describe('css', () => {
+  test('requires parenthesized support conditions', () => {
+    // @ts-expect-error Support conditions require parentheses or a feature function.
+    css({ '@supports display: grid': { color: 'red' } })
+    css({ '@supports selector(:has(*))': { color: 'red' } })
+  })
+  test('accepts case-insensitive media types', () => {
+    css({
+      '@media SCREEN': { color: 'red' },
+      '@media OnLy ScReEn': { color: 'blue' },
+    })
+  })
+})
 
 describe('define', () => {
   test('preserves broad bound declarations and rejects unknown keys', () => {

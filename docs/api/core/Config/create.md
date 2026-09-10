@@ -1,7 +1,7 @@
 # Config.create
 
 > [!NOTE]
-> The factory, source extraction, and direct `zyzz.css` calls are implemented. `vars`, `variants`, and layer emission remain planned. Layer keys are inferred but are not yet accepted by source compilation.
+> The factory, source extraction, and direct `zyzz.css` calls are implemented. Theme `vars` references are supported; `variants` and layer emission remain planned. Layer keys are inferred but are not yet accepted by source compilation.
 
 Bind style authoring to explicit theme and layer contracts. Export the config as `zyzz` from `zyzz.config.ts` and consume its members through a named import.
 

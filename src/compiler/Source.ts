@@ -316,6 +316,18 @@ export function extract(options: extract.Options): extract.ReturnType {
             }
           }
         }
+        if (
+          reference &&
+          Token.is(reference) &&
+          !Token.accepts(reference.group, key as keyof Style.Properties)
+        ) {
+          report(
+            'unsupported_syntax',
+            'Theme variable domain is incompatible with this property.',
+            node,
+          )
+          return undefined
+        }
         let result: unknown
         if (reference) result = reference
         else if (template !== undefined) result = template

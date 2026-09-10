@@ -757,8 +757,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
         while (index >= 0) {
           const ancestor = ancestors[index]!
           if (
-            ancestor.type !== 'TemplateLiteral' ||
-            !ancestor.expressions.includes(target as Ast.Expression)
+            !(
+              (ancestor.type === 'TemplateLiteral' &&
+                ancestor.expressions.includes(target as Ast.Expression)) ||
+              ((ancestor.type === 'TSAsExpression' ||
+                ancestor.type === 'TSSatisfiesExpression' ||
+                ancestor.type === 'TSNonNullExpression' ||
+                ancestor.type === 'TSTypeAssertion') &&
+                ancestor.expression === target)
+            )
           )
             break
           target = ancestor

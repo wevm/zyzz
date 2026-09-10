@@ -11,13 +11,14 @@ describe('define', () => {
     css({
       color: theme.vars.color.brand,
       // oxlint-disable-next-line typescript/no-base-to-string, typescript/restrict-template-expressions -- Source compilation consumes this reference before coercion.
-      // oxlint-disable-next-line typescript/no-base-to-string, typescript/restrict-template-expressions -- Source compilation consumes this reference before coercion.
       width: `calc(100% - ${theme.vars.spacing.md})`,
     })
     css({ padding: [theme.vars.spacing.md, '2px'] })
     theme.css({ color: theme.vars.color.brand })
     // @ts-expect-error Variable domains cannot cross properties.
     css({ color: theme.vars.spacing.md })
+    // @ts-expect-error Spacing variables cannot represent integer counts.
+    css({ maxLines: theme.vars.spacing.md })
     // @ts-expect-error Undeclared variables are unavailable.
     css({ width: theme.vars.spacing.missing })
     const config = Config.create({ theme })

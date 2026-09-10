@@ -228,8 +228,14 @@ export type Properties<group extends Group> = group extends 'spacing'
       | `inset${string}`
       | `left`
       | `margin${string}`
-      | `max${string}`
-      | `min${string}`
+      | `maxBlockSize`
+      | `maxHeight`
+      | `maxInlineSize`
+      | `maxWidth`
+      | `minBlockSize`
+      | `minHeight`
+      | `minInlineSize`
+      | `minWidth`
       | `padding${string}`
       | `right`
       | `rowGap`

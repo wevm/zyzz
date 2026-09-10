@@ -74,28 +74,29 @@ export function create(options: create.Options) {
     const cards = container.querySelectorAll('article')
     if (cards.length !== options.components)
       throw new Error('Incorrect card count')
-    const reference = document.createElement('article')
-    container.firstElementChild!.append(reference)
+    // Match the full grid, including fractional tracks and intrinsic content.
+    // Prepare all controls before reading layout to avoid one layout per card.
+    const control = container.firstElementChild!.cloneNode(true) as HTMLElement
+    const references = control.querySelectorAll('article')
+    const input = options.inputs[phase]!
+    for (const [index, reference] of references.entries()) {
+      reference.removeAttribute('class')
+      reference.removeAttribute('style')
+      Object.assign(
+        reference.style,
+        options.literals[(index + phase) % options.literals.length]!,
+        options.kind === 'callable' ? {} : input.style,
+        options.kind === 'dynamic'
+          ? { width: input.width, opacity: input.alpha }
+          : {},
+      )
+    }
+    container.append(control)
     try {
       for (const [index, card] of cards.entries()) {
         const literal =
           options.literals[(index + phase) % options.literals.length]!
-        const input = options.inputs[phase]!
-        reference.removeAttribute('style')
-        // Fractional grid tracks depend on column position. Match the card's
-        // track and intrinsic content before comparing native geometry.
-        reference.style.gridColumn = String((index % 10) + 1)
-        reference.replaceChildren(
-          ...Array.from(card.childNodes, (node) => node.cloneNode(true)),
-        )
-        Object.assign(
-          reference.style,
-          literal,
-          options.kind === 'callable' ? {} : input.style,
-          options.kind === 'dynamic'
-            ? { width: input.width, opacity: input.alpha }
-            : {},
-        )
+        const reference = references[index]!
         const actualStyle = getComputedStyle(card)
         const expectedStyle = getComputedStyle(reference)
         for (const key of new Set([
@@ -126,7 +127,7 @@ export function create(options: create.Options) {
           throw new Error('Missing external class')
       }
     } finally {
-      reference.remove()
+      control.remove()
       container.getBoundingClientRect()
     }
   }

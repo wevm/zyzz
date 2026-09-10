@@ -62,7 +62,7 @@ props.style
 
 ## Errors
 
-Applied unknown keys, invalid override records, non-string classes, and invalid style containers throw `TypeError`.
+Override shapes and values are checked by TypeScript. The runtime helper merges classes and copies inline styles without validation.
 
 This is a generated-code support API. The example assumes the supplied class has a matching stylesheet; normal authoring uses `css`.
 

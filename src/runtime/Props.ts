@@ -1,5 +1,5 @@
 /**
- * Binds compiled classes to validated className and inline-style overrides.
+ * Binds compiled classes to typed className and inline-style overrides.
  * @module
  */
 import type { css } from '../css.js'
@@ -14,26 +14,7 @@ export function create(options: create.Options): css.ReturnType {
   const { className } = options
 
   return (overrides: css.Options = {}) => {
-    if (
-      typeof overrides !== 'object' ||
-      overrides === null ||
-      Array.isArray(overrides) ||
-      Reflect.ownKeys(overrides).some(
-        (key) => key !== 'className' && key !== 'style',
-      )
-    )
-      throw new TypeError('Expected only className and style overrides.')
-
     const { className: external, style } = overrides
-    if (external !== undefined && typeof external !== 'string')
-      throw new TypeError('Expected a string className override.')
-
-    if (
-      style !== undefined &&
-      (typeof style !== 'object' || style === null || Array.isArray(style))
-    )
-      throw new TypeError('Expected an inline style object.')
-
     return {
       className:
         className && external

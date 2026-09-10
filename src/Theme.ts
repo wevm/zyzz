@@ -25,7 +25,7 @@ export type Css<tokens extends Tokens> = {
     ) => styles &
       NoInfer<
         Value.Accepted<styles, Style.Properties<tokens>> &
-          Value.Checked<styles> &
+          Value.Checked<styles, tokens> &
           Binding.Checked<styles> &
           Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
       >) &

@@ -51,10 +51,16 @@ export async function create(options: create.Options): Promise<Bundle> {
   const fixture = await Compilation.create(workload)
   const literals = Corpus.styles(workload)
   const names = literals.map((_, index) => `card${index}`)
-  const application = (expressions: readonly string[]) => {
+  const application = (expressions: readonly string[], direct = false) => {
     if (kind === 'cached')
-      return `const applications = [${expressions.join(',')}];
+      return `const applications = [${expressions.map((expression) => (direct ? `({className:${expression}})` : expression)).join(',')}];
         export function apply(index) { return applications[index]; }`
+    if (direct)
+      return `const classes = [${expressions.join(',')}];
+        export function apply(index, overrides) {
+          const className = classes[index];
+          ${kind === 'callable' ? 'return { className };' : `return { className: overrides.className ? className + ' ' + overrides.className : className, style: overrides.style };`}
+        }`
     return `const applications = [${expressions.map((expression) => `() => (${expression})`).join(',')}];
       export function apply(index, overrides) {
         const props = applications[index]();
@@ -91,10 +97,10 @@ export async function create(options: create.Options): Promise<Bundle> {
         const css = literals
           .map(
             (style, index) =>
-              `.card${index}{${Object.entries(style)
+              `.card${index}{${Object.entries<unknown>(style)
                 .map(
                   ([key, value]) =>
-                    `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}`,
+                    `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${String(value)}`,
                 )
                 .join(';')}}`,
           )
@@ -103,7 +109,8 @@ export async function create(options: create.Options): Promise<Bundle> {
           css: Compilation.minify(css),
           javascript: await bundle(
             application(
-              names.map((name) => `({className:${JSON.stringify(name)}})`),
+              names.map((name) => JSON.stringify(name)),
+              true,
             ),
           ),
         }
@@ -136,14 +143,17 @@ export async function create(options: create.Options): Promise<Bundle> {
       return {
         ...output,
         javascript: await bundle(
-          `${output.javascript}\n${application(names.map((_, index) => `({className:fixture.classes[${index}]})`))}`,
+          `${output.javascript}\n${application(
+            names.map((_, index) => `fixture.classes[${index}]`),
+            true,
+          )}`,
         ),
       }
     })()
     // Only compiled, bundled fixture code executes; authoring remains build-time.
     const exports = Vm.runInThisContext(
       `(() => {${compiled.javascript}; return fixture;})()`,
-    )
+    ) as Pick<Bundle, 'apply'>
     if (typeof exports.apply !== 'function')
       throw new Error(`${library} emitted no application.`)
     return { ...compiled, apply: exports.apply }

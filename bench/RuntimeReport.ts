@@ -20,7 +20,7 @@ type Report = {
 const directory = process.argv[2]
 if (!directory) throw new Error('Usage: node bench/RuntimeReport.ts <results>')
 const report: Report = JSON.parse(
-  Fs.readFileSync(Path.join(directory, 'timings.json'), 'utf8'),
+  Fs.readFileSync(Path.join(directory, 'browser-timings.json'), 'utf8'),
 )
 const groups = report.files.flatMap((file) => file.groups)
 const libraries = [
@@ -42,7 +42,7 @@ const names: Record<string, string> = {
 
 console.log('## Runtime Framework Comparisons\n')
 console.log(
-  'Compiled production props application only; no compilation, DOM or React rendering in timings. Both passes run on this runner with reversed framework order. Cached props are distinct from surviving calls.\n',
+  'Chromium production props application only; no compilation, DOM or React rendering in timings. Both passes execute inside Chromium on this runner with reversed framework order. Cached props are distinct from surviving calls.\n',
 )
 console.log(
   '🟢 Zyzz faster beyond reported uncertainty in both passes · 🔴 competitor faster in both passes (fails) · 🟡 inconclusive or overlapping uncertainty. Plain class/style is an informational control. No claim of a universal speed advantage follows from a tie.\n',

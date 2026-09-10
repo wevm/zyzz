@@ -58,6 +58,19 @@ jobs:
           uname -a > bench/results/platform.txt
       - name: Install runtime benchmark browser
         run: pnpm exec playwright install --with-deps chromium
+      - name: Measure runtime in Chromium
+        env:
+          BENCH_RUNTIME: '1'
+        run: pnpm exec vp test run bench/Runtime.browser.test.ts --no-file-parallelism
+      - name: Publish early runtime results
+        if: ${{ !cancelled() && hashFiles('bench/results/browser-timings.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-benchmarks
+          path: |
+            bench/results/browser-timings.json
+            bench/results/runtime/
+          retention-days: 30
       - name: Run benchmarks
         run: pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json
       - name: Summarize benchmarks

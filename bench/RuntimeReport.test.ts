@@ -72,7 +72,7 @@ describe('runtime report', () => {
               })
             }
         await Fs.writeFile(
-          Path.join(directory, 'timings.json'),
+          Path.join(directory, 'browser-timings.json'),
           JSON.stringify({ files: [{ groups }] }),
         )
         const result = ChildProcess.spawnSync(

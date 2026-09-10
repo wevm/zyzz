@@ -14,7 +14,7 @@ const results: Runtime.Props[] = []
 for (const count of [10, 100])
   for (const kind of Runtime.cases)
     for (const repeat of [1, 2])
-      describe(`runtime comparison / ${count} styles / ${kind} / repeat ${repeat}`, () => {
+      describe(`node runtime comparison / ${count} styles / ${kind} / repeat ${repeat}`, () => {
         // Reverse adapter order to expose systematic warmup/order effects.
         const libraries =
           repeat === 1 ? Runtime.libraries : [...Runtime.libraries].reverse()

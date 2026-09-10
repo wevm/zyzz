@@ -12,18 +12,19 @@
 
 Inputs are preallocated; each timed iteration selects a style and retains the returned props in a shared result array. The same indexing and result-consumption overhead applies to every framework. Browser checks verify all styles and both override inputs against independent native declarations before collecting timings.
 
-Two passes reverse framework order. Reports show nanoseconds per application, relative error, sample counts, and complete stylesheet/client transfer. Raw, gzip, and Brotli sizes and actual compiled artifacts are saved under `bench/results/runtime/`. Client bundles retain the helpers actually required by each framework.
+Client timings execute inside Chromium in two passes with reversed framework order. Each pass uses 100 batches after warmup, with batch calibration to amortize timer resolution. The browser version and raw samples are recorded in `browser-timings.json`. Node measurements remain separate diagnostics. Reports show nanoseconds per application, relative error, sample counts, and complete stylesheet/client transfer. Raw, gzip, and Brotli sizes and actual compiled artifacts are saved under `bench/results/runtime/`. Client bundles retain the helpers actually required by each framework.
 
 ```sh
 pnpm exec playwright install chromium
 pnpm exec vp test bench bench/Runtime.bench.ts --run --no-file-parallelism --outputJson bench/results/timings.json
+BENCH_RUNTIME=1 pnpm exec vp test run bench/Runtime.browser.test.ts --no-file-parallelism
 node bench/RuntimeReport.ts bench/results
 pnpm test bench/Runtime.test.ts --run --no-file-parallelism
 ```
 
 The existing Benchmark Report includes every framework and observed loss. A competitor faster beyond reported uncertainty in both passes fails the runtime gate. Overlapping intervals are inconclusive, not evidence of a Zyzz win. The native control is informational; existing compiler/transfer gates remain unchanged.
 
-These are function application measurements, not React rendering or browser layout timings. Initial mount, unchanged rerenders, changed props, allocation profiling, packed consumption, and dynamic binding remain follow-ups. Variant comparisons must accompany the first variants implementation; this harness does not simulate an unavailable API.
+These are browser JavaScript application measurements, not React rendering or layout timings. Tailwind, vanilla-extract, and the native control read class strings directly without per-style wrapper closures. Initial mount, unchanged rerenders, changed props, allocation profiling, packed consumption, and dynamic binding remain follow-ups. Variant comparisons must accompany the first variants implementation; this harness does not simulate an unavailable API.
 
 The current Zyzz props helper includes override validation and inline-style copying. The benchmark measures that shipped behavior without removing checks or assigning competing frameworks artificial work. Runtime advantages must be established by measured results; cached class applications can have indistinguishable costs.
 

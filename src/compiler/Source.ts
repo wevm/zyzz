@@ -2,6 +2,7 @@
  * Extracts literal styles and local themes through lexical source analysis.
  * @module
  */
+import * as Builtin from './internal/Builtin.js'
 import * as Dynamic from './internal/Dynamic.js'
 import * as Binding from '../internal/Binding.js'
 import * as Variables from './internal/Variables.js'
@@ -120,7 +121,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       return Themes.collect(program, {
         namespace: identity(options.moduleId),
         linked: options[Themes.context] !== undefined,
-        links: options[Themes.context]?.links,
+        links: { ...Builtin.links(program), ...options[Themes.context]?.links },
       })
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error

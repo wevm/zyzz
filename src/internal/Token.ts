@@ -220,7 +220,12 @@ type Paths<tree> = [tree] extends [never]
         [key in Extract<keyof tree, number | string>]: NonNullable<
           tree[key]
         > extends Value
-          ? key | `${key}`
+          ?
+              | key
+              | `${key}`
+              | (key extends `${infer numericKey extends number}`
+                  ? numericKey
+                  : never)
           : `${key}.${Paths<NonNullable<tree[key]>>}`
       }[Extract<keyof tree, number | string>]
 

@@ -53,6 +53,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (!call || node.end !== call.end) return
 
       const folded =
+        !call.slots &&
         parent?.type === 'CallExpression' &&
         parent.callee === node &&
         !parent.optional &&
@@ -63,11 +64,10 @@ export function compile(options: compile.Options): compile.ReturnType {
       })
 
       let argument = node.arguments[0]
-      while (
-        argument?.type === 'TSAsExpression' ||
-        argument?.type === 'TSSatisfiesExpression'
-      )
-        argument = argument.expression
+        ? Expression.unwrap(node.arguments[0])
+        : undefined
+      if (argument?.type === 'ArrowFunctionExpression')
+        argument = Expression.unwrap(argument.body) as Ast.Expression
       if (argument?.type === 'ObjectExpression')
         definitions.set(call.start, argument)
     },
@@ -108,16 +108,26 @@ export function compile(options: compile.Options): compile.ReturnType {
     ),
   )
 
+  let dynamicRuntime = '__zyzzDynamic'
+  while (identifiers.has(dynamicRuntime)) dynamicRuntime += '_'
+  let dynamicCallable = false
   let callable = false
   for (const call of extracted.calls) {
     const application = applications.get(call.start)!
     const props = `{className:${JSON.stringify(classes[call.name])}}`
-    module.overwrite(
-      call.start,
-      application.end,
-      application.folded ? `(${props})` : `${runtime}.create(${props})`,
-    )
-    if (!application.folded) callable = true
+    const replacement = (() => {
+      if (call.slots) {
+        const value = `${dynamicRuntime}.create({...${props},slots:${JSON.stringify(call.slots)}})`
+        return /\.[cm]?tsx?$/.test(options.moduleId)
+          ? `(${value} as import('zyzz').css.Dynamic<${call.valuesType}>)`
+          : value
+      }
+      if (application.folded) return `(${props})`
+      return `${runtime}.create(${props})`
+    })()
+    module.overwrite(call.start, application.end, replacement)
+    if (call.slots) dynamicCallable = true
+    else if (!application.folded) callable = true
   }
 
   for (const call of extracted.themeCalls) {
@@ -247,7 +257,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable || extracted.variableCalls?.length) {
+  if (callable || dynamicCallable || extracted.variableCalls?.length) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -259,7 +269,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[callable ? `Props as ${runtime}` : '', dynamicCallable ? `Dynamic as ${dynamicRuntime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

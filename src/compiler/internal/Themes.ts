@@ -853,11 +853,33 @@ export function collect(program: Ast.Program, options: collect.Options) {
         const ancestor = ancestors[callIndex]!
         if (
           (ancestor.type === 'TSAsExpression' ||
-            ancestor.type === 'TSSatisfiesExpression') &&
+            ancestor.type === 'TSSatisfiesExpression' ||
+            ancestor.type === 'TSNonNullExpression' ||
+            ancestor.type === 'TSTypeAssertion') &&
           ancestor.expression === argument
         )
           argument = ancestor
         else break
+      }
+      if (
+        ancestors[callIndex]?.type === 'ArrowFunctionExpression' &&
+        (ancestors[callIndex] as Ast.ArrowFunctionExpression).body === argument
+      ) {
+        argument = ancestors[callIndex]
+        callIndex--
+      }
+      while (callIndex >= 0) {
+        const wrapper = ancestors[callIndex]!
+        if (
+          (wrapper.type === 'TSAsExpression' ||
+            wrapper.type === 'TSSatisfiesExpression' ||
+            wrapper.type === 'TSNonNullExpression' ||
+            wrapper.type === 'TSTypeAssertion') &&
+          wrapper.expression === argument
+        ) {
+          argument = wrapper
+          callIndex--
+        } else break
       }
       const call = ancestors[callIndex]
       if (

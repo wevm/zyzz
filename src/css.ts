@@ -2,6 +2,7 @@
  * Declares the token-free authoring boundary consumed by source transforms.
  * @module
  */
+import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import type * as Value from './internal/Value.js'
 import type * as Style from './Style.js'
@@ -14,6 +15,26 @@ type Keys<value> = value extends unknown ? keyof value : never
  * @returns A callable style definition after source rewriting.
  * @throws {MissingTransformError} Whenever an untransformed definition executes.
  */
+export function css<
+  const values extends Record<string, string | number>,
+  const styles extends Record<string, unknown>,
+  const callback extends (...args: never[]) => unknown,
+>(
+  styles: callback &
+    ((
+      values: values,
+    ) => styles &
+      NoInfer<
+        Value.Accepted<styles, Style.LiteralProperties> &
+          Value.Checked<styles> &
+          Binding.Checked<styles> &
+          Record<Exclude<Keys<styles>, keyof Style.LiteralProperties>, never>
+      >) &
+    (values extends Binding.Inputs<values> ? unknown : never) &
+    (Parameters<callback> extends [Record<string, string | number>]
+      ? unknown
+      : never),
+): css.Dynamic<values>
 export function css<const styles extends Record<string, unknown>>(
   styles: styles &
     NoInfer<
@@ -21,13 +42,19 @@ export function css<const styles extends Record<string, unknown>>(
         Value.Checked<styles> &
         Record<Exclude<Keys<styles>, keyof Literal.Properties>, never>
     >,
-): css.ReturnType {
+): css.ReturnType
+export function css(styles: unknown): never {
   void styles
   throw new MissingTransformError()
 }
 
 /** Contracts for the literal authoring boundary. */
 export declare namespace css {
+  /** Callable compiled bindings with required scalar inputs and styling overrides. */
+  type Dynamic<values> = <const input extends values & Options>(
+    input: input &
+      Record<Exclude<keyof input, keyof values | keyof Options>, never>,
+  ) => Props
   /** Failure from executing source without a transform. */
   type ErrorType = MissingTransformError
   /** Styling overrides consumed by a transformed definition. */

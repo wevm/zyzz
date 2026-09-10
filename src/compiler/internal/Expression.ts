@@ -3,7 +3,7 @@
  * @module
  */
 import type * as Ast from '@oxc-project/types'
-import type * as Binding from '../../internal/Binding.js'
+import * as Binding from '../../internal/Binding.js'
 import * as Token from '../../internal/Token.js'
 
 /** Folds cooked template text and literal primitive substitutions; unresolved syntax returns undefined. */
@@ -21,8 +21,25 @@ export function template(
     if (!expression) continue
     const value = unwrap(expression)
     const reference = resolve?.(expression) ?? resolve?.(value)
-    if (reference) parts.push(reference)
-    else if (value.type === 'Literal' && !('regex' in value)) {
+    if (reference) {
+      if (
+        quoted(
+          parts
+            .filter((part): part is string => typeof part === 'string')
+            .join(''),
+        )
+      )
+        return undefined
+      // var() substitutions must remain whole CSS tokens.
+      if (
+        /[%a-zA-Z_\d.-]/.test(
+          node.quasis[index + 1]?.value.cooked?.[0] ?? '',
+        ) ||
+        /[\w.#@+\\-]$/.test(quasi.value.cooked)
+      )
+        return undefined
+      parts.push(reference)
+    } else if (value.type === 'Literal' && !('regex' in value)) {
       if (typeof value.value === 'number' && !Number.isFinite(value.value))
         return undefined
       parts.push(String(value.value))
@@ -67,4 +84,24 @@ export function unwrap(node: Ast.Node): Ast.Node {
   )
     node = node.expression
   return node
+}
+
+function quoted(text: string): boolean {
+  let quote = ''
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index]!
+    if (char === '\\') {
+      index++
+      continue
+    }
+    if (quote) {
+      if (char === quote) quote = ''
+    } else if (char === '"' || char === "'") quote = char
+    else if (char === '/' && text[index + 1] === '*') {
+      const end = text.indexOf('*/', index + 2)
+      if (end < 0) return true
+      index = end + 1
+    }
+  }
+  return !!quote
 }

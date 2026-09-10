@@ -100,6 +100,38 @@ type Compatible<
           : property
         : property
 
+/** Rejects broad numeric callback values where a property requires a narrower domain. */
+export type Checked<style> = {
+  [property in keyof style]: property extends keyof Literal.Properties
+    ? number extends style[property]
+      ? property extends Properties<'number'>
+        ? unknown
+        : never
+      : unknown
+    : style[property] extends Record<string, unknown>
+      ? Checked<style[property]>
+      : unknown
+}
+/** Rejects reserved callback field names and importance-bearing value domains. */
+export type Inputs<values> = {
+  [key in keyof values]: key extends
+    | 'class'
+    | 'className'
+    | 'key'
+    | 'ref'
+    | 'style'
+    | '__proto__'
+    ? never
+    : Extract<values[key], `${string}!${string}`> extends never
+      ? Extract<
+          Lowercase<Extract<values[key], string>>,
+          'initial' | 'inherit' | 'unset' | 'revert' | 'revert-layer'
+        > extends never
+        ? values[key]
+        : never
+      : never
+}
+
 /** Recognizes fixed slot data without invoking consumer accessors. */
 export function is(value: unknown): value is Reference {
   if (typeof value !== 'object' || value === null || !Object.isFrozen(value))

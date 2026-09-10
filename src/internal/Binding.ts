@@ -1,6 +1,7 @@
 /** Describes fixed custom-property slots shared by explicit and callback bindings. @module */
 import type * as Literal from './Literal.js'
-import * as Token from './Token.js'
+import type * as Token from './Token.js'
+import * as BindingDomains from './BindingDomains.js'
 
 /** Supported runtime scalar domains. */
 export type Kind = 'color' | 'length' | 'number' | 'percentage'
@@ -22,24 +23,26 @@ export type Value<kind extends Kind> = kind extends 'number'
     ? Literal.Color
     : kind extends 'percentage'
       ? `${number}%`
-      : Literal.Length
+      : Exclude<Literal.Length, `${number}%`>
 
 /** Property domains that accept each scalar reference. */
 export type Properties<kind extends Kind> = {
-  [property in keyof Literal.Properties]: kind extends 'color'
-    ? property extends Token.Properties<'color'>
-      ? property
-      : never
-    : kind extends 'number'
-      ? number extends Literal.Properties[property]
+  [property in keyof Literal.Properties]: property extends `--${string}`
+    ? property
+    : kind extends 'color'
+      ? property extends Token.Properties<'color'>
         ? property
         : never
-      : Extract<
-            Literal.Properties[property],
-            kind extends 'percentage' ? `${number}%` : `${number}px`
-          > extends never
-        ? never
-        : property
+      : kind extends 'number'
+        ? number extends Literal.Properties[property]
+          ? property
+          : never
+        : Extract<
+              Literal.Properties[property],
+              kind extends 'percentage' ? `${number}%` : `${number}px`
+            > extends never
+          ? never
+          : property
 }[keyof Literal.Properties]
 
 /** Recognizes fixed slot data without invoking consumer accessors. */
@@ -56,13 +59,8 @@ export function accepts(
   kind: Kind,
   property: keyof Literal.Properties,
 ): boolean {
-  if (kind === 'color') return Token.accepts('color', property)
   if (property.startsWith('--')) return true
-  // Dimensional template references remain limited to properties with matching scalar domains.
-  if (kind === 'number') return true
-  return (
-    Token.accepts('spacing', property) ||
-    Token.accepts('borderRadius', property) ||
-    property === 'fontSize'
+  return (BindingDomains.properties[kind] as readonly string[]).includes(
+    property,
   )
 }

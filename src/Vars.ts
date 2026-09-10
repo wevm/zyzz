@@ -27,12 +27,19 @@ export function set<
   values: values & Record<Exclude<keyof values, keyof schema>, never>,
 ): Readonly<Record<`--${string}`, number | string>> {
   const output: Record<`--${string}`, number | string> = Object.create(null)
-  for (const key of Object.keys(values)) {
+  for (const key of Reflect.ownKeys(values)) {
+    if (typeof key !== 'string')
+      throw new TypeError('Unknown variable or accessor assignment.')
     const slot = Object.getOwnPropertyDescriptor(definition, key)?.value as
       | Binding.Reference
       | undefined
     const descriptor = Object.getOwnPropertyDescriptor(values, key)
-    if (!slot || !descriptor || !('value' in descriptor))
+    if (
+      !slot ||
+      !descriptor ||
+      !descriptor.enumerable ||
+      !('value' in descriptor)
+    )
       throw new TypeError('Unknown variable or accessor assignment.')
     const value: unknown = descriptor.value
     if (

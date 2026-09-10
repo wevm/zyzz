@@ -307,9 +307,15 @@ export function extract(options: extract.Options): extract.ReturnType {
         continue
       }
       function value(node: Ast.Node, path: readonly string[]): unknown {
+        const unwrapped = Expression.unwrap(node)
         const token =
-          variables.references.get(node.start) ?? themes?.tokens.get(node.start)
-        const reference = token?.end === node.end ? token.reference : undefined
+          variables.references.get(unwrapped.start) ??
+          themes?.tokens.get(node.start)
+        const reference =
+          token?.end ===
+          (Binding.is(token?.reference) ? unwrapped.end : node.end)
+            ? token.reference
+            : undefined
         node = Expression.unwrap(node)
         const template =
           node.type === 'TemplateLiteral'
@@ -347,6 +353,18 @@ export function extract(options: extract.Options): extract.ReturnType {
           report(
             'unsupported_syntax',
             'Theme variable domain is incompatible with this property.',
+            node,
+          )
+          return undefined
+        }
+        if (
+          reference &&
+          Binding.is(reference) &&
+          !Binding.accepts(reference.type, key as keyof Style.Properties)
+        ) {
+          report(
+            'unsupported_syntax',
+            'Variable domain is incompatible with this property.',
             node,
           )
           return undefined

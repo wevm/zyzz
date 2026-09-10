@@ -63,6 +63,11 @@ export function create(options: create.Options = {}): unknown {
       seen.add(layer)
     }
   }
+  const script = () => {
+    throw new Error(
+      'Appearance initialization requires the Zyzz source transform.',
+    )
+  }
   const contract = Object.freeze({})
   if (input.themes !== undefined) {
     const catalog = record(input.themes)
@@ -110,6 +115,7 @@ export function create(options: create.Options = {}): unknown {
     Object.defineProperties(select, Object.getOwnPropertyDescriptors(bound))
     return Object.freeze({
       css,
+      script,
       theme: bound[input.defaultTheme],
       themes: Object.freeze(select),
     })
@@ -119,9 +125,10 @@ export function create(options: create.Options = {}): unknown {
   if (input.theme !== undefined)
     return Object.freeze({
       css,
+      script,
       theme: Token.bind(definition(input.theme), contract),
     })
-  return Object.freeze({ css })
+  return Object.freeze({ css, script })
 }
 
 /** Configuration inputs and inferred results. */
@@ -153,6 +160,8 @@ export declare namespace create {
   )
   /** Bound authoring and the handles corresponding to the selected theme mode. */
   type ReturnType<options extends Options = Options> = {
+    /** Generates synchronous HTML-safe root preference restoration. */
+    readonly script: (options?: ScriptOptions) => string
     /** Inferred callable authoring; execution requires a source transform. */
     readonly css: Css<
       Tokens<options>,
@@ -353,3 +362,9 @@ type Validated<options> = Record<
           }
         }
       : {})
+
+/** Options for a compiled root appearance initialization script. */
+export type ScriptOptions = {
+  /** localStorage key containing theme and colorScheme fields; defaults to zyzz. */
+  readonly storageKey?: string | undefined
+}

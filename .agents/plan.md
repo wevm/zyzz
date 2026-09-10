@@ -28,7 +28,13 @@ Local validation: ten extraction/transform integrations, native type/lint checks
 
 Stack after framework PR #79: callable named-theme selection, root initialization script, property mappings and margin/padding groups, typed relationship helpers, stylesheet completion, variable/extraction completion, then acceptance reconciliation. Larger areas may use multiple dependent PRs. Vue remains deferred.
 
-Callable named selections support destructured exports, aliases/re-exports, packed contracts, default token references, and React/HTML props. Seven focused linked/packed/renderer regressions, three configuration integrations, focused lint/types, and the package build pass locally. Matched 100-style config graph means: 10.138 ms ±10.81% before and 9.197 ms ±7.81% after; uncertainty overlaps. Browser scope verification remains required because Chromium download timed out. Initialization and hydration follow separately.
+Callable named selections support destructured exports, aliases/re-exports, packed contracts, default token references, and React/HTML props. Seven focused linked/packed/renderer regressions, three configuration integrations, focused lint/types, and the package build pass locally. Matched 100-style config graph means: 10.138 ms ±10.81% before and 9.197 ms ±7.81% after; uncertainty overlaps. Browser scope verification remains required because Chromium download timed out. Initialization and hydration follow in the next stack slice.
+
+### Root Appearance Initialization
+
+Config-bound `script({ storageKey }?)` now serializes HTML-safe synchronous restoration using compiled scope classes. Named, single-theme, and token-free modes retain server defaults when storage is missing, malformed, blocked, or has invalid fields. Catalog matching uses own names; unrelated root classes/styles are preserved.
+
+Five packed selection/script tests, 58 graph integrations, focused lint/types, and the package build pass locally. The 100-style configuration graph measured 9.197 ms ±7.81% before and 8.841 ms ±6.35% after; uncertainty overlaps. Real-origin browser fixtures cover field independence, CSP hashes, execution before body parsing, blocked storage, and React hydration identity. Browser execution remains pending because Chromium could not download. Full TypeScript also needs the installed browser benchmark dependency unavailable in the local cache.
 
 ## Phase 2 PR Stack
 

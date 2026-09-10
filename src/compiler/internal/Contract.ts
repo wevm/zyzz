@@ -58,10 +58,11 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
         start: -1,
         tokenType: types[theme]!,
         ...(entry.selection === true ? { selection: true } : {}),
+        ...(entry.initialization === true ? { initialization: true } : {}),
         ...(options
           ? {
               options,
-              type: `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>${entry.selection === true ? "['themes']" : ''}`,
+              type: `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>${entry.initialization === true ? "['script']" : entry.selection === true ? "['themes']" : ''}`,
             }
           : {}),
         ...(members
@@ -135,6 +136,7 @@ export function write(
       kind: link.kind,
       theme: link.call.name,
       ...(link.call.selection ? { selection: true } : {}),
+      ...(link.call.initialization ? { initialization: true } : {}),
       ...(link.call.options ? { options: link.call.options } : {}),
       ...(link.members
         ? {
@@ -161,7 +163,9 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(links).some((link) => link.call.selection)
+    version: Object.values(links).some(
+      (link) => link.call.selection || link.call.initialization,
+    )
       ? 4
       : Object.values(themes).some(
             (theme) =>

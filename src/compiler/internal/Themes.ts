@@ -20,6 +20,8 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Bound root initialization script export. */
+  readonly initialization?: boolean | undefined
   /** Config helper represented by this linked binding. */
   readonly selection?: boolean | undefined
   /** Validated inline configuration options retained for packed declarations. */
@@ -389,13 +391,18 @@ export function collect(program: Ast.Program, options: collect.Options) {
                 }
               continue
             }
-            if (key === 'themes' && link.call.options?.themes) {
+            if (
+              key === 'script' ||
+              (key === 'themes' && link.call.options?.themes)
+            ) {
               const selection = {
                 ...link,
                 call: {
                   ...link.call,
-                  selection: true,
-                  type: `${link.call.type}['themes']`,
+                  ...(key === 'script'
+                    ? { initialization: true }
+                    : { selection: true }),
+                  type: `${link.call.type}['${key}']`,
                 },
               }
               configs.set(id.name, selection)
@@ -687,7 +694,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       )
         fail('Configuration references must follow their definition.', node)
       if (
-        config.call.selection &&
+        (config.call.selection || config.call.initialization) &&
         parent.type === 'CallExpression' &&
         parent.callee === node &&
         !parent.optional
@@ -727,7 +734,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
           return true
         if (
           path.length === 1 &&
-          path[0] === 'themes' &&
+          ['script', 'themes'].includes(path[0]!) &&
           ancestors[index - 1]?.type === 'CallExpression' &&
           (ancestors[index - 1] as Ast.CallExpression).callee === target &&
           !(ancestors[index - 1] as Ast.CallExpression).optional

@@ -90,6 +90,9 @@ export function compile(options: compile.Options): compile.ReturnType {
   let html = '__zyzzHtml'
   while (identifiers.has(html)) html += '_'
   let usesHtml = false
+  let appearance = '__zyzzAppearance'
+  while (identifiers.has(appearance)) appearance += '_'
+  let usesAppearance = false
 
   let variables = '__zyzzVars'
   while (identifiers.has(variables)) variables += '_'
@@ -182,6 +185,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     const props = (() => {
       if (!call.members)
         return `{className:${JSON.stringify(emitted.themes[call.name])}}`
+      usesAppearance = true
       if (call.options?.themes) {
         const catalog = Object.fromEntries(
           Object.entries(call.members)
@@ -204,11 +208,11 @@ export function compile(options: compile.Options): compile.ReturnType {
           ? ': Record<string,string>'
           : ''
         const select = `((${input})=>({${key}:catalog[input.theme],...(input.colorScheme?{style:${style}}:{})}))`
-        return `(()=>{const catalog${catalogType}=Object.fromEntries(${entries});return {theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:Object.defineProperties(${select},Object.getOwnPropertyDescriptors(Object.fromEntries(Object.entries(catalog).map(([name,className])=>[name,{className}]))))}})()`
+        return `(()=>{const catalog${catalogType}=Object.fromEntries(${entries});return {script:${appearance}.create(${entries}),theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:Object.defineProperties(${select},Object.getOwnPropertyDescriptors(Object.fromEntries(Object.entries(catalog).map(([name,className])=>[name,{className}]))))}})()`
       }
       if (Object.hasOwn(call.members, '["theme"]'))
-        return JSON.stringify({ theme: scope(call.members['["theme"]']!) })
-      return '{}'
+        return `{script:${appearance}.create([]),theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
+      return `{script:${appearance}.create([])}`
     })()
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
       ? ` as ${call.type ?? `import('zyzz').Theme.Definition<${call.tokenType}>`}`
@@ -328,7 +332,12 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable || usesHtml || extracted.variableCalls?.length) {
+  if (
+    callable ||
+    usesHtml ||
+    usesAppearance ||
+    extracted.variableCalls?.length
+  ) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -340,7 +349,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

@@ -1,7 +1,7 @@
 # Config
 
 > [!NOTE]
-> The pure factory, normalized themes, and token/layer inference are implemented. Source compilation supports direct bound `css` calls and static theme members. Theme `vars` references are supported. Layer emission and variants remain planned.
+> The pure factory, normalized themes, and token/layer inference are implemented. Source compilation supports named helpers, callable theme selection, initialization scripts, variables, and layers. Variants remain planned.
 
 Configuration-bound authoring and compatible theme scopes.
 

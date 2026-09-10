@@ -12,3 +12,6 @@ export * as Vars from './Vars.js'
 
 /** Compiler-owned HTML attribute binding. */
 export * as Html from './Html.js'
+
+/** Server-safe root appearance initialization script generation. */
+export * as Appearance from './Appearance.js'

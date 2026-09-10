@@ -182,17 +182,33 @@ export function compile(options: compile.Options): compile.ReturnType {
     const props = (() => {
       if (!call.members)
         return `{className:${JSON.stringify(emitted.themes[call.name])}}`
+      if (call.options?.themes) {
+        const catalog = Object.fromEntries(
+          Object.entries(call.members)
+            .filter(([key]) => (JSON.parse(key) as string[]).length === 2)
+            .map(([key, name]) => [
+              (JSON.parse(key) as string[])[1]!,
+              emitted.themes[name],
+            ]),
+        )
+        const input = /\.[cm]?tsx?$/.test(options.moduleId)
+          ? 'input: {theme: string; colorScheme?: string}'
+          : 'input'
+        const entries = JSON.stringify(Object.entries(catalog))
+        const key = call.options.output === 'html' ? 'class' : 'className'
+        const style =
+          call.options.output === 'html'
+            ? '"color-scheme:"+input.colorScheme'
+            : '{colorScheme:input.colorScheme}'
+        const catalogType = /\.[cm]?tsx?$/.test(options.moduleId)
+          ? ': Record<string,string>'
+          : ''
+        const select = `((${input})=>({${key}:catalog[input.theme],...(input.colorScheme?{style:${style}}:{})}))`
+        return `(()=>{const catalog${catalogType}=Object.fromEntries(${entries});return {theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:Object.defineProperties(${select},Object.getOwnPropertyDescriptors(Object.fromEntries(Object.entries(catalog).map(([name,className])=>[name,{className}]))))}})()`
+      }
       if (Object.hasOwn(call.members, '["theme"]'))
         return JSON.stringify({ theme: scope(call.members['["theme"]']!) })
-      if (!Object.keys(call.members).length) return JSON.stringify({})
-      return JSON.stringify({
-        themes: Object.fromEntries(
-          Object.entries(call.members).map(([key, name]) => [
-            (JSON.parse(key) as readonly string[])[1]!,
-            scope(name),
-          ]),
-        ),
-      })
+      return '{}'
     })()
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
       ? ` as ${call.type ?? `import('zyzz').Theme.Definition<${call.tokenType}>`}`

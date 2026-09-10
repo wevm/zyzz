@@ -20,6 +20,8 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Config helper represented by this linked binding. */
+  readonly selection?: boolean | undefined
   /** Validated inline configuration options retained for packed declarations. */
   readonly options?: Readonly<Record<string, unknown>> | undefined
   /** JSON-encoded member path tuples and their compiled scope keys. */
@@ -387,6 +389,21 @@ export function collect(program: Ast.Program, options: collect.Options) {
                 }
               continue
             }
+            if (key === 'themes' && link.call.options?.themes) {
+              const selection = {
+                ...link,
+                call: {
+                  ...link.call,
+                  selection: true,
+                  type: `${link.call.type}['themes']`,
+                },
+              }
+              configs.set(id.name, selection)
+              configBindings.set(id.start, selection)
+              if (statement.type === 'ExportNamedDeclaration')
+                exports[id.name] = selection
+              continue
+            }
             const member = link.members?.[JSON.stringify([key])]
             if (!member)
               fail(
@@ -660,6 +677,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         ? configBindings.get(binding.node.start)
         : undefined
     if (config) {
+      if (node.start === binding!.node.start) return true
       if (exportReferences.has(node.start) || aliasReferences.has(node.start))
         return true
       if (
@@ -668,6 +686,13 @@ export function collect(program: Ast.Program, options: collect.Options) {
         binding?.type !== 'Import'
       )
         fail('Configuration references must follow their definition.', node)
+      if (
+        config.call.selection &&
+        parent.type === 'CallExpression' &&
+        parent.callee === node &&
+        !parent.optional
+      )
+        return true
       let target: Ast.Node = node
       const path: string[] = []
       for (let index = ancestors.length - 2; index >= 0; index--) {
@@ -698,6 +723,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
         if (
           aliasReferences.has(target.start) ||
           factoryReferences.has(target.start)
+        )
+          return true
+        if (
+          path.length === 1 &&
+          path[0] === 'themes' &&
+          ancestors[index - 1]?.type === 'CallExpression' &&
+          (ancestors[index - 1] as Ast.CallExpression).callee === target &&
+          !(ancestors[index - 1] as Ast.CallExpression).optional
         )
           return true
         if (path.length === 1 && path[0] === 'css') {

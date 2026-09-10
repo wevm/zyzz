@@ -1,7 +1,7 @@
 # Config.create
 
 > [!NOTE]
-> The factory, destructured `css`/single `theme` exports, and direct `css` calls are implemented. Theme `vars` references are supported. Callable theme selection, `script`, `variants`, and layer emission remain planned. Layer keys are inferred but are not yet accepted by source compilation.
+> Named config exports, callable theme selection, variables, and layer compilation are implemented. `script` and `variants` remain planned.
 
 Bind style authoring to explicit theme and layer contracts. Export helpers directly from `zyzz.config.ts` and consume them through named imports.
 
@@ -116,9 +116,6 @@ theme.tokens.spacing.md
 ```
 
 ### themes
-
-> [!NOTE]
-> Callable selection is planned. The current factory exposes a catalog of theme definitions; the callable examples describe the target API.
 
 - Type: `(options: { theme: Name; colorScheme?: 'light' | 'dark' | 'light dark' }) => ThemeProps` (provisional names)
 

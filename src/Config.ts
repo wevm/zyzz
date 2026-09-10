@@ -98,16 +98,20 @@ export function create(options: create.Options = {}): unknown {
           `Theme ${JSON.stringify(name)} must have the default theme's complete token paths and domains.`,
         )
     }
+    const bound = Object.fromEntries(
+      Object.entries(definitions).map(([name, value]) => [
+        name,
+        Token.bind(value, contract),
+      ]),
+    )
+    const select = () => {
+      throw new Error('Theme selection requires the Zyzz source transform.')
+    }
+    Object.defineProperties(select, Object.getOwnPropertyDescriptors(bound))
     return Object.freeze({
       css,
-      themes: Object.freeze(
-        Object.fromEntries(
-          Object.entries(definitions).map(([name, value]) => [
-            name,
-            Token.bind(value, contract),
-          ]),
-        ),
-      ),
+      theme: bound[input.defaultTheme],
+      themes: Object.freeze(select),
     })
   }
   if (input.defaultTheme !== undefined)
@@ -167,7 +171,17 @@ export declare namespace create {
       }
     : options extends { themes: infer catalog }
       ? {
-          /** Isolated compatible named contracts. */ readonly themes: {
+          /** Shared default token and variable contract. */ readonly theme: Theme.Definition<
+            Tokens<options>
+          >
+          /** Selects a compiled named scope; catalog members retain compatibility. */ readonly themes: ((options: {
+            readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
+            readonly theme: keyof catalog & string
+          }) => css.Props<
+            options extends { output: infer output extends css.Output }
+              ? output
+              : 'react'
+          >) & {
             readonly [name in keyof catalog]: Theme.Definition<
               ExtractTokens<catalog[name]>
             >

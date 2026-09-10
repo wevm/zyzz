@@ -105,6 +105,8 @@ export function collect(options: collect.Options): Themes.Link {
         'themes' in config ? ['themes', input.defaultTheme] : ['theme'],
       )
     ]
+  if ('themes' in config && selected)
+    members[JSON.stringify(['theme'])] = selected
   const definition =
     selected?.definition ?? Token.bind(Theme.define({}), contract)
   const normalized = {

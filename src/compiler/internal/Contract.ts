@@ -11,7 +11,7 @@ import type * as Themes from './Themes.js'
 /** Reads versioned JSON as validated data; never evaluates package code. */
 export function read(source: string, identities: Map<string, Token.Contract>) {
   const data = record(JSON.parse(source))
-  if (data.version !== 1 && data.version !== 2 && data.version !== 3)
+  if (![1, 2, 3, 4].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
@@ -57,10 +57,11 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
         name: theme,
         start: -1,
         tokenType: types[theme]!,
+        ...(entry.selection === true ? { selection: true } : {}),
         ...(options
           ? {
               options,
-              type: `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`,
+              type: `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>${entry.selection === true ? "['themes']" : ''}`,
             }
           : {}),
         ...(members
@@ -133,6 +134,7 @@ export function write(
       binding: link.binding,
       kind: link.kind,
       theme: link.call.name,
+      ...(link.call.selection ? { selection: true } : {}),
       ...(link.call.options ? { options: link.call.options } : {}),
       ...(link.members
         ? {
@@ -159,24 +161,26 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(themes).some(
-      (theme) =>
-        theme[Token.definition].queries ||
-        Object.keys(theme.tokens).some((group) =>
-          [
-            'fontFamily',
-            'fontSize',
-            'fontWeight',
-            'lineHeight',
-            'letterSpacing',
-          ].includes(group),
-        ),
-    )
-      ? 3
-      : Object.values(links).some(
-            (link) => link.kind === 'config' || link.call.type,
+    version: Object.values(links).some((link) => link.call.selection)
+      ? 4
+      : Object.values(themes).some(
+            (theme) =>
+              theme[Token.definition].queries ||
+              Object.keys(theme.tokens).some((group) =>
+                [
+                  'fontFamily',
+                  'fontSize',
+                  'fontWeight',
+                  'lineHeight',
+                  'letterSpacing',
+                ].includes(group),
+              ),
           )
-        ? 2
-        : 1,
+        ? 3
+        : Object.values(links).some(
+              (link) => link.kind === 'config' || link.call.type,
+            )
+          ? 2
+          : 1,
   })
 }

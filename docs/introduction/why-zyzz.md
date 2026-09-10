@@ -11,7 +11,9 @@ Zyzz puts styling constraints into small, explicit APIs that developers and agen
 ```ts
 import { css } from 'zyzz'
 
-const card = css({ padding: '1rem' })
+const styles = {
+  card: css({ padding: '1rem' }),
+}
 ```
 
 Static compilation imposes constraints: rule structure must be analyzable, source authoring needs a transform, and native cannot reproduce every web feature. See [Compatibility](compatibility.md) and measured [Benchmarks](benchmarks.md).

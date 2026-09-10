@@ -70,11 +70,13 @@ Units use the listed spellings. Signed decimals and finite scientific notation a
 ```ts
 import { css } from 'zyzz'
 
-const panel = css({
-  width: ['80vw', '80cqi'],
-  height: '100dvh',
-  padding: '1lh!',
-})
+const styles = {
+  panel: css({
+    width: ['80vw', '80cqi'],
+    height: '100dvh',
+    padding: '1lh!',
+  }),
+}
 ```
 
 Container units can refer to containment established by ordinary CSS. Zyzz does not yet author containment declarations or container conditions. Browser support for newer units depends on the deployment target; ordered fallback declarations can retain an older unit. Native unit conversion remains unimplemented.
@@ -91,15 +93,17 @@ Container units can refer to containment established by ordinary CSS. Zyzz does 
 | `overscrollBehavior`, `overscrollBehaviorX`, `overscrollBehaviorY` | `auto`, `contain`, `none`                         |
 
 ```ts
-import { Config, css } from 'zyzz'
+import { Config } from 'zyzz'
 
-const zyzz = Config.create({ theme: { spacing: { header: '4rem' } } })
-const scroller = zyzz.css({
-  overflow: 'auto',
-  scrollPaddingBlockStart: 'header',
-  overscrollBehavior: 'contain',
-})
-const section = css({ scrollMarginBlockStart: '1rem' })
+const { css } = Config.create({ theme: { spacing: { header: '4rem' } } })
+const styles = {
+  scroller: css({
+    overflow: 'auto',
+    scrollPaddingBlockStart: 'header',
+    overscrollBehavior: 'contain',
+  }),
+  section: css({ scrollMarginBlockStart: '1rem' }),
+}
 ```
 
 Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, and importance. Scroll margins remain literal-only because the shared spacing token contract permits percentages. Negative scroll padding fails validation. Shorthands accept one scalar per fallback entry.
@@ -119,16 +123,18 @@ Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, a
 ```ts
 import { css } from 'zyzz'
 
-const carousel = css({
-  display: 'flex',
-  overflowX: 'auto',
-  scrollSnapType: 'x mandatory',
-})
-const slide = css({
-  flexShrink: 0,
-  scrollSnapAlign: 'start',
-  scrollSnapStop: 'always',
-})
+const styles = {
+  carousel: css({
+    display: 'flex',
+    overflowX: 'auto',
+    scrollSnapType: 'x mandatory',
+  }),
+  slide: css({
+    flexShrink: 0,
+    scrollSnapAlign: 'start',
+    scrollSnapStop: 'always',
+  }),
+}
 ```
 
 Snap declarations accept CSS-wide keywords, fallback arrays, and importance in root, theme, and Config authoring. Theme tokens do not map to snap keywords. Scroll margins and padding adjust the alignment area. The browser owns proximity thresholds, motion, and gesture physics; native snapping remains deferred.
@@ -149,12 +155,14 @@ Snap declarations accept CSS-wide keywords, fallback arrays, and importance in r
 ```ts
 import { css } from 'zyzz'
 
-const link = css({
-  textDecorationLine: ['underline', 'underline overline!'],
-  textDecorationStyle: 'wavy',
-  textDecorationThickness: '2px',
-  textUnderlineOffset: '.2em',
-})
+const styles = {
+  link: css({
+    textDecorationLine: ['underline', 'underline overline!'],
+    textDecorationStyle: 'wavy',
+    textDecorationThickness: '2px',
+    textUnderlineOffset: '.2em',
+  }),
+}
 ```
 
 Thickness supports a bounded nonnegative subset of CSS. Percentages use font-relative browser semantics. Combined `textDecoration` shorthands, underline position, additional ink-skipping values, emphasis, shadows, and native conversion remain deferred. The browser owns line placement and painting.
@@ -178,13 +186,15 @@ Thickness supports a bounded nonnegative subset of CSS. Percentages use font-rel
 ```ts
 import { css } from 'zyzz'
 
-const title = css({ letterSpacing: '-.02em', textTransform: 'uppercase' })
-const excerpt = css({
-  overflow: 'hidden',
-  whiteSpace: 'nowrap',
-  textOverflow: 'ellipsis',
-})
-const paragraph = css({ overflowWrap: 'anywhere', textIndent: '1em' })
+const styles = {
+  title: css({ letterSpacing: '-.02em', textTransform: 'uppercase' }),
+  excerpt: css({
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+  }),
+  paragraph: css({ overflowWrap: 'anywhere', textIndent: '1em' }),
+}
 ```
 
 [Text overflow](https://www.w3.org/TR/css-overflow-3/#text-overflow) does not create overflow by itself. Use a constrained container with hidden overflow and the appropriate wrapping behavior. All listed properties accept CSS-wide keywords, ordered fallback arrays, and importance.
@@ -215,7 +225,7 @@ Valid CSS keywords precede same-named theme tokens. An explicit `theme.tokens.sp
 ## Borders and Outlines
 
 ```ts
-zyzz.css({
+css({
   borderStyle: 'solid',
   borderWidth: '1px',
   borderInlineStartColor: 'brand',
@@ -237,14 +247,16 @@ Border styles include `dashed`, `dotted`, `double`, `groove`, `hidden`, `inset`,
 ## Flex and Overflow
 
 ```ts
-const row = css({
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignContent: 'space-between',
-  overflow: 'hidden',
-  overflowY: 'auto',
-})
-const item = css({ flexBasis: '12rem', alignSelf: 'center', order: -1 })
+const styles = {
+  row: css({
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignContent: 'space-between',
+    overflow: 'hidden',
+    overflowY: 'auto',
+  }),
+  item: css({ flexBasis: '12rem', alignSelf: 'center', order: -1 }),
+}
 ```
 
 [Flex basis](https://www.w3.org/TR/css-flexbox-1/#flex-basis-property) accepts nonnegative lengths, percentages, zero, `auto`, `content`, or intrinsic sizing keywords, including spacing tokens in bound styles. `order` accepts safe integers; fractional values fail validation. Visual ordering does not change DOM or keyboard order. The multi-value `flex` shorthand remains deferred.
@@ -254,13 +266,15 @@ const item = css({ flexBasis: '12rem', alignSelf: 'center', order: -1 })
 ## Logical Boxes
 
 ```ts
-const panel = css({
-  inlineSize: '20rem',
-  paddingInline: '1rem',
-  marginBlockEnd: '0.5rem!',
-  position: 'relative',
-  insetInlineStart: '-2px',
-})
+const styles = {
+  panel: css({
+    inlineSize: '20rem',
+    paddingInline: '1rem',
+    marginBlockEnd: '0.5rem!',
+    position: 'relative',
+    insetInlineStart: '-2px',
+  }),
+}
 ```
 
 [Logical dimensions, spacing, and offsets](https://www.w3.org/TR/css-logical-1/) follow the element's writing mode and direction. Emission retains logical property names and authored order relative to physical properties. Spacing tokens work in every new length property, including explicit references and fallback arrays.

@@ -172,7 +172,10 @@ type Scalar<group> = group extends 'spacing' | 'borderRadius'
         | 'fontWeight'
         | 'letterSpacing'
         | 'lineHeight'
-    ? NonNullable<Literal.Properties[group]>
+    ? Exclude<
+        NonNullable<Literal.Properties[group]>,
+        'initial' | 'inherit' | 'unset' | 'revert' | 'revert-layer'
+      >
     : group extends 'breakpoints' | 'containers'
       ? Query.Length
       : Color
@@ -180,10 +183,10 @@ type Scalar<group> = group extends 'spacing' | 'borderRadius'
 export type Tokens = {
   /** Compile-time viewport width thresholds. */
   readonly breakpoints?: Readonly<Record<string, Query.Length>> | undefined
-  /** Compile-time container width thresholds. */
-  readonly containers?: Readonly<Record<string, Query.Length>> | undefined
   /** Finite CSS container identities for named queries. */
   readonly containerNames?: readonly string[] | undefined
+  /** Compile-time container width thresholds. */
+  readonly containers?: Readonly<Record<string, Query.Length>> | undefined
   /** Font family token values; does not load font files. */
   readonly fontFamily?:
     | Palette<NonNullable<Literal.Properties['fontFamily']>>
@@ -233,11 +236,11 @@ function build(
       Object.create(null),
       baseQueries?.breakpoints,
     ) as Record<string, string>,
+    containerNames: baseQueries?.containerNames ?? [],
     containers: Object.assign(
       Object.create(null),
       baseQueries?.containers,
     ) as Record<string, string>,
-    containerNames: baseQueries?.containerNames ?? [],
   }
   let hasQueries = !!baseQueries
   const active = new Set<object>()
@@ -426,8 +429,8 @@ function build(
             ? {
                 queries: Object.freeze({
                   breakpoints: Object.freeze(queries.breakpoints),
-                  containers: Object.freeze(queries.containers),
                   containerNames: queries.containerNames,
+                  containers: Object.freeze(queries.containers),
                 }),
               }
             : {}),
@@ -494,9 +497,49 @@ type ValidPalette<palette, group> = palette extends undefined
         : ValidTree<palette[key], group>
     }
 
+type WeightDigits<
+  text extends string,
+  digits extends unknown[] = [],
+> = text extends ''
+  ? digits extends []
+    ? false
+    : true
+  : digits['length'] extends 3
+    ? false
+    : text extends `${infer first}${infer rest}`
+      ? first extends '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+        ? WeightDigits<rest, [...digits, unknown]>
+        : false
+      : false
+type Weight<value> = value extends number
+  ? number extends value
+    ? value
+    : `${value}` extends '1000'
+      ? value
+      : `${value}` extends `${infer whole}.${string}`
+        ? whole extends '0'
+          ? never
+          : WeightDigits<whole> extends true
+            ? value
+            : never
+        : `${value}` extends '0'
+          ? never
+          : WeightDigits<`${value}`> extends true
+            ? value
+            : never
+  : value
+
 type ValidTree<tree, group> = tree extends string | number
   ? tree extends Scalar<group>
-    ? Literal.Checked<tree>
+    ? group extends 'breakpoints' | 'containers'
+      ? tree extends `-${string}`
+        ? never
+        : Literal.Checked<tree>
+      : group extends keyof Literal.Properties
+        ? Literal.Checked<tree> &
+            Value.Checked<Record<group, tree>>[group] &
+            (group extends 'fontWeight' ? Weight<tree> : unknown)
+        : Literal.Checked<tree>
     : never
   : Extract<
         keyof tree,

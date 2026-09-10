@@ -4,8 +4,8 @@ import * as Literal from './Literal.js'
 /** Named thresholds and eligible container identities. */
 export type Metadata = {
   readonly breakpoints: Readonly<Record<string, string>>
-  readonly containers: Readonly<Record<string, string>>
   readonly containerNames: readonly string[]
+  readonly containers: Readonly<Record<string, string>>
 }
 
 /** Supported fixed nonnegative threshold lengths. */
@@ -14,7 +14,7 @@ export type Length = Exclude<Literal.Length, `${number}%` | number | '0'>
 /** Checks threshold structure without converting relative CSS units. */
 export function threshold(value: unknown): value is string {
   if (typeof value !== 'string') return false
-  const match = /^(\d+(?:\.\d+)?|\.\d+)([a-z]+)$/i.exec(value)
+  const match = /^([+]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?)([a-z]+)$/i.exec(value)
   return (
     !!match &&
     Number.isFinite(Number(match[1])) &&
@@ -53,7 +53,8 @@ export function resolve(key: string, metadata: Metadata): string {
       if (range.length !== 2) throw new Error('Malformed query range.')
       const lower = read(range[0]!)
       const upper = read(range[1]!)
-      const unit = (value: string) => value.replace(/^[\d.]+/, '')
+      const unit = (value: string) =>
+        value.replace(/^[+]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?/, '')
       if (unit(lower) === unit(upper) && parseFloat(lower) >= parseFloat(upper))
         throw new Error('Query range must increase.')
       return `${lower} <= width < ${upper}`

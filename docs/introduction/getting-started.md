@@ -17,7 +17,7 @@ pnpm add zyzz
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+export const { css, theme } = Config.create({
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
     spacing: { md: '1rem' },
@@ -29,20 +29,22 @@ export const zyzz = Config.create({
 
 ```tsx
 // Button.tsx
-import { zyzz } from './zyzz.config.js'
+import { css, theme } from './zyzz.config.js'
 
-const button = zyzz.css({
-  backgroundColor: 'brand',
-  padding: 'md',
-  width: `calc(100% - ${zyzz.theme.vars.spacing.md})`,
-})
+const styles = {
+  button: css({
+    backgroundColor: 'brand',
+    padding: 'md',
+    width: `calc(100% - ${theme.vars.spacing.md})`,
+  }),
+}
 
 export function Button() {
-  return <button {...button()}>Save</button>
+  return <button {...styles.button()}>Save</button>
 }
 ```
 
-Import `Button` normally. The named `zyzz` instance retains inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `css` directly from `zyzz`.
+Import `Button` normally. The named helpers retain inferred tokens; compilation supplies executable styles and CSS. For literal values without a theme, import `css` directly from `zyzz`.
 
 ## Choose Compilation
 

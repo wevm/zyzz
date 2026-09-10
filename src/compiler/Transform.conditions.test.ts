@@ -9,6 +9,48 @@ import { Graph, Transform } from 'zyzz/compiler'
 const source =
   'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); export const box=theme.css({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:"100px","&[data-active]":{height:"20px"}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
 describe('compile', () => {
+  test('preserves explicit pseudo relationships and qualified media types', () => {
+    expect(
+      Transform.compile({
+        moduleId: 'selectors.ts',
+        source:
+          'import {css} from "zyzz"; css({":where(.dark) &":{color:"red"},"@media only screen":{display:"grid"},"@media not print":{display:"block"}})',
+      }).css,
+    ).toMatchInlineSnapshot(
+      `".z-style-31e6cc1lbrj8g-26{:where(.dark) &{color:red;}@media only screen{display:grid;}@media not print{display:block;}}"`,
+    )
+  })
+  test('maps declarations after matching text in feature conditions', () => {
+    const source =
+      'import {css} from "zyzz"; css({"@supports (display:grid)":{display:"grid"}})'
+    const output = Transform.compile({ moduleId: 'supports.ts', source })
+    const column = output.css.lastIndexOf('display:')
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: 1,
+        column,
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 59,
+        "line": 1,
+        "name": "display",
+        "source": "supports.ts",
+      }
+    `)
+  })
+  test('rejects private dynamic values on relationship subjects', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'sibling.ts',
+        source:
+          'import {css} from "zyzz"; css((v:{alpha:number})=>({"& + .peer":{opacity:v.alpha}}))',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: sibling.ts:73: Dynamic values require conditions that select the styled element.
+      sibling.ts:73: Expected a literal string or number; expressions are not evaluated.]
+    `)
+  })
   test('preserves functional pseudo lists and multiline conditions', () => {
     const output = Transform.compile({
       moduleId: 'lines.ts',

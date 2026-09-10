@@ -389,6 +389,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       }
       const ordered = declarations(style)
       const authored = locations(definitions.get(call.start)!)
+      const starts = declarationStarts(body)
       let cursor = 1
       for (
         let propertyIndex = 0;
@@ -397,7 +398,10 @@ export function compile(options: compile.Options): compile.ReturnType {
       ) {
         const declaration = ordered[propertyIndex]!
         const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:`
-        const start = body.indexOf(text, cursor)
+        const start =
+          starts.find(
+            (start) => start >= cursor && body.startsWith(text, start),
+          ) ?? -1
         if (start < 0) continue
 
         const location = authored[propertyIndex]!
@@ -458,4 +462,62 @@ export declare namespace compile {
     /** Stable scope classes keyed by local module/binding identity. */
     readonly themes: Readonly<Record<string, string>>
   }
+}
+
+/** Locates emitted declarations while skipping selectors, conditions, and quoted CSS data. */
+function declarationStarts(body: string): readonly number[] {
+  const starts: number[] = []
+  let start = 0
+  let depth = 0
+  let blocks = 0
+  let custom = false
+  let quote = ''
+  for (let index = 0; index < body.length; index++) {
+    const char = body[index]!
+    if (char === '\\') {
+      index++
+      continue
+    }
+    if (quote) {
+      if (char === quote) quote = ''
+      continue
+    }
+    if (char === '"' || char === "'") {
+      quote = char
+      continue
+    }
+    if (char === '/' && body[index + 1] === '*') {
+      const end = body.indexOf('*/', index + 2)
+      if (end < 0) break
+      index = end + 1
+      continue
+    }
+    if (char === '(' || char === '[') {
+      depth++
+      continue
+    }
+    if (char === ')' || char === ']') {
+      depth--
+      continue
+    }
+    if (depth) continue
+    if (char === ':' && body.slice(start, index).trimStart().startsWith('--'))
+      custom = true
+    if (char === '{') {
+      if (custom) blocks++
+      else start = index + 1
+    } else if (char === '}') {
+      if (blocks) blocks--
+      else {
+        start = index + 1
+        custom = false
+      }
+    } else if (char === ';' && !blocks) {
+      while (/\s/.test(body[start] ?? '') && start < index) start++
+      starts.push(start)
+      start = index + 1
+      custom = false
+    }
+  }
+  return starts
 }

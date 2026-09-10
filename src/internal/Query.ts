@@ -32,7 +32,7 @@ export function resolve(key: string, metadata: Metadata): string {
   if (
     text.includes('(') ||
     (kind === 'media' &&
-      /^(?:(?:only|not)\s+)?(?:all|print|screen)(?:\s|,)/.test(text)) ||
+      /^(?:(?:only|not)\s+)?(?:all|print|screen)(?:\s|,|$)/.test(text)) ||
     (kind === 'media' && ['all', 'print', 'screen'].includes(text))
   )
     return key

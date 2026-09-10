@@ -14,28 +14,30 @@ export type Accepted<
   style,
   tokens extends Theme.Tokens = {},
   literal extends boolean = false,
-> = Record<
-  Exclude<Keys<style>, keyof Literal.Properties | Condition.Keys<tokens>>,
-  never
-> & {
-  [key in keyof style]: key extends keyof Literal.Properties
-    ? Value.Accepted<
-        Pick<style, key>,
-        literal extends true
-          ? LiteralDeclarations
-          : DeclarationProperties<tokens>
-      >[key] &
-        Value.Checked<Pick<style, key>, tokens>[key]
-    : key extends Condition.Keys<tokens>
-      ? [style[key]] extends [undefined]
-        ? never
-        : NonNullable<style[key]> extends Record<string, unknown>
-          ?
-              | Accepted<NonNullable<style[key]>, tokens, literal>
-              | Extract<style[key], undefined>
+> = style extends unknown
+  ? Record<
+      Exclude<Keys<style>, keyof Literal.Properties | Condition.Keys<tokens>>,
+      never
+    > & {
+      [key in keyof style]: key extends keyof Literal.Properties
+        ? Value.Accepted<
+            Pick<style, key>,
+            literal extends true
+              ? LiteralDeclarations
+              : DeclarationProperties<tokens>
+          >[key] &
+            Value.Checked<Pick<style, key>, tokens>[key]
+        : key extends Condition.Keys<tokens>
+          ? [style[key]] extends [undefined]
+            ? never
+            : NonNullable<style[key]> extends Record<string, unknown>
+              ?
+                  | Accepted<NonNullable<style[key]>, tokens, literal>
+                  | Extract<style[key], undefined>
+              : never
           : never
-      : never
-}
+    }
+  : never
 type Keys<value> = value extends unknown ? keyof value : never
 type Exact<
   styles extends Record<string, unknown>,
@@ -236,7 +238,9 @@ export function define(
                 ? {}
                 : {
                     condition: Condition.normalize(
-                      condition.startsWith(':') ? `&${condition}` : condition,
+                      condition.startsWith(':') && !condition.includes('&')
+                        ? `&${condition}`
+                        : condition,
                     ),
                   }),
               style: nested.styles[0]!,

@@ -3,6 +3,13 @@ import { describe, test } from 'vite-plus/test'
 import { css, Theme } from 'zyzz'
 
 describe('css', () => {
+  test('validates every branch of aliased style unions', () => {
+    const invalid = null as unknown as
+      | { color: '#fff' }
+      | { ':hover': { colour: '#fff' } }
+    // @ts-expect-error Disjoint outer keys do not hide invalid nested declarations.
+    css(invalid)
+  })
   test('retains recursive literal and bound contracts', () => {
     css({
       '--escaped\\&name': 'red',

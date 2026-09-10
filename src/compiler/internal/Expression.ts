@@ -3,7 +3,7 @@
  * @module
  */
 import type * as Ast from '@oxc-project/types'
-import type * as Binding from '../../internal/Binding.js'
+import * as Binding from '../../internal/Binding.js'
 import * as Token from '../../internal/Token.js'
 
 /** Folds cooked template text and literal primitive substitutions; unresolved syntax returns undefined. */
@@ -21,8 +21,19 @@ export function template(
     if (!expression) continue
     const value = unwrap(expression)
     const reference = resolve?.(expression) ?? resolve?.(value)
-    if (reference) parts.push(reference)
-    else if (value.type === 'Literal' && !('regex' in value)) {
+    if (reference) {
+      // Substitution cannot combine a number token with adjacent unit text.
+      if (
+        Binding.is(reference) &&
+        reference.type === 'number' &&
+        (/[%a-zA-Z_\d.-]/.test(
+          node.quasis[index + 1]?.value.cooked?.[0] ?? '',
+        ) ||
+          /[\w.-]$/.test(quasi.value.cooked))
+      )
+        return undefined
+      parts.push(reference)
+    } else if (value.type === 'Literal' && !('regex' in value)) {
       if (typeof value.value === 'number' && !Number.isFinite(value.value))
         return undefined
       parts.push(String(value.value))

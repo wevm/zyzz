@@ -9,6 +9,66 @@ import { Css } from 'zyzz/web'
 import { theme as bundled, tokens } from 'zyzz/themes/default'
 
 describe('query metadata and typography', () => {
+  test('retains query groups in packed configuration options', () => {
+    const result = Graph.compile({
+      modules: {
+        'config.ts':
+          'import {Config,Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem"},containers:{card:"24rem"},containerNames:["sidebar"]}); export const zyzz=Config.create({theme})',
+      },
+    })
+    expect(JSON.parse(result.contracts['config.ts']!).exports.zyzz.options)
+      .toMatchInlineSnapshot(`
+      {
+        "theme": {
+          "breakpoints": {
+            "tablet": "48rem",
+          },
+          "containerNames": [
+            "sidebar",
+          ],
+          "containers": {
+            "card": "24rem",
+          },
+        },
+      }
+    `)
+  })
+  test('resolves numeric scale names and preserves typography palette keys', () => {
+    expect(
+      Transform.compile({
+        moduleId: 'scale.ts',
+        source:
+          'import {css} from "zyzz/themes/default"; css({fontSize:"2xl",borderRadius:"2xl"})',
+      }).css,
+    ).toMatchInlineSnapshot(`
+      ".z_theme-zyzz-default-theme{--z-tzyzz-default-theme-fontSize_2e_2xl:1.5rem;--z-tzyzz-default-theme-borderRadius_2e_2xl:1rem;}
+      .z-50qoo1xusxbe-base0{font-size:var(--z-tzyzz-default-theme-fontSize_2e_2xl,1.5rem);border-radius:var(--z-tzyzz-default-theme-borderRadius_2e_2xl,1rem);}"
+    `)
+    expect(
+      Theme.define({
+        fontWeight: { body: { light: 300, bold: 700 } },
+        containers: { screen: '40rem' },
+      }).tokens.fontWeight.body.light.value,
+    ).toMatchInlineSnapshot(`300`)
+  })
+  test('keeps generated bundled values synchronized', async () => {
+    const source = await Fs.readFile(
+      new URL('./themes/default.ts', import.meta.url),
+      'utf8',
+    )
+    const raw = source.slice(
+      source.indexOf('export const tokens = ') + 22,
+      source.indexOf(' as const'),
+    )
+    const generated = source.slice(
+      source.indexOf('export const theme = Theme.define(') + 34,
+      source.indexOf(
+        ')\n',
+        source.indexOf('export const theme = Theme.define('),
+      ),
+    )
+    expect(raw.trim() === generated.trim()).toMatchInlineSnapshot(`true`)
+  })
   test('compiles the public bundled import without host linking', () => {
     expect(
       Transform.compile({

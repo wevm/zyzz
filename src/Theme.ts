@@ -25,6 +25,7 @@ export type Css<tokens extends Tokens> = {
     ) => styles &
       NoInfer<
         Value.Accepted<styles, Style.Properties<tokens>> &
+          Value.Checked<styles> &
           Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
       >,
   ): css.Dynamic<values>
@@ -245,7 +246,10 @@ function build(
     const key = path.join('.')
     const scalar = typeof value === 'string' || typeof value === 'number'
     const entries = scalar ? undefined : record(value, path)
-    const pair = entries?.some(([name]) => name === 'light' || name === 'dark')
+    const pair =
+      ['color', 'backgroundColor', 'borderColor', 'textColor'].includes(
+        group,
+      ) && entries?.some(([name]) => name === 'light' || name === 'dark')
     if (scalar || pair) {
       if (base && !Object.hasOwn(base, key))
         throw new InvalidError(
@@ -305,7 +309,17 @@ function build(
         !Array.isArray(palette) ||
         palette.some(
           (name) =>
-            typeof name !== 'string' || !/^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(name),
+            typeof name !== 'string' ||
+            !/^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(name) ||
+            [
+              'none',
+              'default',
+              'inherit',
+              'initial',
+              'unset',
+              'revert',
+              'revert-layer',
+            ].includes(name.toLowerCase()),
         ) ||
         new Set(palette).size !== palette.length
       )
@@ -329,7 +343,8 @@ function build(
       for (const [name, value] of record(palette, [group])) {
         if (
           !/^[a-zA-Z0-9_][a-zA-Z0-9_-]*$/.test(name) ||
-          ['all', 'screen', 'print'].includes(name) ||
+          (group === 'breakpoints' &&
+            ['all', 'screen', 'print'].includes(name)) ||
           !Query.threshold(value)
         )
           throw new InvalidError(
@@ -483,7 +498,12 @@ type ValidTree<tree, group> = tree extends string | number
   ? tree extends Scalar<group>
     ? Literal.Checked<tree>
     : never
-  : Extract<keyof tree, 'dark' | 'light'> extends never
+  : Extract<
+        keyof tree,
+        group extends 'color' | 'backgroundColor' | 'borderColor' | 'textColor'
+          ? 'dark' | 'light'
+          : never
+      > extends never
     ? {
         [key in keyof tree]: key extends `${string}!${string}`
           ? never

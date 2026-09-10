@@ -34,7 +34,13 @@ try {
     properties[statement.name.text] = type.types
       .filter((type) => type.isStringLiteral())
       .map((type) => (type as Ts.StringLiteralType).value)
-      .sort()
+      .sort((a, b) =>
+        a.toLowerCase() < b.toLowerCase()
+          ? -1
+          : a.toLowerCase() > b.toLowerCase()
+            ? 1
+            : 0,
+      )
     if (!properties[statement.name.text]!.length)
       throw new Error('Empty property domain.')
   }

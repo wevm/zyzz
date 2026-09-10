@@ -202,7 +202,7 @@ export function parse(
       .map((part) => (typeof part === 'string' ? part : 'var(--z)'))
       .join('')
     const parsed = parse(text, property)
-    if (!parsed) return undefined
+    if (!parsed || typeof parsed.value === 'object') return undefined
     const parts = [...input.parts]
     const last = parts.at(-1)
     if (typeof last !== 'string') return undefined

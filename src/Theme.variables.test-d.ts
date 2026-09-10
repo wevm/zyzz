@@ -10,6 +10,8 @@ describe('define', () => {
     })
     css({
       color: theme.vars.color.brand,
+      // oxlint-disable-next-line typescript/no-base-to-string, typescript/restrict-template-expressions -- Source compilation consumes this reference before coercion.
+      // oxlint-disable-next-line typescript/no-base-to-string, typescript/restrict-template-expressions -- Source compilation consumes this reference before coercion.
       width: `calc(100% - ${theme.vars.spacing.md})`,
     })
     css({ padding: [theme.vars.spacing.md, '2px'] })

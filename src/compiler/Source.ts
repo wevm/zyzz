@@ -165,6 +165,10 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (
         ancestors.some(
           (ancestor) =>
+            ('typeAnnotation' in ancestor &&
+              typeof ancestor.typeAnnotation === 'object' &&
+              ancestor.typeAnnotation !== null &&
+              ancestors.includes(ancestor.typeAnnotation as Ast.Node)) ||
             ancestor.type === 'TSTypeParameterInstantiation' ||
             ancestor.type === 'TSTypeParameterDeclaration' ||
             ancestor.type === 'TSTypeAnnotation' ||
@@ -488,7 +492,8 @@ export function extract(options: extract.Options): extract.ReturnType {
             !Token.accepts(
               reference.group,
               key as Style.Declaration['property'],
-            )
+            ) &&
+            !dynamic?.accepts(reference as unknown as Binding.Reference, key)
           ) {
             report(
               'unsupported_syntax',
@@ -508,7 +513,8 @@ export function extract(options: extract.Options): extract.ReturnType {
             !Binding.accepts(
               reference.type,
               key as Style.Declaration['property'],
-            )
+            ) &&
+            !dynamic?.accepts(reference as unknown as Binding.Reference, key)
           ) {
             report(
               'unsupported_syntax',
@@ -655,24 +661,17 @@ export function extract(options: extract.Options): extract.ReturnType {
         contributions: contributionData,
         themes: themes?.themes,
       }).css
-      for (const url of rendered.matchAll(
-        /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*))\)/g,
-      )) {
-        const value = (url[1] ?? url[2] ?? url[3] ?? '').trim()
-        if (!/^(?:\/|#|[a-z][a-z\d+.-]*:)/i.test(value))
-          throw new Error(
-            'Contribution URLs must be root-relative or absolute in this compiler slice.',
-          )
-      }
       Lightning.transform({
         filename: options.moduleId,
-        code: new TextEncoder().encode(
-          Css.compile({
-            styles: { styles: [] },
-            contributions: contributionData,
-            themes: themes?.themes,
-          }).css,
-        ),
+        code: new TextEncoder().encode(rendered),
+        visitor: {
+          Url(url) {
+            if (!/^(?:\/|#|[a-z][a-z\d+.-]*:)/i.test(url.url))
+              throw new Error(
+                'Contribution URLs must be root-relative or absolute in this compiler slice.',
+              )
+          },
+        },
         errorRecovery: false,
       })
     }
@@ -680,7 +679,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     report(
       'unsupported_syntax',
       (error as Error).message,
-      contributions.calls[0],
+      error instanceof Themes.InvalidError ? error : contributions.calls[0],
     )
   }
   if (diagnostics.length) throw new ExtractError(diagnostics)

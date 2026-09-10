@@ -81,9 +81,7 @@ export function order(
       const targets = new Set(
         [...graph.values()].flatMap((values) => [...values]),
       )
-      const next = [...graph.keys()]
-        .filter((name) => !targets.has(name))
-        .sort()[0]
+      const next = [...graph.keys()].find((name) => !targets.has(name))
       if (next === undefined)
         throw new Error('Conflicting layer order constraints.')
       const name = parent ? `${parent}.${next}` : next

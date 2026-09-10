@@ -17,6 +17,7 @@ import * as Source from '../compiler/Source.js'
  */
 export function zyzz(): Plugin {
   const states = new WeakMap<Environment, Map<string, Entry>>()
+  const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   let root: string
 
   function entries(environment: Environment) {
@@ -41,6 +42,81 @@ export function zyzz(): Plugin {
       /\.[cm]?[jt]sx?$/.test(id) &&
       !/\.(?:d|test|test-d|bench)\.[cm]?[jt]sx?$/.test(id)
     )
+  }
+
+  function discover(environment: Environment, host: Host) {
+    let pending = discoveries.get(environment)
+    if (!pending) {
+      pending = (async () => {
+        const sources = new Map<string, string>()
+        async function collect(directory: string): Promise<void> {
+          host.watch(directory)
+          for (const item of await Fs.readdir(directory, {
+            withFileTypes: true,
+          })) {
+            if (
+              item.name.startsWith('.') ||
+              [
+                'node_modules',
+                'dist',
+                'build',
+                'coverage',
+                'test',
+                'tests',
+                '__tests__',
+                'fixtures',
+                '__fixtures__',
+              ].includes(item.name)
+            )
+              continue
+            const file = Path.join(directory, item.name)
+            if (item.isDirectory()) await collect(file)
+            else if (item.isFile() && eager(file)) {
+              host.watch(file)
+              const source = await Fs.readFile(file, 'utf8')
+              if (contributes(source)) sources.set(file, source)
+            }
+          }
+        }
+        await collect(root)
+        return sources
+      })()
+      discoveries.set(environment, pending)
+    }
+    return pending
+  }
+  function eager(file: string) {
+    return (
+      eligible(file) &&
+      !Path.relative(root, file)
+        .split(Path.sep)
+        .some((part) =>
+          ['test', 'tests', '__tests__', 'fixtures', '__fixtures__'].includes(
+            part,
+          ),
+        )
+    )
+  }
+  function contributes(source: string) {
+    return (
+      source.includes('zyzz/web') ||
+      (source.includes('Config') && source.includes('layers'))
+    )
+  }
+  async function updateDiscovery(
+    environment: Environment,
+    file: string,
+    event: string,
+  ) {
+    const pending = discoveries.get(environment)
+    if (!pending || !eager(file)) return
+    const sources = await pending
+    if (event === 'delete') sources.delete(file)
+    else {
+      const source = await Fs.readFile(file, 'utf8')
+      if (contributes(source)) sources.set(file, source)
+      else sources.delete(file)
+    }
   }
 
   async function compile(entry: Entry, host: Host, code?: string) {
@@ -129,30 +205,8 @@ export function zyzz(): Plugin {
     }
     await visit(entry.file, code)
     const connected = new Set(files)
-    async function collect(directory: string): Promise<void> {
-      for (const item of await Fs.readdir(directory, { withFileTypes: true })) {
-        if (
-          item.name.startsWith('.') ||
-          ['node_modules', 'dist', 'build', 'coverage'].includes(item.name)
-        )
-          continue
-        const file = Path.join(directory, item.name)
-        if (item.isDirectory()) await collect(file)
-        else if (item.isFile() && eligible(file) && !files.has(file)) {
-          const source = await Fs.readFile(file, 'utf8')
-          if (
-            source.includes('zyzz/web') ||
-            (source.includes('Config') && source.includes('layers'))
-          )
-            await visit(file, source)
-          else {
-            files.add(file)
-            host.watch(file)
-          }
-        }
-      }
-    }
-    await collect(root)
+    for (const [file, source] of await discover(entry.environment, host))
+      if (!files.has(file)) await visit(file, source)
     const result = entry.compiler.compile({ contracts, imports, modules })
     const map = new Mapping.GenMapping()
     const styles: string[] = []
@@ -208,11 +262,14 @@ export function zyzz(): Plugin {
       root = config.root
     },
     enforce: 'pre',
-    hotUpdate({ file, modules, timestamp, type }) {
+    async watchChange(file, change) {
+      await updateDiscovery(this.environment, file, change.event)
+    },
+    async hotUpdate({ file, modules, timestamp, type }) {
+      await updateDiscovery(this.environment, file, type)
       const affected = new Set(modules)
       for (const entry of entries(this.environment).values()) {
-        if (!entry.files.has(file) && !(type === 'create' && eligible(file)))
-          continue
+        if (!entry.files.has(file) && !eager(file)) continue
         // Theme scopes affect CSS even when Vite's JavaScript import was erased.
         for (const id of [entry.file, cssId(entry.file), sharedId]) {
           const module = this.environment.moduleGraph.getModuleById(id)
@@ -255,7 +312,12 @@ export function zyzz(): Plugin {
       const state = entries(this.environment)
       let entry = state.get(id)
       if (!entry) {
-        entry = { compiler: Graph.create(), file: id, files: new Set([id]) }
+        entry = {
+          compiler: Graph.create(),
+          environment: this.environment,
+          file: id,
+          files: new Set([id]),
+        }
         state.set(id, entry)
       }
       const output = await compile(
@@ -277,6 +339,7 @@ export function zyzz(): Plugin {
 }
 
 type Entry = {
+  environment: Environment
   compiler: Graph.create.ReturnType
   file: string
   files: Set<string>

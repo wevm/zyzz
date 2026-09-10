@@ -4,6 +4,42 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 
 describe('stylesheet contributions', () => {
+  test('preserves layer discovery order and omits optional font descriptors', () => {
+    const output = Transform.compile({
+      moduleId: 'effects.ts',
+      source: `import {Css,fontFace,global} from 'zyzz/web'; Css.layers(['reset','base']); Css.layers(['components']); fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined}); global({'body::before':{content:'"url(relative)"'}})`,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      "@layer reset,base,components;
+      @font-face{font-family:App;src:url(/app.woff2);}
+      body::before{content:"url(relative)";}"
+    `)
+  })
+  test('rejects conditional classes and shadowed undefined descriptors', () => {
+    for (const source of [
+      `class Never { static { global({body:{color:'red'}}) } }`,
+      `const unused = false ? class { static { global({body:{color:'red'}}) } } : null`,
+      `const undefined = 'bold'; fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined})`,
+      String.raw`global({body:{backgroundImage:'u\\72l(relative.png)'}})`,
+    ])
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {global,fontFace} from 'zyzz/web'; ${source}`,
+        }),
+      ).toThrow()
+  })
+  test('locates a malformed later contribution at its own span', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'located.ts',
+        source: `import {global} from 'zyzz/web'; global({body:{color:'red'}}); global({body:{color:unknown}})`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: located.ts:63: Stylesheet contributions require literal data.]`,
+    )
+  })
+
   test('Chromium applies global layers and static keyframes', async () => {
     const output = Transform.compile({
       moduleId: 'browser.ts',

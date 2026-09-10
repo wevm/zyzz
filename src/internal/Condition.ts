@@ -51,6 +51,8 @@ export function normalize(key: string): string {
   const stack: string[] = []
   let quote = ''
   let output = ''
+  let scoped = false
+  let list = false
   for (let index = 0; index < key.length; index++) {
     const char = key[index]!
     if (!quote && char === '/' && key[index + 1] === '*') {
@@ -79,22 +81,44 @@ export function normalize(key: string): string {
         throw new Error('Unbalanced condition delimiters.')
     } else if (char === '{' || char === '}')
       throw new Error('Unexpected condition block delimiter.')
-    else if (
-      char === ',' &&
-      !stack.length &&
-      key.startsWith(':') &&
-      !key.includes('&')
-    )
-      throw new Error('Selector lists require explicit & selectors.')
+    else if (char === '&') scoped = true
+    else if (char === ',' && !stack.length && !key.startsWith('@')) {
+      if (!scoped)
+        throw new Error('Selector lists require explicit & selectors.')
+      scoped = false
+      list = true
+    }
     output += /[\n\r\f]/.test(char) ? ' ' : char
   }
   if (quote || stack.length) throw new Error('Unbalanced condition delimiters.')
+  if (list && !scoped)
+    throw new Error('Selector lists require explicit & selectors.')
   return output
 }
 
 /** Identifies conservative same-element selectors for private inline callback variables. */
 export function local(key: string): boolean {
   if (key.startsWith('@')) return true
+  let nesting = 0
+  let quoted = ''
+  for (let index = 0; index < key.length; index++) {
+    const char = key[index]!
+    if (char === '\\') {
+      index++
+      continue
+    }
+    if (quoted) {
+      if (char === quoted) quoted = ''
+      continue
+    }
+    if (char === '"' || char === "'") quoted = char
+    else if (char === '(' || char === '[') nesting++
+    else if (char === ')' || char === ']') nesting--
+    else if (char === ',' && !nesting)
+      return (
+        local(key.slice(0, index).trim()) && local(key.slice(index + 1).trim())
+      )
+  }
   if (!key.startsWith('&') && (!key.startsWith(':') || key.includes('&')))
     return false
   let depth = 0

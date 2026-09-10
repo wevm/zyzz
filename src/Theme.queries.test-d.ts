@@ -4,6 +4,13 @@ import { Config, Theme } from 'zyzz'
 import { css } from './themes/default.js'
 
 describe('define', () => {
+  test('rejects CSS-wide typography leaves', () => {
+    // @ts-expect-error Typography leaves cannot override CSS-wide keywords.
+    Theme.define({ fontFamily: { body: 'inherit' } })
+    // @ts-expect-error CSS-wide keywords are case insensitive.
+    Theme.define({ fontFamily: { body: 'INITIAL' } })
+  })
+
   test('retains scalar domains', () => {
     const theme = Theme.define({
       breakpoints: { tablet: '48rem' },

@@ -31,7 +31,7 @@ export function template(
         (/[%a-zA-Z_\d.-]/.test(
           node.quasis[index + 1]?.value.cooked?.[0] ?? '',
         ) ||
-          /[\w.-]$/.test(quasi.value.cooked))
+          /[\w.+-]$/.test(quasi.value.cooked))
       )
         return undefined
       parts.push(reference)

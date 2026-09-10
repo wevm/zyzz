@@ -121,3 +121,7 @@ export const scope = theme.className
 ```
 
 The graph normalizes configured themes without executing library code. Source edits invalidate dependent authoring and retain stable scope names. Layer emission and variants remain planned.
+
+## Shared stylesheet delivery
+
+When the graph has contributions, the result includes `sharedCss`, containing graph-wide layer declarations, global rules, font faces, and live keyframes. Load this stylesheet once, before the CSS from `modules`. Module CSS remains necessary for local styles. Recompile after source creation, updates, or deletion and replace both the shared stylesheet and affected module styles; contributions that disappear from the graph must also disappear from delivery. Vite handles this lifecycle automatically.

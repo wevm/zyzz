@@ -48,6 +48,7 @@ export function scan(
   const bindings = new Map<number, Call>()
   const references = new Map<number, string>()
   const used = new Set<string>()
+  const undefinedValues = new Set<number>()
   const ancestors: Ast.Node[] = []
   function kind(node: Ast.Node): Kind | undefined {
     if (node.type === 'Identifier') {
@@ -77,6 +78,12 @@ export function scan(
     scopeTracker: scope,
     enter(node, parent) {
       ancestors.push(node)
+      if (
+        node.type === 'Identifier' &&
+        node.name === 'undefined' &&
+        !scope.getDeclaration(node.name)
+      )
+        undefinedValues.add(node.start)
       if (node.type !== 'CallExpression') return
       const type = kind(node.callee)
       if (!type) return
@@ -91,10 +98,15 @@ export function scan(
         (!variable && parent?.type !== 'ExpressionStatement') ||
         ancestors
           .slice(0, -1)
-          .some((node) =>
-            /BlockStatement|Function|IfStatement|Switch|For|While|DoWhile|TryStatement/.test(
-              node.type,
-            ),
+          .some(
+            (ancestor) =>
+              ![
+                'Program',
+                'ExportNamedDeclaration',
+                'VariableDeclaration',
+                'VariableDeclarator',
+                'ExpressionStatement',
+              ].includes(ancestor.type),
           ) ||
         (variable &&
           (statement?.type !== 'VariableDeclaration' ||
@@ -153,7 +165,7 @@ export function scan(
     references.set(node.start, call.name)
     used.add(call.name)
   }
-  return { calls, references, read, used }
+  return { calls, references, read, used, undefinedValues }
 }
 
 /** Builds ordered pure web data after lexical theme references are resolved. */
@@ -168,6 +180,7 @@ export function extract(
     const animation = scanned.references.get(node.start)
     if (animation) return animation
     node = Expression.unwrap(node)
+    if (scanned.undefinedValues.has(node.start)) return undefined
     if (
       node.type === 'Literal' &&
       (typeof node.value === 'string' || typeof node.value === 'number')
@@ -275,6 +288,13 @@ export function extract(
           })
       } else if (call.kind === 'fontFace') {
         const declarations = record(input)
+        for (const key of Object.keys(declarations))
+          if (
+            declarations[key] === undefined &&
+            key !== 'fontFamily' &&
+            key !== 'src'
+          )
+            delete declarations[key]
         const keys = [
           'fontFamily',
           'src',

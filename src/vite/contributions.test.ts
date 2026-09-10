@@ -18,6 +18,18 @@ describe('zyzz', () => {
           'import {global,Css} from "zyzz/web"; Css.layers(["reset","app"]); global({body:{margin:0}})',
       }))
         await Fs.writeFile(Path.join(root, name), source)
+      for (const directory of [
+        'tests',
+        '__tests__',
+        'fixtures',
+        '__fixtures__',
+      ]) {
+        await Fs.mkdir(Path.join(root, directory))
+        await Fs.writeFile(
+          Path.join(root, directory, 'example.ts'),
+          'import {global} from "zyzz/web"; global({body:{color:"red"}})',
+        )
+      }
       const result = await Vite.build({
         root,
         configFile: false,

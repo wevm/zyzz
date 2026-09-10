@@ -412,10 +412,10 @@ export const tokens = {
     '9xl': '8rem',
   },
   fontWeight: {
-    normal: 400,
+    regular: 400,
     medium: 500,
     semibold: 600,
-    bold: 700,
+    strong: 700,
   },
   lineHeight: {
     tight: 1.25,
@@ -424,7 +424,7 @@ export const tokens = {
   },
   letterSpacing: {
     tight: '-0.025em',
-    normal: '0em',
+    default: '0em',
     wide: '0.025em',
   },
 } as const
@@ -841,10 +841,10 @@ export const theme = Theme.define({
     '9xl': '8rem',
   },
   fontWeight: {
-    normal: 400,
+    regular: 400,
     medium: 500,
     semibold: 600,
-    bold: 700,
+    strong: 700,
   },
   lineHeight: {
     tight: 1.25,
@@ -853,7 +853,7 @@ export const theme = Theme.define({
   },
   letterSpacing: {
     tight: '-0.025em',
-    normal: '0em',
+    default: '0em',
     wide: '0.025em',
   },
 })

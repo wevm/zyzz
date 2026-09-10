@@ -859,7 +859,9 @@ export function collect(program: Ast.Program, options: collect.Options) {
         const ancestor = ancestors[callIndex]!
         if (
           (ancestor.type === 'TSAsExpression' ||
-            ancestor.type === 'TSSatisfiesExpression') &&
+            ancestor.type === 'TSSatisfiesExpression' ||
+            ancestor.type === 'TSNonNullExpression' ||
+            ancestor.type === 'TSTypeAssertion') &&
           ancestor.expression === argument
         )
           argument = ancestor
@@ -892,7 +894,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         object?.type !== 'ObjectExpression' ||
         call?.type !== 'CallExpression' ||
         call.arguments[0] !== argument ||
-        (!variable && !styles.has(call.start))
+        !styles.has(call.start)
       )
         fail(
           'Token references must be direct property values in bound theme css calls.',

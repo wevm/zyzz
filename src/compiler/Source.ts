@@ -350,7 +350,9 @@ export function extract(options: extract.Options): extract.ReturnType {
             ) {
               report(
                 'unsupported_syntax',
-                'Theme variable domain is incompatible with this property.',
+                Binding.is(part)
+                  ? 'Variable domain is incompatible with this property.'
+                  : 'Theme variable domain is incompatible with this property.',
                 node,
               )
               return undefined

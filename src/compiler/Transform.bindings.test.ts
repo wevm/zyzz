@@ -15,6 +15,15 @@ const source = [
 ].join('\n')
 
 describe('compile', () => {
+  test('identifies explicit variables in template diagnostics', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'bad-template.ts',
+        source:
+          'import {css,Vars} from "zyzz"; const vars=Vars.define({size:"length"}); css({color:`calc(${vars.size})`})',
+      }),
+    ).toThrow('Variable domain is incompatible with this property.')
+  })
   test('keeps contracts distinct with shadowed globals and assertion types', async () => {
     const output = Transform.compile({
       moduleId: 'hygiene.ts',

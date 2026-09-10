@@ -1,21 +1,20 @@
-# zyzz/themes/default
+# Default theme
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
-Opt-in bundled design tokens. Core `zyzz` imports remain token-free.
+Import `css`, `theme`, and raw `tokens` from `zyzz/themes/default`. The root entrypoint does not import this data. `variants` follows in Phase 3.
 
 ```ts
 import { css } from 'zyzz/themes/default'
 
-const card = css({ color: 'blue.700', padding: 4 })
+const body = css({
+  color: 'foreground',
+  fontFamily: 'sans',
+  fontSize: 'base',
+  padding: 4,
+})
 ```
 
-| Export     | Contract                                                    |
-| ---------- | ----------------------------------------------------------- |
-| `css`      | Bound callable authoring with inferred built-in token names |
-| `theme`    | Complete theme definition and references                    |
-| `tokens`   | Raw token data for reuse and extension                      |
-| `variants` | Bound recipe authoring                                      |
+The opt-in bundle supplies Tailwind's palette, breakpoint, radius, and font-size scales, a quarter-rem spacing scale, scalar typography, and Geist/Geist Mono font stacks with system fallbacks. It does not download or register fonts. `foreground` and `surface` provide light/dark semantic colors.
 
-Geist colors/typography and spacing/radius scales are opt-in theme data. Use [css](../core/css.md), [Theme](../core/Theme/README.md), and [variants](../core/variants.md) for method contracts.
+Palette and scale data come from the pinned Tailwind dependency; its MIT notice is retained in `src/themes/LICENSE.tailwind`. Raw `tokens` are independent of `theme.tokens` portable references and `theme.vars` web references.
+
+Themes can also define `breakpoints`, `containers`, and `containerNames`. These are compile-time query metadata, excluded from declaration references and emitted CSS variables. Thresholds use fixed nonnegative CSS lengths, with relative units preserved. Extensions may change existing thresholds; runtime theme scope changes do not change compiled thresholds. Condition authoring builds on this metadata in the next stacked PR.

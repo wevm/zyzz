@@ -529,8 +529,8 @@ const globals = new Set<string>([
 ])
 const intrinsic = ['fit-content', 'max-content', 'min-content'] as const
 const length = { auto: false, kind: 'length', negative: false } as const
-// Keep type inference and validation on the same unit vocabulary.
-const lengthUnits = [
+/** Shared CSS length unit vocabulary for static domains and query metadata. */
+export const lengthUnits = [
   '%',
   'cap',
   'ch',

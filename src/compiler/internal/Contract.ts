@@ -28,7 +28,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     }
     const definition = Theme.define(record(entry.tokens) as Theme.Tokens)
     themes[name] = Token.bind(definition, contract)
-    types[name] = type(tokens(definition.tokens))
+    types[name] = type(input(definition))
   }
   function link(value: unknown): Themes.Link {
     const entry = record(value)
@@ -100,6 +100,10 @@ function string(value: unknown): string {
   return value
 }
 
+function input(theme: Theme.Definition) {
+  return { ...tokens(theme.tokens), ...theme[Token.definition].queries }
+}
+
 function tokens(tree: Theme.References<Theme.Tokens>): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(tree).map(([name, value]) => [
@@ -112,6 +116,7 @@ function tokens(tree: Theme.References<Theme.Tokens>): Record<string, unknown> {
 }
 
 function type(value: unknown): string {
+  if (Array.isArray(value)) return `readonly [${value.map(type).join(',')}]`
   if (!value || typeof value !== 'object') return JSON.stringify(value)
   return `{${Object.entries(value)
     .map(([key, value]) => `readonly ${JSON.stringify(key)}:${type(value)}`)
@@ -150,7 +155,7 @@ export function write(
         name,
         {
           identity: theme[Token.definition].contract[Token.identity],
-          tokens: tokens(theme.tokens),
+          tokens: input(theme),
         },
       ]),
     ),

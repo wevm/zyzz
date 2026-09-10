@@ -72,9 +72,18 @@ export function create(options: create.Options = {}): unknown {
     )
     const base = definitions[input.defaultTheme]!
     const paths = Object.keys(base[Token.definition].values).sort()
+    function queries(theme: Theme.Definition) {
+      const data = theme[Token.definition].queries
+      return JSON.stringify({
+        breakpoints: Object.keys(data?.breakpoints ?? {}).sort(),
+        containers: Object.keys(data?.containers ?? {}).sort(),
+        containerNames: [...(data?.containerNames ?? [])].sort(),
+      })
+    }
     for (const [name, value] of Object.entries(definitions)) {
       const candidate = Object.keys(value[Token.definition].values).sort()
       if (
+        queries(base) !== queries(value) ||
         paths.length !== candidate.length ||
         paths.some((path, index) => path !== candidate[index])
       )

@@ -3,6 +3,7 @@
  * @module
  */
 import type * as Binding from './Binding.js'
+import type * as Query from './Query.js'
 import type * as Theme from '../Theme.js'
 import * as Literal from './Literal.js'
 
@@ -172,6 +173,11 @@ export type Group =
   | 'borderRadius'
   | 'color'
   | 'spacing'
+  | 'fontFamily'
+  | 'fontSize'
+  | 'fontWeight'
+  | 'letterSpacing'
+  | 'lineHeight'
   | 'textColor'
 
 /** Stable package/module/binding identity supplied by source adapters. */
@@ -194,6 +200,7 @@ export function is(value: unknown): value is Reference {
 
 /** Immutable theme data carried directly by each definition. */
 export type Metadata = {
+  readonly queries?: Query.Metadata | undefined
   readonly contract: Contract
   readonly values: Readonly<Record<string, Value>>
 }
@@ -294,6 +301,11 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
     'borderColor',
     'borderRadius',
     'spacing',
+    'fontFamily',
+    'fontSize',
+    'fontWeight',
+    'letterSpacing',
+    'lineHeight',
     'textColor',
     'color',
   ] as const) {

@@ -51,7 +51,7 @@ const style = Vars.set(progress, { amount: '42%' })
 
 ## Errors
 
-Reject unknown keys and incompatible values. Private compiler-owned variables are not application override keys.
+Reject unknown keys, accessors, symbols, and incompatible scalar primitives; numeric slots require finite numbers. CSS grammar, units, and sign compatibility are checked by the TypeScript authoring contract, not reparsed at runtime. Untyped inputs must be validated at the application boundary before calling `Vars.set`. Private compiler-owned variables are not application override keys.
 
 See [Vars](README.md) for related methods and types.
 

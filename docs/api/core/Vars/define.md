@@ -16,7 +16,7 @@ const progress = Vars.define({ amount: 'percentage' })
 
 ### schema
 
-- Type: Record of `color | length | number | percentage` domains
+- Type: Record of `color | length | number | percentage | signedLength | signedPercentage` domains
 - Required: Yes.
 
 Named shared variable contract. Dynamic callbacks are a separate authoring feature.
@@ -41,7 +41,7 @@ progress.amount
 
 ## Errors
 
-Source extraction rejects nonliteral schemas, duplicate names, and unsupported scalar domains. Untransformed calls throw `css.MissingTransformError`.
+Source extraction rejects nonliteral schemas, duplicate names, and unsupported scalar domains. Untransformed calls throw `Vars.MissingTransformError`.
 
 Dynamic callbacks are a separate authoring feature. Shared contracts are for bindings spanning definitions.
 

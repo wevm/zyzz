@@ -40,7 +40,7 @@ Consumer concepts, usage, and API status are documented in [docs](../docs/README
 
 Accepted API: retain `Theme.define`/`Theme.extend` for reusable token definitions and add `Config.create` as the usual authoring entrypoint, exported as a namespace from `zyzz`.
 
-Export `const zyzz = Config.create(...)` from `zyzz.config.ts`. Consumers import `{ zyzz }` and access its bound helpers and theme handles. Integrations follow this named instance without requiring a default export.
+Export `const { css, variants, theme } = Config.create(...)` from `zyzz.config.ts`. Consumers import `{ css, variants, theme }` directly. Integrations follow these named exports without requiring a default export.
 
 The config is an ordinary importable, statically analyzed module, not an executable configuration hook or a required filename. The root core remains pure and independent of source discovery and platform adapters.
 
@@ -48,7 +48,7 @@ The config is an ordinary importable, statically analyzed module, not an executa
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+export const { css, script, theme, variants } = Config.create({
   layers: ['reset', 'base', 'components'],
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
@@ -57,7 +57,7 @@ export const zyzz = Config.create({
 })
 ```
 
-`theme` accepts inline token definitions or an existing `Theme.define`/`Theme.extend` value. Named `themes` accepts a mixture of those inputs. `theme` and `themes` are mutually exclusive; omitting both produces token-free bound functions. In named mode, require `defaultTheme`, inferred from the catalog's keys, rather than choosing by object order. Single-theme mode returns `theme`; named mode returns `themes`. Both return `css` and `variants`; no returned layer-reference object is required.
+`theme` accepts inline token definitions or an existing `Theme.define`/`Theme.extend` value. Named `themes` accepts a mixture of those inputs. `theme` and `themes` are mutually exclusive; omitting both produces token-free bound functions. In named mode, require `defaultTheme`, inferred from the catalog's keys, rather than choosing by object order. Single-theme mode returns `theme`; named mode returns the default `theme` for shared token references and a callable `themes` selector. Both return `css` and `variants`; no returned layer-reference object is required.
 
 ```ts
 import { Config, Theme } from 'zyzz'
@@ -66,7 +66,7 @@ const base = Theme.define({
   color: { brand: { dark: '#8cf', light: '#06c' } },
 })
 
-export const zyzz = Config.create({
+export const { css, script, themes, variants } = Config.create({
   defaultTheme: 'base',
   layers: ['reset', 'base', 'components'],
   themes: {
@@ -81,14 +81,16 @@ The default determines token paths/domains and unscoped fallback values. Named a
 `layers` is an ordered readonly tuple of valid CSS layer names. Infer exact `@layer <name>` keys directly in the returned `css` and every supported style body of `variants`, retaining property/value/token inference at every depth:
 
 ```ts
-import { zyzz } from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
-const button = zyzz.css({
-  '@layer components': {
-    backgroundColor: 'brand',
-    ':hover': { opacity: 0.8 },
-  },
-})
+const styles = {
+  button: css({
+    '@layer components': {
+      backgroundColor: 'brand',
+      ':hover': { opacity: 0.8 },
+    },
+  }),
+}
 ```
 
 Autocomplete declared keys and reject misspellings such as `@layer component`. No computed key, layer-reference import, or unrestricted string index signature is needed. Preserve declaration order in `layers` as cascade order. An omitted layer list contributes no named layer keys to config-bound functions. Additional project layer declarations do not ambiently widen an imported function's type; include every layer used by that function in its config. Raw unbound web authoring remains subject to its own syntax/extraction contract.
@@ -96,13 +98,17 @@ Autocomplete declared keys and reject misspellings such as `@layer component`. N
 Apply a callable theme to `<html>` for document-wide scope and color-scheme selection:
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { themes } from './zyzz.config.js'
 
-const selected: keyof typeof zyzz.themes = 'mint'
+const selected: Parameters<typeof themes>[0]['theme'] = 'mint'
 const example = (
-  <html {...zyzz.themes[selected]({ colorScheme: 'dark' })}>
-    <head><title>My App</title></head>
-    <body><button {...button()}>Save</button></body>
+  <html {...themes({ theme: selected, colorScheme: 'dark' })}>
+    <head>
+      <title>My App</title>
+    </head>
+    <body>
+      <button {...styles.button()}>Save</button>
+    </body>
   </html>
 )
 ```
@@ -111,7 +117,7 @@ Scope classes assign live custom properties; descendants inherit values without 
 
 Globals and additional layer contributions retain project-wide collection and may be colocated outside `zyzz.config.ts`. Config declarations contribute their layer order through that same pipeline. The filename convention never changes inference in direct root imports or requires runtime providers. Public config properties remain explicit and narrowly typed; new settings need their own semantics rather than an arbitrary metadata bag.
 
-The named `zyzz` instance retains the config's complete inferred contract. Source adapters must follow `zyzz.css`, `zyzz.variants`, and theme handles through aliases, re-exports, and package boundaries. CSS references use `zyzz.theme.vars` or `zyzz.themes.<name>.vars`.
+The named config helpers retain the config's complete inferred contract. Source adapters must follow `css`, `variants`, and theme handles through aliases, re-exports, and package boundaries. CSS references use `theme.vars`.
 
 Integrations discover the originating config through that binding without requiring a default export. No config import performs compilation at runtime.
 
@@ -166,7 +172,7 @@ Property-specific color groups augment the shared `color` group and win when a k
 ```ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+export const { css, script, theme, variants } = Config.create({
   shorthands: {
     px: ['paddingLeft', 'paddingRight'],
     paddingX: ['paddingLeft', 'paddingRight'],
@@ -180,7 +186,9 @@ export const zyzz = Config.create({
   },
 })
 
-const card = zyzz.css({ px: 'sm', margin: 'gutter', color: 'primary' })
+const styles = {
+  card: css({ px: 'sm', margin: 'gutter', color: 'primary' }),
+}
 ```
 
 All three aliases expand to physical left/right padding. Logical alternatives can target `paddingInlineStart` and `paddingInlineEnd`. Aliases never change meaning implicitly with the output target.
@@ -208,10 +216,12 @@ Every `css` definition returns a callable. Calling it returns plain props to spr
 ```tsx
 import { css } from 'zyzz'
 
-const button = css({ color: '#06c', padding: '1rem' })
+const styles = {
+  button: css({ color: '#06c', padding: '1rem' }),
+}
 
 export function Button() {
-  return <button {...button({ className: 'checkout' })}>Continue</button>
+  return <button {...styles.button({ className: 'checkout' })}>Continue</button>
 }
 ```
 
@@ -220,8 +230,10 @@ Theme-bound and bundled functions follow the same contract, with inferred tokens
 ```tsx
 import { css } from 'zyzz/themes/default'
 
-const button = css({ padding: 4, color: 'blue.700' })
-const element = <button {...button()} />
+const styles = {
+  button: css({ padding: 4, color: 'blue.700' }),
+}
+const element = <button {...styles.button()} />
 ```
 
 `Theme.define` returns bound `css` and `variants`, portable `tokens`, web variable references through `vars`, and a scope `className`. Destructuring, aliases, and re-exports retain inference. Static and dynamic definitions may be inline, module-level, exported, or imported. Extraction recognizes the authoring binding independently of markup position.
@@ -229,16 +241,18 @@ const element = <button {...button()} />
 ```tsx
 const { css, variants } = theme
 
-export const button = css({
-  backgroundColor: 'surface',
-  color: 'primary',
-  borderColor: 'subtle',
-  padding: 'md',
-  borderRadius: 'md',
-  ':hover': { backgroundColor: 'brand' },
-})
+export const styles = {
+  button: css({
+    backgroundColor: 'surface',
+    color: 'primary',
+    borderColor: 'subtle',
+    padding: 'md',
+    borderRadius: 'md',
+    ':hover': { backgroundColor: 'brand' },
+  }),
+}
 
-const element = <button {...button()}>Continue</button>
+const element = <button {...styles.button()}>Continue</button>
 ```
 
 Inline usage is also valid: `<button {...css({ padding: '1rem' })()} />`. Extraction replaces definitions with small props-binding functions and can fold fully static applications into constants. No runtime style generation occurs. Untransformed authoring calls fail with an actionable missing-transform diagnostic.
@@ -252,13 +266,15 @@ The in-memory equivalent is `Style.define({ card: { color: 'brand', padding: 'md
 Importance uses a trailing `!` on a string. Fallbacks use a nonempty array of values, in declaration order. CSS expressions are ordinary strings or template literals. There is no helper context or helper callback.
 
 ```ts
-const panel = theme.css({
-  display: ['block', 'grid'],
-  color: 'brand!',
-  backgroundColor: 'oklch(60% 0.2 250)',
-  borderColor: theme.vars.color.brand,
-  width: `calc(100% - ${theme.vars.spacing.md})`,
-})
+const styles = {
+  panel: theme.css({
+    display: ['block', 'grid'],
+    color: 'brand!',
+    backgroundColor: 'oklch(60% 0.2 250)',
+    borderColor: theme.vars.color.brand,
+    width: `calc(100% - ${theme.vars.spacing.md})`,
+  }),
+}
 ```
 
 Parse a single final, unescaped `!` outside CSS strings, comments, and functions as declaration importance, before resolving a token or literal. Also accept standard trailing `!important`. Quoted content such as `content: '"Hello!"'` retains its punctuation. Reject malformed or repeated markers. An important numeric value uses a CSS string, for example `opacity: '0.5!'`; nonzero numeric spacing tokens retain their ordinary token rules.
@@ -282,14 +298,22 @@ Applied web props contain a readonly `className` and optional `style`, plus vali
 Prefer platform state attributes and custom data attributes over conditional class concatenation:
 
 ```tsx
-const button = theme.css({
-  ':disabled': { opacity: 0.5 },
-  '&[aria-expanded="true"]': { backgroundColor: 'brand' },
-  '&[data-loading="true"]': { cursor: 'progress' },
-})
+const styles = {
+  button: theme.css({
+    ':disabled': { opacity: 0.5 },
+    '&[aria-expanded="true"]': { backgroundColor: 'brand' },
+    '&[data-loading="true"]': { cursor: 'progress' },
+  }),
+}
 
-<button {...button()} disabled={disabled}
-  aria-expanded={expanded} data-loading={loading} />
+const example = (
+  <button
+    {...styles.button()}
+    disabled={disabled}
+    aria-expanded={expanded}
+    data-loading={loading}
+  />
+)
 ```
 
 Native/ARIA attributes must reflect actual behavior and accessibility semantics. Visual variants use data attributes. A data attribute alone does not disable a control or supply accessibility state.
@@ -307,15 +331,17 @@ An expression-bodied callback receives only the runtime values record. An annota
 ```tsx
 import { css } from 'zyzz'
 
-const track = css({ height: '0.5rem' })
-const bar = css((values: { width: `${number}%` }) => ({
-  width: values.width,
-}))
+const styles = {
+  track: css({ height: '0.5rem' }),
+  bar: css((values: { width: `${number}%` }) => ({
+    width: values.width,
+  })),
+}
 
 export function Progress() {
   return (
-    <div {...track()}>
-      <div {...bar({ width: '50%', className: 'progress' })} />
+    <div {...styles.track()}>
+      <div {...styles.bar({ width: '50%', className: 'progress' })} />
     </div>
   )
 }
@@ -326,17 +352,19 @@ Static applications accept optional styling overrides. Dynamic applications comb
 ```tsx
 type PanelValues = { readonly width: `${number}px`; readonly opacity: number }
 
-const panel = theme.css((values: PanelValues) => ({
-  width: values.width,
-  opacity: values.opacity,
-  color: theme.vars.color.brand,
-  padding: 'md',
-  ':hover': { opacity: values.opacity },
-}))
+const styles = {
+  panel: theme.css((values: PanelValues) => ({
+    width: values.width,
+    opacity: values.opacity,
+    color: theme.vars.color.brand,
+    padding: 'md',
+    ':hover': { opacity: values.opacity },
+  })),
+}
 
 const element = (
   <section
-    {...panel({
+    {...styles.panel({
       width: '320px',
       opacity: 0.8,
       className: 'checkout',
@@ -373,9 +401,13 @@ Integration gates cover static and dynamic calls, repeated updates, nested insta
 import { Vars, css } from 'zyzz'
 
 const progress = Vars.define({ amount: 'percentage' })
-const bar = css({ width: progress.amount })
+const styles = { bar: css({ width: progress.amount }) }
 
-<div {...bar({ style: Vars.set(progress, { amount: `${percent}%` }) })} />
+const example = (
+  <div
+    {...styles.bar({ style: Vars.set(progress, { amount: `${percent}%` }) })}
+  />
+)
 ```
 
 Dynamic callbacks are the concise path for values local to one style. Keep `Vars` for explicit shared variable contracts and independent assignments. Both forms use the same compiler binding model.
@@ -391,33 +423,37 @@ Dynamic assignment is allowed; dynamic rule generation is not. The core never re
 Each recipe styles one element and returns one spreadable props object when applied. Multipart components use separate `css` or `variants` definitions for their elements. Shared selections use ordinary component inputs; DOM relationships use data attributes or typed markers. Recipes have no `slots` option or map of part props.
 
 ```tsx
-const button = theme.variants({
-  base: { display: 'inline-flex' },
-  variants: {
-    intent: {
-      primary: { backgroundColor: 'brand' },
-      ghost: { backgroundColor: 'transparent' },
+const styles = {
+  button: theme.variants({
+    base: { display: 'inline-flex' },
+    variants: {
+      intent: {
+        primary: { backgroundColor: 'brand' },
+        ghost: { backgroundColor: 'transparent' },
+      },
+      size: {
+        sm: { padding: 'sm' },
+        md: { padding: 'md' },
+      },
+      loading: {
+        true: { opacity: 0.5 },
+        false: {},
+      },
     },
-    size: {
-      sm: { padding: 'sm' },
-      md: { padding: 'md' },
-    },
-    loading: {
-      true: { opacity: 0.5 },
-      false: {},
-    },
-  },
-  compoundVariants: [
-    {
-      when: { intent: 'primary', size: ['sm', 'md'] },
-      style: { fontWeight: 600 },
-    },
-  ],
-  defaultVariants: { intent: 'primary', size: 'md', loading: false },
-})
+    compoundVariants: [
+      {
+        when: { intent: 'primary', size: ['sm', 'md'] },
+        style: { fontWeight: 600 },
+      },
+    ],
+    defaultVariants: { intent: 'primary', size: 'md', loading: false },
+  }),
+}
 
-type ButtonVariants = NonNullable<Parameters<typeof button>[0]>
-const element = <button {...button({ intent: 'ghost', size: 'sm', loading })} />
+type ButtonVariants = NonNullable<Parameters<typeof styles.button>[0]>
+const element = (
+  <button {...styles.button({ intent: 'ghost', size: 'sm', loading })} />
+)
 ```
 
 `variants` and `theme.variants` take static recipe objects. Use `theme.tokens` and `theme.vars` for explicit references; no context callback is needed. Infer variant names, string values, booleans, defaults, compound keys, and style tokens. `NonNullable<Parameters<typeof button>[0]>` extracts selection props; callers can make selected properties required using ordinary type utilities. The selection argument is optional, so `button()` applies defaults. No custom props helper is required.
@@ -425,10 +461,12 @@ const element = <button {...button({ intent: 'ghost', size: 'sm', loading })} />
 ```ts
 import { variants } from 'zyzz'
 
-const button = variants({
-  variants: { size: { sm: { padding: '0.5rem' }, md: { padding: '1rem' } } },
-  defaultVariants: { size: 'md' },
-})
+const styles = {
+  button: variants({
+    variants: { size: { sm: { padding: '0.5rem' }, md: { padding: '1rem' } } },
+    defaultVariants: { size: 'md' },
+  }),
+}
 ```
 
 Destructured `theme.variants`, imported aliases, and re-exports preserve inference and extraction. Recipe structure remains static; individual choices may be value callbacks as specified below. The selection input accepts only declared variant axes and styling overrides under the same merge rules as `css`. Reject reserved axis names and conflicting owned data attributes.
@@ -448,24 +486,32 @@ The native target consumes the same recipe definition and selection types, emitt
 Each choice accepts a static style object or a typed value callback. The callback follows the dynamic `css` contract and compiles to the same binding slots; runtime values remain local to that axis and choice.
 
 ```tsx
-const button = theme.variants({
-  base: { display: 'inline-flex' },
-  variants: {
-    size: {
-      sm: { padding: 'sm' },
-      md: { padding: 'md' },
-      custom: (values: { padding: `${number}px` }) => ({
-        padding: values.padding,
-      }),
+const styles = {
+  button: theme.variants({
+    base: { display: 'inline-flex' },
+    variants: {
+      size: {
+        sm: { padding: 'sm' },
+        md: { padding: 'md' },
+        custom: (values: { padding: `${number}px` }) => ({
+          padding: values.padding,
+        }),
+      },
     },
-  },
-  defaultVariants: { size: 'md' },
-  compoundVariants: [{ when: { size: 'custom' }, style: { fontWeight: 600 } }],
-})
+    defaultVariants: { size: 'md' },
+    compoundVariants: [
+      { when: { size: 'custom' }, style: { fontWeight: 600 } },
+    ],
+  }),
+}
 
 const element = (
   <button
-    {...button({ size: { custom: { padding: '12px' } }, className, style })}
+    {...styles.button({
+      size: { custom: { padding: '12px' } },
+      className,
+      style,
+    })}
     disabled={disabled}
     onClick={onClick}
   />
@@ -491,23 +537,25 @@ Integration coverage must include real source compilation and rendering, active-
 Style objects accept standard CSS properties, scoped selectors, and conditional at-rules. Nested declarations retain the same property types and theme-token inference at every depth.
 
 ```ts
-const control = theme.css({
-  display: 'inline-flex',
-  color: 'primary',
-  ':hover': { backgroundColor: 'brand' },
-  ':focus-visible': { outlineStyle: 'solid' },
-  ':disabled': { opacity: 0.5 },
-  '&::before': { content: '"→"' },
-  '& > svg': { width: '1em' },
-  '&[aria-expanded="true"]': { backgroundColor: 'brand' },
-  '@media (width >= 48rem)': {
-    padding: 'md',
-    ':hover': { color: 'brand' },
-  },
-  '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
-  '@container (width >= 30rem)': { flexDirection: 'row' },
-  '@supports (display: grid)': { display: 'grid' },
-})
+const styles = {
+  control: theme.css({
+    display: 'inline-flex',
+    color: 'primary',
+    ':hover': { backgroundColor: 'brand' },
+    ':focus-visible': { outlineStyle: 'solid' },
+    ':disabled': { opacity: 0.5 },
+    '&::before': { content: '"→"' },
+    '& > svg': { width: '1em' },
+    '&[aria-expanded="true"]': { backgroundColor: 'brand' },
+    '@media (width >= 48rem)': {
+      padding: 'md',
+      ':hover': { color: 'brand' },
+    },
+    '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+    '@container (width >= 30rem)': { flexDirection: 'row' },
+    '@supports (display: grid)': { display: 'grid' },
+  }),
+}
 ```
 
 `&` refers to the current scoped selector. A leading pseudo-class or pseudo-element inserts `&`, so `:hover` means `&:hover`. Descendant, child, attribute, and compound selectors use explicit `&`. Nested selectors and conditions preserve their authored order, specificity, and conjunction; flattening must not change these semantics.
@@ -523,15 +571,17 @@ This is the planned selector API, not implemented source syntax. Use standard ps
 ```tsx
 import { css } from 'zyzz'
 
-const indicator = css({
-  opacity: 0,
-  ':where([data-group="profile"]:has(a)) &': { opacity: 1 },
-})
+const styles = {
+  indicator: css({
+    opacity: 0,
+    ':where([data-group="profile"]:has(a)) &': { opacity: 1 },
+  }),
+}
 
 const profile = (
   <article data-group="profile">
     <a href="/profile">Profile</a>
-    <span {...indicator()}>Has a link</span>
+    <span {...styles.indicator()}>Has a link</span>
   </article>
 )
 ```
@@ -568,15 +618,17 @@ import { css } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const card = Css.marker({ state: ['closed', 'open'] })
-const title = css({
-  color: '#666',
-  [Css.ancestor(card, ':hover')]: { color: '#06c' },
-  [Css.ancestor(card, { data: { state: 'open' } })]: { fontWeight: 600 },
-})
+const styles = {
+  title: css({
+    color: '#666',
+    [Css.ancestor(card, ':hover')]: { color: '#06c' },
+    [Css.ancestor(card, { data: { state: 'open' } })]: { fontWeight: 600 },
+  }),
+}
 
 const profile = (
-  <article {...card({ state: 'open' })}>
-    <h2 {...title()}>Profile</h2>
+  <article {...styles.card({ state: 'open' })}>
+    <h2 {...styles.title()}>Profile</h2>
   </article>
 )
 ```
@@ -592,20 +644,22 @@ Separate marker and styling spreads have disjoint fields: `<article {...card({ s
 An ancestor condition is a supported simple pseudo string or an options object with optional `data`, `pseudo`, and `has`. `data` infers a partial state selection from the first marker argument. `pseudo` is one supported nonfunctional pseudo-class such as `:focus-within` or `:hover`; offer completion and reject `:hovr` and pseudo-elements. `has` is a statically parsed relative-selector list such as `'a'` or `'> input:checked'`. Combined fields are AND predicates on the same marked ancestor. Omission matches marker presence.
 
 ```ts
-const indicator = css({
-  opacity: 0,
-  [Css.ancestor(card, { has: 'a' })]: { opacity: 1 },
-})
-const activeTitle = css({
-  [Css.ancestor(card, {
-    data: { state: 'open' },
-    has: 'a',
-    pseudo: ':focus-within',
-  })]: { color: '#06c' },
-})
+const styles = {
+  indicator: css({
+    opacity: 0,
+    [Css.ancestor(card, { has: 'a' })]: { opacity: 1 },
+  }),
+  activeTitle: css({
+    [Css.ancestor(card, {
+      data: { state: 'open' },
+      has: 'a',
+      pseudo: ':focus-within',
+    })]: { color: '#06c' },
+  }),
+}
 
 // Expected type errors in the proposed contract.
-card({ state: 'expanded' })
+styles.card({ state: 'expanded' })
 Css.ancestor(card, { data: { status: 'open' } })
 Css.ancestor(card, ':hovr')
 ```
@@ -616,17 +670,19 @@ Use the same marker in `Css.descendant`, `Css.siblingBefore`, `Css.siblingAfter`
 
 ```tsx
 const choice = Css.marker()
-const hint = css({
-  [Css.siblingBefore(choice, ':checked')]: { color: '#06c' },
-})
-const fieldset = css({
-  [Css.descendant(choice, ':checked')]: { borderColor: '#06c' },
-})
+const styles = {
+  hint: css({
+    [Css.siblingBefore(choice, ':checked')]: { color: '#06c' },
+  }),
+  fieldset: css({
+    [Css.descendant(choice, ':checked')]: { borderColor: '#06c' },
+  }),
+}
 
 const example = (
-  <fieldset {...fieldset()}>
+  <fieldset {...styles.fieldset()}>
     <input {...choice()} aria-label="Select option" type="checkbox" />
-    <span {...hint()}>Selected</span>
+    <span {...styles.hint()}>Selected</span>
   </fieldset>
 )
 ```
@@ -662,19 +718,20 @@ const { css } = Theme.define({
   containers: { card: '24rem', panel: '40rem' },
 })
 
-export const layout = css({
-  padding: 'sm',
-  '@media tablet': {
-    padding: 'md',
-    ':hover': { opacity: 0.9 },
-  },
-  '@container card': { display: 'grid' },
-})
-
-const region = css({ containerType: 'inline-size' })
+export const styles = {
+  layout: css({
+    padding: 'sm',
+    '@media tablet': {
+      padding: 'md',
+      ':hover': { opacity: 0.9 },
+    },
+    '@container card': { display: 'grid' },
+  }),
+  region: css({ containerType: 'inline-size' }),
+}
 const example = (
-  <section {...region()}>
-    <div {...layout()} />
+  <section {...styles.region()}>
+    <div {...styles.layout()} />
   </section>
 )
 ```
@@ -729,10 +786,12 @@ fontFace({
   fontWeight: '100 900',
   fontDisplay: 'swap',
 })
-const animated = theme.css({
-  animationName: fadeIn,
-  animationDuration: '200ms',
-})
+const styles = {
+  animated: theme.css({
+    animationName: fadeIn,
+    animationDuration: '200ms',
+  }),
+}
 ```
 
 `keyframes(frames)` returns a typed animation-name reference. Accept `from`, `to`, percentages in the inclusive 0–100 range, and valid comma-separated stops. Frame values are declaration objects; reject nested selectors/queries and important declarations. Preserve source order at overlapping offsets, and never reorder frame declarations mechanically. Theme values use explicit `theme.tokens` or supported `theme.vars` references.
@@ -744,12 +803,14 @@ const enter = keyframes({
   from: { opacity: 0, transform: 'translateY(4px)' },
   to: { opacity: 1, transform: 'translateY(0)' },
 })
-const notice = theme.css({
-  animationDuration: '160ms',
-  animationName: enter,
-  '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
-  ':focus-visible': { outline: '2px solid currentColor' },
-})
+const styles = {
+  notice: theme.css({
+    animationDuration: '160ms',
+    animationName: enter,
+    '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
+    ':focus-visible': { outline: '2px solid currentColor' },
+  }),
+}
 ```
 
 Longhands are the simplest typed usage. When animation shorthand/templates and comma-separated animation lists land, parse them and preserve reference identity instead of concatenating unvalidated strings. Reused/imported animations emit reachable definitions with stable names; frame references survive library packaging and query wrapping. Explicit global names need collision and ownership rules before they are exposed.
@@ -765,13 +826,13 @@ Accepted API for 2.4c: `Config.create({ layers, ... })` declares semantic layer 
 ```ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+export const { css, script, variants } = Config.create({
   layers: ['reset', 'base', 'components', 'overrides'],
 })
 ```
 
 ```ts
-import { zyzz } from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
 import { global } from 'zyzz/web'
 
@@ -782,9 +843,11 @@ global({
   },
 })
 
-export const button = zyzz.css({
-  '@layer components': { padding: '1rem' },
-})
+export const styles = {
+  button: css({
+    '@layer components': { padding: '1rem' },
+  }),
+}
 ```
 
 Layer placement belongs to authored blocks in both global and scoped styles. Unwrapped rules remain unlayered; declaring `base` does not implicitly place globals there. `global` has no ambient access to a config's TypeScript catalog: raw global at-rule strings receive compiler validation. Config-bound functions reject undeclared layer keys through their explicit inferred contract.
@@ -866,9 +929,9 @@ The compiler must support local/imported/packed handles and finite dynamic catal
 
 ### Root Preference Initialization
 
-`Config.create` returns a bound `zyzz.script(options = {})` function that generates inline JavaScript. It needs no separate import. Derive the named theme catalog, compiled scope classes, and default selection from its config; the only override is `options.storageKey` (default `'zyzz'`). The server renders fallback root props. No explicit mapping API, duplicate defaults, cookies, providers, or core browser dependencies.
+`Config.create` returns a bound `script(options = {})` function that generates inline JavaScript. It needs no separate import. Derive the named theme catalog, compiled scope classes, and default selection from its config; the only override is `options.storageKey` (default `'zyzz'`). The server renders fallback root props. No explicit mapping API, duplicate defaults, cookies, providers, or core browser dependencies.
 
-Source integration must recognize `zyzz.script` calls on the config receiver through imports, aliases, re-exports, and packed metadata. Serialize only compiled scope identities and selection metadata, never token data or authoring functions. Single-theme and token-free configs restore the color scheme only; ignore stored theme names in those modes. Preserve server-rendered defaults when no valid stored preference exists.
+Source integration must recognize `script` calls on the config receiver through imports, aliases, re-exports, and packed metadata. Serialize only compiled scope identities and selection metadata, never token data or authoring functions. Single-theme and token-free configs restore the color scheme only; ignore stored theme names in those modes. Preserve server-rendered defaults when no valid stored preference exists.
 
 The localStorage record is `{ theme?: string, colorScheme?: 'light' | 'dark' | 'light dark' }`. Read it synchronously once from a classic inline script early in `<head>`, before stylesheets and visible content. Apply allowlisted preferences to `document.documentElement`; retain unrelated classes/styles and remove only classes belonging to the supplied catalog.
 
@@ -959,7 +1022,7 @@ The optional adapter connects the shared compiler to Vite's module graph. It rew
 - **Other bundlers:** use CLI output until a concrete adapter and public setup are defined.
 - **Parity:** plugin and CLI paths must agree on identities, conditions, theme scopes, and emitted behavior for equivalent input graphs.
 
-Application examples import authored components and the named `zyzz` instance normally. A bundler adapter hides rewriting and delivery. Standalone CLI output belongs to a downstream build or package distribution; consumers do not hand-maintain imports to generated component copies. CSS-only output cannot replace rewriting for the current callable API.
+Application examples import authored components and the named config helpers normally. A bundler adapter hides rewriting and delivery. Standalone CLI output belongs to a downstream build or package distribution; consumers do not hand-maintain imports to generated component copies. CSS-only output cannot replace rewriting for the current callable API.
 
 ### Next.js Setup
 
@@ -972,7 +1035,7 @@ import { zyzz } from 'zyzz/next'
 export default zyzz({ reactStrictMode: true })
 ```
 
-The wrapper configures source transformation, CSS delivery, and watching for Webpack and Turbopack internally. Application modules continue importing the named `zyzz` instance from their config. No separate Babel or PostCSS configuration is required by this public contract.
+The wrapper configures source transformation, CSS delivery, and watching for Webpack and Turbopack internally. Application modules continue importing the named config helpers from their config. No separate Babel or PostCSS configuration is required by this public contract.
 
 Reuse the shared compiler and keep loader/transform selection internal. Preserve existing Next.js options and compose build hooks and rules without replacing application configuration. CSS delivery and dependency invalidation require separate bundler implementations and real fixtures; do not assume Webpack hooks work under Turbopack.
 

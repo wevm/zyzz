@@ -31,6 +31,7 @@ jobs:
         if: github.event_name != 'push'
         id: baseline
         run: |
+          if test -f bench/Runtime.bench.ts; then pnpm exec playwright install --with-deps chromium; fi
           mkdir -p bench/results
           git rev-parse HEAD > bench/results/commit.txt
           sha256sum pnpm-lock.yaml > bench/results/lockfile.txt
@@ -55,6 +56,8 @@ jobs:
           node --version > bench/results/node.txt
           pnpm --version > bench/results/pnpm.txt
           uname -a > bench/results/platform.txt
+      - name: Install runtime benchmark browser
+        run: pnpm exec playwright install --with-deps chromium
       - name: Run benchmarks
         run: pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json
       - name: Summarize benchmarks
@@ -113,6 +116,10 @@ jobs:
         id: frameworks
         continue-on-error: true
         run: node bench/Check.ts bench/results > bench/results/frameworks.md
+      - name: Check runtime framework performance
+        id: runtime
+        continue-on-error: true
+        run: node bench/RuntimeReport.ts bench/results > bench/results/runtime.md
       - name: Prepare benchmark comparisons
         id: comparison
         env:
@@ -121,7 +128,7 @@ jobs:
         run: |
           node bench/Compare.ts bench/results "$BASELINE_DIRECTORY" "$RUNNER_TEMP/benchmark-action" > "$RUNNER_TEMP/benchmark-comparison.md"
           printf '# Benchmark Report\n\n[Workflow run](%s/%s/actions/runs/%s)\n\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > "$RUNNER_TEMP/benchmark-report.md"
-          cat bench/results/frameworks.md "$RUNNER_TEMP/benchmark-comparison.md" bench/results/report.md >> "$RUNNER_TEMP/benchmark-report.md"
+          cat bench/results/frameworks.md bench/results/runtime.md "$RUNNER_TEMP/benchmark-comparison.md" bench/results/report.md >> "$RUNNER_TEMP/benchmark-report.md"
           mv "$RUNNER_TEMP/benchmark-report.md" bench/results/report.md
           cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Comment benchmark results
@@ -171,7 +178,7 @@ jobs:
           save-data-file: false
           tool: customSmallerIsBetter
       - name: Enforce framework performance
-        if: ${{ !cancelled() && steps.frameworks.outcome == 'failure' }}
+        if: ${{ !cancelled() && (steps.frameworks.outcome == 'failure' || steps.runtime.outcome == 'failure') }}
         run: exit 1
     timeout-minutes: 30
 permissions:

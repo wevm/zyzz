@@ -1,5 +1,34 @@
 # Compilation Benchmarks
 
+## Runtime Comparisons
+
+`bench/Runtime.bench.ts` measures production-compiled applications for Panda CSS, StyleX, Tailwind, vanilla-extract, and Zyzz, plus a plain class/style control. The shared partial-sharing corpus contains 10 or 100 distinct styles. Compilation, bundling, module initialization, and browser equivalence checks run outside timing.
+
+| Case | Measured application |
+| --- | --- |
+| cached | Read precomputed props, including Zyzz's directly folded `css({...})()` |
+| callable | Apply a surviving style callable or the framework's ordinary class/props API |
+| overrides | Apply styles with alternating external classes and inline color/padding overrides |
+
+Inputs are preallocated; each timed iteration selects a style and retains the returned props in a shared result array. The same indexing and result-consumption overhead applies to every framework. Browser checks verify all styles and both override inputs against independent native declarations before collecting timings.
+
+Two passes reverse framework order. Reports show nanoseconds per application, relative error, sample counts, and complete stylesheet/client transfer. Raw, gzip, and Brotli sizes and actual compiled artifacts are saved under `bench/results/runtime/`. Client bundles retain the helpers actually required by each framework.
+
+```sh
+pnpm exec playwright install chromium
+pnpm exec vp test bench bench/Runtime.bench.ts --run --no-file-parallelism --outputJson bench/results/timings.json
+node bench/RuntimeReport.ts bench/results
+pnpm test bench/Runtime.test.ts --run --no-file-parallelism
+```
+
+The existing Benchmark Report includes every framework and observed loss. A competitor faster beyond reported uncertainty in both passes fails the runtime gate. Overlapping intervals are inconclusive, not evidence of a Zyzz win. The native control is informational; existing compiler/transfer gates remain unchanged.
+
+These are function application measurements, not React rendering or browser layout timings. Initial mount, unchanged rerenders, changed props, allocation profiling, packed consumption, and dynamic binding remain follow-ups. Variant comparisons must accompany the first variants implementation; this harness does not simulate an unavailable API.
+
+The current Zyzz props helper includes override validation and inline-style copying. The benchmark measures that shipped behavior without removing checks or assigning competing frameworks artificial work. Runtime advantages must be established by measured results; cached class applications can have indistinguishable costs.
+
+## Compilation Comparisons
+
 Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, with shared workloads in `bench/Corpus.ts`. Run `pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json`. Reports are ignored by Git.
 
 The Benchmarks workflow uploads results and environment metadata as a 30-day artifact. One updating PR comment shows traffic-light deltas against a fresh main baseline measured sequentially on the same runner followed by the full framework comparison tables. Fork PRs receive Actions summaries and artifacts without comment writes. Missing baselines show “No baseline available.”

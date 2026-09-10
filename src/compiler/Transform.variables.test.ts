@@ -4,6 +4,52 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 
 describe('compile', () => {
+  test('removes consumed Vars imports and retains the public error constructor', () => {
+    const source =
+      'import { Vars } from "zyzz"; export const vars = Vars.define({ size: "length" });'
+    expect(
+      Transform.compile({ moduleId: 'vars.ts', source }).code,
+    ).not.toContain('from "zyzz"')
+    expect(
+      Transform.compile({
+        moduleId: 'error.ts',
+        source: source + 'export const ErrorType = Vars.MissingTransformError',
+      }).code,
+    ).toContain('Vars.MissingTransformError')
+    expect(() =>
+      Transform.compile({
+        moduleId: 'signed.ts',
+        source:
+          'import { Vars, css } from "zyzz"; const vars = Vars.define({ size: "signedLength" }); css({ lineHeight: vars.size })',
+      }),
+    ).toThrow('Variable domain is incompatible')
+  })
+  test('retains type-only generic references to Vars', () => {
+    const output = Transform.compile({
+      moduleId: 'generic.ts',
+      source:
+        'import {Vars} from "zyzz"; const v=Vars.define({gap:"length"}); function identity<T>(v:T){return v}; export const typed=identity<Vars.Definition<{gap:"length"}>>(v)',
+    })
+    expect(output.code).toMatchInlineSnapshot(
+      `
+      "
+      import { Vars as __zyzzVars } from 'zyzz/runtime';
+      import {Vars} from "zyzz"; const v=__zyzzVars.create({"gap":{"name":"--z-v1cd72gh91mozv-76--67-61-70","type":"length","variable":true}}); function identity<T>(v:T){return v}; export const typed=identity<Vars.Definition<{gap:"length"}>>(v)"
+    `,
+    )
+  })
+  test('rejects namespace Vars authoring', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'namespace.ts',
+        source:
+          'import * as zyzz from "zyzz"; export const v=zyzz.Vars.define({gap:"length"})',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: namespace.ts:45: Import Vars by name; namespace authoring calls are not supported yet.]`,
+    )
+  })
+
   test('rejects theme variables in root css', () => {
     expect(() =>
       Transform.compile({

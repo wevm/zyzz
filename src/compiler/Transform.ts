@@ -76,6 +76,15 @@ export function compile(options: compile.Options): compile.ReturnType {
   let runtime = '__zyzzProps'
   while (identifiers.has(runtime)) runtime += '_'
 
+  let variables = '__zyzzVars'
+  while (identifiers.has(variables)) variables += '_'
+
+  for (const call of extracted.variableCalls ?? [])
+    module.overwrite(
+      call.start,
+      call.end,
+      `${variables}.create(${JSON.stringify(call.slots)})`,
+    )
   const first = extracted.calls[0]
   const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
   const names = new Map<string, string>()
@@ -163,6 +172,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       end: applications.get(call.start)!.end,
       start: call.start,
     })),
+    ...(extracted.variableCalls ?? []),
     ...extracted.themeAliases,
     ...extracted.themeCalls,
     ...extracted.themeReferences,
@@ -190,7 +200,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         node.importKind === 'type' ||
         specifier.type !== 'ImportSpecifier' ||
         specifier.importKind === 'type' ||
-        !['Config', 'css', 'Theme'].includes(
+        !['Config', 'css', 'Theme', 'Vars'].includes(
           specifier.imported.type === 'Identifier'
             ? specifier.imported.name
             : specifier.imported.value,
@@ -237,7 +247,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable) {
+  if (callable || extracted.variableCalls?.length) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -249,7 +259,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { Props as ${runtime} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

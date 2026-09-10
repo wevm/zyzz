@@ -2,6 +2,7 @@
  * Copies typed style declarations into immutable, ordered, target-independent data.
  * @module
  */
+import * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import * as Value from './internal/Value.js'
@@ -14,9 +15,14 @@ type Exact<
     styles[name],
     (...args: never[]) => unknown
   > extends never
-    ? Value.Accepted<styles[name], Properties<tokens>> &
-        Value.Checked<styles[name], tokens> &
-        Record<Exclude<Keys<styles[name]>, keyof Properties>, never>
+    ? Properties<tokens> extends styles[name]
+      ? styles[name] extends Properties<tokens>
+        ? styles[name] &
+            Record<Exclude<Keys<styles[name]>, keyof Properties>, never>
+        : never
+      : Value.Accepted<styles[name], Properties<tokens>> &
+          Value.Checked<styles[name], tokens> &
+          Record<Exclude<Keys<styles[name]>, keyof Properties>, never>
     : never
 }
 type Keys<value> = value extends unknown ? keyof value : never
@@ -28,7 +34,12 @@ export type Declaration = {
   /** Supported CSS property in camelCase. */
   readonly property: keyof Properties
   /** Validated primitive or immutable, domain-checked theme reference. */
-  readonly value: number | string | Token.Reference | Token.Expression
+  readonly value:
+    | number
+    | string
+    | Token.Reference
+    | Token.Expression
+    | Binding.Reference
 }
 
 /**
@@ -170,6 +181,19 @@ export function define(
         if (inputs.length !== input.length) continue
       } else inputs.push(input)
       for (const entry of inputs) {
+        if (
+          typeof entry === 'object' &&
+          entry !== null &&
+          Object.getOwnPropertyDescriptor(entry, 'variable')?.value === true &&
+          !Binding.is(entry)
+        ) {
+          report(
+            'invalid_structure',
+            [name, property],
+            'Invalid compiler binding reference.',
+          )
+          continue
+        }
         const parsed = Value.parse(entry, key)
         const scalar = parsed ? parsed.value : entry
         const resolved = (() => {
@@ -198,7 +222,8 @@ export function define(
               | number
               | string
               | Token.Reference
-              | Token.Expression,
+              | Token.Expression
+              | Binding.Reference,
           }),
         )
       }
@@ -268,7 +293,12 @@ export class InvalidError extends Error {
 
 type LiteralAtoms = {
   readonly [property in keyof Literal.Properties]-?: Value.Atom<
-    Exclude<Literal.Properties[property], undefined>
+    | Exclude<Literal.Properties[property], undefined>
+    | {
+        [kind in Binding.Kind]: property extends Binding.Properties<kind>
+          ? Binding.Reference<kind>
+          : never
+      }[Binding.Kind]
   >
 }
 

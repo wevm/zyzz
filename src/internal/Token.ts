@@ -2,6 +2,7 @@
  * Carries portable theme references and enforces their property domains.
  * @module
  */
+import type * as Binding from './Binding.js'
 import type * as Theme from '../Theme.js'
 import * as Literal from './Literal.js'
 
@@ -106,7 +107,7 @@ export type Expression = {
   /** Structured expression discriminator. */
   readonly [expression]: true
   /** Cooked text and live scalar theme references in authored order. */
-  readonly parts: readonly (string | Reference)[]
+  readonly parts: readonly (string | Reference | Binding.Reference)[]
 }
 
 /** Identifies structured web expressions independently of literal CSS text. */
@@ -122,7 +123,9 @@ export function isExpression(value: unknown): value is Expression {
 }
 
 /** Builds an immutable expression from statically extracted segments. */
-export function compose(parts: readonly (string | Reference)[]): Expression {
+export function compose(
+  parts: readonly (string | Reference | Binding.Reference)[],
+): Expression {
   return Object.freeze({
     [expression]: true as const,
     parts: Object.freeze([...parts]),

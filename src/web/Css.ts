@@ -2,6 +2,7 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
+import * as Binding from '../internal/Binding.js'
 import * as Cascade from '../internal/Cascade.js'
 import * as Literal from '../internal/Literal.js'
 import * as Token from '../internal/Token.js'
@@ -208,6 +209,26 @@ export function compile<
     ordered: string
     shared: string
   }
+  const serialized = new Map<object, string>()
+  function serialize(input: Style.Declaration['value']): number | string {
+    if (typeof input !== 'object' || input === null) return input
+    const cached = serialized.get(input)
+    if (cached !== undefined) return cached
+    const value = serializeReference(input)
+    if (typeof value === 'string') serialized.set(input, value)
+    return value
+  }
+  function serializeReference(
+    input: Style.Declaration['value'],
+  ): number | string {
+    if (Binding.is(input)) return `var(${input.name})`
+    if (isReference(input)) return (theme ??= Themes.create()).serialize(input)
+    if (Token.isExpression(input))
+      return input.parts
+        .map((part) => (typeof part === 'string' ? part : serialize(part)))
+        .join('')
+    return input as number | string
+  }
   const unique = new Map<string, Prepared>()
   const resolved = new Map<Style.NamedStyle, Prepared>()
   const prepared = options.styles.styles.map((style, index) => {
@@ -217,21 +238,9 @@ export function compile<
     let body = ''
     const declarations: Cached[] = []
     for (const { important, property, value: input } of style.declarations) {
-      const token = isReference(input)
       let value: number | string
       try {
-        value = (() => {
-          if (token) return (theme ??= Themes.create()).serialize(input)
-          if (Token.isExpression(input))
-            return input.parts
-              .map((part) =>
-                typeof part === 'string'
-                  ? part
-                  : (theme ??= Themes.create()).serialize(part),
-              )
-              .join('')
-          return input as number | string
-        })()
+        value = serialize(input)
       } catch (error) {
         diagnostics.push({
           code: 'invalid_declaration',

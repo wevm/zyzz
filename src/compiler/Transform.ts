@@ -62,6 +62,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (!call || node.end !== call.end) return
 
       const folded =
+        !call.slots &&
         parent?.type === 'CallExpression' &&
         parent.callee === node &&
         !parent.optional &&
@@ -77,6 +78,8 @@ export function compile(options: compile.Options): compile.ReturnType {
         argument?.type === 'TSSatisfiesExpression'
       )
         argument = argument.expression
+      if (argument?.type === 'ArrowFunctionExpression')
+        argument = Expression.unwrap(argument.body) as Ast.Expression
       if (argument?.type === 'ObjectExpression')
         definitions.set(call.start, argument)
     },
@@ -112,11 +115,17 @@ export function compile(options: compile.Options): compile.ReturnType {
   for (const call of extracted.calls) {
     const application = applications.get(call.start)!
     const props = `{className:${JSON.stringify(classes[call.name])}}`
-    module.overwrite(
-      call.start,
-      application.end,
-      application.folded ? `(${props})` : `${runtime}.create(${props})`,
-    )
+    const replacement = (() => {
+      if (call.slots) {
+        const value = `${runtime}.dynamic({...${props},slots:${JSON.stringify(call.slots)}})`
+        return /\.[cm]?tsx?$/.test(options.moduleId)
+          ? `(${value} as import('zyzz').css.Dynamic<${call.valuesType}>)`
+          : value
+      }
+      if (application.folded) return `(${props})`
+      return `${runtime}.create(${props})`
+    })()
+    module.overwrite(call.start, application.end, replacement)
     if (!application.folded) callable = true
   }
 

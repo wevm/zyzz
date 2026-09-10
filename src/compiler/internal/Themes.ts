@@ -806,6 +806,13 @@ export function collect(program: Ast.Program, options: collect.Options) {
           argument = ancestor
         else break
       }
+      if (
+        ancestors[callIndex]?.type === 'ArrowFunctionExpression' &&
+        (ancestors[callIndex] as Ast.ArrowFunctionExpression).body === argument
+      ) {
+        argument = ancestors[callIndex]
+        callIndex--
+      }
       const call = ancestors[callIndex]
       if (
         property?.type !== 'Property' ||

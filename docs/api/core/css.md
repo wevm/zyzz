@@ -90,7 +90,21 @@ props.style
 
 Untransformed calls throw an error whose `name` is `css.MissingTransformError`. This is a diagnostic name, not a constructor exported on `css`; it cannot be referenced as `css.MissingTransformError` for `instanceof`. Invalid source definitions produce source diagnostics; invalid applied override shapes throw `TypeError`.
 
-> [!NOTE]
-> Config-bound extraction, conditions, broad values, and `css((values: Values) => style)` are previews. Callback inputs bind to fixed CSS variables; unknown inputs fail.
+## Dynamic Values
+
+A callback with one explicitly typed finite parameter and a concise object body compiles to static rules and a value binder. Static declarations can accompany scalar reads and template expressions. Generated callables retain required input types across compiled exports.
+
+```ts
+const bar = css((values: { amount: `${number}%`; alpha: number }) => ({
+  display: 'block',
+  opacity: values.alpha,
+  width: values.amount,
+}))
+bar({ amount: '50%', alpha: 0.8 })
+```
+
+All declared inputs are required and consumed. `className` and `style` remain styling overrides; unrelated keys and private-variable overrides throw `TypeError`. Callbacks never execute in generated application code.
+
+The initial source boundary requires inline scalar type literals. Optional fields, type aliases, arbitrary calls, dynamic fallback entries, and dynamic rule structure are unsupported. Conditions and native bindings remain separate work.
 
 Types: `css.ErrorType`, `css.Options`, `css.Props`, and `css.ReturnType`. See [Style Components](../../guides/styling.md#style-components).

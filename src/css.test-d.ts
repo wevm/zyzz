@@ -28,7 +28,7 @@ describe('css', () => {
     css({ padding: 4 })
     // @ts-expect-error Root calls contain no color tokens.
     css({ color: 'blue.700' })
-    // @ts-expect-error Callbacks require the later dynamic binding phase.
+    // @ts-expect-error Dynamic callbacks require an explicitly typed values parameter.
     css(() => ({ padding: 0 }))
     // @ts-expect-error Unrelated component props are not styling overrides.
     card({ id: 'card' })

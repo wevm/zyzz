@@ -2,6 +2,7 @@
  * Extracts literal styles and local themes through lexical source analysis.
  * @module
  */
+import * as Dynamic from './internal/Dynamic.js'
 import * as Binding from '../internal/Binding.js'
 import * as Variables from './internal/Variables.js'
 import * as Expression from './internal/Expression.js'
@@ -23,6 +24,10 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Typed runtime slots for callback definitions. */
+  readonly slots?: Dynamic.Slots | undefined
+  /** Authored scalar input type retained in packed declarations. */
+  readonly valuesType?: string | undefined
   /** Exclusive UTF-16 offset of the complete call. */
   readonly end: number
   /** Matching name in the extracted style definition. */
@@ -264,10 +269,35 @@ export function extract(options: extract.Options): extract.ReturnType {
       argument?.type === 'TSSatisfiesExpression'
     )
       argument = argument.expression
+    const diagnosticCount = diagnostics.length
+    const dynamic = (() => {
+      if (!argument) return undefined
+      try {
+        return Dynamic.read(
+          argument,
+          `${identity(options.moduleId)}-${call.start}`,
+        )
+      } catch (error) {
+        if (!(error instanceof Themes.InvalidError)) throw error
+        report('unsupported_syntax', error.message, error)
+        return undefined
+      }
+    })()
+    if (diagnostics.length !== diagnosticCount) continue
+    function resolveDynamic(node: Ast.Node) {
+      try {
+        return dynamic?.resolve(node)
+      } catch (error) {
+        if (!(error instanceof Themes.InvalidError)) throw error
+        report('unsupported_syntax', error.message, error)
+        return undefined
+      }
+    }
+    if (dynamic) argument = dynamic.body
     if (call.arguments.length !== 1 || argument?.type !== 'ObjectExpression') {
       report(
         'unsupported_syntax',
-        'Expected one direct literal object; callbacks, spreads, and referenced definitions are not supported yet.',
+        'Expected one literal object or typed callback; spreads and referenced definitions are not supported.',
         call,
       )
       continue
@@ -309,7 +339,17 @@ export function extract(options: extract.Options): extract.ReturnType {
       function value(node: Ast.Node, path: readonly string[]): unknown {
         const token =
           variables.references.get(node.start) ?? themes?.tokens.get(node.start)
-        const reference = token?.end === node.end ? token.reference : undefined
+        const reference =
+          resolveDynamic(node) ??
+          (token?.end === node.end ? token.reference : undefined)
+        if (dynamic && reference && path.length > 2) {
+          report(
+            'unsupported_syntax',
+            'Dynamic fallback entries are not supported.',
+            node,
+          )
+          return undefined
+        }
         node = Expression.unwrap(node)
         const template =
           node.type === 'TemplateLiteral'
@@ -317,6 +357,18 @@ export function extract(options: extract.Options): extract.ReturnType {
                 const token =
                   variables.references.get(expression.start) ??
                   themes?.tokens.get(expression.start)
+                const slot = resolveDynamic(expression)
+                if (slot) {
+                  if (path.length > 2) {
+                    report(
+                      'unsupported_syntax',
+                      'Dynamic fallback entries are not supported.',
+                      expression,
+                    )
+                    return undefined
+                  }
+                  return slot
+                }
                 return token?.end === expression.end
                   ? token.reference
                   : undefined
@@ -327,7 +379,8 @@ export function extract(options: extract.Options): extract.ReturnType {
             if (
               typeof part !== 'string' &&
               !(Binding.is(part)
-                ? Binding.accepts(part.type, key as keyof Style.Properties)
+                ? dynamic !== undefined ||
+                  Binding.accepts(part.type, key as keyof Style.Properties)
                 : Token.accepts(part.group, key as keyof Style.Properties))
             ) {
               report(
@@ -404,7 +457,20 @@ export function extract(options: extract.Options): extract.ReturnType {
         { locations, theme: themes?.styles.get(call.start)?.theme },
       )
       styles.push(...definition.styles)
-      calls.push({ end: call.end, name, start: call.start })
+      calls.push({
+        ...(dynamic
+          ? {
+              slots: dynamic.slots,
+              valuesType: options.source.slice(
+                dynamic.type.start,
+                dynamic.type.end,
+              ),
+            }
+          : {}),
+        end: call.end,
+        name,
+        start: call.start,
+      })
     } catch (error) {
       if (!(error instanceof Style.InvalidError)) throw error
       for (const diagnostic of error.diagnostics)

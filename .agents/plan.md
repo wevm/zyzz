@@ -18,7 +18,7 @@ Local validation: ten extraction/transform integrations, native type/lint checks
 
 1. Theme variable references: typed direct values and template interpolation, live fallbacks, imported/config/packed contracts. Standalone variable destructuring remains deferred.
 2. Explicit variable contracts and assignments: module-level schemas compile to fixed, isolated slots; typed partial assignments return ordinary inline properties. Imported style references and native bindings remain deferred.
-3. Dynamic style bindings.
+3. Dynamic style bindings: finite inline scalar parameter types, fixed private slots, static declarations, exact inputs, and compiled callable type preservation. Type aliases, dynamic fallback groups, and native bindings remain deferred.
 4. Bundled themes and query thresholds.
 5. Selectors and conditions.
 6. Stylesheet contributions.

@@ -1,5 +1,68 @@
 # Compilation Benchmarks
 
+## React Render and Mount Benchmarks
+
+Run `pnpm bench:render` after installing Chromium with `pnpm exec playwright install chromium`. Run `node bench/RenderReport.ts bench/results` to report the raw samples in `bench/results/render-timings.json`. CI also measures the base source with the candidate harness on the same runner.
+
+Vitest Browser Mode controls an isolated iframe containing an esbuild production React bundle. Framework applications use the official compiler adapters. React development mode, compilation, loading, test assertions, and protocol calls are outside timing. All frameworks render the same 100 or 1,000 cards with 10 or 100 distinct styles.
+
+Each pass warms three cycles, then measures twenty fresh-root mounts, retained-DOM updates, and remounts after untimed removal. The second pass reverses framework order. Computed CSS is compared with independent native declarations after each operation; updates must preserve DOM identity and remounts must replace it.
+
+| Metric | Boundary |
+| --- | --- |
+| Commit | Scheduling through React rendering and DOM commit to a layout-effect checkpoint |
+| Commit + layout | Commit plus a forced geometry read, including pending style/layout work |
+| Frame | Two animation frames after commit; includes refresh wait, not exact paint CPU time |
+
+These measure warm-code client operations with styles already loaded. They do not measure cold navigation, hydration, GPU presentation, or isolated React CPU time. There is no forced synchronous React flush. Dynamic private slots currently compare only Zyzz and native CSS. Callable and override cases compare all six adapters; variant-recipe APIs need separate equivalent fixtures.
+
+Render timings are the primary runtime report. Performance is advisory until repeated runs establish variance; missing data and correctness failures fail CI. Existing function timings cannot establish a render-performance ranking. Run the old browser diagnostics with `BENCH_RUNTIME=1 pnpm exec vp test run bench/Runtime.browser.test.ts`, or Node diagnostics with `BENCH_MICRO=1 pnpm exec vp test bench --run`.
+
+
+## Runtime Comparisons
+
+`bench/Runtime.bench.ts` measures production-compiled applications for Panda CSS, StyleX, Tailwind, vanilla-extract, and Zyzz, plus a plain class/style control. The shared partial-sharing corpus contains 10 or 100 distinct styles. Compilation, bundling, module initialization, and browser equivalence checks run outside timing.
+
+| Case      | Measured application                                                              |
+| --------- | --------------------------------------------------------------------------------- |
+| cached    | Read precomputed props, including Zyzz's directly folded `css({...})()`           |
+| callable  | Apply a surviving style callable or the framework's ordinary class/props API      |
+| overrides | Apply styles with alternating external classes and inline color/padding overrides |
+
+Inputs are preallocated; each timed iteration selects a style and retains the returned props in a shared result array. The same indexing and result-consumption overhead applies to every framework. Browser checks verify all styles and both override inputs against independent native declarations before collecting timings.
+
+Client timings execute inside Chromium in two passes with reversed framework order. Each pass uses 100 batches after warmup, with batch calibration to amortize timer resolution. The browser version and raw samples are recorded in `browser-timings.json`. Node measurements remain separate diagnostics. Reports show nanoseconds per application, relative error, sample counts, and complete stylesheet/client transfer. Raw, gzip, and Brotli sizes and actual compiled artifacts are saved under `bench/results/runtime/`. Client bundles retain the helpers actually required by each framework.
+
+```sh
+pnpm exec playwright install chromium
+pnpm exec vp test bench bench/Runtime.bench.ts --run --no-file-parallelism --outputJson bench/results/timings.json
+BENCH_RUNTIME=1 pnpm exec vp test run bench/Runtime.browser.test.ts --no-file-parallelism
+node bench/RuntimeReport.ts bench/results
+pnpm test bench/Runtime.test.ts --run --no-file-parallelism
+```
+
+The diagnostic report includes every framework and observed loss. A competitor faster beyond reported uncertainty in both passes is reported without failing CI. Overlapping intervals are inconclusive, not evidence of a Zyzz win. The native control is informational; existing compiler/transfer gates remain unchanged.
+
+These are browser JavaScript application measurements, not React rendering or layout timings. Tailwind, vanilla-extract, and the native control read class strings directly without per-style wrapper closures. The React suite above now covers mounts and changed-prop updates. Unchanged rerenders, allocation profiling, and packed consumption remain follow-ups. Variant comparisons must accompany the first variants implementation; this harness does not simulate an unavailable API.
+
+The current Zyzz props helper includes override validation and inline-style copying. The benchmark measures that shipped behavior without removing checks or assigning competing frameworks artificial work. Runtime advantages must be established by measured results; cached class applications can have indistinguishable costs.
+
+### Runtime Snapshot
+
+Measured on Chromium 153.0.8010.12 in [run 34467564716](https://github.com/wevm/zyzz/actions/runs/34467564716), commit `f30a69c`, on the same Ubuntu runner. Values below span both passes of the 10-style workload, in nanoseconds per application. Each pass contains 100 calibrated batches after warmup; raw samples and browser identity are in the `runtime-benchmarks` artifact.
+
+| Framework       | Cached props | Apply styles | Styling overrides |
+| --------------- | -----------: | -----------: | ----------------: |
+| Panda CSS       |    4.59–4.64 |      474–480 |           484–496 |
+| StyleX          |    4.59–4.60 |    17.5–17.8 |         27.5–31.3 |
+| Tailwind        |    4.58–4.59 |    9.87–9.95 |         16.6–16.7 |
+| vanilla-extract |    4.59–4.60 |    9.85–10.0 |              18.9 |
+| Zyzz            |    4.60–4.70 |    73.4–74.0 |           166–167 |
+
+Cached results overlap across the two passes; no Zyzz advantage is established. Both callable and override results are slower than StyleX, Tailwind, and vanilla-extract beyond reported uncertainty in both passes, and faster than Panda. The 100-style workload has the same outcome. The historical function-only gate failed; that gate has since been replaced by render reporting.
+
+Relative error for these application/override measurements is about 0.8–5.9%. These are browser JavaScript costs only, not component rendering, layout, or interaction latency. Zyzz's remaining override validation and style copying are optimization candidates; this run does not isolate their individual contributions.
+
 Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, with shared workloads in `bench/Corpus.ts`. Run `pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json`. Reports are ignored by Git.
 
 The Benchmarks workflow uploads results and environment metadata as a 30-day artifact. One updating PR comment shows traffic-light deltas against a fresh main baseline measured sequentially on the same runner followed by the full framework comparison tables. Fork PRs receive Actions summaries and artifacts without comment writes. Missing baselines show “No baseline available.”
@@ -181,3 +244,85 @@ Run `pnpm exec vp test bench src/compiler/Transform.bench.ts --run --no-file-par
 `Transform.bench.ts` adds 10/100-style decoration workloads with line combinations, style, thickness, underline offsets, and important fallbacks. The shared source fixture includes shared color and spacing tokens; browser integration compares computed declarations with independent CSS controls across writing modes and directions.
 
 Run `pnpm exec vp test bench src/compiler/Transform.bench.ts --run --no-file-parallelism -t 'text decoration transform' --outputJson bench/results/decoration.json`. Reports under `bench/results/transform/decoration-*.json` separate CSS, bundled JavaScript, maps, and combined raw/gzip/Brotli transfer. Decoration painting is outside compiler timing.
+
+## Runtime specialization experiment
+
+The candidate harness also runs against the PR base source on the same runner,
+with the same installed dependencies and Chromium. `runtime-base/commit.txt`
+records that source revision. Its output is retained beside candidate results.
+The historical snapshot above predates validation removal; it is not the baseline
+for this experiment.
+
+`direct` uses a switch containing statically known application sites for every
+framework. `callable` dispatches surviving callables (or class strings where that
+is the framework API). Both allocate fresh props. `overrides` forwards immutable
+inline styles, and Zyzz now shares the supplied style object. `dynamic` compares
+two changing scalar slots against a native class/custom-property control; it does
+not yet compare dynamic APIs from other frameworks. Browser verification checks
+each update before timing. No React rendering or DOM updates are timed.
+
+Local static definitions fold only when every reference is a direct no-argument
+call. Exports, escapes, mutation, shadowing, optional calls, and overrides retain
+the callable. Generated dynamic functions read fixed slots directly, then return
+one props object and one style object with private variables taking precedence.
+
+### Paired optimization results — 2026-09-10
+
+[Chromium run 34470931898](https://github.com/wevm/zyzz/actions/runs/34470931898)
+measured main `8cca490e42b16fd3c213d1a4ef115403e393656d` against PR head
+`df54ef66fef41d9cee8d642926c6bae5958d963a` (tested merge
+`b6749ac58bcabc6ded86410ea27375b3ef6c61cb`). Chromium was 153.0.8010.12.
+Each cell below gives the two pass means as a range, in nanoseconds per application;
+these ranges are not confidence intervals. The
+[runtime artifact](https://github.com/wevm/zyzz/actions/runs/34470931898/artifacts/10149747652)
+contains all 100 samples per pass, relative error, environment, and delivery sizes.
+
+| Styles | Application |     Main (ns) | Optimized (ns) |
+| ------ | ----------- | ------------: | -------------: |
+| 10     | Direct      |   19.78–19.81 |    14.19–17.67 |
+| 100    | Direct      |   33.57–34.79 |    21.94–22.89 |
+| 10     | Callable    |   18.07–18.08 |    10.88–10.99 |
+| 100    | Callable    |   17.46–17.55 |    11.09–11.18 |
+| 10     | Overrides   |   50.17–50.69 |    20.63–20.66 |
+| 100    | Overrides   |   48.74–49.80 |    20.57–20.61 |
+| 10     | Dynamic     | 651.37–656.25 |    31.49–32.47 |
+| 100    | Dynamic     | 667.97–670.90 |    45.53–46.39 |
+
+Cached props remain around 4 ns. Optimized callables and overrides beat StyleX
+and Panda in both passes, but Tailwind and vanilla-extract remain faster:
+roughly 9 ns for their direct class-string application versus Zyzz's 11 ns;
+15–18 ns for overrides versus Zyzz's 21 ns. The historical function-only gate stayed red; that gate has since been replaced by render reporting.
+The direct-switch workload is noisy at 10 styles and inconclusive against the
+other static frameworks at 100 styles. Dynamic matches the native control within
+uncertainty at 10 styles; at 100, the control remains around 31 ns.
+
+The removed work is concrete: static no-argument calls allocate one props object;
+unchanged overrides avoid style copies; compiled dynamic calls avoid slot
+enumeration and intermediate binding/merge objects. Surviving static calls still
+perform callable dispatch and support optional overrides, while the native class
+paths read a string. The dynamic scaling difference may involve dispatch across
+many generated functions and distinct private-property shapes; profiling is
+needed before attributing the remaining difference to either.
+
+Inlining has a delivery tradeoff. At 100 styles, direct-call JavaScript gzip grows
+from 1,655 to 2,320 bytes; dynamic JavaScript grows from 1,775 to 1,869 bytes.
+Callable JavaScript is unchanged at 1,376 bytes. Initialization guards and fresh
+props identity are retained; no shared result cache is introduced.
+
+### Compiler analysis follow-up
+
+The paired CI report also flagged advisory transform-time regressions (for
+example, 46.76 → 54.69 ms at 1,000 exported styles). The first implementation
+performed another AST walk even when no local definition could be folded.
+The follow-up gathers relevant references during the transform's existing walk
+and skips reference analysis when there are no eligible definitions.
+
+A local Node v24.19.0 comparison ran main, the extra-walk implementation, and the
+shared-walk implementation in reversed order across two passes, with 10 warmups
+and 30 samples each. At 1,000 exported styles, the pass means were 103.36–105.10 ms
+(main), 119.57–146.01 ms (extra walk), and 109.79–110.01 ms (shared walk).
+The shared-walk and main error intervals overlap; smaller workloads were noisier.
+These absolute times are not comparable to the GitHub runner. The comparison
+also verified identical JavaScript, CSS, and source maps before/after the
+refactor for exported and local applications at 100 and 1,000 styles.
+The final CI rerun remains the check on this compile-time follow-up.

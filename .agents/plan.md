@@ -1,5 +1,15 @@
 # Implementation plan
 
+## Runtime Render Performance — Immediate Priority
+
+[PR #74](https://github.com/wevm/zyzz/pull/74) adds production React mounts, changed-prop updates, and remounts through Vitest Browser Mode in Chromium. Matched native, Panda, StyleX, Tailwind, vanilla-extract, and Zyzz applications verify computed styles and DOM identity outside timing. Function microbenchmarks remain diagnostics.
+
+- [x] Implement 100/1,000-card fixtures, forward/reversed passes, raw samples, and same-runner base comparisons.
+- [ ] Complete browser validation and establish repeatability before introducing render timing regression gates.
+- [ ] Extend the suite with equivalent variant recipes when their supported implementation lands.
+
+Commit and forced-layout timings are distinct from frame checkpoints. Cold navigation, hydration, exact paint CPU time, and unchanged rerenders remain separate workloads. No fastest-framework claim follows from function timings.
+
 ## Current CSS Conformance Contract
 
 CSS property/value validation is static only. Remove runtime CSS validators rather than adding a development mode. Retain source extraction, ordered-data, and theme graph structural diagnostics. Browser parsing owns value semantics beyond the static types.
@@ -634,3 +644,4 @@ Compact serialization probes cover 63,738 values and 127,476 declarations. Share
 The bc6e1ca head passed all 315 integrations, including the complete engine-accepted property corpus and escaped CSS controls, plus build, native/ordinary TypeScript, and macOS host checks. These results complete the review for 663 properties under the static authoring contract. Seven grid-placement entries remain partial for the additional signed-integer, named-span, nonzero-index, and slash-limit regressions. The exact full gate remains active.
 
 All 670 property entries are reviewed as supported under the documented static authoring and emission contract. The d2a78d9 head passed grid browser/type regressions, the 63,752-value corpus, build, checks, macOS, and benchmarks. Two unrelated compiler subprocess integrations exceeded the default five-second test budget; matched before/after runs took 8.43/8.38 seconds combined. Explicit ten-second subprocess deadlines within fifteen-second tests bound that work without removing assertions. Final CI must verify the complete inventory and unchanged exact 100% gate.
+

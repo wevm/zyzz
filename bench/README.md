@@ -246,3 +246,46 @@ Local static definitions fold only when every reference is a direct no-argument
 call. Exports, escapes, mutation, shadowing, optional calls, and overrides retain
 the callable. Generated dynamic functions read fixed slots directly, then return
 one props object and one style object with private variables taking precedence.
+
+### Paired optimization results — 2026-09-10
+
+[Chromium run 34470931898](https://github.com/wevm/zyzz/actions/runs/34470931898)
+measured main `8cca490e42b16fd3c213d1a4ef115403e393656d` against PR head
+`df54ef66fef41d9cee8d642926c6bae5958d963a` (tested merge
+`b6749ac58bcabc6ded86410ea27375b3ef6c61cb`). Chromium was 153.0.8010.12.
+Each cell below gives the two pass means as a range, in nanoseconds per application;
+these ranges are not confidence intervals. The
+[runtime artifact](https://github.com/wevm/zyzz/actions/runs/34470931898/artifacts/10149747652)
+contains all 100 samples per pass, relative error, environment, and delivery sizes.
+
+| Styles | Application |     Main (ns) | Optimized (ns) |
+| ------ | ----------- | ------------: | -------------: |
+| 10     | Direct      |   19.78–19.81 |    14.19–17.67 |
+| 100    | Direct      |   33.57–34.79 |    21.94–22.89 |
+| 10     | Callable    |   18.07–18.08 |    10.88–10.99 |
+| 100    | Callable    |   17.46–17.55 |    11.09–11.18 |
+| 10     | Overrides   |   50.17–50.69 |    20.63–20.66 |
+| 100    | Overrides   |   48.74–49.80 |    20.57–20.61 |
+| 10     | Dynamic     | 651.37–656.25 |    31.49–32.47 |
+| 100    | Dynamic     | 667.97–670.90 |    45.53–46.39 |
+
+Cached props remain around 4 ns. Optimized callables and overrides beat StyleX
+and Panda in both passes, but Tailwind and vanilla-extract remain faster:
+roughly 9 ns for their direct class-string application versus Zyzz's 11 ns;
+15–18 ns for overrides versus Zyzz's 21 ns. The runtime gate correctly stays red.
+The direct-switch workload is noisy at 10 styles and inconclusive against the
+other static frameworks at 100 styles. Dynamic matches the native control within
+uncertainty at 10 styles; at 100, the control remains around 31 ns.
+
+The removed work is concrete: static no-argument calls allocate one props object;
+unchanged overrides avoid style copies; compiled dynamic calls avoid slot
+enumeration and intermediate binding/merge objects. Surviving static calls still
+perform callable dispatch and support optional overrides, while the native class
+paths read a string. The dynamic scaling difference may involve dispatch across
+many generated functions and distinct private-property shapes; profiling is
+needed before attributing the remaining difference to either.
+
+Inlining has a delivery tradeoff. At 100 styles, direct-call JavaScript gzip grows
+from 1,655 to 2,320 bytes; dynamic JavaScript grows from 1,775 to 1,869 bytes.
+Callable JavaScript is unchanged at 1,376 bytes. Initialization guards and fresh
+props identity are retained; no shared result cache is introduced.

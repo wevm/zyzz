@@ -6,6 +6,7 @@ import type { css } from '../css.js'
 
 /**
  * Binds compiled classes to the web styling override contract.
+ * Returns fresh props and forwards unchanged inline styles by reference.
  * Never generates rules or changes the supplied overrides.
  * @param options - Classes emitted by a compiler.
  * @returns A callable accepting only className and style.

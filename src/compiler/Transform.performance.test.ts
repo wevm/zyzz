@@ -73,6 +73,22 @@ describe('compile', () => {
     expect(consumer.failed).toMatchInlineSnapshot(`true`)
   })
 
+  test('does not mistake immediately applied props for a callable definition', async () => {
+    for (const source of [
+      `const props=css({color:'red'})();export function apply(){return props()}`,
+      `const styles={card:css({color:'red'})()};export function apply(){return styles.card()}`,
+    ]) {
+      const { consumer } = await execute(`import {css} from 'zyzz';${source}`)
+      let failed = false
+      try {
+        consumer.apply()
+      } catch (error) {
+        failed = error instanceof TypeError
+      }
+      expect(failed).toMatchInlineSnapshot(`true`)
+    }
+  })
+
   test('retains escaping objects, shadowed bindings, overrides, and optional calls', async () => {
     for (const body of [
       `const styles={button:css({color:'red'})}; export {styles}; export function apply(){return styles.button()}`,

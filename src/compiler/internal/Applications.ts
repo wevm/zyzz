@@ -36,7 +36,12 @@ export function find(
     for (const declaration of statement.declarations) {
       if (declaration.id.type !== 'Identifier' || !declaration.init) continue
       const members = new Map<string, Source.Call>()
-      const direct = definitions.get(declaration.init.start)
+      const candidate = definitions.get(declaration.init.start)
+      const direct =
+        declaration.init.type === 'CallExpression' &&
+        declaration.init.end === candidate?.end
+          ? candidate
+          : undefined
       if (!direct) {
         if (declaration.init.type !== 'ObjectExpression') continue
         let valid = true
@@ -52,7 +57,12 @@ export function find(
           }
           const key =
             property.key.type === 'Identifier' ? property.key.name : undefined
-          const call = definitions.get(property.value.start)
+          const candidate = definitions.get(property.value.start)
+          const call =
+            property.value.type === 'CallExpression' &&
+            property.value.end === candidate?.end
+              ? candidate
+              : undefined
           if (!key || key === '__proto__' || !call || members.has(key)) {
             valid = false
             break

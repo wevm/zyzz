@@ -275,12 +275,7 @@ type LiteralAtoms = {
 /** Supported primitive CSS declarations without theme references. */
 export type LiteralProperties = {
   readonly [property in keyof Literal.Properties]: Value.Fallbacks<
-    | LiteralAtoms[property]
-    | {
-        [group in Token.Group]: property extends Token.Properties<group>
-          ? Token.Variable<group>
-          : never
-      }[Token.Group]
+    LiteralAtoms[property]
   >
 }
 

@@ -14,6 +14,7 @@ export function accepts(
   if (group === 'borderColor') return /^border.*Color$/.test(property)
   if (group === 'borderRadius') return /^border.*Radius$/.test(property)
   if (group === 'textColor') return property === 'color'
+  if (group === 'spacing' && property === 'marginTrim') return false
   if (group === 'spacing')
     return (
       /^(padding|margin|inset|scrollPadding)/.test(property) ||
@@ -227,7 +228,10 @@ export type Properties<group extends Group> = group extends 'spacing'
       | `inlineSize`
       | `inset${string}`
       | `left`
-      | `margin${string}`
+      | Exclude<
+          Extract<keyof Literal.Properties, `margin${string}`>,
+          'marginTrim'
+        >
       | `maxBlockSize`
       | `maxHeight`
       | `maxInlineSize`

@@ -204,12 +204,14 @@ export function parse(
     const parsed = parse(text, property)
     if (!parsed || typeof parsed.value === 'object') return undefined
     const parts = [...input.parts]
-    const last = parts.at(-1)
-    if (typeof last !== 'string') return undefined
-    parts[parts.length - 1] = last.slice(
-      0,
-      last.length - (text.length - String(parsed.value).length),
-    )
+    let remaining = text.length - String(parsed.value).length
+    for (let index = parts.length - 1; remaining > 0 && index >= 0; index--) {
+      const part = parts[index]
+      if (typeof part !== 'string') return undefined
+      const count = Math.min(remaining, part.length)
+      parts[index] = part.slice(0, part.length - count)
+      remaining -= count
+    }
     return { important: parsed.important, value: Token.compose(parts) }
   }
   if (typeof input !== 'string') return undefined

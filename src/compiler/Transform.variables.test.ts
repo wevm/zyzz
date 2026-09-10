@@ -4,12 +4,36 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 
 describe('compile', () => {
+  test('rejects theme variables in root css', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'root.ts',
+        source:
+          'import {Theme,css} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); css({width:theme.vars.spacing.md})',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: root.ts:91: Token references must be direct property values in bound theme css calls.
+      root.ts:91: Expected a literal string or number; expressions are not evaluated.]
+    `)
+  })
+  test('strips importance across nested template segments', () => {
+    expect(
+      Transform.compile({
+        moduleId: 'nested.ts',
+        source:
+          'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.css({width:`${`calc(${theme.vars.spacing.md})!`}`})',
+      }).css,
+    ).toMatchInlineSnapshot(`
+      ".z_theme-ingwo11j6aspr-theme{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
+      .z-ingwo11j6aspr-base0{width:calc(var(--z-tingwo11j6aspr-theme-spacing_2e_md,8px))!important;}"
+    `)
+  })
   test('preserves assertions around nested variable templates and fallbacks', () => {
     expect(
       Transform.compile({
         moduleId: 'assertions.ts',
         source:
-          'import { Theme, css } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); css({width:["1px", (`calc(${(`${theme.vars.spacing.md}` satisfies string)})` as string)]})',
+          'import { Theme, css } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.css({width:["1px", (`calc(${(`${theme.vars.spacing.md}` satisfies string)})` as string)]})',
       }).css,
     ).toMatchInlineSnapshot(`
       ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
@@ -21,18 +45,18 @@ describe('compile', () => {
       Transform.compile({
         moduleId: 'domains.ts',
         source:
-          'import { Theme, css } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); css({maxLines:theme.vars.spacing.md})',
+          'import { Theme, css } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.css({maxLines:theme.vars.spacing.md})',
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: domains.ts:97: Theme variable domain is incompatible with this property.]`,
+      `[Source.ExtractError: domains.ts:103: Theme variable domain is incompatible with this property.]`,
     )
   })
 
-  test('retains live references in root declarations and important templates', () => {
+  test('retains live references in bound declarations and important templates', () => {
     const source = [
       'import { Theme, css } from "zyzz";',
       'const theme = Theme.define({spacing:{md:"8px"},color:{brand:"red",unused:"blue"}});',
-      'export const box = css({width:`calc(100% - ${theme.vars.spacing.md})!`, color:theme.vars.color.brand})()',
+      'export const box = theme.css({width:`calc(100% - ${theme.vars.spacing.md})!`, color:theme.vars.color.brand})()',
     ].join('\n')
     expect(Transform.compile({ moduleId: 'vars.ts', source }).css)
       .toMatchInlineSnapshot(`
@@ -47,7 +71,7 @@ describe('compile', () => {
         'theme.ts':
           'import { Theme } from "zyzz"; export const theme = Theme.define({ spacing: { md: "8px" }, color: { brand: { light: "red", dark: "blue" } } }); export const alt = Theme.extend(theme, { spacing: { md: "16px" } });',
         'app.ts':
-          'import { css } from "zyzz"; import { theme as palette, alt } from "./theme.js"; export const box = css({ width: `calc(100% - ${palette.vars.spacing.md})`, color: palette.vars.color.brand })(); export const scope = alt.className;',
+          'import { css } from "zyzz"; import { theme as palette, alt } from "./theme.js"; export const box = palette.css({ width: `calc(100% - ${palette.vars.spacing.md})`, color: palette.vars.color.brand })(); export const scope = alt.className;',
       },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
@@ -70,7 +94,7 @@ describe('compile', () => {
       imports: { 'app.ts': { '@acme/theme': 'library/index.js', zyzz: null } },
       modules: {
         'app.ts':
-          'import { css } from "zyzz"; import { zyzz } from "@acme/theme"; export const box = css({width:`calc(100% - ${zyzz.theme.vars.spacing.md})`})()',
+          'import { css } from "zyzz"; import { zyzz } from "@acme/theme"; export const box = zyzz.css({width:`calc(100% - ${zyzz.theme.vars.spacing.md})`})()',
       },
     })
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
@@ -90,12 +114,12 @@ describe('compile', () => {
     ],
     [
       'wrong domains',
-      'css({ color: `${theme.vars.spacing.md}` })',
+      'theme.css({ color: `${theme.vars.spacing.md}` })',
       'incompatible',
     ],
     [
       'unknown paths',
-      'css({ width: `${theme.vars.spacing.missing}` })',
+      'theme.css({ width: `${theme.vars.spacing.missing}` })',
       'Unknown theme token path',
     ],
   ])('rejects %s', (_name, source, message) => {
@@ -120,7 +144,7 @@ describe('compile', () => {
         'import { Theme, css } from "zyzz";',
         'const theme = Theme.define({spacing:{md:"8px"}});',
         'const alt = Theme.extend(theme,{spacing:{md:"16px"}});',
-        'css({width:`calc(100% - ${theme.vars.spacing.md})`})()',
+        'theme.css({width:`calc(100% - ${theme.vars.spacing.md})`})()',
         'export const scope = alt.className;',
       ].join('\n'),
     })

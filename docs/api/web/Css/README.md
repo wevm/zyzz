@@ -14,7 +14,6 @@ import { Css } from 'zyzz/web'
 | [Css.anySibling](anySibling.md)       | A qualifying sibling in either direction.                                 |
 | [Css.compile](compile.md)             | Compile ordered style data into CSS, class lists, and theme scopes.       |
 | [Css.descendant](descendant.md)       | A qualifying descendant at any depth.                                     |
-| [Css.layers](layers.md)               | Contribute an ordered set of cascade layer names.                         |
 | [Css.marker](marker.md)               | Define a typed identity and finite data states for element relationships. |
 | [Css.siblingAfter](siblingAfter.md)   | A qualifying marked sibling following the styled element.                 |
 | [Css.siblingBefore](siblingBefore.md) | A qualifying marked sibling preceding the styled element.                 |

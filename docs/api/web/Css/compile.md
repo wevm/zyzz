@@ -51,6 +51,17 @@ Named theme definitions for inherited scopes.
 Css.compile({ styles, themes: { base: theme } })
 ```
 
+### options.contributions
+
+- Type: `readonly Css.Contribution[]`
+- Default: `undefined`
+
+Ordered static stylesheet data. Use `kind: 'layers'` with `names`, `kind: 'rule'` with a `selector` and `Style.NamedStyle`, `kind: 'font-face'` with descriptor `declarations`, or `kind: 'keyframes'` with a `name` and ordered `{ stop, style }` frames. Source adapters construct this data from the direct web authoring functions.
+
+```ts
+Css.compile({ styles, contributions: [{ kind: 'layers', names: ['reset', 'base'] }] })
+```
+
 ## Returns
 
 Returns frozen `Css.compile.ReturnType` data. Authored style and theme keys remain inferred.
@@ -73,6 +84,17 @@ Emitted stylesheet. Distribute together with the matching class map.
 
 ```ts
 output.css
+```
+
+### contributionCss and scopedCss
+
+- Type: `string | undefined` for each field.
+
+Present when contributions emit nonempty CSS. `contributionCss` contains eager stylesheet rules and `scopedCss` contains ordinary theme scopes and style rules. Load `contributionCss` before `scopedCss` and before other stylesheets that establish cascade layers. Replace both artifacts together when rebuilding. `css` already combines both in that order; consumers using `css` should not also load the split fields.
+
+```ts
+const shared = output.contributionCss
+const moduleCss = output.scopedCss ?? output.css
 ```
 
 ### themes

@@ -2,6 +2,7 @@
  * Links a closed graph of source modules without executing code or reading files.
  * @module
  */
+import * as Css from '../web/Css.js'
 import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
@@ -39,6 +40,8 @@ export declare namespace compile {
     readonly contracts: Readonly<Record<string, string>>
     /** Direct static runtime source and library-contract dependencies, keyed by module identity. */
     readonly dependencies: Readonly<Record<string, readonly string[]>>
+    /** One eager stylesheet for all supplied modules. Load before module CSS. */
+    readonly sharedCss?: string | undefined
     /** Rewritten modules and their stylesheets/maps. Load the CSS for the graph together. */
     readonly modules: Readonly<Record<string, Transform.compile.ReturnType>>
   }
@@ -412,6 +415,16 @@ function build(options: compile.Options, cache?: Cache): Cache {
   const modules: Record<string, Transform.compile.ReturnType> =
     Object.create(null)
   const sharedThemes = Object.freeze(themes)
+  const contributions = ids.flatMap(
+    (id) => extracted.get(id)!.contributions ?? [],
+  )
+  const sharedCss = contributions.length
+    ? Css.compile({
+        styles: { styles: [] },
+        themes: sharedThemes,
+        contributions,
+      }).css
+    : ''
   // Every stylesheet includes all graph scopes, including unimported alternatives.
   const names = Object.keys(themes)
   const previousNames = Object.keys(previous?.themes ?? {})
@@ -434,6 +447,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
               extracted: Object.freeze({
                 ...extracted.get(moduleId)!,
                 themes: sharedThemes,
+                contributions: undefined,
               }),
               links: {},
               owners,
@@ -445,6 +459,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     libraries: Object.freeze(libraries),
     resolutions: Object.freeze(resolutions),
     result: Object.freeze({
+      ...(sharedCss ? { sharedCss } : {}),
       contracts: Object.freeze(
         Object.fromEntries(
           ids

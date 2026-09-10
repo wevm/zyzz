@@ -1,42 +1,44 @@
-# global
+# layers
 
 > [!NOTE]
 > Initial compiler support: direct named imports and module-level literal calls.
 
-Contribute eager global selectors and nested stylesheet rules.
+Contribute an ordered set of cascade layer names.
 
 ```ts
-import { global } from 'zyzz/web'
+import { layers } from 'zyzz/web'
 
-global({ '@layer base': { body: { margin: 0 } } })
+layers(['reset', 'base', 'components'])
 ```
 
 ## Signature
 
-`global(definition)`
+`layers(names)`
 
 ## Parameters
 
-### definition
+### names
 
-- Type: Static selector maps and nested stylesheet rules
+- Type: `readonly string[]`
 - Required: Yes.
 
-Module-level selectors and supported at-rules. Discovery includes configured unimported modules.
+Static ordered CSS layer names, merged with other project order contributions.
 
 ```ts
-global({ '@layer base': { body: { margin: 0 } } })
+layers(['reset', 'base', 'components'])
 ```
 
 ## Returns
 
-Creates a retained stylesheet effect independent of JavaScript export usage. Watching replaces or removes contributions with their sources. The call is erased and returns no runtime object.
+`void`. The compiler records the stylesheet order and removes the call.
 
 ## Errors
 
-Reject invalid selectors, declarations, at-rules, and order cycles. Raw global layer names have no ambient config inference.
+Reject invalid names and contradictory order cycles with source locations.
 
-See [Fonts and Motion](../../guides/stylesheets.md#fonts-and-motion) and [Global Styles](../../guides/stylesheets.md#global-styles).
+Bound `@layer` inference derives from config, not ambient global declarations. Normal and important CSS layer precedence remain unchanged.
+
+See [Css](Css/README.md) for related methods and types.
 
 ## Current compiler boundary
 

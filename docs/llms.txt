@@ -56,7 +56,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Css.anySibling](api/web/Css/anySibling.md): Reference and examples.
 - [Css.compile](api/web/Css/compile.md): Reference and examples.
 - [Css.descendant](api/web/Css/descendant.md): Reference and examples.
-- [Css.layers](api/web/Css/layers.md): Reference and examples.
+- [layers](api/web/layers.md): Reference and examples.
 - [Css.marker](api/web/Css/marker.md): Reference and examples.
 - [Css.siblingAfter](api/web/Css/siblingAfter.md): Reference and examples.
 - [Css.siblingBefore](api/web/Css/siblingBefore.md): Reference and examples.

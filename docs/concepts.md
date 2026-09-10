@@ -229,7 +229,7 @@ Calls accept declared inputs plus `className`/`style` overrides. Keep other comp
 ```ts
 import { global } from 'zyzz/web'
 
-// Layer order comes from config or Css.layers.
+// Layer order comes from config or layers.
 global({ '@layer base': { body: { margin: 0 } } })
 ```
 

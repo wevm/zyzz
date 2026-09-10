@@ -120,6 +120,10 @@ export const styles = {
 export const scope = theme.className
 ```
 
-The graph normalizes configured themes without executing library code. Source edits invalidate dependent authoring and retain stable scope names. Layer emission and variants remain planned.
+The graph normalizes configured themes without executing library code. Source edits invalidate dependent authoring and retain stable scope names. Variants remain planned.
+
+## Shared stylesheet delivery
+
+When the graph has contributions, the result includes `sharedCss`, containing graph-wide layer declarations, global rules, font faces, and live keyframes. Load this stylesheet once, before the CSS from `modules`. Module CSS remains necessary for local styles. Recompile after source creation, updates, or deletion and replace both the shared stylesheet and affected module styles; contributions that disappear from the graph must also disappear from delivery. Vite handles this lifecycle automatically.
 
 Packed contracts containing query metadata or typography groups use schema version 3. Existing scalar-only theme contracts retain version 1, and scalar-only configuration contracts retain version 2. Matching readers accept all three; older readers reject version 3 explicitly instead of misinterpreting the new groups.

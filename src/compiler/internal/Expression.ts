@@ -10,7 +10,9 @@ import * as Token from '../../internal/Token.js'
 export function template(
   node: Ast.TemplateLiteral,
   depth = 0,
-  resolve?: (node: Ast.Node) => Token.Reference | Binding.Reference | undefined,
+  resolve?: (
+    node: Ast.Node,
+  ) => string | Token.Reference | Binding.Reference | undefined,
 ): string | Token.Expression | undefined {
   if (depth >= 128) return undefined
   const parts: (string | Token.Reference | Binding.Reference)[] = []

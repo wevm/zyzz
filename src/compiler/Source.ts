@@ -3,6 +3,8 @@
  * @module
  */
 import * as Condition from '../internal/Condition.js'
+import * as Contributions from './internal/Contributions.js'
+import * as Css from '../web/Css.js'
 import * as Dynamic from './internal/Dynamic.js'
 import * as Binding from '../internal/Binding.js'
 import * as Variables from './internal/Variables.js'
@@ -108,6 +110,22 @@ export function extract(options: extract.Options): extract.ReturnType {
     throw new ExtractError(diagnostics)
   }
   const program = parsed.program
+  const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
+  Walker.walk(program, { scopeTracker })
+  scopeTracker.freeze()
+  const contributions = (() => {
+    try {
+      return Contributions.scan(
+        program,
+        scopeTracker,
+        identity(options.moduleId),
+      )
+    } catch (error) {
+      if (!(error instanceof Themes.InvalidError)) throw error
+      report('unsupported_syntax', error.message, error)
+      throw new ExtractError(diagnostics)
+    }
+  })()
   const variables = (() => {
     try {
       return Variables.collect(program, identity(options.moduleId))
@@ -121,6 +139,9 @@ export function extract(options: extract.Options): extract.ReturnType {
     try {
       return Themes.collect(program, {
         namespace: identity(options.moduleId),
+        contributionCalls: new Set(
+          contributions.calls.map((call) => call.start),
+        ),
         linked: options[Themes.context] !== undefined,
         links: options[Themes.context]?.links,
       })
@@ -130,9 +151,6 @@ export function extract(options: extract.Options): extract.ReturnType {
       throw new ExtractError(diagnostics)
     }
   })()
-  const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
-  Walker.walk(program, { scopeTracker })
-  scopeTracker.freeze()
   const ancestors: Ast.Node[] = []
   Walker.walk(program, {
     enter(node, parent) {
@@ -165,6 +183,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
         return
       const binding = scopeTracker.getDeclaration(node.name)
+      contributions.read(node, parent, binding)
       try {
         if (variables.reference(node, parent, binding)) return
       } catch (error) {
@@ -415,9 +434,15 @@ export function extract(options: extract.Options): extract.ReturnType {
             return undefined
           }
           node = Expression.unwrap(node)
+          const animation = contributions.references.get(node.start)
+          if (animation) return animation
           const template =
             node.type === 'TemplateLiteral'
               ? Expression.template(node, 0, (expression) => {
+                  const animation = contributions.references.get(
+                    Expression.unwrap(expression).start,
+                  )
+                  if (animation) return animation
                   const token =
                     variables.references.get(expression.start) ??
                     themes?.tokens.get(expression.start)
@@ -610,15 +635,65 @@ export function extract(options: extract.Options): extract.ReturnType {
   }
   if (themes && !diagnostics.length)
     for (const [start, token] of themes.tokens) {
-      if (!calls.some((call) => start >= call.start && token.end <= call.end))
+      if (
+        ![...calls, ...contributions.calls].some(
+          (call) => start >= call.start && token.end <= call.end,
+        )
+      )
         report(
           'unsupported_syntax',
           'Theme references require a compiled style declaration.',
           { start, end: token.end },
         )
     }
+  let contributionData: readonly Css.Contribution[] = []
+  try {
+    contributionData = [
+      ...Contributions.extract(contributions, themes?.tokens ?? new Map()),
+      ...(themes?.calls ?? []).flatMap((call) =>
+        call.options?.layers
+          ? [
+              {
+                kind: 'layers' as const,
+                names: call.options.layers as readonly string[],
+              },
+            ]
+          : [],
+      ),
+    ]
+    if (contributionData.length) {
+      const rendered = Css.compile({
+        styles: { styles: [] },
+        contributions: contributionData,
+        themes: themes?.themes,
+      }).css
+      Lightning.transform({
+        filename: options.moduleId,
+        code: new TextEncoder().encode(rendered),
+        visitor: {
+          Url(url) {
+            if (!/^(?:\/|#|[a-z][a-z\d+.-]*:)/i.test(url.url))
+              throw new Error(
+                'Contribution URLs must be root-relative or absolute in this compiler slice.',
+              )
+          },
+        },
+        errorRecovery: false,
+      })
+    }
+  } catch (error) {
+    report(
+      'unsupported_syntax',
+      (error as Error).message,
+      error instanceof Themes.InvalidError ? error : contributions.calls[0],
+    )
+  }
   if (diagnostics.length) throw new ExtractError(diagnostics)
   return Object.freeze({
+    ...(contributionData.length ? { contributions: contributionData } : {}),
+    ...(contributions.calls.length
+      ? { contributionCalls: contributions.calls }
+      : {}),
     ...(options[Themes.context]
       ? { themeExports: themes?.exports ?? Object.freeze({}) }
       : {}),
@@ -649,6 +724,9 @@ export declare namespace extract {
   }
   /** Ordered public compiler input and spans for later rewriting. */
   type ReturnType = {
+    /** Static stylesheet effects and their source replacements. */
+    readonly contributions?: readonly Css.Contribution[] | undefined
+    readonly contributionCalls?: readonly Contributions.Call[] | undefined
     /** Explicit variable contracts replaced by fixed slot data. */
     readonly variableCalls?: readonly Variables.Call[] | undefined
     /** Direct calls in source order. */

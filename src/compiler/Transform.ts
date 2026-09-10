@@ -27,6 +27,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     options[Themes.context]?.extracted ?? Source.extract(options)
   const emitted = Css.compile({
     styles: extracted.styles,
+    contributions: extracted.contributions,
     themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
   })
   const module = new MagicString(options.source)
@@ -35,6 +36,12 @@ export function compile(options: compile.Options): compile.ReturnType {
     sourceType: 'module',
   }).program
 
+  for (const call of extracted.contributionCalls ?? [])
+    module.overwrite(
+      call.start,
+      call.end,
+      call.kind === 'keyframes' ? JSON.stringify(call.name) : 'void 0',
+    )
   type Span = Pick<Ast.Node, 'end' | 'start'>
   const applications = new Map<number, { end: number; folded: boolean }>()
   const calls = new Map(extracted.calls.map((call) => [call.start, call]))
@@ -183,6 +190,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       end: applications.get(call.start)!.end,
       start: call.start,
     })),
+    ...(extracted.contributionCalls ?? []),
     ...(extracted.variableCalls ?? []),
     ...extracted.themeAliases,
     ...extracted.themeCalls,
@@ -203,7 +211,10 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   for (const node of program.body) {
-    if (node.type !== 'ImportDeclaration' || node.source.value !== 'zyzz')
+    if (
+      node.type !== 'ImportDeclaration' ||
+      !['zyzz', 'zyzz/web'].includes(node.source.value)
+    )
       continue
     const removed = new Set<Ast.ImportDeclaration['specifiers'][number]>()
     for (const specifier of node.specifiers) {
@@ -211,7 +222,11 @@ export function compile(options: compile.Options): compile.ReturnType {
         node.importKind === 'type' ||
         specifier.type !== 'ImportSpecifier' ||
         specifier.importKind === 'type' ||
-        !['Config', 'css', 'Theme', 'Vars'].includes(
+        !(
+          node.source.value === 'zyzz'
+            ? ['Config', 'css', 'Theme', 'Vars']
+            : ['global', 'fontFace', 'keyframes', 'layers']
+        ).includes(
           specifier.imported.type === 'Identifier'
             ? specifier.imported.name
             : specifier.imported.value,
@@ -317,118 +332,125 @@ export function compile(options: compile.Options): compile.ReturnType {
   )
 
   // Literal and scalar-theme rules each occupy one line at this boundary.
-  const css = (emitted.css ? emitted.css.split('\n') : [])
-    .map((rule, index) => {
-      const line = index + 1
-      const brace = rule.indexOf('{')
-      const name = rule.slice(1, brace)
-      const linkedOwner = linkedOwners.get(name)
-      if (linkedOwner) {
-        const lines = linkedOwner.source
-          .slice(0, linkedOwner.call.start)
-          .split('\n')
-        Mapping.setSourceContent(
-          cssMap,
-          linkedOwner.moduleId,
-          linkedOwner.source,
-        )
+  const prefix = emitted.contributionCss ?? ''
+  const scoped = emitted.scopedCss ?? emitted.css
+  const css = [
+    prefix,
+    (scoped ? scoped.split('\n') : [])
+      .map((rule, index) => {
+        const line = index + 1 + (prefix ? prefix.split('\n').length : 0)
+        const brace = rule.indexOf('{')
+        const name = rule.slice(1, brace)
+        const linkedOwner = linkedOwners.get(name)
+        if (linkedOwner) {
+          const lines = linkedOwner.source
+            .slice(0, linkedOwner.call.start)
+            .split('\n')
+          Mapping.setSourceContent(
+            cssMap,
+            linkedOwner.moduleId,
+            linkedOwner.source,
+          )
+          Mapping.addMapping(cssMap, {
+            generated: { column: 0, line },
+            name: linkedOwner.call.name,
+            original: { line: lines.length, column: lines.at(-1)!.length },
+            source: linkedOwner.moduleId,
+          })
+          return rule
+        }
+        const themeOwner = themeOwners.get(name)
+        if (themeOwner) {
+          Mapping.addMapping(cssMap, {
+            generated: { column: 0, line },
+            name: themeOwner.name,
+            original: position(themeOwner.start),
+            source: options.moduleId,
+          })
+          return rule
+        }
+        if (Object.values(emitted.themes).includes(name)) {
+          // Packed theme declarations have no authored source in this graph.
+          Mapping.addMapping(cssMap, { generated: { column: 0, line } })
+          return rule
+        }
+        const selector = `.${names.get(name)!}`
+        const call = owners.get(name)!
         Mapping.addMapping(cssMap, {
           generated: { column: 0, line },
-          name: linkedOwner.call.name,
-          original: { line: lines.length, column: lines.at(-1)!.length },
-          source: linkedOwner.moduleId,
-        })
-        return rule
-      }
-      const themeOwner = themeOwners.get(name)
-      if (themeOwner) {
-        Mapping.addMapping(cssMap, {
-          generated: { column: 0, line },
-          name: themeOwner.name,
-          original: position(themeOwner.start),
+          name: call.name,
+          original: position(call.start),
           source: options.moduleId,
         })
-        return rule
-      }
-      if (Object.values(emitted.themes).includes(name)) {
-        // Packed theme declarations have no authored source in this graph.
-        Mapping.addMapping(cssMap, { generated: { column: 0, line } })
-        return rule
-      }
-      const selector = `.${names.get(name)!}`
-      const call = owners.get(name)!
-      Mapping.addMapping(cssMap, {
-        generated: { column: 0, line },
-        name: call.name,
-        original: position(call.start),
-        source: options.moduleId,
+
+        const body = rule.slice(brace)
+        const style = styles.get(call.name)!
+        function declarations(
+          style: Style.NamedStyle,
+        ): readonly Style.Declaration[] {
+          return style.rules
+            ? style.rules.flatMap((rule) => declarations(rule.style))
+            : style.declarations
+        }
+        const conditionNodes: Extract<Ast.Node, { type: 'Property' }>[] = []
+        function locations(node: Ast.ObjectExpression): readonly Ast.Node[] {
+          return node.properties.flatMap((property) => {
+            if (property.type !== 'Property') return []
+            const value = Expression.unwrap(property.value)
+            if (value.type === 'ObjectExpression') {
+              conditionNodes.push(property)
+              return locations(value)
+            }
+            if (value.type === 'ArrayExpression')
+              return value.elements.filter(
+                (node): node is NonNullable<typeof node> => node !== null,
+              )
+            return [property]
+          })
+        }
+        const ordered = declarations(style)
+        const authored = locations(definitions.get(call.start)!)
+        const conditionStarts = declarationStarts(body, true)
+        for (const [index, start] of conditionStarts.entries()) {
+          const node = conditionNodes[index]
+          if (!node) continue
+          Mapping.addMapping(cssMap, {
+            generated: { column: selector.length + start, line },
+            name: options.source.slice(node.key.start, node.key.end),
+            original: position(node.key.start),
+            source: options.moduleId,
+          })
+        }
+        const starts = declarationStarts(body)
+        let cursor = 1
+        for (
+          let propertyIndex = 0;
+          propertyIndex < ordered.length;
+          propertyIndex++
+        ) {
+          const declaration = ordered[propertyIndex]!
+          const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:`
+          const start =
+            starts.find(
+              (start) => start >= cursor && body.startsWith(text, start),
+            ) ?? -1
+          if (start < 0) continue
+
+          const location = authored[propertyIndex]!
+          Mapping.addMapping(cssMap, {
+            generated: { column: selector.length + start, line },
+            name: declaration.property,
+            original: position(location.start),
+            source: options.moduleId,
+          })
+          cursor = start + text.length
+        }
+
+        return selector + body
       })
-
-      const body = rule.slice(brace)
-      const style = styles.get(call.name)!
-      function declarations(
-        style: Style.NamedStyle,
-      ): readonly Style.Declaration[] {
-        return style.rules
-          ? style.rules.flatMap((rule) => declarations(rule.style))
-          : style.declarations
-      }
-      const conditionNodes: Extract<Ast.Node, { type: 'Property' }>[] = []
-      function locations(node: Ast.ObjectExpression): readonly Ast.Node[] {
-        return node.properties.flatMap((property) => {
-          if (property.type !== 'Property') return []
-          const value = Expression.unwrap(property.value)
-          if (value.type === 'ObjectExpression') {
-            conditionNodes.push(property)
-            return locations(value)
-          }
-          if (value.type === 'ArrayExpression')
-            return value.elements.filter(
-              (node): node is NonNullable<typeof node> => node !== null,
-            )
-          return [property]
-        })
-      }
-      const ordered = declarations(style)
-      const authored = locations(definitions.get(call.start)!)
-      const conditionStarts = declarationStarts(body, true)
-      for (const [index, start] of conditionStarts.entries()) {
-        const node = conditionNodes[index]
-        if (!node) continue
-        Mapping.addMapping(cssMap, {
-          generated: { column: selector.length + start, line },
-          name: options.source.slice(node.key.start, node.key.end),
-          original: position(node.key.start),
-          source: options.moduleId,
-        })
-      }
-      const starts = declarationStarts(body)
-      let cursor = 1
-      for (
-        let propertyIndex = 0;
-        propertyIndex < ordered.length;
-        propertyIndex++
-      ) {
-        const declaration = ordered[propertyIndex]!
-        const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:`
-        const start =
-          starts.find(
-            (start) => start >= cursor && body.startsWith(text, start),
-          ) ?? -1
-        if (start < 0) continue
-
-        const location = authored[propertyIndex]!
-        Mapping.addMapping(cssMap, {
-          generated: { column: selector.length + start, line },
-          name: declaration.property,
-          original: position(location.start),
-          source: options.moduleId,
-        })
-        cursor = start + text.length
-      }
-
-      return selector + body
-    })
+      .join('\n'),
+  ]
+    .filter(Boolean)
     .join('\n')
 
   const map = module.generateMap({

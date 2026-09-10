@@ -2,6 +2,7 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
+import * as Contributions from './internal/Contributions.js'
 import * as Binding from '../internal/Binding.js'
 import * as Cascade from '../internal/Cascade.js'
 import * as Literal from '../internal/Literal.js'
@@ -9,6 +10,9 @@ import * as Token from '../internal/Token.js'
 import type * as Style from '../Style.js'
 import type * as Theme from '../Theme.js'
 import * as Themes from './internal/Themes.js'
+
+/** Explicit ordered stylesheet contribution data. */
+export type Contribution = Contributions.Definition
 
 /**
  * Emits factored literal and theme-reference CSS without reading files or generating runtime code.
@@ -382,6 +386,19 @@ export function compile<
     classes[style.name] = names.join(' ')
   }
   if (diagnostics.length) throw new CompileError(diagnostics)
+  const contributionCss = (() => {
+    try {
+      return Contributions.render(options.contributions ?? [], nested)
+    } catch (error) {
+      throw new CompileError([
+        {
+          code: 'invalid_declaration',
+          message: (error as Error).message,
+          path: ['contributions'],
+        },
+      ])
+    }
+  })()
   let scopes: ReturnType<NonNullable<typeof theme>['emit']>
   try {
     scopes =
@@ -397,11 +414,16 @@ export function compile<
       },
     ])
   }
+  const scopedCss = [
+    scopes.css,
+    ...[...rules].map(([name, body]) => `.${name}{${body}}`),
+  ]
+    .filter(Boolean)
+    .join('\n')
   return Object.freeze({
+    ...(contributionCss ? { contributionCss, scopedCss } : {}),
     classes: Object.freeze(classes),
-    css: [scopes.css, ...[...rules].map(([name, body]) => `.${name}{${body}}`)]
-      .filter(Boolean)
-      .join('\n'),
+    css: [contributionCss, scopedCss].filter(Boolean).join('\n'),
     themes: scopes.classes as Readonly<Record<themeName, string>>,
   })
 }
@@ -421,6 +443,8 @@ export declare namespace compile {
      * Independent deduplicates complete applications; its class lists must not be
      * combined with each other. Resolve composition before compiling in this mode.
      */
+    /** Eager module-level stylesheet contributions, supplied as static data. */
+    readonly contributions?: readonly Contribution[] | undefined
     readonly composition?: 'independent' | 'ordered' | undefined
     /** Ordered definitions; no themes or source adapter is required. */
     readonly styles: Style.Definition<name>
@@ -432,6 +456,10 @@ export declare namespace compile {
     name extends string = string,
     themeName extends string = string,
   > = {
+    /** Contribution text separated for graph-wide hoisting. */
+    readonly contributionCss?: string | undefined
+    /** Ordinary scope and style rules when contributions were supplied. */
+    readonly scopedCss?: string | undefined
     /** Readable space-separated class identifiers per authored style. */
     readonly classes: Readonly<Record<name, string>>
     /** Factored CSS preserving cascade behavior, without reset or layers. */

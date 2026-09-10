@@ -27,6 +27,28 @@ jobs:
         run: pnpm check:css >> "$GITHUB_STEP_SUMMARY"
       - name: Check types
         run: pnpm check:types
+  conformance:
+    name: CSS Property Conformance (100%)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Enforce complete property conformance
+        run: |
+          set -o pipefail
+          pnpm check:css:full 2>&1 | tee css-conformance.md
+      - if: ${{ always() }}
+        name: Publish conformance summary
+        run: cat css-conformance.md >> "$GITHUB_STEP_SUMMARY"
+      - if: ${{ always() && hashFiles('css-conformance.md') != '' }}
+        name: Upload conformance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: css-conformance
+          path: css-conformance.md
+          retention-days: 30
   host-macos:
     name: Host on macOS
     runs-on: macos-latest
@@ -68,4 +90,18 @@ jobs:
         with:
           name: coverage
           path: coverage/
+          retention-days: 30
+      - if: ${{ !cancelled() && hashFiles('test-results/css-browser-capabilities.json') != '' }}
+        name: Upload CSS browser capabilities
+        uses: actions/upload-artifact@v4
+        with:
+          name: css-browser-capabilities
+          path: test-results/css-browser-capabilities.json
+          retention-days: 30
+      - if: ${{ failure() && hashFiles('test-results/css-consumer.test-d.ts') != '' }}
+        name: Upload failing CSS consumer
+        uses: actions/upload-artifact@v4
+        with:
+          name: css-consumer
+          path: test-results/css-consumer.test-d.ts
           retention-days: 30

@@ -8,6 +8,9 @@ import * as Module from 'node:module'
 import * as Path from 'node:path'
 
 const require = Module.createRequire(import.meta.url)
+const requireFull = process.argv.includes('--require-full')
+if (requireFull && process.argv.includes('--update'))
+  throw new Error('--require-full cannot be combined with --update')
 const directory = Path.resolve(import.meta.dirname, '../test/conformance')
 const inventoryIndex = process.argv.indexOf('--inventory')
 const file =
@@ -83,6 +86,27 @@ if (process.argv.includes('--update')) {
     console.log(
       `| ${family} | ${counts.supported} | ${counts.partial} | ${counts.deferred} | ${counts.unclassified} |`,
     )
+  }
+  const properties = Object.entries(current.families.properties!)
+  const incomplete = properties.filter(
+    ([, entry]) => entry.status !== 'supported',
+  )
+  const supported = properties.length - incomplete.length
+  const percentage =
+    properties.length === 0 ? 0 : (supported / properties.length) * 100
+  console.log(
+    `\nFull property conformance: **${supported}/${properties.length} (${percentage.toFixed(2)}%)**. Required: **100%**. Partial properties receive no completion credit.`,
+  )
+  if (requireFull && (properties.length === 0 || incomplete.length > 0)) {
+    console.log('\n<details>\n<summary>Incomplete properties</summary>\n')
+    console.log('| Property | Status |\n| --- | --- |')
+    for (const [name, entry] of incomplete)
+      console.log(`| ${name} | ${entry.status} |`)
+    console.log('\n</details>')
+    console.error(
+      `CSS property conformance is below 100%: ${supported}/${properties.length} fully supported; ${incomplete.length} incomplete.`,
+    )
+    process.exitCode = 1
   }
   if (changes.length) {
     console.error(

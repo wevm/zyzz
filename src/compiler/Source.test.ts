@@ -301,14 +301,6 @@ Zyzz.css({ padding: 0 });
       {
         "diagnostics": [
           {
-            "code": "invalid_literal",
-            "end": 44,
-            "message": "Expected a nonnegative literal length or numeric zero.",
-            "source": "example/errors.ts",
-            "start": 43,
-            "text": "4",
-          },
-          {
             "code": "unsupported_syntax",
             "end": 66,
             "message": "Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.",

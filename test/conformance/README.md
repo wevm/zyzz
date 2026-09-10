@@ -1,37 +1,71 @@
 # CSS Conformance
 
-Zyzz owns its property/value mapping. Pinned `mdn-data` and `css-tree` development dependencies provide an independent check; neither changes the public types or ships in client code.
+Zyzz owns its property/value types. Pinned `mdn-data` and `css-tree` development dependencies provide independent grammar checks; neither ships in client code.
+
+## Validation Contract
+
+CSS authoring relies on static TypeScript validation. Style definitions, theme values, and CSS emission do not execute CSS property/value validators in development or production. Source extraction still diagnoses unsupported executable syntax; ordered data and theme graph checks remain structural requirements.
+
+Consumer probes cover property names, token domains, units, hex literals, integer literals, nonnegative scalar literals, fallbacks, and importance. Broad numbers, custom identifiers, and complex function arguments cannot all be validated by these types. CSS parsing and computed-value semantics belong to the browser.
 
 ## Coverage
 
-Run `pnpm check:css` for the traffic-light report. `coverage.json` classifies every upstream property, function, selector, at-rule, syntax, type, and unit. SHA-256 fingerprints include each complete upstream entry; shared syntax changes are checked independently, including changes referenced indirectly by a property.
+`coverage.json` classifies every pinned property, function, selector, at-rule, syntax, type, and unit. SHA-256 fingerprints cover complete upstream entries and shared syntaxes. `pnpm check:css` fails on grammar drift or unclassified additions.
 
-| Status | Meaning |
-| --- | --- |
-| 🟢 Supported | Reviewed complete support for the upstream feature, with type/compiler/browser evidence |
-| 🟡 Partial | Implemented with deliberate restrictions; see the capability inventory and literal guide |
-| ⚪ Deferred | Tracked, with no complete support claim |
-| 🔴 Unclassified | Requires an explicit coverage decision; CI fails |
+| Status       | Meaning                                                                               |
+| ------------ | ------------------------------------------------------------------------------------- |
+| Supported    | Reviewed complete support with static type, compiler, and applicable browser evidence |
+| Partial      | Typed mapping exists with documented grammar or evidence gaps                         |
+| Deferred     | Tracked without an implemented property mapping                                       |
+| Unclassified | Requires review; CI fails                                                             |
 
-Current properties are conservatively partial: Zyzz's bounded values are not the entire CSS grammar. Other families remain deferred as whole features, including units whose use is already partially exercised through property probes. The integration check requires exact agreement between implemented properties and supported/partial inventory entries.
+Current property coverage is **0 partial, 0 deferred, and 670 supported** out of 670. Removing runtime validation does not promote entries. A partial property receives no completion credit.
 
-## Values and Types
+## Evidence
 
-The Transform integration suite compiles every finite keyword and samples colors, numbers, and lengths through root authoring, fallback arrays, importance, and CSS emission. CSS Tree validates emitted values against the pinned MDN properties and referenced syntaxes, overriding its older bundled grammar. Unknown grammar fails rather than silently skipping validation.
+The Transform conformance suite walks the independent grammar and referenced productions to enumerate accepted keywords and samples numeric, color, image, URL, and dimensional domains. Candidate units come from upstream data and are selected by the independent MDN/CSS Tree grammar, never a Zyzz runtime validator.
 
-Length candidates combine MDN units with CSS Tree's unit vocabulary. Every accepted probe is checked against public `Style.Properties`; representative fallbacks also check inferred `css` calls. Independent invalid/unsupported cases check runtime rejection and expected type errors, including importance. Existing token inference fixtures and native-CSS browser comparisons remain required.
+Every accepted probe checks emitted CSS against independent grammar and compiles a public TypeScript consumer. Invalid probes check expected TypeScript errors, including importance; booleans are rejected for every mapped property. Dedicated fixtures verify browser layout, painting, cascade, inheritance, and theme behavior. The property browser matrix checks every engine-accepted value in the corpus and records counts per property and unsupported spellings in a CI capability artifact. A separate matrix checks shorthand/longhand repeated overrides and reset-only relationships.
 
-Numeric bounds and hex-digit validity remain runtime checks where public TypeScript templates are broader. The corpus exhausts finite keywords, but samples infinite numeric/string domains. Grammar conformance does not establish browser support or rendering equivalence; browser integration remains separate. No blanket claim of complete CSS conformance is made.
+Image and URL mappings include background-image, border-image-source, list-style-image, mask-border-source, mask-image, -webkit-mask-image, marker and its longhands, and -moz-binding. Quoted URL fallbacks retain importance. Marker shorthand/longhand conflicts preserve declaration order. Legacy spellings retain static declaration support; unavailable engines are recorded separately. Image-function arguments remain CSS text under the validation contract.
+
+## Completion Gate
+
+`pnpm check:css:full` requires all 670 pinned MDN properties, including vendor and obsolete entries, to be reviewed as supported. Partial, deferred, and unclassified entries receive zero credit. The threshold uses exact counts, not rounded percentages. Grammar drift still fails, and `--update` cannot be combined with the full gate.
+
+The **CSS Property Conformance (100%)** CI job publishes a report even when it fails. Type, grammar, build, and browser checks run alongside it. The ledger records reviewed implementation status; it is not a browser certification. The full gate passes with the reviewed inventory; grammar drift and incomplete future entries still fail.
 
 ## Upstream Updates
 
-Dependabot opens weekly grouped PRs for MDN data, CSS Tree, and its type declarations. Normal CI uses the lockfile and does not fetch live grammar. Upstream changes fail the inventory check until reviewed.
+1. Review the dependency update and changed upstream grammar.
+2. Run `pnpm update:css` to refresh fingerprints.
+3. Classify additions and update property types and probes as required.
+4. Run `pnpm check:css`, `pnpm check:types`, and the Transform CSS conformance scenarios; run applicable browser fixtures.
 
-1. Inspect the dependency update and upstream changes.
-2. Run `pnpm update:css` to refresh fingerprints. New entries remain unclassified; existing classifications are retained for review.
-3. Review every changed entry and explicitly classify additions in `coverage.json`. Grammar changes can require narrower values, new support, or documented partial coverage.
-4. Run `pnpm check:css`, `pnpm check:types`, and `pnpm exec vp test run src/compiler/Transform.test.ts -t 'CSS conformance'`.
+Refreshing fingerprints acknowledges upstream changes; it does not implement features or promote coverage. Normal CI uses the lockfile and does not fetch live grammar.
 
-Refreshing fingerprints acknowledges upstream changes; it does not implement features or promote coverage. Review updated grammars before accepting that diff. Removal and renaming are also reported. Broader browser tests run in CI.
+Sources: [MDN data](https://github.com/mdn/data), [CSS Tree](https://github.com/csstree/csstree), [CSS Images](https://www.w3.org/TR/css-images-4/), [SVG Markers](https://www.w3.org/TR/svg-markers/).
 
-Sources: [MDN data](https://github.com/mdn/data), [CSS Tree](https://github.com/csstree/csstree), [Zyzz capabilities](../../.agents/capabilities.md).
+## Compound Properties
+
+Every pinned property now has an authoring type, including custom properties, shorthands, font settings, filters, shadows, motion paths, timelines, and legacy spellings. Custom-property case and arbitrary scalar data are preserved. Named CSS properties still reject unknown names, wrong scalar domains, and invalid finite keywords.
+
+The new compound fixture records positive declarations independently of the emitter. Recursive function arguments and open custom identifiers retain CSS text. Argument semantics and open custom identifiers remain browser-owned under the static validation contract. Bounded grammar probes and the complete engine-accepted corpus provide evidence for the modeled property surface.
+
+The grammar oracle supplements the missing `param()` production from CSS Linked Parameters. It corrects the pinned circle production's use of radial-gradient sizing and normalizes SVG 2's path-length range notation. These exceptions are test-only; upstream fingerprints remain checked.
+
+Compositional probes sample upstream grammar alternatives, repetition counts, and component orders with bounded traversal. They complement keyword and scalar probes; they are not an exhaustive enumeration of recursive CSS text. The test oracle also applies the CSS Writing Modes requirement that explicit `text-combine-upright: digits` counts be between two and four.
+
+Authoring helpers accept mixed-case CSS literals and surrounding CSS whitespace while retaining case-sensitive token names. Numeric refinements distinguish CSS decimal and integer tokens from JavaScript radix spellings, preserve signed zero, and retain nonnegative and positive constraints. These refinements exist only in TypeScript.
+
+Compact serialization expands the corpus to 63,752 independently accepted values, each emitted normally and with importance (127,504 declarations). Static lexical probes cover CSS comments, identifier escapes, ASCII keyword folding, and numeric token boundaries. Browser fixtures verify escaped literals and commented importance; CSS Tree does not resolve these escape spellings itself.
+
+## Reviewed Evidence
+
+[bc6e1ca CI](https://github.com/wevm/zyzz/actions/runs/34417051637) passed all 315 integrations, including every engine-accepted corpus value, shorthand resets, escaped literals, and theme/cascade controls. Build, native checks, ordinary TypeScript, macOS host checks, and the benchmark workflow passed. [d2a78d9 CI](https://github.com/wevm/zyzz/actions/runs/34417846641) additionally passed the grid integer and slash-limit type probes, browser regressions, full corpus, and benchmarks. Two unrelated subprocess integrations hit their five-second test limit; the follow-up adds bounded compiler deadlines and an explicit integration-test budget.
+
+The review covers finite keywords and combinations, upstream dimensional units, CSS numeric/hex spelling, scalar ranges, compound entry shapes, token domains, fallbacks, importance, emitted declaration order, and applicable computed styles. Supported means the documented static authoring and emission contract; recursive function arguments, arbitrary identifiers, and browser feature availability retain their stated boundaries.
+
+Grid indexes use nonzero integers, and span counts use positive integers, including signed and zero-padded spellings. The restrictions follow [CSS Grid line placement](https://www.w3.org/TR/css-grid-2/#line-placement); the pinned grammar alone does not exclude zero.
+
+The matched theme/graph integrations took 8.43 seconds before the grid change and 8.38 seconds after it on the same machine. Each TypeScript subprocess now has a ten-second deadline inside a fifteen-second integration budget. The full-coverage arithmetic still rejects 669/670 and stale fingerprints.

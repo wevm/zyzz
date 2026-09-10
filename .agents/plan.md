@@ -1,5 +1,11 @@
 # Implementation plan
 
+## Current CSS Conformance Contract
+
+CSS property/value validation is static only. Remove runtime CSS validators rather than adding a development mode. Retain source extraction, ordered-data, and theme graph structural diagnostics. Browser parsing owns value semantics beyond the static types.
+
+The consolidated PR maps 670/670 properties: 670 reviewed as supported, 0 partial, and 0 deferred. The strict 100% gate remains active. Static hex/integer/nonnegative literal checks and image/URL declarations extend the independent grammar and public consumer corpus. Browser evidence remains required for applicable properties.
+
 ## Goal
 
 A minimal, type-safe styling system with an environment-independent core, shared web/native authoring, modular extensions, and optional integration adapters. Styles compile ahead of time. Core `css` and `variants` have no tokens; bundled themes are opt-in through `zyzz/themes/default`. Color tokens accept shared values or light/dark pairs.
@@ -426,7 +432,7 @@ Custom conflict graphs, shared-subset/biclique search, bounded beam search, MaxS
 
 ## Continuing CSS Conformance
 
-Continue opening coherent property/value PRs against the pinned MDN inventory. Each batch preserves independent grammar/type validation, adds browser fixtures and benchmark evidence, and records remaining restrictions. New type fixtures use describe/test blocks. Full support requires value and rendering proof, not property-name acceptance.
+Continue all property/value work in the single consolidated CSS conformance PR against the pinned MDN inventory. Each batch preserves independent grammar/type validation, adds browser fixtures and benchmark evidence, and records remaining restrictions. New type fixtures use describe/test blocks. Full support requires value and rendering proof, not property-name acceptance.
 
 - Column properties: 12 additions plus normal column gaps; numeric keyword domains preserve positive count validation. Shorthands and remaining fragment grammar follow separately.
 
@@ -440,7 +446,7 @@ Continue opening coherent property/value PRs against the pinned MDN inventory. E
 
 - Motion controls: 11 additional properties and a finite time dimension domain, independent grammar/type probes, invalid duration checks, source maps, and native paused-animation timing. Lists, easing functions, keyframes, and timelines remain deferred.
 
-- Grid tracks: nine additional properties, bounded fr dimensions and grid-line domains, independent grammar/type probes, source maps, and implicit-track/span geometry. Lists, functions, named lines, and areas remain deferred.
+- Grid tracks: nine additional properties, bounded fr dimensions and grid-line domains, independent grammar/type probes, source maps, and implicit-track/span geometry. Structural track lists are implemented below; named-line placement and areas remain deferred.
 
 - Masks and image positioning: 16 additional properties, scalar position domains, background axis conflict handling, independent grammar/type checks, source maps, and masked-pixel comparisons. Image sources, lists, and complex functions remain deferred.
 
@@ -455,3 +461,131 @@ Continue opening coherent property/value PRs against the pinned MDN inventory. E
 ## Reading Order
 
 `readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 303 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
+
+## Full Property Conformance Acceptance
+
+Keep the remaining CSS property implementation in one PR. The required CI job fails unless all 670 pinned MDN properties are fully supported; partial entries never count toward 100%. Retain independent grammar checks, public type probes, emission checks, browser evidence, and performance gates. Do not promote inventory statuses to make CI green before the implementation and evidence exist.
+
+Outstanding work includes the 248 deferred properties and completion of all 422 partial domains: CSS tokenization/escaping and case handling; compositional value grammars, lists, functions and custom identifiers; property-specific numeric rules; shorthand/longhand cascade interactions; and independent browser/type evidence. The threshold remains red while these gaps exist. The property gate does not claim full support for the separately tracked selectors and at-rule families.
+
+### Structured Grid Tracks
+
+Explicit and implicit grid tracks accept size lists, `minmax()` and `fit-content()`. Explicit tracks also accept line-name groups and integer or automatic `repeat()`, including fixed-size restrictions for auto-repeat. Repetitions remain compact CSS rather than being expanded by the compiler. The compiler rejects invalid argument counts, flexible minima, nested repetition, and multiple auto-repeat groups. Consumer types constrain the outer value shape; nested grammar is checked during compilation.
+
+Independent MDN grammar probes and native responsive-grid fixtures cover these additions. Math functions, variable references, escaped identifiers, and subgrid name repetition remain incomplete; property completion stays partial.
+
+### Box Value Lists
+
+Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthands accept one to four space-separated scalar components. Their logical block/inline shorthands and gap accept pairs. Each component retains its property-specific auto, percentage, and sign rules; CSS-wide keywords must stand alone. Longhands remain scalar. Type shapes cover lists while the compiler validates arity and every component. Native browser fixtures compare physical longhands in horizontal and vertical writing modes, including importance and shorthand/longhand overrides. Functions, variable substitution, and broader component spellings remain incomplete.
+
+### Motion, Color, Border, and Keyword Grammar
+
+Motion lists preserve easing-function commas and validate cubic-bezier(), steps(), and linear() constraints. Absolute functional colors preserve color spaces and browser clamping. Border color/style lists and elliptical radii preserve logical overrides and importance. Compatible font variant and containment groups reject conflicts; font-synthesis adds one partially implemented property.
+
+The completion count remains 0/670: 561 partial and 109 deferred (84 standard, 25 vendor-prefixed). Shared substitution, math, tokenization/escaping, relative colors, combined shorthands, and the remaining property families are still required. Browser fixtures verify motion output, themed colors and SVG, border expansion, and grouped declarations. The external alias consumer typecheck has a bounded ten-second subprocess timeout within a fifteen-second integration deadline; benchmark gates remain separate and unchanged.
+
+### Dimensional Math
+
+Number, length, time, and grid track domains accept literal calc(), min(), max(), and clamp(). Component splitting preserves nested function spaces and slash axes. The parser checks dimensional compatibility and arithmetic precedence; browser evaluation owns clamping, integer rounding, and unit resolution. Substitution, constants, dimension cancellation, and additional functions remain incomplete. Nesting is bounded at 128 levels.
+
+### Deferred Variable Values
+
+All mapped property types admit unquoted var() expressions. The web emitter validates and preserves raw references alongside typed theme tokens; browser substitution owns property-value matching, inherited custom properties, cycles, and invalid-at-computed-value semantics. Compiler validation requires balanced delimiters and valid unescaped custom-property names. Quotes, comments, braces, URL tokens, and more than 128 nested levels remain unsupported.
+
+SVG geometry, baseline, caret, emoji, font-synthesis-position, logical overflow, scrolling axes, text wrapping, and additional scalar keywords add 38 partial property mappings. Positions allow signed lengths; radii retain nonnegative bounds. Animation composition and scroll timeline axes accept comma lists. Related shorthand and alias domains preserve A/B/A declaration order.
+
+Zoom accepts nonnegative numbers/percentages and normal/reset. Stop opacity accepts finite numbers/percentages with browser clamping. Experimental properties may lack browser implementation; grammar and type coverage do not imply browser support. New SVG geometry and text fixtures compare native computed values and rendered bounds.
+
+Text wrapping, underline position, hanging punctuation, flex flow, position visibility, masonry flow, and speech keywords validate compatible groups. Border/mask image repetition accepts pairs. Timeline axes accept comma lists; interest delays remain scalar. Further baseline, offset, column, fragmentation, and legacy mappings add 44 partial properties. Shorthand and alias domains preserve authored cascade order.
+
+Independent grammar and generated consumer probes cover the expanded map. Browser controls exercise text and flex output; obsolete and experimental declarations retain separate browser limitations. Complete range rules, lexical forms, and associated functional/shorthand grammars remain incomplete.
+
+Eighteen named-value properties add unescaped custom identifiers, dashed names, and comma/space lists. Names preserve case; validation excludes CSS-wide and property-reserved words, enforces standalone keywords, and rejects malformed prefixes or list boundaries. Public string types defer lexical validation to compilation. Quoted names, escaping, comments, and timeline functions remain incomplete.
+
+Browser fixtures resolve case-sensitive keyframes and named container queries. Name grammar follows [CSS Values](https://www.w3.org/TR/css-values-4/#custom-idents), [Containment](https://www.w3.org/TR/css-contain-3/#container-name), [Transitions](https://www.w3.org/TR/css-transitions-1/#transition-property-property), and [Will Change](https://www.w3.org/TR/css-will-change/#will-change). These mappings retain partial status.
+
+Combined border, physical/logical border sides, outline, and column-rule add thirteen partial properties. Values accept one width, style, and color in any order, preserving functional components. Duplicate domains, negative literal widths, and percentages are rejected. When a combined shorthand occurs, related declaration domains remain ordered to preserve longhand overrides.
+
+Browser controls compare both text directions and three writing modes, A/B/A overrides, and the border-image reset performed by border. Independent grammar and consumer probes cover component permutations and functional values. Escaped spellings, broader color functions, and complete numeric forms remain incomplete.
+
+Aspect ratios and transform/translate/rotate/scale add five partial properties. Transform functions validate arity and component dimensions while preserving authored order. Individual transforms accept their respective vector forms. Angle math extends calc/min/max/clamp dimensional checks; percentage depth translations and malformed matrices are rejected.
+
+Browser fixtures compare individual transforms with equivalent function lists, native 3D matrices, rendered bounds, and aspect-ratio sizing. Constants, dimension cancellation, full escaping, and broader numeric spellings remain incomplete. See [CSS Transforms](https://www.w3.org/TR/css-transforms-2/) and [CSS Sizing](https://www.w3.org/TR/css-sizing-4/#aspect-ratio).
+
+Theme authoring constrains its generic to the property contract before refining concrete literals. Extracted Parameters remain usable without comparing an impossible arbitrary-key intersection. A standalone consumer probe fell from 14.81 seconds to 5.97 seconds; the alias integration passed in 7.28 seconds. Its 10-second subprocess and 15-second integration limits remain unchanged.
+
+Percentage domains support fontWidth, its fontStretch alias, and textSizeAdjust, including nonnegative literals and dimensionally valid math. Zoom accepts percentages. Opacity, fillOpacity, strokeOpacity, floodOpacity, and stopOpacity preserve finite numbers and percentages outside 0–1 for browser clamping. Number/percentage addition remains invalid.
+
+Public source, grammar, type, and browser fixtures cover percentage units, alpha clamping, aliases, importance, and rejection paths. These properties remain partial: escaped numeric spellings, complete tokenization, and broader math still need coverage. See [CSS Color](https://www.w3.org/TR/css-color-4/#transparency), [CSS Fonts](https://www.w3.org/TR/css-fonts-4/#font-width-prop), and [CSS Values](https://www.w3.org/TR/css-values-4/#percentages).
+
+The theme signature now skips redundant whole-map literal refinement at its already-constrained broad boundary, while retaining exact-key checks. Both real theme subprocess integrations pass in 3.36 seconds combined without timeout increases; arbitrary records, callable declarations, undeclared numeric tokens, and malformed literal spellings remain rejected.
+
+Percentage benchmark: the unchanged 100-style module measured 4.3502 ms ±6.01% before and 4.1858 ms ±6.48% after on the same machine without competing heavy work. New percentage lanes measured 0.9308 ms (10 additional styles) and 5.5985 ms (100). Full TypeScript, generated conformance probes, lint, and non-browser integration checks pass. Percentage browser assertions await CI.
+
+Eighty-two prefixed properties now cover finite keyword domains, lengths, colors, percentages, logical borders, outline radii, line clamping, and scalar mask lists. Public names preserve capitalized prefixes: MozAppearance, MsAccelerator, and WebkitUserSelect. MsScrollbar3dlightColor emits the exact historical -ms-scrollbar-3dlight-color spelling.
+
+WebKit logical-border aliases share conflict domains with standard borders. Independent grammar and consumer probes cover all added mappings; native controls cover logical borders in three writing modes and both directions, text fill/stroke, selection, and repeated alias overrides. Legacy Microsoft/Mozilla platform behavior remains unverified; all entries remain partial.
+
+The percentage browser fixture confirms alpha clamping. Current Chromium ignores font-width and retains the font-stretch fallback; the fixture records that capability and an independent native control. See [legacy logical borders](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-webkit-border-before) and [text stroke width](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-webkit-text-stroke-width).
+
+The percentage benchmark CI lost the token-inclusive 100-style theme lane: 5.484 ms ±18.58% against Tailwind 4.896 ms ±41.16%. Local confirmation measured 3.6241 ms against 3.6002 ms. Reusing validated token references within one Style.define call reduced the follow-up to 2.4569 ms ±6.01% against Tailwind 3.3350 ms ±28.96%; all five frameworks remain measured.
+
+Cache entries are scoped by property and scalar within one definition; no state persists across calls or themes. Public integration controls cover repeated names in different property groups and successive distinct themes. Browser percentage checks now explicitly record Chromium's missing font-width implementation, with independent native fallback controls.
+
+Prefixed mappings added 82 properties, reaching 505 partial and 165 deferred (135 standard, 30 prefixed). The initial 100-style transform comparison rose from 3.7546 to 4.3133 ms; a clean matched repeat measured 4.0851 ms ±5.74% before and 4.2505 ms ±6.27% after. New prefixed lanes measured 1.2137 ms (10 styles) and 6.2824 ms (100).
+
+Seventeen corner-shape properties accept canonical curvature keywords, finite superellipse numbers, infinity endpoints, numeric math, and their one/two/four-value shorthands. Additional mappings cover all, grid-gap aliases, font-smooth, justify-items/self, position-try-order, and text-box-edge. Corner aliases share conflict domains; all prevents declaration factoring across reset boundaries.
+
+Source and type probes retain arity and dimension restrictions. Browser fixtures compare bevel hit testing with an independent polygon and verify A/B/A declarations around an all reset. These entries remain partial. Contracts follow [CSS Borders](https://www.w3.org/TR/css-borders-4/#corner-shaping).
+
+Path-length remains deferred: the pinned grammar places its range outside the length production, while [the MDN examples](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/path-length) describe unitless numbers. The independent grammar oracle is unchanged pending clarification of that experimental property.
+
+Corner/layout validation passes full TypeScript, lint, generated consumer probes, and source/grammar tests. The same-machine 100-style transform measured 4.0065 ms ±5.94% before and 4.3670 ms ±7.34% after; new 10/100-style lanes measured 1.1467/6.1129 ms. Browser curvature and reset assertions await CI.
+
+The prefixed head passed every standard CI check, but benchmark CI still lost palette (Zyzz 6.576 ms ±62.99%, Tailwind 4.031 ms ±47.00%) and token-inclusive themes (5.093 ms ±19.46%, 4.669 ms ±46.38%). Local confirmation retained all frameworks: palette 1.6219 vs 3.3085 ms; themes 3.0934 vs 4.3162 ms. Neither loss reproduced; gates remain unchanged.
+
+Fifteen compound-value properties add border/mask image slices, widths and outsets; two scrollbar colors; unbounded legacy Mozilla color lists; hyphenation limits; interest-delay pairs; and comma-separated view-timeline insets. Domains distinguish numeric factors, lengths, percentages, colors, integer counts, and times, with explicit arity and fill-marker placement.
+
+Interest-delay shorthands share conflict domains with start/end longhands. Independent source and consumer probes cover repeated scalar grammar; native controls compare border-image painting and computed scrollbar colors. These entries remain partial. See [CSS Backgrounds](https://www.w3.org/TR/css-backgrounds-3/#border-images), [CSS Masking](https://www.w3.org/TR/css-masking-1/#mask-borders), and [CSS Scrollbars](https://www.w3.org/TR/css-scrollbars-1/#scrollbar-color).
+
+Compound-value validation passes full TypeScript, generated consumer probes, source/grammar tests, lint, and the package build. The 100-style transform measured 8.4964 ms ±41.31% before and 7.5531 ms ±30.22% after; the high variance limits conclusions. New 10/100-style lanes measured 1.7317/14.3092 ms. Native painting assertions await CI.
+
+The corner/layout head passed all standard checks, browser tests, and the benchmark workflow. Only the strict 100% conformance gate failed, as expected from the explicitly incomplete inventory.
+
+Intrinsic size overrides and font-size-adjust accept optional component prefixes with dimension and arity checks. Intrinsic shorthand and physical/logical longhands share a cascade conflict domain. Native controls exercise contained sizing. These six properties remain partial pending complete lexical and browser evidence.
+
+Intrinsic prefix validation passes full TypeScript, generated consumers, lint, and source/grammar checks. The same-machine 100-style transform measured 3.8647 ms ±5.32% before and 4.2825 ms ±5.66% after; expanded scalar lanes measured 1.1911/6.5752 ms for 10/100 styles. The six mappings remain partial.
+
+Compound-value CI passed build, checks, and macOS, but the native image-border pixel comparison differed. The follow-up compares all computed border-image components and paints both controls at identical device coordinates, retaining exact pixel equality. CI must verify the revised control and intrinsic sizing.
+
+Grid row, column, and area shorthands accept slash-separated placement lines. Named indices and spans extend all four placement longhands; nonzero indices, positive spans, reserved names, and component limits are checked. Placement declarations share a conflict domain. These three new mappings remain partial.
+
+Intrinsic-sizing CI passed all standard checks and browser tests. Matching device coordinates resolved the exact border-image pixel comparison; computed component equality also passed. The 100% conformance gate remains failing.
+
+Grid placement passes full TypeScript, generated consumers, source/grammar checks, and lint. The 100-style baseline measured 4.2487 ms ±5.96%; an initial 5.2802 ms ±19.17% candidate prompted a repeat at 4.3584 ms ±7.96%. New grid lanes measured 0.7551/4.5315 ms for 10/100 styles. Native layout controls await CI.
+
+Grid span type refinement preserves fractional/negative rejection through importance markers and fallback arrays. Runtime compilation additionally checks named combinations and slash arity. Escaped names and integer math remain incomplete.
+
+Six animation/trigger range endpoints accept named ranges with optional signed length/percentage offsets and comma lists. Standalone normal and active-trigger auto remain exclusive. Native controls compare view-animation progress. These mappings remain partial; trigger event behavior and complete tokenization remain unverified.
+
+Range endpoint validation passes full TypeScript, generated consumers, source/grammar checks, lint, and the package build. The 100-style transform measured 4.2752 ms ±6.08% before and 4.1974 ms ±6.99% after; range lanes measured 0.6734/4.1274 ms for 10/100 styles. Browser progress controls await CI.
+
+The intrinsic-sizing benchmark workflow passed. Grid CI passed native layout controls but found an older rejection diagnostic snapshot; the updated diagnostic passes all retained invalid-count cases locally. Both theme consumer integrations passed in 3.70 seconds combined without changed timeouts.
+
+### Complete Property Mapping and Broader Conformance Evidence
+
+All 670 pinned property entries now have static authoring mappings, including 98 formerly deferred entries. The independent corpus traverses upstream keyword productions and adds compound, custom-property, SVG paint, and paired image-size probes. Runtime CSS value validation remains removed. All entries remain partial until remaining grammar and evidence gaps are reviewed.
+
+A browser matrix compares emitted declarations with native CSS for every engine-supported property and records unavailable browser spellings separately. A second matrix exercises repeated shorthand/longhand overrides, including reset-only relationships. Conditional shorthand conflict groups restore the existing grid workload to 770 gzip CSS bytes while preserving grid-area conflicts. These browser additions require CI because the local Chromium download is unavailable.
+
+The pinned oracle now supplements the missing Linked Parameters production, corrects circle percentage sizing from CSS Shapes, and normalizes SVG 2 path-length range notation. Its upstream fingerprints and the exact 100% completion gate remain unchanged.
+
+The all-property browser and shorthand reset matrices passed on e301d9c, and the benchmark workflow passed with grid CSS at its 770-byte gzip baseline. Follow-up work adds case-insensitive authoring, escaped importance preservation, complete custom-property type probes, and independent compositional grammar samples. These samples exposed additional alignment, image, sizing, font, and keyword combinations; completion remains subject to the expanded checks.
+
+The f9552bb corpus passes 60,892 declaration probes and the new browser matrices, but its CI type checker exhausted a 2 GB heap and five integrations timed out. Follow-up work narrows comparisons to authored properties, preserves annotated records, and keeps generated diagnostics out of the standalone project check. Whitespace and numeric spelling refinements remain static-only. The ordinary TypeScript check now passes with a 2 GB heap limit, using about 1.5 GB. All six focused conformance/theme tests, native lint/types, and the build pass locally; the complete CI rerun remains required.
+
+Compact serialization probes cover 63,738 values and 127,476 declarations. Shared static normalization accepts CSS comments, identifier escapes, whitespace, and zero spellings while retaining numeric token boundaries and ASCII-only keyword folding. Browser conformance now selects every engine-accepted corpus value. The extractor uses the existing structural Style.define call without instantiating the public generic authoring contract for untyped JavaScript; the measured package build fell from 36 seconds to 5 seconds and both previously timed-out integrations pass locally. Native lint/types and ordinary TypeScript with a 2 GB heap pass; complete corpus and browser CI remain required before final coverage promotion.
+
+The bc6e1ca head passed all 315 integrations, including the complete engine-accepted property corpus and escaped CSS controls, plus build, native/ordinary TypeScript, and macOS host checks. These results complete the review for 663 properties under the static authoring contract. Seven grid-placement entries remain partial for the additional signed-integer, named-span, nonzero-index, and slash-limit regressions. The exact full gate remains active.
+
+All 670 property entries are reviewed as supported under the documented static authoring and emission contract. The d2a78d9 head passed grid browser/type regressions, the 63,752-value corpus, build, checks, macOS, and benchmarks. Two unrelated compiler subprocess integrations exceeded the default five-second test budget; matched before/after runs took 8.43/8.38 seconds combined. Explicit ten-second subprocess deadlines within fifteen-second tests bound that work without removing assertions. Final CI must verify the complete inventory and unchanged exact 100% gate.

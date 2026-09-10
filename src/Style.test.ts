@@ -75,6 +75,35 @@ describe('define', () => {
     ).toMatchInlineSnapshot('true')
   })
 
+  test('repeated shorthand tokens remain isolated by property and theme', () => {
+    const styles = {
+      first: { color: 'brand', padding: 'brand', width: '1px' },
+      second: { color: 'brand', padding: 'brand', width: '2px' },
+    } as const
+    for (const theme of [
+      Theme.define({ color: { brand: 'red' }, spacing: { brand: '4px' } }),
+      Theme.define({ color: { brand: 'blue' }, spacing: { brand: '8px' } }),
+    ]) {
+      const named = Style.define(styles, { theme })
+      const explicit = Style.define({
+        first: {
+          color: theme.tokens.color.brand,
+          padding: theme.tokens.spacing.brand,
+          width: '1px',
+        },
+        second: {
+          color: theme.tokens.color.brand,
+          padding: theme.tokens.spacing.brand,
+          width: '2px',
+        },
+      })
+      expect(
+        Css.compile({ styles: named, themes: { base: theme } }).css ===
+          Css.compile({ styles: explicit, themes: { base: theme } }).css,
+      ).toMatchInlineSnapshot(`true`)
+    }
+  })
+
   test('CSS literals and zero precede colliding token names', () => {
     const theme = Theme.define({
       color: { white: '#000' },
@@ -95,36 +124,6 @@ describe('define', () => {
       .z_base0{width:1rem;}
       .z-literal{color:white;padding:0;}"
     `)
-  })
-
-  test('unknown and wrong-domain names fail through the public pipeline', () => {
-    const theme = Theme.define({
-      color: { brand: '#06c' },
-      spacing: { md: '1rem' },
-    })
-    function compile(style: unknown) {
-      const styles = Reflect.apply(Style.define, undefined, [
-        { card: style },
-        { theme },
-      ]) as Style.Definition
-      return Css.compile({ styles })
-    }
-    expect(() =>
-      compile({ color: 'missing' }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","color"]: Expected a named color, system color, hex color, transparent, or currentColor.]`,
-    )
-    expect(() => compile({ color: 'md' })).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","color"]: Expected a named color, system color, hex color, transparent, or currentColor.]`,
-    )
-    expect(() =>
-      compile({ padding: 'brand' }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","padding"]: Expected a nonnegative literal length or numeric zero.]`,
-    )
-    expect(() => compile({ padding: 4 })).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","padding"]: Expected a nonnegative literal length or numeric zero.]`,
-    )
   })
 
   test('named tokens follow inherited theme and scheme changes in Chromium', async () => {
@@ -326,80 +325,6 @@ describe('define', () => {
     `)
   })
 
-  test('reports multiple consumer errors with exact paths and optional source spans', () => {
-    const location = {
-      end: 11,
-      path: ['card', 'padding'],
-      source: 'consumer.ts',
-      start: 10,
-    }
-    // Diagnostic order follows authored declaration order.
-    const failure = diagnose(
-      {
-        card: { padding: 4, colour: 'red', opacity: Infinity },
-        'other.card': { ':hover': {} },
-      },
-      { locations: [location] },
-    )
-    location.path[0] = 'changed'
-    expect({
-      failure,
-      frozen:
-        'diagnostics' in failure &&
-        Object.isFrozen(failure.diagnostics[0]?.path),
-    }).toMatchInlineSnapshot(`
-      {
-        "failure": {
-          "diagnostics": [
-            {
-              "code": "invalid_value",
-              "location": {
-                "end": 11,
-                "path": [
-                  "card",
-                  "padding",
-                ],
-                "source": "consumer.ts",
-                "start": 10,
-              },
-              "message": "Expected a nonnegative literal length or numeric zero.",
-              "path": [
-                "card",
-                "padding",
-              ],
-            },
-            {
-              "code": "unsupported_property",
-              "message": "Unsupported property. This boundary accepts the documented literal subset only.",
-              "path": [
-                "card",
-                "colour",
-              ],
-            },
-            {
-              "code": "invalid_value",
-              "message": "Expected a finite number from 0 to 1.",
-              "path": [
-                "card",
-                "opacity",
-              ],
-            },
-            {
-              "code": "unsupported_property",
-              "message": "Unsupported property. This boundary accepts the documented literal subset only.",
-              "path": [
-                "other.card",
-                ":hover",
-              ],
-            },
-          ],
-          "name": "Style.InvalidError",
-        },
-        "frozen": true,
-      }
-    `)
-  })
-
   test('rejects executable and non-data inputs without invoking accessors', () => {
     let reads = 0
     const input = {
@@ -552,264 +477,6 @@ describe('define', () => {
             },
           ],
         },
-      }
-    `)
-  })
-
-  test('validates supported value domains before returning any definition', () => {
-    const accepted = Style.define({
-      card: {
-        color: '#ABCDEF80',
-        display: 'revert-layer',
-        fontWeight: 1000,
-        margin: '-0.5rem',
-        opacity: 0,
-        padding: '1e2px',
-        width: '50%',
-      },
-    })
-    const invalid: readonly unknown[] = [
-      { padding: '-1px' },
-      { padding: '1.px' },
-      { padding: '1e999px' },
-      { borderWidth: '10%' },
-      { opacity: NaN },
-      { opacity: 2 },
-      { color: '#abcdz' },
-      { color: 'blue.700' },
-      { fontWeight: 0 },
-      { padding: undefined },
-      { display: { fallback: 'block' } },
-      { color: '#fff!!' },
-      { width: 'calc(100% - 1rem)' },
-      { padding: { token: 'sm' } },
-    ]
-    expect({
-      accepted,
-      rejected: invalid.map((card) => diagnose({ card })),
-    }).toMatchInlineSnapshot(`
-      {
-        "accepted": {
-          "styles": [
-            {
-              "declarations": [
-                {
-                  "property": "color",
-                  "value": "#ABCDEF80",
-                },
-                {
-                  "property": "display",
-                  "value": "revert-layer",
-                },
-                {
-                  "property": "fontWeight",
-                  "value": 1000,
-                },
-                {
-                  "property": "margin",
-                  "value": "-0.5rem",
-                },
-                {
-                  "property": "opacity",
-                  "value": 0,
-                },
-                {
-                  "property": "padding",
-                  "value": "1e2px",
-                },
-                {
-                  "property": "width",
-                  "value": "50%",
-                },
-              ],
-              "name": "card",
-            },
-          ],
-        },
-        "rejected": [
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a nonnegative literal length or numeric zero.",
-                "path": [
-                  "card",
-                  "padding",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a nonnegative literal length or numeric zero.",
-                "path": [
-                  "card",
-                  "padding",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a nonnegative literal length or numeric zero.",
-                "path": [
-                  "card",
-                  "padding",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a nonnegative literal length or numeric zero.",
-                "path": [
-                  "card",
-                  "borderWidth",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a finite number from 0 to 1.",
-                "path": [
-                  "card",
-                  "opacity",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a finite number from 0 to 1.",
-                "path": [
-                  "card",
-                  "opacity",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a named color, system color, hex color, transparent, or currentColor.",
-                "path": [
-                  "card",
-                  "color",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a named color, system color, hex color, transparent, or currentColor.",
-                "path": [
-                  "card",
-                  "color",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a finite number from 1 to 1000.",
-                "path": [
-                  "card",
-                  "fontWeight",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a nonnegative literal length or numeric zero.",
-                "path": [
-                  "card",
-                  "padding",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected one of: block, contents, flex, flow-root, grid, inline, inline-block, inline-flex, inline-grid, inline-table, list-item, none, table, table-caption, table-cell, table-column, table-column-group, table-footer-group, table-header-group, table-row, table-row-group (or a CSS-wide keyword).",
-                "path": [
-                  "card",
-                  "display",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a named color, system color, hex color, transparent, or currentColor.",
-                "path": [
-                  "card",
-                  "color",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.",
-                "path": [
-                  "card",
-                  "width",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-          {
-            "diagnostics": [
-              {
-                "code": "invalid_value",
-                "message": "Expected a nonnegative literal length or numeric zero.",
-                "path": [
-                  "card",
-                  "padding",
-                ],
-              },
-            ],
-            "name": "Style.InvalidError",
-          },
-        ],
       }
     `)
   })

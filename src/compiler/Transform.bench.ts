@@ -9,7 +9,10 @@ import * as Zlib from 'node:zlib'
 import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import * as Backgrounds from '../../test/fixtures/Backgrounds.js'
+import * as BorderLists from '../../test/fixtures/BorderLists.js'
+import * as BorderShorthand from '../../test/fixtures/BorderShorthand.js'
 import * as Borders from '../../test/fixtures/Borders.js'
+import * as BoxLists from '../../test/fixtures/BoxLists.js'
 import * as Colors from '../../test/fixtures/Colors.js'
 import * as Columns from '../../test/fixtures/Columns.js'
 import * as ContainerSizing from '../../test/fixtures/ContainerSizing.js'
@@ -17,20 +20,36 @@ import * as Controls from '../../test/fixtures/Controls.js'
 import * as Declarations from '../../test/fixtures/Declarations.js'
 import * as Flex from '../../test/fixtures/Flex.js'
 import * as Fonts from '../../test/fixtures/Fonts.js'
+import * as FunctionalColors from '../../test/fixtures/FunctionalColors.js'
 import * as Grid from '../../test/fixtures/Grid.js'
+import * as GridLists from '../../test/fixtures/GridLists.js'
+import * as Prefixed from '../../test/fixtures/Prefixed.js'
+import * as Percentage from '../../test/fixtures/Percentage.js'
+import * as GridLines from '../../test/fixtures/GridLines.js'
+import * as Ranges from '../../test/fixtures/Ranges.js'
+import * as Tuples from '../../test/fixtures/Tuples.js'
+import * as Corners from '../../test/fixtures/Corners.js'
+import * as Geometry from '../../test/fixtures/Geometry.js'
+import * as Identifiers from '../../test/fixtures/Identifiers.js'
 import * as Interaction from '../../test/fixtures/Interaction.js'
+import * as KeywordGroups from '../../test/fixtures/KeywordGroups.js'
 import * as Layout from '../../test/fixtures/Layout.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 import * as Masks from '../../test/fixtures/Masks.js'
+import * as MathExpressions from '../../test/fixtures/MathExpressions.js'
 import * as Motion from '../../test/fixtures/Motion.js'
+import * as MotionLists from '../../test/fixtures/MotionLists.js'
 import * as Reading from '../../test/fixtures/Reading.js'
+import * as Scalars from '../../test/fixtures/Scalars.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
 import * as Sizing from '../../test/fixtures/Sizing.js'
 import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as Substitution from '../../test/fixtures/Substitution.js'
 import * as Svg from '../../test/fixtures/Svg.js'
 import * as Tables from '../../test/fixtures/Tables.js'
 import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
+import * as TextTimeline from '../../test/fixtures/TextTimeline.js'
 import * as TextFlow from '../../test/fixtures/TextFlow.js'
 import * as Compilation from '../../bench/Compilation.js'
 
@@ -168,6 +187,18 @@ const workloads = {
     source: Backgrounds.source,
     title: 'background',
   },
+  borderShorthand: {
+    declaration: (index: number) =>
+      `export const border${index} = css({border:'${index}px solid red',borderInlineStart:'blue dashed 4px',outline:'1px dotted black'})();`,
+    source: BorderShorthand.source,
+    title: 'border shorthand',
+  },
+  borderLists: {
+    declaration: (index: number) =>
+      `export const borderList${index} = css({borderColor:'red rgb(0 128 0) blue gold',borderRadius:'${index}px 20px / 30px 40px'})();`,
+    source: BorderLists.source,
+    title: 'border list',
+  },
   borders: {
     declaration: (index: number) =>
       `export const box${index} = css({borderStyle:'solid',borderWidth:'2px',borderInlineStartWidth:'${index}px',borderStartStartRadius:'8px',outlineWidth:'1px'})();`,
@@ -179,6 +210,12 @@ const workloads = {
       `export const named${index} = css({color:'rebeccapurple',backgroundColor:'aliceblue',fill:'gold',stroke:'navy',padding:'${index}px'})();`,
     source: Colors.source,
     title: 'named color',
+  },
+  boxLists: {
+    declaration: (index: number) =>
+      `export const boxList${index} = css({padding:'${index}px 8px 12px 16px',marginInline:'2px auto'})();`,
+    source: BoxLists.source,
+    title: 'box list',
   },
   columns: {
     declaration: (index: number) =>
@@ -216,17 +253,83 @@ const workloads = {
     source: Fonts.source,
     title: 'font',
   },
+  gridLists: {
+    declaration: (index: number) =>
+      `export const tracks${index} = css({gridTemplateColumns:'repeat(3, minmax(0, 1fr))',gridAutoRows:'${index}px 40px'})();`,
+    source: GridLists.source,
+    title: 'grid list',
+  },
+  functionalColors: {
+    declaration: (index: number) =>
+      `export const functionalColor${index} = css({color:'oklch(.5 .1 ${index})',backgroundColor:'rgb(255 0 0 / 50%)'})();`,
+    source: FunctionalColors.source,
+    title: 'functional color',
+  },
   grid: {
     declaration: (index: number) =>
       `export const cell${index} = css({display:'grid',gridAutoColumns:'1fr',gridAutoRows:'${index}px',gridAutoFlow:'column',gridColumnEnd:'span 2'})();`,
     source: Grid.source,
     title: 'grid',
   },
+  prefixed: {
+    declaration: (index: number) =>
+      `export const prefixed${index} = css({WebkitBorderBefore:'${index}px solid red',WebkitTextFillColor:'rgb(10 20 30)',MsContentZoomLimitMax:'200%',MozAppearance:'button'})();`,
+    source: Prefixed.source,
+    title: 'prefixed',
+  },
+  percentage: {
+    declaration: (index: number) =>
+      `export const percentage${index} = css({fontWidth:'${100 + index}%',textSizeAdjust:'110%',opacity:'${index}%',zoom:'125%'})();`,
+    source: Percentage.source,
+    title: 'percentage',
+  },
+  tuples: {
+    declaration: (index: number) =>
+      `export const tuple${index} = css({borderImageSlice:'25% fill',borderImageWidth:'1 2 3 4',borderImageOutset:'${index}px 2px',scrollbarColor:'red blue'})();`,
+    source: Tuples.source,
+    title: 'scalar tuple',
+  },
+  gridLines: {
+    declaration: (index: number) =>
+      `export const grid${index} = css({gridArea:'1 / 2 / 3 / 4',gridColumnStart:'span content 2'})();`,
+    source: GridLines.source,
+    title: 'grid placement',
+  },
+  ranges: {
+    declaration: (index: number) =>
+      `export const range${index} = css({animationRangeStart:'entry ${index}%',animationRangeEnd:'exit 80%'})();`,
+    source: Ranges.source,
+    title: 'timeline range',
+  },
+  corners: {
+    declaration: (index: number) =>
+      `export const corner${index} = css({borderRadius:'${index}px',cornerShape:'superellipse(2) bevel',gridGap:'10px 20px',justifySelf:'safe end'})();`,
+    source: Corners.source,
+    title: 'corner and layout',
+  },
+  geometry: {
+    declaration: (index: number) =>
+      `export const transformed${index} = css({transform:'translate(${index}px,20%) rotate(45deg) scale(2,3)',aspectRatio:'16/9'})();`,
+    source: Geometry.source,
+    title: 'geometry',
+  },
+  identifiers: {
+    declaration: (index: number) =>
+      `export const named${index} = css({animationName:'Fade${index}',containerName:'Card${index} Secondary',anchorName:'--Anchor${index}',transitionProperty:'opacity, transform'})();`,
+    source: Identifiers.source,
+    title: 'custom identifier',
+  },
   interaction: {
     declaration: (index: number) =>
       `export const control${index} = css({width:'${index}px',cursor:'pointer',pointerEvents:['auto','none!'],resize:'inline',userSelect:'all',visibility:'visible'})();`,
     source: Interaction.source,
     title: 'interaction',
+  },
+  keywordGroups: {
+    declaration: (index: number) =>
+      `export const keywordGroup${index} = css({fontVariantNumeric:'oldstyle-nums tabular-nums slashed-zero',contain:'layout style paint',padding:'${index}px'})();`,
+    source: KeywordGroups.source,
+    title: 'keyword group',
   },
   layout: {
     declaration: (index: number) =>
@@ -252,11 +355,29 @@ const workloads = {
     source: Masks.source,
     title: 'mask',
   },
+  motionLists: {
+    declaration: (index: number) =>
+      `export const motionList${index} = css({transitionDuration:'${index}ms, 1s',transitionTimingFunction:'steps(4, end), cubic-bezier(0, -1, 1, 2)'})();`,
+    source: MotionLists.source,
+    title: 'motion list',
+  },
+  mathExpressions: {
+    declaration: (index: number) =>
+      `export const math${index} = css({width:'calc(50% - ${index}px)',padding:'calc(2px * 3) min(20px, 5%)'})();`,
+    source: MathExpressions.source,
+    title: 'math expression',
+  },
   motion: {
     declaration: (index: number) =>
       `export const motion${index} = css({animationDelay:'-${index}ms',animationDuration:'1s',animationIterationCount:'infinite',animationTimingFunction:'linear',transitionDuration:'250ms'})();`,
     source: Motion.source,
     title: 'motion',
+  },
+  scalars: {
+    declaration: (index: number) =>
+      `export const scalar${index} = css({cx:'${index}px',cy:'20px',r:'10px',textWrapMode:'nowrap',caretShape:'bar'})();`,
+    source: Scalars.source,
+    title: 'remaining scalar',
   },
   scrolling: {
     declaration: (index: number) =>
@@ -275,6 +396,18 @@ const workloads = {
       `export const slide${index} = css({scrollMarginInlineStart:'${index}px',scrollSnapAlign:'start center',scrollSnapStop:'always',scrollSnapType:['inline proximity','inline mandatory!']})();`,
     source: Snapping.source,
     title: 'scroll snap',
+  },
+  textTimeline: {
+    declaration: (index: number) =>
+      `export const line${index} = css({flexFlow:'row wrap',textWrap:'wrap balance',verticalAlign:'${index}px',viewTimelineAxis:'block, x'})();`,
+    source: TextTimeline.source,
+    title: 'text timeline',
+  },
+  substitution: {
+    declaration: (index: number) =>
+      `export const substituted${index} = css({width:'calc(var(--width, 100px) - ${index}px)',color:'var(--ink, var(--fallback, blue))'})();`,
+    source: Substitution.source,
+    title: 'variable substitution',
   },
   svg: {
     declaration: (index: number) =>

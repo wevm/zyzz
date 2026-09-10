@@ -42,9 +42,9 @@ The property surface is intentionally finite. No catch-all string index permits 
 
 - **Colors:** 3/4/6/8-digit hex, `transparent`, `currentColor`, any of the 148 canonical lowercase CSS named colors, or the 19 canonical system-color keywords.
 - **CSS-wide values:** every property accepts `inherit`, `initial`, `revert`, `revert-layer`, and `unset`.
-- **Numbers:** finite values only; opacity 0–1, font weight 1–1000, line height/flex factors nonnegative.
+- **Numbers:** finite values only; opacity numbers/percentages (browser-clamped), font weight 1–1000, line height/flex factors nonnegative.
 
-Inferred authoring values reject hexadecimal, binary, octal, and whitespace-separated numeric lengths. Valid token names remain usable even when their spelling resembles an invalid CSS value. Types check units and token names; runtime validation checks numeric bounds and hex digits.
+Inferred authoring values reject hexadecimal, binary, octal, and whitespace-separated numeric lengths. Valid token names remain usable even when their spelling resembles an invalid CSS value. Types check units, token names, concrete hex digits, integer literals, and nonnegative scalar literals. Runtime CSS value validation is not performed. Broad numeric values and complex function arguments remain subject to browser CSS parsing.
 
 This boundary rejects:
 
@@ -230,7 +230,7 @@ zyzz.css({
 
 Radius supports all four physical and logical corners. Scalar shorthands apply one value to their sides; arrays remain fallbacks.
 
-`borderColor` tokens apply to every border color property before shared `color` tokens. `borderRadius` tokens apply to every corner radius. Outlines use shared `color` tokens. Widths accept nonnegative lengths or zero; radii additionally accept percentages. Outline offsets accept negative lengths. Named widths and combined border/outline strings remain deferred.
+`borderColor` tokens apply to every border color property before shared `color` tokens. `borderRadius` tokens apply to every corner radius. Outlines use shared `color` tokens. Widths accept nonnegative lengths, zero, thin, medium, or thick; radii additionally accept percentages. Outline offsets accept negative lengths. Color/style lists accept up to four physical components or two logical components. Corners accept elliptical pairs; borderRadius accepts slash-separated axis lists. Combined border/outline strings remain deferred.
 
 Border styles include `dashed`, `dotted`, `double`, `groove`, `hidden`, `inset`, `none`, `outset`, `ridge`, and `solid`. [Outline styles](https://www.w3.org/TR/css-ui-4/#outline-props) accept `auto` instead of `hidden`. Rendering details remain browser-owned; native border/outline conversion is not implemented.
 
@@ -283,7 +283,7 @@ Nonempty arrays emit repeated declarations in authored order. Each entry is inde
 
 Token keys cannot contain `!`, including nested palette keys. This reserves importance syntax and prevents a shorthand such as `md!` from naming both a token and an important `md` declaration. `Theme.define` and inline Config themes reject these keys in types and runtime validation.
 
-Importance is stored separately on `Style.Declaration.important`. Numeric importance uses a string, such as `'0.5!'` or `'0!'`. Empty, sparse, nested, accessor-backed, and invalid arrays fail before emission. Quoted or escaped exclamation marks are not suffixes; unsupported string-content syntax still fails scalar validation.
+Importance is stored separately on `Style.Declaration.important`. Numeric importance uses a string, such as `'0.5!'` or `'0!'`. Empty, sparse, and accessor-backed fallbacks fail structurally. Value validity is checked statically. Quoted image URLs retain their contents when a trailing importance marker is separated.
 
 ## Ordering and Ownership
 
@@ -293,7 +293,7 @@ Plain and null-prototype objects are accepted. Accessors, symbols, non-enumerabl
 
 ## Diagnostics
 
-`Style.InvalidError` aggregates errors in traversal order. Each diagnostic has a stable code, component path array, and message. Codes are `invalid_structure`, `unsupported_property`, and `invalid_value`. Paths remain unambiguous when names contain dots.
+`Style.InvalidError` aggregates errors in traversal order. Each diagnostic has a stable code, component path array, and message. Structural errors use `invalid_structure`; empty fallback arrays use `invalid_value`. CSS property and value errors are static TypeScript diagnostics. Paths remain unambiguous when names contain dots.
 
 `Style.define(input, { locations })` can attach caller-owned `{ path, source, start, end }` spans to errors at exactly matching paths. Source offsets are metadata supplied by a caller; this API does not parse source text. Locations are copied so input mutations do not alter emitted diagnostics.
 
@@ -407,7 +407,7 @@ css({
 
 `display` includes `contents`, `flow-root`, `list-item`, `inline-table`, and table roles. `float` and `clear` accept physical and logical sides; clear also accepts `both`. `zIndex` accepts `auto` or safe integers, including negatives. `isolation` accepts `auto`/`isolate`.
 
-`contain` accepts single `none`, `strict`, `content`, `size`, `inline-size`, `layout`, `style`, or `paint` keywords. `contentVisibility` accepts `auto`, `hidden`, or `visible`. Combined containment and multi-keyword display values remain deferred.
+`contain` accepts single `none`, `strict`, `content`, `size`, `inline-size`, `layout`, `style`, or `paint` keywords. `contentVisibility` accepts `auto`, `hidden`, or `visible`. Compatible containment keywords can be combined; size and inline-size remain mutually exclusive. Multi-keyword display values remain deferred.
 
 `objectFit` accepts `fill`, `contain`, `cover`, `none`, or `scale-down`; `boxDecorationBreak` accepts `slice`/`clone`. `backfaceVisibility` accepts `hidden`/`visible` and `transformStyle` accepts `flat`/`preserve-3d`. Transform functions remain a separate capability. These keyword domains do not map theme tokens.
 
@@ -428,27 +428,27 @@ Accent and caret colors accept the shared color domain, color tokens, and auto. 
 
 ## SVG Paint
 
-Nineteen properties cover fill/stroke paints, opacity, fill/clip rules, line caps/joins, stroke lengths and miter limits, filter colors, paint order, rendering hints, and non-scaling strokes. Fill and stroke accept scalar colors, shared color tokens, none, context-fill, and context-stroke. Opacities accept numbers from zero to one; miter limits accept finite numbers at least one. Stroke widths use nonnegative lengths/percentages; dash offsets also allow negative values.
+Nineteen properties cover fill/stroke paints, opacity, fill/clip rules, line caps/joins, stroke lengths and miter limits, filter colors, paint order, rendering hints, and non-scaling strokes. Fill and stroke accept scalar colors, shared color tokens, none, context-fill, and context-stroke. Opacities accept finite numbers and percentages, clamped by the browser; miter limits accept finite numbers at least one. Stroke widths use nonnegative lengths/percentages; dash offsets also allow negative values.
 
-Paint order currently accepts normal or a single fill/stroke/markers keyword. Unitless nonzero SVG lengths, paint servers, dash arrays, opacity percentages, multi-keyword paint order, and other vector effects remain deferred. Browser evidence compares independent computed styles and verifies evenodd path geometry; it does not prove filter pixels, hint quality, or vector-effect rendering.
+Paint order currently accepts normal or a single fill/stroke/markers keyword. Unitless nonzero SVG lengths, paint servers, dash arrays, multi-keyword paint order, and other vector effects remain deferred. Browser evidence compares independent computed styles and verifies evenodd path geometry; it does not prove filter pixels, hint quality, or vector-effect rendering.
 
 ## Font Controls
 
 Nineteen properties add font kerning, optical sizing, stretch keywords, synthesis controls, caps/position/east-Asian/ligature/numeric variants, ruby placement/alignment, vertical orientation, text combination, justification, and emphasis. Emphasis colors accept shared color tokens; emphasis shapes support filled/open combinations in either order. Emphasis positioning and ruby positioning use finite keyword combinations.
 
-Font variants currently accept individual keywords. Combined variants, stretch percentages, custom emphasis strings, digit-combination counts, and font feature settings remain deferred. Browser fixtures compare independent computed styles and verify ruby annotation placement and upright vertical text geometry; they do not establish font-specific glyph selection or justification quality.
+Numeric, East Asian, and ligature variants accept compatible keyword combinations. Font synthesis accepts independent weight, style, small-caps, and position choices. Conflicting alternatives and repeated groups fail. Stretch percentages, custom emphasis strings, digit-combination counts, and font feature settings remain deferred. Browser fixtures compare independent computed styles and verify ruby annotation placement and upright vertical text geometry; they do not establish font-specific glyph selection or justification quality.
 
 ## Motion Controls
 
-Eleven animation and transition properties support scalar durations/delays, easing keywords, iteration counts, direction, fill mode, play state, and discrete transition behavior. Times use finite decimal or exponent values with s/ms units, including zero; negative delays are accepted, while negative durations are rejected. Animation duration also accepts auto. Iteration counts accept nonnegative numbers or infinite.
+Eleven animation and transition properties support comma-separated durations/delays, easing functions, iteration counts, direction, fill mode, play state, and discrete transition behavior. Times use finite decimal or exponent values with s/ms units, including zero; negative delays are accepted, while negative durations are rejected. Animation duration also accepts auto. Iteration counts accept nonnegative numbers or infinite.
 
-Comma-separated lists, easing functions, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
+Literal cubic-bezier(), steps(), and linear() curves validate argument counts and numeric constraints. Math inside easing arguments, substitution, comments, escaped spellings, animation names, timeline syntax, and keyframe authoring remain deferred. Ordinary CSS can supply animation names and keyframes. A paused-animation fixture verifies computed declarations, native duration/delay, and the opacity produced by a negative delay. Transition interpolation and discrete-transition lifecycle behavior remain separate browser gates.
 
 ## Grid Tracks
 
 Nine properties cover implicit tracks, scalar explicit tracks, auto-placement, and row/column start/end lines. Tracks accept nonnegative lengths, percentages, fr dimensions, auto, min-content, and max-content. Explicit tracks also accept none and subgrid. Auto flow accepts row/column with optional dense in either order.
 
-Grid lines accept auto, nonzero safe integers, and span followed by a canonical positive safe integer. Important numeric fallbacks preserve their number domain. Track lists, repeat/minmax functions, named lines, areas, and grid shorthands remain deferred. Browser fixtures compare independent CSS and verify fractional implicit tracks and a two-column span; subgrid layout remains a separate gate.
+Grid lines accept auto, nonzero safe integers, and span followed by a canonical positive safe integer. Important numeric fallbacks preserve their number domain. Track lists, repeat/minmax/fit-content functions, and track line-name groups are supported as described below. Named-line placement, areas, and grid shorthands remain deferred. Browser fixtures compare independent CSS and verify fractional implicit tracks and a two-column span; subgrid layout remains a separate gate.
 
 ## Masks and Positioning
 
@@ -464,7 +464,7 @@ Tab sizes are nonnegative safe integers. Custom counter styles/strings, length-b
 
 ## Color Keywords
 
-All 148 canonical lowercase CSS named colors and 19 canonical system-color keywords are accepted by color properties and theme values, including paired schemes. Literal names take precedence over inferred token names; explicit theme.tokens references retain access to colliding tokens. The independent MDN corpus exhausts every named color across each color property and consumer type. Browser fixtures verify named RGB values, explicit references, importance, and light/dark scheme changes. Noncanonical case spellings and functional color syntax remain deferred.
+All 148 canonical lowercase CSS named colors and 19 canonical system-color keywords are accepted by color properties and theme values, including paired schemes. Literal names take precedence over inferred token names; explicit theme.tokens references retain access to colliding tokens. The independent MDN corpus exhausts every named color across each color property and consumer type. Browser fixtures verify named RGB values, explicit references, importance, and light/dark scheme changes. Absolute rgb()/rgba(), hsl()/hsla(), hwb(), lab()/lch(), oklab()/oklch(), and predefined color() spaces accept finite literal channels, alpha, and modern none components. Legacy separators retain their restrictions. Relative colors, nested functions, comments, and escaped spellings remain deferred.
 
 ## Container and Field Sizing
 
@@ -472,4 +472,84 @@ All 148 canonical lowercase CSS named colors and 19 canonical system-color keywo
 
 ## Reading Order
 
-`readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 303 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
+`readingFlow` accepts the seven modes from the pinned CSS Display grammar. `readingOrder` accepts signed safe integers, including zero, with ordered fallbacks and importance. Runtime validation rejects fractions and unsafe integers; TypeScript's number domain cannot express these numeric bounds. Chromium keyboard fixtures compare reversed visual flex flow and explicit ordinal groups with independent native controls and source-order navigation. The inventory now tracks 304 partially implemented properties. Grid traversal, writing-mode interactions, assistive-technology traversal, and cross-browser behavior remain separate gates. See [CSS Display Level 4](https://drafts.csswg.org/css-display-4/#reading-flow).
+
+### Structured Grid Tracks
+
+Explicit and implicit grid tracks accept size lists, `minmax()` and `fit-content()`. Explicit tracks also accept line-name groups and integer or automatic `repeat()`, including fixed-size restrictions for auto-repeat. Repetitions remain compact CSS rather than being expanded by the compiler. Consumer types constrain the outer value shape. Nested grammar and computed values are interpreted by the browser; compilation preserves the authored expression.
+
+Independent MDN grammar probes and native responsive-grid fixtures cover these additions. Additional math functions, variable references, escaped identifiers, and subgrid name repetition remain incomplete; property completion stays partial.
+
+### Box Value Lists
+
+Margin, padding, inset, border-width, scroll-margin, and scroll-padding shorthands accept one to four space-separated scalar components. Their logical block/inline shorthands and gap accept pairs. Each component retains its property-specific auto, percentage, and sign rules; CSS-wide keywords must stand alone. Longhands remain scalar. Type shapes cover lists while the compiler validates arity and every component. Native browser fixtures compare physical longhands in horizontal and vertical writing modes, including importance and shorthand/longhand overrides. Functions, variable substitution, and broader component spellings remain incomplete.
+
+Motion lists keep function commas separate from declaration-list commas:
+
+```ts
+css({
+  transitionDuration: '250ms, 500ms',
+  transitionTimingFunction: 'steps(4, end), cubic-bezier(0, -1, 1, 2)',
+  animationIterationCount: '2.5, infinite',
+})
+```
+
+Bézier x coordinates must fall within zero and one; y coordinates may overshoot. Step counts must be positive integers, and `jump-none` requires at least two. Linear stops support one or two percentage positions. CSS-wide keywords must stand alone. Nested functions remain unsupported.
+
+### Math Expressions
+
+Numeric, length, and time properties accept literal calc(), min(), max(), and clamp() expressions. Grid track sizes and length lists retain nested function arguments. Addition requires compatible dimensions; multiplication and division accept scalar factors. Length-percentage mixtures are restricted to properties accepting percentages. Browser evaluation owns range clamping, integer rounding, and unit resolution.
+
+Function names and outer shapes are typed. Argument syntax, dimensions, substitutions, and calculation results are interpreted by the browser. Compilation does not impose a parser nesting limit. Browser comparisons cover responsive dimensions, radius axes, integer rounding, opacity, and durations.
+
+### Custom-Property References
+
+All mapped properties accept unquoted var() references, including nested and empty fallbacks and variables inside other expressions. Compilation validates balanced components and custom-property names. Property-value matching is deferred until browser substitution, including invalid-at-computed-value behavior. References preserve case and authored spelling; custom properties are supplied by ordinary CSS or native style APIs.
+
+Quotes, escapes, comments, braces, URL tokens, and nesting beyond 128 levels remain outside this subset. Browser fixtures cover inheritance, overrides, cycles, empty fallbacks, importance, and invalid substitutions. These limitations retain partial property status.
+
+SVG geometry, baseline, caret, emoji, font-synthesis-position, logical overflow, scrolling axes, text wrapping, and additional scalar keywords add 38 partial property mappings. Positions allow signed lengths; radii retain nonnegative bounds. Animation composition and scroll timeline axes accept comma lists. Related shorthand and alias domains preserve A/B/A declaration order.
+
+Zoom accepts nonnegative numbers/percentages and normal/reset. Stop opacity accepts finite numbers/percentages with browser clamping. Experimental properties may lack browser implementation; grammar and type coverage do not imply browser support. New SVG geometry and text fixtures compare native computed values and rendered bounds.
+
+Text wrapping, underline position, hanging punctuation, flex flow, position visibility, masonry flow, and speech keywords validate compatible groups. Border/mask image repetition accepts pairs. Timeline axes accept comma lists; interest delays remain scalar. Further baseline, offset, column, fragmentation, and legacy mappings add 44 partial properties. Shorthand and alias domains preserve authored cascade order.
+
+Independent grammar and generated consumer probes cover the expanded map. Browser controls exercise text and flex output; obsolete and experimental declarations retain separate browser limitations. Complete range rules, lexical forms, and associated functional/shorthand grammars remain incomplete.
+
+Eighteen named-value properties add unescaped custom identifiers, dashed names, and comma/space lists. Names preserve case; validation excludes CSS-wide and property-reserved words, enforces standalone keywords, and rejects malformed prefixes or list boundaries. Public string types defer lexical validation to compilation. Quoted names, escaping, comments, and timeline functions remain incomplete.
+
+Browser fixtures resolve case-sensitive keyframes and named container queries. Name grammar follows [CSS Values](https://www.w3.org/TR/css-values-4/#custom-idents), [Containment](https://www.w3.org/TR/css-contain-3/#container-name), [Transitions](https://www.w3.org/TR/css-transitions-1/#transition-property-property), and [Will Change](https://www.w3.org/TR/css-will-change/#will-change). These mappings retain partial status.
+
+Combined border, physical/logical border sides, outline, and column-rule add thirteen partial properties. Values accept one width, style, and color in any order, preserving functional components. Duplicate domains, negative literal widths, and percentages are rejected. When a combined shorthand occurs, related declaration domains remain ordered to preserve longhand overrides.
+
+Browser controls compare both text directions and three writing modes, A/B/A overrides, and the border-image reset performed by border. Independent grammar and consumer probes cover component permutations and functional values. Escaped spellings, broader color functions, and complete numeric forms remain incomplete.
+
+Aspect ratios and transform/translate/rotate/scale add five partial properties. Transform functions validate arity and component dimensions while preserving authored order. Individual transforms accept their respective vector forms. Angle math extends calc/min/max/clamp dimensional checks; percentage depth translations and malformed matrices are rejected.
+
+Browser fixtures compare individual transforms with equivalent function lists, native 3D matrices, rendered bounds, and aspect-ratio sizing. Constants, dimension cancellation, full escaping, and broader numeric spellings remain incomplete. See [CSS Transforms](https://www.w3.org/TR/css-transforms-2/) and [CSS Sizing](https://www.w3.org/TR/css-sizing-4/#aspect-ratio).
+
+Percentage domains support fontWidth, its fontStretch alias, and textSizeAdjust, including nonnegative literals and dimensionally valid math. Zoom accepts percentages. Opacity, fillOpacity, strokeOpacity, floodOpacity, and stopOpacity preserve finite numbers and percentages outside 0–1 for browser clamping. Number/percentage addition remains invalid.
+
+Public source, grammar, type, and browser fixtures cover percentage units, alpha clamping, aliases, importance, and rejection paths. These properties remain partial: escaped numeric spellings, complete tokenization, and broader math still need coverage. See [CSS Color](https://www.w3.org/TR/css-color-4/#transparency), [CSS Fonts](https://www.w3.org/TR/css-fonts-4/#font-width-prop), and [CSS Values](https://www.w3.org/TR/css-values-4/#percentages).
+
+Eighty-two prefixed properties now cover finite keyword domains, lengths, colors, percentages, logical borders, outline radii, line clamping, and scalar mask lists. Public names preserve capitalized prefixes: MozAppearance, MsAccelerator, and WebkitUserSelect. MsScrollbar3dlightColor emits the exact historical -ms-scrollbar-3dlight-color spelling.
+
+WebKit logical-border aliases share conflict domains with standard borders. Independent grammar and consumer probes cover all added mappings; native controls cover logical borders in three writing modes and both directions, text fill/stroke, selection, and repeated alias overrides. Legacy Microsoft/Mozilla platform behavior remains unverified; all entries remain partial.
+
+The percentage browser fixture confirms alpha clamping. Current Chromium ignores font-width and retains the font-stretch fallback; the fixture records that capability and an independent native control. See [legacy logical borders](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-webkit-border-before) and [text stroke width](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/-webkit-text-stroke-width).
+
+Seventeen corner-shape properties accept canonical curvature keywords, finite superellipse numbers, infinity endpoints, numeric math, and their one/two/four-value shorthands. Additional mappings cover all, grid-gap aliases, font-smooth, justify-items/self, position-try-order, and text-box-edge. Corner aliases share conflict domains; all prevents declaration factoring across reset boundaries.
+
+Source and type probes retain arity and dimension restrictions. Browser fixtures compare bevel hit testing with an independent polygon and verify A/B/A declarations around an all reset. These entries remain partial. Contracts follow [CSS Borders](https://www.w3.org/TR/css-borders-4/#corner-shaping).
+
+Path-length remains deferred: the pinned grammar places its range outside the length production, while [the MDN examples](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/path-length) describe unitless numbers. The independent grammar oracle is unchanged pending clarification of that experimental property.
+
+Fifteen compound-value properties add border/mask image slices, widths and outsets; two scrollbar colors; unbounded legacy Mozilla color lists; hyphenation limits; interest-delay pairs; and comma-separated view-timeline insets. Domains distinguish numeric factors, lengths, percentages, colors, integer counts, and times, with explicit arity and fill-marker placement.
+
+Interest-delay shorthands share conflict domains with start/end longhands. Independent source and consumer probes cover repeated scalar grammar; native controls compare border-image painting and computed scrollbar colors. These entries remain partial. See [CSS Backgrounds](https://www.w3.org/TR/css-backgrounds-3/#border-images), [CSS Masking](https://www.w3.org/TR/css-masking-1/#mask-borders), and [CSS Scrollbars](https://www.w3.org/TR/css-scrollbars-1/#scrollbar-color).
+
+Intrinsic size overrides accept lengths or none, each optionally prefixed by auto. Font-size-adjust accepts a nonnegative number or from-font, optionally prefixed by ex-height, cap-height, ch-width, ic-width, or ic-height. These contracts follow [CSS Sizing](https://www.w3.org/TR/css-sizing-4/#intrinsic-size-override) and [CSS Fonts](https://www.w3.org/TR/css-fonts-5/#font-size-adjust-prop).
+
+Grid placement accepts named lines and integer indices, positive spans, and row/column/area shorthands. For example, gridColumn accepts `start / span 2` and gridArea accepts `1 / 2 / 3 / 4`. Escaped line names and complete integer math remain deferred. See [CSS Grid placement](https://www.w3.org/TR/css-grid-2/#line-placement).
+
+Animation and timeline-trigger range endpoints accept cover, contain, entry, exit, entry-crossing, or exit-crossing with optional length/percentage offsets. Lists preserve boundaries; normal is standalone, and auto is limited to active-trigger endpoints. See [Scroll-driven Animations](https://www.w3.org/TR/scroll-animations-1/#animation-range).

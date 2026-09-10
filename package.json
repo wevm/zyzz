@@ -5,6 +5,7 @@
     "changeset:version": "changeset version",
     "check": "vp check --fix",
     "check:css": "node scripts/css-conformance.ts",
+    "check:css:full": "node scripts/css-conformance.ts --require-full",
     "check:types": "tsc",
     "dev": "zile dev",
     "test": "vp test",

@@ -1,6 +1,6 @@
 # Style
 
-Ordered style data and validation.
+Ordered style data with static property and value validation.
 
 ```ts
 import { Style } from 'zyzz'

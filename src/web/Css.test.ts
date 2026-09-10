@@ -315,22 +315,6 @@ describe('compile', () => {
     }
   })
 
-  test('order rejects nonfinite values at the public declaration boundary', () => {
-    expect(() =>
-      Css.compile({
-        styles: Style.define({
-          item: { order: Infinity },
-          unsafe: { order: 1e21 },
-        }),
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `
-      [Style.InvalidError: ["item","order"]: Expected a finite integer from -9007199254740991 to 9007199254740991.
-      ["unsafe","order"]: Expected a finite integer from -9007199254740991 to 9007199254740991.]
-    `,
-    )
-  })
-
   test('logical boxes match native controls across authored writing modes in the browser', async () => {
     const output = Css.compile({
       styles: Style.define({
@@ -470,21 +454,6 @@ describe('compile', () => {
     }
   })
 
-  test('unsupported properties cannot collide with important cache entries', () => {
-    const declarations = [
-      { property: 'color', value: '#fff', important: true },
-      { property: 'color!', value: '#fff' },
-    ]
-    for (const values of [declarations, [...declarations].reverse()])
-      expect(() =>
-        Css.compile({
-          styles: { styles: [{ name: 'card', declarations: values }] },
-        } as never),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Css.CompileError: ["card","color!"]: Unsupported literal property.]`,
-      )
-  })
-
   test('standard length families compile through public definitions', () => {
     const styles = Style.define({
       card: {
@@ -535,37 +504,6 @@ describe('compile', () => {
     }
   })
 
-  test('standard length validation retains property bounds and syntax restrictions', () => {
-    expect(() =>
-      Style.define({
-        card: {
-          padding: '-1cqi',
-          borderWidth: '1%',
-          width: '1e999dvh',
-          height: '1ms',
-          margin: '1 dvw',
-          fontSize: '1cqi; color:red',
-        },
-      } as never),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Style.InvalidError: ["card","padding"]: Expected a nonnegative literal length or numeric zero.
-      ["card","borderWidth"]: Expected a nonnegative literal length or numeric zero.
-      ["card","width"]: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
-      ["card","height"]: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
-      ["card","margin"]: Expected a literal length, auto, or numeric zero.
-      ["card","fontSize"]: Expected a nonnegative literal length or numeric zero.]
-    `)
-    expect(
-      Css.compile({
-        styles: Style.define({
-          card: { margin: '-1e2cqi', padding: '+.5rlh', borderWidth: '1Q' },
-        }),
-      }).css,
-    ).toMatchInlineSnapshot(
-      `".z_base0{margin:-1e2cqi;padding:+.5rlh;border-width:1Q;}"`,
-    )
-  })
-
   test('importance is distinct in cached and factored declarations', () => {
     const styles = Style.define({
       first: { color: ['#fff!', '#000!'] },
@@ -579,41 +517,6 @@ describe('compile', () => {
       .z-last{color:#fff!important;}
       .z_base0{opacity:0.5!important;padding:0!important;}"
     `)
-  })
-
-  test('invalid fallback values and importance produce located diagnostics', () => {
-    expect(() =>
-      Style.define({ card: { color: [] } } as never),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","color"]: Fallback arrays must be nonempty.]`,
-    )
-    expect(() =>
-      Style.define({ card: { padding: ['8px', undefined] } } as never),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","padding","1"]: Expected a nonnegative literal length or numeric zero.]`,
-    )
-    expect(() =>
-      Style.define({ card: { color: ['#fff', ['#000']] } } as never),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","color","1"]: Expected a named color, system color, hex color, transparent, or currentColor.]`,
-    )
-    expect(() =>
-      Style.define({
-        card: { color: '#fff!!', opacity: '2!', padding: "'8px!'" },
-      } as never),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Style.InvalidError: ["card","color"]: Expected a named color, system color, hex color, transparent, or currentColor.
-      ["card","opacity"]: Expected a finite number from 0 to 1.
-      ["card","padding"]: Expected a nonnegative literal length or numeric zero.]
-    `)
-    const sparse = ['8px']
-    sparse.length = 3
-    sparse[2] = '12px'
-    expect(() =>
-      Style.define({ card: { padding: sparse } } as never),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Style.InvalidError: ["card","padding","1"]: Fallback arrays require dense data entries without accessors.]`,
-    )
   })
 
   test('independent applications share complete rules and retain valid class identifiers', async () => {
@@ -748,7 +651,7 @@ describe('compile', () => {
   `)
   })
 
-  test('compiler diagnostics reject invalid ordered declarations without emitting CSS', () => {
+  test('compiler diagnostics reject duplicate style names without emitting CSS', () => {
     const valid = Style.define({ card: { padding: 0 } })
     // A source adapter can supply ordered data directly; invalid literal data still fails.
     const styles: Style.Definition = {
@@ -778,30 +681,6 @@ describe('compile', () => {
         .toMatchInlineSnapshot(`
         {
           "diagnostics": [
-            {
-              "code": "invalid_declaration",
-              "message": "Expected a nonnegative literal length or numeric zero.",
-              "path": [
-                "injection",
-                "padding",
-              ],
-            },
-            {
-              "code": "invalid_declaration",
-              "message": "Expected a finite number from 0 to 1.",
-              "path": [
-                "numeric",
-                "opacity",
-              ],
-            },
-            {
-              "code": "invalid_declaration",
-              "message": "Expected a finite number from 0 to 1.",
-              "path": [
-                "numericAgain",
-                "opacity",
-              ],
-            },
             {
               "code": "invalid_name",
               "message": "Style names must be nonempty and unique.",

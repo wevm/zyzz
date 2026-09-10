@@ -10,7 +10,7 @@ export function accepts(
   group: Group,
   property: keyof Literal.Properties,
 ): boolean {
-  if (group === 'color') return Literal.rules[property]?.kind === 'color'
+  if (group === 'color') return Literal.rule(property)?.kind === 'color'
   if (group === 'borderColor') return /^border.*Color$/.test(property)
   if (group === 'borderRadius') return /^border.*Radius$/.test(property)
   if (group === 'textColor') return property === 'color'
@@ -206,11 +206,11 @@ export type Reference<group extends Group = Group> = {
 
 const reference = Symbol('zyzz.token')
 
-/** Resolves shorthand tokens after literal validation, with specific colors first. */
+/** Resolves shorthand tokens with literal precedence, with specific colors first. */
 export function resolve(value: unknown, options: resolve.Options): unknown {
   if (
     (typeof value !== 'string' && typeof value !== 'number') ||
-    !Literal.validate(options.property, value)
+    Literal.isLiteral(options.property, value)
   )
     return value
 

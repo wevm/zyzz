@@ -1,6 +1,6 @@
 # Style.define
 
-Validate named ordered styles and return immutable compiler data.
+Copy typed ordered styles and return immutable compiler data.
 
 ```ts
 import { Style } from 'zyzz'
@@ -72,7 +72,7 @@ styles.styles[0]?.declarations
 
 ## Errors
 
-`Style.InvalidError` aggregates structure, property, and value errors in traversal order. Undefined values, accessors, unsupported objects, and invalid names fail.
+`Style.InvalidError` reports structural errors such as accessors, non-data objects, empty names, and sparse fallbacks. CSS properties, values, and token domains rely on static TypeScript validation; compilation does not run a CSS value validator.
 
 See [Literal Values](literals.md) for the full grammar, ordering, and diagnostic details.
 

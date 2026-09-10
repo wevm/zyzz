@@ -1,8 +1,8 @@
 /**
- * Validates style declarations into immutable, ordered, target-independent data.
+ * Copies typed style declarations into immutable, ordered, target-independent data.
  * @module
  */
-import * as Literal from './internal/Literal.js'
+import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import * as Value from './internal/Value.js'
 import type * as Theme from './Theme.js'
@@ -14,14 +14,14 @@ type Exact<
     styles[name],
     (...args: never[]) => unknown
   > extends never
-    ? Properties<tokens> &
+    ? Value.Accepted<styles[name], Properties<tokens>> &
         Value.Checked<styles[name], tokens> &
         Record<Exclude<Keys<styles[name]>, keyof Properties>, never>
     : never
 }
 type Keys<value> = value extends unknown ? keyof value : never
 
-/** A validated declaration; order is significant for future cascade processing. */
+/** A typed declaration; order is significant for future cascade processing. */
 export type Declaration = {
   /** Whether this declaration overrides normal declarations in the cascade. */
   readonly important?: boolean | undefined
@@ -32,14 +32,15 @@ export type Declaration = {
 }
 
 /**
- * Validates named literal and token styles and copies them into deeply frozen ordered data.
+ * Copies named literal and token styles into deeply frozen ordered data.
+ * CSS values are checked by TypeScript only.
  * Preserves names, values, and JavaScript own-property enumeration order. Never
  * evaluates accessors, mutates input, generates CSS, or reads an environment.
  * Empty maps and empty styles are valid. See the literal subset documentation.
  * @param styles - Plain objects containing supported primitives or typed theme references.
  * @param options - Optional theme for shorthand names and caller-owned diagnostic source spans.
  * @returns Immutable definitions retaining the inferred style-name union.
- * @throws {InvalidError} If any structure, property, or value is unsupported.
+ * @throws {InvalidError} If the input structure cannot represent ordered declarations.
  */
 export function define<
   const styles extends Record<string, unknown>,
@@ -58,6 +59,11 @@ export function define(
 ): Definition {
   const diagnostics: Diagnostic[] = []
   const output: NamedStyle[] = []
+  // One definition owns one theme; only validated references are reused within this call.
+  const references = new Map<
+    keyof Properties,
+    Map<string | number, Token.Reference>
+  >()
   function report(
     code: Diagnostic['code'],
     path: readonly string[],
@@ -135,14 +141,6 @@ export function define(
       report('invalid_structure', [name], 'Style names must not be empty.')
     const declarations: Declaration[] = []
     for (const [property, input] of entries(style, [name])) {
-      if (!Object.hasOwn(Literal.rules, property)) {
-        report(
-          'unsupported_property',
-          [name, property],
-          'Unsupported property. This boundary accepts the documented literal subset only.',
-        )
-        continue
-      }
       const key = property as keyof Properties
       const inputs: unknown[] = []
       if (Array.isArray(input)) {
@@ -171,38 +169,34 @@ export function define(
         }
         if (inputs.length !== input.length) continue
       } else inputs.push(input)
-      for (const [index, entry] of inputs.entries()) {
+      for (const entry of inputs) {
         const parsed = Value.parse(entry, key)
         const scalar = parsed ? parsed.value : entry
-        const resolved = options.theme
-          ? Token.resolve(scalar, { property: key, theme: options.theme })
-          : scalar
-        const value = parsed && resolved === '0' ? 0 : resolved
-        const message = (() => {
-          if (Token.is(value)) {
-            if (Token.accepts(value.group, key)) {
-              return undefined
-            }
-            return 'Token group is incompatible with this property.'
+        const resolved = (() => {
+          if (!options.theme) return scalar
+          if (typeof scalar !== 'string' && typeof scalar !== 'number')
+            return scalar
+          const cached = references.get(key)?.get(scalar)
+          if (cached) return cached
+          const resolved = Token.resolve(scalar, {
+            property: key,
+            theme: options.theme,
+          })
+          if (Token.is(resolved)) {
+            let values = references.get(key)
+            if (!values) references.set(key, (values = new Map()))
+            values.set(scalar, resolved)
           }
-          return Literal.validate(key, value)
+          return resolved
         })()
-        if (message)
-          report(
-            'invalid_value',
-            Array.isArray(input)
-              ? [name, property, String(index)]
-              : [name, property],
-            message,
-          )
-        else
-          declarations.push(
-            Object.freeze({
-              ...(parsed?.important ? { important: true } : {}),
-              property: key,
-              value: value as number | string | Token.Reference,
-            }),
-          )
+        const value = parsed && resolved === '0' ? 0 : resolved
+        declarations.push(
+          Object.freeze({
+            ...(parsed?.important ? { important: true } : {}),
+            property: key,
+            value: value as number | string | Token.Reference,
+          }),
+        )
       }
     }
     output.push(
@@ -242,7 +236,7 @@ export type Definition<name extends string = string> = {
 /** A caller-visible validation failure at an exact input path. */
 export type Diagnostic = {
   /** Stable machine-readable category. */
-  readonly code: 'invalid_structure' | 'invalid_value' | 'unsupported_property'
+  readonly code: 'invalid_structure' | 'invalid_value'
   /** Source span when a caller supplied an exact matching path. */
   readonly location?: SourceLocation | undefined
   /** Explanation of the supported input contract. */
@@ -268,10 +262,16 @@ export class InvalidError extends Error {
   override name = 'Style.InvalidError'
 }
 
+type LiteralAtoms = {
+  readonly [property in keyof Literal.Properties]-?: Value.Atom<
+    Exclude<Literal.Properties[property], undefined>
+  >
+}
+
 /** Supported primitive CSS declarations without theme references. */
 export type LiteralProperties = {
-  readonly [property in keyof Literal.Properties]: Value.Input<
-    Literal.Properties[property]
+  readonly [property in keyof Literal.Properties]: Value.Fallbacks<
+    LiteralAtoms[property]
   >
 }
 
@@ -285,9 +285,9 @@ export type NamedStyle<name extends string = string> = {
 
 /** Supported literal and token declarations. Unknown properties and undefined values are rejected. */
 export type Properties<tokens extends Theme.Tokens = {}> = {
-  readonly [property in keyof Literal.Properties]: Value.Input<
-    | Literal.Properties[property]
-    | Token.Names<tokens, property>
+  readonly [property in keyof Literal.Properties]: Value.Fallbacks<
+    | LiteralAtoms[property]
+    | Value.Atom<Token.Names<tokens, property>>
     | {
         [group in Token.Group]: property extends Token.Properties<group>
           ? Token.Reference<group>

@@ -21,7 +21,9 @@ const output = Css.compile({ styles })
 - Type: `'independent' | 'ordered'`
 - Default: `'ordered'`
 
-Independent mode deduplicates complete applications whose composition is already resolved. Independent class lists must not be composed with each other.
+Independent mode deduplicates complete applications whose composition is already resolved. CSS property/value validity relies on static authoring; emission preserves values without a CSS validator.
+
+Independent class lists must not be composed with each other.
 
 ```ts
 Css.compile({ composition: 'independent', styles })
@@ -87,7 +89,9 @@ output.themes
 
 ## Errors
 
-`Css.CompileError` aggregates invalid declarations, names, themes, or identity collisions without returning partial CSS.
+`Css.CompileError` aggregates invalid names, theme graphs, or identity collisions without returning partial CSS.
+
+CSS property/value validity relies on static authoring; emission preserves values without a CSS validator.
 
 Independent class lists must not be composed with each other. Distribute class maps and matching CSS together. Types live under `Css.compile.Options`, `ReturnType`, and `ErrorType`.
 

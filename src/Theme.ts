@@ -3,7 +3,7 @@
  * @module
  */
 import { css, MissingTransformError } from './css.js'
-import * as Literal from './internal/Literal.js'
+import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import type * as Value from './internal/Value.js'
 import type * as Style from './Style.js'
@@ -14,16 +14,28 @@ export type Color =
   | { readonly dark: Literal.Color; readonly light: Literal.Color }
 
 /** Theme-bound authoring signature; execution requires source rewriting. */
-export type Css<tokens extends Tokens> = <
-  const styles extends Record<string, unknown>,
->(
-  styles: styles &
-    NoInfer<
-      Style.Properties<tokens> &
-        Value.Checked<styles, tokens> &
-        Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
-    >,
-) => css.ReturnType
+export type Css<tokens extends Tokens> = {
+  <const styles extends Record<string, unknown>>(
+    styles: styles &
+      NoInfer<
+        Value.Accepted<styles, Style.Properties<tokens>> &
+          Record<Exclude<Keys<styles>, keyof Style.Properties>, never> &
+          Value.Checked<styles, tokens>
+      >,
+  ): css.ReturnType
+  <const styles extends Style.Properties<tokens>>(
+    styles: styles &
+      NoInfer<
+        Record<Exclude<Keys<styles>, keyof Style.Properties>, never> &
+          (Style.Properties<tokens> extends styles
+            ? unknown
+            : (Extract<styles, (...args: never[]) => unknown> extends never
+                ? unknown
+                : never) &
+                Value.Checked<styles, tokens>)
+      >,
+  ): css.ReturnType
+}
 
 /**
  * Defines scalar tokens without metadata, defaults, or environment access.
@@ -175,15 +187,6 @@ function build(
           path,
           'Extensions cannot add or replace token paths.',
         )
-      const property = (() => {
-        if (group === 'spacing') {
-          return 'padding'
-        }
-        if (group === 'textColor') {
-          return 'color'
-        }
-        return group
-      })()
       if (pair) {
         if (
           group === 'spacing' ||
@@ -197,17 +200,11 @@ function build(
             'Expected a complete light/dark color pair.',
           )
         const schemes = Object.fromEntries(entries!)
-        for (const scheme of ['dark', 'light'] as const) {
-          const message = validate(property, schemes[scheme])
-          if (message) throw new InvalidError([...path, scheme], message)
-        }
         values[key] = Object.freeze({
           dark: schemes.dark as string,
           light: schemes.light as string,
         })
       } else {
-        const message = validate(property, value)
-        if (message) throw new InvalidError(path, message)
         values[key] = value as number | string
       }
       return
@@ -354,7 +351,7 @@ type ValidTree<tree, group> = tree extends string | number
     ? tree extends Literal.Length
       ? Literal.Checked<tree>
       : never
-    : Literal.Color
+    : Literal.Color & Literal.Checked<tree>
   : Extract<keyof tree, 'dark' | 'light'> extends never
     ? {
         [key in keyof tree]: key extends `${string}!${string}`
@@ -364,15 +361,8 @@ type ValidTree<tree, group> = tree extends string | number
     : group extends 'borderRadius' | 'spacing'
       ? never
       : {
-          readonly dark: Literal.Color
-          readonly light: Literal.Color
+          readonly dark: Literal.Color &
+            Literal.Checked<tree extends { dark: infer value } ? value : never>
+          readonly light: Literal.Color &
+            Literal.Checked<tree extends { light: infer value } ? value : never>
         } & Record<Exclude<keyof tree, 'dark' | 'light'>, never>
-
-function validate(property: keyof Literal.Properties, value: unknown) {
-  if (
-    typeof value === 'string' &&
-    ['inherit', 'initial', 'revert', 'revert-layer', 'unset'].includes(value)
-  )
-    return 'Theme tokens require concrete values, not CSS-wide keywords.'
-  return Literal.validate(property, value)
-}

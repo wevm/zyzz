@@ -4,17 +4,248 @@
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, css, Style, Theme } from 'zyzz'
+import * as BorderShorthand from '../test/fixtures/BorderShorthand.js'
 import * as Borders from '../test/fixtures/Borders.js'
+import * as Geometry from '../test/fixtures/Geometry.js'
+import * as Identifiers from '../test/fixtures/Identifiers.js'
 import * as Interaction from '../test/fixtures/Interaction.js'
 import * as Logical from '../test/fixtures/Logical.js'
+import * as Scalars from '../test/fixtures/Scalars.js'
 import * as Scrolling from '../test/fixtures/Scrolling.js'
 import * as Snapping from '../test/fixtures/Snapping.js'
 import * as Tables from '../test/fixtures/Tables.js'
 import * as TextDecoration from '../test/fixtures/TextDecoration.js'
+import * as TextTimeline from '../test/fixtures/TextTimeline.js'
 import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
+describe('intrinsic scalar prefixes', () => {
+  test('preserves component domains through public authoring', () => {
+    css({
+      containIntrinsicSize: 'auto 80px auto 40px',
+      containIntrinsicWidth: 'auto none',
+      fontSizeAdjust: 'cap-height .7',
+    })
+    // @ts-expect-error Intrinsic sizes exclude percentages.
+    css({ containIntrinsicWidth: '10%' })
+    // @ts-expect-error Metric prefixes need a following value.
+    css({ fontSizeAdjust: 'cap-height' })
+  })
+})
+
+describe('timeline range endpoints', () => {
+  test('retains typed names and offsets', () => {
+    css({
+      animationRangeStart: 'entry 20%',
+      animationRangeEnd: 'exit -10px',
+      timelineTriggerActiveRangeStart: 'auto',
+    })
+    // @ts-expect-error Range offsets cannot use time units.
+    css({ animationRangeStart: '1s' })
+    // @ts-expect-error Auto is exclusive to active trigger endpoints.
+    css({ animationRangeEnd: 'auto' })
+  })
+})
+
+describe('compound scalar declarations', () => {
+  test('typed tuples preserve scalar domains', () => {
+    css({
+      borderImageSlice: 'fill 10% 20%',
+      borderImageWidth: '1 auto 20% 3px',
+      borderImageOutset: '1 2px',
+      scrollbarColor: 'red blue',
+      MozBorderTopColors: 'red blue green yellow black white',
+      interestDelay: '1s 200ms',
+      viewTimelineInset: 'auto 10%, 20px',
+      hyphenateLimitChars: 'auto 3 2',
+    })
+    // @ts-expect-error Scrollbar colors require two colors or auto.
+    css({ scrollbarColor: 'red' })
+    // @ts-expect-error Border image slices exclude lengths.
+    css({ borderImageSlice: '1px' })
+    // @ts-expect-error Outset excludes percentages.
+    css({ borderImageOutset: '10%' })
+    // @ts-expect-error Interest delays use time dimensions.
+    css({ interestDelay: '1px' })
+    // @ts-expect-error A fill marker needs numeric components.
+    css({ borderImageSlice: 'fill' })
+  })
+})
+
+describe('corner and layout declarations', () => {
+  test('typed curvature and reset values preserve property domains', () => {
+    css({
+      cornerShape: 'superellipse(2) bevel',
+      cornerTopLeftShape: 'round',
+      all: 'initial',
+      gridGap: '10px 20px',
+      justifySelf: 'safe end',
+      textBoxEdge: 'cap alphabetic',
+      positionTryOrder: 'most-width',
+    })
+    // @ts-expect-error Curvature is a keyword or function rather than a bare number.
+    css({ cornerShape: 2 })
+    // @ts-expect-error All accepts only CSS-wide values or deferred substitution.
+    css({ all: 'red' })
+    // @ts-expect-error Legacy is exclusive to justify-items.
+    css({ justifySelf: 'legacy' })
+    // @ts-expect-error Text box edges retain separate over and under keyword domains.
+    css({ textBoxEdge: 'cap ex' })
+  })
+})
+
+describe('prefixed declarations', () => {
+  test('vendor keywords preserve prefixes and domains', () => {
+    css({
+      MozAppearance: 'button',
+      MsAccelerator: 'true',
+      MsScrollbar3dlightColor: 'red',
+      WebkitBorderBefore: '2px solid red',
+      WebkitTextStrokeWidth: '2px',
+      WebkitMaskPositionX: 'left, 20%',
+      WebkitLineClamp: 2,
+    })
+    // @ts-expect-error Prefix spelling is part of the public property name.
+    css({ webkitUserSelect: 'none' })
+    // @ts-expect-error CSS true is a keyword rather than a JavaScript boolean.
+    css({ MsAccelerator: true })
+    // @ts-expect-error Vendor keyword domains remain distinct.
+    css({ WebkitUserSelect: 'element' })
+    // @ts-expect-error Scroll limits exclude percentages.
+    css({ MsScrollLimitXMin: '20%' })
+    // @ts-expect-error Text stroke widths exclude percentages.
+    css({ WebkitTextStrokeWidth: '20%' })
+  })
+})
+
+describe('percentage values', () => {
+  test('percentages retain their property dimensions', () => {
+    css({
+      fontWidth: '125%',
+      fontStretch: '120%',
+      textSizeAdjust: '110%',
+      zoom: '125%',
+      opacity: '-20%',
+      fillOpacity: '150%',
+      strokeOpacity: 2,
+      floodOpacity: '-25%',
+      stopOpacity: 'calc(50% + 25%)',
+    })
+    // @ts-expect-error A percentage requires its unit even for zero.
+    css({ fontWidth: 0 })
+    // @ts-expect-error Font width excludes lengths.
+    css({ fontWidth: '125px' })
+    // @ts-expect-error Hexadecimal percentages are not CSS numeric tokens.
+    css({ fontWidth: '0x10%' })
+  })
+})
+
 describe('css', () => {
+  test('geometric values expose structured transform shapes', () => {
+    Style.define(Geometry.styles)
+    for (const transform of Geometry.functions) css({ transform })
+    css({
+      aspectRatio: 'auto 16/9',
+      rotate: '0 1 0 45deg',
+      scale: '-1 50% 2',
+      translate: 'calc(50% - 10px) 2px -3px',
+    })
+    css({
+      transform: ['rotate(90deg)', 'translateX(20px) rotate(45deg)!'],
+      aspectRatio: 2,
+      scale: 1.5,
+    })
+    // @ts-expect-error Transform names remain a finite function vocabulary.
+    css({ transform: 'unknown(1)' })
+    // @ts-expect-error Nonzero translations need units.
+    css({ translate: 20 })
+    // @ts-expect-error Scale factors do not use length units.
+    css({ scale: '2px' })
+    // @ts-expect-error Ratios do not use dimensional components.
+    css({ aspectRatio: '16px/9px' })
+  })
+
+  test('combined line values retain typed width style and color components', () => {
+    Style.define(BorderShorthand.styles)
+    css({
+      border: 0,
+      borderBlock: 'red solid thin',
+      borderInlineEnd: 'rgb(0 0 255) dashed calc(1px + 2px)',
+      outline: 'auto thin red',
+      columnRule: 'medium double blue',
+    })
+    // @ts-expect-error A nonzero number requires a length unit.
+    css({ border: 5 })
+    // @ts-expect-error Border widths do not accept percentages.
+    css({ border: '50%' })
+    // @ts-expect-error Arbitrary identifiers are not line components.
+    css({ border: 'unknown' })
+  })
+
+  test('custom identifiers retain string authoring and declaration fallbacks', () => {
+    Style.define(Identifiers.styles)
+    css({
+      animationName: ['Fade', 'Pulse!'],
+      anchorScope: '--Anchor, --Other',
+      fontPalette: '--Palette',
+      timelineScope: '--Scroll',
+      triggerScope: 'all',
+      page: 'Chapter',
+    })
+    // @ts-expect-error Identifiers cannot be authored as numbers.
+    css({ animationName: 123 })
+    // @ts-expect-error Identifiers cannot be authored as booleans.
+    css({ containerName: false })
+  })
+
+  test('text and timeline groups retain public type constraints', () => {
+    Style.define(TextTimeline.styles)
+    css({
+      hangingPunctuation: 'last first allow-end',
+      masonryAutoFlow: 'ordered pack',
+      positionVisibility: 'anchors-visible no-overflow',
+      speakAs: 'digits spell-out',
+      maskBorderRepeat: 'stretch round',
+    })
+    css({
+      columnHeight: 'calc(20px + 2em)',
+      lineHeightStep: '2em',
+      shapeImageThreshold: 0.5,
+      textDecorationInset: '1px 2px',
+    })
+    // @ts-expect-error Timeline axes are an explicit finite vocabulary.
+    css({ viewTimelineAxis: 'horizontal' })
+    // @ts-expect-error Height accepts lengths rather than percentages.
+    css({ columnHeight: '50%' })
+    // @ts-expect-error Delay requires a time unit.
+    css({ interestDelayStart: 20 })
+  })
+
+  test('SVG geometry and text scalars preserve finite authoring', () => {
+    Style.define(Scalars.styles)
+    css({
+      animationComposition: 'add, replace',
+      scrollTimelineAxis: 'block, x',
+      fontSynthesisPosition: 'none',
+      caretAnimation: 'manual',
+      caretShape: 'bar',
+      zoom: 1.5,
+    })
+    css({
+      x: 'calc(10% - 2px)',
+      r: 'var(--radius)',
+      stopColor: 'rgb(0 0 255)',
+      stopOpacity: 0.5,
+      strokeColor: 'red',
+    })
+    // @ts-expect-error SVG radii require a dimension for nonzero numbers.
+    css({ r: 12 })
+    // @ts-expect-error Caret keywords cannot be combined.
+    css({ caretShape: 'bar block' })
+    // @ts-expect-error Zoom excludes length units.
+    css({ zoom: '150px' })
+  })
+
   test('interaction properties', () => {
     Style.define(Interaction.styles)
     css({
@@ -25,13 +256,11 @@ describe('css', () => {
     css({ resize: 'vertical', visibility: 'revert-layer' })
     Config.create().css({ cursor: 'zoom-in', pointerEvents: 'auto' })
     Theme.define({}).css({ userSelect: 'text', resize: 'both' })
-    // @ts-expect-error Cursor URL lists remain deferred.
     css({ cursor: 'url(cursor.png), pointer' })
-    // @ts-expect-error Pointer-events SVG keywords remain deferred.
     css({ pointerEvents: 'visiblePainted' })
     // @ts-expect-error Resize axes cannot be combined.
     css({ resize: 'horizontal vertical' })
-    // @ts-expect-error Selection containment remains deferred.
+    // @ts-expect-error Containment is outside the pinned user-select grammar.
     css({ userSelect: 'contain' })
     // @ts-expect-error Visibility is not opacity.
     css({ visibility: 0 })
@@ -54,7 +283,6 @@ describe('css', () => {
     Theme.define({}).css({ borderSpacing: '1rem', captionSide: 'bottom' })
     // @ts-expect-error Border spacing does not accept percentages.
     css({ borderSpacing: '10%' })
-    // @ts-expect-error Paired border spacing remains deferred.
     css({ borderSpacing: '1px 2px' })
     // @ts-expect-error Table layout has a finite keyword domain.
     css({ tableLayout: 'flex' })
@@ -107,7 +335,6 @@ describe('css', () => {
     css({ textDecorationStyle: 'groove' })
     // @ts-expect-error From-font is a thickness keyword, not an underline offset.
     css({ textUnderlineOffset: 'from-font' })
-    // @ts-expect-error Combined decoration shorthand remains deferred.
     css({ textDecoration: 'underline solid' })
     // @ts-expect-error Invalid numeric spellings remain checked in importance strings.
     css({ textDecorationThickness: '0x10px!' })
@@ -140,13 +367,10 @@ describe('css', () => {
     textTheme.css({ whiteSpace: textTheme.tokens.spacing.indent })
     // @ts-expect-error Root indentation remains token-free.
     css({ textIndent: 'indent' })
-    // @ts-expect-error Indentation modifiers remain deferred.
     css({ textIndent: '2em hanging' })
     // @ts-expect-error Unknown wrapping values do not widen the finite domain.
     css({ overflowWrap: 'all' })
-    // @ts-expect-error Custom text-overflow strings remain deferred.
     css({ textOverflow: '"..."' })
-    // @ts-expect-error New whitespace longhands are not part of this surface.
     css({ whiteSpaceCollapse: 'preserve' })
     // @ts-expect-error Numeric spellings remain checked through fallback importance.
     css({ letterSpacing: ['normal', '0x10px!'] })
@@ -210,7 +434,6 @@ describe('css', () => {
     css({ overscrollBehavior: 'hidden' })
     // @ts-expect-error Instant is a scrolling API option, not a CSS scroll-behavior value.
     css({ scrollBehavior: 'instant' })
-    // @ts-expect-error Multi-value shorthands remain unsupported.
     css({ overscrollBehavior: 'none contain' })
     // @ts-expect-error Numeric spellings are checked inside fallback arrays.
     css({ scrollPadding: ['auto', '0x10px!'] })
@@ -288,7 +511,6 @@ describe('css', () => {
     logicalTheme.css({ blockSize: logicalTheme.tokens.color.brand })
     // @ts-expect-error Invalid numeric spellings remain rejected on logical lengths.
     css({ insetInlineStart: '0x10px!' })
-    // @ts-expect-error Shorthands accept one scalar per fallback, not multi-value strings.
     css({ marginInline: '1px 2px' })
     // @ts-expect-error Unknown writing modes cannot widen the enum.
     css({ writingMode: 'diagonal' })
@@ -322,7 +544,6 @@ describe('css', () => {
     css({ inlineSize: 'content' })
     // @ts-expect-error Intrinsic keywords do not become spacing values.
     css({ padding: 'min-content' })
-    // @ts-expect-error Function parsing remains a separate capability.
     css({ width: 'fit-content(10px)' })
     // @ts-expect-error Theme spacing remains a literal length domain.
     Theme.define({ spacing: { small: 'min-content' } })
@@ -592,7 +813,6 @@ describe('css', () => {
     css({ breakInside: 'column' })
     // @ts-expect-error Column widths do not accept percentage-capable spacing tokens.
     theme.css({ columnWidth: theme.tokens.spacing.gutter })
-    // @ts-expect-error Legacy regions remain deferred.
     css({ breakAfter: 'region' })
   })
 })
@@ -616,7 +836,6 @@ describe('css', () => {
     })
     Config.create().css({ zIndex: 2, display: 'flow-root' })
     Theme.define({}).css({ contain: 'strict', objectFit: 'contain' })
-    // @ts-expect-error Containment combinations are a later grammar expansion.
     css({ contain: 'layout paint' })
     // @ts-expect-error Floats are not centering controls.
     css({ float: 'center' })
@@ -626,7 +845,6 @@ describe('css', () => {
     css({ zIndex: '2px' })
     // @ts-expect-error Isolation does not accept blend modes.
     css({ isolation: 'multiply' })
-    // @ts-expect-error Multi-keyword display remains deferred.
     css({ display: 'inline flow-root' })
   })
 })
@@ -658,9 +876,7 @@ describe('css', () => {
     })
     // @ts-expect-error Background position axes use different side keywords.
     css({ backgroundPositionX: 'top' })
-    // @ts-expect-error Image lists remain deferred.
     css({ backgroundAttachment: 'scroll, fixed' })
-    // @ts-expect-error Two-axis background sizes remain deferred.
     css({ backgroundSize: '10px 20px' })
     // @ts-expect-error Color controls do not accept length tokens.
     theme.css({ accentColor: theme.tokens.spacing.gap })
@@ -696,11 +912,8 @@ describe('css', () => {
     })
     const zyzz = Config.create({ theme: { color: { ink: '#06c' } } })
     zyzz.css({ fill: 'ink', stroke: zyzz.theme.tokens.color.ink })
-    // @ts-expect-error Paint servers require URL syntax support.
     css({ fill: 'url(#gradient)' })
-    // @ts-expect-error Multi-keyword paint order remains deferred.
     css({ paintOrder: 'stroke fill' })
-    // @ts-expect-error Widths require units except for zero.
     css({ strokeWidth: 2 })
     // @ts-expect-error Scalar paint keywords do not apply to filter colors.
     css({ floodColor: 'none' })
@@ -732,12 +945,10 @@ describe('css', () => {
     })
     const zyzz = Config.create({ theme: { color: { accent: '#06c' } } })
     zyzz.css({ textEmphasisColor: 'accent' })
-    // @ts-expect-error Combined font variants remain deferred.
     css({ fontVariantNumeric: 'tabular-nums slashed-zero' })
-    // @ts-expect-error Custom emphasis strings remain deferred.
     css({ textEmphasisStyle: '"*"' })
-    // @ts-expect-error Font stretch percentages remain deferred.
-    css({ fontStretch: '120%' })
+    // @ts-expect-error Font stretch excludes length units.
+    css({ fontStretch: '120px' })
     // @ts-expect-error Conflicting emphasis fill keywords are invalid.
     css({ textEmphasisStyle: 'open filled' })
   })
@@ -764,7 +975,6 @@ describe('css', () => {
     css({ transitionDelay: '2px' })
     // @ts-expect-error Nondecimal times are not CSS dimensions.
     css({ animationDelay: '0x10s' })
-    // @ts-expect-error Multiple transitions require list support.
     css({ transitionDuration: '1s, 2s' })
     // @ts-expect-error Transition duration has no auto keyword.
     css({ transitionDuration: 'auto' })
@@ -784,7 +994,6 @@ describe('grid tracks and placement', () => {
       gridRowStart: -1,
       gridRowEnd: 'auto',
     })
-    // @ts-expect-error Track lists require structural grammar support.
     css({ gridTemplateColumns: '1fr 2fr' })
     // @ts-expect-error Flexible units are limited to grid tracks.
     css({ width: '1fr' })
@@ -792,8 +1001,13 @@ describe('grid tracks and placement', () => {
     css({ gridColumnStart: 'span 1.5' })
     // @ts-expect-error Nondecimal fractional units are not CSS dimensions.
     css({ gridAutoColumns: '0x10fr' })
-    // @ts-expect-error Named grid lines remain deferred.
-    css({ gridRowStart: 'header' })
+    css({
+      gridRowStart: 'header',
+      gridColumn: 'start / end',
+      gridArea: '1 / 2 / 3 / 4',
+    })
+    // @ts-expect-error Negative spans are invalid.
+    css({ gridColumnEnd: 'span -1' })
   })
 })
 
@@ -817,13 +1031,10 @@ describe('mask and image properties', () => {
       transformBox: 'border-box',
       transformOrigin: '-5px',
     })
-    // @ts-expect-error Mask lists remain deferred.
     css({ maskMode: 'alpha, luminance' })
     // @ts-expect-error Perspective distances exclude percentages.
     css({ perspective: '50%' })
-    // @ts-expect-error Paired mask sizes remain deferred.
     css({ maskSize: '50% 100%' })
-    // @ts-expect-error Multi-axis origin positions remain deferred.
     css({ transformOrigin: 'left top' })
   })
 })
@@ -849,12 +1060,10 @@ describe('list and input controls', () => {
     css({ touchAction: 'pan-left pan-right' })
     // @ts-expect-error Auto does not combine with gestures.
     css({ touchAction: 'auto pinch-zoom' })
-    // @ts-expect-error Custom counter styles remain deferred.
     css({ listStyleType: 'custom-counter' })
-    // @ts-expect-error Length-based tab stops remain deferred.
     css({ tabSize: '20px' })
-    // @ts-expect-error Text autoscaling percentages remain deferred.
-    css({ textSizeAdjust: '100%' })
+    // @ts-expect-error Text autoscaling excludes length units.
+    css({ textSizeAdjust: '100px' })
   })
 })
 
@@ -884,7 +1093,6 @@ describe('css', () => {
     })
     // @ts-expect-error Unknown color names remain outside the domain.
     css({ color: 'not-a-color' })
-    // @ts-expect-error Mixed-case keyword spellings remain deferred.
     css({ color: 'rEbEcCaPuRpLe' })
   })
 })
@@ -938,5 +1146,159 @@ describe('css', () => {
     css({ readingOrder: '2px' })
     // @ts-expect-error Reading order has no auto keyword.
     css({ readingOrder: 'auto' })
+  })
+})
+
+describe('css', () => {
+  test('accepts structural grid tracks through public authoring', () => {
+    css({
+      gridTemplateColumns: '[start] repeat(3, minmax(0, 1fr)) [end]',
+      gridTemplateRows: 'fit-content(40px) 1fr',
+      gridAutoRows: '20px 30px',
+    })
+    css({
+      gridTemplateColumns: ['1fr 2fr', 'repeat(auto-fit, minmax(80px, 1fr))!'],
+    })
+    // @ts-expect-error Implicit tracks cannot repeat.
+    css({ gridAutoColumns: 'repeat(2, 1fr)' })
+    // @ts-expect-error Grid functions are not ordinary dimensions.
+    css({ width: 'minmax(0, 1fr)' })
+  })
+})
+
+describe('css', () => {
+  test('accepts physical box lists and logical pairs', () => {
+    css({
+      margin: '8px auto',
+      padding: '1px 2px 3px 4px',
+      inset: '0 20% auto -1px',
+      borderWidth: '1px 2px',
+      gap: '4px 8px',
+    })
+    css({
+      marginInline: '-1px auto',
+      paddingBlock: '1px 2px',
+      scrollMargin: '1px 2px 3px 4px',
+      scrollPaddingInline: '10% auto',
+    })
+    // @ts-expect-error Longhands still accept a single length.
+    css({ paddingLeft: '1px 2px' })
+    // @ts-expect-error Auto is not a padding item.
+    css({ padding: 'auto 2px' })
+  })
+})
+
+describe('css', () => {
+  test('supports motion lists and structured easing functions', () => {
+    css({
+      animationDelay: '-1s, 0s',
+      animationDirection: 'alternate, reverse',
+      animationDuration: 'auto, 1s',
+      animationFillMode: 'both, forwards',
+      animationIterationCount: '2.5, infinite',
+      animationPlayState: 'running, paused',
+      animationTimingFunction: 'cubic-bezier(0, -1, 1, 2), steps(2, jump-none)',
+      transitionBehavior: 'normal, allow-discrete',
+      transitionDuration: ['1s, 2s', '250ms, 500ms!'],
+      transitionTimingFunction: 'linear(0, .5 25% 75%, 1)',
+    })
+    // @ts-expect-error Unknown easing functions are outside the structural grammar.
+    css({ transitionTimingFunction: 'spring(1)' })
+    // @ts-expect-error A duration list must start with a time.
+    css({ transitionDuration: '20px, 1s' })
+    // @ts-expect-error A CSS-wide keyword cannot start a component list.
+    css({ animationDirection: 'inherit, normal' })
+  })
+})
+
+describe('css', () => {
+  test('supports absolute functional colors across color properties', () => {
+    css({
+      backgroundColor: 'hsl(120deg 50% 50% / .5)',
+      borderColor: 'hwb(120 20% 30%)',
+      color: ['rgb(255, 0, 0)', 'oklch(.5 .1 120)!'],
+      fill: 'lab(50% 20 -30)',
+      outlineColor: 'color(display-p3 .1 .2 .3)',
+      stroke: 'oklab(.5 .1 -.1)',
+      textDecorationColor: 'lch(50 30 120)',
+    })
+    // @ts-expect-error Unknown function names are rejected by the structural type.
+    css({ color: 'cmyk(0, 0, 0, 1)' })
+    // @ts-expect-error Functions require a closing delimiter.
+    css({ color: 'rgb(0 0 0' })
+  })
+})
+
+describe('css', () => {
+  test('supports border shorthand lists and elliptical radii', () => {
+    css({
+      borderBlockColor: 'red rgb(0 0 255)',
+      borderColor: 'red green blue gold',
+      borderInlineStyle: 'solid dashed',
+      borderRadius: ['10px/20%', '1px 2px / 3px 4px 5px 6px!'],
+      borderStyle: 'solid dashed dotted double',
+      borderTopLeftRadius: '10px 20%',
+      borderWidth: 'thin medium thick 2px',
+      outlineWidth: 'thin',
+    })
+    // @ts-expect-error Individual border color longhands take one color.
+    css({ borderLeftColor: 'red blue' })
+    // @ts-expect-error Individual border style longhands take one style.
+    css({ borderTopStyle: 'solid dashed' })
+    // @ts-expect-error Radius longhands use space-separated axes without a slash.
+    css({ borderTopLeftRadius: '10px/20px' })
+    // @ts-expect-error SVG stroke widths do not accept border width keywords.
+    css({ strokeWidth: 'thin' })
+  })
+})
+
+describe('css', () => {
+  test('supports compatible font and containment keyword groups', () => {
+    css({
+      contain: 'layout style paint',
+      fontSynthesis: 'style weight small-caps',
+      fontVariantEastAsian: 'jis78 full-width ruby',
+      fontVariantLigatures: 'no-common-ligatures contextual',
+      fontVariantNumeric: 'oldstyle-nums tabular-nums slashed-zero',
+    })
+    // @ts-expect-error Standalone keywords cannot introduce groups.
+    css({ fontVariantNumeric: 'normal tabular-nums' })
+    // @ts-expect-error Unsupported leading keywords are rejected structurally.
+    css({ fontSynthesis: 'bold style' })
+  })
+})
+
+describe('css', () => {
+  test('supports dimensional math inside scalar and list values', () => {
+    css({
+      animationDuration: 'min(1s, 500ms), calc(1s + 20ms)',
+      borderRadius: 'calc(10px / 2) / max(10px, 20%)',
+      gridTemplateColumns: 'minmax(calc(10px + 2px), 1fr)',
+      opacity: 'calc(1 / 2)',
+      padding: 'calc(1px + 2px) max(2px, 1%)',
+      width: 'clamp(10px, 50%, 100px)',
+    })
+    // @ts-expect-error Unknown math function names are outside the supported structural type.
+    css({ width: 'multiply(1px, 2)' })
+    // @ts-expect-error Easing properties do not take arbitrary dimensional math.
+    css({ transitionTimingFunction: 'calc(1 + 2)' })
+  })
+})
+
+describe('css', () => {
+  test('supports deferred custom-property substitution in every property domain', () => {
+    css({
+      animationTimingFunction: 'var(--easing, ease)',
+      color: 'rgb(var(--channels) / var(--alpha, .5))',
+      display: 'var(--display, block)',
+      fontVariantNumeric: 'var(--numeric, tabular-nums)',
+      gridTemplateColumns: 'var(--tracks, 1fr 2fr)',
+      padding: 'var(--spacing, 1px 2px)',
+      width: 'calc(100% - var(--gap, 10px))',
+    })
+    // @ts-expect-error Custom properties still require their double-hyphen spelling.
+    css({ display: 'var(display)' })
+    // @ts-expect-error Variable expressions do not add arbitrary property names.
+    css({ imaginaryProperty: 'var(--anything)' })
   })
 })

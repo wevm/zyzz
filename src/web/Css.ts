@@ -2,6 +2,7 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
+import * as Cascade from '../internal/Cascade.js'
 import * as Literal from '../internal/Literal.js'
 import * as Token from '../internal/Token.js'
 import type * as Style from '../Style.js'
@@ -28,7 +29,6 @@ export function compile<
   type Cached = {
     declaration: string
     domain: string
-    message: string | undefined
   }
   const cache = new Map<string, Map<number | string, Cached>>()
   const references = new Map<object, boolean>()
@@ -50,6 +50,142 @@ export function compile<
       /^(min|max)?(blockSize|inlineSize)$/i.test(property),
     ),
   )
+  const resets = options.styles.styles.some((style) =>
+    style.declarations.some(({ property }) => property === 'all'),
+  )
+  const combinedLines = new Set<string>()
+  for (const style of options.styles.styles)
+    for (const { property } of style.declarations)
+      if (Literal.rule(property)?.kind === 'line') {
+        const canonical =
+          property in Literal.aliases
+            ? Literal.aliases[property as keyof typeof Literal.aliases]
+            : property
+        combinedLines.add(canonical.startsWith('border') ? 'border' : canonical)
+      }
+  function canonical(property: string): string {
+    return property in Literal.aliases
+      ? Literal.aliases[property as keyof typeof Literal.aliases]
+      : property
+  }
+  function domain(property: string): string {
+    if (
+      resets &&
+      !property.startsWith('--') &&
+      property !== 'direction' &&
+      property !== 'unicodeBidi'
+    )
+      return 'all'
+    if (/^marker(?:Start|Mid|End)?$/.test(property)) return 'marker'
+    if (property.startsWith('corner')) return 'cornerShape'
+    if (property.startsWith('containIntrinsic')) return 'containIntrinsicSize'
+    if (property.startsWith('interestDelay')) return 'interestDelay'
+    if (property.startsWith('backgroundPosition')) return 'backgroundPosition'
+    if (combinedLines.has('columnRule') && property.startsWith('columnRule'))
+      return 'columnRule'
+    if (combinedLines.has('outline') && property.startsWith('outline'))
+      return 'outline'
+    if (property.startsWith('borderImage')) return 'borderImage'
+    if (property.startsWith('border')) {
+      if (combinedLines.has('border')) return 'border'
+      if (property.endsWith('Color')) {
+        return 'borderColor'
+      }
+      if (property.endsWith('Style')) {
+        return 'borderStyle'
+      }
+      if (property.endsWith('Width')) {
+        return 'borderWidth'
+      }
+      return 'borderRadius'
+    }
+    if (['flexDirection', 'flexFlow', 'flexWrap'].includes(property))
+      return 'flexFlow'
+    if (/^(pageBreak|break)(After|Before|Inside)$/.test(property))
+      return property.replace('pageBreak', 'break')
+    if (['fontStretch', 'fontWidth'].includes(property)) return 'fontWidth'
+    if (property.startsWith('fontSynthesis')) return 'fontSynthesis'
+    if (
+      [
+        'whiteSpace',
+        'whiteSpaceCollapse',
+        'textWrap',
+        'textWrapMode',
+        'textWrapStyle',
+      ].includes(property)
+    )
+      return 'whiteSpace'
+    if (['wordWrap', 'overflowWrap'].includes(property)) return 'overflowWrap'
+    if (property.startsWith('margin')) {
+      return 'margin'
+    }
+    if (property.startsWith('padding')) {
+      return 'padding'
+    }
+    if (
+      property === 'overflow' ||
+      property === 'overflowX' ||
+      property === 'overflowY' ||
+      property === 'overflowBlock' ||
+      property === 'overflowInline'
+    ) {
+      return 'overflow'
+    }
+    if (property.startsWith('overscrollBehavior')) {
+      return 'overscrollBehavior'
+    }
+    if (property.startsWith('scrollMargin')) {
+      return 'scrollMargin'
+    }
+    if (property.startsWith('scrollPadding')) {
+      return 'scrollPadding'
+    }
+    if (['columnGap', 'gap', 'rowGap'].includes(property)) {
+      return 'gap'
+    }
+    if (/^(inset|top$|right$|bottom$|left$)/.test(property)) {
+      return 'inset'
+    }
+    if (
+      logicalSizing &&
+      /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(property)
+    ) {
+      if (property.startsWith('min')) {
+        return 'min-size'
+      }
+      if (property.startsWith('max')) {
+        return 'max-size'
+      }
+      return 'size'
+    }
+    return property
+  }
+  const parents = new Map<string, string>()
+  function root(domain: string): string {
+    const parent = parents.get(domain)
+    if (!parent) return domain
+    const result = root(parent)
+    parents.set(domain, result)
+    return result
+  }
+  // Union only authored shorthands. Unrelated axes retain their original factoring.
+  // Recursion includes nested and reset-only shorthands without parsing CSS values.
+  function join(property: string, target: string, visited = new Set<string>()) {
+    if (visited.has(property)) return
+    visited.add(property)
+    const current = root(domain(canonical(property)))
+    const group = root(target)
+    if (current !== group) parents.set(current, group)
+    if (Object.hasOwn(Cascade.shorthands, property))
+      for (const child of Cascade.shorthands[
+        property as keyof typeof Cascade.shorthands
+      ])
+        join(child, target, visited)
+  }
+  for (const style of options.styles.styles)
+    for (const { property } of style.declarations)
+      if (Object.hasOwn(Cascade.shorthands, canonical(property)))
+        join(canonical(property), domain(canonical(property)))
   type Prepared = {
     declarations: readonly Cached[]
     ordered: string
@@ -60,32 +196,16 @@ export function compile<
     let body = ''
     const declarations: Cached[] = []
     for (const { important, property, value: input } of style.declarations) {
-      if (important !== undefined && typeof important !== 'boolean') {
-        diagnostics.push({
-          code: 'invalid_declaration',
-          message: 'Declaration importance must be boolean.',
-          path: [style.name, property],
-        })
-        continue
-      }
       const token = isReference(input)
       let value: number | string
       try {
         value = token
-          ? (theme ??= Themes.create()).serialize(input, property)
+          ? (theme ??= Themes.create()).serialize(input)
           : (input as number | string)
       } catch (error) {
         diagnostics.push({
           code: 'invalid_declaration',
           message: (error as Error).message,
-          path: [style.name, property],
-        })
-        continue
-      }
-      if (!token && typeof value === 'string' && value.startsWith('var(')) {
-        diagnostics.push({
-          code: 'invalid_declaration',
-          message: 'Use a typed theme token reference.',
           path: [style.name, property],
         })
         continue
@@ -98,89 +218,13 @@ export function compile<
       }
       let entry = values.get(value)
       if (!entry) {
-        const message = (() => {
-          if (Object.hasOwn(Literal.rules, property)) {
-            if (token) {
-              return undefined
-            }
-            return Literal.validate(property, value)
-          }
-          return 'Unsupported literal property.'
-        })()
         entry = {
-          declaration: message
-            ? ''
-            : `${property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}${important ? '!important' : ''};`,
-          domain: (() => {
-            if (property.startsWith('backgroundPosition'))
-              return 'backgroundPosition'
-            if (property.startsWith('border')) {
-              if (property.endsWith('Color')) {
-                return 'borderColor'
-              }
-              if (property.endsWith('Style')) {
-                return 'borderStyle'
-              }
-              if (property.endsWith('Width')) {
-                return 'borderWidth'
-              }
-              return 'borderRadius'
-            }
-            if (property.startsWith('margin')) {
-              return 'margin'
-            }
-            if (property.startsWith('padding')) {
-              return 'padding'
-            }
-            if (
-              property === 'overflow' ||
-              property === 'overflowX' ||
-              property === 'overflowY'
-            ) {
-              return 'overflow'
-            }
-            if (property.startsWith('overscrollBehavior')) {
-              return 'overscrollBehavior'
-            }
-            if (property.startsWith('scrollMargin')) {
-              return 'scrollMargin'
-            }
-            if (property.startsWith('scrollPadding')) {
-              return 'scrollPadding'
-            }
-            if (['columnGap', 'gap', 'rowGap'].includes(property)) {
-              return 'gap'
-            }
-            if (/^(inset|top$|right$|bottom$|left$)/.test(property)) {
-              return 'inset'
-            }
-            if (
-              logicalSizing &&
-              /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(property)
-            ) {
-              if (property.startsWith('min')) {
-                return 'min-size'
-              }
-              if (property.startsWith('max')) {
-                return 'max-size'
-              }
-              return 'size'
-            }
-            return property
-          })(),
-          message,
+          declaration: `${Literal.name(property)}:${value}${important ? '!important' : ''};`,
+          domain: root(domain(canonical(property))),
         }
         values.set(value, entry)
       }
-      const { declaration, message } = entry
-      if (message) {
-        diagnostics.push({
-          code: 'invalid_declaration',
-          message,
-          path: [style.name, property],
-        })
-        continue
-      }
+      const { declaration } = entry
       body += declaration
       declarations.push(entry)
     }
@@ -202,8 +246,7 @@ export function compile<
     }
     return { content, name: style.name }
   })
-  // Equivalent validated bodies share factoring work, including repeated tokens.
-  // Validation still visits every input to retain diagnostics and live contracts.
+  // Equivalent bodies share factoring work, including repeated tokens.
   for (const content of unique.values())
     for (const { declaration, domain } of content.declarations) {
       if (groups.get(domain) === false) content.ordered += declaration

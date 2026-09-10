@@ -44,26 +44,6 @@ describe('compile', () => {
     `)
   })
 
-  test('grid placement rejects zero, fractional, unsafe, and invalid span counts', () => {
-    for (const value of [
-      0,
-      1.5,
-      Number.MAX_SAFE_INTEGER + 1,
-      'span 0',
-      'span -2',
-      'span 1.5',
-      'span 9007199254740992',
-    ])
-      expect(() =>
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({gridColumnStart:${JSON.stringify(value)}});`,
-        }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:49: Expected auto, a nonzero safe integer, or span followed by a positive safe integer.]`,
-      )
-  })
-
   test('grid tracks and spans match independent browser geometry', async () => {
     const output = Transform.compile({
       moduleId: 'grid.ts',

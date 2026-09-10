@@ -9,7 +9,7 @@ import { Transform } from 'zyzz/compiler'
 import * as Layout from '../../test/fixtures/Layout.js'
 
 describe('compile', () => {
-  test('layout preserves stacking importance and rejects noninteger indices', () => {
+  test('layout preserves stacking importance', () => {
     const output = Transform.compile({
       moduleId: 'layout.ts',
       source: Layout.source,
@@ -21,14 +21,6 @@ describe('compile', () => {
         "z-index:1",
       ]
     `)
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({zIndex:1.5});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:40: Expected a finite integer from -9007199254740991 to 9007199254740991.]`,
-    )
   })
 
   test('layout matches browser float clearance, containment, and stacking', async () => {

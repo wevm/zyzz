@@ -68,53 +68,58 @@ describe('create', () => {
             )
             await page.addStyleTag({ content: bundle.css })
             await page.addScriptTag({ content: bundle.javascript })
-            const result = await page.evaluate((styles) => {
-              const { classes } = (
-                window as unknown as { fixture: { classes: string[] } }
-              ).fixture
-              const properties = [
-                ...new Set(styles.flatMap((style) => Object.keys(style))),
-              ]
-              const differences: unknown[] = []
-              for (const [index, style] of styles.entries()) {
-                const actual = document.createElement('div')
-                const reference = document.createElement('div')
-                actual.className = classes[index] ?? ''
-                // The browser interprets the original literal CSS independently of every compiler.
-                for (const [property, value] of Object.entries(style))
-                  reference.style.setProperty(
-                    property.replace(
+            const result = await page.evaluate(
+              (styles) => {
+                const { classes } = (
+                  window as unknown as { fixture: { classes: string[] } }
+                ).fixture
+                const properties = [
+                  ...new Set(styles.flatMap((style) => Object.keys(style))),
+                ]
+                const differences: unknown[] = []
+                for (const [index, style] of styles.entries()) {
+                  const actual = document.createElement('div')
+                  const reference = document.createElement('div')
+                  actual.className = classes[index] ?? ''
+                  // The browser interprets the original literal CSS independently of every compiler.
+                  for (const [property, value] of Object.entries(style))
+                    reference.style.setProperty(
+                      property.replace(
+                        /[A-Z]/g,
+                        (letter) => `-${letter.toLowerCase()}`,
+                      ),
+                      String(value),
+                    )
+                  document.body.append(actual, reference)
+                  const actualStyle = getComputedStyle(actual)
+                  const referenceStyle = getComputedStyle(reference)
+                  for (const property of properties) {
+                    const key = property.replace(
                       /[A-Z]/g,
                       (letter) => `-${letter.toLowerCase()}`,
-                    ),
-                    String(value),
-                  )
-                document.body.append(actual, reference)
-                const actualStyle = getComputedStyle(actual)
-                const referenceStyle = getComputedStyle(reference)
-                for (const property of properties) {
-                  const key = property.replace(
-                    /[A-Z]/g,
-                    (letter) => `-${letter.toLowerCase()}`,
-                  )
-                  const actualValue = actualStyle.getPropertyValue(key)
-                  const expectedValue = referenceStyle.getPropertyValue(key)
-                  if (actualValue !== expectedValue && differences.length < 5)
-                    differences.push({
-                      actual: actualValue,
-                      expected: expectedValue,
-                      index,
-                      property,
-                    })
+                    )
+                    const actualValue = actualStyle.getPropertyValue(key)
+                    const expectedValue = referenceStyle.getPropertyValue(key)
+                    if (actualValue !== expectedValue && differences.length < 5)
+                      differences.push({
+                        actual: actualValue,
+                        expected: expectedValue,
+                        index,
+                        property,
+                      })
+                  }
+                  actual.remove()
+                  reference.remove()
                 }
-                actual.remove()
-                reference.remove()
-              }
-              return {
-                countMatches: classes.length === styles.length,
-                differences,
-              }
-            }, Corpus.styles(workload))
+                return {
+                  countMatches: classes.length === styles.length,
+                  differences,
+                }
+              },
+              Corpus.styles(workload) as readonly Readonly<
+                Record<string, string | number>
+              >[],
+            )
             expect(result, `${library} / ${workload.name}`)
               .toMatchInlineSnapshot(`
             {

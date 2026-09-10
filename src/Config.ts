@@ -158,20 +158,12 @@ export declare namespace create {
 type Css<tokens extends Theme.Tokens, layers extends string> = <
   const styles extends Record<string, unknown>,
 >(
-  styles: styles &
-    NoInfer<Properties<tokens, layers> & Body<styles, tokens, layers>>,
+  styles: styles & NoInfer<Body<styles, tokens, layers>>,
 ) => css.ReturnType
-type Properties<
-  tokens extends Theme.Tokens,
-  layers extends string,
-> = Style.Properties<tokens> & {
-  [key in `@layer ${layers}`]?: Properties<tokens, layers>
-}
-// Properties validates declaration values; this traversal only rejects unknown keys.
-// Intersecting the value unions twice multiplies fallback tuple alternatives.
 type Body<styles, tokens extends Theme.Tokens, layers extends string> = {
   [key in keyof styles]: key extends keyof Style.Properties<tokens>
-    ? Value.Checked<styles, tokens>[key]
+    ? Value.Accepted<styles, Style.Properties<tokens>>[key] &
+        Value.Checked<styles, tokens>[key]
     : key extends `@layer ${layers}`
       ? styles[key] extends Record<string, unknown>
         ? Body<styles[key], tokens, layers>

@@ -11,6 +11,13 @@ import type * as Theme from '../Theme.js'
 import * as Scope from './internal/Scope.js'
 import * as Themes from './internal/Themes.js'
 
+// JavaScript extraction supplies untyped values. Keep structural checks without
+// asserting that those values already satisfy the TypeScript authoring contract.
+const define = Style.define as unknown as (
+  styles: Record<string, unknown>,
+  options: Style.define.Options,
+) => Style.Definition
+
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
   /** Exclusive UTF-16 offset of the complete call. */
@@ -331,8 +338,8 @@ export function extract(options: extract.Options): extract.ReturnType {
     }
     if (diagnostics.length !== before) continue
     try {
-      const definition = Style.define(
-        { [name]: values as Style.Properties },
+      const definition = define(
+        { [name]: values },
         { locations, theme: themes?.styles.get(call.start)?.theme },
       )
       styles.push(...definition.styles)

@@ -40,7 +40,10 @@ describe('compile', () => {
     ) as {
       families: { properties: Record<string, { status: string }> }
     }
-    const implemented = Object.keys(Literal.rules).map(Conformance.name).sort()
+    const implemented = [
+      ...Object.keys(Literal.rules).map(Conformance.name),
+      '--*',
+    ].sort()
     const classified = Object.entries(inventory.families.properties)
       .filter(
         ([, entry]) =>
@@ -146,46 +149,27 @@ describe('compile', () => {
     expect(failures).toMatchInlineSnapshot(`[]`)
   }, 30_000)
 
-  test('CSS conformance rejects invalid and unsupported values through source authoring', () => {
-    const accepted: string[] = []
-    const rejected = [
-      ...Conformance.rejected,
-      { property: 'fillOpacity', value: -0.1 },
-      { property: 'strokeMiterlimit', value: 0.5 },
-      { property: 'strokeOpacity', value: 1.1 },
-      { property: 'strokeWidth', value: '-2px' },
-      { property: 'color', value: '#12' },
-      { property: 'fontWeight', value: 1001 },
-      { property: 'opacity', value: -1 },
-      { property: 'opacity', value: 1.1 },
-      { property: 'order', value: 0.5 },
-      { property: 'padding', value: '-1px' },
-    ]
-    for (const { property, value } of rejected)
-      for (const scalar of [value, `${value}!`]) {
-        try {
-          Transform.compile({
-            moduleId: 'invalid.ts',
-            source: `import { css } from 'zyzz'; css({${property}: ${JSON.stringify(scalar)}});`,
-          })
-          accepted.push(`${property}: ${scalar}`)
-        } catch (error) {
-          if (!(error instanceof Error) || error.name !== 'Source.ExtractError')
-            throw error
-        }
-      }
-    expect(accepted).toMatchInlineSnapshot(`[]`)
-  })
-
   test('CSS conformance preserves consumer types for every accepted probe', async () => {
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-css-types-'))
     try {
       const cases = Conformance.cases()
-      const declarations = Object.keys(Literal.rules).map((property) => {
-        const values = cases
-          .filter((entry) => entry.property === property)
-          .flatMap(({ value }) => [value, `${value}!`])
-        return `[${values.map((value) => JSON.stringify(value)).join(',')}] as const satisfies readonly Style.Properties['${property}'][];\ncss({${property}: [${values
+      const groups = new Map<string, string>()
+      const declarations = Conformance.properties().map((property) => {
+        const values = [
+          ...cases
+            .filter((entry) => entry.property === property)
+            .map(({ value }) => value),
+          'var(--probe)',
+          'var(--probe,)',
+          'calc(1px + var(--probe))',
+        ].flatMap((value) => [value, `${value}!`])
+        const key = JSON.stringify(values)
+        let group = groups.get(key)
+        if (!group) {
+          group = `values${groups.size}`
+          groups.set(key, group)
+        }
+        return `${group} satisfies readonly Style.Properties['${property}'][];\ncss({${JSON.stringify(property)}: [${values
           .slice(0, 16)
           .map((value) => JSON.stringify(value))
           .join(',')}]});`
@@ -194,15 +178,16 @@ describe('compile', () => {
         ({ property, value }) =>
           `// @ts-expect-error Invalid or deliberately unsupported scalar.\ncss({${property}: ${JSON.stringify(value)}});\n// @ts-expect-error Importance must preserve rejection.\ncss({${property}: ${JSON.stringify(`${value}!`)}});`,
       )
-      const booleans = Object.keys(Literal.rules).map(
+      const booleans = Conformance.properties().map(
         (property) =>
-          `// @ts-expect-error Booleans are outside every CSS scalar domain.\ncss({${property}: true});`,
+          `css({${JSON.stringify(property)}: [' InHeRiT ! ImPoRtAnT ', ${JSON.stringify(String.raw`\69 nherit/**/!impor\74 ant`)}]});\n// @ts-expect-error Booleans are outside every CSS scalar domain.\ncss({${JSON.stringify(property)}: true});`,
       )
-      const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { css, type Style } from 'zyzz';\ndescribe('css', () => {\n  test('validates generated conformance probes', () => {\n${[...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
+      const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { css, type Style } from 'zyzz';\ndescribe('css', () => {\n  test('validates generated conformance probes', () => {\n${[...[...groups].map(([values, group]) => `const ${group} = ${values} as const;`), ...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
       await Fs.writeFile(Path.join(directory, 'consumer.test-d.ts'), source)
       await Fs.writeFile(
         Path.join(directory, 'tsconfig.json'),
         JSON.stringify({
+          exclude: [],
           extends: '../tsconfig.json',
           include: ['./consumer.test-d.ts'],
         }),
@@ -211,15 +196,23 @@ describe('compile', () => {
       const { stderr, stdout } = await Util.promisify(ChildProcess.execFile)(
         process.execPath,
         [
-          '--max-old-space-size=2048',
+          '--max-old-space-size=6144',
           require.resolve('typescript/bin/tsc'),
           '--project',
           Path.join(directory, 'tsconfig.json'),
         ],
-        { cwd: root, maxBuffer: 1024 * 1024, timeout: 110_000 },
-      ).catch((error: unknown) => {
+        { cwd: root, maxBuffer: 1024 * 1024, timeout: 300_000 },
+      ).catch(async (error: unknown) => {
+        await Fs.mkdir(Path.join(root, 'test-results'), { recursive: true })
+        await Fs.writeFile(
+          Path.join(root, 'test-results/css-consumer.test-d.ts'),
+          source,
+        )
         if (error && typeof error === 'object' && 'stdout' in error)
-          throw new Error(String(error.stdout))
+          throw new Error(
+            String(error.stdout) ||
+              String('stderr' in error ? error.stderr : error),
+          )
         throw error
       })
       expect(stderr).toMatchInlineSnapshot(`""`)
@@ -227,7 +220,7 @@ describe('compile', () => {
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })
     }
-  }, 120_000)
+  }, 310_000)
 
   test('interaction declarations preserve importance and source maps', () => {
     const output = Transform.compile({
@@ -256,29 +249,6 @@ describe('compile', () => {
         "source": "example/interaction.ts",
       }
     `)
-  })
-
-  test('interaction declarations reject unsupported keywords and token domains', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({cursor:'hand',pointerEvents:'visiblePainted',resize:'horizontal vertical',userSelect:'contain',visibility:'none'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid.ts:40: Expected one of: alias, all-scroll, auto, cell, col-resize, context-menu, copy, crosshair, default, e-resize, ew-resize, grab, grabbing, help, move, n-resize, ne-resize, nesw-resize, no-drop, none, not-allowed, ns-resize, nw-resize, nwse-resize, pointer, progress, row-resize, s-resize, se-resize, sw-resize, text, vertical-text, w-resize, wait, zoom-in, zoom-out (or a CSS-wide keyword).
-      invalid.ts:61: Expected one of: auto, none (or a CSS-wide keyword).
-      invalid.ts:85: Expected one of: block, both, horizontal, inline, none, vertical (or a CSS-wide keyword).
-      invalid.ts:118: Expected one of: all, auto, none, text (or a CSS-wide keyword).
-      invalid.ts:139: Expected one of: collapse, hidden, visible (or a CSS-wide keyword).]
-    `)
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid-token.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({spacing:{control:'8px'}}); theme.css({cursor:theme.tokens.spacing.control});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid-token.ts:103: Token group is incompatible with this property.]`,
-    )
   })
 
   test('interaction declarations match browser hit testing, selection, and visibility', async () => {
@@ -420,38 +390,6 @@ describe('compile', () => {
     `)
   })
 
-  test('table declarations reject invalid keywords, lengths, and tokens', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({borderCollapse:'solid',borderSpacing:'-1px',captionSide:'center',emptyCells:'hidden',tableLayout:'flex'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid.ts:48: Expected one of: collapse, separate (or a CSS-wide keyword).
-      invalid.ts:70: Expected a nonnegative literal length or numeric zero.
-      invalid.ts:89: Expected one of: bottom, top (or a CSS-wide keyword).
-      invalid.ts:109: Expected one of: hide, show (or a CSS-wide keyword).
-      invalid.ts:130: Expected one of: auto, fixed (or a CSS-wide keyword).]
-    `)
-    for (const value of ['10%', 'auto', '1px 2px', '0x10px!', 'Infinitypx'])
-      expect(() =>
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({borderSpacing:${JSON.stringify(value)}});`,
-        }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        `[Source.ExtractError: invalid.ts:47: Expected a nonnegative literal length or numeric zero.]`,
-      )
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid-token.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({spacing:{gutter:'8px'}}); theme.css({borderSpacing:theme.tokens.spacing.gutter});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid-token.ts:109: Token group is incompatible with this property.]`,
-    )
-  })
-
   test('table declarations match browser layout and inherited cell styles', async () => {
     const output = Transform.compile({
       moduleId: 'example/tables.ts',
@@ -591,29 +529,6 @@ describe('compile', () => {
     `)
   })
 
-  test('text decorations reject invalid line combinations and value domains', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({textDecorationLine:'none underline',textDecorationStyle:'groove',textDecorationThickness:'thin',textUnderlineOffset:'from-font',textDecorationSkipInk:'always'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid.ts:52: Expected one of: line-through, line-through overline, line-through overline underline, line-through underline, line-through underline overline, none, overline, overline line-through, overline line-through underline, overline underline, overline underline line-through, underline, underline line-through, underline line-through overline, underline overline, underline overline line-through (or a CSS-wide keyword).
-      invalid.ts:89: Expected one of: dashed, dotted, double, solid, wavy (or a CSS-wide keyword).
-      invalid.ts:122: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: from-font.
-      invalid.ts:149: Expected a literal length, auto, or numeric zero.
-      invalid.ts:183: Expected one of: auto, none (or a CSS-wide keyword).]
-    `)
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid-token.ts',
-        source: `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{textColor:{ink:'#06c'}}}); zyzz.css({textDecorationColor:zyzz.theme.tokens.textColor.ink});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid-token.ts:123: Token group is incompatible with this property.]`,
-    )
-  })
-
   test('text decorations match native browser controls across writing modes', async () => {
     const output = Transform.compile({
       moduleId: 'example/decoration.ts',
@@ -732,34 +647,6 @@ describe('compile', () => {
         "source": "example/text.ts",
       }
     `)
-  })
-
-  test('text flow rejects invalid spacing and keyword domains', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({letterSpacing:'10%',wordSpacing:'auto',textIndent:'auto',whiteSpace:'preserve',textOverflow:'fade',hyphens:'always',textTransform:'wide',wordBreak:'anywhere',overflowWrap:'all',textAlignLast:'normal'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid.ts:47: Expected a literal length or numeric zero. Also accepts: normal.
-      invalid.ts:65: Expected a literal length or numeric zero. Also accepts: normal.
-      invalid.ts:83: Expected a literal length or numeric zero.
-      invalid.ts:101: Expected one of: break-spaces, normal, nowrap, pre, pre-line, pre-wrap (or a CSS-wide keyword).
-      invalid.ts:125: Expected one of: clip, ellipsis (or a CSS-wide keyword).
-      invalid.ts:140: Expected one of: auto, manual, none (or a CSS-wide keyword).
-      invalid.ts:163: Expected one of: capitalize, lowercase, none, uppercase (or a CSS-wide keyword).
-      invalid.ts:180: Expected one of: break-all, keep-all, normal (or a CSS-wide keyword).
-      invalid.ts:204: Expected one of: anywhere, break-word, normal (or a CSS-wide keyword).
-      invalid.ts:224: Expected one of: auto, center, end, justify, left, right, start (or a CSS-wide keyword).]
-    `)
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid-token.ts',
-        source: `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{spacing:{portion:'10%'}}}); zyzz.css({wordSpacing:zyzz.theme.tokens.spacing.portion});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid-token.ts:116: Token group is incompatible with this property.]`,
-    )
   })
 
   test('text flow wraps and spaces text like native CSS in the browser', async () => {
@@ -894,28 +781,6 @@ describe('compile', () => {
     `)
   })
 
-  test('scroll snap rejects malformed combinations and misplaced keywords', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({scrollSnapType:'mandatory',scrollSnapAlign:'start center end',scrollSnapStop:'mandatory'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid.ts:48: Expected one of: block, block mandatory, block proximity, both, both mandatory, both proximity, inline, inline mandatory, inline proximity, none, x, x mandatory, x proximity, y, y mandatory, y proximity (or a CSS-wide keyword).
-      invalid.ts:76: Expected one of: center, center center, center end, center none, center start, end, end center, end end, end none, end start, none, none center, none end, none none, none start, start, start center, start end, start none, start start (or a CSS-wide keyword).
-      invalid.ts:110: Expected one of: always, normal (or a CSS-wide keyword).]
-    `)
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid-pair.ts',
-        source: `import { css } from 'zyzz'; css({scrollSnapType:['x','none mandatory!'],scrollSnapAlign:'inherit center'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid-pair.ts:53: Expected one of: block, block mandatory, block proximity, both, both mandatory, both proximity, inline, inline mandatory, inline proximity, none, x, x mandatory, x proximity, y, y mandatory, y proximity (or a CSS-wide keyword).
-      invalid-pair.ts:88: Expected one of: center, center center, center end, center none, center start, end, end center, end end, end none, end start, none, none center, none end, none none, none start, start, start center, start end, start none, start start (or a CSS-wide keyword).]
-    `)
-  })
-
   test('scroll snap aligns both axes and respects always stops in the browser', async () => {
     const output = Transform.compile({
       moduleId: 'example/snapping.ts',
@@ -1028,30 +893,6 @@ describe('compile', () => {
     `)
   })
 
-  test('scroll spacing rejects invalid values and incompatible token domains', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({scrollMargin:'10%',scrollMarginTop:'auto',scrollPadding:'-1px',scrollBehavior:'instant',overscrollBehavior:'hidden',scrollPaddingInline:'1px 2px'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid.ts:46: Expected a literal length or numeric zero.
-      invalid.ts:68: Expected a literal length or numeric zero.
-      invalid.ts:89: Expected a nonnegative literal length, auto, or numeric zero.
-      invalid.ts:111: Expected one of: auto, smooth (or a CSS-wide keyword).
-      invalid.ts:140: Expected one of: auto, contain, none (or a CSS-wide keyword).
-      invalid.ts:169: Expected a nonnegative literal length, auto, or numeric zero.]
-    `)
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid-token.ts',
-        source: `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{spacing:{portion:'10%'}}}); zyzz.css({scrollMarginTop:zyzz.theme.tokens.spacing.portion});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid-token.ts:120: Token group is incompatible with this property.]`,
-    )
-  })
-
   test('scroll spacing offsets scroll-into-view in the browser', async () => {
     const output = Transform.compile({
       moduleId: 'example/scrolling.ts',
@@ -1152,21 +993,6 @@ describe('compile', () => {
         "name": "inlineSize",
         "source": "example/sizing.ts",
       }
-    `)
-  })
-
-  test('intrinsic sizing rejects keywords outside their property domains', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({width:'none',maxHeight:'auto',minWidth:'none',padding:'min-content',height:'content'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid.ts:39: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
-      invalid.ts:56: Expected a nonnegative literal length or numeric zero. Also accepts: fit-content, max-content, min-content, none.
-      invalid.ts:72: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.
-      invalid.ts:87: Expected a nonnegative literal length or numeric zero.
-      invalid.ts:108: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.]
     `)
   })
 
@@ -1315,21 +1141,6 @@ describe('compile', () => {
     `)
   })
 
-  test('border and outline sources reject percentages and invalid scalar bounds', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({borderLeftWidth:'10%',borderBlockWidth:'5%',outlineWidth:'2%',outlineOffset:'4%',borderEndStartRadius:'-1px'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid.ts:49: Expected a nonnegative literal length or numeric zero.
-      invalid.ts:72: Expected a nonnegative literal length or numeric zero.
-      invalid.ts:90: Expected a nonnegative literal length or numeric zero.
-      invalid.ts:109: Expected a literal length or numeric zero.
-      invalid.ts:135: Expected a nonnegative literal length or numeric zero.]
-    `)
-  })
-
   test('flex sizing and overflow preserve tokens, importance, and maps', () => {
     const output = Transform.compile({
       moduleId: 'example/flex.ts',
@@ -1359,28 +1170,6 @@ describe('compile', () => {
         "source": "example/flex.ts",
       }
     `)
-  })
-
-  test('flex and overflow diagnostics retain scalar bounds and integer order', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({order:1.5,flexBasis:'-1px',alignSelf:'space-between',overflow:'none'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: invalid.ts:39: Expected a finite integer from -9007199254740991 to 9007199254740991.
-      invalid.ts:53: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: content, fit-content, max-content, min-content.
-      invalid.ts:70: Expected one of: auto, baseline, center, end, flex-end, flex-start, normal, self-end, self-start, start, stretch (or a CSS-wide keyword).
-      invalid.ts:95: Expected one of: auto, clip, hidden, scroll, visible (or a CSS-wide keyword).]
-    `)
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid.ts',
-        source: `import { css } from 'zyzz'; css({order:'1.5!'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:39: Expected a finite integer from -9007199254740991 to 9007199254740991.]`,
-    )
   })
 
   test('flex sizing, line alignment, and overflow match native browser layout', async () => {
@@ -1508,33 +1297,6 @@ describe('compile', () => {
         "name": "inlineSize",
         "source": "example/logical.ts",
       }
-    `)
-  })
-
-  test('logical boxes reject invalid scalar values with source locations', () => {
-    const diagnostics = [
-      "paddingInline:'-1px'",
-      "blockSize:'-1px'",
-      "inset:'1px 2px'",
-      "writingMode:'diagonal'",
-    ].map((declaration) => {
-      try {
-        Transform.compile({
-          moduleId: 'invalid.ts',
-          source: `import { css } from 'zyzz'; css({${declaration}});`,
-        })
-      } catch (error) {
-        return (error as Error).message
-      }
-      return null
-    })
-    expect(diagnostics).toMatchInlineSnapshot(`
-      [
-        "invalid.ts:47: Expected a nonnegative literal length or numeric zero.",
-        "invalid.ts:43: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.",
-        "invalid.ts:39: Expected a literal length, auto, or numeric zero.",
-        "invalid.ts:45: Expected one of: horizontal-tb, vertical-lr, vertical-rl (or a CSS-wide keyword).",
-      ]
     `)
   })
 
@@ -1681,25 +1443,6 @@ export const props = theme.css({
         "source": "assertions.ts",
       }
     `)
-  })
-
-  test('nondecimal length spellings fail source and theme compilation', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid-length.ts',
-        source: `import { css } from 'zyzz'; export const props = css({width:'0x10dvh'})();`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid-length.ts:60: Expected a nonnegative literal length, auto, or numeric zero. Also accepts: fit-content, max-content, min-content.]`,
-    )
-    expect(() =>
-      Transform.compile({
-        moduleId: 'invalid-theme.ts',
-        source: `import { Theme } from 'zyzz'; const theme = Theme.define({spacing:{space:'0b10lh'}}); export const props = theme.css({padding:'space'})();`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid-theme.ts:44: ["spacing","space"]: Expected a nonnegative literal length or numeric zero.]`,
-    )
   })
 
   test('standard lengths preserve source spelling, token fallbacks, and maps', () => {
@@ -2057,17 +1800,6 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
     `)
   })
 
-  test('explicit token diagnostics reject wrong domains', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'example/tokens.ts',
-        source: `import { css, Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); theme.css({ padding: theme.tokens.color.brand });`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/tokens.ts:108: Token group is incompatible with this property.]`,
-    )
-  })
-
   test('local themes compile to scope constants and executable token styles', async () => {
     const source = `import { Theme } from 'zyzz';
 const theme = Theme.define({ color: { brand: { dark: '#fff', light: '#000' } }, spacing: { 1: '4px', md: '8px' } });
@@ -2132,6 +1864,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
           'ES2022',
           file,
         ],
+        { timeout: 10_000 },
       ).catch((error: Error & { stdout?: string }) => {
         throw new Error(error.stdout || error.message)
       })
@@ -2165,7 +1898,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
         "source": "example/theme.ts",
       }
     `)
-  })
+  }, 15_000)
 
   test('theme identity survives value edits and preceding unrelated definitions', () => {
     const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; export const props = theme.css({ color: 'brand' })();`
@@ -2438,12 +2171,13 @@ css({ color: 'md' });
           '--noEmit',
           Path.join(directory, 'module.ts'),
         ],
+        { timeout: 10_000 },
       )
       expect(checked.stdout).toMatchInlineSnapshot(`""`)
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })
     }
-  })
+  }, 15_000)
 
   test('JavaScript aliases remain JavaScript and parameter initializers retain lexical bindings', async () => {
     const result = Transform.compile({

@@ -24,5 +24,12 @@
     "target": "esnext",
     "types": ["node", "vite-plus/test/globals"],
     "verbatimModuleSyntax": true
-  }
+  },
+  "exclude": [
+    ".fixture-*/**",
+    "bench/results/**",
+    "dist",
+    "node_modules",
+    "test-results"
+  ]
 }

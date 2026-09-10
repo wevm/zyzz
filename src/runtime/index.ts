@@ -5,5 +5,5 @@
 /** Runtime props binding without parsing, compilation, or theme data. */
 export * as Props from './Props.js'
 
-/** Immutable compiler binding data. */
-export * as Freeze from './Freeze.js'
+/** Compiler-generated variable contracts with typed assignments. */
+export * as Vars from './Vars.js'

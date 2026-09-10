@@ -5,7 +5,7 @@ Create a shared contract for explicit CSS variable bindings.
 ```ts
 import { Vars } from 'zyzz'
 
-const progress = Vars.define({ amount: 'percentage' })
+const vars = Vars.define({ amount: 'percentage' })
 ```
 
 ## Signature
@@ -29,6 +29,16 @@ Vars.define({ amount: 'percentage' })
 
 Returns typed references whose keys are inferred from the schema. The result is `Vars.Definition<schema>`.
 
+### set
+
+- Type: Generic method accepting `Vars.Values<schema>`
+
+Returns inline assignments through `vars.set(values)`. The method is bound to its contract. The schema name `set` is reserved.
+
+```ts
+vars.set({ amount: '50%' })
+```
+
 ### [name]
 
 - Type: Typed CSS variable reference
@@ -36,7 +46,7 @@ Returns typed references whose keys are inferred from the schema. The result is 
 A reference for each schema key, usable in properties with a compatible domain.
 
 ```ts
-progress.amount
+vars.amount
 ```
 
 ## Errors

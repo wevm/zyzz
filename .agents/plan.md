@@ -8,9 +8,11 @@ The consolidated PR maps 670/670 properties: 670 reviewed as supported, 0 partia
 
 ## Static Template Values
 
-The next Phase 2.3 slice folds untagged template text and literal primitive substitutions, including signed numbers, TypeScript assertions, nesting, fallbacks, and importance. Integration/type fixtures and extraction benchmarks cover this boundary.
+[PR #64](https://github.com/wevm/zyzz/pull/64) folds untagged template text and literal primitive substitutions, including signed numbers, TypeScript assertions, nesting, fallbacks, and importance. Integration/type fixtures and extraction benchmarks cover this boundary.
 
 Identifier evaluation and recognized theme variable interpolation remain separate follow-ups. The expression/variable acceptance gate remains open.
+
+Local validation: ten extraction/transform integrations, native type/lint checks, package build, and the 670/670 gate pass. Ordinary TypeScript and browser verification remain with CI. Matched 10/100/1000-style extraction means: 0.873/11.500/72.863 ms before and 0.851/9.489/74.794 ms after; uncertainty overlaps. The template fixture measures 0.371 ms. No speedup is established.
 
 ## Goal
 

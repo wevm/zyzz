@@ -11,9 +11,29 @@ const source = [
   'export const bar = css({width:progress.amount, marginLeft:`calc(${progress.gap} + 2px)`})();',
   'export const assignments = Vars.set(progress,{amount:"50%",count:2,gap:"8px"});',
   'export const update = () => Vars.set(progress,{amount:"75%"});',
+  'export const assign = (values: any) => Vars.set(progress,values);',
 ].join('\n')
 
 describe('compile', () => {
+  test('preserves asserted reads and compatible border length templates', () => {
+    expect(
+      Transform.compile({
+        moduleId: 'border.ts',
+        source:
+          'import { css, Vars } from "zyzz"; const border=Vars.define({size:"length"}); css({borderWidth:`calc(${border.size})`,width:(border.size satisfies unknown)})',
+      }).css,
+    ).toMatchInlineSnapshot(`".z-1h19mkqtvuh7e-base0{border-width:calc(var(--z-v1h19mkqtvuh7e-62-6f-72-64-65-72-73-69-7a-65));width:var(--z-v1h19mkqtvuh7e-62-6f-72-64-65-72-73-69-7a-65);}"`)
+  })
+  test('rejects incompatible direct binding domains', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'bad.ts',
+        source:
+          'import {css,Vars} from "zyzz"; const vars=Vars.define({color:"color"}); css({width:vars.color})',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: bad.ts:83: Variable domain is incompatible with this property.]`)
+  })
+
   test('emits fixed slots and executes typed assignments without generating rules', async () => {
     const output = Transform.compile({ moduleId: 'slots.ts', source })
     expect(output.css).toMatchInlineSnapshot(
@@ -46,6 +66,16 @@ describe('compile', () => {
         "--z-v161esph179x895-70-72-6f-67-72-65-73-73-61-6d-6f-75-6e-74": "75%",
       }
     `)
+    expect(() =>
+      module.assign({ [Symbol('unknown')]: 1 }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Unknown variable or accessor assignment.]`,
+    )
+    expect(() =>
+      module.assign(Object.defineProperty({}, 'hidden', { value: 1 })),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Unknown variable or accessor assignment.]`,
+    )
     expect(output.code.includes('Vars.define')).toMatchInlineSnapshot(`false`)
   })
 

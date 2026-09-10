@@ -337,11 +337,17 @@ export function extract(options: extract.Options): extract.ReturnType {
         continue
       }
       function value(node: Ast.Node, path: readonly string[]): unknown {
+        const unwrapped = Expression.unwrap(node)
         const token =
-          variables.references.get(node.start) ?? themes?.tokens.get(node.start)
+          variables.references.get(unwrapped.start) ??
+          themes?.tokens.get(node.start)
         const reference =
           resolveDynamic(node) ??
-          (token?.end === node.end ? token.reference : undefined)
+          (token &&
+          token.end ===
+            (Binding.is(token?.reference) ? unwrapped.end : node.end)
+            ? token.reference
+            : undefined)
         if (dynamic && reference && path.length > 2) {
           report(
             'unsupported_syntax',
@@ -379,7 +385,8 @@ export function extract(options: extract.Options): extract.ReturnType {
             if (
               typeof part !== 'string' &&
               !(Binding.is(part)
-                ? dynamic !== undefined ||
+                ? (dynamic !== undefined &&
+                    Object.values(dynamic.slots).includes(part)) ||
                   Binding.accepts(part.type, key as keyof Style.Properties)
                 : Token.accepts(part.group, key as keyof Style.Properties))
             ) {
@@ -400,6 +407,19 @@ export function extract(options: extract.Options): extract.ReturnType {
           report(
             'unsupported_syntax',
             'Theme variable domain is incompatible with this property.',
+            node,
+          )
+          return undefined
+        }
+        if (
+          reference &&
+          Binding.is(reference) &&
+          !(dynamic && Object.values(dynamic.slots).includes(reference)) &&
+          !Binding.accepts(reference.type, key as keyof Style.Properties)
+        ) {
+          report(
+            'unsupported_syntax',
+            'Variable domain is incompatible with this property.',
             node,
           )
           return undefined

@@ -15,8 +15,17 @@ export type Color =
 
 /** Theme-bound authoring signature; execution requires source rewriting. */
 export type Css<tokens extends Tokens> = {
-  <const values extends Record<string, string | number>>(
-    styles: (values: values) => Style.Properties<tokens>,
+  <
+    const values extends Record<string, string | number>,
+    const styles extends Record<string, unknown>,
+  >(
+    styles: (
+      values: values,
+    ) => styles &
+      NoInfer<
+        Value.Accepted<styles, Style.Properties<tokens>> &
+          Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
+      >,
   ): css.Dynamic<values>
   <const styles extends Record<string, unknown>>(
     styles: styles &

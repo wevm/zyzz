@@ -11,11 +11,14 @@ describe('define', () => {
       gap: 'length',
     })
     css({
+      '--accent': progress.color,
       color: progress.color,
       opacity: progress.count,
       padding: progress.gap,
       width: progress.amount,
     })
+    // @ts-expect-error Length slots exclude percentage assignments.
+    Vars.set(progress, { gap: '50%' })
     // @ts-expect-error Color variables do not supply lengths.
     css({ width: progress.color })
     // @ts-expect-error Unknown schema types cannot be declared.

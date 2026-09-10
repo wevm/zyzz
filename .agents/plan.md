@@ -14,6 +14,22 @@ Identifier evaluation and recognized theme variable interpolation remain separat
 
 Local validation: ten extraction/transform integrations, native type/lint checks, package build, and the 670/670 gate pass. Ordinary TypeScript and browser verification remain with CI. Matched 10/100/1000-style extraction means: 0.873/11.500/72.863 ms before and 0.851/9.489/74.794 ms after; uncertainty overlaps. The template fixture measures 0.371 ms. No speedup is established.
 
+## Near-Term Runtime Benchmarks
+
+Priority: the next standalone benchmark PR after the current open stack, during Phase 2 and before additional authoring expansion. Start with the shipped static callable path; add dynamic binding as it lands. Variant comparisons are an acceptance gate of the first Phase 3 variants PR, not deferred to Phase 5.
+
+Authoring calls compile ahead of time. Fully folded applications may leave no function call; surviving callables merge props, bind values, or select precompiled alternatives. Measure production-transformed output, not the untransformed missing-transform stubs or build-time authoring.
+
+- [ ] Compare Zyzz with the existing Panda CSS, StyleX, Tailwind, and vanilla-extract adapters using equivalent rendered behavior and each library's normal production APIs. Include Recipes for vanilla-extract variant selection and idiomatic conditional classes for Tailwind. Document unsupported cases; do not substitute reduced semantics or add unrelated libraries.
+- [ ] Measure folded static applications, surviving static callables, class/style overrides, and imported packed callables. Separate module initialization from steady-state application; add dynamic CSS-variable binding and changed/unchanged values when supported. Include a plain className/style baseline to expose incremental styling cost.
+- [ ] In the first variants PR, extend the same harness with default, single, multiple, and compound selections, unchanged/changed choices, dynamic payloads, and styling overrides. Exercise small and large recipes and repeated selections without compiling definitions inside the timed loop.
+- [ ] Use colocated Vite Plus benchmarks for generated callable cost: time per operation and throughput, observable consumed results, warmup, repeated samples, and variance. Measure allocations/GC separately where reliable tooling permits. Build fixtures before timing; never count extraction or compilation as runtime work.
+- [ ] Add a bounded production React/browser comparison in this Phase 2 PR for initial mount, unchanged rerender, and changed styling props across small and large instance counts. Verify computed-style parity before timing. Report scripting, style recalculation, layout/paint, and interaction latency separately where measurable; retain a framework-only baseline.
+- [ ] Integrate runtime results into the existing Benchmark Report and workflow, alongside separate build-time and transfer tables. Run competitors sequentially on the same runner; retain every framework and observed loss. Upload machine-readable results and metadata, including versions, commit, fixture sizes, sample counts, and uncertainty.
+- [ ] Establish runtime regression budgets from repeated matched baselines and enforce confirmed regressions with documented tolerances. Saved-main timing from another runner remains informational. Include required runtime helper bytes in existing raw/gzip/Brotli delivery accounting without double-counting; preserve current build/size gates.
+
+Acceptance: reproducible commands, production-output fixtures, browser equivalence, and framework runtime comparisons land during Phase 2. The variants implementation cannot be marked complete without its runtime comparison rows. No runtime CSS validation or rule generation is introduced.
+
 ## Goal
 
 A minimal, type-safe styling system with an environment-independent core, shared web/native authoring, modular extensions, and optional integration adapters. Styles compile ahead of time. Core `css` and `variants` have no tokens; bundled themes are opt-in through `zyzz/themes/default`. Color tokens accept shared values or light/dark pairs.
@@ -172,6 +188,8 @@ The [CSS capability union](parity.md) deduplicates parity items across the refer
 
 ### PR Sequence
 
+Scheduling override: prioritize [Near-Term Runtime Benchmarks](#near-term-runtime-benchmarks) immediately after the current open stack, before starting further authoring expansion. The harness does not wait for variants or Phase 2 completion.
+
 1. **2.1 — In-Memory Theme Contracts:** `Theme.define`, compatible `Theme.extend`, immutable typed scalar references, and `Style.define` to `Css.compile` integration. Emit live custom properties, defining fallbacks, light/dark pairs, and complete inherited scopes. Cover browser scheme/scope behavior and compiler size/timing separately. Retain the documented literal grammar; source themes and authoring callables are not part of this PR.
 2. **2.2a — Theme Authoring Contracts:** bound `theme.css` inference and missing-transform behavior; typed shorthand resolution through `Style.define(styles, { theme })`; property-specific color precedence, nested/numeric names, literal precedence, browser scope parity, and resolution-to-CSS benchmarks. Source rewriting is a separate dependency and bound calls remain non-executable until it lands.
 3. **2.2b — Theme Source Identity and Linking:** extract bound calls, derive stable package/module/binding identities, link imported theme dependencies, and publish packed-library contracts. Expose compiled `theme.className`, preserve aliases/re-exports, and verify source/file/watch parity. No independently emitted theme library is supported before this gate.
@@ -291,6 +309,8 @@ Gate: two compatible themes each work in both schemes. Switching a scope changes
 - [ ] Verify exact alias/value inference, cross-target token intersections, rejected collisions/chains/unknown targets, explicit reference domains, extensions, and named theme compatibility. Integration gates compare mapped and expanded declarations in a browser, including mixed ordering and importance; measure compilation and emitted output against the equivalent standard-property workload.
 
 ## Phase 3 — Composition, variants, and target output
+
+The first variants PR must extend the Phase 2 [runtime comparison harness](#near-term-runtime-benchmarks) with recipe selection and update workloads; benchmark evidence ships with the feature.
 
 - [ ] Keep `variants` scoped to one element, returning one props object with no `slots` option. Cover multipart components through separate `css`/`variants` definitions and shared component inputs; use data attributes or typed markers for supported DOM relationships.
 - [ ] Specify responsive recipe selection separately from dynamic payload choices, including conditions/defaults/nulls/compounds and native diagnostics. A static choice containing media rules does not establish full conditional-selection parity.

@@ -34,6 +34,15 @@ export function compile(options: compile.Options): compile.ReturnType {
     sourceType: 'module',
   }).program
 
+  for (const call of extracted.variableCalls ?? []) {
+    const slots = Object.entries(call.slots)
+      .map(
+        ([key, slot]) =>
+          `[${JSON.stringify(key)}]:Object.freeze(${JSON.stringify(slot)})`,
+      )
+      .join(',')
+    module.overwrite(call.start, call.end, `Object.freeze({${slots}})`)
+  }
   type Span = Pick<Ast.Node, 'end' | 'start'>
   const applications = new Map<number, { end: number; folded: boolean }>()
   const calls = new Map(extracted.calls.map((call) => [call.start, call]))

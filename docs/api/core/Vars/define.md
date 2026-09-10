@@ -1,8 +1,5 @@
 # Vars.define
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Create a shared contract for explicit CSS variable bindings.
 
 ```ts
@@ -22,7 +19,7 @@ const progress = Vars.define({ amount: 'percentage' })
 - Type: Record of `color | length | number | percentage` domains
 - Required: Yes.
 
-Named shared variable contract. Use callbacks for ordinary local dynamic values.
+Named shared variable contract. Dynamic callbacks are a separate authoring feature.
 
 ```ts
 Vars.define({ amount: 'percentage' })
@@ -30,7 +27,7 @@ Vars.define({ amount: 'percentage' })
 
 ## Returns
 
-Returns typed references whose keys are inferred from the schema. Exact public type names remain undecided.
+Returns typed references whose keys are inferred from the schema. The result is `Vars.Definition<schema>`.
 
 ### [name]
 
@@ -44,8 +41,10 @@ progress.amount
 
 ## Errors
 
-Reject invalid schemas and incompatible use sites. Exact diagnostic names and CSS registration descriptors remain undecided.
+Source extraction rejects nonliteral schemas, duplicate names, and unsupported scalar domains. Untransformed calls throw `css.MissingTransformError`.
 
-Use callbacks for ordinary local dynamic values. Shared contracts are for bindings spanning definitions.
+Dynamic callbacks are a separate authoring feature. Shared contracts are for bindings spanning definitions.
 
 See [Vars](README.md) for related methods and types.
+
+Contracts currently require module-level constants and local style references. Runtime assignments may use exported compiled contracts. Imported references in style definitions, native bindings, and `@property` registration remain deferred.

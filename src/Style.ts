@@ -2,6 +2,7 @@
  * Copies typed style declarations into immutable, ordered, target-independent data.
  * @module
  */
+import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import * as Value from './internal/Value.js'
@@ -28,7 +29,12 @@ export type Declaration = {
   /** Supported CSS property in camelCase. */
   readonly property: keyof Properties
   /** Validated primitive or immutable, domain-checked theme reference. */
-  readonly value: number | string | Token.Reference | Token.Expression
+  readonly value:
+    | number
+    | string
+    | Token.Reference
+    | Token.Expression
+    | Binding.Reference
 }
 
 /**
@@ -198,7 +204,8 @@ export function define(
               | number
               | string
               | Token.Reference
-              | Token.Expression,
+              | Token.Expression
+              | Binding.Reference,
           }),
         )
       }
@@ -268,7 +275,12 @@ export class InvalidError extends Error {
 
 type LiteralAtoms = {
   readonly [property in keyof Literal.Properties]-?: Value.Atom<
-    Exclude<Literal.Properties[property], undefined>
+    | Exclude<Literal.Properties[property], undefined>
+    | {
+        [kind in Binding.Kind]: property extends Binding.Properties<kind>
+          ? Binding.Reference<kind>
+          : never
+      }[Binding.Kind]
   >
 }
 

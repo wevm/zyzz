@@ -3,16 +3,17 @@
  * @module
  */
 import type * as Ast from '@oxc-project/types'
+import type * as Binding from '../../internal/Binding.js'
 import * as Token from '../../internal/Token.js'
 
 /** Folds cooked template text and literal primitive substitutions; unresolved syntax returns undefined. */
 export function template(
   node: Ast.TemplateLiteral,
   depth = 0,
-  resolve?: (node: Ast.Node) => Token.Reference | undefined,
+  resolve?: (node: Ast.Node) => Token.Reference | Binding.Reference | undefined,
 ): string | Token.Expression | undefined {
   if (depth >= 128) return undefined
-  const parts: (string | Token.Reference)[] = []
+  const parts: (string | Token.Reference | Binding.Reference)[] = []
   for (const [index, quasi] of node.quasis.entries()) {
     if (quasi.value.cooked === null) return undefined
     parts.push(quasi.value.cooked)

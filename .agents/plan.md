@@ -17,7 +17,7 @@ Local validation: ten extraction/transform integrations, native type/lint checks
 ## Phase 2 PR Stack
 
 1. Theme variable references: typed direct values and template interpolation, live fallbacks, imported/config/packed contracts. Standalone variable destructuring remains deferred.
-2. Explicit variable contracts and assignments.
+2. Explicit variable contracts and assignments: module-level schemas compile to fixed, isolated slots; typed partial assignments return ordinary inline properties. Imported style references and native bindings remain deferred.
 3. Dynamic style bindings.
 4. Bundled themes and query thresholds.
 5. Selectors and conditions.

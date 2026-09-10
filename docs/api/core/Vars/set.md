@@ -1,8 +1,5 @@
 # Vars.set
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Assign values to an explicit shared variable contract.
 
 ```ts
@@ -57,3 +54,5 @@ const style = Vars.set(progress, { amount: '42%' })
 Reject unknown keys and incompatible values. Private compiler-owned variables are not application override keys.
 
 See [Vars](README.md) for related methods and types.
+
+Contracts currently require module-level constants and local style references. Runtime assignments may use exported compiled contracts. Imported references in style definitions, native bindings, and `@property` registration remain deferred.

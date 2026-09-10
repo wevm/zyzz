@@ -2,6 +2,7 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
+import * as Binding from '../internal/Binding.js'
 import * as Cascade from '../internal/Cascade.js'
 import * as Literal from '../internal/Literal.js'
 import * as Token from '../internal/Token.js'
@@ -200,13 +201,16 @@ export function compile<
       let value: number | string
       try {
         value = (() => {
+          if (Binding.is(input)) return `var(${input.name})`
           if (token) return (theme ??= Themes.create()).serialize(input)
           if (Token.isExpression(input))
             return input.parts
               .map((part) =>
                 typeof part === 'string'
                   ? part
-                  : (theme ??= Themes.create()).serialize(part),
+                  : Binding.is(part)
+                    ? `var(${part.name})`
+                    : (theme ??= Themes.create()).serialize(part),
               )
               .join('')
           return input as number | string

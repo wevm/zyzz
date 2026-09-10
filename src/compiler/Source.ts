@@ -2,6 +2,8 @@
  * Extracts literal styles and local themes through lexical source analysis.
  * @module
  */
+import * as Binding from '../internal/Binding.js'
+import * as Variables from './internal/Variables.js'
 import * as Expression from './internal/Expression.js'
 import * as Token from '../internal/Token.js'
 import type * as Ast from '@oxc-project/types'
@@ -99,6 +101,15 @@ export function extract(options: extract.Options): extract.ReturnType {
     throw new ExtractError(diagnostics)
   }
   const program = parsed.program
+  const variables = (() => {
+    try {
+      return Variables.collect(program, identity(options.moduleId))
+    } catch (error) {
+      if (!(error instanceof Themes.InvalidError)) throw error
+      report('unsupported_syntax', error.message, error)
+      throw new ExtractError(diagnostics)
+    }
+  })()
   const themes = (() => {
     try {
       return Themes.collect(program, {
@@ -141,6 +152,13 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
         return
       const binding = scopeTracker.getDeclaration(node.name)
+      try {
+        if (variables.reference(node, parent, binding)) return
+      } catch (error) {
+        if (!(error instanceof Themes.InvalidError)) throw error
+        report('unsupported_syntax', error.message, error)
+        return
+      }
       if (themes)
         try {
           if (themes.reference(node, parent, ancestors, binding)) return
@@ -289,13 +307,16 @@ export function extract(options: extract.Options): extract.ReturnType {
         continue
       }
       function value(node: Ast.Node, path: readonly string[]): unknown {
-        const token = themes?.tokens.get(node.start)
+        const token =
+          variables.references.get(node.start) ?? themes?.tokens.get(node.start)
         const reference = token?.end === node.end ? token.reference : undefined
         node = Expression.unwrap(node)
         const template =
           node.type === 'TemplateLiteral'
             ? Expression.template(node, 0, (expression) => {
-                const token = themes?.tokens.get(expression.start)
+                const token =
+                  variables.references.get(expression.start) ??
+                  themes?.tokens.get(expression.start)
                 return token?.end === expression.end
                   ? token.reference
                   : undefined
@@ -305,7 +326,9 @@ export function extract(options: extract.Options): extract.ReturnType {
           for (const part of template.parts) {
             if (
               typeof part !== 'string' &&
-              !Token.accepts(part.group, key as keyof Style.Properties)
+              !(Binding.is(part)
+                ? Binding.accepts(part.type, key as keyof Style.Properties)
+                : Token.accepts(part.group, key as keyof Style.Properties))
             ) {
               report(
                 'unsupported_syntax',
@@ -398,6 +421,9 @@ export function extract(options: extract.Options): extract.ReturnType {
       : {}),
     calls: Object.freeze(calls.map((call) => Object.freeze(call))),
     styles: Object.freeze({ styles: Object.freeze(styles) }),
+    ...(variables.calls.length
+      ? { variableCalls: Object.freeze(variables.calls) }
+      : {}),
     themeAliases: Object.freeze(themes?.aliases ?? []),
     themeCalls: Object.freeze(themes?.calls ?? []),
     themeReferences: Object.freeze(themes?.references ?? []),
@@ -420,6 +446,8 @@ export declare namespace extract {
   }
   /** Ordered public compiler input and spans for later rewriting. */
   type ReturnType = {
+    /** Explicit variable contracts replaced by fixed slot data. */
+    readonly variableCalls?: readonly Variables.Call[] | undefined
     /** Direct calls in source order. */
     readonly calls: readonly Call[]
     /** Validated definitions accepted by Css.compile. */

@@ -28,6 +28,8 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Native HTML attribute output selected by the bound configuration. */
+  readonly output?: 'html' | undefined
   /** Typed runtime slots for callback definitions. */
   readonly slots?: Dynamic.Slots | undefined
   /** Authored scalar input type retained in packed declarations. */
@@ -608,6 +610,9 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (diagnostics.length !== before) continue
       styles.push(...definition.styles)
       calls.push({
+        ...(themes?.styles.get(call.start)?.output
+          ? { output: 'html' as const }
+          : {}),
         ...(dynamic
           ? {
               slots: dynamic.slots,

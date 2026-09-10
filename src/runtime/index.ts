@@ -9,3 +9,6 @@ export * as Props from './Props.js'
 export * as Dynamic from './Dynamic.js'
 /** Compiler-generated variable contracts with typed assignments. */
 export * as Vars from './Vars.js'
+
+/** Compiler-owned HTML attribute binding. */
+export * as Html from './Html.js'

@@ -130,6 +130,7 @@ export function collect(options: collect.Options): Themes.Link {
       }
       return {}
     })(),
+    ...(input.output ? { output: input.output } : {}),
     ...(input.layers ? { layers: input.layers } : {}),
   }
   return {

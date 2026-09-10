@@ -9,8 +9,9 @@ import type { css } from 'zyzz'
 import { Transform } from 'zyzz/compiler'
 
 const source = `
-import { css } from 'zyzz';
-import { Attrs } from 'zyzz/web';
+import { css, Config } from 'zyzz';
+import { Html } from 'zyzz/runtime';
+const { css: htmlCss } = Config.create({ output: 'html' });
 import * as React from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
@@ -18,24 +19,27 @@ const styles = {
   card: css((values: { width: \`\${number}%\` }) => ({
     backgroundColor: '#0066cc', height: '20px', width: values.width,
   })),
+  htmlCard: htmlCss((values: { width: \`\${number}%\` }) => ({
+    backgroundColor: '#0066cc', height: '20px', width: values.width,
+  })),
 };
 export function props(width: \`\${number}%\`, overrides = true) {
   return styles.card({ width, ...(overrides ? { style: { marginTop: '12px', opacity: 0.5, colorScheme: 'dark', '--note': '"<&>' } } : {}) });
 }
-export function html() { return Attrs.serialize({ ...Attrs.from(props('25%')), 'data-note': '"<&>' }); }
+export function html() { return Html.serialize({ ...styles.htmlCard({ width: '25%', style: { marginTop: '12px', opacity: 0.5, colorScheme: 'dark', '--note': '"<&>' } }), 'data-note': '"<&>' }); }
 let root;
 function Card({ values }) { React.useEffect(() => { document.documentElement.dataset.hydrated = "true" }, []); return React.createElement("div", { id: "card", ...values }); }
 export function hydrate() { root = hydrateRoot(document.querySelector('#react'), React.createElement(Card, { values: props('25%') })); }
 export function update() { flushSync(() => root.render(React.createElement(Card, { values: props('75%', false) }))); }
 export function unmount() { flushSync(() => root.unmount()); }
 export function updateDom(element) {
-  const next = Attrs.from(props('75%', false));
+  const next = styles.htmlCard({ width: '75%' });
   element.setAttribute('class', next.class);
   element.setAttribute('style', next.style ?? '');
 }
 `
 
-describe('from', () => {
+describe('create', () => {
   test('compiled bindings survive SSR, hydration, updates, and attribute serialization', async () => {
     const result = Transform.compile({ moduleId: 'fixture/card.ts', source })
     const bundle = await Esbuild.build({

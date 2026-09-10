@@ -4,7 +4,6 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 
 | API                       | Description                                                    |
 | ------------------------- | -------------------------------------------------------------- |
-| [Attrs](Attrs/README.md) | Convert compiled props to DOM attributes and escaped HTML. |
 | [Css](Css/README.md)      | Pure web emission and typed stylesheet relationships.          |
 | [fontFace](fontFace.md)   | Contribute a static font-face rule.                            |
 | [global](global.md)       | Contribute eager global selectors and nested stylesheet rules. |

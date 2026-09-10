@@ -11,7 +11,7 @@ import type * as Themes from './Themes.js'
 /** Reads versioned JSON as validated data; never evaluates package code. */
 export function read(source: string, identities: Map<string, Token.Contract>) {
   const data = record(JSON.parse(source))
-  if (data.version !== 1 && data.version !== 2)
+  if (data.version !== 1 && data.version !== 2 && data.version !== 3)
     throw new Error('Unsupported Zyzz contract version.')
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
@@ -28,7 +28,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     }
     const definition = Theme.define(record(entry.tokens) as Theme.Tokens)
     themes[name] = Token.bind(definition, contract)
-    types[name] = type(tokens(definition.tokens))
+    types[name] = type(input(definition))
   }
   function link(value: unknown): Themes.Link {
     const entry = record(value)
@@ -100,6 +100,10 @@ function string(value: unknown): string {
   return value
 }
 
+function input(theme: Theme.Definition) {
+  return { ...tokens(theme.tokens), ...theme[Token.definition].queries }
+}
+
 function tokens(tree: Theme.References<Theme.Tokens>): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(tree).map(([name, value]) => [
@@ -112,6 +116,7 @@ function tokens(tree: Theme.References<Theme.Tokens>): Record<string, unknown> {
 }
 
 function type(value: unknown): string {
+  if (Array.isArray(value)) return `readonly [${value.map(type).join(',')}]`
   if (!value || typeof value !== 'object') return JSON.stringify(value)
   return `{${Object.entries(value)
     .map(([key, value]) => `readonly ${JSON.stringify(key)}:${type(value)}`)
@@ -150,14 +155,28 @@ export function write(
         name,
         {
           identity: theme[Token.definition].contract[Token.identity],
-          tokens: tokens(theme.tokens),
+          tokens: input(theme),
         },
       ]),
     ),
-    version: Object.values(links).some(
-      (link) => link.kind === 'config' || link.call.type,
+    version: Object.values(themes).some(
+      (theme) =>
+        theme[Token.definition].queries ||
+        Object.keys(theme.tokens).some((group) =>
+          [
+            'fontFamily',
+            'fontSize',
+            'fontWeight',
+            'lineHeight',
+            'letterSpacing',
+          ].includes(group),
+        ),
     )
-      ? 2
-      : 1,
+      ? 3
+      : Object.values(links).some(
+            (link) => link.kind === 'config' || link.call.type,
+          )
+        ? 2
+        : 1,
   })
 }

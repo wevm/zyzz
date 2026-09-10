@@ -211,6 +211,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
       typeof node.argument.value === 'number'
     )
       return node.operator === '-' ? -node.argument.value : node.argument.value
+    if (node.type === 'ArrayExpression')
+      return node.elements.map((element) => {
+        if (!element || element.type === 'SpreadElement')
+          return fail('Theme arrays require dense literal elements.', node)
+        return data(element)
+      })
     if (node.type !== 'ObjectExpression')
       return fail(
         'Theme values must be literal data; expressions are not evaluated.',

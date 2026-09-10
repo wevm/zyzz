@@ -5,6 +5,7 @@
 import { css, MissingTransformError } from './css.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
+import * as Query from './internal/Query.js'
 import * as Token from './internal/Token.js'
 import type * as Value from './internal/Value.js'
 import type * as Style from './Style.js'
@@ -102,6 +103,7 @@ export function extend<
     overrides,
     data.contract,
     data.values,
+    data.queries,
   ) as unknown as Definition<tokens>
 }
 
@@ -139,9 +141,7 @@ export type Overrides<tokens> = {
   readonly [group in keyof tokens]?: OverrideTree<tokens[group], group>
 }
 type OverrideTree<tree, group> = tree extends string | number
-  ? group extends 'spacing' | 'borderRadius'
-    ? Literal.Length
-    : Color
+  ? Scalar<group>
   : tree extends { readonly dark: string; readonly light: string }
     ? Color
     : { readonly [key in keyof tree]?: OverrideTree<tree[key], group> }
@@ -155,10 +155,9 @@ export type Reference<group extends Token.Group = Token.Group> =
 
 /** The inferred tree replaces scalar values and scheme pairs with references. */
 export type References<tokens> = {
-  readonly [group in keyof tokens]: ReferenceTree<
-    tokens[group],
-    Extract<group, Token.Group>
-  >
+  readonly [group in keyof tokens as group extends Token.Group
+    ? group
+    : never]: ReferenceTree<tokens[group], Extract<group, Token.Group>>
 }
 type ReferenceTree<tree, group extends Token.Group> = tree extends
   | string
@@ -168,6 +167,22 @@ type ReferenceTree<tree, group extends Token.Group> = tree extends
   : { readonly [key in keyof tree]: ReferenceTree<tree[key], group> }
 
 /** Supported scalar groups; composite presets and query metadata follow separately. */
+type Scalar<group> = group extends 'spacing' | 'borderRadius'
+  ? Literal.Length
+  : group extends
+        | 'fontFamily'
+        | 'fontSize'
+        | 'fontWeight'
+        | 'letterSpacing'
+        | 'lineHeight'
+    ? Exclude<
+        NonNullable<Literal.Properties[group]>,
+        'initial' | 'inherit' | 'unset' | 'revert' | 'revert-layer'
+      >
+    : group extends 'breakpoints' | 'containers'
+      ? Query.Length
+      : Color
+
 export type Tokens = {
   /** Colors available to background declarations. */
   readonly backgroundColor?: Palette<Color> | undefined
@@ -175,8 +190,34 @@ export type Tokens = {
   readonly borderColor?: Palette<Color> | undefined
   /** Nonnegative corner radii. */
   readonly borderRadius?: Palette<Literal.Length> | undefined
+  /** Compile-time viewport width thresholds. */
+  readonly breakpoints?: Readonly<Record<string, Query.Length>> | undefined
   /** Shared colors available to every supported color property. */
   readonly color?: Palette<Color> | undefined
+  /** Finite CSS container identities for named queries. */
+  readonly containerNames?: readonly string[] | undefined
+  /** Compile-time container width thresholds. */
+  readonly containers?: Readonly<Record<string, Query.Length>> | undefined
+  /** Font family token values; does not load font files. */
+  readonly fontFamily?:
+    | Palette<NonNullable<Literal.Properties['fontFamily']>>
+    | undefined
+  /** Font size token values. */
+  readonly fontSize?:
+    | Palette<NonNullable<Literal.Properties['fontSize']>>
+    | undefined
+  /** Font weight token values. */
+  readonly fontWeight?:
+    | Palette<NonNullable<Literal.Properties['fontWeight']>>
+    | undefined
+  /** Letter spacing token values. */
+  readonly letterSpacing?:
+    | Palette<NonNullable<Literal.Properties['letterSpacing']>>
+    | undefined
+  /** Line height token values. */
+  readonly lineHeight?:
+    | Palette<NonNullable<Literal.Properties['lineHeight']>>
+    | undefined
   /** Nonnegative spacing and sizing values. */
   readonly spacing?: Palette<Literal.Length> | undefined
   /** Colors available to text declarations. */
@@ -187,18 +228,34 @@ function build(
   input: unknown,
   contract: Token.Contract,
   base?: Readonly<Record<string, Token.Value>>,
+  baseQueries?: Query.Metadata,
 ) {
   const values: Record<string, Token.Value> = Object.assign(
     Object.create(null),
     base,
   )
+  const queries = {
+    breakpoints: Object.assign(
+      Object.create(null),
+      baseQueries?.breakpoints,
+    ) as Record<string, string>,
+    containerNames: baseQueries?.containerNames ?? [],
+    containers: Object.assign(
+      Object.create(null),
+      baseQueries?.containers,
+    ) as Record<string, string>,
+  }
+  let hasQueries = !!baseQueries
   const active = new Set<object>()
 
   function visit(value: unknown, group: Token.Group, path: readonly string[]) {
     const key = path.join('.')
     const scalar = typeof value === 'string' || typeof value === 'number'
     const entries = scalar ? undefined : record(value, path)
-    const pair = entries?.some(([name]) => name === 'light' || name === 'dark')
+    const pair =
+      ['color', 'backgroundColor', 'borderColor', 'textColor'].includes(
+        group,
+      ) && entries?.some(([name]) => name === 'light' || name === 'dark')
     if (scalar || pair) {
       if (base && !Object.hasOwn(base, key))
         throw new InvalidError(
@@ -207,8 +264,9 @@ function build(
         )
       if (pair) {
         if (
-          group === 'spacing' ||
-          group === 'borderRadius' ||
+          !['color', 'backgroundColor', 'borderColor', 'textColor'].includes(
+            group,
+          ) ||
           entries!.length !== 2 ||
           !entries!.some(([name]) => name === 'light') ||
           !entries!.some(([name]) => name === 'dark')
@@ -250,6 +308,72 @@ function build(
   }
 
   for (const [group, palette] of record(input, [])) {
+    if (palette === undefined) continue
+    if (group === 'containerNames') {
+      hasQueries = true
+      if (
+        !Array.isArray(palette) ||
+        Array.from({ length: palette.length }, (_, index) =>
+          Object.getOwnPropertyDescriptor(palette, index),
+        ).some((field) => !field || !('value' in field)) ||
+        palette.some(
+          (name) =>
+            typeof name !== 'string' ||
+            !/^(?:--|-?(?:[_a-zA-Z\u0080-\uffff]|\\(?:[0-9a-fA-F]{1,6}[ \t\n\r\f]?|[^\n\r\f0-9a-fA-F])))(?:[-_a-zA-Z0-9\u0080-\uffff]|\\(?:[0-9a-fA-F]{1,6}[ \t\n\r\f]?|[^\n\r\f0-9a-fA-F]))*$/.test(
+              name,
+            ) ||
+            [
+              'none',
+              'and',
+              'not',
+              'or',
+              'default',
+              'inherit',
+              'initial',
+              'unset',
+              'revert',
+              'revert-layer',
+            ].includes(name.toLowerCase()),
+        ) ||
+        new Set(palette).size !== palette.length
+      )
+        throw new InvalidError(
+          [group],
+          'Expected unique container identifiers.',
+        )
+      if (
+        base &&
+        JSON.stringify(palette) !== JSON.stringify(baseQueries?.containerNames)
+      )
+        throw new InvalidError(
+          [group],
+          'Extensions cannot change container identities.',
+        )
+      queries.containerNames = Object.freeze([...palette])
+      continue
+    }
+    if (group === 'breakpoints' || group === 'containers') {
+      hasQueries = true
+      for (const [name, value] of record(palette, [group])) {
+        if (
+          !/^[a-zA-Z0-9_][a-zA-Z0-9_-]*$/.test(name) ||
+          (group === 'breakpoints' &&
+            ['all', 'screen', 'print'].includes(name)) ||
+          !Query.threshold(value)
+        )
+          throw new InvalidError(
+            [group, name],
+            'Expected a named nonnegative length threshold.',
+          )
+        if (base && !Object.hasOwn(queries[group], name))
+          throw new InvalidError(
+            [group, name],
+            'Extensions cannot add query thresholds.',
+          )
+        queries[group][name] = value
+      }
+      continue
+    }
     if (
       ![
         'backgroundColor',
@@ -257,6 +381,11 @@ function build(
         'borderRadius',
         'color',
         'spacing',
+        'fontFamily',
+        'fontSize',
+        'fontWeight',
+        'letterSpacing',
+        'lineHeight',
         'textColor',
       ].includes(group)
     )
@@ -304,7 +433,19 @@ function build(
       },
       Token.definition,
       {
-        value: Object.freeze({ contract, values: Object.freeze(values) }),
+        value: Object.freeze({
+          contract,
+          values: Object.freeze(values),
+          ...(hasQueries
+            ? {
+                queries: Object.freeze({
+                  breakpoints: Object.freeze(queries.breakpoints),
+                  containerNames: queries.containerNames,
+                  containers: Object.freeze(queries.containers),
+                }),
+              }
+            : {}),
+        }),
       },
     ),
   )
@@ -352,11 +493,48 @@ function record(
   return entries
 }
 
-type Validated<tokens> = {
-  [group in keyof tokens]: group extends keyof Tokens
-    ? ValidPalette<tokens[group], group>
-    : never
-}
+type Validated<tokens> = Tokens extends tokens
+  ? tokens
+  : Overrides<Tokens> extends tokens
+    ? tokens
+    : {
+        [group in keyof tokens]: group extends keyof Tokens
+          ? group extends 'containerNames'
+            ? ContainerNames<tokens[group]>
+            : ValidPalette<tokens[group], group>
+          : never
+      }
+type ContainerNames<names> = names extends readonly string[]
+  ? UniqueNames<names> & {
+      [index in keyof names]: ContainerName<names[index]>
+    }
+  : names
+type UniqueNames<
+  names extends readonly string[],
+  seen extends string = never,
+> = names extends readonly [
+  infer name extends string,
+  ...infer rest extends readonly string[],
+]
+  ? name extends seen
+    ? never
+    : UniqueNames<rest, seen | name>
+  : unknown
+type ContainerName<name> = name extends string
+  ? Lowercase<name> extends
+      | 'none'
+      | 'and'
+      | 'not'
+      | 'or'
+      | 'default'
+      | 'inherit'
+      | 'initial'
+      | 'unset'
+      | 'revert'
+      | 'revert-layer'
+    ? never
+    : name
+  : name
 type ValidPalette<palette, group> = palette extends undefined
   ? undefined
   : {
@@ -365,23 +543,76 @@ type ValidPalette<palette, group> = palette extends undefined
         : ValidTree<palette[key], group>
     }
 
+type WeightDigits<
+  text extends string,
+  digits extends unknown[] = [],
+> = text extends ''
+  ? digits extends []
+    ? false
+    : true
+  : digits['length'] extends 3
+    ? false
+    : text extends `${infer first}${infer rest}`
+      ? first extends '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+        ? WeightDigits<rest, [...digits, unknown]>
+        : false
+      : false
+type Weight<value> = value extends number
+  ? number extends value
+    ? value
+    : `${value}` extends '1000'
+      ? value
+      : `${value}` extends `${infer whole}.${string}`
+        ? whole extends '0'
+          ? never
+          : WeightDigits<whole> extends true
+            ? value
+            : never
+        : `${value}` extends '0'
+          ? never
+          : WeightDigits<`${value}`> extends true
+            ? value
+            : never
+  : value
+
 type ValidTree<tree, group> = tree extends string | number
-  ? group extends 'borderRadius' | 'spacing'
-    ? tree extends Literal.Length
-      ? Literal.Checked<tree>
-      : never
-    : Literal.Color & Literal.Checked<tree>
-  : Extract<keyof tree, 'dark' | 'light'> extends never
+  ? tree extends Scalar<group>
+    ? group extends 'breakpoints' | 'containers'
+      ? tree extends `-${string}`
+        ? never
+        : Literal.Checked<tree>
+      : group extends keyof Literal.Properties
+        ? Literal.Checked<tree> &
+            Value.Checked<Record<group, tree>>[group] &
+            (group extends 'fontWeight' ? Weight<tree> : unknown) &
+            (tree extends string
+              ? Lowercase<tree> extends
+                  | 'inherit'
+                  | 'initial'
+                  | 'unset'
+                  | 'revert'
+                  | 'revert-layer'
+                ? never
+                : unknown
+              : unknown)
+        : Literal.Checked<tree>
+    : never
+  : Extract<
+        keyof tree,
+        group extends 'color' | 'backgroundColor' | 'borderColor' | 'textColor'
+          ? 'dark' | 'light'
+          : never
+      > extends never
     ? {
         [key in keyof tree]: key extends `${string}!${string}`
           ? never
           : ValidTree<tree[key], group>
       }
-    : group extends 'borderRadius' | 'spacing'
-      ? never
-      : {
+    : group extends 'color' | 'backgroundColor' | 'borderColor' | 'textColor'
+      ? {
           readonly dark: Literal.Color &
             Literal.Checked<tree extends { dark: infer value } ? value : never>
           readonly light: Literal.Color &
             Literal.Checked<tree extends { light: infer value } ? value : never>
         } & Record<Exclude<keyof tree, 'dark' | 'light'>, never>
+      : never

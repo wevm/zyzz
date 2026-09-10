@@ -3,6 +3,7 @@
  * @module
  */
 import type * as Binding from './Binding.js'
+import type * as Query from './Query.js'
 import type * as Theme from '../Theme.js'
 import * as Literal from './Literal.js'
 
@@ -173,6 +174,11 @@ export type Group =
   | 'borderRadius'
   | 'color'
   | 'spacing'
+  | 'fontFamily'
+  | 'fontSize'
+  | 'fontWeight'
+  | 'letterSpacing'
+  | 'lineHeight'
   | 'textColor'
 
 /** Stable package/module/binding identity supplied by source adapters. */
@@ -195,6 +201,7 @@ export function is(value: unknown): value is Reference {
 
 /** Immutable theme data carried directly by each definition. */
 export type Metadata = {
+  readonly queries?: Query.Metadata | undefined
   readonly contract: Contract
   readonly values: Readonly<Record<string, Value>>
 }
@@ -214,7 +221,14 @@ type Paths<tree> = [tree] extends [never]
         [key in Extract<keyof tree, number | string>]: NonNullable<
           tree[key]
         > extends Value
-          ? key | `${key}`
+          ?
+              | key
+              | `${key}`
+              | (key extends `${infer numericKey extends number}`
+                  ? `${numericKey}` extends key
+                    ? numericKey
+                    : never
+                  : never)
           : `${key}.${Paths<NonNullable<tree[key]>>}`
       }[Extract<keyof tree, number | string>]
 
@@ -298,6 +312,11 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
     'borderColor',
     'borderRadius',
     'spacing',
+    'fontFamily',
+    'fontSize',
+    'fontWeight',
+    'letterSpacing',
+    'lineHeight',
     'textColor',
     'color',
   ] as const) {

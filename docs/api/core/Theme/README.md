@@ -35,3 +35,7 @@ Variable paths must appear inside compiled declarations. Standalone variable des
 `Color`, `Css`, `Definition`, `Overrides`, `Palette`, `Reference`, `References`, `Tokens`; `InvalidError`.
 
 See the [public declarations](../../../../src/Theme.ts) for complete generic signatures and documented type properties.
+
+## Typography and queries
+
+Scalar `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight` groups retain property-specific inference and inherited variables. `breakpoints`, `containers`, and `containerNames` are separate compile-time metadata; they never become declaration variables. See the opt-in [default theme](../../themes/default.md).

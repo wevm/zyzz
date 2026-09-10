@@ -20,6 +20,11 @@ import * as TextFlow from '../test/fixtures/TextFlow.js'
 import { components } from '../test/fixtures/components.js'
 
 describe('intrinsic scalar prefixes', () => {
+  test('rejects optional unknown keys on broad style annotations', () => {
+    const box = {} as Style.Properties & { widht?: string }
+    // @ts-expect-error Broad annotations must still reject unknown keys.
+    Style.define({ box })
+  })
   test('preserves component domains through public authoring', () => {
     css({
       containIntrinsicSize: 'auto 80px auto 40px',

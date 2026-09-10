@@ -349,7 +349,6 @@ export const properties = {
     'strokeDashoffset',
     'strokeOpacity',
     'strokeWidth',
-    'tabSize',
     'textDecorationInset',
     'textDecorationThickness',
     'textSizeAdjust',

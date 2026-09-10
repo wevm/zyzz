@@ -50,7 +50,8 @@ type Exact<
   > extends never
     ? Properties<tokens> extends styles[name]
       ? styles[name] extends Properties<tokens>
-        ? styles[name]
+        ? styles[name] &
+            Record<Exclude<Keys<styles[name]>, keyof Properties>, never>
         : never
       : DeclarationProperties<tokens> extends styles[name]
         ? styles[name] extends DeclarationProperties<tokens>

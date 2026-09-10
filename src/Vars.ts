@@ -48,7 +48,8 @@ export function set<
     if (
       slot.type === 'number'
         ? typeof value !== 'number' || !Number.isFinite(value)
-        : typeof value !== 'string' && !(slot.type === 'length' && value === 0)
+        : typeof value !== 'string' &&
+          !(['length', 'signedLength'].includes(slot.type) && value === 0)
     )
       throw new TypeError(
         'Variable assignments require a matching scalar primitive.',

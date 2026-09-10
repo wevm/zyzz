@@ -6,7 +6,14 @@ import * as Ts from 'typescript'
 const directory = await Fs.mkdtemp(Path.resolve('.fixture-binding-domains-'))
 try {
   const file = Path.join(directory, 'probe.ts')
-  const kinds = ['color', 'length', 'number', 'percentage'] as const
+  const kinds = [
+    'color',
+    'length',
+    'number',
+    'percentage',
+    'signedLength',
+    'signedPercentage',
+  ] as const
   await Fs.writeFile(
     file,
     `import type * as Binding from '../src/internal/Binding.js';\n${kinds.map((kind) => `type ${kind} = Binding.Properties<'${kind}'>`).join('\n')}`,

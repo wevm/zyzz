@@ -140,6 +140,10 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (
         ancestors.some(
           (ancestor) =>
+            ('typeAnnotation' in ancestor &&
+              typeof ancestor.typeAnnotation === 'object' &&
+              ancestor.typeAnnotation !== null &&
+              ancestors.includes(ancestor.typeAnnotation as Ast.Node)) ||
             ancestor.type === 'TSTypeParameterInstantiation' ||
             ancestor.type === 'TSTypeParameterDeclaration' ||
             ancestor.type === 'TSTypeAnnotation' ||

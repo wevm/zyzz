@@ -18,20 +18,22 @@ export type Accepted<
   Exclude<Keys<style>, keyof Literal.Properties | Condition.Keys<tokens>>,
   never
 > & {
-  [key in keyof style]: key extends Condition.Keys<tokens>
-    ? NonNullable<style[key]> extends Record<string, unknown>
-      ?
-          | Accepted<NonNullable<style[key]>, tokens, literal>
-          | Extract<style[key], undefined>
-      : never
-    : key extends keyof Literal.Properties
-      ? Value.Accepted<
-          Pick<style, key>,
-          literal extends true
-            ? LiteralDeclarations
-            : DeclarationProperties<tokens>
-        >[key] &
-          Value.Checked<Pick<style, key>, tokens>[key]
+  [key in keyof style]: key extends keyof Literal.Properties
+    ? Value.Accepted<
+        Pick<style, key>,
+        literal extends true
+          ? LiteralDeclarations
+          : DeclarationProperties<tokens>
+      >[key] &
+        Value.Checked<Pick<style, key>, tokens>[key]
+    : key extends Condition.Keys<tokens>
+      ? [style[key]] extends [undefined]
+        ? never
+        : NonNullable<style[key]> extends Record<string, unknown>
+          ?
+              | Accepted<NonNullable<style[key]>, tokens, literal>
+              | Extract<style[key], undefined>
+          : never
       : never
 }
 type Keys<value> = value extends unknown ? keyof value : never
@@ -202,8 +204,7 @@ export function define(
                 },
               )
             : undefined
-          if (condition?.startsWith(':') && condition.includes(','))
-            throw new Error('Selector lists require explicit & selectors.')
+          if (condition !== undefined) Condition.normalize(condition)
           const nested = (
             define as (
               styles: Record<string, unknown>,
@@ -214,14 +215,19 @@ export function define(
             {
               ...options,
               [nesting]: (options[nesting] ?? 0) + 1,
-              locations: options.locations?.map((location) =>
-                condition === undefined
-                  ? location
-                  : {
-                      ...location,
-                      path: location.path.filter((_, index) => index !== 1),
-                    },
-              ),
+              locations: options.locations
+                ?.filter(
+                  (location) =>
+                    condition === undefined || location.path[1] === key,
+                )
+                .map((location) =>
+                  condition === undefined
+                    ? location
+                    : {
+                        ...location,
+                        path: location.path.filter((_, index) => index !== 1),
+                      },
+                ),
             },
           )
           rules.push(
@@ -229,9 +235,9 @@ export function define(
               ...(condition === undefined
                 ? {}
                 : {
-                    condition: condition.startsWith(':')
-                      ? `&${condition}`
-                      : condition,
+                    condition: Condition.normalize(
+                      condition.startsWith(':') ? `&${condition}` : condition,
+                    ),
                   }),
               style: nested.styles[0]!,
             }),
@@ -244,6 +250,18 @@ export function define(
                   ? {
                       ...diagnostic,
                       path: [name, key, ...diagnostic.path.slice(1)],
+                      ...(diagnostic.location
+                        ? {
+                            location: {
+                              ...diagnostic.location,
+                              path: [
+                                name,
+                                key,
+                                ...diagnostic.location.path.slice(1),
+                              ],
+                            },
+                          }
+                        : {}),
                     }
                   : diagnostic,
               ),
@@ -450,7 +468,9 @@ export type LiteralProperties = LiteralDeclarations & {
 
 /** Ordered nested blocks; an absent condition represents a declaration segment. */
 export type Rule = {
+  /** Scoped selector or conditional at-rule; absent for a declaration segment. */
   readonly condition?: string | undefined
+  /** Immutable nested declarations and ordered child rules. */
   readonly style: NamedStyle
 }
 

@@ -35,7 +35,22 @@ export type Properties<kind extends Kind> = {
         : never
       : kind extends 'number'
         ? number extends Literal.Properties[property]
-          ? property
+          ? property extends keyof typeof Literal.rules
+            ? property extends
+                | 'opacity'
+                | 'fillOpacity'
+                | 'floodOpacity'
+                | 'stopOpacity'
+                | 'strokeOpacity'
+              ? property
+              : (typeof Literal.rules)[property] extends
+                    | { integer: true }
+                    | { min: number }
+                    | { max: number }
+                    | { negative: false }
+                ? never
+                : property
+            : property
           : never
         : Extract<
               Literal.Properties[property],

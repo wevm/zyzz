@@ -119,13 +119,16 @@ export function compile(options: compile.Options): compile.ReturnType {
     ),
   )
 
+  let dynamicRuntime = '__zyzzDynamic'
+  while (identifiers.has(dynamicRuntime)) dynamicRuntime += '_'
+  let dynamicCallable = false
   let callable = false
   for (const call of extracted.calls) {
     const application = applications.get(call.start)!
     const props = `{className:${JSON.stringify(classes[call.name])}}`
     const replacement = (() => {
       if (call.slots) {
-        const value = `${runtime}.dynamic({...${props},slots:${JSON.stringify(call.slots)}})`
+        const value = `${dynamicRuntime}.create({...${props},slots:${JSON.stringify(call.slots)}})`
         return /\.[cm]?tsx?$/.test(options.moduleId)
           ? `(${value} as import('zyzz').css.Dynamic<${call.valuesType}>)`
           : value
@@ -134,7 +137,8 @@ export function compile(options: compile.Options): compile.ReturnType {
       return `${runtime}.create(${props})`
     })()
     module.overwrite(call.start, application.end, replacement)
-    if (!application.folded) callable = true
+    if (call.slots) dynamicCallable = true
+    else if (!application.folded) callable = true
   }
 
   for (const call of extracted.themeCalls) {
@@ -271,7 +275,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable) {
+  if (callable || dynamicCallable) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -283,7 +287,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { Props as ${runtime} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[callable ? `Props as ${runtime}` : '', dynamicCallable ? `Dynamic as ${dynamicRuntime}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

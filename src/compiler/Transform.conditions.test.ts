@@ -2,11 +2,60 @@
 import * as Trace from '@jridgewell/trace-mapping'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
+import { Style } from 'zyzz'
+import { Css } from 'zyzz/web'
 import { Graph, Transform } from 'zyzz/compiler'
 
 const source =
   'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); export const box=theme.css({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:"100px","&[data-active]":{height:"20px"}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
-describe('conditions', () => {
+describe('compile', () => {
+  test('preserves functional pseudo lists and multiline conditions', () => {
+    const output = Transform.compile({
+      moduleId: 'lines.ts',
+      source:
+        'import {css} from "zyzz"; css({":is(:hover,:focus)":{color:"red"},"@media (width > 1px)\\n and (hover: hover)":{padding:"2px"}})',
+    })
+    expect(output.css).toMatchInlineSnapshot(
+      `".z-style-1xoh7zjj7hyhn-26{&:is(:hover,:focus){color:red;}@media (width > 1px)  and (hover: hover){padding:2px;}}"`,
+    )
+  })
+  test('rejects malformed conditions in the direct compiler pipeline', () => {
+    expect(() =>
+      Css.compile({
+        styles: Style.define({ body: { '&[': { color: 'red' } } }),
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Style.InvalidError: ["body","&["]: Unbalanced condition delimiters.]`,
+    )
+  })
+  test('Chromium retains flat A/B/A overrides around conditional declarations', async () => {
+    const output = Css.compile({
+      styles: Style.define({
+        a: { marginLeft: '2px' },
+        b: { marginLeft: '4px', ':hover': { color: 'red' } },
+        c: { marginLeft: '2px' },
+      }),
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      ".z-a{margin-left:2px;}
+      .z-b{margin-left:4px;&:hover{color:red;}}
+      .z-c{margin-left:2px;}"
+    `)
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><div id="box" class="${output.classes.a} ${output.classes.b} ${output.classes.c}">Box</div>`,
+      )
+      expect(
+        await page
+          .locator('#box')
+          .evaluate((element) => getComputedStyle(element).marginLeft),
+      ).toMatchInlineSnapshot(`"2px"`)
+    } finally {
+      await browser.close()
+    }
+  })
   test('maps nested declarations and passes through raw media lists', () => {
     const source =
       'import {css} from "zyzz"; css({color:"red","@media screen, print":{padding:"2px"}})'
@@ -103,7 +152,7 @@ describe('conditions', () => {
         source: 'import {css} from "zyzz"; css({"&[":{color:"red"}})',
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:26: Invalid selector or condition: Unexpected end of input]`,
+      `[Source.ExtractError: invalid.ts:31: Unbalanced condition delimiters.]`,
     )
   })
   test('Chromium resolves named container thresholds', async () => {

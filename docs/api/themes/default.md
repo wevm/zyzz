@@ -1,16 +1,13 @@
 # Default theme
 
-Import `css`, `theme`, and raw `tokens` from `zyzz/themes/default`. The root entrypoint does not import this data. `variants` follows in Phase 3.
+Preview: `zyzz/themes/default` is not published in this phase. The bundled dataset is retained internally; the public entrypoint will ship with bound `css`, `variants`, `theme`, and raw `tokens` after Phase 3 adds variants. Core and compiler imports do not load this data. The following examples describe that planned API.
 
 ```ts
 import { css } from 'zyzz/themes/default'
 
-const body = css({
-  color: 'foreground',
-  fontFamily: 'sans',
-  fontSize: 'base',
-  padding: 4,
-})
+const styles = {
+  card: css({ color: 'blue.700', padding: 4 }),
+}
 ```
 
 The opt-in bundle supplies Tailwind's palette, breakpoint, radius, and font-size scales, a quarter-rem spacing scale, scalar typography, and Geist/Geist Mono font stacks with system fallbacks. It does not download or register fonts. `foreground` and `surface` provide light/dark semantic colors.

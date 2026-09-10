@@ -12,6 +12,48 @@ const source = [
 ].join('\n')
 
 describe('compile', () => {
+  test('rejects imported names in callback template annotations', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'annotation.ts',
+        source:
+          'import {css,Theme} from "zyzz"; css((v:{width:`${Theme.Length}px`})=>({width:v.width}))',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: annotation.ts:40: Dynamic values require explicit string or number scalar types.]`,
+    )
+  })
+  test('static callable bundles omit the dynamic helper', async () => {
+    const output = Transform.compile({
+      moduleId: 'static.ts',
+      source:
+        'import {css} from "zyzz"; export const card=css({display:"block"})',
+    })
+    const built = await Esbuild.build({
+      stdin: {
+        contents: output.code,
+        resolveDir: Path.resolve(import.meta.dirname, '../..'),
+        loader: 'ts',
+      },
+      bundle: true,
+      write: false,
+      metafile: true,
+      conditions: ['src'],
+    })
+    expect(
+      Object.keys(built.metafile!.inputs)
+        .filter((path) => path.endsWith('/runtime/Dynamic.ts'))
+        .flatMap((path) =>
+          Object.values(built.metafile!.outputs).map(
+            (output) => output.inputs[path]?.bytesInOutput ?? 0,
+          ),
+        ),
+    ).toMatchInlineSnapshot(`
+      [
+        0,
+      ]
+    `)
+  })
   test('rejects number slots adjacent to dimension suffixes', () => {
     expect(() =>
       Transform.compile({

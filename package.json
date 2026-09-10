@@ -75,11 +75,6 @@
       "types": "./dist/runtime/index.d.ts",
       "default": "./dist/runtime/index.js"
     },
-    "./themes/default": {
-      "src": "./src/themes/default.ts",
-      "types": "./dist/themes/default.d.ts",
-      "default": "./dist/themes/default.js"
-    },
     "./vite": {
       "src": "./src/vite/index.ts",
       "types": "./dist/vite/index.d.ts",

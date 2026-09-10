@@ -99,7 +99,11 @@ export function read(node: Ast.Node, identity: string) {
 
 function scalar(node: Ast.Node): 'number' | 'string' | undefined {
   if (node.type === 'TSNumberKeyword') return 'number'
-  if (node.type === 'TSStringKeyword' || node.type === 'TSTemplateLiteralType')
+  if (node.type === 'TSStringKeyword') return 'string'
+  if (
+    node.type === 'TSTemplateLiteralType' &&
+    node.types.every((type) => scalar(type) !== undefined)
+  )
     return 'string'
   if (node.type === 'TSLiteralType') {
     if (

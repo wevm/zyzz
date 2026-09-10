@@ -419,7 +419,7 @@ export const tokens = {
   },
   lineHeight: {
     tight: 1.25,
-    normal: 1.5,
+    default: 1.5,
     relaxed: 1.625,
   },
   letterSpacing: {
@@ -848,7 +848,7 @@ export const theme = Theme.define({
   },
   lineHeight: {
     tight: 1.25,
-    normal: 1.5,
+    default: 1.5,
     relaxed: 1.625,
   },
   letterSpacing: {

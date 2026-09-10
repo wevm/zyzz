@@ -6,9 +6,9 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Style, Theme } from 'zyzz'
 import { Graph, Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
-import { theme as bundled, tokens } from 'zyzz/themes/default'
+import { theme as bundled, tokens } from './themes/default.js'
 
-describe('query metadata and typography', () => {
+describe('compile', () => {
   test('retains query groups in packed configuration options', () => {
     const result = Graph.compile({
       modules: {
@@ -34,22 +34,20 @@ describe('query metadata and typography', () => {
     `)
   })
   test('resolves numeric scale names and preserves typography palette keys', () => {
+    const theme = Theme.define({
+      fontSize: { '2xl': '1.5rem' },
+      borderRadius: { '2xl': '1rem' },
+    })
     expect(
-      Transform.compile({
-        moduleId: 'scale.ts',
-        source:
-          'import {css} from "zyzz/themes/default"; css({fontSize:"2xl",borderRadius:"2xl"})',
+      Css.compile({
+        styles: Style.define(
+          { body: { fontSize: '2xl', borderRadius: '2xl' } },
+          { theme },
+        ),
       }).css,
-    ).toMatchInlineSnapshot(`
-      ".z_theme-zyzz-default-theme{--z-tzyzz-default-theme-fontSize_2e_2xl:1.5rem;--z-tzyzz-default-theme-borderRadius_2e_2xl:1rem;}
-      .z-50qoo1xusxbe-base0{font-size:var(--z-tzyzz-default-theme-fontSize_2e_2xl,1.5rem);border-radius:var(--z-tzyzz-default-theme-borderRadius_2e_2xl,1rem);}"
-    `)
-    expect(
-      Theme.define({
-        fontWeight: { body: { light: 300, bold: 700 } },
-        containers: { screen: '40rem' },
-      }).tokens.fontWeight.body.light.value,
-    ).toMatchInlineSnapshot(`300`)
+    ).toMatchInlineSnapshot(
+      `".z_base0{font-size:var(--z0,1.5rem);border-radius:var(--z1,1rem);}"`,
+    )
   })
   test('keeps generated bundled values synchronized', async () => {
     const source = await Fs.readFile(
@@ -69,19 +67,6 @@ describe('query metadata and typography', () => {
     )
     expect(raw.trim() === generated.trim()).toMatchInlineSnapshot(`true`)
   })
-  test('compiles the public bundled import without host linking', () => {
-    expect(
-      Transform.compile({
-        moduleId: 'app.ts',
-        source:
-          'import {css} from "zyzz/themes/default"; export const body=css({fontSize:"base",padding:4})()',
-      }).css,
-    ).toMatchInlineSnapshot(`
-      ".z_theme-zyzz-default-theme{--z-tzyzz-default-theme-fontSize_2e_base:1rem;--z-tzyzz-default-theme-spacing_2e_4:1rem;}
-      .z-1e8a67z1uaws1j-base0{font-size:var(--z-tzyzz-default-theme-fontSize_2e_base,1rem);padding:var(--z-tzyzz-default-theme-spacing_2e_4,1rem);}"
-    `)
-  })
-
   test('links bundled source through its exported css boundary', async () => {
     const source = await Fs.readFile(
       new URL('./themes/default.ts', import.meta.url),
@@ -100,10 +85,12 @@ describe('query metadata and typography', () => {
     `)
     const built = await Esbuild.build({
       stdin: {
-        contents: 'import * as root from "zyzz"; console.log(root)',
+        contents: 'import * as root from "zyzz/compiler"; console.log(root)',
         resolveDir: import.meta.dirname,
       },
       bundle: true,
+      platform: 'node',
+      external: ['oxc-parser', 'lightningcss'],
       write: false,
       metafile: true,
       conditions: ['src'],
@@ -236,5 +223,16 @@ describe('query metadata and typography', () => {
     ).toThrowErrorMatchingInlineSnapshot(
       `[Source.ExtractError: invalid.ts:40: ["breakpoints","tablet"]: Expected a named nonnegative length threshold.]`,
     )
+  })
+})
+
+describe('define', () => {
+  test('preserves typography palette and exponent threshold keys', () => {
+    expect(
+      Theme.define({
+        fontWeight: { body: { light: 300, bold: 700 } },
+        containers: { screen: '1e3px' },
+      }).tokens.fontWeight.body.light.value,
+    ).toMatchInlineSnapshot(`300`)
   })
 })

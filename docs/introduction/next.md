@@ -14,15 +14,17 @@ export default zyzz({
 })
 ```
 
-Define the application's named `zyzz` instance as shown in [Getting Started](getting-started.md#define-config). Components keep ordinary source imports:
+Define the application's named config helpers as shown in [Getting Started](getting-started.md#define-config). Components keep ordinary source imports:
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
-const card = zyzz.css({ padding: 'md' })
+const styles = {
+  card: css({ padding: 'md' }),
+}
 
 export default function Page() {
-  return <main {...card()}>Hello</main>
+  return <main {...styles.card()}>Hello</main>
 }
 ```
 

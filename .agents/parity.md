@@ -13,9 +13,11 @@ Sources: StyleX `create`/`atoms`, Tailwind utilities, vanilla-extract `style`/Sp
 ```tsx
 import { css } from 'zyzz'
 
-export const card = css({ display: 'flex', gap: '1rem', padding: '1rem' })
+export const styles = {
+  card: css({ display: 'flex', gap: '1rem', padding: '1rem' }),
+}
 
-const article = <article {...card()} />
+const article = <article {...styles.card()} />
 const label = <span {...css({ color: '#06c' })()} />
 ```
 
@@ -72,12 +74,18 @@ Sources: StyleX `props` and style restriction types; utility composition; vanill
 ```tsx
 import { css, cx } from 'zyzz'
 
-const base = css({ color: '#06c', padding: '1rem' })
-const compact = css({ padding: '0.5rem' })
+const styles = {
+  base: css({ color: '#06c', padding: '1rem' }),
+  compact: css({ padding: '0.5rem' }),
+}
 
-const button = <button {...cx(base(), compact())}>Continue</button>
+const button = (
+  <button {...cx(styles.base(), styles.compact())}>Continue</button>
+)
 const checkout = (
-  <button {...base({ className: 'checkout', style: { marginTop: '1rem' } })} />
+  <button
+    {...styles.base({ className: 'checkout', style: { marginTop: '1rem' } })}
+  />
 )
 ```
 
@@ -92,11 +100,13 @@ import { css } from 'zyzz'
 
 // Static constants and template expressions remain planned.
 const gap = '1rem'
-const panel = css({
-  color: '#06c!',
-  display: ['block', 'grid'],
-  width: `calc(100% - ${gap})`,
-})
+const styles = {
+  panel: css({
+    color: '#06c!',
+    display: ['block', 'grid'],
+    width: `calc(100% - ${gap})`,
+  }),
+}
 ```
 
 Arrays emit ordered declarations; later supported values win under CSS importance. CSS lists remain strings. Static imported constants, literal math/color functions, and supported template interpolation use ordinary analysis. `theme.vars` works inside CSS expressions. Configured arbitrary function execution, including a clone of StyleX `env.*`, is outside core; import explicit constants instead. Dynamic inputs cannot inject selectors, declarations, or importance.
@@ -113,11 +123,13 @@ const theme = Theme.define({
   spacing: { md: '1rem', sm: '0.5rem' },
 })
 const alternate = Theme.extend(theme, { color: { brand: '#147d32' } })
-const button = theme.css({ color: 'brand', padding: 'md' })
+const styles = {
+  button: theme.css({ color: 'brand', padding: 'md' }),
+}
 
 const example = (
   <section className={alternate.className} style={{ colorScheme: 'dark' }}>
-    <button {...button()}>Continue</button>
+    <button {...styles.button()}>Continue</button>
   </section>
 )
 ```
@@ -125,11 +137,13 @@ const example = (
 `backgroundColor`, `borderColor`, and `textColor` augment shared colors only in matching properties. Portable `theme.tokens` references disambiguate token names from literals. CSS variables implement inheritance; scopes select compatible theme values independently of `color-scheme`. Independent definitions remain isolated. StyleX `Theme`/`VarGroup` contracts map to inferred theme/reference types; cross-package assignability remains an acceptance gate.
 
 ```ts
-const inset = theme.css({
-  backgroundColor: `color-mix(in oklab, ${theme.vars.color.brand} 50%, transparent)`,
-  borderColor: theme.tokens.color.brand,
-  width: `calc(100% - ${theme.vars.spacing.md})`,
-})
+const styles = {
+  inset: theme.css({
+    backgroundColor: `color-mix(in oklab, ${theme.vars.color.brand} 50%, transparent)`,
+    borderColor: theme.tokens.color.brand,
+    width: `calc(100% - ${theme.vars.spacing.md})`,
+  }),
+}
 ```
 
 This reuses the preceding theme; `theme.vars` and expression support remain 2.3 work.
@@ -142,21 +156,23 @@ const button = <button {...css({ color: 'blue.700', padding: 4 })()} />
 
 Bundled themes are opt-in entrypoints. Root `css` stays token-free. Contract-only and external-name interoperability is tracked separately in item 19.
 
-**Config API accepted; implementation pending in 2.2c:** `Config.create({ theme })` accepts inline or reusable definitions. Named `{ defaultTheme, themes }` catalogs allow mixed inputs, validate one complete token contract, and return normalized scope handles with bound `css`/`variants`. Recommend `export const zyzz = Config.create(...)` in `zyzz.config.ts` and named `{ zyzz }` imports; neither the filename nor importing a config changes root-function inference globally.
+**Config API accepted; implementation pending in 2.2c:** `Config.create({ theme })` accepts inline or reusable definitions. Named `{ defaultTheme, themes }` catalogs allow mixed inputs, validate one complete token contract, and return normalized scope handles with bound `css`/`variants`. Recommend `export const { css, variants, theme } = Config.create(...)` in `zyzz.config.ts` and named helper imports; neither the filename nor importing a config changes root-function inference globally.
 
 ```tsx
-export const zyzz = Config.create({
+export const { css, themes } = Config.create({
   defaultTheme: 'base',
   themes: { base: theme, green: alternate },
 })
 
-const control = zyzz.css({ color: 'brand' })
+const styles = {
+  control: css({ color: 'brand' }),
+}
 const selected = (
   <section
-    className={zyzz.themes.green.className}
+    className={themes.green.className}
     style={{ colorScheme: 'light dark' }}
   >
-    <button {...control()}>Continue</button>
+    <button {...styles.control()}>Continue</button>
   </section>
 )
 ```
@@ -171,17 +187,21 @@ Sources: StyleX variables, vanilla-extract `createVar`/`assignVars`/`fallbackVar
 import { css, Vars } from 'zyzz'
 
 const progress = Vars.define({ amount: 'percentage' })
-const bar = css({ width: progress.amount })
+const styles = {
+  bar: css({ width: progress.amount }),
+}
 
 const element = (
-  <div {...bar({ style: Vars.set(progress, { amount: '42%' }) })} />
+  <div {...styles.bar({ style: Vars.set(progress, { amount: '42%' }) })} />
 )
 ```
 
 Explicit sets are for shared contracts; callbacks in item 07 handle local values. Static custom-property assignments also need typed declaration support. A nested variable fallback is distinct from a declaration fallback array:
 
 ```ts
-const text = css({ color: 'var(--app-accent, var(--app-brand, #06c))' })
+const styles = {
+  text: css({ color: 'var(--app-accent, var(--app-brand, #06c))' }),
+}
 ```
 
 The literal example references application-owned names. Generated reference fallback construction and assignment under nested conditions need a documented API before implementation; do not expose private names or accidentally nest a complete `var()` reference as the first `var()` argument.
@@ -201,7 +221,9 @@ Until that shape is decided, the interoperability target is an ordinary external
 ```
 
 ```ts
-const progress = css({ opacity: 'var(--app-progress)' })
+const styles = {
+  progress: css({ opacity: 'var(--app-progress)' }),
+}
 ```
 
 Specify descriptor grammar, computationally independent initial values, inheritance, interpolation, duplicate ownership, and native errors. Preserve `Theme.define(tokens)` and the existing callback binding API.
@@ -211,11 +233,13 @@ Specify descriptor grammar, computationally independent initial values, inherita
 Sources: StyleX dynamic styles/atoms, vanilla-extract Dynamic, Tailwind utilities referencing runtime variables. **Planned:** 2.3 bindings, using fixed compiled rules.
 
 ```tsx
-const bar = css((values: { width: `${number}%` }) => ({
-  width: values.width,
-}))
+const styles = {
+  bar: css((values: { width: `${number}%` }) => ({
+    width: values.width,
+  })),
+}
 
-const element = <div {...bar({ width: '42%' })} />
+const element = <div {...styles.bar({ width: '42%' })} />
 ```
 
 Callbacks receive only typed inputs and disappear from delivered code. Applications bind values to precompiled slots; rule counts remain fixed. Styling overrides are allowed, while arbitrary component props stay on the component.
@@ -227,21 +251,23 @@ Sources: StyleX variant patterns, Tailwind state-driven utility combinations, va
 ```tsx
 import { variants } from 'zyzz'
 
-const button = variants({
-  base: { display: 'inline-flex' },
-  compoundVariants: [
-    { style: { fontWeight: 600 }, when: { intent: 'primary', size: 'sm' } },
-  ],
-  defaultVariants: { intent: 'primary', size: 'sm' },
-  variants: {
-    intent: { ghost: { color: 'inherit' }, primary: { color: '#06c' } },
-    size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } },
-  },
-})
+const styles = {
+  button: variants({
+    base: { display: 'inline-flex' },
+    compoundVariants: [
+      { style: { fontWeight: 600 }, when: { intent: 'primary', size: 'sm' } },
+    ],
+    defaultVariants: { intent: 'primary', size: 'sm' },
+    variants: {
+      intent: { ghost: { color: 'inherit' }, primary: { color: '#06c' } },
+      size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } },
+    },
+  }),
+}
 
-type ButtonProps = NonNullable<Parameters<typeof button>[0]>
+type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
 
-const element = <button {...button({ intent: 'ghost' })} />
+const element = <button {...styles.button({ intent: 'ghost' })} />
 ```
 
 Theme-bound `theme.variants` infers tokens. Include boolean choices, array compound matches, omitted/default/null semantics, and declaration-order precedence. Runtime selections produce classes and owned data attributes, without expanding every Cartesian combination.
@@ -251,19 +277,21 @@ Theme-bound `theme.variants` infers tokens. Include boolean choices, array compo
 Sources: dynamic style/recipe composition across the libraries. **Planned:** Phase 3; an additional Zyzz convenience, not a claim of identical APIs in each source.
 
 ```tsx
-const button = variants({
-  variants: {
-    size: {
-      custom: (values: { padding: `${number}px` }) => ({
-        padding: values.padding,
-      }),
-      sm: { padding: '0.5rem' },
+const styles = {
+  button: variants({
+    variants: {
+      size: {
+        custom: (values: { padding: `${number}px` }) => ({
+          padding: values.padding,
+        }),
+        sm: { padding: '0.5rem' },
+      },
     },
-  },
-})
+  }),
+}
 
 const element = (
-  <button {...button({ size: { custom: { padding: '12px' } } })} />
+  <button {...styles.button({ size: { custom: { padding: '12px' } } })} />
 )
 ```
 
@@ -274,15 +302,17 @@ Selections infer their payloads. Compounds match the choice name, not its contin
 Sources: all four libraries' selector/state systems. **Planned:** 2.4b.
 
 ```ts
-const field = css({
-  ':disabled': { opacity: 0.5 },
-  ':focus-visible': { outline: '2px solid currentColor' },
-  '::placeholder': { color: '#666' },
-  '&[aria-invalid="true"]': { borderColor: '#c00' },
-  '&[data-state="open"]': { display: 'block' },
-})
-const list = css({ '& > *:nth-child(2n)': { backgroundColor: '#eee' } })
-const badge = css({ '::before': { content: '"New"' } })
+const styles = {
+  field: css({
+    ':disabled': { opacity: 0.5 },
+    ':focus-visible': { outline: '2px solid currentColor' },
+    '::placeholder': { color: '#666' },
+    '&[aria-invalid="true"]': { borderColor: '#c00' },
+    '&[data-state="open"]': { display: 'block' },
+  }),
+  list: css({ '& > *:nth-child(2n)': { backgroundColor: '#eee' } }),
+  badge: css({ '::before': { content: '"New"' } }),
+}
 ```
 
 Cover interactive/form/structural states, ARIA/data/direction, open/popover/inert, negation, and all supported pseudo-elements, including selection, marker, file selector, first letter/line, and backdrop. `& > *` selects direct children; `& *` selects descendants. Retain CSS specificity and explicit pseudo-element content. Raw selectors remain available with compiler grammar validation; types cannot prove DOM structure.
@@ -296,15 +326,17 @@ import { css } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const card = Css.marker({ state: ['closed', 'open'] })
-const title = css({
-  color: '#666',
-  [Css.ancestor(card, ':hover')]: { color: '#06c' },
-  [Css.ancestor(card, { data: { state: 'open' } })]: { fontWeight: 600 },
-})
+const styles = {
+  title: css({
+    color: '#666',
+    [Css.ancestor(card, ':hover')]: { color: '#06c' },
+    [Css.ancestor(card, { data: { state: 'open' } })]: { fontWeight: 600 },
+  }),
+}
 
 const profile = (
-  <article {...card({ state: 'open' })}>
-    <h2 {...title()}>Profile</h2>
+  <article {...styles.card({ state: 'open' })}>
+    <h2 {...styles.title()}>Profile</h2>
   </article>
 )
 ```
@@ -312,17 +344,19 @@ const profile = (
 The schema infers data keys and allowed values in both marker application and conditions. Simple pseudos autocomplete. Unknown keys, values, and pseudo typos are errors. Marker calls return only private data attributes; separate styling spreads do not overwrite them. These attributes express visual state and do not replace real ARIA or control attributes.
 
 ```ts
-const indicator = css({
-  opacity: 0,
-  [Css.ancestor(card, { has: 'a' })]: { opacity: 1 },
-})
 const choice = Css.marker()
-const hint = css({
-  [Css.siblingBefore(choice, ':checked')]: { color: '#06c' },
-})
-const section = css({
-  [Css.descendant(choice, ':checked')]: { borderColor: '#06c' },
-})
+const styles = {
+  indicator: css({
+    opacity: 0,
+    [Css.ancestor(card, { has: 'a' })]: { opacity: 1 },
+  }),
+  hint: css({
+    [Css.siblingBefore(choice, ':checked')]: { color: '#06c' },
+  }),
+  section: css({
+    [Css.descendant(choice, ':checked')]: { borderColor: '#06c' },
+  }),
+}
 ```
 
 Place `choice()` on the real checkbox. `siblingBefore` means the marked sibling precedes the styled element; `siblingAfter` reverses that direction, and `anySibling` covers either. `has: 'a'` checks descendants of the marked ancestor, not the styled element. Combined `data`, `pseudo`, and `has` conditions match the same marked element with AND. Full contracts and lowering are in [architecture](architecture.md#typed-markers-and-ancestors).
@@ -340,26 +374,30 @@ const theme = Theme.define({
   containers: { card: '24rem' },
   spacing: { md: '1rem', sm: '0.5rem' },
 })
-const region = theme.css({
-  containerName: 'sidebar',
-  containerType: 'inline-size',
-})
-const content = theme.css({
-  padding: 'sm',
-  '@container sidebar >=card': { display: 'grid' },
-  '@media tablet..desktop': { padding: 'md' },
-  '@supports (display: grid)': { display: 'grid' },
-})
+const styles = {
+  region: theme.css({
+    containerName: 'sidebar',
+    containerType: 'inline-size',
+  }),
+  content: theme.css({
+    padding: 'sm',
+    '@container sidebar >=card': { display: 'grid' },
+    '@media tablet..desktop': { padding: 'md' },
+    '@supports (display: grid)': { display: 'grid' },
+  }),
+}
 ```
 
 Apply `region()` to an ancestor and `content()` to its child. Aliases infer from the correct theme groups and resolve to literal conditions, never CSS variables. Named-container private identities across packages remain a design gate. Containers select the nearest eligible ancestor, independently of marker ancestor semantics.
 
 ```ts
-const link = css({
-  '@media (hover: hover)': { ':hover': { textDecorationLine: 'underline' } },
-  '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
-  '@media print': { color: '#000' },
-})
+const styles = {
+  link: css({
+    '@media (hover: hover)': { ':hover': { textDecorationLine: 'underline' } },
+    '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
+    '@media print': { color: '#000' },
+  }),
+}
 ```
 
 Also cover contrast/forced colors, pointer capability, orientation, scripting, and combined/nested conditions. Raw `:hover` does not silently add a capability query. Container style/scroll-state queries remain deferred in item 22.
@@ -373,7 +411,9 @@ export const focusRing = {
   ':focus-visible': { outline: '2px solid currentColor' },
 } as const
 
-const button = css({ ...focusRing, padding: '1rem' })
+const styles = {
+  button: css({ ...focusRing, padding: '1rem' }),
+}
 ```
 
 Imported immutable objects and explicit composition cover reuse without a registration API. Ordinary object spreads have JavaScript replacement semantics; they do not deep-merge duplicate nested keys. Arbitrary helper execution is not part of static analysis. A duplicate utility/plugin/configuration language is outside scope.
@@ -386,12 +426,14 @@ const surface = {
   borderRadius: '0.5rem',
   borderWidth: '1px',
 } as const
-const stack = css({
-  ...surface,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1rem',
-})
+const styles = {
+  stack: css({
+    ...surface,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  }),
+}
 ```
 
 Panda property-based conditions and responsive arrays map to nested Zyzz blocks in item 12. Zyzz arrays remain declaration fallbacks, so they must never double as breakpoint positions. Reusable condition lists must specify AND versus OR and preserve order; no underscore-condition registry is needed. [Conditional styles](https://panda-css.com/docs/concepts/conditional-styles)
@@ -407,17 +449,19 @@ const enter = keyframes({
   from: { opacity: 0, transform: 'translateY(4px)' },
   to: { opacity: 1, transform: 'translateY(0)' },
 })
-const notice = css({
-  animationDuration: '160ms',
-  animationName: enter,
-  '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
-})
-const entry = css({
-  opacity: 1,
-  transition: 'opacity 160ms',
-  '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
-  '@starting-style': { opacity: 0 },
-})
+const styles = {
+  notice: css({
+    animationDuration: '160ms',
+    animationName: enter,
+    '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
+  }),
+  entry: css({
+    opacity: 1,
+    transition: 'opacity 160ms',
+    '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+    '@starting-style': { opacity: 0 },
+  }),
+}
 ```
 
 Validate offsets, ordered overlapping frames, theme references, and animation shorthand/lists; reject important frame declarations. Preserve imported references and remove unused animations. Discrete entry/exit transitions additionally require explicit `transition-behavior` and relevant properties. Test actual browser animation progress and motion preferences.
@@ -435,7 +479,9 @@ fontFace({
   fontWeight: '100 900',
   src: 'url("/fonts/app.woff2") format("woff2")',
 })
-const text = css({ fontFamily: '"App Sans", sans-serif' })
+const styles = {
+  text: css({ fontFamily: '"App Sans", sans-serif' }),
+}
 ```
 
 Cover multiple sources, descriptor grammar, URL handling, and side-effect retention. Public font names need explicit ownership; a generated/private font-family reference remains a design decision rather than an assumed return type. Font loading stays with the platform/build.
@@ -449,7 +495,9 @@ import 'zyzz/reset.css'
 import { Config } from 'zyzz'
 import { global } from 'zyzz/web'
 
-export const zyzz = Config.create({ layers: ['reset', 'base', 'components'] })
+export const { css } = Config.create({
+  layers: ['reset', 'base', 'components'],
+})
 
 global({
   '@layer base': {
@@ -458,9 +506,11 @@ global({
   },
 })
 
-const card = zyzz.css({
-  '@layer components': { padding: '1rem' },
-})
+const styles = {
+  card: css({
+    '@layer components': { padding: '1rem' },
+  }),
+}
 ```
 
 **API accepted:** module-level declarations may live anywhere in configured project sources, including unimported modules. The source adapter hoists global contributions and a shared layer-order prelude into initial CSS. Consumers do not manually register globals or configure layer placement on `Css.compile`; the pure compiler receives explicit extracted data without global registration.
@@ -474,9 +524,11 @@ The [collection contract](architecture.md#layer-and-global-collection) specifies
 Sources: [StyleX `props`/`attrs`](https://stylexjs.com/docs/api/javascript/attrs), ordinary class/style consumption elsewhere. **Partial:** web `className`/style-object output. **Proposal required:** DOM attribute adapter in Phase 4.
 
 ```tsx
-const button = css({ color: '#06c' })
+const styles = {
+  button: css({ color: '#06c' }),
+}
 
-const element = <button {...button()}>Continue</button>
+const element = <button {...styles.button()}>Continue</button>
 ```
 
 The non-React target must retain callable application while returning `class`, serialized inline styles where needed, and data attributes. Its public adapter shape is still open; no unsupported `Css.attrs` API is implied. Test escaping, attribute serialization, real template consumers, framework updates, SSR/hydration, and packed output. Do not require framework imports in core.
@@ -491,7 +543,7 @@ import { Transform } from 'zyzz/compiler'
 const result = Transform.compile({
   moduleId: 'app/card.ts',
   source:
-    "import { css } from 'zyzz'; export const card = css({ color: '#06c' })",
+    "import { css } from 'zyzz'; export const styles = { card: css({ color: '#06c' }) }",
 })
 ```
 
@@ -528,12 +580,14 @@ The immediate interoperability form uses application-owned CSS plus literal refe
 ```
 
 ```ts
-const card = css({
-  animationDuration: '160ms',
-  animationName: 'app-enter',
-  color: 'var(--app-accent)',
-  '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
-})
+const styles = {
+  card: css({
+    animationDuration: '160ms',
+    animationName: 'app-enter',
+    color: 'var(--app-accent)',
+    '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
+  }),
+}
 ```
 
 Specify required/missing contract leaves, domain inference, external name mapping, initialization, global fonts/layers, static variable assignments, reachability, and duplicate diagnostics. Literal interoperability is not a substitute for those typed contracts.
@@ -543,7 +597,9 @@ Specify required/missing contract leaves, domain inference, external name mappin
 Sources: StyleX `viewTransitionClass`, vanilla-extract `createViewTransition`, ordinary CSS in Tailwind. **Deferred:** typed scoped names/classes and transition pseudo-element contributions. Illustrative external stylesheet integration:
 
 ```ts
-const avatar = css({ viewTransitionName: 'profile-avatar' })
+const styles = {
+  avatar: css({ viewTransitionName: 'profile-avatar' }),
+}
 ```
 
 ```css
@@ -565,13 +621,15 @@ The declaration itself awaits property support. Define uniqueness, imported name
 Sources: StyleX `positionTry` and ordinary CSS positioning elsewhere. **Deferred:** declarations, restricted `@position-try` descriptors, and scoped references. External CSS target:
 
 ```ts
-const trigger = css({ anchorName: '--profile-trigger' })
-const popup = css({
-  position: 'fixed',
-  positionAnchor: '--profile-trigger',
-  positionArea: 'bottom',
-  positionTryFallbacks: '--profile-above',
-})
+const styles = {
+  trigger: css({ anchorName: '--profile-trigger' }),
+  popup: css({
+    position: 'fixed',
+    positionAnchor: '--profile-trigger',
+    positionArea: 'bottom',
+    positionTryFallbacks: '--profile-above',
+  }),
+}
 ```
 
 ```css
@@ -613,12 +671,14 @@ Sources: standard CSS reachable through the libraries; extensions beyond their d
 ```
 
 ```ts
-const reveal = css({
-  animationDuration: 'auto',
-  animationName: 'app-reveal',
-  animationTimeline: 'view()',
-  '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
-})
+const styles = {
+  reveal: css({
+    animationDuration: 'auto',
+    animationName: 'app-reveal',
+    animationTimeline: 'view()',
+    '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
+  }),
+}
 ```
 
 The timeline preview requires an external `app-reveal` animation and future property support. Query containers require their corresponding containment setup; scroll-state queries do not select the container itself. No blanket raw-at-rule passthrough is proposed. Browser DOM/CSSOM manipulation, observers, and Web Animations orchestration are application concerns.
@@ -650,20 +710,22 @@ Theme labels, schemes, and style names infer from inputs. Unit conversion is exp
 Panda [slot recipes](https://panda-css.com/docs/concepts/slot-recipes), `sva`, and `defineParts` coordinate styles across component elements. **Planned through existing APIs:** Zyzz uses separate `css` or `variants` definitions for each element. Each recipe application returns one props object; the `slots` pattern is excluded from `variants` and `theme.variants`.
 
 ```tsx
-const button = variants({
-  base: { display: 'inline-flex' },
-  defaultVariants: { size: 'sm' },
-  variants: {
-    size: {
-      md: { padding: '1rem' },
-      sm: { padding: '0.5rem' },
+const styles = {
+  button: variants({
+    base: { display: 'inline-flex' },
+    defaultVariants: { size: 'sm' },
+    variants: {
+      size: {
+        md: { padding: '1rem' },
+        sm: { padding: '0.5rem' },
+      },
     },
-  },
-})
-const label = css({ fontWeight: 600 })
+  }),
+  label: css({ fontWeight: 600 }),
+}
 const element = (
-  <button {...button({ size: 'sm' })}>
-    <span {...label()}>Save</span>
+  <button {...styles.button({ size: 'sm' })}>
+    <span {...styles.label()}>Save</span>
   </button>
 )
 ```
@@ -679,7 +741,9 @@ const palette = { blue: '#06c', paleBlue: '#69f' } as const
 const theme = Theme.define({
   color: { brand: { dark: palette.paleBlue, light: palette.blue } },
 })
-const button = theme.css({ color: 'brand' })
+const styles = {
+  button: theme.css({ color: 'brand' }),
+}
 ```
 
 This planned static-expression example reuses values; it is not a live alias between CSS variables. A true alias must retain domain inference, cycle/missing-reference diagnostics, imported identity, and the chosen inheritance behavior when its target is overridden. Preserve token-only `Theme.define` arguments and color leaves as `string | { light, dark }`; decide a compatible reference representation before adding one. Arbitrary conditional tokens need a separate contract from CSS scheme pairs and immutable query thresholds.
@@ -689,18 +753,20 @@ This planned static-expression example reuses values; it is not a live alias bet
 Panda config recipes can expose conditional selections, with restrictions around compounds. **Design required:** Zyzz's dynamic payload selections do not imply responsive variant selection. The existing planned syntax can express a finite responsive choice:
 
 ```ts
-const button = variants({
-  variants: {
-    size: {
-      responsive: {
-        padding: '0.5rem',
-        '@media (width >= 48rem)': { padding: '1rem' },
+const styles = {
+  button: variants({
+    variants: {
+      size: {
+        responsive: {
+          padding: '0.5rem',
+          '@media (width >= 48rem)': { padding: '1rem' },
+        },
+        sm: { padding: '0.5rem' },
       },
-      sm: { padding: '0.5rem' },
     },
-  },
-})
-const props = button({ size: 'responsive' })
+  }),
+}
+const props = styles.button({ size: 'responsive' })
 ```
 
 An inferred per-condition selection API still needs a nonambiguous shape alongside `{ custom: payload }`, compound behavior, defaults/null semantics, query ordering, and native errors. Track this explicitly instead of claiming the example provides that API. [Recipes](https://panda-css.com/docs/concepts/recipes)

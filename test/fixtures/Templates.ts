@@ -6,7 +6,7 @@ export const source = [
   'export const box = css({',
   '  color: `r${"ed"}`,',
   '  content: `"${true}:${null}:${12n}"`,',
-  '  marginLeft: `${-2}px`,',
+  '  marginLeft: `${-2n}px`,',
   '  padding: [`${4}px`, `${8 as const}px!`],',
   '  width: `calc(100% - ${`${+16}`}px)`,',
   '})()',

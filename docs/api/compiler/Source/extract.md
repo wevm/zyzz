@@ -10,6 +10,8 @@ css({ padding: `${8}px`, width: `calc(100% - ${16}px)` })
 
 Identifiers, property reads, object coercions, arithmetic expressions, calls, and tagged templates remain unsupported. Theme variable references inside templates are deferred. Nested templates are limited to 128 levels. CSS value checking remains static-only.
 
+Bigint literals also support unary minus: `${-12n}px` folds to `-12px`. Unary plus on bigint remains rejected, matching JavaScript semantics.
+
 ```ts
 import { Source } from 'zyzz/compiler'
 

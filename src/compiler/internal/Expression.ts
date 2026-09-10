@@ -31,6 +31,13 @@ export function template(
       result += String(
         value.operator === '-' ? -value.argument.value : value.argument.value,
       )
+    } else if (
+      value.type === 'UnaryExpression' &&
+      value.operator === '-' &&
+      value.argument.type === 'Literal' &&
+      typeof value.argument.value === 'bigint'
+    ) {
+      result += String(-value.argument.value)
     } else if (value.type === 'TemplateLiteral') {
       const nested = template(value, depth + 1)
       if (nested === undefined) return undefined

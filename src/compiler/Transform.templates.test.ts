@@ -7,6 +7,17 @@ import { Source, Transform } from 'zyzz/compiler'
 import * as Templates from '../../test/fixtures/Templates.js'
 
 describe('compile', () => {
+  test('folds negative bigint substitutions without losing precision', () => {
+    const output = Transform.compile({
+      moduleId: 'bigint.ts',
+      source:
+        'import { css } from "zyzz"; css({ marginLeft: `${-12n}px`, "--large": `${-9007199254740993n}`, "--zero": `${-0n}` })',
+    })
+    expect(output.css).toMatchInlineSnapshot(
+      `".z-1hxpdr579toep-base0{margin-left:-12px;--large:-9007199254740993;--zero:0;}"`,
+    )
+  })
+
   test('bounds nested template extraction', () => {
     const nested = (count: number) =>
       '`'.concat('${`'.repeat(count), '8', '`}'.repeat(count), '`')
@@ -83,6 +94,7 @@ describe('compile', () => {
       '[]',
       '/x/',
       '1e999',
+      '+12n',
       'String.raw`x`',
       '1 + 2',
     ]) {

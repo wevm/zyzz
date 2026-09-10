@@ -7,16 +7,30 @@ import type * as Value from '../internal/Value.js'
 export function keyframes<const frames extends Record<string, unknown>>(
   frames: frames &
     NoInfer<{
-      [key in keyof frames]: key extends
-        | 'from'
-        | 'to'
-        | `${number}%`
-        | `${string},${string}`
-        ? Value.Accepted<frames[key], Style.DeclarationProperties> &
-            Value.Checked<frames[key]>
+      [key in keyof frames]: key extends string
+        ? Stops<key> extends true
+          ? Value.Accepted<frames[key], Style.DeclarationProperties> &
+              Value.Checked<frames[key]>
+          : never
         : never
     }>,
 ): string {
   void frames
   throw new MissingTransformError()
 }
+
+type Trim<value extends string> = value extends
+  | ` ${infer rest}`
+  | `\n${infer rest}`
+  | `\t${infer rest}`
+  ? Trim<rest>
+  : value extends `${infer rest} ` | `${infer rest}\n` | `${infer rest}\t`
+    ? Trim<rest>
+    : value
+type Stops<value extends string> = value extends `${infer first},${infer rest}`
+  ? Stops<first> extends true
+    ? Stops<rest>
+    : false
+  : Trim<value> extends 'from' | 'to' | `${number}%`
+    ? true
+    : false

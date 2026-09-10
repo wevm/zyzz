@@ -11,7 +11,11 @@ describe('zyzz', () => {
       for (const [name, source] of Object.entries({
         'index.html': '<script type="module" src="/app.ts"></script>',
         'app.ts':
-          'document.body.textContent="App"; globalThis.load=()=>import("./lazy.ts")',
+          'import "./base.css"; document.body.textContent="App"; globalThis.load=()=>import("./lazy.ts")',
+        'base.css': '@layer app { body { color: blue } }',
+        'utility.ts':
+          'import { Css } from "zyzz/web"; import "./cycle.ts"; export const compile = Css.compile',
+        'cycle.ts': 'import "./utility.ts"; // zyzz/web',
         'lazy.ts':
           'import {css} from "zyzz"; export const lazy=css({color:"blue"})()',
         'global.ts':
@@ -49,10 +53,46 @@ describe('zyzz', () => {
         .join('\n')
       expect(css).toMatchInlineSnapshot(`
         "@layer reset,app;
-        body{margin:0;}
+        body{margin:0;}@layer app { body { color: blue } }
         .z-hdbty1i04nhy-base0{color:blue;}"
       `)
     } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+  test('reloads shared styles after deleting the first transformed entry', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-shared-delete-'))
+    const server = await Vite.createServer({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      plugins: [zyzz()],
+      server: { watch: { usePolling: true, interval: 20 } },
+    })
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'first.ts'),
+        'import { global } from "zyzz/web"; global({body:{color:"red"}})',
+      )
+      await Fs.writeFile(
+        Path.join(root, 'second.ts'),
+        'import { global } from "zyzz/web"; global({body:{color:"blue"}})',
+      )
+      await server.transformRequest('/first.ts')
+      await server.transformRequest('/second.ts')
+      const removed = new Promise<void>((resolve) =>
+        server.watcher.once('unlink', () => resolve()),
+      )
+      await Fs.unlink(Path.join(root, 'first.ts'))
+      await removed
+      await expect
+        .poll(async () => {
+          const output = await server.transformRequest('\0zyzz:shared.css')
+          return output?.code
+        })
+        .toContain('blue')
+    } finally {
+      await server.close()
       await Fs.rm(root, { recursive: true, force: true })
     }
   })

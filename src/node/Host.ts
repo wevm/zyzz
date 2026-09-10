@@ -89,7 +89,14 @@ export async function create(options: create.Options): Promise<Runtime> {
         if (
           inside(outDir, path) ||
           entry.name === '.git' ||
-          entry.name === 'node_modules'
+          [
+            'node_modules',
+            'test',
+            'tests',
+            '__tests__',
+            'fixtures',
+            '__fixtures__',
+          ].includes(entry.name)
         )
           continue
         if (entry.isDirectory()) await scan(path)

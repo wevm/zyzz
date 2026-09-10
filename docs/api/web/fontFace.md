@@ -11,7 +11,7 @@ import { fontFace } from 'zyzz/web'
 fontFace({
   fontDisplay: 'swap',
   fontFamily: 'App Sans',
-  src: 'url("./app.woff2") format("woff2")',
+  src: 'url("/app.woff2") format("woff2")',
 })
 ```
 
@@ -26,10 +26,10 @@ fontFace({
 - Type: Static font-face descriptors
 - Required: Yes.
 
-Declared family, source, and other supported font-face descriptors. Relative URLs retain the owning source module.
+Declared family, source, and other supported font-face descriptors. URLs must be root-relative or absolute; relative asset relocation is not implemented.
 
 ```ts
-fontFace({ fontFamily: 'App Sans', src: 'url("./app.woff2") format("woff2")' })
+fontFace({ fontFamily: 'App Sans', src: 'url("/app.woff2") format("woff2")' })
 ```
 
 ### definition.fontDisplay
@@ -43,7 +43,7 @@ Controls font display behavior while loading.
 fontFace({
   fontDisplay: 'swap',
   fontFamily: 'App Sans',
-  src: 'url("./app.woff2")',
+  src: 'url("/app.woff2")',
 })
 ```
 
@@ -55,7 +55,7 @@ fontFace({
 Family name used by ordinary style declarations.
 
 ```ts
-fontFace({ fontFamily: 'App Sans', src: 'url("./app.woff2")' })
+fontFace({ fontFamily: 'App Sans', src: 'url("/app.woff2")' })
 ```
 
 ### definition.src
@@ -66,7 +66,7 @@ fontFace({ fontFamily: 'App Sans', src: 'url("./app.woff2")' })
 Font URL and optional format descriptor.
 
 ```ts
-fontFace({ fontFamily: 'App Sans', src: 'url("./app.woff2") format("woff2")' })
+fontFace({ fontFamily: 'App Sans', src: 'url("/app.woff2") format("woff2")' })
 ```
 
 ## Returns

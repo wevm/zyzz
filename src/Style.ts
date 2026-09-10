@@ -239,7 +239,7 @@ export function define(
                 ? {}
                 : {
                     condition: Condition.normalize(
-                      condition.startsWith(':') && !condition.includes('&')
+                      condition.startsWith(':') && !Condition.nested(condition)
                         ? `&${condition}`
                         : condition,
                     ),

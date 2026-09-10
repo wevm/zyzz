@@ -16,6 +16,46 @@ const project = Path.resolve(import.meta.dirname, '../..')
 const source = `import { css } from 'zyzz'; export const button = css({ padding: '8px' });`
 
 describe('create', () => {
+  test('excludes fixture contributions from standalone CSS', async () => {
+    const root = await Fs.mkdtemp(
+      Path.join(project, '.fixture-host-contributions-'),
+    )
+    const outDir = Path.join(root, 'output')
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        'import { global } from "zyzz/web"; global({body:{color:"blue"}})',
+      )
+      for (const directory of [
+        'test',
+        'tests',
+        '__tests__',
+        'fixtures',
+        '__fixtures__',
+      ]) {
+        await Fs.mkdir(Path.join(root, directory))
+        await Fs.writeFile(
+          Path.join(root, directory, 'reset.ts'),
+          'import { global } from "zyzz/web"; global({body:{color:"red"}})',
+        )
+      }
+      await using host = await Host.create({
+        root,
+        outDir,
+        packageId: 'example',
+      })
+      await host.build()
+      const css = await Fs.readFile(
+        Path.join(outDir, 'zyzz.shared.css'),
+        'utf8',
+      )
+      expect(css).toContain('#00f')
+      expect(css).not.toContain('red')
+      expect(css).not.toContain('#f00')
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
   test('await using drains builds and releases output ownership on scope exit', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-dispose-'))
     const outDir = Path.join(root, 'output')
@@ -30,9 +70,8 @@ describe('create', () => {
         })(),
       ).rejects.toThrowErrorMatchingInlineSnapshot('[Error: Scope failed]')
 
-      expect(
-        await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'),
-      ).toMatchInlineSnapshot(`
+      expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
+        .toMatchInlineSnapshot(`
         ".z-12ydhop55omeb-base0 {
           padding: 8px;
         }

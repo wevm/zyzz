@@ -129,7 +129,10 @@ export function collect(program: Ast.Program, namespace: string) {
     if (binding?.type === 'Import' && imports.has(binding.node.start)) {
       if (
         parent.type === 'MemberExpression' &&
-        calls.some((call) => parent.start === call.start)
+        (calls.some((call) => parent.start === call.start) ||
+          (!parent.computed &&
+            parent.property.type === 'Identifier' &&
+            parent.property.name === 'MissingTransformError'))
       )
         return true
       throw new InvalidError(

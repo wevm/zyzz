@@ -20,6 +20,9 @@ describe('stylesheet contributions', () => {
     global({ body: { padding: '-1px' } })
     // @ts-expect-error Font sources are required.
     fontFace({ fontFamily: 'App' })
+    keyframes({ 'from, 50%, to': { opacity: 0 } })
+    // @ts-expect-error Each comma-separated stop must be valid.
+    keyframes({ 'middle,bad': { opacity: 0 } })
     // @ts-expect-error Frame keys must be stop positions.
     keyframes({ middle: { opacity: 0 } })
   })

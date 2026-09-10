@@ -6,6 +6,8 @@ import * as Mapping from '@jridgewell/gen-mapping'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Parser from 'oxc-parser'
+import * as Walker from 'oxc-walker'
+import * as Scope from '../compiler/internal/Scope.js'
 import type { Environment, Plugin } from 'vite'
 import * as Graph from '../compiler/Graph.js'
 import * as Source from '../compiler/Source.js'
@@ -97,16 +99,88 @@ export function zyzz(): Plugin {
     )
   }
   function contributes(source: string) {
-    return (
-      source.includes('zyzz/web') ||
-      (source.includes('Config') && source.includes('layers'))
-    )
+    if (!source.includes('zyzz')) return false
+    const { program } = Parser.parseSync('source.tsx', source, {
+      sourceType: 'module',
+    })
+    const imports = new Map<number, string>()
+    for (const node of program.body) {
+      if (
+        node.type !== 'ImportDeclaration' ||
+        node.importKind === 'type' ||
+        !['zyzz', 'zyzz/web'].includes(node.source.value)
+      )
+        continue
+      for (const specifier of node.specifiers) {
+        if (
+          specifier.type !== 'ImportSpecifier' ||
+          specifier.importKind === 'type'
+        )
+          continue
+        const name =
+          specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value
+        if (
+          node.source.value === 'zyzz/web'
+            ? ['global', 'fontFace', 'keyframes', 'layers'].includes(name)
+            : name === 'Config'
+        )
+          imports.set(specifier.start, name)
+      }
+    }
+    if (!imports.size) return false
+    const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
+    Walker.walk(program, { scopeTracker })
+    scopeTracker.freeze()
+    let found = false
+    Walker.walk(program, {
+      scopeTracker,
+      enter(node) {
+        if (node.type !== 'CallExpression') return
+        const callee = node.callee
+        if (callee.type === 'Identifier') {
+          const binding = scopeTracker.getDeclaration(callee.name)
+          if (
+            binding?.type === 'Import' &&
+            imports.has(binding.node.start) &&
+            imports.get(binding.node.start) !== 'Config'
+          )
+            found = true
+        } else if (
+          callee.type === 'MemberExpression' &&
+          callee.object.type === 'Identifier' &&
+          !callee.computed &&
+          callee.property.type === 'Identifier' &&
+          callee.property.name === 'create'
+        ) {
+          const binding = scopeTracker.getDeclaration(callee.object.name)
+          const argument = node.arguments[0]
+          if (
+            binding?.type === 'Import' &&
+            imports.get(binding.node.start) === 'Config' &&
+            argument?.type === 'ObjectExpression' &&
+            argument.properties.some(
+              (property) =>
+                property.type === 'Property' &&
+                (property.key.type === 'Identifier'
+                  ? property.key.name === 'layers'
+                  : property.key.type === 'Literal' &&
+                    property.key.value === 'layers'),
+            )
+          )
+            found = true
+        }
+      },
+    })
+    return found
   }
   async function updateDiscovery(
     environment: Environment,
     file: string,
     event: string,
   ) {
+    if (event === 'delete') entries(environment).delete(file)
     const pending = discoveries.get(environment)
     if (!pending || !eager(file)) return
     const sources = await pending
@@ -329,9 +403,54 @@ export function zyzz(): Plugin {
       )
       // Keep the CSS dependency even when the current graph has no live rules.
       // Later edits can introduce styles without changing this import boundary.
+      const parsed = Parser.parseSync('source.tsx', output.code, {
+        sourceType: 'module',
+      })
+      let offset = output.code.startsWith('#!')
+        ? output.code.indexOf('\n') + 1
+        : 0
+      for (const node of parsed.program.body) {
+        if (node.type !== 'ExpressionStatement' || !node.directive) break
+        offset = node.end
+      }
+      const sharedImport = `\nimport ${JSON.stringify(sharedId)};\n`
+      const map = Mapping.fromMap(JSON.stringify(output.map))
+      // The inserted dependency shifts only generated positions after the prologue.
+      const before = output.code.slice(0, offset)
+      const insertionLine = before.split('\n').length
+      const insertionColumn = before.length - (before.lastIndexOf('\n') + 1)
+      const shifted = new Mapping.GenMapping()
+      for (const mapping of Mapping.allMappings(map)) {
+        const generated = { ...mapping.generated }
+        if (
+          generated.line > insertionLine ||
+          (generated.line === insertionLine &&
+            generated.column >= insertionColumn)
+        ) {
+          if (generated.line === insertionLine)
+            generated.column -= insertionColumn
+          generated.line += 2
+        }
+        if (mapping.source !== undefined && mapping.original !== undefined) {
+          const location = {
+            generated,
+            original: mapping.original,
+            source: mapping.source,
+          }
+          if (mapping.name === undefined) Mapping.addMapping(shifted, location)
+          else Mapping.addMapping(shifted, { ...location, name: mapping.name })
+        } else Mapping.addMapping(shifted, { generated })
+      }
+      for (const [index, source] of output.map.sources.entries())
+        if (source !== null)
+          Mapping.setSourceContent(
+            shifted,
+            source,
+            output.map.sourcesContent?.[index] ?? null,
+          )
       return {
-        code: `${output.code}\nimport ${JSON.stringify(sharedId)};\nimport ${JSON.stringify(cssId(id))};`,
-        map: JSON.stringify(output.map),
+        code: `${before}${sharedImport}${output.code.slice(offset)}\nimport ${JSON.stringify(cssId(id))};`,
+        map: JSON.stringify(Mapping.toEncodedMap(shifted)),
       }
     },
   }

@@ -12,13 +12,18 @@ describe('create', () => {
         const options = { count: 10, kind, library }
         const output = await Runtime.create(options)
         await Runtime.verify(output, options)
-        const input = { className: 'external', style: { color: '#123456', paddingLeft: '2px' } }
+        const input = {
+          className: 'external',
+          style: { color: '#123456', paddingLeft: '2px' },
+        }
         const before = JSON.stringify(input)
         for (let index = 0; index < options.count; index++) {
           const props = output.apply(index, input)
           expect(typeof props.className).toMatchInlineSnapshot(`"string"`)
           if (kind === 'overrides') {
-            expect(props.className.endsWith(' external')).toMatchInlineSnapshot(`true`)
+            expect(props.className.endsWith(' external')).toMatchInlineSnapshot(
+              `true`,
+            )
             expect(props.style).toMatchInlineSnapshot(`
               {
                 "color": "#123456",

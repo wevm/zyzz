@@ -78,26 +78,53 @@ export async function create(options: create.Options): Promise<Bundle> {
               return applications[index](${kind === 'overrides' ? 'overrides' : ''});
             }`
         })()
-        const output = Transform.compile({ moduleId: 'benchmark/runtime.ts', source })
-        return { css: Compilation.minify(output.css), javascript: await bundle(output.code) }
+        const output = Transform.compile({
+          moduleId: 'benchmark/runtime.ts',
+          source,
+        })
+        return {
+          css: Compilation.minify(output.css),
+          javascript: await bundle(output.code),
+        }
       }
       if (library === 'baseline') {
-        const css = literals.map((style, index) =>
-          `.card${index}{${Object.entries(style).map(([key, value]) => `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}`).join(';')}}`,
-        ).join('')
+        const css = literals
+          .map(
+            (style, index) =>
+              `.card${index}{${Object.entries(style)
+                .map(
+                  ([key, value]) =>
+                    `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}`,
+                )
+                .join(';')}}`,
+          )
+          .join('')
         return {
           css: Compilation.minify(css),
-          javascript: await bundle(application(names.map((name) => `({className:${JSON.stringify(name)}})`))),
+          javascript: await bundle(
+            application(
+              names.map((name) => `({className:${JSON.stringify(name)}})`),
+            ),
+          ),
         }
       }
       if (library === 'panda') {
-        await Fs.writeFile(Path.join(fixture.directory, 'panda.ts'),
+        await Fs.writeFile(
+          Path.join(fixture.directory, 'panda.ts'),
           `import { css } from './styled-system/css'; ${application(literals.map((style) => `({className:css(${JSON.stringify(style)})})`))}`,
         )
         // The compiler adapter re-exports classes; expose the application through it.
-        await Fs.appendFile(Path.join(fixture.directory, 'panda.ts'), '\nexport const classes = apply;')
+        await Fs.appendFile(
+          Path.join(fixture.directory, 'panda.ts'),
+          '\nexport const classes = apply;',
+        )
         const output = await Compilation.panda(fixture)
-        return { ...output, javascript: await bundle(`${output.javascript}\nexport const apply = fixture.classes;`) }
+        return {
+          ...output,
+          javascript: await bundle(
+            `${output.javascript}\nexport const apply = fixture.classes;`,
+          ),
+        }
       }
       if (library === 'stylex') {
         fixture.stylex = `import * as stylex from '@stylexjs/stylex';
@@ -108,12 +135,17 @@ export async function create(options: create.Options): Promise<Bundle> {
       const output = await Compilation.compilers[library](fixture)
       return {
         ...output,
-        javascript: await bundle(`${output.javascript}\n${application(names.map((_, index) => `({className:fixture.classes[${index}]})`))}`),
+        javascript: await bundle(
+          `${output.javascript}\n${application(names.map((_, index) => `({className:fixture.classes[${index}]})`))}`,
+        ),
       }
     })()
     // Only compiled, bundled fixture code executes; authoring remains build-time.
-    const exports = Vm.runInThisContext(`(() => {${compiled.javascript}; return fixture;})()`)
-    if (typeof exports.apply !== 'function') throw new Error(`${library} emitted no application.`)
+    const exports = Vm.runInThisContext(
+      `(() => {${compiled.javascript}; return fixture;})()`,
+    )
+    if (typeof exports.apply !== 'function')
+      throw new Error(`${library} emitted no application.`)
     return { ...compiled, apply: exports.apply }
   } finally {
     await Fs.rm(fixture.directory, { force: true, recursive: true })
@@ -134,43 +166,81 @@ export declare namespace create {
 }
 
 /** Verifies every component and both updates against independent native CSS. */
-export async function verify(output: Bundle, options: create.Options): Promise<void> {
+export async function verify(
+  output: Bundle,
+  options: create.Options,
+): Promise<void> {
   const browser = await chromium.launch()
   try {
     const page = await browser.newPage()
-    await page.setContent('<!doctype html><html><head></head><body></body></html>')
+    await page.setContent(
+      '<!doctype html><html><head></head><body></body></html>',
+    )
     await page.addStyleTag({ content: output.css })
     await page.addScriptTag({ content: output.javascript })
-    const differences = await page.evaluate(({ kind, literals, overrides }) => {
-      const { apply } = (window as unknown as { fixture: Pick<Bundle, 'apply'> }).fixture
-      const differences: string[] = []
-      for (const [index, literal] of literals.entries()) {
-        const actual = document.createElement('div')
-        const reference = document.createElement('div')
-        document.body.append(actual, reference)
-        for (const input of overrides) {
-          const props = apply(index, input)
-          actual.className = props.className
-          actual.removeAttribute('style')
-          Object.assign(actual.style, props.style)
-          reference.removeAttribute('style')
-          Object.assign(reference.style, literal, kind === 'overrides' ? input.style : {})
-          const actualStyle = getComputedStyle(actual)
-          const referenceStyle = getComputedStyle(reference)
-          for (const property of new Set([...Object.keys(literal), 'paddingLeft'])) {
-            const key = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)
-            if (actualStyle.getPropertyValue(key) !== referenceStyle.getPropertyValue(key))
-              differences.push(`${index}: ${key}`)
+    const differences = await page.evaluate(
+      ({ kind, literals, overrides }) => {
+        const { apply } = (
+          window as unknown as { fixture: Pick<Bundle, 'apply'> }
+        ).fixture
+        const differences: string[] = []
+        for (const [index, literal] of literals.entries()) {
+          const actual = document.createElement('div')
+          const reference = document.createElement('div')
+          document.body.append(actual, reference)
+          for (const input of overrides) {
+            const props = apply(index, input)
+            actual.className = props.className
+            actual.removeAttribute('style')
+            Object.assign(actual.style, props.style)
+            reference.removeAttribute('style')
+            Object.assign(
+              reference.style,
+              literal,
+              kind === 'overrides' ? input.style : {},
+            )
+            const actualStyle = getComputedStyle(actual)
+            const referenceStyle = getComputedStyle(reference)
+            for (const property of new Set([
+              ...Object.keys(literal),
+              'paddingLeft',
+            ])) {
+              const key = property.replace(
+                /[A-Z]/g,
+                (letter) => `-${letter.toLowerCase()}`,
+              )
+              if (
+                actualStyle.getPropertyValue(key) !==
+                referenceStyle.getPropertyValue(key)
+              )
+                differences.push(`${index}: ${key}`)
+            }
+            if (
+              kind === 'overrides' &&
+              input.className &&
+              !actual.classList.contains(input.className)
+            )
+              differences.push(`${index}: external class`)
           }
-          if (kind === 'overrides' && input.className && !actual.classList.contains(input.className))
-            differences.push(`${index}: external class`)
+          actual.remove()
+          reference.remove()
         }
-        actual.remove()
-        reference.remove()
-      }
-      return differences
-    }, { kind: options.kind, literals: Corpus.styles({ count: options.count, name: 'runtime', pattern: 'partial' }), overrides })
-    if (differences.length) throw new Error(`${options.library} browser mismatch: ${differences.join(', ')}`)
+        return differences
+      },
+      {
+        kind: options.kind,
+        literals: Corpus.styles({
+          count: options.count,
+          name: 'runtime',
+          pattern: 'partial',
+        }),
+        overrides,
+      },
+    )
+    if (differences.length)
+      throw new Error(
+        `${options.library} browser mismatch: ${differences.join(', ')}`,
+      )
   } finally {
     await browser.close()
   }

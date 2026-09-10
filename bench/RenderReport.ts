@@ -76,3 +76,52 @@ if (data.groups.length !== expected) throw new Error('Unexpected groups')
 console.log(
   '\nPerformance comparisons are advisory while repeatability is established. Missing measurements and browser correctness failures fail CI. Dynamic slots compare only Zyzz and native CSS; no dynamic ranking of other frameworks is implied. Function microbenchmarks are separate diagnostics.\n',
 )
+
+const basePath = Path.join(directory, 'render-base', 'render-timings.json')
+if (
+  await Fs.access(basePath).then(
+    () => true,
+    () => false,
+  )
+) {
+  const base = JSON.parse(await Fs.readFile(basePath, 'utf8')) as {
+    groups: Render.Group[]
+  }
+  console.log('### Zyzz Base Comparison\n')
+  console.log(
+    'Same runner and candidate harness; base runs first. Sequential order remains a source of drift. Values are commit + layout medians in milliseconds, not isolated styling costs.\n',
+  )
+  console.log(
+    '| Cards | Workload | Operation | Pass | Base ms | Candidate ms | Change |',
+  )
+  console.log('| ---: | --- | --- | ---: | ---: | ---: | ---: |')
+  for (const group of data.groups.filter((group) => group.library === 'zyzz')) {
+    const before = base.groups.find(
+      (item) =>
+        item.library === 'zyzz' &&
+        item.components === group.components &&
+        item.kind === group.kind &&
+        item.pass === group.pass,
+    )
+    if (!before) throw new Error('Missing base render group')
+    for (const operation of ['mount', 'update', 'remount']) {
+      const median = (samples: Render.Group['samples']) => {
+        const values = samples
+          .filter((sample) => sample.operation === operation)
+          .map((sample) => sample.commitLayout)
+          .sort((a, b) => a - b)
+        if (
+          values.length !== 20 ||
+          values.some((value) => !Number.isFinite(value) || value < 0)
+        )
+          throw new Error('Invalid base samples')
+        return values[9]!
+      }
+      const oldValue = median(before.samples)
+      const newValue = median(group.samples)
+      console.log(
+        `| ${group.components} | ${group.kind} | ${operation} | ${group.pass} | ${oldValue.toFixed(2)} | ${newValue.toFixed(2)} | ${oldValue ? ((newValue / oldValue - 1) * 100).toFixed(1) + '%' : 'n/a'} |`,
+      )
+    }
+  }
+}

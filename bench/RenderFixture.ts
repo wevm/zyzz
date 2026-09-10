@@ -119,6 +119,7 @@ export function create(options: create.Options) {
       }
     } finally {
       reference.remove()
+      container.getBoundingClientRect()
     }
   }
 
@@ -126,6 +127,7 @@ export function create(options: create.Options) {
     async cycle(): Promise<readonly Sample[]> {
       root?.unmount()
       root = undefined
+      container.getBoundingClientRect()
       const mount = await render(0, true)
       verify(0)
       previous = container.querySelector('article')
@@ -141,6 +143,7 @@ export function create(options: create.Options) {
         }
         root!.render(React.createElement(Empty))
       })
+      container.getBoundingClientRect()
       const remount = await render(0, false)
       if (previous === container.querySelector('article'))
         throw new Error('Remount reused DOM')

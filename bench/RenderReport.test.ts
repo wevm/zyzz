@@ -36,7 +36,7 @@ describe('render report', () => {
                 library,
                 pass,
                 samples: Array.from({ length: 20 }, () =>
-                  ['mount', 'update', 'remount'].map(
+                  (['mount', 'update', 'remount'] as const).map(
                     (operation) =>
                       ({
                         commit: 1,
@@ -45,7 +45,7 @@ describe('render report', () => {
                         operation,
                       }) as const,
                   ),
-                ).flat() as Render.Group['samples'],
+                ).flat(),
               })
       const path = Path.join(directory, 'render-timings.json')
       await Fs.writeFile(

@@ -41,9 +41,9 @@ node bench/RuntimeReport.ts bench/results
 pnpm test bench/Runtime.test.ts --run --no-file-parallelism
 ```
 
-The existing Benchmark Report includes every framework and observed loss. A competitor faster beyond reported uncertainty in both passes fails the runtime gate. Overlapping intervals are inconclusive, not evidence of a Zyzz win. The native control is informational; existing compiler/transfer gates remain unchanged.
+The diagnostic report includes every framework and observed loss. A competitor faster beyond reported uncertainty in both passes is reported without failing CI. Overlapping intervals are inconclusive, not evidence of a Zyzz win. The native control is informational; existing compiler/transfer gates remain unchanged.
 
-These are browser JavaScript application measurements, not React rendering or layout timings. Tailwind, vanilla-extract, and the native control read class strings directly without per-style wrapper closures. Initial mount, unchanged rerenders, changed props, allocation profiling, packed consumption, and dynamic binding remain follow-ups. Variant comparisons must accompany the first variants implementation; this harness does not simulate an unavailable API.
+These are browser JavaScript application measurements, not React rendering or layout timings. Tailwind, vanilla-extract, and the native control read class strings directly without per-style wrapper closures. The React suite above now covers mounts and changed-prop updates. Unchanged rerenders, allocation profiling, and packed consumption remain follow-ups. Variant comparisons must accompany the first variants implementation; this harness does not simulate an unavailable API.
 
 The current Zyzz props helper includes override validation and inline-style copying. The benchmark measures that shipped behavior without removing checks or assigning competing frameworks artificial work. Runtime advantages must be established by measured results; cached class applications can have indistinguishable costs.
 
@@ -59,7 +59,7 @@ Measured on Chromium 153.0.8010.12 in [run 34467564716](https://github.com/wevm/
 | vanilla-extract |    4.59–4.60 |    9.85–10.0 |              18.9 |
 | Zyzz            |    4.60–4.70 |    73.4–74.0 |           166–167 |
 
-Cached results overlap across the two passes; no Zyzz advantage is established. Both callable and override results are slower than StyleX, Tailwind, and vanilla-extract beyond reported uncertainty in both passes, and faster than Panda. The 100-style workload has the same outcome. The runtime gate correctly fails.
+Cached results overlap across the two passes; no Zyzz advantage is established. Both callable and override results are slower than StyleX, Tailwind, and vanilla-extract beyond reported uncertainty in both passes, and faster than Panda. The 100-style workload has the same outcome. The historical function-only gate failed; that gate has since been replaced by render reporting.
 
 Relative error for these application/override measurements is about 0.8–5.9%. These are browser JavaScript costs only, not component rendering, layout, or interaction latency. Zyzz's remaining override validation and style copying are optimization candidates; this run does not isolate their individual contributions.
 
@@ -291,7 +291,7 @@ contains all 100 samples per pass, relative error, environment, and delivery siz
 Cached props remain around 4 ns. Optimized callables and overrides beat StyleX
 and Panda in both passes, but Tailwind and vanilla-extract remain faster:
 roughly 9 ns for their direct class-string application versus Zyzz's 11 ns;
-15–18 ns for overrides versus Zyzz's 21 ns. The runtime gate correctly stays red.
+15–18 ns for overrides versus Zyzz's 21 ns. The historical function-only gate stayed red; that gate has since been replaced by render reporting.
 The direct-switch workload is noisy at 10 styles and inconclusive against the
 other static frameworks at 100 styles. Dynamic matches the native control within
 uncertainty at 10 styles; at 100, the control remains around 31 ns.

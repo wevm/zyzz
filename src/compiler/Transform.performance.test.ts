@@ -39,7 +39,7 @@ describe('compile', () => {
       consumer.failed,
       first[0] !== second[0],
       first[1] !== second[1],
-      output.code.includes('(styles.button,{className:'),
+      output.code.includes('(styles.button?{className:'),
     ]).toMatchInlineSnapshot(`
       [
         true,
@@ -50,6 +50,29 @@ describe('compile', () => {
     `)
   })
 
+  test('bundled calls still fail when invoked before initialization', async () => {
+    const output = Transform.compile({
+      moduleId: 'early.ts',
+      source: `import {css} from 'zyzz';
+      export function early(){return card()}
+      export let failed=false;
+      try {early()} catch(error){failed=error instanceof Error}
+      const card=css({color:'red'});`,
+    })
+    const bundle = await Esbuild.build({
+      alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+      bundle: true,
+      format: 'esm',
+      minify: true,
+      stdin: { contents: output.code, loader: 'ts', resolveDir: process.cwd() },
+      write: false,
+    })
+    const consumer = await import(
+      `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0]!.text).toString('base64')}`
+    )
+    expect(consumer.failed).toMatchInlineSnapshot(`true`)
+  })
+
   test('retains escaping objects, shadowed bindings, overrides, and optional calls', async () => {
     for (const body of [
       `const styles={button:css({color:'red'})}; export {styles}; export function apply(){return styles.button()}`,
@@ -58,7 +81,7 @@ describe('compile', () => {
       `const card=css({color:'red'}); export function apply(){return card?.()}`,
     ]) {
       const { output } = await execute(`import {css} from 'zyzz'; ${body}`)
-      expect(output.code.includes(',{className:')).toMatchInlineSnapshot(
+      expect(output.code.includes('?{className:')).toMatchInlineSnapshot(
         `false`,
       )
     }

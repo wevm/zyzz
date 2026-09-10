@@ -150,11 +150,11 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   for (const application of Applications.find(program, extracted.calls)) {
     const className = JSON.stringify(classes[application.name])
-    // Retain the original read, including its temporal dead zone behavior.
+    // Keep a callable guard so bundlers also retain failures before initialization.
     module.overwrite(
       application.start,
       application.end,
-      `(${options.source.slice(application.start, application.calleeEnd)},{className:${className}})`,
+      `(${options.source.slice(application.start, application.calleeEnd)}?{className:${className}}:${options.source.slice(application.start, application.calleeEnd)}())`,
     )
   }
 

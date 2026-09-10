@@ -125,6 +125,20 @@ export async function create(options: create.Options): Promise<Runtime> {
         ]),
       ),
     })
+    if (graph.sharedCss) {
+      const shared =
+        css === false
+          ? graph.sharedCss
+          : Buffer.from(
+              LightningCss.transform({
+                code: Buffer.from(graph.sharedCss),
+                filename: 'zyzz.shared.css',
+                minify: css.minify,
+                targets: css.targets,
+              }).code,
+            ).toString()
+      artifacts.set('zyzz.shared.css', shared)
+    }
     for (const name of Object.keys(sources)) {
       const output = graph.modules[`${options.packageId}/${name}`]!
 

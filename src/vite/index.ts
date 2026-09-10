@@ -128,11 +128,37 @@ export function zyzz(): Plugin {
       }
     }
     await visit(entry.file, code)
+    const connected = new Set(files)
+    async function collect(directory: string): Promise<void> {
+      for (const item of await Fs.readdir(directory, { withFileTypes: true })) {
+        if (
+          item.name.startsWith('.') ||
+          ['node_modules', 'dist', 'build', 'coverage'].includes(item.name)
+        )
+          continue
+        const file = Path.join(directory, item.name)
+        if (item.isDirectory()) await collect(file)
+        else if (item.isFile() && eligible(file) && !files.has(file)) {
+          const source = await Fs.readFile(file, 'utf8')
+          if (
+            source.includes('zyzz/web') ||
+            (source.includes('Config') && source.includes('layers'))
+          )
+            await visit(file, source)
+          else {
+            files.add(file)
+            host.watch(file)
+          }
+        }
+      }
+    }
+    await collect(root)
     const result = entry.compiler.compile({ contracts, imports, modules })
     const map = new Mapping.GenMapping()
     const styles: string[] = []
     let line = 0
-    for (const output of Object.values(result.modules)) {
+    for (const [id, output] of Object.entries(result.modules)) {
+      if (!connected.has(Path.join(root, id.slice(4)))) continue
       if (!output.css) continue
       for (const mapping of Mapping.allMappings(
         Mapping.fromMap(JSON.stringify(output.cssMap)),
@@ -166,6 +192,7 @@ export function zyzz(): Plugin {
     return {
       code: output.code,
       css: styles.join('\n'),
+      sharedCss: result.sharedCss ?? '',
       cssMap: Mapping.toEncodedMap(map),
       map: {
         ...output.map,
@@ -187,7 +214,7 @@ export function zyzz(): Plugin {
         if (!entry.files.has(file) && !(type === 'create' && eligible(file)))
           continue
         // Theme scopes affect CSS even when Vite's JavaScript import was erased.
-        for (const id of [entry.file, cssId(entry.file)]) {
+        for (const id of [entry.file, cssId(entry.file), sharedId]) {
           const module = this.environment.moduleGraph.getModuleById(id)
           if (!module) continue
           this.environment.moduleGraph.invalidateModule(
@@ -203,13 +230,20 @@ export function zyzz(): Plugin {
     },
     async load(id) {
       if (!id.startsWith(prefix)) return
-      const file = decodeURIComponent(id.slice(prefix.length, -4))
-      const entry = entries(this.environment).get(file)
+      const file =
+        id === sharedId
+          ? undefined
+          : decodeURIComponent(id.slice(prefix.length, -4))
+      const entry =
+        file === undefined
+          ? entries(this.environment).values().next().value
+          : entries(this.environment).get(file)
       if (!entry) throw new Error(`Unknown Zyzz stylesheet: ${file}`)
       const output = await compile(entry, {
         resolve: (source, importer) => this.resolve(source, importer),
         watch: (file) => this.addWatchFile(file),
       })
+      if (id === sharedId) return { code: output.sharedCss }
       return { code: output.css, map: JSON.stringify(output.cssMap) }
     },
     name: 'zyzz',
@@ -235,7 +269,7 @@ export function zyzz(): Plugin {
       // Keep the CSS dependency even when the current graph has no live rules.
       // Later edits can introduce styles without changing this import boundary.
       return {
-        code: `${output.code}\nimport ${JSON.stringify(cssId(id))};`,
+        code: `${output.code}\nimport ${JSON.stringify(sharedId)};\nimport ${JSON.stringify(cssId(id))};`,
         map: JSON.stringify(output.map),
       }
     },
@@ -260,6 +294,7 @@ type Host = {
 }
 
 const prefix = '\0zyzz:'
+const sharedId = `${prefix}shared.css`
 
 function cssId(file: string) {
   return `${prefix}${encodeURIComponent(file)}.css`

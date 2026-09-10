@@ -847,7 +847,9 @@ export function collect(program: Ast.Program, options: collect.Options) {
         object?.type !== 'ObjectExpression' ||
         call?.type !== 'CallExpression' ||
         call.arguments[0] !== argument ||
-        (!variable && !styles.has(call.start))
+        (!variable &&
+          !styles.has(call.start) &&
+          !options.contributionCalls?.has(call.start))
       )
         fail(
           'Token references must be direct property values in bound theme css calls.',
@@ -937,6 +939,7 @@ export declare namespace collect {
   /** Stable module namespace, independent of token values and call offsets. */
   type Options = {
     /** Encoded package/module identity from the source adapter. */
+    readonly contributionCalls?: ReadonlySet<number> | undefined
     readonly namespace: string
     readonly linked?: boolean | undefined
     readonly links?: Readonly<Record<string, Link>> | undefined

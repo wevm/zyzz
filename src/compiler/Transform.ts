@@ -35,15 +35,6 @@ export function compile(options: compile.Options): compile.ReturnType {
     sourceType: 'module',
   }).program
 
-  for (const call of extracted.variableCalls ?? []) {
-    const slots = Object.entries(call.slots)
-      .map(
-        ([key, slot]) =>
-          `[${JSON.stringify(key)}]:Object.freeze(${JSON.stringify(slot)})`,
-      )
-      .join(',')
-    module.overwrite(call.start, call.end, `Object.freeze({${slots}})`)
-  }
   type Span = Pick<Ast.Node, 'end' | 'start'>
   const applications = new Map<number, { end: number; folded: boolean }>()
   const calls = new Map(extracted.calls.map((call) => [call.start, call]))
@@ -89,6 +80,18 @@ export function compile(options: compile.Options): compile.ReturnType {
   let runtime = '__zyzzProps'
   while (identifiers.has(runtime)) runtime += '_'
 
+  let freeze = '__zyzzFreeze'
+  while (identifiers.has(freeze)) freeze += '_'
+
+  for (const call of extracted.variableCalls ?? []) {
+    const slots = Object.entries(call.slots)
+      .map(
+        ([key, slot]) =>
+          `[${JSON.stringify(key)}]:${freeze}.create(${JSON.stringify(slot)})`,
+      )
+      .join(',')
+    module.overwrite(call.start, call.end, `${freeze}.create({${slots}})`)
+  }
   const first = extracted.calls[0]
   const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
   const names = new Map<string, string>()
@@ -260,7 +263,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable || dynamicCallable) {
+  if (callable || dynamicCallable || extracted.variableCalls?.length) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -272,7 +275,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[callable ? `Props as ${runtime}` : '', dynamicCallable ? `Dynamic as ${dynamicRuntime}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[callable ? `Props as ${runtime}` : '', dynamicCallable ? `Dynamic as ${dynamicRuntime}` : '', extracted.variableCalls?.length ? `Freeze as ${freeze}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 
@@ -375,11 +378,15 @@ export function compile(options: compile.Options): compile.ReturnType {
           ? style.rules.flatMap((rule) => declarations(rule.style))
           : style.declarations
       }
+      const conditionNodes: Extract<Ast.Node, { type: 'Property' }>[] = []
       function locations(node: Ast.ObjectExpression): readonly Ast.Node[] {
         return node.properties.flatMap((property) => {
           if (property.type !== 'Property') return []
           const value = Expression.unwrap(property.value)
-          if (value.type === 'ObjectExpression') return locations(value)
+          if (value.type === 'ObjectExpression') {
+            conditionNodes.push(property)
+            return locations(value)
+          }
           if (value.type === 'ArrayExpression')
             return value.elements.filter(
               (node): node is NonNullable<typeof node> => node !== null,
@@ -389,6 +396,17 @@ export function compile(options: compile.Options): compile.ReturnType {
       }
       const ordered = declarations(style)
       const authored = locations(definitions.get(call.start)!)
+      const conditionStarts = declarationStarts(body, true)
+      for (const [index, start] of conditionStarts.entries()) {
+        const node = conditionNodes[index]
+        if (!node) continue
+        Mapping.addMapping(cssMap, {
+          generated: { column: selector.length + start, line },
+          name: options.source.slice(node.key.start, node.key.end),
+          original: position(node.key.start),
+          source: options.moduleId,
+        })
+      }
       const starts = declarationStarts(body)
       let cursor = 1
       for (
@@ -465,7 +483,10 @@ export declare namespace compile {
 }
 
 /** Locates emitted declarations while skipping selectors, conditions, and quoted CSS data. */
-function declarationStarts(body: string): readonly number[] {
+function declarationStarts(
+  body: string,
+  conditions = false,
+): readonly number[] {
   const starts: number[] = []
   let start = 0
   let depth = 0
@@ -505,7 +526,10 @@ function declarationStarts(body: string): readonly number[] {
       custom = true
     if (char === '{') {
       if (custom) blocks++
-      else start = index + 1
+      else {
+        if (conditions && index > start) starts.push(start)
+        start = index + 1
+      }
     } else if (char === '}') {
       if (blocks) blocks--
       else {
@@ -514,7 +538,7 @@ function declarationStarts(body: string): readonly number[] {
       }
     } else if (char === ';' && !blocks) {
       while (/\s/.test(body[start] ?? '') && start < index) start++
-      starts.push(start)
+      if (!conditions) starts.push(start)
       start = index + 1
       custom = false
     }

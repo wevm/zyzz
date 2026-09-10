@@ -9,6 +9,50 @@ import { Graph, Transform } from 'zyzz/compiler'
 const source =
   'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); export const box=theme.css({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:"100px","&[data-active]":{height:"20px"}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
 describe('compile', () => {
+  test('maps condition keys and supports local dynamic selector lists', () => {
+    const source = `import {css} from 'zyzz'; css((v:{alpha:number})=>({'&:hover, &:focus':{opacity:v.alpha},'@media screen':{color:'red'}}))`
+    const output = Transform.compile({ moduleId: 'keys.ts', source })
+    const map = new Trace.TraceMap(output.cssMap)
+    for (const key of ['&:hover, &:focus', '@media screen']) {
+      const location = Trace.originalPositionFor(map, {
+        line: 1,
+        column: output.css.indexOf(key),
+      })
+      expect(location.column).toBe(source.indexOf(`'${key}'`))
+    }
+  })
+  test('freezes nested diagnostic paths and locations', () => {
+    try {
+      Reflect.apply(Style.define, undefined, [
+        { box: { ':hover': { color: [] } } },
+        {
+          locations: [
+            {
+              path: ['box', ':hover', 'color'],
+              source: 'input.ts',
+              start: 1,
+              end: 2,
+            },
+          ],
+        },
+      ])
+      throw new Error('Expected validation failure')
+    } catch (error) {
+      expect(error).toBeInstanceOf(Style.InvalidError)
+      if (!(error instanceof Style.InvalidError)) throw error
+      const diagnostic = error.diagnostics[0]!
+      expect(
+        [
+          diagnostic,
+          diagnostic.path,
+          diagnostic.location,
+          diagnostic.location?.path,
+        ].every(Object.isFrozen),
+      ).toBe(true)
+      expect(diagnostic.location?.path).toEqual(['box', ':hover', 'color'])
+    }
+  })
+
   test('preserves explicit pseudo relationships and qualified media types', () => {
     expect(
       Transform.compile({
@@ -119,6 +163,21 @@ describe('compile', () => {
         "source": "mapped.ts",
       }
     `)
+  })
+  test('requires nesting in every selector list member', () => {
+    for (const selector of ['&:hover, :focus', ':hover, &:focus'])
+      expect(() =>
+        Transform.compile({
+          moduleId: 'list.ts',
+          source: `import {css} from 'zyzz'; css({${JSON.stringify(selector)}:{color:'red'}})`,
+        }),
+      ).toThrow('Selector lists require explicit & selectors.')
+    expect(
+      Transform.compile({
+        moduleId: 'list.ts',
+        source: `import {css} from 'zyzz'; css({'&:is(:hover, :focus), &:active':{color:'red'}})`,
+      }).css,
+    ).toContain('&:is(')
   })
   test('requires explicit nesting in pseudo selector lists', () => {
     expect(() =>

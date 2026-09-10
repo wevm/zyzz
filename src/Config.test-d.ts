@@ -6,6 +6,15 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, Theme } from 'zyzz'
 
 describe('create', () => {
+  test('checks configured callback domains', () => {
+    const { css } = Config.create()
+    // @ts-expect-error Configured callbacks cannot use broad numbers for integer slots.
+    css((values: { order: number }) => ({ order: values.order }))
+    // @ts-expect-error Reserved styling fields cannot be callback slots.
+    css((values: { style: string }) => ({ color: values.style }))
+    css((values: { alpha: number }) => ({ opacity: values.alpha }))
+  })
+
   test('preserves token domains in grouped styles from destructured helpers', () => {
     const { css, theme } = Config.create({
       theme: { color: { brand: '#06c' }, spacing: { md: '8px' } },

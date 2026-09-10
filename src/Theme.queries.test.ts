@@ -101,6 +101,24 @@ describe('compile', () => {
       ),
     ).toMatchInlineSnapshot(`false`)
   })
+  test('rejects sparse and accessor container identities', () => {
+    const sparse: string[] = []
+    sparse.length = 1
+    expect(() => Theme.define({ containerNames: sparse })).toThrow(
+      Theme.InvalidError,
+    )
+    let invoked = false
+    const names = Object.defineProperty([], '0', {
+      get() {
+        invoked = true
+        return 'card'
+      },
+    })
+    expect(() => Theme.define({ containerNames: names })).toThrow(
+      Theme.InvalidError,
+    )
+    expect(invoked).toMatchInlineSnapshot(`false`)
+  })
   test('emits typography variables without emitting threshold variables', () => {
     const theme = Theme.define({
       breakpoints: { tablet: '48rem' },

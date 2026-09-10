@@ -18,7 +18,9 @@ export function threshold(value: unknown): value is string {
   return (
     !!match &&
     Number.isFinite(Number(match[1])) &&
-    Literal.lengthUnits.includes(match[2] as never) &&
+    Literal.lengthUnits.some(
+      (unit) => unit.toLowerCase() === match[2]!.toLowerCase(),
+    ) &&
     match[2] !== '%'
   )
 }
@@ -32,8 +34,7 @@ export function resolve(key: string, metadata: Metadata): string {
   if (
     text.includes('(') ||
     (kind === 'media' &&
-      /^(?:(?:only|not)\s+)?(?:all|print|screen)(?:\s|,|$)/.test(text)) ||
-    (kind === 'media' && ['all', 'print', 'screen'].includes(text))
+      /^(?:(?:only|not)\s+)?(?:all|print|screen)(?:\s|,|$)/.test(text))
   )
     return key
   const pieces = text.split(' ')
@@ -56,7 +57,9 @@ export function resolve(key: string, metadata: Metadata): string {
       const lower = read(range[0]!)
       const upper = read(range[1]!)
       const unit = (value: string) =>
-        value.replace(/^[+]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?/, '')
+        value
+          .replace(/^[+]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?/, '')
+          .toLowerCase()
       if (unit(lower) === unit(upper) && parseFloat(lower) >= parseFloat(upper))
         throw new Error('Query range must increase.')
       return `${lower} <= width < ${upper}`

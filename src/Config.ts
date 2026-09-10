@@ -2,6 +2,7 @@
  * Normalizes explicit configuration into isolated typed authoring contracts.
  * @module
  */
+import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
 import { css } from './css.js'
 import type * as Style from './Style.js'
@@ -169,7 +170,11 @@ type Css<tokens extends Theme.Tokens, layers extends string> = {
     const values extends Record<string, string | number>,
     const styles extends Record<string, unknown>,
   >(
-    styles: (values: values) => styles & NoInfer<Body<styles, tokens, layers>>,
+    styles: ((
+      values: values,
+    ) => styles &
+      NoInfer<Body<styles, tokens, layers> & Binding.Checked<styles>>) &
+      (values extends Binding.Inputs<values> ? unknown : never),
   ): css.Dynamic<values>
   <const styles extends Record<string, unknown>>(
     styles: styles & NoInfer<Body<styles, tokens, layers>>,

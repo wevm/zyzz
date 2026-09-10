@@ -251,22 +251,26 @@ export function define(
             diagnostics.push(
               ...error.diagnostics.map((diagnostic) =>
                 Condition.is(key)
-                  ? {
+                  ? Object.freeze({
                       ...diagnostic,
-                      path: [name, key, ...diagnostic.path.slice(1)],
+                      path: Object.freeze([
+                        name,
+                        key,
+                        ...diagnostic.path.slice(1),
+                      ]),
                       ...(diagnostic.location
                         ? {
-                            location: {
+                            location: Object.freeze({
                               ...diagnostic.location,
-                              path: [
+                              path: Object.freeze([
                                 name,
                                 key,
                                 ...diagnostic.location.path.slice(1),
-                              ],
-                            },
+                              ]),
+                            }),
                           }
                         : {}),
-                    }
+                    })
                   : diagnostic,
               ),
             )

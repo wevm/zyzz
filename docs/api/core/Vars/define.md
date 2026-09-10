@@ -48,3 +48,5 @@ Dynamic callbacks are a separate authoring feature. Shared contracts are for bin
 See [Vars](README.md) for related methods and types.
 
 Contracts currently require module-level constants and local style references. Runtime assignments may use exported compiled contracts. Imported references in style definitions, native bindings, and `@property` registration remain deferred.
+
+`length` and `percentage` accept nonnegative dimensions, so they can be used in properties such as padding and width. Use `signedLength` or `signedPercentage` for values that may be negative; those slots are restricted to properties that accept negative dimensions. `number` accepts finite numbers and is restricted to properties that accept an unconstrained numeric domain.

@@ -12,6 +12,45 @@ const source = [
 ].join('\n')
 
 describe('compile', () => {
+  test('supports asserted callbacks, quoted fields, negative literals, and empty values', async () => {
+    const output = Transform.compile({
+      moduleId: 'scalars.ts',
+      source: `import {css} from 'zyzz'; export const style = css(((v: {'item-size': string; order: -1 | 1}) => ({marginLeft: v['item-size'], order: v.order})) satisfies unknown)`,
+    })
+    expect(output.css).toContain('order:var(')
+    const built = await Esbuild.build({
+      stdin: {
+        contents: output.code,
+        resolveDir: Path.resolve(import.meta.dirname, '../..'),
+        loader: 'ts',
+      },
+      bundle: true,
+      write: false,
+      platform: 'node',
+      conditions: ['src'],
+      format: 'esm',
+    })
+    const result = await import(
+      `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
+    )
+    expect(Object.values(result.style({ 'item-size': '', order: -1 }).style))
+      .toMatchInlineSnapshot(`
+      [
+        " ",
+        -1,
+      ]
+    `)
+  })
+  test('rejects a sign joined to a private numeric token', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'sign.ts',
+        source:
+          'import {css} from "zyzz"; css((v:{alpha:number})=>({opacity:`+${v.alpha}`}))',
+      }),
+    ).toThrow()
+  })
+
   test('rejects constrained and reserved callback domains', () => {
     const errors = [
       'css((v:{level:number})=>({zIndex:v.level}))',

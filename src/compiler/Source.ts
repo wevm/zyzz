@@ -147,6 +147,10 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (
         ancestors.some(
           (ancestor) =>
+            ('typeAnnotation' in ancestor &&
+              typeof ancestor.typeAnnotation === 'object' &&
+              ancestor.typeAnnotation !== null &&
+              ancestors.includes(ancestor.typeAnnotation as Ast.Node)) ||
             ancestor.type === 'TSTypeParameterInstantiation' ||
             ancestor.type === 'TSTypeParameterDeclaration' ||
             ancestor.type === 'TSTypeAnnotation' ||
@@ -463,7 +467,8 @@ export function extract(options: extract.Options): extract.ReturnType {
             !Token.accepts(
               reference.group,
               key as Style.Declaration['property'],
-            )
+            ) &&
+            !dynamic?.accepts(reference as unknown as Binding.Reference, key)
           ) {
             report(
               'unsupported_syntax',
@@ -483,7 +488,8 @@ export function extract(options: extract.Options): extract.ReturnType {
             !Binding.accepts(
               reference.type,
               key as Style.Declaration['property'],
-            )
+            ) &&
+            !dynamic?.accepts(reference as unknown as Binding.Reference, key)
           ) {
             report(
               'unsupported_syntax',

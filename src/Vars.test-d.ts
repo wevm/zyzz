@@ -3,6 +3,16 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css, Vars } from 'zyzz'
 
 describe('define', () => {
+  test('rejects partial compound grammars', () => {
+    const slots = Vars.define({ size: 'length', count: 'number' })
+    // @ts-expect-error A font shorthand also requires a family.
+    css({ font: slots.size })
+    // @ts-expect-error A shadow needs multiple lengths.
+    css({ boxShadow: slots.size })
+    // @ts-expect-error Numbers alone cannot describe a font shorthand.
+    css({ font: slots.count })
+  })
+
   test('rejects malformed assignments and constrained numeric properties', () => {
     const slots = Vars.define({
       color: 'color',

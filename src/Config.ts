@@ -255,7 +255,20 @@ type Match<input, base> = base extends
   : {
       [key in keyof input | keyof base]: key extends keyof input
         ? key extends keyof base
-          ? Match<input[key], base[key]>
+          ? key extends 'containerNames'
+            ? input[key] extends readonly string[]
+              ? base[key] extends readonly string[]
+                ?
+                    | Exclude<input[key][number], base[key][number]>
+                    | Exclude<
+                        base[key][number],
+                        input[key][number]
+                      > extends never
+                  ? input[key]
+                  : never
+                : never
+              : never
+            : Match<input[key], base[key]>
           : never
         : never
     }

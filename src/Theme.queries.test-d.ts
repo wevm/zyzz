@@ -1,6 +1,6 @@
 /** Checks that query metadata stays out of declaration variables and typography domains stay distinct. @module */
 import { describe, test } from 'vite-plus/test'
-import { Theme } from 'zyzz'
+import { Config, Theme } from 'zyzz'
 import { css } from './themes/default.js'
 
 describe('define', () => {
@@ -13,6 +13,18 @@ describe('define', () => {
     })
     theme.css({ fontSize: 'body', fontWeight: 'medium' })
     css({ fontFamily: 'sans', fontSize: 'base', color: 'blue.500', padding: 4 })
+    const odd = Theme.define({ spacing: { '01': '1px', '1e3': '2px' } })
+    odd.css({ padding: '01' })
+    // @ts-expect-error Noncanonical numeric keys cannot widen shorthand numbers.
+    odd.css({ padding: 999 })
+    Config.create({
+      defaultTheme: 'base',
+      themes: {
+        base: { containerNames: ['sidebar'] },
+        // @ts-expect-error Named themes must expose the same container identities.
+        other: { containerNames: ['content'] },
+      },
+    })
     // @ts-expect-error Thresholds are nonnegative.
     Theme.define({ breakpoints: { bad: '-1px' } })
     // @ts-expect-error Font weights cannot exceed 1000.

@@ -132,12 +132,6 @@ jobs:
           printf '\n</details>\n' >> "$RUNNER_TEMP/benchmark-report.md"
           mv "$RUNNER_TEMP/benchmark-report.md" bench/results/report.md
           cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
-      - name: Comment benchmark results
-        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: benchmarks
-          path: bench/results/report.md
       - if: ${{ !cancelled() }}
         name: Upload benchmark results
         uses: actions/upload-artifact@v4
@@ -182,6 +176,46 @@ jobs:
         if: ${{ !cancelled() && steps.frameworks.outcome == 'failure' }}
         run: exit 1
     timeout-minutes: 30
+  report:
+    name: Benchmark Report
+    if: ${{ !cancelled() }}
+    needs: [benchmarks, render]
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Download compiler results
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmarks
+          path: reports/compiler
+      - name: Download render results
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: render-benchmarks
+          path: reports/render
+      - name: Prepare comment
+        run: |
+          mkdir -p reports
+          node bench/Comment.ts reports/compiler/report.md reports/render/render.md > reports/comment.md
+          cat reports/comment.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment benchmark results
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: benchmarks
+          path: reports/comment.md
+    timeout-minutes: 5
   render:
     name: React Render Benchmarks
     permissions:
@@ -195,6 +229,12 @@ jobs:
           fetch-depth: 0
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
+      - name: Remove separate render comment
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          delete: true
+          header: render-benchmarks
       - name: Record render environment
         run: |
           mkdir -p bench/results
@@ -221,12 +261,6 @@ jobs:
         run: |
           node bench/RenderReport.ts bench/results > bench/results/render.md
           cat bench/results/render.md >> "$GITHUB_STEP_SUMMARY"
-      - name: Comment render results
-        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: render-benchmarks
-          path: bench/results/render.md
       - name: Upload render measurements
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4

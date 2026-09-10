@@ -209,9 +209,9 @@ jobs:
           git restore --source="$BASE_SHA" --worktree -- src
           mkdir -p "$BENCH_RENDER_OUTPUT"
           printf '%s\n' "$BASE_SHA" > "$BENCH_RENDER_OUTPUT/commit.txt"
-          pnpm exec vp test run --config bench/Render.config.ts --no-file-parallelism
+          pnpm bench:render
       - name: Measure production React renders in Chromium
-        run: pnpm exec vp test run --config bench/Render.config.ts --no-file-parallelism
+        run: pnpm bench:render
       - name: Validate and report React renders
         run: |
           node bench/RenderReport.ts bench/results > bench/results/render.md

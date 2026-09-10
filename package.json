@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "bench:render": "vp test run --config bench/Render.config.ts --no-file-parallelism",
+    "bench:render": "zile && vp test run --config bench/Render.config.ts --no-file-parallelism",
     "build": "zile",
     "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
     "changeset:version": "changeset version",

@@ -73,6 +73,23 @@ describe('define', () => {
   })
 })
 describe('set', () => {
+  test('excludes implicitly constrained numeric and signed grammars', () => {
+    const vars = Vars.define({
+      size: 'signedLength',
+      ratio: 'signedPercentage',
+      count: 'number',
+    })
+    // @ts-expect-error Border widths are implicitly nonnegative.
+    css({ border: vars.size })
+    // @ts-expect-error Outline widths are implicitly nonnegative.
+    css({ outline: vars.size })
+    // @ts-expect-error Grid track breadths are implicitly nonnegative.
+    css({ gridTemplateColumns: vars.size })
+    // @ts-expect-error Grid percentage tracks are implicitly nonnegative.
+    css({ gridAutoRows: vars.ratio })
+    // @ts-expect-error Aspect ratios cannot accept arbitrary signed numbers.
+    css({ aspectRatio: vars.count })
+  })
   test('excludes percentage bindings from length-only number rules', () => {
     const vars = Vars.define({ size: 'percentage' })
     // @ts-expect-error Tab size accepts lengths and integers, not percentages.

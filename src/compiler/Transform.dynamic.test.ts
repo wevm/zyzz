@@ -12,6 +12,32 @@ const source = [
 ].join('\n')
 
 describe('compile', () => {
+  test('unwraps all transparent callback assertions and rejects token concatenation', () => {
+    for (const callback of [
+      '(((v:{alpha:number})=>({opacity:v.alpha}))!)',
+      '(((v:{alpha:number})=>({opacity:v.alpha}))! as unknown)',
+    ])
+      expect(
+        Transform.compile({
+          moduleId: 'asserted.ts',
+          source: 'import {css} from "zyzz"; css(' + callback + ')',
+        }).css,
+      ).toContain('opacity:var(')
+    for (const body of [
+      '{color:`#${v.hex}`}',
+      '{fontFamily:`prefix${v.hex}`}',
+      '{fontFamily:`${v.hex}suffix`}',
+    ])
+      expect(() =>
+        Transform.compile({
+          moduleId: 'joined.ts',
+          source:
+            'import {css} from "zyzz"; css((v:{hex:"fff"|"000"})=>(' +
+            body +
+            '))',
+        }),
+      ).toThrow()
+  })
   test('supports zero dimensions and rejects private-property keywords and quoted substitutions', async () => {
     const output = Transform.compile({
       moduleId: 'zero.ts',

@@ -64,11 +64,8 @@ export function compile(options: compile.Options): compile.ReturnType {
       })
 
       let argument = node.arguments[0]
-      while (
-        argument?.type === 'TSAsExpression' ||
-        argument?.type === 'TSSatisfiesExpression'
-      )
-        argument = argument.expression
+        ? Expression.unwrap(node.arguments[0])
+        : undefined
       if (argument?.type === 'ArrowFunctionExpression')
         argument = Expression.unwrap(argument.body) as Ast.Expression
       if (argument?.type === 'ObjectExpression')

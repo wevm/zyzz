@@ -124,7 +124,12 @@ jobs:
         run: |
           node bench/Compare.ts bench/results "$BASELINE_DIRECTORY" "$RUNNER_TEMP/benchmark-action" > "$RUNNER_TEMP/benchmark-comparison.md"
           printf '# Benchmark Report\n\n[Workflow run](%s/%s/actions/runs/%s)\n\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > "$RUNNER_TEMP/benchmark-report.md"
-          cat bench/results/frameworks.md "$RUNNER_TEMP/benchmark-comparison.md" bench/results/report.md >> "$RUNNER_TEMP/benchmark-report.md"
+          cat bench/results/frameworks.md >> "$RUNNER_TEMP/benchmark-report.md"
+          printf '\n<details>\n<summary>Baseline changes</summary>\n\n' >> "$RUNNER_TEMP/benchmark-report.md"
+          cat "$RUNNER_TEMP/benchmark-comparison.md" >> "$RUNNER_TEMP/benchmark-report.md"
+          printf '\n</details>\n\n<details>\n<summary>Extraction, transforms, binding, host, and theme timings</summary>\n\n' >> "$RUNNER_TEMP/benchmark-report.md"
+          cat bench/results/report.md >> "$RUNNER_TEMP/benchmark-report.md"
+          printf '\n</details>\n' >> "$RUNNER_TEMP/benchmark-report.md"
           mv "$RUNNER_TEMP/benchmark-report.md" bench/results/report.md
           cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Comment benchmark results

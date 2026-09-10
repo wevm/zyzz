@@ -42,16 +42,18 @@ const names: Record<string, string> = {
 
 console.log('## Runtime Framework Comparisons\n')
 console.log(
+  'Summaries rank the average of the two pass means, including the native control; ratios compare the runner-up. Observed leads are not significance claims.\n',
+)
+console.log(
   'Chromium production props application only; no compilation, DOM or React rendering in timings. Both passes execute inside Chromium on this runner with reversed framework order. Cached props are distinct from surviving calls.\n',
 )
 console.log(
-  '🟢 Zyzz faster beyond reported uncertainty in both passes · 🔴 competitor faster in both passes (fails) · 🟡 inconclusive or overlapping uncertainty. Plain class/style is an informational control. No claim of a universal speed advantage follows from a tie.\n',
+  '🟢 Zyzz faster beyond reported uncertainty in both passes · 🔴 competitor faster in both passes · 🟡 inconclusive or overlapping uncertainty. Plain class/style is an informational control. No claim of a universal speed advantage follows from a tie.\n',
 )
 
 for (const count of [10, 100])
   for (const kind of ['cached', 'direct', 'callable', 'overrides', 'dynamic']) {
     const libraries = kind === 'dynamic' ? ['baseline', 'zyzz'] : frameworks
-    console.log(`### ${count} Styles — ${kind}\n`)
     try {
       const passes = [1, 2].map((repeat) => {
         const name = `runtime comparison / ${count} styles / ${kind} / repeat ${repeat}`
@@ -95,6 +97,20 @@ for (const count of [10, 100])
         .every((library) =>
           passes.every((pass) => faster(pass.get('zyzz')!, pass.get(library)!)),
         )
+      const summary = winner({
+        decimals: 1,
+        measurements: libraries.map((library) => ({
+          name: names[library]!,
+          value:
+            (passes.reduce((sum, pass) => sum + pass.get(library)!.mean, 0) /
+              passes.length) *
+            1e6,
+        })),
+        unit: 'ns',
+      })
+      console.log(
+        `<details>\n<summary>${count} Styles — ${kind}: ${summary}</summary>\n`,
+      )
       console.log(
         '| Framework | Pass 1 (ns ±%) | Pass 2 (ns ±%) | Samples | CSS gzip | JS gzip | Total gzip |',
       )
@@ -132,10 +148,54 @@ for (const count of [10, 100])
           `| ${status}${names[library]} | ${measurements.map((timing) => `${(timing.mean * 1e6).toFixed(1)} ±${timing.rme.toFixed(1)}%`).join(' | ')} | ${measurements.map((timing) => timing.sampleCount).join(' / ')} | ${size.css.gzip} B | ${size.javascript.gzip} B | ${size.total.gzip} B |`,
         )
       }
-      console.log('')
+      console.log('\n</details>\n')
     } catch (error) {
       process.exitCode = 1
       console.log('🔴 Missing or invalid runtime measurements.\n')
       console.error(error)
     }
   }
+
+/** Returns the lowest measured time and its ratio against the runner-up. */
+function winner(options: winner.Options): string {
+  const ranked = options.measurements
+    .map((item) => ({
+      ...item,
+      value: Number(item.value.toFixed(options.decimals)),
+    }))
+    .sort((a, b) => a.value - b.value)
+  const first = ranked[0]
+  if (
+    !first ||
+    ranked.some((item) => !Number.isFinite(item.value) || item.value < 0)
+  )
+    return '🟡 No valid timings'
+  const tied = ranked.filter((item) => item.value === first.value)
+  const time = `${first.value.toFixed(options.decimals)} ${options.unit}`
+  if (tied.length > 1)
+    return `🟡 Tie: ${tied.map((item) => item.name).join(', ')} — ${time}`
+  const next = ranked[1]
+  const ratio =
+    next && first.value > 0
+      ? ` · ${(next.value / first.value).toFixed(2)}× as fast as ${next.name}`
+      : ''
+  return `${first.name.startsWith('Zyzz') ? '🟢' : '🔴'} ${first.name} — ${time}${ratio}`
+}
+
+/** Display inputs for one matched timing comparison. */
+declare namespace winner {
+  /** Measured values share one workload and timing unit. */
+  type Options = {
+    /** Decimal places used for times and displayed ties. */
+    decimals: number
+    /** Comparable framework or implementation timings. */
+    measurements: readonly {
+      /** Display name. */
+      name: string
+      /** Measured duration in the supplied unit. */
+      value: number
+    }[]
+    /** Displayed timing unit. */
+    unit: 'ms' | 'ns'
+  }
+}

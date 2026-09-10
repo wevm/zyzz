@@ -92,6 +92,9 @@ const titles: Record<string, string> = {
 
 console.log('## Framework Comparisons\n')
 console.log(
+  'Summaries show observed build-time winners and ratios versus the runner-up. Small leads may fall within measurement uncertainty; size gates are separate.\n',
+)
+console.log(
   '🟢 Zyzz beats every other framework · 🔴 Zyzz fails, or another framework beats a Zyzz result on speed or size. Both build time and total gzip must pass; ties fail. Total gzip includes CSS + required JavaScript.\n',
 )
 console.log(
@@ -99,7 +102,6 @@ console.log(
 )
 
 for (const workload of workloads) {
-  console.log(`### ${titles[workload.directory]}\n`)
   try {
     const matches = groups.filter(
       (group) =>
@@ -152,6 +154,17 @@ for (const workload of workloads) {
         timing,
       })
     }
+    const summary = winner({
+      decimals: 3,
+      measurements: [...measurements].map(([library, result]) => ({
+        name: names[library]!,
+        value: result.mean,
+      })),
+      unit: 'ms',
+    })
+    console.log(
+      `<details>\n<summary>${titles[workload.directory]}: ${summary}</summary>\n`,
+    )
     console.log('| Framework | Build (ms) | CSS gzip | JS gzip | Total gzip |')
     console.log('| --- | ---: | ---: | ---: | ---: |')
     for (const [library, result] of measurements) {
@@ -176,7 +189,7 @@ for (const workload of workloads) {
         `| ${status}${names[library]} | ${result.mean.toFixed(3)} | ${result.sizes.css.gzip} B | ${result.sizes.javascript.gzip} B | ${result.size} B |`,
       )
     }
-    console.log('\n<details>\n<summary>Full Measurements</summary>\n')
+    console.log('\nFull measurements:\n')
     console.log(
       '| Framework | Error (±%) | Samples | CSS raw | CSS Brotli | JS raw | JS Brotli | Total raw | Total Brotli |',
     )
@@ -192,7 +205,53 @@ for (const workload of workloads) {
     console.log('\n</details>\n')
   } catch (error) {
     process.exitCode = 1
-    console.log('🔴 Missing or invalid measurements. See workflow logs.\n')
+    console.log(
+      `🔴 ${titles[workload.directory]}: Missing or invalid measurements. See workflow logs.\n`,
+    )
     console.error(`${workload.directory}:`, error)
+  }
+}
+
+/** Returns the lowest measured time and its ratio against the runner-up. */
+function winner(options: winner.Options): string {
+  const ranked = options.measurements
+    .map((item) => ({
+      ...item,
+      value: Number(item.value.toFixed(options.decimals)),
+    }))
+    .sort((a, b) => a.value - b.value)
+  const first = ranked[0]
+  if (
+    !first ||
+    ranked.some((item) => !Number.isFinite(item.value) || item.value < 0)
+  )
+    return '🟡 No valid timings'
+  const tied = ranked.filter((item) => item.value === first.value)
+  const time = `${first.value.toFixed(options.decimals)} ${options.unit}`
+  if (tied.length > 1)
+    return `🟡 Tie: ${tied.map((item) => item.name).join(', ')} — ${time}`
+  const next = ranked[1]
+  const ratio =
+    next && first.value > 0
+      ? ` · ${(next.value / first.value).toFixed(2)}× as fast as ${next.name}`
+      : ''
+  return `${first.name.startsWith('Zyzz') ? '🟢' : '🔴'} ${first.name} — ${time}${ratio}`
+}
+
+/** Display inputs for one matched timing comparison. */
+declare namespace winner {
+  /** Measured values share one workload and timing unit. */
+  type Options = {
+    /** Decimal places used for times and displayed ties. */
+    decimals: number
+    /** Comparable framework or implementation timings. */
+    measurements: readonly {
+      /** Display name. */
+      name: string
+      /** Measured duration in the supplied unit. */
+      value: number
+    }[]
+    /** Displayed timing unit. */
+    unit: 'ms' | 'ns'
   }
 }

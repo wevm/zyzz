@@ -289,3 +289,21 @@ Inlining has a delivery tradeoff. At 100 styles, direct-call JavaScript gzip gro
 from 1,655 to 2,320 bytes; dynamic JavaScript grows from 1,775 to 1,869 bytes.
 Callable JavaScript is unchanged at 1,376 bytes. Initialization guards and fresh
 props identity are retained; no shared result cache is introduced.
+
+### Compiler analysis follow-up
+
+The paired CI report also flagged advisory transform-time regressions (for
+example, 46.76 → 54.69 ms at 1,000 exported styles). The first implementation
+performed another AST walk even when no local definition could be folded.
+The follow-up gathers relevant references during the transform's existing walk
+and skips reference analysis when there are no eligible definitions.
+
+A local Node v24.19.0 comparison ran main, the extra-walk implementation, and the
+shared-walk implementation in reversed order across two passes, with 10 warmups
+and 30 samples each. At 1,000 exported styles, the pass means were 103.36–105.10 ms
+(main), 119.57–146.01 ms (extra walk), and 109.79–110.01 ms (shared walk).
+The shared-walk and main error intervals overlap; smaller workloads were noisier.
+These absolute times are not comparable to the GitHub runner. The comparison
+also verified identical JavaScript, CSS, and source maps before/after the
+refactor for exported and local applications at 100 and 1,000 styles.
+The final CI rerun remains the check on this compile-time follow-up.

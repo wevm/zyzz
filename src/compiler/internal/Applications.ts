@@ -1,34 +1,22 @@
 /** Finds nonescaping local static callables whose applications can become props. @module */
 import type * as Ast from '@oxc-project/types'
-import * as Walker from 'oxc-walker'
 import type * as Source from '../Source.js'
 
 /** Conservatively proves direct applications without changing binding reads. */
-export function find(
+export function create(
   program: Ast.Program,
   calls: readonly Source.Call[],
-): readonly Application[] {
-  const parents = new Map<Ast.Node, Ast.Node>()
-  const references = new Map<
-    string,
-    Extract<Ast.Node, { type: 'Identifier' }>[]
-  >()
-  let evaluation = false
-  Walker.walk(program, {
-    enter(node, parent) {
-      if (parent) parents.set(node, parent)
-      if (node.type !== 'Identifier') return
-      if (node.name === 'eval') evaluation = true
-      const nodes = references.get(node.name) ?? []
-      nodes.push(node)
-      references.set(node.name, nodes)
-    },
-  })
-  if (evaluation) return []
+): Collector | undefined {
   const definitions = new Map(
     calls.filter((call) => !call.slots).map((call) => [call.start, call]),
   )
-  const result: Application[] = []
+  const candidates: {
+    declaration: Ast.VariableDeclarator & {
+      id: Extract<Ast.Node, { type: 'Identifier' }>
+    }
+    direct: Source.Call | undefined
+    members: Map<string, Source.Call>
+  }[] = []
   for (const statement of program.body) {
     // Exported values can escape and object members can subsequently be replaced.
     if (statement.type !== 'VariableDeclaration' || statement.kind !== 'const')
@@ -71,49 +59,84 @@ export function find(
         }
         if (!valid || !members.size) continue
       }
-      const applications: Application[] = []
-      let valid = true
-      for (const reference of references.get(declaration.id.name) ?? []) {
-        if (reference === declaration.id) continue
-        let callee: Ast.Node = reference
-        let call = direct
-        if (!direct) {
-          const member = parents.get(reference)
+      candidates.push({
+        declaration: { ...declaration, id: declaration.id },
+        direct,
+        members,
+      })
+    }
+  }
+  if (!candidates.length) return undefined
+  const parents = new Map<Ast.Node, Ast.Node>()
+  const references = new Map<
+    string,
+    Extract<Ast.Node, { type: 'Identifier' }>[]
+  >(candidates.map(({ declaration }) => [declaration.id.name, []]))
+  let evaluation = false
+  return {
+    enter(node, parent) {
+      if (
+        node.type === 'MemberExpression' &&
+        node.object.type === 'Identifier' &&
+        references.has(node.object.name) &&
+        parent
+      )
+        parents.set(node, parent)
+      if (node.type !== 'Identifier') return
+      if (node.name === 'eval') evaluation = true
+      const nodes = references.get(node.name)
+      if (!nodes) return
+      nodes.push(node)
+      if (parent) parents.set(node, parent)
+    },
+    find() {
+      if (evaluation) return []
+      const result: Application[] = []
+      for (const { declaration, direct, members } of candidates) {
+        const applications: Application[] = []
+        let valid = true
+        for (const reference of references.get(declaration.id.name) ?? []) {
+          if (reference === declaration.id) continue
+          let callee: Ast.Node = reference
+          let call = direct
+          if (!direct) {
+            const member = parents.get(reference)
+            if (
+              member?.type !== 'MemberExpression' ||
+              member.object !== reference ||
+              member.computed ||
+              member.optional ||
+              member.property.type !== 'Identifier'
+            ) {
+              valid = false
+              break
+            }
+            call = members.get(member.property.name)
+            callee = member
+          }
+          const application = parents.get(callee)
           if (
-            member?.type !== 'MemberExpression' ||
-            member.object !== reference ||
-            member.computed ||
-            member.optional ||
-            member.property.type !== 'Identifier'
+            !call ||
+            application?.type !== 'CallExpression' ||
+            application.callee !== callee ||
+            application.optional ||
+            application.arguments.length
           ) {
             valid = false
             break
           }
-          call = members.get(member.property.name)
-          callee = member
+          applications.push({
+            calleeEnd: callee.end,
+            end: application.end,
+            name: call.name,
+            start: application.start,
+          })
         }
-        const application = parents.get(callee)
-        if (
-          !call ||
-          application?.type !== 'CallExpression' ||
-          application.callee !== callee ||
-          application.optional ||
-          application.arguments.length
-        ) {
-          valid = false
-          break
-        }
-        applications.push({
-          calleeEnd: callee.end,
-          end: application.end,
-          name: call.name,
-          start: application.start,
-        })
+        if (valid) result.push(...applications)
       }
-      if (valid) result.push(...applications)
-    }
+      return result
+    },
   }
-  return result
 }
 
 /** Proven call site and its compiled definition. */
@@ -126,4 +149,12 @@ type Application = {
   readonly name: string
   /** Start of the application. */
   readonly start: number
+}
+
+/** Binding references gathered during the transform's existing walk. */
+type Collector = {
+  /** Records relevant reads and their immediate parents. */
+  enter: (node: Ast.Node, parent: Ast.Node | null | undefined) => void
+  /** Resolves applications after traversal completes. */
+  find: () => readonly Application[]
 }

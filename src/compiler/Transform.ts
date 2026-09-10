@@ -49,8 +49,10 @@ export function compile(options: compile.Options): compile.ReturnType {
   const definitions = new Map<number, Ast.ObjectExpression>()
   const identifiers = new Map<string, Span[]>()
 
+  const localApplications = Applications.create(program, extracted.calls)
   Walker.walk(program, {
     enter(node, parent) {
+      localApplications?.enter(node, parent)
       if (node.type === 'Identifier') {
         const references = identifiers.get(node.name) ?? []
         references.push(node)
@@ -148,7 +150,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     if (!call.slots && !application.folded) callable = true
   }
 
-  for (const application of Applications.find(program, extracted.calls)) {
+  for (const application of localApplications?.find() ?? []) {
     const className = JSON.stringify(classes[application.name])
     // Keep a callable guard so bundlers also retain failures before initialization.
     module.overwrite(

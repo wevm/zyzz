@@ -49,59 +49,62 @@ jobs:
           name: css-conformance
           path: css-conformance.md
           retention-days: 30
-  host-macos:
-    name: Host on macOS
-    runs-on: macos-latest
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-      - name: Install dependencies
-        uses: ./.github/actions/install-dependencies
-      - name: Verify case-insensitive output ownership
-        run: pnpm exec vp test run src/node/Host.test.ts -t 'prefixed sources and case-only renames'
-    timeout-minutes: 5
   test:
-    name: Test
+    name: Test (${{ matrix.os }})
     permissions:
       contents: read
       pull-requests: write
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
-      - name: Install browser
+      - if: ${{ runner.os == 'Linux' }}
+        name: Install browser
         run: pnpm exec playwright install --with-deps --only-shell chromium
       - env:
           CI: true
+        if: ${{ runner.os == 'Linux' }}
         name: Run tests
         run: pnpm run test run --coverage
-      - if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
+      - if: ${{ runner.os == 'macOS' }}
+        name: Verify case-insensitive output ownership
+        run: pnpm exec vp test run src/node/Host.test.ts -t 'prefixed sources and case-only renames'
+      - if: ${{ !cancelled() && runner.os == 'Linux' && hashFiles('coverage/coverage-summary.json') != '' }}
         name: Report coverage
         uses: davelosert/vitest-coverage-report-action@v2
         with:
           comment-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && 'pr' || 'none' }}
           file-coverage-mode: all
           name: Integration Tests
-      - if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
+      - if: ${{ !cancelled() && runner.os == 'Linux' && hashFiles('coverage/coverage-summary.json') != '' }}
         name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: coverage/
           retention-days: 30
-      - if: ${{ !cancelled() && hashFiles('test-results/css-browser-capabilities.json') != '' }}
+      - if: ${{ !cancelled() && runner.os == 'Linux' && hashFiles('test-results/css-browser-capabilities.json') != '' }}
         name: Upload CSS browser capabilities
         uses: actions/upload-artifact@v4
         with:
           name: css-browser-capabilities
           path: test-results/css-browser-capabilities.json
           retention-days: 30
-      - if: ${{ failure() && hashFiles('test-results/css-consumer.test-d.ts') != '' }}
+      - if: ${{ failure() && runner.os == 'Linux' && hashFiles('test-results/css-consumer.test-d.ts') != '' }}
         name: Upload failing CSS consumer
         uses: actions/upload-artifact@v4
         with:
           name: css-consumer
           path: test-results/css-consumer.test-d.ts
           retention-days: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            timeout: 360
+          - os: macos-latest
+            timeout: 5
+    timeout-minutes: ${{ matrix.timeout }}

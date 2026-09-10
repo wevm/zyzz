@@ -10,9 +10,11 @@ import { css } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const target = Css.marker({ state: ['closed', 'open'] })
-const style = css({
-  [Css.ancestor(target, { data: { state: 'open' } })]: { opacity: 1 },
-})
+const styles = {
+  style: css({
+    [Css.ancestor(target, { data: { state: 'open' } })]: { opacity: 1 },
+  }),
+}
 ```
 
 ## Signature

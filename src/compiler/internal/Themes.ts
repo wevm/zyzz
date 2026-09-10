@@ -308,13 +308,39 @@ export function collect(program: Ast.Program, options: collect.Options) {
       if (
         (statement.type === 'ExportNamedDeclaration' && !options.linked) ||
         declaration.kind !== 'const' ||
-        variable.id.type !== 'Identifier'
+        (variable.id.type !== 'Identifier' &&
+          !(
+            configNamespaces.has(expression.callee.object.name) &&
+            variable.id.type === 'ObjectPattern'
+          ))
       )
         fail(
           'Define local themes with a module-level const; exported themes require source linking.',
           variable,
         )
-      const name = `${options.namespace}-${variable.id.name}`
+      const bindings = (() => {
+        if (variable.id.type !== 'ObjectPattern') return []
+        return variable.id.properties.map((property) => {
+          if (
+            property.type !== 'Property' ||
+            property.computed ||
+            property.key.type !== 'Identifier' ||
+            property.value.type !== 'Identifier'
+          )
+            fail(
+              'Configuration destructuring requires named bindings without defaults, rest, or nested patterns.',
+              property,
+            )
+          return { key: property.key.name, id: property.value }
+        })
+      })()
+      const binding =
+        variable.id.type === 'Identifier'
+          ? variable.id.name
+          : bindings[0]?.id.name
+      if (!binding)
+        fail('Configuration destructuring requires a binding.', variable)
+      const name = `${options.namespace}-${binding}`
       if (configNamespaces.has(expression.callee.object.name)) {
         try {
           const link = Configurations.collect({
@@ -327,15 +353,41 @@ export function collect(program: Ast.Program, options: collect.Options) {
               return link
             },
           })
-          configs.set(variable.id.name, link)
-          configBindings.set(variable.id.start, link)
+          if (variable.id.type === 'Identifier') {
+            configs.set(variable.id.name, link)
+            configBindings.set(variable.id.start, link)
+            if (statement.type === 'ExportNamedDeclaration')
+              exports[variable.id.name] = link
+          }
           calls.push(link.call)
           factories.add(expression.start)
           for (const member of Object.values(link.members ?? {}))
             themes[member.call.name] = member.definition
           themes[link.call.name] = link.definition
-          if (statement.type === 'ExportNamedDeclaration')
-            exports[variable.id.name] = link
+          for (const { key, id } of bindings) {
+            if (key === 'css') {
+              const alias = { ...link.call, destructured: false }
+              aliasBindings.set(id.start, alias)
+              aliasNames.set(id.name, alias)
+              if (statement.type === 'ExportNamedDeclaration')
+                exports[id.name] = {
+                  ...link,
+                  binding: `${options.namespace}-${id.name}`,
+                  kind: 'css',
+                }
+              continue
+            }
+            const member = link.members?.[JSON.stringify([key])]
+            if (!member)
+              fail(
+                'Destructure only css and the configured single theme; other helpers remain unsupported.',
+                id,
+              )
+            definitions.set(id.start, member.call)
+            names.set(id.name, member.call)
+            if (statement.type === 'ExportNamedDeclaration')
+              exports[id.name] = member
+          }
         } catch (error) {
           if (!(error instanceof Config.InvalidError)) throw error
           fail(error.message, expression)
@@ -384,10 +436,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
       calls.push(call)
       definitions.set(variable.id.start, call)
       factories.add(expression.start)
-      names.set(variable.id.name, call)
+      names.set(binding, call)
       themes[name] = definition
       if (statement.type === 'ExportNamedDeclaration')
-        exports[variable.id.name] = {
+        exports[binding] = {
           binding: name,
           call,
           definition,
@@ -664,6 +716,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         ? definitions.get(binding.node.start)
         : undefined
     if (!theme) return false
+    if (node.start === binding!.node.start) return true
     return themeReference(node, parent, ancestors, theme)
   }
 

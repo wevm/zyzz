@@ -858,6 +858,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
       for (; callIndex >= 0; callIndex--) {
         const ancestor = ancestors[callIndex]!
         if (
+          ancestor.type === 'Property' &&
+          ancestor.value === argument &&
+          ancestors[callIndex - 1]?.type === 'ObjectExpression'
+        ) {
+          argument = ancestors[--callIndex]
+          continue
+        }
+        if (
           (ancestor.type === 'TSAsExpression' ||
             ancestor.type === 'TSSatisfiesExpression' ||
             ancestor.type === 'TSNonNullExpression' ||

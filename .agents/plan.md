@@ -20,7 +20,7 @@ Local validation: ten extraction/transform integrations, native type/lint checks
 2. Explicit variable contracts and assignments: module-level schemas compile to fixed, isolated slots; typed partial assignments return ordinary inline properties. Imported style references and native bindings remain deferred.
 3. Dynamic style bindings: finite inline scalar parameter types, fixed private slots, static declarations, exact inputs, and compiled callable type preservation. Type aliases, dynamic fallback groups, and native bindings remain deferred.
 4. Bundled themes and query thresholds: opt-in palette/scales, scalar typography, and separate packed query metadata. Alias condition emission follows in the dependent conditions PR.
-5. Selectors and conditions.
+5. Selectors and conditions: native CSS nesting, raw data/ARIA/relationship selectors, query aliases/ranges, and fixed dynamic values. Typed marker helpers remain a follow-up.
 6. Stylesheet contributions.
 
 Each dependent PR targets the preceding branch. CSS value validation remains static-only; structural extraction diagnostics and the 670/670 gate remain active.

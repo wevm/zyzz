@@ -61,6 +61,7 @@ export function compile<
   const classes = Object.create(null) as Record<name, string>
   const diagnostics: Diagnostic[] = []
   const groups = new Map<string, false | string>()
+  const nestedComposition = options.styles.styles.some((style) => style.rules)
   // Logical dimensions may alias either physical axis in inherited writing modes.
   // Preserve physical-only factoring when no logical dimension is authored.
   const logicalSizing = analyzed.some((style) =>
@@ -229,9 +230,31 @@ export function compile<
         .join('')
     return input as number | string
   }
+  function nested(style: Style.NamedStyle): string {
+    if (style.rules)
+      return style.rules
+        .map((rule) => {
+          const body = nested(rule.style)
+          return rule.condition === undefined
+            ? body
+            : `${rule.condition}{${body}}`
+        })
+        .join('')
+    return style.declarations
+      .map(
+        ({ property, value, important }) =>
+          `${Literal.name(property)}:${serialize(value)}${important ? '!important' : ''};`,
+      )
+      .join('')
+  }
   const unique = new Map<string, Prepared>()
   const resolved = new Map<Style.NamedStyle, Prepared>()
   const prepared = options.styles.styles.map((style, index) => {
+    if (style.rules)
+      return {
+        name: style.name,
+        content: { declarations: [], ordered: nested(style), shared: '' },
+      }
     const canonicalStyle = canonicalStyles[index]!
     const cached = resolved.get(canonicalStyle)
     if (cached) return { content: cached, name: style.name }
@@ -292,7 +315,8 @@ export function compile<
   // Equivalent bodies share factoring work, including repeated tokens.
   for (const content of unique.values())
     for (const { declaration, domain } of content.declarations) {
-      if (groups.get(domain) === false) content.ordered += declaration
+      if (nestedComposition || groups.get(domain) === false)
+        content.ordered += declaration
       else content.shared += declaration
     }
   // Sort identities only, never authored declarations or cascade order. Separate

@@ -6,6 +6,15 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, Theme } from 'zyzz'
 
 describe('create', () => {
+  test('checks configured callback domains', () => {
+    const { css } = Config.create()
+    // @ts-expect-error Configured callbacks cannot use broad numbers for integer slots.
+    css((values: { order: number }) => ({ order: values.order }))
+    // @ts-expect-error Reserved styling fields cannot be callback slots.
+    css((values: { style: string }) => ({ color: values.style }))
+    css((values: { alpha: number }) => ({ opacity: values.alpha }))
+  })
+
   test('preserves token domains in grouped styles from destructured helpers', () => {
     const { css, theme } = Config.create({
       theme: { color: { brand: '#06c' }, spacing: { md: '8px' } },
@@ -54,7 +63,7 @@ describe('create', () => {
     // @ts-expect-error Single-theme config has no catalog.
     void single.themes
 
-    // @ts-expect-error A layer list does not add an arbitrary selector index.
+    // Scoped selectors retain the same bound token inference.
     single.css({ ':hover': { color: 'brand' } })
   })
 
@@ -116,5 +125,16 @@ describe('create', () => {
     })
     // @ts-expect-error Unknown options are rejected through variables.
     Config.create({ theme: base, unknown: true } as const)
+  })
+})
+
+describe('create', () => {
+  test('rejects invalid union branches and empty callbacks', () => {
+    const { css } = Config.create()
+    const styles = {} as { color: '#fff' } | { ':hover': { colour: '#fff' } }
+    // @ts-expect-error Each disjoint branch must contain valid nested properties.
+    css(styles)
+    // @ts-expect-error Callbacks require one scalar input parameter.
+    css(() => ({ color: '#fff' }))
   })
 })

@@ -4,7 +4,6 @@
  */
 import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
-import type * as Value from './internal/Value.js'
 import type * as Style from './Style.js'
 
 type Keys<value> = value extends unknown ? keyof value : never
@@ -24,24 +23,14 @@ export function css<
     ((
       values: values,
     ) => styles &
-      NoInfer<
-        Value.Accepted<styles, Style.LiteralProperties> &
-          Value.Checked<styles> &
-          Binding.Checked<styles> &
-          Record<Exclude<Keys<styles>, keyof Style.LiteralProperties>, never>
-      >) &
+      NoInfer<Style.Accepted<styles, {}, true> & Binding.Checked<styles>>) &
     (values extends Binding.Inputs<values> ? unknown : never) &
     (Parameters<callback> extends [Record<string, string | number>]
       ? unknown
       : never),
 ): css.Dynamic<values>
 export function css<const styles extends Record<string, unknown>>(
-  styles: styles &
-    NoInfer<
-      Value.Accepted<styles, Style.LiteralProperties> &
-        Value.Checked<styles> &
-        Record<Exclude<Keys<styles>, keyof Literal.Properties>, never>
-    >,
+  styles: styles & NoInfer<Style.Accepted<styles, {}, true>>,
 ): css.ReturnType
 export function css(styles: unknown): never {
   void styles

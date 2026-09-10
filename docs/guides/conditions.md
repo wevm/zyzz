@@ -6,9 +6,6 @@ Respond to viewport size, browser state, and related elements. Begin with [Getti
 
 ### Responsive Styles
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Define typed thresholds in config, then reference them in media and container conditions.
 
 ```ts
@@ -49,9 +46,6 @@ const example = (
 Media thresholds measure the viewport; container thresholds measure the eligible ancestor. Aliases compile to literals, so switching theme scopes does not change them. Raw CSS queries and `@supports` remain supported design paths.
 
 ### Style States
-
-> [!NOTE]
-> Preview API; not yet implemented.
 
 Use pseudo styles for browser state and data attributes for application state. Keep accessibility attributes on the real control.
 
@@ -102,3 +96,5 @@ const example = (
 ```
 
 This deliberately includes an intermediate element: the marker is an ancestor, not the span's immediate parent. `Css.descendant` checks descendants of the styled element. Helper names describe direction and depth; they do not verify DOM structure through TypeScript.
+
+Dynamic callback values use private variables on the styled element. They are supported inside at-rules and same-element pseudo or attribute selectors. Relationship selectors remain available for static declarations.

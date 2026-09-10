@@ -615,7 +615,6 @@ describe('define', () => {
     Style.define({ card: { color: 'blue.700' } })
     // @ts-expect-error Invalid enum values cannot widen the contract.
     Style.define({ card: { display: 'banana' } })
-    // @ts-expect-error Selectors are outside the literal subset.
     Style.define({ card: { ':hover': { color: '#fff' } } })
     // @ts-expect-error Callbacks are outside the literal subset.
     Style.define({ card: () => ({ color: '#fff' }) })

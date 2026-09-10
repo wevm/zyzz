@@ -2,6 +2,7 @@
 import type * as Ast from '@oxc-project/types'
 import type * as Binding from '../../internal/Binding.js'
 import * as Expression from './Expression.js'
+import * as Literal from '../../internal/Literal.js'
 import * as Themes from './Themes.js'
 
 /** Fixed callback input slots retained in generated callables. */
@@ -9,6 +10,7 @@ export type Slots = Readonly<Record<string, Binding.Reference>>
 
 /** Reads a finite explicitly typed parameter and a concise static object body. */
 export function read(node: Ast.Node, identity: string) {
+  node = Expression.unwrap(node)
   if (node.type !== 'ArrowFunctionExpression') return undefined
   if (node.async || node.params.length !== 1)
     throw new Themes.InvalidError(
@@ -27,17 +29,27 @@ export function read(node: Ast.Node, identity: string) {
     )
   const parameterName = parameter.name
   const slots: Record<string, Binding.Reference> = Object.create(null)
+  const numeric = new Map<Binding.Reference, readonly number[]>()
   for (const member of parameter.typeAnnotation.typeAnnotation.members) {
+    const key =
+      member.type === 'TSPropertySignature'
+        ? member.key.type === 'Identifier'
+          ? member.key.name
+          : member.key.type === 'Literal' &&
+              typeof member.key.value === 'string'
+            ? member.key.value
+            : undefined
+        : undefined
     if (
       member.type !== 'TSPropertySignature' ||
       member.computed ||
       member.optional ||
       !member.typeAnnotation ||
-      member.key.type !== 'Identifier' ||
+      key === undefined ||
       ['class', 'className', 'key', 'ref', 'style', '__proto__'].includes(
-        member.key.name,
+        key,
       ) ||
-      Object.hasOwn(slots, member.key.name)
+      Object.hasOwn(slots, key)
     )
       throw new Themes.InvalidError(
         'Dynamic values require unique required scalar fields without styling override keys.',
@@ -50,13 +62,15 @@ export function read(node: Ast.Node, identity: string) {
         'Dynamic values require explicit string or number scalar types.',
         member,
       )
-    slots[member.key.name] = Object.freeze({
-      name: `--z-d${identity}-${Array.from(member.key.name)
+    const slot = (slots[key] = Object.freeze({
+      name: `--z-d${identity}-${Array.from(key)
         .map((character) => character.codePointAt(0)!.toString(16))
         .join('-')}`,
       type: kind === 'number' ? 'number' : 'length',
       variable: true,
-    })
+    }))
+    const values = numbers(type)
+    if (values) numeric.set(slot, values)
   }
   const body = Expression.unwrap(node.body)
   if (body.type !== 'ObjectExpression')
@@ -93,6 +107,24 @@ export function read(node: Ast.Node, identity: string) {
   }
   return {
     body,
+    accepts(reference: Binding.Reference, property: string) {
+      const values = numeric.get(reference)
+      const rule = Literal.rules[property as keyof typeof Literal.rules]
+      if (!values || !rule) return false
+      if (rule.kind === 'grid-line')
+        return values.every(
+          (value) => Number.isSafeInteger(value) && value !== 0,
+        )
+      if (rule.kind !== 'number') return false
+      return values.every(
+        (value) =>
+          (!('integer' in rule) ||
+            !rule.integer ||
+            Number.isSafeInteger(value)) &&
+          (!('min' in rule) || value >= rule.min) &&
+          (!('max' in rule) || value <= rule.max),
+      )
+    },
     resolve,
     slots: Object.freeze(slots),
     type: parameter.typeAnnotation.typeAnnotation,
@@ -109,6 +141,7 @@ function scalar(node: Ast.Node): 'number' | 'string' | undefined {
   )
     return 'string'
   if (node.type === 'TSLiteralType') {
+    if (numbers(node)) return 'number'
     if (
       node.literal.type === 'Literal' &&
       typeof node.literal.value === 'number'
@@ -126,5 +159,26 @@ function scalar(node: Ast.Node): 'number' | 'string' | undefined {
     if (kinds.length && kinds.every((kind) => kind === kinds[0]))
       return kinds[0]
   }
+  return undefined
+}
+
+function numbers(node: Ast.Node): readonly number[] | undefined {
+  if (node.type === 'TSUnionType') {
+    const members = node.types.map(numbers)
+    return members.every((member) => member !== undefined)
+      ? members.flat()
+      : undefined
+  }
+  if (node.type !== 'TSLiteralType') return undefined
+  const literal = node.literal
+  if (literal.type === 'Literal' && typeof literal.value === 'number')
+    return [literal.value]
+  if (
+    literal.type === 'UnaryExpression' &&
+    literal.operator === '-' &&
+    literal.argument.type === 'Literal' &&
+    typeof literal.argument.value === 'number'
+  )
+    return [-literal.argument.value]
   return undefined
 }

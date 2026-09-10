@@ -4,7 +4,13 @@ import type * as Token from './Token.js'
 import * as BindingDomains from './BindingDomains.js'
 
 /** Supported runtime scalar domains. */
-export type Kind = 'color' | 'length' | 'number' | 'percentage'
+export type Kind =
+  | 'color'
+  | 'length'
+  | 'number'
+  | 'percentage'
+  | 'signedLength'
+  | 'signedPercentage'
 
 /** A compiler-assigned web custom property with its scalar domain. */
 export type Reference<kind extends Kind = Kind> = {
@@ -21,9 +27,16 @@ export type Value<kind extends Kind> = kind extends 'number'
   ? number
   : kind extends 'color'
     ? Literal.Color
-    : kind extends 'percentage'
+    : kind extends 'signedPercentage'
       ? `${number}%`
-      : Exclude<Literal.Length, `${number}%`>
+      : kind extends 'signedLength'
+        ? Exclude<Literal.Length, `${number}%`>
+        : kind extends 'percentage'
+          ? `${number}%` & NonNegative
+          : Exclude<Literal.Length, `${number}%`> & (NonNegative | 0)
+
+type NonNegative =
+  `${'0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | '+'}${string}`
 
 /** Property domains that accept each scalar reference. */
 export type Properties<kind extends Kind> = {
@@ -53,6 +66,7 @@ type Compatible<
             | 'strokeOpacity'
           ? property
           : (typeof Literal.rules)[property] extends
+                | { kind: 'grid-line' }
                 | { integer: true }
                 | { min: number }
                 | { max: number }
@@ -63,10 +77,18 @@ type Compatible<
       : never
     : Extract<
           Literal.Properties[property],
-          kind extends 'percentage' ? `${number}%` : `${number}px`
+          kind extends 'percentage' | 'signedPercentage'
+            ? `${number}%`
+            : `${number}px`
         > extends never
       ? never
-      : property
+      : kind extends 'signedLength' | 'signedPercentage'
+        ? property extends keyof typeof Literal.rules
+          ? (typeof Literal.rules)[property] extends { negative: false }
+            ? never
+            : property
+          : property
+        : property
 
 /** Rejects broad numeric callback values where a property requires a narrower domain. */
 export type Checked<style> = {
@@ -107,7 +129,14 @@ export function is(value: unknown): value is Reference {
     fields.variable!.value === true &&
     typeof fields.name!.value === 'string' &&
     /^--[a-zA-Z0-9_-]+$/.test(fields.name!.value) &&
-    ['color', 'length', 'number', 'percentage'].includes(fields.type!.value)
+    [
+      'color',
+      'length',
+      'number',
+      'percentage',
+      'signedLength',
+      'signedPercentage',
+    ].includes(fields.type!.value)
   )
 }
 

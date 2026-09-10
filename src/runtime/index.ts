@@ -7,3 +7,5 @@ export * as Props from './Props.js'
 
 /** Runtime scalar binding isolated from static props. */
 export * as Dynamic from './Dynamic.js'
+/** Immutable compiler binding data. */
+export * as Freeze from './Freeze.js'

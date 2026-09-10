@@ -34,15 +34,6 @@ export function compile(options: compile.Options): compile.ReturnType {
     sourceType: 'module',
   }).program
 
-  for (const call of extracted.variableCalls ?? []) {
-    const slots = Object.entries(call.slots)
-      .map(
-        ([key, slot]) =>
-          `[${JSON.stringify(key)}]:Object.freeze(${JSON.stringify(slot)})`,
-      )
-      .join(',')
-    module.overwrite(call.start, call.end, `Object.freeze({${slots}})`)
-  }
   type Span = Pick<Ast.Node, 'end' | 'start'>
   const applications = new Map<number, { end: number; folded: boolean }>()
   const calls = new Map(extracted.calls.map((call) => [call.start, call]))
@@ -88,6 +79,18 @@ export function compile(options: compile.Options): compile.ReturnType {
   let runtime = '__zyzzProps'
   while (identifiers.has(runtime)) runtime += '_'
 
+  let freeze = '__zyzzFreeze'
+  while (identifiers.has(freeze)) freeze += '_'
+
+  for (const call of extracted.variableCalls ?? []) {
+    const slots = Object.entries(call.slots)
+      .map(
+        ([key, slot]) =>
+          `[${JSON.stringify(key)}]:${freeze}.create(${JSON.stringify(slot)})`,
+      )
+      .join(',')
+    module.overwrite(call.start, call.end, `${freeze}.create({${slots}})`)
+  }
   const first = extracted.calls[0]
   const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
   const names = new Map<string, string>()
@@ -259,7 +262,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable || dynamicCallable) {
+  if (callable || dynamicCallable || extracted.variableCalls?.length) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -271,7 +274,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[callable ? `Props as ${runtime}` : '', dynamicCallable ? `Dynamic as ${dynamicRuntime}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[callable ? `Props as ${runtime}` : '', dynamicCallable ? `Dynamic as ${dynamicRuntime}` : '', extracted.variableCalls?.length ? `Freeze as ${freeze}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

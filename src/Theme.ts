@@ -319,9 +319,14 @@ function build(
         palette.some(
           (name) =>
             typeof name !== 'string' ||
-            !/^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(name) ||
+            !/^(?:--|-?(?:[_a-zA-Z\u0080-\uffff]|\\(?:[0-9a-fA-F]{1,6}[ \t\n\r\f]?|[^\n\r\f0-9a-fA-F])))(?:[-_a-zA-Z0-9\u0080-\uffff]|\\(?:[0-9a-fA-F]{1,6}[ \t\n\r\f]?|[^\n\r\f0-9a-fA-F]))*$/.test(
+              name,
+            ) ||
             [
               'none',
+              'and',
+              'not',
+              'or',
               'default',
               'inherit',
               'initial',
@@ -500,13 +505,27 @@ type Validated<tokens> = Tokens extends tokens
           : never
       }
 type ContainerNames<names> = names extends readonly string[]
-  ? {
+  ? UniqueNames<names> & {
       [index in keyof names]: ContainerName<names[index]>
     }
   : names
+type UniqueNames<
+  names extends readonly string[],
+  seen extends string = never,
+> = names extends readonly [
+  infer name extends string,
+  ...infer rest extends readonly string[],
+]
+  ? name extends seen
+    ? never
+    : UniqueNames<rest, seen | name>
+  : unknown
 type ContainerName<name> = name extends string
   ? Lowercase<name> extends
       | 'none'
+      | 'and'
+      | 'not'
+      | 'or'
       | 'default'
       | 'inherit'
       | 'initial'

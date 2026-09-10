@@ -72,7 +72,7 @@ type Compatible<
             | 'strokeOpacity'
           ? property
           : (typeof Literal.rules)[property] extends
-                | { kind: 'grid-line' }
+                | { kind: 'grid-line' | 'ratio' }
                 | { integer: true }
                 | { min: number }
                 | { max: number }
@@ -92,6 +92,7 @@ type Compatible<
         ? property extends keyof typeof Literal.rules
           ? (typeof Literal.rules)[property] extends
               | { negative: false }
+              | { kind: 'line' | 'grid-tracks' }
               | { min: number }
               | { max: number }
             ? never

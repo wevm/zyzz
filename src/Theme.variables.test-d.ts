@@ -8,19 +8,23 @@ describe('define', () => {
       color: { brand: 'red' },
       spacing: { md: '8px' },
     })
-    css({
+    theme.css({
       color: theme.vars.color.brand,
       // oxlint-disable-next-line typescript/no-base-to-string, typescript/restrict-template-expressions -- Source compilation consumes this reference before coercion.
       width: `calc(100% - ${theme.vars.spacing.md})`,
     })
-    css({ padding: [theme.vars.spacing.md, '2px'] })
+    theme.css({ padding: [theme.vars.spacing.md, '2px'] })
     theme.css({ color: theme.vars.color.brand })
     // @ts-expect-error Variable domains cannot cross properties.
-    css({ color: theme.vars.spacing.md })
+    theme.css({ color: theme.vars.spacing.md })
     // @ts-expect-error Spacing variables cannot represent integer counts.
-    css({ maxLines: theme.vars.spacing.md })
+    theme.css({ maxLines: theme.vars.spacing.md })
     // @ts-expect-error Undeclared variables are unavailable.
-    css({ width: theme.vars.spacing.missing })
+    theme.css({ width: theme.vars.spacing.missing })
+    // @ts-expect-error Root css has no theme reference contract.
+    css({ width: theme.vars.spacing.md })
+    // @ts-expect-error marginTrim is a keyword grammar, not a length.
+    theme.css({ marginTrim: theme.vars.spacing.md })
     const config = Config.create({ theme })
     expectTypeOf(config.theme.vars.color.brand).toEqualTypeOf<
       typeof theme.vars.color.brand

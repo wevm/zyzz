@@ -3,6 +3,7 @@
  * @module
  */
 import { css, MissingTransformError } from './css.js'
+import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import * as Query from './internal/Query.js'
 import * as Token from './internal/Token.js'
@@ -20,9 +21,11 @@ export type Css<tokens extends Tokens> = {
     const values extends Record<string, string | number>,
     const styles extends Record<string, unknown>,
   >(
-    styles: (
+    styles: ((
       values: values,
-    ) => styles & NoInfer<Style.Accepted<styles, tokens>>,
+    ) => styles &
+      NoInfer<Style.Accepted<styles, tokens> & Binding.Checked<styles>>) &
+      (values extends Binding.Inputs<values> ? unknown : never),
   ): css.Dynamic<values>
   <const styles extends Record<string, unknown>>(
     styles: styles & NoInfer<Style.Accepted<styles, tokens>>,
@@ -168,8 +171,16 @@ type Scalar<group> = group extends 'spacing' | 'borderRadius'
       : Color
 
 export type Tokens = {
+  /** Colors available to background declarations. */
+  readonly backgroundColor?: Palette<Color> | undefined
+  /** Colors available to border declarations. */
+  readonly borderColor?: Palette<Color> | undefined
+  /** Nonnegative corner radii. */
+  readonly borderRadius?: Palette<Literal.Length> | undefined
   /** Compile-time viewport width thresholds. */
   readonly breakpoints?: Readonly<Record<string, Query.Length>> | undefined
+  /** Shared colors available to every supported color property. */
+  readonly color?: Palette<Color> | undefined
   /** Finite CSS container identities for named queries. */
   readonly containerNames?: readonly string[] | undefined
   /** Compile-time container width thresholds. */
@@ -194,14 +205,6 @@ export type Tokens = {
   readonly lineHeight?:
     | Palette<NonNullable<Literal.Properties['lineHeight']>>
     | undefined
-  /** Colors available to background declarations. */
-  readonly backgroundColor?: Palette<Color> | undefined
-  /** Colors available to border declarations. */
-  readonly borderColor?: Palette<Color> | undefined
-  /** Nonnegative corner radii. */
-  readonly borderRadius?: Palette<Literal.Length> | undefined
-  /** Shared colors available to every supported color property. */
-  readonly color?: Palette<Color> | undefined
   /** Nonnegative spacing and sizing values. */
   readonly spacing?: Palette<Literal.Length> | undefined
   /** Colors available to text declarations. */
@@ -469,13 +472,17 @@ function record(
   return entries
 }
 
-type Validated<tokens> = {
-  [group in keyof tokens]: group extends keyof Tokens
-    ? group extends 'containerNames'
-      ? tokens[group]
-      : ValidPalette<tokens[group], group>
-    : never
-}
+type Validated<tokens> = Tokens extends tokens
+  ? tokens
+  : Overrides<Tokens> extends tokens
+    ? tokens
+    : {
+        [group in keyof tokens]: group extends keyof Tokens
+          ? group extends 'containerNames'
+            ? tokens[group]
+            : ValidPalette<tokens[group], group>
+          : never
+      }
 type ValidPalette<palette, group> = palette extends undefined
   ? undefined
   : {

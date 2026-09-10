@@ -3,6 +3,19 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css, Theme } from 'zyzz'
 
 describe('css', () => {
+  test('rejects constrained numbers and reserved runtime domains', () => {
+    const bound = Theme.define({ color: { ink: 'red' } })
+    // @ts-expect-error Bound callbacks reject reserved component fields too.
+    bound.css((v: { ref: number }) => ({ opacity: v.ref }))
+    // @ts-expect-error Bound callbacks reject unconstrained integer slots too.
+    bound.css((v: { level: number }) => ({ zIndex: v.level }))
+    // @ts-expect-error Arbitrary numbers cannot satisfy integer properties.
+    css((v: { level: number }) => ({ zIndex: v.level }))
+    // @ts-expect-error Component refs are not styling values.
+    css((v: { ref: number }) => ({ opacity: v.ref }))
+    // @ts-expect-error Importance belongs to declarations, not runtime values.
+    css((v: { width: `${number}%!` }) => ({ width: v.width }))
+  })
   test('checks static callback literals', () => {
     // @ts-expect-error Negative padding remains invalid in callbacks.
     css((v: { alpha: number }) => ({ opacity: v.alpha, padding: '-1px' }))

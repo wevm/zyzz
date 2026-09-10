@@ -1,6 +1,7 @@
 # Default theme
 
-Preview: `zyzz/themes/default` is not published in this phase. The bundled dataset is retained internally; the public entrypoint will ship with bound `css`, `variants`, `theme`, and raw `tokens` after Phase 3 adds variants. Core and compiler imports do not load this data. The following examples describe that planned API.
+> [!NOTE]
+> Preview: `zyzz/themes/default` is not published in this phase. The bundled dataset is retained internally; the public entrypoint will ship with bound `css`, `variants`, `theme`, and raw `tokens` after Phase 3 adds variants. Core and compiler imports do not load this data. The following examples describe that planned API.
 
 ```ts
 import { css } from 'zyzz/themes/default'

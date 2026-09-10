@@ -1,14 +1,14 @@
 # Config.create
 
 > [!NOTE]
-> The factory, source extraction, and direct `zyzz.css` calls are implemented. Theme `vars` references are supported; `variants` and layer emission remain planned. Layer keys are inferred but are not yet accepted by source compilation.
+> The factory, destructured `css`/single `theme` exports, and direct `css` calls are implemented. Theme `vars` references are supported. Callable theme selection, `script`, `variants`, and layer emission remain planned. Layer keys are inferred but are not yet accepted by source compilation.
 
-Bind style authoring to explicit theme and layer contracts. Export the config as `zyzz` from `zyzz.config.ts` and consume its members through a named import.
+Bind style authoring to explicit theme and layer contracts. Export helpers directly from `zyzz.config.ts` and consume them through named imports.
 
 ```ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+export const { css, theme } = Config.create({
   layers: ['base', 'components'],
   theme: { spacing: { md: '1rem' } },
 })
@@ -53,11 +53,13 @@ Config.create({ layers: ['base', 'components'] })
 Map custom names to one or more properties. Values infer from all targets; tokens resolve separately for each property. Expansion preserves declaration order. Targets must be supported standard properties, and alias names cannot replace existing properties or reserved keys.
 
 ```ts
-const zyzz = Config.create({
+const { css } = Config.create({
   shorthands: { px: ['paddingLeft', 'paddingRight'] },
   theme: { padding: { md: '1rem' } },
 })
-const card = zyzz.css({ px: 'md' })
+const styles = {
+  card: css({ px: 'md' }),
+}
 ```
 
 See [Property Mappings](../../../guides/themes.md#property-mappings) for aliases and property-specific token scales.
@@ -98,32 +100,39 @@ Returns `Config.create.ReturnType<options>`: a frozen object with typed `css`, a
 Infers configured token and layer names, retaining property checking inside layer bodies. Without a theme, authoring remains token-free. Direct literal calls compile through Vite or the source graph/file host. Untransformed calls throw the missing-transform error.
 
 ```ts
-const card = zyzz.css({ padding: 'md' })
+const styles = {
+  card: css({ padding: 'md' }),
+}
 ```
 
 ### theme
 
 - Type: Normalized callable single-theme definition
 
-Present for single-theme configuration. Call `zyzz.theme({ colorScheme: 'light dark' })` to spread root props onto `<html>`. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
+Present for single-theme configuration. Call `theme({ colorScheme: 'light dark' })` to spread root props onto `<html>`. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
 
 ```ts
-zyzz.theme.tokens.spacing.md
+theme.tokens.spacing.md
 ```
 
 ### themes
 
-- Type: Normalized named theme catalog
+> [!NOTE]
+> Callable selection is planned. The current factory exposes a catalog of theme definitions; the callable examples describe the target API.
 
-Present for named catalogs. Call `zyzz.themes.mint({ colorScheme: 'dark' })` to apply a named scope. Compatible alternatives share config identity without mutating independent definitions.
+- Type: `(options: { theme: Name; colorScheme?: 'light' | 'dark' | 'light dark' }) => ThemeProps` (provisional names)
+
+Present for named catalogs. Call `themes({ theme: 'mint', colorScheme: 'dark' })` to apply a named scope. Compatible alternatives share config identity without mutating independent definitions.
 
 ```ts
-const zyzz = Config.create({
+const { themes } = Config.create({
   defaultTheme: 'base',
   themes: { base: { spacing: { md: '1rem' } } },
 })
-const token = zyzz.themes.base.tokens.spacing.md
+const props = themes({ theme: 'base', colorScheme: 'light dark' })
 ```
+
+`options.theme` is required and inferred from the configured catalog keys. Runtime selection uses the same call, such as `themes({ theme: appearance })`. Omitted `colorScheme` preserves inherited CSS behavior. The returned props contain the selected scope class and an inline scheme only when supplied.
 
 ### script
 
@@ -132,8 +141,8 @@ const token = zyzz.themes.base.tokens.spacing.md
 Generate an optional inline initialization script using this config's theme catalog. It restores localStorage preferences on `<html>` before first paint. No cookies, provider, or extra import is required.
 
 ```ts
-const script = zyzz.script()
-const custom = zyzz.script({ storageKey: 'my-app-appearance' })
+const initialization = script()
+const custom = script({ storageKey: 'my-app-appearance' })
 ```
 
 See [Config Script](script.md) for storage, CSP, and hydration behavior.
@@ -148,9 +157,11 @@ See [Config Script](script.md) for storage, CSP, and hydration behavior.
 Infers the same theme and layer contract as bound css.
 
 ```ts
-const button = zyzz.variants({
-  variants: { size: { md: { padding: 'md' } } },
-})
+const styles = {
+  button: variants({
+    variants: { size: { md: { padding: 'md' } } },
+  }),
+}
 ```
 
 ## Errors
@@ -163,7 +174,7 @@ See [Config](README.md) for related methods and types.
 
 ## Named Exports
 
-Export `const zyzz = Config.create(...)` and import `{ zyzz }` in consuming modules. Use `zyzz.css`; access `zyzz.theme` for single themes or `zyzz.themes` for named catalogs. Source integrations follow this named instance without requiring a default export. Immutable aliases, named re-exports, and packed declarations retain its contract. `zyzz.variants` remains planned.
+Export `const { css, theme } = Config.create(...)` and import `{ css, theme }` in consuming modules. Use `css`; access `theme` for single themes or `themes` for named catalogs. Source integrations follow these named exports without requiring a default export. Immutable aliases, named re-exports, and packed declarations retain its contract. `variants` remains planned.
 
 ## In-Memory Compilation
 
@@ -171,9 +182,9 @@ Export `const zyzz = Config.create(...)` and import `{ zyzz }` in consuming modu
 import { Config, Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
-const zyzz = Config.create({ theme: { spacing: { md: '1rem' } } })
+const { theme } = Config.create({ theme: { spacing: { md: '1rem' } } })
 const output = Css.compile({
-  styles: Style.define({ card: { padding: zyzz.theme.tokens.spacing.md } }),
-  themes: { base: zyzz.theme },
+  styles: Style.define({ card: { padding: theme.tokens.spacing.md } }),
+  themes: { base: theme },
 })
 ```

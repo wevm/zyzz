@@ -6,6 +6,21 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, Theme } from 'zyzz'
 
 describe('create', () => {
+  test('preserves token domains in grouped styles from destructured helpers', () => {
+    const { css, theme } = Config.create({
+      theme: { color: { brand: '#06c' }, spacing: { md: '8px' } },
+    })
+    const styles = {
+      card: css({ padding: 'md' }),
+      label: css({ color: theme.tokens.color.brand }),
+    }
+    expectTypeOf(styles.card).toEqualTypeOf<typeof styles.label>()
+    // @ts-expect-error Token names remain constrained after destructuring.
+    css({ padding: 'missing' })
+    // @ts-expect-error References retain their property domains.
+    css({ padding: theme.tokens.color.brand })
+  })
+
   test('keeps unthemed configuration token-free', () => {
     const empty = Config.create()
     empty.css({ color: '#fff', padding: '8px' })

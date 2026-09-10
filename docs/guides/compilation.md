@@ -30,11 +30,11 @@ import { Transform } from 'zyzz/compiler'
 const output = Transform.compile({
   moduleId: 'example/button.ts',
   source: `import { css } from 'zyzz';
-export const button = css({ padding: '1rem' });`,
+export const styles = { button: css({ padding: '1rem' }) };`,
 })
 ```
 
-Bundle the returned `code` and load its matching `css`. Keep their source maps together. Apply the exported `button()` props to an element. A stable package-relative module ID prevents unrelated modules sharing identities. Source extraction alone does not rewrite executable calls.
+Bundle the returned `code` and load its matching `css`. Keep their source maps together. Apply the exported `styles.button()` props to an element. A stable package-relative module ID prevents unrelated modules sharing identities. Source extraction alone does not rewrite executable calls.
 
 For filesystem builds, `await Host.create({ outDir, packageId, root })` from `zyzz/node` resolves to build/watch/close operations. It writes module and CSS sidecars; loading CSS and lowering TypeScript/JSX remain application build responsibilities.
 
@@ -64,12 +64,14 @@ Libraries expose compiled modules through package exports and document styleshee
 Apply compiled styles during server rendering and deliver their stylesheet before styled content paints. Use the same compiled identities on server and client.
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
-const card = zyzz.css({ padding: 'md' })
+const styles = {
+  card: css({ padding: 'md' }),
+}
 
 export function Card() {
-  return <article {...card()}>Content</article>
+  return <article {...styles.card()}>Content</article>
 }
 ```
 

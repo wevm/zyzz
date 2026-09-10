@@ -17,7 +17,8 @@ import { Source } from 'zyzz/compiler'
 
 const output = Source.extract({
   moduleId: 'app/card.ts',
-  source: "import { css } from 'zyzz'; export const card = css({ padding: 0 })",
+  source:
+    "import { css } from 'zyzz'; export const styles = { card: css({ padding: 0 }) }",
 })
 ```
 
@@ -37,7 +38,8 @@ Stable portable package-relative module identity.
 ```ts
 Source.extract({
   moduleId: 'app/card.ts',
-  source: "import { css } from 'zyzz'; export const card = css({ padding: 0 })",
+  source:
+    "import { css } from 'zyzz'; export const styles = { card: css({ padding: 0 }) }",
 })
 ```
 
@@ -51,7 +53,8 @@ Complete module text parsed as TypeScript with JSX. No source execution or files
 ```ts
 Source.extract({
   moduleId: 'app/card.ts',
-  source: "import { css } from 'zyzz'; export const card = css({ padding: 0 })",
+  source:
+    "import { css } from 'zyzz'; export const styles = { card: css({ padding: 0 }) }",
 })
 ```
 

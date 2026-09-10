@@ -13,7 +13,7 @@ const output = Graph.compile({
     `,
     'app/card.ts': `
       import { theme } from './theme.js'
-      export const card = theme.css({ color: 'brand' })
+      export const styles = { card: theme.css({ color: 'brand' }) }
     `,
   },
 })
@@ -112,10 +112,12 @@ Scope and variable identities retain the defining module/binding. CSS maps trace
 Named `Config.create` exports and bound aliases retain token and layer inference across source re-exports and packed declarations. Configuration metadata uses version 2; version 1 theme metadata remains readable. Publish matching JavaScript, declarations, CSS, and adjacent metadata from one build.
 
 ```ts
-import { zyzz } from '@acme/theme'
+import { css, theme } from '@acme/theme'
 
-export const card = zyzz.css({ color: 'brand' })
-export const scope = zyzz.themes.mint.className
+export const styles = {
+  card: css({ color: 'brand' }),
+}
+export const scope = theme.className
 ```
 
 The graph normalizes configured themes without executing library code. Source edits invalidate dependent authoring and retain stable scope names. Layer emission and variants remain planned.

@@ -1,5 +1,6 @@
 /** Declares explicit scalar slots and assigns values to compiled custom properties. @module */
 import { MissingTransformError } from './css.js'
+import type * as Literal from './internal/Literal.js'
 import type * as Binding from './internal/Binding.js'
 
 /** Compiled scalar slots, preserving each schema key and value domain. */
@@ -24,7 +25,9 @@ export function set<
   const values extends Values<schema>,
 >(
   definition: Definition<schema>,
-  values: values & Record<Exclude<keyof values, keyof schema>, never>,
+  values: values & {
+    [key in keyof values]: Literal.Checked<values[key]>
+  } & Record<Exclude<keyof values, keyof schema>, never>,
 ): Readonly<Record<`--${string}`, number | string>> {
   const output: Record<`--${string}`, number | string> = Object.create(null)
   for (const key of Reflect.ownKeys(values)) {

@@ -3,6 +3,19 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css, Vars } from 'zyzz'
 
 describe('define', () => {
+  test('rejects malformed assignments and constrained numeric properties', () => {
+    const slots = Vars.define({
+      color: 'color',
+      amount: 'percentage',
+      count: 'number',
+    })
+    // @ts-expect-error CSS percentages use decimal numeric spelling.
+    Vars.set(slots, { amount: '0x10%' })
+    // @ts-expect-error Color hashes require hexadecimal digits.
+    Vars.set(slots, { color: '#nothex' })
+    // @ts-expect-error Generic numeric slots cannot guarantee integer z-index values.
+    css({ zIndex: slots.count })
+  })
   test('infers references and rejects incompatible declarations', () => {
     const progress = Vars.define({
       amount: 'percentage',

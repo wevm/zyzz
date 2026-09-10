@@ -61,8 +61,10 @@ Migrate one component and its computed styles at a time. Preserve layout, states
 ```tsx
 import { css } from 'zyzz'
 
-const card = css({ padding: '1rem' })
-const example = <div {...card()}>Card</div>
+const styles = {
+  card: css({ padding: '1rem' }),
+}
+const example = <div {...styles.card()}>Card</div>
 ```
 
 External CSS remains subject to its authored specificity and layers. Do not assume previous class-order overrides or component wrappers translate automatically. Use the [comparison](../introduction/comparisons.md) and [compatibility inventory](../introduction/compatibility.md) to identify unsupported cases.

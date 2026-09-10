@@ -4,6 +4,28 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 
 describe('compile', () => {
+  test('retains type-only generic references to Vars', () => {
+    const output = Transform.compile({
+      moduleId: 'generic.ts',
+      source:
+        'import {Vars} from "zyzz"; const v=Vars.define({gap:"length"}); function identity<T>(v:T){return v}; export const typed=identity<Vars.Definition<{gap:"length"}>>(v)',
+    })
+    expect(output.code).toMatchInlineSnapshot(
+      `"import {Vars} from "zyzz"; const v=Object.freeze({["gap"]:Object.freeze({"name":"--z-v1cd72gh91mozv-76-67-61-70","type":"length","variable":true})}); function identity<T>(v:T){return v}; export const typed=identity<Vars.Definition<{gap:"length"}>>(v)"`,
+    )
+  })
+  test('rejects namespace Vars authoring', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'namespace.ts',
+        source:
+          'import * as zyzz from "zyzz"; export const v=zyzz.Vars.define({gap:"length"})',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: namespace.ts:45: Import Vars by name; namespace authoring calls are not supported yet.]`,
+    )
+  })
+
   test('preserves assertions around nested variable templates and fallbacks', () => {
     expect(
       Transform.compile({

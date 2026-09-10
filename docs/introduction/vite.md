@@ -16,7 +16,7 @@ export default defineConfig({
 ```
 
 - **Development:** run the existing dev command; edits update transformed modules and CSS.
-- **Imports:** import source components normally. Use token-free `css` or `Theme.define`/`theme.css` within the current source subset; the named `zyzz` config instance remains planned.
+- **Imports:** import source components normally. Import token-free `css` or named `{ css, theme }` helpers from config.
 - **Production:** run the existing build command; the adapter emits linked CSS assets.
 
 No generated component imports or manual stylesheet import is required. Theme source is analyzed without executing application code. Vite owns alias resolution, TypeScript/JSX lowering, final CSS processing, and asset delivery.
@@ -45,20 +45,22 @@ export const props = theme.css({ color: 'brand' })()
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+export const { css, theme } = Config.create({
   theme: { color: { brand: '#06c' } },
 })
 ```
 
 ```ts
 // card.ts
-import { zyzz } from './zyzz.config.js'
+import { css, theme } from './zyzz.config.js'
 
-export const card = zyzz.css({ color: 'brand' })
-element.className = `${zyzz.theme.className} ${card().className}`
+export const styles = {
+  card: css({ color: 'brand' }),
+}
+element.className = `${theme.className} ${styles.card().className}`
 ```
 
-Named catalogs use `zyzz.themes.<name>.className`; `defaultTheme` selects shorthand token fallbacks. Config edits rebuild dependent styles. Direct literal calls, immutable aliases, and named re-exports are supported. Dynamic member access, escaping config objects, variants, and layer bodies remain unsupported.
+`defaultTheme` selects shorthand token fallbacks for named catalogs. Callable `themes({ theme: 'mint' })` selection remains planned. Config edits rebuild dependent styles. Direct literal calls, immutable aliases, and named re-exports are supported. Dynamic member access, escaping config objects, variants, and layer bodies remain unsupported.
 
 ## Theme Libraries
 
@@ -78,8 +80,10 @@ export default defineConfig({
 import { css, mint } from '@acme/theme'
 import '@acme/theme/style.css'
 
-const card = css({ color: 'brand' })
-element.className = `${mint.className} ${card().className}`
+const styles = {
+  card: css({ color: 'brand' }),
+}
+element.className = `${mint.className} ${styles.card().className}`
 ```
 
 Light/dark pairs require final CSS targets with native `light-dark()` support. The profile above preserves it; Vite's default minification targets can lower it to scheme helper variables, which do not preserve arbitrary inherited or inline `color-scheme` selection. Zyzz does not override the host's target policy.

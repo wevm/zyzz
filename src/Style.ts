@@ -2,7 +2,7 @@
  * Copies typed style declarations into immutable, ordered, target-independent data.
  * @module
  */
-import type * as Binding from './internal/Binding.js'
+import * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import * as Value from './internal/Value.js'
@@ -180,6 +180,19 @@ export function define(
         if (inputs.length !== input.length) continue
       } else inputs.push(input)
       for (const entry of inputs) {
+        if (
+          typeof entry === 'object' &&
+          entry !== null &&
+          Object.getOwnPropertyDescriptor(entry, 'variable')?.value === true &&
+          !Binding.is(entry)
+        ) {
+          report(
+            'invalid_structure',
+            [name, property],
+            'Invalid compiler binding reference.',
+          )
+          continue
+        }
         const parsed = Value.parse(entry, key)
         const scalar = parsed ? parsed.value : entry
         const resolved = (() => {
@@ -291,12 +304,7 @@ type LiteralAtoms = {
 /** Supported primitive CSS declarations without theme references. */
 export type LiteralProperties = {
   readonly [property in keyof Literal.Properties]: Value.Fallbacks<
-    | LiteralAtoms[property]
-    | {
-        [group in Token.Group]: property extends Token.Properties<group>
-          ? Token.Variable<group>
-          : never
-      }[Token.Group]
+    LiteralAtoms[property]
   >
 }
 

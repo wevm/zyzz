@@ -34,7 +34,9 @@ export function read(node: Ast.Node, identity: string) {
       member.optional ||
       !member.typeAnnotation ||
       member.key.type !== 'Identifier' ||
-      ['className', 'style', '__proto__'].includes(member.key.name) ||
+      ['class', 'className', 'key', 'ref', 'style', '__proto__'].includes(
+        member.key.name,
+      ) ||
       Object.hasOwn(slots, member.key.name)
     )
       throw new Themes.InvalidError(
@@ -102,7 +104,8 @@ function scalar(node: Ast.Node): 'number' | 'string' | undefined {
   if (node.type === 'TSStringKeyword') return 'string'
   if (
     node.type === 'TSTemplateLiteralType' &&
-    node.types.every((type) => scalar(type) !== undefined)
+    node.types.every((type) => scalar(type) !== undefined) &&
+    node.quasis.every((part) => !part.value.raw.includes('!'))
   )
     return 'string'
   if (node.type === 'TSLiteralType') {
@@ -113,7 +116,8 @@ function scalar(node: Ast.Node): 'number' | 'string' | undefined {
       return 'number'
     if (
       node.literal.type === 'Literal' &&
-      typeof node.literal.value === 'string'
+      typeof node.literal.value === 'string' &&
+      !node.literal.value.includes('!')
     )
       return 'string'
   }

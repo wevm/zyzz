@@ -2,6 +2,7 @@
  * Declares the token-free authoring boundary consumed by source transforms.
  * @module
  */
+import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import type * as Value from './internal/Value.js'
 import type * as Style from './Style.js'
@@ -20,7 +21,13 @@ export function css<
   styles: callback &
     ((
       values: Parameters<callback>[0],
-    ) => NoInfer<Value.Checked<ReturnType<callback>>>) &
+    ) => NoInfer<
+      Value.Checked<ReturnType<callback>> &
+        Binding.Checked<ReturnType<callback>>
+    >) &
+    (Parameters<callback>[0] extends Binding.Inputs<Parameters<callback>[0]>
+      ? unknown
+      : never) &
     (Parameters<callback> extends [Record<string, string | number>]
       ? unknown
       : never),

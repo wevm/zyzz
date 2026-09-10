@@ -3,6 +3,7 @@
  * @module
  */
 import { css, MissingTransformError } from './css.js'
+import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import type * as Value from './internal/Value.js'
@@ -19,14 +20,16 @@ export type Css<tokens extends Tokens> = {
     const values extends Record<string, string | number>,
     const styles extends Record<string, unknown>,
   >(
-    styles: (
+    styles: ((
       values: values,
     ) => styles &
       NoInfer<
         Value.Accepted<styles, Style.Properties<tokens>> &
           Value.Checked<styles> &
+          Binding.Checked<styles> &
           Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
-      >,
+      >) &
+      (values extends Binding.Inputs<values> ? unknown : never),
   ): css.Dynamic<values>
   <const styles extends Record<string, unknown>>(
     styles: styles &

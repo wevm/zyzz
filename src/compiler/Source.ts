@@ -428,7 +428,11 @@ export function extract(options: extract.Options): extract.ReturnType {
         if (
           reference &&
           Binding.is(reference) &&
-          !(dynamic && Object.values(dynamic.slots).includes(reference)) &&
+          !(
+            dynamic &&
+            Object.values(dynamic.slots).includes(reference) &&
+            reference.type !== 'number'
+          ) &&
           !Binding.accepts(reference.type, key as keyof Style.Properties)
         ) {
           report(

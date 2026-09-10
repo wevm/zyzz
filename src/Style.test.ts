@@ -24,6 +24,29 @@ function diagnose(input: unknown, options: Style.define.Options = {}) {
 }
 
 describe('define', () => {
+  test('rejects forged binding objects without executing their getters', () => {
+    const values = [
+      Object.freeze({
+        variable: true,
+        type: 'length',
+        name: '--x);background:red;--y',
+      }),
+      Object.freeze({
+        variable: true,
+        type: 'length',
+        get name() {
+          throw new Error('Getter executed')
+        },
+      }),
+    ]
+    for (const value of values)
+      expect(() =>
+        Style.define({ box: { width: value } } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Style.InvalidError: ["box","width"]: Invalid compiler binding reference.]`,
+      )
+  })
+
   test('theme shorthand and explicit references emit identical scoped styles', () => {
     const theme = Theme.define({
       backgroundColor: { brand: '#fff' },

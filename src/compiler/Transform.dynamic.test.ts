@@ -12,6 +12,46 @@ const source = [
 ].join('\n')
 
 describe('compile', () => {
+  test('rejects constrained and reserved callback domains', () => {
+    const errors = [
+      'css((v:{level:number})=>({zIndex:v.level}))',
+      'css((v:{ref:number})=>({opacity:v.ref}))',
+      'css((v:{key:number})=>({opacity:v.key}))',
+      'css((v:{class:number})=>({opacity:v.class}))',
+      'css((v:{width:`${number}%!`})=>({width:v.width}))',
+    ].map((source) => {
+      try {
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: 'import {css} from "zyzz"; ' + source,
+        })
+        return 'accepted'
+      } catch (error) {
+        return String(error)
+      }
+    })
+    expect(errors).toMatchInlineSnapshot(`
+      [
+        "Source.ExtractError: invalid.ts:59: Variable domain is incompatible with this property.",
+        "Source.ExtractError: invalid.ts:34: Dynamic values require unique required scalar fields without styling override keys.",
+        "Source.ExtractError: invalid.ts:34: Dynamic values require unique required scalar fields without styling override keys.",
+        "Source.ExtractError: invalid.ts:34: Dynamic values require unique required scalar fields without styling override keys.",
+        "Source.ExtractError: invalid.ts:34: Dynamic values require explicit string or number scalar types.",
+      ]
+    `)
+  })
+  test('unwraps non-null callback bodies before binding theme variables', () => {
+    expect(
+      Transform.compile({
+        moduleId: 'body.ts',
+        source:
+          'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.css((v:{alpha:number})=>({color:t.vars.color.ink,opacity:v.alpha})!)',
+      }).css,
+    ).toMatchInlineSnapshot(`
+      ".z_theme-10qvms41gznlvu-t{--z-t10qvms41gznlvu-t-color_2e_ink:red;}
+      .z-10qvms41gznlvu-base0{color:var(--z-t10qvms41gznlvu-t-color_2e_ink,red);opacity:var(--z-d10qvms41gznlvu-71-61-6c-70-68-61);}"
+    `)
+  })
   test('rejects imported names in callback template annotations', () => {
     expect(() =>
       Transform.compile({

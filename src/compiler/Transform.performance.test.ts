@@ -135,7 +135,7 @@ describe('create', () => {
   test('returns fresh props and forwards unchanged styles with single getter reads', () => {
     for (const className of ['', 'generated']) {
       const apply = Props.create({ className })
-      const style = { color: 'red' }
+      const style = { color: 'red' } as const
       const reads: string[] = []
       const result = apply({
         get className() {

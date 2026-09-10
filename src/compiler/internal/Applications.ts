@@ -9,7 +9,10 @@ export function find(
   calls: readonly Source.Call[],
 ): readonly Application[] {
   const parents = new Map<Ast.Node, Ast.Node>()
-  const references = new Map<string, Ast.Identifier[]>()
+  const references = new Map<
+    string,
+    Extract<Ast.Node, { type: 'Identifier' }>[]
+  >()
   let evaluation = false
   Walker.walk(program, {
     enter(node, parent) {

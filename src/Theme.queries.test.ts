@@ -9,6 +9,19 @@ import { Css } from 'zyzz/web'
 import { theme as bundled, tokens } from 'zyzz/themes/default'
 
 describe('query metadata and typography', () => {
+  test('compiles the public bundled import without host linking', () => {
+    expect(
+      Transform.compile({
+        moduleId: 'app.ts',
+        source:
+          'import {css} from "zyzz/themes/default"; export const body=css({fontSize:"base",padding:4})()',
+      }).css,
+    ).toMatchInlineSnapshot(`
+      ".z_theme-zyzz-default-theme{--z-tzyzz-default-theme-fontSize_2e_base:1rem;--z-tzyzz-default-theme-spacing_2e_4:1rem;}
+      .z-1e8a67z1uaws1j-base0{font-size:var(--z-tzyzz-default-theme-fontSize_2e_base,1rem);padding:var(--z-tzyzz-default-theme-spacing_2e_4,1rem);}"
+    `)
+  })
+
   test('links bundled source through its exported css boundary', async () => {
     const source = await Fs.readFile(
       new URL('./themes/default.ts', import.meta.url),

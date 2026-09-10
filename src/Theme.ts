@@ -313,6 +313,9 @@ function build(
       hasQueries = true
       if (
         !Array.isArray(palette) ||
+        Array.from({ length: palette.length }, (_, index) =>
+          Object.getOwnPropertyDescriptor(palette, index),
+        ).some((field) => !field || !('value' in field)) ||
         palette.some(
           (name) =>
             typeof name !== 'string' ||
@@ -545,7 +548,17 @@ type ValidTree<tree, group> = tree extends string | number
       : group extends keyof Literal.Properties
         ? Literal.Checked<tree> &
             Value.Checked<Record<group, tree>>[group] &
-            (group extends 'fontWeight' ? Weight<tree> : unknown)
+            (group extends 'fontWeight' ? Weight<tree> : unknown) &
+            (tree extends string
+              ? Lowercase<tree> extends
+                  | 'inherit'
+                  | 'initial'
+                  | 'unset'
+                  | 'revert'
+                  | 'revert-layer'
+                ? never
+                : unknown
+              : unknown)
         : Literal.Checked<tree>
     : never
   : Extract<

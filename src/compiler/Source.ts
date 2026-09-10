@@ -145,6 +145,10 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (
         ancestors.some(
           (ancestor) =>
+            ('typeAnnotation' in ancestor &&
+              typeof ancestor.typeAnnotation === 'object' &&
+              ancestor.typeAnnotation !== null &&
+              ancestors.includes(ancestor.typeAnnotation as Ast.Node)) ||
             ancestor.type === 'TSTypeParameterInstantiation' ||
             ancestor.type === 'TSTypeParameterDeclaration' ||
             ancestor.type === 'TSTypeAnnotation' ||
@@ -433,7 +437,8 @@ export function extract(options: extract.Options): extract.ReturnType {
             Object.values(dynamic.slots).includes(reference) &&
             reference.type !== 'number'
           ) &&
-          !Binding.accepts(reference.type, key as keyof Style.Properties)
+          !Binding.accepts(reference.type, key as keyof Style.Properties) &&
+          !dynamic?.accepts(reference, key)
         ) {
           report(
             'unsupported_syntax',

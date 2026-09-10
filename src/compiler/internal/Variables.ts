@@ -90,16 +90,21 @@ export function collect(program: Ast.Program, namespace: string) {
           !key ||
           Object.hasOwn(slots, key) ||
           value.type !== 'Literal' ||
-          !['color', 'length', 'number', 'percentage'].includes(
-            String(value.value),
-          )
+          ![
+            'color',
+            'length',
+            'number',
+            'percentage',
+            'signedLength',
+            'signedPercentage',
+          ].includes(String(value.value))
         )
           throw new InvalidError(
             'Variable schemas require unique names and supported scalar domains.',
             property,
           )
         const name =
-          `--z-v${namespace}-${encode(declaration.id.name)}-${encode(key)}` as const
+          `--z-v${namespace}-${encode(declaration.id.name)}--${encode(key)}` as const
         slots[key] = Object.freeze({
           name,
           type: value.value as Binding.Kind,

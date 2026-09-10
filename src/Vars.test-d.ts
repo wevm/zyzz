@@ -3,6 +3,25 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css, Vars } from 'zyzz'
 
 describe('define', () => {
+  test('distinguishes signed dimensions and grid integers', () => {
+    const slots = Vars.define({
+      size: 'length',
+      signed: 'signedLength',
+      amount: 'percentage',
+      count: 'number',
+    })
+    Vars.set(slots, { size: '12px', signed: '-12px', amount: '50%' })
+    css({ marginLeft: slots.signed, padding: slots.size })
+    // @ts-expect-error Nonnegative lengths cannot carry negative values.
+    Vars.set(slots, { size: '-12px' })
+    // @ts-expect-error Nonnegative percentages cannot carry negative values.
+    Vars.set(slots, { amount: '-50%' })
+    // @ts-expect-error Signed dimensions cannot guarantee nonnegative padding.
+    css({ padding: slots.signed })
+    // @ts-expect-error Grid lines require nonzero integers.
+    css({ gridColumnStart: slots.count })
+  })
+
   test('rejects partial compound grammars', () => {
     const slots = Vars.define({ size: 'length', count: 'number' })
     // @ts-expect-error A font shorthand also requires a family.

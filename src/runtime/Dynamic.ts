@@ -35,7 +35,7 @@ export function create(
         throw new TypeError(
           'Dynamic style inputs require matching scalar primitives.',
         )
-      style[slot.name] = value as string | number
+      style[slot.name] = value === '' ? ' ' : (value as string | number)
     }
     const overrides = { className: input.className, style: input.style }
     const result = bind(overrides)

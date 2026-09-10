@@ -11,7 +11,11 @@ describe('compile', () => {
         'import {Vars} from "zyzz"; const v=Vars.define({gap:"length"}); function identity<T>(v:T){return v}; export const typed=identity<Vars.Definition<{gap:"length"}>>(v)',
     })
     expect(output.code).toMatchInlineSnapshot(
-      `"import {Vars} from "zyzz"; const v=Object.freeze({["gap"]:Object.freeze({"name":"--z-v1cd72gh91mozv-76-67-61-70","type":"length","variable":true})}); function identity<T>(v:T){return v}; export const typed=identity<Vars.Definition<{gap:"length"}>>(v)"`,
+      `
+      "
+      import { Freeze as __zyzzFreeze } from 'zyzz/runtime';
+      import {Vars} from "zyzz"; const v=__zyzzFreeze.create({["gap"]:__zyzzFreeze.create({"name":"--z-v1cd72gh91mozv-76--67-61-70","type":"length","variable":true})}); function identity<T>(v:T){return v}; export const typed=identity<Vars.Definition<{gap:"length"}>>(v)"
+    `,
     )
   })
   test('rejects namespace Vars authoring', () => {

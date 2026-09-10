@@ -82,6 +82,12 @@ export function create(options: create.Options) {
           options.literals[(index + phase) % options.literals.length]!
         const input = options.inputs[phase]!
         reference.removeAttribute('style')
+        // Fractional grid tracks depend on column position. Match the card's
+        // track and intrinsic content before comparing native geometry.
+        reference.style.gridColumn = String((index % 10) + 1)
+        reference.replaceChildren(
+          ...Array.from(card.childNodes, (node) => node.cloneNode(true)),
+        )
         Object.assign(
           reference.style,
           literal,
@@ -106,7 +112,9 @@ export function create(options: create.Options) {
             actualStyle.getPropertyValue(property) !==
             expectedStyle.getPropertyValue(property)
           )
-            throw new Error(`Card ${index}: ${property} differs`)
+            throw new Error(
+              `Card ${index}: ${property} differs (${actualStyle.getPropertyValue(property)} versus ${expectedStyle.getPropertyValue(property)})`,
+            )
         }
         if (card.textContent !== `Card ${index}Phase ${phase}`)
           throw new Error('Incorrect card content')

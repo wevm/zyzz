@@ -11,8 +11,8 @@ import { Config } from 'zyzz'
 
 ## Methods
 
-| API                        | Description                                                                                                                                                   |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Config.create](create.md) | Bind style authoring to explicit theme and layer contracts. Export the config as `zyzz` from `zyzz.config.ts` and consume its members through a named import. |
+| API                        | Description                                                                                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Config.create](create.md) | Bind style authoring to explicit theme and layer contracts. Export helpers directly from `zyzz.config.ts` and consume them through named imports. |
 
-[Config Script](script.md) documents `zyzz.script()` for optional localStorage preference initialization.
+[Config Script](script.md) documents `script()` for optional localStorage preference initialization.

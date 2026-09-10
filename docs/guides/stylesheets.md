@@ -37,13 +37,17 @@ Declare layer order once in config. Bound styles infer the exact layer names.
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({ layers: ['reset', 'base', 'components'] })
+export const { css } = Config.create({
+  layers: ['reset', 'base', 'components'],
+})
 ```
 
 ```ts
-import { zyzz } from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
-const card = zyzz.css({ '@layer components': { padding: '1rem' } })
+const styles = {
+  card: css({ '@layer components': { padding: '1rem' } }),
+}
 ```
 
 Global modules may contribute rules independently. Their raw layer names receive compiler validation without ambient config inference.
@@ -73,12 +77,14 @@ fontFace({
   src: 'url("./app.woff2") format("woff2")',
 })
 const enter = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })
-const notice = css({
-  animationDuration: '160ms',
-  animationName: enter,
-  fontFamily: '"App Sans", sans-serif',
-  '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
-})
+const styles = {
+  notice: css({
+    animationDuration: '160ms',
+    animationName: enter,
+    fontFamily: '"App Sans", sans-serif',
+    '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
+  }),
+}
 ```
 
 Font URLs retain source ownership. Reachable keyframes emit stable references. Frame bodies contain declarations only; no importance or nested selectors/queries. Native font loading and animations require platform-specific behavior.

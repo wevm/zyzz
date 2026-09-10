@@ -3,14 +3,14 @@
 Return inline JavaScript that restores saved root theme and color-scheme preferences. The factory is pure and safe to call during server rendering; only the returned script accesses the browser.
 
 ```ts
-import { zyzz } from './zyzz.config.js'
+import { script } from './zyzz.config.js'
 
-const script = zyzz.script()
+const initialization = script()
 ```
 
 ## Signature
 
-`zyzz.script(options = {}) => string`
+`script(options = {}) => string`
 
 The bound function derives the theme catalog, compiled scope classes, and default selection from its config. Named catalogs restore allowlisted theme names; single-theme and token-free configs restore only the color scheme. Server-rendered root props remain the fallback.
 
@@ -24,7 +24,7 @@ The bound function derives the theme catalog, compiled scope classes, and defaul
 localStorage key containing a JSON object. Supported fields are `theme` (a catalog key) and `colorScheme` (`'light'`, `'dark'`, or `'light dark'`). Either field may be omitted.
 
 ```ts
-zyzz.script({ storageKey: 'my-app-appearance' })
+script({ storageKey: 'my-app-appearance' })
 ```
 
 ## Returns

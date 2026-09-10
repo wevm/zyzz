@@ -9,13 +9,13 @@ Define shared tokens, apply theme scopes, and choose light or dark mode. See [Ge
 > [!NOTE]
 > Config authoring is a preview. For current support, see [Compile Local Theme Source](#compile-local-theme-source).
 
-Export a named config instance and use its bound styles:
+Export bound helpers directly from the config:
 
 ```ts
 // zyzz.config.ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+export const { css, theme, variants } = Config.create({
   theme: {
     color: { brand: { dark: '#8cf', light: '#06c' } },
     spacing: { md: '1rem' },
@@ -24,11 +24,13 @@ export const zyzz = Config.create({
 ```
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { css } from './zyzz.config.js'
 
-const button = zyzz.css({ backgroundColor: 'brand', padding: 'md' })
+const styles = {
+  button: css({ backgroundColor: 'brand', padding: 'md' }),
+}
 
-const example = <button {...button()}>Save</button>
+const example = <button {...styles.button()}>Save</button>
 ```
 
 Token names are inferred from the config. Nested palettes use dotted paths; CSS literals win over colliding token names. See [Theme.define](../api/core/Theme/define.md) for supported groups and values.
@@ -40,7 +42,7 @@ Define custom property names with `shorthands` and separate token scales by prop
 ```ts
 import { Config } from 'zyzz'
 
-export const zyzz = Config.create({
+export const { css } = Config.create({
   shorthands: {
     px: ['paddingLeft', 'paddingRight'],
     paddingX: ['paddingLeft', 'paddingRight'],
@@ -54,7 +56,9 @@ export const zyzz = Config.create({
   },
 })
 
-const card = zyzz.css({ px: 'sm', margin: 'gutter', color: 'primary' })
+const styles = {
+  card: css({ px: 'sm', margin: 'gutter', color: 'primary' }),
+}
 ```
 
 `px`, `paddingX`, and `paddingHorizontal` each set left/right padding. Use logical targets such as `paddingInlineStart` and `paddingInlineEnd` for writing-direction-aware aliases. Aliases are optional and local to the config.
@@ -71,11 +75,13 @@ The example uses `padding.sm` for `px`, `margin.gutter` for margin, and `textCol
 Apply the single theme's scope to the document root:
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { theme } from './zyzz.config.js'
 
 const example = (
-  <html {...zyzz.theme()}>
-    <head><title>My App</title></head>
+  <html {...theme()}>
+    <head>
+      <title>My App</title>
+    </head>
     <body>Content</body>
   </html>
 )
@@ -89,7 +95,7 @@ import { Config, Theme } from 'zyzz'
 
 const base = Theme.define({ color: { brand: '#06c' } })
 
-export const zyzz = Config.create({
+export const { css, script, themes } = Config.create({
   defaultTheme: 'base',
   themes: {
     base,
@@ -99,21 +105,27 @@ export const zyzz = Config.create({
 ```
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { css, themes } from './zyzz.config.js'
 
-const card = zyzz.css({ color: 'brand' })
+const styles = {
+  card: css({ color: 'brand' }),
+}
 
 function App({ appearance }: { appearance: 'base' | 'mint' }) {
   return (
-    <html {...zyzz.themes[appearance]()}>
-      <head><title>My App</title></head>
-      <body><div {...card()}>Card</div></body>
+    <html {...themes({ theme: appearance })}>
+      <head>
+        <title>My App</title>
+      </head>
+      <body>
+        <div {...styles.card()}>Card</div>
+      </body>
     </html>
   )
 }
 ```
 
-Changing the scope updates inherited token values while component styles stay the same. Single-theme configs expose `zyzz.theme`; named catalogs expose `zyzz.themes`. Independently defined themes do not share a contract merely because their token names match.
+Changing the scope updates inherited token values while component styles stay the same. Single-theme configs expose `theme`; named catalogs expose `themes`. Independently defined themes do not share a contract merely because their token names match.
 
 <a id="dark-mode"></a>
 
@@ -122,11 +134,13 @@ Changing the scope updates inherited token values while component styles stay th
 Color tokens accept a shared string or a `{ dark, light }` pair, as in [Use Themes](#use-themes). Pass the scheme when applying the theme:
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { theme } from './zyzz.config.js'
 
 const example = (
-  <html {...zyzz.theme({ colorScheme: 'light dark' })}>
-    <head><title>My App</title></head>
+  <html {...theme({ colorScheme: 'light dark' })}>
+    <head>
+      <title>My App</title>
+    </head>
     <body>Content</body>
   </html>
 )
@@ -141,18 +155,21 @@ Use an optional initialization script when preferences persist in localStorage. 
 The following uses the named catalog from [Selecting a Theme](#selecting-a-theme):
 
 ```tsx
-import { zyzz } from './zyzz.config.js'
+import { script, themes } from './zyzz.config.js'
 
-const script = zyzz.script()
+const initialization = script()
 
 export function Document({ nonce }: { nonce?: string }) {
   return (
     <html
-      {...zyzz.themes.base({ colorScheme: 'light dark' })}
+      {...themes({ theme: 'base', colorScheme: 'light dark' })}
       suppressHydrationWarning
     >
       <head>
-        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: script }} />
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{ __html: initialization }}
+        />
         <title>My App</title>
       </head>
       <body>Content</body>
@@ -195,10 +212,10 @@ export const theme = Theme.define({ spacing: { md: '1rem' } })
 import { Config } from 'zyzz'
 import { theme } from './tokens.js'
 
-export const zyzz = Config.create({ theme })
+export const { css } = Config.create({ theme })
 ```
 
-Consumers import `{ zyzz }` from the config's stable export. See [Publish Libraries](compilation.md#publish-libraries) for distributing precompiled components.
+Consumers import named helpers from the config's stable exports. See [Publish Libraries](compilation.md#publish-libraries) for distributing precompiled components.
 
 ### Compile Local Theme Source
 
@@ -212,10 +229,12 @@ const alternate = Theme.extend(theme, { color: { brand: '#175' } })
 const { css } = theme
 
 export const scope = alternate.className
-export const card = css({ color: theme.tokens.color.brand })
+export const styles = {
+  card: css({ color: theme.tokens.color.brand }),
+}
 ```
 
-Compile this module with [Transform.compile](../api/compiler/Transform/compile.md), load its CSS, and apply `scope` to an ancestor of an element using `card()`.
+Compile this module with [Transform.compile](../api/compiler/Transform/compile.md), load its CSS, and apply `scope` to an ancestor of an element using `styles.card()`.
 
 Use explicit `theme.tokens` paths to select tokens whose names collide with CSS literals. Dot access and literal string/numeric brackets are supported.
 

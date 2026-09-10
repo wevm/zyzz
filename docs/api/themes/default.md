@@ -8,7 +8,9 @@ Opt-in bundled design tokens. Core `zyzz` imports remain token-free.
 ```ts
 import { css } from 'zyzz/themes/default'
 
-const card = css({ color: 'blue.700', padding: 4 })
+const styles = {
+  card: css({ color: 'blue.700', padding: 4 }),
+}
 ```
 
 | Export     | Contract                                                    |

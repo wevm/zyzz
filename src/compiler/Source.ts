@@ -312,8 +312,9 @@ export function extract(options: extract.Options): extract.ReturnType {
           variables.references.get(unwrapped.start) ??
           themes?.tokens.get(node.start)
         const reference =
-          token?.end ===
-          (Binding.is(token?.reference) ? unwrapped.end : node.end)
+          token &&
+          token.end ===
+            (Binding.is(token?.reference) ? unwrapped.end : node.end)
             ? token.reference
             : undefined
         node = Expression.unwrap(node)

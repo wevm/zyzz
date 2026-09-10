@@ -79,10 +79,44 @@ export function normalize(key: string): string {
         throw new Error('Unbalanced condition delimiters.')
     } else if (char === '{' || char === '}')
       throw new Error('Unexpected condition block delimiter.')
-    else if (char === ',' && !stack.length && key.startsWith(':'))
+    else if (
+      char === ',' &&
+      !stack.length &&
+      key.startsWith(':') &&
+      !key.includes('&')
+    )
       throw new Error('Selector lists require explicit & selectors.')
     output += /[\n\r\f]/.test(char) ? ' ' : char
   }
   if (quote || stack.length) throw new Error('Unbalanced condition delimiters.')
   return output
+}
+
+/** Identifies conservative same-element selectors for private inline callback variables. */
+export function local(key: string): boolean {
+  if (key.startsWith('@')) return true
+  if (!key.startsWith('&') && (!key.startsWith(':') || key.includes('&')))
+    return false
+  let depth = 0
+  let quote = ''
+  for (let index = 0; index < key.length; index++) {
+    const char = key[index]!
+    if (char === '\\') {
+      index++
+      continue
+    }
+    if (quote) {
+      if (char === quote) quote = ''
+      continue
+    }
+    if (char === '"' || char === "'") {
+      quote = char
+      continue
+    }
+    if (char === '(' || char === '[') depth++
+    else if (char === ')' || char === ']') depth--
+    else if (!depth && (/[\s+~>,]/.test(char) || (char === '&' && index !== 0)))
+      return false
+  }
+  return true
 }

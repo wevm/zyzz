@@ -1,14 +1,23 @@
-/** Measures ordered nested selector and query compilation through the public transform. @module */
+/** Measures nested conditions over shared repeated, unique, and component workloads. @module */
 import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
-const source =
-  'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem"}}); export const box=theme.css({width:"40px",":hover":{opacity:0.5},"@media tablet":{width:"80px"}})()'
-describe('nested conditions', () => {
-  bench(
-    'compile',
-    () => {
-      Transform.compile({ moduleId: 'conditions.ts', source })
-    },
-    { time: 200, warmupTime: 100 },
-  )
-})
+import * as Corpus from '../../bench/Corpus.js'
+for (const workload of Corpus.cases) {
+  const source =
+    'import {css} from "zyzz";' +
+    Corpus.styles(workload)
+      .map(
+        (style, index) =>
+          `export const card${index}=css(${JSON.stringify({ ...style, ':hover': style, '@media (width >= 48rem)': style })})()`,
+      )
+      .join('\n')
+  describe(`compile / conditions / ${workload.name}`, () => {
+    bench(
+      'shared corpus',
+      () => {
+        Transform.compile({ moduleId: 'conditions.ts', source })
+      },
+      { time: 1000, warmupTime: 500 },
+    )
+  })
+}

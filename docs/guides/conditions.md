@@ -102,3 +102,5 @@ const example = (
 ```
 
 This deliberately includes an intermediate element: the marker is an ancestor, not the span's immediate parent. `Css.descendant` checks descendants of the styled element. Helper names describe direction and depth; they do not verify DOM structure through TypeScript.
+
+Dynamic callback values use private variables on the styled element. They are supported inside at-rules and same-element pseudo or attribute selectors. Relationship selectors remain available for static declarations.

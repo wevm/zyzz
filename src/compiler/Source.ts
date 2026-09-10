@@ -339,6 +339,18 @@ export function extract(options: extract.Options): extract.ReturnType {
     ): Record<string, unknown> {
       const values: Record<string, unknown> = Object.create(null)
       const depth = prefix.length + 2
+      function localSlot(node: Ast.Node) {
+        const slot = resolveDynamic(node)
+        if (slot && prefix.some((key) => !Condition.local(key))) {
+          report(
+            'unsupported_syntax',
+            'Dynamic values require conditions that select the styled element.',
+            node,
+          )
+          return undefined
+        }
+        return slot
+      }
       for (const property of argument.properties) {
         if (
           property.type !== 'Property' ||
@@ -394,7 +406,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             variables.references.get(unwrapped.start) ??
             themes?.tokens.get(node.start)
           const reference =
-            resolveDynamic(node) ??
+            localSlot(node) ??
             (token &&
             token.end ===
               (Binding.is(token?.reference) ? unwrapped.end : node.end)
@@ -428,7 +440,7 @@ export function extract(options: extract.Options): extract.ReturnType {
                   const token =
                     variables.references.get(expression.start) ??
                     themes?.tokens.get(expression.start)
-                  const slot = resolveDynamic(expression)
+                  const slot = localSlot(expression)
                   if (slot) {
                     if (path.length > depth) {
                       report(

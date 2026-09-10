@@ -6,6 +6,14 @@ CSS property/value validation is static only. Remove runtime CSS validators rath
 
 The consolidated PR maps 670/670 properties: 670 reviewed as supported, 0 partial, and 0 deferred. The strict 100% gate remains active. Static hex/integer/nonnegative literal checks and image/URL declarations extend the independent grammar and public consumer corpus. Browser evidence remains required for applicable properties.
 
+## Static Template Values
+
+[PR #64](https://github.com/wevm/zyzz/pull/64) folds untagged template text and literal primitive substitutions, including signed numbers, TypeScript assertions, nesting, fallbacks, and importance. Integration/type fixtures and extraction benchmarks cover this boundary.
+
+Identifier evaluation and recognized theme variable interpolation remain separate follow-ups. The expression/variable acceptance gate remains open.
+
+Local validation: ten extraction/transform integrations, native type/lint checks, package build, and the 670/670 gate pass. Ordinary TypeScript and browser verification remain with CI. Matched 10/100/1000-style extraction means: 0.873/11.500/72.863 ms before and 0.851/9.489/74.794 ms after; uncertainty overlaps. The template fixture measures 0.371 ms. No speedup is established.
+
 ## Goal
 
 A minimal, type-safe styling system with an environment-independent core, shared web/native authoring, modular extensions, and optional integration adapters. Styles compile ahead of time. Core `css` and `variants` have no tokens; bundled themes are opt-in through `zyzz/themes/default`. Color tokens accept shared values or light/dark pairs.

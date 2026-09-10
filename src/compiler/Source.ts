@@ -291,8 +291,13 @@ export function extract(options: extract.Options): extract.ReturnType {
         const token = themes?.tokens.get(node.start)
         const reference = token?.end === node.end ? token.reference : undefined
         node = Expression.unwrap(node)
+        const template =
+          node.type === 'TemplateLiteral'
+            ? Expression.template(node)
+            : undefined
         let result: unknown
         if (reference) result = reference
+        else if (template !== undefined) result = template
         else if (
           node.type === 'Literal' &&
           (typeof node.value === 'string' || typeof node.value === 'number')

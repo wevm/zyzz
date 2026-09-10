@@ -2,6 +2,16 @@
 
 Extract supported root literal definitions without evaluating source.
 
+Declaration values accept ordinary strings and untagged template literals. Templates fold cooked text and literal string, finite number, boolean, null, and bigint substitutions; signed numbers, TypeScript assertions, and nested templates are supported. Fallback entries use the same rules.
+
+```ts
+css({ padding: `${8}px`, width: `calc(100% - ${16}px)` })
+```
+
+Identifiers, property reads, object coercions, arithmetic expressions, calls, and tagged templates remain unsupported. Theme variable references inside templates are deferred. Nested templates are limited to 128 levels. CSS value checking remains static-only.
+
+Bigint literals also support unary minus: `${-12n}px` folds to `-12px`. Unary plus on bigint remains rejected, matching JavaScript semantics.
+
 ```ts
 import { Source } from 'zyzz/compiler'
 

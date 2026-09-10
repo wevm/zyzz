@@ -6,6 +6,16 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css } from 'zyzz'
 
 describe('css', () => {
+  test('preserves static template value constraints', () => {
+    expectTypeOf(
+      css({ padding: `${8}px`, width: `calc(100% - ${16}px)` }),
+    ).toEqualTypeOf<css.ReturnType>()
+    // @ts-expect-error A static template does not bypass the length domain.
+    css({ padding: `${8}invalid` })
+    // @ts-expect-error Nonnegative length domains still reject negative literals.
+    css({ padding: `${-8}px` })
+  })
+
   test('infers applied props and rejects invalid styles and overrides', () => {
     const card = css({ color: '#fff', padding: '1rem' })
     expectTypeOf(card).toEqualTypeOf<css.ReturnType>()

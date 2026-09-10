@@ -9,6 +9,19 @@ import { Graph, Transform } from 'zyzz/compiler'
 const source =
   'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); export const box=theme.css({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:"100px","&[data-active]":{height:"20px"}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
 describe('compile', () => {
+  test('scopes pseudo selectors containing ampersands in data', () => {
+    const output = Transform.compile({
+      moduleId: 'data.ts',
+      source: `import { css } from 'zyzz'; css({ ':hover[data-token="a&b"]': { color: 'red' } })`,
+    })
+    expect(output.css).toContain('&:hover[data-token="a&b"]')
+    expect(() =>
+      Transform.compile({
+        moduleId: 'backdrop.ts',
+        source: `import { css } from 'zyzz'; css((v: { alpha: number }) => ({ '::backdrop': { opacity: v.alpha } }))`,
+      }),
+    ).toThrow()
+  })
   test('maps condition keys and supports local dynamic selector lists', () => {
     const source = `import {css} from 'zyzz'; css((v:{alpha:number})=>({'&:hover, &:focus':{opacity:v.alpha},'@media screen':{color:'red'}}))`
     const output = Transform.compile({ moduleId: 'keys.ts', source })

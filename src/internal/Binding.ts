@@ -84,7 +84,10 @@ type Compatible<
       ? never
       : kind extends 'signedLength' | 'signedPercentage'
         ? property extends keyof typeof Literal.rules
-          ? (typeof Literal.rules)[property] extends { negative: false }
+          ? (typeof Literal.rules)[property] extends
+              | { negative: false }
+              | { min: number }
+              | { max: number }
             ? never
             : property
           : property

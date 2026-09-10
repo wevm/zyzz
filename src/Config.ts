@@ -169,24 +169,43 @@ type Css<tokens extends Theme.Tokens, layers extends string> = {
   <
     const values extends Record<string, string | number>,
     const styles extends Record<string, unknown>,
+    const callback extends (...args: never[]) => unknown,
   >(
-    styles: ((
-      values: values,
-    ) => styles &
-      NoInfer<Body<styles, tokens, layers> & Binding.Checked<styles>>) &
-      (values extends Binding.Inputs<values> ? unknown : never),
+    styles: callback &
+      ((
+        values: values,
+      ) => styles &
+        NoInfer<Body<styles, tokens, layers> & Binding.Checked<styles>>) &
+      (values extends Binding.Inputs<values> ? unknown : never) &
+      (Parameters<callback> extends [Record<string, string | number>]
+        ? unknown
+        : never),
   ): css.Dynamic<values>
   <const styles extends Record<string, unknown>>(
     styles: styles & NoInfer<Body<styles, tokens, layers>>,
   ): css.ReturnType
 }
-type Body<styles, tokens extends Theme.Tokens, layers extends string> = {
-  [key in keyof styles]: key extends Condition.Keys<tokens> | `@layer ${layers}`
-    ? styles[key] extends Record<string, unknown>
-      ? Body<styles[key], tokens, layers>
-      : never
-    : Style.Accepted<Pick<styles, key>, tokens>[key]
-}
+type Keys<styles> = styles extends unknown ? keyof styles : never
+type Body<styles, tokens extends Theme.Tokens, layers extends string> = Record<
+  Exclude<
+    Keys<styles>,
+    | keyof Style.DeclarationProperties
+    | Condition.Keys<tokens>
+    | `@layer ${layers}`
+  >,
+  never
+> &
+  (styles extends unknown
+    ? {
+        [key in keyof styles]: key extends
+          | Condition.Keys<tokens>
+          | `@layer ${layers}`
+          ? styles[key] extends Record<string, unknown>
+            ? Body<styles[key], tokens, layers>
+            : never
+          : Style.Accepted<Pick<styles, key>, tokens>[key]
+      }
+    : never)
 
 function definition(value: unknown): Theme.Definition {
   try {

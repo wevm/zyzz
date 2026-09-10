@@ -127,3 +127,14 @@ describe('create', () => {
     Config.create({ theme: base, unknown: true } as const)
   })
 })
+
+describe('configured conditions', () => {
+  test('rejects invalid union branches and empty callbacks', () => {
+    const { css } = Config.create()
+    const styles = {} as { color: '#fff' } | { ':hover': { colour: '#fff' } }
+    // @ts-expect-error Each disjoint branch must contain valid nested properties.
+    css(styles)
+    // @ts-expect-error Callbacks require one scalar input parameter.
+    css(() => ({ color: '#fff' }))
+  })
+})

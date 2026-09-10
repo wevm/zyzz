@@ -39,11 +39,37 @@ export type Keys<tokens extends Theme.Tokens = {}> =
 export function is(key: string): boolean {
   if (key.startsWith('--')) return false
   return (
-    key.includes('&') ||
+    nested(key) ||
     key.startsWith(':') ||
     key === '@starting-style' ||
     /^@(media|supports|container) /.test(key)
   )
+}
+
+/** Detects nesting tokens outside quoted data, comments, and escapes. */
+export function nested(key: string): boolean {
+  let quote = ''
+  for (let index = 0; index < key.length; index++) {
+    const char = key[index]!
+    if (char === '\\') {
+      index++
+      continue
+    }
+    if (quote) {
+      if (char === quote) quote = ''
+      continue
+    }
+    if (char === '"' || char === "'") {
+      quote = char
+      continue
+    }
+    if (char === '/' && key[index + 1] === '*') {
+      const end = key.indexOf('*/', index + 2)
+      if (end === -1) return false
+      index = end + 1
+    } else if (char === '&') return true
+  }
+  return false
 }
 
 /** Normalizes rule whitespace and rejects unbalanced delimiters and unscoped selector lists. */
@@ -119,7 +145,7 @@ export function local(key: string): boolean {
         local(key.slice(0, index).trim()) && local(key.slice(index + 1).trim())
       )
   }
-  if (!key.startsWith('&') && (!key.startsWith(':') || key.includes('&')))
+  if (!key.startsWith('&') && (!key.startsWith(':') || nested(key)))
     return false
   let depth = 0
   let quote = ''
@@ -136,6 +162,22 @@ export function local(key: string): boolean {
     if (char === '"' || char === "'") {
       quote = char
       continue
+    }
+    if (!depth && char === ':' && key[index + 1] === ':') {
+      const name = /^::([a-z-]+)/i.exec(key.slice(index))?.[1]?.toLowerCase()
+      if (
+        !name ||
+        ![
+          'before',
+          'after',
+          'first-letter',
+          'first-line',
+          'marker',
+          'placeholder',
+          'selection',
+        ].includes(name)
+      )
+        return false
     }
     if (char === '(' || char === '[') depth++
     else if (char === ')' || char === ']') depth--

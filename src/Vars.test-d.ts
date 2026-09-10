@@ -73,6 +73,16 @@ describe('define', () => {
   })
 })
 describe('set', () => {
+  test('excludes minimum constrained signed bindings', () => {
+    const vars = Vars.define({
+      size: 'signedLength',
+      ratio: 'signedPercentage',
+    })
+    // @ts-expect-error Line height cannot accept arbitrary signed lengths.
+    css({ lineHeight: vars.size })
+    // @ts-expect-error Line height cannot accept arbitrary signed percentages.
+    css({ lineHeight: vars.ratio })
+  })
   test('checks partial assignments and rejects unknown names', () => {
     const vars = Vars.define({ amount: 'percentage', count: 'number' })
     expectTypeOf(vars.set({ amount: '50%' })).toEqualTypeOf<

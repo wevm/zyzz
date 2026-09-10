@@ -430,6 +430,7 @@ export const tokens = {
 } as const
 
 /** Bundled theme with light/dark foreground and surface colors. */
+// Generated from tokens by scripts/default-theme.ts; edit tokens and regenerate.
 export const theme = Theme.define({
   breakpoints: {
     sm: '40rem',

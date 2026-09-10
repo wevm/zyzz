@@ -78,7 +78,7 @@ describe('compile', () => {
       scrollPadding: '8px',
       overscrollBehavior: 'contain',
     } as const
-    const styles: Record<string, Style.LiteralProperties> = {
+    const styles: Record<string, Style.LiteralDeclarations> = {
       ...input,
       a,
       b: {
@@ -154,7 +154,7 @@ describe('compile', () => {
   })
 
   test('border and outline properties match native browser controls in every writing mode', async () => {
-    const input: Record<string, Style.LiteralProperties> = {}
+    const input: Record<string, Style.LiteralDeclarations> = {}
     for (const entry of Borders.cases)
       input[entry.property] = {
         borderStyle: 'solid',

@@ -9,6 +9,7 @@ import MagicString from 'magic-string'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Css from '../web/Css.js'
+import type * as Style from '../Style.js'
 import * as Source from './Source.js'
 import * as Themes from './internal/Themes.js'
 
@@ -363,49 +364,39 @@ export function compile(options: compile.Options): compile.ReturnType {
 
       const body = rule.slice(brace)
       const style = styles.get(call.name)!
-      const properties = definitions.get(call.start)!.properties
-      const fallbacks = properties.some(
-        (property) =>
-          property.type === 'Property' &&
-          Expression.unwrap(property.value).type === 'ArrayExpression',
-      )
-      const occurrences = new Map<string, number>()
+      function declarations(
+        style: Style.NamedStyle,
+      ): readonly Style.Declaration[] {
+        return style.rules
+          ? style.rules.flatMap((rule) => declarations(rule.style))
+          : style.declarations
+      }
+      function locations(node: Ast.ObjectExpression): readonly Ast.Node[] {
+        return node.properties.flatMap((property) => {
+          if (property.type !== 'Property') return []
+          const value = Expression.unwrap(property.value)
+          if (value.type === 'ObjectExpression') return locations(value)
+          if (value.type === 'ArrayExpression')
+            return value.elements.filter(
+              (node): node is NonNullable<typeof node> => node !== null,
+            )
+          return [property]
+        })
+      }
+      const ordered = declarations(style)
+      const authored = locations(definitions.get(call.start)!)
       let cursor = 1
       for (
         let propertyIndex = 0;
-        propertyIndex < style.declarations.length;
+        propertyIndex < ordered.length;
         propertyIndex++
       ) {
-        const declaration = style.declarations[propertyIndex]!
+        const declaration = ordered[propertyIndex]!
         const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:`
         const start = body.indexOf(text, cursor)
         if (start < 0) continue
 
-        const property = fallbacks
-          ? properties.find(
-              (property) =>
-                property.type === 'Property' &&
-                (() => {
-                  if (property.key.type === 'Identifier') {
-                    return property.key.name
-                  }
-                  if (property.key.type === 'Literal') {
-                    return property.key.value
-                  }
-                  return undefined
-                })() === declaration.property,
-            )!
-          : properties[propertyIndex]!
-        const occurrence = occurrences.get(declaration.property) ?? 0
-        occurrences.set(declaration.property, occurrence + 1)
-        const value =
-          property.type === 'Property'
-            ? Expression.unwrap(property.value)
-            : undefined
-        const location =
-          value?.type === 'ArrayExpression'
-            ? value.elements[occurrence]!
-            : property
+        const location = authored[propertyIndex]!
         Mapping.addMapping(cssMap, {
           generated: { column: selector.length + start, line },
           name: declaration.property,

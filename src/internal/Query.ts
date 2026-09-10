@@ -31,6 +31,8 @@ export function resolve(key: string, metadata: Metadata): string {
   const text = match[2]!
   if (
     text.includes('(') ||
+    (kind === 'media' &&
+      /^(?:(?:only|not)\s+)?(?:all|print|screen)(?:\s|,)/.test(text)) ||
     (kind === 'media' && ['all', 'print', 'screen'].includes(text))
   )
     return key

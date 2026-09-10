@@ -874,7 +874,10 @@ export function isLiteral(
     if ('auto' in rule && rule.auto && folded === 'auto') return true
     // Dimension and expression spellings always retain literal precedence.
     if (
-      /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?(?:[a-zA-Z]+|%)$/.test(value) ||
+      new RegExp(
+        `^[+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?(?:${[...lengthUnits, 'deg', 'grad', 'rad', 'turn', 's', 'ms', 'fr', 'dpi', 'dpcm', 'dppx', 'Hz', 'kHz'].join('|')})$`,
+        'i',
+      ).test(value) ||
       /[#()]/.test(value)
     )
       return true

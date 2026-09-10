@@ -14,10 +14,15 @@ export type Accepted<
   style,
   tokens extends Theme.Tokens = {},
   literal extends boolean = false,
-> = {
+> = Record<
+  Exclude<Keys<style>, keyof Literal.Properties | Condition.Keys<tokens>>,
+  never
+> & {
   [key in keyof style]: key extends Condition.Keys<tokens>
-    ? style[key] extends Record<string, unknown>
-      ? Accepted<style[key], tokens, literal>
+    ? NonNullable<style[key]> extends Record<string, unknown>
+      ?
+          | Accepted<NonNullable<style[key]>, tokens, literal>
+          | Extract<style[key], undefined>
       : never
     : key extends keyof Literal.Properties
       ? Value.Accepted<
@@ -29,6 +34,7 @@ export type Accepted<
           Value.Checked<Pick<style, key>, tokens>[key]
       : never
 }
+type Keys<value> = value extends unknown ? keyof value : never
 type Exact<
   styles extends Record<string, unknown>,
   tokens extends Theme.Tokens,
@@ -37,7 +43,15 @@ type Exact<
     styles[name],
     (...args: never[]) => unknown
   > extends never
-    ? Accepted<styles[name], tokens>
+    ? Properties<tokens> extends styles[name]
+      ? styles[name] extends Properties<tokens>
+        ? styles[name]
+        : never
+      : DeclarationProperties<tokens> extends styles[name]
+        ? styles[name] extends DeclarationProperties<tokens>
+          ? styles[name]
+          : never
+        : Accepted<styles[name], tokens>
     : never
 }
 const nesting = Symbol('zyzz.style.nesting')
@@ -188,6 +202,8 @@ export function define(
                 },
               )
             : undefined
+          if (condition?.startsWith(':') && condition.includes(','))
+            throw new Error('Selector lists require explicit & selectors.')
           const nested = (
             define as (
               styles: Record<string, unknown>,
@@ -222,7 +238,16 @@ export function define(
           )
         } catch (error) {
           if (error instanceof InvalidError)
-            diagnostics.push(...error.diagnostics)
+            diagnostics.push(
+              ...error.diagnostics.map((diagnostic) =>
+                Condition.is(key)
+                  ? {
+                      ...diagnostic,
+                      path: [name, key, ...diagnostic.path.slice(1)],
+                    }
+                  : diagnostic,
+              ),
+            )
           else
             report('invalid_structure', [name, key], (error as Error).message)
         }
@@ -378,7 +403,7 @@ type LiteralAtoms = {
 }
 
 /** Supported primitive CSS declarations without theme references. */
-type LiteralDeclarations = {
+export type LiteralDeclarations = {
   readonly [property in keyof Literal.Properties]: Value.Fallbacks<
     | LiteralAtoms[property]
     | {

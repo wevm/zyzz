@@ -17,6 +17,9 @@ export function css<
   const callback extends (values: never) => Style.LiteralProperties,
 >(
   styles: callback &
+    ((
+      values: Parameters<callback>[0],
+    ) => NoInfer<Style.Accepted<ReturnType<callback>, {}, true>>) &
     (Parameters<callback> extends [Record<string, string | number>]
       ? unknown
       : never),

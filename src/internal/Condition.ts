@@ -10,6 +10,8 @@ export type Raw =
   | `@media (${string}`
   | `@media ${'all' | 'print' | 'screen'}`
   | `@media ${'all' | 'print' | 'screen'} ${string}`
+  | `@media ${'all' | 'print' | 'screen'},${string}`
+  | `@media ${'only' | 'not'} ${string}`
   | `@container (${string}`
   | `@container ${string} (${string}`
 type Names<tokens, group extends PropertyKey> = group extends keyof tokens

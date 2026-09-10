@@ -1,4 +1,5 @@
 /** Verifies ordered nesting, query identities, scalar inference, and native browser conditions. @module */
+import * as Trace from '@jridgewell/trace-mapping'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
@@ -6,6 +7,39 @@ import { Graph, Transform } from 'zyzz/compiler'
 const source =
   'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); export const box=theme.css({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:"100px","&[data-active]":{height:"20px"}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
 describe('conditions', () => {
+  test('maps nested declarations and passes through raw media lists', () => {
+    const source =
+      'import {css} from "zyzz"; css({color:"red","@media screen, print":{padding:"2px"}})'
+    const output = Transform.compile({ moduleId: 'mapped.ts', source })
+    expect(output.css).toMatchInlineSnapshot(
+      `".z-style-cqzv9l1th5n7r-26{color:red;@media screen, print{padding:2px;}}"`,
+    )
+    const column = output.css.indexOf('padding:')
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: 1,
+        column,
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 67,
+        "line": 1,
+        "name": "padding",
+        "source": "mapped.ts",
+      }
+    `)
+  })
+  test('requires explicit nesting in pseudo selector lists', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'list.ts',
+        source:
+          'import {css} from "zyzz"; css({":hover, :focus":{color:"red"}})',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: list.ts:31: Selector lists require explicit & selectors.]`,
+    )
+  })
   test('preserves authored nesting and resolves distinct threshold domains', () => {
     expect(Transform.compile({ moduleId: 'conditions.ts', source }).css)
       .toMatchInlineSnapshot(`

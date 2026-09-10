@@ -111,9 +111,12 @@ describe('create', () => {
       const colors = await page.evaluate(
         `(()=>{const {styles,outer,inner}=Fixture;for(const [id,scope]of [['outer',outer],['inner',inner]]){const el=document.getElementById(id);el.className=scope.className+' '+styles.card().className;Object.assign(el.style,scope.style)}return ['outer','inner'].map(id=>getComputedStyle(document.getElementById(id)).color)})()`,
       )
-      expect(colors).toMatchInlineSnapshot(
-        `["rgb(18, 52, 86)","rgb(170, 255, 204)"]`,
-      )
+      expect(colors).toMatchInlineSnapshot(`
+        [
+          "rgb(18, 52, 86)",
+          "rgb(170, 255, 204)",
+        ]
+      `)
     } finally {
       await browser.close()
     }

@@ -86,7 +86,10 @@ export function collect(options: collect.Options): Themes.Link {
       end: options.expression.end,
       name,
       start: options.expression.start,
-      tokenType: type(values(original.tokens)),
+      tokenType: type({
+        ...values(original.tokens),
+        ...original[Token.definition].queries,
+      }),
     }
     members[JSON.stringify('themes' in config ? ['themes', key] : ['theme'])] =
       {
@@ -112,13 +115,18 @@ export function collect(options: collect.Options): Themes.Link {
           themes: Object.fromEntries(
             Object.entries(catalog).map(([name, theme]) => [
               name,
-              values(theme.tokens),
+              { ...values(theme.tokens), ...theme[Token.definition].queries },
             ]),
           ),
         }
       }
       if ('theme' in config) {
-        return { theme: values(config.theme.tokens) }
+        return {
+          theme: {
+            ...values(config.theme.tokens),
+            ...config.theme[Token.definition].queries,
+          },
+        }
       }
       return {}
     })(),

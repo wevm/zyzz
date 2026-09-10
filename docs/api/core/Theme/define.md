@@ -24,7 +24,7 @@ const theme = Theme.define({
 
 Token palettes. Palettes must be nonempty data records with dot-free keys.
 
-Current color leaves accept 3/4/6/8-digit hex, the 148 canonical lowercase CSS named colors, 19 canonical system-color keywords, `transparent`, or `currentColor`, optionally paired as `{ dark, light }`. Noncanonical case spellings and functional colors remain unsupported. Spacing and radius leaves accept nonnegative literal lengths or zero, without scheme pairs.
+Current color leaves accept 3/4/6/8-digit hex, the 148 canonical lowercase CSS named colors, 19 canonical system-color keywords, `transparent`, or `currentColor`, optionally paired as `{ dark, light }`. CSS color literals are statically checked. Spacing and radius leaves accept nonnegative literal lengths or zero, without scheme pairs.
 
 ```ts
 Theme.define({ spacing: { md: '1rem' } })
@@ -96,6 +96,94 @@ Text color palette. Leaves use the supported literal grammar; nested palettes in
 Theme.define({ textColor: { muted: '#666' } })
 ```
 
+### tokens.breakpoints
+
+- Type: `Theme.Tokens["breakpoints"]`
+- Default: `undefined`
+
+Named nonnegative fixed length thresholds for media width queries; metadata is not emitted as custom properties.
+
+```ts
+Theme.define({ breakpoints: { tablet: '48rem' } })
+```
+
+### tokens.containers
+
+- Type: `Theme.Tokens["containers"]`
+- Default: `undefined`
+
+Named nonnegative fixed length thresholds for container width queries; metadata is separate from declaration tokens.
+
+```ts
+Theme.define({ containers: { card: '24rem' } })
+```
+
+### tokens.containerNames
+
+- Type: `Theme.Tokens["containerNames"]`
+- Default: `undefined`
+
+Unique container identifiers eligible for named queries. Reserved names such as none and CSS-wide keywords are rejected.
+
+```ts
+Theme.define({ containerNames: ['sidebar'] })
+```
+
+### tokens.fontFamily
+
+- Type: `Theme.Tokens["fontFamily"]`
+- Default: `undefined`
+
+Scalar font-family palettes, without light/dark pairs or CSS-wide keywords.
+
+```ts
+Theme.define({ fontFamily: { body: 'system-ui, sans-serif' } })
+```
+
+### tokens.fontSize
+
+- Type: `Theme.Tokens["fontSize"]`
+- Default: `undefined`
+
+Scalar font-size palettes; values retain their property domain and do not accept scheme pairs.
+
+```ts
+Theme.define({ fontSize: { body: '1rem' } })
+```
+
+### tokens.fontWeight
+
+- Type: `Theme.Tokens["fontWeight"]`
+- Default: `undefined`
+
+Scalar numeric font weights from 1 through 1000, without scheme pairs.
+
+```ts
+Theme.define({ fontWeight: { medium: 500 } })
+```
+
+### tokens.lineHeight
+
+- Type: `Theme.Tokens["lineHeight"]`
+- Default: `undefined`
+
+Scalar line-height palettes, supporting nonnegative numbers and lengths.
+
+```ts
+Theme.define({ lineHeight: { relaxed: 1.5 } })
+```
+
+### tokens.letterSpacing
+
+- Type: `Theme.Tokens["letterSpacing"]`
+- Default: `undefined`
+
+Scalar letter-spacing palettes, including signed lengths.
+
+```ts
+Theme.define({ letterSpacing: { tight: '-0.02em' } })
+```
+
 ## Returns
 
 Returns a callable `Theme.Definition<tokens>` with inferred references and bound authoring types. [Theme application](apply.md) returns scope props with an optional `colorScheme`.
@@ -137,6 +225,6 @@ theme.tokens.spacing.md
 `Theme.InvalidError` identifies invalid groups, paths, records, or cycles. Palettes must be nonempty and keys dot-free. CSS token values are checked statically.
 
 > [!NOTE]
-> Same-module `theme.css` and `theme.className` are supported by `Transform.compile`. Cross-module linking, `theme.vars`, bound `variants`, and broader groups remain previews. See [Compile Local Theme Source](../../../guides/themes.md#compile-local-theme-source).
+> Same-module `theme.css` and `theme.className` are supported by `Transform.compile`. Graph compilation supports cross-module linking and `theme.vars` references. Bound `variants` remains a preview. See [Compile Local Theme Source](../../../guides/themes.md#compile-local-theme-source).
 
 See [Theme](README.md) for related methods and types.

@@ -23,7 +23,7 @@ const report: Report = JSON.parse(
   Fs.readFileSync(Path.join(directory, 'browser-timings.json'), 'utf8'),
 )
 const groups = report.files.flatMap((file) => file.groups)
-const libraries = [
+const frameworks = [
   'baseline',
   'panda',
   'stylex',
@@ -49,7 +49,8 @@ console.log(
 )
 
 for (const count of [10, 100])
-  for (const kind of ['cached', 'callable', 'overrides']) {
+  for (const kind of ['cached', 'direct', 'callable', 'overrides', 'dynamic']) {
+    const libraries = kind === 'dynamic' ? ['baseline', 'zyzz'] : frameworks
     console.log(`### ${count} Styles — ${kind}\n`)
     try {
       const passes = [1, 2].map((repeat) => {
@@ -125,6 +126,7 @@ for (const count of [10, 100])
           if (losses.includes(library)) return '🔴 '
           if (library !== 'zyzz') return ''
           if (losses.length) return '🔴 '
+          if (kind === 'dynamic') return ''
           return wins ? '🟢 ' : '🟡 '
         })()
         console.log(

@@ -14,6 +14,17 @@ Identifier evaluation and recognized theme variable interpolation remain separat
 
 Local validation: ten extraction/transform integrations, native type/lint checks, package build, and the 670/670 gate pass. Ordinary TypeScript and browser verification remain with CI. Matched 10/100/1000-style extraction means: 0.873/11.500/72.863 ms before and 0.851/9.489/74.794 ms after; uncertainty overlaps. The template fixture measures 0.371 ms. No speedup is established.
 
+## Phase 2 PR Stack
+
+1. Theme variable references: typed direct values and template interpolation, live fallbacks, imported/config/packed contracts. Standalone variable destructuring remains deferred.
+2. Explicit variable contracts and assignments: module-level schemas compile to fixed, isolated slots; typed partial assignments return ordinary inline properties. Imported style references and native bindings remain deferred.
+3. Dynamic style bindings: finite inline scalar parameter types, fixed private slots, static declarations, exact inputs, and compiled callable type preservation. Type aliases, dynamic fallback groups, and native bindings remain deferred.
+4. Bundled themes and query thresholds: opt-in palette/scales, scalar typography, and separate packed query metadata. Alias condition emission follows in the dependent conditions PR.
+5. Selectors and conditions: native CSS nesting, raw data/ARIA/relationship selectors, query aliases/ranges, and fixed dynamic values. Typed marker helpers remain a follow-up.
+6. Stylesheet contributions.
+
+Each dependent PR targets the preceding branch. CSS value validation remains static-only; structural extraction diagnostics and the 670/670 gate remain active.
+
 ## Goal
 
 A minimal, type-safe styling system with an environment-independent core, shared web/native authoring, modular extensions, and optional integration adapters. Styles compile ahead of time. Core `css` and `variants` have no tokens; bundled themes are opt-in through `zyzz/themes/default`. Color tokens accept shared values or light/dark pairs.
@@ -155,6 +166,8 @@ Gate: identical public-pipeline results across real server, browser, worker, and
 Evidence: real filesystem integration covers output exclusion, ownership across restarts, changed-file protection, watcher recovery, and disposal. The pure pipeline runs on Node, workers, Chromium, and the QuickJS WebAssembly engine. Packed root/web/runtime consumption is exercised without a compiler plugin. This is embedded-engine portability coverage; Hermes/device rendering remains in Phase 3. Host benchmarks separately measure cold-process rebuilds, unchanged rebuilds, and edit-to-artifact watching.
 
 ## Phase 2 — Standard authoring and themes
+
+Current stack: #65 theme variables → #66 explicit variables → #68 dynamic styles → #69 bundled themes/query metadata → #70 nested conditions → stylesheet contribution foundation. These are Phase 2 slices. Remaining acceptance work includes typed relationship markers, bundled variants (Phase 3), imported animation references, relative assets, optional reset, and packed contributions; the broad Phase 2 gates below remain open.
 
 Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) and [PR 2.2a / #10](https://github.com/wevm/zyzz/pull/10) are merged. [PR 2.2b.1 / #12](https://github.com/wevm/zyzz/pull/12) is merged. [PR #13](https://github.com/wevm/zyzz/pull/13) adds local bound-authoring aliases. [PR #14](https://github.com/wevm/zyzz/pull/14) adds explicit source token references. [PR #16](https://github.com/wevm/zyzz/pull/16) merged relative source graphs and host dependency rebuilds; PRs #17–#19 add incremental compilation, Vite 8, standalone CSS processing, and lazy modules. [PR #23](https://github.com/wevm/zyzz/pull/23) adds versioned packed-theme metadata, host sidecars, and Vite consumption; its browser, CI, and benchmark gates passed after explicit native light-dark targets. It is merged. [PR #24](https://github.com/wevm/zyzz/pull/24) and [PR #27](https://github.com/wevm/zyzz/pull/27) merged configuration core and source contracts. Standard declaration values are the current follow-up.
 

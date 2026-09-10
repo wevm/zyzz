@@ -6,7 +6,7 @@ import type * as Grid from './Grid.js'
 import * as Lexical from './Lexical.js'
 import * as Literal from './Literal.js'
 import type * as Numeric from './Numeric.js'
-import type * as Token from './Token.js'
+import * as Token from './Token.js'
 
 /** Scalar declarations optionally carrying a trailing importance marker. */
 export type Atom<value> =
@@ -191,7 +191,29 @@ export type Fallbacks<atom> = atom | readonly [atom, ...atom[]]
 export type Input<value> = Fallbacks<Atom<Exclude<value, undefined>>>
 
 /** Splits a trailing importance marker without interpreting quoted or escaped text. */
-export function parse(input: unknown, property: keyof Literal.Properties) {
+export function parse(
+  input: unknown,
+  property: keyof Literal.Properties,
+):
+  | { important: boolean; value: number | string | Token.Expression }
+  | undefined {
+  if (Token.isExpression(input)) {
+    const text = input.parts
+      .map((part) => (typeof part === 'string' ? part : 'var(--z)'))
+      .join('')
+    const parsed = parse(text, property)
+    if (!parsed || typeof parsed.value === 'object') return undefined
+    const parts = [...input.parts]
+    let remaining = text.length - String(parsed.value).length
+    for (let index = parts.length - 1; remaining > 0 && index >= 0; index--) {
+      const part = parts[index]
+      if (typeof part !== 'string') return undefined
+      const count = Math.min(remaining, part.length)
+      parts[index] = part.slice(0, part.length - count)
+      remaining -= count
+    }
+    return { important: parsed.important, value: Token.compose(parts) }
+  }
   if (typeof input !== 'string') return undefined
   const valueText = input
   function escaped(index: number): boolean {

@@ -23,7 +23,13 @@ describe('runtime report', () => {
       try {
         const groups = []
         for (const count of [10, 100])
-          for (const kind of ['cached', 'callable', 'overrides'])
+          for (const kind of [
+            'cached',
+            'direct',
+            'callable',
+            'overrides',
+            'dynamic',
+          ])
             for (const repeat of [1, 2]) {
               const benchmarks = []
               for (const library of [
@@ -34,6 +40,12 @@ describe('runtime report', () => {
                 'vanilla-extract',
                 'zyzz',
               ]) {
+                if (
+                  kind === 'dynamic' &&
+                  library !== 'baseline' &&
+                  library !== 'zyzz'
+                )
+                  continue
                 if (scenario === 'missing' && library === 'stylex') continue
                 const mean = (() => {
                   if (library !== 'zyzz') return 0.001

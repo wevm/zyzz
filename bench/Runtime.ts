@@ -12,7 +12,13 @@ import * as Compilation from './Compilation.js'
 import * as Corpus from './Corpus.js'
 
 /** Production application shapes measured independently. */
-export const cases = ['cached', 'callable', 'overrides'] as const
+export const cases = [
+  'cached',
+  'direct',
+  'callable',
+  'overrides',
+  'dynamic',
+] as const
 
 /** Existing comparison libraries plus a plain class/style control. */
 export const libraries = [
@@ -29,19 +35,44 @@ export type Props = {
   /** Applied class list. */
   className: string
   /** Optional inline styling overrides. */
-  style?: Record<string, string> | undefined
+  style?: Record<string, string | number> | undefined
+}
+
+/** Fixed dynamic inputs shared by generated and native application controls. */
+export type Input = Props & {
+  /** Runtime opacity. */
+  alpha: number
+  /** Runtime width. */
+  width: string
+}
+
+/** Frameworks with equivalent fixtures for a workload. Dynamic starts with a native control. */
+export function librariesFor(
+  kind: (typeof cases)[number],
+): readonly (typeof libraries)[number][] {
+  return kind === 'dynamic' ? ['baseline', 'zyzz'] : libraries
 }
 
 /** One production module and its required stylesheet. */
 export type Bundle = Compilation.Bundle & {
   /** Applies one of the authored component styles. */
-  apply: (index: number, overrides: Props) => Props
+  apply: (index: number, overrides: Input) => Props
 }
 
 /** Alternating real styling inputs, allocated outside the timed calls. */
-export const overrides: readonly Props[] = [
-  { className: 'external', style: { color: '#123456', paddingLeft: '2px' } },
-  { className: '', style: { color: '#654321', paddingLeft: '4px' } },
+export const overrides: readonly Input[] = [
+  {
+    alpha: 0.5,
+    width: '25px',
+    className: 'external',
+    style: { color: '#123456', paddingLeft: '2px' },
+  },
+  {
+    alpha: 0.8,
+    width: '75px',
+    className: '',
+    style: { color: '#654321', paddingLeft: '4px' },
+  },
 ]
 
 /** Compiles through official adapters before loading the emitted application. */
@@ -52,6 +83,8 @@ export async function create(options: create.Options): Promise<Bundle> {
   const literals = literalStyles(count)
   const names = literals.map((_, index) => `card${index}`)
   const application = (expressions: readonly string[], direct = false) => {
+    if (kind === 'direct')
+      return `export function apply(index) { switch(index) { ${expressions.map((expression, index) => `case ${index}:return ${direct ? `({className:${expression}})` : expression};`).join('')} } }`
     if (kind === 'cached')
       return `const applications = [${expressions.map((expression) => (direct ? `({className:${expression}})` : expression)).join(',')}];
         export function apply(index) { return applications[index]; }`
@@ -70,11 +103,50 @@ export async function create(options: create.Options): Promise<Bundle> {
 
   try {
     const compiled = await (async (): Promise<Compilation.Bundle> => {
+      if (kind === 'dynamic') {
+        if (library === 'zyzz') {
+          const definitions = literals.map((style) => {
+            const { width: _width, opacity: _opacity, ...fixed } = style
+            return `css((values:{width:\`\${number}px\`;alpha:number})=>({${JSON.stringify(fixed).slice(1, -1)},width:values.width,opacity:values.alpha}))`
+          })
+          const output = Transform.compile({
+            moduleId: 'benchmark/runtime.ts',
+            source: `import {css} from 'zyzz';const applications=[${definitions.join(',')}];export function apply(index,input){return applications[index](input)}`,
+          })
+          return {
+            css: Compilation.minify(output.css),
+            javascript: await bundle(output.code),
+          }
+        }
+        const css = literals
+          .map(
+            (style, index) =>
+              `.card${index}{${Object.entries({
+                ...style,
+                width: 'var(--width)',
+                opacity: 'var(--alpha)',
+              })
+                .map(
+                  ([key, value]) =>
+                    `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${String(value)}`,
+                )
+                .join(';')}}`,
+          )
+          .join('')
+        return {
+          css: Compilation.minify(css),
+          javascript: await bundle(
+            `const classes=${JSON.stringify(names)};export function apply(index,input){const width=input.width;const alpha=input.alpha;const external=input.className;return {className:external?classes[index]+' '+external:classes[index],style:{...input.style,'--width':width,'--alpha':alpha}}}`,
+          ),
+        }
+      }
       if (library === 'zyzz') {
         const definitions = literals.map(
           (style, index) => `${names[index]}: css(${JSON.stringify(style)})`,
         )
         const source = (() => {
+          if (kind === 'direct')
+            return `import {css} from 'zyzz'; const styles={${definitions.join(',')}}; ${application(names.map((name) => `styles.${name}()`))}`
           if (kind === 'cached')
             return `import { css } from 'zyzz'; ${application(literals.map((style) => `css(${JSON.stringify(style)})()`))}`
           return `import { css } from 'zyzz';
@@ -202,18 +274,26 @@ export async function verify(
             const props = apply(index, input)
             actual.className = props.className
             actual.removeAttribute('style')
-            Object.assign(actual.style, props.style)
+            for (const [key, value] of Object.entries(props.style ?? {})) {
+              if (key.startsWith('--'))
+                actual.style.setProperty(key, String(value))
+              else Object.assign(actual.style, { [key]: value })
+            }
             reference.removeAttribute('style')
             Object.assign(
               reference.style,
               literal,
-              kind === 'overrides' ? input.style : {},
+              kind === 'overrides' || kind === 'dynamic' ? input.style : {},
+              kind === 'dynamic'
+                ? { width: input.width, opacity: input.alpha }
+                : {},
             )
             const actualStyle = getComputedStyle(actual)
             const referenceStyle = getComputedStyle(reference)
             for (const property of new Set([
               ...Object.keys(literal),
               'paddingLeft',
+              ...(kind === 'dynamic' ? ['width', 'opacity'] : []),
             ])) {
               const key = property.replace(
                 /[A-Z]/g,
@@ -226,7 +306,7 @@ export async function verify(
                 differences.push(`${index}: ${key}`)
             }
             if (
-              kind === 'overrides' &&
+              (kind === 'overrides' || kind === 'dynamic') &&
               input.className &&
               !actual.classList.contains(input.className)
             )

@@ -44,6 +44,8 @@ jobs:
           mv bench/results "$RUNNER_TEMP/benchmark-baseline"
       - name: Clone repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install dependencies
         uses: ./.github/actions/install-dependencies
       - name: Record benchmark environment
@@ -58,6 +60,19 @@ jobs:
           uname -a > bench/results/platform.txt
       - name: Install runtime benchmark browser
         run: pnpm exec playwright install --with-deps chromium
+      - name: Measure base runtime with the candidate harness
+        if: github.event_name == 'pull_request'
+        env:
+          BENCH_RUNTIME: '1'
+          BENCH_RUNTIME_OUTPUT: bench/results/runtime-base
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          BASE_SHA=$(git rev-parse "origin/$BASE_REF")
+          trap 'git restore --source=HEAD --worktree -- src' EXIT
+          git restore --source="$BASE_SHA" --worktree -- src
+          mkdir -p "$BENCH_RUNTIME_OUTPUT"
+          printf '%s\n' "$BASE_SHA" > "$BENCH_RUNTIME_OUTPUT/commit.txt"
+          pnpm exec vp test run bench/Runtime.browser.test.ts --no-file-parallelism
       - name: Measure runtime in Chromium
         env:
           BENCH_RUNTIME: '1'
@@ -70,6 +85,11 @@ jobs:
           path: |
             bench/results/browser-timings.json
             bench/results/runtime/
+            bench/results/runtime-base/
+            bench/results/commit.txt
+            bench/results/lockfile.txt
+            bench/results/cpu.txt
+            bench/results/node.txt
           retention-days: 30
       - name: Run benchmarks
         run: pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json

@@ -2,8 +2,16 @@
  * Extracts literal styles and local themes through lexical source analysis.
  * @module
  */
+import * as Condition from '../internal/Condition.js'
+import * as Contributions from './internal/Contributions.js'
+import * as Css from '../web/Css.js'
+import * as Dynamic from './internal/Dynamic.js'
+import * as Binding from '../internal/Binding.js'
+import * as Variables from './internal/Variables.js'
 import * as Expression from './internal/Expression.js'
+import * as Token from '../internal/Token.js'
 import type * as Ast from '@oxc-project/types'
+import * as Lightning from 'lightningcss'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Style from '../Style.js'
@@ -20,6 +28,10 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Typed runtime slots for callback definitions. */
+  readonly slots?: Dynamic.Slots | undefined
+  /** Authored scalar input type retained in packed declarations. */
+  readonly valuesType?: string | undefined
   /** Exclusive UTF-16 offset of the complete call. */
   readonly end: number
   /** Matching name in the extracted style definition. */
@@ -98,10 +110,38 @@ export function extract(options: extract.Options): extract.ReturnType {
     throw new ExtractError(diagnostics)
   }
   const program = parsed.program
+  const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
+  Walker.walk(program, { scopeTracker })
+  scopeTracker.freeze()
+  const contributions = (() => {
+    try {
+      return Contributions.scan(
+        program,
+        scopeTracker,
+        identity(options.moduleId),
+      )
+    } catch (error) {
+      if (!(error instanceof Themes.InvalidError)) throw error
+      report('unsupported_syntax', error.message, error)
+      throw new ExtractError(diagnostics)
+    }
+  })()
+  const variables = (() => {
+    try {
+      return Variables.collect(program, identity(options.moduleId))
+    } catch (error) {
+      if (!(error instanceof Themes.InvalidError)) throw error
+      report('unsupported_syntax', error.message, error)
+      throw new ExtractError(diagnostics)
+    }
+  })()
   const themes = (() => {
     try {
       return Themes.collect(program, {
         namespace: identity(options.moduleId),
+        contributionCalls: new Set(
+          contributions.calls.map((call) => call.start),
+        ),
         linked: options[Themes.context] !== undefined,
         links: options[Themes.context]?.links,
       })
@@ -111,9 +151,6 @@ export function extract(options: extract.Options): extract.ReturnType {
       throw new ExtractError(diagnostics)
     }
   })()
-  const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
-  Walker.walk(program, { scopeTracker })
-  scopeTracker.freeze()
   const ancestors: Ast.Node[] = []
   Walker.walk(program, {
     enter(node, parent) {
@@ -128,6 +165,12 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (
         ancestors.some(
           (ancestor) =>
+            ('typeAnnotation' in ancestor &&
+              typeof ancestor.typeAnnotation === 'object' &&
+              ancestor.typeAnnotation !== null &&
+              ancestors.includes(ancestor.typeAnnotation as Ast.Node)) ||
+            ancestor.type === 'TSTypeParameterInstantiation' ||
+            ancestor.type === 'TSTypeParameterDeclaration' ||
             ancestor.type === 'TSTypeAnnotation' ||
             ancestor.type === 'TSTypeAliasDeclaration' ||
             ancestor.type === 'TSInterfaceDeclaration' ||
@@ -140,6 +183,14 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
         return
       const binding = scopeTracker.getDeclaration(node.name)
+      contributions.read(node, parent, binding)
+      try {
+        if (variables.reference(node, parent, binding)) return
+      } catch (error) {
+        if (!(error instanceof Themes.InvalidError)) throw error
+        report('unsupported_syntax', error.message, error)
+        return
+      }
       if (themes)
         try {
           if (themes.reference(node, parent, ancestors, binding)) return
@@ -166,7 +217,12 @@ export function extract(options: extract.Options): extract.ReturnType {
             }
             return undefined
           })()
-          if (name === 'Config' || name === 'css' || name === 'Theme')
+          if (
+            name === 'Config' ||
+            name === 'css' ||
+            name === 'Theme' ||
+            name === 'Vars'
+          )
             report(
               'unsupported_syntax',
               `Import ${name} by name; namespace authoring calls are not supported yet.`,
@@ -245,110 +301,326 @@ export function extract(options: extract.Options): extract.ReturnType {
       argument?.type === 'TSSatisfiesExpression'
     )
       argument = argument.expression
+    const diagnosticCount = diagnostics.length
+    const dynamic = (() => {
+      if (!argument) return undefined
+      try {
+        return Dynamic.read(
+          argument,
+          `${identity(options.moduleId)}-${call.start}`,
+        )
+      } catch (error) {
+        if (!(error instanceof Themes.InvalidError)) throw error
+        report('unsupported_syntax', error.message, error)
+        return undefined
+      }
+    })()
+    if (diagnostics.length !== diagnosticCount) continue
+    function resolveDynamic(node: Ast.Node) {
+      try {
+        return dynamic?.resolve(node)
+      } catch (error) {
+        if (!(error instanceof Themes.InvalidError)) throw error
+        report('unsupported_syntax', error.message, error)
+        return undefined
+      }
+    }
+    if (dynamic) argument = dynamic.body
     if (call.arguments.length !== 1 || argument?.type !== 'ObjectExpression') {
       report(
         'unsupported_syntax',
-        'Expected one direct literal object; callbacks, spreads, and referenced definitions are not supported yet.',
+        'Expected one literal object or typed callback; spreads and referenced definitions are not supported.',
         call,
       )
       continue
     }
     const before = diagnostics.length
     const name = `style-${identity(options.moduleId)}-${call.start}`
-    const values: Record<string, unknown> = Object.create(null)
     const locations: Style.SourceLocation[] = []
-    for (const property of argument.properties) {
-      if (
-        property.type !== 'Property' ||
-        property.kind !== 'init' ||
-        property.method ||
-        property.computed ||
-        property.shorthand ||
-        (property.key.type !== 'Identifier' &&
-          (property.key.type !== 'Literal' ||
-            typeof property.key.value !== 'string'))
-      ) {
-        report(
-          'unsupported_syntax',
-          'Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.',
-          property,
-        )
-        continue
-      }
-      const key =
-        property.key.type === 'Identifier'
-          ? property.key.name
-          : property.key.value
-      if (Object.hasOwn(values, key)) {
-        report(
-          'unsupported_syntax',
-          'Duplicate properties are not supported in source definitions yet.',
-          property,
-        )
-        continue
-      }
-      function value(node: Ast.Node, path: readonly string[]): unknown {
-        const token = themes?.tokens.get(node.start)
-        const reference = token?.end === node.end ? token.reference : undefined
-        node = Expression.unwrap(node)
-        const template =
-          node.type === 'TemplateLiteral'
-            ? Expression.template(node)
-            : undefined
-        let result: unknown
-        if (reference) result = reference
-        else if (template !== undefined) result = template
-        else if (
-          node.type === 'Literal' &&
-          (typeof node.value === 'string' || typeof node.value === 'number')
-        )
-          result = node.value
-        else if (
-          node.type === 'UnaryExpression' &&
-          (node.operator === '-' || node.operator === '+') &&
-          node.argument.type === 'Literal' &&
-          typeof node.argument.value === 'number'
-        )
-          result =
-            node.operator === '-' ? -node.argument.value : node.argument.value
-        else if (node.type === 'ArrayExpression' && path.length === 2) {
-          result = node.elements.map((element, index) => {
-            if (!element || element.type === 'SpreadElement') {
-              report(
-                'unsupported_syntax',
-                'Fallback arrays require dense literal entries without spreads.',
-                element ?? node,
-              )
-              return undefined
-            }
-            return value(element, [...path, String(index)])
-          })
-        } else {
+    const conditionKeys: Ast.Node[] = []
+    function object(
+      argument: Ast.ObjectExpression,
+      prefix: readonly string[] = [],
+    ): Record<string, unknown> {
+      const values: Record<string, unknown> = Object.create(null)
+      const depth = prefix.length + 2
+      function localSlot(node: Ast.Node) {
+        const slot = resolveDynamic(node)
+        if (slot && prefix.some((key) => !Condition.local(key))) {
           report(
             'unsupported_syntax',
-            'Expected a literal string or number; expressions are not evaluated.',
+            'Dynamic values require conditions that select the styled element.',
             node,
           )
           return undefined
         }
-        locations.push({
-          end: node.end,
-          path,
-          source: options.moduleId,
-          start: node.start,
-        })
-        return result
+        return slot
       }
-      values[key] = value(property.value, [name, key])
+      for (const property of argument.properties) {
+        if (
+          property.type !== 'Property' ||
+          property.kind !== 'init' ||
+          property.method ||
+          property.computed ||
+          property.shorthand ||
+          (property.key.type !== 'Identifier' &&
+            (property.key.type !== 'Literal' ||
+              typeof property.key.value !== 'string'))
+        ) {
+          report(
+            'unsupported_syntax',
+            'Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.',
+            property,
+          )
+          continue
+        }
+        const key =
+          property.key.type === 'Identifier'
+            ? property.key.name
+            : property.key.value
+        if (Object.hasOwn(values, key)) {
+          report(
+            'unsupported_syntax',
+            'Duplicate properties are not supported in source definitions yet.',
+            property,
+          )
+          continue
+        }
+        if (Condition.is(key)) {
+          conditionKeys.push(property.key)
+          const input = Expression.unwrap(property.value)
+          if (input.type !== 'ObjectExpression') {
+            report(
+              'unsupported_syntax',
+              'Conditions require literal declaration objects.',
+              input,
+            )
+            continue
+          }
+          locations.push({
+            source: options.moduleId,
+            start: property.start,
+            end: property.end,
+            path: [name, ...prefix, key],
+          })
+          values[key] = object(input, [...prefix, key])
+          continue
+        }
+        function value(node: Ast.Node, path: readonly string[]): unknown {
+          const unwrapped = Expression.unwrap(node)
+          const token =
+            variables.references.get(unwrapped.start) ??
+            themes?.tokens.get(node.start)
+          const reference =
+            localSlot(node) ??
+            (token &&
+            token.end ===
+              (Binding.is(token?.reference) ? unwrapped.end : node.end)
+              ? token.reference
+              : undefined)
+          if (
+            dynamic &&
+            reference &&
+            Object.values(dynamic.slots).includes(
+              reference as Binding.Reference,
+            ) &&
+            path.length > depth
+          ) {
+            report(
+              'unsupported_syntax',
+              'Dynamic fallback entries are not supported.',
+              node,
+            )
+            return undefined
+          }
+          node = Expression.unwrap(node)
+          const animation = contributions.references.get(node.start)
+          if (animation) return animation
+          const template =
+            node.type === 'TemplateLiteral'
+              ? Expression.template(node, 0, (expression) => {
+                  const animation = contributions.references.get(
+                    Expression.unwrap(expression).start,
+                  )
+                  if (animation) return animation
+                  const token =
+                    variables.references.get(expression.start) ??
+                    themes?.tokens.get(expression.start)
+                  const slot = localSlot(expression)
+                  if (slot) {
+                    if (path.length > depth) {
+                      report(
+                        'unsupported_syntax',
+                        'Dynamic fallback entries are not supported.',
+                        expression,
+                      )
+                      return undefined
+                    }
+                    return slot
+                  }
+                  return token?.end === expression.end
+                    ? token.reference
+                    : undefined
+                })
+              : undefined
+          if (Token.isExpression(template)) {
+            for (const part of template.parts) {
+              if (
+                typeof part !== 'string' &&
+                !(Binding.is(part)
+                  ? (dynamic !== undefined &&
+                      Object.values(dynamic.slots).includes(part)) ||
+                    Binding.accepts(
+                      part.type,
+                      key as Style.Declaration['property'],
+                    )
+                  : Token.accepts(
+                      part.group,
+                      key as Style.Declaration['property'],
+                    ))
+              ) {
+                report(
+                  'unsupported_syntax',
+                  Binding.is(part)
+                    ? 'Variable domain is incompatible with this property.'
+                    : 'Theme variable domain is incompatible with this property.',
+                  node,
+                )
+                return undefined
+              }
+            }
+          }
+          if (
+            reference &&
+            Token.is(reference) &&
+            !Token.accepts(
+              reference.group,
+              key as Style.Declaration['property'],
+            ) &&
+            !dynamic?.accepts(reference as unknown as Binding.Reference, key)
+          ) {
+            report(
+              'unsupported_syntax',
+              'Theme variable domain is incompatible with this property.',
+              node,
+            )
+            return undefined
+          }
+          if (
+            reference &&
+            Binding.is(reference) &&
+            !(
+              dynamic &&
+              Object.values(dynamic.slots).includes(reference) &&
+              reference.type !== 'number'
+            ) &&
+            !Binding.accepts(
+              reference.type,
+              key as Style.Declaration['property'],
+            ) &&
+            !dynamic?.accepts(reference as unknown as Binding.Reference, key)
+          ) {
+            report(
+              'unsupported_syntax',
+              'Variable domain is incompatible with this property.',
+              node,
+            )
+            return undefined
+          }
+          let result: unknown
+          if (reference) result = reference
+          else if (template !== undefined) result = template
+          else if (
+            node.type === 'Literal' &&
+            (typeof node.value === 'string' || typeof node.value === 'number')
+          )
+            result = node.value
+          else if (
+            node.type === 'UnaryExpression' &&
+            (node.operator === '-' || node.operator === '+') &&
+            node.argument.type === 'Literal' &&
+            typeof node.argument.value === 'number'
+          )
+            result =
+              node.operator === '-' ? -node.argument.value : node.argument.value
+          else if (node.type === 'ArrayExpression' && path.length === depth) {
+            result = node.elements.map((element, index) => {
+              if (!element || element.type === 'SpreadElement') {
+                report(
+                  'unsupported_syntax',
+                  'Fallback arrays require dense literal entries without spreads.',
+                  element ?? node,
+                )
+                return undefined
+              }
+              return value(element, [...path, String(index)])
+            })
+          } else {
+            report(
+              'unsupported_syntax',
+              'Expected a literal string or number; expressions are not evaluated.',
+              node,
+            )
+            return undefined
+          }
+          locations.push({
+            end: node.end,
+            path,
+            source: options.moduleId,
+            start: node.start,
+          })
+          return result
+        }
+        values[key] = value(property.value, [name, ...prefix, key])
+      }
+      return values
     }
+    const values = object(argument)
     if (diagnostics.length !== before) continue
     try {
       const definition = define(
         { [name]: values },
         { locations, theme: themes?.styles.get(call.start)?.theme },
       )
+      let conditionIndex = 0
+      function validate(style: Style.NamedStyle) {
+        for (const rule of style.rules ?? []) {
+          if (rule.condition !== undefined) {
+            const location = conditionKeys[conditionIndex++] ?? call
+            try {
+              Lightning.transform({
+                filename: options.moduleId,
+                code: Buffer.from(`.z{${rule.condition}{color:red;}}`),
+                errorRecovery: false,
+              })
+            } catch (error) {
+              report(
+                'unsupported_syntax',
+                `Invalid selector or condition: ${(error as Error).message}`,
+                location,
+              )
+            }
+          }
+          validate(rule.style)
+        }
+      }
+      for (const style of definition.styles) validate(style)
+      if (diagnostics.length !== before) continue
       styles.push(...definition.styles)
-      calls.push({ end: call.end, name, start: call.start })
+      calls.push({
+        ...(dynamic
+          ? {
+              slots: dynamic.slots,
+              valuesType: options.source.slice(
+                dynamic.type.start,
+                dynamic.type.end,
+              ),
+            }
+          : {}),
+        end: call.end,
+        name,
+        start: call.start,
+      })
     } catch (error) {
       if (!(error instanceof Style.InvalidError)) throw error
       for (const diagnostic of error.diagnostics)
@@ -361,13 +633,75 @@ export function extract(options: extract.Options): extract.ReturnType {
         })
     }
   }
+  if (themes && !diagnostics.length)
+    for (const [start, token] of themes.tokens) {
+      if (
+        ![...calls, ...contributions.calls].some(
+          (call) => start >= call.start && token.end <= call.end,
+        )
+      )
+        report(
+          'unsupported_syntax',
+          'Theme references require a compiled style declaration.',
+          { start, end: token.end },
+        )
+    }
+  let contributionData: readonly Css.Contribution[] = []
+  try {
+    contributionData = [
+      ...Contributions.extract(contributions, themes?.tokens ?? new Map()),
+      ...(themes?.calls ?? []).flatMap((call) =>
+        call.options?.layers
+          ? [
+              {
+                kind: 'layers' as const,
+                names: call.options.layers as readonly string[],
+              },
+            ]
+          : [],
+      ),
+    ]
+    if (contributionData.length) {
+      const rendered = Css.compile({
+        styles: { styles: [] },
+        contributions: contributionData,
+        themes: themes?.themes,
+      }).css
+      Lightning.transform({
+        filename: options.moduleId,
+        code: new TextEncoder().encode(rendered),
+        visitor: {
+          Url(url) {
+            if (!/^(?:\/|#|[a-z][a-z\d+.-]*:)/i.test(url.url))
+              throw new Error(
+                'Contribution URLs must be root-relative or absolute in this compiler slice.',
+              )
+          },
+        },
+        errorRecovery: false,
+      })
+    }
+  } catch (error) {
+    report(
+      'unsupported_syntax',
+      (error as Error).message,
+      error instanceof Themes.InvalidError ? error : contributions.calls[0],
+    )
+  }
   if (diagnostics.length) throw new ExtractError(diagnostics)
   return Object.freeze({
+    ...(contributionData.length ? { contributions: contributionData } : {}),
+    ...(contributions.calls.length
+      ? { contributionCalls: contributions.calls }
+      : {}),
     ...(options[Themes.context]
       ? { themeExports: themes?.exports ?? Object.freeze({}) }
       : {}),
     calls: Object.freeze(calls.map((call) => Object.freeze(call))),
     styles: Object.freeze({ styles: Object.freeze(styles) }),
+    ...(variables.calls.length
+      ? { variableCalls: Object.freeze(variables.calls) }
+      : {}),
     themeAliases: Object.freeze(themes?.aliases ?? []),
     themeCalls: Object.freeze(themes?.calls ?? []),
     themeReferences: Object.freeze(themes?.references ?? []),
@@ -390,6 +724,11 @@ export declare namespace extract {
   }
   /** Ordered public compiler input and spans for later rewriting. */
   type ReturnType = {
+    /** Static stylesheet effects and their source replacements. */
+    readonly contributions?: readonly Css.Contribution[] | undefined
+    readonly contributionCalls?: readonly Contributions.Call[] | undefined
+    /** Explicit variable contracts replaced by fixed slot data. */
+    readonly variableCalls?: readonly Variables.Call[] | undefined
     /** Direct calls in source order. */
     readonly calls: readonly Call[]
     /** Validated definitions accepted by Css.compile. */

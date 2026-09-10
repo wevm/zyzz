@@ -45,7 +45,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [cx](api/core/cx.md): Reference and examples.
 - [Vars](api/core/Vars/README.md): Section index.
 - [Vars.define](api/core/Vars/define.md): Reference and examples.
-- [Vars.set](api/core/Vars/set.md): Reference and examples.
+- [vars.set](api/core/Vars/set.md): Reference and examples.
 - [Style](api/core/Style/README.md): Section index.
 - [Style.define](api/core/Style/define.md): Reference and examples.
 - [Literal Values](api/core/Style/literals.md): Reference and examples.
@@ -56,7 +56,7 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Css.anySibling](api/web/Css/anySibling.md): Reference and examples.
 - [Css.compile](api/web/Css/compile.md): Reference and examples.
 - [Css.descendant](api/web/Css/descendant.md): Reference and examples.
-- [Css.layers](api/web/Css/layers.md): Reference and examples.
+- [layers](api/web/layers.md): Reference and examples.
 - [Css.marker](api/web/Css/marker.md): Reference and examples.
 - [Css.siblingAfter](api/web/Css/siblingAfter.md): Reference and examples.
 - [Css.siblingBefore](api/web/Css/siblingBefore.md): Reference and examples.

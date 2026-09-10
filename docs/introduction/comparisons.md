@@ -91,7 +91,7 @@ const styles = {
 }
 ```
 
-Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `zyzz/themes/default` entrypoint exports bundled `css`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
+Property-specific groups such as `backgroundColor`, `textColor`, and `borderColor` constrain token use. The optional `zyzz/themes/default` entrypoint is planned to export bundled `css`, `variants`, `theme`, and raw `tokens`; importing the core does not bring that theme along.
 
 ### Tailwind
 
@@ -345,7 +345,7 @@ export function Bar() {
 }
 ```
 
-`Vars.define` and `Vars.set` remain available for shared explicit variable contracts. Theme references use `theme.vars` for CSS expressions and `theme.tokens` for portable references. Dynamic callbacks bind values without generating rules.
+`Vars.define` and `vars.set` remain available for shared explicit variable contracts. Theme references use `theme.vars` for CSS expressions and `theme.tokens` for portable references. Dynamic callbacks bind values without generating rules.
 
 ### Tailwind
 

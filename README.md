@@ -145,7 +145,7 @@ Token names infer by property, and compatible theme scopes change inherited valu
 
 #### Default Theme
 
-Import the default theme's `css` for inferred colors, typography, spacing, and radius tokens. `zyzz/themes/default` also exports bound `variants`, the full `theme`, and raw `tokens` for extension and reuse.
+The planned `zyzz/themes/default` entrypoint will provide inferred colors, typography, spacing, and radius tokens through bound `css` and `variants`, plus `theme` and raw `tokens`. It remains unpublished until Phase 3 adds variants. These examples preview that API.
 
 ```ts
 import { css } from 'zyzz/themes/default'

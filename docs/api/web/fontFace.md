@@ -1,7 +1,7 @@
 # fontFace
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> Initial compiler support: direct named imports and module-level literal calls.
 
 Contribute a static font-face rule.
 
@@ -11,7 +11,7 @@ import { fontFace } from 'zyzz/web'
 fontFace({
   fontDisplay: 'swap',
   fontFamily: 'App Sans',
-  src: 'url("./app.woff2") format("woff2")',
+  src: 'url("/app.woff2") format("woff2")',
 })
 ```
 
@@ -26,10 +26,10 @@ fontFace({
 - Type: Static font-face descriptors
 - Required: Yes.
 
-Declared family, source, and other supported font-face descriptors. Relative URLs retain the owning source module.
+Declared family, source, and other supported font-face descriptors. URLs must be root-relative or absolute; relative asset relocation is not implemented.
 
 ```ts
-fontFace({ fontFamily: 'App Sans', src: 'url("./app.woff2") format("woff2")' })
+fontFace({ fontFamily: 'App Sans', src: 'url("/app.woff2") format("woff2")' })
 ```
 
 ### definition.fontDisplay
@@ -43,7 +43,7 @@ Controls font display behavior while loading.
 fontFace({
   fontDisplay: 'swap',
   fontFamily: 'App Sans',
-  src: 'url("./app.woff2")',
+  src: 'url("/app.woff2")',
 })
 ```
 
@@ -55,7 +55,7 @@ fontFace({
 Family name used by ordinary style declarations.
 
 ```ts
-fontFace({ fontFamily: 'App Sans', src: 'url("./app.woff2")' })
+fontFace({ fontFamily: 'App Sans', src: 'url("/app.woff2")' })
 ```
 
 ### definition.src
@@ -66,7 +66,7 @@ fontFace({ fontFamily: 'App Sans', src: 'url("./app.woff2")' })
 Font URL and optional format descriptor.
 
 ```ts
-fontFace({ fontFamily: 'App Sans', src: 'url("./app.woff2") format("woff2")' })
+fontFace({ fontFamily: 'App Sans', src: 'url("/app.woff2") format("woff2")' })
 ```
 
 ## Returns
@@ -78,3 +78,9 @@ Contributes a stylesheet rule. A generated/private family return API remains und
 Reject invalid descriptors and unsupported target semantics. Native font loading belongs to platform APIs.
 
 See [Fonts and Motion](../../guides/stylesheets.md#fonts-and-motion) and [Global Styles](../../guides/stylesheets.md#global-styles).
+
+## Current compiler boundary
+
+Direct named imports from `zyzz/web` compile to static stylesheet data. `global`, `fontFace`, and `layers` are eager across supplied graph modules. Vite scans physical project source under its root, excluding generated directories, tests, and dependencies; the standalone host scans its configured source tree. `Graph.compile` returns one `sharedCss` artifact, and the standalone host writes `zyzz.shared.css`, loaded before module stylesheets. Vite imports one shared virtual stylesheet automatically.
+
+Local keyframes use stable module-and-binding names; unused local definitions are omitted and exported names remain live. Imported animation references, source-relative asset relocation, optional reset, and packed contribution metadata remain follow-ups. Contribution URLs currently require root-relative or absolute paths; unsupported relative URLs fail compilation. Shared contribution maps are not yet emitted.

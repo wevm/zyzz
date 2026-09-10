@@ -2,7 +2,8 @@
  * Normalizes explicit configuration into isolated typed authoring contracts.
  * @module
  */
-import type * as Value from './internal/Value.js'
+import type * as Binding from './internal/Binding.js'
+import type * as Condition from './internal/Condition.js'
 import { css } from './css.js'
 import type * as Style from './Style.js'
 import * as Theme from './Theme.js'
@@ -72,9 +73,18 @@ export function create(options: create.Options = {}): unknown {
     )
     const base = definitions[input.defaultTheme]!
     const paths = Object.keys(base[Token.definition].values).sort()
+    function queries(theme: Theme.Definition) {
+      const data = theme[Token.definition].queries
+      return JSON.stringify({
+        breakpoints: Object.keys(data?.breakpoints ?? {}).sort(),
+        containers: Object.keys(data?.containers ?? {}).sort(),
+        containerNames: [...(data?.containerNames ?? [])].sort(),
+      })
+    }
     for (const [name, value] of Object.entries(definitions)) {
       const candidate = Object.keys(value[Token.definition].values).sort()
       if (
+        queries(base) !== queries(value) ||
         paths.length !== candidate.length ||
         paths.some((path, index) => path !== candidate[index])
       )
@@ -155,21 +165,47 @@ export declare namespace create {
       : {})
 }
 
-type Css<tokens extends Theme.Tokens, layers extends string> = <
-  const styles extends Record<string, unknown>,
->(
-  styles: styles & NoInfer<Body<styles, tokens, layers>>,
-) => css.ReturnType
-type Body<styles, tokens extends Theme.Tokens, layers extends string> = {
-  [key in keyof styles]: key extends keyof Style.Properties<tokens>
-    ? Value.Accepted<styles, Style.Properties<tokens>>[key] &
-        Value.Checked<styles, tokens>[key]
-    : key extends `@layer ${layers}`
-      ? styles[key] extends Record<string, unknown>
-        ? Body<styles[key], tokens, layers>
-        : never
-      : never
+type Css<tokens extends Theme.Tokens, layers extends string> = {
+  <
+    const values extends Record<string, string | number>,
+    const styles extends Record<string, unknown>,
+    const callback extends (...args: never[]) => unknown,
+  >(
+    styles: callback &
+      ((
+        values: values,
+      ) => styles &
+        NoInfer<Body<styles, tokens, layers> & Binding.Checked<styles>>) &
+      (values extends Binding.Inputs<values> ? unknown : never) &
+      (Parameters<callback> extends [Record<string, string | number>]
+        ? unknown
+        : never),
+  ): css.Dynamic<values>
+  <const styles extends Record<string, unknown>>(
+    styles: styles & NoInfer<Body<styles, tokens, layers>>,
+  ): css.ReturnType
 }
+type Keys<styles> = styles extends unknown ? keyof styles : never
+type Body<styles, tokens extends Theme.Tokens, layers extends string> = Record<
+  Exclude<
+    Keys<styles>,
+    | keyof Style.DeclarationProperties
+    | Condition.Keys<tokens>
+    | `@layer ${layers}`
+  >,
+  never
+> &
+  (styles extends unknown
+    ? {
+        [key in keyof styles]: key extends
+          | Condition.Keys<tokens>
+          | `@layer ${layers}`
+          ? styles[key] extends Record<string, unknown>
+            ? Body<styles[key], tokens, layers>
+            : never
+          : Style.Accepted<Pick<styles, key>, tokens>[key]
+      }
+    : never)
 
 function definition(value: unknown): Theme.Definition {
   try {
@@ -243,7 +279,20 @@ type Match<input, base> = base extends
   : {
       [key in keyof input | keyof base]: key extends keyof input
         ? key extends keyof base
-          ? Match<input[key], base[key]>
+          ? key extends 'containerNames'
+            ? input[key] extends readonly string[]
+              ? base[key] extends readonly string[]
+                ?
+                    | Exclude<input[key][number], base[key][number]>
+                    | Exclude<
+                        base[key][number],
+                        input[key][number]
+                      > extends never
+                  ? input[key]
+                  : never
+                : never
+              : never
+            : Match<input[key], base[key]>
           : never
         : never
     }

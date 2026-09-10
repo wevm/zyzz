@@ -2,12 +2,17 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
+import * as Contributions from './internal/Contributions.js'
+import * as Binding from '../internal/Binding.js'
 import * as Cascade from '../internal/Cascade.js'
 import * as Literal from '../internal/Literal.js'
 import * as Token from '../internal/Token.js'
 import type * as Style from '../Style.js'
 import type * as Theme from '../Theme.js'
 import * as Themes from './internal/Themes.js'
+
+/** Explicit ordered stylesheet contribution data. */
+export type Contribution = Contributions.Definition
 
 /**
  * Emits factored literal and theme-reference CSS without reading files or generating runtime code.
@@ -40,21 +45,39 @@ export function compile<
     references.set(value, result)
     return result
   }
+  // Only primitive declaration lists can be interned without erasing token identity.
+  const repeated = new Map<string, Style.NamedStyle>()
+  const canonicalStyles = options.styles.styles.map((style) => {
+    if (
+      'rules' in style ||
+      style.declarations.some(
+        (declaration) => typeof declaration.value === 'object',
+      )
+    )
+      return style
+    const key = JSON.stringify(style.declarations)
+    const previous = repeated.get(key)
+    if (previous) return previous
+    repeated.set(key, style)
+    return style
+  })
+  const analyzed = [...new Set(canonicalStyles)]
   const classes = Object.create(null) as Record<name, string>
   const diagnostics: Diagnostic[] = []
   const groups = new Map<string, false | string>()
+  const nestedComposition = options.styles.styles.some((style) => style.rules)
   // Logical dimensions may alias either physical axis in inherited writing modes.
   // Preserve physical-only factoring when no logical dimension is authored.
-  const logicalSizing = options.styles.styles.some((style) =>
+  const logicalSizing = analyzed.some((style) =>
     style.declarations.some(({ property }) =>
       /^(min|max)?(blockSize|inlineSize)$/i.test(property),
     ),
   )
-  const resets = options.styles.styles.some((style) =>
+  const resets = analyzed.some((style) =>
     style.declarations.some(({ property }) => property === 'all'),
   )
   const combinedLines = new Set<string>()
-  for (const style of options.styles.styles)
+  for (const style of analyzed)
     for (const { property } of style.declarations)
       if (Literal.rule(property)?.kind === 'line') {
         const canonical =
@@ -182,7 +205,7 @@ export function compile<
       ])
         join(child, target, visited)
   }
-  for (const style of options.styles.styles)
+  for (const style of analyzed)
     for (const { property } of style.declarations)
       if (Object.hasOwn(Cascade.shorthands, canonical(property)))
         join(canonical(property), domain(canonical(property)))
@@ -191,17 +214,60 @@ export function compile<
     ordered: string
     shared: string
   }
+  const serialized = new Map<object, string>()
+  function serialize(input: Style.Declaration['value']): number | string {
+    if (typeof input !== 'object' || input === null) return input
+    const cached = serialized.get(input)
+    if (cached !== undefined) return cached
+    const value = serializeReference(input)
+    if (typeof value === 'string') serialized.set(input, value)
+    return value
+  }
+  function serializeReference(
+    input: Style.Declaration['value'],
+  ): number | string {
+    if (Binding.is(input)) return `var(${input.name})`
+    if (isReference(input)) return (theme ??= Themes.create()).serialize(input)
+    if (Token.isExpression(input))
+      return input.parts
+        .map((part) => (typeof part === 'string' ? part : serialize(part)))
+        .join('')
+    return input as number | string
+  }
+  function nested(style: Style.NamedStyle): string {
+    if (style.rules)
+      return style.rules
+        .map((rule) => {
+          const body = nested(rule.style)
+          return rule.condition === undefined
+            ? body
+            : `${rule.condition}{${body}}`
+        })
+        .join('')
+    return style.declarations
+      .map(
+        ({ property, value, important }) =>
+          `${Literal.name(property)}:${serialize(value)}${important ? '!important' : ''};`,
+      )
+      .join('')
+  }
   const unique = new Map<string, Prepared>()
-  const prepared = options.styles.styles.map((style) => {
+  const resolved = new Map<Style.NamedStyle, Prepared>()
+  const prepared = options.styles.styles.map((style, index) => {
+    if (style.rules)
+      return {
+        name: style.name,
+        content: { declarations: [], ordered: nested(style), shared: '' },
+      }
+    const canonicalStyle = canonicalStyles[index]!
+    const cached = resolved.get(canonicalStyle)
+    if (cached) return { content: cached, name: style.name }
     let body = ''
     const declarations: Cached[] = []
     for (const { important, property, value: input } of style.declarations) {
-      const token = isReference(input)
       let value: number | string
       try {
-        value = token
-          ? (theme ??= Themes.create()).serialize(input)
-          : (input as number | string)
+        value = serialize(input)
       } catch (error) {
         diagnostics.push({
           code: 'invalid_declaration',
@@ -229,9 +295,13 @@ export function compile<
       declarations.push(entry)
     }
     const previous = unique.get(body)
-    if (previous) return { content: previous, name: style.name }
+    if (previous) {
+      resolved.set(canonicalStyle, previous)
+      return { content: previous, name: style.name }
+    }
 
     const content = { declarations, ordered: '', shared: '' }
+    resolved.set(canonicalStyle, content)
     unique.set(body, content)
     const domains = new Map<string, string>()
     for (const { declaration, domain } of declarations)
@@ -249,7 +319,8 @@ export function compile<
   // Equivalent bodies share factoring work, including repeated tokens.
   for (const content of unique.values())
     for (const { declaration, domain } of content.declarations) {
-      if (groups.get(domain) === false) content.ordered += declaration
+      if (nestedComposition || groups.get(domain) === false)
+        content.ordered += declaration
       else content.shared += declaration
     }
   // Sort identities only, never authored declarations or cascade order. Separate
@@ -315,6 +386,19 @@ export function compile<
     classes[style.name] = names.join(' ')
   }
   if (diagnostics.length) throw new CompileError(diagnostics)
+  const contributionCss = (() => {
+    try {
+      return Contributions.render(options.contributions ?? [], nested)
+    } catch (error) {
+      throw new CompileError([
+        {
+          code: 'invalid_declaration',
+          message: (error as Error).message,
+          path: ['contributions'],
+        },
+      ])
+    }
+  })()
   let scopes: ReturnType<NonNullable<typeof theme>['emit']>
   try {
     scopes =
@@ -330,11 +414,16 @@ export function compile<
       },
     ])
   }
+  const scopedCss = [
+    scopes.css,
+    ...[...rules].map(([name, body]) => `.${name}{${body}}`),
+  ]
+    .filter(Boolean)
+    .join('\n')
   return Object.freeze({
+    ...(contributionCss ? { contributionCss, scopedCss } : {}),
     classes: Object.freeze(classes),
-    css: [scopes.css, ...[...rules].map(([name, body]) => `.${name}{${body}}`)]
-      .filter(Boolean)
-      .join('\n'),
+    css: [contributionCss, scopedCss].filter(Boolean).join('\n'),
     themes: scopes.classes as Readonly<Record<themeName, string>>,
   })
 }
@@ -354,6 +443,8 @@ export declare namespace compile {
      * Independent deduplicates complete applications; its class lists must not be
      * combined with each other. Resolve composition before compiling in this mode.
      */
+    /** Eager module-level stylesheet contributions, supplied as static data. */
+    readonly contributions?: readonly Contribution[] | undefined
     readonly composition?: 'independent' | 'ordered' | undefined
     /** Ordered definitions; no themes or source adapter is required. */
     readonly styles: Style.Definition<name>
@@ -365,6 +456,10 @@ export declare namespace compile {
     name extends string = string,
     themeName extends string = string,
   > = {
+    /** Contribution text separated for graph-wide hoisting. */
+    readonly contributionCss?: string | undefined
+    /** Ordinary scope and style rules when contributions were supplied. */
+    readonly scopedCss?: string | undefined
     /** Readable space-separated class identifiers per authored style. */
     readonly classes: Readonly<Record<name, string>>
     /** Factored CSS preserving cascade behavior, without reset or layers. */

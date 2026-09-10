@@ -161,7 +161,7 @@ ${configuration ? "zyzz.css({'@layer components':{color:'brand'}});\n// @ts-expe
           ).toMatchInlineSnapshot(`false`)
           const origin = server.resolvedUrls!.local[0]!.replace(/\/$/, '')
           const cssPath = transformed!.code.match(
-            /import "([^"\n]*zyzz:[^"\n]*\.css)"/,
+            /import "([^"\n]*zyzz:(?!shared\.css)[^"\n]*\.css)"/,
           )![1]!
           const css = await (await fetch(origin + cssPath)).text()
           expect(css.includes('--z-t')).toMatchInlineSnapshot(`true`)
@@ -350,7 +350,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       const lazy = await fetch(`${origin}/lazy.ts`)
       expect(lazy.status).toMatchInlineSnapshot('200')
       const cssPath = (await lazy.text()).match(
-        /import\s*["']([^"']*zyzz:[^"']+\.css)["']/,
+        /import\s*["']([^"']*zyzz:(?!shared\.css)[^"']+\.css)["']/,
       )?.[1]
       if (!cssPath) throw new Error('Missing lazy CSS import')
       expect(
@@ -471,14 +471,17 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       const code = await response.text()
       expect(response.status).toMatchInlineSnapshot(`200`)
       const cssPath = code.match(
-        /import\s*["']([^"']*zyzz:[^"']+\.css)["']/,
+        /import\s*["']([^"']*zyzz:(?!shared\.css)[^"']+\.css)["']/,
       )?.[1]
       if (!cssPath) throw new Error(`Missing CSS import in ${code}`)
       const stylesheet = async () => (await fetch(origin + cssPath)).text()
       await stylesheet()
       const cssModule = [
         ...server.environments.client!.moduleGraph.idToModuleMap.values(),
-      ].find((module) => module.id?.startsWith('\0zyzz:'))
+      ].find(
+        (module) =>
+          module.id?.startsWith('\0zyzz:') && module.id !== '\0zyzz:shared.css',
+      )
       if (!cssModule) throw new Error('Missing virtual CSS module')
       const loaded = await server.environments.client!.pluginContainer.load(
         cssModule.id!,

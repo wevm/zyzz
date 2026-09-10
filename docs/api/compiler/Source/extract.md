@@ -8,7 +8,7 @@ Declaration values accept ordinary strings and untagged template literals. Templ
 css({ padding: `${8}px`, width: `calc(100% - ${16}px)` })
 ```
 
-Identifiers, property reads, object coercions, arithmetic expressions, calls, and tagged templates remain unsupported. Theme variable references inside templates are deferred. Nested templates are limited to 128 levels. CSS value checking remains static-only.
+Identifiers, property reads, object coercions, arithmetic expressions, calls, and tagged templates remain unsupported. Direct theme variable paths are supported inside templates and retain their defining fallbacks. Nested templates are limited to 128 levels. CSS value checking remains static-only.
 
 Bigint literals also support unary minus: `${-12n}px` folds to `-12px`. Unary plus on bigint remains rejected, matching JavaScript semantics.
 
@@ -59,6 +59,12 @@ Source.extract({
 ```
 
 ## Returns
+
+### variableCalls
+
+- Type: Optional readonly array of `{ start: number; end: number; slots: Readonly<Record<string, Binding.Reference>> }`
+
+Module-owned `Vars.define` calls with inclusive start and exclusive end offsets and immutable slot references. Each slot has a fixed custom-property `name`, scalar `type`, and `variable: true` marker. Hosts implementing rewriting must replace these spans with compiled contracts; `Transform.compile` does so automatically. The field is absent when no variable contracts are declared.
 
 ### calls
 

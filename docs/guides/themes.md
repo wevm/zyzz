@@ -238,7 +238,7 @@ Compile this module with [Transform.compile](../api/compiler/Transform/compile.m
 
 Use explicit `theme.tokens` paths to select tokens whose names collide with CSS literals. Dot access and literal string/numeric brackets are supported.
 
-Local `const` aliases such as `const css = theme.css`, destructuring/renaming, and alias chains are supported. Local themes and aliases must precede their uses. Use [Graph.compile](../api/compiler/Graph/compile.md) or the file host to link relative theme imports and re-exports; packed libraries supply [compiler metadata](../introduction/vite.md#theme-libraries). `theme.vars` remains unsupported. See [source restrictions](../api/compiler/Source/extract.md#theme-source) for details.
+Local `const` aliases such as `const css = theme.css`, destructuring/renaming, and alias chains are supported. Local themes and aliases must precede their uses. Use [Graph.compile](../api/compiler/Graph/compile.md) or the file host to link relative theme imports and re-exports; packed libraries supply [compiler metadata](../introduction/vite.md#theme-libraries). `theme.vars` supports direct scalar references and template interpolation, including imported and packed contracts. Standalone variable destructuring remains unsupported. See [source restrictions](../api/compiler/Source/extract.md#theme-source) for details.
 
 ### Compile Themes
 

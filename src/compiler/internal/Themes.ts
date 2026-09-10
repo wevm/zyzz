@@ -211,6 +211,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
       typeof node.argument.value === 'number'
     )
       return node.operator === '-' ? -node.argument.value : node.argument.value
+    if (node.type === 'ArrayExpression')
+      return node.elements.map((element) => {
+        if (!element || element.type === 'SpreadElement')
+          return fail('Theme arrays require dense literal elements.', node)
+        return data(element)
+      })
     if (node.type !== 'ObjectExpression')
       return fail(
         'Theme values must be literal data; expressions are not evaluated.',
@@ -743,14 +749,21 @@ export function collect(program: Ast.Program, options: collect.Options) {
       parent.object === node &&
       ((parent.property.type === 'Identifier' &&
         !parent.computed &&
-        parent.property.name === 'tokens') ||
+        ['tokens', 'vars'].includes(parent.property.name)) ||
         (parent.property.type === 'Literal' &&
           parent.computed &&
-          parent.property.value === 'tokens'))
+          ['tokens', 'vars'].includes(String(parent.property.value))))
     ) {
       if (parent.optional)
         fail('Token references cannot use optional access.', parent)
-      let value: unknown = themes[theme.name]!.tokens
+      const variable =
+        parent.property.type === 'Identifier'
+          ? parent.property.name === 'vars'
+          : parent.property.type === 'Literal' &&
+            parent.property.value === 'vars'
+      let value: unknown = variable
+        ? themes[theme.name]!.vars
+        : themes[theme.name]!.tokens
       let target: Ast.Node = parent
       let index = ancestors.length - 3
       for (; index >= 0; index--) {
@@ -799,6 +812,25 @@ export function collect(program: Ast.Program, options: collect.Options) {
         else break
       }
       const valueTarget = target
+      if (variable) {
+        while (index >= 0) {
+          const ancestor = ancestors[index]!
+          if (
+            !(
+              (ancestor.type === 'TemplateLiteral' &&
+                ancestor.expressions.includes(target as Ast.Expression)) ||
+              ((ancestor.type === 'TSAsExpression' ||
+                ancestor.type === 'TSSatisfiesExpression' ||
+                ancestor.type === 'TSNonNullExpression' ||
+                ancestor.type === 'TSTypeAssertion') &&
+                ancestor.expression === target)
+            )
+          )
+            break
+          target = ancestor
+          index--
+        }
+      }
       const array = ancestors[index]
       if (
         array?.type === 'ArrayExpression' &&
@@ -826,12 +858,42 @@ export function collect(program: Ast.Program, options: collect.Options) {
       for (; callIndex >= 0; callIndex--) {
         const ancestor = ancestors[callIndex]!
         if (
+          ancestor.type === 'Property' &&
+          ancestor.value === argument &&
+          ancestors[callIndex - 1]?.type === 'ObjectExpression'
+        ) {
+          argument = ancestors[--callIndex]
+          continue
+        }
+        if (
           (ancestor.type === 'TSAsExpression' ||
-            ancestor.type === 'TSSatisfiesExpression') &&
+            ancestor.type === 'TSSatisfiesExpression' ||
+            ancestor.type === 'TSNonNullExpression' ||
+            ancestor.type === 'TSTypeAssertion') &&
           ancestor.expression === argument
         )
           argument = ancestor
         else break
+      }
+      if (
+        ancestors[callIndex]?.type === 'ArrowFunctionExpression' &&
+        (ancestors[callIndex] as Ast.ArrowFunctionExpression).body === argument
+      ) {
+        argument = ancestors[callIndex]
+        callIndex--
+      }
+      while (callIndex >= 0) {
+        const wrapper = ancestors[callIndex]!
+        if (
+          (wrapper.type === 'TSAsExpression' ||
+            wrapper.type === 'TSSatisfiesExpression' ||
+            wrapper.type === 'TSNonNullExpression' ||
+            wrapper.type === 'TSTypeAssertion') &&
+          wrapper.expression === argument
+        ) {
+          argument = wrapper
+          callIndex--
+        } else break
       }
       const call = ancestors[callIndex]
       if (
@@ -840,7 +902,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         object?.type !== 'ObjectExpression' ||
         call?.type !== 'CallExpression' ||
         call.arguments[0] !== argument ||
-        !styles.has(call.start)
+        (!styles.has(call.start) && !options.contributionCalls?.has(call.start))
       )
         fail(
           'Token references must be direct property values in bound theme css calls.',
@@ -930,6 +992,7 @@ export declare namespace collect {
   /** Stable module namespace, independent of token values and call offsets. */
   type Options = {
     /** Encoded package/module identity from the source adapter. */
+    readonly contributionCalls?: ReadonlySet<number> | undefined
     readonly namespace: string
     readonly linked?: boolean | undefined
     readonly links?: Readonly<Record<string, Link>> | undefined

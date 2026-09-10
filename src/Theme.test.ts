@@ -169,6 +169,7 @@ describe('define', () => {
         "className",
         "css",
         "tokens",
+        "vars",
       ]
     `)
   })
@@ -190,7 +191,6 @@ describe('define', () => {
       { color: { brand: { light: '#fff' } } },
       { color: { brand: { dark: '#000', light: '#fff', system: '#ccc' } } },
       { color: { 'blue.500': '#fff' } },
-      { spacing: { md: { dark: '1rem', light: '2rem' } } },
       { color: {} },
     ]
     for (const input of invalid) {

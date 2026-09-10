@@ -17,7 +17,9 @@ for (const count of [10, 100])
       describe(`node runtime comparison / ${count} styles / ${kind} / repeat ${repeat}`, () => {
         // Reverse adapter order to expose systematic warmup/order effects.
         const libraries =
-          repeat === 1 ? Runtime.libraries : [...Runtime.libraries].reverse()
+          repeat === 1
+            ? Runtime.librariesFor(kind)
+            : [...Runtime.librariesFor(kind)].reverse()
         for (const library of libraries) {
           let apply: Runtime.Bundle['apply']
           let index = 0

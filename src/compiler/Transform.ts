@@ -2,6 +2,7 @@
  * Rewrites extracted style calls into executable modules with CSS and source maps.
  * @module
  */
+import * as Applications from './internal/Applications.js'
 import * as Expression from './internal/Expression.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import type * as Ast from '@oxc-project/types'
@@ -9,6 +10,7 @@ import MagicString from 'magic-string'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Css from '../web/Css.js'
+import type * as Style from '../Style.js'
 import * as Source from './Source.js'
 import * as Themes from './internal/Themes.js'
 
@@ -26,6 +28,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     options[Themes.context]?.extracted ?? Source.extract(options)
   const emitted = Css.compile({
     styles: extracted.styles,
+    contributions: extracted.contributions,
     themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
   })
   const module = new MagicString(options.source)
@@ -34,6 +37,12 @@ export function compile(options: compile.Options): compile.ReturnType {
     sourceType: 'module',
   }).program
 
+  for (const call of extracted.contributionCalls ?? [])
+    module.overwrite(
+      call.start,
+      call.end,
+      call.kind === 'keyframes' ? JSON.stringify(call.name) : 'void 0',
+    )
   type Span = Pick<Ast.Node, 'end' | 'start'>
   const applications = new Map<number, { end: number; folded: boolean }>()
   const calls = new Map(extracted.calls.map((call) => [call.start, call]))
@@ -53,6 +62,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (!call || node.end !== call.end) return
 
       const folded =
+        !call.slots &&
         parent?.type === 'CallExpression' &&
         parent.callee === node &&
         !parent.optional &&
@@ -63,11 +73,10 @@ export function compile(options: compile.Options): compile.ReturnType {
       })
 
       let argument = node.arguments[0]
-      while (
-        argument?.type === 'TSAsExpression' ||
-        argument?.type === 'TSSatisfiesExpression'
-      )
-        argument = argument.expression
+        ? Expression.unwrap(node.arguments[0])
+        : undefined
+      if (argument?.type === 'ArrowFunctionExpression')
+        argument = Expression.unwrap(argument.body) as Ast.Expression
       if (argument?.type === 'ObjectExpression')
         definitions.set(call.start, argument)
     },
@@ -76,6 +85,15 @@ export function compile(options: compile.Options): compile.ReturnType {
   let runtime = '__zyzzProps'
   while (identifiers.has(runtime)) runtime += '_'
 
+  let variables = '__zyzzVars'
+  while (identifiers.has(variables)) variables += '_'
+
+  for (const call of extracted.variableCalls ?? [])
+    module.overwrite(
+      call.start,
+      call.end,
+      `${variables}.create(${JSON.stringify(call.slots)})`,
+    )
   const first = extracted.calls[0]
   const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
   const names = new Map<string, string>()
@@ -103,12 +121,41 @@ export function compile(options: compile.Options): compile.ReturnType {
   for (const call of extracted.calls) {
     const application = applications.get(call.start)!
     const props = `{className:${JSON.stringify(classes[call.name])}}`
+    const replacement = (() => {
+      if (call.slots) {
+        const type = `import('zyzz').css.Dynamic<${call.valuesType}>`
+        const typed = /\.[cm]?tsx?$/.test(options.moduleId)
+        const slots = Object.entries(call.slots)
+        const reads = slots
+          .map(
+            ([key], index) => `const v${index}=input[${JSON.stringify(key)}];`,
+          )
+          .join('')
+        const assignments = slots
+          .map(
+            ([, slot], index) =>
+              `${JSON.stringify(slot.name)}:v${index}===''?' ':v${index}`,
+          )
+          .join(',')
+        const className = JSON.stringify(classes[call.name])
+        const value = `(input${typed ? `:Parameters<${type}>[0]` : ''})=>{${reads}const external=input.className;const style=input.style;return {className:external?${className}+" "+external:${className},style:{...style,${assignments}}}}`
+        return typed ? `((${value}) as ${type})` : `(${value})`
+      }
+      if (application.folded) return `(${props})`
+      return `${runtime}.create(${props})`
+    })()
+    module.overwrite(call.start, application.end, replacement)
+    if (!call.slots && !application.folded) callable = true
+  }
+
+  for (const application of Applications.find(program, extracted.calls)) {
+    const className = JSON.stringify(classes[application.name])
+    // Retain the original read, including its temporal dead zone behavior.
     module.overwrite(
-      call.start,
+      application.start,
       application.end,
-      application.folded ? `(${props})` : `${runtime}.create(${props})`,
+      `(${options.source.slice(application.start, application.calleeEnd)},{className:${className}})`,
     )
-    if (!application.folded) callable = true
   }
 
   for (const call of extracted.themeCalls) {
@@ -163,6 +210,8 @@ export function compile(options: compile.Options): compile.ReturnType {
       end: applications.get(call.start)!.end,
       start: call.start,
     })),
+    ...(extracted.contributionCalls ?? []),
+    ...(extracted.variableCalls ?? []),
     ...extracted.themeAliases,
     ...extracted.themeCalls,
     ...extracted.themeReferences,
@@ -182,7 +231,10 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   for (const node of program.body) {
-    if (node.type !== 'ImportDeclaration' || node.source.value !== 'zyzz')
+    if (
+      node.type !== 'ImportDeclaration' ||
+      !['zyzz', 'zyzz/web'].includes(node.source.value)
+    )
       continue
     const removed = new Set<Ast.ImportDeclaration['specifiers'][number]>()
     for (const specifier of node.specifiers) {
@@ -190,7 +242,11 @@ export function compile(options: compile.Options): compile.ReturnType {
         node.importKind === 'type' ||
         specifier.type !== 'ImportSpecifier' ||
         specifier.importKind === 'type' ||
-        !['Config', 'css', 'Theme'].includes(
+        !(
+          node.source.value === 'zyzz'
+            ? ['Config', 'css', 'Theme', 'Vars']
+            : ['global', 'fontFace', 'keyframes', 'layers']
+        ).includes(
           specifier.imported.type === 'Identifier'
             ? specifier.imported.name
             : specifier.imported.value,
@@ -237,7 +293,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable) {
+  if (callable || extracted.variableCalls?.length) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -249,7 +305,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { Props as ${runtime} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 
@@ -296,109 +352,125 @@ export function compile(options: compile.Options): compile.ReturnType {
   )
 
   // Literal and scalar-theme rules each occupy one line at this boundary.
-  const css = (emitted.css ? emitted.css.split('\n') : [])
-    .map((rule, index) => {
-      const line = index + 1
-      const brace = rule.indexOf('{')
-      const name = rule.slice(1, brace)
-      const linkedOwner = linkedOwners.get(name)
-      if (linkedOwner) {
-        const lines = linkedOwner.source
-          .slice(0, linkedOwner.call.start)
-          .split('\n')
-        Mapping.setSourceContent(
-          cssMap,
-          linkedOwner.moduleId,
-          linkedOwner.source,
-        )
+  const prefix = emitted.contributionCss ?? ''
+  const scoped = emitted.scopedCss ?? emitted.css
+  const css = [
+    prefix,
+    (scoped ? scoped.split('\n') : [])
+      .map((rule, index) => {
+        const line = index + 1 + (prefix ? prefix.split('\n').length : 0)
+        const brace = rule.indexOf('{')
+        const name = rule.slice(1, brace)
+        const linkedOwner = linkedOwners.get(name)
+        if (linkedOwner) {
+          const lines = linkedOwner.source
+            .slice(0, linkedOwner.call.start)
+            .split('\n')
+          Mapping.setSourceContent(
+            cssMap,
+            linkedOwner.moduleId,
+            linkedOwner.source,
+          )
+          Mapping.addMapping(cssMap, {
+            generated: { column: 0, line },
+            name: linkedOwner.call.name,
+            original: { line: lines.length, column: lines.at(-1)!.length },
+            source: linkedOwner.moduleId,
+          })
+          return rule
+        }
+        const themeOwner = themeOwners.get(name)
+        if (themeOwner) {
+          Mapping.addMapping(cssMap, {
+            generated: { column: 0, line },
+            name: themeOwner.name,
+            original: position(themeOwner.start),
+            source: options.moduleId,
+          })
+          return rule
+        }
+        if (Object.values(emitted.themes).includes(name)) {
+          // Packed theme declarations have no authored source in this graph.
+          Mapping.addMapping(cssMap, { generated: { column: 0, line } })
+          return rule
+        }
+        const selector = `.${names.get(name)!}`
+        const call = owners.get(name)!
         Mapping.addMapping(cssMap, {
           generated: { column: 0, line },
-          name: linkedOwner.call.name,
-          original: { line: lines.length, column: lines.at(-1)!.length },
-          source: linkedOwner.moduleId,
-        })
-        return rule
-      }
-      const themeOwner = themeOwners.get(name)
-      if (themeOwner) {
-        Mapping.addMapping(cssMap, {
-          generated: { column: 0, line },
-          name: themeOwner.name,
-          original: position(themeOwner.start),
+          name: call.name,
+          original: position(call.start),
           source: options.moduleId,
         })
-        return rule
-      }
-      if (Object.values(emitted.themes).includes(name)) {
-        // Packed theme declarations have no authored source in this graph.
-        Mapping.addMapping(cssMap, { generated: { column: 0, line } })
-        return rule
-      }
-      const selector = `.${names.get(name)!}`
-      const call = owners.get(name)!
-      Mapping.addMapping(cssMap, {
-        generated: { column: 0, line },
-        name: call.name,
-        original: position(call.start),
-        source: options.moduleId,
+
+        const body = rule.slice(brace)
+        const style = styles.get(call.name)!
+        function declarations(
+          style: Style.NamedStyle,
+        ): readonly Style.Declaration[] {
+          return style.rules
+            ? style.rules.flatMap((rule) => declarations(rule.style))
+            : style.declarations
+        }
+        const conditionNodes: Extract<Ast.Node, { type: 'Property' }>[] = []
+        function locations(node: Ast.ObjectExpression): readonly Ast.Node[] {
+          return node.properties.flatMap((property) => {
+            if (property.type !== 'Property') return []
+            const value = Expression.unwrap(property.value)
+            if (value.type === 'ObjectExpression') {
+              conditionNodes.push(property)
+              return locations(value)
+            }
+            if (value.type === 'ArrayExpression')
+              return value.elements.filter(
+                (node): node is NonNullable<typeof node> => node !== null,
+              )
+            return [property]
+          })
+        }
+        const ordered = declarations(style)
+        const authored = locations(definitions.get(call.start)!)
+        const conditionStarts = declarationStarts(body, true)
+        for (const [index, start] of conditionStarts.entries()) {
+          const node = conditionNodes[index]
+          if (!node) continue
+          Mapping.addMapping(cssMap, {
+            generated: { column: selector.length + start, line },
+            name: options.source.slice(node.key.start, node.key.end),
+            original: position(node.key.start),
+            source: options.moduleId,
+          })
+        }
+        const starts = declarationStarts(body)
+        let cursor = 1
+        for (
+          let propertyIndex = 0;
+          propertyIndex < ordered.length;
+          propertyIndex++
+        ) {
+          const declaration = ordered[propertyIndex]!
+          const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:`
+          const start =
+            starts.find(
+              (start) => start >= cursor && body.startsWith(text, start),
+            ) ?? -1
+          if (start < 0) continue
+
+          const location = authored[propertyIndex]!
+          Mapping.addMapping(cssMap, {
+            generated: { column: selector.length + start, line },
+            name: declaration.property,
+            original: position(location.start),
+            source: options.moduleId,
+          })
+          cursor = start + text.length
+        }
+
+        return selector + body
       })
-
-      const body = rule.slice(brace)
-      const style = styles.get(call.name)!
-      const properties = definitions.get(call.start)!.properties
-      const fallbacks = properties.some(
-        (property) =>
-          property.type === 'Property' &&
-          Expression.unwrap(property.value).type === 'ArrayExpression',
-      )
-      const occurrences = new Map<string, number>()
-      let cursor = 1
-      for (
-        let propertyIndex = 0;
-        propertyIndex < style.declarations.length;
-        propertyIndex++
-      ) {
-        const declaration = style.declarations[propertyIndex]!
-        const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:`
-        const start = body.indexOf(text, cursor)
-        if (start < 0) continue
-
-        const property = fallbacks
-          ? properties.find(
-              (property) =>
-                property.type === 'Property' &&
-                (() => {
-                  if (property.key.type === 'Identifier') {
-                    return property.key.name
-                  }
-                  if (property.key.type === 'Literal') {
-                    return property.key.value
-                  }
-                  return undefined
-                })() === declaration.property,
-            )!
-          : properties[propertyIndex]!
-        const occurrence = occurrences.get(declaration.property) ?? 0
-        occurrences.set(declaration.property, occurrence + 1)
-        const value =
-          property.type === 'Property'
-            ? Expression.unwrap(property.value)
-            : undefined
-        const location =
-          value?.type === 'ArrayExpression'
-            ? value.elements[occurrence]!
-            : property
-        Mapping.addMapping(cssMap, {
-          generated: { column: selector.length + start, line },
-          name: declaration.property,
-          original: position(location.start),
-          source: options.moduleId,
-        })
-        cursor = start + text.length
-      }
-
-      return selector + body
-    })
+      .join('\n'),
+  ]
+    .filter(Boolean)
     .join('\n')
 
   const map = module.generateMap({
@@ -445,4 +517,68 @@ export declare namespace compile {
     /** Stable scope classes keyed by local module/binding identity. */
     readonly themes: Readonly<Record<string, string>>
   }
+}
+
+/** Locates emitted declarations while skipping selectors, conditions, and quoted CSS data. */
+function declarationStarts(
+  body: string,
+  conditions = false,
+): readonly number[] {
+  const starts: number[] = []
+  let start = 0
+  let depth = 0
+  let blocks = 0
+  let custom = false
+  let quote = ''
+  for (let index = 0; index < body.length; index++) {
+    const char = body[index]!
+    if (char === '\\') {
+      index++
+      continue
+    }
+    if (quote) {
+      if (char === quote) quote = ''
+      continue
+    }
+    if (char === '"' || char === "'") {
+      quote = char
+      continue
+    }
+    if (char === '/' && body[index + 1] === '*') {
+      const end = body.indexOf('*/', index + 2)
+      if (end < 0) break
+      index = end + 1
+      continue
+    }
+    if (char === '(' || char === '[') {
+      depth++
+      continue
+    }
+    if (char === ')' || char === ']') {
+      depth--
+      continue
+    }
+    if (depth) continue
+    if (char === ':' && body.slice(start, index).trimStart().startsWith('--'))
+      custom = true
+    if (char === '{') {
+      if (custom) blocks++
+      else {
+        if (conditions && index > start) starts.push(start)
+        start = index + 1
+      }
+    } else if (char === '}') {
+      if (blocks) blocks--
+      else {
+        start = index + 1
+        custom = false
+      }
+    } else if (char === ';' && !blocks) {
+      while (/\s/.test(body[start] ?? '') && start < index) start++
+      if (!conditions) starts.push(start)
+      start = index + 1
+      custom = false
+    }
+  }
+  return starts
 }

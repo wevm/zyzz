@@ -34,7 +34,7 @@ The returned callable accepts the [application parameters](../../core/css.md#app
 
 - Type: `css.ReturnType`
 
-Callable accepting only className and style overrides, and returning copied inline overrides.
+Callable accepting only className and style overrides, and returning forwarded inline overrides.
 
 ```ts
 const props = card({ style: { padding: '1rem' } })
@@ -54,7 +54,7 @@ props.className
 
 - Type: `css.Props["style"]`
 
-Copied inline overrides when supplied. Other component props remain on the element.
+Forwarded inline overrides when supplied. Other component props remain on the element.
 
 ```ts
 props.style
@@ -62,8 +62,12 @@ props.style
 
 ## Errors
 
-Applied unknown keys, invalid override records, non-string classes, and invalid style containers throw `TypeError`.
+Override shapes and values are checked by TypeScript. The runtime helper merges classes and forwards inline styles without validation.
 
 This is a generated-code support API. The example assumes the supplied class has a matching stylesheet; normal authoring uses `css`.
 
 See [Props](README.md) for related methods and types.
+
+Each call returns a fresh props object. When `style` is supplied, the returned
+`style` is the same object; treat it as immutable after passing it to a callable.
+Dynamic styles create a new style object to add their private variables.

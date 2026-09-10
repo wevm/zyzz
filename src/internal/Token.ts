@@ -2,6 +2,8 @@
  * Carries portable theme references and enforces their property domains.
  * @module
  */
+import type * as Binding from './Binding.js'
+import type * as Query from './Query.js'
 import type * as Theme from '../Theme.js'
 import * as Literal from './Literal.js'
 
@@ -14,6 +16,7 @@ export function accepts(
   if (group === 'borderColor') return /^border.*Color$/.test(property)
   if (group === 'borderRadius') return /^border.*Radius$/.test(property)
   if (group === 'textColor') return property === 'color'
+  if (group === 'spacing' && property === 'marginTrim') return false
   if (group === 'spacing')
     return (
       /^(padding|margin|inset|scrollPadding)/.test(property) ||
@@ -69,6 +72,7 @@ export function bind<tokens extends Theme.Tokens>(
       ),
     )
   }
+  const tokens = rebind(original.tokens)
   return Object.freeze(
     Object.defineProperty(
       {
@@ -76,7 +80,8 @@ export function bind<tokens extends Theme.Tokens>(
           return original.className
         },
         css: original.css,
-        tokens: rebind(original.tokens),
+        tokens,
+        vars: variables(tokens),
       },
       definition,
       { value: Object.freeze({ ...original[definition], contract }) },
@@ -98,6 +103,67 @@ export function create(options: Omit<Reference, typeof reference>): Reference {
   return Object.freeze({ ...options, [reference]: true as const })
 }
 
+/** Ordered web expression segments retain live references until CSS emission. */
+export type Expression = {
+  /** Structured expression discriminator. */
+  readonly [expression]: true
+  /** Cooked text and live scalar theme references in authored order. */
+  readonly parts: readonly (string | Reference | Binding.Reference)[]
+}
+
+/** Identifies structured web expressions independently of literal CSS text. */
+export const expression = Symbol('zyzz.expression')
+
+/** Recognizes compiler-owned expression data without invoking getters. */
+export function isExpression(value: unknown): value is Expression {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Object.getOwnPropertyDescriptor(value, expression)?.value === true
+  )
+}
+
+/** Builds an immutable expression from statically extracted segments. */
+export function compose(
+  parts: readonly (string | Reference | Binding.Reference)[],
+): Expression {
+  return Object.freeze({
+    [expression]: true as const,
+    parts: Object.freeze([...parts]),
+  })
+}
+
+/** Marks web-only references distinctly from portable tokens. */
+export const web = Symbol('zyzz.web.variable')
+
+/** Web reference with the original token domain. */
+export type Variable<group extends Group = Group> = Reference<group> & {
+  readonly [web]: true
+}
+
+/** Replaces portable scalar leaves with web-only references. */
+export type Variables<tree> =
+  tree extends Reference<infer group>
+    ? Variable<group>
+    : { readonly [key in keyof tree]: Variables<tree[key]> }
+
+/** Creates web-only reference leaves without changing contract identities. */
+export function variables<tree>(tree: tree): Variables<tree> {
+  if (is(tree))
+    return Object.freeze({
+      ...tree,
+      [web]: true as const,
+    }) as unknown as Variables<tree>
+  return Object.freeze(
+    Object.fromEntries(
+      Object.entries(tree as object).map(([key, value]) => [
+        key,
+        variables(value),
+      ]),
+    ),
+  ) as Variables<tree>
+}
+
 /** Internal definition metadata; never enumerable consumer output. */
 export const definition = Symbol('zyzz.theme')
 
@@ -108,6 +174,11 @@ export type Group =
   | 'borderRadius'
   | 'color'
   | 'spacing'
+  | 'fontFamily'
+  | 'fontSize'
+  | 'fontWeight'
+  | 'letterSpacing'
+  | 'lineHeight'
   | 'textColor'
 
 /** Stable package/module/binding identity supplied by source adapters. */
@@ -130,6 +201,7 @@ export function is(value: unknown): value is Reference {
 
 /** Immutable theme data carried directly by each definition. */
 export type Metadata = {
+  readonly queries?: Query.Metadata | undefined
   readonly contract: Contract
   readonly values: Readonly<Record<string, Value>>
 }
@@ -149,7 +221,14 @@ type Paths<tree> = [tree] extends [never]
         [key in Extract<keyof tree, number | string>]: NonNullable<
           tree[key]
         > extends Value
-          ? key | `${key}`
+          ?
+              | key
+              | `${key}`
+              | (key extends `${infer numericKey extends number}`
+                  ? `${numericKey}` extends key
+                    ? numericKey
+                    : never
+                  : never)
           : `${key}.${Paths<NonNullable<tree[key]>>}`
       }[Extract<keyof tree, number | string>]
 
@@ -166,9 +245,18 @@ export type Properties<group extends Group> = group extends 'spacing'
       | `inlineSize`
       | `inset${string}`
       | `left`
-      | `margin${string}`
-      | `max${string}`
-      | `min${string}`
+      | Exclude<
+          Extract<keyof Literal.Properties, `margin${string}`>,
+          'marginTrim'
+        >
+      | `maxBlockSize`
+      | `maxHeight`
+      | `maxInlineSize`
+      | `maxWidth`
+      | `minBlockSize`
+      | `minHeight`
+      | `minInlineSize`
+      | `minWidth`
       | `padding${string}`
       | `right`
       | `rowGap`
@@ -224,6 +312,11 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
     'borderColor',
     'borderRadius',
     'spacing',
+    'fontFamily',
+    'fontSize',
+    'fontWeight',
+    'letterSpacing',
+    'lineHeight',
     'textColor',
     'color',
   ] as const) {

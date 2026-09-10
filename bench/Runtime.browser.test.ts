@@ -13,6 +13,7 @@ describe('browser runtime', () => {
   test.runIf(process.env.BENCH_RUNTIME === '1')(
     'measures equivalent production applications',
     async () => {
+      const directory = process.env.BENCH_RUNTIME_OUTPUT ?? 'bench/results'
       const browser = await chromium.launch()
       const bundles = new Map<string, Runtime.Bundle>()
       const groups = []
@@ -23,8 +24,8 @@ describe('browser runtime', () => {
               const benchmarks = []
               const libraries =
                 repeat === 1
-                  ? Runtime.libraries
-                  : [...Runtime.libraries].reverse()
+                  ? Runtime.librariesFor(kind)
+                  : [...Runtime.librariesFor(kind)].reverse()
               for (const library of libraries) {
                 const key = `${count}/${kind}/${library}`
                 let output = bundles.get(key)
@@ -32,12 +33,13 @@ describe('browser runtime', () => {
                   output = await Runtime.create({ count, kind, library })
                   await Runtime.verify(output, { count, kind, library })
                   bundles.set(key, output)
-                  const directory = Path.join(
-                    'bench/results/runtime',
+                  const sizesDirectory = Path.join(
+                    directory,
+                    'runtime',
                     String(count),
                     kind,
                   )
-                  await Fs.mkdir(directory, { recursive: true })
+                  await Fs.mkdir(sizesDirectory, { recursive: true })
                   const measure = (value: string) => ({
                     brotli: Zlib.brotliCompressSync(value).byteLength,
                     gzip: Zlib.gzipSync(value).byteLength,
@@ -46,7 +48,7 @@ describe('browser runtime', () => {
                   const css = measure(output.css)
                   const javascript = measure(output.javascript)
                   await Fs.writeFile(
-                    Path.join(directory, `${library}.json`),
+                    Path.join(sizesDirectory, `${library}.json`),
                     JSON.stringify(
                       {
                         css,
@@ -137,9 +139,9 @@ describe('browser runtime', () => {
                 benchmarks,
                 fullName: `runtime comparison / ${count} styles / ${kind} / repeat ${repeat}`,
               })
-              await Fs.mkdir('bench/results', { recursive: true })
+              await Fs.mkdir(directory, { recursive: true })
               await Fs.writeFile(
-                'bench/results/browser-timings.json',
+                Path.join(directory, 'browser-timings.json'),
                 JSON.stringify(
                   {
                     browser: browser.version(),
@@ -157,6 +159,6 @@ describe('browser runtime', () => {
         await browser.close()
       }
     },
-    180_000,
+    300_000,
   )
 })

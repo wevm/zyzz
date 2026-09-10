@@ -11,7 +11,7 @@ import type * as Themes from './Themes.js'
 /** Reads versioned JSON as validated data; never evaluates package code. */
 export function read(source: string, identities: Map<string, Token.Contract>) {
   const data = record(JSON.parse(source))
-  if (data.version !== 1 && data.version !== 2)
+  if (data.version !== 1 && data.version !== 2 && data.version !== 3)
     throw new Error('Unsupported Zyzz contract version.')
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
@@ -159,10 +159,24 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(links).some(
-      (link) => link.kind === 'config' || link.call.type,
+    version: Object.values(themes).some(
+      (theme) =>
+        theme[Token.definition].queries ||
+        Object.keys(theme.tokens).some((group) =>
+          [
+            'fontFamily',
+            'fontSize',
+            'fontWeight',
+            'lineHeight',
+            'letterSpacing',
+          ].includes(group),
+        ),
     )
-      ? 2
-      : 1,
+      ? 3
+      : Object.values(links).some(
+            (link) => link.kind === 'config' || link.call.type,
+          )
+        ? 2
+        : 1,
   })
 }

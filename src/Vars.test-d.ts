@@ -3,6 +3,11 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css, Vars } from 'zyzz'
 
 describe('define', () => {
+  test('reserves the assignment method name', () => {
+    // @ts-expect-error The contract owns the set method.
+    Vars.define({ set: 'number' })
+  })
+
   test('distinguishes signed dimensions and grid integers', () => {
     const slots = Vars.define({
       size: 'length',
@@ -10,12 +15,12 @@ describe('define', () => {
       amount: 'percentage',
       count: 'number',
     })
-    Vars.set(slots, { size: '12px', signed: '-12px', amount: '50%' })
+    slots.set({ size: '12px', signed: '-12px', amount: '50%' })
     css({ marginLeft: slots.signed, padding: slots.size })
     // @ts-expect-error Nonnegative lengths cannot carry negative values.
-    Vars.set(slots, { size: '-12px' })
+    slots.set({ size: '-12px' })
     // @ts-expect-error Nonnegative percentages cannot carry negative values.
-    Vars.set(slots, { amount: '-50%' })
+    slots.set({ amount: '-50%' })
     // @ts-expect-error Signed dimensions cannot guarantee nonnegative padding.
     css({ padding: slots.signed })
     // @ts-expect-error Grid lines require nonzero integers.
@@ -39,44 +44,44 @@ describe('define', () => {
       count: 'number',
     })
     // @ts-expect-error CSS percentages use decimal numeric spelling.
-    Vars.set(slots, { amount: '0x10%' })
+    slots.set({ amount: '0x10%' })
     // @ts-expect-error Color hashes require hexadecimal digits.
-    Vars.set(slots, { color: '#nothex' })
+    slots.set({ color: '#nothex' })
     // @ts-expect-error Generic numeric slots cannot guarantee integer z-index values.
     css({ zIndex: slots.count })
   })
   test('infers references and rejects incompatible declarations', () => {
-    const progress = Vars.define({
+    const vars = Vars.define({
       amount: 'percentage',
       color: 'color',
       count: 'number',
       gap: 'length',
     })
     css({
-      '--accent': progress.color,
-      color: progress.color,
-      opacity: progress.count,
-      padding: progress.gap,
-      width: progress.amount,
+      '--accent': vars.color,
+      color: vars.color,
+      opacity: vars.count,
+      padding: vars.gap,
+      width: vars.amount,
     })
     // @ts-expect-error Length slots exclude percentage assignments.
-    Vars.set(progress, { gap: '50%' })
+    vars.set({ gap: '50%' })
     // @ts-expect-error Color variables do not supply lengths.
-    css({ width: progress.color })
+    css({ width: vars.color })
     // @ts-expect-error Unknown schema types cannot be declared.
     Vars.define({ bad: 'anything' })
   })
 })
 describe('set', () => {
   test('checks partial assignments and rejects unknown names', () => {
-    const progress = Vars.define({ amount: 'percentage', count: 'number' })
-    expectTypeOf(Vars.set(progress, { amount: '50%' })).toEqualTypeOf<
+    const vars = Vars.define({ amount: 'percentage', count: 'number' })
+    expectTypeOf(vars.set({ amount: '50%' })).toEqualTypeOf<
       Readonly<Record<`--${string}`, number | string>>
     >()
-    Vars.set(progress, { count: 2 })
+    vars.set({ count: 2 })
     // @ts-expect-error Values retain the declared percentage domain.
-    Vars.set(progress, { amount: '20px' })
+    vars.set({ amount: '20px' })
     // @ts-expect-error Unknown slots cannot be assigned.
-    Vars.set(progress, { missing: 1 })
+    vars.set({ missing: 1 })
   })
 })

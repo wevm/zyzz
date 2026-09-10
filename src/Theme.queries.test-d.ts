@@ -4,6 +4,13 @@ import { Config, Theme } from 'zyzz'
 import { css } from './themes/default.js'
 
 describe('define', () => {
+  test('rejects reserved container identities', () => {
+    // @ts-expect-error Container identities exclude reserved keywords.
+    Theme.define({ containerNames: ['none'] })
+    // @ts-expect-error Container keywords are case insensitive.
+    Theme.define({ containerNames: ['INITIAL'] })
+  })
+
   test('rejects CSS-wide typography leaves', () => {
     // @ts-expect-error Typography leaves cannot override CSS-wide keywords.
     Theme.define({ fontFamily: { body: 'inherit' } })

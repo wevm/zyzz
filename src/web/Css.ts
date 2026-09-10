@@ -192,29 +192,51 @@ export function compile<
     ordered: string
     shared: string
   }
+  function serialize(input: Style.Declaration['value']): number | string {
+    if (Binding.is(input)) return `var(${input.name})`
+    if (isReference(input)) return (theme ??= Themes.create()).serialize(input)
+    if (Token.isExpression(input))
+      return input.parts
+        .map((part) =>
+          typeof part === 'string'
+            ? part
+            : Binding.is(part)
+              ? `var(${part.name})`
+              : (theme ??= Themes.create()).serialize(part),
+        )
+        .join('')
+    return input as number | string
+  }
+  function nested(style: Style.NamedStyle): string {
+    if (style.rules)
+      return style.rules
+        .map((rule) => {
+          const body = nested(rule.style)
+          return rule.condition === undefined
+            ? body
+            : `${rule.condition}{${body}}`
+        })
+        .join('')
+    return style.declarations
+      .map(
+        ({ property, value, important }) =>
+          `${Literal.name(property)}:${serialize(value)}${important ? '!important' : ''};`,
+      )
+      .join('')
+  }
   const unique = new Map<string, Prepared>()
   const prepared = options.styles.styles.map((style) => {
+    if (style.rules)
+      return {
+        name: style.name,
+        content: { declarations: [], ordered: nested(style), shared: '' },
+      }
     let body = ''
     const declarations: Cached[] = []
     for (const { important, property, value: input } of style.declarations) {
-      const token = isReference(input)
       let value: number | string
       try {
-        value = (() => {
-          if (Binding.is(input)) return `var(${input.name})`
-          if (token) return (theme ??= Themes.create()).serialize(input)
-          if (Token.isExpression(input))
-            return input.parts
-              .map((part) =>
-                typeof part === 'string'
-                  ? part
-                  : Binding.is(part)
-                    ? `var(${part.name})`
-                    : (theme ??= Themes.create()).serialize(part),
-              )
-              .join('')
-          return input as number | string
-        })()
+        value = serialize(input)
       } catch (error) {
         diagnostics.push({
           code: 'invalid_declaration',

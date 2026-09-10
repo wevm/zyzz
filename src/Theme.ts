@@ -6,7 +6,6 @@ import { css, MissingTransformError } from './css.js'
 import type * as Literal from './internal/Literal.js'
 import * as Query from './internal/Query.js'
 import * as Token from './internal/Token.js'
-import type * as Value from './internal/Value.js'
 import type * as Style from './Style.js'
 
 /** Complete color-scheme pair or a shared color. */
@@ -22,30 +21,20 @@ export type Css<tokens extends Tokens> = {
   >(
     styles: (
       values: values,
-    ) => styles &
-      NoInfer<
-        Value.Accepted<styles, Style.Properties<tokens>> &
-          Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
-      >,
+    ) => styles & NoInfer<Style.Accepted<styles, tokens>>,
   ): css.Dynamic<values>
   <const styles extends Record<string, unknown>>(
-    styles: styles &
-      NoInfer<
-        Value.Accepted<styles, Style.Properties<tokens>> &
-          Record<Exclude<Keys<styles>, keyof Style.Properties>, never> &
-          Value.Checked<styles, tokens>
-      >,
+    styles: styles & NoInfer<Style.Accepted<styles, tokens>>,
   ): css.ReturnType
   <const styles extends Style.Properties<tokens>>(
     styles: styles &
       NoInfer<
-        Record<Exclude<Keys<styles>, keyof Style.Properties>, never> &
-          (Style.Properties<tokens> extends styles
+        (Style.Properties<tokens> extends styles
+          ? unknown
+          : Style.Accepted<styles, tokens>) &
+          (Extract<styles, (...args: never[]) => unknown> extends never
             ? unknown
-            : (Extract<styles, (...args: never[]) => unknown> extends never
-                ? unknown
-                : never) &
-                Value.Checked<styles, tokens>)
+            : never)
       >,
   ): css.ReturnType
 }
@@ -129,8 +118,6 @@ export class InvalidError extends Error {
   /** Group and nested keys identifying the failure. */
   readonly path: readonly string[]
 }
-
-type Keys<value> = value extends unknown ? keyof value : never
 
 /** Existing paths with widened values and optional branches. */
 export type Overrides<tokens> = {

@@ -3,7 +3,6 @@
  * @module
  */
 import type * as Literal from './internal/Literal.js'
-import type * as Value from './internal/Value.js'
 import type * as Style from './Style.js'
 
 type Keys<value> = value extends unknown ? keyof value : never
@@ -23,12 +22,7 @@ export function css<
       : never),
 ): css.Dynamic<Parameters<callback>[0] & Record<never, never>>
 export function css<const styles extends Record<string, unknown>>(
-  styles: styles &
-    NoInfer<
-      Value.Accepted<styles, Style.LiteralProperties> &
-        Value.Checked<styles> &
-        Record<Exclude<Keys<styles>, keyof Literal.Properties>, never>
-    >,
+  styles: styles & NoInfer<Style.Accepted<styles, {}, true>>,
 ): css.ReturnType
 export function css(styles: unknown): never {
   void styles

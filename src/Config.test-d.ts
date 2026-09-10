@@ -39,7 +39,7 @@ describe('create', () => {
     // @ts-expect-error Single-theme config has no catalog.
     void single.themes
 
-    // @ts-expect-error A layer list does not add an arbitrary selector index.
+    // Scoped selectors retain the same bound token inference.
     single.css({ ':hover': { color: 'brand' } })
   })
 

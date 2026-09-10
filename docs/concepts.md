@@ -83,7 +83,7 @@ const theme = Theme.define({
 Use [Compile Themes](guides/themes.md#compile-themes) for the current pipeline.
 
 > [!NOTE]
-> Config normalization, bundled defaults, typography/query groups, and web expression references are previews. Config returns compatible handles without mutating independently defined themes.
+> Config normalization, bundled defaults, scalar typography/query metadata, and web expression references are implemented. Config returns compatible handles without mutating independently defined themes.
 
 ### Theme Scopes
 
@@ -98,9 +98,7 @@ Use the instance handles from a [named-theme config](guides/themes.md#selecting-
 import { zyzz } from './zyzz.config.js'
 
 const example = (
-  <section {...zyzz.themes.mint({ colorScheme: 'dark' })}>
-    Content
-  </section>
+  <section {...zyzz.themes.mint({ colorScheme: 'dark' })}>Content</section>
 )
 ```
 

@@ -105,6 +105,26 @@ bar({ amount: '50%', alpha: 0.8 })
 
 All declared inputs are required and consumed. `className` and `style` remain styling overrides; unrelated keys and private-variable overrides throw `TypeError`. Callbacks never execute in generated application code.
 
-The initial source boundary requires inline scalar type literals. Optional fields, type aliases, arbitrary calls, dynamic fallback entries, and dynamic rule structure are unsupported. Conditions and native bindings remain separate work.
+The initial source boundary requires inline scalar type literals. Optional fields, type aliases, arbitrary calls, dynamic fallback entries, and dynamic rule structure are unsupported. Fixed nested conditions can contain dynamic values. Native bindings remain separate work.
 
 Types: `css.ErrorType`, `css.Options`, `css.Props`, and `css.ReturnType`. See [Style Components](../../guides/styling.md#style-components).
+
+## Selectors and conditions
+
+Scoped pseudo keys (`:hover`, `::before`) and explicit `&` selectors retain declaration inference at every depth. `@media`, `@container`, `@supports`, and `@starting-style` compile to native CSS nesting, preserving authored order and specificity. Raw syntax is checked by the source compiler.
+
+```ts
+const theme = Theme.define({
+  breakpoints: { tablet: '48rem' },
+  spacing: { gap: '1rem' },
+})
+const panel = theme.css({
+  padding: 'gap',
+  ':hover': { opacity: 0.8 },
+  '@media tablet': { display: 'grid' },
+})
+```
+
+Threshold aliases support `>=tablet`, `<desktop`, and `tablet..desktop` (inclusive lower/exclusive upper). Named container aliases use `@container sidebar >=card` with declared `containerNames`. Raw named container queries remain available. Applications establish containment with standard `containerType`/`containerName` declarations. Thresholds resolve during compilation; changing a runtime scope cannot change them.
+
+Use explicit selectors for application-owned data/ARIA states and ancestor/sibling relationships. Typed marker helpers remain a separate follow-up; this slice does not implement their preview API.

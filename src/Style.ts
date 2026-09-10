@@ -2,11 +2,33 @@
  * Copies typed style declarations into immutable, ordered, target-independent data.
  * @module
  */
+import * as Condition from './internal/Condition.js'
+import * as Query from './internal/Query.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import * as Value from './internal/Value.js'
 import type * as Theme from './Theme.js'
+/** Validates only authored keys, recursively retaining nested token inference. */
+export type Accepted<
+  style,
+  tokens extends Theme.Tokens = {},
+  literal extends boolean = false,
+> = {
+  [key in keyof style]: key extends Condition.Keys<tokens>
+    ? style[key] extends Record<string, unknown>
+      ? Accepted<style[key], tokens, literal>
+      : never
+    : key extends keyof Literal.Properties
+      ? Value.Accepted<
+          Pick<style, key>,
+          literal extends true
+            ? LiteralDeclarations
+            : DeclarationProperties<tokens>
+        >[key] &
+          Value.Checked<Pick<style, key>, tokens>[key]
+      : never
+}
 type Exact<
   styles extends Record<string, unknown>,
   tokens extends Theme.Tokens,
@@ -15,19 +37,17 @@ type Exact<
     styles[name],
     (...args: never[]) => unknown
   > extends never
-    ? Value.Accepted<styles[name], Properties<tokens>> &
-        Value.Checked<styles[name], tokens> &
-        Record<Exclude<Keys<styles[name]>, keyof Properties>, never>
+    ? Accepted<styles[name], tokens>
     : never
 }
-type Keys<value> = value extends unknown ? keyof value : never
+const nesting = Symbol('zyzz.style.nesting')
 
 /** A typed declaration; order is significant for future cascade processing. */
 export type Declaration = {
   /** Whether this declaration overrides normal declarations in the cascade. */
   readonly important?: boolean | undefined
   /** Supported CSS property in camelCase. */
-  readonly property: keyof Properties
+  readonly property: keyof Literal.Properties
   /** Validated primitive or immutable, domain-checked theme reference. */
   readonly value:
     | number
@@ -63,11 +83,19 @@ export function define(
   styles: Record<string, unknown>,
   options: define.Options = {},
 ): Definition {
+  if ((options[nesting] ?? 0) > 128)
+    throw new InvalidError([
+      {
+        code: 'invalid_structure',
+        path: [],
+        message: 'Nested styles exceed the depth limit.',
+      },
+    ])
   const diagnostics: Diagnostic[] = []
   const output: NamedStyle[] = []
   // One definition owns one theme; only validated references are reused within this call.
   const references = new Map<
-    keyof Properties,
+    keyof Literal.Properties,
     Map<string | number, Token.Reference>
   >()
   function report(
@@ -145,9 +173,72 @@ export function define(
   for (const [name, style] of entries(styles, [])) {
     if (name.length === 0)
       report('invalid_structure', [name], 'Style names must not be empty.')
+    const properties = entries(style, [name])
+    if (properties.some(([key]) => Condition.is(key))) {
+      const rules: Rule[] = []
+      for (const [key, input] of properties) {
+        try {
+          const condition = Condition.is(key)
+            ? Query.resolve(
+                key,
+                options.theme?.[Token.definition].queries ?? {
+                  breakpoints: {},
+                  containers: {},
+                  containerNames: [],
+                },
+              )
+            : undefined
+          const nested = (
+            define as (
+              styles: Record<string, unknown>,
+              options: define.Options,
+            ) => Definition
+          )(
+            { [name]: condition === undefined ? { [key]: input } : input },
+            {
+              ...options,
+              [nesting]: (options[nesting] ?? 0) + 1,
+              locations: options.locations?.map((location) =>
+                condition === undefined
+                  ? location
+                  : {
+                      ...location,
+                      path: location.path.filter((_, index) => index !== 1),
+                    },
+              ),
+            },
+          )
+          rules.push(
+            Object.freeze({
+              ...(condition === undefined
+                ? {}
+                : {
+                    condition: condition.startsWith(':')
+                      ? `&${condition}`
+                      : condition,
+                  }),
+              style: nested.styles[0]!,
+            }),
+          )
+        } catch (error) {
+          if (error instanceof InvalidError)
+            diagnostics.push(...error.diagnostics)
+          else
+            report('invalid_structure', [name, key], (error as Error).message)
+        }
+      }
+      output.push(
+        Object.freeze({
+          name,
+          declarations: Object.freeze([]),
+          rules: Object.freeze(rules),
+        }),
+      )
+      continue
+    }
     const declarations: Declaration[] = []
-    for (const [property, input] of entries(style, [name])) {
-      const key = property as keyof Properties
+    for (const [property, input] of properties) {
+      const key = property as keyof Literal.Properties
       const inputs: unknown[] = []
       if (Array.isArray(input)) {
         if (!input.length) {
@@ -225,6 +316,8 @@ export function define(
 export declare namespace define {
   /** Source locations are optional; pure in-memory callers need no source text. */
   type Options<tokens extends Theme.Tokens = never> = {
+    /** Internal recursion budget, propagated only by structured authoring. */
+    readonly [nesting]?: number | undefined
     /** Caller-provided spans matched by complete diagnostic path. */
     readonly locations?: readonly SourceLocation[] | undefined
   } & ([tokens] extends [never]
@@ -285,7 +378,7 @@ type LiteralAtoms = {
 }
 
 /** Supported primitive CSS declarations without theme references. */
-export type LiteralProperties = {
+type LiteralDeclarations = {
   readonly [property in keyof Literal.Properties]: Value.Fallbacks<
     | LiteralAtoms[property]
     | {
@@ -298,6 +391,8 @@ export type LiteralProperties = {
 
 /** A named group of ordered declarations. */
 export type NamedStyle<name extends string = string> = {
+  /** Ordered nested blocks, when this style contains conditions. */
+  readonly rules?: readonly Rule[] | undefined
   /** Declarations in own enumerable property order. */
   readonly declarations: readonly Declaration[]
   /** Authored style name, without generated target identifiers. */
@@ -305,7 +400,7 @@ export type NamedStyle<name extends string = string> = {
 }
 
 /** Supported literal and token declarations. Unknown properties and undefined values are rejected. */
-export type Properties<tokens extends Theme.Tokens = {}> = {
+export type DeclarationProperties<tokens extends Theme.Tokens = {}> = {
   readonly [property in keyof Literal.Properties]: Value.Fallbacks<
     | LiteralAtoms[property]
     | Value.Atom<Token.Names<tokens, property>>
@@ -315,6 +410,23 @@ export type Properties<tokens extends Theme.Tokens = {}> = {
           : never
       }[Token.Group]
   >
+}
+
+/** Recursive theme-aware declaration and condition authoring. */
+export type Properties<tokens extends Theme.Tokens = {}> =
+  DeclarationProperties<tokens> & {
+    readonly [key in Condition.Keys<tokens>]?: Properties<tokens>
+  }
+
+/** Nested literal declarations retain exact keys at every depth. */
+export type LiteralProperties = LiteralDeclarations & {
+  readonly [key in Condition.Keys]?: LiteralProperties
+}
+
+/** Ordered nested blocks; an absent condition represents a declaration segment. */
+export type Rule = {
+  readonly condition?: string | undefined
+  readonly style: NamedStyle
 }
 
 /** A source span optionally attached to a diagnostic by a caller. */

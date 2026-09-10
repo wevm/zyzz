@@ -2,12 +2,14 @@
  * Extracts literal styles and local themes through lexical source analysis.
  * @module
  */
+import * as Condition from '../internal/Condition.js'
 import * as Dynamic from './internal/Dynamic.js'
 import * as Binding from '../internal/Binding.js'
 import * as Variables from './internal/Variables.js'
 import * as Expression from './internal/Expression.js'
 import * as Token from '../internal/Token.js'
 import type * as Ast from '@oxc-project/types'
+import * as Lightning from 'lightningcss'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Style from '../Style.js'
@@ -304,178 +306,239 @@ export function extract(options: extract.Options): extract.ReturnType {
     }
     const before = diagnostics.length
     const name = `style-${identity(options.moduleId)}-${call.start}`
-    const values: Record<string, unknown> = Object.create(null)
     const locations: Style.SourceLocation[] = []
-    for (const property of argument.properties) {
-      if (
-        property.type !== 'Property' ||
-        property.kind !== 'init' ||
-        property.method ||
-        property.computed ||
-        property.shorthand ||
-        (property.key.type !== 'Identifier' &&
-          (property.key.type !== 'Literal' ||
-            typeof property.key.value !== 'string'))
-      ) {
-        report(
-          'unsupported_syntax',
-          'Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.',
-          property,
-        )
-        continue
-      }
-      const key =
-        property.key.type === 'Identifier'
-          ? property.key.name
-          : property.key.value
-      if (Object.hasOwn(values, key)) {
-        report(
-          'unsupported_syntax',
-          'Duplicate properties are not supported in source definitions yet.',
-          property,
-        )
-        continue
-      }
-      function value(node: Ast.Node, path: readonly string[]): unknown {
-        const unwrapped = Expression.unwrap(node)
-        const token =
-          variables.references.get(unwrapped.start) ??
-          themes?.tokens.get(node.start)
-        const reference =
-          resolveDynamic(node) ??
-          (token &&
-          token.end ===
-            (Binding.is(token?.reference) ? unwrapped.end : node.end)
-            ? token.reference
-            : undefined)
-        if (dynamic && reference && path.length > 2) {
+    function object(
+      argument: Ast.ObjectExpression,
+      prefix: readonly string[] = [],
+    ): Record<string, unknown> {
+      const values: Record<string, unknown> = Object.create(null)
+      const depth = prefix.length + 2
+      for (const property of argument.properties) {
+        if (
+          property.type !== 'Property' ||
+          property.kind !== 'init' ||
+          property.method ||
+          property.computed ||
+          property.shorthand ||
+          (property.key.type !== 'Identifier' &&
+            (property.key.type !== 'Literal' ||
+              typeof property.key.value !== 'string'))
+        ) {
           report(
             'unsupported_syntax',
-            'Dynamic fallback entries are not supported.',
-            node,
+            'Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.',
+            property,
           )
-          return undefined
+          continue
         }
-        node = Expression.unwrap(node)
-        const template =
-          node.type === 'TemplateLiteral'
-            ? Expression.template(node, 0, (expression) => {
-                const token =
-                  variables.references.get(expression.start) ??
-                  themes?.tokens.get(expression.start)
-                const slot = resolveDynamic(expression)
-                if (slot) {
-                  if (path.length > 2) {
-                    report(
-                      'unsupported_syntax',
-                      'Dynamic fallback entries are not supported.',
-                      expression,
-                    )
-                    return undefined
+        const key =
+          property.key.type === 'Identifier'
+            ? property.key.name
+            : property.key.value
+        if (Object.hasOwn(values, key)) {
+          report(
+            'unsupported_syntax',
+            'Duplicate properties are not supported in source definitions yet.',
+            property,
+          )
+          continue
+        }
+        if (Condition.is(key)) {
+          const input = Expression.unwrap(property.value)
+          if (input.type !== 'ObjectExpression') {
+            report(
+              'unsupported_syntax',
+              'Conditions require literal declaration objects.',
+              input,
+            )
+            continue
+          }
+          locations.push({
+            source: options.moduleId,
+            start: property.start,
+            end: property.end,
+            path: [name, ...prefix, key],
+          })
+          values[key] = object(input, [...prefix, key])
+          continue
+        }
+        function value(node: Ast.Node, path: readonly string[]): unknown {
+          const unwrapped = Expression.unwrap(node)
+          const token =
+            variables.references.get(unwrapped.start) ??
+            themes?.tokens.get(node.start)
+          const reference =
+            resolveDynamic(node) ??
+            (token &&
+            token.end ===
+              (Binding.is(token?.reference) ? unwrapped.end : node.end)
+              ? token.reference
+              : undefined)
+          if (dynamic && reference && path.length > depth) {
+            report(
+              'unsupported_syntax',
+              'Dynamic fallback entries are not supported.',
+              node,
+            )
+            return undefined
+          }
+          node = Expression.unwrap(node)
+          const template =
+            node.type === 'TemplateLiteral'
+              ? Expression.template(node, 0, (expression) => {
+                  const token =
+                    variables.references.get(expression.start) ??
+                    themes?.tokens.get(expression.start)
+                  const slot = resolveDynamic(expression)
+                  if (slot) {
+                    if (path.length > depth) {
+                      report(
+                        'unsupported_syntax',
+                        'Dynamic fallback entries are not supported.',
+                        expression,
+                      )
+                      return undefined
+                    }
+                    return slot
                   }
-                  return slot
-                }
-                return token?.end === expression.end
-                  ? token.reference
-                  : undefined
-              })
-            : undefined
-        if (Token.isExpression(template)) {
-          for (const part of template.parts) {
-            if (
-              typeof part !== 'string' &&
-              !(Binding.is(part)
-                ? (dynamic !== undefined &&
-                    Object.values(dynamic.slots).includes(part)) ||
-                  Binding.accepts(part.type, key as keyof Style.Properties)
-                : Token.accepts(part.group, key as keyof Style.Properties))
-            ) {
-              report(
-                'unsupported_syntax',
-                'Theme variable domain is incompatible with this property.',
-                node,
-              )
-              return undefined
+                  return token?.end === expression.end
+                    ? token.reference
+                    : undefined
+                })
+              : undefined
+          if (Token.isExpression(template)) {
+            for (const part of template.parts) {
+              if (
+                typeof part !== 'string' &&
+                !(Binding.is(part)
+                  ? (dynamic !== undefined &&
+                      Object.values(dynamic.slots).includes(part)) ||
+                    Binding.accepts(
+                      part.type,
+                      key as Style.Declaration['property'],
+                    )
+                  : Token.accepts(
+                      part.group,
+                      key as Style.Declaration['property'],
+                    ))
+              ) {
+                report(
+                  'unsupported_syntax',
+                  'Theme variable domain is incompatible with this property.',
+                  node,
+                )
+                return undefined
+              }
             }
           }
-        }
-        if (
-          reference &&
-          Token.is(reference) &&
-          !Token.accepts(reference.group, key as keyof Style.Properties)
-        ) {
-          report(
-            'unsupported_syntax',
-            'Theme variable domain is incompatible with this property.',
-            node,
+          if (
+            reference &&
+            Token.is(reference) &&
+            !Token.accepts(
+              reference.group,
+              key as Style.Declaration['property'],
+            )
+          ) {
+            report(
+              'unsupported_syntax',
+              'Theme variable domain is incompatible with this property.',
+              node,
+            )
+            return undefined
+          }
+          if (
+            reference &&
+            Binding.is(reference) &&
+            !(dynamic && Object.values(dynamic.slots).includes(reference)) &&
+            !Binding.accepts(
+              reference.type,
+              key as Style.Declaration['property'],
+            )
+          ) {
+            report(
+              'unsupported_syntax',
+              'Variable domain is incompatible with this property.',
+              node,
+            )
+            return undefined
+          }
+          let result: unknown
+          if (reference) result = reference
+          else if (template !== undefined) result = template
+          else if (
+            node.type === 'Literal' &&
+            (typeof node.value === 'string' || typeof node.value === 'number')
           )
-          return undefined
-        }
-        if (
-          reference &&
-          Binding.is(reference) &&
-          !(dynamic && Object.values(dynamic.slots).includes(reference)) &&
-          !Binding.accepts(reference.type, key as keyof Style.Properties)
-        ) {
-          report(
-            'unsupported_syntax',
-            'Variable domain is incompatible with this property.',
-            node,
+            result = node.value
+          else if (
+            node.type === 'UnaryExpression' &&
+            (node.operator === '-' || node.operator === '+') &&
+            node.argument.type === 'Literal' &&
+            typeof node.argument.value === 'number'
           )
-          return undefined
-        }
-        let result: unknown
-        if (reference) result = reference
-        else if (template !== undefined) result = template
-        else if (
-          node.type === 'Literal' &&
-          (typeof node.value === 'string' || typeof node.value === 'number')
-        )
-          result = node.value
-        else if (
-          node.type === 'UnaryExpression' &&
-          (node.operator === '-' || node.operator === '+') &&
-          node.argument.type === 'Literal' &&
-          typeof node.argument.value === 'number'
-        )
-          result =
-            node.operator === '-' ? -node.argument.value : node.argument.value
-        else if (node.type === 'ArrayExpression' && path.length === 2) {
-          result = node.elements.map((element, index) => {
-            if (!element || element.type === 'SpreadElement') {
-              report(
-                'unsupported_syntax',
-                'Fallback arrays require dense literal entries without spreads.',
-                element ?? node,
-              )
-              return undefined
-            }
-            return value(element, [...path, String(index)])
+            result =
+              node.operator === '-' ? -node.argument.value : node.argument.value
+          else if (node.type === 'ArrayExpression' && path.length === depth) {
+            result = node.elements.map((element, index) => {
+              if (!element || element.type === 'SpreadElement') {
+                report(
+                  'unsupported_syntax',
+                  'Fallback arrays require dense literal entries without spreads.',
+                  element ?? node,
+                )
+                return undefined
+              }
+              return value(element, [...path, String(index)])
+            })
+          } else {
+            report(
+              'unsupported_syntax',
+              'Expected a literal string or number; expressions are not evaluated.',
+              node,
+            )
+            return undefined
+          }
+          locations.push({
+            end: node.end,
+            path,
+            source: options.moduleId,
+            start: node.start,
           })
-        } else {
-          report(
-            'unsupported_syntax',
-            'Expected a literal string or number; expressions are not evaluated.',
-            node,
-          )
-          return undefined
+          return result
         }
-        locations.push({
-          end: node.end,
-          path,
-          source: options.moduleId,
-          start: node.start,
-        })
-        return result
+        values[key] = value(property.value, [name, ...prefix, key])
       }
-      values[key] = value(property.value, [name, key])
+      return values
     }
+    const values = object(argument)
     if (diagnostics.length !== before) continue
     try {
       const definition = define(
         { [name]: values },
         { locations, theme: themes?.styles.get(call.start)?.theme },
       )
+      function validate(style: Style.NamedStyle) {
+        for (const rule of style.rules ?? []) {
+          if (rule.condition !== undefined) {
+            try {
+              Lightning.transform({
+                filename: options.moduleId,
+                code: Buffer.from(`.z{${rule.condition}{color:red;}}`),
+                errorRecovery: false,
+              })
+            } catch (error) {
+              report(
+                'unsupported_syntax',
+                `Invalid selector or condition: ${(error as Error).message}`,
+                call,
+              )
+            }
+          }
+          validate(rule.style)
+        }
+      }
+      for (const style of definition.styles) validate(style)
+      if (diagnostics.length !== before) continue
       styles.push(...definition.styles)
       calls.push({
         ...(dynamic

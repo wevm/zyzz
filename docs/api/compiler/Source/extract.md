@@ -8,7 +8,7 @@ Declaration values accept ordinary strings and untagged template literals. Templ
 css({ padding: `${8}px`, width: `calc(100% - ${16}px)` })
 ```
 
-Identifiers, property reads, object coercions, arithmetic expressions, calls, and tagged templates remain unsupported. Theme variable references inside templates are deferred. Nested templates are limited to 128 levels. CSS value checking remains static-only.
+Identifiers, property reads, object coercions, arithmetic expressions, calls, and tagged templates remain unsupported. Direct theme variable paths are supported inside templates and retain their defining fallbacks. Nested templates are limited to 128 levels. CSS value checking remains static-only.
 
 Bigint literals also support unary minus: `${-12n}px` folds to `-12px`. Unary plus on bigint remains rejected, matching JavaScript semantics.
 

@@ -1,7 +1,7 @@
 # Config.create
 
 > [!NOTE]
-> The factory, destructured `css`/single `theme` exports, and direct `css` calls are implemented. Callable theme selection, `script`, `vars`, `variants`, and layer emission remain planned. Layer keys are inferred but are not yet accepted by source compilation.
+> The factory, destructured `css`/single `theme` exports, and direct `css` calls are implemented. Theme `vars` references are supported. Callable theme selection, `script`, `variants`, and layer emission remain planned. Layer keys are inferred but are not yet accepted by source compilation.
 
 Bind style authoring to explicit theme and layer contracts. Export helpers directly from `zyzz.config.ts` and consume them through named imports.
 

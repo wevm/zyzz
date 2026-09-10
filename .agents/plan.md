@@ -14,6 +14,17 @@ Identifier evaluation and recognized theme variable interpolation remain separat
 
 Local validation: ten extraction/transform integrations, native type/lint checks, package build, and the 670/670 gate pass. Ordinary TypeScript and browser verification remain with CI. Matched 10/100/1000-style extraction means: 0.873/11.500/72.863 ms before and 0.851/9.489/74.794 ms after; uncertainty overlaps. The template fixture measures 0.371 ms. No speedup is established.
 
+## Phase 2 PR Stack
+
+1. Theme variable references: typed direct values and template interpolation, live fallbacks, imported/config/packed contracts. Standalone variable destructuring remains deferred.
+2. Explicit variable contracts and assignments.
+3. Dynamic style bindings.
+4. Bundled themes and query thresholds.
+5. Selectors and conditions.
+6. Stylesheet contributions.
+
+Each dependent PR targets the preceding branch. CSS value validation remains static-only; structural extraction diagnostics and the 670/670 gate remain active.
+
 ## Goal
 
 A minimal, type-safe styling system with an environment-independent core, shared web/native authoring, modular extensions, and optional integration adapters. Styles compile ahead of time. Core `css` and `variants` have no tokens; bundled themes are opt-in through `zyzz/themes/default`. Color tokens accept shared values or light/dark pairs.

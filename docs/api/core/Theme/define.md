@@ -137,6 +137,6 @@ theme.tokens.spacing.md
 `Theme.InvalidError` identifies invalid groups, paths, records, or cycles. Palettes must be nonempty and keys dot-free. CSS token values are checked statically.
 
 > [!NOTE]
-> Same-module `theme.css` and `theme.className` are supported by `Transform.compile`. Cross-module linking, `theme.vars`, bound `variants`, and broader groups remain previews. See [Compile Local Theme Source](../../../guides/themes.md#compile-local-theme-source).
+> Same-module `theme.css` and `theme.className` are supported by `Transform.compile`. Graph compilation supports cross-module linking and `theme.vars` references. Bound `variants` and broader groups remain previews. See [Compile Local Theme Source](../../../guides/themes.md#compile-local-theme-source).
 
 See [Theme](README.md) for related methods and types.

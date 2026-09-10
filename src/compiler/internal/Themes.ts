@@ -743,14 +743,21 @@ export function collect(program: Ast.Program, options: collect.Options) {
       parent.object === node &&
       ((parent.property.type === 'Identifier' &&
         !parent.computed &&
-        parent.property.name === 'tokens') ||
+        ['tokens', 'vars'].includes(parent.property.name)) ||
         (parent.property.type === 'Literal' &&
           parent.computed &&
-          parent.property.value === 'tokens'))
+          ['tokens', 'vars'].includes(String(parent.property.value))))
     ) {
       if (parent.optional)
         fail('Token references cannot use optional access.', parent)
-      let value: unknown = themes[theme.name]!.tokens
+      const variable =
+        parent.property.type === 'Identifier'
+          ? parent.property.name === 'vars'
+          : parent.property.type === 'Literal' &&
+            parent.property.value === 'vars'
+      let value: unknown = variable
+        ? themes[theme.name]!.vars
+        : themes[theme.name]!.tokens
       let target: Ast.Node = parent
       let index = ancestors.length - 3
       for (; index >= 0; index--) {
@@ -799,6 +806,25 @@ export function collect(program: Ast.Program, options: collect.Options) {
         else break
       }
       const valueTarget = target
+      if (variable) {
+        while (index >= 0) {
+          const ancestor = ancestors[index]!
+          if (
+            !(
+              (ancestor.type === 'TemplateLiteral' &&
+                ancestor.expressions.includes(target as Ast.Expression)) ||
+              ((ancestor.type === 'TSAsExpression' ||
+                ancestor.type === 'TSSatisfiesExpression' ||
+                ancestor.type === 'TSNonNullExpression' ||
+                ancestor.type === 'TSTypeAssertion') &&
+                ancestor.expression === target)
+            )
+          )
+            break
+          target = ancestor
+          index--
+        }
+      }
       const array = ancestors[index]
       if (
         array?.type === 'ArrayExpression' &&

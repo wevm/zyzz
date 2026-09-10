@@ -59,6 +59,8 @@ export type Definition<tokens extends Tokens = Tokens> = {
   readonly [Token.definition]: Token.Metadata
   /** Inferred references for use in Style.define declarations. */
   readonly tokens: References<tokens>
+  /** Web variable references; source templates retain their identity and fallback. */
+  readonly vars: Token.Variables<References<tokens>>
 }
 
 /**
@@ -282,6 +284,7 @@ function build(
         },
         css,
         tokens,
+        vars: Token.variables(tokens),
       },
       Token.definition,
       {

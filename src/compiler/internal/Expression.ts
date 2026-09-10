@@ -3,24 +3,28 @@
  * @module
  */
 import type * as Ast from '@oxc-project/types'
+import * as Token from '../../internal/Token.js'
 
 /** Folds cooked template text and literal primitive substitutions; unresolved syntax returns undefined. */
 export function template(
   node: Ast.TemplateLiteral,
   depth = 0,
-): string | undefined {
+  resolve?: (node: Ast.Node) => Token.Reference | undefined,
+): string | Token.Expression | undefined {
   if (depth >= 128) return undefined
-  let result = ''
+  const parts: (string | Token.Reference)[] = []
   for (const [index, quasi] of node.quasis.entries()) {
     if (quasi.value.cooked === null) return undefined
-    result += quasi.value.cooked
+    parts.push(quasi.value.cooked)
     const expression = node.expressions[index]
     if (!expression) continue
     const value = unwrap(expression)
-    if (value.type === 'Literal' && !('regex' in value)) {
+    const reference = resolve?.(expression) ?? resolve?.(value)
+    if (reference) parts.push(reference)
+    else if (value.type === 'Literal' && !('regex' in value)) {
       if (typeof value.value === 'number' && !Number.isFinite(value.value))
         return undefined
-      result += String(value.value)
+      parts.push(String(value.value))
     } else if (
       value.type === 'UnaryExpression' &&
       (value.operator === '-' || value.operator === '+') &&
@@ -28,8 +32,10 @@ export function template(
       typeof value.argument.value === 'number' &&
       Number.isFinite(value.argument.value)
     ) {
-      result += String(
-        value.operator === '-' ? -value.argument.value : value.argument.value,
+      parts.push(
+        String(
+          value.operator === '-' ? -value.argument.value : value.argument.value,
+        ),
       )
     } else if (
       value.type === 'UnaryExpression' &&
@@ -37,14 +43,17 @@ export function template(
       value.argument.type === 'Literal' &&
       typeof value.argument.value === 'bigint'
     ) {
-      result += String(-value.argument.value)
+      parts.push(String(-value.argument.value))
     } else if (value.type === 'TemplateLiteral') {
-      const nested = template(value, depth + 1)
+      const nested = template(value, depth + 1, resolve)
       if (nested === undefined) return undefined
-      result += nested
+      if (typeof nested === 'string') parts.push(nested)
+      else parts.push(...nested.parts)
     } else return undefined
   }
-  return result
+  return parts.every((part) => typeof part === 'string')
+    ? parts.join('')
+    : Token.compose(parts)
 }
 
 /** Returns the expression beneath assertions without evaluating application code. */

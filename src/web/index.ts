@@ -3,6 +3,8 @@
  * @module
  */
 /** Pure web compilation, separate from target-independent authoring. */
+export * as Attrs from './Attrs.js'
+
 export * as Css from './Css.js'
 
 export { fontFace } from './fontFace.js'

@@ -45,6 +45,8 @@ Initial support covers React, Vue, Solid, Svelte, and plain DOM/HTML, with Vite 
 
 Follow with Nuxt, SvelteKit, SolidStart, Astro, TanStack Start, and Preact integration fixtures. Angular, Qwik, and native rendering remain later work. Base renderer support does not establish application-framework support.
 
+Renderer output implementation adds `Attrs.from` and `Attrs.serialize` at `zyzz/web`, with compiled React/DOM browser fixtures and consumer types. Framework integration gates remain open until their dedicated fixtures pass.
+
 Implement in this order:
 
 1. **Renderer output:** define typed output for DOM `class`, `className`, inline style objects, and serialized style attributes. Preserve classes, CSS variables, theme scopes, owned data attributes, escaping, units, existing class/style override merging, and removal of stale values. Verify React and plain DOM consumers through the shared compiler.

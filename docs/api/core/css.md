@@ -67,7 +67,7 @@ The returned callable produces `css.Props` when applied. `className` and `style`
 
 ### Callable
 
-- Type: `css.ReturnType`
+- Type: `css.ReturnType` for literal objects; `css.Dynamic<values>` for callbacks
 
 Callable producing styling props. Static no-argument applications may fold to constants.
 
@@ -97,7 +97,7 @@ props.style
 
 ## Errors
 
-Untransformed calls throw an error whose `name` is `css.MissingTransformError`. This is a diagnostic name, not a constructor exported on `css`; it cannot be referenced as `css.MissingTransformError` for `instanceof`. Invalid source definitions produce source diagnostics; invalid applied override shapes throw `TypeError`.
+Untransformed calls throw an error whose `name` is `css.MissingTransformError`. This is a diagnostic name, not a constructor exported on `css`; it cannot be referenced as `css.MissingTransformError` for `instanceof`. Invalid source definitions produce source diagnostics; application inputs are checked by TypeScript without runtime validation.
 
 ## Dynamic Values
 
@@ -112,11 +112,11 @@ const bar = css((values: { amount: `${number}%`; alpha: number }) => ({
 bar({ amount: '50%', alpha: 0.8 })
 ```
 
-All declared inputs are required and consumed. `className` and `style` remain styling overrides; unrelated keys and private-variable overrides throw `TypeError`. Callbacks never execute in generated application code.
+All declared inputs are required and consumed. `className` and `style` remain styling overrides; unrelated keys are rejected by types, and generated private assignments take precedence over overrides. Callbacks never execute in generated application code.
 
 The initial source boundary requires inline scalar type literals. Optional fields, type aliases, arbitrary calls, dynamic fallback entries, and dynamic rule structure are unsupported. Fixed nested conditions can contain dynamic values. Native bindings remain separate work.
 
-Types: `css.ErrorType`, `css.Options`, `css.Props`, and `css.ReturnType`. See [Style Components](../../guides/styling.md#style-components).
+Types: `css.ErrorType`, `css.Options`, `css.Props`, `css.ReturnType`, and `css.Dynamic<values>`. See [Style Components](../../guides/styling.md#style-components).
 
 ## Selectors and conditions
 
@@ -137,3 +137,5 @@ const panel = theme.css({
 Threshold aliases support `>=tablet`, `<desktop`, and `tablet..desktop` (inclusive lower/exclusive upper). Named container aliases use `@container sidebar >=card` with declared `containerNames`. Raw named container queries remain available. Applications establish containment with standard `containerType`/`containerName` declarations. Thresholds resolve during compilation; changing a runtime scope cannot change them.
 
 Use explicit selectors for application-owned data/ARIA states and ancestor/sibling relationships. Typed marker helpers remain a separate follow-up; this slice does not implement their preview API.
+
+Dynamic private values cannot contain CSS-wide keywords (`initial`, `inherit`, `unset`, `revert`, or `revert-layer`), because those keywords would apply to the custom property itself. Numeric zero can accompany string dimension domains. Template substitutions inside quoted CSS strings are rejected; pass the complete quoted scalar as a slot value when authoring dynamic content.

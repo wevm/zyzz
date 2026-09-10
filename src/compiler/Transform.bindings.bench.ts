@@ -3,7 +3,7 @@ import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 
 const source =
-  'import { Vars, css } from "zyzz"; const progress = Vars.define({ amount: "percentage" }); export const bar = css({width:progress.amount})(); export const style = Vars.set(progress,{amount:"50%"});'
+  'import { Vars, css } from "zyzz"; const progress = Vars.define({ amount: "percentage" }); export const bar = css({width:progress.amount})(); export const style = progress.set({amount:"50%"});'
 describe('explicit variable contracts', () => {
   bench(
     'compile',

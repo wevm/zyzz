@@ -121,3 +121,5 @@ export const scope = theme.className
 ```
 
 The graph normalizes configured themes without executing library code. Source edits invalidate dependent authoring and retain stable scope names. Layer emission and variants remain planned.
+
+Packed contracts containing query metadata or typography groups use schema version 3. Existing scalar-only theme contracts retain version 1, and scalar-only configuration contracts retain version 2. Matching readers accept all three; older readers reject version 3 explicitly instead of misinterpreting the new groups.

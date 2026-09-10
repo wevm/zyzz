@@ -3,9 +3,20 @@
  * @module
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { css } from 'zyzz'
+import { css, Theme } from 'zyzz'
 
 describe('css', () => {
+  test('infers callback templates and rejects CSS-wide scalar domains', () => {
+    const style = css((v: { gap: `${number}px` }) => ({
+      marginLeft: `calc(${v.gap} + 2px)`,
+    }))
+    style({ gap: '2px' })
+    const theme = Theme.define({ spacing: { '-1': '1px' } })
+    theme.css((v: { alpha: number }) => ({ padding: '-1', opacity: v.alpha }))
+    // @ts-expect-error CSS-wide keywords apply to the private property, not its consumer.
+    css((v: { color: 'initial' | 'red' }) => ({ color: v.color }))
+  })
+
   test('preserves static template value constraints', () => {
     expectTypeOf(
       css({ padding: `${8}px`, width: `calc(100% - ${16}px)` }),

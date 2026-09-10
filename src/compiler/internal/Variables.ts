@@ -88,6 +88,7 @@ export function collect(program: Ast.Program, namespace: string) {
         const value = Expression.unwrap(property.value)
         if (
           !key ||
+          key === 'set' ||
           Object.hasOwn(slots, key) ||
           value.type !== 'Literal' ||
           ![
@@ -128,18 +129,11 @@ export function collect(program: Ast.Program, namespace: string) {
     if (binding?.type === 'Import' && imports.has(binding.node.start)) {
       if (
         parent.type === 'MemberExpression' &&
-        !parent.computed &&
-        parent.property.type === 'Identifier' &&
-        parent.property.name === 'set'
-      )
-        return true
-      if (
-        parent.type === 'MemberExpression' &&
         calls.some((call) => parent.start === call.start)
       )
         return true
       throw new InvalidError(
-        'Vars.define requires a module-level constant; Vars.set assigns compiled slots.',
+        'Vars.define requires a module-level constant; The returned contract provides set(values).',
         node,
       )
     }
@@ -158,6 +152,7 @@ export function collect(program: Ast.Program, namespace: string) {
           : parent.property.type === 'Literal' && parent.computed
             ? String(parent.property.value)
             : undefined
+      if (key === 'set' && !parent.optional) return true
       const slot = key === undefined ? undefined : definition.slots[key]
       if (parent.optional || !slot)
         throw new InvalidError(

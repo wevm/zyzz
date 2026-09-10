@@ -210,18 +210,23 @@ export function compile<
     ordered: string
     shared: string
   }
+  const serialized = new Map<object, string>()
   function serialize(input: Style.Declaration['value']): number | string {
+    if (typeof input !== 'object' || input === null) return input
+    const cached = serialized.get(input)
+    if (cached !== undefined) return cached
+    const value = serializeReference(input)
+    if (typeof value === 'string') serialized.set(input, value)
+    return value
+  }
+  function serializeReference(
+    input: Style.Declaration['value'],
+  ): number | string {
     if (Binding.is(input)) return `var(${input.name})`
     if (isReference(input)) return (theme ??= Themes.create()).serialize(input)
     if (Token.isExpression(input))
       return input.parts
-        .map((part) =>
-          typeof part === 'string'
-            ? part
-            : Binding.is(part)
-              ? `var(${part.name})`
-              : (theme ??= Themes.create()).serialize(part),
-        )
+        .map((part) => (typeof part === 'string' ? part : serialize(part)))
         .join('')
     return input as number | string
   }

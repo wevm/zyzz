@@ -9,6 +9,11 @@ import { Css } from 'zyzz/web'
 import { theme as bundled, tokens } from './themes/default.js'
 
 describe('compile', () => {
+  test('preserves dashed and non-ASCII container identifiers', () => {
+    expect(() =>
+      Theme.define({ containerNames: ['--sidebar', '-sidebar', '侧栏'] }),
+    ).not.toThrow()
+  })
   test('retains query groups in packed configuration options', () => {
     const result = Graph.compile({
       modules: {

@@ -1,17 +1,21 @@
 /** Typed nested selector and condition keys without a general string index. @module */
 import type * as Theme from '../Theme.js'
 
+type Case<text extends string> = text extends `${infer first}${infer rest}`
+  ? `${Lowercase<first> | Uppercase<first>}${Case<rest>}`
+  : ''
+type Media = Case<'all' | 'print' | 'screen'>
 /** Explicit scoped selectors and standard conditional rule forms. */
 export type Raw =
   | `${string}&${string}`
   | `:${string}`
   | '@starting-style'
-  | `@supports ${string}`
+  | `@supports ${string}(${string}`
   | `@media (${string}`
-  | `@media ${'all' | 'print' | 'screen'}`
-  | `@media ${'all' | 'print' | 'screen'} ${string}`
-  | `@media ${'all' | 'print' | 'screen'},${string}`
-  | `@media ${'only' | 'not'} ${string}`
+  | `@media ${Media}`
+  | `@media ${Media} ${string}`
+  | `@media ${Media},${string}`
+  | `@media ${Case<'only' | 'not'>} ${string}`
   | `@container style(${string}`
   | `@container ${string} style(${string}`
   | `@container (${string}`
@@ -129,6 +133,12 @@ export function local(key: string): boolean {
   let quoted = ''
   for (let index = 0; index < key.length; index++) {
     const char = key[index]!
+    if (!quoted && char === '/' && key[index + 1] === '*') {
+      const end = key.indexOf('*/', index + 2)
+      if (end < 0) return false
+      index = end + 1
+      continue
+    }
     if (char === '\\') {
       index++
       continue
@@ -151,6 +161,12 @@ export function local(key: string): boolean {
   let quote = ''
   for (let index = 0; index < key.length; index++) {
     const char = key[index]!
+    if (!quote && char === '/' && key[index + 1] === '*') {
+      const end = key.indexOf('*/', index + 2)
+      if (end < 0) return false
+      index = end + 1
+      continue
+    }
     if (char === '\\') {
       index++
       continue

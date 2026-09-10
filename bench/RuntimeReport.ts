@@ -1,5 +1,5 @@
 /**
- * Reports matched runtime samples and rejects losses confirmed in both passes.
+ * Reports diagnostic function timings; these do not establish render performance.
  * @module
  */
 import * as Fs from 'node:fs'
@@ -90,7 +90,6 @@ for (const count of [10, 100])
           library !== 'zyzz' &&
           passes.every((pass) => faster(pass.get(library)!, pass.get('zyzz')!)),
       )
-      if (losses.length) process.exitCode = 1
       const wins = libraries
         .filter((library) => library !== 'baseline' && library !== 'zyzz')
         .every((library) =>

@@ -60,32 +60,29 @@ jobs:
           uname -a > bench/results/platform.txt
       - name: Install runtime benchmark browser
         run: pnpm exec playwright install --with-deps chromium
-      - name: Measure base runtime with the candidate harness
+      - name: Measure base React renders with the candidate harness
         if: github.event_name == 'pull_request'
         env:
-          BENCH_RUNTIME: '1'
-          BENCH_RUNTIME_OUTPUT: bench/results/runtime-base
+          BENCH_RENDER_OUTPUT: bench/results/render-base
           BASE_REF: ${{ github.base_ref }}
         run: |
           BASE_SHA=$(git rev-parse "origin/$BASE_REF")
           trap 'git restore --source=HEAD --worktree -- src' EXIT
           git restore --source="$BASE_SHA" --worktree -- src
-          mkdir -p "$BENCH_RUNTIME_OUTPUT"
-          printf '%s\n' "$BASE_SHA" > "$BENCH_RUNTIME_OUTPUT/commit.txt"
-          pnpm exec vp test run bench/Runtime.browser.test.ts --no-file-parallelism
-      - name: Measure runtime in Chromium
-        env:
-          BENCH_RUNTIME: '1'
-        run: pnpm exec vp test run bench/Runtime.browser.test.ts --no-file-parallelism
-      - name: Publish early runtime results
-        if: ${{ !cancelled() && hashFiles('bench/results/browser-timings.json') != '' }}
+          mkdir -p "$BENCH_RENDER_OUTPUT"
+          printf '%s\n' "$BASE_SHA" > "$BENCH_RENDER_OUTPUT/commit.txt"
+          pnpm exec vp test run --config bench/Render.config.ts --no-file-parallelism
+      - name: Measure production React renders in Chromium
+        run: pnpm exec vp test run --config bench/Render.config.ts --no-file-parallelism
+      - name: Publish early render results
+        if: ${{ !cancelled() && hashFiles('bench/results/render-timings.json') != '' }}
         uses: actions/upload-artifact@v4
         with:
-          name: runtime-benchmarks
+          name: render-benchmarks
           path: |
-            bench/results/browser-timings.json
-            bench/results/runtime/
-            bench/results/runtime-base/
+            bench/results/render-timings.json
+            bench/results/render/
+            bench/results/render-base/
             bench/results/commit.txt
             bench/results/lockfile.txt
             bench/results/cpu.txt
@@ -149,10 +146,10 @@ jobs:
         id: frameworks
         continue-on-error: true
         run: node bench/Check.ts bench/results > bench/results/frameworks.md
-      - name: Check runtime framework performance
+      - name: Validate and report React render performance
         id: runtime
         continue-on-error: true
-        run: node bench/RuntimeReport.ts bench/results > bench/results/runtime.md
+        run: node bench/RenderReport.ts bench/results > bench/results/render.md
       - name: Prepare benchmark comparisons
         id: comparison
         env:
@@ -161,7 +158,7 @@ jobs:
         run: |
           node bench/Compare.ts bench/results "$BASELINE_DIRECTORY" "$RUNNER_TEMP/benchmark-action" > "$RUNNER_TEMP/benchmark-comparison.md"
           printf '# Benchmark Report\n\n[Workflow run](%s/%s/actions/runs/%s)\n\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > "$RUNNER_TEMP/benchmark-report.md"
-          cat bench/results/frameworks.md bench/results/runtime.md "$RUNNER_TEMP/benchmark-comparison.md" bench/results/report.md >> "$RUNNER_TEMP/benchmark-report.md"
+          cat bench/results/render.md bench/results/frameworks.md "$RUNNER_TEMP/benchmark-comparison.md" bench/results/report.md >> "$RUNNER_TEMP/benchmark-report.md"
           mv "$RUNNER_TEMP/benchmark-report.md" bench/results/report.md
           cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Comment benchmark results

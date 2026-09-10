@@ -348,7 +348,8 @@ async function bundle(source: string): Promise<string> {
   return result.outputFiles[0]!.text
 }
 
-function literalStyles(
+/** Scalar corpus declarations for independent browser style verification. */
+export function literalStyles(
   count: number,
 ): readonly Record<string, string | number>[] {
   return Corpus.styles({ count, name: 'runtime', pattern: 'partial' }).map(

@@ -92,7 +92,7 @@ describe('runtime report', () => {
           ['bench/RuntimeReport.ts', directory],
           { encoding: 'utf8', timeout: 10_000 },
         )
-        if (scenario === 'confirmed loss' || scenario === 'missing')
+        if (scenario === 'missing')
           expect(result.status).toMatchInlineSnapshot(`1`)
         else expect(result.status).toMatchInlineSnapshot(`0`)
         if (scenario === 'confirmed loss')

@@ -45,7 +45,13 @@ export type Properties<kind extends Kind> = {
     : property extends keyof typeof Literal.rules
       ? (typeof Literal.rules)[property] extends { kind: 'compound' }
         ? never
-        : Compatible<kind, property>
+        : kind extends 'percentage' | 'signedPercentage'
+          ? (typeof Literal.rules)[property] extends { kind: 'number' }
+            ? (typeof Literal.rules)[property] extends { percentage: true }
+              ? Compatible<kind, property>
+              : never
+            : Compatible<kind, property>
+          : Compatible<kind, property>
       : never
 }[keyof Literal.Properties]
 type Compatible<

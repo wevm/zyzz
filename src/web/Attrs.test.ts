@@ -86,7 +86,7 @@ describe('from', () => {
       )
       expect(
         await page.locator('#plain').getAttribute('data-note'),
-      ).toMatchInlineSnapshot(`"\\"<&>"`)
+      ).toMatchInlineSnapshot(`""<&>"`)
       expect(
         await page
           .locator('#plain')

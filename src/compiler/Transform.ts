@@ -2,6 +2,7 @@
  * Rewrites extracted style calls into executable modules with CSS and source maps.
  * @module
  */
+import * as Applications from './internal/Applications.js'
 import * as Expression from './internal/Expression.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import type * as Ast from '@oxc-project/types'
@@ -48,8 +49,10 @@ export function compile(options: compile.Options): compile.ReturnType {
   const definitions = new Map<number, Ast.ObjectExpression>()
   const identifiers = new Map<string, Span[]>()
 
+  const localApplications = Applications.create(program, extracted.calls)
   Walker.walk(program, {
     enter(node, parent) {
+      localApplications?.enter(node, parent)
       if (node.type === 'Identifier') {
         const references = identifiers.get(node.name) ?? []
         references.push(node)
@@ -116,26 +119,45 @@ export function compile(options: compile.Options): compile.ReturnType {
     ),
   )
 
-  let dynamicRuntime = '__zyzzDynamic'
-  while (identifiers.has(dynamicRuntime)) dynamicRuntime += '_'
-  let dynamicCallable = false
   let callable = false
   for (const call of extracted.calls) {
     const application = applications.get(call.start)!
     const props = `{className:${JSON.stringify(classes[call.name])}}`
     const replacement = (() => {
       if (call.slots) {
-        const value = `${dynamicRuntime}.create({...${props},slots:${JSON.stringify(call.slots)}})`
-        return /\.[cm]?tsx?$/.test(options.moduleId)
-          ? `(${value} as import('zyzz').css.Dynamic<${call.valuesType}>)`
-          : value
+        const type = `import('zyzz').css.Dynamic<${call.valuesType}>`
+        const typed = /\.[cm]?tsx?$/.test(options.moduleId)
+        const slots = Object.entries(call.slots)
+        const reads = slots
+          .map(
+            ([key], index) => `const v${index}=input[${JSON.stringify(key)}];`,
+          )
+          .join('')
+        const assignments = slots
+          .map(
+            ([, slot], index) =>
+              `${JSON.stringify(slot.name)}:v${index}===''?' ':v${index}`,
+          )
+          .join(',')
+        const className = JSON.stringify(classes[call.name])
+        const value = `(input${typed ? `:Parameters<${type}>[0]` : ''})=>{${reads}const external=input.className;const style=input.style;return {className:external?${className}+" "+external:${className},style:{...style,${assignments}}}}`
+        return typed ? `((${value}) as ${type})` : `(${value})`
       }
       if (application.folded) return `(${props})`
       return `${runtime}.create(${props})`
     })()
     module.overwrite(call.start, application.end, replacement)
-    if (call.slots) dynamicCallable = true
-    else if (!application.folded) callable = true
+    if (!call.slots && !application.folded) callable = true
+  }
+
+  for (const application of localApplications?.find() ?? []) {
+    const className = JSON.stringify(classes[application.name])
+    // Keep a callable guard so bundlers also retain failures before initialization.
+    module.overwrite(
+      application.start,
+      application.end,
+      `(${options.source.slice(application.start, application.calleeEnd)}?{className:${className}}:${options.source.slice(application.start, application.calleeEnd)}())`,
+    )
   }
 
   for (const call of extracted.themeCalls) {
@@ -273,7 +295,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable || dynamicCallable || extracted.variableCalls?.length) {
+  if (callable || extracted.variableCalls?.length) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -285,7 +307,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[callable ? `Props as ${runtime}` : '', dynamicCallable ? `Dynamic as ${dynamicRuntime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

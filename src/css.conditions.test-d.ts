@@ -2,8 +2,18 @@
 import { describe, test } from 'vite-plus/test'
 import { css, Theme } from 'zyzz'
 
-describe('condition inference', () => {
+describe('css', () => {
   test('retains recursive literal and bound contracts', () => {
+    css({
+      '--escaped\\&name': 'red',
+      '@container style(--active: true)': { color: 'red' },
+      '@container sidebar style(--active: true)': { color: 'red' },
+    })
+    Theme.define({ breakpoints: { 640: '40rem' } }).css({
+      '@media 640': { color: 'red' },
+    })
+    // @ts-expect-error Concrete undefined conditions are rejected.
+    css({ ':hover': undefined })
     css({
       ':hover': { color: 'red' },
       '&[data-active]': { opacity: 0.5 },

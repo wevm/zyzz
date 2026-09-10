@@ -41,21 +41,39 @@ export function compile<
     references.set(value, result)
     return result
   }
+  // Only primitive declaration lists can be interned without erasing token identity.
+  const repeated = new Map<string, Style.NamedStyle>()
+  const canonicalStyles = options.styles.styles.map((style) => {
+    if (
+      'rules' in style ||
+      style.declarations.some(
+        (declaration) => typeof declaration.value === 'object',
+      )
+    )
+      return style
+    const key = JSON.stringify(style.declarations)
+    const previous = repeated.get(key)
+    if (previous) return previous
+    repeated.set(key, style)
+    return style
+  })
+  const analyzed = [...new Set(canonicalStyles)]
   const classes = Object.create(null) as Record<name, string>
   const diagnostics: Diagnostic[] = []
   const groups = new Map<string, false | string>()
+  const nestedComposition = options.styles.styles.some((style) => style.rules)
   // Logical dimensions may alias either physical axis in inherited writing modes.
   // Preserve physical-only factoring when no logical dimension is authored.
-  const logicalSizing = options.styles.styles.some((style) =>
+  const logicalSizing = analyzed.some((style) =>
     style.declarations.some(({ property }) =>
       /^(min|max)?(blockSize|inlineSize)$/i.test(property),
     ),
   )
-  const resets = options.styles.styles.some((style) =>
+  const resets = analyzed.some((style) =>
     style.declarations.some(({ property }) => property === 'all'),
   )
   const combinedLines = new Set<string>()
-  for (const style of options.styles.styles)
+  for (const style of analyzed)
     for (const { property } of style.declarations)
       if (Literal.rule(property)?.kind === 'line') {
         const canonical =
@@ -183,7 +201,7 @@ export function compile<
       ])
         join(child, target, visited)
   }
-  for (const style of options.styles.styles)
+  for (const style of analyzed)
     for (const { property } of style.declarations)
       if (Object.hasOwn(Cascade.shorthands, canonical(property)))
         join(canonical(property), domain(canonical(property)))
@@ -225,12 +243,16 @@ export function compile<
       .join('')
   }
   const unique = new Map<string, Prepared>()
-  const prepared = options.styles.styles.map((style) => {
+  const resolved = new Map<Style.NamedStyle, Prepared>()
+  const prepared = options.styles.styles.map((style, index) => {
     if (style.rules)
       return {
         name: style.name,
         content: { declarations: [], ordered: nested(style), shared: '' },
       }
+    const canonicalStyle = canonicalStyles[index]!
+    const cached = resolved.get(canonicalStyle)
+    if (cached) return { content: cached, name: style.name }
     let body = ''
     const declarations: Cached[] = []
     for (const { important, property, value: input } of style.declarations) {
@@ -264,9 +286,13 @@ export function compile<
       declarations.push(entry)
     }
     const previous = unique.get(body)
-    if (previous) return { content: previous, name: style.name }
+    if (previous) {
+      resolved.set(canonicalStyle, previous)
+      return { content: previous, name: style.name }
+    }
 
     const content = { declarations, ordered: '', shared: '' }
+    resolved.set(canonicalStyle, content)
     unique.set(body, content)
     const domains = new Map<string, string>()
     for (const { declaration, domain } of declarations)
@@ -284,7 +310,8 @@ export function compile<
   // Equivalent bodies share factoring work, including repeated tokens.
   for (const content of unique.values())
     for (const { declaration, domain } of content.declarations) {
-      if (groups.get(domain) === false) content.ordered += declaration
+      if (nestedComposition || groups.get(domain) === false)
+        content.ordered += declaration
       else content.shared += declaration
     }
   // Sort identities only, never authored declarations or cascade order. Separate

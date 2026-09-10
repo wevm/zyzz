@@ -841,6 +841,11 @@ export const aliases = {
   WebkitUserSelect: 'userSelect',
 } as const
 
+const dimension = new RegExp(
+  `^[+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?(?:${[...lengthUnits, 'deg', 'grad', 'rad', 'turn', 's', 'ms', 'fr', 'dpi', 'dpcm', 'dppx', 'Hz', 'kHz'].join('|')})$`,
+  'i',
+)
+
 /** Resolves literal/token ambiguity without validating CSS values. */
 export function isLiteral(
   property: keyof Properties,
@@ -873,14 +878,7 @@ export function isLiteral(
       return true
     if ('auto' in rule && rule.auto && folded === 'auto') return true
     // Dimension and expression spellings always retain literal precedence.
-    if (
-      new RegExp(
-        `^[+-]?(?:\\d*\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?(?:${[...lengthUnits, 'deg', 'grad', 'rad', 'turn', 's', 'ms', 'fr', 'dpi', 'dpcm', 'dppx', 'Hz', 'kHz'].join('|')})$`,
-        'i',
-      ).test(value) ||
-      /[#()]/.test(value)
-    )
-      return true
+    if (dimension.test(value) || /[#()]/.test(value)) return true
   }
   return rule.kind === 'number' && typeof value === 'number'
 }

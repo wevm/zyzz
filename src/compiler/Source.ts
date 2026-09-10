@@ -3,7 +3,6 @@
  * @module
  */
 import * as Condition from '../internal/Condition.js'
-import * as Builtin from './internal/Builtin.js'
 import * as Dynamic from './internal/Dynamic.js'
 import * as Binding from '../internal/Binding.js'
 import * as Variables from './internal/Variables.js'
@@ -123,7 +122,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       return Themes.collect(program, {
         namespace: identity(options.moduleId),
         linked: options[Themes.context] !== undefined,
-        links: { ...Builtin.links(program), ...options[Themes.context]?.links },
+        links: options[Themes.context]?.links,
       })
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
@@ -148,6 +147,8 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (
         ancestors.some(
           (ancestor) =>
+            ancestor.type === 'TSTypeParameterInstantiation' ||
+            ancestor.type === 'TSTypeParameterDeclaration' ||
             ancestor.type === 'TSTypeAnnotation' ||
             ancestor.type === 'TSTypeAliasDeclaration' ||
             ancestor.type === 'TSInterfaceDeclaration' ||
@@ -193,7 +194,12 @@ export function extract(options: extract.Options): extract.ReturnType {
             }
             return undefined
           })()
-          if (name === 'Config' || name === 'css' || name === 'Theme')
+          if (
+            name === 'Config' ||
+            name === 'css' ||
+            name === 'Theme' ||
+            name === 'Vars'
+          )
             report(
               'unsupported_syntax',
               `Import ${name} by name; namespace authoring calls are not supported yet.`,

@@ -5,8 +5,10 @@ Define callable styles that compile to static CSS and styling props.
 ```ts
 import { css } from 'zyzz'
 
-const card = css({ padding: '1rem' })
-const props = card({ style: { padding: '2rem' } })
+const styles = {
+  card: css({ padding: '1rem' }),
+}
+const props = styles.card({ style: { padding: '2rem' } })
 ```
 
 ## Signature
@@ -38,7 +40,7 @@ The returned callable accepts an optional `css.Options` object, defaulting to `{
 External classes appended to the compiled class list.
 
 ```ts
-card({ className: 'external' })
+styles.card({ className: 'external' })
 ```
 
 ### options.style
@@ -49,7 +51,7 @@ card({ className: 'external' })
 Literal inline overrides. Events, children, and accessibility props stay on the component.
 
 ```ts
-card({ style: { padding: '2rem' } })
+styles.card({ style: { padding: '2rem' } })
 ```
 
 ## Returns
@@ -63,7 +65,7 @@ The returned callable produces `css.Props` when applied. `className` and `style`
 Callable producing styling props. Static no-argument applications may fold to constants.
 
 ```ts
-const props = card({ style: { padding: '2rem' } })
+const props = styles.card({ style: { padding: '2rem' } })
 ```
 
 ### className

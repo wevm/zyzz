@@ -3,9 +3,11 @@
 Use TypeScript inference from the named `zyzz` export. Keep config values literal so token names and variant choices remain narrow.
 
 ```ts
-import { zyzz } from '../../zyzz.config.js'
+import { css } from '../../zyzz.config.js'
 
-const card = zyzz.css({ padding: 'md' })
+const styles = {
+  card: css({ padding: 'md' }),
+}
 ```
 
 > [!NOTE]

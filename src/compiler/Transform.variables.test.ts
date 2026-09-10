@@ -4,6 +4,26 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 
 describe('compile', () => {
+  test('removes consumed Vars imports and retains the public error constructor', () => {
+    const source =
+      'import { Vars } from "zyzz"; export const vars = Vars.define({ size: "length" });'
+    expect(
+      Transform.compile({ moduleId: 'vars.ts', source }).code,
+    ).not.toContain('from "zyzz"')
+    expect(
+      Transform.compile({
+        moduleId: 'error.ts',
+        source: source + 'export const ErrorType = Vars.MissingTransformError',
+      }).code,
+    ).toContain('Vars.MissingTransformError')
+    expect(() =>
+      Transform.compile({
+        moduleId: 'signed.ts',
+        source:
+          'import { Vars, css } from "zyzz"; const vars = Vars.define({ size: "signedLength" }); css({ lineHeight: vars.size })',
+      }),
+    ).toThrow('Variable domain is incompatible')
+  })
   test('retains type-only generic references to Vars', () => {
     const output = Transform.compile({
       moduleId: 'generic.ts',

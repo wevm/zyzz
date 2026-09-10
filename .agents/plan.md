@@ -47,7 +47,7 @@ Follow with Nuxt, SvelteKit, SolidStart, Astro, TanStack Start, and Preact integ
 
 Implement in this order:
 
-1. **Renderer output:** define typed output for DOM `class`, `className`, inline style objects, and serialized style attributes. Preserve classes, CSS variables, theme scopes, owned data attributes, escaping, units, composition, and removal of stale values. Verify React and plain DOM consumers through the shared compiler.
+1. **Renderer output:** define typed output for DOM `class`, `className`, inline style objects, and serialized style attributes. Preserve classes, CSS variables, theme scopes, owned data attributes, escaping, units, existing class/style override merging, and removal of stale values. Verify React and plain DOM consumers through the shared compiler.
 2. **Solid:** integrate the existing TSX/Vite path with normal `class` and dash-separated inline style keys. Verify signal-driven updates, dynamic variable bindings, theme/scheme changes, SSR, hydration, and supported refresh behavior.
 3. **Vue:** support both imported styles from separate TypeScript modules and authoring in Vue single-file component script blocks. Handle SFC/virtual-module identities, source maps, dependency edits, and normal template class/style bindings without passing template syntax into core.
 4. **Svelte:** support imported TypeScript style modules and authoring in Svelte component script blocks. Preserve normal template class/style bindings, reactive updates, source maps, dependency edits, SSR, hydration, and development refresh through the shared compiler.
@@ -60,13 +60,15 @@ Next.js acceptance:
 
 For each integration:
 
-- [ ] Add real consumer type fixtures and browser integration coverage for static styles, dynamic bindings, composition, themes, and color schemes. Extend the same fixtures with variants when Phase 3 implements them; variants do not block this work.
-- [ ] Verify mount/update/unmount, computed styles, SSR/hydration identity, development CSS updates, production CSS loading, source maps, and add/edit/remove/rename recovery. Record unsupported framework lifecycle behavior explicitly.
+- [ ] Add real consumer type fixtures and browser integration coverage for static styles, dynamic bindings, existing class/style override merging, themes, and color schemes. Extend these fixtures with `cx` composition and variants when their Phase 3 APIs land; neither blocks Phase 2 integrations.
+- [ ] Verify mount/update/unmount, computed styles, development CSS updates, production CSS loading, source maps, and add/edit/remove/rename recovery. Require SSR/hydration identity for runtimes that implement hydration. For plain DOM/HTML, verify server attribute serialization and element/style identity across client updates; no hydration lifecycle is required.
 - [ ] Exercise packed style/theme consumers and confirm no framework dependency enters core or unrelated renderer output.
 - [ ] Record supported framework/build-tool versions and add concise setup examples. Claim support only after the corresponding consumer gate passes.
 - [ ] Reuse the browser benchmark harness for relevant renderer/adapter changes, with matched baselines within each framework and untimed correctness checks. Include required helpers and emitted bytes; React results do not prove non-React performance.
 
-Gate: React, plain DOM/HTML, Solid, Vue SFCs, Svelte components, and Next.js render the same supported style contracts through their normal APIs using one compiler. Each integration has passing consumer types, browser rendering, server/hydration, development, production, and packed-consumer evidence before its support claim is published.
+Gate: React, plain DOM/HTML, Solid, Vue SFCs, Svelte components, and Next.js render the supported Phase 2 style contracts through their normal APIs using one compiler. Each integration requires passing consumer types, browser rendering, development, production, and packed-consumer evidence before its support claim is published.
+
+Hydrating runtimes also require SSR/hydration identity evidence. Plain DOM/HTML requires server attribute serialization and client-update identity evidence instead. `cx` composition and variants remain Phase 3 extensions to these fixtures.
 
 ## Goal
 

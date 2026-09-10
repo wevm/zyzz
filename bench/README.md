@@ -28,6 +28,22 @@ These are browser JavaScript application measurements, not React rendering or la
 
 The current Zyzz props helper includes override validation and inline-style copying. The benchmark measures that shipped behavior without removing checks or assigning competing frameworks artificial work. Runtime advantages must be established by measured results; cached class applications can have indistinguishable costs.
 
+### Runtime Snapshot
+
+Measured on Chromium 153.0.8010.12 in [run 34467564716](https://github.com/wevm/zyzz/actions/runs/34467564716), commit `f30a69c`, on the same Ubuntu runner. Values below span both passes of the 10-style workload, in nanoseconds per application. Each pass contains 100 calibrated batches after warmup; raw samples and browser identity are in the `runtime-benchmarks` artifact.
+
+| Framework | Cached props | Apply styles | Styling overrides |
+| --- | ---: | ---: | ---: |
+| Panda CSS | 4.59–4.64 | 474–480 | 484–496 |
+| StyleX | 4.59–4.60 | 17.5–17.8 | 27.5–31.3 |
+| Tailwind | 4.58–4.59 | 9.87–9.95 | 16.6–16.7 |
+| vanilla-extract | 4.59–4.60 | 9.85–10.0 | 18.9 |
+| Zyzz | 4.60–4.70 | 73.4–74.0 | 166–167 |
+
+Cached results overlap across the two passes; no Zyzz advantage is established. Both callable and override results are slower than StyleX, Tailwind, and vanilla-extract beyond reported uncertainty in both passes, and faster than Panda. The 100-style workload has the same outcome. The runtime gate correctly fails.
+
+Relative error for these application/override measurements is about 0.8–5.9%. These are browser JavaScript costs only, not component rendering, layout, or interaction latency. Zyzz's remaining override validation and style copying are optimization candidates; this run does not isolate their individual contributions.
+
 ## Compilation Comparisons
 
 Definitions live in `bench/Compilation.bench.ts` beside the compiler adapters, with shared workloads in `bench/Corpus.ts`. Run `pnpm exec vp test bench --run --no-file-parallelism --outputJson bench/results/timings.json`. Reports are ignored by Git.

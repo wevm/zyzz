@@ -49,7 +49,7 @@ export async function create(options: create.Options): Promise<Bundle> {
   const { count, kind, library } = options
   const workload: Corpus.Case = { count, name: 'runtime', pattern: 'partial' }
   const fixture = await Compilation.create(workload)
-  const literals = Corpus.styles(workload)
+  const literals = literalStyles(count)
   const names = literals.map((_, index) => `card${index}`)
   const application = (expressions: readonly string[], direct = false) => {
     if (kind === 'cached')
@@ -239,11 +239,7 @@ export async function verify(
       },
       {
         kind: options.kind,
-        literals: Corpus.styles({
-          count: options.count,
-          name: 'runtime',
-          pattern: 'partial',
-        }),
+        literals: literalStyles(options.count),
         overrides,
       },
     )
@@ -270,4 +266,19 @@ async function bundle(source: string): Promise<string> {
     write: false,
   })
   return result.outputFiles[0]!.text
+}
+
+function literalStyles(
+  count: number,
+): readonly Record<string, string | number>[] {
+  return Corpus.styles({ count, name: 'runtime', pattern: 'partial' }).map(
+    (style) =>
+      Object.fromEntries(
+        Object.entries<unknown>(style).map(([key, value]) => {
+          if (typeof value !== 'string' && typeof value !== 'number')
+            throw new Error('Runtime corpus requires scalar declarations.')
+          return [key, value]
+        }),
+      ),
+  )
 }

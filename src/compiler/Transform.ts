@@ -172,6 +172,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       end: applications.get(call.start)!.end,
       start: call.start,
     })),
+    ...(extracted.variableCalls ?? []),
     ...extracted.themeAliases,
     ...extracted.themeCalls,
     ...extracted.themeReferences,
@@ -199,7 +200,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         node.importKind === 'type' ||
         specifier.type !== 'ImportSpecifier' ||
         specifier.importKind === 'type' ||
-        !['Config', 'css', 'Theme'].includes(
+        !['Config', 'css', 'Theme', 'Vars'].includes(
           specifier.imported.type === 'Identifier'
             ? specifier.imported.name
             : specifier.imported.value,

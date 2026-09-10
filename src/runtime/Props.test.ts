@@ -11,7 +11,7 @@ import { Props } from 'zyzz/runtime'
 const root = Path.resolve(import.meta.dirname, '../..')
 
 describe('create', () => {
-  test('rewritten exports execute with overrides and reject unrelated props', async () => {
+  test('rewritten exports execute with overrides without runtime validation', async () => {
     const source = `import { css } from 'zyzz';
 export const button = css({ color: '#f00', padding: '8px' });
 export const inline = css({ color: '#fff' })();
@@ -33,40 +33,11 @@ export const text = '🎉';`
 
     const bind = Props.create({ className: Object.values(result.classes)[0]! })
     const style = { color: '#000', paddingLeft: '2px' } as const
-    const invalid = [
-      null,
-      [],
-      { id: 'button' },
-      { 'data-size': 'small' },
-      { className: 1 },
-      { style: null },
-    ]
-
     expect(consumer.button()).toMatchInlineSnapshot(`
     {
       "className": "z-12ydhop55omeb-base0 z-style-12ydhop55omeb-50",
     }
   `)
-
-    expect(
-      invalid.map((value) => {
-        try {
-          Reflect.apply(bind, undefined, [value])
-          return 'accepted'
-        } catch (error) {
-          return (error as Error).message
-        }
-      }),
-    ).toMatchInlineSnapshot(`
-      [
-        "Expected only className and style overrides.",
-        "Expected only className and style overrides.",
-        "Expected only className and style overrides.",
-        "Expected only className and style overrides.",
-        "Expected a string className override.",
-        "Expected an inline style object.",
-      ]
-    `)
 
     expect(consumer.inline).toMatchInlineSnapshot(`
     {

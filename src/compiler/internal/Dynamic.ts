@@ -67,6 +67,7 @@ export function read(node: Ast.Node, identity: string) {
         .map((character) => character.codePointAt(0)!.toString(16))
         .join('-')}`,
       type: kind === 'number' ? 'number' : 'length',
+      ...(kind === 'zero-string' ? { zero: true } : {}),
       variable: true,
     }))
     const values = numbers(type)
@@ -131,7 +132,9 @@ export function read(node: Ast.Node, identity: string) {
   }
 }
 
-function scalar(node: Ast.Node): 'number' | 'string' | undefined {
+function scalar(
+  node: Ast.Node,
+): 'number' | 'string' | 'zero-string' | undefined {
   if (node.type === 'TSNumberKeyword') return 'number'
   if (node.type === 'TSStringKeyword') return 'string'
   if (
@@ -150,12 +153,25 @@ function scalar(node: Ast.Node): 'number' | 'string' | undefined {
     if (
       node.literal.type === 'Literal' &&
       typeof node.literal.value === 'string' &&
-      !node.literal.value.includes('!')
+      !node.literal.value.includes('!') &&
+      !['initial', 'inherit', 'unset', 'revert', 'revert-layer'].includes(
+        node.literal.value.trim().toLowerCase(),
+      )
     )
       return 'string'
   }
   if (node.type === 'TSUnionType') {
     const kinds = node.types.map(scalar)
+    if (
+      kinds.some((kind) => kind === 'string' || kind === 'zero-string') &&
+      node.types.every(
+        (type, index) =>
+          kinds[index] === 'string' ||
+          kinds[index] === 'zero-string' ||
+          numbers(type)?.every((value) => value === 0),
+      )
+    )
+      return 'zero-string'
     if (kinds.length && kinds.every((kind) => kind === kinds[0]))
       return kinds[0]
   }

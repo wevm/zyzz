@@ -12,6 +12,43 @@ const source = [
 ].join('\n')
 
 describe('compile', () => {
+  test('supports zero dimensions and rejects private-property keywords and quoted substitutions', async () => {
+    const output = Transform.compile({
+      moduleId: 'zero.ts',
+      source:
+        'import {css} from "zyzz"; export const style=css((v:{width:0|`${number}px`})=>({width:v.width}))',
+    })
+    const built = await Esbuild.build({
+      stdin: {
+        contents: output.code,
+        resolveDir: Path.resolve(import.meta.dirname, '../..'),
+        loader: 'ts',
+      },
+      bundle: true,
+      write: false,
+      platform: 'node',
+      conditions: ['src'],
+      format: 'esm',
+    })
+    const result = await import(
+      `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
+    )
+    expect(Object.values(result.style({ width: 0 }).style)).toEqual([0])
+    expect(Object.values(result.style({ width: '10px' }).style)).toEqual([
+      '10px',
+    ])
+    for (const source of [
+      'css((v:{color:"initial"|"red"})=>({color:v.color}))',
+      'css((v:{text:string})=>({content:`"${v.text}"`}))',
+    ])
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: 'import {css} from "zyzz"; ' + source,
+        }),
+      ).toThrow()
+  })
+
   test('supports asserted callbacks, quoted fields, negative literals, and empty values', async () => {
     const output = Transform.compile({
       moduleId: 'scalars.ts',
@@ -207,27 +244,15 @@ describe('compile', () => {
         },
       }
     `)
-    expect(() =>
-      module.bar({ amount: '50%' }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[TypeError: Missing dynamic style input or accessor value.]`,
-    )
-    expect(() =>
-      module.bar({ amount: '50%', gap: '8px', alpha: 1, id: 'bad' }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[TypeError: Unknown dynamic style input.]`,
-    )
     const key = Object.keys(module.first.style)[0]!
-    expect(() =>
+    expect(
       module.bar({
         amount: '50%',
         gap: '8px',
         alpha: 1,
         style: { [key]: 'bad' },
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[TypeError: Private dynamic variables cannot be overridden.]`,
-    )
+      }).style[key],
+    ).toBe('50%')
   })
 
   test('Chromium updates values with stable classes and rule counts', async () => {

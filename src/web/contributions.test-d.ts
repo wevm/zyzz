@@ -1,7 +1,7 @@
 /** Verifies literal stylesheet contribution contracts through public entrypoints. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Theme } from 'zyzz'
-import { Css, fontFace, global, keyframes } from 'zyzz/web'
+import { layers, fontFace, global, keyframes } from 'zyzz/web'
 describe('stylesheet contributions', () => {
   test('accepts checked literals and theme variables', () => {
     const theme = Theme.define({ color: { ink: 'red' } })
@@ -13,7 +13,7 @@ describe('stylesheet contributions', () => {
     expectTypeOf(
       keyframes({ from: { opacity: 0 }, to: { opacity: 1 } }),
     ).toEqualTypeOf<string>()
-    Css.layers(['reset', 'base'])
+    layers(['reset', 'base'])
     // @ts-expect-error Unknown declarations remain invalid.
     global({ body: { unknown: true } })
     // @ts-expect-error Negative padding is invalid.

@@ -15,22 +15,20 @@ type Keys<value> = value extends unknown ? keyof value : never
  * @throws {MissingTransformError} Whenever an untransformed definition executes.
  */
 export function css<
-  const callback extends (values: never) => Style.LiteralProperties,
+  const values extends Record<string, string | number>,
+  const styles extends Record<string, unknown>,
+  const callback extends (...args: never[]) => unknown,
 >(
   styles: callback &
     ((
-      values: Parameters<callback>[0],
-    ) => NoInfer<
-      Style.Accepted<ReturnType<callback>, {}, true> &
-        Binding.Checked<ReturnType<callback>>
-    >) &
-    (Parameters<callback>[0] extends Binding.Inputs<Parameters<callback>[0]>
-      ? unknown
-      : never) &
+      values: values,
+    ) => styles &
+      NoInfer<Style.Accepted<styles, {}, true> & Binding.Checked<styles>>) &
+    (values extends Binding.Inputs<values> ? unknown : never) &
     (Parameters<callback> extends [Record<string, string | number>]
       ? unknown
       : never),
-): css.Dynamic<Parameters<callback>[0] & Record<never, never>>
+): css.Dynamic<values>
 export function css<const styles extends Record<string, unknown>>(
   styles: styles & NoInfer<Style.Accepted<styles, {}, true>>,
 ): css.ReturnType

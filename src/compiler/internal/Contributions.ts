@@ -25,7 +25,7 @@ export function scan(
   scope: Scope.Tracker,
   namespace: string,
 ) {
-  const imports = new Map<number, Kind | 'Css'>()
+  const imports = new Map<number, Kind>()
   for (const node of program.body)
     if (
       node.type === 'ImportDeclaration' &&
@@ -41,8 +41,8 @@ export function scan(
             specifier.imported.type === 'Identifier'
               ? specifier.imported.name
               : specifier.imported.value
-          if (['fontFace', 'global', 'keyframes', 'Css'].includes(name))
-            imports.set(specifier.start, name as Kind | 'Css')
+          if (['fontFace', 'global', 'keyframes', 'layers'].includes(name))
+            imports.set(specifier.start, name as Kind)
         }
   const calls: Call[] = []
   const bindings = new Map<number, Call>()
@@ -55,22 +55,7 @@ export function scan(
       const binding = scope.getDeclaration(node.name)
       const name =
         binding?.type === 'Import' ? imports.get(binding.node.start) : undefined
-      return name === 'Css' ? undefined : name
-    }
-    if (
-      node.type === 'MemberExpression' &&
-      !node.computed &&
-      !node.optional &&
-      node.object.type === 'Identifier' &&
-      node.property.type === 'Identifier' &&
-      node.property.name === 'layers'
-    ) {
-      const binding = scope.getDeclaration(node.object.name)
-      if (
-        binding?.type === 'Import' &&
-        imports.get(binding.node.start) === 'Css'
-      )
-        return 'layers'
+      return name
     }
     return undefined
   }

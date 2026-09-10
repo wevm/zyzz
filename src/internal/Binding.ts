@@ -113,7 +113,12 @@ export type Inputs<values> = {
     | '__proto__'
     ? never
     : Extract<values[key], `${string}!${string}`> extends never
-      ? values[key]
+      ? Extract<
+          Lowercase<Extract<values[key], string>>,
+          'initial' | 'inherit' | 'unset' | 'revert' | 'revert-layer'
+        > extends never
+        ? values[key]
+        : never
       : never
 }
 

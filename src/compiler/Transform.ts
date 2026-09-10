@@ -87,18 +87,15 @@ export function compile(options: compile.Options): compile.ReturnType {
   let runtime = '__zyzzProps'
   while (identifiers.has(runtime)) runtime += '_'
 
-  let freeze = '__zyzzFreeze'
-  while (identifiers.has(freeze)) freeze += '_'
+  let variables = '__zyzzVars'
+  while (identifiers.has(variables)) variables += '_'
 
-  for (const call of extracted.variableCalls ?? []) {
-    const slots = Object.entries(call.slots)
-      .map(
-        ([key, slot]) =>
-          `[${JSON.stringify(key)}]:${freeze}.create(${JSON.stringify(slot)})`,
-      )
-      .join(',')
-    module.overwrite(call.start, call.end, `${freeze}.create({${slots}})`)
-  }
+  for (const call of extracted.variableCalls ?? [])
+    module.overwrite(
+      call.start,
+      call.end,
+      `${variables}.create(${JSON.stringify(call.slots)})`,
+    )
   const first = extracted.calls[0]
   const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
   const names = new Map<string, string>()
@@ -290,7 +287,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[callable ? `Props as ${runtime}` : '', dynamicCallable ? `Dynamic as ${dynamicRuntime}` : '', extracted.variableCalls?.length ? `Freeze as ${freeze}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[callable ? `Props as ${runtime}` : '', dynamicCallable ? `Dynamic as ${dynamicRuntime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

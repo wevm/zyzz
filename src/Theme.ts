@@ -482,10 +482,27 @@ type Validated<tokens> = Tokens extends tokens
     : {
         [group in keyof tokens]: group extends keyof Tokens
           ? group extends 'containerNames'
-            ? tokens[group]
+            ? ContainerNames<tokens[group]>
             : ValidPalette<tokens[group], group>
           : never
       }
+type ContainerNames<names> = names extends readonly string[]
+  ? {
+      [index in keyof names]: ContainerName<names[index]>
+    }
+  : names
+type ContainerName<name> = name extends string
+  ? Lowercase<name> extends
+      | 'none'
+      | 'default'
+      | 'inherit'
+      | 'initial'
+      | 'unset'
+      | 'revert'
+      | 'revert-layer'
+    ? never
+    : name
+  : name
 type ValidPalette<palette, group> = palette extends undefined
   ? undefined
   : {

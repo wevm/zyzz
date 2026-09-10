@@ -7,7 +7,7 @@ describe('stylesheet contributions', () => {
   test('preserves layer discovery order and omits optional font descriptors', () => {
     const output = Transform.compile({
       moduleId: 'effects.ts',
-      source: `import {Css,fontFace,global} from 'zyzz/web'; Css.layers(['reset','base']); Css.layers(['components']); fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined}); global({'body::before':{content:'"url(relative)"'}})`,
+      source: `import {layers,fontFace,global} from 'zyzz/web'; layers(['reset','base']); layers(['components']); fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined}); global({'body::before':{content:'"url(relative)"'}})`,
     })
     expect(output.css).toMatchInlineSnapshot(`
       "@layer reset,base,components;
@@ -44,7 +44,7 @@ describe('stylesheet contributions', () => {
     const output = Transform.compile({
       moduleId: 'browser.ts',
       source:
-        'import {global,keyframes,Css} from "zyzz/web"; Css.layers(["reset","base"]); const fade=keyframes({from:{opacity:0},to:{opacity:1}}); global({"@layer reset":{body:{margin:"20px"}},"@layer base":{body:{margin:0}},body:{animationName:fade,animationDuration:"1s",animationTimingFunction:"linear",animationDelay:"-0.5s",animationPlayState:"paused"}})',
+        'import {global,keyframes,layers} from "zyzz/web"; layers(["reset","base"]); const fade=keyframes({from:{opacity:0},to:{opacity:1}}); global({"@layer reset":{body:{margin:"20px"}},"@layer base":{body:{margin:0}},body:{animationName:fade,animationDuration:"1s",animationTimingFunction:"linear",animationDelay:"-0.5s",animationPlayState:"paused"}})',
     })
     const browser = await chromium.launch()
     try {
@@ -65,7 +65,7 @@ describe('stylesheet contributions', () => {
     const result = Transform.compile({
       moduleId: 'app/styles.ts',
       source:
-        'import {css} from "zyzz"; import {global,fontFace,keyframes,Css} from "zyzz/web"; Css.layers(["reset","base"]); global({"@layer reset":{"body":{margin:0}},"body":{color:"red"}}); fontFace({fontFamily:"App",src:"url(/font.woff2)",fontDisplay:"swap"}); const unused=keyframes({from:{opacity:0},to:{opacity:1}}); const fade=keyframes({from:{opacity:0},to:{opacity:1}}); export const box=css({animationName:fade})()',
+        'import {css} from "zyzz"; import {global,fontFace,keyframes,layers} from "zyzz/web"; layers(["reset","base"]); global({"@layer reset":{"body":{margin:0}},"body":{color:"red"}}); fontFace({fontFamily:"App",src:"url(/font.woff2)",fontDisplay:"swap"}); const unused=keyframes({from:{opacity:0},to:{opacity:1}}); const fade=keyframes({from:{opacity:0},to:{opacity:1}}); export const box=css({animationName:fade})()',
     })
     expect(result.css).toMatchInlineSnapshot(`
       "@layer reset,base;
@@ -76,7 +76,7 @@ describe('stylesheet contributions', () => {
       .z-11238c6bg65w8-base0{animation-name:z-k11238c6bg65w8-66-61-64-65;}"
     `)
     expect(result.code).toMatchInlineSnapshot(
-      `"  void 0; void 0; void 0; const unused="z-k11238c6bg65w8-75-6e-75-73-65-64"; const fade="z-k11238c6bg65w8-66-61-64-65"; export const box=({className:"z-11238c6bg65w8-base0"})"`,
+      `" import {layers} from "zyzz/web"; void 0; void 0; void 0; const unused="z-k11238c6bg65w8-75-6e-75-73-65-64"; const fade="z-k11238c6bg65w8-66-61-64-65"; export const box=({className:"z-11238c6bg65w8-base0"})"`,
     )
   })
   test('keeps theme references live in global rules', () => {
@@ -95,13 +95,13 @@ describe('stylesheet contributions', () => {
     const failures = [
       'if(true) global({body:{color:"red"}})',
       'global({"[":{color:"red"}})',
-      'Css.layers(["one","two"]); Css.layers(["two","one"])',
+      'layers(["one","two"]); layers(["two","one"])',
       'const frames=keyframes({"101%":{opacity:0}})',
     ].map((source) => {
       try {
         Transform.compile({
           moduleId: 'bad.ts',
-          source: 'import {global,Css,keyframes} from "zyzz/web";' + source,
+          source: 'import {global,layers,keyframes} from "zyzz/web";' + source,
         })
         return 'accepted'
       } catch (error) {
@@ -110,10 +110,10 @@ describe('stylesheet contributions', () => {
     })
     expect(failures).toMatchInlineSnapshot(`
       [
-        "bad.ts:55: Stylesheet contributions require direct module-level calls and constant animation bindings.",
-        "bad.ts:46: Unexpected end of input",
-        "bad.ts:46: ["contributions"]: Conflicting layer order constraints.",
-        "bad.ts:59: Keyframe stops must be from, to, or percentages from 0 to 100.",
+        "bad.ts:58: Stylesheet contributions require direct module-level calls and constant animation bindings.",
+        "bad.ts:49: Unexpected end of input",
+        "bad.ts:49: ["contributions"]: Conflicting layer order constraints.",
+        "bad.ts:62: Keyframe stops must be from, to, or percentages from 0 to 100.",
       ]
     `)
   })
@@ -123,7 +123,7 @@ describe('stylesheet contributions', () => {
       'app.ts':
         'import {css} from "zyzz"; export const box=css({color:"blue"})()',
       'global.ts':
-        'import {global,Css} from "zyzz/web"; Css.layers(["reset","app"]); global({body:{margin:0}})',
+        'import {global,layers} from "zyzz/web"; layers(["reset","app"]); global({body:{margin:0}})',
     }
     const first = compiler.compile({ modules })
     expect({

@@ -1,58 +1,40 @@
-# Vars.set
+# vars.set
 
-Assign values to an explicit shared variable contract.
+Assign values through the contract returned by `Vars.define`.
 
 ```ts
 import { Vars } from 'zyzz'
 
-const progress = Vars.define({ amount: 'percentage' })
-const style = Vars.set(progress, { amount: '42%' })
+const vars = Vars.define({ amount: 'percentage' })
+const style = vars.set({ amount: '42%' })
 ```
 
 ## Signature
 
-`Vars.set(definition, values)`
+`vars.set(values)`
 
 ## Parameters
 
-### definition
-
-- Type: Shared contract returned by `Vars.define`
-- Required: Yes.
-
-Defines allowed assignment keys and domains.
-
-```ts
-Vars.set(progress, { amount: '42%' })
-```
-
 ### values
 
-- Type: Assignments to inferred contract keys
+- Type: `Vars.Values<schema>` with inferred scalar domains and exact keys
 - Required: Yes.
 
-Existing keys with compatible values. Compiler-owned private variables are not application override keys.
+Partial assignments to this contract's named slots. Unknown keys and incompatible CSS values are rejected by TypeScript. The method is bound to its contract and can be passed independently of the object.
 
 ```ts
-Vars.set(progress, { amount: '42%' })
+const set = vars.set
+const style = set({ amount: '75%' })
 ```
 
 ## Returns
 
-### style
+- Type: `Readonly<Record<\`--${string}\`, number | string>>`
 
-- Type: Inline variable assignment object
-
-Returned object can be supplied as the applied style override.
+A frozen inline custom-property assignment object, suitable for the `style` prop. Assignments do not create CSS rules or perform runtime value validation.
 
 ```ts
-const style = Vars.set(progress, { amount: '42%' })
+const style = vars.set({ amount: '42%' })
 ```
 
-## Errors
-
-Reject unknown keys and incompatible values. Private compiler-owned variables are not application override keys.
-
-See [Vars](README.md) for related methods and types.
-
-Contracts currently require module-level constants and local style references. Runtime assignments may use exported compiled contracts. Imported references in style definitions, native bindings, and `@property` registration remain deferred.
+See [Vars](README.md) for the schema and reference types.

@@ -15,7 +15,7 @@ describe('zyzz', () => {
         'lazy.ts':
           'import {css} from "zyzz"; export const lazy=css({color:"blue"})()',
         'global.ts':
-          'import {global,Css} from "zyzz/web"; Css.layers(["reset","app"]); global({body:{margin:0}})',
+          'import {global,layers} from "zyzz/web"; layers(["reset","app"]); global({body:{margin:0}})',
       }))
         await Fs.writeFile(Path.join(root, name), source)
       for (const directory of [

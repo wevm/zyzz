@@ -2,7 +2,6 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
-import { MissingTransformError } from '../css.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Binding from '../internal/Binding.js'
 import * as Cascade from '../internal/Cascade.js'
@@ -14,12 +13,6 @@ import * as Themes from './internal/Themes.js'
 
 /** Explicit ordered stylesheet contribution data. */
 export type Contribution = Contributions.Definition
-
-/** Declares module-level layer ordering; source compilation removes this call. */
-export function layers(names: readonly string[]): void {
-  void names
-  throw new MissingTransformError()
-}
 
 /**
  * Emits factored literal and theme-reference CSS without reading files or generating runtime code.
@@ -221,18 +214,23 @@ export function compile<
     ordered: string
     shared: string
   }
+  const serialized = new Map<object, string>()
   function serialize(input: Style.Declaration['value']): number | string {
+    if (typeof input !== 'object' || input === null) return input
+    const cached = serialized.get(input)
+    if (cached !== undefined) return cached
+    const value = serializeReference(input)
+    if (typeof value === 'string') serialized.set(input, value)
+    return value
+  }
+  function serializeReference(
+    input: Style.Declaration['value'],
+  ): number | string {
     if (Binding.is(input)) return `var(${input.name})`
     if (isReference(input)) return (theme ??= Themes.create()).serialize(input)
     if (Token.isExpression(input))
       return input.parts
-        .map((part) =>
-          typeof part === 'string'
-            ? part
-            : Binding.is(part)
-              ? `var(${part.name})`
-              : (theme ??= Themes.create()).serialize(part),
-        )
+        .map((part) => (typeof part === 'string' ? part : serialize(part)))
         .join('')
     return input as number | string
   }

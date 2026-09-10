@@ -50,7 +50,6 @@ export function zyzz(): Plugin {
       pending = (async () => {
         const sources = new Map<string, string>()
         async function collect(directory: string): Promise<void> {
-          host.watch(directory)
           for (const item of await Fs.readdir(directory, {
             withFileTypes: true,
           })) {

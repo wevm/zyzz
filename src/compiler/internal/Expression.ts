@@ -24,6 +24,14 @@ export function template(
     const value = unwrap(expression)
     const reference = resolve?.(expression) ?? resolve?.(value)
     if (reference) {
+      if (
+        quoted(
+          parts
+            .filter((part): part is string => typeof part === 'string')
+            .join(''),
+        )
+      )
+        return undefined
       // Substitution cannot combine a number token with adjacent unit text.
       if (
         Binding.is(reference) &&
@@ -80,4 +88,24 @@ export function unwrap(node: Ast.Node): Ast.Node {
   )
     node = node.expression
   return node
+}
+
+function quoted(text: string): boolean {
+  let quote = ''
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index]!
+    if (char === '\\') {
+      index++
+      continue
+    }
+    if (quote) {
+      if (char === quote) quote = ''
+    } else if (char === '"' || char === "'") quote = char
+    else if (char === '/' && text[index + 1] === '*') {
+      const end = text.indexOf('*/', index + 2)
+      if (end < 0) return true
+      index = end + 1
+    }
+  }
+  return !!quote
 }

@@ -17,7 +17,8 @@ type Exact<
   > extends never
     ? Properties<tokens> extends styles[name]
       ? styles[name] extends Properties<tokens>
-        ? styles[name]
+        ? styles[name] &
+            Record<Exclude<Keys<styles[name]>, keyof Properties>, never>
         : never
       : Value.Accepted<styles[name], Properties<tokens>> &
           Value.Checked<styles[name], tokens> &

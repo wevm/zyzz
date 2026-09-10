@@ -73,6 +73,11 @@ describe('define', () => {
   })
 })
 describe('set', () => {
+  test('excludes percentage bindings from length-only number rules', () => {
+    const vars = Vars.define({ size: 'percentage' })
+    // @ts-expect-error Tab size accepts lengths and integers, not percentages.
+    css({ tabSize: vars.size })
+  })
   test('excludes minimum constrained signed bindings', () => {
     const vars = Vars.define({
       size: 'signedLength',

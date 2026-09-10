@@ -40,10 +40,12 @@ export function css(styles: unknown): never {
 /** Contracts for the literal authoring boundary. */
 export declare namespace css {
   /** Callable compiled bindings with required scalar inputs and styling overrides. */
-  type Dynamic<values> = <const input extends values & Options>(
+  type Dynamic<values, output extends Output = 'react'> = <
+    const input extends values & Options,
+  >(
     input: input &
       Record<Exclude<keyof input, keyof values | keyof Options>, never>,
-  ) => Props
+  ) => Props<output>
   /** Failure from executing source without a transform. */
   type ErrorType = MissingTransformError
   /** Styling overrides consumed by a transformed definition. */
@@ -54,16 +56,22 @@ export declare namespace css {
     readonly style?: Literal.Properties | undefined
   }
   /** Props produced by a transformed web definition. */
-  type Props = {
-    /** Compiled and supplied class names. */
-    readonly className: string
-    /** Supplied inline styling overrides when present. */
-    readonly style?: Literal.Properties | undefined
-  }
+  type Output = 'html' | 'react'
+  /** Renderer-native props selected by configuration. */
+  type Props<output extends Output = 'react'> = output extends 'html'
+    ? { readonly class: string; readonly style?: string | undefined }
+    : {
+        /** Compiled and supplied class names. */
+        readonly className: string
+        /** Supplied inline styling overrides when present. */
+        readonly style?: Literal.Properties | undefined
+      }
   /** Callable definition; source rewriting supplies its implementation. */
-  type ReturnType = <const options extends Options = Options>(
+  type ReturnType<output extends Output = 'react'> = <
+    const options extends Options = Options,
+  >(
     options?: options & Record<Exclude<Keys<options>, keyof Options>, never>,
-  ) => Props
+  ) => Props<output>
 }
 
 /** Executed authoring source has not been rewritten. */

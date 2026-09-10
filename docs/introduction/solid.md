@@ -15,12 +15,13 @@ export default defineConfig({
 })
 ```
 
-Apply compiled styles through the DOM adapter inside the reactive JSX expression:
+Select HTML output once in the shared configuration, then spread applied styles inside the reactive JSX expression:
 
 ```tsx
 import { createSignal } from 'solid-js'
-import { css } from 'zyzz'
-import { Attrs } from 'zyzz/web'
+import { Config } from 'zyzz'
+
+const { css } = Config.create({ output: 'html' })
 
 const styles = {
   bar: css((values: { width: `${number}%` }) => ({
@@ -30,11 +31,11 @@ const styles = {
 }
 
 export function Progress() {
-  const [width, setWidth] = createSignal<`${number}%`>('25%')
-  return <div {...Attrs.from(styles.bar({ width: width() }))} />
+  const [width] = createSignal<`${number}%`>('25%')
+  return <div {...styles.bar({ width: width() })} />
 }
 ```
 
-`Attrs.from` supplies `class` and a CSS style string, including dynamic custom properties. Keep signal reads in the JSX expression so updates reach the element. React-style camel-case inline overrides are serialized by the adapter.
+`output: 'html'` supplies `class` and a CSS style string, including dynamic custom properties. Keep signal reads in the JSX expression so updates reach the element. React-style camel-case inline overrides are serialized by compiled bindings.
 
 The test fixture pins Solid 1.9.9 and vite-plugin-solid 2.11.8. Packed-library coverage and the remaining lifecycle recovery gates are tracked in the implementation plan.

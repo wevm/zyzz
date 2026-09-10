@@ -23,8 +23,14 @@ export function create<const options extends create.Options>(
 export function create(options: create.Options = {}): unknown {
   const input = record(options)
   for (const key of Object.keys(input))
-    if (!['defaultTheme', 'layers', 'theme', 'themes'].includes(key))
+    if (!['defaultTheme', 'layers', 'output', 'theme', 'themes'].includes(key))
       throw new InvalidError(`Unknown configuration option: ${key}`)
+  if (
+    input.output !== undefined &&
+    input.output !== 'html' &&
+    input.output !== 'react'
+  )
+    throw new InvalidError('output must be html or react.')
   if (input.theme !== undefined && input.themes !== undefined)
     throw new InvalidError('Use either theme or themes, not both.')
   if (input.layers !== undefined) {
@@ -118,6 +124,8 @@ export function create(options: create.Options = {}): unknown {
 export declare namespace create {
   /** Optional layer names and mutually exclusive theme modes. */
   type Options = {
+    /** Renderer props format; React is the default. */
+    readonly output?: css.Output | undefined
     /** Ordered plain or dotted CSS layer names; emission follows source integration. */
     readonly layers?: readonly string[] | undefined
   } & (
@@ -146,7 +154,10 @@ export declare namespace create {
       Tokens<options>,
       options extends { layers: readonly (infer name extends string)[] }
         ? name
-        : never
+        : never,
+      options extends { output: infer output extends css.Output }
+        ? output
+        : 'react'
     >
   } & (options extends { theme: infer input }
     ? {
@@ -165,7 +176,11 @@ export declare namespace create {
       : {})
 }
 
-type Css<tokens extends Theme.Tokens, layers extends string> = {
+type Css<
+  tokens extends Theme.Tokens,
+  layers extends string,
+  output extends css.Output,
+> = {
   <
     const values extends Record<string, string | number>,
     const styles extends Record<string, unknown>,
@@ -180,10 +195,10 @@ type Css<tokens extends Theme.Tokens, layers extends string> = {
       (Parameters<callback> extends [Record<string, string | number>]
         ? unknown
         : never),
-  ): css.Dynamic<values>
+  ): css.Dynamic<values, output>
   <const styles extends Record<string, unknown>>(
     styles: styles & NoInfer<Body<styles, tokens, layers>>,
-  ): css.ReturnType
+  ): css.ReturnType<output>
 }
 type Keys<styles> = styles extends unknown ? keyof styles : never
 type Body<styles, tokens extends Theme.Tokens, layers extends string> = Record<

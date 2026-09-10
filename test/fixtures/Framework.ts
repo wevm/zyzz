@@ -96,9 +96,11 @@ export async function verify(options: verify.Options) {
     expect(checked.stdout).toMatchInlineSnapshot(`""`)
     server = await Vite.createServer(config)
     const ssr = (await server.ssrLoadModule('/server.tsx')) as {
-      render: () => { html: string; script: string }
+      render: () =>
+        | { html: string; script: string }
+        | Promise<{ html: string; script: string }>
     }
-    const rendered = ssr.render()
+    const rendered = await ssr.render()
     expect(rendered.html.includes('class=')).toMatchInlineSnapshot(`true`)
     expect(rendered.html.includes('className=')).toMatchInlineSnapshot(`false`)
     await Fs.writeFile(
@@ -191,7 +193,9 @@ export async function verify(options: verify.Options) {
           .evaluate((element) => getComputedStyle(element).backgroundColor),
       ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
       await page.locator('#dispose').click()
-      expect(await page.locator('#app').innerHTML()).toMatchInlineSnapshot(`""`)
+      await page.waitForFunction(
+        'document.querySelector("#app").childElementCount === 0',
+      )
     }
     expect(errors).toMatchInlineSnapshot(`[]`)
   } finally {
@@ -213,7 +217,7 @@ export declare namespace verify {
     /** Exact consumer dependency versions. */
     dependencies: Record<string, string>
     /** Application modules and type-contract probes. */
-    files: Record<string, string>
+    files: Record<string, string> & { 'styles.ts': string }
     /** JSX type provider when the framework uses JSX. */
     jsxImportSource?: string
     /** Temporary consumer identity. */

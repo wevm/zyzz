@@ -1,5 +1,6 @@
 /** Converts compiled styling props to DOM attributes and HTML text. @module */
 import type { css } from '../css.js'
+import * as Props from './Props.js'
 
 /** DOM attributes ready for a framework spread or setAttribute. */
 export type Attributes = {
@@ -63,4 +64,15 @@ function escape(value: string): string {
     if (character === "'") return '&#39;'
     return `&#${character.charCodeAt(0)};`
   })
+}
+
+/** Binds compiler-generated props to native HTML attributes. */
+export function bind<input>(
+  fn: (input: input) => css.Props,
+): (input: input) => css.Props<'html'> {
+  return (input) => from(fn(input))
+}
+/** Creates a static HTML style callable without CSS generation. */
+export function create(options: Props.create.Options): css.ReturnType<'html'> {
+  return bind(Props.create(options))
 }

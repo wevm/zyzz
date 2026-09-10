@@ -2,7 +2,7 @@
 import { bench, describe } from 'vite-plus/test'
 import type { css } from 'zyzz'
 import { Dynamic } from 'zyzz/runtime'
-import { Attrs } from 'zyzz/web'
+import { Html as Attrs } from 'zyzz/runtime'
 
 const card = Dynamic.create({
   className: 'z-card',

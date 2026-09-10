@@ -4,6 +4,30 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 
 describe('compile', () => {
+  test('preserves assertions around nested variable templates and fallbacks', () => {
+    expect(
+      Transform.compile({
+        moduleId: 'assertions.ts',
+        source:
+          'import { Theme, css } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); css({width:["1px", (`calc(${(`${theme.vars.spacing.md}` satisfies string)})` as string)]})',
+      }).css,
+    ).toMatchInlineSnapshot(`
+      ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
+      .z-1jvt0134f5zz3-base0{width:1px;width:calc(var(--z-t1jvt0134f5zz3-theme-spacing_2e_md,8px));}"
+    `)
+  })
+  test('rejects spacing variables in integer properties', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'domains.ts',
+        source:
+          'import { Theme, css } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); css({maxLines:theme.vars.spacing.md})',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: domains.ts:97: Theme variable domain is incompatible with this property.]`,
+    )
+  })
+
   test('retains live references in root declarations and important templates', () => {
     const source = [
       'import { Theme, css } from "zyzz";',

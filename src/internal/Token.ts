@@ -2,7 +2,6 @@
  * Carries portable theme references and enforces their property domains.
  * @module
  */
-import type * as Binding from './Binding.js'
 import type * as Theme from '../Theme.js'
 import * as Literal from './Literal.js'
 
@@ -106,7 +105,7 @@ export type Expression = {
   /** Structured expression discriminator. */
   readonly [expression]: true
   /** Cooked text and live scalar theme references in authored order. */
-  readonly parts: readonly (string | Reference | Binding.Reference)[]
+  readonly parts: readonly (string | Reference)[]
 }
 
 /** Identifies structured web expressions independently of literal CSS text. */
@@ -122,9 +121,7 @@ export function isExpression(value: unknown): value is Expression {
 }
 
 /** Builds an immutable expression from statically extracted segments. */
-export function compose(
-  parts: readonly (string | Reference | Binding.Reference)[],
-): Expression {
+export function compose(parts: readonly (string | Reference)[]): Expression {
   return Object.freeze({
     [expression]: true as const,
     parts: Object.freeze([...parts]),
@@ -231,8 +228,14 @@ export type Properties<group extends Group> = group extends 'spacing'
       | `inset${string}`
       | `left`
       | `margin${string}`
-      | `max${string}`
-      | `min${string}`
+      | `maxBlockSize`
+      | `maxHeight`
+      | `maxInlineSize`
+      | `maxWidth`
+      | `minBlockSize`
+      | `minHeight`
+      | `minInlineSize`
+      | `minWidth`
       | `padding${string}`
       | `right`
       | `rowGap`

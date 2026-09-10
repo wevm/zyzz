@@ -41,12 +41,22 @@ Bring renderer output and framework source support forward from Phase 4 into Pha
 
 Use one shared CSS compiler with thin source and renderer adapters. Keep framework dependencies outside core, preserve React output, and add no custom JSX runtime, provider, component wrapper, or runtime CSS generation. Group fixture styles in `const styles = {}` and consume named config helpers.
 
+Initial support covers React, Vue, Solid, Svelte, and plain DOM/HTML, with Vite and Next.js as application integrations. Remix 3 and React Router are deferred and are not initial acceptance gates.
+
+Follow with Nuxt, SvelteKit, SolidStart, Astro, TanStack Start, and Preact integration fixtures. Angular, Qwik, and native rendering remain later work. Base renderer support does not establish application-framework support.
+
 Implement in this order:
 
 1. **Renderer output:** define typed output for DOM `class`, `className`, inline style objects, and serialized style attributes. Preserve classes, CSS variables, theme scopes, owned data attributes, escaping, units, composition, and removal of stale values. Verify React and plain DOM consumers through the shared compiler.
 2. **Solid:** integrate the existing TSX/Vite path with normal `class` and dash-separated inline style keys. Verify signal-driven updates, dynamic variable bindings, theme/scheme changes, SSR, hydration, and supported refresh behavior.
 3. **Vue:** support both imported styles from separate TypeScript modules and authoring in Vue single-file component script blocks. Handle SFC/virtual-module identities, source maps, dependency edits, and normal template class/style bindings without passing template syntax into core.
-4. **Remix 3:** integrate with its own UI runtime and actual source/asset pipeline. Verify compiled module and stylesheet delivery, client updates, server rendering, hydration, and navigation. React or React Router fixtures do not establish Remix 3 support.
+4. **Svelte:** support imported TypeScript style modules and authoring in Svelte component script blocks. Preserve normal template class/style bindings, reactive updates, source maps, dependency edits, SSR, hydration, and development refresh through the shared compiler.
+5. **Next.js:** bring the existing integration and both bundler acceptance gates into Phase 2. Verify the application build and server-rendering paths independently of React renderer support.
+
+Next.js acceptance:
+
+- [ ] Implement `zyzz(nextConfig)` from `zyzz/next` as the single Next.js setup. Preserve existing options and compose build hooks/rules; configure transformation, CSS delivery, and dependency watching internally without requiring separate Babel/PostCSS configuration. Reuse the shared compiler and keep loader/transform selection internal.
+- [ ] Verify Next.js Webpack and Turbopack independently: Server Components, client components, streaming, hydration identities, Fast Refresh, route navigation, imported config/theme edits, production CSS loading, and failure recovery. Record supported Next.js versions and finalize async/function-valued config support before documenting it.
 
 For each integration:
 
@@ -56,7 +66,7 @@ For each integration:
 - [ ] Record supported framework/build-tool versions and add concise setup examples. Claim support only after the corresponding consumer gate passes.
 - [ ] Reuse the browser benchmark harness for relevant renderer/adapter changes, with matched baselines within each framework and untimed correctness checks. Include required helpers and emitted bytes; React results do not prove non-React performance.
 
-Gate: React, plain DOM, Solid, Vue SFCs, and Remix 3 render the same supported style contracts through their normal APIs using one compiler. Each integration has passing consumer types, browser rendering, server/hydration, development, production, and packed-consumer evidence before its support claim is published.
+Gate: React, plain DOM/HTML, Solid, Vue SFCs, Svelte components, and Next.js render the same supported style contracts through their normal APIs using one compiler. Each integration has passing consumer types, browser rendering, server/hydration, development, production, and packed-consumer evidence before its support claim is published.
 
 ## Goal
 
@@ -370,7 +380,7 @@ Gate: shared definitions render on web and both mobile platforms. Theme/scheme s
 
 ## Phase 4 — Integrations and distribution
 
-Status: planned. Renderer output and Solid, Vue, and Remix 3 source/consumer verification now belong to the Phase 2 [Framework Integration Priority](#framework-integration-priority). The remaining distribution, Next.js, and native gates stay here.
+Status: planned. Renderer output and Solid, Vue, Svelte, and Next.js source/consumer verification now belong to the Phase 2 [Framework Integration Priority](#framework-integration-priority). The remaining distribution and native gates stay here.
 
 - [ ] Verify plain document, component, template, and native consumers through their normal class/style APIs.
 - [ ] Build the CLI with `build [src]` and `watch [src]` commands (defaults: `src`, `dist`, `<out-dir>/styles.css`) and optional `--out-dir`, `--css`, and `--minify` flags; rewrite modules alongside CSS and declarations, requiring no styling plugin in consumers.
@@ -378,8 +388,6 @@ Status: planned. Renderer output and Solid, Vue, and Remix 3 source/consumer ver
 - [ ] Verify CLI/build/in-memory parity, dependency watching, output exclusion, diagnostics, failure preservation, and owned-output cleanup. Include imported style constants and threshold edits in dependency recovery fixtures.
 - [ ] Keep build integrations optional and thin; implement only those needed by concrete fixtures.
 - [ ] Validate the [Getting Started](../docs/introduction/getting-started.md) Vite and CLI paths as real consumer fixtures. Finalize the proposed `zyzz()` entrypoint, automatic dev/production CSS delivery, and standalone CLI output consumption without generated-component imports in application examples. Cover edits, production rendering, and matching CSS; remove preview callouts only when the complete paths work.
-- [ ] Implement `zyzz(nextConfig)` from `zyzz/next` as the single Next.js setup. Preserve existing options and compose build hooks/rules; configure transformation, CSS delivery, and dependency watching internally without requiring separate Babel/PostCSS configuration. Reuse the shared compiler and keep loader/transform selection internal.
-- [ ] Verify Next.js Webpack and Turbopack independently: Server Components, client components, streaming, hydration identities, Fast Refresh, route navigation, imported config/theme edits, production CSS loading, and failure recovery. Record supported Next.js versions and finalize async/function-valued config support before documenting it.
 - [ ] Compile from in-memory definitions and from source adapters using the same target emitters.
 - [ ] Distribute web modules, declarations, and CSS; distribute native modules, declarations, and static theme tables. Consumers do not need compiler integrations.
 - [ ] Verify server rendering, hydration identity, state-preserving refresh where supported, CSS-to-source tracing, actionable missing-transform diagnostics, and add/edit/remove/rename recovery.

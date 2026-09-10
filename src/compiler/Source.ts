@@ -348,7 +348,14 @@ export function extract(options: extract.Options): extract.ReturnType {
             (Binding.is(token?.reference) ? unwrapped.end : node.end)
             ? token.reference
             : undefined)
-        if (dynamic && reference && path.length > 2) {
+        if (
+          dynamic &&
+          reference &&
+          Object.values(dynamic.slots).includes(
+            reference as Binding.Reference,
+          ) &&
+          path.length > 2
+        ) {
           report(
             'unsupported_syntax',
             'Dynamic fallback entries are not supported.',

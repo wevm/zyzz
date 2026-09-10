@@ -24,6 +24,7 @@ export type Css<tokens extends Tokens> = {
     ) => styles &
       NoInfer<
         Value.Accepted<styles, Style.Properties<tokens>> &
+          Value.Checked<styles> &
           Record<Exclude<Keys<styles>, keyof Style.Properties>, never>
       >,
   ): css.Dynamic<values>

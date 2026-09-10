@@ -813,6 +813,19 @@ export function collect(program: Ast.Program, options: collect.Options) {
         argument = ancestors[callIndex]
         callIndex--
       }
+      while (callIndex >= 0) {
+        const wrapper = ancestors[callIndex]!
+        if (
+          (wrapper.type === 'TSAsExpression' ||
+            wrapper.type === 'TSSatisfiesExpression' ||
+            wrapper.type === 'TSNonNullExpression' ||
+            wrapper.type === 'TSTypeAssertion') &&
+          wrapper.expression === argument
+        ) {
+          argument = wrapper
+          callIndex--
+        } else break
+      }
       const call = ancestors[callIndex]
       if (
         property?.type !== 'Property' ||

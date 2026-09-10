@@ -3,6 +3,13 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css, Theme } from 'zyzz'
 
 describe('css', () => {
+  test('checks static callback literals', () => {
+    // @ts-expect-error Negative padding remains invalid in callbacks.
+    css((v: { alpha: number }) => ({ opacity: v.alpha, padding: '-1px' }))
+    const theme = Theme.define({ color: { ink: 'red' } })
+    // @ts-expect-error Bound callbacks apply the same literal checks.
+    theme.css((v: { alpha: number }) => ({ opacity: v.alpha, padding: '-1px' }))
+  })
   test('retains required input domains and styling overrides', () => {
     const bar = css((values: { amount: `${number}%`; alpha: number }) => ({
       width: values.amount,

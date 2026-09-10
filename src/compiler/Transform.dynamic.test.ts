@@ -12,6 +12,29 @@ const source = [
 ].join('\n')
 
 describe('compile', () => {
+  test('rejects number slots adjacent to dimension suffixes', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'units.ts',
+        source:
+          'import {css} from "zyzz"; css((v:{size:number})=>({width:`${v.size}px`}))',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: units.ts:57: Expected a literal string or number; expressions are not evaluated.]`,
+    )
+  })
+  test('retains static fallbacks in asserted theme callbacks', () => {
+    expect(
+      Transform.compile({
+        moduleId: 'fallback.ts',
+        source:
+          'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.css(((v:{alpha:number})=>({opacity:v.alpha,color:["blue",t.vars.color.ink]})) satisfies Callback)',
+      }).css,
+    ).toMatchInlineSnapshot(`
+      ".z_theme-181sefq1osze6y-t{--z-t181sefq1osze6y-t-color_2e_ink:red;}
+      .z-181sefq1osze6y-base0{opacity:var(--z-d181sefq1osze6y-71-61-6c-70-68-61);color:blue;color:var(--z-t181sefq1osze6y-t-color_2e_ink,red);}"
+    `)
+  })
   test('compiles callbacks to fixed rules and preserves callable values', async () => {
     const output = Transform.compile({ moduleId: 'dynamic.ts', source })
     expect(output.css).toMatchInlineSnapshot(

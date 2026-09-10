@@ -13,6 +13,19 @@ import { Theme } from 'zyzz'
 | [Theme.define](define.md) | Define immutable scalar tokens and portable references.                 |
 | [Theme.extend](extend.md) | Create compatible token overrides without changing the base definition. |
 
+## Variables
+
+`theme.vars` exposes readonly, property-aware web references with defining fallbacks. Direct declaration values and template interpolations retain inherited theme overrides, including light/dark pairs. Source imports, theme aliases, config members, and packed theme contracts preserve identity.
+
+```ts
+const panel = theme.css({
+  color: theme.vars.color.brand,
+  width: `calc(100% - ${theme.vars.spacing.md})`,
+})
+```
+
+Variable paths must appear inside compiled declarations. Standalone variable destructuring and runtime string coercion are not supported. Portable `theme.tokens` remains separate from web variable references.
+
 ## Application
 
 [Call a theme](apply.md) to spread its scope and optional color scheme onto `<html>` or a subtree. Metadata and bound authoring members remain accessible.

@@ -28,7 +28,7 @@ export type Declaration = {
   /** Supported CSS property in camelCase. */
   readonly property: keyof Properties
   /** Validated primitive or immutable, domain-checked theme reference. */
-  readonly value: number | string | Token.Reference
+  readonly value: number | string | Token.Reference | Token.Expression
 }
 
 /**
@@ -194,7 +194,11 @@ export function define(
           Object.freeze({
             ...(parsed?.important ? { important: true } : {}),
             property: key,
-            value: value as number | string | Token.Reference,
+            value: value as
+              | number
+              | string
+              | Token.Reference
+              | Token.Expression,
           }),
         )
       }
@@ -271,7 +275,12 @@ type LiteralAtoms = {
 /** Supported primitive CSS declarations without theme references. */
 export type LiteralProperties = {
   readonly [property in keyof Literal.Properties]: Value.Fallbacks<
-    LiteralAtoms[property]
+    | LiteralAtoms[property]
+    | {
+        [group in Token.Group]: property extends Token.Properties<group>
+          ? Token.Variable<group>
+          : never
+      }[Token.Group]
   >
 }
 

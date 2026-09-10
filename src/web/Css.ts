@@ -199,9 +199,18 @@ export function compile<
       const token = isReference(input)
       let value: number | string
       try {
-        value = token
-          ? (theme ??= Themes.create()).serialize(input)
-          : (input as number | string)
+        value = (() => {
+          if (token) return (theme ??= Themes.create()).serialize(input)
+          if (Token.isExpression(input))
+            return input.parts
+              .map((part) =>
+                typeof part === 'string'
+                  ? part
+                  : (theme ??= Themes.create()).serialize(part),
+              )
+              .join('')
+          return input as number | string
+        })()
       } catch (error) {
         diagnostics.push({
           code: 'invalid_declaration',

@@ -3,6 +3,7 @@
  * @module
  */
 import * as Expression from './internal/Expression.js'
+import * as Token from '../internal/Token.js'
 import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
@@ -293,8 +294,28 @@ export function extract(options: extract.Options): extract.ReturnType {
         node = Expression.unwrap(node)
         const template =
           node.type === 'TemplateLiteral'
-            ? Expression.template(node)
+            ? Expression.template(node, 0, (expression) => {
+                const token = themes?.tokens.get(expression.start)
+                return token?.end === expression.end
+                  ? token.reference
+                  : undefined
+              })
             : undefined
+        if (Token.isExpression(template)) {
+          for (const part of template.parts) {
+            if (
+              typeof part !== 'string' &&
+              !Token.accepts(part.group, key as keyof Style.Properties)
+            ) {
+              report(
+                'unsupported_syntax',
+                'Theme variable domain is incompatible with this property.',
+                node,
+              )
+              return undefined
+            }
+          }
+        }
         let result: unknown
         if (reference) result = reference
         else if (template !== undefined) result = template
@@ -361,6 +382,15 @@ export function extract(options: extract.Options): extract.ReturnType {
         })
     }
   }
+  if (themes && !diagnostics.length)
+    for (const [start, token] of themes.tokens) {
+      if (!calls.some((call) => start >= call.start && token.end <= call.end))
+        report(
+          'unsupported_syntax',
+          'Theme references require a compiled style declaration.',
+          { start, end: token.end },
+        )
+    }
   if (diagnostics.length) throw new ExtractError(diagnostics)
   return Object.freeze({
     ...(options[Themes.context]

@@ -13,6 +13,7 @@ describe('compile', () => {
       source:
         'import { css } from "zyzz"; css({ marginLeft: `${-12n}px`, "--large": `${-9007199254740993n}`, "--zero": `${-0n}` })',
     })
+
     expect(output.css).toMatchInlineSnapshot(
       `".z-1hxpdr579toep-base0{margin-left:-12px;--large:-9007199254740993;--zero:0;}"`,
     )
@@ -21,6 +22,7 @@ describe('compile', () => {
   test('bounds nested template extraction', () => {
     const nested = (count: number) =>
       '`'.concat('${`'.repeat(count), '8', '`}'.repeat(count), '`')
+
     expect(
       Transform.compile({
         moduleId: 'depth.ts',
@@ -44,15 +46,19 @@ describe('compile', () => {
       moduleId: 'templates.ts',
       source: Templates.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(
       `".z-1nogkwjo2b0vl-base0{color:red;content:"true:null:12";margin-left:-2px;padding:4px;padding:8px!important;width:calc(100% - 16px);}"`,
     )
+
     const literal = Transform.compile({
       moduleId: 'templates.ts',
       source: `import { css } from 'zyzz'; export const box = css({ color: 'red', content: '"true:null:12"', marginLeft: '-2px', padding: ['4px', '8px!'], width: 'calc(100% - 16px)' })()`,
     })
+
     expect(output.css === literal.css).toMatchInlineSnapshot(`true`)
     expect(output.code.includes('${')).toMatchInlineSnapshot(`false`)
+
     const js = await Esbuild.transform(output.code, {
       format: 'esm',
       loader: 'ts',
@@ -60,6 +66,7 @@ describe('compile', () => {
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
+
     expect(module.box).toMatchInlineSnapshot(`
       {
         "className": "z-1nogkwjo2b0vl-base0",
@@ -79,6 +86,7 @@ describe('compile', () => {
       "const theme = Theme.define({ color: { brand: '#06c' } })",
       'export const box = theme.css({ color: `br${"and"}`, content: `"\\u0041"`, "--empty": `` })()',
     ].join('\n')
+
     expect(Transform.compile({ moduleId: 'theme.ts', source }).css)
       .toMatchInlineSnapshot(`
       ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-color_2e_brand:#06c;}
@@ -100,14 +108,17 @@ describe('compile', () => {
     ].map((expression) => {
       const source =
         'import { css } from "zyzz"; css({ width: `${' + expression + '}px` })'
+
       try {
         Transform.compile({ moduleId: 'invalid.ts', source })
         throw new Error('Expected extraction failure')
       } catch (error) {
         if (!(error instanceof Source.ExtractError)) throw error
+
         return error.diagnostics
       }
     })
+
     expect(diagnostics).toMatchInlineSnapshot(`
       [
         [
@@ -208,15 +219,19 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div style="width:400px"><div id="actual" class="${module.box.className}" style="padding:1px"></div><div id="control" style="color:red;content:'true:null:12';margin-left:-2px;padding:8px!important;width:calc(100% - 16px)"></div></div>`,
       )
+
       expect(
         await page.evaluate(() => {
           const actual = getComputedStyle(document.getElementById('actual')!)
           const control = getComputedStyle(document.getElementById('control')!)
+
           return ['color', 'content', 'margin-left', 'padding', 'width'].filter(
             (property) =>
               actual.getPropertyValue(property) !==

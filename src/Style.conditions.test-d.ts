@@ -23,8 +23,11 @@ describe('define', () => {
       color: { accent: 'red' },
     })
     const styles = {} as Style.Properties<Theme.Tokens>
+
     Style.define({ styles }, { theme })
+
     const declarations = {} as Style.DeclarationProperties & { widht?: string }
+
     // @ts-expect-error Broad declaration annotations must retain exact keys too.
     Style.define({ declarations })
   })

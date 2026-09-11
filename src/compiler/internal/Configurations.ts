@@ -14,18 +14,23 @@ export function collect(options: collect.Options): Themes.Link {
   function data(node: Ast.Node): unknown {
     const linked = options.resolve(node)
     if (linked?.kind === 'theme') return linked.definition
+
     if (node.type === 'TSAsExpression' || node.type === 'TSSatisfiesExpression')
       return data(node.expression)
+
     if (node.type === 'ArrayExpression')
       return node.elements.map((node) => {
         if (!node || node.type === 'SpreadElement')
           throw new Config.InvalidError(
             'Configuration arrays require literal entries.',
           )
+
         return data(node)
       })
+
     if (node.type === 'ObjectExpression') {
       const entries: Record<string, unknown> = Object.create(null)
+
       for (const property of node.properties) {
         if (
           property.type !== 'Property' ||
@@ -36,10 +41,12 @@ export function collect(options: collect.Options): Themes.Link {
           throw new Config.InvalidError(
             'Configuration requires static properties without spreads or methods.',
           )
+
         const key = (() => {
           if (property.key.type === 'Identifier') {
             return property.key.name
           }
+
           if (
             property.key.type === 'Literal' &&
             (typeof property.key.value === 'string' ||
@@ -47,44 +54,57 @@ export function collect(options: collect.Options): Themes.Link {
           ) {
             return String(property.key.value)
           }
+
           return undefined
         })()
         if (key === undefined || Object.hasOwn(entries, key))
           throw new Config.InvalidError(
             'Configuration requires unique literal keys.',
           )
+
         entries[key] = data(property.value)
       }
+
       return entries
     }
+
     return options.data(node)
   }
+
   if (options.expression.arguments.length > 1)
     throw new Config.InvalidError(
       'Config.create accepts one literal options object.',
     )
+
   const input = (
     options.expression.arguments.length
       ? data(options.expression.arguments[0]!)
       : {}
   ) as Config.create.Options
+
   const config = Config.create(input)
+
   const catalog = (() => {
     if ('themes' in config) {
       return config.themes
     }
+
     if ('theme' in config) {
       return { theme: config.theme }
     }
+
     return {}
   })()
+
   const contract = Object.freeze({
     [Token.identity]: options.name,
     ...(input.shorthands
       ? { shorthands: Shorthands.read(input.shorthands) }
       : {}),
   })
+
   const members: Record<string, Themes.Link> = Object.create(null)
+
   for (const [key, original] of Object.entries(catalog)) {
     const name = `${options.name}-${key}`
     const definition = Token.bind(original, contract)
@@ -92,6 +112,7 @@ export function collect(options: collect.Options): Themes.Link {
       ...values(original.tokens),
       ...original[Token.definition].queries,
     })
+
     const call = {
       ...(input.output === 'html' ? { output: 'html' as const } : {}),
       end: options.expression.end,
@@ -104,6 +125,7 @@ export function collect(options: collect.Options): Themes.Link {
           }
         : {}),
     }
+
     members[JSON.stringify('themes' in config ? ['themes', key] : ['theme'])] =
       {
         binding: name,
@@ -112,16 +134,20 @@ export function collect(options: collect.Options): Themes.Link {
         kind: 'theme',
       }
   }
+
   const selected =
     members[
       JSON.stringify(
         'themes' in config ? ['themes', input.defaultTheme] : ['theme'],
       )
     ]
+
   if ('themes' in config && selected)
     members[JSON.stringify(['theme'])] = selected
+
   const definition =
     selected?.definition ?? Token.bind(Theme.define({}), contract)
+
   const normalized = {
     ...(() => {
       if ('themes' in config) {
@@ -135,6 +161,7 @@ export function collect(options: collect.Options): Themes.Link {
           ),
         }
       }
+
       if ('theme' in config) {
         return {
           theme: {
@@ -143,12 +170,14 @@ export function collect(options: collect.Options): Themes.Link {
           },
         }
       }
+
       return {}
     })(),
     ...(input.shorthands ? { shorthands: input.shorthands } : {}),
     ...(input.output ? { output: input.output } : {}),
     ...(input.layers ? { layers: input.layers } : {}),
   }
+
   return {
     binding: options.name,
     call: {
@@ -188,6 +217,7 @@ export declare namespace collect {
 export function type(value: unknown): string {
   if (Array.isArray(value)) return `readonly [${value.map(type).join(',')}]`
   if (!value || typeof value !== 'object') return JSON.stringify(value)
+
   return `{${Object.entries(value)
     .map(([key, value]) => `readonly ${JSON.stringify(key)}:${type(value)}`)
     .join(';')}}`

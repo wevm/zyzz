@@ -7,12 +7,14 @@ import { Dynamic, Props } from 'zyzz/runtime'
 
 async function execute(source: string) {
   const output = Transform.compile({ moduleId: 'performance.ts', source })
+
   const runtime = await Esbuild.build({
     entryPoints: [Path.resolve('src/runtime/index.ts')],
     bundle: true,
     format: 'esm',
     write: false,
   })
+
   const url = `data:text/javascript;base64,${Buffer.from(runtime.outputFiles[0]!.text).toString('base64')}`
   const lowered = await Esbuild.transform(
     output.code.replace("'zyzz/runtime'", JSON.stringify(url)),
@@ -21,6 +23,7 @@ async function execute(source: string) {
   const consumer = await import(
     `data:text/javascript;base64,${Buffer.from(lowered.code).toString('base64')}`
   )
+
   return { consumer, output }
 }
 
@@ -33,8 +36,10 @@ describe('compile', () => {
       const card=css({color:'red'});
       const styles={button:css({color:'blue'})};
       export function apply(){return [card(),styles.button()]}`)
+
     const first = consumer.apply()
     const second = consumer.apply()
+
     expect([
       consumer.failed,
       first[0] !== second[0],
@@ -59,6 +64,7 @@ describe('compile', () => {
       try {early()} catch(error){failed=error instanceof Error}
       const card=css({color:'red'});`,
     })
+
     const bundle = await Esbuild.build({
       alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
       bundle: true,
@@ -67,9 +73,11 @@ describe('compile', () => {
       stdin: { contents: output.code, loader: 'ts', resolveDir: process.cwd() },
       write: false,
     })
+
     const consumer = await import(
       `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0]!.text).toString('base64')}`
     )
+
     expect(consumer.failed).toMatchInlineSnapshot(`true`)
   })
 
@@ -80,11 +88,13 @@ describe('compile', () => {
     ]) {
       const { consumer } = await execute(`import {css} from 'zyzz';${source}`)
       let failed = false
+
       try {
         consumer.apply()
       } catch (error) {
         failed = error instanceof TypeError
       }
+
       expect(failed).toMatchInlineSnapshot(`true`)
     }
   })
@@ -97,14 +107,17 @@ describe('compile', () => {
       `const card=css({color:'red'}); export function apply(){return card?.()}`,
     ]) {
       const { output } = await execute(`import {css} from 'zyzz'; ${body}`)
+
       expect(output.code.includes('?{className:')).toMatchInlineSnapshot(
         `false`,
       )
     }
+
     const { consumer } = await execute(`import {css} from 'zyzz';
       const styles={button:css({color:'red'})};
       styles.button=()=>({className:'replaced'});
       export function apply(){return styles.button()}`)
+
     expect(consumer.apply()).toMatchInlineSnapshot(`
       {
         "className": "replaced",
@@ -122,28 +135,36 @@ describe('compile', () => {
       slots,
     })
     const privateName = slots.width!.name
+
     for (const apply of [consumer.apply, generic]) {
       const reads: string[] = []
       const style = { color: 'red', [privateName]: 'wrong' }
+
       const input = {
         get width() {
           reads.push('width')
+
           return ''
         },
         get alpha() {
           reads.push('alpha')
+
           return 0
         },
         get className() {
           reads.push('className')
+
           return 'external'
         },
         get style() {
           reads.push('style')
+
           return style
         },
       }
+
       const props = apply(input)
+
       expect(reads).toMatchInlineSnapshot(`
         [
           "width",
@@ -166,6 +187,7 @@ describe('compile', () => {
         ]
       `)
     }
+
     expect(output.code.includes('Dynamic as')).toMatchInlineSnapshot(`false`)
   })
 })
@@ -176,16 +198,20 @@ describe('create', () => {
       const apply = Props.create({ className })
       const style = { color: 'red' } as const
       const reads: string[] = []
+
       const result = apply({
         get className() {
           reads.push('className')
+
           return 'external'
         },
         get style() {
           reads.push('style')
+
           return style
         },
       })
+
       expect([
         apply() !== apply(),
         apply(undefined).className === className,

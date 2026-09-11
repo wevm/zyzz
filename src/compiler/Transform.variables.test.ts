@@ -7,6 +7,7 @@ describe('compile', () => {
   test('removes consumed Vars imports and retains the public error constructor', () => {
     const source =
       'import { Vars } from "zyzz"; export const vars = Vars.define({ size: "length" });'
+
     expect(
       Transform.compile({ moduleId: 'vars.ts', source }).code,
     ).not.toContain('from "zyzz"')
@@ -30,6 +31,7 @@ describe('compile', () => {
       source:
         'import {Vars} from "zyzz"; const v=Vars.define({gap:"length"}); function identity<T>(v:T){return v}; export const typed=identity<Vars.Definition<{gap:"length"}>>(v)',
     })
+
     expect(output.code).toMatchInlineSnapshot(
       `
       "
@@ -104,6 +106,7 @@ describe('compile', () => {
       'const theme = Theme.define({spacing:{md:"8px"},color:{brand:"red",unused:"blue"}});',
       'export const box = theme.css({width:`calc(100% - ${theme.vars.spacing.md})!`, color:theme.vars.color.brand})()',
     ].join('\n')
+
     expect(Transform.compile({ moduleId: 'vars.ts', source }).css)
       .toMatchInlineSnapshot(`
       ".z_theme-4t4nbe1og4cic-theme{--z-t4t4nbe1og4cic-theme-spacing_2e_md:8px;--z-t4t4nbe1og4cic-theme-color_2e_brand:red;}
@@ -120,6 +123,7 @@ describe('compile', () => {
           'import { css } from "zyzz"; import { theme as palette, alt } from "./theme.js"; export const box = palette.css({ width: `calc(100% - ${palette.vars.spacing.md})`, color: palette.vars.color.brand })(); export const scope = alt.className;',
       },
     })
+
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_md:8px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
       .z_theme-1xn44ix111xh3v-alt{--z-t1xn44ix111xh3v-theme-spacing_2e_md:16px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
@@ -135,6 +139,7 @@ describe('compile', () => {
           'import { Config } from "zyzz"; export const zyzz = Config.create({ theme: { spacing: { md: "8px" } } });',
       },
     })
+
     const output = Graph.compile({
       contracts: { 'library/index.js': library.contracts['config.ts']! },
       imports: { 'app.ts': { '@acme/theme': 'library/index.js', zyzz: null } },
@@ -143,6 +148,7 @@ describe('compile', () => {
           'import { css } from "zyzz"; import { zyzz } from "@acme/theme"; export const box = zyzz.css({width:`calc(100% - ${zyzz.theme.vars.spacing.md})`})()',
       },
     })
+
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-u8smm21l81sow-zyzz-theme{--z-tu8smm21l81sow-zyzz-spacing_2e_md:8px;}
       .z-1e8a67z1uaws1j-base0{width:calc(100% - var(--z-tu8smm21l81sow-zyzz-spacing_2e_md,8px));}"
@@ -179,6 +185,7 @@ describe('compile', () => {
       throw new Error('Expected source failure')
     } catch (error) {
       if (!(error instanceof Source.ExtractError)) throw error
+
       expect(error.message.includes(message!)).toMatchInlineSnapshot(`true`)
     }
   })
@@ -194,25 +201,31 @@ describe('compile', () => {
         'export const scope = alt.className;',
       ].join('\n'),
     })
+
     const className = output.css.match(/\.([^{}]+)\{width:/)![1]!
     const scope = output.css.match(/\.([^{}]+)\{[^{}]*:16px;/)![1]!
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div style="width:100px"><div id="box" class="${className}"></div></div>`,
       )
+
       expect(
         await page
           .locator('#box')
           .evaluate((element) => getComputedStyle(element).width),
       ).toMatchInlineSnapshot(`"92px"`)
+
       await page
         .locator('#box')
         .evaluate(
           (element, scope) => element.parentElement!.classList.add(scope),
           scope,
         )
+
       expect(
         await page
           .locator('#box')

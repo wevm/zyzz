@@ -1,6 +1,7 @@
 /** Measures the public shared stylesheet graph workflow. @module */
 import { bench, describe } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
+
 const modules = {
   'app.ts': 'import {css} from "zyzz"; export const box=css({color:"red"})()',
   'global.ts':

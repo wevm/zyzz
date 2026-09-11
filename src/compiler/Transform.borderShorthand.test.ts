@@ -17,6 +17,7 @@ describe('compile', () => {
       outline: '1px dotted black',
       columnRule: '3px dashed blue',
     } as const
+
     const output = Css.compile({
       styles: Style.define({
         a,
@@ -28,6 +29,7 @@ describe('compile', () => {
         c: a,
       }),
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z-a{border:2px solid red;outline:1px dotted black;column-rule:3px dashed blue;}
       .z-b{border-top-color:green;outline-width:5px;column-rule-style:solid;}
@@ -46,11 +48,13 @@ describe('compile', () => {
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
+
     const a = {
       border: '2px solid red',
       outline: '1px dotted black',
       columnRule: '3px dashed blue',
     } as const
+
     const cascade = Css.compile({
       styles: Style.define({
         a,
@@ -62,12 +66,16 @@ describe('compile', () => {
         c: a,
       }),
     })
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>.z-a{border-image-source:linear-gradient(red,blue)}${output.css}${cascade.css}</style><div id="parent"><div id="actual" class="${module.box.className}"></div><div id="control" style="${BorderShorthand.control}"></div></div><div id="cascade" class="z-a z-b z-c"></div>`,
       )
+
       for (const writingMode of ['horizontal-tb', 'vertical-rl', 'vertical-lr'])
         for (const direction of ['ltr', 'rtl']) {
           await page.locator('#parent').evaluate(
@@ -77,10 +85,12 @@ describe('compile', () => {
             },
             { writingMode, direction },
           )
+
           expect(
             await page.evaluate(() => {
               const a = getComputedStyle(document.getElementById('actual')!)
               const b = getComputedStyle(document.getElementById('control')!)
+
               return [
                 'border-top-width',
                 'border-top-style',
@@ -107,6 +117,7 @@ describe('compile', () => {
             }),
           ).toMatchInlineSnapshot(`[]`)
         }
+
       expect(
         await page
           .locator('#cascade')

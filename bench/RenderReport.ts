@@ -23,6 +23,7 @@ for (const components of [100, 1000])
       : ['baseline', 'panda', 'stylex', 'tailwind', 'vanilla-extract', 'zyzz'])
       for (const pass of [1, 2]) {
         expected++
+
         const matches = data.groups.filter(
           (group) =>
             group.components === components &&
@@ -35,8 +36,10 @@ for (const components of [100, 1000])
           throw new Error(
             `Missing or duplicate group: ${components}/${kind}/${library}/${pass}`,
           )
+
         const group = matches[0]!
         if (group.samples.length !== 60) throw new Error('Incomplete samples')
+
         for (const operation of ['mount', 'update', 'remount']) {
           const samples = group.samples.filter(
             (sample) => sample.operation === operation,
@@ -53,6 +56,7 @@ for (const components of [100, 1000])
             )
           )
             throw new Error('Invalid operation samples')
+
           const quantile = (
             key: 'commit' | 'commitLayout' | 'frame',
             fraction: number,
@@ -60,8 +64,10 @@ for (const components of [100, 1000])
             [...samples]
               .sort((a, b) => a[key] - b[key])
               [Math.ceil(samples.length * fraction) - 1]![key].toFixed(2)
+
           const key = `${components} cards — ${kind}`
           const rows = details.get(key) ?? []
+
           rows.push(
             `| ${components} | ${kind} | ${library} | ${operation} | ${pass} | ${quantile('commit', 0.5)} | ${quantile('commitLayout', 0.5)} | ${quantile('commitLayout', 0.95)} | ${quantile('frame', 0.5)} |`,
           )
@@ -74,11 +80,13 @@ for (const components of [100, 1000])
     const groups = data.groups.filter(
       (group) => group.components === components && group.kind === kind,
     )
+
     const summaries = ['mount', 'update', 'remount'].map((operation) => {
       const measurements = [
         ...new Set(groups.map((group) => group.library)),
       ].map((library) => {
         const passes = groups.filter((group) => group.library === library)
+
         const value =
           passes.reduce(
             (sum, group) =>
@@ -89,17 +97,22 @@ for (const components of [100, 1000])
                 .sort((a, b) => a - b)[9]!,
             0,
           ) / passes.length
+
         const name =
           library === 'zyzz'
             ? 'Zyzz'
             : library === 'baseline'
               ? 'Plain class/style'
               : library
+
         return { name, value }
       })
+
       return `${operation}: ${winner({ decimals: 2, measurements, unit: 'ms' })}`
     })
+
     const key = `${components} cards — ${kind}`
+
     console.log(
       `<details>\n<summary>${key} · ${summaries.join(' · ')}</summary>\n`,
     )
@@ -133,6 +146,7 @@ if (
   const base = JSON.parse(await Fs.readFile(basePath, 'utf8')) as {
     groups: Render.Group[]
   }
+
   console.log('<details>\n<summary>Zyzz base comparison</summary>\n')
   console.log(
     'Same runner and candidate harness; base runs first. Sequential order remains a source of drift. Values are commit + layout medians in milliseconds, not isolated styling costs.\n',
@@ -141,6 +155,7 @@ if (
     '| Cards | Workload | Operation | Pass | Base ms | Candidate ms | Change |',
   )
   console.log('| ---: | --- | --- | ---: | ---: | ---: | ---: |')
+
   for (const group of data.groups.filter((group) => group.library === 'zyzz')) {
     const before = base.groups.find(
       (item) =>
@@ -150,6 +165,7 @@ if (
         item.pass === group.pass,
     )
     if (!before) throw new Error('Missing base render group')
+
     for (const operation of ['mount', 'update', 'remount']) {
       const median = (samples: Render.Group['samples']) => {
         const values = samples
@@ -161,15 +177,19 @@ if (
           values.some((value) => !Number.isFinite(value) || value < 0)
         )
           throw new Error('Invalid base samples')
+
         return values[9]!
       }
+
       const oldValue = median(before.samples)
       const newValue = median(group.samples)
+
       console.log(
         `| ${group.components} | ${group.kind} | ${operation} | ${group.pass} | ${oldValue.toFixed(2)} | ${newValue.toFixed(2)} | ${oldValue ? ((newValue / oldValue - 1) * 100).toFixed(1) + '%' : 'n/a'} |`,
       )
     }
   }
+
   console.log('\n</details>\n')
 }
 
@@ -181,21 +201,25 @@ function winner(options: winner.Options): string {
       value: Number(item.value.toFixed(options.decimals)),
     }))
     .sort((a, b) => a.value - b.value)
+
   const first = ranked[0]
   if (
     !first ||
     ranked.some((item) => !Number.isFinite(item.value) || item.value < 0)
   )
     return '🟡 No valid timings'
+
   const tied = ranked.filter((item) => item.value === first.value)
   const time = `${first.value.toFixed(options.decimals)} ${options.unit}`
   if (tied.length > 1)
     return `🟡 Tie: ${tied.map((item) => item.name).join(', ')} — ${time}`
+
   const next = ranked[1]
   const ratio =
     next && first.value > 0
       ? ` · ${(next.value / first.value).toFixed(2)}× as fast as ${next.name}`
       : ''
+
   return `${first.name.startsWith('Zyzz') ? '🟢' : '🔴'} ${first.name} — ${time}${ratio}`
 }
 

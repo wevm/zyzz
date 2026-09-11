@@ -27,6 +27,7 @@ export function values(
   property: string,
 ): readonly string[] {
   const cache = new Map<string, readonly string[]>()
+
   function reference(
     kind: 'Property' | 'Type',
     name: string,
@@ -34,35 +35,49 @@ export function values(
   ): readonly string[] {
     if (kind === 'Type' && primitives[name]) return primitives[name]
     if (depth < 0) return name === 'color' ? ['red'] : []
+
     const key = `${kind}:${name}:${depth}`
     const previous = cache.get(key)
     if (previous) return previous
+
     const syntax = (
       kind === 'Property' ? lexer.getProperty(name) : lexer.getType(name)
     )?.syntax
     if (!syntax || typeof syntax === 'function') return []
+
     const output = expand(syntax, depth)
+
     cache.set(key, output)
+
     return output
   }
+
   function merge(groups: readonly (readonly string[])[]): readonly string[] {
     const output = new Set<string>()
+
     // Round-robin selection keeps large keyword families from hiding later branches.
     for (let index = 0; index < 64 && output.size < 64; index++) {
       let found = false
+
       for (const group of groups) {
         const value = group[index]
         if (value === undefined) continue
+
         found = true
         output.add(value)
       }
+
       if (!found) break
     }
+
     return [...output]
   }
+
   function sequence(groups: readonly (readonly string[])[]): readonly string[] {
     if (groups.some((group) => !group.length)) return []
+
     const base = groups.map((group) => group[0]!)
+
     return merge(
       groups.map((group, index) =>
         group.map((value) =>
@@ -74,6 +89,7 @@ export function values(
       ),
     )
   }
+
   function expand(node: CssTree.DSNode, depth: number): readonly string[] {
     switch (node.type) {
       case 'AtKeyword':
@@ -102,9 +118,11 @@ export function values(
               ),
             ),
           ]
+
         return reference('Type', node.name, depth - 1)
       case 'Multiplier': {
         const terms = expand(node.term, depth)
+
         const counts = [
           ...new Set([
             node.min,
@@ -114,6 +132,7 @@ export function values(
               : Math.max(2, node.min),
           ]),
         ]
+
         return merge(
           counts.map((count) =>
             count === 0
@@ -130,9 +149,11 @@ export function values(
         const groups = node.terms.map((term) => expand(term, depth))
         if (node.combinator === '|') return merge(groups)
         if (node.combinator === ' ') return sequence(groups)
+
         const permutations = groups.map((_, offset) =>
           sequence([...groups.slice(offset), ...groups.slice(0, offset)]),
         )
+
         return merge(
           node.combinator === '||'
             ? [...groups, ...permutations]
@@ -141,9 +162,11 @@ export function values(
       }
     }
   }
+
   const candidates = reference('Property', property, 8)
     .map((value) => value.trim())
     .filter((value) => value && !lexer.matchProperty(property, value).error)
+
   return [
     ...new Set(
       candidates.flatMap((value) => [

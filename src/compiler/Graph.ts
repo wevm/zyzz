@@ -25,6 +25,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 export declare namespace compile {
   /** Errors raised while extracting or compiling a source graph. */
   type ErrorType = Source.ExtractError | Transform.compile.ErrorType
+
   /** Source modules available for relative import resolution. */
   type Options = {
     /** Serialized library contracts keyed by host-resolved module identity. Runtime modules stay external to this graph. */
@@ -36,6 +37,7 @@ export declare namespace compile {
     /** Complete source graph keyed by stable package-relative module identities. */
     readonly modules: Readonly<Record<string, string>>
   }
+
   /** Compiled modules and their direct source dependencies. */
   type ReturnType = {
     /** Versioned compiler-only JSON per module; publish beside the compiled entrypoint as <entry>.zyzz.json. */
@@ -58,10 +60,13 @@ export declare namespace compile {
 /** Creates an isolated compiler that retains only the last successful graph. */
 export function create(): create.ReturnType {
   let previous: Cache | undefined
+
   return Object.freeze({
     compile(options: compile.Options): compile.ReturnType {
       const next = build(options, previous)
+
       previous = next
+
       return next.result
     },
   })
@@ -88,11 +93,13 @@ type Cache = {
 
 function build(options: compile.Options, cache?: Cache): Cache {
   const ids = Object.keys(options.modules).sort()
+
   const contracts = JSON.stringify(
     Object.entries(options.contracts ?? {}).sort(([a], [b]) =>
       a.localeCompare(b),
     ),
   )
+
   const resolutions = Object.fromEntries(
     [...new Set([...ids, ...Object.keys(options.imports ?? {})])]
       .sort()
@@ -107,6 +114,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
             ),
       ]),
   )
+
   // File-set changes can alter extensionless resolution even without source edits.
   const previous = (() => {
     if (
@@ -117,6 +125,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     ) {
       return cache
     }
+
     return undefined
   })()
   if (
@@ -150,9 +159,11 @@ function build(options: compile.Options, cache?: Cache): Cache {
     string,
     { owner: string; binding: string; type: string }
   >()
+
   function validateLibraryLink(link: Themes.Link, owner: string) {
     if (link.call.marker) {
       const { id, schema } = link.call.marker
+
       const signature = JSON.stringify(
         Object.entries(schema)
           .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
@@ -163,14 +174,18 @@ function build(options: compile.Options, cache?: Cache): Cache {
             ),
           ]),
       )
+
       const previous = markerIdentities.get(id)
       if (previous !== undefined && previous !== signature)
         throw new Error(`Conflicting packed marker schema: ${id}`)
+
       markerIdentities.set(id, signature)
     }
+
     const variableOwner = owner.includes('/')
       ? (link.call.variableOwner ?? owner)
       : owner
+
     for (const slot of Object.values(link.call.variables ?? {})) {
       const previous = variableSlots.get(slot.name)
       if (
@@ -182,12 +197,14 @@ function build(options: compile.Options, cache?: Cache): Cache {
         throw new Error(
           `Conflicting packed variable identity: ${slot.name}; compile libraries with package-qualified module IDs.`,
         )
+
       variableSlots.set(slot.name, {
         owner: variableOwner,
         binding: link.binding,
         type: slot.type,
       })
     }
+
     for (const member of Object.values(link.members ?? {}))
       validateLibraryLink(member, owner)
   }
@@ -195,11 +212,14 @@ function build(options: compile.Options, cache?: Cache): Cache {
   for (const [id, source] of Object.entries(options.contracts ?? {})) {
     if (Object.hasOwn(options.modules, id))
       fail(id, 'A module cannot supply both source and a library contract.')
+
     try {
       const library =
         previous?.libraries[id] ?? Contract.read(source, identities, id)
+
       for (const link of Object.values(library.links))
         validateLibraryLink(link, id)
+
       for (const [name, theme] of Object.entries(library.themes)) {
         if (
           themes[name] &&
@@ -207,8 +227,10 @@ function build(options: compile.Options, cache?: Cache): Cache {
             Contract.write({}, { [name]: theme })
         )
           throw new Error(`Conflicting library theme identity: ${name}`)
+
         themes[name] = theme
       }
+
       libraries[id] = library
     } catch (error) {
       fail(id, `Invalid library contract: ${(error as Error).message}`)
@@ -238,18 +260,23 @@ function build(options: compile.Options, cache?: Cache): Cache {
   ): string | undefined {
     if (options.imports !== undefined) {
       const imports = options.imports[moduleId]
+
       if (!imports || !Object.hasOwn(imports, specifier))
         fail(moduleId, `Missing host resolution: ${specifier}`, node)
+
       const target = imports[specifier]
       if (target === null) return undefined
+
       if (
         target === undefined ||
         (!Object.hasOwn(options.modules, target) &&
           !Object.hasOwn(libraries, target))
       )
         fail(moduleId, `Missing host source module: ${specifier}`, node)
+
       return target
     }
+
     try {
       return Relative.resolve({ moduleId, modules: options.modules, specifier })
     } catch (error) {
@@ -260,10 +287,14 @@ function build(options: compile.Options, cache?: Cache): Cache {
   function visit(moduleId: string): Source.extract.ReturnType {
     const cached = extracted.get(moduleId)
     if (cached) return cached
+
     if (visiting.has(moduleId))
       fail(moduleId, 'Circular source dependencies are not supported yet.')
+
     visiting.add(moduleId)
+
     const source = options.modules[moduleId]!
+
     if (
       previous &&
       source === previous.sources[moduleId] &&
@@ -280,13 +311,17 @@ function build(options: compile.Options, cache?: Cache): Cache {
         previous.result.dependencies[moduleId]!,
       )
     }
+
     // Validate identity and syntax through the public source boundary before linking.
     Source.extract({ moduleId, source: '' })
+
     const parsed = Parser.parseSync('source.tsx', source, {
       sourceType: 'module',
       showSemanticErrors: true,
     })
+
     if (parsed.errors.length) Source.extract({ moduleId, source })
+
     Walker.walk(parsed.program, {
       enter(node) {
         if (
@@ -303,11 +338,13 @@ function build(options: compile.Options, cache?: Cache): Cache {
           )
       },
     })
+
     const links: Record<string, Themes.Link> = Object.create(null)
     const forwarded: Record<string, Themes.Link> = Object.create(null)
     const explicit = new Set<string>()
     const stars: Readonly<Record<string, Themes.Link>>[] = []
     const imports = new Set<string>()
+
     function exportedBindings(node: Ast.Node) {
       if (node.type === 'Identifier') explicit.add(node.name)
       else if (node.type === 'ObjectPattern')
@@ -322,6 +359,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       else if (node.type === 'AssignmentPattern') exportedBindings(node.left)
       else if (node.type === 'RestElement') exportedBindings(node.argument)
     }
+
     for (const node of parsed.program.body) {
       if (
         node.type === 'ExportNamedDeclaration' &&
@@ -335,6 +373,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
                 ? specifier.exported.name
                 : specifier.exported.value,
             )
+
         if (node.declaration?.type === 'VariableDeclaration')
           for (const declaration of node.declaration.declarations)
             exportedBindings(declaration.id)
@@ -345,6 +384,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         )
           explicit.add(node.declaration.id.name)
       }
+
       if (
         (node.type !== 'ImportDeclaration' &&
           node.type !== 'ExportNamedDeclaration' &&
@@ -352,12 +392,14 @@ function build(options: compile.Options, cache?: Cache): Cache {
         !node.source
       )
         continue
+
       if (
         node.type === 'ImportDeclaration'
           ? node.importKind === 'type'
           : node.exportKind === 'type'
       )
         continue
+
       if (
         'specifiers' in node &&
         node.specifiers.length &&
@@ -369,11 +411,15 @@ function build(options: compile.Options, cache?: Cache): Cache {
         )
       )
         continue
+
       const target = resolve(moduleId, node.source.value, node)
       if (!target) continue
+
       imports.add(target)
+
       const contracts =
         libraries[target]?.links ?? visit(target).themeExports ?? {}
+
       if (node.type === 'ImportDeclaration') {
         for (const specifier of node.specifiers) {
           if (specifier.type === 'ImportNamespaceSpecifier') {
@@ -383,32 +429,40 @@ function build(options: compile.Options, cache?: Cache): Cache {
                 'Import theme contracts by name; namespace imports are not supported.',
                 specifier,
               )
+
             continue
           }
+
           if (
             specifier.type === 'ImportSpecifier' &&
             specifier.importKind === 'type'
           )
             continue
+
           const name = (() => {
             if (specifier.type === 'ImportDefaultSpecifier') {
               return 'default'
             }
+
             if (specifier.imported.type === 'Identifier') {
               return specifier.imported.name
             }
+
             return specifier.imported.value
           })()
+
           if (Object.hasOwn(contracts, name))
             links[specifier.local.name] = contracts[name]!
         }
       } else if (node.type === 'ExportAllDeclaration') {
         if (node.exported && Object.keys(contracts).length)
           fail(moduleId, 'Namespace theme re-exports are not supported.', node)
+
         stars.push(contracts)
       } else {
         for (const specifier of node.specifiers) {
           if (specifier.exportKind === 'type') continue
+
           const name =
             specifier.local.type === 'Identifier'
               ? specifier.local.name
@@ -417,39 +471,50 @@ function build(options: compile.Options, cache?: Cache): Cache {
             specifier.exported.type === 'Identifier'
               ? specifier.exported.name
               : specifier.exported.value
+
           explicit.add(exported)
+
           if (Object.hasOwn(contracts, name))
             forwarded[exported] = contracts[name]!
         }
       }
     }
+
     const result = Source.extract({
       moduleId,
       source,
       [Themes.context]: { links },
     })
+
     const exports: Record<string, Themes.Link> = Object.assign(
       Object.create(null),
       forwarded,
       result.themeExports,
     )
+
     for (const name of Object.keys(result.themeExports ?? {}))
       explicit.add(name)
+
     for (const contracts of stars)
       for (const [name, link] of Object.entries(contracts)) {
         if (name === 'default' || explicit.has(name)) continue
+
         const previous = exports[name]
+
         if (
           previous &&
           (previous.binding !== link.binding || previous.kind !== link.kind)
         )
           fail(moduleId, `Ambiguous theme re-export: ${name}`)
+
         exports[name] = link
       }
+
     const linked = Object.freeze({
       ...result,
       themeExports: Object.freeze(exports),
     })
+
     return retain(moduleId, linked, Object.freeze([...imports]))
   }
 
@@ -462,6 +527,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       for (const slot of Object.values(call.slots)) {
         const owner = moduleId.replace(/\.[cm]?[jt]sx?$/, '')
         const previous = variableSlots.get(slot.name)
+
         if (
           previous &&
           (previous.owner !== owner || previous.type !== slot.type)
@@ -471,14 +537,17 @@ function build(options: compile.Options, cache?: Cache): Cache {
             `Conflicting variable identity: ${slot.name}; compile libraries with package-qualified module IDs.`,
             call,
           )
+
         variableSlots.set(slot.name, {
           owner,
           binding: `source:${call.start}`,
           type: slot.type,
         })
       }
+
     extracted.set(moduleId, result)
     dependencies[moduleId] = imports
+
     for (const call of result.themeCalls)
       for (const name of new Set([
         call.name,
@@ -489,23 +558,29 @@ function build(options: compile.Options, cache?: Cache): Cache {
           moduleId,
           source: options.modules[moduleId]!,
         }
+
     Object.assign(themes, result.themes)
     visiting.delete(moduleId)
+
     return result
   }
 
   for (const moduleId of ids) visit(moduleId)
+
   const modules: Record<string, Transform.compile.ReturnType> =
     Object.create(null)
   const sharedThemes = Object.freeze(themes)
   const sections = new Map<string, readonly Stylesheets.Section[]>()
+
   for (const id of ids) {
     const extractedModule = extracted.get(id)!
     const contributions = extractedModule.contributions ?? []
+
     if (!contributions.length) {
       sections.set(id, [])
       continue
     }
+
     sections.set(
       id,
       contributions.map((contribution, index) => ({
@@ -525,20 +600,25 @@ function build(options: compile.Options, cache?: Cache): Cache {
       })),
     )
   }
+
   for (const [id, library] of Object.entries(libraries))
     sections.set(
       id,
       library.stylesheets.map((section) => {
         let owner = id
+
         for (const specifier of section.dependency ?? []) {
           const target = resolve(owner, specifier)
+
           if (!target || !Object.hasOwn(libraries, target))
             fail(
               id,
               'Repacked stylesheet dependencies require supplied library contracts.',
             )
+
           owner = target
         }
+
         return {
           ...section,
           owner,
@@ -546,6 +626,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         }
       }),
     )
+
   const resetOwners = ids.filter(
     (id) =>
       options.modules[id]!.includes('zyzz/reset.css') &&
@@ -557,6 +638,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
           node.source.value === 'zyzz/reset.css',
       ),
   )
+
   const layerNames = [
     ...new Set(
       ids.flatMap((id) =>
@@ -564,12 +646,14 @@ function build(options: compile.Options, cache?: Cache): Cache {
       ),
     ),
   ].filter((name) => name !== 'reset')
+
   for (const resetOwner of resetOwners) {
     const entryLayers = [
       ...new Set(
         reachable(resetOwner).flatMap((section) => section.layers.flat()),
       ),
     ].filter((name) => name !== 'reset')
+
     sections.set(resetOwner, [
       {
         source: resetOwner,
@@ -582,31 +666,39 @@ function build(options: compile.Options, cache?: Cache): Cache {
       ...(sections.get(resetOwner) ?? []),
     ])
   }
+
   function dependencyPath(from: string, to: string): readonly string[] {
     const queue = [{ id: from, path: [] as string[] }]
     const seen = new Set<string>()
+
     while (queue.length) {
       const current = queue.shift()!
       if (current.id === to) return current.path
       if (seen.has(current.id)) continue
+
       seen.add(current.id)
+
       for (const [specifier, target] of Object.entries(
         options.imports?.[current.id] ?? {},
       ))
         if (target)
           queue.push({ id: target, path: [...current.path, specifier] })
     }
+
     fail(
       from,
       'Repacked stylesheet ownership requires a resolved dependency path.',
     )
   }
+
   function reachable(
     id: string,
     visited = new Set<string>(),
   ): readonly Stylesheets.Section[] {
     if (visited.has(id)) return []
+
     visited.add(id)
+
     return [
       ...(dependencies[id] ?? []).flatMap((dependency) =>
         reachable(dependency, visited),
@@ -614,7 +706,9 @@ function build(options: compile.Options, cache?: Cache): Cache {
       ...(sections.get(id) ?? []),
     ]
   }
+
   const sharedVisited = new Set<string>()
+
   const shared = (() => {
     try {
       const sharedSections = ids.flatMap((id) => reachable(id, sharedVisited))
@@ -622,6 +716,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         resetOwners[0] ??
         sharedSections.find((section) => section.key === 'optional-reset-order')
           ?.source
+
       return Stylesheets.render([
         ...(resetSource === undefined
           ? []
@@ -644,10 +739,12 @@ function build(options: compile.Options, cache?: Cache): Cache {
       )
     }
   })()
+
   const sharedCss = shared.css
   // Every stylesheet includes all graph scopes, including unimported alternatives.
   const names = Object.keys(themes)
   const previousNames = Object.keys(previous?.themes ?? {})
+
   const sameThemes =
     previous &&
     names.length === previousNames.length &&
@@ -655,6 +752,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       (name, index) =>
         name === previousNames[index] && previous.themes[name] === themes[name],
     )
+
   for (const moduleId of ids)
     modules[moduleId] =
       sameThemes &&
@@ -673,6 +771,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
               owners,
             },
           })
+
   return {
     contracts,
     extracted,

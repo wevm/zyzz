@@ -40,10 +40,12 @@ describe('compile', () => {
     ) as {
       families: { properties: Record<string, { status: string }> }
     }
+
     const implemented = [
       ...Object.keys(Literal.rules).map(Conformance.name),
       '--*',
     ].sort()
+
     const classified = Object.entries(inventory.families.properties)
       .filter(
         ([, entry]) =>
@@ -51,17 +53,20 @@ describe('compile', () => {
       )
       .map(([name]) => name)
       .sort()
+
     expect(
       classified.filter((name) => !implemented.includes(name)),
     ).toMatchInlineSnapshot(`[]`)
     expect(
       implemented.filter((name) => !classified.includes(name)),
     ).toMatchInlineSnapshot(`[]`)
+
     const { stderr } = await Util.promisify(ChildProcess.execFile)(
       process.execPath,
       ['scripts/css-conformance.ts'],
       { cwd: root },
     )
+
     expect(stderr).toMatchInlineSnapshot(`""`)
   })
 
@@ -69,6 +74,7 @@ describe('compile', () => {
     const directory = await Fs.mkdtemp(
       Path.join(root, '.fixture-css-inventory-'),
     )
+
     try {
       const inventory = JSON.parse(
         await Fs.readFile(
@@ -80,15 +86,20 @@ describe('compile', () => {
           properties: Record<string, { grammar: string; status: string }>
         }
       }
+
       delete inventory.families.properties['display']
       inventory.families.properties['color']!.grammar = 'unreviewed'
+
       const file = Path.join(directory, 'coverage.json')
+
       await Fs.writeFile(file, JSON.stringify(inventory))
+
       const result = ChildProcess.spawnSync(
         process.execPath,
         ['scripts/css-conformance.ts', '--inventory', file],
         { cwd: root, encoding: 'utf8', timeout: 10_000 },
       )
+
       expect(result.status).toMatchInlineSnapshot(`1`)
       expect(result.stderr).toMatchInlineSnapshot(`
         "
@@ -98,17 +109,21 @@ describe('compile', () => {
         Review upstream changes with pnpm update:css, then classify coverage.json entries.
         "
       `)
+
       const update = ChildProcess.spawnSync(
         process.execPath,
         ['scripts/css-conformance.ts', '--inventory', file, '--update'],
         { cwd: root, encoding: 'utf8', timeout: 10_000 },
       )
+
       expect(update.status).toMatchInlineSnapshot(`0`)
+
       const check = ChildProcess.spawnSync(
         process.execPath,
         ['scripts/css-conformance.ts', '--inventory', file],
         { cwd: root, encoding: 'utf8', timeout: 10_000 },
       )
+
       expect(check.status).toMatchInlineSnapshot(`1`)
       expect(check.stderr).toMatchInlineSnapshot(`
         "
@@ -125,35 +140,46 @@ describe('compile', () => {
     const cases = Conformance.cases()
     const lexer = Conformance.lexer()
     const failures: string[] = []
+
     // Batches bound compiler input size while still exercising fallback and importance rewriting.
     for (let start = 0; start < cases.length; start += 100) {
       const batch = cases.slice(start, start + 100)
+
       const source = `import { css } from 'zyzz';\n${batch
         .map(
           ({ property, value }, index) =>
             `export const case${index} = css({${property}: [${JSON.stringify(value)}, ${JSON.stringify(`${value}!`)}]})();`,
         )
         .join('\n')}`
+
       const output = Transform.compile({ moduleId: 'conformance.ts', source })
       let count = 0
+
       CssTree.walk(CssTree.parse(output.css), (node) => {
         if (node.type !== 'Declaration') return
+
         count++
+
         const value = CssTree.generate(node.value)
         const error = lexer.matchProperty(node.property, value).error
+
         if (error) failures.push(`${node.property}: ${value}: ${error.message}`)
       })
+
       if (count !== batch.length * 2)
         failures.push(`Declaration count: ${count} != ${batch.length * 2}`)
     }
+
     expect(failures).toMatchInlineSnapshot(`[]`)
   }, 30_000)
 
   test('CSS conformance preserves consumer types for every accepted probe', async () => {
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-css-types-'))
+
     try {
       const cases = Conformance.cases()
       const groups = new Map<string, string>()
+
       const declarations = Conformance.properties().map((property) => {
         const values = [
           ...cases
@@ -163,17 +189,21 @@ describe('compile', () => {
           'var(--probe,)',
           'calc(1px + var(--probe))',
         ].flatMap((value) => [value, `${value}!`])
+
         const key = JSON.stringify(values)
         let group = groups.get(key)
+
         if (!group) {
           group = `values${groups.size}`
           groups.set(key, group)
         }
+
         return `${group} satisfies readonly Style.Properties['${property}'][];\ncss({${JSON.stringify(property)}: [${values
           .slice(0, 16)
           .map((value) => JSON.stringify(value))
           .join(',')}]});`
       })
+
       const rejections = Conformance.rejected.map(
         ({ property, value }) =>
           `// @ts-expect-error Invalid or deliberately unsupported scalar.\ncss({${property}: ${JSON.stringify(value)}});\n// @ts-expect-error Importance must preserve rejection.\ncss({${property}: ${JSON.stringify(`${value}!`)}});`,
@@ -183,6 +213,7 @@ describe('compile', () => {
           `css({${JSON.stringify(property)}: [' InHeRiT ! ImPoRtAnT ', ${JSON.stringify(String.raw`\69 nherit/**/!impor\74 ant`)}]});\n// @ts-expect-error Booleans are outside every CSS scalar domain.\ncss({${JSON.stringify(property)}: true});`,
       )
       const source = `/** Checks generated consumer declarations. @module */\nimport { describe, test } from 'vite-plus/test';\nimport { css, type Style } from 'zyzz';\ndescribe('css', () => {\n  test('validates generated conformance probes', () => {\n${[...[...groups].map(([values, group]) => `const ${group} = ${values} as const;`), ...declarations, ...rejections, ...booleans].join('\n')}\n  });\n});`
+
       await Fs.writeFile(Path.join(directory, 'consumer.test-d.ts'), source)
       await Fs.writeFile(
         Path.join(directory, 'tsconfig.json'),
@@ -192,7 +223,9 @@ describe('compile', () => {
           include: ['./consumer.test-d.ts'],
         }),
       )
+
       const require = Module.createRequire(import.meta.url)
+
       const { stderr, stdout } = await Util.promisify(ChildProcess.execFile)(
         process.execPath,
         [
@@ -208,13 +241,16 @@ describe('compile', () => {
           Path.join(root, 'test-results/css-consumer.test-d.ts'),
           source,
         )
+
         if (error && typeof error === 'object' && 'stdout' in error)
           throw new Error(
             String(error.stdout) ||
               String('stderr' in error ? error.stderr : error),
           )
+
         throw error
       })
+
       expect(stderr).toMatchInlineSnapshot(`""`)
       expect(stdout).toMatchInlineSnapshot(`""`)
     } finally {
@@ -227,15 +263,18 @@ describe('compile', () => {
       moduleId: 'example/interaction.ts',
       source: Interaction.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z-style-bsh2u91k616n-90{cursor:not-allowed;pointer-events:auto;pointer-events:none!important;pointer-events:auto;resize:none;user-select:none;visibility:visible;}
       .z-style-bsh2u91k616n-243{cursor:text;pointer-events:auto;resize:both;user-select:text;visibility:visible;}
       .z-style-bsh2u91k616n-368{cursor:default;pointer-events:auto;resize:none;user-select:auto;visibility:hidden;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('pointer-events:none!important'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         column: lines[line]!.indexOf('pointer-events:none!important'),
@@ -264,8 +303,10 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>.panel{position:relative;width:160px;height:60px;margin:8px}.panel>button,.overlay{position:absolute;inset:0;width:160px;height:60px;box-sizing:border-box}.overlay{overflow:auto;background:white}${output.css}</style>${Object.entries(
           Interaction.controls,
@@ -276,6 +317,7 @@ describe('compile', () => {
           )
           .join('')}`,
       )
+
       expect(
         await page.evaluate(
           (names) =>
@@ -284,6 +326,7 @@ describe('compile', () => {
               const control = document.getElementById(`${name}-control`)!
               const a = getComputedStyle(actual)
               const b = getComputedStyle(control)
+
               return (
                 [
                   'cursor',
@@ -303,24 +346,30 @@ describe('compile', () => {
           Object.keys(Interaction.controls),
         ),
       ).toMatchInlineSnapshot(`[]`)
+
       await page.evaluate(() => {
         for (const panel of document.querySelectorAll('.panel'))
           panel.addEventListener('click', (event) => {
             const target = event.target as HTMLElement
+
             panel.setAttribute('data-target', target.tagName)
           })
       })
+
       for (const name of Object.keys(Interaction.controls)) {
         for (const suffix of ['', '-control']) {
           const box = await page
             .locator(`#${name}${suffix}`)
             .evaluate((element) => {
               const rect = element.getBoundingClientRect()
+
               return { x: rect.x, y: rect.y }
             })
+
           await page.mouse.click(box.x + 80, box.y + 30)
         }
       }
+
       expect(
         await page
           .locator('.panel')
@@ -342,6 +391,7 @@ describe('compile', () => {
           .locator('#hidden')
           .evaluate((element) => element.getBoundingClientRect().height),
       ).toMatchInlineSnapshot(`60`)
+
       // Isolate selection from the disabled control's hit-testing declaration.
       await page
         .locator('#disabled')
@@ -349,10 +399,13 @@ describe('compile', () => {
           element.style.setProperty('pointer-events', 'auto', 'important'),
         )
       await page.locator('#disabled').dblclick({ position: { x: 20, y: 8 } })
+
       expect(
         await page.evaluate(() => getSelection()!.toString()),
       ).toMatchInlineSnapshot(`""`)
+
       await page.locator('#editable').dblclick({ position: { x: 20, y: 8 } })
+
       expect(
         await page.evaluate(() => getSelection()!.toString()),
       ).toMatchInlineSnapshot(`"Selection"`)
@@ -366,15 +419,18 @@ describe('compile', () => {
       moduleId: 'example/tables.ts',
       source: Tables.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z-style-m20tii1jg8qc0-53{border-collapse:collapse;border-spacing:12px;caption-side:top;empty-cells:show;table-layout:auto;}
       .z-style-m20tii1jg8qc0-190{border-collapse:separate;border-spacing:2px;border-spacing:8px!important;border-spacing:4px;caption-side:bottom;empty-cells:hide;table-layout:fixed;}
       .z-style-m20tii1jg8qc0-347{border-collapse:separate;border-spacing:0;caption-side:top;empty-cells:show;table-layout:fixed;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('border-spacing:8px!important'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         column: lines[line]!.indexOf('border-spacing:8px!important'),
@@ -403,10 +459,12 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
       const rows =
         '<caption>Caption</caption><tbody><tr><td>Wide content</td><td></td></tr><tr><td>A</td><td>B</td></tr></tbody>'
+
       await page.setContent(
         `<style>table{width:240px}td{border:2px solid;padding:0;height:24px}${output.css}</style>${Object.entries(
           Tables.controls,
@@ -417,16 +475,19 @@ describe('compile', () => {
           )
           .join('')}`,
       )
+
       for (const direction of ['ltr', 'rtl']) {
         await page.locator('body').evaluate((element, direction) => {
           element.style.direction = direction
         }, direction)
+
         expect(
           await page.evaluate(
             (names) =>
               names.filter((name) => {
                 const actual = document.getElementById(name)!
                 const control = document.getElementById(`${name}-control`)!
+
                 for (const selector of [
                   '',
                   'caption',
@@ -453,6 +514,7 @@ describe('compile', () => {
                     )
                   )
                     return true
+
                   const ar = a.getBoundingClientRect()
                   const br = b.getBoundingClientRect()
                   if (
@@ -463,15 +525,18 @@ describe('compile', () => {
                   )
                     return true
                 }
+
                 return false
               }),
             Object.keys(Tables.controls),
           ),
         ).toMatchInlineSnapshot(`[]`)
       }
+
       expect(
         await page.locator('#separated').evaluate((element) => {
           const cells = element.querySelectorAll('td')
+
           return {
             captionBelow:
               element.querySelector('caption')!.getBoundingClientRect().top >=
@@ -503,6 +568,7 @@ describe('compile', () => {
       moduleId: 'example/decoration.ts',
       source: TextDecoration.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-aauzfj1an5ia3-zyzz-theme{--z-taauzfj1an5ia3-zyzz-color_2e_brand:#06c;--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke:2px;--z-taauzfj1an5ia3-zyzz-spacing_2e_offset:4px;}
       .z-style-aauzfj1an5ia3-182{text-decoration-line:underline;text-decoration-thickness:from-font;text-underline-offset:auto;text-decoration-skip-ink:auto;}
@@ -510,10 +576,12 @@ describe('compile', () => {
       .z-style-aauzfj1an5ia3-340{text-decoration-line:underline;text-decoration-line:underline overline!important;text-decoration-thickness:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_stroke,2px);text-underline-offset:var(--z-taauzfj1an5ia3-zyzz-spacing_2e_offset,4px);text-decoration-skip-ink:none;}
       .z-style-aauzfj1an5ia3-616{text-decoration-line:line-through;text-decoration-thickness:10%;text-underline-offset:-10%;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('text-decoration-line:underline overline'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -542,8 +610,10 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>body{font:24px/2 monospace}${output.css}</style><main>${Object.entries(
           TextDecoration.controls,
@@ -554,6 +624,7 @@ describe('compile', () => {
           )
           .join('')}</main>`,
       )
+
       for (const writingMode of ['horizontal-tb', 'vertical-lr', 'vertical-rl'])
         for (const direction of ['ltr', 'rtl']) {
           await page.locator('main').evaluate(
@@ -563,6 +634,7 @@ describe('compile', () => {
             },
             { direction, writingMode },
           )
+
           expect(
             await page.evaluate((names) => {
               const properties = [
@@ -573,11 +645,13 @@ describe('compile', () => {
                 'text-decoration-skip-ink',
                 'text-underline-offset',
               ]
+
               return names.filter((name) => {
                 const actual = getComputedStyle(document.getElementById(name)!)
                 const control = getComputedStyle(
                   document.getElementById(`${name}-control`)!,
                 )
+
                 return properties.some(
                   (property) =>
                     actual.getPropertyValue(property) !==
@@ -587,9 +661,11 @@ describe('compile', () => {
             }, Object.keys(TextDecoration.controls)),
           ).toMatchInlineSnapshot(`[]`)
         }
+
       expect(
         await page.locator('#decorated').evaluate((element) => {
           const style = getComputedStyle(element)
+
           return {
             color: style.textDecorationColor,
             line: style.textDecorationLine,
@@ -619,6 +695,7 @@ describe('compile', () => {
       moduleId: 'example/text.ts',
       source: TextFlow.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-r52i20xb74bg-zyzz-theme{--z-tr52i20xb74bg-zyzz-spacing_2e_indent:12px;}
       .z-r52i20xb74bg-base4{word-break:break-all;}
@@ -632,8 +709,10 @@ describe('compile', () => {
       .z-r52i20xb74bg-base1{overflow-wrap:anywhere;}
       .z-style-r52i20xb74bg-580{width:65px;white-space:normal;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) => line.includes('white-space:nowrap'))
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -662,9 +741,11 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
       const text = 'abcdefghij'
+
       await page.setContent(
         `<style>body{font:20px/1 monospace}${output.css}</style>${Object.entries(
           TextFlow.controls,
@@ -677,6 +758,7 @@ describe('compile', () => {
             '',
           )}<span id="letters-measure" class="${module.letters.className}">abcd</span><span id="letters-plain">abcd</span><span id="words-measure" class="${module.words.className}">a a</span><span id="words-plain">a a</span>`,
       )
+
       expect(
         await page.evaluate((names) => {
           const properties = [
@@ -691,11 +773,13 @@ describe('compile', () => {
             'word-break',
             'word-spacing',
           ]
+
           return names.filter((name) => {
             const actual = document.getElementById(name)!
             const control = document.getElementById(`${name}-control`)!
             const style = getComputedStyle(actual)
             const expected = getComputedStyle(control)
+
             return (
               actual.scrollWidth !== control.scrollWidth ||
               actual.getBoundingClientRect().height !==
@@ -715,6 +799,7 @@ describe('compile', () => {
             document.getElementById(id)!.getBoundingClientRect().width
           const paragraph = document.getElementById('paragraph')!
           const truncate = document.getElementById('truncate')!
+
           return {
             brokenHeight: document
               .getElementById('breaks')!
@@ -752,6 +837,7 @@ describe('compile', () => {
       moduleId: 'example/snapping.ts',
       source: Snapping.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-10s7rhx1h1kg6d-zyzz-theme{--z-t10s7rhx1h1kg6d-zyzz-spacing_2e_edge:10px;}
       .z-10s7rhx1h1kg6d-base1{display:flex;gap:40px;overflow:auto;}
@@ -762,10 +848,12 @@ describe('compile', () => {
       .z-style-10s7rhx1h1kg6d-481{width:60px;height:60px;scroll-snap-align:start;}
       .z-style-10s7rhx1h1kg6d-630{scroll-snap-align:none center;scroll-snap-type:both proximity;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('scroll-snap-type:x mandatory'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -794,13 +882,16 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
       const children = (props: string) =>
         Array.from({ length: 5 }, () => `<div ${props}></div>`).join('')
+
       await page.setContent(
         `<style>${output.css}</style>${['horizontal', 'vertical'].map((axis) => `<div id="${axis}" class="${module[axis].className}">${children(`class="${module.item.className}"`)}</div><div id="${axis}-control" style="${Snapping.controls[axis as 'horizontal' | 'vertical']}">${children(`style="${Snapping.controls.item}"`)}</div>`).join('')}<div id="pair" class="${module.pair.className}"></div>`,
       )
+
       expect(
         await page.evaluate(() => {
           const horizontal = document.getElementById('horizontal')!
@@ -808,10 +899,12 @@ describe('compile', () => {
           const horizontalControl =
             document.getElementById('horizontal-control')!
           const verticalControl = document.getElementById('vertical-control')!
+
           horizontal.scrollTo({ left: 75, behavior: 'instant' })
           horizontalControl.scrollTo({ left: 75, behavior: 'instant' })
           vertical.scrollTo({ top: 75, behavior: 'instant' })
           verticalControl.scrollTo({ top: 75, behavior: 'instant' })
+
           return {
             horizontal: horizontal.scrollLeft,
             horizontalControl: horizontalControl.scrollLeft,
@@ -831,10 +924,12 @@ describe('compile', () => {
         await page.evaluate(() => {
           const horizontal = document.getElementById('horizontal')!
           const control = document.getElementById('horizontal-control')!
+
           horizontal.scrollTo({ left: 0, behavior: 'instant' })
           control.scrollTo({ left: 0, behavior: 'instant' })
           horizontal.scrollBy({ left: 350, behavior: 'instant' })
           control.scrollBy({ left: 350, behavior: 'instant' })
+
           return { actual: horizontal.scrollLeft, control: control.scrollLeft }
         }),
       ).toMatchInlineSnapshot(`
@@ -864,6 +959,7 @@ describe('compile', () => {
       moduleId: 'example/scrolling.ts',
       source: Scrolling.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-1567lwky4x5t8-zyzz-theme{--z-t1567lwky4x5t8-zyzz-spacing_2e_offset:20px;--z-t1567lwky4x5t8-zyzz-spacing_2e_auto:24px;}
       .z-1567lwky4x5t8-base0{overflow:auto;width:100px;overscroll-behavior:auto;overscroll-behavior:contain!important;overscroll-behavior-x:none;}
@@ -874,10 +970,12 @@ describe('compile', () => {
       .z-style-1567lwky4x5t8-557{scroll-padding-block-start:var(--z-t1567lwky4x5t8-zyzz-spacing_2e_offset,20px)!important;}
       .z-style-1567lwky4x5t8-628{scroll-behavior:smooth;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('scroll-padding-top:var('),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -906,20 +1004,26 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
       const contents = (target: string) =>
         `<div style="height:300px"></div><div ${target}></div><div style="height:300px"></div>`
+
       await page.setContent(
         `<style>${output.css}</style><div id="actual" class="${module.container.className}">${contents(`class="${module.target.className}"`)}</div><div id="control" style="overflow:auto;height:100px;width:100px;scroll-padding-top:20px;scroll-behavior:auto">${contents('style="scroll-margin-top:10px;height:20px"')}</div><div id="smooth" class="${module.smooth.className}" style="overflow:auto;height:100px"><div style="height:500px"></div></div>`,
       )
+
       expect(
         await page.evaluate(() => {
           const actual = document.getElementById('actual')!
           const control = document.getElementById('control')!
+
           actual.children[1]!.scrollIntoView({ block: 'start' })
           control.children[1]!.scrollIntoView({ block: 'start' })
+
           const style = getComputedStyle(actual)
+
           return {
             actual: actual.scrollTop,
             control: control.scrollTop,
@@ -937,6 +1041,7 @@ describe('compile', () => {
           "paddingInline": "auto",
         }
       `)
+
       await page
         .locator('#smooth')
         .evaluate((element) => element.scrollTo({ top: 100 }))
@@ -945,6 +1050,7 @@ describe('compile', () => {
         undefined,
         { timeout: 5000 },
       )
+
       expect(
         await page.locator('#smooth').evaluate((element) => ({
           behavior: getComputedStyle(element).scrollBehavior,
@@ -966,6 +1072,7 @@ describe('compile', () => {
       moduleId: 'example/sizing.ts',
       source: Sizing.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-flktdz142jfd9-zyzz-theme{--z-tflktdz142jfd9-zyzz-spacing_2e_min-content:24px;--z-tflktdz142jfd9-zyzz-spacing_2e_narrow:40px;}
       .z-style-flktdz142jfd9-143{inline-size:min-content;}
@@ -977,10 +1084,12 @@ describe('compile', () => {
       .z-style-flktdz142jfd9-603{flex-basis:content;width:5px;min-width:0;}
       .z-style-flktdz142jfd9-694{flex-basis:auto;width:5px;min-width:0;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('inline-size:fit-content'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -1009,13 +1118,16 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
       const content =
         '<span style="display:inline-block;width:40px;height:10px"></span><wbr><span style="display:inline-block;width:40px;height:10px"></span>'
+
       await page.setContent(
         `<style>${output.css}</style><main style="width:60px">${['minimum', 'maximum', 'fit'].map((name) => `<div id="${name}" class="${module[name].className}">${content}</div>`).join('')}<div id="explicit" class="${module.explicit.className}"></div></main><section style="display:flex;width:200px"><div id="content" class="${module.content.className}">${content}</div><div id="automatic" class="${module.automatic.className}">${content}</div></section>`,
       )
+
       expect(
         await page.evaluate(() =>
           Object.fromEntries(
@@ -1060,11 +1172,14 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>div{width:100px;height:100px}${output.css}</style><main><div id="box" class="${module.box.className}"></div><div id="control" style="border-style:solid;border-width:2px;border-left-width:3px;border-inline-start-width:4px;border-inline-start-width:5px!important;border-color:#06c;border-inline-end-color:#fff;border-radius:8px;border-start-start-radius:10px;outline-color:#fff;outline-style:dashed;outline-width:2px;outline-offset:-1px"></div></main>`,
       )
+
       for (const writingMode of ['horizontal-tb', 'vertical-rl', 'vertical-lr'])
         for (const direction of ['ltr', 'rtl']) {
           await page.locator('main').evaluate(
@@ -1074,12 +1189,14 @@ describe('compile', () => {
             },
             { writingMode, direction },
           )
+
           expect(
             await page.evaluate(() => {
               const actual = getComputedStyle(document.getElementById('box')!)
               const expected = getComputedStyle(
                 document.getElementById('control')!,
               )
+
               return [
                 'border-top-width',
                 'border-left-width',
@@ -1115,6 +1232,7 @@ describe('compile', () => {
       moduleId: 'example/borders.ts',
       source: Borders.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-1qal89srxpye2-zyzz-theme{--z-t1qal89srxpye2-zyzz-borderColor_2e_brand:#06c;--z-t1qal89srxpye2-zyzz-color_2e_brand:#fff;--z-t1qal89srxpye2-zyzz-borderRadius_2e_round:8px;}
       .z-1qal89srxpye2-base1{border-style:solid;border-color:var(--z-t1qal89srxpye2-zyzz-borderColor_2e_brand,#06c);border-inline-end-color:var(--z-t1qal89srxpye2-zyzz-color_2e_brand,#fff);border-radius:var(--z-t1qal89srxpye2-zyzz-borderRadius_2e_round,8px);border-start-start-radius:10px;outline-color:var(--z-t1qal89srxpye2-zyzz-color_2e_brand,#fff);outline-style:dashed;outline-width:2px;outline-offset:-1px;}
@@ -1122,10 +1240,12 @@ describe('compile', () => {
       .z-1qal89srxpye2-base0{border-style:solid;}
       .z-style-1qal89srxpye2-524{border-width:2px;border-inline-start-width:5px;border-left-width:3px;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('border-inline-start-width:5px'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -1146,6 +1266,7 @@ describe('compile', () => {
       moduleId: 'example/flex.ts',
       source: Flex.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-bjw6jw1i067e2-zyzz-theme{--z-tbjw6jw1i067e2-zyzz-spacing_2e_item:60px;}
       .z-bjw6jw1i067e2-base0{display:flex;flex-wrap:wrap;align-content:space-between;align-items:flex-start;}
@@ -1155,8 +1276,10 @@ describe('compile', () => {
       .z-style-bjw6jw1i067e2-421{width:40px;height:40px;overflow:hidden;overflow:clip!important;overflow-x:visible;}
       .z-style-bjw6jw1i067e2-528{width:40px;height:40px;overflow-x:clip;overflow:hidden;overflow-y:scroll;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) => line.includes('flex-basis:var('))
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -1185,20 +1308,25 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
       const children = (item: string) =>
         `<div style="width:60px;height:40px;flex-shrink:0"></div><div ${item}></div><div style="width:60px;height:20px;flex-shrink:0"></div><div style="width:60px;height:20px;flex-shrink:0"></div>`
+
       await page.setContent(
         `<style>${output.css}</style><main id="actual" class="${module.container.className}">${children(`class="${module.item.className}"`)}</main><main id="expected" style="display:flex;flex-wrap:wrap;width:180px;height:100px;align-content:space-between;align-items:flex-start">${children('style="flex-basis:60px;flex-grow:0;flex-shrink:0;height:20px;align-self:flex-end;order:-1!important"')}</main><div id="clip" class="${module.clip.className}"><div style="width:200px;height:200px"></div></div><div id="scroll" class="${module.scroll.className}"><div style="width:200px;height:200px"></div></div>`,
       )
+
       expect(
         await page.evaluate(() => {
           const layout = (id: string) => {
             const parent = document.getElementById(id)!
             const origin = parent.getBoundingClientRect()
+
             return Array.from(parent.children, (child) => {
               const box = child.getBoundingClientRect()
+
               return {
                 height: box.height,
                 width: box.width,
@@ -1207,6 +1335,7 @@ describe('compile', () => {
               }
             })
           }
+
           return (
             JSON.stringify(layout('actual')) ===
             JSON.stringify(layout('expected'))
@@ -1218,6 +1347,7 @@ describe('compile', () => {
           const child = parent.children[1]!
           const box = child.getBoundingClientRect()
           const origin = parent.getBoundingClientRect()
+
           return {
             height: box.height,
             width: box.width,
@@ -1236,7 +1366,9 @@ describe('compile', () => {
       expect(
         await page.locator('#clip').evaluate((element) => {
           element.scrollTop = 10
+
           const style = getComputedStyle(element)
+
           return {
             overflowX: style.overflowX,
             overflowY: style.overflowY,
@@ -1253,7 +1385,9 @@ describe('compile', () => {
       expect(
         await page.locator('#scroll').evaluate((element) => {
           element.scrollTop = 10
+
           const style = getComputedStyle(element)
+
           return {
             overflowX: style.overflowX,
             overflowY: style.overflowY,
@@ -1277,14 +1411,17 @@ describe('compile', () => {
       moduleId: 'example/logical.ts',
       source: Logical.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-9k2sno1hln8ye-zyzz-theme{--z-t9k2sno1hln8ye-zyzz-spacing_2e_space:12px;}
       .z-9k2sno1hln8ye-base0{margin-inline-end:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px)!important;position:relative;inset-inline-start:-3px;}
       .z-style-9k2sno1hln8ye-121{width:60px;inline-size:70px;inline-size:80px!important;block-size:40px;padding-left:2px;padding-inline-start:4px;padding-inline-start:var(--z-t9k2sno1hln8ye-zyzz-spacing_2e_space,12px);}
       .z-style-9k2sno1hln8ye-374{inline-size:30px;width:50px;padding-inline-start:6px;padding-left:8px;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) => line.includes('inline-size:80px'))
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -1313,11 +1450,14 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><main style="writing-mode:horizontal-tb;direction:ltr"><div id="box" class="${module.logical.className}"></div><div id="control" style="width:60px;inline-size:70px;inline-size:80px!important;block-size:40px;padding-left:2px;padding-inline-start:4px;padding-inline-start:12px;margin-inline-end:12px!important;position:relative;inset-inline-start:-3px"></div><div id="physical" class="${module.physical.className}"></div><div id="physical-control" style="inline-size:30px;width:50px;padding-inline-start:6px;padding-left:8px"></div></main>`,
       )
+
       for (const writingMode of [
         'horizontal-tb',
         'vertical-rl',
@@ -1331,6 +1471,7 @@ describe('compile', () => {
             },
             { writingMode, direction },
           )
+
           expect(
             await page.evaluate(() => {
               const properties = [
@@ -1349,12 +1490,14 @@ describe('compile', () => {
                 'top',
                 'bottom',
               ]
+
               return [
                 ['box', 'control'],
                 ['physical', 'physical-control'],
               ].flatMap(([actual, expected]) => {
                 const a = getComputedStyle(document.getElementById(actual!)!)
                 const b = getComputedStyle(document.getElementById(expected!)!)
+
                 return properties
                   .filter(
                     (property) =>
@@ -1371,6 +1514,7 @@ describe('compile', () => {
           ).toMatchInlineSnapshot(`[]`)
         }
       }
+
       await page.locator('main').evaluate((element, scope) => {
         element.setAttribute('class', scope)
       }, module.scope)
@@ -1378,9 +1522,11 @@ describe('compile', () => {
       await page.addStyleTag({
         content: `.${module.scope}{${output.css.match(/--[^:]+(?=:12px)/)![0]}:20px;}`,
       })
+
       expect(
         await page.locator('#box').evaluate((element) => {
           const style = getComputedStyle(element)
+
           return {
             marginInlineEnd: style.marginInlineEnd,
             paddingInlineStart: style.paddingInlineStart,
@@ -1406,6 +1552,7 @@ export const token = theme.css({padding:'0!'})();
 export const literal = css({padding:'0!'})();
 export const plain = theme.css({padding:0})();`,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-1s1gwcevjtf8w-theme{--z-t1s1gwcevjtf8w-theme-spacing_2e_0:8px;}
       .z-style-1s1gwcevjtf8w-105{padding:var(--z-t1s1gwcevjtf8w-theme-spacing_2e_0,8px)!important;}
@@ -1424,12 +1571,15 @@ export const props = theme.css({
   color: ((['#000',theme.tokens.color.brand] as const) satisfies readonly unknown[])!,
 })();`,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-color_2e_brand:#06c;}
       .z-1jvt0134f5zz3-base0{display:block;display:flex;color:#000;color:var(--z-t1jvt0134f5zz3-theme-color_2e_brand,#06c);}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) => line.includes('color:var('))
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -1450,6 +1600,7 @@ export const props = theme.css({
       moduleId: 'example/lengths.ts',
       source: Lengths.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-1aowg2i1i6ewzi-zyzz-theme{--z-t1aowg2i1i6ewzi-zyzz-spacing_2e_space:1lh;}
       .z-1aowg2i1i6ewzi-base1{width:50vw;width:50cqi!important;height:10dvh;border-width:1pc;border-style:solid;}
@@ -1457,8 +1608,10 @@ export const props = theme.css({
       .z-1aowg2i1i6ewzi-base0{padding:1rem;padding:var(--z-t1aowg2i1i6ewzi-zyzz-spacing_2e_space,1lh);}
       .z-style-1aowg2i1i6ewzi-244{margin-top:2rlh!important;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) => line.includes('width:50cqi'))
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -1487,16 +1640,20 @@ export const props = theme.css({
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage({
         viewport: { width: 800, height: 600 },
       })
+
       await page.setContent(
         `<style>html{font-size:16px;line-height:24px}main{container-type:size;width:400px;height:300px;line-height:30px}${output.css}</style><main><div id="root" class="${module.root.className}"></div><div id="themed" class="${module.themed.className}"></div></main>`,
       )
+
       expect(
         await page.locator('#root').evaluate((element) => {
           const style = getComputedStyle(element)
+
           return {
             borderWidth: style.borderTopWidth,
             height: style.height,
@@ -1515,6 +1672,7 @@ export const props = theme.css({
       expect(
         await page.locator('#themed').evaluate((element) => {
           const style = getComputedStyle(element)
+
           return { marginTop: style.marginTop, padding: style.paddingTop }
         }),
       ).toMatchInlineSnapshot(`
@@ -1556,6 +1714,7 @@ export const props = zyzz.css({padding:'nested!.md'})();`,
       moduleId: 'example/fallbacks.ts',
       source: Declarations.source,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-1ne2r2w17wkfe-theme{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#06c;}
       .z_theme-1ne2r2w17wkfe-mint{--z-t1ne2r2w17wkfe-theme-color_2e_brand:#175;}
@@ -1563,8 +1722,10 @@ export const props = zyzz.css({padding:'nested!.md'})();`,
       .z-style-1ne2r2w17wkfe-183{color:#000;color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c);color:var(--z-t1ne2r2w17wkfe-theme-color_2e_brand,#06c)!important;padding:4px!important;padding:8px;padding-left:12px;}
       .z-style-1ne2r2w17wkfe-390{color:#fff;padding:20px;}"
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) => line.includes('color:var('))
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -1593,11 +1754,14 @@ export const props = zyzz.css({padding:'nested!.md'})();`,
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><main class="${module.scope}"><div id="card" class="${module.props.className} ${module.later.className}"></div></main>`,
       )
+
       expect(
         await page
           .locator('#card')
@@ -1634,6 +1798,7 @@ export const scope = alternate.className;
 export const props = css({ color: theme.tokens.color.transparent, borderColor: (theme['tokens'].color.palette['500']!), padding: theme.tokens.spacing[0] })();
 `,
     })
+
     expect(result.code).toMatchInlineSnapshot(`
       "
       const theme = ({className:"z_theme-1wr3l4n1jk260t-theme"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>);
@@ -1648,6 +1813,7 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
       .z_theme-1wr3l4n1jk260t-alternate{--z-t1wr3l4n1jk260t-theme-color_2e_transparent:#175;--z-t1wr3l4n1jk260t-theme-color_2e_palette_2e_500:#456;--z-t1wr3l4n1jk260t-theme-spacing_2e_0:8px;}
       .z-1wr3l4n1jk260t-base0{color:var(--z-t1wr3l4n1jk260t-theme-color_2e_transparent,#06c);border-color:var(--z-t1wr3l4n1jk260t-theme-color_2e_palette_2e_500,#123);padding:var(--z-t1wr3l4n1jk260t-theme-spacing_2e_0,8px);}"
     `)
+
     const output = await Esbuild.build({
       bundle: true,
       format: 'cjs',
@@ -1655,13 +1821,18 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
       stdin: { contents: result.code, loader: 'ts' },
       write: false,
     })
+
     expect(output.metafile!.outputs['stdin.js']!.imports).toMatchInlineSnapshot(
       `[]`,
     )
+
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-tokens-'))
+
     try {
       const path = Path.join(directory, 'module.cjs')
+
       await Fs.writeFile(path, output.outputFiles[0]!.text)
+
       const executed = await Util.promisify(ChildProcess.execFile)(
         process.execPath,
         [
@@ -1669,6 +1840,7 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
           `console.log(JSON.stringify(require(${JSON.stringify(path)}).props))`,
         ],
       )
+
       expect(executed.stdout).toMatchInlineSnapshot(`
         "{"className":"z-1wr3l4n1jk260t-base0"}
         "
@@ -1676,9 +1848,11 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })
     }
+
     const map = new Trace.TraceMap(result.cssMap)
     const lines = result.css.split('\n')
     const line = lines.findIndex((value) => value.includes('color:var('))
+
     expect(
       Trace.originalPositionFor(map, {
         line: line + 1,
@@ -1807,7 +1981,9 @@ const alternate = Theme.extend(theme, { color: { brand: '#f00' } });
 export type Brand = typeof theme.tokens.color.brand;
 export const scope = alternate.className;
 export const props = theme.css({ color: 'brand', padding: 'md' })();`
+
     const result = Transform.compile({ moduleId: 'example/theme.ts', source })
+
     const bundle = await Esbuild.build({
       bundle: true,
       format: 'esm',
@@ -1843,12 +2019,15 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
     ).toMatchInlineSnapshot('false')
 
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-theme-types-'))
+
     try {
       const file = Path.join(directory, 'theme.ts')
+
       await Fs.writeFile(
         file,
         `${result.code}\ntheme.css({ padding: 1 });\n// @ts-expect-error The numeric token 2 is undeclared.\ntheme.css({ padding: 2 });`,
       )
+
       const checked = await Util.promisify(ChildProcess.execFile)(
         process.execPath,
         [
@@ -1868,6 +2047,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
       ).catch((error: Error & { stdout?: string }) => {
         throw new Error(error.stdout || error.message)
       })
+
       expect(checked.stdout).toMatchInlineSnapshot('""')
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })
@@ -1876,6 +2056,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
     const map = new Trace.TraceMap(result.cssMap)
     const lines = result.css.split('\n')
     const line = lines.findIndex((value) => value.includes('color:var('))
+
     expect(
       Trace.originalPositionFor(map, {
         column: lines[line]!.indexOf('color:'),
@@ -1907,6 +2088,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
       moduleId: 'example/theme.ts',
       source: source.replace("'#000'", "'#fff'"),
     })
+
     const inserted = Transform.compile({
       moduleId: 'example/theme.ts',
       source: source.replace(
@@ -1914,6 +2096,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
         "const other = Theme.define({ spacing: { sm: '4px' } }); const theme",
       ),
     })
+
     const separate = Transform.compile({ moduleId: 'another/theme.ts', source })
 
     expect(original.themes).toMatchInlineSnapshot(`
@@ -1964,11 +2147,14 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
         if (kind === 'member') {
           return 'const css = theme.css;'
         }
+
         if (kind === 'destructured') {
           return 'const { css } = theme;'
         }
+
         return ''
       })()
+
       const source = `import { Theme } from 'zyzz';
 const theme = Theme.define({ color: { brand: { dark: '#fff', light: '#000' } }, spacing: { md: '8px' } });
 const alternate = Theme.extend(theme, { color: { brand: '#f00' } });
@@ -1976,7 +2162,9 @@ export const alternateScope = alternate.className;
 export const baseScope = theme.className;
 ${alias}
 export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.css' : 'css'}(${kind === 'tokens' ? '{ color: theme.tokens.color.brand, padding: theme.tokens.spacing.md }' : "{ color: 'brand', padding: 'md' }"});`
+
       const result = Transform.compile({ moduleId: 'example/theme.ts', source })
+
       const bundle = await Esbuild.build({
         alias: { 'zyzz/runtime': Path.join(root, 'src/runtime/index.ts') },
         bundle: true,
@@ -1986,6 +2174,7 @@ export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.css' : '
         stdin: { contents: result.code, loader: 'ts', resolveDir: root },
         write: false,
       })
+
       expect(
         Object.keys(bundle.metafile!.inputs).some((path) =>
           /Theme\.ts|compiler\//.test(path),
@@ -1993,13 +2182,16 @@ export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.css' : '
       ).toMatchInlineSnapshot('false')
 
       const browser = await chromium.launch()
+
       try {
         const page = await browser.newPage()
+
         await page.setContent(
           '<section id="scope"><button id="button">Continue</button></section>',
         )
         await page.addStyleTag({ content: result.css })
         await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+
         const rendered = await page.evaluate(() => {
           const fixture = (
             window as unknown as {
@@ -2012,19 +2204,26 @@ export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.css' : '
               }
             }
           ).Fixture
+
           const scope = document.querySelector<HTMLElement>('#scope')!
           const button = document.querySelector<HTMLElement>('#button')!
+
           button.className = fixture.button({ className: 'external' }).className
+
           const values: string[] = []
+
           for (const name of ['', fixture.alternateScope, fixture.baseScope]) {
             scope.className = name
+
             for (const scheme of ['light', 'dark']) {
               scope.style.colorScheme = scheme
               values.push(getComputedStyle(button).color)
             }
           }
+
           return values
         })
+
         expect(rendered).toMatchInlineSnapshot(`
           [
             "rgb(0, 0, 0)",
@@ -2055,6 +2254,7 @@ export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.css' : '
     const source = `import { Theme as T } from 'zyzz'; const theme = T.define({ color: { brand: '#000' } }); export const props = theme.css({ color: 'brand' })(); export function other(T) { return T.define({ arbitrary: true }); }`
     const result = Transform.compile({ moduleId: 'example/theme.js', source })
     const transformed = await Esbuild.transform(result.code, { loader: 'js' })
+
     expect(transformed.code).toMatchInlineSnapshot(`
       "import { Theme as T } from "zyzz";
       const theme = { className: "z_theme-1kg4lys8lrjea-theme" };
@@ -2102,6 +2302,7 @@ export const second = renamed({ padding: 'md' })();
 export function shadow(css: (input: string) => string) { return css('untouched') }
 `,
     })
+
     expect(result.code).toMatchInlineSnapshot(`
       "
       const theme = ({className:"z_theme-1ypjmwd1mnjqht-theme"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>);
@@ -2119,6 +2320,7 @@ export function shadow(css: (input: string) => string) { return css('untouched')
       .z-1ypjmwd1mnjqht-base0{color:var(--z-t1ypjmwd1mnjqht-theme-color_2e_brand,#06c);}
       .z-1ypjmwd1mnjqht-base1{padding:var(--z-t1ypjmwd1mnjqht-theme-spacing_2e_md,8px);}"
     `)
+
     const bundle = await Esbuild.build({
       bundle: true,
       format: 'cjs',
@@ -2126,13 +2328,18 @@ export function shadow(css: (input: string) => string) { return css('untouched')
       stdin: { contents: result.code, loader: 'ts' },
       write: false,
     })
+
     expect(bundle.metafile!.outputs['stdin.js']!.imports).toMatchInlineSnapshot(
       `[]`,
     )
+
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-alias-'))
+
     try {
       const file = Path.join(directory, 'module.cjs')
+
       await Fs.writeFile(file, bundle.outputFiles[0]!.text)
+
       const executed = await Util.promisify(ChildProcess.execFile)(
         process.execPath,
         [
@@ -2140,12 +2347,14 @@ export function shadow(css: (input: string) => string) { return css('untouched')
           `const value = require(${JSON.stringify(file)}); console.log(JSON.stringify(value.first)); console.log(JSON.stringify(value.second)); console.log(value.shadow(value => value));`,
         ],
       )
+
       expect(executed.stdout).toMatchInlineSnapshot(`
         "{"className":"z-1ypjmwd1mnjqht-base0"}
         {"className":"z-1ypjmwd1mnjqht-base1"}
         untouched
         "
       `)
+
       await Fs.writeFile(
         Path.join(directory, 'module.ts'),
         `${result.code}
@@ -2156,6 +2365,7 @@ renamed({ color: 'unknown' });
 css({ color: 'md' });
 `,
       )
+
       const checked = await Util.promisify(ChildProcess.execFile)(
         process.execPath,
         [
@@ -2173,6 +2383,7 @@ css({ color: 'md' });
         ],
         { timeout: 30_000 },
       )
+
       expect(checked.stdout).toMatchInlineSnapshot(`""`)
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })
@@ -2188,6 +2399,7 @@ const { css } = theme;
 export function card(value = css({color:'brand'})()) { var css = 1; return value }
 `,
     })
+
     expect(result.code).toMatchInlineSnapshot(`
       "
       const theme = ({className:"z_theme-1yrnmp3116l80n-theme"});
@@ -2195,7 +2407,9 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
       export function card(value = ({className:"z-1yrnmp3116l80n-base0"})) { var css = 1; return value }
       "
     `)
+
     const output = await Esbuild.transform(result.code, { loader: 'js' })
+
     expect(output.warnings).toMatchInlineSnapshot(`[]`)
   })
 
@@ -2524,11 +2738,13 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     ]
 
     const outputs = []
+
     for (const source of sources) {
       const result = Transform.compile({
         moduleId: 'example/syntax.tsx',
         source,
       })
+
       await Esbuild.transform(result.code, { loader: 'tsx' })
       outputs.push(result.code)
     }
@@ -2560,6 +2776,7 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
   test('separately transformed modules render without class collisions in Chromium', async () => {
     const browser = await chromium.launch()
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-transform-'))
+
     try {
       const first = Transform.compile({
         moduleId: 'package/first.ts',
@@ -2569,6 +2786,7 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
         moduleId: 'package/second.ts',
         source: `import { css } from 'zyzz'; export const props = css({ color: '#00f', padding: '4px' })();`,
       })
+
       await Fs.writeFile(Path.join(directory, 'first.ts'), first.code)
       await Fs.writeFile(Path.join(directory, 'second.ts'), second.code)
 
@@ -2586,9 +2804,11 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
       })
 
       const page = await browser.newPage()
+
       await page.setContent('<!doctype html><body></body>')
       await page.addStyleTag({ content: first.css + '\n' + second.css })
       await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+
       const result = await page.evaluate(`fixture.values.map(props => {
       const element = document.createElement('button');
       element.className = props.className;
@@ -2624,8 +2844,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     const directory = await Fs.mkdtemp(
       Path.join(root, '.fixture-transform-pack-'),
     )
+
     try {
       const run = Util.promisify(ChildProcess.execFile)
+
       await run('pnpm', ['build'], { cwd: root })
       await run('pnpm', ['pack', '--pack-destination', directory], {
         cwd: root,
@@ -2635,6 +2857,7 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
         name.endsWith('.tgz'),
       )!
       const installed = Path.join(directory, 'node_modules/zyzz')
+
       await Fs.mkdir(installed, { recursive: true })
       await run('tar', [
         '-xzf',
@@ -2648,7 +2871,9 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
         moduleId: 'library/button.ts',
         source: `import { css } from 'zyzz'; export const button = css({ color: '#f00' });`,
       })
+
       await Fs.writeFile(Path.join(directory, 'button.ts'), output.code)
+
       const consumer = await run(
         process.execPath,
         [
@@ -2679,6 +2904,7 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
         ],
         { cwd: directory },
       )
+
       expect(JSON.parse(platforms.stdout)).toMatchInlineSnapshot(`
       {
         "classes": {

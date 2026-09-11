@@ -11,6 +11,7 @@ for (const count of [10, 100]) {
   describe(`theme comparison / ${count} styles`, () => {
     for (const [library, compile] of Object.entries(Themes.compilers)) {
       let fixture: Themes.Fixture
+
       bench(
         library,
         async () => {
@@ -23,16 +24,20 @@ for (const count of [10, 100]) {
           warmupTime: 50,
           setup: async () => {
             fixture = await Themes.create(count)
+
             try {
               const bundle = await compile(fixture)
+
               const measure = (value: string) => ({
                 brotli: Zlib.brotliCompressSync(value).length,
                 gzip: Zlib.gzipSync(value).length,
                 raw: Buffer.byteLength(value),
               })
+
               const css = measure(bundle.css)
               const javascript = measure(bundle.javascript)
               const directory = `bench/results/theme-comparison/${count}`
+
               await Fs.mkdir(directory, { recursive: true })
               await Fs.writeFile(`${directory}/${library}.css`, bundle.css)
               await Fs.writeFile(
@@ -61,6 +66,7 @@ for (const count of [10, 100]) {
           },
           teardown: async () => {
             const directory = fixture.directory
+
             await Fs.rm(directory, { force: true, recursive: true })
           },
         },

@@ -17,6 +17,7 @@ export async function verify(options: verify.Options) {
   let server: Vite.ViteDevServer | undefined
   let preview: Vite.PreviewServer | undefined
   let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+
   try {
     await Fs.writeFile(
       Path.join(root, 'package.json'),
@@ -37,16 +38,21 @@ export async function verify(options: verify.Options) {
       ],
       { cwd: root, timeout: 120000 },
     )
+
     for (const [name, content] of Object.entries(options.files))
       await Fs.writeFile(Path.join(root, name), content)
+
     const require = Module.createRequire(Path.join(root, 'package.json'))
+
     const pluginModule = (await import(
       Url.pathToFileURL(require.resolve(options.plugin)).href
     )) as Record<
       string,
       (options: Record<string, unknown>) => Vite.PluginOption
     >
+
     const framework = pluginModule[options.pluginExport ?? 'default']!
+
     const config: Vite.InlineConfig = {
       build: { cssTarget: 'esnext' },
       configFile: false,
@@ -61,6 +67,7 @@ export async function verify(options: verify.Options) {
       root,
       server: { fs: { allow: [process.cwd()] }, host: '127.0.0.1', port: 0 },
     }
+
     await Fs.writeFile(
       Path.join(root, 'tsconfig.json'),
       JSON.stringify({
@@ -84,6 +91,7 @@ export async function verify(options: verify.Options) {
         include: ['types.tsx', 'styles.ts'],
       }),
     )
+
     const checked = await exec(
       process.execPath,
       [
@@ -93,25 +101,34 @@ export async function verify(options: verify.Options) {
       ],
       { timeout: 120000 },
     )
+
     expect(checked.stdout).toMatchInlineSnapshot(`""`)
+
     server = await Vite.createServer(config)
     await server.listen()
+
     const ssr = (await server.ssrLoadModule('/server.tsx')) as {
       render: () =>
         | { html: string; script: string }
         | Promise<{ html: string; script: string }>
     }
+
     const rendered = await ssr.render()
+
     expect(rendered.html.includes('class=')).toMatchInlineSnapshot(`true`)
     expect(rendered.html.includes('className=')).toMatchInlineSnapshot(`false`)
+
     await Fs.writeFile(
       Path.join(root, 'index.html'),
       `<!doctype html><html><head>${rendered.script}</head><body><div id="app">${rendered.html}</div><button id="dispose">Dispose</button><script type="module" src="/client.tsx"></script></body></html>`,
     )
     browser = await chromium.launch({ headless: true })
+
     const page = await browser.newPage()
     const errors: string[] = []
+
     page.on('pageerror', (error) => errors.push(error.message))
+
     for (const production of [false, true]) {
       if (production) {
         await server!.close()
@@ -122,12 +139,16 @@ export async function verify(options: verify.Options) {
           preview: { host: '127.0.0.1', port: 0 },
         })
       }
+
       const url = production
         ? preview!.resolvedUrls!.local[0]!
         : server!.resolvedUrls!.local[0]!
+
       await page.goto(url)
+
       if (!production) {
         const optimizer = server!.environments.client.depsOptimizer
+
         await optimizer?.scanProcessing
         await Promise.all(
           Object.values({
@@ -139,15 +160,19 @@ export async function verify(options: verify.Options) {
         )
         await page.waitForLoadState('networkidle')
       }
+
       await page.waitForFunction(
         'document.documentElement.dataset.ready === "true"',
       )
+
       expect(
         await page.evaluate('document.documentElement.dataset.identity'),
       ).toMatchInlineSnapshot(`"true"`)
+
       await page.waitForFunction(
         'getComputedStyle(document.querySelector("#card")).width === "100px"',
       )
+
       expect(
         await page
           .locator('#card')
@@ -163,11 +188,13 @@ export async function verify(options: verify.Options) {
           .locator('#card')
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(0, 0, 0)"`)
+
       await page.evaluate('window.original = document.querySelector("#card")')
       await page.locator('#toggle').click()
       await page.waitForFunction(
         'getComputedStyle(document.querySelector("#card")).width === "300px"',
       )
+
       expect(
         await page.evaluate(
           'window.original === document.querySelector("#card")',
@@ -190,10 +217,12 @@ export async function verify(options: verify.Options) {
           .locator('#card')
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(255, 255, 255)"`)
+
       await page.locator('#toggle').click()
       await page.waitForFunction(
         'getComputedStyle(document.querySelector("#card")).width === "100px"',
       )
+
       if (!production) {
         await Fs.writeFile(
           Path.join(root, 'styles.ts'),
@@ -203,29 +232,35 @@ export async function verify(options: verify.Options) {
           'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
         )
       }
+
       await page.waitForFunction(
         'document.querySelector("#card")?.isConnected && getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
       )
+
       expect(
         await page.evaluate(
           'getComputedStyle(document.querySelector("#card")).backgroundColor',
         ),
       ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
+
       await page.locator('#dispose').click()
       await page.waitForFunction(
         'document.querySelector("#app").childElementCount === 0',
       )
     }
+
     expect(errors).toMatchInlineSnapshot(`[]`)
   } finally {
     await browser?.close()
     await server?.close()
+
     if (preview)
       await new Promise<void>((resolve, reject) =>
         preview!.httpServer.close((error) =>
           error ? reject(error) : resolve(),
         ),
       )
+
     await Fs.rm(root, { force: true, recursive: true })
   }
 }

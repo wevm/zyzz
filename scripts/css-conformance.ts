@@ -33,10 +33,12 @@ type Entry = {
   grammar: string
   status: 'deferred' | 'partial' | 'supported' | 'unclassified'
 }
+
 type Inventory = {
   families: Record<string, Record<string, Entry>>
   version: string
 }
+
 const previous: Inventory = JSON.parse(Fs.readFileSync(file, 'utf8'))
 const version: string = require('mdn-data/package.json').version
 const current: Inventory = { families: {}, version }
@@ -44,16 +46,21 @@ const changes: string[] = []
 for (const family of families) {
   const data: Record<string, unknown> = require(`mdn-data/css/${family}.json`)
   const entries: Record<string, Entry> = {}
+
   current.families[family] = entries
+
   for (const name of Object.keys(data).sort()) {
     const old = previous.families[family]?.[name]
     const grammar = Crypto.createHash('sha256')
       .update(JSON.stringify(data[name]))
       .digest('hex')
+
     entries[name] = { grammar, status: old?.status ?? 'unclassified' }
+
     if (!old) changes.push(`Added ${family}: ${name}`)
     else if (old.grammar !== grammar) changes.push(`Changed ${family}: ${name}`)
   }
+
   for (const name of Object.keys(previous.families[family] ?? {}))
     if (!(name in data)) changes.push(`Removed ${family}: ${name}`)
 }
@@ -74,19 +81,24 @@ if (process.argv.includes('--update')) {
     '| Family | 🟢 Supported | 🟡 Partial | ⚪ Deferred | 🔴 Unclassified |',
   )
   console.log('| --- | ---: | ---: | ---: | ---: |')
+
   for (const [family, entries] of Object.entries(current.families)) {
     const counts = { deferred: 0, partial: 0, supported: 0, unclassified: 0 }
+
     for (const [name, entry] of Object.entries(entries)) {
       if (!Object.hasOwn(counts, entry.status))
         changes.push(`Invalid status ${family}: ${name}`)
       else counts[entry.status]++
+
       if (entry.status === 'unclassified')
         changes.push(`Unclassified ${family}: ${name}`)
     }
+
     console.log(
       `| ${family} | ${counts.supported} | ${counts.partial} | ${counts.deferred} | ${counts.unclassified} |`,
     )
   }
+
   const properties = Object.entries(current.families.properties!)
   const incomplete = properties.filter(
     ([, entry]) => entry.status !== 'supported',
@@ -94,20 +106,25 @@ if (process.argv.includes('--update')) {
   const supported = properties.length - incomplete.length
   const percentage =
     properties.length === 0 ? 0 : (supported / properties.length) * 100
+
   console.log(
     `\nFull property conformance: **${supported}/${properties.length} (${percentage.toFixed(2)}%)**. Required: **100%**. Partial properties receive no completion credit.`,
   )
+
   if (requireFull && (properties.length === 0 || incomplete.length > 0)) {
     console.log('\n<details>\n<summary>Incomplete properties</summary>\n')
     console.log('| Property | Status |\n| --- | --- |')
+
     for (const [name, entry] of incomplete)
       console.log(`| ${name} | ${entry.status} |`)
+
     console.log('\n</details>')
     console.error(
       `CSS property conformance is below 100%: ${supported}/${properties.length} fully supported; ${incomplete.length} incomplete.`,
     )
     process.exitCode = 1
   }
+
   if (changes.length) {
     console.error(
       `\n${changes.join('\n')}\nReview upstream changes with pnpm update:css, then classify coverage.json entries.`,

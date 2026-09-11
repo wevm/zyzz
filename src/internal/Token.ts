@@ -17,10 +17,13 @@ export function accepts(
   if (group === 'borderColor') return /^border.*Color$/.test(property)
   if (group === 'borderRadius') return /^border.*Radius$/.test(property)
   if (group === 'textColor') return property === 'color'
+
   if (group === 'margin')
     return property.startsWith('margin') && property !== 'marginTrim'
+
   if (group === 'padding') return property.startsWith('padding')
   if (group === 'spacing' && property === 'marginTrim') return false
+
   if (group === 'spacing')
     return (
       /^(padding|margin|inset|scrollPadding)/.test(property) ||
@@ -50,6 +53,7 @@ export function accepts(
         'width',
       ].includes(property)
     )
+
   return group === property
 }
 
@@ -59,6 +63,7 @@ export function bind<tokens extends Theme.Tokens>(
   contract: Contract,
 ): Theme.Definition<tokens> {
   type Tree = { [key: string]: Reference | Tree }
+
   function rebind(tree: Theme.References<Theme.Tokens>): Tree {
     return Object.freeze(
       Object.fromEntries(
@@ -76,7 +81,9 @@ export function bind<tokens extends Theme.Tokens>(
       ),
     )
   }
+
   const tokens = rebind(original.tokens)
+
   return Object.freeze(
     Object.defineProperty(
       {
@@ -160,6 +167,7 @@ export function variables<tree>(tree: tree): Variables<tree> {
       ...tree,
       [web]: true as const,
     }) as unknown as Variables<tree>
+
   return Object.freeze(
     Object.fromEntries(
       Object.entries(tree as object).map(([key, value]) => [
@@ -200,8 +208,11 @@ export function is(value: unknown): value is Reference {
     Object.getOwnPropertyDescriptor(value, reference)?.value !== true
   )
     return false
+
   if (!Object.isFrozen(value)) return false
+
   const fields = Object.getOwnPropertyDescriptors(value)
+
   return ['contract', 'group', 'path', 'value'].every(
     (key) => fields[key] && 'value' in fields[key]!,
   )
@@ -336,6 +347,7 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
     'color',
   ] as const) {
     if (!accepts(group, options.property)) continue
+
     const path = `${group}.${value}`
     if (Object.hasOwn(data.values, path))
       return create({
@@ -345,6 +357,7 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
         value: data.values[path]!,
       })
   }
+
   return value
 }
 

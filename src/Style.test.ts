@@ -19,6 +19,7 @@ function diagnose(input: unknown, options: Style.define.Options = {}) {
     return Style.define(input, options)
   } catch (error) {
     if (!(error instanceof Style.InvalidError)) throw error
+
     return { diagnostics: error.diagnostics, name: error.name }
   }
 }
@@ -39,6 +40,7 @@ describe('define', () => {
         },
       }),
     ]
+
     for (const value of values)
       expect(() =>
         Style.define({ box: { width: value } } as never),
@@ -56,6 +58,7 @@ describe('define', () => {
       spacing: { 4: '1rem' },
       textColor: { brand: { dark: '#fff', light: '#111' } },
     })
+
     const named = Style.define(
       {
         card: {
@@ -69,6 +72,7 @@ describe('define', () => {
       },
       { theme },
     )
+
     const explicit = Style.define({
       card: {
         backgroundColor: theme.tokens.backgroundColor.brand,
@@ -79,11 +83,13 @@ describe('define', () => {
       },
       link: { color: theme.tokens.color.blue[500] },
     })
+
     const alternate = Theme.extend(theme, { spacing: { 4: '2rem' } })
     const output = Css.compile({
       styles: named,
       themes: { alternate, base: theme },
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:2rem;--z5:#06c;}
       .t_1{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:1rem;--z5:#06c;}
@@ -103,11 +109,13 @@ describe('define', () => {
       first: { color: 'brand', padding: 'brand', width: '1px' },
       second: { color: 'brand', padding: 'brand', width: '2px' },
     } as const
+
     for (const theme of [
       Theme.define({ color: { brand: 'red' }, spacing: { brand: '4px' } }),
       Theme.define({ color: { brand: 'blue' }, spacing: { brand: '8px' } }),
     ]) {
       const named = Style.define(styles, { theme })
+
       const explicit = Style.define({
         first: {
           color: theme.tokens.color.brand,
@@ -120,6 +128,7 @@ describe('define', () => {
           width: '2px',
         },
       })
+
       expect(
         Css.compile({ styles: named, themes: { base: theme } }).css ===
           Css.compile({ styles: explicit, themes: { base: theme } }).css,
@@ -132,6 +141,7 @@ describe('define', () => {
       color: { white: '#000' },
       spacing: { 0: '8px', '1rem': '2rem' },
     })
+
     const styles = Style.define(
       {
         explicit: {
@@ -142,6 +152,7 @@ describe('define', () => {
       },
       { theme },
     )
+
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
       ".z-explicit{color:var(--z0,#000);padding:var(--z1,8px);}
       .z_base0{width:1rem;}
@@ -164,33 +175,42 @@ describe('define', () => {
     )
     const output = Css.compile({ styles, themes: { alternate, base: theme } })
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage({ colorScheme: 'light' })
+
       await page.setContent(
         `<style>:root{color-scheme:light dark}${output.css}</style><main><div class="${output.classes.card}">Card</div></main>`,
       )
+
       async function read() {
         return page.locator('div').evaluate((element) => {
           const style = getComputedStyle(element)
+
           return { color: style.color, padding: style.padding }
         })
       }
+
       expect(await read()).toMatchInlineSnapshot(`
         {
           "color": "rgb(17, 17, 17)",
           "padding": "8px",
         }
       `)
+
       await page.locator('main').evaluate((element, scope) => {
         element.setAttribute('class', scope)
       }, output.themes.alternate)
+
       expect(await read()).toMatchInlineSnapshot(`
         {
           "color": "rgb(0, 102, 204)",
           "padding": "16px",
         }
       `)
+
       await page.emulateMedia({ colorScheme: 'dark' })
+
       expect(await read()).toMatchInlineSnapshot(`
         {
           "color": "rgb(153, 204, 255)",
@@ -204,6 +224,7 @@ describe('define', () => {
 
   test('preserves named declarations and cascade-significant order across modules', () => {
     const definition = Style.define(components)
+
     expect({
       definition,
       repeatMatches:
@@ -321,7 +342,9 @@ describe('define', () => {
   test('copies input and freezes the entire public data graph', () => {
     const input = { card: { padding: '1rem' as const } }
     const definition = Style.define(input)
+
     Object.assign(input.card, { padding: '9rem' })
+
     const objects = [
       definition,
       definition.styles,
@@ -329,6 +352,7 @@ describe('define', () => {
       definition.styles[0]?.declarations,
       definition.styles[0]?.declarations[0],
     ]
+
     expect({
       frozen: objects.map(Object.isFrozen),
       mutationAccepted: Reflect.set(definition.styles, '0', {}),
@@ -350,14 +374,17 @@ describe('define', () => {
 
   test('rejects executable and non-data inputs without invoking accessors', () => {
     let reads = 0
+
     const input = {
       card: {
         get padding() {
           reads++
+
           return '1rem'
         },
       },
     }
+
     const failures = [
       input,
       null,
@@ -367,6 +394,7 @@ describe('define', () => {
       { card: null },
       { card: { [Symbol('color')]: '#fff' } },
     ].map((value) => diagnose(value))
+
     expect({ failures, reads }).toMatchInlineSnapshot(`
       {
         "failures": [
@@ -461,6 +489,7 @@ describe('define', () => {
         toString: { margin: 'auto' as const },
       },
     )
+
     expect({
       empty: Style.define({}),
       emptyStyle: Style.define({ empty: {} }),
@@ -537,6 +566,7 @@ describe('define', () => {
     card: { color: '#fff', padding: 0 },
   })`)
     const nested: unknown = { card: Vm.runInNewContext("({ color: '#fff' })") }
+
     const instances: readonly unknown[] = Vm.runInNewContext(`[
     new (class Card { color = '#fff' })(),
     new Date(),
@@ -545,17 +575,22 @@ describe('define', () => {
       return Object.create(new.target.prototype)
     } })(),
   ]`)
+
     let reads = 0
     const prototype = Object.create(null) as object
+
     Object.defineProperty(prototype, 'constructor', {
       get() {
         reads++
+
         return Object
       },
     })
+
     const rejected = [...instances, Object.create(prototype)].map((card) =>
       diagnose({ card }),
     )
+
     expect({
       foreign: diagnose(foreign),
       nested: diagnose(nested),
@@ -684,12 +719,14 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
         /oxc|compiler|node:|themes/.test(path),
       ),
     ).toMatchInlineSnapshot('[]')
+
     return bundle.outputFiles[0]!.text
   }
 
   test('the pure compilation pipeline agrees in Node, a worker, and QuickJS', async () => {
     const code = await portableBundle()
     const server = Vm.runInNewContext(`${code}; JSON.stringify(fixture.result)`)
+
     expect(JSON.parse(server)).toMatchInlineSnapshot(`
     {
       "classes": {
@@ -704,11 +741,13 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       `${code}; require('node:worker_threads').parentPort.postMessage(JSON.stringify(fixture.result));`,
       { eval: true },
     )
+
     try {
       const result = await new Promise<string>((resolve, reject) => {
         worker.once('error', reject)
         worker.once('message', resolve)
       })
+
       expect(JSON.parse(result)).toMatchInlineSnapshot(`
       {
         "classes": {
@@ -724,10 +763,12 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
 
     const engine = await getQuickJS()
     const context = engine.newContext()
+
     try {
       const result = context.unwrapResult(
         context.evalCode(`${code}; JSON.stringify(fixture.result)`),
       )
+
       try {
         expect(JSON.parse(context.getString(result))).toMatchInlineSnapshot(`
       {
@@ -749,9 +790,12 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
   test('the pure compilation pipeline runs in Chromium and a browser worker', async () => {
     const code = await portableBundle()
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.addScriptTag({ content: code })
+
       expect(await page.evaluate('fixture.result')).toMatchInlineSnapshot(`
       {
         "classes": {
@@ -768,7 +812,9 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
             type: 'text/javascript',
           }),
         )
+
         const worker = new globalThis.Worker(url)
+
         try {
           return await new Promise((resolve, reject) => {
             worker.onmessage = (event) => resolve(event.data)
@@ -779,6 +825,7 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
           URL.revokeObjectURL(url)
         }
       }, code)
+
       expect(result).toMatchInlineSnapshot(`
       {
         "classes": {

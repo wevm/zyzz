@@ -42,6 +42,7 @@ export function updateDom(element) {
 describe('create', () => {
   test('compiled bindings survive SSR, hydration, updates, and attribute serialization', async () => {
     const result = Transform.compile({ moduleId: 'fixture/card.ts', source })
+
     const bundle = await Esbuild.build({
       alias: {
         'zyzz/runtime': Path.resolve('src/runtime/index.ts'),
@@ -55,6 +56,7 @@ describe('create', () => {
       stdin: { contents: result.code, loader: 'ts', resolveDir: process.cwd() },
       write: false,
     })
+
     expect(
       Object.values(bundle.metafile!.outputs).some((output) =>
         Object.entries(output.inputs).some(
@@ -64,10 +66,13 @@ describe('create', () => {
         ),
       ),
     ).toMatchInlineSnapshot(`false`)
+
     const browser = await chromium.launch({ headless: true })
+
     try {
       const page = await browser.newPage()
       const errors: string[] = []
+
       page.on('pageerror', (error) => errors.push(error.message))
       await page.setContent(
         '<style>' +
@@ -75,10 +80,12 @@ describe('create', () => {
           '</style><main style="width:400px" id="react"></main><main style="width:400px" id="dom"></main>',
       )
       await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+
       const props = await page.evaluate<css.Props>('Fixture.props("25%")')
       const markup = Server.renderToString(
         React.createElement('div', { id: 'card', ...props }),
       )
+
       await page.evaluate((html) => {
         document.querySelector('#react')!.innerHTML = html
       }, markup)
@@ -88,6 +95,7 @@ describe('create', () => {
       await page.waitForFunction(
         'document.querySelector("#card").style.opacity === "0.5"',
       )
+
       expect(
         await page.locator('#plain').getAttribute('data-note'),
       ).toMatchInlineSnapshot(`""<&>"`)
@@ -118,11 +126,13 @@ describe('create', () => {
           "style",
         ]
       `)
+
       // Wait for React's actual hydration commit before issuing an update.
       await page.waitForFunction(
         `document.documentElement.dataset.hydrated === 'true'`,
       )
       await page.evaluate('Fixture.update(); Fixture.updateDom(window.plain)')
+
       for (const id of ['card', 'plain']) {
         expect(
           await page
@@ -147,12 +157,15 @@ describe('create', () => {
             ),
         ).toMatchInlineSnapshot(`""`)
       }
+
       expect(
         await page.evaluate(
           'window.original === document.querySelector("#card") && window.plain === document.querySelector("#plain")',
         ),
       ).toMatchInlineSnapshot(`true`)
+
       await page.evaluate('Fixture.unmount()')
+
       expect(await page.locator('#react').innerHTML()).toMatchInlineSnapshot(
         `""`,
       )

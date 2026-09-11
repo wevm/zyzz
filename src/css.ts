@@ -46,8 +46,10 @@ export declare namespace css {
     input: input &
       Record<Exclude<keyof input, keyof values | keyof Options>, never>,
   ) => Props<output>
+
   /** Failure from executing source without a transform. */
   type ErrorType = MissingTransformError
+
   /** Styling overrides consumed by a transformed definition. */
   type Options = {
     /** External class names appended to the generated classes. */
@@ -55,8 +57,10 @@ export declare namespace css {
     /** Literal inline styling overrides. */
     readonly style?: Literal.Properties | undefined
   }
+
   /** Props produced by a transformed web definition. */
   type Output = 'html' | 'react'
+
   /** Renderer-native props selected by configuration. */
   type Props<output extends Output = 'react'> = output extends 'html'
     ? { readonly class: string; readonly style?: string | undefined }
@@ -66,6 +70,7 @@ export declare namespace css {
         /** Supplied inline styling overrides when present. */
         readonly style?: Literal.Properties | undefined
       }
+
   /** Callable definition; source rewriting supplies its implementation. */
   type ReturnType<output extends Output = 'react'> = <
     const options extends Options = Options,

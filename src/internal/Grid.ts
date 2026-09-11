@@ -41,6 +41,7 @@ type Words<
     ? never
     : Words<rest, span>
   : Word<text, span>
+
 type Word<text extends string, span extends boolean> = [
   Numeric.Parse<text>,
 ] extends [never]
@@ -48,6 +49,7 @@ type Word<text extends string, span extends boolean> = [
     ? never
     : text
   : Count<text, span>
+
 type Count<value extends string | number, span extends boolean> =
   Numeric.Checked<value, true> extends never
     ? never

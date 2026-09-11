@@ -5,6 +5,7 @@ import * as Literal from './Literal.js'
 export type Map = Readonly<Record<string, readonly [Property, ...Property[]]>>
 /** Standard properties accepted as alias targets. */
 export type Property = Exclude<keyof Literal.Properties, `--${string}`>
+
 /** Copies validated configuration data; throws for invalid aliases or targets. */
 export function read(value: unknown): Map {
   if (
@@ -15,7 +16,9 @@ export function read(value: unknown): Map {
       Object.getPrototypeOf(value) !== Object.prototype)
   )
     throw new Error('shorthands must be a property mapping record.')
+
   const entries = Object.entries(Object.getOwnPropertyDescriptors(value))
+
   return Object.freeze(
     Object.setPrototypeOf(
       Object.fromEntries(
@@ -37,6 +40,7 @@ export function read(value: unknown): Map {
             ].includes(name)
           )
             throw new Error(`Invalid shorthand name: ${name}`)
+
           const targets: unknown = descriptor.value
           if (
             !('value' in descriptor) ||
@@ -46,7 +50,9 @@ export function read(value: unknown): Map {
             throw new Error(
               `Shorthand ${name} requires a nonempty property tuple.`,
             )
+
           const result: Property[] = []
+
           for (let index = 0; index < targets.length; index++) {
             const target: unknown = Object.getOwnPropertyDescriptor(
               targets,
@@ -60,8 +66,10 @@ export function read(value: unknown): Map {
               throw new Error(
                 `Shorthand ${name} requires unique standard properties.`,
               )
+
             result.push(target as Property)
           }
+
           return [name, Object.freeze(result)]
         }),
       ),
@@ -98,6 +106,7 @@ export type Validated<mappings extends Map> = {
       : Unique<mappings[key]>
     : never
 }
+
 type Unique<
   targets extends readonly Property[],
   seen extends Property = never,

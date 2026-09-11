@@ -5,8 +5,38 @@ import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
+import { Config } from 'zyzz'
 
 describe('create', () => {
+  test('reports missing transforms and removes unused selection runtime from bundles', async () => {
+    const { themes } = Config.create({
+      defaultTheme: 'base',
+      themes: { base: {} },
+    })
+    expect(() => themes({ theme: 'base' })).toThrowErrorMatchingInlineSnapshot(
+      `[css.MissingTransformError: css requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.]`,
+    )
+    const graph = Graph.compile({
+      modules: {
+        'app.ts': `import {Config} from 'zyzz';const {css}=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}},other:{color:{ink:'blue'}}}});export const props=css({color:'ink'})();`,
+      },
+    })
+    const bundle = await Esbuild.build({
+      stdin: {
+        contents: graph.modules['app.ts']!.code,
+        loader: 'ts',
+        resolveDir: process.cwd(),
+      },
+      bundle: true,
+      write: false,
+      minify: true,
+      format: 'esm',
+      alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+    })
+    expect(
+      bundle.outputFiles![0]!.text.includes('colorScheme'),
+    ).toMatchInlineSnapshot('false')
+  })
   test('rejects selectors on configurations without named catalogs', () => {
     for (const options of ['{}', "{theme:{color:{ink:'red'}}}"])
       expect(() =>

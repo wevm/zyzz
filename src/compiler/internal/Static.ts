@@ -122,6 +122,12 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
       const resolved = resolve(value, allowed, active)
       active.delete(binding)
       if (
+        ['CallExpression', 'NewExpression', 'Identifier'].includes(
+          resolved.type,
+        )
+      )
+        return node
+      if (
         resolved.type === 'ObjectExpression' ||
         resolved.type === 'ArrayExpression'
       ) {
@@ -285,7 +291,9 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
     return node
   }
   function normalize(node: Ast.Node, allowed: ReadonlySet<number>): Ast.Node {
-    node = resolve(node, allowed)
+    const original = node
+    const resolved = resolve(node, allowed)
+    node = Expression.unwrap(original) === resolved ? original : resolved
     if (node.type === 'ObjectExpression') {
       const expanded = properties(node, allowed)
       const normalized = expanded.map((property) =>

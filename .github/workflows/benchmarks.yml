@@ -47,6 +47,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Install dependencies
+        id: dependencies
         uses: ./.github/actions/install-dependencies
       - name: Record benchmark environment
         run: |
@@ -132,14 +133,6 @@ jobs:
           printf '\n</details>\n' >> "$RUNNER_TEMP/benchmark-report.md"
           mv "$RUNNER_TEMP/benchmark-report.md" bench/results/report.md
           cat bench/results/report.md >> "$GITHUB_STEP_SUMMARY"
-      - if: ${{ !cancelled() }}
-        name: Upload benchmark results
-        uses: actions/upload-artifact@v4
-        with:
-          if-no-files-found: error
-          name: benchmarks
-          path: bench/results/
-          retention-days: 30
       - name: Upload baseline results
         if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
         uses: actions/upload-artifact@v4
@@ -175,11 +168,50 @@ jobs:
       - name: Enforce framework performance
         if: ${{ !cancelled() && steps.frameworks.outcome == 'failure' }}
         run: exit 1
-    timeout-minutes: 30
+      - name: Remove separate render comment
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          delete: true
+          header: render-benchmarks
+      - name: Install runtime benchmark browser
+        id: render-browser
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Measure base React renders with the candidate harness
+        id: render-baseline
+        if: ${{ !cancelled() && steps.render-browser.outcome == 'success' && github.event_name == 'pull_request' }}
+        env:
+          BENCH_RENDER_OUTPUT: bench/results/render-base
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          trap 'git restore --source=HEAD --worktree -- src' EXIT
+          git restore --source="$BASE_SHA" --worktree -- src
+          mkdir -p "$BENCH_RENDER_OUTPUT"
+          printf '%s\n' "$BASE_SHA" > "$BENCH_RENDER_OUTPUT/commit.txt"
+          pnpm bench:render
+      - name: Measure production React renders in Chromium
+        id: render
+        if: ${{ !cancelled() && steps.render-browser.outcome == 'success' && (steps.render-baseline.outcome == 'success' || steps.render-baseline.outcome == 'skipped') }}
+        run: pnpm bench:render
+      - name: Validate and report React renders
+        if: ${{ !cancelled() && steps.render.outcome == 'success' }}
+        run: |
+          node bench/RenderReport.ts bench/results > bench/results/render.md
+          cat bench/results/render.md >> "$GITHUB_STEP_SUMMARY"
+      - if: ${{ !cancelled() }}
+        name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: benchmarks
+          path: bench/results/
+          retention-days: 30
+    timeout-minutes: 50
   report:
     name: Benchmark Report
     if: ${{ !cancelled() }}
-    needs: [benchmarks, render]
+    needs: benchmarks
     permissions:
       actions: read
       contents: read
@@ -192,22 +224,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Download compiler results
+      - name: Download benchmark results
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: benchmarks
-          path: reports/compiler
-      - name: Download render results
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: render-benchmarks
-          path: reports/render
+          path: reports/benchmarks
       - name: Prepare comment
         run: |
           mkdir -p reports
-          node bench/Comment.ts reports/compiler/report.md reports/render/render.md > reports/comment.md
+          node bench/Comment.ts reports/benchmarks/report.md reports/benchmarks/render.md > reports/comment.md
           cat reports/comment.md >> "$GITHUB_STEP_SUMMARY"
       - name: Comment benchmark results
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
@@ -216,59 +242,5 @@ jobs:
           header: benchmarks
           path: reports/comment.md
     timeout-minutes: 5
-  render:
-    name: React Render Benchmarks
-    permissions:
-      contents: read
-      pull-requests: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Install dependencies
-        uses: ./.github/actions/install-dependencies
-      - name: Remove separate render comment
-        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          delete: true
-          header: render-benchmarks
-      - name: Record render environment
-        run: |
-          mkdir -p bench/results
-          git rev-parse HEAD > bench/results/commit.txt
-          sha256sum pnpm-lock.yaml > bench/results/lockfile.txt
-          lscpu > bench/results/cpu.txt
-          node --version > bench/results/node.txt
-      - name: Install runtime benchmark browser
-        run: pnpm exec playwright install --with-deps chromium
-      - name: Measure base React renders with the candidate harness
-        if: github.event_name == 'pull_request'
-        env:
-          BENCH_RENDER_OUTPUT: bench/results/render-base
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          trap 'git restore --source=HEAD --worktree -- src' EXIT
-          git restore --source="$BASE_SHA" --worktree -- src
-          mkdir -p "$BENCH_RENDER_OUTPUT"
-          printf '%s\n' "$BASE_SHA" > "$BENCH_RENDER_OUTPUT/commit.txt"
-          pnpm bench:render
-      - name: Measure production React renders in Chromium
-        run: pnpm bench:render
-      - name: Validate and report React renders
-        run: |
-          node bench/RenderReport.ts bench/results > bench/results/render.md
-          cat bench/results/render.md >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload render measurements
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          if-no-files-found: error
-          name: render-benchmarks
-          path: bench/results/
-          retention-days: 30
-    timeout-minutes: 20
 permissions:
   contents: read

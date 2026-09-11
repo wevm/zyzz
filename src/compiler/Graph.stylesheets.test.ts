@@ -104,7 +104,7 @@ global({html:{color:'blue'}});`
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      '[Error: Conflicting packed stylesheet contributions.]',
+      '[Source.ExtractError: lib/b.js:0: Conflicting packed stylesheet contributions.]',
     )
   })
   test('normalizes encoded asset traversal and rejects generated or control-file collisions', async () => {
@@ -151,6 +151,14 @@ global({html:{color:'blue'}});`
     expect(output.sharedCss?.includes('@keyframes')).toMatchInlineSnapshot(
       'true',
     )
+  })
+  test('does not retain animation names exported only as types', () => {
+    const output = Graph.compile({
+      modules: {
+        'effects.ts': `import {keyframes} from 'zyzz/web';const fade=keyframes({from:{opacity:0},to:{opacity:1}});type fade=typeof fade;export type {fade}`,
+      },
+    })
+    expect(output.sharedCss).toMatchInlineSnapshot('undefined')
   })
   test('serves relocated assets and layers with the optional reset in Chromium', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-assets-browser-'))

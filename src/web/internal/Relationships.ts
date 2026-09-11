@@ -218,7 +218,9 @@ export function selector(
       typeof values.has !== 'string' ||
       !values.has.trim() ||
       [
-        ...values.has.matchAll(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\\.|(&)/gs),
+        ...values.has.matchAll(
+          /\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\\.|(&)/gs,
+        ),
       ].some((match) => match[1])
     )
       throw new Error('has requires a descendant selector without nesting.')

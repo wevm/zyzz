@@ -3,10 +3,23 @@ import * as Mapping from '@jridgewell/gen-mapping'
 import * as Lightning from 'lightningcss'
 import * as Contributions from '../../web/internal/Contributions.js'
 
+/** Identifies the owner of invalid packed stylesheet output. */
+export class ConflictError extends Error {
+  /** Attaches the contract/source identity to the rendering failure. */
+  constructor(
+    readonly source: string,
+    message: string,
+  ) {
+    super(message)
+  }
+  override name = 'Stylesheets.ConflictError'
+}
 /** Ordered CSS owned by one portable source module. */
 export type Section = {
   /** Portable identity of the contributing source module. */
   readonly source: string
+  /** Trusted graph owner; ignored when reading external metadata. */
+  readonly owner?: string | undefined
   /** Stable contribution identity within its source module. */
   readonly key?: string | undefined
   /** Ordered emitted CSS before host asset relocation. */
@@ -50,7 +63,10 @@ export function render(sections: readonly Section[]) {
     const prior = seen.get(identity)
     if (prior !== undefined) {
       if (prior !== signature)
-        throw new Error('Conflicting packed stylesheet contributions.')
+        throw new ConflictError(
+          section.owner ?? section.source,
+          'Conflicting packed stylesheet contributions.',
+        )
       return false
     }
     seen.set(identity, signature)
@@ -61,6 +77,7 @@ export function render(sections: readonly Section[]) {
   )
   const map = new Mapping.GenMapping({ file: 'zyzz.shared.css' })
   const assets: Record<string, string> = Object.create(null)
+  const owners: Record<string, string> = Object.create(null)
   const chunks: string[] = layers.length ? [`@layer ${layers.join(',')};`] : []
   let line = chunks.length + 1
   for (const section of ordered) {
@@ -76,6 +93,7 @@ export function render(sections: readonly Section[]) {
           const target = resolve(section.source, url.url)
           const key = `zyzz-asset:${encodeURIComponent(target)}`
           assets[key] = target
+          owners[key] = section.owner ?? section.source
           return { ...url, url: key }
         },
       },
@@ -97,7 +115,12 @@ export function render(sections: readonly Section[]) {
     chunks.push(css)
     line += css.split('\n').length
   }
-  return { css: chunks.join('\n'), map: Mapping.toEncodedMap(map), assets }
+  return {
+    css: chunks.join('\n'),
+    map: Mapping.toEncodedMap(map),
+    assets,
+    owners,
+  }
 }
 /** Reads packed sections as validated data; CSS is parsed before emission. */
 export function read(value: unknown): readonly Section[] {

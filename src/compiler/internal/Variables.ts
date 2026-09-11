@@ -71,6 +71,8 @@ export function collect(
   for (const statement of program.body)
     if (statement.type === 'ImportDeclaration')
       for (const specifier of statement.specifiers) {
+        if ('exportKind' in specifier && specifier.exportKind === 'type')
+          continue
         const link = links[specifier.local.name]
         if (link?.kind === 'variables' && link.call.variables) {
           bound.set(specifier.local.name, link)
@@ -309,8 +311,14 @@ export function collect(
     return true
   }
   for (const statement of program.body)
-    if (statement.type === 'ExportNamedDeclaration' && !statement.source)
+    if (
+      statement.type === 'ExportNamedDeclaration' &&
+      statement.exportKind !== 'type' &&
+      !statement.source
+    )
       for (const specifier of statement.specifiers) {
+        if ('exportKind' in specifier && specifier.exportKind === 'type')
+          continue
         const name =
           specifier.local.type === 'Identifier'
             ? specifier.local.name

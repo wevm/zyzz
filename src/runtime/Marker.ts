@@ -10,7 +10,13 @@ export type Definition = {
 }
 /** Copies and validates finite state schemas without reading accessors. */
 export function schema(input: unknown): Schema {
-  if (!input || typeof input !== 'object' || Array.isArray(input))
+  if (
+    !input ||
+    typeof input !== 'object' ||
+    Array.isArray(input) ||
+    (Object.getPrototypeOf(input) !== null &&
+      Object.getPrototypeOf(input) !== Object.prototype)
+  )
     throw new Error('Marker schemas require a plain record.')
   if (Object.getOwnPropertySymbols(input).length)
     throw new Error('Marker schemas require string keys.')

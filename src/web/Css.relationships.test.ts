@@ -5,6 +5,7 @@ import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
+import { Marker } from 'zyzz/runtime'
 const config = `import {Css} from 'zyzz/web';export const card=Css.marker({state:['open','closed'],selected:[true,false]});`
 const app = `import {css} from 'zyzz';import {Css} from 'zyzz/web';import {card} from 'library';export {card};export const styles={ancestor:css({[Css.ancestor(card,{data:{state:'open'}})]:{color:'red'}}),descendant:css({[Css.descendant(card,{data:{selected:false}})]:{color:'blue'}}),before:css({[Css.siblingBefore(card)]:{color:'green'}}),after:css({[Css.siblingAfter(card)]:{color:'purple'}}),either:css({[Css.anySibling(card)]:{color:'orange'}})};`
 function compile() {
@@ -135,7 +136,7 @@ describe('marker', () => {
   test('respects lexical aliases and compiles literal ampersands, undefined and dynamic relationships', () => {
     const output = Graph.compile({
       modules: {
-        'app.ts': `import {css} from 'zyzz';import {Css} from 'zyzz/web';const card=Css.marker(undefined);const alias=card;function other(card:unknown){const alias=card;return alias}export {alias};export const style=css((values:{color:'#123'|'#456'})=>({[Css.ancestor(card,{data:undefined,has:'[href*="&"]'})]:{color:values.color}}));`,
+        'app.ts': `import {css} from 'zyzz';import {Css} from 'zyzz/web';const card=Css.marker(undefined);const alias=card;function other(card:unknown){const alias=card;return alias}export {alias};export const style=css((values:{color:'#123'|'#456'})=>({[Css.ancestor(card,{data:undefined,has:'[href*="&"]/* & */'})]:{color:values.color}}));`,
       },
     })
     expect(
@@ -159,7 +160,7 @@ describe('marker', () => {
   })
   test('unwraps factories and freezes their public rewrite spans', async () => {
     const source =
-      "import {Css} from 'zyzz/web';export const card=(Css.marker({state:[`open`]}))!"
+      "import {Css} from 'zyzz/web';export const card=(Css['marker']({state:[`open`]}))!"
     const extracted = Source.extract({ moduleId: 'marker.ts', source })
     expect(Object.isFrozen(extracted.markerCalls)).toMatchInlineSnapshot('true')
     expect(Object.isFrozen(extracted.markerCalls![0])).toMatchInlineSnapshot(
@@ -173,6 +174,25 @@ describe('marker', () => {
         })
       ).code.includes('zyzz/web'),
     ).toMatchInlineSnapshot('false')
+  })
+  test('rejects inherited and class-instance schemas before creating attribute bindings', () => {
+    class Schema {
+      state = ['open']
+    }
+    for (const schema of [Object.create({ state: ['open'] }), new Schema()])
+      expect(() =>
+        Marker.create({ id: 'data-z-card', schema: Marker.schema(schema) })(),
+      ).toThrowErrorMatchingInlineSnapshot(
+        '[Error: Marker schemas require a plain record.]',
+      )
+  })
+  test('does not publish a marker through a type-only export', () => {
+    const output = Graph.compile({
+      modules: {
+        'marker.ts': `import {Css} from 'zyzz/web';const card=Css.marker();type card=typeof card;export type {card}`,
+      },
+    })
+    expect(output.contracts['marker.ts']).toMatchInlineSnapshot('undefined')
   })
   test('observes ancestor, descendant, and sibling direction in Chromium', async () => {
     const { code, css } = await bundle()

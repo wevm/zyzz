@@ -1,5 +1,5 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
-import type * as RuleReference from '../../internal/RuleReference.js'
+import * as RuleReference from '../../internal/RuleReference.js'
 import * as Condition from '../../internal/Condition.js'
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
@@ -160,12 +160,12 @@ export function scan(
             variable.id.type !== 'Identifier'))
       )
         throw new Themes.InvalidError(
-          'Stylesheet contributions require direct module-level calls and constant animation bindings.',
+          'Stylesheet contributions require direct module-level calls and constant named stylesheet bindings.',
           node,
         )
       if (named.includes(type) && !variable)
         throw new Themes.InvalidError(
-          'Keyframes require a module-level named constant.',
+          'Named stylesheet definitions require a module-level named constant.',
           node,
         )
       const name =
@@ -276,7 +276,22 @@ export function scan(
         }
       }
   }
-  return { calls, references, read, used, undefinedValues, exports: exported }
+  const kinds = new Map(
+    [...linkedNames.values()].flatMap((link) =>
+      link.call.reference
+        ? [[link.call.name, link.call.reference] as const]
+        : [],
+    ),
+  )
+  return {
+    calls,
+    kinds,
+    references,
+    read,
+    used,
+    undefinedValues,
+    exports: exported,
+  }
 }
 
 /** Builds ordered pure web data after lexical theme references are resolved. */
@@ -289,10 +304,18 @@ export function extract(
   function value(node: Ast.Node): unknown {
     const reference = tokens.get(node.start)
     if (reference?.end === node.end) return reference.reference
+    node = Expression.unwrap(node)
     const animation = scanned.references.get(node.start)
     if (animation) return animation
     node = Expression.unwrap(node)
     if (scanned.undefinedValues.has(node.start)) return undefined
+    if (
+      node.type === 'UnaryExpression' &&
+      node.operator === 'void' &&
+      node.argument.type === 'Literal' &&
+      node.argument.value === 0
+    )
+      return undefined
     if (
       node.type === 'Literal' &&
       (typeof node.value === 'string' || typeof node.value === 'number')
@@ -355,6 +378,14 @@ export function extract(
           'Contribution keys must be unique literal strings.',
           property,
         )
+      const item = Expression.unwrap(property.value)
+      const name = scanned.references.get(item.start)
+      const kind = name ? scanned.kinds.get(name) : undefined
+      if (kind && !RuleReference.accepts(kind, key))
+        throw new Themes.InvalidError(
+          'Named stylesheet reference is incompatible with this descriptor.',
+          item,
+        )
       output[key] = value(property.value)
     }
     return output
@@ -392,6 +423,7 @@ export function extract(
     const before = result.length
     try {
       const input = value(call.argument)
+      if (call.name && !call.exported && !scanned.used.has(call.name)) continue
       if (call.kind === 'layers') {
         if (
           !Array.isArray(input) ||
@@ -545,12 +577,41 @@ export function extract(
           Object.entries(declarations).some(
             ([key, value]) =>
               !(definition.keys as readonly string[]).includes(key) ||
-              (typeof value !== 'string' && typeof value !== 'number'),
+              (typeof value !== 'string' &&
+                !(key === 'basePalette' && typeof value === 'number')),
           )
         )
           throw new Error(
             'Expected supported scalar descriptors and required fields.',
           )
+        if (call.kind === 'counterStyle') {
+          const system =
+            typeof declarations.system === 'string'
+              ? declarations.system.trim().toLowerCase()
+              : 'symbolic'
+          if (
+            !/^(?:cyclic|numeric|alphabetic|symbolic|additive|fixed(?:\s+[+-]?\d+)?|extends\s+\S+)$/.test(
+              system,
+            )
+          )
+            throw new Error(
+              'Expected a supported counter system, with an integer after fixed.',
+            )
+          const required =
+            system === 'additive'
+              ? 'additiveSymbols'
+              : system.startsWith('extends ')
+                ? undefined
+                : 'symbols'
+          if (
+            required &&
+            (typeof declarations[required] !== 'string' ||
+              !(declarations[required] as string).trim())
+          )
+            throw new Error(
+              'The counter system requires symbols or additiveSymbols.',
+            )
+        }
         result.push({
           kind: 'descriptor',
           rule: definition.rule,
@@ -590,8 +651,9 @@ export function extract(
         if (call.exported || scanned.used.has(call.name!))
           result.push({ kind: 'keyframes', name: call.name!, frames })
       }
-      if (call.context) {
-        const context = record(value(call.context))
+      const contextValue = call.context ? value(call.context) : undefined
+      if (contextValue !== undefined) {
+        const context = record(contextValue)
         if (Object.keys(context).some((key) => key !== 'within'))
           throw new Error('Unknown contribution context option.')
         const within = context.within ?? []
@@ -600,7 +662,12 @@ export function extract(
           within.some(
             (header) =>
               typeof header !== 'string' ||
-              !/^@(media|supports|container|layer) .+/.test(header),
+              !(
+                header === '@layer' ||
+                /^@(media|supports|container|layer)(?=[\t\n\r\f (/])/.test(
+                  header,
+                )
+              ),
           )
         )
           throw new Error('Expected enclosing conditional or layer headers.')

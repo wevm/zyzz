@@ -34,3 +34,27 @@ type Domain<property> = property extends
       : never
 /** Checks domain-sensitive descriptor members without widening literals. */
 export type Checked<value> = { [key in keyof value]: Check<value[key], key> }
+
+/** Checks the domain of a compiler-owned identity at untyped source boundaries. */
+export function accepts(kind: Kind, property: string): boolean {
+  if (property.startsWith('--')) return true
+  if (kind === 'counterStyle')
+    return [
+      'fallback',
+      'listStyle',
+      'listStyleType',
+      'speakAs',
+      'system',
+    ].includes(property)
+  if (kind === 'fontPaletteValues') return property === 'fontPalette'
+  if (kind === 'positionTry')
+    return ['positionTry', 'positionTryFallbacks'].includes(property)
+  return [
+    'color',
+    'background',
+    'backgroundColor',
+    'borderColor',
+    'fill',
+    'stroke',
+  ].includes(property)
+}

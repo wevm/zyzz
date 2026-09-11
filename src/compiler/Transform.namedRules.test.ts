@@ -1,8 +1,65 @@
 /** Exercises named descriptor identities through source and packed-library compilation. @module */
+import * as Esbuild from 'esbuild'
+import * as Trace from '@jridgewell/trace-mapping'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 
 describe('compile', () => {
+  test('emits valid JavaScript, prunes dead names, and resolves wrapped references', async () => {
+    const output = Transform.compile({
+      moduleId: 'names.js',
+      source: `import {counterStyle,fontPaletteValues,positionTry,colorProfile} from 'zyzz/web';const unused=counterStyle({symbols:'"x"'});const unusedPalette=fontPaletteValues({fontFamily:'Body'});const unusedPosition=positionTry({top:'1px'});const unusedProfile=colorProfile({src:'url(/profile.icc)'});const base=counterStyle({symbols:'"x"'});export const alias=counterStyle({system:'extends decimal',fallback:(base)});`,
+    })
+    expect(
+      (await Esbuild.transform(output.code, { loader: 'js' })).warnings,
+    ).toMatchInlineSnapshot('[]')
+    expect(output.css).toMatchInlineSnapshot(`
+      "@counter-style z-counterstyle16ar4zc1t3v3rg-62-61-73-65{symbols:"x";}
+      @counter-style z-counterstyle16ar4zc1t3v3rg-61-6c-69-61-73{system:extends decimal;fallback:z-counterstyle16ar4zc1t3v3rg-62-61-73-65;}"
+    `)
+    const map = new Trace.TraceMap(output.cssMap)
+    expect(Trace.originalPositionFor(map, { line: 2, column: 0 }))
+      .toMatchInlineSnapshot(`
+      {
+        "column": 349,
+        "line": 1,
+        "name": null,
+        "source": "names.js",
+      }
+    `)
+  })
+  test('rejects untyped cross-domain references and malformed descriptors', () => {
+    const cases = [
+      `export const x=counterStyle({});`,
+      `export const x=counterStyle({system:'fixedfoo',symbols:'"x"'});`,
+      `export const x=counterStyle({symbols:'"x"',fallback:1});`,
+      `const p=fontPaletteValues({fontFamily:'Body'});export const x=css({listStyleType:p});`,
+      `const p=fontPaletteValues({fontFamily:'Body'});export const x=counterStyle({symbols:'"x"',fallback:(p)});`,
+    ]
+    expect(
+      cases.map((source) => {
+        try {
+          Transform.compile({
+            moduleId: 'bad.js',
+            source:
+              `import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';` +
+              source,
+          })
+          return 'accepted'
+        } catch (error) {
+          return error
+        }
+      }),
+    ).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: bad.js:96: The counter system requires symbols or additiveSymbols.],
+        [Source.ExtractError: bad.js:96: Expected a supported counter system, with an integer after fixed.],
+        [Source.ExtractError: bad.js:96: Expected supported scalar descriptors and required fields.],
+        [Source.ExtractError: bad.js:162: Named stylesheet reference is incompatible with this property.],
+        [Source.ExtractError: bad.js:143: Named stylesheet reference is incompatible with this descriptor.],
+      ]
+    `)
+  })
   test('emits each named descriptor family and direct references', () => {
     const output = Transform.compile({
       moduleId: 'names.ts',

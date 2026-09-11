@@ -9,7 +9,9 @@ export type Definition<schema extends Schema = Schema> = {
   readonly schema: schema
 }
 /** Copies and validates finite state schemas without reading accessors. */
-export function schema<const input extends Schema>(input: input): input
+export function schema<const input extends Schema>(
+  input: input,
+): { readonly [key in keyof input]: readonly input[key][number][] }
 export function schema(input: unknown): Schema
 export function schema(input: unknown): Schema {
   if (
@@ -71,12 +73,12 @@ export function schema(input: unknown): Schema {
 export function create<const schema extends Schema>(
   definition: Definition<schema>,
 ) {
-  if (!/^data-z-[a-z0-9_-]+$/.test(definition.id))
+  const id = definition.id
+  if (typeof id !== 'string' || !/^data-z-[a-z0-9_-]+$/.test(id))
     throw new Error(
       'Marker identities require compiler-owned data-z attributes.',
     )
   const states = schema(definition.schema)
-  const id = definition.id
   type State = {
     readonly [key in keyof schema]?: schema[key][number] | undefined
   }

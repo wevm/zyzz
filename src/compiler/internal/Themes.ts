@@ -20,6 +20,7 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  readonly catalogOnly?: boolean | undefined
   /** Whether the compiled configuration supplies initialization. */
   readonly script?: boolean | undefined
   /** Bound root initialization script export. */
@@ -724,8 +725,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
         parent.type === 'CallExpression' &&
         parent.callee === node &&
         !parent.optional
-      )
+      ) {
+        if (config.call.selection && config.call.catalogOnly)
+          fail(
+            'This legacy catalog is not callable; rebuild its library.',
+            node,
+          )
         return true
+      }
       let target: Ast.Node = node
       const path: string[] = []
       for (let index = ancestors.length - 2; index >= 0; index--) {
@@ -769,6 +776,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
         ) {
           if (path[0] === 'themes' && !config.call.options?.themes)
             fail('Theme selection requires a named catalog.', target)
+          if (config.call.catalogOnly && path[0] === 'themes')
+            fail(
+              'This legacy catalog is not callable; rebuild its library.',
+              target,
+            )
           if (path[0] === 'script') {
             if (!config.call.script)
               fail(

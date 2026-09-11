@@ -58,6 +58,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
           const slot = record(value)
           if (
             key === 'set' ||
+            key === '__proto__' ||
             names.has(string(slot.name)) ||
             !/^--z-v[a-z0-9-]+$/.test(string(slot.name)) ||
             ![

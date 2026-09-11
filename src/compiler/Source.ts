@@ -719,6 +719,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     for (const [start, token] of themes.tokens) {
       if (
         !staticData.used.has(start) &&
+        !themes.staticTokens.some((node) => node.start === start) &&
         ![...calls, ...contributions.calls].some(
           (call) => start >= call.start && token.end <= call.end,
         )
@@ -780,7 +781,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     if (!staticData.used.has(token.start))
       report(
         'unsupported_syntax',
-        'Theme token records must be consumed by a compiled style.',
+        'Token references must be direct property values in bound theme css calls.',
         token,
       )
   if (diagnostics.length) throw new ExtractError(diagnostics)

@@ -205,6 +205,7 @@ export function scan(
       imported.has(binding.node.start)
     ) {
       references.set(node.start, imported.get(binding.node.start)!)
+      used.add(imported.get(binding.node.start)!)
       return
     }
     if (binding?.type !== 'Variable') return

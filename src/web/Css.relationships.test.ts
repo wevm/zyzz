@@ -64,6 +64,16 @@ async function bundle() {
   }
 }
 describe('marker', () => {
+  test('retains mutable marker aliases used only at runtime', () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {Css} from 'zyzz/web';const card=Css.marker();let active=card;export const attrs=active();`,
+      },
+    })
+    expect(
+      result.modules['app.ts']!.code.includes('active()'),
+    ).toMatchInlineSnapshot('true')
+  })
   test('links packed marker identities and validates runtime state subsets', async () => {
     const { code, css } = await bundle()
     const fixture = Vm.runInNewContext(`${code};Fixture;`) as {

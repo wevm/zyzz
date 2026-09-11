@@ -22,7 +22,7 @@ export type References<schema extends Schema = Schema> = {
  */
 export function define<const schema extends Schema>(
   schema: schema &
-    Record<Extract<keyof schema, 'set'>, never> & {
+    Record<Extract<keyof schema, 'set' | '__proto__'>, never> & {
       [key in keyof schema]: schema[key] extends Registration<infer kind>
         ? {
             readonly initialValue: Literal.Checked<

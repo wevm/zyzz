@@ -35,12 +35,20 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
         node.type === 'TSInterfaceDeclaration' &&
         !node.extends?.length &&
         !node.typeParameters
-      )
-        types.set(node.id.start, {
+      ) {
+        const key =
+          scope.getDeclaration(node.id.name, { mode: 'type' })?.node.start ??
+          node.id.start
+        const previous = types.get(key)
+        types.set(key, {
           ...node.body,
           type: 'TSTypeLiteral',
-          members: node.body.body,
+          members: [
+            ...(previous?.type === 'TSTypeLiteral' ? previous.members : []),
+            ...node.body.body,
+          ],
         } as Ast.TSTypeLiteral)
+      }
       if (
         node.type === 'TSTypeReference' &&
         node.typeName.type === 'Identifier' &&
@@ -145,7 +153,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
           const write = path.find(
             (node) =>
               (node.type === 'VariableDeclarator' &&
-                node.id.type !== 'Identifier') ||
+                (node.id.type !== 'Identifier' || !values.has(node.start))) ||
               node.type === 'AssignmentExpression' ||
               node.type === 'UpdateExpression' ||
               (node.type === 'UnaryExpression' && node.operator === 'delete') ||
@@ -205,14 +213,6 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
     node: Ast.ObjectExpression,
     allowed: ReadonlySet<number>,
   ): readonly Ast.ObjectPropertyKind[] {
-    if (
-      !node.properties.some(
-        (property) =>
-          property.type === 'SpreadElement' ||
-          (property.type === 'Property' && property.shorthand),
-      )
-    )
-      return node.properties
     const result = new Map<string, Ast.ObjectPropertyKind>()
     for (const property of node.properties) {
       const entries =
@@ -231,6 +231,16 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
         if (entry.type !== 'Property')
           throw new Themes.InvalidError(
             'Unsupported static object entry.',
+            entry,
+          )
+        if (
+          !entry.computed &&
+          ((entry.key.type === 'Identifier' &&
+            entry.key.name === '__proto__') ||
+            (entry.key.type === 'Literal' && entry.key.value === '__proto__'))
+        )
+          throw new Themes.InvalidError(
+            'Static object prototypes are unsupported.',
             entry,
           )
         if (entry.computed) {

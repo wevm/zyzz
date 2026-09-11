@@ -39,6 +39,18 @@ export function zyzz(): Plugin {
     return `app/${Path.relative(root, file).split(Path.sep).join('/')}`
   }
 
+  function resource(id: string) {
+    const query = id.split('?')[1]?.split('#')[0]
+    return (
+      query !== undefined &&
+      [...new URLSearchParams(query).keys()].some(
+        (key) => !['v', 't', 'import'].includes(key),
+      )
+    )
+  }
+  function normalize(id: string) {
+    return resource(id) ? id : id.split('?')[0]!
+  }
   function eligible(id: string) {
     const relative = Path.relative(root, id)
     return (
@@ -206,28 +218,17 @@ export function zyzz(): Plugin {
     code?: string,
     allSources = false,
   ) {
-    function resource(id: string) {
-      const query = id.split('?')[1]?.split('#')[0]
-      return (
-        query !== undefined &&
-        [...new URLSearchParams(query).keys()].some(
-          (key) => !['v', 't', 'import'].includes(key),
-        )
-      )
-    }
     async function resolve(source: string, importer: string) {
       const resolved = await host.resolve(source, importer)
-      if (resolved && entry.environment.mode === 'dev') {
+      if (!resolved) return resolved
+      if (entry.environment.mode === 'dev') {
         const optimized = Object.values({
           ...entry.environment.depsOptimizer?.metadata.optimized,
           ...entry.environment.depsOptimizer?.metadata.discovered,
         }).find((item) => item.file === resolved.id.split('?')[0])
         if (optimized?.src) return { ...resolved, id: optimized.src }
-        // Vite cache queries do not change module semantics.
-        if (resolved.id.includes('?') && !resource(resolved.id))
-          return { ...resolved, id: resolved.id.split('?')[0]! }
       }
-      return resolved
+      return { ...resolved, id: normalize(resolved.id) }
     }
     const imports: Record<
       string,
@@ -677,6 +678,7 @@ export function zyzz(): Plugin {
       if (id.startsWith(prefix)) return id
     },
     async transform(code, id) {
+      id = normalize(id)
       if (!eligible(id)) return
       const state = entries(this.environment)
       let entry = state.get(id)

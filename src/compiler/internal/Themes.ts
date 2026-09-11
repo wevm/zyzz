@@ -213,6 +213,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       ['themes', 'script'].includes(path[0]!)
     ) {
       const key = path[0]!
+      if (key === 'script') scripts.add(config.call.name)
       if (key === 'themes' && !config.call.options?.themes) return undefined
       if (key === 'script' && !config.call.script)
         fail(
@@ -424,7 +425,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
             themes[member.call.name] = member.definition
           themes[link.call.name] = link.definition
           for (const { key, id } of bindings) {
-            if (key === 'css') {
+            if (
+              key === 'css' &&
+              !link.call.selection &&
+              !link.call.initialization
+            ) {
               const alias = { ...link.call, destructured: false }
               aliasBindings.set(id.start, alias)
               aliasNames.set(id.name, alias)
@@ -437,8 +442,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
               continue
             }
             if (
-              key === 'script' ||
-              (key === 'themes' && link.call.options?.themes)
+              !link.call.selection &&
+              !link.call.initialization &&
+              (key === 'script' ||
+                (key === 'themes' && link.call.options?.themes))
             ) {
               if (
                 (key === 'script' && !link.call.script) ||
@@ -564,6 +571,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (!expression) return
     const linked = resolve(expression)
     if (linked?.kind === 'config' && variable.id.type === 'ObjectPattern') {
+      if (statement.type === 'ExportNamedDeclaration' && !options.linked)
+        fail(
+          'Exported configuration destructuring requires source linking.',
+          variable,
+        )
       if (declaration.kind !== 'const')
         fail('Configuration destructuring requires const bindings.', variable)
       const link = linked
@@ -589,7 +601,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
         retained: true,
       })
       for (const { key, id } of bindings) {
-        if (key === 'css') {
+        if (
+          key === 'css' &&
+          !link.call.selection &&
+          !link.call.initialization
+        ) {
           const alias = { ...link.call, destructured: false }
           aliasBindings.set(id.start, alias)
           aliasNames.set(id.name, alias)
@@ -602,8 +618,9 @@ export function collect(program: Ast.Program, options: collect.Options) {
           continue
         }
         if (
-          key === 'script' ||
-          (key === 'themes' && link.call.options?.themes)
+          !link.call.selection &&
+          !link.call.initialization &&
+          (key === 'script' || (key === 'themes' && link.call.options?.themes))
         ) {
           if (
             (key === 'script' && !link.call.script) ||

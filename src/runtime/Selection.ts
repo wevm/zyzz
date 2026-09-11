@@ -1,5 +1,11 @@
 /** Selects compiler-owned theme classes without evaluating authoring code. @module */
-/** Creates a validated selector with the compatible named theme catalog. */
+/**
+ * Creates a validated selector with the compatible named theme catalog.
+ * @param entries Compatible theme names paired with compiler-owned scope classes.
+ * @param html Whether selection returns HTML class/serialized-style props. Defaults to false (React className/object-style props).
+ * @returns A callable selector with catalog members exposing their scope class names.
+ * @throws {TypeError} When selection names, schemes, or option keys are invalid.
+ */
 export function create<
   const entries extends readonly (readonly [string, string])[],
   const html extends boolean = false,

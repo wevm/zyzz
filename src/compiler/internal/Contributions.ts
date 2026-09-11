@@ -217,8 +217,14 @@ export function scan(
     used.add(call.name)
   }
   for (const statement of program.body)
-    if (statement.type === 'ExportNamedDeclaration' && !statement.source)
+    if (
+      statement.type === 'ExportNamedDeclaration' &&
+      statement.exportKind !== 'type' &&
+      !statement.source
+    )
       for (const specifier of statement.specifiers) {
+        if ('exportKind' in specifier && specifier.exportKind === 'type')
+          continue
         const name =
           specifier.local.type === 'Identifier'
             ? specifier.local.name

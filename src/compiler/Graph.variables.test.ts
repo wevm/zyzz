@@ -176,6 +176,34 @@ describe('compile', () => {
       ]
     `)
   })
+  test('rejects loop writes and noncanonical array member keys', () => {
+    for (const write of [
+      `for(base.width of ['20px']){}`,
+      `for(base.width in {x:1}){}`,
+    ])
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.js': `import {css} from 'zyzz';const base={width:'10px'};${write}export const card=css(base)`,
+          },
+        }),
+      ).toThrow(/cannot be mutated/)
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.js': `import {css} from 'zyzz';const sizes=['10px','20px'];export const card=css({width:sizes['01']})`,
+        },
+      }),
+    ).toThrow()
+  })
+  test('does not publish values through type-only variable exports', () => {
+    const output = Graph.compile({
+      modules: {
+        'vars.ts': `import {Vars} from 'zyzz';const vars=Vars.define({gap:'length'});type vars=typeof vars;export type {vars};export {type vars as other}`,
+      },
+    })
+    expect(output.contracts['vars.ts']).toMatchInlineSnapshot('undefined')
+  })
   test('applies registered defaults, inheritance, and assignment in Chromium', async () => {
     const { code, css } = await bundle()
     const browser = await chromium.launch()

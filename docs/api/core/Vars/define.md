@@ -71,3 +71,5 @@ const vars = Vars.define({
 `inherits` and `initialValue` are required for descriptors. The optional `syntax` must match the scalar domain. Initial lengths use absolute units or zero; CSS resolves registered defaults and inheritance. Registration adds no runtime CSS generation.
 
 `length` and `percentage` accept nonnegative dimensions, so they can be used in properties such as padding and width. Use `signedLength` or `signedPercentage` for values that may be negative; those slots are restricted to properties that accept negative dimensions. `number` accepts finite numbers and is restricted to properties that accept an unconstrained numeric domain.
+
+Registration initial values are checked by the public static types, including scalar domains and computational independence. Unchecked JavaScript values rely on browser CSS validation; source compilation validates descriptor structure and matching syntax.

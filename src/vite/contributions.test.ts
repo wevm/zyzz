@@ -104,6 +104,11 @@ describe('zyzz', () => {
         Path.join(root, 'lazy.ts'),
         `import 'effects';export const loaded=true`,
       )
+      await Fs.writeFile(
+        Path.join(root, 'types.ts'),
+        `import 'effects'; import {css} from 'zyzz'; // @ts-expect-error
+css({color:123})`,
+      )
       const result = await Vite.build({
         root,
         configFile: false,
@@ -130,6 +135,54 @@ describe('zyzz', () => {
         outputs.some((value) => value.fileName.endsWith('.svg')),
       ).toMatchInlineSnapshot('true')
       expect(css.includes('zyzz-asset:')).toMatchInlineSnapshot('false')
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+  test('rejects packed assets outside the declaring package', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-owned-assets-'))
+    try {
+      const packageRoot = Path.join(root, 'node_modules/effects')
+      await Fs.mkdir(packageRoot, { recursive: true })
+      const library = Graph.compile({
+        modules: {
+          'index.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./private.txt)'}})`,
+        },
+      })
+      const metadata = JSON.parse(library.contracts['index.ts']!)
+      metadata.stylesheets[0].source = '../../index.ts'
+      await Fs.writeFile(
+        Path.join(packageRoot, 'package.json'),
+        JSON.stringify({
+          name: 'effects',
+          type: 'module',
+          exports: './index.js',
+          sideEffects: true,
+        }),
+      )
+      await Fs.writeFile(
+        Path.join(packageRoot, 'index.js'),
+        library.modules['index.ts']!.code,
+      )
+      await Fs.writeFile(
+        Path.join(packageRoot, 'index.js.zyzz.json'),
+        JSON.stringify(metadata),
+      )
+      await Fs.writeFile(Path.join(root, 'private.txt'), 'fixture data')
+      await Fs.writeFile(
+        Path.join(root, 'index.html'),
+        '<script type="module" src="/app.ts"></script>',
+      )
+      await Fs.writeFile(Path.join(root, 'app.ts'), `import 'effects'`)
+      await expect(
+        Vite.build({
+          root,
+          configFile: false,
+          logLevel: 'silent',
+          plugins: [zyzz()],
+          build: { write: false },
+        }),
+      ).rejects.toThrow(/escapes its owning package/)
     } finally {
       await Fs.rm(root, { recursive: true, force: true })
     }

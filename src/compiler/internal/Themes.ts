@@ -32,6 +32,8 @@ export type Call = {
   readonly initialization?: boolean | undefined
   /** Config helper represented by this linked binding. */
   readonly selection?: boolean | undefined
+  /** Legacy packed catalogs have static members but are not callable. */
+  readonly catalogOnly?: boolean | undefined
   /** Validated inline configuration options retained for packed declarations. */
   readonly options?: Readonly<Record<string, unknown>> | undefined
   /** JSON-encoded member path tuples and their compiled scope keys. */
@@ -742,8 +744,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
         parent.type === 'CallExpression' &&
         parent.callee === node &&
         !parent.optional
-      )
+      ) {
+        if (config.call.selection && config.call.catalogOnly)
+          fail(
+            'This legacy catalog is not callable; rebuild its library.',
+            node,
+          )
         return true
+      }
       let target: Ast.Node = node
       const path: string[] = []
       for (let index = ancestors.length - 2; index >= 0; index--) {
@@ -787,6 +795,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
         ) {
           if (path[0] === 'themes' && !config.call.options?.themes)
             fail('Theme selection requires a named catalog.', target)
+          if (path[0] === 'themes' && config.call.catalogOnly)
+            fail(
+              'This legacy catalog is not callable; rebuild its library.',
+              target,
+            )
           if (path[0] === 'script') {
             if (!config.call.script)
               fail(

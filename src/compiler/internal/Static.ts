@@ -146,7 +146,10 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
             (node) =>
               node.type === 'AssignmentExpression' ||
               node.type === 'UpdateExpression' ||
-              (node.type === 'UnaryExpression' && node.operator === 'delete'),
+              (node.type === 'UnaryExpression' && node.operator === 'delete') ||
+              ((node.type === 'ForInStatement' ||
+                node.type === 'ForOfStatement') &&
+                path.some((value) => value === node.left)),
           )
           const call = path.find(
             (node) =>
@@ -186,7 +189,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
       if (
         key !== undefined &&
         object.type === 'ArrayExpression' &&
-        /^\d+$/.test(key)
+        /^(?:0|[1-9]\d*)$/.test(key)
       ) {
         const element = object.elements[Number(key)]
         if (element && element.type !== 'SpreadElement')

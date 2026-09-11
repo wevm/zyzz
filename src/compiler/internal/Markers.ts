@@ -1,6 +1,6 @@
 /** Extracts lexical marker identities and relationship predicates across source and packed imports. @module */
 import type * as Ast from '@oxc-project/types'
-import * as CssTree from 'css-tree'
+import * as Lightning from 'lightningcss'
 import * as Walker from 'oxc-walker'
 import * as Marker from '../../runtime/Marker.js'
 import * as Relationships from '../../web/internal/Relationships.js'
@@ -239,17 +239,28 @@ export function scan(
             'has' in condition &&
             typeof condition.has === 'string'
           ) {
-            const parsed = CssTree.parse(condition.has, {
-              context: 'selectorList',
-            })
-            CssTree.walk(parsed, (node) => {
-              if (
-                node.type === 'PseudoElementSelector' ||
-                node.type === 'NestingSelector'
-              )
-                throw new Error(
-                  'has requires element selectors without nesting or pseudo-elements.',
-                )
+            Lightning.transform({
+              filename: 'marker.css',
+              code: new TextEncoder().encode(
+                `:has(${condition.has}){color:red}`,
+              ),
+              visitor: {
+                Rule(rule) {
+                  if (rule.type !== 'style')
+                    throw new Error('has requires a relative selector list.')
+                  const selectors = rule.value.selectors
+                  const selector = selectors[0]
+                  const component = selector?.[0]
+                  if (
+                    selectors.length !== 1 ||
+                    selector?.length !== 1 ||
+                    component?.type !== 'pseudo-class' ||
+                    component.kind !== 'has'
+                  )
+                    throw new Error('has requires a relative selector list.')
+                },
+              },
+              errorRecovery: false,
             })
           }
           const selector = Relationships.selector(

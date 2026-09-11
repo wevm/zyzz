@@ -18,9 +18,11 @@ export const above = positionTry({
 })
 
 page({
-  size: 'A4',
-  margin: '2cm',
-  '@bottom-center': { content: 'counter(page)' },
+  descriptors: {
+    size: 'A4',
+    margin: '2cm',
+    '@bottom-center': { content: 'counter(page)' },
+  },
 })
 
 viewTransition({ navigation: 'auto' })

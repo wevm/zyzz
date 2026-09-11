@@ -32,7 +32,7 @@ import { Css } from 'zyzz/web'
 import { StyleSheet } from 'zyzz/react-native'
 ```
 
-`fontFace`, `global`, and `keyframes` are direct named exports from `zyzz/web`. `Css` remains the named namespace for pure web compilation and relational/layer helpers; the three stylesheet functions are not members of that namespace. `StyleSheet` owns React Native compilation and precompiled theme/scheme selection. Both target compilers consume shared `Style.define` data through pure in-memory APIs. The root entrypoint remains independent of these target namespaces and their platform adapters.
+`fontFace`, `global`, `keyframes`, and `layers` are direct named exports from `zyzz/web`. `Css` remains the named namespace for pure web compilation; stylesheet functions are not members of that namespace. `StyleSheet` owns React Native compilation and precompiled theme/scheme selection. Both target compilers consume shared `Style.define` data through pure in-memory APIs. The root entrypoint remains independent of these target namespaces and their platform adapters.
 
 Consumer concepts, usage, and API status are documented in [docs](../docs/README.md).
 
@@ -860,7 +860,7 @@ export const styles = {
 
 Layer placement belongs to authored blocks in both global and scoped styles. Unwrapped rules remain unlayered; declaring `base` does not implicitly place globals there. `global` has no ambient access to a config's TypeScript catalog: raw global at-rule strings receive compiler validation. Config-bound functions reject undeclared layer keys through their explicit inferred contract.
 
-`Css.layers(names)` remains available for standalone module-level order contributions; it is not required to obtain keys for config-bound authoring. Its declarations and config layer lists feed the same order constraints. Layer names follow CSS identifier and dotted-name syntax; duplicate names in one declaration receive diagnostics. Named layers intentionally share CSS identity; libraries namespace public layers such as `acme.components`. Pure compilation receives explicit extracted data independently of source discovery or a runtime registry; consumers do not configure layer placement on `Css.compile`.
+The direct `layers` import from `zyzz/web` contributes standalone module-level order declarations; it is not required to obtain keys for config-bound authoring. Its declarations and config layer lists feed the same order constraints. Layer names follow CSS identifier and dotted-name syntax; duplicate names in one declaration receive diagnostics. Named layers intentionally share CSS identity; libraries namespace public layers such as `acme.components`. Pure compilation receives explicit extracted data independently of source discovery or a runtime registry; consumers do not configure layer placement on `Css.compile`.
 
 The collection contract is project-wide: adapters scan configured source roots, including unimported modules, with tests, generated output, and dependencies excluded by default. Dependency contributions require explicit inclusion or published library artifacts. Declarations must be static and module-level; calls inside functions, runtime branches, or component rendering receive diagnostics. No application code executes during collection.
 

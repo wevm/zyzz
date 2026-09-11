@@ -7,7 +7,7 @@ Stylesheet declarations use direct named imports from `zyzz/web`. Conditional an
 
 ## Functions
 
-Signatures below describe the accepted call shapes. New public TypeScript type names and unresolved options remain provisional.
+Signatures below describe the accepted call shapes. Multi-field helpers receive one named object parameter. New public TypeScript type names and unresolved options remain provisional.
 
 | CSS rule | Authoring | Result |
 | --- | --- | --- |
@@ -18,15 +18,15 @@ Signatures below describe the accepted call shapes. New public TypeScript type n
 | `@custom-media` | `customMedia(query)` | Typed query reference |
 | `@document` | Explicit legacy grouping support; helper/context spelling to be designed | Conditional global rules |
 | `@font-face` | `fontFace(descriptors)` | Eager stylesheet effect |
-| `@font-feature-values` | `fontFeatureValues(families, features)` | Font-family-associated stylesheet effect |
+| `@font-feature-values` | `fontFeatureValues({ families, features })` | Font-family-associated stylesheet effect |
 | `@font-palette-values` | `fontPaletteValues(descriptors)` | Typed palette reference |
 | `@function` | `cssFunction(definition)` | Callable CSS function reference |
-| `@import` | `importCss(url, options?)` | Ordered stylesheet import |
+| `@import` | `importCss({ layer, media, supports, url })` | Ordered stylesheet import |
 | `@keyframes` | `keyframes(frames)` | Typed animation reference |
 | `@layer` | `layers(names)` and declared `'@layer …'` keys | Layer order and grouped rules |
 | `@media` | `'@media …'` in style bodies | Nested declarations or selectors |
-| `@namespace` | `namespace(prefix, uri)`; default namespace overload to be designed | Stylesheet namespace declaration |
-| `@page` | `page(descriptors)` or `page(selector, descriptors)` | Eager page rule |
+| `@namespace` | `namespace({ prefix, uri })`; omit `prefix` for the default namespace | Stylesheet namespace declaration |
+| `@page` | `page({ descriptors, selector })`; `selector` is optional | Eager page rule |
 | `@position-try` | `positionTry(declarations)` | Typed fallback reference |
 | `@property` | Registration descriptors on `Vars.define` | Existing variable references and `.set` |
 | `@scope` | `'@scope …'` in valid style/grouping bodies | Scoped rules |
@@ -35,6 +35,8 @@ Signatures below describe the accepted call shapes. New public TypeScript type n
 | `@view-transition` | `viewTransition(descriptors)` | Eager stylesheet effect |
 
 The coverage inventory follows [MDN's at-rule reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules), including descriptors, nested page-margin rules, font-feature blocks, and statement/block forms. Experimental and legacy rules remain explicit inventory entries. Compiler support and browser availability are separate claims.
+
+Import options `layer`, `media`, and `supports` are optional; `url` is required. Font feature values require both `families` and `features`. Page rules require `descriptors`; `selector` is optional. Namespace declarations require `uri`; `prefix` is optional. None of these functions has an optional positional options bag.
 
 ## Declarations
 
@@ -49,8 +51,8 @@ import {
   viewTransition,
 } from 'zyzz/web'
 
-importCss('./reset.css', { layer: 'reset' })
-importCss('./print.css', { media: 'print' })
+importCss({ layer: 'reset', url: './reset.css' })
+importCss({ media: 'print', url: './print.css' })
 
 fontFace({
   fontFamily: '"Inter"',
@@ -59,22 +61,27 @@ fontFace({
   src: 'url("./inter.woff2")',
 })
 
-fontFeatureValues('"Example Font"', {
-  '@styleset': { editorial: '1 3' },
-  '@swash': { decorative: 2 },
+fontFeatureValues({
+  families: '"Example Font"',
+  features: {
+    '@styleset': { editorial: '1 3' },
+    '@swash': { decorative: 2 },
+  },
 })
 
 page({
-  size: 'A4',
-  margin: '2cm',
-  '@bottom-center': { content: 'counter(page)' },
+  descriptors: {
+    size: 'A4',
+    margin: '2cm',
+    '@bottom-center': { content: 'counter(page)' },
+  },
 })
 
-page(':first', { marginTop: '4cm' })
+page({ descriptors: { marginTop: '4cm' }, selector: ':first' })
 viewTransition({ navigation: 'auto' })
 ```
 
-Repeated calls preserve distinct rules and authored order. The page selector overload supports named pages and page pseudo-classes. Font feature values retain their special nested block grammar.
+Repeated calls preserve distinct rules and authored order. The optional page selector supports named pages and page pseudo-classes; omission targets all pages. Font feature values retain their special nested block grammar.
 
 ## Named References
 
@@ -158,7 +165,7 @@ These decisions precede implementation of the affected helper. They do not defer
 - **CSS functions:** specify parameters, defaults, return domains, local custom properties, permitted nested rules, and typed invocation. Calls create CSS expressions; the browser evaluates the CSS function.
 - **Query and profile references:** define how `customMedia` enters query keys and `colorProfile` enters `color()` without losing reference identity.
 - **External names:** define explicit names, counter fallback/extension references, font-feature aliases, named pages, and collisions across packages.
-- **Statements:** define import supports/layer/media options, anonymous import layers, relative asset ownership, and default namespaces. Preserve namespace meaning across combined source modules; never hoist across a semantic boundary merely to produce valid syntax.
+- **Statements:** define import supports/layer/media options, anonymous import layers, relative asset ownership, and default namespace emission. Preserve namespace meaning across combined source modules; never hoist across a semantic boundary merely to produce valid syntax.
 - **Encoding and legacy rules:** define the UTF-8 output/charset policy and explicit `@document` compatibility syntax. No ambient encoding or browser-dependent compiler behavior.
 
 ## Compilation and Evidence

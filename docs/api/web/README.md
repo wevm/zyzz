@@ -15,4 +15,4 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 > [!NOTE]
 > The [complete at-rule API](at-rules.md) is an accepted design; new helpers are not implemented.
 
-Planned direct imports include `counterStyle`, `positionTry`, `fontPaletteValues`, `colorProfile`, `fontFeatureValues`, `page`, `viewTransition`, `importCss`, `namespace`, `customMedia`, and `cssFunction`. Conditional/grouping rules remain native keys in valid style bodies. Registration extends `Vars.define`.
+Planned direct imports include `colorProfile`, `counterStyle`, `cssFunction`, `customMedia`, `fontFeatureValues`, `fontPaletteValues`, `importCss`, `namespace`, `page`, `positionTry`, and `viewTransition`. Conditional/grouping rules remain native keys in valid style bodies. Registration extends `Vars.define`.

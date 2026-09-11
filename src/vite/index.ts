@@ -130,7 +130,16 @@ export function zyzz(): Plugin {
             : specifier.imported.value
         if (
           node.source.value === 'zyzz/web'
-            ? ['global', 'fontFace', 'keyframes', 'layers'].includes(name)
+            ? [
+                'colorProfile',
+                'counterStyle',
+                'fontFace',
+                'fontPaletteValues',
+                'global',
+                'keyframes',
+                'layers',
+                'positionTry',
+              ].includes(name)
             : name === 'Config'
         )
           imports.set(specifier.start, name)

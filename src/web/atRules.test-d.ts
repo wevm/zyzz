@@ -25,9 +25,9 @@ describe('at-rule authoring', () => {
     global({ '@scope': { body: { color: 'red' } } })
     // @ts-expect-error Descriptor rules are not selector/grouping blocks.
     global({ '@font-face': { body: { color: 'red' } } })
-    // @ts-expect-error Selectors cannot enclose a font-face declaration.
     fontFace(
       { fontFamily: 'Body', src: 'local("Arial")' },
+      // @ts-expect-error Selectors cannot enclose a font-face declaration.
       { within: ['.card'] },
     )
     // @ts-expect-error Timeline ranges must use standard range names.

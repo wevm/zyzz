@@ -4,6 +4,7 @@
  */
 import type * as Binding from './Binding.js'
 import type * as Query from './Query.js'
+import type * as Shorthands from './Shorthands.js'
 import type * as Theme from '../Theme.js'
 import * as Literal from './Literal.js'
 
@@ -16,6 +17,9 @@ export function accepts(
   if (group === 'borderColor') return /^border.*Color$/.test(property)
   if (group === 'borderRadius') return /^border.*Radius$/.test(property)
   if (group === 'textColor') return property === 'color'
+  if (group === 'margin')
+    return property.startsWith('margin') && property !== 'marginTrim'
+  if (group === 'padding') return property.startsWith('padding')
   if (group === 'spacing' && property === 'marginTrim') return false
   if (group === 'spacing')
     return (
@@ -94,6 +98,8 @@ export const complete = Symbol('zyzz.contract.complete')
 
 /** Opaque data shared by a definition and its compatible extensions. */
 export type Contract = {
+  /** Configuration-local property aliases, inherited by bound handles. */
+  readonly shorthands?: Shorthands.Map | undefined
   readonly [complete]?: boolean | undefined
   readonly [identity]?: string | undefined
 }
@@ -173,6 +179,8 @@ export type Group =
   | 'borderColor'
   | 'borderRadius'
   | 'color'
+  | 'margin'
+  | 'padding'
   | 'spacing'
   | 'fontFamily'
   | 'fontSize'
@@ -233,55 +241,60 @@ type Paths<tree> = [tree] extends [never]
       }[Extract<keyof tree, number | string>]
 
 /** Property domains accepted by each token group. */
-export type Properties<group extends Group> = group extends 'spacing'
-  ? Extract<
-      keyof Literal.Properties,
-      | `blockSize`
-      | `bottom`
-      | `columnGap`
-      | `flexBasis`
-      | `gap`
-      | `height`
-      | `inlineSize`
-      | `inset${string}`
-      | `left`
-      | Exclude<
-          Extract<keyof Literal.Properties, `margin${string}`>,
-          'marginTrim'
-        >
-      | `maxBlockSize`
-      | `maxHeight`
-      | `maxInlineSize`
-      | `maxWidth`
-      | `minBlockSize`
-      | `minHeight`
-      | `minInlineSize`
-      | `minWidth`
-      | `padding${string}`
-      | `right`
-      | `rowGap`
-      | `scrollPadding${string}`
-      | `textDecorationThickness`
-      | `textIndent`
-      | `textUnderlineOffset`
-      | `top`
-      | `width`
+export type Properties<group extends Group> = group extends 'margin' | 'padding'
+  ? Exclude<
+      Extract<keyof Literal.Properties, `${group}${string}`>,
+      'marginTrim'
     >
-  : group extends 'textColor'
-    ? 'color'
-    : group extends 'color'
-      ? {
-          [property in keyof typeof Literal.rules]: (typeof Literal.rules)[property] extends {
-            kind: 'color'
-          }
-            ? property
-            : never
-        }[keyof typeof Literal.rules]
-      : group extends 'borderColor'
-        ? Extract<keyof Literal.Properties, `border${string}Color`>
-        : group extends 'borderRadius'
-          ? Extract<keyof Literal.Properties, `border${string}Radius`>
-          : group
+  : group extends 'spacing'
+    ? Extract<
+        keyof Literal.Properties,
+        | `blockSize`
+        | `bottom`
+        | `columnGap`
+        | `flexBasis`
+        | `gap`
+        | `height`
+        | `inlineSize`
+        | `inset${string}`
+        | `left`
+        | Exclude<
+            Extract<keyof Literal.Properties, `margin${string}`>,
+            'marginTrim'
+          >
+        | `maxBlockSize`
+        | `maxHeight`
+        | `maxInlineSize`
+        | `maxWidth`
+        | `minBlockSize`
+        | `minHeight`
+        | `minInlineSize`
+        | `minWidth`
+        | `padding${string}`
+        | `right`
+        | `rowGap`
+        | `scrollPadding${string}`
+        | `textDecorationThickness`
+        | `textIndent`
+        | `textUnderlineOffset`
+        | `top`
+        | `width`
+      >
+    : group extends 'textColor'
+      ? 'color'
+      : group extends 'color'
+        ? {
+            [property in keyof typeof Literal.rules]: (typeof Literal.rules)[property] extends {
+              kind: 'color'
+            }
+              ? property
+              : never
+          }[keyof typeof Literal.rules]
+        : group extends 'borderColor'
+          ? Extract<keyof Literal.Properties, `border${string}Color`>
+          : group extends 'borderRadius'
+            ? Extract<keyof Literal.Properties, `border${string}Radius`>
+            : group
 
 /** Immutable portable reference retaining its defining fallback. */
 export type Reference<group extends Group = Group> = {
@@ -311,6 +324,8 @@ export function resolve(value: unknown, options: resolve.Options): unknown {
     'backgroundColor',
     'borderColor',
     'borderRadius',
+    'margin',
+    'padding',
     'spacing',
     'fontFamily',
     'fontSize',

@@ -4,6 +4,7 @@
  */
 import type * as Ast from '@oxc-project/types'
 import * as Config from '../../Config.js'
+import * as Shorthands from '../../internal/Shorthands.js'
 import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
 import type * as Themes from './Themes.js'
@@ -77,7 +78,12 @@ export function collect(options: collect.Options): Themes.Link {
     }
     return {}
   })()
-  const contract = Object.freeze({ [Token.identity]: options.name })
+  const contract = Object.freeze({
+    [Token.identity]: options.name,
+    ...(input.shorthands
+      ? { shorthands: Shorthands.read(input.shorthands) }
+      : {}),
+  })
   const members: Record<string, Themes.Link> = Object.create(null)
   for (const [key, original] of Object.entries(catalog)) {
     const name = `${options.name}-${key}`
@@ -132,6 +138,7 @@ export function collect(options: collect.Options): Themes.Link {
       }
       return {}
     })(),
+    ...(input.shorthands ? { shorthands: input.shorthands } : {}),
     ...(input.output ? { output: input.output } : {}),
     ...(input.layers ? { layers: input.layers } : {}),
   }

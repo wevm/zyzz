@@ -4,6 +4,7 @@
  */
 import * as Config from '../../Config.js'
 import * as Configurations from './Configurations.js'
+import * as Shorthands from '../../internal/Shorthands.js'
 import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
 import type * as Themes from './Themes.js'
@@ -21,6 +22,9 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     let contract = identities.get(identity)
     if (!contract) {
       contract = Object.freeze({
+        ...(entry.shorthands
+          ? { shorthands: Shorthands.read(entry.shorthands) }
+          : {}),
         [Token.complete]: true,
         [Token.identity]: identity,
       })
@@ -160,6 +164,9 @@ export function write(
       Object.entries(themes).map(([name, theme]) => [
         name,
         {
+          ...(theme[Token.definition].contract.shorthands
+            ? { shorthands: theme[Token.definition].contract.shorthands }
+            : {}),
           identity: theme[Token.definition].contract[Token.identity],
           tokens: input(theme),
         },

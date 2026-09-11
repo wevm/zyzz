@@ -466,11 +466,21 @@ export function compile(options: compile.Options): compile.ReturnType {
               conditionNodes.push(property)
               return locations(value)
             }
-            if (value.type === 'ArrayExpression')
-              return value.elements.filter(
-                (node): node is NonNullable<typeof node> => node !== null,
-              )
-            return [property]
+            const key =
+              property.key.type === 'Identifier'
+                ? property.key.name
+                : property.key.type === 'Literal'
+                  ? String(property.key.value)
+                  : ''
+            const authoredLocations: readonly Ast.Node[] =
+              value.type === 'ArrayExpression'
+                ? value.elements.filter(
+                    (node): node is NonNullable<typeof node> => node !== null,
+                  )
+                : [property]
+            return (call.shorthands?.[key] ?? [key]).flatMap(
+              () => authoredLocations,
+            )
           })
         }
         const ordered = declarations(style)

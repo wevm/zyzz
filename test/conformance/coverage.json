@@ -2119,7 +2119,11 @@
       },
       "margin": {
         "grammar": "ba8c2119c04d1856a08330442e0eea364128340dddbe828bfd0e73f636a50734",
-        "status": "supported"
+        "status": "supported",
+        "evidence": [
+          "src/ConfigMappings.test.ts",
+          "src/ConfigMappings.test-d.ts"
+        ]
       },
       "margin-block": {
         "grammar": "62d652d525f1bfcf95de7db83b898e09b7a710220a5d8ba3903f5d3b0bf37750",
@@ -2151,11 +2155,19 @@
       },
       "margin-left": {
         "grammar": "3ade5a4e3f01e6c3f4bb3e148052bbf42592c07b6a612c9acc4f357fa64d4ebb",
-        "status": "supported"
+        "status": "supported",
+        "evidence": [
+          "src/ConfigMappings.test.ts",
+          "src/ConfigMappings.test-d.ts"
+        ]
       },
       "margin-right": {
         "grammar": "4d1719aae6e558a4abbbe8d3a81bd195d8129ad4e000a5b1cee70bb4cb8bb840",
-        "status": "supported"
+        "status": "supported",
+        "evidence": [
+          "src/ConfigMappings.test.ts",
+          "src/ConfigMappings.test-d.ts"
+        ]
       },
       "margin-top": {
         "grammar": "3fdda5f6fd796a88597934ade8e6f9b0b5064244bd57f3f8980ff38981b67bda",
@@ -2435,7 +2447,11 @@
       },
       "padding": {
         "grammar": "9658f36daeba45903f5eac31a1827c945caa2c60a8f4ffae46f5ec06f0ac51f7",
-        "status": "supported"
+        "status": "supported",
+        "evidence": [
+          "src/ConfigMappings.test.ts",
+          "src/ConfigMappings.test-d.ts"
+        ]
       },
       "padding-block": {
         "grammar": "f78f2cf80693effa23391255aab3097e3e0e69bdba41f29ae2ce89c6886c7182",
@@ -2467,11 +2483,19 @@
       },
       "padding-left": {
         "grammar": "d0ee8f8f207c1e7b6bc1e8b13cd7b8f7ff4a0ed4af41394e27749466494d5230",
-        "status": "supported"
+        "status": "supported",
+        "evidence": [
+          "src/ConfigMappings.test.ts",
+          "src/ConfigMappings.test-d.ts"
+        ]
       },
       "padding-right": {
         "grammar": "6c0efbd76d237d4cb2b9f5106417a5bbacfbeeb9c61b23090c3cb42a1bc7e40a",
-        "status": "supported"
+        "status": "supported",
+        "evidence": [
+          "src/ConfigMappings.test.ts",
+          "src/ConfigMappings.test-d.ts"
+        ]
       },
       "padding-top": {
         "grammar": "0e36e92c87bcaccf6828e3811a08e75269fd3e99a81a9127c93e10a3c789a56f",

@@ -154,7 +154,11 @@ type ReferenceTree<tree, group extends Token.Group> = tree extends
   : { readonly [key in keyof tree]: ReferenceTree<tree[key], group> }
 
 /** Supported scalar groups; composite presets and query metadata follow separately. */
-type Scalar<group> = group extends 'spacing' | 'borderRadius'
+type Scalar<group> = group extends
+  | 'spacing'
+  | 'borderRadius'
+  | 'margin'
+  | 'padding'
   ? Literal.Length
   : group extends
         | 'fontFamily'
@@ -205,6 +209,10 @@ export type Tokens = {
   readonly lineHeight?:
     | Palette<NonNullable<Literal.Properties['lineHeight']>>
     | undefined
+  /** Signed spacing for margins, preferred over shared spacing tokens. */
+  readonly margin?: Palette<Literal.Length> | undefined
+  /** Nonnegative padding, preferred over shared spacing tokens. */
+  readonly padding?: Palette<Literal.Length> | undefined
   /** Nonnegative spacing and sizing values. */
   readonly spacing?: Palette<Literal.Length> | undefined
   /** Colors available to text declarations. */
@@ -367,6 +375,8 @@ function build(
         'borderColor',
         'borderRadius',
         'color',
+        'margin',
+        'padding',
         'spacing',
         'fontFamily',
         'fontSize',

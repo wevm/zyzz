@@ -89,6 +89,22 @@ Config.create({
 })
 ```
 
+### shorthands
+
+- Type: `Readonly<Record<string, readonly [Property, ...Property[]]>>`
+
+Optional aliases for standard properties. Each expands in place and in tuple order. Values must satisfy every target; each target resolves its own tokens. The aliases belong to this config and its theme handles. Root `css` has no default aliases.
+
+```ts
+const { css } = Config.create({
+  shorthands: { px: ['paddingLeft', 'paddingRight'] },
+  theme: { spacing: { sm: '4px' }, padding: { sm: '8px' } },
+})
+const card = css({ px: 'sm', paddingLeft: '2px' })
+```
+
+Dedicated `margin` and `padding` groups take precedence over `spacing` for their properties. Margin tokens accept signed lengths; padding tokens require nonnegative lengths. Empty or duplicate target lists, alias chains, unknown targets, and names colliding with authoring keys are rejected.
+
 ## Returns
 
 Returns `Config.create.ReturnType<options>`: a frozen object with typed `css`, a bound `script` function, and either `theme` or `themes`. Omission returns token-free `css` and a color-scheme-only `script`. Separate calls own isolated contracts and leave supplied definitions unchanged.

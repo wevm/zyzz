@@ -2,6 +2,7 @@
  * Rewrites extracted style calls into executable modules with CSS and source maps.
  * @module
  */
+import * as Namespaces from './internal/Namespaces.js'
 import * as Applications from './internal/Applications.js'
 import * as Expression from './internal/Expression.js'
 import * as Mapping from '@jridgewell/gen-mapping'
@@ -41,9 +42,14 @@ export function compile(options: compile.Options): compile.ReturnType {
     module.overwrite(
       call.start,
       call.end,
-      call.name
-        ? `${JSON.stringify(call.name)}${call.kind === 'keyframes' ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
-        : 'void 0',
+      (() => {
+        if (call.kind === 'cssFunction')
+          return `((...args: readonly (string | number)[]) => ${JSON.stringify(call.name + '(')} + args.join(',') + ')') as import('zyzz/web').cssFunction.Reference<${JSON.stringify(call.function?.parameters ?? [])}, ${JSON.stringify(call.function?.returns ?? '*')}>`
+        if (call.kind === 'customMedia')
+          return `${JSON.stringify(`@media (${call.name})`)} as unknown as import('zyzz/web').customMedia.Reference`
+        if (!call.name) return 'void 0'
+        return `${JSON.stringify(call.name)}${call.kind === 'keyframes' ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
+      })(),
     )
   type Span = Pick<Ast.Node, 'end' | 'start'>
   const applications = new Map<number, { end: number; folded: boolean }>()
@@ -335,6 +341,10 @@ export function compile(options: compile.Options): compile.ReturnType {
             ? ['Config', 'css', 'Theme', 'Vars']
             : [
                 'Css',
+                'cssFunction',
+                'customMedia',
+                'importCss',
+                'namespace',
                 'colorProfile',
                 'counterStyle',
                 'fontPaletteValues',
@@ -597,11 +607,17 @@ export function compile(options: compile.Options): compile.ReturnType {
     source: options.moduleId,
   })
 
+  const namespaced = Namespaces.rewrite(
+    css,
+    extracted.namespaces ?? [],
+    Mapping.toEncodedMap(cssMap),
+    true,
+  )
   return Object.freeze({
     classes,
     code: module.toString(),
-    css,
-    cssMap: Mapping.toEncodedMap(cssMap),
+    css: namespaced.css,
+    cssMap: namespaced.map ?? Mapping.toEncodedMap(cssMap),
     map: {
       file: options.moduleId,
       mappings: map.mappings,

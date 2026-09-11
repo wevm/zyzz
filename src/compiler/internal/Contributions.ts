@@ -1,4 +1,5 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
+import type { cssFunction } from '../../web/cssFunction.js'
 import type * as Block from '../../web/internal/Block.js'
 import type * as RuleReference from '../../internal/RuleReference.js'
 import * as Condition from '../../internal/Condition.js'
@@ -13,6 +14,8 @@ import * as Themes from './Themes.js'
 import type * as Scope from './Scope.js'
 
 type Kind =
+  | 'importCss'
+  | 'namespace'
   | 'fontFeatureValues'
   | 'page'
   | 'viewTransition'
@@ -22,6 +25,8 @@ type Kind =
   | 'layers'
   | RuleReference.Kind
 const named = [
+  'cssFunction',
+  'customMedia',
   'colorProfile',
   'counterStyle',
   'fontPaletteValues',
@@ -29,6 +34,8 @@ const named = [
   'positionTry',
 ]
 const macros = [
+  'importCss',
+  'namespace',
   'fontFace',
   'fontFeatureValues',
   'global',
@@ -39,6 +46,8 @@ const macros = [
 ]
 /** Source-owned factory replacement and optional animation identity. */
 export type Call = {
+  /** CSS function signature populated by literal extraction. */
+  readonly function?: NonNullable<Themes.Call['function']> | undefined
   readonly start: number
   readonly end: number
   readonly kind: Kind
@@ -88,6 +97,7 @@ export function scan(
   const calls: Call[] = []
   const bindings = new Map<number, Call>()
   const references = new Map<number, string>()
+  const queryKeys = new Map<number, string>()
   const used = new Set<string>()
   const undefinedValues = new Set<number>()
   const ancestors: Ast.Node[] = []
@@ -205,6 +215,9 @@ export function scan(
         end: node.end,
         argument: node.arguments[0]!,
         context: node.arguments[1],
+        ...(type === 'cssFunction'
+          ? { function: { parameters: [], returns: '*' as const } }
+          : {}),
         ...(named.includes(type)
           ? {
               name,
@@ -226,6 +239,7 @@ export function scan(
             end: call.end,
             name: call.name!,
             tokenType: '{}',
+            ...(call.function ? { function: call.function } : {}),
             ...(call.kind !== 'keyframes'
               ? { reference: call.kind as RuleReference.Kind }
               : {}),
@@ -250,7 +264,39 @@ export function scan(
       (binding?.type === 'Import' || binding?.type === 'Variable') &&
       imported.has(binding.node.start)
     ) {
-      references.set(node.start, imported.get(binding.node.start)!)
+      const name = imported.get(binding.node.start)!
+      const link = [...linkedNames.values()].find(
+        (link) => link.call.name === name,
+      )
+      const text =
+        link?.call.reference === 'customMedia' ? `@media (${name})` : name
+      references.set(node.start, text)
+      if (link?.call.reference === 'customMedia')
+        queryKeys.set(node.start, text)
+      if (
+        link?.call.reference === 'cssFunction' &&
+        parent.type === 'CallExpression' &&
+        parent.callee === node
+      ) {
+        const args = parent.arguments.map((argument) => {
+          const input = Expression.unwrap(argument)
+          if (
+            input.type === 'Literal' &&
+            (typeof input.value === 'string' || typeof input.value === 'number')
+          )
+            return String(input.value)
+          if (
+            input.type === 'UnaryExpression' &&
+            input.operator === '-' &&
+            input.argument.type === 'Literal' &&
+            typeof input.argument.value === 'number'
+          )
+            return String(-input.argument.value)
+          return undefined
+        })
+        if (args.every((value) => value !== undefined))
+          references.set(parent.start, `${name}(${args.join(',')})`)
+      }
       used.add(imported.get(binding.node.start)!)
       return
     }
@@ -299,7 +345,16 @@ export function scan(
         }
       }
   }
-  return { calls, references, read, used, undefinedValues, exports: exported }
+  return {
+    namespace,
+    calls,
+    queryKeys,
+    references,
+    read,
+    used,
+    undefinedValues,
+    exports: exported,
+  }
 }
 
 /** Builds ordered pure web data after lexical theme references are resolved. */
@@ -318,7 +373,9 @@ export function extract(
     if (scanned.undefinedValues.has(node.start)) return undefined
     if (
       node.type === 'Literal' &&
-      (typeof node.value === 'string' || typeof node.value === 'number')
+      (typeof node.value === 'string' ||
+        typeof node.value === 'number' ||
+        typeof node.value === 'boolean')
     ) {
       return node.value
     }
@@ -357,7 +414,7 @@ export function extract(
     for (const property of node.properties) {
       if (
         property.type !== 'Property' ||
-        property.computed ||
+        (property.computed && !scanned.queryKeys.has(property.key.start)) ||
         property.shorthand ||
         property.method ||
         property.kind !== 'init'
@@ -367,12 +424,13 @@ export function extract(
           property,
         )
       const key =
-        property.key.type === 'Identifier'
+        scanned.queryKeys.get(property.key.start) ??
+        (property.key.type === 'Identifier'
           ? property.key.name
           : property.key.type === 'Literal' &&
               typeof property.key.value === 'string'
             ? property.key.value
-            : undefined
+            : undefined)
       if (key === undefined || Object.hasOwn(output, key))
         throw new Themes.InvalidError(
           'Contribution keys must be unique literal strings.',
@@ -415,7 +473,150 @@ export function extract(
     const before = result.length
     try {
       const input = value(call.argument)
-      if (call.kind === 'layers') {
+      if (call.kind === 'importCss') {
+        const options = record(input)
+        if (
+          Object.keys(options).some(
+            (key) => !['layer', 'media', 'supports', 'url'].includes(key),
+          ) ||
+          typeof options.url !== 'string' ||
+          Object.entries(options).some(
+            ([key, value]) =>
+              key !== 'url' &&
+              value !== undefined &&
+              typeof value !== 'string' &&
+              !(key === 'layer' && value === true),
+          )
+        )
+          throw new Error(
+            'Expected a stylesheet URL and static import conditions.',
+          )
+        result.push({
+          kind: 'import',
+          url: options.url,
+          ...(options.layer !== undefined
+            ? { layer: options.layer as string | true }
+            : {}),
+          ...(options.supports !== undefined
+            ? { supports: options.supports as string }
+            : {}),
+          ...(options.media !== undefined
+            ? { media: options.media as string }
+            : {}),
+        })
+      } else if (call.kind === 'namespace') {
+        const options = record(input)
+        if (
+          Object.keys(options).some(
+            (key) => !['prefix', 'uri'].includes(key),
+          ) ||
+          typeof options.uri !== 'string' ||
+          (options.prefix !== undefined &&
+            (typeof options.prefix !== 'string' ||
+              !/^-?[_a-zA-Z][\w-]*$/.test(options.prefix)))
+        )
+          throw new Error(
+            'Expected a namespace URI and optional identifier prefix.',
+          )
+        if (
+          result.some(
+            (value) =>
+              value.kind === 'namespace' && value.prefix === options.prefix,
+          )
+        )
+          throw new Error('Duplicate namespace prefix in one module.')
+        result.push({
+          kind: 'namespace',
+          uri: options.uri,
+          ...(options.prefix !== undefined
+            ? { prefix: options.prefix as string }
+            : {}),
+          name: `z-n${scanned.namespace}-${call.start.toString(36)}`,
+        })
+      } else if (call.kind === 'customMedia') {
+        if (typeof input !== 'string' && typeof input !== 'boolean')
+          throw new Error('Expected a media query or boolean.')
+        result.push({ kind: 'custom-media', name: call.name!, query: input })
+      } else if (call.kind === 'cssFunction') {
+        const options = record(input)
+        const syntaxes = [
+          '*',
+          '<color>',
+          '<length>',
+          '<length-percentage>',
+          '<number>',
+          '<percentage>',
+          '<integer>',
+          '<angle>',
+          '<time>',
+        ]
+        if (
+          Object.keys(options).some(
+            (key) => !['body', 'parameters', 'returns'].includes(key),
+          ) ||
+          !Array.isArray(options.parameters) ||
+          (options.returns !== undefined &&
+            (typeof options.returns !== 'string' ||
+              !syntaxes.includes(options.returns)))
+        )
+          throw new Error(
+            'Expected CSS function parameters, body, and optional return syntax.',
+          )
+        const names = new Set<string>()
+        const parameters = options.parameters.map((input) => {
+          const parameter = record(input)
+          if (
+            Object.keys(parameter).some(
+              (key) => !['default', 'name', 'syntax'].includes(key),
+            ) ||
+            typeof parameter.name !== 'string' ||
+            !/^--[_a-zA-Z][\w-]*$/.test(parameter.name) ||
+            names.has(parameter.name) ||
+            (parameter.syntax !== undefined &&
+              (typeof parameter.syntax !== 'string' ||
+                !syntaxes.includes(parameter.syntax))) ||
+            (parameter.default !== undefined &&
+              typeof parameter.default !== 'string' &&
+              typeof parameter.default !== 'number')
+          )
+            throw new Error(
+              'Expected unique CSS parameters with supported syntaxes and scalar defaults.',
+            )
+          names.add(parameter.name)
+          return `${parameter.name}${parameter.syntax ? ` ${parameter.syntax === '*' ? 'type(*)' : parameter.syntax}` : ''}${parameter.default !== undefined ? `: ${parameter.default}` : ''}`
+        })
+        function body(input: unknown): readonly Block.Entry[] {
+          return Object.entries(record(input)).flatMap(
+            ([key, value]): Block.Entry[] => {
+              if (value === undefined) return []
+              if (/^@(media|supports|container) /.test(key))
+                return [
+                  {
+                    kind: 'block',
+                    header: Condition.normalize(key),
+                    entries: body(value),
+                  },
+                ]
+              if (
+                (key !== 'result' && !/^--[_a-zA-Z][\w-]*$/.test(key)) ||
+                (typeof value !== 'string' && typeof value !== 'number')
+              )
+                throw new Error(
+                  'CSS function bodies accept result, local variables, and conditional groups.',
+                )
+              return [{ kind: 'descriptor', name: key, value }]
+            },
+          )
+        }
+        call.function!.parameters =
+          options.parameters as readonly cssFunction.Parameter[]
+        call.function!.returns = (options.returns ?? '*') as cssFunction.Syntax
+        result.push({
+          kind: 'block',
+          header: `@function ${call.name}(${parameters.join(',')})${options.returns ? ` returns ${options.returns === '*' ? 'type(*)' : options.returns}` : ''}`,
+          entries: body(options.body),
+        })
+      } else if (call.kind === 'layers') {
         if (
           !Array.isArray(input) ||
           input.some((value) => typeof value !== 'string')

@@ -4,6 +4,8 @@ declare const reference: unique symbol
 export type Kind =
   | 'colorProfile'
   | 'counterStyle'
+  | 'cssFunction'
+  | 'customMedia'
   | 'fontPaletteValues'
   | 'positionTry'
 /** A fixed CSS name whose domain remains visible to authoring types. */

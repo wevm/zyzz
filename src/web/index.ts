@@ -19,3 +19,8 @@ export { positionTry } from './positionTry.js'
 export { fontFeatureValues } from './fontFeatureValues.js'
 export { page } from './page.js'
 export { viewTransition } from './viewTransition.js'
+
+export { cssFunction } from './cssFunction.js'
+export { customMedia } from './customMedia.js'
+export { importCss } from './importCss.js'
+export { namespace } from './namespace.js'

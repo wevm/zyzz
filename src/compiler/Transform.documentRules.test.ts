@@ -26,7 +26,9 @@ describe('compile', () => {
       moduleId: 'print.ts',
       source: `import {page} from 'zyzz/web';page({selector:':first',descriptors:{size:'A4 landscape',margin:'2cm',${margins.map((name, index) => JSON.stringify('@' + name) + ':{content:' + JSON.stringify('"' + index + '"') + '}').join(',')},pageOrientation:'upright',marks:'crop cross',bleed:'3mm'}},{within:['@media print']});`,
     })
-    expect(output.css).toMatchInlineSnapshot(`"@media print{@page :first{size:A4 landscape;margin:2cm;@top-left-corner{content:"0";}@top-left{content:"1";}@top-center{content:"2";}@top-right{content:"3";}@top-right-corner{content:"4";}@bottom-left-corner{content:"5";}@bottom-left{content:"6";}@bottom-center{content:"7";}@bottom-right{content:"8";}@bottom-right-corner{content:"9";}@left-top{content:"10";}@left-middle{content:"11";}@left-bottom{content:"12";}@right-top{content:"13";}@right-middle{content:"14";}@right-bottom{content:"15";}page-orientation:upright;marks:crop cross;bleed:3mm;}}"`)
+    expect(output.css).toMatchInlineSnapshot(
+      `"@media print{@page :first{size:A4 landscape;margin:2cm;@top-left-corner{content:"0";}@top-left{content:"1";}@top-center{content:"2";}@top-right{content:"3";}@top-right-corner{content:"4";}@bottom-left-corner{content:"5";}@bottom-left{content:"6";}@bottom-center{content:"7";}@bottom-right{content:"8";}@bottom-right-corner{content:"9";}@left-top{content:"10";}@left-middle{content:"11";}@left-bottom{content:"12";}@right-top{content:"13";}@right-middle{content:"14";}@right-bottom{content:"15";}page-orientation:upright;marks:crop cross;bleed:3mm;}}"`,
+    )
     expect(output.code).toMatchInlineSnapshot(`"void 0;"`)
   })
   test('retains feature blocks and view-transition descriptors in packed libraries', () => {
@@ -52,12 +54,16 @@ describe('compile', () => {
         moduleId: 'bad.ts',
         source: `import {page} from 'zyzz/web';page({descriptors:{'@top-center':{size:'A4'}}})`,
       }),
-    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: bad.ts:30: Unsupported page or page-margin declaration.]`)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: bad.ts:30: Unsupported page or page-margin declaration.]`,
+    )
     expect(() =>
       Transform.compile({
         moduleId: 'bad.ts',
         source: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Body',features:{'@swash':{flow:[1,2]}}})`,
       }),
-    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: bad.ts:43: Expected feature aliases with nonnegative integer indices.]`)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: bad.ts:43: Expected feature aliases with nonnegative integer indices.]`,
+    )
   })
 })

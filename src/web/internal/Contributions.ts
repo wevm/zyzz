@@ -1,4 +1,5 @@
 /** Pure ordered stylesheet contribution data and layer ordering. @module */
+import type * as Namespace from './Namespace.js'
 import * as Block from './Block.js'
 import type * as Style from '../../Style.js'
 
@@ -53,6 +54,19 @@ export type Definition = {
       readonly header: string
       /** Descriptors and nested blocks in authored order. */
       readonly entries: readonly Block.Entry[]
+    }
+  | (Namespace.Definition & { readonly kind: 'namespace' })
+  | {
+      readonly kind: 'import'
+      readonly url: string
+      readonly layer?: string | true | undefined
+      readonly supports?: string | undefined
+      readonly media?: string | undefined
+    }
+  | {
+      readonly kind: 'custom-media'
+      readonly name: string
+      readonly query: string | boolean
     }
   | { readonly kind: 'layers'; readonly names: readonly string[] }
 )
@@ -141,32 +155,46 @@ export function render(
   )
   return [
     layers.length ? `@layer ${layers.join(',')};` : '',
-    ...definitions.map((value) => {
-      const css = (() => {
-        if (value.kind === 'layers') return ''
-        if (value.kind === 'block')
-          return `${value.header}{${Block.render(value.entries, style)}}`
-        if (value.kind === 'rule')
-          return `${value.selector}{${style(value.style)}}`
-        if (value.kind === 'property')
-          return `@property ${value.name}{syntax:${JSON.stringify(value.syntax)};inherits:${value.inherits};initial-value:${value.initialValue};}`
-        if (value.kind === 'font-face' || value.kind === 'descriptor')
-          return `@${value.kind === 'font-face' ? 'font-face' : `${value.rule} ${value.name}`}{${Object.entries(
-            value.declarations,
-          )
-            .map(
-              ([key, value]) =>
-                `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value};`,
+    ...definitions
+      .toSorted((a, b) => rank(a) - rank(b))
+      .map((value) => {
+        const css = (() => {
+          if (value.kind === 'layers') return ''
+          if (value.kind === 'namespace')
+            return `@namespace ${value.name} ${JSON.stringify(value.uri)};`
+          if (value.kind === 'custom-media')
+            return `@custom-media ${value.name} ${value.query};`
+          if (value.kind === 'import')
+            return `@import url(${JSON.stringify(value.url)})${value.layer === true ? ' layer' : value.layer ? ` layer(${value.layer})` : ''}${value.supports ? ` supports(${value.supports})` : ''}${value.media ? ` ${value.media}` : ''};`
+          if (value.kind === 'block')
+            return `${value.header}{${Block.render(value.entries, style)}}`
+          if (value.kind === 'rule')
+            return `${value.selector}{${style(value.style)}}`
+          if (value.kind === 'property')
+            return `@property ${value.name}{syntax:${JSON.stringify(value.syntax)};inherits:${value.inherits};initial-value:${value.initialValue};}`
+          if (value.kind === 'font-face' || value.kind === 'descriptor')
+            return `@${value.kind === 'font-face' ? 'font-face' : `${value.rule} ${value.name}`}{${Object.entries(
+              value.declarations,
             )
-            .join('')}}`
-        return `@keyframes ${value.name}{${value.frames.map((frame) => `${frame.stop}{${style(frame.style)}}`).join('')}}`
-      })()
-      return (value.within ?? []).reduceRight(
-        (body, header) => `${header}{${body}}`,
-        css,
-      )
-    }),
+              .map(
+                ([key, value]) =>
+                  `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value};`,
+              )
+              .join('')}}`
+          return `@keyframes ${value.name}{${value.frames.map((frame) => `${frame.stop}{${style(frame.style)}}`).join('')}}`
+        })()
+        return (value.within ?? []).reduceRight(
+          (body, header) => `${header}{${body}}`,
+          css,
+        )
+      }),
   ]
     .filter(Boolean)
     .join('\n')
+}
+
+function rank(value: Definition): number {
+  if (value.kind === 'import') return 0
+  if (value.kind === 'namespace') return 1
+  return 2
 }

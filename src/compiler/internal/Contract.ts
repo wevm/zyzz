@@ -19,7 +19,7 @@ export function read(
   moduleId = '',
 ) {
   const data = record(JSON.parse(source))
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(data.version as number))
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
@@ -112,8 +112,10 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        data.version !== 9 ||
+        (data.version !== 9 && data.version !== 10) ||
         ![
+          'cssFunction',
+          'customMedia',
           'colorProfile',
           'counterStyle',
           'fontPaletteValues',
@@ -136,6 +138,9 @@ export function read(
           name,
           tokenType: '{}',
           reference: reference as NonNullable<Themes.Call['reference']>,
+          ...(reference === 'cssFunction'
+            ? { function: signature(entry.function) }
+            : {}),
         },
       }
     }
@@ -320,6 +325,7 @@ export function write(
         kind: link.kind,
         name: link.call.name,
         reference: link.call.reference,
+        ...(link.call.function ? { function: link.call.function } : {}),
       }
     if (link.kind === 'animation')
       return { binding: link.binding, kind: link.kind, name: link.call.name }
@@ -373,59 +379,121 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(links).some((link) => link.kind === 'rule-reference')
-      ? 9
-      : Object.values(links).some((link) => link.kind === 'variables')
-        ? 8
-        : stylesheets.length ||
-            Object.values(links).some((link) => link.kind === 'animation')
-          ? 7
-          : Object.values(links).some((link) => link.kind === 'marker')
-            ? 6
-            : Object.values(themes).some(
-                  (theme) =>
-                    theme[Token.definition].contract.shorthands ||
-                    Object.hasOwn(theme.tokens, 'margin') ||
-                    Object.hasOwn(theme.tokens, 'padding'),
-                ) ||
-                Object.values(links).some(
-                  (link) =>
-                    link.call.output === 'html' ||
-                    Object.values(link.members ?? {}).some(
-                      (member) => member.call.output === 'html',
-                    ),
-                )
-              ? 5
-              : stylesheets.length ||
-                  Object.values(links).some(
-                    (link) =>
-                      link.call.selection ||
-                      (link.kind === 'config' && !!link.call.options?.themes) ||
-                      link.call.initialization ||
-                      (link.kind === 'config' && link.call.script) ||
-                      link.kind === 'marker' ||
-                      link.kind === 'animation' ||
-                      link.kind === 'variables',
-                  )
-                ? 4
+    version:
+      stylesheets.some((section) => section.namespaces?.length) ||
+      Object.values(links).some(
+        (link) =>
+          link.call.reference === 'cssFunction' ||
+          link.call.reference === 'customMedia',
+      )
+        ? 10
+        : Object.values(links).some((link) => link.kind === 'rule-reference')
+          ? 9
+          : Object.values(links).some((link) => link.kind === 'variables')
+            ? 8
+            : stylesheets.length ||
+                Object.values(links).some((link) => link.kind === 'animation')
+              ? 7
+              : Object.values(links).some((link) => link.kind === 'marker')
+                ? 6
                 : Object.values(themes).some(
                       (theme) =>
-                        theme[Token.definition].queries ||
-                        Object.keys(theme.tokens).some((group) =>
-                          [
-                            'fontFamily',
-                            'fontSize',
-                            'fontWeight',
-                            'lineHeight',
-                            'letterSpacing',
-                          ].includes(group),
+                        theme[Token.definition].contract.shorthands ||
+                        Object.hasOwn(theme.tokens, 'margin') ||
+                        Object.hasOwn(theme.tokens, 'padding'),
+                    ) ||
+                    Object.values(links).some(
+                      (link) =>
+                        link.call.output === 'html' ||
+                        Object.values(link.members ?? {}).some(
+                          (member) => member.call.output === 'html',
                         ),
                     )
-                  ? 3
-                  : Object.values(links).some(
-                        (link) => link.kind === 'config' || link.call.type,
+                  ? 5
+                  : stylesheets.length ||
+                      Object.values(links).some(
+                        (link) =>
+                          link.call.selection ||
+                          (link.kind === 'config' &&
+                            !!link.call.options?.themes) ||
+                          link.call.initialization ||
+                          (link.kind === 'config' && link.call.script) ||
+                          link.kind === 'marker' ||
+                          link.kind === 'animation' ||
+                          link.kind === 'variables',
                       )
-                    ? 2
-                    : 1,
+                    ? 4
+                    : Object.values(themes).some(
+                          (theme) =>
+                            theme[Token.definition].queries ||
+                            Object.keys(theme.tokens).some((group) =>
+                              [
+                                'fontFamily',
+                                'fontSize',
+                                'fontWeight',
+                                'lineHeight',
+                                'letterSpacing',
+                              ].includes(group),
+                            ),
+                        )
+                      ? 3
+                      : Object.values(links).some(
+                            (link) => link.kind === 'config' || link.call.type,
+                          )
+                        ? 2
+                        : 1,
   })
+}
+
+function signature(input: unknown): NonNullable<Themes.Call['function']> {
+  const value = record(input)
+  const syntaxes = [
+    '*',
+    '<color>',
+    '<length>',
+    '<length-percentage>',
+    '<number>',
+    '<percentage>',
+    '<integer>',
+    '<angle>',
+    '<time>',
+  ]
+  if (
+    !syntaxes.includes(string(value.returns)) ||
+    !Array.isArray(value.parameters)
+  )
+    throw new Error('Invalid packed CSS function signature.')
+  const names = new Set<string>()
+  const parameters = value.parameters.map((input: unknown) => {
+    const parameter = record(input)
+    const name = string(parameter.name)
+    if (
+      !/^--[_a-zA-Z][\w-]*$/.test(name) ||
+      names.has(name) ||
+      (parameter.syntax !== undefined &&
+        !syntaxes.includes(string(parameter.syntax))) ||
+      (parameter.default !== undefined &&
+        typeof parameter.default !== 'number' &&
+        typeof parameter.default !== 'string')
+    )
+      throw new Error('Invalid packed CSS function parameter.')
+    names.add(name)
+    return {
+      name: name as `--${string}`,
+      ...(parameter.syntax !== undefined
+        ? {
+            syntax: parameter.syntax as NonNullable<
+              Themes.Call['function']
+            >['returns'],
+          }
+        : {}),
+      ...(parameter.default !== undefined
+        ? { default: parameter.default as string | number }
+        : {}),
+    }
+  })
+  return {
+    parameters,
+    returns: value.returns as NonNullable<Themes.Call['function']>['returns'],
+  }
 }

@@ -6,8 +6,18 @@ export function transform<C extends Lightning.CustomAtRules>(
   options: Lightning.TransformOptions<C>,
 ): Lightning.TransformResult {
   const source = new TextDecoder().decode(options.code)
+  // The pinned visitor cannot round-trip the nested Option used for anonymous import layers.
+  // Give emitted anonymous layers a temporary name while URL visitors run, then restore them.
+  let marker = 'zyzz-anonymous-import'
+  while (source.includes(marker)) marker += '-x'
+  const imports = options.visitor
+    ? source.replace(
+        /^(\s*@import\s+(?:url\()?"(?:\\.|[^"\\])*"\)?\s+)layer(?=[\s;])/gm,
+        `$1layer(${marker})`,
+      )
+    : source
   const renamed = rename(
-    source,
+    imports,
     'font-feature-values',
     '-zyzz-font-feature-values',
   )
@@ -20,7 +30,9 @@ export function transform<C extends Lightning.CustomAtRules>(
     ...result,
     code: new TextEncoder().encode(
       rename(
-        new TextDecoder().decode(result.code),
+        new TextDecoder()
+          .decode(result.code)
+          .replaceAll(`layer(${marker})`, 'layer'),
         '-zyzz-font-feature-values',
         'font-feature-values',
       ),
@@ -30,7 +42,8 @@ export function transform<C extends Lightning.CustomAtRules>(
 
 // Contribution extraction validates feature blocks and their descriptors before this adapter.
 // At-keyword substitution keeps Lightning's token/URL traversal without discarding newer descriptors.
-function rename(source: string, before: string, after: string): string {
+/** Renames actual at-keywords without touching strings, comments, or function arguments. */
+export function rename(source: string, before: string, after: string): string {
   let output = ''
   let quote = ''
   let parentheses = 0
@@ -68,4 +81,21 @@ function rename(source: string, before: string, after: string): string {
     output += char
   }
   return output
+}
+
+/** Relocates an import while omitting absent conditions in the parser's visitor return format. */
+export function relocateImport(
+  value: Lightning.ImportRule,
+  url: string,
+): Lightning.ReturnedRule {
+  const { layer, supports, ...rest } = value
+  return {
+    type: 'import',
+    value: {
+      ...rest,
+      url,
+      ...(layer ? { layer } : {}),
+      ...(supports ? { supports } : {}),
+    },
+  }
 }

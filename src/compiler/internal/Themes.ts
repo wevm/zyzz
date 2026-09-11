@@ -2,6 +2,7 @@
  * Extracts local theme data and validates its lexical source references.
  * @module
  */
+import type { cssFunction } from '../../web/cssFunction.js'
 import type * as RuleReference from '../../internal/RuleReference.js'
 import type * as Ast from '@oxc-project/types'
 import type * as Walker from 'oxc-walker'
@@ -24,6 +25,13 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Static CSS function signature shared during extraction and packed serialization. */
+  readonly function?:
+    | {
+        parameters: readonly cssFunction.Parameter[]
+        returns: cssFunction.Syntax
+      }
+    | undefined
   /** Named stylesheet identity domain. */
   readonly reference?: RuleReference.Kind | undefined
   /** Canonical defining module for multi-entry variable contracts. */

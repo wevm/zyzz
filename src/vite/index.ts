@@ -2,6 +2,7 @@
  * Connects static Zyzz source compilation to Vite resolution and CSS delivery.
  * @module
  */
+import * as Namespaces from '../compiler/internal/Namespaces.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Crypto from 'node:crypto'
@@ -133,12 +134,16 @@ export function zyzz(): Plugin {
             ? [
                 'colorProfile',
                 'counterStyle',
+                'cssFunction',
+                'customMedia',
                 'fontFace',
                 'fontFeatureValues',
                 'fontPaletteValues',
                 'global',
+                'importCss',
                 'keyframes',
                 'layers',
+                'namespace',
                 'page',
                 'positionTry',
                 'viewTransition',
@@ -573,6 +578,15 @@ export function zyzz(): Plugin {
               Mapping.toEncodedMap(new Mapping.GenMapping()),
           ),
           visitor: {
+            Rule(rule) {
+              if (rule.type !== 'import') return
+              const target = result.sharedAssets?.[rule.value.url]
+              if (target)
+                return AtRules.relocateImport(
+                  rule.value,
+                  assetUrls.get(target)!,
+                )
+            },
             Url(url) {
               const target = result.sharedAssets?.[url.url]
               if (!target) return
@@ -625,6 +639,24 @@ export function zyzz(): Plugin {
       root = config.root
     },
     enforce: 'pre',
+    generateBundle: {
+      order: 'post',
+      handler(_, bundle) {
+        for (const output of Object.values(bundle)) {
+          if (output.type !== 'asset' || !output.fileName.endsWith('.css'))
+            continue
+          const css =
+            typeof output.source === 'string'
+              ? output.source
+              : new TextDecoder().decode(output.source)
+          output.source = AtRules.rename(
+            Namespaces.bundle(css),
+            '-zyzz-font-feature-values',
+            'font-feature-values',
+          )
+        }
+      },
+    },
     async watchChange(file, change) {
       await updateDiscovery(this.environment, file, change.event)
     },
@@ -677,12 +709,20 @@ export function zyzz(): Plugin {
         undefined,
         id === sharedId,
       )
+      const transport = (css: string) =>
+        this.environment.config.command === 'build'
+          ? AtRules.rename(
+              Namespaces.protect(css),
+              'font-feature-values',
+              '-zyzz-font-feature-values',
+            )
+          : css
       if (id === sharedId)
         return {
-          code: output.sharedCss,
+          code: transport(output.sharedCss),
           map: JSON.stringify(output.sharedCssMap),
         }
-      return { code: output.css, map: JSON.stringify(output.cssMap) }
+      return { code: transport(output.css), map: JSON.stringify(output.cssMap) }
     },
     name: 'zyzz',
     resolveId(id) {

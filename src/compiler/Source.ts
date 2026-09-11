@@ -14,6 +14,7 @@ import * as Variables from './internal/Variables.js'
 import * as Expression from './internal/Expression.js'
 import * as Token from '../internal/Token.js'
 import type * as Ast from '@oxc-project/types'
+import type * as Namespace from '../web/internal/Namespace.js'
 import * as AtRules from './internal/AtRules.js'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
@@ -423,7 +424,9 @@ export function extract(options: extract.Options): extract.ReturnType {
           property.type !== 'Property' ||
           property.kind !== 'init' ||
           property.method ||
-          (property.computed && !markers.conditions.has(property.key.start)) ||
+          (property.computed &&
+            !markers.conditions.has(property.key.start) &&
+            !contributions.queryKeys.has(property.key.start)) ||
           property.shorthand ||
           (!markers.conditions.has(property.key.start) &&
             property.key.type !== 'Identifier' &&
@@ -439,6 +442,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         }
         const key =
           markers.conditions.get(property.key.start) ??
+          contributions.queryKeys.get(property.key.start) ??
           (property.key.type === 'Identifier'
             ? property.key.name
             : property.key.type === 'Literal'
@@ -779,6 +783,16 @@ export function extract(options: extract.Options): extract.ReturnType {
         ...(!options[Themes.context]
           ? {
               visitor: {
+                Rule(rule) {
+                  if (
+                    rule.type === 'import' &&
+                    rule.value.url &&
+                    !/^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(rule.value.url)
+                  )
+                    throw new Error(
+                      'Relative contribution assets require Graph.compile and a relocation host.',
+                    )
+                },
                 Url(url) {
                   if (
                     url.url &&
@@ -816,6 +830,10 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
   if (diagnostics.length) throw new ExtractError(diagnostics)
   return Object.freeze({
+    namespaces: contributionData.filter(
+      (value): value is Extract<Css.Contribution, { kind: 'namespace' }> =>
+        value.kind === 'namespace',
+    ),
     ...(markers.calls.length
       ? {
           markerCalls: Object.freeze(
@@ -882,6 +900,8 @@ export declare namespace extract {
   }
   /** Ordered public compiler input and spans for later rewriting. */
   type ReturnType = {
+    /** Module-owned namespace bindings retained when contributions are shared. */
+    readonly namespaces?: readonly Namespace.Definition[] | undefined
     /** Marker factories replaced with fixed data-attribute callables. */
     readonly markerCalls?: readonly Markers.Call[] | undefined
     /** Static stylesheet effects and their source replacements. */

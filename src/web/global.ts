@@ -15,11 +15,13 @@ export function global<const styles extends Record<string, unknown>>(
 export declare namespace global {
   /** Selectors contain exact declarations; at-rules contain further selectors. */
   type Body<styles> = {
-    [key in keyof styles]: key extends `@${string}`
-      ? key extends Extract<Condition.Raw, `@${string}`>
-        ? Body<styles[key]>
-        : never
-      : Style.Accepted<styles[key]> & WithoutRelationships<styles[key]>
+    [key in keyof styles]: key extends symbol
+      ? Body<styles[key]>
+      : key extends `@${string}`
+        ? key extends Extract<Condition.Raw, `@${string}`>
+          ? Body<styles[key]>
+          : never
+        : Style.Accepted<styles[key]> & WithoutRelationships<styles[key]>
   }
 }
 

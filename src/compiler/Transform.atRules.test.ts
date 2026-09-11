@@ -22,6 +22,13 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
       export const fade = "z-ko6ez0r19fmsab-66-61-64-65";"
     `)
   })
+  test('resolves configured queries across CSS whitespace and comment boundaries', () => {
+    const output = Transform.compile({
+      moduleId: 'queries.ts',
+      source: `import {Theme} from 'zyzz';const theme=Theme.define({breakpoints:{tablet:'48rem'}});export const styles={card:theme.css({'@media\\ttablet':{color:'red'},'@media/**/tablet':{color:'blue'}})};`,
+    })
+    expect(output.css).toMatchInlineSnapshot(`".z-style-1df82zi1f2cka-110{@media (width >= 48rem){color:red;}@media (width >= 48rem){color:blue;}}"`)
+  })
   test('keeps scope, layer, and scroll-state nesting in authored order', () => {
     const output = Transform.compile({
       moduleId: 'scope.ts',
@@ -34,7 +41,7 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
   test('defaults undefined contexts and accepts anonymous and CSS-whitespace groups', () => {
     const output = Transform.compile({
       moduleId: 'contexts.ts',
-      source: `import {fontFace,keyframes,global} from 'zyzz/web';fontFace({fontFamily:'Body',src:'url(/body)'},undefined);export const fade=keyframes({from:{opacity:0},to:{opacity:1}},void 0);fontFace({fontFamily:'Layered',src:'url(/body)'},{within:['@layer']});global({'@media\\nscreen':{body:{color:'red'}},'@supports(display:grid)':{body:{display:'grid'}},'@media/**/print':{body:{color:'blue'}}});`,
+      source: `import {fontFace,keyframes,global} from 'zyzz/web';fontFace({fontFamily:'Body',src:'url(/body)'},undefined);export const fade=keyframes({from:{opacity:0},to:{opacity:1}},void 1);fontFace({fontFamily:'Layered',src:'url(/body)'},{within:['@layer']});global({'@media\\nscreen':{body:{color:'red'}},'@supports(display:grid)':{body:{display:'grid'}},'@media/**/print':{body:{color:'blue'}}});`,
     })
     expect(output.css).toMatchInlineSnapshot(`
       "@font-face{font-family:Body;src:url(/body);}

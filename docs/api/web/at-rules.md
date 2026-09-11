@@ -1,6 +1,7 @@
 # At-Rules
 
 > [!NOTE]
+> `colorProfile` remains planned and is not exported until real-browser rendering is verified.
 > Grouping contexts, expanded font-face descriptors, and timeline-range keyframes are implemented. New descriptor and statement helpers remain planned in the dependent PRs; full conformance is tracked separately.
 
 Stylesheet declarations use direct named imports from `zyzz/web`. Conditional and grouping rules remain native `@…` keys in valid style contexts. `global` owns global selectors and their grouping rules; descriptor and statement rules have dedicated functions.

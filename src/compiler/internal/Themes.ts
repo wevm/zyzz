@@ -79,6 +79,8 @@ export type Link = {
 
 /** Shared graph data; no filesystem or runtime evaluation is involved. */
 export type Context = {
+  /** Locally imported stylesheet factories resolved through source barrels. */
+  readonly factories?: Readonly<Record<string, string>> | undefined
   readonly extracted?: Source.extract.ReturnType | undefined
   readonly links: Readonly<Record<string, Link>>
   readonly owners?:

@@ -49,12 +49,5 @@ export function accepts(kind: Kind, property: string): boolean {
   if (kind === 'fontPaletteValues') return property === 'fontPalette'
   if (kind === 'positionTry')
     return ['positionTry', 'positionTryFallbacks'].includes(property)
-  return [
-    'color',
-    'background',
-    'backgroundColor',
-    'borderColor',
-    'fill',
-    'stroke',
-  ].includes(property)
+  return false
 }

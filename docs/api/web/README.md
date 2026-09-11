@@ -15,6 +15,9 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 > [!NOTE]
 > The [complete at-rule API](at-rules.md) is an accepted design; statement and document helpers remain planned.
 
-`colorProfile`, `counterStyle`, `fontPaletteValues`, and `positionTry` emit named descriptor rules and return typed CSS identities. Each accepts optional ordered `{ within }` grouping contexts. Imports, aliases, re-exports, and packed metadata preserve the identities.
+`counterStyle`, `fontPaletteValues`, and `positionTry` emit named descriptor rules and return typed CSS identities. Each accepts optional ordered `{ within }` grouping contexts. Imports, aliases, re-exports, and packed metadata preserve the identities.
 
 Planned direct imports include `cssFunction`, `customMedia`, `fontFeatureValues`, `importCss`, `namespace`, `page`, and `viewTransition`. Conditional/grouping rules remain native keys in valid style bodies. Registration extends `Vars.define`.
+
+> [!NOTE]
+> `colorProfile` is planned and remains unexported until real-browser rendering is verified.

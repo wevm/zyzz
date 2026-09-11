@@ -134,32 +134,44 @@ export async function create(options: create.Options): Promise<Runtime> {
     })
     if (graph.sharedCss) {
       const assets = new Map<string, string>()
-      const shared = LightningCss.transform({
-        filename: 'zyzz.shared.css',
-        code: Buffer.from(graph.sharedCss),
-        sourceMap: true,
-        inputSourceMap: JSON.stringify(graph.sharedCssMap),
-        minify: css === false ? false : css.minify,
-        ...(css === false ? {} : { targets: css.targets }),
-        visitor: {
-          Url(url) {
-            const target = graph.sharedAssets?.[url.url]
-            if (!target) return
-            if (!target.startsWith(`${options.packageId}/`))
-              throw new Error('Asset path escapes the package root.')
-            const relative = target.slice(options.packageId.length + 1)
-            const filename = decodeURIComponent(relative.split(/[?#]/)[0]!)
-            if (
-              filename
-                .split('/')
-                .some((part) => ['.zyzz.json', '.zyzz-lock'].includes(part))
-            )
-              throw new Error('Asset path conflicts with host control files.')
-            assets.set(filename, Path.join(root, filename))
-            return { ...url, url: relative }
-          },
-        },
-      })
+      const shared =
+        css === false && !Object.keys(graph.sharedAssets ?? {}).length
+          ? {
+              code: Buffer.from(graph.sharedCss),
+              map: Buffer.from(JSON.stringify(graph.sharedCssMap)),
+            }
+          : LightningCss.transform({
+              filename: 'zyzz.shared.css',
+              code: Buffer.from(graph.sharedCss),
+              sourceMap: true,
+              inputSourceMap: JSON.stringify(graph.sharedCssMap),
+              minify: css === false ? false : css.minify,
+              ...(css === false ? {} : { targets: css.targets }),
+              visitor: {
+                Url(url) {
+                  const target = graph.sharedAssets?.[url.url]
+                  if (!target) return
+                  if (!target.startsWith(`${options.packageId}/`))
+                    throw new Error('Asset path escapes the package root.')
+                  const relative = target.slice(options.packageId.length + 1)
+                  const filename = decodeURIComponent(
+                    relative.split(/[?#]/)[0]!,
+                  )
+                  if (
+                    filename
+                      .split('/')
+                      .some((part) =>
+                        ['.zyzz.json', '.zyzz-lock'].includes(part),
+                      )
+                  )
+                    throw new Error(
+                      'Asset path conflicts with host control files.',
+                    )
+                  assets.set(filename, Path.join(root, filename))
+                  return { ...url, url: relative }
+                },
+              },
+            })
       for (const [name, file] of assets) {
         const real = await Fs.realpath(file)
         if (!inside(root, real))

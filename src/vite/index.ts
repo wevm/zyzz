@@ -315,23 +315,36 @@ export function zyzz(): Plugin {
       styles.push(output.css)
       line += output.css.split('\n').length
     }
-    const shared = Lightning.transform({
-      filename: 'zyzz.shared.css',
-      code: new TextEncoder().encode(result.sharedCss ?? ''),
-      sourceMap: true,
-      inputSourceMap: JSON.stringify(result.sharedCssMap),
-      visitor: {
-        Url(url) {
-          const target = result.sharedAssets?.[url.url]
-          if (!target) return
-          if (!target.startsWith('app/'))
-            throw new Error('Asset path escapes the Vite project.')
-          const file = Path.join(root, target.slice(4).split(/[?#]/)[0]!)
-          host.watch(file)
-          return { ...url, url: `/@fs/${Path.join(root, target.slice(4))}` }
-        },
-      },
-    })
+    const shared = !Object.keys(result.sharedAssets ?? {}).length
+      ? {
+          code: new TextEncoder().encode(result.sharedCss ?? ''),
+          map: new TextEncoder().encode(
+            JSON.stringify(
+              result.sharedCssMap ??
+                Mapping.toEncodedMap(new Mapping.GenMapping()),
+            ),
+          ),
+        }
+      : Lightning.transform({
+          filename: 'zyzz.shared.css',
+          code: new TextEncoder().encode(result.sharedCss ?? ''),
+          sourceMap: true,
+          inputSourceMap: JSON.stringify(
+            result.sharedCssMap ??
+              Mapping.toEncodedMap(new Mapping.GenMapping()),
+          ),
+          visitor: {
+            Url(url) {
+              const target = result.sharedAssets?.[url.url]
+              if (!target) return
+              if (!target.startsWith('app/'))
+                throw new Error('Asset path escapes the Vite project.')
+              const file = Path.join(root, target.slice(4).split(/[?#]/)[0]!)
+              host.watch(file)
+              return { ...url, url: `/@fs/${Path.join(root, target.slice(4))}` }
+            },
+          },
+        })
     const sharedMap = JSON.parse(
       new TextDecoder().decode(shared.map!),
     ) as Mapping.EncodedSourceMap

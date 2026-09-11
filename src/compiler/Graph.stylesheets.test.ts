@@ -111,7 +111,11 @@ describe('compile', () => {
           .locator('body')
           .evaluate((el) => getComputedStyle(el).marginTop),
       ).toMatchInlineSnapshot('"13px"')
-      expect(loaded).toMatchInlineSnapshot('["asset"]')
+      expect(loaded).toMatchInlineSnapshot(`
+          [
+            "asset",
+          ]
+        `)
       await page.evaluate(
         `document.head.append(document.querySelector('link[href="/reset.css"]'))`,
       )

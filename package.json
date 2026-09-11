@@ -58,7 +58,8 @@
     "!src/**/*.test.ts"
   ],
   "sideEffects": [
-    "./src/reset.css"
+    "./src/reset.css",
+    "./dist/reset.css"
   ],
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -78,7 +79,10 @@
       "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
     },
-    "./reset.css": "./dist/reset.css",
+    "./reset.css": {
+      "src": "./src/reset.css",
+      "default": "./dist/reset.css"
+    },
     "./runtime": {
       "src": "./src/runtime/index.ts",
       "types": "./dist/runtime/index.d.ts",

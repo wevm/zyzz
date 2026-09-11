@@ -11,6 +11,36 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 
 describe('create', () => {
+  test('rejects script destructuring from legacy and selection contracts', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultTheme:'base',themes:{base:{}}});export const select=config.themes;`,
+      },
+    })
+    const data = JSON.parse(library.contracts['config.ts']!)
+    delete data.exports.config.script
+    const errors = [
+      `import {config} from 'lib';const {script}=config;script()`,
+      `import {select} from 'lib';const {script}=select;script()`,
+    ].map((source) => {
+      try {
+        Graph.compile({
+          contracts: { 'lib.js': JSON.stringify(data) },
+          imports: { 'app.js': { lib: 'lib.js' } },
+          modules: { 'app.js': source },
+        })
+        return 'accepted'
+      } catch (error) {
+        return error
+      }
+    })
+    expect(errors).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: app.js:34: This configuration helper is not available on the linked contract.],
+        [Source.ExtractError: app.js:34: This configuration helper is not available on the linked contract.],
+      ]
+    `)
+  })
   test('omits unavailable script methods from legacy alias declarations', () => {
     const library = Graph.compile({
       modules: {

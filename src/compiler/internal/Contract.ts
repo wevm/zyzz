@@ -51,11 +51,15 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     const catalogOnly =
       !!options?.themes &&
       ((data.version as number) < 4 || entry.catalogOnly === true)
-    const configType = options
+    const fullConfigType = options
       ? `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
       : ''
+    const configType =
+      entry.script === true
+        ? fullConfigType
+        : `{readonly [key in keyof ${fullConfigType} as key extends 'script' ? never : key]:${fullConfigType}[key]}`
     const outputType = catalogOnly
-      ? `(Omit<${configType},'themes'> & {readonly themes:Pick<${configType}['themes'],keyof ${configType}['themes']>})`
+      ? `({readonly [key in keyof ${configType} as key extends 'themes' ? never : key]:${configType}[key]} & {readonly themes:{readonly [key in keyof ${configType}['themes']]:${configType}['themes'][key]}})`
       : configType
     if (entry.kind === 'config' && !options)
       throw new Error('Missing configuration options.')

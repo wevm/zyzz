@@ -162,7 +162,7 @@ export function write(
         marker: link.call.marker,
       }
     return {
-      ...(link.call.script ? { script: true } : {}),
+      ...(link.call.script && (link.kind === 'config' || link.call.initialization) ? { script: true } : {}),
       binding: link.binding,
       kind: link.kind,
       theme: link.call.name,

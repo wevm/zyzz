@@ -7,6 +7,41 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 
 describe('create', () => {
+  test('rejects selectors on configurations without named catalogs', () => {
+    for (const options of ['{}', "{theme:{color:{ink:'red'}}}"])
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.js': `import {Config} from 'zyzz';const config=Config.create(${options});config.themes({theme:'base'})`,
+          },
+        }),
+      ).toThrow(/named catalog/)
+  })
+  test('versions complete named configurations as callable and isolates builtin bindings', async () => {
+    const graph = Graph.compile({
+      modules: {
+        'config.js': `import {Config} from 'zyzz';const Object=null,Array=null,TypeError=null,globalThis=null;export const config=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}}}});export const selected=config.themes({theme:'base',colorScheme:'dark'})`,
+      },
+    })
+    expect(
+      JSON.parse(graph.contracts['config.js']!).version,
+    ).toMatchInlineSnapshot('4')
+    const bundle = await Esbuild.build({
+      stdin: {
+        contents: graph.modules['config.js']!.code,
+        resolveDir: process.cwd(),
+      },
+      bundle: true,
+      write: false,
+      format: 'iife',
+      globalName: 'Fixture',
+      alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+    })
+    const value = Vm.runInNewContext(
+      `${bundle.outputFiles[0]!.text};Fixture.selected`,
+    )
+    expect(value.style.colorScheme).toMatchInlineSnapshot('"dark"')
+  })
   test('rejects unchecked selector names, fields, and schemes', async () => {
     const graph = Graph.compile({
       modules: {
@@ -30,6 +65,7 @@ describe('create', () => {
     ) as (input: unknown) => unknown
     for (const input of [
       { theme: 'missing' },
+      { theme: 1 },
       { theme: 'toString' },
       { theme: 'base', colorScheme: 'invalid' },
       { theme: 'base', extra: true },

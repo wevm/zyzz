@@ -17,3 +17,6 @@ export * as Html from './Html.js'
 export * as Appearance from './Appearance.js'
 
 export * as Marker from './Marker.js'
+
+/** Validated selection of compiler-owned theme catalogs. */
+export * as Selection from './Selection.js'

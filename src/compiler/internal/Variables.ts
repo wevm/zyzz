@@ -1,6 +1,7 @@
 /** Extracts module-owned explicit slot contracts without executing application code. @module */
 import type * as Ast from '@oxc-project/types'
-import type * as Walker from 'oxc-walker'
+import * as Walker from 'oxc-walker'
+import type * as Scope from './Scope.js'
 import type * as Css from '../../web/Css.js'
 import * as Theme from '../../Theme.js'
 import type * as Themes from './Themes.js'
@@ -22,6 +23,7 @@ export type Call = {
 export function collect(
   program: Ast.Program,
   namespace: string,
+  scope: Scope.Tracker,
   links: Readonly<Record<string, Themes.Link>> = {},
 ) {
   const imports = new Set<number>()
@@ -43,6 +45,19 @@ export function collect(
           imports.add(specifier.start)
           names.add(specifier.local.name)
         }
+  const undefinedValues = new Set<number>()
+  if (imports.size)
+    Walker.walk(program, {
+      scopeTracker: scope,
+      enter(node) {
+        if (
+          node.type === 'Identifier' &&
+          node.name === 'undefined' &&
+          !scope.getDeclaration(node.name)
+        )
+          undefinedValues.add(node.start)
+      },
+    })
   const exports: Record<string, Themes.Link> = Object.create(null)
   const bound = new Map<string, Themes.Link>()
   const registrations: Css.Contribution[] = []
@@ -145,6 +160,13 @@ export function collect(
                   ? String(entry.key.value)
                   : ''
             const input = Expression.unwrap(entry.value)
+            if (
+              key === 'syntax' &&
+              input.type === 'Identifier' &&
+              input.name === 'undefined' &&
+              undefinedValues.has(input.start)
+            )
+              continue
             const literal =
               input.type === 'Literal'
                 ? input.value

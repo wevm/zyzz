@@ -142,6 +142,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       return Variables.collect(
         program,
         identity(options.moduleId),
+        scopeTracker,
         options[Themes.context]?.links,
       )
     } catch (error) {

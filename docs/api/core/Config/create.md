@@ -62,6 +62,8 @@ const styles = {
 }
 ```
 
+Dedicated `margin` and `padding` groups take precedence over `spacing` for their properties. Margin tokens accept signed lengths; padding tokens require nonnegative lengths. Empty or duplicate target lists, alias chains, unknown targets, and names colliding with authoring keys are rejected.
+
 See [Property Mappings](../../../guides/themes.md#property-mappings) for aliases and property-specific token scales.
 
 ### options.theme
@@ -88,22 +90,6 @@ Config.create({
   themes: { base: { spacing: { md: '1rem' } } },
 })
 ```
-
-### shorthands
-
-- Type: `Readonly<Record<string, readonly [Property, ...Property[]]>>`
-
-Optional aliases for standard properties. Each expands in place and in tuple order. Values must satisfy every target; each target resolves its own tokens. The aliases belong to this config and its theme handles. Root `css` has no default aliases.
-
-```ts
-const { css } = Config.create({
-  shorthands: { px: ['paddingLeft', 'paddingRight'] },
-  theme: { spacing: { sm: '4px' }, padding: { sm: '8px' } },
-})
-const card = css({ px: 'sm', paddingLeft: '2px' })
-```
-
-Dedicated `margin` and `padding` groups take precedence over `spacing` for their properties. Margin tokens accept signed lengths; padding tokens require nonnegative lengths. Empty or duplicate target lists, alias chains, unknown targets, and names colliding with authoring keys are rejected.
 
 ## Returns
 

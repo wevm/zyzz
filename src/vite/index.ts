@@ -2,7 +2,7 @@
  * Connects static Zyzz source compilation to Vite resolution and CSS delivery.
  * @module
  */
-import * as Lightning from 'lightningcss'
+import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
@@ -552,7 +552,7 @@ export function zyzz(): Plugin {
             ),
           ),
         }
-      : Lightning.transform({
+      : AtRules.transform({
           filename: 'zyzz.shared.css',
           code: new TextEncoder().encode(result.sharedCss ?? ''),
           sourceMap: true,

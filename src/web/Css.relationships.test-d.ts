@@ -1,7 +1,7 @@
 /** Checks marker state inference and relationship-key authoring without broad state domains. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css } from 'zyzz'
-import { Css } from 'zyzz/web'
+import { Css, global } from 'zyzz/web'
 describe('marker', () => {
   test('retains finite states and typed relationships', () => {
     const card = Css.marker({
@@ -54,4 +54,10 @@ describe('marker', () => {
     // @ts-expect-error serialization ambiguity
     Css.marker({ state: [false, 'false'] })
   })
+})
+
+test('excludes marker relationships from global declarations', () => {
+  const card = Css.marker()
+  // @ts-expect-error global rules cannot contain marker relationship keys
+  global({ body: { [Css.ancestor(card)]: { color: 'red' } } })
 })

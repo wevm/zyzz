@@ -15,6 +15,17 @@ export declare namespace global {
   type Body<styles> = {
     [key in keyof styles]: key extends `@${string}`
       ? Body<styles[key]>
-      : Style.Accepted<styles[key]>
+      : Style.Accepted<styles[key]> & WithoutRelationships<styles[key]>
   }
 }
+
+/** Global declarations do not accept marker-relative conditions. */
+type WithoutRelationships<value> = value extends readonly unknown[]
+  ? unknown
+  : value extends object
+    ? {
+        [key in keyof value]: key extends symbol
+          ? never
+          : WithoutRelationships<value[key]>
+      }
+    : unknown

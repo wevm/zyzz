@@ -107,6 +107,28 @@ test('expands immutable theme references and rejects hidden mutations and duplic
     }),
   ).toThrow()
 })
+test('merges finite interface declarations and rejects unsafe static records', () => {
+  const graph = Graph.compile({
+    modules: {
+      'app.ts': `import {css} from 'zyzz';interface Values {width:'10px'|'20px'} interface Values {opacity:0|1} export const style=css((values:Values)=>({width:values.width,opacity:values.opacity}));`,
+    },
+  })
+  expect(
+    graph.modules['app.ts']!.css.includes('opacity:var('),
+  ).toMatchInlineSnapshot('true')
+  for (const source of [
+    `const base={width:'10px'};let alias=base;alias.width='20px';css(base)`,
+    `const base={__proto__:'red'};css({color:base.__proto__})`,
+    `const vars=Vars.define({__proto__:'length'});css({width:vars.__proto__})`,
+  ])
+    expect(
+      () =>
+        Graph.compile({
+          modules: { 'app.ts': `import {css,Vars} from 'zyzz';${source}` },
+        }),
+      source,
+    ).toThrow()
+})
 describe('compile', () => {
   test('links registered variable references and assignments through packed aliases', async () => {
     expect(

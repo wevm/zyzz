@@ -193,6 +193,7 @@ export function collect(
         if (
           !key ||
           key === 'set' ||
+          key === '__proto__' ||
           Object.hasOwn(slots, key) ||
           (value.type !== 'Literal' && value.type !== 'ObjectExpression') ||
           ![

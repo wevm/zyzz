@@ -77,7 +77,7 @@ describe('zyzz', () => {
           name: 'effects',
           type: 'module',
           exports: './index.js',
-          sideEffects: true,
+          sideEffects: false,
         }),
       )
       await Fs.writeFile(
@@ -109,6 +109,34 @@ describe('zyzz', () => {
         `import 'effects'; import {css} from 'zyzz'; // @ts-expect-error
 css({color:123})`,
       )
+      const typeRoot = Path.join(root, 'node_modules/type-effects')
+      await Fs.mkdir(typeRoot, { recursive: true })
+      const typeLibrary = Graph.compile({
+        modules: {
+          'index.ts': `import {global} from 'zyzz/web';global({body:{outlineWidth:'37px'}});`,
+        },
+      })
+      await Fs.writeFile(
+        Path.join(typeRoot, 'package.json'),
+        JSON.stringify({
+          name: 'type-effects',
+          type: 'module',
+          exports: './index.js',
+          sideEffects: false,
+        }),
+      )
+      await Fs.writeFile(
+        Path.join(typeRoot, 'index.js'),
+        typeLibrary.modules['index.ts']!.code,
+      )
+      await Fs.writeFile(
+        Path.join(typeRoot, 'index.js.zyzz.json'),
+        typeLibrary.contracts['index.ts']!,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'only-types.ts'),
+        `import {type Foo} from 'type-effects';export {type Foo as Bar} from 'type-effects';`,
+      )
       const result = await Vite.build({
         root,
         configFile: false,
@@ -130,6 +158,7 @@ css({color:123})`,
         )
         .map((value) => (value.type === 'asset' ? String(value.source) : ''))
         .join('\n')
+      expect(css.includes('37px')).toMatchInlineSnapshot('false')
       expect(css.includes('background-image')).toMatchInlineSnapshot('true')
       expect(
         outputs.some((value) => value.fileName.endsWith('.svg')),

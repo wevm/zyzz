@@ -310,6 +310,17 @@ export function zyzz(): Plugin {
               : node.exportKind === 'type'
           )
             continue
+          if (
+            'specifiers' in node &&
+            node.specifiers.length &&
+            node.specifiers.every((specifier) =>
+              specifier.type === 'ImportSpecifier'
+                ? specifier.importKind === 'type'
+                : specifier.type === 'ExportSpecifier' &&
+                  specifier.exportKind === 'type',
+            )
+          )
+            continue
           const specifier = node.source.value
           if (specifier === 'zyzz' || specifier.startsWith('zyzz/')) continue
           const resolved = await host.resolve(specifier, file)

@@ -61,3 +61,8 @@ test('excludes marker relationships from global declarations', () => {
   // @ts-expect-error global rules cannot contain marker relationship keys
   global({ body: { [Css.ancestor(card)]: { color: 'red' } } })
 })
+
+test('requires compiler marker provenance', () => {
+  // @ts-expect-error arbitrary callables do not carry marker provenance
+  Css.ancestor(() => ({}))
+})

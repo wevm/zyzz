@@ -40,3 +40,8 @@ describe('define', () => {
     })
   })
 })
+
+test('reserves prototype keys in variable schemas', () => {
+  // @ts-expect-error prototype syntax cannot define an assignable own slot
+  Vars.define({ __proto__: 'length' })
+})

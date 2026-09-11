@@ -35,6 +35,7 @@ type Containers<tokens> = tokens extends {
   : never
 /** Keys inferred from the bound theme's own threshold groups. */
 export type Keys<tokens extends Theme.Tokens = {}> =
+  | symbol
   | Raw
   | `@media ${Alias<Names<tokens, 'breakpoints'>>}`
   | `@container ${Alias<Names<tokens, 'containers'>>}`

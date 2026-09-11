@@ -2,6 +2,7 @@
  * Serializes validated theme authoring data for independently compiled libraries.
  * @module
  */
+import * as Marker from '../../runtime/Marker.js'
 import * as Config from '../../Config.js'
 import * as Configurations from './Configurations.js'
 import * as Shorthands from '../../internal/Shorthands.js'
@@ -36,6 +37,24 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
   }
   function link(value: unknown): Themes.Link {
     const entry = record(value)
+    if (entry.kind === 'marker') {
+      const marker = record(entry.marker)
+      const id = string(marker.id)
+      if (!/^data-z-[a-z0-9_-]+$/.test(id))
+        throw new Error('Invalid marker identity.')
+      return {
+        binding: string(entry.binding),
+        kind: 'marker',
+        definition: Theme.define({}),
+        call: {
+          start: -1,
+          end: -1,
+          name: id,
+          tokenType: '{}',
+          marker: { id, schema: Marker.schema(marker.schema) },
+        },
+      }
+    }
     const theme = string(entry.theme)
     const definition = themes[theme]
     if (!definition || !['config', 'css', 'theme'].includes(String(entry.kind)))
@@ -136,6 +155,12 @@ export function write(
   themes: Readonly<Record<string, Theme.Definition>>,
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
+    if (link.kind === 'marker')
+      return {
+        binding: link.binding,
+        kind: link.kind,
+        marker: link.call.marker,
+      }
     return {
       ...(link.call.script ? { script: true } : {}),
       binding: link.binding,
@@ -174,7 +199,10 @@ export function write(
     ),
     version: Object.values(links).some(
       (link) =>
-        link.call.selection || link.call.initialization || link.call.script,
+        link.call.selection ||
+        link.call.initialization ||
+        link.call.script ||
+        link.kind === 'marker',
     )
       ? 4
       : Object.values(themes).some(

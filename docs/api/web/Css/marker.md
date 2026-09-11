@@ -1,8 +1,5 @@
 # Css.marker
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Define a typed identity and finite data states for element relationships.
 
 ```ts
@@ -46,3 +43,5 @@ const attributes = card({ state: 'open' })
 Reject invalid schemas, state keys colliding after ASCII case folding, and undeclared state values. Attribute names and selectors use the same lowercase key fragments; typed selections remain case-sensitive. Markers do not validate the DOM tree or supply ARIA attributes.
 
 See [Css](README.md) for related methods and types.
+
+Requires the source transform. Marker identities survive aliases, named re-exports, and packed-library contracts. Relationship helpers must appear directly as computed style keys. Browser rendering follows ordinary CSS matching, including any-depth ancestry and directional nonadjacent siblings.

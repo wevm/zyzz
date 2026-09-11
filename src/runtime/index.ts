@@ -15,3 +15,5 @@ export * as Html from './Html.js'
 
 /** Server-safe root appearance initialization script generation. */
 export * as Appearance from './Appearance.js'
+
+export * as Marker from './Marker.js'

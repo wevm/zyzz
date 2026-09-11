@@ -59,7 +59,10 @@ Css.compile({ styles, themes: { base: theme } })
 Ordered static stylesheet data. Use `kind: 'layers'` with `names`, `kind: 'rule'` with a `selector` and `Style.NamedStyle`, `kind: 'font-face'` with descriptor `declarations`, or `kind: 'keyframes'` with a `name` and ordered `{ stop, style }` frames. Source adapters construct this data from the direct web authoring functions.
 
 ```ts
-Css.compile({ styles, contributions: [{ kind: 'layers', names: ['reset', 'base'] }] })
+Css.compile({
+  styles,
+  contributions: [{ kind: 'layers', names: ['reset', 'base'] }],
+})
 ```
 
 ## Returns

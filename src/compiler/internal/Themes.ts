@@ -4,6 +4,7 @@
  */
 import type * as Ast from '@oxc-project/types'
 import type * as Walker from 'oxc-walker'
+import type * as Marker from '../../runtime/Marker.js'
 import * as Config from '../../Config.js'
 import * as Configurations from './Configurations.js'
 import * as Token from '../../internal/Token.js'
@@ -20,6 +21,8 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Portable marker contract, separate from theme metadata. */
+  readonly marker?: Marker.Definition | undefined
   /** Whether the compiled configuration supplies initialization. */
   readonly script?: boolean | undefined
   /** Bound root initialization script export. */
@@ -50,7 +53,7 @@ export type Link = {
   readonly binding: string
   readonly call: Call
   readonly definition: Theme.Definition
-  readonly kind: 'config' | 'css' | 'theme'
+  readonly kind: 'config' | 'css' | 'theme' | 'marker'
   readonly members?: Readonly<Record<string, Link>> | undefined
 }
 
@@ -129,7 +132,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       continue
     for (const specifier of node.specifiers) {
       const link = options.links?.[specifier.local.name]
-      if (!link) continue
+      if (!link || link.kind === 'marker') continue
       const call = { ...link.call, start: -1, end: -1 }
       themes[call.name] = link.definition
       if (link.kind === 'config') {

@@ -3,6 +3,7 @@
  * @module
  */
 import * as Condition from '../internal/Condition.js'
+import * as Markers from './internal/Markers.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Css from '../web/Css.js'
 import * as Dynamic from './internal/Dynamic.js'
@@ -134,6 +135,20 @@ export function extract(options: extract.Options): extract.ReturnType {
   const variables = (() => {
     try {
       return Variables.collect(program, identity(options.moduleId))
+    } catch (error) {
+      if (!(error instanceof Themes.InvalidError)) throw error
+      report('unsupported_syntax', error.message, error)
+      throw new ExtractError(diagnostics)
+    }
+  })()
+  const markers = (() => {
+    try {
+      return Markers.scan(
+        program,
+        scopeTracker,
+        identity(options.moduleId),
+        options[Themes.context]?.links,
+      )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
       report('unsupported_syntax', error.message, error)
@@ -366,9 +381,10 @@ export function extract(options: extract.Options): extract.ReturnType {
           property.type !== 'Property' ||
           property.kind !== 'init' ||
           property.method ||
-          property.computed ||
+          (property.computed && !markers.conditions.has(property.key.start)) ||
           property.shorthand ||
-          (property.key.type !== 'Identifier' &&
+          (!markers.conditions.has(property.key.start) &&
+            property.key.type !== 'Identifier' &&
             (property.key.type !== 'Literal' ||
               typeof property.key.value !== 'string'))
         ) {
@@ -380,9 +396,12 @@ export function extract(options: extract.Options): extract.ReturnType {
           continue
         }
         const key =
-          property.key.type === 'Identifier'
+          markers.conditions.get(property.key.start) ??
+          (property.key.type === 'Identifier'
             ? property.key.name
-            : property.key.value
+            : property.key.type === 'Literal'
+              ? String(property.key.value)
+              : '')
         if (Object.hasOwn(values, key)) {
           report(
             'unsupported_syntax',
@@ -709,12 +728,18 @@ export function extract(options: extract.Options): extract.ReturnType {
   }
   if (diagnostics.length) throw new ExtractError(diagnostics)
   return Object.freeze({
+    ...(markers.calls.length ? { markerCalls: markers.calls } : {}),
     ...(contributionData.length ? { contributions: contributionData } : {}),
     ...(contributions.calls.length
       ? { contributionCalls: contributions.calls }
       : {}),
     ...(options[Themes.context]
-      ? { themeExports: themes?.exports ?? Object.freeze({}) }
+      ? {
+          themeExports: Object.freeze({
+            ...themes?.exports,
+            ...markers.exports,
+          }),
+        }
       : {}),
     calls: Object.freeze(calls.map((call) => Object.freeze(call))),
     styles: Object.freeze({ styles: Object.freeze(styles) }),
@@ -746,6 +771,8 @@ export declare namespace extract {
   }
   /** Ordered public compiler input and spans for later rewriting. */
   type ReturnType = {
+    /** Marker factories replaced with fixed data-attribute callables. */
+    readonly markerCalls?: readonly Markers.Call[] | undefined
     /** Static stylesheet effects and their source replacements. */
     readonly contributions?: readonly Css.Contribution[] | undefined
     readonly contributionCalls?: readonly Contributions.Call[] | undefined

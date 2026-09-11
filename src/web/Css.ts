@@ -2,6 +2,8 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
+import type * as Marker from '../runtime/Marker.js'
+import type * as Relationships from './internal/Relationships.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Binding from '../internal/Binding.js'
 import * as Cascade from '../internal/Cascade.js'
@@ -520,4 +522,122 @@ function identifier(value: string): string {
     /^[0-9]|^-(?=[0-9]|$)/g,
     (character) => `_${character.charCodeAt(0).toString(16)}_`,
   )
+}
+
+/** Defines a marker with finite data states; source compilation assigns its identity. */
+export function marker<const schema extends Marker.Schema = {}>(
+  schema?: schema & NoInfer<Relationships.Validated<schema>>,
+): Relationships.Handle<schema> {
+  void schema
+  throw new Error('Markers require the Zyzz source transform.')
+}
+
+/** Selects the styled element by a marked ancestor relationship with zero predicate specificity. */
+export function ancestor<
+  schema extends Marker.Schema,
+  const condition extends string | Record<string, unknown> = {},
+>(
+  marker: Relationships.Handle<schema>,
+  condition?: condition &
+    NoInfer<
+      condition extends string
+        ? condition extends Relationships.Pseudo
+          ? unknown
+          : never
+        : condition extends Relationships.Condition<schema>
+          ? Relationships.Checked<schema, condition>
+          : never
+    >,
+): Relationships.Key {
+  void marker
+  void condition
+  throw new Error('Relationships require the Zyzz source transform.')
+}
+
+/** Selects the styled element by a marked anySibling relationship with zero predicate specificity. */
+export function anySibling<
+  schema extends Marker.Schema,
+  const condition extends string | Record<string, unknown> = {},
+>(
+  marker: Relationships.Handle<schema>,
+  condition?: condition &
+    NoInfer<
+      condition extends string
+        ? condition extends Relationships.Pseudo
+          ? unknown
+          : never
+        : condition extends Relationships.Condition<schema>
+          ? Relationships.Checked<schema, condition>
+          : never
+    >,
+): Relationships.Key {
+  void marker
+  void condition
+  throw new Error('Relationships require the Zyzz source transform.')
+}
+
+/** Selects the styled element by a marked descendant relationship with zero predicate specificity. */
+export function descendant<
+  schema extends Marker.Schema,
+  const condition extends string | Record<string, unknown> = {},
+>(
+  marker: Relationships.Handle<schema>,
+  condition?: condition &
+    NoInfer<
+      condition extends string
+        ? condition extends Relationships.Pseudo
+          ? unknown
+          : never
+        : condition extends Relationships.Condition<schema>
+          ? Relationships.Checked<schema, condition>
+          : never
+    >,
+): Relationships.Key {
+  void marker
+  void condition
+  throw new Error('Relationships require the Zyzz source transform.')
+}
+
+/** Selects the styled element by a marked siblingAfter relationship with zero predicate specificity. */
+export function siblingAfter<
+  schema extends Marker.Schema,
+  const condition extends string | Record<string, unknown> = {},
+>(
+  marker: Relationships.Handle<schema>,
+  condition?: condition &
+    NoInfer<
+      condition extends string
+        ? condition extends Relationships.Pseudo
+          ? unknown
+          : never
+        : condition extends Relationships.Condition<schema>
+          ? Relationships.Checked<schema, condition>
+          : never
+    >,
+): Relationships.Key {
+  void marker
+  void condition
+  throw new Error('Relationships require the Zyzz source transform.')
+}
+
+/** Selects the styled element by a marked siblingBefore relationship with zero predicate specificity. */
+export function siblingBefore<
+  schema extends Marker.Schema,
+  const condition extends string | Record<string, unknown> = {},
+>(
+  marker: Relationships.Handle<schema>,
+  condition?: condition &
+    NoInfer<
+      condition extends string
+        ? condition extends Relationships.Pseudo
+          ? unknown
+          : never
+        : condition extends Relationships.Condition<schema>
+          ? Relationships.Checked<schema, condition>
+          : never
+    >,
+): Relationships.Key {
+  void marker
+  void condition
+  throw new Error('Relationships require the Zyzz source transform.')
 }

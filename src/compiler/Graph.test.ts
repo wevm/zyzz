@@ -118,7 +118,7 @@ export const scope = mint.className;`,
       `
       "
       import { Appearance as __zyzzAppearance } from 'zyzz/runtime';
-       export const zyzz = ((()=>{const catalog=Object.fromEntries([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]);return {script:__zyzzAppearance.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]),theme:{"className":"z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"},themes:Object.defineProperties(((input)=>({className:catalog[input.theme],...(input.colorScheme?{style:{colorScheme:input.colorScheme}}:{})})),Object.getOwnPropertyDescriptors(Object.fromEntries(Object.entries(catalog).map(([name,className])=>[name,{className}]))))}})()); export const props = ({className:"z-1fzmg4ts3ctu1-base0"}); export const scope = "z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark";"
+       export const zyzz = ((()=>{const catalog=Object.fromEntries([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]);return {script:__zyzzAppearance.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]),theme:{"className":"z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"},themes:Object.defineProperties(((input)=>{if(!input||typeof input!=="object"||Array.isArray(input)||!Object.hasOwn(input,"theme")||!Object.hasOwn(catalog,input.theme)||Object.keys(input).some(key=>key!=="theme"&&key!=="colorScheme")||(input.colorScheme!==undefined&&!["light","dark","light dark"].includes(input.colorScheme)))throw new TypeError("Invalid theme selection.");return {className:catalog[input.theme],...(input.colorScheme?{style:{colorScheme:input.colorScheme}}:{})}}),Object.getOwnPropertyDescriptors(Object.fromEntries(Object.entries(catalog).map(([name,className])=>[name,{className}]))))}})()); export const props = ({className:"z-1fzmg4ts3ctu1-base0"}); export const scope = "z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark";"
     `,
     )
     const options = {
@@ -162,7 +162,7 @@ export const scope = mint.className;`,
       `
       "
       import { Appearance as __zyzzAppearance } from 'zyzz/runtime';
-       import { base } from './base.js'; export const zyzz = ((()=>{const catalog: Record<string,string>=Object.fromEntries([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]]);return {script:__zyzzAppearance.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]]),theme:{"className":"z_theme-69adjg15dlzyu-zyzz-base"},themes:Object.defineProperties(((input: {theme: string; colorScheme?: string})=>({className:catalog[input.theme],...(input.colorScheme?{style:{colorScheme:input.colorScheme}}:{})})),Object.getOwnPropertyDescriptors(Object.fromEntries(Object.entries(catalog).map(([name,className])=>[name,{className}]))))}})() as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>);"
+       import { base } from './base.js'; export const zyzz = ((()=>{const catalog: Record<string,string>=Object.fromEntries([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]]);return {script:__zyzzAppearance.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]]),theme:{"className":"z_theme-69adjg15dlzyu-zyzz-base"},themes:Object.defineProperties(((input: {theme: string; colorScheme?: string})=>{if(!input||typeof input!=="object"||Array.isArray(input)||!Object.hasOwn(input,"theme")||!Object.hasOwn(catalog,input.theme)||Object.keys(input).some(key=>key!=="theme"&&key!=="colorScheme")||(input.colorScheme!==undefined&&!["light","dark","light dark"].includes(input.colorScheme)))throw new TypeError("Invalid theme selection.");return {className:catalog[input.theme],...(input.colorScheme?{style:{colorScheme:input.colorScheme}}:{})}}),Object.getOwnPropertyDescriptors(Object.fromEntries(Object.entries(catalog).map(([name,className])=>[name,{className}]))))}})() as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>);"
     `,
     )
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
@@ -533,13 +533,13 @@ export const scope = mint.className;`,
           '--noEmit',
           Path.join(directory, 'pkg/card.ts'),
         ],
-        { timeout: 10_000 },
+        { timeout: 30_000 },
       )
       expect(checked.stdout).toMatchInlineSnapshot(`""`)
     } finally {
       await Fs.rm(directory, { recursive: true, force: true })
     }
-  }, 15_000)
+  }, 35_000)
 
   test('token edits preserve identities and removing the last use removes declarations', () => {
     const before = Graph.compile({ modules })

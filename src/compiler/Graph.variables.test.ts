@@ -61,6 +61,52 @@ async function bundle() {
     code: bundle.outputFiles[0]!.text,
   }
 }
+test('expands immutable theme references and rejects hidden mutations and duplicate packed slots', async () => {
+  const result = Graph.compile({
+    modules: {
+      'app.ts': `import {Theme} from 'zyzz';const theme=Theme.define({color:{primary:'#123'}});const base={color:theme.tokens.color.primary,backgroundColor:theme.vars.color.primary};export const style=theme.css(base);`,
+    },
+  })
+  expect(result.modules['app.ts']!.css.includes('#123')).toMatchInlineSnapshot(
+    'true',
+  )
+  const bundle = await Esbuild.build({
+    stdin: {
+      contents: result.modules['app.ts']!.code,
+      loader: 'ts',
+      resolveDir: process.cwd(),
+    },
+    bundle: true,
+    write: false,
+    format: 'iife',
+    globalName: 'Fixture',
+    alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+  })
+  expect(
+    Vm.runInNewContext(
+      `${bundle.outputFiles![0]!.text};typeof Fixture.style().className`,
+    ),
+  ).toMatchInlineSnapshot('"string"')
+  expect(() =>
+    Graph.compile({
+      modules: {
+        'app.ts': `import {css} from 'zyzz';const base={width:'10px'};const [alias]=[base];alias.width='20px';export const style=css(base);`,
+      },
+    }),
+  ).toThrow()
+  const library = Graph.compile({ modules: { 'vars.ts': librarySource } })
+  const data = JSON.parse(library.contracts['vars.ts']!)
+  data.exports.vars.variables.gap.name = data.exports.vars.variables.amount.name
+  expect(() =>
+    Graph.compile({
+      contracts: { 'lib.js': JSON.stringify(data) },
+      imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
+      modules: {
+        'app.ts': `import {css} from 'zyzz';import {vars} from 'lib';export const style=css({width:vars.gap});`,
+      },
+    }),
+  ).toThrow()
+})
 describe('compile', () => {
   test('links registered variable references and assignments through packed aliases', async () => {
     expect(

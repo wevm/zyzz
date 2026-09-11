@@ -4,6 +4,7 @@
  */
 import * as Condition from '../internal/Condition.js'
 import * as Static from './internal/Static.js'
+import * as ThemeValues from '../web/internal/Themes.js'
 import * as Markers from './internal/Markers.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Css from '../web/Css.js'
@@ -168,6 +169,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   const themes = (() => {
     try {
       return Themes.collect(program, {
+        staticBindings: staticData.bindings,
         namespace: identity(options.moduleId),
         contributionCalls: new Set(
           contributions.calls.map((call) => call.start),
@@ -716,6 +718,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   if (themes && !diagnostics.length)
     for (const [start, token] of themes.tokens) {
       if (
+        !staticData.used.has(start) &&
         ![...calls, ...contributions.calls].some(
           (call) => start >= call.start && token.end <= call.end,
         )
@@ -773,6 +776,13 @@ export function extract(options: extract.Options): extract.ReturnType {
         'Relationship helpers require a compiled style definition.',
         { start, end: start },
       )
+  for (const token of themes?.staticTokens ?? [])
+    if (!staticData.used.has(token.start))
+      report(
+        'unsupported_syntax',
+        'Theme token records must be consumed by a compiled style.',
+        token,
+      )
   if (diagnostics.length) throw new ExtractError(diagnostics)
   return Object.freeze({
     ...(markers.calls.length
@@ -808,6 +818,19 @@ export function extract(options: extract.Options): extract.ReturnType {
       ? { themeScripts: Object.freeze([...themes.scripts]) }
       : {}),
     themeCalls: Object.freeze(themes?.calls ?? []),
+    ...(themes?.staticTokens.length
+      ? {
+          staticThemeReferences: Object.freeze(
+            (themes?.staticTokens ?? []).map((node) => ({
+              start: node.start,
+              end: node.end,
+              value: ThemeValues.create().serialize(
+                themes!.tokens.get(node.start)!.reference,
+              ),
+            })),
+          ),
+        }
+      : {}),
     themeReferences: Object.freeze(themes?.references ?? []),
     themes: themes?.themes ?? Object.freeze({}),
   })
@@ -847,6 +870,13 @@ export declare namespace extract {
     /** Local factory spans replaced by compiled scope data. */
     readonly themeCalls: readonly Themes.Call[]
     /** Scope reads replaced by class constants. */
+    readonly staticThemeReferences?:
+      | readonly {
+          readonly start: number
+          readonly end: number
+          readonly value: string
+        }[]
+      | undefined
     readonly themeReferences: readonly Themes.Reference[]
     /** Resolved authoring exports when extracted as part of a source graph. */
     readonly themeExports?: Readonly<Record<string, Themes.Link>> | undefined

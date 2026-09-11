@@ -250,6 +250,12 @@ export function compile(options: compile.Options): compile.ReturnType {
       : ''
     module.overwrite(alias.start, alias.end, `(${value}${assertion})`)
   }
+  for (const reference of extracted.staticThemeReferences ?? [])
+    module.overwrite(
+      reference.start,
+      reference.end,
+      JSON.stringify(reference.value),
+    )
   for (const reference of extracted.themeReferences)
     module.overwrite(
       reference.start,
@@ -268,6 +274,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     ...extracted.themeAliases,
     ...extracted.themeCalls,
     ...extracted.themeReferences,
+    ...(extracted.staticThemeReferences ?? []),
   ].sort((a, b) => a.start - b.start)
 
   function replaced(reference: Span) {

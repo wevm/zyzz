@@ -41,7 +41,7 @@ export type Keys<
   tokens extends Theme.Tokens = {},
   key extends PropertyKey = never,
 > =
-  | (symbol extends key ? symbol : Relationship)
+  | ([key] extends [never] ? never : symbol extends key ? symbol : Relationship)
   | Raw
   | `@media ${Alias<Names<tokens, 'breakpoints'>>}`
   | `@container ${Alias<Names<tokens, 'containers'>>}`

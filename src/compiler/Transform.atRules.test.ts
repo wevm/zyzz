@@ -49,14 +49,14 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
   test('Chromium applies local scope and layer rules as a scroll-state query changes', async () => {
     const output = Transform.compile({
       moduleId: 'nested.ts',
-      source: `import {css} from 'zyzz';export const styles={item:css({'@scope (.outer) to (.stop)':{'@layer components':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}})};`,
+      source: `import {css} from 'zyzz';export const styles={item:css({'@scope (&) to (.stop)':{'@layer components':{'& .item':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}}})};`,
     })
     const name = Object.values(output.classes)[0]!
     const browser = await chromium.launch()
     try {
       const page = await browser.newPage()
       await page.setContent(
-        `<div class="outer" style="height:80px;overflow:auto"><div style="container-type:scroll-state;position:sticky;top:0"><span id="inside" class="${name}">inside</span><div class="stop"><span id="outside" class="${name}">outside</span></div></div><div style="height:300px"></div></div>`,
+        `<div class="outer ${name}" style="height:80px;overflow:auto"><div style="container-type:scroll-state;position:sticky;top:0"><span id="inside" class="item">inside</span><div class="stop"><span id="outside" class="item">outside</span></div></div><div style="height:300px"></div></div>`,
       )
       await page.addStyleTag({ content: output.css })
       expect(

@@ -33,7 +33,7 @@ describe('zyzz', () => {
         .filter(
           (value) => value.type === 'asset' && value.fileName.endsWith('.css'),
         )
-        .map((value) => String(value.source))
+        .map((value) => (value.type === 'asset' ? String(value.source) : ''))
         .join('\n')
       expect(
         css.match(

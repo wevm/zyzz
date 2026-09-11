@@ -5,10 +5,80 @@ import * as Path from 'node:path'
 import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Graph, Source } from 'zyzz/compiler'
+import { Graph, Source, Transform } from 'zyzz/compiler'
 import { Config } from 'zyzz'
 
 describe('create', () => {
+  test('distinguishes catalog names from configuration helpers', async () => {
+    const library = Graph.compile({
+      modules: {
+        'index.ts': `import {Config} from 'zyzz';const config=Config.create({defaultTheme:'css',themes:{css:{color:{ink:'red'}},themes:{color:{ink:'blue'}}}});export const select=config.themes;const {css:cssTheme,themes:themesTheme}=select;export const first=cssTheme.className;export const second=themesTheme.className;`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'lib.js': library.contracts['index.ts']! },
+      imports: { 'app.ts': { lib: 'lib.js' } },
+      modules: {
+        'app.ts': `import {select,first,second} from 'lib';const {css:cssTheme,themes:themesTheme}=select;export const same=first===cssTheme.className && second===themesTheme.className;`,
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: { 'app.ts': app.modules['app.ts']!.code },
+      packages: { lib: { 'index.ts': library.modules['index.ts']!.code } },
+    })
+    expect(Vm.runInNewContext(`${code};Fixture.same;`)).toMatchInlineSnapshot(
+      'true',
+    )
+  })
+  test('rejects exported config destructuring without graph linking', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'app.ts',
+        source: `import {Config} from 'zyzz';const config=Config.create();export const {css}=config;`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: app.ts:70: Exported configuration destructuring requires source linking.]`)
+  })
+  for (const output of ['react', 'html']) {
+    test(`renders packed ${output} selection and stable component rules in Chromium`, async () => {
+      const library = Graph.compile({
+        modules: {
+          'index.ts': `import {Config} from 'zyzz';export const {css,themes}=Config.create({output:'${output}',defaultTheme:'base',themes:{base:{color:{ink:{light:'#123456',dark:'#abcdef'}}},mint:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}});`,
+        },
+      })
+      const app = Graph.compile({
+        contracts: { 'lib.js': library.contracts['index.ts']! },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: {
+          'app.ts': `import {css,themes} from 'lib';export const styles={card:css({color:'ink'})};export const select=themes;`,
+        },
+      })
+      const code = await Packed.bundle({
+        entry: 'app.ts',
+        modules: { 'app.ts': app.modules['app.ts']!.code },
+        packages: { lib: { 'index.ts': library.modules['index.ts']!.code } },
+      })
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${app.modules['app.ts']!.css}</style><div id="scope"><div id="card">Card</div></div>`,
+        )
+        await page.addScriptTag({ content: code })
+        const colors = await page.evaluate(
+          `(()=>{const el=document.getElementById('card'),scope=document.getElementById('scope'),props=Fixture.styles.card();el.className=props.class??props.className;return [['base','light'],['mint','dark']].map(([theme,colorScheme])=>{const props=Fixture.select({theme,colorScheme});scope.className=props.class??props.className;if(typeof props.style==='string')scope.setAttribute('style',props.style);else Object.assign(scope.style,props.style);return getComputedStyle(el).color})})()`,
+        )
+        expect(colors).toMatchInlineSnapshot(`
+          [
+            "rgb(18, 52, 86)",
+            "rgb(170, 255, 204)",
+          ]
+        `)
+      } finally {
+        await browser.close()
+      }
+    })
+  }
   test('aliases named selectors through local and packed member access', () => {
     const library = Graph.compile({
       modules: {

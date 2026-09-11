@@ -103,6 +103,35 @@ output.modules['app/card.ts']?.css
 
 Scope and variable identities retain the defining module/binding. CSS maps trace source scope rules to their factory and declarations to the consuming style. Imported metadata scope rules are unmapped because their original source is not present. JavaScript/JSX lowering remains the consuming build's responsibility.
 
+### sharedCssMap
+
+Type: `EncodedSourceMap | undefined`. Maps the combined shared stylesheet to its source-owned and packed contributions. Present with nonempty shared CSS; source content is retained when published by its owner.
+
+```ts
+import * as fs from 'node:fs/promises'
+
+if (output.sharedCssMap)
+  await fs.writeFile('zyzz.shared.css.map', JSON.stringify(output.sharedCssMap))
+```
+
+### sharedAssets
+
+Type: `Readonly<Record<string, string>> | undefined`. Maps compiler URL placeholders to portable asset targets. The host resolves and publishes those targets, then rewrites matching placeholders in shared CSS.
+
+```ts
+for (const [placeholder, target] of Object.entries(output.sharedAssets ?? {}))
+  console.log(placeholder, target)
+```
+
+### sharedAssetOwners
+
+Type: `Readonly<Record<string, string>> | undefined`. Maps each asset placeholder to its trusted source or declaring contract identity. Hosts use that identity to enforce package-root ownership, including repacked dependencies.
+
+```ts
+for (const placeholder of Object.keys(output.sharedAssets ?? {}))
+  console.log(output.sharedAssetOwners?.[placeholder])
+```
+
 ## Errors
 
 `Source.ExtractError` or `Css.CompileError`; no partial result is returned. Missing modules, ambiguous exports, namespace theme imports, and static cycles are rejected. Dynamic source imports are rejected in standalone mode. Library authoring requires matching contract metadata; runtime JavaScript alone cannot supply token definitions.

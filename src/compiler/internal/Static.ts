@@ -125,6 +125,12 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
         key !== undefined &&
         /^(?:0|[1-9]\d*)$/.test(key)
       ) {
+        if (
+          object.elements
+            .slice(0, Number(key) + 1)
+            .some((element) => element?.type === 'SpreadElement')
+        )
+          return undefined
         const element = object.elements[Number(key)]
         return element && element.type !== 'SpreadElement'
           ? initial(element, seen)
@@ -311,6 +317,15 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
         object.type === 'ArrayExpression' &&
         /^(?:0|[1-9]\d*)$/.test(key)
       ) {
+        if (
+          object.elements
+            .slice(0, Number(key) + 1)
+            .some((element) => element?.type === 'SpreadElement')
+        )
+          throw new Themes.InvalidError(
+            'Static array indexes cannot cross spread elements.',
+            node,
+          )
         const element = object.elements[Number(key)]
         if (element && element.type !== 'SpreadElement')
           return resolve(element, allowed, active)

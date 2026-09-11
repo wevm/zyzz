@@ -94,16 +94,18 @@ function build(options: compile.Options, cache?: Cache): Cache {
     ),
   )
   const resolutions = Object.fromEntries(
-    ids.map((id) => [
-      id,
-      options.imports === undefined
-        ? 'relative'
-        : JSON.stringify(
-            Object.entries(options.imports[id] ?? {}).sort(([a], [b]) =>
-              a.localeCompare(b),
+    [...new Set([...ids, ...Object.keys(options.imports ?? {})])]
+      .sort()
+      .map((id) => [
+        id,
+        options.imports === undefined
+          ? 'relative'
+          : JSON.stringify(
+              Object.entries(options.imports[id] ?? {}).sort(([a], [b]) =>
+                a.localeCompare(b),
+              ),
             ),
-          ),
-    ]),
+      ]),
   )
   // File-set changes can alter extensionless resolution even without source edits.
   const previous = (() => {
@@ -119,6 +121,11 @@ function build(options: compile.Options, cache?: Cache): Cache {
   })()
   if (
     previous &&
+    Object.keys(resolutions).length ===
+      Object.keys(previous.resolutions).length &&
+    Object.entries(resolutions).every(
+      ([id, value]) => value === previous.resolutions[id],
+    ) &&
     ids.every(
       (id) =>
         options.modules[id] === previous.sources[id] &&
@@ -539,7 +546,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         }
       }),
     )
-  const resetOwner = ids.find(
+  const resetOwners = ids.filter(
     (id) =>
       options.modules[id]!.includes('zyzz/reset.css') &&
       Parser.parseSync('source.tsx', options.modules[id]!, {
@@ -557,7 +564,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       ),
     ),
   ].filter((name) => name !== 'reset')
-  if (resetOwner)
+  for (const resetOwner of resetOwners)
     sections.set(resetOwner, [
       {
         source: resetOwner,

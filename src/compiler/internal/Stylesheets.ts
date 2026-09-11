@@ -162,6 +162,9 @@ export function read(value: unknown): readonly Section[] {
       typeof section !== 'object' ||
       typeof section.source !== 'string' ||
       typeof section.css !== 'string' ||
+      (section.content !== undefined && typeof section.content !== 'string') ||
+      (section.start !== undefined &&
+        (!Number.isSafeInteger(section.start) || section.start < 0)) ||
       (section.key !== undefined && typeof section.key !== 'string') ||
       (section.dependency !== undefined &&
         (!Array.isArray(section.dependency) ||

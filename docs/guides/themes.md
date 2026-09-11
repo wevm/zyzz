@@ -177,8 +177,7 @@ React's `suppressHydrationWarning` is limited to the root attributes changed bef
 
 ### Shared Configuration
 
-> [!NOTE]
-> Cross-module config authoring is a preview.
+Cross-module configuration is implemented through the Vite adapter and `Graph.compile`. Standalone single-module transforms require their imported contracts to be linked through the graph.
 
 Keep reusable tokens in a shared module and pass them into each application's config:
 

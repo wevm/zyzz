@@ -7,6 +7,18 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 describe('compile', () => {
+  test('rejects indexed folding across array spreads', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {css} from 'zyzz';const prefix=['5px','6px'];const sizes=['10px',...prefix,'20px'];export const styles={card:css({width:sizes[2]})};`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:127: Static array indexes cannot cross spread elements.]`,
+    )
+  })
+
   test('rejects source/packed slot collisions and unresolved computed overrides', () => {
     const library = Graph.compile({
       modules: {

@@ -151,6 +151,12 @@ type Name<
     : false
   : false
 
+type Union<value, whole = value> = value extends whole
+  ? [whole] extends [value]
+    ? false
+    : true
+  : never
+
 type Unique<
   values extends readonly (boolean | string)[],
   seen extends string = never,
@@ -158,9 +164,16 @@ type Unique<
   infer first extends boolean | string,
   ...infer rest extends readonly (boolean | string)[],
 ]
-  ? `${first}` extends `${string}\0${string}` | `${string}\r${string}` | seen
+  ? string extends first
     ? never
-    : Unique<rest, seen | `${first}`>
+    : true extends Union<first>
+      ? never
+      : `${first}` extends
+            | `${string}\0${string}`
+            | `${string}\r${string}`
+            | seen
+        ? never
+        : Unique<rest, seen | `${first}`>
   : unknown
 /** Supported relationship directions relative to the styled element. */
 export type Kind =

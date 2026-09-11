@@ -169,7 +169,7 @@ export function scan(
   const ancestors: Ast.Node[] = []
   Walker.walk(program, {
     scopeTracker: scope,
-    enter(node, parent) {
+    enter(node) {
       ancestors.push(node)
       if (
         node.type === 'VariableDeclarator' &&
@@ -283,11 +283,11 @@ export function scan(
           'siblingBefore',
         ].includes(name)
       ) {
-        if (
-          parent?.type !== 'Property' ||
-          parent.key !== node ||
-          !parent.computed
+        const property = ancestors.findLast(
+          (value) =>
+            value.type === 'Property' && Expression.unwrap(value.key) === node,
         )
+        if (property?.type !== 'Property' || !property.computed)
           throw new Themes.InvalidError(
             'Relationship helpers must be computed style keys.',
             node,

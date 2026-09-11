@@ -138,7 +138,12 @@ The writer selects the lowest version required by the exported capabilities:
 | 4       | Callable theme selection and initialization script |
 | 5       | Property mappings                                  |
 | 6       | Marker relationships                               |
+| 7       | Packed stylesheets and animation identities        |
 
-This reader accepts versions 1–6. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
+This reader accepts versions 1–7. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
+
+`sharedAssetOwners` associates each relocated URL placeholder with its trusted source or packed-contract identity. Hosts validate package ownership before serving or publishing assets. Conflicting packed sections raise `Source.ExtractError` attributed to the contributing contract.
 
 Packed marker aliases sharing an identity must carry the same state schema; conflicting schemas are rejected across loaded contracts.
+
+Repacked stylesheet sections retain an import chain to their declaring contract. Hosts must supply each chain edge in `imports` and its adjacent sidecar in `contracts`; Vite resolves and watches these dependencies recursively, including nested package installations. Asset validation uses the declaring package root. Source content and offsets participate in packed contribution conflict checks, and each sidecar validates its layer constraints before rendering.

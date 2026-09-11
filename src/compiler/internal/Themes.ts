@@ -55,7 +55,7 @@ export type Link = {
   readonly binding: string
   readonly call: Call
   readonly definition: Theme.Definition
-  readonly kind: 'config' | 'css' | 'theme' | 'marker'
+  readonly kind: 'config' | 'css' | 'theme' | 'marker' | 'animation'
   readonly members?: Readonly<Record<string, Link>> | undefined
 }
 
@@ -134,7 +134,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       continue
     for (const specifier of node.specifiers) {
       const link = options.links?.[specifier.local.name]
-      if (!link || link.kind === 'marker') continue
+      if (!link || link.kind === 'marker' || link.kind === 'animation') continue
       const call = { ...link.call, start: -1, end: -1 }
       themes[call.name] = link.definition
       if (link.kind === 'config') {

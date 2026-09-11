@@ -125,6 +125,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         program,
         scopeTracker,
         identity(options.moduleId),
+        options[Themes.context]?.links,
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
@@ -691,9 +692,14 @@ export function extract(options: extract.Options): extract.ReturnType {
         )
     }
   let contributionData: readonly Css.Contribution[] = []
+  const contributionStarts: number[] = []
   try {
     contributionData = [
-      ...Contributions.extract(contributions, themes?.tokens ?? new Map()),
+      ...Contributions.extract(
+        contributions,
+        themes?.tokens ?? new Map(),
+        contributionStarts,
+      ),
       ...(themes?.calls ?? []).flatMap((call) =>
         call.options?.layers
           ? [
@@ -714,15 +720,22 @@ export function extract(options: extract.Options): extract.ReturnType {
       Lightning.transform({
         filename: options.moduleId,
         code: new TextEncoder().encode(rendered),
-        visitor: {
-          Url(url) {
-            if (!/^(?:\/|#|[a-z][a-z\d+.-]*:)/i.test(url.url))
-              throw new Error(
-                'Contribution URLs must be root-relative or absolute in this compiler slice.',
-              )
-          },
-        },
         errorRecovery: false,
+        ...(!options[Themes.context]
+          ? {
+              visitor: {
+                Url(url) {
+                  if (
+                    url.url &&
+                    !/^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url.url)
+                  )
+                    throw new Error(
+                      'Relative contribution assets require Graph.compile and a relocation host.',
+                    )
+                },
+              },
+            }
+          : {}),
       })
     }
   } catch (error) {
@@ -748,7 +761,9 @@ export function extract(options: extract.Options): extract.ReturnType {
           ),
         }
       : {}),
-    ...(contributionData.length ? { contributions: contributionData } : {}),
+    ...(contributionData.length
+      ? { contributions: contributionData, contributionStarts }
+      : {}),
     ...(contributions.calls.length
       ? { contributionCalls: contributions.calls }
       : {}),
@@ -757,6 +772,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           themeExports: Object.freeze({
             ...themes?.exports,
             ...markers.exports,
+            ...contributions.exports,
           }),
         }
       : {}),
@@ -793,6 +809,7 @@ export declare namespace extract {
     /** Marker factories replaced with fixed data-attribute callables. */
     readonly markerCalls?: readonly Markers.Call[] | undefined
     /** Static stylesheet effects and their source replacements. */
+    readonly contributionStarts?: readonly number[] | undefined
     readonly contributions?: readonly Css.Contribution[] | undefined
     readonly contributionCalls?: readonly Contributions.Call[] | undefined
     /** Explicit variable contracts replaced by fixed slot data. */

@@ -2,7 +2,9 @@
  * Connects static Zyzz source compilation to Vite resolution and CSS delivery.
  * @module
  */
+import * as Lightning from 'lightningcss'
 import * as Mapping from '@jridgewell/gen-mapping'
+import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Parser from 'oxc-parser'
@@ -20,6 +22,8 @@ import * as Source from '../compiler/Source.js'
 export function zyzz(): Plugin {
   const states = new WeakMap<Environment, Map<string, Entry>>()
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
+  const contributionFiles = new WeakMap<Environment, Set<string>>()
+  const assets = new Map<string, string>()
   let root: string
 
   function entries(environment: Environment) {
@@ -51,6 +55,8 @@ export function zyzz(): Plugin {
     if (!pending) {
       pending = (async () => {
         const sources = new Map<string, string>()
+        const eagerFiles = new Set<string>()
+        contributionFiles.set(environment, eagerFiles)
         async function collect(directory: string): Promise<void> {
           for (const item of await Fs.readdir(directory, {
             withFileTypes: true,
@@ -75,7 +81,8 @@ export function zyzz(): Plugin {
             else if (item.isFile() && eager(file)) {
               host.watch(file)
               const source = await Fs.readFile(file, 'utf8')
-              if (contributes(source)) sources.set(file, source)
+              sources.set(file, source)
+              if (contributes(source)) eagerFiles.add(file)
             }
           }
         }
@@ -187,12 +194,29 @@ export function zyzz(): Plugin {
     if (event === 'delete') sources.delete(file)
     else {
       const source = await Fs.readFile(file, 'utf8')
-      if (contributes(source)) sources.set(file, source)
-      else sources.delete(file)
+      sources.set(file, source)
+      if (contributes(source)) contributionFiles.get(environment)?.add(file)
+      else contributionFiles.get(environment)?.delete(file)
     }
   }
 
-  async function compile(entry: Entry, host: Host, code?: string) {
+  async function compile(
+    entry: Entry,
+    host: Host,
+    code?: string,
+    allSources = false,
+  ) {
+    async function resolve(source: string, importer: string) {
+      const resolved = await host.resolve(source, importer)
+      if (resolved && entry.environment.mode === 'dev') {
+        const optimized = Object.values({
+          ...entry.environment.depsOptimizer?.metadata.optimized,
+          ...entry.environment.depsOptimizer?.metadata.discovered,
+        }).find((item) => item.file === resolved.id.split('?')[0])
+        if (optimized?.src) return { ...resolved, id: optimized.src }
+      }
+      return resolved
+    }
     const imports: Record<
       string,
       Record<string, string | null>
@@ -243,7 +267,7 @@ export function zyzz(): Plugin {
           resolutions[specifier] = null
           continue
         }
-        const resolved = await host.resolve(specifier, file)
+        const resolved = await resolve(specifier, file)
         if (!resolved)
           throw new Source.ExtractError([
             {
@@ -278,8 +302,125 @@ export function zyzz(): Plugin {
     }
     await visit(entry.file, code)
     const connected = new Set(files)
-    for (const [file, source] of await discover(entry.environment, host))
-      if (!files.has(file)) await visit(file, source)
+    for (const [file, source] of await discover(entry.environment, host)) {
+      if (files.has(file) && !allSources) continue
+      const selected = contributionFiles.get(entry.environment)?.has(file)
+      if (allSources) {
+        const { program } = Parser.parseSync('source.tsx', source, {
+          sourceType: 'module',
+        })
+        const dynamic: import('@oxc-project/types').ImportExpression[] = []
+        Walker.walk(program, {
+          enter(node) {
+            if (
+              node.type === 'ImportExpression' &&
+              node.source.type === 'Literal' &&
+              typeof node.source.value === 'string'
+            )
+              dynamic.push(node)
+          },
+        })
+        for (const node of [...program.body, ...dynamic]) {
+          if (
+            (node.type !== 'ImportExpression' &&
+              node.type !== 'ImportDeclaration' &&
+              node.type !== 'ExportNamedDeclaration' &&
+              node.type !== 'ExportAllDeclaration') ||
+            !node.source
+          )
+            continue
+          if (
+            node.type === 'ImportExpression'
+              ? false
+              : node.type === 'ImportDeclaration'
+                ? node.importKind === 'type'
+                : node.exportKind === 'type'
+          )
+            continue
+          if (
+            'specifiers' in node &&
+            node.specifiers.length &&
+            node.specifiers.every((specifier) =>
+              specifier.type === 'ImportSpecifier'
+                ? specifier.importKind === 'type'
+                : specifier.type === 'ExportSpecifier' &&
+                  specifier.exportKind === 'type',
+            )
+          )
+            continue
+          if (
+            node.source.type !== 'Literal' ||
+            typeof node.source.value !== 'string'
+          )
+            continue
+          const specifier = node.source.value
+          if (specifier === 'zyzz' || specifier.startsWith('zyzz/')) continue
+          const resolved = await resolve(specifier, file)
+          if (!resolved || (!resolved.external && eligible(resolved.id)))
+            continue
+          const physical = resolved.id.split(/[?#]/)[0]!
+          if (!Path.isAbsolute(physical) || !/\.[cm]?[jt]sx?$/.test(physical))
+            continue
+          try {
+            const sidecar = `${physical}.zyzz.json`
+            contracts[resolved.id] = await Fs.readFile(sidecar, 'utf8')
+            host.watch(sidecar)
+            files.add(sidecar)
+            // Discover the package contribution without compiling unrelated authoring
+            // expressions in an otherwise unreachable source file.
+            const discovery = `${sourceId(file)}.zyzz-discovery`
+            modules[discovery] =
+              (modules[discovery] ?? '') +
+              `import ${JSON.stringify(specifier)};\n`
+            ;(imports[discovery] ??= Object.create(null))[specifier] =
+              resolved.id
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+          }
+        }
+      }
+      if (selected) await visit(file, source)
+    }
+    const loaded = new Set<string>()
+    async function dependencies(id: string): Promise<void> {
+      if (loaded.has(id)) return
+      loaded.add(id)
+      const metadata = (() => {
+        try {
+          return JSON.parse(contracts[id]!)
+        } catch (error) {
+          Graph.compile({ modules: {}, contracts: { [id]: contracts[id]! } })
+          throw error
+        }
+      })()
+      if (!Array.isArray(metadata?.stylesheets)) return
+      for (const section of metadata.stylesheets) {
+        if (!Array.isArray(section?.dependency)) continue
+        let owner = id
+        for (const specifier of section.dependency) {
+          if (
+            typeof specifier !== 'string' ||
+            !specifier ||
+            specifier.includes('\0')
+          )
+            throw new Error('Invalid packed stylesheet dependency.')
+          const target = await resolve(specifier, owner)
+          if (!target || !Path.isAbsolute(target.id))
+            throw new Error('Unable to resolve packed stylesheet dependency.')
+          imports[owner] ??= Object.create(null)
+          imports[owner]![specifier] = target.id
+          if (!Object.hasOwn(contracts, target.id)) {
+            const sidecar = `${target.id.split(/[?#]/)[0]}.zyzz.json`
+            contracts[target.id] = await Fs.readFile(sidecar, 'utf8')
+            host.watch(sidecar)
+            files.add(sidecar)
+          }
+          await dependencies(target.id)
+          owner = target.id
+        }
+      }
+    }
+    for (const id of Object.keys(contracts)) await dependencies(id)
     const result = entry.compiler.compile({ contracts, imports, modules })
     const map = new Mapping.GenMapping()
     const styles: string[] = []
@@ -314,12 +455,115 @@ export function zyzz(): Plugin {
       styles.push(output.css)
       line += output.css.split('\n').length
     }
+    const appRoot = await Fs.realpath(root)
+    const owners = new Map<string, string>()
+    for (const id of new Set(Object.values(result.sharedAssetOwners ?? {}))) {
+      if (!Path.isAbsolute(id)) continue
+      let directory = Path.dirname(id.split(/[?#]/)[0]!)
+      for (;;) {
+        try {
+          await Fs.access(Path.join(directory, 'package.json'))
+          owners.set(id, await Fs.realpath(directory))
+          break
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+        }
+        const parent = Path.dirname(directory)
+        if (parent === directory)
+          throw new Error('Packed assets require an owning package.json.')
+        directory = parent
+      }
+    }
+    const assetUrls = new Map<string, string>()
+    for (const [key, target] of Object.entries(result.sharedAssets ?? {})) {
+      const raw = target.split(/[?#]/)[0]!
+      const file = await Fs.realpath(
+        target.startsWith('app/')
+          ? Path.join(root, decodeURIComponent(raw.slice(4)))
+          : Path.isAbsolute(raw)
+            ? decodeURIComponent(raw)
+            : (() => {
+                throw new Error('Asset path escapes the Vite graph.')
+              })(),
+      )
+      const identity = result.sharedAssetOwners?.[key]
+      const owner = identity?.startsWith('app/')
+        ? appRoot
+        : identity
+          ? owners.get(identity)
+          : undefined
+      const relative = owner ? Path.relative(owner, file) : '..'
+      if (
+        relative === '..' ||
+        relative.startsWith(`..${Path.sep}`) ||
+        Path.isAbsolute(relative)
+      )
+        throw new Error('Asset path escapes its owning package.')
+      host.watch(file)
+      files.add(file)
+      let url: string
+      if (/[?#%]/.test(file)) {
+        if (entry.environment.mode === 'build') {
+          url = await host.asset(file)
+          if (target.slice(raw.length)) url += `$_${target.slice(raw.length)}__`
+        } else {
+          url = `/@zyzz/asset/${Crypto.hash('sha256', file)}/${encodeURIComponent(Path.basename(file))}`
+          assets.set(url, file)
+          url += target.slice(raw.length)
+        }
+      } else {
+        const pathname = file
+          .replaceAll('\\', '/')
+          .split('/')
+          .map((part, index) =>
+            index === 0 && /^[a-z]:$/i.test(part)
+              ? part
+              : encodeURIComponent(part),
+          )
+          .join('/')
+        url = `/@fs/${pathname}${target.slice(raw.length)}`
+      }
+      assetUrls.set(target, url)
+    }
+    const shared = !Object.keys(result.sharedAssets ?? {}).length
+      ? {
+          code: new TextEncoder().encode(result.sharedCss ?? ''),
+          map: new TextEncoder().encode(
+            JSON.stringify(
+              result.sharedCssMap ??
+                Mapping.toEncodedMap(new Mapping.GenMapping()),
+            ),
+          ),
+        }
+      : Lightning.transform({
+          filename: 'zyzz.shared.css',
+          code: new TextEncoder().encode(result.sharedCss ?? ''),
+          sourceMap: true,
+          inputSourceMap: JSON.stringify(
+            result.sharedCssMap ??
+              Mapping.toEncodedMap(new Mapping.GenMapping()),
+          ),
+          visitor: {
+            Url(url) {
+              const target = result.sharedAssets?.[url.url]
+              if (!target) return
+              return { ...url, url: assetUrls.get(target)! }
+            },
+          },
+        })
+    const sharedMap = JSON.parse(
+      new TextDecoder().decode(shared.map!),
+    ) as Mapping.EncodedSourceMap
+    sharedMap.sources = sharedMap.sources.map((source) =>
+      source?.startsWith('app/') ? Path.join(root, source.slice(4)) : source,
+    )
     const output = result.modules[sourceId(entry.file)]!
     entry.files = files
     return {
       code: output.code,
       css: styles.join('\n'),
-      sharedCss: result.sharedCss ?? '',
+      sharedCss: new TextDecoder().decode(shared.code),
+      sharedCssMap: sharedMap,
       cssMap: Mapping.toEncodedMap(map),
       map: {
         ...output.map,
@@ -331,6 +575,23 @@ export function zyzz(): Plugin {
   }
 
   return {
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        const path = new URL(request.url ?? '/', 'http://localhost').pathname
+        const file = assets.get(path)
+        if (!file) return next()
+        Fs.readFile(file).then((content) => {
+          response.setHeader(
+            'Content-Type',
+            file.endsWith('.svg')
+              ? 'image/svg+xml'
+              : 'application/octet-stream',
+          )
+          response.setHeader('Cache-Control', 'no-cache')
+          response.end(content)
+        }, next)
+      })
+    },
     configResolved(config) {
       root = config.root
     },
@@ -369,11 +630,29 @@ export function zyzz(): Plugin {
           ? entries(this.environment).values().next().value
           : entries(this.environment).get(file)
       if (!entry) throw new Error(`Unknown Zyzz stylesheet: ${file}`)
-      const output = await compile(entry, {
-        resolve: (source, importer) => this.resolve(source, importer),
-        watch: (file) => this.addWatchFile(file),
-      })
-      if (id === sharedId) return { code: output.sharedCss }
+      const output = await compile(
+        entry,
+        {
+          resolve: (source, importer) => this.resolve(source, importer),
+          watch: (file) => this.addWatchFile(file),
+          asset: async (file) => {
+            const reference = this.emitFile({
+              type: 'asset',
+              name: Path.basename(file).replace(/[?#%]/g, '_'),
+              source: await Fs.readFile(file),
+            })
+            // Vite's CSS asset placeholder preserves its configured base and output naming.
+            return `__VITE_ASSET__${reference}__`
+          },
+        },
+        undefined,
+        id === sharedId,
+      )
+      if (id === sharedId)
+        return {
+          code: output.sharedCss,
+          map: JSON.stringify(output.sharedCssMap),
+        }
       return { code: output.css, map: JSON.stringify(output.cssMap) }
     },
     name: 'zyzz',
@@ -398,6 +677,15 @@ export function zyzz(): Plugin {
         {
           resolve: (source, importer) => this.resolve(source, importer),
           watch: (file) => this.addWatchFile(file),
+          asset: async (file) => {
+            const reference = this.emitFile({
+              type: 'asset',
+              name: Path.basename(file).replace(/[?#%]/g, '_'),
+              source: await Fs.readFile(file),
+            })
+            // Vite's CSS asset placeholder preserves its configured base and output naming.
+            return `__VITE_ASSET__${reference}__`
+          },
         },
         code,
       )
@@ -464,6 +752,7 @@ type Entry = {
 }
 
 type Host = {
+  asset: (file: string) => Promise<string>
   resolve: (
     source: string,
     importer: string,

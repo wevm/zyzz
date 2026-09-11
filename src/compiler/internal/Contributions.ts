@@ -1,6 +1,7 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
+import * as Theme from '../../Theme.js'
 import * as Style from '../../Style.js'
 import type * as Token from '../../internal/Token.js'
 import type * as Css from '../../web/Css.js'
@@ -24,6 +25,7 @@ export function scan(
   program: Ast.Program,
   scope: Scope.Tracker,
   namespace: string,
+  links: Readonly<Record<string, Themes.Link>> = {},
 ) {
   const imports = new Map<number, Kind>()
   for (const node of program.body)
@@ -44,6 +46,18 @@ export function scan(
           if (['fontFace', 'global', 'keyframes', 'layers'].includes(name))
             imports.set(specifier.start, name as Kind)
         }
+  const exported: Record<string, Themes.Link> = Object.create(null)
+  const linkedNames = new Map<string, Themes.Link>()
+  const imported = new Map<number, string>()
+  for (const node of program.body)
+    if (node.type === 'ImportDeclaration')
+      for (const specifier of node.specifiers) {
+        const link = links[specifier.local.name]
+        if (link?.kind === 'animation') {
+          imported.set(specifier.start, link.call.name)
+          linkedNames.set(specifier.local.name, link)
+        }
+      }
   const calls: Call[] = []
   const bindings = new Map<number, Call>()
   const references = new Map<number, string>()
@@ -69,6 +83,41 @@ export function scan(
         !scope.getDeclaration(node.name)
       )
         undefinedValues.add(node.start)
+      if (
+        node.type === 'VariableDeclarator' &&
+        node.id.type === 'Identifier' &&
+        node.init &&
+        Expression.unwrap(node.init).type === 'Identifier'
+      ) {
+        const init = Expression.unwrap(node.init) as Extract<
+          Ast.Node,
+          { type: 'Identifier' }
+        >
+        const declaration = scope.getDeclaration(init.name)
+        const identity = declaration
+          ? imported.get(declaration.node.start)
+          : undefined
+        const link = identity
+          ? [...linkedNames.values()].find(
+              (link) => link.call.name === identity,
+            )
+          : undefined
+        if (link) {
+          if (parent?.type !== 'VariableDeclaration' || parent.kind !== 'const')
+            throw new Themes.InvalidError(
+              'Animation aliases require const bindings.',
+              node,
+            )
+          imported.set(node.start, link.call.name)
+          if (
+            ancestors.at(-3)?.type === 'Program' ||
+            ancestors.at(-3)?.type === 'ExportNamedDeclaration'
+          )
+            linkedNames.set(node.id.name, link)
+          if (ancestors.some((node) => node.type === 'ExportNamedDeclaration'))
+            exported[node.id.name] = link
+        }
+      }
       if (node.type !== 'CallExpression') return
       const type = kind(node.callee)
       if (!type) return
@@ -129,6 +178,22 @@ export function scan(
           : {}),
       }
       calls.push(call)
+      if (call.kind === 'keyframes' && variable?.id.type === 'Identifier') {
+        const link: Themes.Link = {
+          binding: call.name!,
+          kind: 'animation',
+          definition: Theme.define({}),
+          call: {
+            start: call.start,
+            end: call.end,
+            name: call.name!,
+            tokenType: '{}',
+          },
+        }
+        imported.set(variable.start, call.name!)
+        linkedNames.set(variable.id.name, link)
+        if (call.exported) exported[variable.id.name] = link
+      }
       if (call.binding !== undefined) bindings.set(call.binding, call)
     },
     leave() {
@@ -140,6 +205,14 @@ export function scan(
     parent: Ast.Node,
     binding: Walker.ScopeTrackerNode | null,
   ) {
+    if (
+      (binding?.type === 'Import' || binding?.type === 'Variable') &&
+      imported.has(binding.node.start)
+    ) {
+      references.set(node.start, imported.get(binding.node.start)!)
+      used.add(imported.get(binding.node.start)!)
+      return
+    }
     if (binding?.type !== 'Variable') return
     const call = bindings.get(binding.node.start)
     if (
@@ -150,13 +223,49 @@ export function scan(
     references.set(node.start, call.name)
     used.add(call.name)
   }
-  return { calls, references, read, used, undefinedValues }
+  for (const statement of program.body) {
+    if (statement.type === 'ExportDefaultDeclaration') {
+      const declaration = Expression.unwrap(statement.declaration)
+      const link =
+        declaration.type === 'Identifier'
+          ? linkedNames.get(declaration.name)
+          : undefined
+      if (link) {
+        used.add(link.call.name)
+        exported.default = link
+      }
+    }
+    if (
+      statement.type === 'ExportNamedDeclaration' &&
+      statement.exportKind !== 'type' &&
+      !statement.source
+    )
+      for (const specifier of statement.specifiers) {
+        if ('exportKind' in specifier && specifier.exportKind === 'type')
+          continue
+        const name =
+          specifier.local.type === 'Identifier'
+            ? specifier.local.name
+            : specifier.local.value
+        const link = linkedNames.get(name)
+        if (link) {
+          used.add(link.call.name)
+          exported[
+            specifier.exported.type === 'Identifier'
+              ? specifier.exported.name
+              : specifier.exported.value
+          ] = link
+        }
+      }
+  }
+  return { calls, references, read, used, undefinedValues, exports: exported }
 }
 
 /** Builds ordered pure web data after lexical theme references are resolved. */
 export function extract(
   scanned: ReturnType<typeof scan>,
   tokens: ReadonlyMap<number, { end: number; reference: Token.Reference }>,
+  starts?: number[],
 ): readonly Css.Contribution[] {
   const result: Css.Contribution[] = []
   function value(node: Ast.Node): unknown {
@@ -255,6 +364,7 @@ export function extract(
     }
   }
   for (const call of scanned.calls) {
+    const before = result.length
     try {
       const input = value(call.argument)
       if (call.kind === 'layers') {
@@ -337,6 +447,8 @@ export function extract(
         if (call.exported || scanned.used.has(call.name!))
           result.push({ kind: 'keyframes', name: call.name!, frames })
       }
+      for (let index = before; index < result.length; index++)
+        starts?.push(call.start)
     } catch (error) {
       throw new Themes.InvalidError((error as Error).message, call)
     }

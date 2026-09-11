@@ -1,6 +1,6 @@
 /** Carries source-owned stylesheet sections across packed boundaries and rebases their assets. @module */
 import * as Mapping from '@jridgewell/gen-mapping'
-import * as Lightning from 'lightningcss'
+import * as AtRules from './AtRules.js'
 import * as Contributions from '../../web/internal/Contributions.js'
 
 /** Identifies the owner of invalid packed stylesheet output. */
@@ -95,7 +95,7 @@ export function render(sections: readonly Section[]) {
   for (const section of ordered) {
     if (!section.css) continue
     let changed = false
-    const rewritten = Lightning.transform({
+    const rewritten = AtRules.transform({
       filename: section.source,
       code: new TextEncoder().encode(section.css),
       visitor: {
@@ -233,7 +233,7 @@ export function read(value: unknown): readonly Section[] {
       contents.set(section.source, section.content)
     }
     if (section.css)
-      Lightning.transform({
+      AtRules.transform({
         filename: section.source,
         code: new TextEncoder().encode(section.css),
         errorRecovery: false,

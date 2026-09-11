@@ -14,7 +14,7 @@ import * as Variables from './internal/Variables.js'
 import * as Expression from './internal/Expression.js'
 import * as Token from '../internal/Token.js'
 import type * as Ast from '@oxc-project/types'
-import * as Lightning from 'lightningcss'
+import * as AtRules from './internal/AtRules.js'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import type * as Shorthands from '../internal/Shorthands.js'
@@ -657,7 +657,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           if (rule.condition !== undefined) {
             const location = conditionKeys[conditionIndex++] ?? call
             try {
-              Lightning.transform({
+              AtRules.transform({
                 filename: options.moduleId,
                 code: Buffer.from(`.z{${rule.condition}{color:red;}}`),
                 errorRecovery: false,
@@ -736,7 +736,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           styles: { styles: [] },
           contributions: [registration],
         }).css
-        Lightning.transform({
+        AtRules.transform({
           filename: options.moduleId,
           code: new TextEncoder().encode(css),
           errorRecovery: false,
@@ -772,7 +772,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         contributions: contributionData,
         themes: themes?.themes,
       }).css
-      Lightning.transform({
+      AtRules.transform({
         filename: options.moduleId,
         code: new TextEncoder().encode(rendered),
         errorRecovery: false,

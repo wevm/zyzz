@@ -1,4 +1,5 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
+import type * as Block from '../../web/internal/Block.js'
 import type * as RuleReference from '../../internal/RuleReference.js'
 import * as Condition from '../../internal/Condition.js'
 import type * as Ast from '@oxc-project/types'
@@ -11,7 +12,15 @@ import * as Expression from './Expression.js'
 import * as Themes from './Themes.js'
 import type * as Scope from './Scope.js'
 
-type Kind = 'fontFace' | 'global' | 'keyframes' | 'layers' | RuleReference.Kind
+type Kind =
+  | 'fontFeatureValues'
+  | 'page'
+  | 'viewTransition'
+  | 'fontFace'
+  | 'global'
+  | 'keyframes'
+  | 'layers'
+  | RuleReference.Kind
 const named = [
   'colorProfile',
   'counterStyle',
@@ -19,7 +28,15 @@ const named = [
   'keyframes',
   'positionTry',
 ]
-const macros = ['fontFace', 'global', 'layers', ...named]
+const macros = [
+  'fontFace',
+  'fontFeatureValues',
+  'global',
+  'layers',
+  'page',
+  'viewTransition',
+  ...named,
+]
 /** Source-owned factory replacement and optional animation identity. */
 export type Call = {
   readonly start: number
@@ -139,7 +156,13 @@ export function scan(
       if (
         node.optional ||
         (node.arguments.length !== 1 &&
-          (!['fontFace', ...named].includes(type) ||
+          (![
+            'fontFace',
+            'fontFeatureValues',
+            'page',
+            'viewTransition',
+            ...named,
+          ].includes(type) ||
             node.arguments.length !== 2)) ||
         (!variable && parent?.type !== 'ExpressionStatement') ||
         ancestors
@@ -446,6 +469,200 @@ export function extract(
           kind: 'font-face',
           declarations: declarations as Record<string, string | number>,
         })
+      } else if (call.kind === 'page') {
+        const options = record(input)
+        if (
+          Object.keys(options).some(
+            (key) => !['descriptors', 'selector'].includes(key),
+          ) ||
+          (options.selector !== undefined &&
+            typeof options.selector !== 'string')
+        )
+          throw new Error('Expected page descriptors and an optional selector.')
+        const margins = [
+          'top-left-corner',
+          'top-left',
+          'top-center',
+          'top-right',
+          'top-right-corner',
+          'bottom-left-corner',
+          'bottom-left',
+          'bottom-center',
+          'bottom-right',
+          'bottom-right-corner',
+          'left-top',
+          'left-middle',
+          'left-bottom',
+          'right-top',
+          'right-middle',
+          'right-bottom',
+        ].map((name) => `@${name}`)
+        const properties = /^(?:background|border|font|margin|padding|outline)/
+        const names = [
+          'color',
+          'counterIncrement',
+          'counterReset',
+          'direction',
+          'height',
+          'letterSpacing',
+          'lineHeight',
+          'maxHeight',
+          'maxWidth',
+          'minHeight',
+          'minWidth',
+          'quotes',
+          'textAlign',
+          'textDecoration',
+          'textIndent',
+          'textTransform',
+          'visibility',
+          'whiteSpace',
+          'width',
+          'wordSpacing',
+        ]
+        function body(input: unknown, margin = false): readonly Block.Entry[] {
+          return Object.entries(record(input)).flatMap(
+            ([key, value]): Block.Entry[] => {
+              if (value === undefined) return []
+              if (!margin && margins.includes(key))
+                return [
+                  { kind: 'block', header: key, entries: body(value, true) },
+                ]
+              if (
+                !margin &&
+                ['bleed', 'marks', 'pageOrientation', 'size'].includes(key)
+              ) {
+                if (typeof value !== 'string' && typeof value !== 'number')
+                  throw new Error('Expected a scalar page descriptor.')
+                return [
+                  {
+                    kind: 'descriptor',
+                    name: key.replace(
+                      /[A-Z]/g,
+                      (letter) => `-${letter.toLowerCase()}`,
+                    ),
+                    value,
+                  },
+                ]
+              }
+              if (
+                !properties.test(key) &&
+                !names.includes(key) &&
+                !(
+                  margin &&
+                  [
+                    'content',
+                    'overflow',
+                    'unicodeBidi',
+                    'verticalAlign',
+                    'zIndex',
+                  ].includes(key)
+                )
+              )
+                throw new Error('Unsupported page or page-margin declaration.')
+              return [{ kind: 'style', style: style({ [key]: value }) }]
+            },
+          )
+        }
+        result.push({
+          kind: 'block',
+          header: `@page${options.selector ? ` ${Condition.normalize(options.selector as string)}` : ''}`,
+          entries: body(options.descriptors),
+        })
+      } else if (call.kind === 'fontFeatureValues') {
+        const options = record(input)
+        if (
+          Object.keys(options).some(
+            (key) => !['families', 'features', 'fontDisplay'].includes(key),
+          )
+        )
+          throw new Error('Unknown font-feature-values option.')
+        const families = options.families
+        if (
+          typeof families !== 'string' &&
+          (!Array.isArray(families) ||
+            !families.length ||
+            families.some((value) => typeof value !== 'string'))
+        )
+          throw new Error('Expected a font family list.')
+        const entries: Block.Entry[] = []
+        if (options.fontDisplay !== undefined) {
+          if (
+            typeof options.fontDisplay !== 'string' ||
+            !['auto', 'block', 'fallback', 'optional', 'swap'].includes(
+              options.fontDisplay,
+            )
+          )
+            throw new Error('Invalid font display descriptor.')
+          entries.push({
+            kind: 'descriptor',
+            name: 'font-display',
+            value: options.fontDisplay,
+          })
+        }
+        for (const [header, input] of Object.entries(
+          record(options.features),
+        )) {
+          if (
+            ![
+              '@annotation',
+              '@character-variant',
+              '@ornaments',
+              '@styleset',
+              '@stylistic',
+              '@swash',
+            ].includes(header)
+          )
+            throw new Error('Unknown font feature block.')
+          const declarations: Block.Entry[] = Object.entries(record(input)).map(
+            ([name, value]) => {
+              const values = Array.isArray(value) ? value : [value]
+              const maximum =
+                header === '@styleset'
+                  ? Infinity
+                  : header === '@character-variant'
+                    ? 2
+                    : 1
+              if (
+                !/^-?[_a-zA-Z][\w-]*$/.test(name) ||
+                !values.length ||
+                values.length > maximum ||
+                values.some(
+                  (value) =>
+                    typeof value !== 'number' ||
+                    !Number.isInteger(value) ||
+                    value < 0,
+                )
+              )
+                throw new Error(
+                  'Expected feature aliases with nonnegative integer indices.',
+                )
+              return { kind: 'descriptor', name, value: values.join(' ') }
+            },
+          )
+          entries.push({ kind: 'block', header, entries: declarations })
+        }
+        result.push({
+          kind: 'block',
+          header: `@font-feature-values ${Array.isArray(families) ? families.map((value) => JSON.stringify(value)).join(',') : families}`,
+          entries,
+        })
+      } else if (call.kind === 'viewTransition') {
+        const entries = Object.entries(record(input)).flatMap(
+          ([key, value]): Block.Entry[] => {
+            if (value === undefined) return []
+            if (
+              (key !== 'navigation' && key !== 'types') ||
+              typeof value !== 'string' ||
+              (key === 'navigation' && !['auto', 'none'].includes(value))
+            )
+              throw new Error(
+                'Expected navigation or types view-transition descriptors.',
+              )
+            return [{ kind: 'descriptor', name: key, value }]
+          },
+        )
+        result.push({ kind: 'block', header: '@view-transition', entries })
       } else if (call.kind === 'positionTry') {
         const declarations = record(input)
         const keys = [

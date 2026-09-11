@@ -15,3 +15,7 @@ export { colorProfile } from './colorProfile.js'
 export { counterStyle } from './counterStyle.js'
 export { fontPaletteValues } from './fontPaletteValues.js'
 export { positionTry } from './positionTry.js'
+
+export { fontFeatureValues } from './fontFeatureValues.js'
+export { page } from './page.js'
+export { viewTransition } from './viewTransition.js'

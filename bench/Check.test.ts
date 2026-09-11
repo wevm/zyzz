@@ -130,10 +130,22 @@ describe('framework gate', () => {
         expect(result.stdout.includes('| 🔴')).toMatchInlineSnapshot('false')
       } else {
         expect(result.code).toMatchInlineSnapshot('1')
-        expect(
-          result.stdout.includes('Themes — 100 Components:'),
-        ).toMatchInlineSnapshot('true')
-        expect(result.stdout.includes('🔴')).toMatchInlineSnapshot('true')
+        if (['speed loss', 'size loss', 'tie'].includes(scenario)) {
+          expect(
+            result.stdout.includes('<summary>Themes — 100 Components:'),
+          ).toMatchInlineSnapshot('true')
+          expect(
+            result.stdout.includes('| 🔴 Zyzz (token resolution included) |'),
+          ).toMatchInlineSnapshot('true')
+        } else {
+          expect(
+            result.stdout
+              .split('\n')
+              .find((line) => line.startsWith('🔴 Themes')),
+          ).toMatchInlineSnapshot(
+            '"🔴 Themes — 100 Components: Missing or invalid measurements. See workflow logs."',
+          )
+        }
       }
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })

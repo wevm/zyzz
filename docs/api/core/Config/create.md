@@ -39,7 +39,7 @@ Config.create({
 - Type: `readonly string[]` (literal names inferred)
 - Default: No configured layers.
 
-Ordered plain or dotted CSS identifiers, without duplicates or CSS-wide keywords. The tuple infers exact bound `@layer <name>` keys. Unicode/escaped layer identifiers and layer emission remain planned.
+Ordered plain or dotted CSS identifiers, without duplicates or CSS-wide keywords. The tuple infers exact bound `@layer <name>` keys. Layer order and bodies compile to CSS. Unicode and escaped layer identifiers remain planned.
 
 ```ts
 Config.create({ layers: ['base', 'components'] })

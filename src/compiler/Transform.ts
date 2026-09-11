@@ -185,7 +185,8 @@ export function compile(options: compile.Options): compile.ReturnType {
     const props = (() => {
       if (!call.members)
         return `{className:${JSON.stringify(emitted.themes[call.name])}}`
-      usesAppearance = true
+      const script = extracted.themeScripts?.includes(call.name)
+      if (script) usesAppearance = true
       if (call.options?.themes) {
         const catalog = Object.fromEntries(
           Object.entries(call.members)
@@ -208,11 +209,11 @@ export function compile(options: compile.Options): compile.ReturnType {
           ? ': Record<string,string>'
           : ''
         const select = `((${input})=>({${key}:catalog[input.theme],...(input.colorScheme?{style:${style}}:{})}))`
-        return `(()=>{const catalog${catalogType}=Object.fromEntries(${entries});return {script:${appearance}.create(${entries}),theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:Object.defineProperties(${select},Object.getOwnPropertyDescriptors(Object.fromEntries(Object.entries(catalog).map(([name,className])=>[name,{className}]))))}})()`
+        return `(()=>{const catalog${catalogType}=Object.fromEntries(${entries});return {${script ? `script:${appearance}.create(${entries}),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:Object.defineProperties(${select},Object.getOwnPropertyDescriptors(Object.fromEntries(Object.entries(catalog).map(([name,className])=>[name,{className}]))))}})()`
       }
       if (Object.hasOwn(call.members, '["theme"]'))
-        return `{script:${appearance}.create([]),theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
-      return `{script:${appearance}.create([])}`
+        return `{${script ? `script:${appearance}.create([]),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
+      return script ? `{script:${appearance}.create([])}` : '{}'
     })()
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
       ? ` as ${call.type ?? `import('zyzz').Theme.Definition<${call.tokenType}>`}`

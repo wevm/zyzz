@@ -11,6 +11,56 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 
 describe('create', () => {
+  test('omits initialization from static configured styles', () => {
+    for (const options of [
+      '{}',
+      "{theme:{color:{ink:'#123456'}}}",
+      "{defaultTheme:'base',themes:{base:{color:{ink:'#123456'}}}}",
+    ]) {
+      const graph = Graph.compile({
+        modules: {
+          'app.ts': `import {Config} from 'zyzz';const {css}=Config.create(${options});export const styles={card:css({width:'10px'})};`,
+        },
+      })
+      expect(
+        graph.modules['app.ts']!.code.includes('Appearance'),
+      ).toMatchInlineSnapshot('false')
+      expect(
+        graph.modules['app.ts']!.code.includes('script:'),
+      ).toMatchInlineSnapshot('false')
+    }
+  })
+  test('rejects script calls on old packed configurations', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const config=Config.create({});`,
+      },
+    })
+    const old = JSON.parse(library.contracts['config.ts']!)
+    old.version = 3
+    delete old.exports.config.script
+    expect(() =>
+      Graph.compile({
+        contracts: { 'library/index.js': JSON.stringify(old) },
+        imports: { 'app.ts': { library: 'library/index.js' } },
+        modules: {
+          'app.ts': `import {config} from 'library';export const source=config.script();`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:51: This packed configuration does not provide script(); rebuild its library with initialization support.]`,
+    )
+    const current = Graph.compile({
+      contracts: { 'library/index.js': library.contracts['config.ts']! },
+      imports: { 'app.ts': { library: 'library/index.js' } },
+      modules: {
+        'app.ts': `import {config} from 'library';export const source=config.script();`,
+      },
+    })
+    expect(
+      current.modules['app.ts']!.code.includes('config.script()'),
+    ).toMatchInlineSnapshot('true')
+  })
   for (const config of [
     '{}',
     "{theme:{color:{ink:'#123456'}}}",

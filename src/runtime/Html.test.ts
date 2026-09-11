@@ -24,9 +24,9 @@ const styles = {
   })),
 };
 export function props(width: \`\${number}%\`, overrides = true) {
-  return styles.card({ width, ...(overrides ? { style: { marginTop: '12px', opacity: 0.5, colorScheme: 'dark', '--note': '"<&>' } } : {}) });
+  return styles.card({ width, ...(overrides ? { style: { marginTop: '12px', opacity: 0.5, colorScheme: 'dark', '--note': '"<&>"' } } : {}) });
 }
-export function html() { return Html.serialize({ ...styles.htmlCard({ width: '25%', style: { marginTop: '12px', opacity: 0.5, colorScheme: 'dark', '--note': '"<&>' } }), 'data-note': '"<&>' }); }
+export function html() { return Html.serialize({ ...styles.htmlCard({ width: '25%', style: { marginTop: '12px', opacity: 0.5, colorScheme: 'dark', '--note': '"<&>"' } }), 'data-note': '"<&>' }); }
 let root;
 function Card({ values }) { React.useEffect(() => { document.documentElement.dataset.hydrated = "true" }, []); return React.createElement("div", { id: "card", ...values }); }
 export function hydrate() { root = hydrateRoot(document.querySelector('#react'), React.createElement(Card, { values: props('25%') })); }

@@ -20,6 +20,8 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Whether the compiled configuration supplies initialization. */
+  readonly script?: boolean | undefined
   /** Bound root initialization script export. */
   readonly initialization?: boolean | undefined
   /** Config helper represented by this linked binding. */
@@ -67,6 +69,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const aliasBindings = new Map<number, Alias>()
   const aliasReferences = new Set<number>()
   const calls: Call[] = []
+  const scripts = new Set<string>()
   const definitions = new Map<number, Call>()
   const factories = new Set<number>()
   const imports = new Set<number>()
@@ -395,10 +398,28 @@ export function collect(program: Ast.Program, options: collect.Options) {
               key === 'script' ||
               (key === 'themes' && link.call.options?.themes)
             ) {
+              if (key === 'script') scripts.add(link.call.name)
+              const members = Object.fromEntries(
+                Object.entries(link.members ?? {}).flatMap(
+                  ([pathKey, member]) => {
+                    const path = JSON.parse(pathKey) as string[]
+                    return key === 'themes' && path[0] === 'themes'
+                      ? [[JSON.stringify(path.slice(1)), member]]
+                      : []
+                  },
+                ),
+              )
               const selection = {
                 ...link,
+                members,
                 call: {
                   ...link.call,
+                  members: Object.fromEntries(
+                    Object.entries(members).map(([key, member]) => [
+                      key,
+                      member.call.name,
+                    ]),
+                  ),
                   ...(key === 'script'
                     ? { initialization: true }
                     : { selection: true }),
@@ -734,12 +755,23 @@ export function collect(program: Ast.Program, options: collect.Options) {
           return true
         if (
           path.length === 1 &&
+          !config.call.selection &&
+          !config.call.initialization &&
           ['script', 'themes'].includes(path[0]!) &&
           ancestors[index - 1]?.type === 'CallExpression' &&
           (ancestors[index - 1] as Ast.CallExpression).callee === target &&
           !(ancestors[index - 1] as Ast.CallExpression).optional
-        )
+        ) {
+          if (path[0] === 'script') {
+            if (!config.call.script)
+              fail(
+                'This packed configuration does not provide script(); rebuild its library with initialization support.',
+                target,
+              )
+            scripts.add(config.call.name)
+          }
           return true
+        }
         if (path.length === 1 && path[0] === 'css') {
           const call = ancestors[index - 1]
           if (
@@ -1027,12 +1059,22 @@ export function collect(program: Ast.Program, options: collect.Options) {
     return true
   }
 
+  for (const link of Object.values(exports))
+    if (
+      link.kind === 'config' &&
+      !link.call.selection &&
+      !link.call.initialization &&
+      link.call.script
+    )
+      scripts.add(link.call.name)
+
   return {
     aliases,
     calls,
     exports: Object.freeze(exports),
     reference,
     references,
+    scripts,
     styles,
     themes: Object.freeze(themes),
     tokens,

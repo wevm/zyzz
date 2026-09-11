@@ -95,6 +95,7 @@ export async function verify(options: verify.Options) {
     )
     expect(checked.stdout).toMatchInlineSnapshot(`""`)
     server = await Vite.createServer(config)
+    await server.listen()
     const ssr = (await server.ssrLoadModule('/server.tsx')) as {
       render: () =>
         | { html: string; script: string }
@@ -107,7 +108,6 @@ export async function verify(options: verify.Options) {
       Path.join(root, 'index.html'),
       `<!doctype html><html><head>${rendered.script}</head><body><div id="app">${rendered.html}</div><button id="dispose">Dispose</button><script type="module" src="/client.tsx"></script></body></html>`,
     )
-    await server.listen()
     browser = await chromium.launch({ headless: true })
     const page = await browser.newPage()
     const errors: string[] = []

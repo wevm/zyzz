@@ -19,7 +19,7 @@ describe('create', () => {
         contracts: { 'library/index.js': library.contracts['index.ts']! },
         imports: { 'app.ts': { library: 'library/index.js' } },
         modules: {
-          'app.ts': `import { css, theme, select } from 'library'; export const styles={card:css({color:theme.tokens.color.ink})}; export const first=select({theme:'ocean'}); export const second=select({theme:'mint',colorScheme:'dark'}); export const selectTheme=(name:'ocean'|'mint')=>select({theme:name});`,
+          'app.ts': `import { css, theme, select } from 'library'; export const styles={card:css({color:select.mint.tokens.color.ink})}; export const mint=select.mint.className; export const first=select({theme:'ocean'}); export const second=select({theme:'mint',colorScheme:'dark'}); export const selectTheme=(name:'ocean'|'mint')=>select({theme:name});`,
         },
       })
       const bundle = await Esbuild.build({
@@ -58,11 +58,13 @@ describe('create', () => {
       const result = Vm.runInNewContext(
         `${bundle.outputFiles[0]!.text};Fixture;`,
       ) as {
+        mint: string
         first: Record<string, unknown>
         second: Record<string, unknown>
         selectTheme: (name: string) => Record<string, unknown>
       }
       const key = output === 'html' ? 'class' : 'className'
+      expect(result.mint === result.second[key]).toMatchInlineSnapshot('true')
       expect(typeof result.first[key]).toMatchInlineSnapshot('"string"')
       expect(result.first.style).toMatchInlineSnapshot('undefined')
       expect(result.second[key] !== result.first[key]).toMatchInlineSnapshot(

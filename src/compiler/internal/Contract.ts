@@ -53,6 +53,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     return {
       binding: string(entry.binding),
       call: {
+        ...(entry.script === true ? { script: true } : {}),
         end: -1,
         name: theme,
         start: -1,
@@ -132,6 +133,7 @@ export function write(
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
     return {
+      ...(link.call.script ? { script: true } : {}),
       binding: link.binding,
       kind: link.kind,
       theme: link.call.name,
@@ -164,7 +166,8 @@ export function write(
       ]),
     ),
     version: Object.values(links).some(
-      (link) => link.call.selection || link.call.initialization,
+      (link) =>
+        link.call.selection || link.call.initialization || link.call.script,
     )
       ? 4
       : Object.values(themes).some(

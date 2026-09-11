@@ -2,6 +2,7 @@
  * Connects static Zyzz source compilation to Vite resolution and CSS delivery.
  * @module
  */
+import * as Lightning from 'lightningcss'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
@@ -314,12 +315,36 @@ export function zyzz(): Plugin {
       styles.push(output.css)
       line += output.css.split('\n').length
     }
+    const shared = Lightning.transform({
+      filename: 'zyzz.shared.css',
+      code: new TextEncoder().encode(result.sharedCss ?? ''),
+      sourceMap: true,
+      inputSourceMap: JSON.stringify(result.sharedCssMap),
+      visitor: {
+        Url(url) {
+          const target = result.sharedAssets?.[url.url]
+          if (!target) return
+          if (!target.startsWith('app/'))
+            throw new Error('Asset path escapes the Vite project.')
+          const file = Path.join(root, target.slice(4).split(/[?#]/)[0]!)
+          host.watch(file)
+          return { ...url, url: `/@fs/${Path.join(root, target.slice(4))}` }
+        },
+      },
+    })
+    const sharedMap = JSON.parse(
+      new TextDecoder().decode(shared.map!),
+    ) as Mapping.EncodedSourceMap
+    sharedMap.sources = sharedMap.sources.map((source) =>
+      source?.startsWith('app/') ? Path.join(root, source.slice(4)) : source,
+    )
     const output = result.modules[sourceId(entry.file)]!
     entry.files = files
     return {
       code: output.code,
       css: styles.join('\n'),
-      sharedCss: result.sharedCss ?? '',
+      sharedCss: new TextDecoder().decode(shared.code),
+      sharedCssMap: sharedMap,
       cssMap: Mapping.toEncodedMap(map),
       map: {
         ...output.map,
@@ -373,7 +398,11 @@ export function zyzz(): Plugin {
         resolve: (source, importer) => this.resolve(source, importer),
         watch: (file) => this.addWatchFile(file),
       })
-      if (id === sharedId) return { code: output.sharedCss }
+      if (id === sharedId)
+        return {
+          code: output.sharedCss,
+          map: JSON.stringify(output.sharedCssMap),
+        }
       return { code: output.css, map: JSON.stringify(output.cssMap) }
     },
     name: 'zyzz',

@@ -2,6 +2,8 @@
  * Links a closed graph of source modules without executing code or reading files.
  * @module
  */
+import * as Stylesheets from './internal/Stylesheets.js'
+import type * as Mapping from '@jridgewell/gen-mapping'
 import * as Css from '../web/Css.js'
 import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
@@ -42,6 +44,10 @@ export declare namespace compile {
     readonly dependencies: Readonly<Record<string, readonly string[]>>
     /** One eager stylesheet for all supplied modules. Load before module CSS. */
     readonly sharedCss?: string | undefined
+    /** Source map for source-owned and packed global contributions. */
+    readonly sharedCssMap?: Mapping.EncodedSourceMap | undefined
+    /** Portable asset targets keyed by emitted compiler URL placeholders. */
+    readonly sharedAssets?: Readonly<Record<string, string>> | undefined
     /** Rewritten modules and their stylesheets/maps. Load the CSS for the graph together. */
     readonly modules: Readonly<Record<string, Transform.compile.ReturnType>>
   }
@@ -415,16 +421,67 @@ function build(options: compile.Options, cache?: Cache): Cache {
   const modules: Record<string, Transform.compile.ReturnType> =
     Object.create(null)
   const sharedThemes = Object.freeze(themes)
-  const contributions = ids.flatMap(
-    (id) => extracted.get(id)!.contributions ?? [],
+  const sections = new Map<string, readonly Stylesheets.Section[]>()
+  for (const id of ids) {
+    const extractedModule = extracted.get(id)!
+    const contributions = extractedModule.contributions ?? []
+    if (!contributions.length) {
+      sections.set(id, [])
+      continue
+    }
+    const layers = contributions.flatMap((value) =>
+      value.kind === 'layers' ? [value.names] : [],
+    )
+    const content = contributions.some((value) => value.kind !== 'layers')
+      ? Css.compile({
+          styles: { styles: [] },
+          themes: sharedThemes,
+          contributions: contributions.filter(
+            (value) => value.kind !== 'layers',
+          ),
+        }).css
+      : ''
+    sections.set(
+      id,
+      contributions.length
+        ? [
+            {
+              source: id,
+              css: content,
+              layers,
+              content: options.modules[id]!,
+              start: extractedModule.contributionCalls?.[0]?.start ?? 0,
+            },
+          ]
+        : [],
+    )
+  }
+  for (const [id, library] of Object.entries(libraries))
+    sections.set(
+      id,
+      library.stylesheets.map((section) => ({
+        ...section,
+        source: Stylesheets.resolve(id, section.source),
+      })),
+    )
+  function reachable(
+    id: string,
+    visited = new Set<string>(),
+  ): readonly Stylesheets.Section[] {
+    if (visited.has(id)) return []
+    visited.add(id)
+    return [
+      ...(dependencies[id] ?? []).flatMap((dependency) =>
+        reachable(dependency, visited),
+      ),
+      ...(sections.get(id) ?? []),
+    ]
+  }
+  const sharedVisited = new Set<string>()
+  const shared = Stylesheets.render(
+    ids.flatMap((id) => reachable(id, sharedVisited)),
   )
-  const sharedCss = contributions.length
-    ? Css.compile({
-        styles: { styles: [] },
-        themes: sharedThemes,
-        contributions,
-      }).css
-    : ''
+  const sharedCss = shared.css
   // Every stylesheet includes all graph scopes, including unimported alternatives.
   const names = Object.keys(themes)
   const previousNames = Object.keys(previous?.themes ?? {})
@@ -459,18 +516,26 @@ function build(options: compile.Options, cache?: Cache): Cache {
     libraries: Object.freeze(libraries),
     resolutions: Object.freeze(resolutions),
     result: Object.freeze({
-      ...(sharedCss ? { sharedCss } : {}),
+      ...(sharedCss
+        ? { sharedCss, sharedCssMap: shared.map, sharedAssets: shared.assets }
+        : {}),
       contracts: Object.freeze(
         Object.fromEntries(
           ids
             .filter(
-              (id) => Object.keys(extracted.get(id)!.themeExports ?? {}).length,
+              (id) =>
+                Object.keys(extracted.get(id)!.themeExports ?? {}).length ||
+                reachable(id).length,
             )
             .map((id) => [
               id,
               Contract.write(
                 extracted.get(id)!.themeExports ?? {},
                 sharedThemes,
+                reachable(id).map((section) => ({
+                  ...section,
+                  source: Stylesheets.relative(id, section.source),
+                })),
               ),
             ]),
         ),

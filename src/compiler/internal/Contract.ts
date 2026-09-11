@@ -2,6 +2,7 @@
  * Serializes validated theme authoring data for independently compiled libraries.
  * @module
  */
+import * as Stylesheets from './Stylesheets.js'
 import * as Marker from '../../runtime/Marker.js'
 import * as Config from '../../Config.js'
 import * as Configurations from './Configurations.js'
@@ -37,6 +38,17 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
   }
   function link(value: unknown): Themes.Link {
     const entry = record(value)
+    if (entry.kind === 'animation') {
+      const name = string(entry.name)
+      if (!/^z-k[a-z0-9-]+$/.test(name))
+        throw new Error('Invalid animation identity.')
+      return {
+        binding: string(entry.binding),
+        kind: 'animation',
+        definition: Theme.define({}),
+        call: { start: -1, end: -1, name, tokenType: '{}' },
+      }
+    }
     if (entry.kind === 'marker') {
       const marker = record(entry.marker)
       const id = string(marker.id)
@@ -111,7 +123,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
       link(value),
     ]),
   )
-  return { links, themes }
+  return { links, themes, stylesheets: Stylesheets.read(data.stylesheets) }
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -153,8 +165,11 @@ function type(value: unknown): string {
 export function write(
   links: Readonly<Record<string, Themes.Link>>,
   themes: Readonly<Record<string, Theme.Definition>>,
+  stylesheets: readonly Stylesheets.Section[] = [],
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
+    if (link.kind === 'animation')
+      return { binding: link.binding, kind: link.kind, name: link.call.name }
     if (link.kind === 'marker')
       return {
         binding: link.binding,
@@ -182,6 +197,7 @@ export function write(
     }
   }
   return JSON.stringify({
+    ...(stylesheets.length ? { stylesheets } : {}),
     exports: Object.fromEntries(
       Object.entries(links).map(([name, link]) => [name, entry(link)]),
     ),
@@ -197,32 +213,35 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(links).some(
-      (link) =>
-        link.call.selection ||
-        link.call.initialization ||
-        link.call.script ||
-        link.kind === 'marker',
-    )
-      ? 4
-      : Object.values(themes).some(
-            (theme) =>
-              theme[Token.definition].queries ||
-              Object.keys(theme.tokens).some((group) =>
-                [
-                  'fontFamily',
-                  'fontSize',
-                  'fontWeight',
-                  'lineHeight',
-                  'letterSpacing',
-                ].includes(group),
-              ),
-          )
-        ? 3
-        : Object.values(links).some(
-              (link) => link.kind === 'config' || link.call.type,
+    version:
+      stylesheets.length ||
+      Object.values(links).some(
+        (link) =>
+          link.call.selection ||
+          link.call.initialization ||
+          link.call.script ||
+          link.kind === 'marker' ||
+          link.kind === 'animation',
+      )
+        ? 4
+        : Object.values(themes).some(
+              (theme) =>
+                theme[Token.definition].queries ||
+                Object.keys(theme.tokens).some((group) =>
+                  [
+                    'fontFamily',
+                    'fontSize',
+                    'fontWeight',
+                    'lineHeight',
+                    'letterSpacing',
+                  ].includes(group),
+                ),
             )
-          ? 2
-          : 1,
+          ? 3
+          : Object.values(links).some(
+                (link) => link.kind === 'config' || link.call.type,
+              )
+            ? 2
+            : 1,
   })
 }

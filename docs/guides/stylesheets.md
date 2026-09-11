@@ -6,9 +6,6 @@ Declare global rules, cascade order, fonts, and animations. Begin with [Getting 
 
 ### Global Styles
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Declare global rules at module scope in a configured project source. A component import is not required for collection.
 
 ```ts
@@ -27,9 +24,6 @@ global({
 Use [Cascade Layers](stylesheets.md#cascade-layers) to define ordering and [Fonts and Motion](stylesheets.md#fonts-and-motion) for other stylesheet contributions.
 
 ### Cascade Layers
-
-> [!NOTE]
-> Preview API; not yet implemented.
 
 Declare layer order once in config. Bound styles infer the exact layer names.
 
@@ -62,9 +56,6 @@ The initial bundle contains the shared layer prelude. Conflicting order constrai
 
 ### Fonts and Motion
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Declare fonts and keyframes near their owning code. Disable nonessential motion when reduced motion is requested.
 
 ```ts
@@ -88,3 +79,17 @@ const styles = {
 ```
 
 Font URLs retain source ownership. Reachable keyframes emit stable references. Frame bodies contain declarations only; no importance or nested selectors/queries. Native font loading and animations require platform-specific behavior.
+
+### Optional Reset
+
+```ts
+import 'zyzz/reset.css'
+```
+
+The reset is a separate stylesheet in the `reset` layer. Core imports do not install it. Ordinary unlayered declarations take precedence regardless of whether the reset loads before or after them.
+
+### Packed Libraries
+
+Publish generated `.zyzz.json` sidecars alongside their compiled entrypoints. They retain global contributions, fonts, keyframes, and layer constraints through imports and re-exports. Shared source maps retain the original authoring content. Identical source contributions emit once; conflicting copies fail compilation.
+
+Relative URLs resolve from their owning module. The standalone host copies referenced assets into the output tree and tracks their ownership and updates. Vite resolves the same assets through its CSS pipeline and watches their source files. Keep the emitted asset tree with packed modules and metadata.

@@ -1,6 +1,7 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
+import * as Theme from '../../Theme.js'
 import * as Style from '../../Style.js'
 import type * as Token from '../../internal/Token.js'
 import type * as Css from '../../web/Css.js'
@@ -24,6 +25,7 @@ export function scan(
   program: Ast.Program,
   scope: Scope.Tracker,
   namespace: string,
+  links: Readonly<Record<string, Themes.Link>> = {},
 ) {
   const imports = new Map<number, Kind>()
   for (const node of program.body)
@@ -44,6 +46,18 @@ export function scan(
           if (['fontFace', 'global', 'keyframes', 'layers'].includes(name))
             imports.set(specifier.start, name as Kind)
         }
+  const exported: Record<string, Themes.Link> = Object.create(null)
+  const linkedNames = new Map<string, Themes.Link>()
+  const imported = new Map<number, string>()
+  for (const node of program.body)
+    if (node.type === 'ImportDeclaration')
+      for (const specifier of node.specifiers) {
+        const link = links[specifier.local.name]
+        if (link?.kind === 'animation') {
+          imported.set(specifier.start, link.call.name)
+          linkedNames.set(specifier.local.name, link)
+        }
+      }
   const calls: Call[] = []
   const bindings = new Map<number, Call>()
   const references = new Map<number, string>()
@@ -69,6 +83,24 @@ export function scan(
         !scope.getDeclaration(node.name)
       )
         undefinedValues.add(node.start)
+      if (
+        node.type === 'VariableDeclarator' &&
+        node.id.type === 'Identifier' &&
+        node.init?.type === 'Identifier'
+      ) {
+        const link = linkedNames.get(node.init.name)
+        if (link) {
+          if (parent?.type !== 'VariableDeclaration' || parent.kind !== 'const')
+            throw new Themes.InvalidError(
+              'Animation aliases require const bindings.',
+              node,
+            )
+          imported.set(node.start, link.call.name)
+          linkedNames.set(node.id.name, link)
+          if (ancestors.some((node) => node.type === 'ExportNamedDeclaration'))
+            exported[node.id.name] = link
+        }
+      }
       if (node.type !== 'CallExpression') return
       const type = kind(node.callee)
       if (!type) return
@@ -129,6 +161,21 @@ export function scan(
           : {}),
       }
       calls.push(call)
+      if (call.kind === 'keyframes' && variable?.id.type === 'Identifier') {
+        const link: Themes.Link = {
+          binding: call.name!,
+          kind: 'animation',
+          definition: Theme.define({}),
+          call: {
+            start: call.start,
+            end: call.end,
+            name: call.name!,
+            tokenType: '{}',
+          },
+        }
+        linkedNames.set(variable.id.name, link)
+        if (call.exported) exported[variable.id.name] = link
+      }
       if (call.binding !== undefined) bindings.set(call.binding, call)
     },
     leave() {
@@ -140,6 +187,13 @@ export function scan(
     parent: Ast.Node,
     binding: Walker.ScopeTrackerNode | null,
   ) {
+    if (
+      (binding?.type === 'Import' || binding?.type === 'Variable') &&
+      imported.has(binding.node.start)
+    ) {
+      references.set(node.start, imported.get(binding.node.start)!)
+      return
+    }
     if (binding?.type !== 'Variable') return
     const call = bindings.get(binding.node.start)
     if (
@@ -150,7 +204,22 @@ export function scan(
     references.set(node.start, call.name)
     used.add(call.name)
   }
-  return { calls, references, read, used, undefinedValues }
+  for (const statement of program.body)
+    if (statement.type === 'ExportNamedDeclaration' && !statement.source)
+      for (const specifier of statement.specifiers) {
+        const name =
+          specifier.local.type === 'Identifier'
+            ? specifier.local.name
+            : specifier.local.value
+        const link = linkedNames.get(name)
+        if (link)
+          exported[
+            specifier.exported.type === 'Identifier'
+              ? specifier.exported.name
+              : specifier.exported.value
+          ] = link
+      }
+  return { calls, references, read, used, undefinedValues, exports: exported }
 }
 
 /** Builds ordered pure web data after lexical theme references are resolved. */

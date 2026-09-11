@@ -125,6 +125,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         program,
         scopeTracker,
         identity(options.moduleId),
+        options[Themes.context]?.links,
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
@@ -708,14 +709,6 @@ export function extract(options: extract.Options): extract.ReturnType {
       Lightning.transform({
         filename: options.moduleId,
         code: new TextEncoder().encode(rendered),
-        visitor: {
-          Url(url) {
-            if (!/^(?:\/|#|[a-z][a-z\d+.-]*:)/i.test(url.url))
-              throw new Error(
-                'Contribution URLs must be root-relative or absolute in this compiler slice.',
-              )
-          },
-        },
         errorRecovery: false,
       })
     }
@@ -738,6 +731,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           themeExports: Object.freeze({
             ...themes?.exports,
             ...markers.exports,
+            ...contributions.exports,
           }),
         }
       : {}),

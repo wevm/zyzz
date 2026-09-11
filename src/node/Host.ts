@@ -112,7 +112,7 @@ export async function create(options: create.Options): Promise<Runtime> {
     await scan(root)
     inputs.sort()
 
-    const artifacts = new Map<string, string>()
+    const artifacts = new Map<string, string | Uint8Array>()
     const sources: Record<string, string> = Object.create(null)
     for (const input of inputs) {
       const name = Path.relative(root, input).split(Path.sep).join('/')
@@ -133,18 +133,41 @@ export async function create(options: create.Options): Promise<Runtime> {
       ),
     })
     if (graph.sharedCss) {
-      const shared =
-        css === false
-          ? graph.sharedCss
-          : Buffer.from(
-              LightningCss.transform({
-                code: Buffer.from(graph.sharedCss),
-                filename: 'zyzz.shared.css',
-                minify: css.minify,
-                targets: css.targets,
-              }).code,
-            ).toString()
-      artifacts.set('zyzz.shared.css', shared)
+      const assets = new Map<string, string>()
+      const shared = LightningCss.transform({
+        filename: 'zyzz.shared.css',
+        code: Buffer.from(graph.sharedCss),
+        sourceMap: true,
+        inputSourceMap: JSON.stringify(graph.sharedCssMap),
+        minify: css === false ? false : css.minify,
+        ...(css === false ? {} : { targets: css.targets }),
+        visitor: {
+          Url(url) {
+            const target = graph.sharedAssets?.[url.url]
+            if (!target) return
+            if (!target.startsWith(`${options.packageId}/`))
+              throw new Error('Asset path escapes the package root.')
+            const relative = target.slice(options.packageId.length + 1)
+            const filename = decodeURIComponent(relative.split(/[?#]/)[0]!)
+            if (
+              filename
+                .split('/')
+                .some((part) => ['.zyzz.json', '.zyzz-lock'].includes(part))
+            )
+              throw new Error('Asset path conflicts with host control files.')
+            assets.set(filename, Path.join(root, filename))
+            return { ...url, url: relative }
+          },
+        },
+      })
+      for (const [name, file] of assets) {
+        const real = await Fs.realpath(file)
+        if (!inside(root, real))
+          throw new Error('Asset path escapes the package root.')
+        artifacts.set(name, await Fs.readFile(real))
+      }
+      artifacts.set('zyzz.shared.css', Buffer.from(shared.code).toString())
+      artifacts.set('zyzz.shared.css.map', Buffer.from(shared.map!).toString())
     }
     for (const name of Object.keys(sources)) {
       const output = graph.modules[`${options.packageId}/${name}`]!
@@ -193,7 +216,7 @@ export async function create(options: create.Options): Promise<Runtime> {
     }
 
     const hashes: Record<string, string> = Object.create(null)
-    const before = new Map<string, string | undefined>()
+    const before = new Map<string, string | Uint8Array | undefined>()
     const changed: string[] = []
 
     for (const name of new Set([...Object.keys(owned), ...artifacts.keys()])) {
@@ -202,7 +225,7 @@ export async function create(options: create.Options): Promise<Runtime> {
       const owner = ownedNames.get(key(name))
       const path = Path.join(outDir, name)
       await regular(path, outDir)
-      const content = await read(path)
+      const content = await read(path, true)
       const expected = owner === undefined ? undefined : owned[owner]
       if (
         content !== undefined &&
@@ -214,7 +237,12 @@ export async function create(options: create.Options): Promise<Runtime> {
 
       const next = artifacts.get(name)
       if (next !== undefined) hashes[name] = hash(next)
-      if (content !== next || (owner !== undefined && owner !== name)) {
+      if (
+        (content === undefined || next === undefined
+          ? content !== next
+          : hash(content) !== hash(next)) ||
+        (owner !== undefined && owner !== name)
+      ) {
         before.set(name, content)
         changed.push(name)
       }
@@ -362,7 +390,7 @@ export declare namespace watch {
   }
 }
 
-function hash(content: string) {
+function hash(content: string | Uint8Array) {
   return Crypto.createHash('sha256').update(content).digest('hex')
 }
 
@@ -407,9 +435,14 @@ function manifest(source: string, packageId: string): Record<string, string> {
   return value.files as Record<string, string>
 }
 
-async function read(path: string): Promise<string | undefined> {
+async function read(path: string): Promise<string | undefined>
+async function read(path: string, binary: true): Promise<Uint8Array | undefined>
+async function read(
+  path: string,
+  binary = false,
+): Promise<string | Uint8Array | undefined> {
   try {
-    return await Fs.readFile(path, 'utf8')
+    return binary ? await Fs.readFile(path) : await Fs.readFile(path, 'utf8')
   } catch (error) {
     if (
       error &&
@@ -445,7 +478,7 @@ async function regular(path: string, root: string) {
   }
 }
 
-async function write(path: string, content: string) {
+async function write(path: string, content: string | Uint8Array) {
   await Fs.mkdir(Path.dirname(path), { recursive: true })
   const temporary = `${path}.${Crypto.randomUUID()}.tmp`
   try {

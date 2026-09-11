@@ -28,6 +28,8 @@ Local validation: ten extraction/transform integrations, native type/lint checks
 
 Stack after framework PR #79: callable named-theme selection, root initialization script, property mappings and margin/padding groups, typed relationship helpers, stylesheet completion, variable/extraction completion, then acceptance reconciliation. Larger areas may use multiple dependent PRs. Vue remains deferred.
 
+Stylesheet completion adds imported/re-exported animation identities, packed eager contributions, shared source maps, source-relative assets in Vite and the standalone host, and the opt-in layered reset. Binary asset relocation/update and packed contribution tests pass locally; browser and CI checks remain the final acceptance gate.
+
 Typed marker, ancestor, descendant, and all three sibling helpers now carry finite state schemas through aliases and packed contracts. Selectors retain zero predicate specificity. Runtime applications emit data attributes only; browser and CI acceptance remain pending until the stack checks complete.
 
 Property mappings support explicit ordered aliases on config CSS and bound theme handles, including packed contracts, nested declarations, dynamic slots, source maps, and dedicated margin/padding token precedence. Browser, type, and CI acceptance evidence remains pending until the stack checks finish. Variants retain their separate deferred implementation gate.

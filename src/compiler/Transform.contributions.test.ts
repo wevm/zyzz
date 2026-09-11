@@ -20,7 +20,6 @@ describe('stylesheet contributions', () => {
       `class Never { static { global({body:{color:'red'}}) } }`,
       `const unused = false ? class { static { global({body:{color:'red'}}) } } : null`,
       `const undefined = 'bold'; fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined})`,
-      String.raw`global({body:{backgroundImage:'u\\72l(relative.png)'}})`,
     ])
       expect(() =>
         Transform.compile({

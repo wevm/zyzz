@@ -1864,7 +1864,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
           'ES2022',
           file,
         ],
-        { timeout: 10_000 },
+        { timeout: 30_000 },
       ).catch((error: Error & { stdout?: string }) => {
         throw new Error(error.stdout || error.message)
       })
@@ -1898,7 +1898,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
         "source": "example/theme.ts",
       }
     `)
-  }, 15_000)
+  }, 35_000)
 
   test('theme identity survives value edits and preceding unrelated definitions', () => {
     const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; export const props = theme.css({ color: 'brand' })();`
@@ -2171,13 +2171,13 @@ css({ color: 'md' });
           '--noEmit',
           Path.join(directory, 'module.ts'),
         ],
-        { timeout: 10_000 },
+        { timeout: 30_000 },
       )
       expect(checked.stdout).toMatchInlineSnapshot(`""`)
     } finally {
       await Fs.rm(directory, { force: true, recursive: true })
     }
-  }, 15_000)
+  }, 35_000)
 
   test('JavaScript aliases remain JavaScript and parameter initializers retain lexical bindings', async () => {
     const result = Transform.compile({

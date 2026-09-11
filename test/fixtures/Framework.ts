@@ -187,10 +187,13 @@ export async function verify(options: verify.Options) {
           'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
         )
       }
+      await page.waitForFunction(
+        'document.querySelector("#card")?.isConnected && getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
+      )
       expect(
-        await page
-          .locator('#card')
-          .evaluate((element) => getComputedStyle(element).backgroundColor),
+        await page.evaluate(
+          'getComputedStyle(document.querySelector("#card")).backgroundColor',
+        ),
       ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
       await page.locator('#dispose').click()
       await page.waitForFunction(

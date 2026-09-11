@@ -746,8 +746,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
           ancestors[index - 1]?.type === 'CallExpression' &&
           (ancestors[index - 1] as Ast.CallExpression).callee === target &&
           !(ancestors[index - 1] as Ast.CallExpression).optional
-        )
+        ) {
+          if (!config.call.options?.themes)
+            fail('Theme selection requires a named catalog.', target)
           return true
+        }
         if (path.length === 1 && path[0] === 'css') {
           const call = ancestors[index - 1]
           if (

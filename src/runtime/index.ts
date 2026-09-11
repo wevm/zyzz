@@ -12,3 +12,6 @@ export * as Vars from './Vars.js'
 
 /** Compiler-owned HTML attribute binding. */
 export * as Html from './Html.js'
+
+/** Validated selection of compiler-owned theme catalogs. */
+export * as Selection from './Selection.js'

@@ -91,6 +91,10 @@ export function compile(options: compile.Options): compile.ReturnType {
   while (identifiers.has(html)) html += '_'
   let usesHtml = false
 
+  let selection = '__zyzzSelection'
+  while (identifiers.has(selection)) selection += '_'
+  let usesSelection = false
+
   let variables = '__zyzzVars'
   while (identifiers.has(variables)) variables += '_'
 
@@ -191,20 +195,9 @@ export function compile(options: compile.Options): compile.ReturnType {
               emitted.themes[name],
             ]),
         )
-        const input = /\.[cm]?tsx?$/.test(options.moduleId)
-          ? 'input: {theme: string; colorScheme?: string}'
-          : 'input'
         const entries = JSON.stringify(Object.entries(catalog))
-        const key = call.options.output === 'html' ? 'class' : 'className'
-        const style =
-          call.options.output === 'html'
-            ? '"color-scheme:"+input.colorScheme'
-            : '{colorScheme:input.colorScheme}'
-        const catalogType = /\.[cm]?tsx?$/.test(options.moduleId)
-          ? ': Record<string,string>'
-          : ''
-        const select = `((${input})=>{if(!input||typeof input!=="object"||Array.isArray(input)||!Object.hasOwn(input,"theme")||!Object.hasOwn(catalog,input.theme)||Object.keys(input).some(key=>key!=="theme"&&key!=="colorScheme")||(input.colorScheme!==undefined&&!["light","dark","light dark"].includes(input.colorScheme)))throw new TypeError("Invalid theme selection.");return {${key}:catalog[input.theme],...(input.colorScheme?{style:${style}}:{})}})`
-        return `(()=>{const catalog${catalogType}=Object.fromEntries(${entries});return {theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:Object.defineProperties(${select},Object.getOwnPropertyDescriptors(Object.fromEntries(Object.entries(catalog).map(([name,className])=>[name,{className}]))))}})()`
+        usesSelection = true
+        return `{theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:${selection}.create(${entries},${call.options.output === 'html'})}`
       }
       if (Object.hasOwn(call.members, '["theme"]'))
         return JSON.stringify({ theme: scope(call.members['["theme"]']!) })
@@ -328,7 +321,12 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable || usesHtml || extracted.variableCalls?.length) {
+  if (
+    usesSelection ||
+    callable ||
+    usesHtml ||
+    extracted.variableCalls?.length
+  ) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -340,7 +338,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesSelection ? `Selection as ${selection}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

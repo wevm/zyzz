@@ -161,7 +161,11 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(links).some((link) => link.call.selection)
+    version: Object.values(links).some(
+      (link) =>
+        link.call.selection ||
+        (link.kind === 'config' && !!link.call.options?.themes),
+    )
       ? 4
       : Object.values(themes).some(
             (theme) =>

@@ -123,8 +123,8 @@ export function render(
   return [
     layers.length ? `@layer ${layers.join(',')};` : '',
     ...definitions.map((value) => {
+      if (value.kind === 'layers') return ''
       const css = (() => {
-        if (value.kind === 'layers') return ''
         if (value.kind === 'rule')
           return `${value.selector}{${style(value.style)}}`
         if (value.kind === 'property')

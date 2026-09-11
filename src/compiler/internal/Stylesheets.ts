@@ -5,10 +5,15 @@ import * as Contributions from '../../web/internal/Contributions.js'
 
 /** Ordered CSS owned by one portable source module. */
 export type Section = {
+  /** Portable identity of the contributing source module. */
   readonly source: string
+  /** Ordered emitted CSS before host asset relocation. */
   readonly css: string
+  /** Authored layer-order constraints retained across packages. */
   readonly layers: readonly (readonly string[])[]
+  /** Original source text, when available for source maps. */
   readonly content?: string | undefined
+  /** Start offset of the first contribution in original source text. */
   readonly start?: number | undefined
 }
 /** Resolves a relative path within a portable graph, retaining query/hash suffixes. */

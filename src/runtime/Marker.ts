@@ -2,7 +2,12 @@
 /** Finite authored state domains. */
 export type Schema = Readonly<Record<string, readonly (boolean | string)[]>>
 /** Portable marker identity and state schema. */
-export type Definition = { readonly id: string; readonly schema: Schema }
+export type Definition = {
+  /** Compiler-assigned presence attribute name. */
+  readonly id: string
+  /** Finite state names and accepted values. */
+  readonly schema: Schema
+}
 /** Copies and validates finite state schemas without reading accessors. */
 export function schema(input: unknown): Schema {
   if (!input || typeof input !== 'object' || Array.isArray(input))

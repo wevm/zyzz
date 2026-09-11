@@ -505,6 +505,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
         name,
         start: expression.start,
         tokenType,
+        ...(definition[Token.definition].contract.shorthands
+          ? {
+              type: `import('zyzz').Config.create.ReturnType<{theme:${tokenType};shorthands:${Configurations.type(definition[Token.definition].contract.shorthands!)}}>['theme']`,
+            }
+          : {}),
       })
       calls.push(call)
       definitions.set(variable.id.start, call)

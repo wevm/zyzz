@@ -145,6 +145,11 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
         name: theme,
         start: -1,
         tokenType: types[theme]!,
+        ...(definition[Token.definition].contract.shorthands
+          ? {
+              type: `import('zyzz').Config.create.ReturnType<{theme:${types[theme]!};shorthands:${Configurations.type(definition[Token.definition].contract.shorthands!)}}>['theme']`,
+            }
+          : {}),
         ...(entry.selection === true ? { selection: true } : {}),
         ...(entry.initialization === true ? { initialization: true } : {}),
         ...(options
@@ -274,39 +279,46 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(themes).some(
-      (theme) => theme[Token.definition].contract.shorthands,
-    )
-      ? 5
+    version: Object.values(links).some((link) => link.kind === 'variables')
+      ? 8
       : stylesheets.length ||
-          Object.values(links).some(
-            (link) =>
-              link.call.selection ||
-              link.call.initialization ||
-              (link.kind === 'config' && link.call.script) ||
-              link.kind === 'marker' ||
-              link.kind === 'animation' ||
-              link.kind === 'variables',
-          )
-        ? 4
-        : Object.values(themes).some(
-              (theme) =>
-                theme[Token.definition].queries ||
-                Object.keys(theme.tokens).some((group) =>
-                  [
-                    'fontFamily',
-                    'fontSize',
-                    'fontWeight',
-                    'lineHeight',
-                    'letterSpacing',
-                  ].includes(group),
-                ),
-            )
-          ? 3
-          : Object.values(links).some(
-                (link) => link.kind === 'config' || link.call.type,
+          Object.values(links).some((link) => link.kind === 'animation')
+        ? 7
+        : Object.values(links).some((link) => link.kind === 'marker')
+          ? 6
+          : Object.values(themes).some(
+                (theme) => theme[Token.definition].contract.shorthands,
               )
-            ? 2
-            : 1,
+            ? 5
+            : stylesheets.length ||
+                Object.values(links).some(
+                  (link) =>
+                    link.call.selection ||
+                    link.call.initialization ||
+                    (link.kind === 'config' && link.call.script) ||
+                    link.kind === 'marker' ||
+                    link.kind === 'animation' ||
+                    link.kind === 'variables',
+                )
+              ? 4
+              : Object.values(themes).some(
+                    (theme) =>
+                      theme[Token.definition].queries ||
+                      Object.keys(theme.tokens).some((group) =>
+                        [
+                          'fontFamily',
+                          'fontSize',
+                          'fontWeight',
+                          'lineHeight',
+                          'letterSpacing',
+                        ].includes(group),
+                      ),
+                  )
+                ? 3
+                : Object.values(links).some(
+                      (link) => link.kind === 'config' || link.call.type,
+                    )
+                  ? 2
+                  : 1,
   })
 }

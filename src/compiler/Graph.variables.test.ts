@@ -63,6 +63,9 @@ async function bundle() {
 }
 describe('compile', () => {
   test('links registered variable references and assignments through packed aliases', async () => {
+    expect(
+      JSON.parse(compile().library.contracts['vars.ts']!).version,
+    ).toMatchInlineSnapshot('8')
     const { code, css } = await bundle()
     const value = Vm.runInNewContext(`${code};Fixture;`) as {
       layout: {

@@ -385,8 +385,15 @@ export function zyzz(): Plugin {
     async function dependencies(id: string): Promise<void> {
       if (loaded.has(id)) return
       loaded.add(id)
-      const metadata = JSON.parse(contracts[id]!)
-      if (!Array.isArray(metadata.stylesheets)) return
+      const metadata = (() => {
+        try {
+          return JSON.parse(contracts[id]!)
+        } catch (error) {
+          Graph.compile({ modules: {}, contracts: { [id]: contracts[id]! } })
+          throw error
+        }
+      })()
+      if (!Array.isArray(metadata?.stylesheets)) return
       for (const section of metadata.stylesheets) {
         if (!Array.isArray(section?.dependency)) continue
         let owner = id

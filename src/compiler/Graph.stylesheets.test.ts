@@ -5,9 +5,30 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Trace from '@jridgewell/trace-mapping'
 import { describe, expect, test } from 'vite-plus/test'
-import { Graph, Source, Transform } from 'zyzz/compiler'
+import { Graph, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 describe('compile', () => {
+  test('links default-exported keyframes from packed libraries', () => {
+    const library = Graph.compile({
+      modules: {
+        'effects.ts': `import {keyframes} from 'zyzz/web';const fade=keyframes({from:{opacity:0},to:{opacity:1}});export default (fade satisfies string);`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'lib/index.js': library.contracts['effects.ts']! },
+      imports: { 'app.ts': { lib: 'lib/index.js', zyzz: null } },
+      modules: {
+        'app.ts': `import fade from 'lib';import {css} from 'zyzz';export const styles={card:css({animationName:fade})};`,
+      },
+    })
+    expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-1e8a67z1uaws1j-base0{animation-name:z-k185tc9w526bf2-66-61-64-65;}"`,
+    )
+    expect(app.sharedCss).toMatchInlineSnapshot(
+      `"@keyframes z-k185tc9w526bf2-66-61-64-65{from{opacity:0;}to{opacity:1;}}"`,
+    )
+  })
+
   test('preserves suffix URLs and rejects relative assets without a graph host', () => {
     const source = `import {global} from 'zyzz/web';global({body:{backgroundImage:'url("?v=1")'},html:{backgroundImage:'url("")'}});`
     const result = Graph.compile({ modules: { 'app.ts': source } })
@@ -229,7 +250,9 @@ global({html:{color:'blue'}});`
         imports: { 'app.ts': { lib: 'lib/index.js' } },
         contracts: { 'lib/index.js': JSON.stringify(contract) },
       }),
-    ).toThrow(Source.ExtractError)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: lib/index.js:0: Invalid library contract: Unexpected end of input]`,
+    )
     const first = JSON.parse(library.contracts['effects.ts']!)
     const second = JSON.parse(library.contracts['effects.ts']!)
     second.stylesheets[0].layers = [['different']]

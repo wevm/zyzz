@@ -4,11 +4,16 @@ import type * as Style from '../../Style.js'
 /** Explicit stylesheet data supplied by source adapters or in-memory callers. */
 export type Definition =
   | {
-      readonly kind: 'property'
-      readonly name: `--${string}`
-      readonly syntax: string
+      /** Whether the registered value inherits from its parent element. */
       readonly inherits: boolean
+      /** Computationally independent initial CSS value. */
       readonly initialValue: number | string
+      /** Emits a CSS custom-property registration rule. */
+      readonly kind: 'property'
+      /** Registered custom-property name, including the -- prefix. */
+      readonly name: `--${string}`
+      /** CSS Properties and Values syntax descriptor. */
+      readonly syntax: string
     }
   | {
       readonly kind: 'rule'

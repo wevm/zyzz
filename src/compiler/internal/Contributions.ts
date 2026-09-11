@@ -223,7 +223,18 @@ export function scan(
     references.set(node.start, call.name)
     used.add(call.name)
   }
-  for (const statement of program.body)
+  for (const statement of program.body) {
+    if (statement.type === 'ExportDefaultDeclaration') {
+      const declaration = Expression.unwrap(statement.declaration)
+      const link =
+        declaration.type === 'Identifier'
+          ? linkedNames.get(declaration.name)
+          : undefined
+      if (link) {
+        used.add(link.call.name)
+        exported.default = link
+      }
+    }
     if (
       statement.type === 'ExportNamedDeclaration' &&
       statement.exportKind !== 'type' &&
@@ -246,6 +257,7 @@ export function scan(
           ] = link
         }
       }
+  }
   return { calls, references, read, used, undefinedValues, exports: exported }
 }
 

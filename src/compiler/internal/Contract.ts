@@ -69,7 +69,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     if (entry.kind === 'marker') {
       const marker = record(entry.marker)
       const id = string(marker.id)
-      if (!/^data-z-[a-z0-9_-]+$/.test(id))
+      if (!/^data-z-[a-z0-9_-]+$/.test(id) || entry.binding !== id)
         throw new Error('Invalid marker identity.')
       return {
         binding: string(entry.binding),

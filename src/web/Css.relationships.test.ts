@@ -100,6 +100,17 @@ describe('marker', () => {
   })
   test('preserves identities across offsets and rejects invalid schemas and predicates', () => {
     const before = Graph.compile({ modules: { 'marker.ts': config } })
+    const malformed = JSON.parse(before.contracts['marker.ts']!)
+    malformed.exports.card.binding = 'data-z-other'
+    expect(() =>
+      Graph.compile({
+        contracts: { 'lib.js': JSON.stringify(malformed) },
+        imports: { 'app.ts': { lib: 'lib.js', zyzz: null, 'zyzz/web': null } },
+        modules: {
+          'app.ts': `import {card} from 'lib';import {css} from 'zyzz';import {Css} from 'zyzz/web';export const style=css({[Css.ancestor(card)]:{color:'red'}});`,
+        },
+      }),
+    ).toThrow()
     const after = Graph.compile({
       modules: { 'marker.ts': '// leading edit\n' + config },
     })
@@ -149,6 +160,7 @@ describe('marker', () => {
       `const style=css({[Css.ancestor(card,{data:null})]:{color:'red'}})`,
       `const style=css({[Css.descendant(card,{has:'a'})]:{color:'red'}})`,
       `const invalid=Css.marker({state:['\\0']})`,
+      `const invalid=Css.marker({state:['\\r']})`,
     ])
       expect(() =>
         Graph.compile({

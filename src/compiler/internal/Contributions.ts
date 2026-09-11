@@ -185,6 +185,7 @@ export function scan(
             tokenType: '{}',
           },
         }
+        imported.set(variable.start, call.name!)
         linkedNames.set(variable.id.name, link)
         if (call.exported) exported[variable.id.name] = link
       }

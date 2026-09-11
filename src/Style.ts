@@ -102,11 +102,17 @@ export function define<
   const styles extends Record<string, unknown>,
   const tokens extends Theme.Tokens,
 >(
-  styles: styles & NoInfer<Exact<styles, tokens>>,
+  styles: styles &
+    NoInfer<Exact<styles, tokens>> & {
+      [key in keyof styles]: WithoutRelationships<styles[key]>
+    },
   options: define.Options<tokens>,
 ): Definition<`${Extract<keyof styles, number | string>}`>
 export function define<const styles extends Record<string, unknown>>(
-  styles: styles & NoInfer<Exact<styles, {}>>,
+  styles: styles &
+    NoInfer<Exact<styles, {}>> & {
+      [key in keyof styles]: WithoutRelationships<styles[key]>
+    },
   options?: define.Options,
 ): Definition<`${Extract<keyof styles, number | string>}`>
 export function define(
@@ -522,3 +528,16 @@ export type SourceLocation = {
   /** Inclusive source offset. */
   readonly start: number
 }
+
+/** Core definitions exclude compiler-owned web relationship keys. */
+type WithoutRelationships<value> = value extends readonly unknown[]
+  ? unknown
+  : value extends object
+    ? {
+        [key in keyof value]: key extends symbol
+          ? never
+          : key extends keyof Literal.Properties
+            ? unknown
+            : WithoutRelationships<value[key]>
+      }
+    : unknown

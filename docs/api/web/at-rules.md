@@ -12,31 +12,31 @@ Signatures below describe the accepted call shapes. Multi-field helpers receive 
 | CSS rule               | Authoring                                                                | Result                                   |
 | ---------------------- | ------------------------------------------------------------------------ | ---------------------------------------- |
 | `@charset`             | Stylesheet output encoding option; spelling to be designed               | Output metadata                          |
-| `@color-profile`       | `colorProfile(descriptors)`                                              | Typed profile reference                  |
+| `@color-profile`       | `colorProfile(descriptors, context?)`                                    | Typed profile reference                  |
 | `@container`           | `'@container …'` in style bodies                                         | Nested declarations or selectors         |
-| `@counter-style`       | `counterStyle(descriptors)`                                              | Typed counter-style reference            |
+| `@counter-style`       | `counterStyle(descriptors, context?)`                                    | Typed counter-style reference            |
 | `@custom-media`        | `customMedia(query)`                                                     | Typed query reference                    |
 | `@document`            | Explicit legacy grouping support; helper/context spelling to be designed | Conditional global rules                 |
-| `@font-face`           | `fontFace(descriptors)`                                                  | Eager stylesheet effect                  |
-| `@font-feature-values` | `fontFeatureValues({ families, features })`                              | Font-family-associated stylesheet effect |
-| `@font-palette-values` | `fontPaletteValues(descriptors)`                                         | Typed palette reference                  |
+| `@font-face`           | `fontFace(descriptors, context?)`                                        | Eager stylesheet effect                  |
+| `@font-feature-values` | `fontFeatureValues({ families, features }, context?)`                    | Font-family-associated stylesheet effect |
+| `@font-palette-values` | `fontPaletteValues(descriptors, context?)`                               | Typed palette reference                  |
 | `@function`            | `cssFunction(definition)`                                                | Callable CSS function reference          |
 | `@import`              | `importCss({ layer, media, supports, url })`                             | Ordered stylesheet import                |
-| `@keyframes`           | `keyframes(frames)`                                                      | Typed animation reference                |
+| `@keyframes`           | `keyframes(frames, context?)`                                            | Typed animation reference                |
 | `@layer`               | `layers(names)` and declared `'@layer …'` keys                           | Layer order and grouped rules            |
 | `@media`               | `'@media …'` in style bodies                                             | Nested declarations or selectors         |
 | `@namespace`           | `namespace({ prefix, uri })`; omit `prefix` for the default namespace    | Stylesheet namespace declaration         |
-| `@page`                | `page({ descriptors, selector })`; `selector` is optional                | Eager page rule                          |
-| `@position-try`        | `positionTry(declarations)`                                              | Typed fallback reference                 |
+| `@page`                | `page({ descriptors, selector }, context?)`; `selector` is optional      | Eager page rule                          |
+| `@position-try`        | `positionTry(declarations, context?)`                                    | Typed fallback reference                 |
 | `@property`            | Registration descriptors on `Vars.define`                                | Existing variable references and `.set`  |
 | `@scope`               | `'@scope …'` in valid style/grouping bodies                              | Scoped rules                             |
 | `@starting-style`      | `'@starting-style'` in valid style/grouping bodies                       | Starting declarations or selectors       |
 | `@supports`            | `'@supports …'` in style bodies                                          | Nested declarations or selectors         |
-| `@view-transition`     | `viewTransition(descriptors)`                                            | Eager stylesheet effect                  |
+| `@view-transition`     | `viewTransition(descriptors, context?)`                                  | Eager stylesheet effect                  |
 
 The coverage inventory follows [MDN's at-rule reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules), including descriptors, nested page-margin rules, font-feature blocks, and statement/block forms. Experimental and legacy rules remain explicit inventory entries. Compiler support and browser availability are separate claims.
 
-Import options `layer`, `media`, and `supports` are optional; `url` is required. Font feature values require both `families` and `features`. Page rules require `descriptors`; `selector` is optional. Namespace declarations require `uri`; `prefix` is optional. None of these functions has an optional positional options bag.
+Import options `layer`, `media`, and `supports` are optional; `url` is required. Font feature values require both `families` and `features`. Page rules require `descriptors`; `selector` is optional. Namespace declarations require `uri`; `prefix` is optional. Descriptor helpers and `keyframes` accept an optional trailing `context = {}` argument containing ordered `within` groups. Statement helpers and `layers` remain top-level.
 
 ## Declarations
 
@@ -183,7 +183,7 @@ Descriptor helpers accept an optional trailing `{ within }` options object. `wit
 ```ts
 fontFace(
   { fontFamily: 'Body', src: 'url("./body.woff2")' },
-  { within: ['@layer fonts', '@supports (font-tech: variations)'] },
+  { within: ['@layer fonts', '@supports font-tech(variations)'] },
 )
 ```
 

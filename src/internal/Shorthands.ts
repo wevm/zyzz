@@ -64,6 +64,15 @@ export function read(value: unknown): Map {
   ) as Map
 }
 
+/** Canonicalizes alias names while preserving each ordered target tuple. */
+export function signature(value: unknown): string {
+  return JSON.stringify(
+    Object.entries(read(value === undefined ? {} : value)).sort(([a], [b]) =>
+      a < b ? -1 : a > b ? 1 : 0,
+    ),
+  )
+}
+
 /** Rejects duplicate targets and names reserved by the authoring surface. */
 export type Validated<mappings extends Map> = {
   [key in keyof mappings]: key extends string

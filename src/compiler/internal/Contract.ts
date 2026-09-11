@@ -27,7 +27,8 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     let contract = identities.get(identity)
     if (
       contract &&
-      JSON.stringify(contract.shorthands) !== JSON.stringify(shorthands)
+      Shorthands.signature(contract.shorthands) !==
+        Shorthands.signature(shorthands)
     )
       throw new Error(
         'Conflicting packed shorthand mappings for one theme identity.',
@@ -84,8 +85,8 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     if (options) {
       Config.create(options as Config.create.Options)
       if (
-        JSON.stringify(options.shorthands) !==
-        JSON.stringify(definition[Token.definition].contract.shorthands)
+        Shorthands.signature(options.shorthands) !==
+        Shorthands.signature(definition[Token.definition].contract.shorthands)
       )
         throw new Error(
           'Configuration mappings disagree with linked theme metadata.',
@@ -235,6 +236,7 @@ export function write(
         : Object.values(links).some(
               (link) =>
                 link.call.selection ||
+                (link.kind === 'config' && !!link.call.options?.themes) ||
                 link.call.initialization ||
                 (link.kind === 'config' && link.call.script) ||
                 link.kind === 'marker',

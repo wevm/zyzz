@@ -22,6 +22,30 @@ function compile() {
   return { app, library }
 }
 describe('create', () => {
+  test('accepts reordered alias keys with identical target tuples', () => {
+    const { library } = compile()
+    const first = JSON.parse(library.contracts['config.ts']!)
+    const second = JSON.parse(library.contracts['config.ts']!)
+    for (const theme of Object.values(second.themes) as {
+      shorthands: Record<string, string[]>
+    }[])
+      theme.shorthands = Object.fromEntries(
+        Object.entries(theme.shorthands).reverse(),
+      )
+    const output = Graph.compile({
+      contracts: {
+        'a.js': JSON.stringify(first),
+        'b.js': JSON.stringify(second),
+      },
+      imports: { 'app.ts': { a: 'a.js', b: 'b.js' } },
+      modules: {
+        'app.ts': `import {css as a} from 'a';import {css as b} from 'b';export const card=a({px:'sm'})`,
+      },
+    })
+    expect(
+      output.modules['app.ts']!.css.includes('padding-left'),
+    ).toMatchInlineSnapshot('true')
+  })
   test('rejects conflicting packed mappings before reusing theme identities', () => {
     const { library } = compile()
     const original = library.contracts['config.ts']!

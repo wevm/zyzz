@@ -131,7 +131,7 @@ describe('framework gate', () => {
       } else {
         expect(result.code).toMatchInlineSnapshot('1')
         expect(
-          result.stdout.includes('### Themes — 100 Components'),
+          result.stdout.includes('Themes — 100 Components:'),
         ).toMatchInlineSnapshot('true')
         expect(result.stdout.includes('🔴')).toMatchInlineSnapshot('true')
       }

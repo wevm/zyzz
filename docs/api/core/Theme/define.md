@@ -184,6 +184,30 @@ Scalar letter-spacing palettes, including signed lengths.
 Theme.define({ letterSpacing: { tight: '-0.02em' } })
 ```
 
+### tokens.margin
+
+- Type: Optional nested records of signed CSS lengths or zero
+- Default: Falls back to `spacing` when omitted.
+
+Applies to physical and logical margin properties before the shared spacing scale. Negative lengths are supported.
+
+```ts
+const theme = Theme.define({ spacing: { sm: '4px' }, margin: { sm: '-8px' } })
+const style = theme.css({ marginInlineStart: 'sm' })
+```
+
+### tokens.padding
+
+- Type: Optional nested records of nonnegative CSS lengths or zero
+- Default: Falls back to `spacing` when omitted.
+
+Applies to physical and logical padding properties before the shared spacing scale. Static authoring rejects negative padding tokens.
+
+```ts
+const theme = Theme.define({ spacing: { sm: '4px' }, padding: { sm: '8px' } })
+const style = theme.css({ paddingInline: 'sm' })
+```
+
 ## Returns
 
 Returns a callable `Theme.Definition<tokens>` with inferred references and bound authoring types. [Theme application](apply.md) returns scope props with an optional `colorScheme`.

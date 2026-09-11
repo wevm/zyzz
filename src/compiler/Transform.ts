@@ -49,7 +49,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         if (call.kind === 'customMedia')
           return `${JSON.stringify(`@media (${call.name})`)}${typed ? ` as unknown as import('zyzz/web').customMedia.Reference` : ''}`
         if (!call.name) return 'void 0'
-        return `${JSON.stringify(call.name)}${call.kind === 'keyframes' || !typed ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
+        return `${JSON.stringify(call.name)}${call.kind === 'keyframes' || call.kind === 'colorProfile' || !typed ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
       })(),
     )
   type Span = Pick<Ast.Node, 'end' | 'start'>
@@ -481,7 +481,8 @@ export function compile(options: compile.Options): compile.ReturnType {
   const rank = (kind: string) =>
     kind === 'import' ? 0 : kind === 'namespace' ? 1 : 2
   const layered = contributions.find(
-    (value) => value.definition.kind === 'layers',
+    (value) =>
+      value.definition.kind === 'layers' && value.definition.names.length > 0,
   )
   let contributionLine = 1
   if (layered) {

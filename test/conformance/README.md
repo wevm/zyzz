@@ -10,7 +10,7 @@ Consumer probes cover property names, token domains, units, hex literals, intege
 
 ## Coverage
 
-`coverage.json` classifies every pinned property, function, selector, at-rule, syntax, type, and unit. SHA-256 fingerprints cover complete upstream entries and shared syntaxes. `pnpm check:css` fails on grammar drift or unclassified additions.
+`coverage.json` classifies every pinned property, function, selector, syntax, type, and unit. `at-rules.json` separately tracks at-rule and descriptor grammars. SHA-256 fingerprints cover complete upstream entries and shared syntaxes. `pnpm check:css` fails on grammar drift or unclassified additions.
 
 | Status       | Meaning                                                                               |
 | ------------ | ------------------------------------------------------------------------------------- |
@@ -38,9 +38,9 @@ The **CSS Property Conformance (100%)** CI job publishes a report even when it f
 ## Upstream Updates
 
 1. Review the dependency update and changed upstream grammar.
-2. Run `pnpm update:css` to refresh fingerprints.
+2. Run `pnpm update:css` and `pnpm update:at-rules` to refresh both inventories.
 3. Classify additions and update property types and probes as required.
-4. Run `pnpm check:css`, `pnpm check:types`, and the Transform CSS conformance scenarios; run applicable browser fixtures.
+4. Run `pnpm check:css`, `pnpm check:at-rules`, `pnpm check:types`, and the Transform CSS conformance scenarios; run applicable browser fixtures.
 
 Refreshing fingerprints acknowledges upstream changes; it does not implement features or promote coverage. Normal CI uses the lockfile and does not fetch live grammar.
 
@@ -72,10 +72,14 @@ The matched theme/graph integrations took 8.43 seconds before the grid change an
 
 ## At-rule acceptance
 
-The independent at-rule ledger accounts for 22 top-level rules and 61 descriptors/nested blocks. Every entry links implementation evidence; partial remains zero credit toward `check:at-rules:full`. Inventory drift and missing evidence fail the normal gate. No generic-string or parser-passthrough acceptance establishes full grammar support.
+The independent at-rule ledger accounts for 22 top-level rules and 61 descriptors/nested blocks. Implemented entries link evidence; partial remains zero credit toward `check:at-rules:full`. Inventory drift and missing evidence fail the normal gate. No generic-string or parser-passthrough acceptance establishes full grammar support.
 
-The acceptance fixtures cover direct and packed declaration source maps, Unicode and legacy output, nested CSS asset watch updates, descriptor type domains, and real Chromium font loading, counter rendering, animation progress, namespace boundaries, and anchor fallbacks. CI uploads `at-rule-browser-capabilities.json` for experimental and legacy syntax. A browser accepting a rule is not proof of every descriptor or rendering behavior.
+The acceptance fixtures cover direct and packed declaration source maps, Unicode and legacy output, nested CSS asset watch updates, descriptor type domains, and real Chromium font loading, counter rendering, animation progress, namespace boundaries, and anchor fallbacks.
 
-All entries are conservatively partial pending complete context/grammar review. Remaining gaps include composite CSS function signatures, real color-profile and color-font palette rendering, and complete paged-output behavior. The full-completion command deliberately remains red until those requirements are met.
+CI uploads `at-rule-browser-capabilities.json` for experimental and legacy syntax. A browser accepting a rule is not proof of every descriptor or rendering behavior.
 
-Declaration benchmarks measure source transforms with maps and packed consumption at 10/100 families. Existing framework compilation lanes now collect at least 20 samples over one second, with unchanged performance thresholds; the earlier 100ms lanes could be dominated by scheduler stalls. A local sparse lane collected 612 Zyzz samples at 1.635ms ±1.50%; this is diagnostic evidence, not a cross-machine speed claim.
+`@charset` and `colorProfile` remain deferred. Implemented entries are conservatively partial pending complete context/grammar review. Remaining gaps include composite CSS function signatures, real color-profile rendering, and complete paged-output behavior. The full-completion command deliberately remains red until those requirements are met.
+
+Declaration benchmarks measure source transforms with maps and packed consumption at 10/100 families. Existing framework compilation lanes now collect at least 20 samples over one second, with unchanged performance thresholds; the earlier 100ms lanes could be dominated by scheduler stalls.
+
+A local sparse lane collected 612 Zyzz samples at 1.635ms ±1.50%; this is diagnostic evidence, not a cross-machine speed claim.

@@ -196,3 +196,6 @@ CSS functions use ordered parameter records with `name`, optional `syntax`, and 
 ## Conformance Evidence
 
 `pnpm check:at-rules` verifies the pinned MDN inventory, supplementary modern rules, descriptor fingerprints, and referenced evidence files. `pnpm check:at-rules:full` also requires every entry to be supported. Inventory coverage alone does not establish type, compiler, packaging, or browser support. Browser limitations remain explicit in the acceptance report.
+
+> [!NOTE]
+> `colorProfile` is planned and remains unexported until real-browser rendering is verified.

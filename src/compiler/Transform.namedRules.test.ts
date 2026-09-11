@@ -5,6 +5,35 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 
 describe('compile', () => {
+  test('maps contributions after an empty layer list', () => {
+    const output = Transform.compile({
+      moduleId: 'layers.ts',
+      source: `import {layers,fontFace} from 'zyzz/web';layers([]);fontFace({fontFamily:'Body',src:'url(/font.ttf)'});`,
+    })
+    expect(
+      Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+        line: 1,
+        column: 0,
+      }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 52,
+        "line": 1,
+        "name": null,
+        "source": "layers.ts",
+      }
+    `)
+  })
+  test('rejects bare profile references as element colors', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'profile.js',
+        source: `import {css} from 'zyzz';import {colorProfile} from 'zyzz/web';const profile=colorProfile({src:'url(/profile.icc)'});export const styles={text:css({color:profile})};`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: profile.js:154: Named stylesheet reference is incompatible with this property.]`,
+    )
+  })
   test('emits valid JavaScript, prunes dead names, and resolves wrapped references', async () => {
     const output = Transform.compile({
       moduleId: 'names.js',
@@ -89,7 +118,7 @@ export const styles={list:css({listStyleType:dots,fontPalette:palette,positionTr
       export const dots="z-counterstyle141558i1cjhj8q-64-6f-74-73" as import('zyzz/web').counterStyle.Reference;
       export const palette="--z-fontpalettevalues141558i1cjhj8q-70-61-6c-65-74-74-65" as import('zyzz/web').fontPaletteValues.Reference;
       export const below="--z-positiontry141558i1cjhj8q-62-65-6c-6f-77" as import('zyzz/web').positionTry.Reference;
-      export const profile="--z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65" as import('zyzz/web').colorProfile.Reference;
+      export const profile="--z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65";
       export const styles={list:__zyzzProps.create({className:"z-141558i1cjhj8q-base0"})};"
     `)
   })

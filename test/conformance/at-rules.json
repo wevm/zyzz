@@ -1,41 +1,24 @@
 {
   "entries": {
     "@charset": {
-      "evidence": [
-        "src/compiler/Transform.atRuleAcceptance.test.ts",
-        "src/compiler/Transform.statements.test.ts",
-        "src/web/global.test-d.ts",
-        "src/web/statements.test-d.ts"
-      ],
+      "evidence": [],
       "grammar": "9126274fe957e9d6ff46fe3931bc6b8e6024eaf14000e69bb2a343389649b755",
-      "status": "partial"
+      "status": "deferred"
     },
     "@color-profile": {
-      "evidence": [
-        "src/compiler/Transform.atRuleAcceptance.test.ts",
-        "src/compiler/Transform.namedRules.test.ts",
-        "src/web/colorProfile.test-d.ts"
-      ],
+      "evidence": [],
       "grammar": "9a9c77968778e7aab2779d51c1265b7d39444e14dd1253aa13185933a9c6ff09",
-      "status": "partial"
+      "status": "deferred"
     },
     "@color-profile/rendering-intent": {
-      "evidence": [
-        "src/compiler/Transform.atRuleAcceptance.test.ts",
-        "src/compiler/Transform.namedRules.test.ts",
-        "src/web/colorProfile.test-d.ts"
-      ],
+      "evidence": [],
       "grammar": "82d5fc212890a7d8a3acc272ef4d2666ba69ee219cbd5a76a7129c0139540010",
-      "status": "partial"
+      "status": "deferred"
     },
     "@color-profile/src": {
-      "evidence": [
-        "src/compiler/Transform.atRuleAcceptance.test.ts",
-        "src/compiler/Transform.namedRules.test.ts",
-        "src/web/colorProfile.test-d.ts"
-      ],
+      "evidence": [],
       "grammar": "9195c0fd7a8705fa31d69d85d0b438c556a067db50063c0ac97fb0fad48e8f15",
-      "status": "partial"
+      "status": "deferred"
     },
     "@container": {
       "evidence": [
@@ -730,11 +713,7 @@
       "status": "partial"
     },
     "@starting-style": {
-      "evidence": [
-        "src/compiler/Transform.atRuleAcceptance.test.ts",
-        "src/compiler/Transform.atRules.test.ts",
-        "src/web/global.test-d.ts"
-      ],
+      "evidence": ["src/compiler/Transform.conditions.test.ts"],
       "grammar": "84cfab49cedbd5591e889206988100c2fd6e73a24473949b7122a40309db5eab",
       "status": "partial"
     },

@@ -34,23 +34,28 @@ page({descriptors:{size:'A4','@top-center':{content:'"Page"'}}});`,
       })
       await page.evaluate(() => document.fonts.ready)
       expect(
-        await page.evaluate(() => ({
-          loaded: document.fonts.check('100px Evidence'),
-          width: document.querySelector('#font')!.getBoundingClientRect().width,
-          opacity: getComputedStyle(document.querySelector('#animation')!)
-            .opacity,
-          svg: getComputedStyle(document.querySelector('#svg')!).fill,
-          html: getComputedStyle(document.querySelector('#html')!).fill,
-        })),
-      ).toMatchInlineSnapshot(`
-        {
-          "html": "rgb(0, 0, 0)",
-          "loaded": true,
-          "opacity": "0.5",
-          "svg": "rgb(255, 0, 0)",
-          "width": 60,
-        }
-      `)
+        await page.evaluate(() => document.fonts.check('100px Evidence')),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        await page
+          .locator('#font')
+          .evaluate((element) => element.getBoundingClientRect().width),
+      ).toMatchInlineSnapshot('60')
+      expect(
+        await page
+          .locator('#animation')
+          .evaluate((element) => getComputedStyle(element).opacity),
+      ).toMatchInlineSnapshot('"0.5"')
+      expect(
+        await page
+          .locator('#svg')
+          .evaluate((element) => getComputedStyle(element).fill),
+      ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+      expect(
+        await page
+          .locator('#html')
+          .evaluate((element) => getComputedStyle(element).fill),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 0)"')
       expect(
         await page.locator('#tooltip').evaluate((element) => {
           const box = element.getBoundingClientRect()
@@ -106,6 +111,11 @@ page({descriptors:{size:'A4','@top-center':{content:'"Page"'}}});`,
           accepted: rules.some((rule) => rule.startsWith('@')),
           cssom: rules,
         }
+        await Fs.mkdir('test-results', { recursive: true })
+        await Fs.writeFile(
+          'test-results/at-rule-browser-capabilities.json',
+          JSON.stringify({ browser: browser.version(), capabilities }, null, 2),
+        )
         if (name === 'cssFunction' && capabilities[name].accepted) {
           await page.setContent('<div id="target"></div>')
           await page.addStyleTag({ content: output.css })
@@ -116,11 +126,6 @@ page({descriptors:{size:'A4','@top-center':{content:'"Page"'}}});`,
           ).toMatchInlineSnapshot('"4px"')
         }
       }
-      await Fs.mkdir('test-results', { recursive: true })
-      await Fs.writeFile(
-        'test-results/at-rule-browser-capabilities.json',
-        JSON.stringify({ browser: browser.version(), capabilities }, null, 2),
-      )
       expect(Object.keys(capabilities)).toMatchInlineSnapshot(`
         [
           "colorProfile",

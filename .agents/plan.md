@@ -393,7 +393,9 @@ Gate: two compatible themes each work in both schemes. Switching a scope changes
 
 Implementation is stacked in [#95](https://github.com/wevm/zyzz/pull/95), [#96](https://github.com/wevm/zyzz/pull/96), [#97](https://github.com/wevm/zyzz/pull/97), [#99](https://github.com/wevm/zyzz/pull/99), and [#100](https://github.com/wevm/zyzz/pull/100), followed by the acceptance PR. Direct helper APIs, portable references, namespace isolation, ordered statements, and native scalar CSS functions are implemented. Acceptance adds direct/packed source-map ownership, nested asset watch updates, real-font/counter/anchor/browser controls, and declaration benchmarks.
 
-The inventory accounts for 22 rules and 61 descriptors/nested blocks. Entries remain conservatively partial while complete context/grammar and browser evidence is reviewed. Composite CSS function `type(...)` signatures, color-profile rendering, color-font palette rendering, and full paged-output behavior remain explicit acceptance gaps. Do not claim 100% at-rule support or enable the full-completion gate prematurely. Browser availability reports distinguish native experimental/legacy support from source emission.
+The inventory accounts for 22 rules and 61 descriptors/nested blocks. Implemented entries remain conservatively partial while complete context/grammar and browser evidence is reviewed.
+
+Composite CSS function `type(...)` signatures, color-profile rendering, and full paged-output behavior remain explicit acceptance gaps. Do not claim 100% at-rule support or enable the full-completion gate prematurely. Browser availability reports distinguish native experimental/legacy support from source emission.
 
 Accepted direction: [top-level stylesheet functions](../docs/api/web/at-rules.md), alongside native grouping keys in `css`/`variants`. Descriptor and statement rules do not become properties under `global`. This is Phase 2 standard-authoring follow-up after the existing framework/stylesheet/variable stack; current PR acceptance remains separate.
 

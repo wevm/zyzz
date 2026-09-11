@@ -1,7 +1,7 @@
 # Config.create
 
 > [!NOTE]
-> Named config exports, callable theme selection, variables, and layer compilation are implemented. `script` and `variants` remain planned.
+> Named config exports, callable theme selection, variables, and layer compilation are implemented. The initialization `script` is supported; `variants` remains planned.
 
 Bind style authoring to explicit theme and layer contracts. Export helpers directly from `zyzz.config.ts` and consume them through named imports.
 

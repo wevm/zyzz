@@ -44,3 +44,5 @@ Attach an application's CSP nonce to the script element, or authorize the exact 
 React root markup can use `suppressHydrationWarning` for attributes changed before hydration. Client preference controls initialize from the applied root state. The helper does not manage hydration or live application state.
 
 See [Restore Preferences](../../../guides/themes.md#restore-preferences) for complete markup and the localStorage record.
+
+Static configured styles do not retain the initialization helper. Exporting a full config retains it for consumers; destructuring only `css`, `theme`, or `themes` avoids its runtime bytes. Packed configurations compiled without initialization capability must be rebuilt before calling `script()`.

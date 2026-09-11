@@ -2,6 +2,9 @@
  * Exposes the isolated helpers required by compiled callable styles.
  * @module
  */
+/** Server-safe root appearance initialization script generation. */
+export * as Appearance from './Appearance.js'
+
 /** Runtime scalar binding isolated from static props. */
 export * as Dynamic from './Dynamic.js'
 

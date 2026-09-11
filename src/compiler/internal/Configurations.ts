@@ -138,6 +138,7 @@ export function collect(options: collect.Options): Themes.Link {
   return {
     binding: options.name,
     call: {
+      script: true,
       end: options.expression.end,
       members: Object.fromEntries(
         Object.entries(members).map(([key, link]) => [key, link.call.name]),

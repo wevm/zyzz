@@ -107,6 +107,9 @@ export function compile(options: compile.Options): compile.ReturnType {
   let html = '__zyzzHtml'
   while (identifiers.has(html)) html += '_'
   let usesHtml = false
+  let appearance = '__zyzzAppearance'
+  while (identifiers.has(appearance)) appearance += '_'
+  let usesAppearance = false
 
   let selection = '__zyzzSelection'
   while (identifiers.has(selection)) selection += '_'
@@ -203,6 +206,8 @@ export function compile(options: compile.Options): compile.ReturnType {
     const props = (() => {
       if (!call.members)
         return `{className:${JSON.stringify(emitted.themes[call.name])}}`
+      const script = extracted.themeScripts?.includes(call.name)
+      if (script) usesAppearance = true
       if (call.options?.themes) {
         const catalog = Object.fromEntries(
           Object.entries(call.members)
@@ -214,14 +219,14 @@ export function compile(options: compile.Options): compile.ReturnType {
         )
         const entries = JSON.stringify(Object.entries(catalog))
         if (unusedSelections.has(call.start))
-          return `{theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
+          return `{${script ? `script:${appearance}.create(${entries}),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
 
         usesSelection = true
-        return `{theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:/*#__PURE__*/${selection}.create(${entries},${call.options.output === 'html'})}`
+        return `{${script ? `script:${appearance}.create(${entries}),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:/*#__PURE__*/${selection}.create(${entries},${call.options.output === 'html'})}`
       }
       if (Object.hasOwn(call.members, '["theme"]'))
-        return JSON.stringify({ theme: scope(call.members['["theme"]']!) })
-      return '{}'
+        return `{${script ? `script:${appearance}.create([]),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
+      return script ? `{script:${appearance}.create([])}` : '{}'
     })()
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
       ? ` as ${call.type ?? `import('zyzz').Theme.Definition<${call.tokenType}>`}`
@@ -345,6 +350,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     usesSelection ||
     callable ||
     usesHtml ||
+    usesAppearance ||
     extracted.variableCalls?.length
   ) {
     // Insertion after a hashbang keeps executable module syntax intact.
@@ -358,7 +364,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[usesSelection ? `Selection as ${selection}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesSelection ? `Selection as ${selection}` : '', usesAppearance ? `Appearance as ${appearance}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

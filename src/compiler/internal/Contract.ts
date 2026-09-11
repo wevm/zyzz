@@ -51,9 +51,13 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     const catalogOnly =
       !!options?.themes &&
       ((data.version as number) < 4 || entry.catalogOnly === true)
-    const configType = options
+    const fullConfigType = options
       ? `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
       : ''
+    const configType =
+      entry.script === true
+        ? fullConfigType
+        : `{readonly [key in keyof ${fullConfigType} as key extends 'script' ? never : key]:${fullConfigType}[key]}`
     const outputType = catalogOnly
       ? `({readonly [key in keyof ${configType} as key extends 'themes' ? never : key]:${configType}[key]} & {readonly themes:{readonly [key in keyof ${configType}['themes']]:${configType}['themes'][key]}})`
       : configType
@@ -63,15 +67,17 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
       binding: string(entry.binding),
       call: {
         ...(catalogOnly ? { catalogOnly: true } : {}),
+        ...(entry.script === true ? { script: true } : {}),
         end: -1,
         name: theme,
         start: -1,
         tokenType: types[theme]!,
         ...(entry.selection === true ? { selection: true } : {}),
+        ...(entry.initialization === true ? { initialization: true } : {}),
         ...(options
           ? {
               options,
-              type: `${outputType}${entry.selection === true ? "['themes']" : ''}`,
+              type: `${outputType}${entry.initialization === true ? "['script']" : entry.selection === true ? "['themes']" : ''}`,
             }
           : {}),
         ...(members
@@ -141,11 +147,16 @@ export function write(
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
     return {
+      ...(link.call.script &&
+      (link.kind === 'config' || link.call.initialization)
+        ? { script: true }
+        : {}),
       binding: link.binding,
       kind: link.kind,
       theme: link.call.name,
       ...(link.call.catalogOnly ? { catalogOnly: true } : {}),
       ...(link.call.selection ? { selection: true } : {}),
+      ...(link.call.initialization ? { initialization: true } : {}),
       ...(link.call.options ? { options: link.call.options } : {}),
       ...(link.members
         ? {
@@ -175,7 +186,9 @@ export function write(
     version: Object.values(links).some(
       (link) =>
         link.call.selection ||
-        (link.kind === 'config' && !!link.call.options?.themes),
+        (link.kind === 'config' && !!link.call.options?.themes) ||
+        link.call.initialization ||
+        (link.kind === 'config' && link.call.script),
     )
       ? 4
       : Object.values(themes).some(

@@ -708,6 +708,9 @@ export function extract(options: extract.Options): extract.ReturnType {
       ? { variableCalls: Object.freeze(variables.calls) }
       : {}),
     themeAliases: Object.freeze(themes?.aliases ?? []),
+    ...(themes?.scripts.size
+      ? { themeScripts: Object.freeze([...themes.scripts]) }
+      : {}),
     themeCalls: Object.freeze(themes?.calls ?? []),
     themeReferences: Object.freeze(themes?.references ?? []),
     themes: themes?.themes ?? Object.freeze({}),
@@ -740,6 +743,8 @@ export declare namespace extract {
     readonly styles: Style.Definition
     /** Local bound-authoring initializers and their retained token types. */
     readonly themeAliases: readonly Themes.Alias[]
+    /** Configuration identities retaining their initialization helper. */
+    readonly themeScripts?: readonly string[] | undefined
     /** Local factory spans replaced by compiled scope data. */
     readonly themeCalls: readonly Themes.Call[]
     /** Scope reads replaced by class constants. */

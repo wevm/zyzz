@@ -21,6 +21,10 @@ export type Alias = Call & {
 /** Theme factory span and generated scope key. */
 export type Call = {
   readonly catalogOnly?: boolean | undefined
+  /** Whether the compiled configuration supplies initialization. */
+  readonly script?: boolean | undefined
+  /** Bound root initialization script export. */
+  readonly initialization?: boolean | undefined
   /** Config helper represented by this linked binding. */
   readonly selection?: boolean | undefined
   /** Validated inline configuration options retained for packed declarations. */
@@ -66,6 +70,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const aliasBindings = new Map<number, Alias>()
   const aliasReferences = new Set<number>()
   const calls: Call[] = []
+  const scripts = new Set<string>()
   const definitions = new Map<number, Call>()
   const factories = new Set<number>()
   const imports = new Set<number>()
@@ -203,12 +208,18 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (
       config &&
       !config.call.selection &&
+      !config.call.initialization &&
       path.length === 1 &&
-      ['themes'].includes(path[0]!)
+      ['themes', 'script'].includes(path[0]!)
     ) {
       const key = path[0]!
+      if (key === 'script') scripts.add(config.call.name)
       if (key === 'themes' && !config.call.options?.themes) return undefined
-
+      if (key === 'script' && !config.call.script)
+        fail(
+          'This packed configuration does not provide script(); rebuild its library with initialization support.',
+          node,
+        )
       const members = Object.fromEntries(
         Object.entries(config.members ?? {}).flatMap(([name, member]) => {
           const parts = JSON.parse(name) as string[]
@@ -229,7 +240,9 @@ export function collect(program: Ast.Program, options: collect.Options) {
               member.call.name,
             ]),
           ),
-          selection: true,
+          ...(key === 'script'
+            ? { initialization: true }
+            : { selection: true }),
           type: `${config.call.type}['${key}']`,
         },
       }
@@ -412,7 +425,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
             themes[member.call.name] = member.definition
           themes[link.call.name] = link.definition
           for (const { key, id } of bindings) {
-            if (key === 'css' && !link.call.selection) {
+            if (
+              key === 'css' &&
+              !link.call.selection &&
+              !link.call.initialization
+            ) {
               const alias = { ...link.call, destructured: false }
               aliasBindings.set(id.start, alias)
               aliasNames.set(id.name, alias)
@@ -426,16 +443,29 @@ export function collect(program: Ast.Program, options: collect.Options) {
             }
             if (
               !link.call.selection &&
-              key === 'themes' &&
-              link.call.options?.themes
+              !link.call.initialization &&
+              (key === 'script' ||
+                (key === 'themes' && link.call.options?.themes))
             ) {
+              if (
+                (key === 'script' && !link.call.script) ||
+                link.call.selection ||
+                link.call.initialization
+              )
+                fail(
+                  'This configuration helper is not available on the linked contract.',
+                  id,
+                )
+              if (key === 'script') scripts.add(link.call.name)
               const members = Object.fromEntries(
-                Object.entries(link.members ?? {}).flatMap(([key, member]) => {
-                  const path = JSON.parse(key) as string[]
-                  return path[0] === 'themes'
-                    ? [[JSON.stringify(path.slice(1)), member]]
-                    : []
-                }),
+                Object.entries(link.members ?? {}).flatMap(
+                  ([pathKey, member]) => {
+                    const path = JSON.parse(pathKey) as string[]
+                    return key === 'themes' && path[0] === 'themes'
+                      ? [[JSON.stringify(path.slice(1)), member]]
+                      : []
+                  },
+                ),
               )
               const selection = {
                 ...link,
@@ -448,8 +478,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
                       member.call.name,
                     ]),
                   ),
-                  selection: true,
-                  type: `${link.call.type}['themes']`,
+                  ...(key === 'script'
+                    ? { initialization: true }
+                    : { selection: true }),
+                  type: `${link.call.type}['${key}']`,
                 },
               }
               configs.set(id.name, selection)
@@ -569,7 +601,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
         retained: true,
       })
       for (const { key, id } of bindings) {
-        if (key === 'css' && !link.call.selection) {
+        if (
+          key === 'css' &&
+          !link.call.selection &&
+          !link.call.initialization
+        ) {
           const alias = { ...link.call, destructured: false }
           aliasBindings.set(id.start, alias)
           aliasNames.set(id.name, alias)
@@ -583,13 +619,23 @@ export function collect(program: Ast.Program, options: collect.Options) {
         }
         if (
           !link.call.selection &&
-          key === 'themes' &&
-          link.call.options?.themes
+          !link.call.initialization &&
+          (key === 'script' || (key === 'themes' && link.call.options?.themes))
         ) {
+          if (
+            (key === 'script' && !link.call.script) ||
+            link.call.selection ||
+            link.call.initialization
+          )
+            fail(
+              'This configuration helper is not available on the linked contract.',
+              id,
+            )
+          if (key === 'script') scripts.add(link.call.name)
           const members = Object.fromEntries(
-            Object.entries(link.members ?? {}).flatMap(([key, member]) => {
-              const path = JSON.parse(key) as string[]
-              return path[0] === 'themes'
+            Object.entries(link.members ?? {}).flatMap(([pathKey, member]) => {
+              const path = JSON.parse(pathKey) as string[]
+              return key === 'themes' && path[0] === 'themes'
                 ? [[JSON.stringify(path.slice(1)), member]]
                 : []
             }),
@@ -605,8 +651,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
                   member.call.name,
                 ]),
               ),
-              selection: true,
-              type: `${link.call.type}['themes']`,
+              ...(key === 'script'
+                ? { initialization: true }
+                : { selection: true }),
+              type: `${link.call.type}['${key}']`,
             },
           }
           configs.set(id.name, selection)
@@ -831,7 +879,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       )
         fail('Configuration references must follow their definition.', node)
       if (
-        config.call.selection &&
+        (config.call.selection || config.call.initialization) &&
         parent.type === 'CallExpression' &&
         parent.callee === node &&
         !parent.optional
@@ -877,18 +925,28 @@ export function collect(program: Ast.Program, options: collect.Options) {
           return true
         if (
           path.length === 1 &&
-          path[0] === 'themes' &&
+          !config.call.selection &&
+          !config.call.initialization &&
+          ['script', 'themes'].includes(path[0]!) &&
           ancestors[index - 1]?.type === 'CallExpression' &&
           (ancestors[index - 1] as Ast.CallExpression).callee === target &&
           !(ancestors[index - 1] as Ast.CallExpression).optional
         ) {
-          if (!config.call.options?.themes)
+          if (path[0] === 'themes' && !config.call.options?.themes)
             fail('Theme selection requires a named catalog.', target)
-          if (config.call.catalogOnly)
+          if (config.call.catalogOnly && path[0] === 'themes')
             fail(
               'This legacy catalog is not callable; rebuild its library.',
               target,
             )
+          if (path[0] === 'script') {
+            if (!config.call.script)
+              fail(
+                'This packed configuration does not provide script(); rebuild its library with initialization support.',
+                target,
+              )
+            scripts.add(config.call.name)
+          }
           return true
         }
         if (path.length === 1 && path[0] === 'css') {
@@ -1178,12 +1236,22 @@ export function collect(program: Ast.Program, options: collect.Options) {
     return true
   }
 
+  for (const link of Object.values(exports))
+    if (
+      link.kind === 'config' &&
+      !link.call.selection &&
+      !link.call.initialization &&
+      link.call.script
+    )
+      scripts.add(link.call.name)
+
   return {
     aliases,
     calls,
     exports: Object.freeze(exports),
     reference,
     references,
+    scripts,
     styles,
     themes: Object.freeze(themes),
     tokens,

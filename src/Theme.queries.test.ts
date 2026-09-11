@@ -21,7 +21,9 @@ describe('compile', () => {
           'import {Config,Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem"},containers:{card:"24rem"},containerNames:["sidebar"]}); export const zyzz=Config.create({theme})',
       },
     })
-    expect(JSON.parse(result.contracts['config.ts']!).version).toBe(3)
+    expect(
+      JSON.parse(result.contracts['config.ts']!).version,
+    ).toMatchInlineSnapshot('4')
     expect(JSON.parse(result.contracts['config.ts']!).exports.zyzz.options)
       .toMatchInlineSnapshot(`
       {

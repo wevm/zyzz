@@ -390,10 +390,25 @@ export function collect(program: Ast.Program, options: collect.Options) {
               continue
             }
             if (key === 'themes' && link.call.options?.themes) {
+              const members = Object.fromEntries(
+                Object.entries(link.members ?? {}).flatMap(([key, member]) => {
+                  const path = JSON.parse(key) as string[]
+                  return path[0] === 'themes'
+                    ? [[JSON.stringify(path.slice(1)), member]]
+                    : []
+                }),
+              )
               const selection = {
                 ...link,
+                members,
                 call: {
                   ...link.call,
+                  members: Object.fromEntries(
+                    Object.entries(members).map(([key, member]) => [
+                      key,
+                      member.call.name,
+                    ]),
+                  ),
                   selection: true,
                   type: `${link.call.type}['themes']`,
                 },

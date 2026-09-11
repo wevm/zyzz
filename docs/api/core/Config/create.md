@@ -109,7 +109,7 @@ const styles = {
 
 - Type: Normalized callable single-theme definition
 
-Present for single-theme configuration. Call `theme({ colorScheme: 'light dark' })` to spread root props onto `<html>`. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
+Present for single-theme configuration and as the default theme of a named catalog. Call `theme({ colorScheme: 'light dark' })` to spread root props onto `<html>`. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
 
 ```ts
 theme.tokens.spacing.md

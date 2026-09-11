@@ -79,6 +79,7 @@ export type Context = {
 
 /** Collects immutable module-level themes without evaluating source. */
 export function collect(program: Ast.Program, options: collect.Options) {
+  const staticTokens: Ast.Node[] = []
   const aliases: Alias[] = []
   const aliasBindings = new Map<number, Alias>()
   const aliasReferences = new Set<number>()
@@ -1025,11 +1026,21 @@ export function collect(program: Ast.Program, options: collect.Options) {
         call?.type !== 'CallExpression' ||
         call.arguments[0] !== argument ||
         (!styles.has(call.start) && !options.contributionCalls?.has(call.start))
-      )
-        fail(
-          'Token references must be direct property values in bound theme css calls.',
-          target,
+      ) {
+        if (
+          ancestors.some(
+            (node) =>
+              node.type === 'VariableDeclarator' &&
+              options.staticBindings?.has(node.start),
+          )
         )
+          staticTokens.push(valueTarget)
+        else
+          fail(
+            'Token references must be direct property values in bound theme css calls.',
+            target,
+          )
+      }
       tokens.set(valueTarget.start, { end: valueTarget.end, reference })
       return true
     }
@@ -1113,6 +1124,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     reference,
     references,
     scripts,
+    staticTokens,
     styles,
     themes: Object.freeze(themes),
     tokens,
@@ -1124,6 +1136,7 @@ export declare namespace collect {
   /** Stable module namespace, independent of token values and call offsets. */
   type Options = {
     /** Encoded package/module identity from the source adapter. */
+    readonly staticBindings?: ReadonlySet<number> | undefined
     readonly contributionCalls?: ReadonlySet<number> | undefined
     readonly namespace: string
     readonly linked?: boolean | undefined

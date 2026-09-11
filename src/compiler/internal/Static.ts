@@ -144,6 +144,8 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
           if (path.some((node) => allowed.has(node.start))) continue
           const write = path.find(
             (node) =>
+              (node.type === 'VariableDeclarator' &&
+                node.id.type !== 'Identifier') ||
               node.type === 'AssignmentExpression' ||
               node.type === 'UpdateExpression' ||
               (node.type === 'UnaryExpression' && node.operator === 'delete') ||
@@ -350,5 +352,12 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
     }
     return node
   }
-  return { resolve, properties, type, used, normalize }
+  return {
+    resolve,
+    properties,
+    type,
+    used,
+    normalize,
+    bindings: new Set(values.keys()),
+  }
 }

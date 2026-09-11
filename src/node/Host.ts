@@ -180,9 +180,12 @@ export async function create(options: create.Options): Promise<Runtime> {
                   )
                     throw new Error('Asset path escapes the package root.')
                   if (
-                    generated.has(
-                      insensitive ? filename.toLowerCase() : filename,
-                    )
+                    filename.split('/').some((_, index, parts) => {
+                      const ancestor = parts.slice(0, index + 1).join('/')
+                      return generated.has(
+                        insensitive ? ancestor.toLowerCase() : ancestor,
+                      )
+                    })
                   )
                     throw new Error(
                       'Asset path conflicts with generated output.',

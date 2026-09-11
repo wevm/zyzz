@@ -52,11 +52,13 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
   function link(value: unknown): Themes.Link {
     const entry = record(value)
     if (entry.kind === 'variables') {
+      const names = new Set<string>()
       const slots = Object.fromEntries(
         Object.entries(record(entry.variables)).map(([key, value]) => {
           const slot = record(value)
           if (
             key === 'set' ||
+            names.has(string(slot.name)) ||
             !/^--z-v[a-z0-9-]+$/.test(string(slot.name)) ||
             ![
               'color',
@@ -68,6 +70,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
             ].includes(String(slot.type))
           )
             throw new Error('Invalid packed variable contract.')
+          names.add(string(slot.name))
           return [
             key,
             Object.freeze({
@@ -106,7 +109,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     if (entry.kind === 'marker') {
       const marker = record(entry.marker)
       const id = string(marker.id)
-      if (!/^data-z-[a-z0-9_-]+$/.test(id))
+      if (!/^data-z-[a-z0-9_-]+$/.test(id) || entry.binding !== id)
         throw new Error('Invalid marker identity.')
       return {
         binding: string(entry.binding),

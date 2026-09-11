@@ -49,7 +49,8 @@ export function schema(input: unknown): Schema {
       )?.value
       if (
         (typeof value !== 'string' && typeof value !== 'boolean') ||
-        (typeof value === 'string' && value.includes('\0')) ||
+        (typeof value === 'string' &&
+          (value.includes('\0') || value.includes('\r'))) ||
         serialized.has(String(value))
       )
         throw new Error(

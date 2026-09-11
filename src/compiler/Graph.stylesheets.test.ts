@@ -12,8 +12,8 @@ describe('compile', () => {
   test('links relocated animation aliases and preserves packed side effects once', () => {
     const library = Graph.compile({
       modules: {
-        'pkg/effects.ts': source,
-        'pkg/index.ts': `export {fade} from './effects.js';`,
+        'pkg/effects.ts': source + 'export const enter=fade;',
+        'pkg/index.ts': `export {enter as fade} from './effects.js';`,
       },
     })
     const output = Graph.compile({
@@ -47,8 +47,42 @@ describe('compile', () => {
       Trace.originalPositionFor(map, { line: 2, column: 0 }).source,
     ).toMatchInlineSnapshot('"app/node_modules/lib/effects.ts"')
     expect(
-      map.sourcesContent?.some((content) => content === source),
+      map.sourcesContent?.some(
+        (content) => content === source + 'export const enter=fade;',
+      ),
     ).toMatchInlineSnapshot('true')
+  })
+  test('preserves path-like URL suffixes and rejects nested output collisions', async () => {
+    const graph = Graph.compile({
+      modules: {
+        'pkg/a.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./asset.svg?fallback=/../other.svg)'}});`,
+      },
+    })
+    expect(Object.values(graph.sharedAssets ?? {})).toMatchInlineSnapshot(`
+      [
+        "pkg/asset.svg?fallback=/../other.svg",
+      ]
+    `)
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-asset-collision-'))
+    try {
+      await Fs.mkdir(Path.join(root, 'effects.ts.css'))
+      await Fs.writeFile(Path.join(root, 'effects.ts.css/pixel.png'), 'pixel')
+      await Fs.writeFile(
+        Path.join(root, 'effects.ts'),
+        `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./effects.ts.css/pixel.png)'}})`,
+      )
+      const host = await Host.create({
+        root,
+        outDir: Path.join(root, 'out'),
+        packageId: 'pkg',
+      })
+      await expect(host.build()).rejects.toThrow(
+        'Asset path conflicts with generated output.',
+      )
+      await host.close()
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
   })
   test('maps separate contribution calls to their own authored positions', () => {
     const source = `import {global} from 'zyzz/web';

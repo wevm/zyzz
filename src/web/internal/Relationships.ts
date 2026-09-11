@@ -153,7 +153,7 @@ type Unique<
   infer first extends boolean | string,
   ...infer rest extends readonly (boolean | string)[],
 ]
-  ? `${first}` extends `${string}\0${string}` | seen
+  ? `${first}` extends `${string}\0${string}` | `${string}\r${string}` | seen
     ? never
     : Unique<rest, seen | `${first}`>
   : unknown

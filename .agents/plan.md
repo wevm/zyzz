@@ -372,7 +372,8 @@ PR 2.1 uses opaque object references for contracts within one in-memory graph. C
 - [x] Implement bound `script({ storageKey }?)` on every `Config.create` result for localStorage-only root initialization. Derive catalog/default/compiled classes through imported and packed config bindings without serializing token data; cover named, single-theme, and token-free configs; preserve server defaults and unrelated root attributes. No cookies, providers, implicit persistence, or preference listeners.
 - [x] Verify synchronous root restoration, invalid/blocked storage, HTML-safe serialization, CSP execution, and hydration node identity through `ConfigScript.test.ts` in Chromium.
 - [x] Preserve standard declaration order, selectors, at-rules, inheritance, and cascade semantics. Specify token/literal precedence and retain authored condition order.
-- [x] Support same-module immutable definitions and spreads through static binding analysis; add imported definitions only with explicit resolution and cycle errors.
+- [x] Support same-module immutable definitions and spreads through static binding analysis.
+- [ ] Add imported static definitions with explicit resolution and cycle errors.
 
 Gate: two compatible themes each work in both schemes. Switching a scope changes colors and shared tokens through CSS alone. Nested themes and explicit schemes behave as specified. Inline and exported styles retain inference. Dynamic callbacks bind typed values to fixed rules with stable classes, and static definitions remain callable with optional styling overrides; browser integration and binding benchmarks verify both. Nested selectors and raw/aliased queries preserve CSS semantics; invalid definitions fail without evaluating application code.
 
@@ -381,7 +382,8 @@ Gate: two compatible themes each work in both schemes. Switching a scope changes
 - [x] Implement [config shorthands](architecture.md#property-mappings) after standard box properties: static one-to-many mappings such as `px`, `paddingX`, and `paddingHorizontal`; preserve declaration order, importance, fallbacks, and expanded conflict domains.
 - [x] Add optional `margin` and `padding` token groups with property-specific precedence over `spacing`, signed-margin/nonnegative-padding validation, and physical/logical coverage. Retain existing `textColor` precedence over `color`.
 - [x] Preserve mappings through bound css/theme handles, nested declarations, source graphs, packed metadata, and config watch edits; extend the same boundary to variants and native as those capabilities land.
-- [x] Verify exact alias/value inference, target intersections, collisions/chains/unknown targets, references, extensions and packed metadata consistency. Browser fixtures compare ordered mapped declarations and importance; dedicated benchmark lanes record compilation and emitted sizes.
+- [x] Verify exact alias/value inference, target intersections, collisions/chains/unknown targets, references, extensions and packed metadata consistency. Browser fixtures compare ordered mapped declarations and importance.
+- [ ] Add dedicated property-mapping benchmark lanes recording compilation and emitted sizes.
 
 ## Phase 3 — Composition, variants, and target output
 

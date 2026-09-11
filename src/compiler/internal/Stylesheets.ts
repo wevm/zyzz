@@ -33,8 +33,11 @@ export type Section = {
 }
 /** Resolves a relative path within a portable graph, retaining query/hash suffixes. */
 export function resolve(source: string, reference: string): string {
+  const suffixStart = reference.search(/[?#]/)
+  const pathname = suffixStart < 0 ? reference : reference.slice(0, suffixStart)
+  const suffix = suffixStart < 0 ? '' : reference.slice(suffixStart)
   const parts = source.split('/').slice(0, -1)
-  for (const part of reference.split('/')) {
+  for (const part of pathname.split('/')) {
     if (!part || part === '.') continue
     if (part === '..') {
       if (!parts.length)
@@ -42,7 +45,7 @@ export function resolve(source: string, reference: string): string {
       parts.pop()
     } else parts.push(part)
   }
-  return parts.join('/')
+  return parts.join('/') + suffix
 }
 /** Makes a module location relative to another module for relocation in a package. */
 export function relative(owner: string, source: string): string {

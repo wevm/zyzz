@@ -3,6 +3,7 @@
  * @module
  */
 import * as Condition from '../internal/Condition.js'
+import * as Markers from './internal/Markers.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Css from '../web/Css.js'
 import * as Dynamic from './internal/Dynamic.js'
@@ -134,6 +135,20 @@ export function extract(options: extract.Options): extract.ReturnType {
   const variables = (() => {
     try {
       return Variables.collect(program, identity(options.moduleId))
+    } catch (error) {
+      if (!(error instanceof Themes.InvalidError)) throw error
+      report('unsupported_syntax', error.message, error)
+      throw new ExtractError(diagnostics)
+    }
+  })()
+  const markers = (() => {
+    try {
+      return Markers.scan(
+        program,
+        scopeTracker,
+        identity(options.moduleId),
+        options[Themes.context]?.links,
+      )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
       report('unsupported_syntax', error.message, error)
@@ -351,7 +366,14 @@ export function extract(options: extract.Options): extract.ReturnType {
       const depth = prefix.length + 2
       function localSlot(node: Ast.Node) {
         const slot = resolveDynamic(node)
-        if (slot && prefix.some((key) => !Condition.local(key))) {
+        if (
+          slot &&
+          prefix.some(
+            (key) =>
+              !Condition.local(key) &&
+              ![...markers.conditions.values()].includes(key),
+          )
+        ) {
           report(
             'unsupported_syntax',
             'Dynamic values require conditions that select the styled element.',
@@ -366,9 +388,10 @@ export function extract(options: extract.Options): extract.ReturnType {
           property.type !== 'Property' ||
           property.kind !== 'init' ||
           property.method ||
-          property.computed ||
+          (property.computed && !markers.conditions.has(property.key.start)) ||
           property.shorthand ||
-          (property.key.type !== 'Identifier' &&
+          (!markers.conditions.has(property.key.start) &&
+            property.key.type !== 'Identifier' &&
             (property.key.type !== 'Literal' ||
               typeof property.key.value !== 'string'))
         ) {
@@ -380,9 +403,12 @@ export function extract(options: extract.Options): extract.ReturnType {
           continue
         }
         const key =
-          property.key.type === 'Identifier'
+          markers.conditions.get(property.key.start) ??
+          (property.key.type === 'Identifier'
             ? property.key.name
-            : property.key.value
+            : property.key.type === 'Literal'
+              ? String(property.key.value)
+              : '')
         if (Object.hasOwn(values, key)) {
           report(
             'unsupported_syntax',
@@ -523,11 +549,13 @@ export function extract(options: extract.Options): extract.ReturnType {
               Object.values(dynamic.slots).includes(reference) &&
               reference.type !== 'number'
             ) &&
-            !targets.every((target) =>
-              Binding.accepts(reference.type, target) || dynamic?.accepts(
-                reference as unknown as Binding.Reference,
-                target,
-              ),
+            !targets.every(
+              (target) =>
+                Binding.accepts(reference.type, target) ||
+                dynamic?.accepts(
+                  reference as unknown as Binding.Reference,
+                  target,
+                ),
             )
           ) {
             report(
@@ -704,14 +732,33 @@ export function extract(options: extract.Options): extract.ReturnType {
       error instanceof Themes.InvalidError ? error : contributions.calls[0],
     )
   }
+  for (const [start] of markers.conditions)
+    if (!calls.some((call) => call.start <= start && start < call.end))
+      report(
+        'unsupported_syntax',
+        'Relationship helpers require a compiled style definition.',
+        { start, end: start },
+      )
   if (diagnostics.length) throw new ExtractError(diagnostics)
   return Object.freeze({
+    ...(markers.calls.length
+      ? {
+          markerCalls: Object.freeze(
+            markers.calls.map((call) => Object.freeze({ ...call })),
+          ),
+        }
+      : {}),
     ...(contributionData.length ? { contributions: contributionData } : {}),
     ...(contributions.calls.length
       ? { contributionCalls: contributions.calls }
       : {}),
     ...(options[Themes.context]
-      ? { themeExports: themes?.exports ?? Object.freeze({}) }
+      ? {
+          themeExports: Object.freeze({
+            ...themes?.exports,
+            ...markers.exports,
+          }),
+        }
       : {}),
     calls: Object.freeze(calls.map((call) => Object.freeze(call))),
     styles: Object.freeze({ styles: Object.freeze(styles) }),
@@ -743,6 +790,8 @@ export declare namespace extract {
   }
   /** Ordered public compiler input and spans for later rewriting. */
   type ReturnType = {
+    /** Marker factories replaced with fixed data-attribute callables. */
+    readonly markerCalls?: readonly Markers.Call[] | undefined
     /** Static stylesheet effects and their source replacements. */
     readonly contributions?: readonly Css.Contribution[] | undefined
     readonly contributionCalls?: readonly Contributions.Call[] | undefined

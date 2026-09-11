@@ -24,7 +24,6 @@ import { Css } from 'zyzz/web'
 
 See the [public declarations](../../../../src/web/Css.ts) for complete generic signatures and documented type properties.
 
-> [!NOTE]
-> Typed relationship helpers are previews. `compile` supports scalar declarations and ordered nested selector/condition blocks.
+Typed relationship helpers compile marker identities and finite data predicates. `compile` supports scalar declarations and ordered nested selector/condition blocks.
 
 Layer order uses the direct [`layers`](../layers.md) export from `zyzz/web`.

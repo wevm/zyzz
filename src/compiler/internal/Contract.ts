@@ -2,6 +2,7 @@
  * Serializes validated theme authoring data for independently compiled libraries.
  * @module
  */
+import * as Marker from '../../runtime/Marker.js'
 import * as Config from '../../Config.js'
 import * as Configurations from './Configurations.js'
 import * as Shorthands from '../../internal/Shorthands.js'
@@ -12,7 +13,7 @@ import type * as Themes from './Themes.js'
 /** Reads versioned JSON as validated data; never evaluates package code. */
 export function read(source: string, identities: Map<string, Token.Contract>) {
   const data = record(JSON.parse(source))
-  if (![1, 2, 3, 4, 5].includes(data.version as number))
+  if (![1, 2, 3, 4, 5, 6].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
@@ -48,6 +49,27 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
   }
   function link(value: unknown): Themes.Link {
     const entry = record(value)
+    if (entry.kind === 'marker') {
+      const marker = record(entry.marker)
+      const id = string(marker.id)
+      if (!/^data-z-[a-z0-9_-]+$/.test(id) || entry.binding !== id)
+        throw new Error('Invalid marker identity.')
+      return {
+        binding: string(entry.binding),
+        kind: 'marker',
+        definition: Theme.define({}),
+        call: {
+          start: -1,
+          end: -1,
+          name: id,
+          tokenType: '{}',
+          marker: {
+            id: id as `data-z-${string}`,
+            schema: Marker.schema(marker.schema),
+          },
+        },
+      }
+    }
     if (entry.output !== undefined && entry.output !== 'html')
       throw new Error('Invalid theme output.')
     const theme = string(entry.theme)
@@ -181,6 +203,12 @@ export function write(
   themes: Readonly<Record<string, Theme.Definition>>,
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
+    if (link.kind === 'marker')
+      return {
+        binding: link.binding,
+        kind: link.kind,
+        marker: link.call.marker,
+      }
     return {
       ...(link.call.output ? { output: link.call.output } : {}),
       ...(link.call.script &&
@@ -222,27 +250,29 @@ export function write(
         },
       ]),
     ),
-    version:
-      Object.values(themes).some(
-        (theme) =>
-          theme[Token.definition].contract.shorthands ||
-          Object.hasOwn(theme.tokens, 'margin') ||
-          Object.hasOwn(theme.tokens, 'padding'),
-      ) ||
-      Object.values(links).some(
-        (link) =>
-          link.call.output === 'html' ||
-          Object.values(link.members ?? {}).some(
-            (member) => member.call.output === 'html',
-          ),
-      )
+    version: Object.values(links).some((link) => link.kind === 'marker')
+      ? 6
+      : Object.values(themes).some(
+            (theme) =>
+              theme[Token.definition].contract.shorthands ||
+              Object.hasOwn(theme.tokens, 'margin') ||
+              Object.hasOwn(theme.tokens, 'padding'),
+          ) ||
+          Object.values(links).some(
+            (link) =>
+              link.call.output === 'html' ||
+              Object.values(link.members ?? {}).some(
+                (member) => member.call.output === 'html',
+              ),
+          )
         ? 5
         : Object.values(links).some(
               (link) =>
                 link.call.selection ||
                 (link.kind === 'config' && !!link.call.options?.themes) ||
                 link.call.initialization ||
-                (link.kind === 'config' && link.call.script),
+                (link.kind === 'config' && link.call.script) ||
+                link.kind === 'marker',
             )
           ? 4
           : Object.values(themes).some(

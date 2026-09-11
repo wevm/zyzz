@@ -130,12 +130,34 @@ function build(options: compile.Options, cache?: Cache): Cache {
     ReturnType<typeof Contract.read>
   > = Object.create(null)
   const identities = new Map<string, Token.Contract>()
+  const markerIdentities = new Map<string, string>()
+  function validateLibraryLink(link: Themes.Link) {
+    if (link.call.marker) {
+      const { id, schema } = link.call.marker
+      const signature = JSON.stringify(
+        Object.entries(schema)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([key, values]) => [
+            key,
+            [...values].sort((a, b) => String(a).localeCompare(String(b))),
+          ]),
+      )
+      const previous = markerIdentities.get(id)
+      if (previous !== undefined && previous !== signature)
+        throw new Error(`Conflicting packed marker schema: ${id}`)
+      markerIdentities.set(id, signature)
+    }
+    for (const member of Object.values(link.members ?? {}))
+      validateLibraryLink(member)
+  }
+
   for (const [id, source] of Object.entries(options.contracts ?? {})) {
     if (Object.hasOwn(options.modules, id))
       fail(id, 'A module cannot supply both source and a library contract.')
     try {
       const library =
         previous?.libraries[id] ?? Contract.read(source, identities)
+      for (const link of Object.values(library.links)) validateLibraryLink(link)
       for (const [name, theme] of Object.entries(library.themes)) {
         if (
           themes[name] &&

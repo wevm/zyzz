@@ -130,12 +130,15 @@ Packed contracts containing query metadata or typography groups use schema versi
 
 The writer selects the lowest version required by the exported capabilities:
 
-| Version | Added capability |
-| --- | --- |
-| 1 | Theme bindings |
-| 2 | Configuration and bound aliases |
-| 3 | Queries and typography |
-| 4 | Callable theme selection and initialization script |
-| 5 | Property mappings |
+| Version | Added capability                                   |
+| ------- | -------------------------------------------------- |
+| 1       | Theme bindings                                     |
+| 2       | Configuration and bound aliases                    |
+| 3       | Queries and typography                             |
+| 4       | Callable theme selection and initialization script |
+| 5       | Property mappings                                  |
+| 6       | Marker relationships                               |
 
-This reader accepts versions 1–5. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
+This reader accepts versions 1–6. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
+
+Packed marker aliases sharing an identity must carry the same state schema; conflicting schemas are rejected across loaded contracts.

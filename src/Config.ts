@@ -289,7 +289,7 @@ type Body<
     Keys<styles>,
     | keyof mappings
     | keyof Style.DeclarationProperties
-    | Condition.Keys<tokens>
+    | Condition.Keys<tokens, Keys<styles>>
     | `@layer ${layers}`
   >,
   never
@@ -297,7 +297,7 @@ type Body<
   (styles extends unknown
     ? {
         [key in keyof styles]: key extends
-          | Condition.Keys<tokens>
+          | Condition.Keys<tokens, key>
           | `@layer ${layers}`
           ? styles[key] extends Record<string, unknown>
             ? Body<styles[key], tokens, layers, mappings>

@@ -1,8 +1,5 @@
 # Css.siblingBefore
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 A qualifying marked sibling preceding the styled element.
 
 ```ts
@@ -66,3 +63,5 @@ Reject undeclared marker states, unsupported nested `:has()` combinations, and u
 See [Style Relationships](../../../guides/conditions.md#style-relationships).
 
 See [Css](README.md) for related methods and types.
+
+Requires the source transform. Marker identities survive aliases, named re-exports, and packed-library contracts. Relationship helpers must appear directly as computed style keys. Browser rendering follows ordinary CSS matching, including any-depth ancestry and directional nonadjacent siblings.

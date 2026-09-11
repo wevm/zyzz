@@ -159,10 +159,7 @@ export function scan(
         const link = resolve(init)
         if (link) {
           if (owner?.type !== 'VariableDeclaration' || owner.kind !== 'const')
-            throw new Themes.InvalidError(
-              'Marker aliases require const bindings.',
-              node,
-            )
+            return
           bindings.set(node.id.start, link)
           if (
             statement?.type === 'Program' ||

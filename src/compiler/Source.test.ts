@@ -335,18 +335,10 @@ Zyzz.css({ padding: 0 });
             {
               "code": "unsupported_syntax",
               "end": 199,
-              "message": "Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.",
+              "message": "Static data requires literal property keys without methods.",
               "source": "example/errors.ts",
               "start": 151,
               "text": "get color() { throw new Error('never execute') }",
-            },
-            {
-              "code": "unsupported_syntax",
-              "end": 236,
-              "message": "Duplicate properties are not supported in source definitions yet.",
-              "source": "example/errors.ts",
-              "start": 222,
-              "text": "padding: '1px'",
             },
             {
               "code": "unsupported_syntax",

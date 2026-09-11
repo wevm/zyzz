@@ -86,9 +86,14 @@ export function scan(
       if (
         node.type === 'VariableDeclarator' &&
         node.id.type === 'Identifier' &&
-        node.init?.type === 'Identifier'
+        node.init &&
+        Expression.unwrap(node.init).type === 'Identifier'
       ) {
-        const declaration = scope.getDeclaration(node.init.name)
+        const init = Expression.unwrap(node.init) as Extract<
+          Ast.Node,
+          { type: 'Identifier' }
+        >
+        const declaration = scope.getDeclaration(init.name)
         const identity = declaration
           ? imported.get(declaration.node.start)
           : undefined

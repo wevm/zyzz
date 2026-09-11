@@ -144,3 +144,5 @@ The writer selects the lowest version required by the exported capabilities:
 This reader accepts versions 1–8. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
 
 `sharedAssetOwners` associates each relocated URL placeholder with its trusted source or packed-contract identity. Hosts validate package ownership before serving or publishing assets. Conflicting packed sections raise `Source.ExtractError` attributed to the contributing contract.
+
+Compile independent libraries with package-qualified module IDs (the file host supplies these from `packageId`). The graph rejects duplicate packed variable slots across distinct contract entries and conflicting schemas for a packed marker identity before producing output. Re-export aliases inside one contract retain their original identities.

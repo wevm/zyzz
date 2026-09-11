@@ -2,6 +2,17 @@
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Vars, css } from 'zyzz'
 describe('define', () => {
+  test('rejects unknown registration descriptor keys', () => {
+    Vars.define({
+      gap: {
+        type: 'length',
+        inherits: false,
+        initialValue: '4px',
+        // @ts-expect-error descriptor keys are exact through generic inference
+        initial: '8px',
+      },
+    })
+  })
   test('preserves scalar assignment types for registration descriptors', () => {
     Vars.define({
       // @ts-expect-error currentcolor is element-dependent in every supported spelling

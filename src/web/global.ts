@@ -1,5 +1,6 @@
 /** Declares eager module-level global stylesheet effects. @module */
 import { MissingTransformError } from '../css.js'
+import type * as Literal from '../internal/Literal.js'
 import type * as Style from '../Style.js'
 
 /** Compiles module-level selector declarations; never registers runtime CSS. */
@@ -26,7 +27,7 @@ type WithoutRelationships<value> = value extends readonly unknown[]
     ? {
         [key in keyof value]: key extends symbol
           ? never
-          : key extends keyof Style.Properties
+          : key extends keyof Literal.Properties
             ? unknown
             : WithoutRelationships<value[key]>
       }

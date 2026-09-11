@@ -121,10 +121,15 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
           end: -1,
           name: id,
           tokenType: '{}',
-          marker: { id, schema: Marker.schema(marker.schema) },
+          marker: {
+            id: id as `data-z-${string}`,
+            schema: Marker.schema(marker.schema),
+          },
         },
       }
     }
+    if (entry.output !== undefined && entry.output !== 'html')
+      throw new Error('Invalid theme output.')
     const theme = string(entry.theme)
     const definition = themes[theme]
     if (!definition || !['config', 'css', 'theme'].includes(String(entry.kind)))
@@ -168,15 +173,17 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     return {
       binding: string(entry.binding),
       call: {
+        ...(entry.output === 'html' ? { output: 'html' as const } : {}),
         ...(catalogOnly ? { catalogOnly: true } : {}),
         ...(entry.script === true ? { script: true } : {}),
         end: -1,
         name: theme,
         start: -1,
         tokenType: types[theme]!,
-        ...(definition[Token.definition].contract.shorthands
+        ...(definition[Token.definition].contract.shorthands ||
+        entry.output === 'html'
           ? {
-              type: `import('zyzz').Config.create.ReturnType<{theme:${types[theme]!};shorthands:${Configurations.type(definition[Token.definition].contract.shorthands!)}}>['theme']`,
+              type: `import('zyzz').Config.create.ReturnType<{theme:${types[theme]!};${entry.output === 'html' ? "output:'html';" : ''}shorthands:${Configurations.type(definition[Token.definition].contract.shorthands ?? {})}}>['theme']`,
             }
           : {}),
         ...(entry.selection === true ? { selection: true } : {}),
@@ -269,6 +276,7 @@ export function write(
         marker: link.call.marker,
       }
     return {
+      ...(link.call.output ? { output: link.call.output } : {}),
       ...(link.call.script &&
       (link.kind === 'config' || link.call.initialization)
         ? { script: true }
@@ -293,7 +301,9 @@ export function write(
     }
   }
   return JSON.stringify({
-    ...(stylesheets.length ? { stylesheets } : {}),
+    ...(stylesheets.length
+      ? { stylesheets: Stylesheets.write(stylesheets) }
+      : {}),
     exports: Object.fromEntries(
       Object.entries(links).map(([name, link]) => [name, entry(link)]),
     ),
@@ -317,7 +327,17 @@ export function write(
         : Object.values(links).some((link) => link.kind === 'marker')
           ? 6
           : Object.values(themes).some(
-                (theme) => theme[Token.definition].contract.shorthands,
+                (theme) =>
+                  theme[Token.definition].contract.shorthands ||
+                  Object.hasOwn(theme.tokens, 'margin') ||
+                  Object.hasOwn(theme.tokens, 'padding'),
+              ) ||
+              Object.values(links).some(
+                (link) =>
+                  link.call.output === 'html' ||
+                  Object.values(link.members ?? {}).some(
+                    (member) => member.call.output === 'html',
+                  ),
               )
             ? 5
             : stylesheets.length ||

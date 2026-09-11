@@ -3,6 +3,21 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, css, Theme } from 'zyzz'
 
 describe('create', () => {
+  test('preserves HTML output on mapped theme handles', () => {
+    const { theme } = Config.create({
+      output: 'html',
+      theme: { padding: { sm: '4px' } },
+      shorthands: { px: ['paddingLeft', 'paddingRight'] },
+    })
+    expectTypeOf(theme.css({ px: 'sm' })()).toHaveProperty('class')
+    expectTypeOf(
+      theme.css((values: { width: '4px' | '8px' }) => ({ px: values.width }))({
+        width: '4px',
+      }).style,
+    ).toEqualTypeOf<string | undefined>()
+    // @ts-expect-error HTML handles do not expose React className
+    expectTypeOf(theme.css({ px: 'sm' })().className).toEqualTypeOf<never>()
+  })
   test('preserves configured aliases through theme extensions', () => {
     const { theme } = Config.create({
       theme: { spacing: { sm: '4px' } },

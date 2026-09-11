@@ -311,7 +311,14 @@ export function collect(
     }
     return true
   }
-  for (const statement of program.body)
+  for (const statement of program.body) {
+    if (statement.type === 'ExportDefaultDeclaration') {
+      const declaration = Expression.unwrap(statement.declaration)
+      if (declaration.type === 'Identifier') {
+        const link = bound.get(declaration.name)
+        if (link) exports.default = link
+      }
+    }
     if (
       statement.type === 'ExportNamedDeclaration' &&
       statement.exportKind !== 'type' &&
@@ -332,6 +339,7 @@ export function collect(
               : specifier.exported.value
           ] = link
       }
+  }
   return {
     calls,
     reference,

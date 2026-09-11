@@ -150,6 +150,31 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
       ) {
         for (const path of paths(binding)) {
           if (path.some((node) => allowed.has(node.start))) continue
+          const unsupported = path.find(
+            (node) =>
+              ![
+                'Program',
+                'VariableDeclaration',
+                'VariableDeclarator',
+                'Identifier',
+                'MemberExpression',
+                'ObjectExpression',
+                'Property',
+                'ArrayExpression',
+                'SpreadElement',
+                'TSAsExpression',
+                'TSSatisfiesExpression',
+                'TSNonNullExpression',
+                'TSTypeAssertion',
+                'ExportNamedDeclaration',
+                'ExportSpecifier',
+              ].includes(node.type),
+          )
+          if (unsupported)
+            throw new Themes.InvalidError(
+              'Static data cannot be mutated or escape through unsupported expressions.',
+              unsupported,
+            )
           const write = path.find(
             (node) =>
               (node.type === 'VariableDeclarator' &&

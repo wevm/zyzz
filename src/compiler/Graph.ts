@@ -138,12 +138,56 @@ function build(options: compile.Options, cache?: Cache): Cache {
     ReturnType<typeof Contract.read>
   > = Object.create(null)
   const identities = new Map<string, Token.Contract>()
+  const markerIdentities = new Map<string, string>()
+  const variableSlots = new Map<
+    string,
+    { owner: string; binding: string; type: string }
+  >()
+  function validateLibraryLink(link: Themes.Link, owner: string) {
+    if (link.call.marker) {
+      const { id, schema } = link.call.marker
+      const signature = JSON.stringify(
+        Object.entries(schema)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([key, values]) => [
+            key,
+            [...values].sort((a, b) => String(a).localeCompare(String(b))),
+          ]),
+      )
+      const previous = markerIdentities.get(id)
+      if (previous !== undefined && previous !== signature)
+        throw new Error(`Conflicting packed marker schema: ${id}`)
+      markerIdentities.set(id, signature)
+    }
+    for (const slot of Object.values(link.call.variables ?? {})) {
+      const previous = variableSlots.get(slot.name)
+      if (
+        previous &&
+        (previous.owner !== owner ||
+          previous.binding !== link.binding ||
+          previous.type !== slot.type)
+      )
+        throw new Error(
+          `Conflicting packed variable identity: ${slot.name}; compile libraries with package-qualified module IDs.`,
+        )
+      variableSlots.set(slot.name, {
+        owner,
+        binding: link.binding,
+        type: slot.type,
+      })
+    }
+    for (const member of Object.values(link.members ?? {}))
+      validateLibraryLink(member, owner)
+  }
+
   for (const [id, source] of Object.entries(options.contracts ?? {})) {
     if (Object.hasOwn(options.modules, id))
       fail(id, 'A module cannot supply both source and a library contract.')
     try {
       const library =
         previous?.libraries[id] ?? Contract.read(source, identities)
+      for (const link of Object.values(library.links))
+        validateLibraryLink(link, id)
       for (const [name, theme] of Object.entries(library.themes)) {
         if (
           themes[name] &&

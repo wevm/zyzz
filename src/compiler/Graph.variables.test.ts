@@ -1,135 +1,245 @@
 /** Exercises registered variables, packed references, immutable styles, and finite dynamic aliases. @module */
 import * as Esbuild from 'esbuild'
 import * as Path from 'node:path'
+import * as Fs from 'node:fs/promises'
 import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
-const librarySource = `import {Vars} from 'zyzz';export const vars=Vars.define({amount:{type:'percentage',inherits:false,initialValue:'25%'},gap:{type:'length',inherits:true,initialValue:'4px'}});`
-function compile() {
-  const library = Graph.compile({
-    modules: {
-      'vars.ts': librarySource,
-      'index.ts': `export {vars as layout} from './vars.js';`,
-    },
-  })
-  const app = Graph.compile({
-    contracts: { 'lib/index.js': library.contracts['index.ts']! },
-    imports: { 'app.ts': { lib: 'lib/index.js', zyzz: null } },
-    modules: {
-      'app.ts': `import {css} from 'zyzz';import {layout} from 'lib';export {layout};const base={height:'20px',padding:layout.gap} as const;type Width='10px'|'30px';interface Values {width:Width}export const styles={registered:css({...base,width:layout.amount}),dynamic:css((values:Values)=>({...base,width:values.width}))};`,
-    },
-  })
-  return { library, app }
-}
-async function bundle() {
-  const { library, app } = compile()
-  const bundle = await Esbuild.build({
-    stdin: {
-      contents: app.modules['app.ts']!.code,
-      loader: 'ts',
-      resolveDir: process.cwd(),
-    },
-    bundle: true,
-    write: false,
-    format: 'iife',
-    globalName: 'Fixture',
-    alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
-    plugins: [
-      {
-        name: 'library',
-        setup(build) {
-          build.onResolve({ filter: /^lib$/ }, () => ({
-            path: 'index',
-            namespace: 'fixture',
-          }))
-          build.onResolve(
-            { filter: /^\.\/vars\.js$/, namespace: 'fixture' },
-            () => ({ path: 'vars', namespace: 'fixture' }),
-          )
-          build.onLoad({ filter: /.*/, namespace: 'fixture' }, (args) => ({
-            contents: library.modules[args.path + '.ts']!.code,
-            loader: 'ts',
-            resolveDir: process.cwd(),
-          }))
-        },
-      },
-    ],
-  })
-  return {
-    css: (app.sharedCss ?? '') + app.modules['app.ts']!.css,
-    code: bundle.outputFiles[0]!.text,
-  }
-}
-test('expands immutable theme references and rejects hidden mutations and duplicate packed slots', async () => {
-  const result = Graph.compile({
-    modules: {
-      'app.ts': `import {Theme} from 'zyzz';const theme=Theme.define({color:{primary:'#123'}});const base={color:theme.tokens.color.primary,backgroundColor:theme.vars.color.primary};export const style=theme.css(base);`,
-    },
-  })
-  expect(result.modules['app.ts']!.css.includes('#123')).toMatchInlineSnapshot(
-    'true',
-  )
-  const bundle = await Esbuild.build({
-    stdin: {
-      contents: result.modules['app.ts']!.code,
-      loader: 'ts',
-      resolveDir: process.cwd(),
-    },
-    bundle: true,
-    write: false,
-    format: 'iife',
-    globalName: 'Fixture',
-    alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
-  })
-  expect(
-    Vm.runInNewContext(
-      `${bundle.outputFiles![0]!.text};typeof Fixture.style().className`,
-    ),
-  ).toMatchInlineSnapshot('"string"')
-  expect(() =>
-    Graph.compile({
+describe('compile', () => {
+  test('links default variable exports through packed contracts', () => {
+    const library = Graph.compile({
       modules: {
-        'app.ts': `import {css} from 'zyzz';const base={width:'10px'};const [alias]=[base];alias.width='20px';export const style=css(base);`,
+        'vars.ts': `import {Vars} from 'zyzz';const vars=Vars.define({gap:'length'});export default vars;`,
       },
-    }),
-  ).toThrow()
-  const library = Graph.compile({ modules: { 'vars.ts': librarySource } })
-  const data = JSON.parse(library.contracts['vars.ts']!)
-  data.exports.vars.variables.gap.name = data.exports.vars.variables.amount.name
-  expect(() =>
-    Graph.compile({
-      contracts: { 'lib.js': JSON.stringify(data) },
+    })
+    const app = Graph.compile({
+      contracts: { 'lib.js': library.contracts['vars.ts']! },
       imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
       modules: {
-        'app.ts': `import {css} from 'zyzz';import {vars} from 'lib';export const style=css({width:vars.gap});`,
+        'app.ts': `import vars from 'lib';import {css} from 'zyzz';export const styles={card:css({width:vars.gap})};`,
       },
-    }),
-  ).toThrow()
-})
-test('merges finite interface declarations and rejects unsafe static records', () => {
-  const graph = Graph.compile({
-    modules: {
-      'app.ts': `import {css} from 'zyzz';interface Values {width:'10px'|'20px'} interface Values {opacity:0|1} export const style=css((values:Values)=>({width:values.width,opacity:values.opacity}));`,
-    },
+    })
+    expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-1e8a67z1uaws1j-base0{width:var(--z-v4t4nbe1og4cic-76-61-72-73--67-61-70);}"`,
+    )
   })
-  expect(
-    graph.modules['app.ts']!.css.includes('opacity:var('),
-  ).toMatchInlineSnapshot('true')
-  for (const source of [
-    `const base={width:'10px'};let alias=base;alias.width='20px';css(base)`,
-    `const base={__proto__:'red'};css({color:base.__proto__})`,
-    `const vars=Vars.define({__proto__:'length'});css({width:vars.__proto__})`,
-  ])
+  test('rejects static records returned to runtime code', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {css} from 'zyzz';const base={width:'10px'};function get(){return base};get().width='20px';css(base);`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:51: Static data cannot be mutated or escape through unsupported expressions.]`,
+    )
+  })
+  const librarySource = `import {Vars} from 'zyzz';export const vars=Vars.define({amount:{type:'percentage',inherits:false,initialValue:'25%'},gap:{type:'length',inherits:true,initialValue:'4px'}});`
+  function compile() {
+    const library = Graph.compile({
+      modules: {
+        'vars.ts': librarySource,
+        'index.ts': `export {vars as layout} from './vars.js';`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'lib/index.js': library.contracts['index.ts']! },
+      imports: { 'app.ts': { lib: 'lib/index.js', zyzz: null } },
+      modules: {
+        'app.ts': `import {css} from 'zyzz';import {layout} from 'lib';export {layout};const base={height:'20px',padding:layout.gap} as const;type Width='10px'|'30px';interface Values {width:Width}export const styles={registered:css({...base,width:layout.amount}),dynamic:css((values:Values)=>({...base,width:values.width}))};`,
+      },
+    })
+    return { library, app }
+  }
+  async function bundle() {
+    const { library, app } = compile()
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-variable-package-'))
+    try {
+      const packageRoot = Path.join(root, 'node_modules/lib')
+      await Fs.mkdir(packageRoot, { recursive: true })
+      await Fs.writeFile(
+        Path.join(packageRoot, 'package.json'),
+        JSON.stringify({ name: 'lib', type: 'module', exports: './index.js' }),
+      )
+      for (const [id, module] of Object.entries(library.modules)) {
+        const filename = id.replace(/\.ts$/, '.js')
+        await Fs.writeFile(
+          Path.join(packageRoot, filename),
+          (await Esbuild.transform(module.code, { loader: 'ts' })).code,
+        )
+        if (library.contracts[id])
+          await Fs.writeFile(
+            Path.join(packageRoot, filename + '.zyzz.json'),
+            library.contracts[id]!,
+          )
+      }
+      await Fs.writeFile(Path.join(root, 'app.ts'), app.modules['app.ts']!.code)
+      const bundle = await Esbuild.build({
+        entryPoints: [Path.join(root, 'app.ts')],
+        bundle: true,
+        write: false,
+        format: 'iife',
+        globalName: 'Fixture',
+        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+      })
+      return {
+        css: (app.sharedCss ?? '') + app.modules['app.ts']!.css,
+        code: bundle.outputFiles[0]!.text,
+      }
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }
+  test('rejects variable identity collisions across independent libraries', () => {
+    const a = Graph.compile({ modules: { 'vars.ts': librarySource } })
+    const b = Graph.compile({
+      modules: { 'vars.ts': librarySource.replace('25%', '50%') },
+    })
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'a.js': a.contracts['vars.ts']!,
+          'b.js': b.contracts['vars.ts']!,
+        },
+        modules: { 'app.ts': 'export {}' },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: b.js:0: Invalid library contract: Conflicting packed variable identity: --z-v4t4nbe1og4cic-76-61-72-73--61-6d-6f-75-6e-74; compile libraries with package-qualified module IDs.]`,
+    )
+  })
+  test('renders statically expanded theme records in a browser', async () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {Theme} from 'zyzz';const theme=Theme.define({color:{primary:'#123'}});const base={color:theme.tokens.color.primary,backgroundColor:theme.vars.color.primary};export const style=theme.css(base);export const scope=theme.className;`,
+      },
+    })
+    const bundle = await Esbuild.build({
+      stdin: {
+        contents: result.modules['app.ts']!.code,
+        loader: 'ts',
+        resolveDir: process.cwd(),
+      },
+      bundle: true,
+      write: false,
+      format: 'iife',
+      globalName: 'Fixture',
+      alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${result.modules['app.ts']!.css}</style><main><div id="card"></div></main>`,
+      )
+      await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+      await page.evaluate(
+        `document.querySelector('main').className=Fixture.scope;document.getElementById('card').className=Fixture.style().className`,
+      )
+      expect(
+        await page
+          .locator('#card')
+          .evaluate((el) => [
+            getComputedStyle(el).color,
+            getComputedStyle(el).backgroundColor,
+          ]),
+      ).toMatchInlineSnapshot(`
+      [
+        "rgb(17, 34, 51)",
+        "rgb(17, 34, 51)",
+      ]
+    `)
+    } finally {
+      await browser.close()
+    }
+  })
+  test('expands immutable theme references and rejects hidden mutations and duplicate packed slots', async () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {Theme} from 'zyzz';const theme=Theme.define({color:{primary:'#123'}});const base={color:theme.tokens.color.primary,backgroundColor:theme.vars.color.primary};export const style=theme.css(base);`,
+      },
+    })
     expect(
-      () =>
+      result.modules['app.ts']!.css.includes('#123'),
+    ).toMatchInlineSnapshot('true')
+    const bundle = await Esbuild.build({
+      stdin: {
+        contents: result.modules['app.ts']!.code,
+        loader: 'ts',
+        resolveDir: process.cwd(),
+      },
+      bundle: true,
+      write: false,
+      format: 'iife',
+      globalName: 'Fixture',
+      alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+    })
+    expect(
+      Vm.runInNewContext(
+        `${bundle.outputFiles![0]!.text};typeof Fixture.style().className`,
+      ),
+    ).toMatchInlineSnapshot('"string"')
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {css} from 'zyzz';const base={width:'10px'};const [alias]=[base];alias.width='20px';export const style=css(base);`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:57: Static data cannot be mutated or escape to runtime calls.]`,
+    )
+    const library = Graph.compile({ modules: { 'vars.ts': librarySource } })
+    const data = JSON.parse(library.contracts['vars.ts']!)
+    data.exports.vars.variables.gap.name =
+      data.exports.vars.variables.amount.name
+    expect(() =>
+      Graph.compile({
+        contracts: { 'lib.js': JSON.stringify(data) },
+        imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
+        modules: {
+          'app.ts': `import {css} from 'zyzz';import {vars} from 'lib';export const style=css({width:vars.gap});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: lib.js:0: Invalid library contract: Invalid packed variable contract.]`,
+    )
+  })
+  test('merges finite interface declarations and rejects unsafe static records', () => {
+    const graph = Graph.compile({
+      modules: {
+        'app.ts': `import {css} from 'zyzz';interface Values {width:'10px'|'20px'} interface Values {opacity:0|1} export const style=css((values:Values)=>({width:values.width,opacity:values.opacity}));`,
+      },
+    })
+    expect(
+      graph.modules['app.ts']!.css.includes('opacity:var('),
+    ).toMatchInlineSnapshot('true')
+    const errors = [
+      `const base={width:'10px'};let alias=base;alias.width='20px';css(base)`,
+      `const base={__proto__:'red'};css({color:base.__proto__})`,
+      `const vars=Vars.define({__proto__:'length'});css({width:vars.__proto__})`,
+      `const base={width:'10px'};const alias=flag?base:{};alias.width='20px';css(base)`,
+      `const base={width:'10px'};const holder={safe:base,unsafe:flag?base:{}};holder.unsafe.width='20px';css(base)`,
+    ].map((source) => {
+      try {
         Graph.compile({
           modules: { 'app.ts': `import {css,Vars} from 'zyzz';${source}` },
-        }),
-      source,
-    ).toThrow()
-})
-describe('compile', () => {
+        })
+        return 'accepted'
+      } catch (error) {
+        return error
+      }
+    })
+    expect(errors).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: app.ts:60: Static data cannot be mutated or escape to runtime calls.],
+        [Source.ExtractError: app.ts:42: Static object prototypes are unsupported.],
+        [Source.ExtractError: app.ts:54: Variable schemas require unique names and supported scalar domains.],
+        [Source.ExtractError: app.ts:68: Static data cannot be mutated or escape through unsupported expressions.],
+        [Source.ExtractError: app.ts:87: Static data cannot be mutated or escape through unsupported expressions.],
+      ]
+    `)
+  })
+
   test('links registered variable references and assignments through packed aliases', async () => {
     expect(
       JSON.parse(compile().library.contracts['vars.ts']!).version,
@@ -204,7 +314,9 @@ describe('compile', () => {
           'app.ts': `import {css} from 'zyzz';const base={width:'10px'};const holder={nested:{base}};holder.nested.base.width='20px';export const style=css(base);`,
         },
       }),
-    ).toThrow(/cannot be mutated/)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:80: Static data cannot be mutated or escape through unsupported expressions.]`,
+    )
   })
   test('does not resolve a shadowed type alias using the outer declaration', () => {
     expect(() =>
@@ -233,36 +345,48 @@ describe('compile', () => {
           })
           return 'accepted'
         } catch (error) {
-          return (error as Error).message
+          return error
         }
       }),
     ).toMatchInlineSnapshot(`
       [
-        "app.ts:51: Static data cannot be mutated or escape to runtime calls.",
-        "app.ts:68: Static data cannot be mutated or escape to runtime calls.",
-        "app.ts:51: Static data cannot be mutated or escape to runtime calls.",
+        [Source.ExtractError: app.ts:51: Static data cannot be mutated or escape through unsupported expressions.],
+        [Source.ExtractError: app.ts:68: Static data cannot be mutated or escape through unsupported expressions.],
+        [Source.ExtractError: app.ts:51: Static data cannot be mutated or escape through unsupported expressions.],
       ]
     `)
   })
   test('rejects loop writes and noncanonical array member keys', () => {
-    for (const write of [
+    const errors = [
       `for(base.width of ['20px']){}`,
       `for(base.width in {x:1}){}`,
-    ])
-      expect(() =>
+    ].map((write) => {
+      try {
         Graph.compile({
           modules: {
             'app.js': `import {css} from 'zyzz';const base={width:'10px'};${write}export const card=css(base)`,
           },
-        }),
-      ).toThrow(/cannot be mutated/)
+        })
+        return 'accepted'
+      } catch (error) {
+        return error
+      }
+    })
+    expect(errors).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: app.js:51: Static data cannot be mutated or escape through unsupported expressions.],
+        [Source.ExtractError: app.js:51: Static data cannot be mutated or escape through unsupported expressions.],
+      ]
+    `)
     expect(() =>
       Graph.compile({
         modules: {
           'app.js': `import {css} from 'zyzz';const sizes=['10px','20px'];export const card=css({width:sizes['01']})`,
         },
       }),
-    ).toThrow()
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.js:82: Expected a literal string or number; expressions are not evaluated.]`,
+    )
   })
   test('does not publish values through type-only variable exports', () => {
     const output = Graph.compile({

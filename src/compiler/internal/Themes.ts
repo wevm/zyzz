@@ -22,6 +22,7 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  readonly output?: 'html' | undefined
   /** Portable explicit variable references. */
   readonly variables?: Readonly<Record<string, Binding.Reference>> | undefined
   /** Portable marker contract, separate from theme metadata. */
@@ -223,9 +224,50 @@ export function collect(program: Ast.Program, options: collect.Options) {
       path.unshift(key)
       root = root.object
     }
-    return root.type === 'Identifier'
-      ? configs.get(root.name)?.members?.[JSON.stringify(path)]
-      : undefined
+    const config =
+      root.type === 'Identifier' ? configs.get(root.name) : undefined
+    if (
+      config &&
+      !config.call.selection &&
+      !config.call.initialization &&
+      path.length === 1 &&
+      ['themes', 'script'].includes(path[0]!)
+    ) {
+      const key = path[0]!
+      if (key === 'themes' && !config.call.options?.themes) return undefined
+      if (key === 'script' && !config.call.script)
+        fail(
+          'This packed configuration does not provide script(); rebuild its library with initialization support.',
+          node,
+        )
+      const members = Object.fromEntries(
+        Object.entries(config.members ?? {}).flatMap(([name, member]) => {
+          const parts = JSON.parse(name) as string[]
+          return key === 'themes' && parts[0] === 'themes'
+            ? [[JSON.stringify(parts.slice(1)), member]]
+            : []
+        }),
+      )
+      return {
+        ...config,
+        members,
+        binding: `${config.binding}:${key}`,
+        call: {
+          ...config.call,
+          members: Object.fromEntries(
+            Object.entries(members).map(([name, member]) => [
+              name,
+              member.call.name,
+            ]),
+          ),
+          ...(key === 'script'
+            ? { initialization: true }
+            : { selection: true }),
+          type: `${config.call.type}['${key}']`,
+        },
+      }
+    }
+    return config?.members?.[JSON.stringify(path)]
   }
 
   function data(node: Ast.Node): unknown {
@@ -419,6 +461,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
               key === 'script' ||
               (key === 'themes' && link.call.options?.themes)
             ) {
+              if (
+                (key === 'script' && !link.call.script) ||
+                link.call.selection ||
+                link.call.initialization
+              )
+                fail(
+                  'This configuration helper is not available on the linked contract.',
+                  id,
+                )
               if (key === 'script') scripts.add(link.call.name)
               const members = Object.fromEntries(
                 Object.entries(link.members ?? {}).flatMap(
@@ -580,6 +631,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
           key === 'script' ||
           (key === 'themes' && link.call.options?.themes)
         ) {
+          if (
+            (key === 'script' && !link.call.script) ||
+            link.call.selection ||
+            link.call.initialization
+          )
+            fail(
+              'This configuration helper is not available on the linked contract.',
+              id,
+            )
           if (key === 'script') scripts.add(link.call.name)
           const members = Object.fromEntries(
             Object.entries(link.members ?? {}).flatMap(([pathKey, member]) => {
@@ -809,7 +869,9 @@ export function collect(program: Ast.Program, options: collect.Options) {
       styles.set(parent.start, {
         call: parent,
         theme: themes[alias.name]!,
-        output: alias.options?.output === 'html' ? 'html' : undefined,
+        output:
+          alias.output ??
+          (alias.options?.output === 'html' ? 'html' : undefined),
       })
       return true
     }
@@ -1151,6 +1213,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       styles.set(grandparent.start, {
         call: grandparent,
         theme: themes[theme.name]!,
+        output: theme.output,
       })
       return true
     }

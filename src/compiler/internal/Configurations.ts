@@ -88,14 +88,21 @@ export function collect(options: collect.Options): Themes.Link {
   for (const [key, original] of Object.entries(catalog)) {
     const name = `${options.name}-${key}`
     const definition = Token.bind(original, contract)
+    const tokenType = type({
+      ...values(original.tokens),
+      ...original[Token.definition].queries,
+    })
     const call = {
+      ...(input.output === 'html' ? { output: 'html' as const } : {}),
       end: options.expression.end,
       name,
       start: options.expression.start,
-      tokenType: type({
-        ...values(original.tokens),
-        ...original[Token.definition].queries,
-      }),
+      tokenType,
+      ...(input.output === 'html' || input.shorthands
+        ? {
+            type: `import('zyzz').Config.create.ReturnType<{theme:${tokenType};${input.output === 'html' ? "output:'html';" : ''}shorthands:${type(input.shorthands ?? {})}}>['theme']`,
+          }
+        : {}),
     }
     members[JSON.stringify('themes' in config ? ['themes', key] : ['theme'])] =
       {

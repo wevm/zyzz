@@ -4,6 +4,7 @@
  */
 import * as Lightning from 'lightningcss'
 import * as Mapping from '@jridgewell/gen-mapping'
+import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Parser from 'oxc-parser'
@@ -22,6 +23,7 @@ export function zyzz(): Plugin {
   const states = new WeakMap<Environment, Map<string, Entry>>()
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
+  const assets = new Map<string, string>()
   let root: string
 
   function entries(environment: Environment) {
@@ -204,6 +206,17 @@ export function zyzz(): Plugin {
     code?: string,
     allSources = false,
   ) {
+    async function resolve(source: string, importer: string) {
+      const resolved = await host.resolve(source, importer)
+      if (resolved && entry.environment.mode === 'dev') {
+        const optimized = Object.values({
+          ...entry.environment.depsOptimizer?.metadata.optimized,
+          ...entry.environment.depsOptimizer?.metadata.discovered,
+        }).find((item) => item.file === resolved.id.split('?')[0])
+        if (optimized?.src) return { ...resolved, id: optimized.src }
+      }
+      return resolved
+    }
     const imports: Record<
       string,
       Record<string, string | null>
@@ -254,7 +267,7 @@ export function zyzz(): Plugin {
           resolutions[specifier] = null
           continue
         }
-        const resolved = await host.resolve(specifier, file)
+        const resolved = await resolve(specifier, file)
         if (!resolved)
           throw new Source.ExtractError([
             {
@@ -342,7 +355,7 @@ export function zyzz(): Plugin {
             continue
           const specifier = node.source.value
           if (specifier === 'zyzz' || specifier.startsWith('zyzz/')) continue
-          const resolved = await host.resolve(specifier, file)
+          const resolved = await resolve(specifier, file)
           if (!resolved || (!resolved.external && eligible(resolved.id)))
             continue
           const physical = resolved.id.split(/[?#]/)[0]!
@@ -450,10 +463,29 @@ export function zyzz(): Plugin {
         throw new Error('Asset path escapes its owning package.')
       host.watch(file)
       files.add(file)
-      assetUrls.set(
-        target,
-        `/@fs/${file.replaceAll('\\', '/')}${target.slice(raw.length)}`,
-      )
+      let url: string
+      if (/[?#%]/.test(file)) {
+        if (entry.environment.mode === 'build') {
+          url = await host.asset(file)
+          if (target.slice(raw.length)) url += `$_${target.slice(raw.length)}__`
+        } else {
+          url = `/@zyzz/asset/${Crypto.hash('sha256', file)}/${encodeURIComponent(Path.basename(file))}`
+          assets.set(url, file)
+          url += target.slice(raw.length)
+        }
+      } else {
+        const pathname = file
+          .replaceAll('\\', '/')
+          .split('/')
+          .map((part, index) =>
+            index === 0 && /^[a-z]:$/i.test(part)
+              ? part
+              : encodeURIComponent(part),
+          )
+          .join('/')
+        url = `/@fs/${pathname}${target.slice(raw.length)}`
+      }
+      assetUrls.set(target, url)
     }
     const shared = !Object.keys(result.sharedAssets ?? {}).length
       ? {
@@ -505,6 +537,23 @@ export function zyzz(): Plugin {
   }
 
   return {
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        const path = new URL(request.url ?? '/', 'http://localhost').pathname
+        const file = assets.get(path)
+        if (!file) return next()
+        Fs.readFile(file).then((content) => {
+          response.setHeader(
+            'Content-Type',
+            file.endsWith('.svg')
+              ? 'image/svg+xml'
+              : 'application/octet-stream',
+          )
+          response.setHeader('Cache-Control', 'no-cache')
+          response.end(content)
+        }, next)
+      })
+    },
     configResolved(config) {
       root = config.root
     },
@@ -548,6 +597,15 @@ export function zyzz(): Plugin {
         {
           resolve: (source, importer) => this.resolve(source, importer),
           watch: (file) => this.addWatchFile(file),
+          asset: async (file) => {
+            const reference = this.emitFile({
+              type: 'asset',
+              name: Path.basename(file).replace(/[?#%]/g, '_'),
+              source: await Fs.readFile(file),
+            })
+            // Vite's CSS asset placeholder preserves its configured base and output naming.
+            return `__VITE_ASSET__${reference}__`
+          },
         },
         undefined,
         id === sharedId,
@@ -581,6 +639,15 @@ export function zyzz(): Plugin {
         {
           resolve: (source, importer) => this.resolve(source, importer),
           watch: (file) => this.addWatchFile(file),
+          asset: async (file) => {
+            const reference = this.emitFile({
+              type: 'asset',
+              name: Path.basename(file).replace(/[?#%]/g, '_'),
+              source: await Fs.readFile(file),
+            })
+            // Vite's CSS asset placeholder preserves its configured base and output naming.
+            return `__VITE_ASSET__${reference}__`
+          },
         },
         code,
       )
@@ -647,6 +714,7 @@ type Entry = {
 }
 
 type Host = {
+  asset: (file: string) => Promise<string>
   resolve: (
     source: string,
     importer: string,

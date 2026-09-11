@@ -2,6 +2,7 @@
  * Extracts literal styles and local themes through lexical source analysis.
  * @module
  */
+import * as RuleReference from '../internal/RuleReference.js'
 import * as Condition from '../internal/Condition.js'
 import * as Static from './internal/Static.js'
 import * as ThemeValues from '../web/internal/Themes.js'
@@ -499,7 +500,21 @@ export function extract(options: extract.Options): extract.ReturnType {
           }
           node = Expression.unwrap(node)
           const animation = contributions.references.get(node.start)
-          if (animation) return animation
+          if (animation) {
+            const kind = contributions.kinds.get(animation)
+            if (
+              kind &&
+              targets.some((target) => !RuleReference.accepts(kind, target))
+            ) {
+              report(
+                'unsupported_syntax',
+                'Named stylesheet reference is incompatible with this property.',
+                node,
+              )
+              return undefined
+            }
+            return animation
+          }
           const template =
             node.type === 'TemplateLiteral'
               ? Expression.template(node, 0, (expression) => {

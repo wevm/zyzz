@@ -6,11 +6,11 @@ export function transform<C extends Lightning.CustomAtRules>(
   options: Lightning.TransformOptions<C>,
 ): Lightning.TransformResult {
   const source = new TextDecoder().decode(options.code)
-  const renamed = rename(
-    source,
-    'font-feature-values',
-    '-zyzz-font-feature-values',
-  )
+  let marker = '-zyzz-ffv-000000000'
+  let suffix = 0
+  while (source.toLowerCase().includes(marker))
+    marker = `-zyzz-ffv-${(++suffix).toString(36).padStart(9, '0')}`
+  const renamed = rename(source, 'font-feature-values', marker)
   if (source === renamed) return Lightning.transform(options)
   const result = Lightning.transform({
     ...options,
@@ -21,7 +21,7 @@ export function transform<C extends Lightning.CustomAtRules>(
     code: new TextEncoder().encode(
       rename(
         new TextDecoder().decode(result.code),
-        '-zyzz-font-feature-values',
+        marker,
         'font-feature-values',
       ),
     ),

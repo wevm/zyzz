@@ -7,7 +7,12 @@ import type * as Context from './internal/Context.js'
 export function counterStyle<const options extends counterStyle.Options>(
   options: options &
     Record<Exclude<keyof options, keyof counterStyle.Options>, never> &
-    RuleReference.Checked<options>,
+    RuleReference.Checked<options> &
+    (options extends { system: 'additive' }
+      ? { readonly additiveSymbols: string }
+      : options extends { system: `extends ${string}` }
+        ? unknown
+        : { readonly symbols: string }),
   context: Context.Options = {},
 ): counterStyle.Reference {
   void options
@@ -43,7 +48,8 @@ export declare namespace counterStyle {
       | 'alphabetic'
       | 'symbolic'
       | 'additive'
-      | `fixed${string}`
+      | 'fixed'
+      | `fixed ${bigint}`
       | `extends ${string}`
       | undefined
   }

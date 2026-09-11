@@ -18,9 +18,9 @@ const full = process.argv.includes('--require-full')
 if (update && full)
   throw new Error('--require-full cannot be combined with --update')
 type Entry = {
+  evidence: readonly string[]
   grammar: string
   status: 'deferred' | 'partial' | 'supported'
-  evidence: readonly string[]
 }
 type Inventory = { entries: Record<string, Entry>; version: string }
 type Rule = { descriptors?: Record<string, unknown> }
@@ -47,18 +47,34 @@ for (const name of Object.keys(grammars).sort()) {
     .digest('hex')
   const old = previous.entries[name]
   current.entries[name] = {
-    evidence: old?.evidence ?? [],
+    evidence: old?.grammar === grammar ? old.evidence : [],
     grammar,
-    status: old?.status ?? 'deferred',
+    status: old?.grammar === grammar ? old.status : 'deferred',
   }
   if (!old || old.grammar !== grammar) errors.push(`Grammar changed: ${name}`)
   if (old && !['deferred', 'partial', 'supported'].includes(old.status))
     errors.push(`Invalid status: ${name}`)
   if (old?.status === 'supported' && !old.evidence.length)
     errors.push(`Missing evidence: ${name}`)
-  for (const evidence of old?.evidence ?? [])
-    if (!Fs.existsSync(Path.resolve(directory, '../..', evidence)))
-      errors.push(`Missing evidence file: ${name}: ${evidence}`)
+  for (const evidence of old?.evidence ?? []) {
+    const root = Path.resolve(directory, '../..')
+    const path = Path.resolve(root, evidence)
+    const relative = Path.relative(root, path)
+    const valid = (() => {
+      if (relative.startsWith('..') || Path.isAbsolute(relative)) return false
+      try {
+        const real = Path.relative(root, Fs.realpathSync(path))
+        return (
+          !real.startsWith('..') &&
+          !Path.isAbsolute(real) &&
+          Fs.statSync(path).isFile()
+        )
+      } catch {
+        return false
+      }
+    })()
+    if (!valid) errors.push(`Missing evidence file: ${name}: ${evidence}`)
+  }
 }
 for (const name of Object.keys(previous.entries))
   if (!(name in grammars)) errors.push(`Removed grammar: ${name}`)

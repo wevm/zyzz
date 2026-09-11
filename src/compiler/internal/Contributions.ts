@@ -284,8 +284,7 @@ export function extract(
     if (
       node.type === 'UnaryExpression' &&
       node.operator === 'void' &&
-      node.argument.type === 'Literal' &&
-      node.argument.value === 0
+      Expression.unwrap(node.argument).type === 'Literal'
     )
       return undefined
     if (

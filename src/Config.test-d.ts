@@ -138,3 +138,14 @@ describe('create', () => {
     css(() => ({ color: '#fff' }))
   })
 })
+
+describe('create', () => {
+  test('rejects undeclared layer names with CSS separators', () => {
+    const { css } = Config.create({ layers: ['base'] })
+    // @ts-expect-error undeclared tab-separated layer
+    css({ '@layer\tunknown': { color: 'red' } })
+    // @ts-expect-error undeclared comment-separated layer
+    css({ '@layer/**/unknown': { color: 'red' } })
+    css({ '@layer': { color: 'red' }, '@layer base': { color: 'blue' } })
+  })
+})

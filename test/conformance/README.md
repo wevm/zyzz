@@ -10,7 +10,7 @@ Consumer probes cover property names, token domains, units, hex literals, intege
 
 ## Coverage
 
-`coverage.json` classifies every pinned property, function, selector, at-rule, syntax, type, and unit. SHA-256 fingerprints cover complete upstream entries and shared syntaxes. `pnpm check:css` fails on grammar drift or unclassified additions.
+`coverage.json` classifies every pinned property, function, selector, syntax, type, and unit. `at-rules.json` separately tracks at-rule and descriptor grammars. SHA-256 fingerprints cover complete upstream entries and shared syntaxes. `pnpm check:css` fails on grammar drift or unclassified additions.
 
 | Status       | Meaning                                                                               |
 | ------------ | ------------------------------------------------------------------------------------- |
@@ -38,9 +38,9 @@ The **CSS Property Conformance (100%)** CI job publishes a report even when it f
 ## Upstream Updates
 
 1. Review the dependency update and changed upstream grammar.
-2. Run `pnpm update:css` to refresh fingerprints.
+2. Run `pnpm update:css` and `pnpm update:at-rules` to refresh both inventories.
 3. Classify additions and update property types and probes as required.
-4. Run `pnpm check:css`, `pnpm check:types`, and the Transform CSS conformance scenarios; run applicable browser fixtures.
+4. Run `pnpm check:css`, `pnpm check:at-rules`, `pnpm check:types`, and the Transform CSS conformance scenarios; run applicable browser fixtures.
 
 Refreshing fingerprints acknowledges upstream changes; it does not implement features or promote coverage. Normal CI uses the lockfile and does not fetch live grammar.
 

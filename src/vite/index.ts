@@ -106,7 +106,6 @@ export function zyzz(): Plugin {
     )
   }
   function contributes(source: string) {
-    if (!source.includes('zyzz')) return false
     const { program } = Parser.parseSync('source.tsx', source, {
       sourceType: 'module',
     })
@@ -115,7 +114,8 @@ export function zyzz(): Plugin {
       if (
         node.type !== 'ImportDeclaration' ||
         node.importKind === 'type' ||
-        !['zyzz', 'zyzz/web'].includes(node.source.value)
+        (!['zyzz', 'zyzz/web'].includes(node.source.value) &&
+          !node.source.value.startsWith('.'))
       )
         continue
       for (const specifier of node.specifiers) {
@@ -143,11 +143,12 @@ export function zyzz(): Plugin {
                 'positionTry',
                 'viewTransition',
               ].includes(name)
-            : name === 'Config'
+            : name === 'Config' || node.source.value.startsWith('.')
         )
           imports.set(specifier.start, name)
       }
     }
+    // Local call imports are candidates; Graph follows their re-exports before emission.
     if (!imports.size) return false
     const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
     Walker.walk(program, { scopeTracker })

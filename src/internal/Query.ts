@@ -27,17 +27,19 @@ export function threshold(value: unknown): value is string {
 
 /** Resolves exact named width comparisons and ranges; raw conditions pass through. */
 export function resolve(key: string, metadata: Metadata): string {
-  const match = /^@(media|container) (.+)$/.exec(key)
+  const match = /^@(media|container)[ \t\n\r\f]+([\s\S]+)$/.exec(
+    key.replace(/\/\*[^]*?\*\//g, ' '),
+  )
   if (!match) return key
   const kind = match[1]!
-  const text = match[2]!
+  const text = match[2]!.trim()
   if (
     text.includes('(') ||
     (kind === 'media' &&
       /^(?:(?:only|not)\s+)?(?:all|print|screen)(?:\s|,|$)/i.test(text))
   )
     return key
-  const pieces = text.split(' ')
+  const pieces = text.split(/[ \t\n\r\f]+/)
   const name =
     kind === 'container' && pieces.length === 2 ? pieces.shift() : undefined
   if (name && !metadata.containerNames.includes(name))

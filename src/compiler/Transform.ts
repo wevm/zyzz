@@ -42,7 +42,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       call.start,
       call.end,
       call.name
-        ? `${JSON.stringify(call.name)}${call.kind === 'keyframes' || !/\.[cm]?tsx?$/.test(options.moduleId) ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
+        ? `${JSON.stringify(call.name)}${call.kind === 'keyframes' || call.kind === 'colorProfile' || !/\.[cm]?tsx?$/.test(options.moduleId) ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
         : 'void 0',
     )
   type Span = Pick<Ast.Node, 'end' | 'start'>
@@ -463,7 +463,9 @@ export function compile(options: compile.Options): compile.ReturnType {
   const prefix = emitted.contributionCss ?? ''
   let contributionLine = 1
   const contributions = extracted.contributions ?? []
-  const firstLayer = contributions.findIndex((value) => value.kind === 'layers')
+  const firstLayer = contributions.findIndex(
+    (value) => value.kind === 'layers' && value.names.length > 0,
+  )
   if (firstLayer >= 0) {
     const start = extracted.contributionStarts?.[firstLayer]
     if (start !== undefined)

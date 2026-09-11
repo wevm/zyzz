@@ -1,10 +1,9 @@
-/** Checks colorProfile through its public descriptor contract. @module */
-import { describe, test, expectTypeOf } from 'vite-plus/test'
-import { colorProfile } from 'zyzz/web'
+/** Keeps the profile helper behind its browser verification gate. @module */
+import { describe, test } from 'vite-plus/test'
+import * as Web from 'zyzz/web'
 describe('colorProfile', () => {
-  test('preserves its descriptor and identity domains', () => {
-    expectTypeOf(
-      colorProfile({ src: 'url(/profile.icc)' }),
-    ).toEqualTypeOf<colorProfile.Reference>()
+  test('remains planned until rendering is verified', () => {
+    // @ts-expect-error colorProfile is not a public export yet
+    Web.colorProfile({ src: 'url(/profile.icc)' })
   })
 })

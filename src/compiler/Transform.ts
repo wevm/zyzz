@@ -47,12 +47,29 @@ export function compile(options: compile.Options): compile.ReturnType {
   const applications = new Map<number, { end: number; folded: boolean }>()
   const calls = new Map(extracted.calls.map((call) => [call.start, call]))
   const definitions = new Map<number, Ast.ObjectExpression>()
+  const unusedSelections = new Set<number>()
   const identifiers = new Map<string, Span[]>()
 
   const localApplications = Applications.create(program, extracted.calls)
   Walker.walk(program, {
     enter(node, parent) {
       localApplications?.enter(node, parent)
+      if (
+        node.type === 'VariableDeclarator' &&
+        node.init &&
+        node.id.type === 'ObjectPattern' &&
+        node.id.properties.every(
+          (property) =>
+            property.type === 'Property' &&
+            (property.key.type === 'Identifier'
+              ? property.key.name
+              : property.key.type === 'Literal'
+                ? property.key.value
+                : undefined) !== 'themes',
+        )
+      )
+        unusedSelections.add(Expression.unwrap(node.init).start)
+
       if (node.type === 'Identifier') {
         const references = identifiers.get(node.name) ?? []
         references.push(node)
@@ -196,8 +213,11 @@ export function compile(options: compile.Options): compile.ReturnType {
             ]),
         )
         const entries = JSON.stringify(Object.entries(catalog))
+        if (unusedSelections.has(call.start))
+          return `{theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
+
         usesSelection = true
-        return `{theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:${selection}.create(${entries},${call.options.output === 'html'})}`
+        return `{theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:/*#__PURE__*/${selection}.create(${entries},${call.options.output === 'html'})}`
       }
       if (Object.hasOwn(call.members, '["theme"]'))
         return JSON.stringify({ theme: scope(call.members['["theme"]']!) })

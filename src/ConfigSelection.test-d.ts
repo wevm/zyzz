@@ -29,3 +29,13 @@ describe('create', () => {
     void html.themes({ theme: 'a' }).className
   })
 })
+
+test('rejects extra selector fields through variables', () => {
+  const { themes } = Config.create({
+    defaultTheme: 'base',
+    themes: { base: {} },
+  })
+  const choice = { theme: 'base', extra: true } as const
+  // @ts-expect-error selectors accept only theme and colorScheme
+  themes(choice)
+})

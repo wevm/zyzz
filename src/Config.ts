@@ -4,7 +4,7 @@
  */
 import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
-import { css } from './css.js'
+import { css, MissingTransformError } from './css.js'
 import type * as Style from './Style.js'
 import * as Theme from './Theme.js'
 import * as Token from './internal/Token.js'
@@ -105,7 +105,7 @@ export function create(options: create.Options = {}): unknown {
       ]),
     )
     const select = () => {
-      throw new Error('Theme selection requires the Zyzz source transform.')
+      throw new MissingTransformError()
     }
     Object.defineProperties(select, Object.getOwnPropertyDescriptors(bound))
     return Object.freeze({
@@ -174,10 +174,15 @@ export declare namespace create {
           /** Shared default token and variable contract. */ readonly theme: Theme.Definition<
             Tokens<options>
           >
-          /** Selects a compiled named scope; catalog members retain compatibility. */ readonly themes: ((options: {
-            readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
-            readonly theme: keyof catalog & string
-          }) => css.Props<
+          /** Selects a compiled named scope; catalog members retain compatibility. */ readonly themes: (<
+            const selection extends {
+              readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
+              readonly theme: keyof catalog & string
+            },
+          >(
+            options: selection &
+              Record<Exclude<keyof selection, 'theme' | 'colorScheme'>, never>,
+          ) => css.Props<
             options extends { output: infer output extends css.Output }
               ? output
               : 'react'

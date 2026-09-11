@@ -18,6 +18,7 @@ export type Validated<mappings extends Map> = {
     | 'script'
     | 'variants'
     | '__proto__'
+    | ''
     ? never
     : Unique<mappings[key]>
 }
@@ -43,7 +44,11 @@ export function read(value: unknown): Map {
       Object.fromEntries(
         entries.map(([name, descriptor]) => {
           if (
-            !/^[a-zA-Z_][\w]*$/.test(name) ||
+            !name ||
+            name.startsWith(':') ||
+            name.startsWith('@') ||
+            name.startsWith('--') ||
+            name.includes('&') ||
             Object.hasOwn(Literal.rules, name) ||
             [
               'css',

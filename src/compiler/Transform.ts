@@ -208,7 +208,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         const catalogType = /\.[cm]?tsx?$/.test(options.moduleId)
           ? ': Record<string,string>'
           : ''
-        const select = `((${input})=>({${key}:catalog[input.theme],...(input.colorScheme?{style:${style}}:{})}))`
+        const select = `((${input})=>{if(!input||typeof input!=="object"||Array.isArray(input)||!Object.hasOwn(input,"theme")||!Object.hasOwn(catalog,input.theme)||Object.keys(input).some(key=>key!=="theme"&&key!=="colorScheme")||(input.colorScheme!==undefined&&!["light","dark","light dark"].includes(input.colorScheme)))throw new TypeError("Invalid theme selection.");return {${key}:catalog[input.theme],...(input.colorScheme?{style:${style}}:{})}})`
         return `(()=>{const catalog${catalogType}=Object.fromEntries(${entries});return {${script ? `script:${appearance}.create(${entries}),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:Object.defineProperties(${select},Object.getOwnPropertyDescriptors(Object.fromEntries(Object.entries(catalog).map(([name,className])=>[name,{className}]))))}})()`
       }
       if (Object.hasOwn(call.members, '["theme"]'))

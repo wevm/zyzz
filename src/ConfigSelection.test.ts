@@ -7,6 +7,38 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 
 describe('create', () => {
+  test('rejects unchecked selector names, fields, and schemes', async () => {
+    const graph = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const {themes}=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'#123456'}}}});`,
+      },
+    })
+    const bundle = await Esbuild.build({
+      stdin: {
+        contents: graph.modules['config.ts']!.code,
+        loader: 'ts',
+        resolveDir: process.cwd(),
+      },
+      bundle: true,
+      write: false,
+      format: 'iife',
+      globalName: 'Fixture',
+      alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+    })
+    const select = Vm.runInNewContext(
+      `${bundle.outputFiles[0]!.text};Fixture.themes;`,
+    ) as (input: unknown) => unknown
+    for (const input of [
+      { theme: 'missing' },
+      { theme: 'toString' },
+      { theme: 'base', colorScheme: 'invalid' },
+      { theme: 'base', extra: true },
+      null,
+    ])
+      expect(() => select(input)).toThrowErrorMatchingInlineSnapshot(
+        '[TypeError: Invalid theme selection.]',
+      )
+  })
   for (const output of ['react', 'html'] as const) {
     test(`selects imported and packed ${output} themes without changing component rules`, async () => {
       const library = Graph.compile({

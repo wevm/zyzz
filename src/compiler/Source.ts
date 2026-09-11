@@ -524,10 +524,7 @@ export function extract(options: extract.Options): extract.ReturnType {
               reference.type !== 'number'
             ) &&
             !targets.every((target) =>
-              Binding.accepts(reference.type, target),
-            ) &&
-            !targets.every((target) =>
-              dynamic?.accepts(
+              Binding.accepts(reference.type, target) || dynamic?.accepts(
                 reference as unknown as Binding.Reference,
                 target,
               ),

@@ -27,7 +27,9 @@ jobs:
         run: pnpm check:at-rules >> "$GITHUB_STEP_SUMMARY"
       - name: Check CSS coverage
         run: pnpm check:css >> "$GITHUB_STEP_SUMMARY"
-      - name: Check types
+      - env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        name: Check types
         run: pnpm check:types
   conformance:
     name: CSS Property Conformance (100%)

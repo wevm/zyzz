@@ -175,3 +175,24 @@ All helpers are static authoring operations. Calls compile away; no stylesheet g
 Eager effects survive JavaScript tree shaking. Named definitions follow reachability with exported and externally observable names handled explicitly. Preserve declaration and rule order, URL ownership, source maps, HMR replacement/deletion, and packed-library metadata.
 
 Full support requires independent type, extraction, emission, map, packaging, and applicable browser fixtures for every inventory entry. Track unavailable browser features explicitly; accepted strings or emitted snapshots cannot substitute for rendering evidence. Web-only operations retain explicit native-target diagnostics.
+
+## Compilation Contexts
+
+Descriptor helpers accept an optional trailing `{ within }` options object. `within` is an ordered tuple of CSS grouping headers, outermost first. Only grouping contexts legal for the emitted rule are accepted. The default emits at stylesheet scope. Selectors and descriptor blocks are separate contexts.
+
+```ts
+fontFace(
+  { fontFamily: 'Body', src: 'url("./body.woff2")' },
+  { within: ['@layer fonts', '@supports (font-tech: variations)'] },
+)
+```
+
+Named helpers derive stable identities from the source module and constant binding. No name override is exposed initially. Exported identities retain their definitions across source and packed-library imports. Declaration helpers preserve authored descriptor order. Arrays preserve fallback order where the descriptor grammar permits fallbacks.
+
+Statement helpers emit at stylesheet scope. Imports precede namespaces and ordinary rules; charset is a UTF-8 output policy, never a nested contribution. Namespace declarations have stylesheet scope and require isolation from unrelated modules. Unsupported namespace combinations must fail compilation instead of changing selectors silently.
+
+CSS functions use ordered parameter records with `name`, optional `syntax`, and optional `default` fields, an optional `returns` syntax, and a `body` containing `result`, local custom properties, and conditional groups. Custom media owns a query identity; profile identities belong inside CSS color expressions. These contracts remain planned until their corresponding implementation gates pass.
+
+## Conformance Evidence
+
+`pnpm check:at-rules` verifies the pinned MDN inventory, supplementary modern rules, descriptor fingerprints, and referenced evidence files. `pnpm check:at-rules:full` also requires every entry to be supported. Inventory coverage alone does not establish type, compiler, packaging, or browser support. Browser limitations remain explicit in the acceptance report.

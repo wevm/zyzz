@@ -5,11 +5,14 @@
     "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
     "changeset:version": "changeset version",
     "check": "vp check --fix",
+    "check:at-rules": "node scripts/at-rule-conformance.ts",
+    "check:at-rules:full": "node scripts/at-rule-conformance.ts --require-full",
     "check:css": "node scripts/css-conformance.ts",
     "check:css:full": "node scripts/css-conformance.ts --require-full",
     "check:types": "tsc",
     "dev": "zile dev",
     "test": "vp test",
+    "update:at-rules": "node scripts/at-rule-conformance.ts --update",
     "update:css": "node scripts/css-conformance.ts --update"
   },
   "devDependencies": {

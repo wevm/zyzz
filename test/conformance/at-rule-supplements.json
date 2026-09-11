@@ -1,0 +1,118 @@
+{
+  "@color-profile": {
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules",
+    "syntax": "@color-profile <dashed-ident> { src: <url>; rendering-intent: <intent>; }"
+  },
+  "@color-profile/rendering-intent": {
+    "context": "@color-profile",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@color-profile/src": {
+    "context": "@color-profile",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@custom-media": {
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules",
+    "syntax": "@custom-media <dashed-ident> [ <media-query-list> | true | false ];"
+  },
+  "@font-feature-values/@annotation": {
+    "context": "@font-feature-values",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@font-feature-values/@character-variant": {
+    "context": "@font-feature-values",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@font-feature-values/@ornaments": {
+    "context": "@font-feature-values",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@font-feature-values/@styleset": {
+    "context": "@font-feature-values",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@font-feature-values/@stylistic": {
+    "context": "@font-feature-values",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@font-feature-values/@swash": {
+    "context": "@font-feature-values",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@font-feature-values/font-display": {
+    "context": "@font-feature-values",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@function": {
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules",
+    "syntax": "@function <dashed-ident>(<parameters>) [returns <syntax>]? { <function-body> }"
+  },
+  "@function/result": {
+    "context": "@function",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@bottom-center": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@bottom-left": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@bottom-left-corner": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@bottom-right": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@bottom-right-corner": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@left-bottom": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@left-middle": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@left-top": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@right-bottom": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@right-middle": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@right-top": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@top-center": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@top-left": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@top-left-corner": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@top-right": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  },
+  "@page/@top-right-corner": {
+    "context": "@page",
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules"
+  }
+}

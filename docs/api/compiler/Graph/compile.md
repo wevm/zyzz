@@ -136,5 +136,6 @@ The writer selects the lowest version required by the exported capabilities:
 | 2 | Configuration and bound aliases |
 | 3 | Queries and typography |
 | 4 | Callable theme selection and initialization script |
+| 5 | Property mappings |
 
-This reader accepts versions 1–4. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
+This reader accepts versions 1–5. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.

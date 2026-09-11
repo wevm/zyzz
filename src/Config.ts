@@ -5,6 +5,7 @@
 import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
 import { css, MissingTransformError } from './css.js'
+import * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
 import * as Theme from './Theme.js'
 import * as Token from './internal/Token.js'
@@ -23,7 +24,16 @@ export function create<const options extends create.Options>(
 export function create(options: create.Options = {}): unknown {
   const input = record(options)
   for (const key of Object.keys(input))
-    if (!['defaultTheme', 'layers', 'output', 'theme', 'themes'].includes(key))
+    if (
+      ![
+        'defaultTheme',
+        'layers',
+        'output',
+        'shorthands',
+        'theme',
+        'themes',
+      ].includes(key)
+    )
       throw new InvalidError(`Unknown configuration option: ${key}`)
   if (
     input.output !== undefined &&
@@ -68,7 +78,15 @@ export function create(options: create.Options = {}): unknown {
       'Appearance initialization requires the Zyzz source transform.',
     )
   }
-  const contract = Object.freeze({})
+  const shorthands = (() => {
+    if (input.shorthands === undefined) return undefined
+    try {
+      return Shorthands.read(input.shorthands)
+    } catch (error) {
+      throw new InvalidError((error as Error).message)
+    }
+  })()
+  const contract = Object.freeze(shorthands ? { shorthands } : {})
   if (input.themes !== undefined) {
     const catalog = record(input.themes)
     if (
@@ -135,6 +153,8 @@ export function create(options: create.Options = {}): unknown {
 export declare namespace create {
   /** Optional layer names and mutually exclusive theme modes. */
   type Options = {
+    /** Explicit ordered property aliases; none are installed by default. */
+    readonly shorthands?: Shorthands.Map | undefined
     /** Renderer props format; React is the default. */
     readonly output?: css.Output | undefined
     /** Ordered plain or dotted CSS layer names; emission follows source integration. */
@@ -170,18 +190,27 @@ export declare namespace create {
         : never,
       options extends { output: infer output extends css.Output }
         ? output
-        : 'react'
+        : 'react',
+      Mappings<options>
     >
   } & (options extends { theme: infer input }
     ? {
-        /** Isolated single-theme contract. */ readonly theme: Theme.Definition<
-          ExtractTokens<input>
+        /** Isolated single-theme contract. */ readonly theme: Handle<
+          ExtractTokens<input>,
+          Mappings<options>,
+          options extends { output: infer output extends css.Output }
+            ? output
+            : 'react'
         >
       }
     : options extends { themes: infer catalog }
       ? {
-          /** Shared default token and variable contract. */ readonly theme: Theme.Definition<
-            Tokens<options>
+          /** Shared default token and variable contract. */ readonly theme: Handle<
+            Tokens<options>,
+            Mappings<options>,
+            options extends { output: infer output extends css.Output }
+              ? output
+              : 'react'
           >
           /** Selects a compiled named scope; catalog members retain compatibility. */ readonly themes: (<
             const selection extends {
@@ -196,18 +225,37 @@ export declare namespace create {
               ? output
               : 'react'
           >) & {
-            readonly [name in keyof catalog]: Theme.Definition<
-              ExtractTokens<catalog[name]>
+            readonly [name in keyof catalog]: Handle<
+              ExtractTokens<catalog[name]>,
+              Mappings<options>,
+              options extends { output: infer output extends css.Output }
+                ? output
+                : 'react'
             >
           }
         }
       : {})
 }
 
+type Mappings<options> = options extends {
+  shorthands: infer map extends Shorthands.Map
+}
+  ? string extends keyof map
+    ? {}
+    : map
+  : {}
+type Handle<
+  tokens extends Theme.Tokens,
+  mappings extends Shorthands.Map,
+  output extends css.Output,
+> = Omit<Theme.Definition<tokens>, 'css'> & {
+  readonly css: Css<tokens, never, output, mappings>
+}
 type Css<
   tokens extends Theme.Tokens,
   layers extends string,
   output extends css.Output,
+  mappings extends Shorthands.Map,
 > = {
   <
     const values extends Record<string, string | number>,
@@ -218,20 +266,28 @@ type Css<
       ((
         values: values,
       ) => styles &
-        NoInfer<Body<styles, tokens, layers> & Binding.Checked<styles>>) &
+        NoInfer<
+          Body<styles, tokens, layers, mappings> & Binding.Checked<styles>
+        >) &
       (values extends Binding.Inputs<values> ? unknown : never) &
       (Parameters<callback> extends [Record<string, string | number>]
         ? unknown
         : never),
   ): css.Dynamic<values, output>
   <const styles extends Record<string, unknown>>(
-    styles: styles & NoInfer<Body<styles, tokens, layers>>,
+    styles: styles & NoInfer<Body<styles, tokens, layers, mappings>>,
   ): css.ReturnType<output>
 }
 type Keys<styles> = styles extends unknown ? keyof styles : never
-type Body<styles, tokens extends Theme.Tokens, layers extends string> = Record<
+type Body<
+  styles,
+  tokens extends Theme.Tokens,
+  layers extends string,
+  mappings extends Shorthands.Map,
+> = Record<
   Exclude<
     Keys<styles>,
+    | keyof mappings
     | keyof Style.DeclarationProperties
     | Condition.Keys<tokens>
     | `@layer ${layers}`
@@ -244,9 +300,21 @@ type Body<styles, tokens extends Theme.Tokens, layers extends string> = Record<
           | Condition.Keys<tokens>
           | `@layer ${layers}`
           ? styles[key] extends Record<string, unknown>
-            ? Body<styles[key], tokens, layers>
+            ? Body<styles[key], tokens, layers, mappings>
             : never
-          : Style.Accepted<Pick<styles, key>, tokens>[key]
+          : key extends keyof mappings
+            ? {
+                [target in mappings[key][number]]: styles[key] extends Style.Accepted<
+                  Record<target, styles[key]>,
+                  tokens
+                >[target] &
+                  Binding.Checked<Record<target, styles[key]>>[target]
+                  ? never
+                  : target
+              }[mappings[key][number]] extends never
+              ? styles[key]
+              : never
+            : Style.Accepted<Pick<styles, key>, tokens>[key]
       }
     : never)
 
@@ -343,6 +411,9 @@ type Validated<options> = Record<
   Exclude<keyof options, keyof create.Options>,
   never
 > &
+  (options extends { shorthands: infer mappings extends Shorthands.Map }
+    ? { shorthands: Shorthands.Validated<mappings> }
+    : {}) &
   (options extends { theme: infer input }
     ? { theme: ValidInput<input> }
     : options extends { themes: infer catalog; defaultTheme: infer key }

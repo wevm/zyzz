@@ -62,6 +62,8 @@ const styles = {
 }
 ```
 
+Dedicated `margin` and `padding` groups take precedence over `spacing` for their properties. Margin tokens accept signed lengths; padding tokens require nonnegative lengths. Empty or duplicate target lists, alias chains, unknown targets, and names colliding with authoring keys are rejected.
+
 See [Property Mappings](../../../guides/themes.md#property-mappings) for aliases and property-specific token scales.
 
 ### options.theme
@@ -196,3 +198,5 @@ const styles = { card: css({ padding: '8px' }) }
 ```
 
 `styles.card()` returns `class` and an optional serialized CSS `style` string. Styling overrides retain the same `className` and typed `style` inputs. Conversion belongs to compiled bindings; application code spreads or binds the result directly.
+
+Padding token literals are checked as nonnegative during typed authoring. Widened and JavaScript inputs follow the repository-wide contract of no runtime CSS-value validation.

@@ -28,6 +28,8 @@ Local validation: ten extraction/transform integrations, native type/lint checks
 
 Stack after framework PR #79: callable named-theme selection, root initialization script, property mappings and margin/padding groups, typed relationship helpers, stylesheet completion, variable/extraction completion, then acceptance reconciliation. Larger areas may use multiple dependent PRs. Vue remains deferred.
 
+Property mappings support explicit ordered aliases on config CSS and bound theme handles, including packed contracts, nested declarations, dynamic slots, source maps, and dedicated margin/padding token precedence. Browser, type, and CI acceptance evidence remains pending until the stack checks finish. Variants retain their separate deferred implementation gate.
+
 Callable named selections support destructured exports, aliases/re-exports, packed contracts, default token references, and React/HTML props. Seven focused linked/packed/renderer regressions, three configuration integrations, focused lint/types, and the package build pass locally. Matched 100-style config graph means: 10.138 ms ±10.81% before and 9.197 ms ±7.81% after; uncertainty overlaps. Browser scope verification remains required because Chromium download timed out. Initialization and hydration follow in the next stack slice.
 
 ### Root Appearance Initialization

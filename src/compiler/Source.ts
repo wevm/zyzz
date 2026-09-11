@@ -14,6 +14,7 @@ import type * as Ast from '@oxc-project/types'
 import * as Lightning from 'lightningcss'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
+import type * as Shorthands from '../internal/Shorthands.js'
 import * as Style from '../Style.js'
 import type * as Theme from '../Theme.js'
 import * as Scope from './internal/Scope.js'
@@ -28,6 +29,8 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Alias targets retained for declaration source locations. */
+  readonly shorthands?: Shorthands.Map | undefined
   /** Native HTML attribute output selected by the bound configuration. */
   readonly output?: 'html' | undefined
   /** Typed runtime slots for callback definitions. */
@@ -408,6 +411,8 @@ export function extract(options: extract.Options): extract.ReturnType {
           values[key] = object(input, [...prefix, key])
           continue
         }
+        const targets = themes?.styles.get(call.start)?.theme[Token.definition]
+          .contract.shorthands?.[key] ?? [key as Style.Declaration['property']]
         function value(node: Ast.Node, path: readonly string[]): unknown {
           const unwrapped = Expression.unwrap(node)
           const token =
@@ -472,13 +477,11 @@ export function extract(options: extract.Options): extract.ReturnType {
                 !(Binding.is(part)
                   ? (dynamic !== undefined &&
                       Object.values(dynamic.slots).includes(part)) ||
-                    Binding.accepts(
-                      part.type,
-                      key as Style.Declaration['property'],
+                    targets.every((target) =>
+                      Binding.accepts(part.type, target),
                     )
-                  : Token.accepts(
-                      part.group,
-                      key as Style.Declaration['property'],
+                  : targets.every((target) =>
+                      Token.accepts(part.group, target),
                     ))
               ) {
                 report(
@@ -495,11 +498,15 @@ export function extract(options: extract.Options): extract.ReturnType {
           if (
             reference &&
             Token.is(reference) &&
-            !Token.accepts(
-              reference.group,
-              key as Style.Declaration['property'],
+            !targets.every((target) =>
+              Token.accepts(reference.group, target),
             ) &&
-            !dynamic?.accepts(reference as unknown as Binding.Reference, key)
+            !targets.every((target) =>
+              dynamic?.accepts(
+                reference as unknown as Binding.Reference,
+                target,
+              ),
+            )
           ) {
             report(
               'unsupported_syntax',
@@ -516,11 +523,12 @@ export function extract(options: extract.Options): extract.ReturnType {
               Object.values(dynamic.slots).includes(reference) &&
               reference.type !== 'number'
             ) &&
-            !Binding.accepts(
-              reference.type,
-              key as Style.Declaration['property'],
-            ) &&
-            !dynamic?.accepts(reference as unknown as Binding.Reference, key)
+            !targets.every((target) =>
+              Binding.accepts(reference.type, target) || dynamic?.accepts(
+                reference as unknown as Binding.Reference,
+                target,
+              ),
+            )
           ) {
             report(
               'unsupported_syntax',
@@ -609,7 +617,10 @@ export function extract(options: extract.Options): extract.ReturnType {
       for (const style of definition.styles) validate(style)
       if (diagnostics.length !== before) continue
       styles.push(...definition.styles)
+      const shorthands = themes?.styles.get(call.start)?.theme[Token.definition]
+        .contract.shorthands
       calls.push({
+        ...(shorthands ? { shorthands } : {}),
         ...(themes?.styles.get(call.start)?.output
           ? { output: 'html' as const }
           : {}),

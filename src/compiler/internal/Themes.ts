@@ -20,6 +20,7 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  readonly output?: 'html' | undefined
   readonly catalogOnly?: boolean | undefined
   /** Whether the compiled configuration supplies initialization. */
   readonly script?: boolean | undefined
@@ -509,6 +510,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       }
       let definition: Theme.Definition
       let tokenType: string
+      let output: Call['output']
       try {
         if (member.property.name === 'define') {
           if (expression.arguments.length !== 1)
@@ -534,6 +536,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
             data(expression.arguments[1]!) as Theme.Overrides<Theme.Tokens>,
           )
           tokenType = parent.tokenType
+          output = parent.output
         }
       } catch (error) {
         if (error instanceof InvalidError) throw error
@@ -541,10 +544,17 @@ export function collect(program: Ast.Program, options: collect.Options) {
         fail(error.message, expression)
       }
       const call = Object.freeze({
+        ...(output ? { output } : {}),
         end: expression.end,
         name,
         start: expression.start,
         tokenType,
+        ...(definition[Token.definition].contract.shorthands ||
+        output === 'html'
+          ? {
+              type: `import('zyzz').Config.create.ReturnType<{theme:${tokenType};${output === 'html' ? "output:'html';" : ''}shorthands:${Configurations.type(definition[Token.definition].contract.shorthands ?? {})}}>['theme']`,
+            }
+          : {}),
       })
       calls.push(call)
       definitions.set(variable.id.start, call)
@@ -766,6 +776,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       tokenType: theme.tokenType,
       type: theme.type,
       options: theme.options,
+      output: theme.output,
     })
     aliases.push(alias)
     aliasBindings.set(id.start, alias)
@@ -860,7 +871,9 @@ export function collect(program: Ast.Program, options: collect.Options) {
       styles.set(parent.start, {
         call: parent,
         theme: themes[alias.name]!,
-        output: alias.options?.output === 'html' ? 'html' : undefined,
+        output:
+          alias.output ??
+          (alias.options?.output === 'html' ? 'html' : undefined),
       })
       return true
     }
@@ -1192,6 +1205,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       styles.set(grandparent.start, {
         call: grandparent,
         theme: themes[theme.name]!,
+        output: theme.output,
       })
       return true
     }

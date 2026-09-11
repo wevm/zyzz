@@ -56,11 +56,14 @@ export function define<const tokens extends Tokens>(
 }
 
 /** A theme contract with immutable, property-aware portable token references. */
-export type Definition<tokens extends Tokens = Tokens> = {
+export type Definition<
+  tokens extends Tokens = Tokens,
+  boundCss extends Css<tokens> = Css<tokens>,
+> = {
   /** Compiled scope class; reading untransformed authoring throws. */
   readonly className: string
   /** Token-aware callable authoring boundary, replaced by the source compiler. */
-  readonly css: Css<tokens>
+  readonly css: boundCss
   /** Internal contract and resolved values, carried without a registry. */
   readonly [Token.definition]: Token.Metadata
   /** Inferred references for use in Style.define declarations. */
@@ -77,12 +80,13 @@ export type Definition<tokens extends Tokens = Tokens> = {
 export function extend<
   const tokens extends Tokens,
   const overrides extends Record<string, unknown>,
+  const boundCss extends Css<tokens> = Css<tokens>,
 >(
-  theme: Definition<tokens>,
+  theme: Definition<tokens, boundCss>,
   overrides: overrides &
     NoInfer<Exact<overrides, Overrides<tokens>>> &
     NoInfer<Validated<overrides>>,
-): Definition<tokens> {
+): Definition<tokens, boundCss> {
   if (!theme || typeof theme !== 'object')
     throw new InvalidError([], 'Expected a theme definition.')
   const data = Object.getOwnPropertyDescriptor(theme, Token.definition)
@@ -93,7 +97,7 @@ export function extend<
     data.contract,
     data.values,
     data.queries,
-  ) as unknown as Definition<tokens>
+  ) as unknown as Definition<tokens, boundCss>
 }
 
 type Exact<input, shape> = {
@@ -154,7 +158,11 @@ type ReferenceTree<tree, group extends Token.Group> = tree extends
   : { readonly [key in keyof tree]: ReferenceTree<tree[key], group> }
 
 /** Supported scalar groups; composite presets and query metadata follow separately. */
-type Scalar<group> = group extends 'spacing' | 'borderRadius'
+type Scalar<group> = group extends
+  | 'spacing'
+  | 'borderRadius'
+  | 'margin'
+  | 'padding'
   ? Literal.Length
   : group extends
         | 'fontFamily'
@@ -205,6 +213,10 @@ export type Tokens = {
   readonly lineHeight?:
     | Palette<NonNullable<Literal.Properties['lineHeight']>>
     | undefined
+  /** Signed spacing for margins, preferred over shared spacing tokens. */
+  readonly margin?: Palette<Literal.Length> | undefined
+  /** Nonnegative padding, preferred over shared spacing tokens. */
+  readonly padding?: Palette<Literal.Length> | undefined
   /** Nonnegative spacing and sizing values. */
   readonly spacing?: Palette<Literal.Length> | undefined
   /** Colors available to text declarations. */
@@ -367,6 +379,8 @@ function build(
         'borderColor',
         'borderRadius',
         'color',
+        'margin',
+        'padding',
         'spacing',
         'fontFamily',
         'fontSize',

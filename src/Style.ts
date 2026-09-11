@@ -200,7 +200,16 @@ export function define(
   for (const [name, style] of entries(styles, [])) {
     if (name.length === 0)
       report('invalid_structure', [name], 'Style names must not be empty.')
-    const properties = entries(style, [name])
+    const mappings = options.theme?.[Token.definition].contract.shorthands
+    const authored = entries(style, [name])
+    const properties = mappings
+      ? authored.flatMap(
+          ([property, input]) =>
+            mappings?.[property]?.map((target) => [target, input] as const) ?? [
+              [property, input] as const,
+            ],
+        )
+      : authored
     if (properties.some(([key]) => Condition.is(key))) {
       const rules: Rule[] = []
       for (const [key, input] of properties) {

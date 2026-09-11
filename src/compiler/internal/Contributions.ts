@@ -34,7 +34,8 @@ const named = [
   'keyframes',
   'positionTry',
 ]
-const macros = [
+/** Stylesheet factory exports recognized by source and graph linking. */
+export const factories: readonly string[] = [
   'importCss',
   'namespace',
   'fontFace',
@@ -64,24 +65,26 @@ export function scan(
   scope: Scope.Tracker,
   namespace: string,
   links: Readonly<Record<string, Themes.Link>> = {},
+  factoryImports: Readonly<Record<string, string>> = {},
 ) {
   const imports = new Map<number, Kind>()
   for (const node of program.body)
-    if (
-      node.type === 'ImportDeclaration' &&
-      node.importKind !== 'type' &&
-      node.source.value === 'zyzz/web'
-    )
+    if (node.type === 'ImportDeclaration' && node.importKind !== 'type')
       for (const specifier of node.specifiers)
         if (
           specifier.type === 'ImportSpecifier' &&
           specifier.importKind !== 'type'
         ) {
-          const name =
+          const imported =
             specifier.imported.type === 'Identifier'
               ? specifier.imported.name
               : specifier.imported.value
-          if (macros.includes(name)) imports.set(specifier.start, name as Kind)
+          const name =
+            node.source.value === 'zyzz/web'
+              ? imported
+              : factoryImports[specifier.local.name]
+          if (name && factories.includes(name))
+            imports.set(specifier.start, name as Kind)
         }
   const exported: Record<string, Themes.Link> = Object.create(null)
   const linkedNames = new Map<string, Themes.Link>()
@@ -391,8 +394,7 @@ export function extract(
     if (
       node.type === 'UnaryExpression' &&
       node.operator === 'void' &&
-      node.argument.type === 'Literal' &&
-      node.argument.value === 0
+      Expression.unwrap(node.argument).type === 'Literal'
     )
       return undefined
     if (

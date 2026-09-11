@@ -133,6 +133,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         scopeTracker,
         identity(options.moduleId),
         options[Themes.context]?.links,
+        options[Themes.context]?.factories,
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error

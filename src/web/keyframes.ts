@@ -22,12 +22,10 @@ export function keyframes<const frames extends Record<string, unknown>>(
   throw new MissingTransformError()
 }
 
-type Trim<value extends string> = value extends
-  | ` ${infer rest}`
-  | `\n${infer rest}`
-  | `\t${infer rest}`
+type Space = ' ' | '\t' | '\n' | '\r' | '\f'
+type Trim<value extends string> = value extends `${Space}${infer rest}`
   ? Trim<rest>
-  : value extends `${infer rest} ` | `${infer rest}\n` | `${infer rest}\t`
+  : value extends `${infer rest}${Space}`
     ? Trim<rest>
     : value
 type Stops<value extends string> = value extends `${infer first},${infer rest}`
@@ -38,6 +36,6 @@ type Stops<value extends string> = value extends `${infer first},${infer rest}`
         | 'from'
         | 'to'
         | `${number}%`
-        | `${'contain' | 'cover' | 'entry' | 'entry-crossing' | 'exit' | 'exit-crossing'} ${number}%`
+        | `${'contain' | 'cover' | 'entry' | 'entry-crossing' | 'exit' | 'exit-crossing'}${Space}${number}%`
     ? true
     : false

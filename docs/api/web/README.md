@@ -15,7 +15,7 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 > [!NOTE]
 > The [complete at-rule API](at-rules.md) tracks implementation and acceptance separately; full conformance is not yet established.
 
-`colorProfile`, `counterStyle`, `fontPaletteValues`, and `positionTry` emit named descriptor rules and return typed CSS identities. Each accepts optional ordered `{ within }` grouping contexts. Imports, aliases, re-exports, and packed metadata preserve the identities.
+`counterStyle`, `fontPaletteValues`, and `positionTry` emit named descriptor rules and return typed CSS identities. Each accepts optional ordered `{ within }` grouping contexts. Imports, aliases, re-exports, and packed metadata preserve the identities.
 
 `page`, `fontFeatureValues`, and `viewTransition` emit eager document rules with ordered grouping contexts. Page-margin boxes and font-feature aliases use distinct descriptor bodies.
 
@@ -38,3 +38,6 @@ const styles = {
 ```
 
 These helpers emit native CSS; they do not polyfill experimental browser features. CSS functions currently accept individual scalar syntax domains, not composite `type(...)` signatures. Namespaces are local to their declaring source module, including packed output. Generated CSS is UTF-8 without a BOM or `@charset` declaration. Legacy `@document` remains an explicit grouping key; browser availability is separate from extraction.
+
+> [!NOTE]
+> `colorProfile` is planned and remains unexported until real-browser rendering is verified.

@@ -2,6 +2,7 @@
  * Links a closed graph of source modules without executing code or reading files.
  * @module
  */
+import * as Contributions from './internal/Contributions.js'
 import * as Stylesheets from './internal/Stylesheets.js'
 import type * as Mapping from '@jridgewell/gen-mapping'
 import * as Css from '../web/Css.js'
@@ -257,6 +258,82 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
   }
 
+  const factoryPrograms = new Map<string, Ast.Program>()
+  function factory(
+    moduleId: string,
+    name: string,
+    seen = new Set<string>(),
+  ): string | undefined {
+    if (moduleId === 'zyzz/web')
+      return Contributions.factories.includes(name) ? name : undefined
+    const key = `${moduleId}#${name}`
+    if (seen.has(key) || !Object.hasOwn(options.modules, moduleId))
+      return undefined
+    const next = new Set(seen).add(key)
+    const program =
+      factoryPrograms.get(moduleId) ??
+      Parser.parseSync('barrel.ts', options.modules[moduleId]!, {
+        sourceType: 'module',
+      }).program
+    factoryPrograms.set(moduleId, program)
+    const target = (specifier: string, node: Ast.Node) =>
+      specifier === 'zyzz/web' ? specifier : resolve(moduleId, specifier, node)
+    for (const node of program.body) {
+      if (
+        node.type === 'ExportAllDeclaration' &&
+        node.exportKind !== 'type' &&
+        !node.exported
+      ) {
+        const id = target(node.source.value, node)
+        const found = id ? factory(id, name, next) : undefined
+        if (found) return found
+      }
+      if (node.type !== 'ExportNamedDeclaration' || node.exportKind === 'type')
+        continue
+      for (const specifier of node.specifiers) {
+        if (specifier.exportKind === 'type') continue
+        const exported =
+          specifier.exported.type === 'Identifier'
+            ? specifier.exported.name
+            : specifier.exported.value
+        if (exported !== name) continue
+        const local =
+          specifier.local.type === 'Identifier'
+            ? specifier.local.name
+            : specifier.local.value
+        if (node.source) {
+          const id = target(node.source.value, node)
+          return id ? factory(id, local, next) : undefined
+        }
+        for (const declaration of program.body) {
+          if (
+            declaration.type !== 'ImportDeclaration' ||
+            declaration.importKind === 'type'
+          )
+            continue
+          for (const imported of declaration.specifiers) {
+            if (
+              imported.type !== 'ImportSpecifier' ||
+              imported.importKind === 'type' ||
+              imported.local.name !== local
+            )
+              continue
+            const id = target(declaration.source.value, declaration)
+            return id
+              ? factory(
+                  id,
+                  imported.imported.type === 'Identifier'
+                    ? imported.imported.name
+                    : imported.imported.value,
+                  next,
+                )
+              : undefined
+          }
+        }
+      }
+    }
+    return undefined
+  }
   function visit(moduleId: string): Source.extract.ReturnType {
     const cached = extracted.get(moduleId)
     if (cached) return cached
@@ -287,6 +364,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       showSemanticErrors: true,
     })
     if (parsed.errors.length) Source.extract({ moduleId, source })
+    factoryPrograms.set(moduleId, parsed.program)
     Walker.walk(parsed.program, {
       enter(node) {
         if (
@@ -423,10 +501,34 @@ function build(options: compile.Options, cache?: Cache): Cache {
         }
       }
     }
+    const factories: Record<string, string> = Object.create(null)
+    for (const node of parsed.program.body) {
+      if (
+        node.type !== 'ImportDeclaration' ||
+        node.importKind === 'type' ||
+        !node.source.value.startsWith('.')
+      )
+        continue
+      const target = resolve(moduleId, node.source.value, node)
+      if (!target) continue
+      for (const specifier of node.specifiers) {
+        if (
+          specifier.type !== 'ImportSpecifier' ||
+          specifier.importKind === 'type'
+        )
+          continue
+        const name =
+          specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value
+        const found = factory(target, name)
+        if (found) factories[specifier.local.name] = found
+      }
+    }
     const result = Source.extract({
       moduleId,
       source,
-      [Themes.context]: { links },
+      [Themes.context]: { factories, links },
     })
     const exports: Record<string, Themes.Link> = Object.assign(
       Object.create(null),

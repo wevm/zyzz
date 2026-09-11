@@ -3,6 +3,8 @@ import { describe, test } from 'vite-plus/test'
 import { fontFeatureValues } from 'zyzz/web'
 describe('fontFeatureValues', () => {
   test('accepts descriptor grammar and rejects context errors', () => {
+    // @ts-expect-error CSS keywords fold ASCII letters only
+    fontFeatureValues({ families: 'Body', features: {}, fontDisplay: 'blocK' })
     const options: fontFeatureValues.Options = {
       families: 'Body',
       features: {},

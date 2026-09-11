@@ -429,34 +429,23 @@ function build(options: compile.Options, cache?: Cache): Cache {
       sections.set(id, [])
       continue
     }
-    const layers = contributions.flatMap((value) =>
-      value.kind === 'layers' ? [value.names] : [],
-    )
-    const content = contributions.some((value) => value.kind !== 'layers')
-      ? Css.compile({
-          styles: { styles: [] },
-          themes: sharedThemes,
-          contributions: contributions.filter(
-            (value) => value.kind !== 'layers',
-          ),
-        }).css
-      : ''
     sections.set(
       id,
-      contributions.length
-        ? [
-            {
-              source: id,
-              css: content,
-              layers,
-              content: options.modules[id]!,
-              start:
-                extractedModule.contributionCalls?.[0]?.start ??
-                extractedModule.variableCalls?.[0]?.start ??
-                0,
-            },
-          ]
-        : [],
+      contributions.map((contribution, index) => ({
+        source: id,
+        key: String(index),
+        css:
+          contribution.kind === 'layers'
+            ? ''
+            : (Css.compile({
+                styles: { styles: [] },
+                themes: sharedThemes,
+                contributions: [contribution],
+              }).contributionCss ?? ''),
+        layers: contribution.kind === 'layers' ? [contribution.names] : [],
+        content: options.modules[id]!,
+        start: extractedModule.contributionStarts?.[index] ?? 0,
+      })),
     )
   }
   for (const [id, library] of Object.entries(libraries))

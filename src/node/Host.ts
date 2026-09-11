@@ -132,6 +132,21 @@ export async function create(options: create.Options): Promise<Runtime> {
         ]),
       ),
     })
+    const generated = new Set(
+      [
+        'zyzz.shared.css',
+        'zyzz.shared.css.map',
+        '.zyzz.json',
+        '.zyzz-lock',
+        ...Object.keys(sources).flatMap((name) => [
+          name,
+          `${name}.map`,
+          `${name}.css`,
+          `${name}.css.map`,
+          `${name}.zyzz.json`,
+        ]),
+      ].map((name) => (insensitive ? name.toLowerCase() : name)),
+    )
     if (graph.sharedCss) {
       const assets = new Map<string, string>()
       const shared =
@@ -154,21 +169,43 @@ export async function create(options: create.Options): Promise<Runtime> {
                   if (!target.startsWith(`${options.packageId}/`))
                     throw new Error('Asset path escapes the package root.')
                   const relative = target.slice(options.packageId.length + 1)
-                  const filename = decodeURIComponent(
-                    relative.split(/[?#]/)[0]!,
+                  const decoded = decodeURIComponent(relative.split(/[?#]/)[0]!)
+                  const filename = Path.posix.normalize(decoded)
+                  if (
+                    filename === '..' ||
+                    filename.startsWith('../') ||
+                    filename.startsWith('/') ||
+                    filename.includes('\\') ||
+                    filename.includes('\0')
                   )
+                    throw new Error('Asset path escapes the package root.')
+                  if (
+                    generated.has(
+                      insensitive ? filename.toLowerCase() : filename,
+                    )
+                  )
+                    throw new Error(
+                      'Asset path conflicts with generated output.',
+                    )
                   if (
                     filename
                       .split('/')
                       .some((part) =>
-                        ['.zyzz.json', '.zyzz-lock'].includes(part),
+                        ['.zyzz.json', '.zyzz-lock'].includes(
+                          part.toLowerCase(),
+                        ),
                       )
                   )
                     throw new Error(
                       'Asset path conflicts with host control files.',
                     )
                   assets.set(filename, Path.join(root, filename))
-                  return { ...url, url: relative }
+                  return {
+                    ...url,
+                    url:
+                      filename.split('/').map(encodeURIComponent).join('/') +
+                      relative.slice(relative.split(/[?#]/)[0]!.length),
+                  }
                 },
               },
             })

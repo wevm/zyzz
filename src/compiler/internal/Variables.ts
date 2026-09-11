@@ -46,6 +46,7 @@ export function collect(
   const exports: Record<string, Themes.Link> = Object.create(null)
   const bound = new Map<string, Themes.Link>()
   const registrations: Css.Contribution[] = []
+  const registrationStarts: number[] = []
   const calls: Call[] = []
   const definitions = new Map<number, Call>()
   const references = new Map<
@@ -201,6 +202,7 @@ export function collect(
               'Registration requires matching syntax, inherits, and an independent initialValue.',
               value,
             )
+          registrationStarts.push(property.start)
           registrations.push({
             kind: 'property',
             name,
@@ -299,7 +301,14 @@ export function collect(
               : specifier.exported.value
           ] = link
       }
-  return { calls, reference, references, registrations, exports }
+  return {
+    calls,
+    reference,
+    references,
+    registrations,
+    registrationStarts,
+    exports,
+  }
 }
 
 function encode(value: string): string {

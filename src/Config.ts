@@ -226,7 +226,9 @@ export declare namespace create {
 type Mappings<options> = options extends {
   shorthands: infer map extends Shorthands.Map
 }
-  ? map
+  ? string extends keyof map
+    ? {}
+    : map
   : {}
 type Handle<
   tokens extends Theme.Tokens,
@@ -272,7 +274,7 @@ type Body<
     Keys<styles>,
     | keyof mappings
     | keyof Style.DeclarationProperties
-    | Condition.Keys<tokens>
+    | Condition.Keys<tokens, Keys<styles>>
     | `@layer ${layers}`
   >,
   never
@@ -280,7 +282,7 @@ type Body<
   (styles extends unknown
     ? {
         [key in keyof styles]: key extends
-          | Condition.Keys<tokens>
+          | Condition.Keys<tokens, key>
           | `@layer ${layers}`
           ? styles[key] extends Record<string, unknown>
             ? Body<styles[key], tokens, layers, mappings>

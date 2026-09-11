@@ -59,6 +59,14 @@ export function scan(
   function data(node: Ast.Node): unknown {
     node = Expression.unwrap(node)
     if (node.type === 'Literal') return node.value
+    if (node.type === 'TemplateLiteral' && !node.expressions.length)
+      return node.quasis[0]!.value.cooked
+    if (
+      node.type === 'Identifier' &&
+      node.name === 'undefined' &&
+      !scope.getDeclaration(node.name)
+    )
+      return undefined
     if (node.type === 'ArrayExpression')
       return node.elements.map((element) => {
         if (!element || element.type === 'SpreadElement')
@@ -144,7 +152,11 @@ export function scan(
               node,
             )
           bindings.set(node.id.start, link)
-          names.set(node.id.name, link)
+          if (
+            statement?.type === 'Program' ||
+            statement?.type === 'ExportNamedDeclaration'
+          )
+            names.set(node.id.name, link)
           if (statement?.type === 'ExportNamedDeclaration')
             exports[node.id.name] = link
         }
@@ -152,10 +164,17 @@ export function scan(
       if (node.type !== 'CallExpression') return
       const name = method(node.callee)
       if (name === 'marker') {
+        const index = ancestors.findLastIndex(
+          (value) =>
+            value.type === 'VariableDeclarator' &&
+            value.init !== null &&
+            Expression.unwrap(value.init) === node,
+        )
+        const owner = ancestors[index]
         const variable =
-          parent?.type === 'VariableDeclarator' ? parent : undefined
-        const declaration = ancestors.at(-3)
-        const statement = ancestors.at(-4)
+          owner?.type === 'VariableDeclarator' ? owner : undefined
+        const declaration = ancestors[index - 1]
+        const statement = ancestors[index - 2]
         if (
           !variable ||
           variable.id.type !== 'Identifier' ||
@@ -171,9 +190,8 @@ export function scan(
             node,
           )
         try {
-          const schema = Marker.schema(
-            node.arguments[0] ? data(node.arguments[0]) : {},
-          )
+          const input = node.arguments[0] ? data(node.arguments[0]) : undefined
+          const schema = Marker.schema(input === undefined ? {} : input)
           const id = `data-z-${namespace}-${variable.id.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-')}-${Array.from(
             variable.id.name,
           )

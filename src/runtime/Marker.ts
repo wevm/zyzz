@@ -2,11 +2,18 @@
 /** Finite authored state domains. */
 export type Schema = Readonly<Record<string, readonly (boolean | string)[]>>
 /** Portable marker identity and state schema. */
-export type Definition = { readonly id: string; readonly schema: Schema }
+export type Definition = {
+  /** Compiler-assigned presence attribute name. */
+  readonly id: string
+  /** Finite state names and accepted values. */
+  readonly schema: Schema
+}
 /** Copies and validates finite state schemas without reading accessors. */
 export function schema(input: unknown): Schema {
   if (!input || typeof input !== 'object' || Array.isArray(input))
     throw new Error('Marker schemas require a plain record.')
+  if (Object.getOwnPropertySymbols(input).length)
+    throw new Error('Marker schemas require string keys.')
   const result: Record<string, readonly (boolean | string)[]> =
     Object.create(null)
   const names = new Set<string>()
@@ -36,6 +43,7 @@ export function schema(input: unknown): Schema {
       )?.value
       if (
         (typeof value !== 'string' && typeof value !== 'boolean') ||
+        (typeof value === 'string' && value.includes('\0')) ||
         serialized.has(String(value))
       )
         throw new Error(
@@ -55,6 +63,8 @@ export function create(definition: Definition) {
   ) => {
     if (!input || typeof input !== 'object' || Array.isArray(input))
       throw new Error('Marker input must be a state record.')
+    if (Object.getOwnPropertySymbols(input).length)
+      throw new Error('Unknown marker state: symbol')
     const result: Record<string, string> = { [definition.id]: '' }
     for (const [name, descriptor] of Object.entries(
       Object.getOwnPropertyDescriptors(input),

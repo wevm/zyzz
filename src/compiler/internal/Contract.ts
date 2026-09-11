@@ -22,9 +22,10 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
-    const shorthands = entry.shorthands
-      ? Shorthands.read(entry.shorthands)
-      : undefined
+    const shorthands =
+      entry.shorthands !== undefined
+        ? Shorthands.read(entry.shorthands)
+        : undefined
     let contract = identities.get(identity)
     if (
       contract &&
@@ -35,7 +36,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
       )
     if (!contract) {
       contract = Object.freeze({
-        ...(entry.shorthands
+        ...(entry.shorthands !== undefined
           ? { shorthands: Shorthands.read(entry.shorthands) }
           : {}),
         [Token.complete]: true,
@@ -134,7 +135,16 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
         : undefined
     const options =
       entry.options === undefined ? undefined : record(entry.options)
-    if (options) Config.create(options as Config.create.Options)
+    if (options) {
+      Config.create(options as Config.create.Options)
+      if (
+        JSON.stringify(options.shorthands) !==
+        JSON.stringify(definition[Token.definition].contract.shorthands)
+      )
+        throw new Error(
+          'Configuration mappings disagree with linked theme metadata.',
+        )
+    }
     if (entry.kind === 'config' && !options)
       throw new Error('Missing configuration options.')
     return {
@@ -145,6 +155,11 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
         name: theme,
         start: -1,
         tokenType: types[theme]!,
+        ...(definition[Token.definition].contract.shorthands
+          ? {
+              type: `import('zyzz').Config.create.ReturnType<{theme:${types[theme]!};shorthands:${Configurations.type(definition[Token.definition].contract.shorthands!)}}>['theme']`,
+            }
+          : {}),
         ...(entry.selection === true ? { selection: true } : {}),
         ...(entry.initialization === true ? { initialization: true } : {}),
         ...(options
@@ -274,39 +289,46 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(themes).some(
-      (theme) => theme[Token.definition].contract.shorthands,
-    )
-      ? 5
+    version: Object.values(links).some((link) => link.kind === 'variables')
+      ? 8
       : stylesheets.length ||
-          Object.values(links).some(
-            (link) =>
-              link.call.selection ||
-              link.call.initialization ||
-              (link.kind === 'config' && link.call.script) ||
-              link.kind === 'marker' ||
-              link.kind === 'animation' ||
-              link.kind === 'variables',
-          )
-        ? 4
-        : Object.values(themes).some(
-              (theme) =>
-                theme[Token.definition].queries ||
-                Object.keys(theme.tokens).some((group) =>
-                  [
-                    'fontFamily',
-                    'fontSize',
-                    'fontWeight',
-                    'lineHeight',
-                    'letterSpacing',
-                  ].includes(group),
-                ),
-            )
-          ? 3
-          : Object.values(links).some(
-                (link) => link.kind === 'config' || link.call.type,
+          Object.values(links).some((link) => link.kind === 'animation')
+        ? 7
+        : Object.values(links).some((link) => link.kind === 'marker')
+          ? 6
+          : Object.values(themes).some(
+                (theme) => theme[Token.definition].contract.shorthands,
               )
-            ? 2
-            : 1,
+            ? 5
+            : stylesheets.length ||
+                Object.values(links).some(
+                  (link) =>
+                    link.call.selection ||
+                    link.call.initialization ||
+                    (link.kind === 'config' && link.call.script) ||
+                    link.kind === 'marker' ||
+                    link.kind === 'animation' ||
+                    link.kind === 'variables',
+                )
+              ? 4
+              : Object.values(themes).some(
+                    (theme) =>
+                      theme[Token.definition].queries ||
+                      Object.keys(theme.tokens).some((group) =>
+                        [
+                          'fontFamily',
+                          'fontSize',
+                          'fontWeight',
+                          'lineHeight',
+                          'letterSpacing',
+                        ].includes(group),
+                      ),
+                  )
+                ? 3
+                : Object.values(links).some(
+                      (link) => link.kind === 'config' || link.call.type,
+                    )
+                  ? 2
+                  : 1,
   })
 }

@@ -271,6 +271,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       start: call.start,
     })),
     ...(extracted.contributionCalls ?? []),
+    ...(extracted.markerCalls ?? []),
     ...(extracted.variableCalls ?? []),
     ...extracted.themeAliases,
     ...extracted.themeCalls,
@@ -305,7 +306,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         !(
           node.source.value === 'zyzz'
             ? ['Config', 'css', 'Theme', 'Vars']
-            : ['global', 'fontFace', 'keyframes', 'layers']
+            : ['Css', 'global', 'fontFace', 'keyframes', 'layers']
         ).includes(
           specifier.imported.type === 'Identifier'
             ? specifier.imported.name

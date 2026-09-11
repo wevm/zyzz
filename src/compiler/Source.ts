@@ -3,6 +3,8 @@
  * @module
  */
 import * as Condition from '../internal/Condition.js'
+import * as Static from './internal/Static.js'
+import * as ThemeValues from '../web/internal/Themes.js'
 import * as Markers from './internal/Markers.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Css from '../web/Css.js'
@@ -30,6 +32,8 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Expanded immutable source data retained for declaration mapping. */
+  readonly body?: Ast.ObjectExpression | undefined
   /** Alias targets retained for declaration source locations. */
   readonly shorthands?: Shorthands.Map | undefined
   /** Native HTML attribute output selected by the bound configuration. */
@@ -119,6 +123,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
   Walker.walk(program, { scopeTracker })
   scopeTracker.freeze()
+  const staticData = Static.collect(program, scopeTracker)
   const contributions = (() => {
     try {
       return Contributions.scan(
@@ -135,7 +140,13 @@ export function extract(options: extract.Options): extract.ReturnType {
   })()
   const variables = (() => {
     try {
-      return Variables.collect(program, identity(options.moduleId))
+      return Variables.collect(
+        program,
+        identity(options.moduleId),
+        scopeTracker,
+        options[Themes.context]?.links,
+        options.moduleId,
+      )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
       report('unsupported_syntax', error.message, error)
@@ -159,6 +170,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   const themes = (() => {
     try {
       return Themes.collect(program, {
+        staticBindings: staticData.bindings,
         namespace: identity(options.moduleId),
         contributionCalls: new Set(
           contributions.calls.map((call) => call.start),
@@ -315,6 +327,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   if (themes)
     for (const entry of themes.styles.values()) pending.push(entry.call)
   pending.sort((a, b) => a.start - b.start)
+  const staticCalls = new Set(pending.map((call) => call.start))
   for (const call of pending) {
     let argument = call.arguments[0]
     while (
@@ -322,6 +335,15 @@ export function extract(options: extract.Options): extract.ReturnType {
       argument?.type === 'TSSatisfiesExpression'
     )
       argument = argument.expression
+    const original = argument
+    try {
+      if (argument)
+        argument = staticData.normalize(argument, staticCalls) as Ast.Expression
+    } catch (error) {
+      if (!(error instanceof Themes.InvalidError)) throw error
+      report('unsupported_syntax', error.message, error)
+      continue
+    }
     const diagnosticCount = diagnostics.length
     const dynamic = (() => {
       if (!argument) return undefined
@@ -329,6 +351,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         return Dynamic.read(
           argument,
           `${identity(options.moduleId)}-${call.start}`,
+          staticData.type,
         )
       } catch (error) {
         if (!(error instanceof Themes.InvalidError)) throw error
@@ -346,7 +369,18 @@ export function extract(options: extract.Options): extract.ReturnType {
         return undefined
       }
     }
-    if (dynamic) argument = dynamic.body
+    if (dynamic) {
+      try {
+        argument = staticData.normalize(
+          dynamic.body,
+          staticCalls,
+        ) as Ast.Expression
+      } catch (error) {
+        if (!(error instanceof Themes.InvalidError)) throw error
+        report('unsupported_syntax', error.message, error)
+        continue
+      }
+    }
     if (call.arguments.length !== 1 || argument?.type !== 'ObjectExpression') {
       report(
         'unsupported_syntax',
@@ -444,14 +478,10 @@ export function extract(options: extract.Options): extract.ReturnType {
           const unwrapped = Expression.unwrap(node)
           const token =
             variables.references.get(unwrapped.start) ??
-            themes?.tokens.get(node.start)
+            themes?.tokens.get(unwrapped.start)
           const reference =
             localSlot(node) ??
-            (token &&
-            token.end ===
-              (Binding.is(token?.reference) ? unwrapped.end : node.end)
-              ? token.reference
-              : undefined)
+            (token && token.end === unwrapped.end ? token.reference : undefined)
           if (
             dynamic &&
             reference &&
@@ -649,6 +679,10 @@ export function extract(options: extract.Options): extract.ReturnType {
       const shorthands = themes?.styles.get(call.start)?.theme[Token.definition]
         .contract.shorthands
       calls.push({
+        ...(argument !== (dynamic?.body ?? original) &&
+        argument.type === 'ObjectExpression'
+          ? { body: argument }
+          : {}),
         ...(shorthands ? { shorthands } : {}),
         ...(themes?.styles.get(call.start)?.output
           ? { output: 'html' as const }
@@ -681,6 +715,8 @@ export function extract(options: extract.Options): extract.ReturnType {
   if (themes && !diagnostics.length)
     for (const [start, token] of themes.tokens) {
       if (
+        !staticData.used.has(start) &&
+        !themes.staticTokens.some((node) => node.start === start) &&
         ![...calls, ...contributions.calls].some(
           (call) => start >= call.start && token.end <= call.end,
         )
@@ -692,9 +728,28 @@ export function extract(options: extract.Options): extract.ReturnType {
         )
     }
   let contributionData: readonly Css.Contribution[] = []
-  const contributionStarts: number[] = []
+  const contributionStarts = [...variables.registrationStarts]
   try {
+    for (const [index, registration] of variables.registrations.entries()) {
+      try {
+        const css = Css.compile({
+          styles: { styles: [] },
+          contributions: [registration],
+        }).css
+        Lightning.transform({
+          filename: options.moduleId,
+          code: new TextEncoder().encode(css),
+          errorRecovery: false,
+        })
+      } catch (error) {
+        throw new Themes.InvalidError(
+          (error as Error).message,
+          variables.registrationLocations[index]!,
+        )
+      }
+    }
     contributionData = [
+      ...variables.registrations,
       ...Contributions.extract(
         contributions,
         themes?.tokens ?? new Map(),
@@ -752,6 +807,13 @@ export function extract(options: extract.Options): extract.ReturnType {
         'Relationship helpers require a compiled style definition.',
         { start, end: start },
       )
+  for (const token of themes?.staticTokens ?? [])
+    if (!staticData.used.has(Expression.unwrap(token).start))
+      report(
+        'unsupported_syntax',
+        'Token references must be direct property values in bound theme css calls.',
+        token,
+      )
   if (diagnostics.length) throw new ExtractError(diagnostics)
   return Object.freeze({
     ...(markers.calls.length
@@ -773,6 +835,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             ...themes?.exports,
             ...markers.exports,
             ...contributions.exports,
+            ...variables.exports,
           }),
         }
       : {}),
@@ -786,6 +849,19 @@ export function extract(options: extract.Options): extract.ReturnType {
       ? { themeScripts: Object.freeze([...themes.scripts]) }
       : {}),
     themeCalls: Object.freeze(themes?.calls ?? []),
+    ...(themes?.staticTokens.length
+      ? {
+          staticThemeReferences: Object.freeze(
+            (themes?.staticTokens ?? []).map((node) => ({
+              start: node.start,
+              end: node.end,
+              value: ThemeValues.create().serialize(
+                themes!.tokens.get(node.start)!.reference,
+              ),
+            })),
+          ),
+        }
+      : {}),
     themeReferences: Object.freeze(themes?.references ?? []),
     themes: themes?.themes ?? Object.freeze({}),
   })
@@ -825,6 +901,13 @@ export declare namespace extract {
     /** Local factory spans replaced by compiled scope data. */
     readonly themeCalls: readonly Themes.Call[]
     /** Scope reads replaced by class constants. */
+    readonly staticThemeReferences?:
+      | readonly {
+          readonly start: number
+          readonly end: number
+          readonly value: string
+        }[]
+      | undefined
     readonly themeReferences: readonly Themes.Reference[]
     /** Resolved authoring exports when extracted as part of a source graph. */
     readonly themeExports?: Readonly<Record<string, Themes.Link>> | undefined

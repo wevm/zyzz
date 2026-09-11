@@ -130,20 +130,21 @@ Packed contracts containing query metadata or typography groups use schema versi
 
 The writer selects the lowest version required by the exported capabilities:
 
-| Version | Added capability                                   |
-| ------- | -------------------------------------------------- |
-| 1       | Theme bindings                                     |
-| 2       | Configuration and bound aliases                    |
-| 3       | Queries and typography                             |
-| 4       | Callable theme selection and initialization script |
-| 5       | Property mappings                                  |
-| 6       | Marker relationships                               |
-| 7       | Packed stylesheets and animation identities        |
+| Version | Added capability                                     |
+| ------- | ---------------------------------------------------- |
+| 1       | Theme bindings                                       |
+| 2       | Configuration and bound aliases                      |
+| 3       | Queries and typography                               |
+| 4       | Callable theme selection and initialization script   |
+| 5       | Property mappings                                    |
+| 6       | Marker relationships                                 |
+| 7       | Packed stylesheets and animation identities          |
+| 8       | Variable references and registered custom properties |
 
-This reader accepts versions 1–7. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
+This reader accepts versions 1–8. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
 
 `sharedAssetOwners` associates each relocated URL placeholder with its trusted source or packed-contract identity. Hosts validate package ownership before serving or publishing assets. Conflicting packed sections raise `Source.ExtractError` attributed to the contributing contract.
 
-Packed marker aliases sharing an identity must carry the same state schema; conflicting schemas are rejected across loaded contracts.
+Compile independent libraries with package-qualified module IDs (the file host supplies these from `packageId`). Packed variable sidecars retain their canonical defining module, so multiple package entrypoints can share one contract. The graph rejects accidental slot collisions between distinct defining modules and conflicting schemas for one marker identity. Bare contract IDs provide no package provenance and remain isolated; package-qualified IDs are required for multi-entry sharing.
 
 Repacked stylesheet sections retain an import chain to their declaring contract. Hosts must supply each chain edge in `imports` and its adjacent sidecar in `contracts`; Vite resolves and watches these dependencies recursively, including nested package installations. Asset validation uses the declaring package root. Source content and offsets participate in packed contribution conflict checks, and each sidecar validates its layer constraints before rendering.

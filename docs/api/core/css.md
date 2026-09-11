@@ -18,7 +18,9 @@ const props = styles.card({ style: { padding: '2rem' } })
 The callback overload requires an explicit finite object type and a concise static object body. It returns `css.Dynamic<values>`. Applying that callable requires every declared input and accepts optional `className` and `style` overrides, returning `css.Props`. The compiler emits fixed private custom properties; applications assign their values without generating rules. Private properties cannot be overridden through `style`. Empty strings remain explicit empty custom-property values.
 
 ```ts
-const progress = css((values: { amount: `${number}%` }) => ({ width: values.amount }))
+const progress = css((values: { amount: `${number}%` }) => ({
+  width: values.amount,
+}))
 const props = progress({ amount: '50%', className: 'external' })
 ```
 
@@ -114,7 +116,7 @@ bar({ amount: '50%', alpha: 0.8 })
 
 All declared inputs are required and consumed. `className` and `style` remain styling overrides; unrelated keys are rejected by types, and generated private assignments take precedence over overrides. Callbacks never execute in generated application code.
 
-The initial source boundary requires inline scalar type literals. Optional fields, type aliases, arbitrary calls, dynamic fallback entries, and dynamic rule structure are unsupported. Fixed nested conditions can contain dynamic values. Native bindings remain separate work.
+The source boundary accepts inline finite scalar object types, module-local type aliases, interfaces, and compatible object intersections. Optional fields, imported or generic types, arbitrary calls, dynamic fallback entries, and dynamic rule structure are unsupported. Fixed nested conditions can contain dynamic values. Native bindings remain separate work.
 
 Types: `css.ErrorType`, `css.Options`, `css.Props`, `css.ReturnType`, and `css.Dynamic<values>`. See [Style Components](../../guides/styling.md#style-components).
 

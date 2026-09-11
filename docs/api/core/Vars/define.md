@@ -57,6 +57,19 @@ Dynamic callbacks are a separate authoring feature. Shared contracts are for bin
 
 See [Vars](README.md) for related methods and types.
 
-Contracts currently require module-level constants and local style references. Runtime assignments may use exported compiled contracts. Imported references in style definitions, native bindings, and `@property` registration remain deferred.
+Contracts require module-level constants. References and assignments retain their identities through imports, aliases, re-exports, and packed contracts. Native bindings remain deferred.
+
+Registration descriptors emit CSS `@property` rules with the same fixed slot names:
+
+```ts
+const vars = Vars.define({
+  amount: { type: 'percentage', inherits: false, initialValue: '0%' },
+  gap: { type: 'length', inherits: true, initialValue: '4px' },
+})
+```
+
+`inherits` and `initialValue` are required for descriptors. The optional `syntax` must match the scalar domain. Initial lengths use absolute units or zero; CSS resolves registered defaults and inheritance. Registration adds no runtime CSS generation.
 
 `length` and `percentage` accept nonnegative dimensions, so they can be used in properties such as padding and width. Use `signedLength` or `signedPercentage` for values that may be negative; those slots are restricted to properties that accept negative dimensions. `number` accepts finite numbers and is restricted to properties that accept an unconstrained numeric domain.
+
+Registration initial values are checked by the public static types, including scalar domains and computational independence. Unchecked JavaScript values rely on browser CSS validation; source compilation validates descriptor structure and matching syntax.

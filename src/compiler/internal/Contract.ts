@@ -3,6 +3,7 @@
  * @module
  */
 import * as Stylesheets from './Stylesheets.js'
+import type * as Binding from '../../internal/Binding.js'
 import * as Marker from '../../runtime/Marker.js'
 import * as Config from '../../Config.js'
 import * as Configurations from './Configurations.js'
@@ -12,9 +13,13 @@ import * as Theme from '../../Theme.js'
 import type * as Themes from './Themes.js'
 
 /** Reads versioned JSON as validated data; never evaluates package code. */
-export function read(source: string, identities: Map<string, Token.Contract>) {
+export function read(
+  source: string,
+  identities: Map<string, Token.Contract>,
+  moduleId = '',
+) {
   const data = record(JSON.parse(source))
-  if (![1, 2, 3, 4, 5, 6, 7].includes(data.version as number))
+  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
@@ -50,6 +55,59 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
   }
   function link(value: unknown): Themes.Link {
     const entry = record(value)
+    if (entry.kind === 'variables') {
+      const names = new Set<string>()
+      const slots = Object.fromEntries(
+        Object.entries(record(entry.variables)).map(([key, value]) => {
+          const slot = record(value)
+          if (
+            key === 'set' ||
+            key === '__proto__' ||
+            names.has(string(slot.name)) ||
+            !/^--z-v[a-z0-9-]+$/.test(string(slot.name)) ||
+            ![
+              'color',
+              'length',
+              'number',
+              'percentage',
+              'signedLength',
+              'signedPercentage',
+            ].includes(String(slot.type))
+          )
+            throw new Error('Invalid packed variable contract.')
+          names.add(string(slot.name))
+          return [
+            key,
+            Object.freeze({
+              name: slot.name as `--${string}`,
+              type: slot.type as Binding.Kind,
+              variable: true as const,
+            }),
+          ]
+        }),
+      )
+      const binding = string(entry.binding)
+      return {
+        binding,
+        kind: 'variables',
+        definition: Theme.define({}),
+        call: {
+          start: -1,
+          end: -1,
+          name: binding,
+          tokenType: '{}',
+          variables: Object.freeze(slots),
+          ...(entry.source !== undefined
+            ? {
+                variableOwner: Stylesheets.resolve(
+                  moduleId,
+                  string(entry.source),
+                ),
+              }
+            : {}),
+        },
+      }
+    }
     if (entry.kind === 'animation') {
       const name = string(entry.name)
       if (!/^z-k[a-z0-9-]+$/.test(name))
@@ -58,12 +116,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
         binding: string(entry.binding),
         kind: 'animation',
         definition: Theme.define({}),
-        call: {
-          start: -1,
-          end: -1,
-          name,
-          tokenType: '{}',
-        },
+        call: { start: -1, end: -1, name, tokenType: '{}' },
       }
     }
     if (entry.kind === 'marker') {
@@ -114,7 +167,6 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
           'Configuration mappings disagree with linked theme metadata.',
         )
     }
-
     const catalogOnly =
       !!options?.themes &&
       ((data.version as number) < 4 || entry.catalogOnly === true)
@@ -219,8 +271,18 @@ export function write(
   links: Readonly<Record<string, Themes.Link>>,
   themes: Readonly<Record<string, Theme.Definition>>,
   stylesheets: readonly Stylesheets.Section[] = [],
+  moduleId = '',
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
+    if (link.kind === 'variables')
+      return {
+        binding: link.binding,
+        kind: link.kind,
+        variables: link.call.variables,
+        ...(link.call.variableOwner
+          ? { source: Stylesheets.relative(moduleId, link.call.variableOwner) }
+          : {}),
+      }
     if (link.kind === 'animation')
       return { binding: link.binding, kind: link.kind, name: link.call.name }
     if (link.kind === 'marker')
@@ -273,9 +335,10 @@ export function write(
         },
       ]),
     ),
-    version:
-      stylesheets.length ||
-      Object.values(links).some((link) => link.kind === 'animation')
+    version: Object.values(links).some((link) => link.kind === 'variables')
+      ? 8
+      : stylesheets.length ||
+          Object.values(links).some((link) => link.kind === 'animation')
         ? 7
         : Object.values(links).some((link) => link.kind === 'marker')
           ? 6
@@ -301,7 +364,8 @@ export function write(
                     link.call.initialization ||
                     (link.kind === 'config' && link.call.script) ||
                     link.kind === 'marker' ||
-                    link.kind === 'animation',
+                    link.kind === 'animation' ||
+                    link.kind === 'variables',
                 )
               ? 4
               : Object.values(themes).some(

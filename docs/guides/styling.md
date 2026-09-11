@@ -143,3 +143,19 @@ const styles = {
 ```
 
 Import `{ css, theme }` from the [config module](../concepts.md#configuration) and access `theme.vars` directly. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `Vars` defines independent shared contracts.
+
+#### Static Bindings
+
+Module-level `const` literals, object spreads, shorthand properties, and literal member reads can supply styles. Extraction preserves property order and rejects mutable or escaping records. Calls and arbitrary expressions are not evaluated.
+
+```ts
+const base = { padding: '8px' } as const
+type Width = '10px' | '30px
+type Values = { width: Width }
+const styles = {
+  card: css({ ...base, color: 'black' }),
+  bar: css((values: Values) => ({ ...base, width: values.width })),
+}
+```
+
+Finite local type aliases, interfaces without inheritance, and object intersections describe dynamic inputs. Imported or generic types still require a directly supported local annotation.

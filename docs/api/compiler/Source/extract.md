@@ -8,7 +8,7 @@ Declaration values accept ordinary strings and untagged template literals. Templ
 css({ padding: `${8}px`, width: `calc(100% - ${16}px)` })
 ```
 
-Identifiers, property reads, object coercions, arithmetic expressions, calls, and tagged templates remain unsupported. Direct theme variable paths are supported inside templates and retain their defining fallbacks. Nested templates are limited to 128 levels. CSS value checking remains static-only.
+Immutable module-local bindings, record spreads, and canonical array/object property reads are expanded statically. Mutation, destructured escapes, object coercions, arithmetic expressions, arbitrary calls, and tagged templates remain unsupported. Direct theme variable paths are supported inside templates and retain their defining fallbacks. Nested templates are limited to 128 levels. CSS value checking remains static-only.
 
 Bigint literals also support unary minus: `${-12n}px` folds to `-12px`. Unary plus on bigint remains rejected, matching JavaScript semantics.
 
@@ -121,6 +121,10 @@ See [Source](README.md) for related methods and types.
 ## Declaration Values
 
 Direct literal fallback arrays expand into repeated declarations without reordering. Each entry retains its own source-map position and diagnostics. Trailing `!` and `!important` apply to that entry before literal/token resolution. Sparse arrays, spreads, nested arrays, and arbitrary expressions are rejected without evaluation.
+
+### staticThemeReferences
+
+Theme-token and variable reads consumed through immutable style records are returned with their source spans and serialized CSS-variable values. `Transform.compile` replaces those retained initializer reads, so the emitted module does not access an erased authoring factory. Imported arbitrary static records remain unsupported.
 
 ### markerCalls
 

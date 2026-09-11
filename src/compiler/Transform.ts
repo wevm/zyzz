@@ -96,7 +96,8 @@ export function compile(options: compile.Options): compile.ReturnType {
         : undefined
       if (argument?.type === 'ArrowFunctionExpression')
         argument = Expression.unwrap(argument.body) as Ast.Expression
-      if (argument?.type === 'ObjectExpression')
+      if (call.body) definitions.set(call.start, call.body)
+      else if (argument?.type === 'ObjectExpression')
         definitions.set(call.start, argument)
     },
   })
@@ -112,7 +113,6 @@ export function compile(options: compile.Options): compile.ReturnType {
   let appearance = '__zyzzAppearance'
   while (identifiers.has(appearance)) appearance += '_'
   let usesAppearance = false
-
   let selection = '__zyzzSelection'
   while (identifiers.has(selection)) selection += '_'
   let usesSelection = false
@@ -270,6 +270,12 @@ export function compile(options: compile.Options): compile.ReturnType {
       : ''
     module.overwrite(alias.start, alias.end, `(${value}${assertion})`)
   }
+  for (const reference of extracted.staticThemeReferences ?? [])
+    module.overwrite(
+      reference.start,
+      reference.end,
+      JSON.stringify(reference.value),
+    )
   for (const reference of extracted.themeReferences)
     module.overwrite(
       reference.start,
@@ -288,6 +294,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     ...extracted.themeAliases,
     ...extracted.themeCalls,
     ...extracted.themeReferences,
+    ...(extracted.staticThemeReferences ?? []),
   ].sort((a, b) => a.start - b.start)
 
   function replaced(reference: Span) {
@@ -367,9 +374,9 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   if (
-    usesSelection ||
     callable ||
     usesHtml ||
+    usesSelection ||
     extracted.markerCalls?.length ||
     usesAppearance ||
     extracted.variableCalls?.length

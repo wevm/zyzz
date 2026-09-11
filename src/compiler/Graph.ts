@@ -139,7 +139,11 @@ function build(options: compile.Options, cache?: Cache): Cache {
   > = Object.create(null)
   const identities = new Map<string, Token.Contract>()
   const markerIdentities = new Map<string, string>()
-  function validateLibraryLink(link: Themes.Link) {
+  const variableSlots = new Map<
+    string,
+    { owner: string; binding: string; type: string }
+  >()
+  function validateLibraryLink(link: Themes.Link, owner: string) {
     if (link.call.marker) {
       const { id, schema } = link.call.marker
       const signature = JSON.stringify(
@@ -155,8 +159,28 @@ function build(options: compile.Options, cache?: Cache): Cache {
         throw new Error(`Conflicting packed marker schema: ${id}`)
       markerIdentities.set(id, signature)
     }
+    const variableOwner = owner.includes('/')
+      ? (link.call.variableOwner ?? owner)
+      : owner
+    for (const slot of Object.values(link.call.variables ?? {})) {
+      const previous = variableSlots.get(slot.name)
+      if (
+        previous &&
+        (previous.owner !== variableOwner ||
+          previous.binding !== link.binding ||
+          previous.type !== slot.type)
+      )
+        throw new Error(
+          `Conflicting packed variable identity: ${slot.name}; compile libraries with package-qualified module IDs.`,
+        )
+      variableSlots.set(slot.name, {
+        owner: variableOwner,
+        binding: link.binding,
+        type: slot.type,
+      })
+    }
     for (const member of Object.values(link.members ?? {}))
-      validateLibraryLink(member)
+      validateLibraryLink(member, owner)
   }
 
   for (const [id, source] of Object.entries(options.contracts ?? {})) {
@@ -164,8 +188,9 @@ function build(options: compile.Options, cache?: Cache): Cache {
       fail(id, 'A module cannot supply both source and a library contract.')
     try {
       const library =
-        previous?.libraries[id] ?? Contract.read(source, identities)
-      for (const link of Object.values(library.links)) validateLibraryLink(link)
+        previous?.libraries[id] ?? Contract.read(source, identities, id)
+      for (const link of Object.values(library.links))
+        validateLibraryLink(link, id)
       for (const [name, theme] of Object.entries(library.themes)) {
         if (
           themes[name] &&
@@ -606,6 +631,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
                     section.source,
                   ),
                 })),
+                id,
               ),
             ]),
         ),

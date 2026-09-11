@@ -4,8 +4,10 @@
  */
 import type * as Ast from '@oxc-project/types'
 import type * as Walker from 'oxc-walker'
+import type * as Binding from '../../internal/Binding.js'
 import type * as Marker from '../../runtime/Marker.js'
 import * as Config from '../../Config.js'
+import * as Expression from './Expression.js'
 import * as Configurations from './Configurations.js'
 import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
@@ -21,8 +23,11 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Canonical defining module for multi-entry variable contracts. */
+  readonly variableOwner?: string | undefined
   readonly output?: 'html' | undefined
-  readonly catalogOnly?: boolean | undefined
+  /** Portable explicit variable references. */
+  readonly variables?: Readonly<Record<string, Binding.Reference>> | undefined
   /** Portable marker contract, separate from theme metadata. */
   readonly marker?: Marker.Definition | undefined
   /** Whether the compiled configuration supplies initialization. */
@@ -31,6 +36,8 @@ export type Call = {
   readonly initialization?: boolean | undefined
   /** Config helper represented by this linked binding. */
   readonly selection?: boolean | undefined
+  /** Legacy packed catalogs have static members but are not callable. */
+  readonly catalogOnly?: boolean | undefined
   /** Validated inline configuration options retained for packed declarations. */
   readonly options?: Readonly<Record<string, unknown>> | undefined
   /** JSON-encoded member path tuples and their compiled scope keys. */
@@ -55,7 +62,13 @@ export type Link = {
   readonly binding: string
   readonly call: Call
   readonly definition: Theme.Definition
-  readonly kind: 'config' | 'css' | 'theme' | 'marker' | 'animation'
+  readonly kind:
+    | 'config'
+    | 'css'
+    | 'theme'
+    | 'marker'
+    | 'animation'
+    | 'variables'
   readonly members?: Readonly<Record<string, Link>> | undefined
 }
 
@@ -70,6 +83,7 @@ export type Context = {
 
 /** Collects immutable module-level themes without evaluating source. */
 export function collect(program: Ast.Program, options: collect.Options) {
+  const staticTokens: Ast.Node[] = []
   const aliases: Alias[] = []
   const aliasBindings = new Map<number, Alias>()
   const aliasReferences = new Set<number>()
@@ -134,7 +148,13 @@ export function collect(program: Ast.Program, options: collect.Options) {
       continue
     for (const specifier of node.specifiers) {
       const link = options.links?.[specifier.local.name]
-      if (!link || link.kind === 'marker' || link.kind === 'animation') continue
+      if (
+        !link ||
+        link.kind === 'marker' ||
+        link.kind === 'animation' ||
+        link.kind === 'variables'
+      )
+        continue
       const call = { ...link.call, start: -1, end: -1 }
       themes[call.name] = link.definition
       if (link.kind === 'config') {
@@ -950,7 +970,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         ) {
           if (path[0] === 'themes' && !config.call.options?.themes)
             fail('Theme selection requires a named catalog.', target)
-          if (config.call.catalogOnly && path[0] === 'themes')
+          if (path[0] === 'themes' && config.call.catalogOnly)
             fail(
               'This legacy catalog is not callable; rebuild its library.',
               target,
@@ -1180,12 +1200,24 @@ export function collect(program: Ast.Program, options: collect.Options) {
         call?.type !== 'CallExpression' ||
         call.arguments[0] !== argument ||
         (!styles.has(call.start) && !options.contributionCalls?.has(call.start))
-      )
-        fail(
-          'Token references must be direct property values in bound theme css calls.',
-          target,
+      ) {
+        if (
+          ancestors.some(
+            (node) =>
+              node.type === 'VariableDeclarator' &&
+              options.staticBindings?.has(node.start),
+          )
         )
+          staticTokens.push(valueTarget)
+        else
+          fail(
+            'Token references must be direct property values in bound theme css calls.',
+            target,
+          )
+      }
       tokens.set(valueTarget.start, { end: valueTarget.end, reference })
+      const unwrapped = Expression.unwrap(valueTarget)
+      tokens.set(unwrapped.start, { end: unwrapped.end, reference })
       return true
     }
     if (
@@ -1269,6 +1301,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     reference,
     references,
     scripts,
+    staticTokens,
     styles,
     themes: Object.freeze(themes),
     tokens,
@@ -1280,6 +1313,7 @@ export declare namespace collect {
   /** Stable module namespace, independent of token values and call offsets. */
   type Options = {
     /** Encoded package/module identity from the source adapter. */
+    readonly staticBindings?: ReadonlySet<number> | undefined
     readonly contributionCalls?: ReadonlySet<number> | undefined
     readonly namespace: string
     readonly linked?: boolean | undefined

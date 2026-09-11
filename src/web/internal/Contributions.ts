@@ -158,8 +158,8 @@ export function render(
     ...definitions
       .toSorted((a, b) => rank(a) - rank(b))
       .map((value) => {
+        if (value.kind === 'layers') return ''
         const css = (() => {
-          if (value.kind === 'layers') return ''
           if (value.kind === 'namespace')
             return `@namespace ${value.name} ${JSON.stringify(value.uri)};`
           if (value.kind === 'custom-media')

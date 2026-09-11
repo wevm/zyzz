@@ -1,6 +1,6 @@
 # Theme
 
-Immutable scalar tokens and compatible extensions.
+Immutable scalar tokens and compatible extensions. Optional `margin` and `padding` scales override `spacing` for their corresponding physical and logical properties; margin permits signed lengths, while padding is nonnegative. See [Theme.define](define.md#tokensmargin).
 
 ```ts
 import { Theme } from 'zyzz'

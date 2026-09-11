@@ -214,6 +214,9 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
               (node) =>
                 node.type === 'AssignmentExpression' ||
                 node.type === 'UpdateExpression' ||
+                ((node.type === 'ForInStatement' ||
+                  node.type === 'ForOfStatement') &&
+                  path.includes(node.left)) ||
                 (node.type === 'UnaryExpression' && node.operator === 'delete'),
             ) &&
             path.some(
@@ -465,9 +468,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
     return node
   }
   function normalize(node: Ast.Node, allowed: ReadonlySet<number>): Ast.Node {
-    const original = node
-    const resolved = resolve(node, allowed)
-    node = Expression.unwrap(original) === resolved ? original : resolved
+    node = resolve(node, allowed)
     if (node.type === 'ObjectExpression') {
       const expanded = properties(node, allowed)
       const normalized = expanded.map((property) =>

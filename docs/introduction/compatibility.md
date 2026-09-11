@@ -1,6 +1,6 @@
 # Compatibility
 
-This documentation describes the implemented web compiler and marks remaining API boundaries with scoped preview notes. The [capability inventory](../../.agents/parity.md) tracks detailed CSS gaps; the [Phase 2 plan](../../.agents/plan.md) records acceptance evidence and deferred gates.
+This documentation describes the implemented web compiler and marks remaining API boundaries with scoped preview notes. The [historical capability inventory](../../.agents/parity.md) records the earlier API comparison; the [Phase 2 plan](../../.agents/plan.md) records acceptance evidence and deferred gates.
 
 | Boundary                                 | Implemented scope                                                                                          |
 | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
@@ -11,7 +11,7 @@ This documentation describes the implemented web compiler and marks remaining AP
 | Web frameworks                           | React, Solid, Svelte, and plain HTML integration fixtures; first-paint and hydration evidence in CI        |
 
 > [!NOTE]
-> Arbitrary imported object records used as `css(record)`, the remaining variants and bundled-theme gates, Vue SFC integration, and native compilation/rendering are still deferred. Inferred authoring types alone do not establish transform or rendering support. See the plan for each remaining acceptance gate.
+> Arbitrary imported object records used as `css(record)`, the remaining variants and bundled-theme gates, Vue SFC integration, the CLI entrypoint, the Next.js adapter, and native compilation/rendering are still deferred. Inferred authoring types alone do not establish transform or rendering support. See the plan for each remaining acceptance gate.
 
 Browser support depends on emitted CSS and selected processing targets. Explicit target processing belongs to adapters. Web integration evidence does not establish native rendering parity.
 

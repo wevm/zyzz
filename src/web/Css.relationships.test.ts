@@ -7,6 +7,23 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 import { Marker } from 'zyzz/runtime'
 describe('marker', () => {
+  test('captures the runtime marker identity before validation', () => {
+    let reads = 0
+    const definition = {
+      get id() {
+        return ++reads === 1 ? 'data-z-card' : 'className'
+      },
+      schema: {},
+    }
+    const card = Marker.create(definition as Marker.Definition)
+    expect(card()).toMatchInlineSnapshot(`
+      {
+        "data-z-card": "",
+      }
+    `)
+    expect(reads).toMatchInlineSnapshot(`1`)
+  })
+
   test('compiles relationship keys through transparent TypeScript wrappers', () => {
     const result = Graph.compile({
       modules: {

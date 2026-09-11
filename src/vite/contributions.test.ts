@@ -119,6 +119,29 @@ describe('zyzz', () => {
         .map((output) => (output.type === 'asset' ? String(output.source) : ''))
         .join('\n')
       expect(css.includes('background-image')).toMatchInlineSnapshot('true')
+      await Fs.writeFile(Path.join(external, 'index.js.zyzz.json'), '{')
+      try {
+        await Vite.build({
+          root,
+          configFile: false,
+          logLevel: 'silent',
+          plugins: [zyzz()],
+          build: { write: false },
+        })
+        throw new Error('Expected invalid sidecar')
+      } catch (error) {
+        expect(
+          (error as Error).message
+            .replaceAll(root, '<root>')
+            .replaceAll(external, '<external>')
+            .split(/\n\s+at /)[0],
+        ).toMatchInlineSnapshot(`
+          "Build failed with 1 error:
+
+          [plugin zyzz] <root>/app.ts
+          Source.ExtractError: <external>/index.js:0: Invalid library contract: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+        `)
+      }
     } finally {
       await Fs.rm(external, { recursive: true, force: true })
       await Fs.rm(root, { recursive: true, force: true })

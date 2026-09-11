@@ -56,7 +56,7 @@ Css.compile({ styles, themes: { base: theme } })
 - Type: `readonly Css.Contribution[]`
 - Default: `undefined`
 
-Ordered static stylesheet data. Use `kind: 'layers'` with `names`, `kind: 'rule'` with a `selector` and `Style.NamedStyle`, `kind: 'font-face'` with descriptor `declarations`, or `kind: 'keyframes'` with a `name` and ordered `{ stop, style }` frames. Source adapters construct this data from the direct web authoring functions.
+Ordered static stylesheet data. Use `kind: 'layers'` with `names`, `kind: 'rule'` with a `selector` and `Style.NamedStyle`, `kind: 'font-face'` with descriptor `declarations`, or `kind: 'keyframes'` with a `name` and ordered `{ stop, style }` frames. Registered variables use `kind: 'property'`: `name` is a `--`-prefixed custom-property name, `syntax` is its CSS syntax descriptor, `inherits` controls inheritance, and `initialValue` is a computationally independent string or number. Source adapters construct this data from the direct web authoring functions and `Vars.define`.
 
 ```ts
 Css.compile({

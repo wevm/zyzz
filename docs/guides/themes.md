@@ -69,25 +69,7 @@ The example uses `padding.sm` for `px`, `margin.gutter` for margin, and `textCol
 
 ### Selecting a Theme
 
-> [!NOTE]
-> Config authoring is a preview.
-
-Apply the single theme's scope to the document root:
-
-```tsx
-import { theme } from './zyzz.config.js'
-
-const example = (
-  <html {...theme()}>
-    <head>
-      <title>My App</title>
-    </head>
-    <body>Content</body>
-  </html>
-)
-```
-
-For alternatives, configure a named catalog with a shared token contract:
+Configure a named catalog with a shared token contract:
 
 ```ts
 // zyzz.config.ts
@@ -131,13 +113,13 @@ Changing the scope updates inherited token values while component styles stay th
 
 ### Color Schemes
 
-Color tokens accept a shared string or a `{ dark, light }` pair, as in [Use Themes](#use-themes). Pass the scheme when applying the theme:
+Color tokens accept a shared string or a `{ dark, light }` pair, as in [Use Themes](#use-themes). Use the named catalog above and pass the scheme when selecting a theme:
 
 ```tsx
-import { theme } from './zyzz.config.js'
+import { themes } from './zyzz.config.js'
 
 const example = (
-  <html {...theme({ colorScheme: 'light dark' })}>
+  <html {...themes({ theme: 'base', colorScheme: 'light dark' })}>
     <head>
       <title>My App</title>
     </head>

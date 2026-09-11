@@ -96,6 +96,12 @@ describe('define', () => {
 
 describe('create', () => {
   test('retains runtime marker state domains', () => {
+    const mutable = { state: ['open'] }
+    const frozen = Marker.schema(mutable)
+    // @ts-expect-error copied domains are readonly
+    frozen.state.push('closed')
+    // @ts-expect-error copied schema fields are readonly
+    frozen.state = ['closed']
     const card = Marker.create({
       id: 'data-z-card',
       schema: Marker.schema({ state: ['open'], selected: [true, false] }),

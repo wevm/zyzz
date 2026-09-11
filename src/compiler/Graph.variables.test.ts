@@ -7,6 +7,52 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 describe('compile', () => {
+  test('normalizes wrapped compound static values and rejects loop mutation', () => {
+    const source =
+      "import {css} from 'zyzz';const size=10;export const styles={card:css({width:(`${size}px` as const)})};"
+    expect(
+      Graph.compile({ modules: { 'app.ts': source } }).modules['app.ts']!.css,
+    ).toMatchInlineSnapshot(`".z-1e8a67z1uaws1j-base0{width:10px;}"`)
+    const errors = [
+      "for(base.width of ['20px']){}",
+      'for(base.width in {changed:true}){}',
+    ].map((loop) => {
+      try {
+        Graph.compile({
+          modules: {
+            'app.ts': `import {css} from 'zyzz';const base={width:'10px'};${loop}export const styles={card:css(base)};`,
+          },
+        })
+        return 'accepted'
+      } catch (error) {
+        return (error as import('zyzz/compiler').Source.ExtractError)
+          .diagnostics
+      }
+    })
+    expect(errors).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 80,
+            "message": "Static data cannot be mutated or escape through unsupported expressions.",
+            "source": "app.ts",
+            "start": 51,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 86,
+            "message": "Static data cannot be mutated or escape through unsupported expressions.",
+            "source": "app.ts",
+            "start": 51,
+          },
+        ],
+      ]
+    `)
+  })
+
   test('attributes invalid registration CSS to its descriptor', () => {
     try {
       Graph.compile({
@@ -446,8 +492,8 @@ export const vars=Vars.define({
     })
     expect(errors).toMatchInlineSnapshot(`
       [
-        "accepted",
-        "accepted",
+        [Source.ExtractError: app.js:51: Static data cannot be mutated or escape through unsupported expressions.],
+        [Source.ExtractError: app.js:51: Static data cannot be mutated or escape through unsupported expressions.],
       ]
     `)
     expect(() =>

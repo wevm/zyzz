@@ -721,6 +721,21 @@ export function extract(options: extract.Options): extract.ReturnType {
         filename: options.moduleId,
         code: new TextEncoder().encode(rendered),
         errorRecovery: false,
+        ...(!options[Themes.context]
+          ? {
+              visitor: {
+                Url(url) {
+                  if (
+                    url.url &&
+                    !/^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url.url)
+                  )
+                    throw new Error(
+                      'Relative contribution assets require Graph.compile and a relocation host.',
+                    )
+                },
+              },
+            }
+          : {}),
       })
     }
   } catch (error) {

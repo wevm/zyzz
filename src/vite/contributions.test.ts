@@ -1,6 +1,8 @@
 /** Checks eager stylesheet delivery across disconnected source and lazy modules. @module */
+import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Os from 'node:os'
 import * as Vite from 'vite'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
@@ -8,7 +10,30 @@ import { zyzz } from 'zyzz/vite'
 describe('zyzz', () => {
   test('retains asset ownership through a repacked nested dependency', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-repacked-vite-'))
+    const external = await Fs.mkdtemp(Path.join(Os.tmpdir(), 'zyzz-sidecar-'))
     try {
+      const sidecar = Graph.compile({
+        modules: {
+          'index.ts': `import {Css} from 'zyzz/web';export const unrelated=Css.marker();`,
+        },
+      })
+      await Fs.writeFile(
+        Path.join(external, 'index.js'),
+        Esbuild.transformSync(sidecar.modules['index.ts']!.code, {
+          loader: 'ts',
+          format: 'esm',
+        }).code,
+      )
+      await Fs.writeFile(
+        Path.join(external, 'index.js.zyzz.json'),
+        sidecar.contracts['index.ts']!,
+      )
+      await Fs.mkdir(Path.join(external, 'node_modules'))
+      await Fs.symlink(
+        Path.resolve('.'),
+        Path.join(external, 'node_modules/zyzz'),
+        'dir',
+      )
       const dependency = Graph.compile({
         modules: {
           'index.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}});`,
@@ -63,7 +88,7 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import 'wrapper';import {css} from 'zyzz';document.body.className=css({color:'red'})().className;`,
+        `import ${JSON.stringify(Path.join(external, 'index.js'))};import 'wrapper';import {css} from 'zyzz';document.body.className=css({color:'red'})().className;`,
       )
       const result = await Vite.build({
         root,
@@ -95,6 +120,7 @@ describe('zyzz', () => {
         .join('\n')
       expect(css.includes('background-image')).toMatchInlineSnapshot('true')
     } finally {
+      await Fs.rm(external, { recursive: true, force: true })
       await Fs.rm(root, { recursive: true, force: true })
     }
   })

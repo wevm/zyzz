@@ -450,9 +450,7 @@ export function zyzz(): Plugin {
     }
     const appRoot = await Fs.realpath(root)
     const owners = new Map<string, string>()
-    for (const id of Object.keys(result.sharedAssets ?? {}).length
-      ? Object.keys(contracts)
-      : []) {
+    for (const id of new Set(Object.values(result.sharedAssetOwners ?? {}))) {
       if (!Path.isAbsolute(id)) continue
       let directory = Path.dirname(id.split(/[?#]/)[0]!)
       for (;;) {

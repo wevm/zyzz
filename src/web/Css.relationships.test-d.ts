@@ -50,6 +50,12 @@ describe('marker', () => {
     Css.ancestor(card, ':hovr')
     // @ts-expect-error unbounded domains
     Css.marker({ state: [] as string[] })
+    // @ts-expect-error widened scalar domain
+    Css.marker({ state: ['open' as string] })
+    // @ts-expect-error union element does not describe the concrete extracted domain
+    Css.marker({ state: ['open' as 'open' | 'closed'] })
+    // @ts-expect-error widened boolean element
+    Css.marker({ selected: [true as boolean] })
     // @ts-expect-error empty domains
     Css.marker({ state: [] })
     // @ts-expect-error serialization ambiguity
@@ -85,5 +91,22 @@ describe('define', () => {
     Css.descendant(card, ':visited')
     // @ts-expect-error visited cannot be observed through has
     Css.siblingAfter(card, { pseudo: ':visited' })
+  })
+})
+
+describe('create', () => {
+  test('retains runtime marker state domains', () => {
+    const card = Marker.create({
+      id: 'data-z-card',
+      schema: Marker.schema({ state: ['open'], selected: [true, false] }),
+    })
+    card({ state: 'open', selected: false })
+    // @ts-expect-error invalid state value
+    card({ state: 'closed' })
+    // @ts-expect-error unknown state key
+    card({ unknown: true })
+    const extra = { state: 'open' as const, unknown: true }
+    // @ts-expect-error unknown state keys remain invalid through bindings
+    card(extra)
   })
 })

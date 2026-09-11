@@ -115,3 +115,5 @@ Untransformed `theme.css` calls and `theme.className` reads throw the missing-tr
 Source maps trace generated artifacts back to original authoring. See [Publish Libraries](../../../guides/compilation.md#publish-libraries).
 
 See [Transform](README.md) for related methods and types.
+
+Relative URLs in stylesheet contributions require `Graph.compile` and a relocation host. A standalone transform rejects them; absolute, data, fragment, query-only, and empty URLs retain their authored resolution.

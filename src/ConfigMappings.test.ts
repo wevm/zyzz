@@ -4,24 +4,34 @@ import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
+import { Config } from 'zyzz'
 
-const config = `import {Config} from 'zyzz';export const {css,theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight'],paddingX:['paddingLeft','paddingRight'],space:['marginLeft','paddingLeft']},theme:{spacing:{sm:'4px'},margin:{sm:'-8px'},padding:{sm:'12px'}}});`
-const source = `import {css,theme} from 'library';export const styles={card:css({px:'sm',paddingLeft:'2px',':hover':{paddingX:'sm!'}}),mixed:css({space:'sm'}),handle:theme.css({px:'sm'}),dynamic:css((values:{width:'10px'|'20px'})=>({px:values.width}))};`
-function compile() {
-  const library = Graph.compile({
-    modules: {
-      'config.ts': config,
-      'index.ts': `export {css,theme} from './config.js';`,
-    },
-  })
-  const app = Graph.compile({
-    contracts: { 'library/index.js': library.contracts['index.ts']! },
-    imports: { 'app.ts': { library: 'library/index.js' } },
-    modules: { 'app.ts': source },
-  })
-  return { app, library }
-}
 describe('create', () => {
+  const config = `import {Config} from 'zyzz';export const {css,theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight'],paddingX:['paddingLeft','paddingRight'],space:['marginLeft','paddingLeft']},theme:{spacing:{sm:'4px'},margin:{sm:'-8px'},padding:{sm:'12px'}}});`
+  const source = `import {css,theme} from 'library';export const styles={card:css({px:'sm',paddingLeft:'2px',':hover':{paddingX:'sm!'}}),mixed:css({space:'sm'}),handle:theme.css({px:'sm'}),dynamic:css((values:{width:'10px'|'20px'})=>({px:values.width}))};`
+  function compile() {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': config,
+        'index.ts': `export {css,theme} from './config.js';`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'library/index.js': library.contracts['index.ts']! },
+      imports: { 'app.ts': { library: 'library/index.js' } },
+      modules: { 'app.ts': source },
+    })
+    return { app, library }
+  }
+  test('rejects non-record shorthand containers', () => {
+    expect(() =>
+      Config.create({
+        shorthands: new Map([['px', ['paddingLeft']]]),
+      } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Config.InvalidError: shorthands must be a property mapping record.]`,
+    )
+  })
   test('accepts reordered alias keys with identical target tuples', () => {
     const { library } = compile()
     const first = JSON.parse(library.contracts['config.ts']!)
@@ -159,7 +169,9 @@ describe('create', () => {
           'app.ts': `import {css} from 'lib';export const card=css({mx:'sm'})`,
         },
       }),
-    ).toThrow(/mappings disagree/)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: lib.js:0: Invalid library contract: Configuration mappings disagree with linked theme metadata.]`,
+    )
   })
   test('rejects present falsy packed mappings', () => {
     const { library } = compile()
@@ -177,7 +189,9 @@ describe('create', () => {
             'app.ts': `import {css} from 'lib';export const card=css({color:'red'})`,
           },
         }),
-      ).toThrow(/shorthands must be/)
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: lib.js:0: Invalid library contract: shorthands must be a property mapping record.]`,
+      )
     }
   })
   test('rejects invalid mappings', () => {

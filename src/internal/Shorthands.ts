@@ -7,7 +7,13 @@ export type Map = Readonly<Record<string, readonly [Property, ...Property[]]>>
 export type Property = Exclude<keyof Literal.Properties, `--${string}`>
 /** Copies validated configuration data; throws for invalid aliases or targets. */
 export function read(value: unknown): Map {
-  if (!value || typeof value !== 'object' || Array.isArray(value))
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    (Object.getPrototypeOf(value) !== null &&
+      Object.getPrototypeOf(value) !== Object.prototype)
+  )
     throw new Error('shorthands must be a property mapping record.')
   const entries = Object.entries(Object.getOwnPropertyDescriptors(value))
   return Object.freeze(

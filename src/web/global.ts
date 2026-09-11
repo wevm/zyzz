@@ -26,6 +26,8 @@ type WithoutRelationships<value> = value extends readonly unknown[]
     ? {
         [key in keyof value]: key extends symbol
           ? never
-          : WithoutRelationships<value[key]>
+          : key extends keyof Style.Properties
+            ? unknown
+            : WithoutRelationships<value[key]>
       }
     : unknown

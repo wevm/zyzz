@@ -34,7 +34,7 @@ export type Handle<schema extends Marker.Schema> = {
     input?: input & Record<Exclude<keyof input, keyof schema>, never>,
   ): Readonly<Record<`data-${string}`, string>>
   /** Compile-time invariant retaining the schema for relationship inference. */
-  readonly [stateSchema]?: schema
+  readonly [stateSchema]: schema
 }
 /** Optional conjunction of marker data, an element pseudo, and descendant selector. */
 export type Condition<schema extends Marker.Schema> =

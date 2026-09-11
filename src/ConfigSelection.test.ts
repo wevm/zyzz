@@ -1,4 +1,5 @@
 /** Verifies named theme selection through linked and packed compilation. @module */
+import * as Packed from '../test/fixtures/Packed.js'
 import * as Esbuild from 'esbuild'
 import * as Path from 'node:path'
 import * as Vm from 'node:vm'
@@ -8,6 +9,23 @@ import { Graph, Source } from 'zyzz/compiler'
 import { Config } from 'zyzz'
 
 describe('create', () => {
+  test('aliases named selectors through local and packed member access', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}}}});const select=config.themes;export const props=select({theme:'base'});`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'lib.js': library.contracts['config.ts']! },
+      imports: { 'app.ts': { lib: 'lib.js' } },
+      modules: {
+        'app.ts': `import {config} from 'lib';const select=config.themes;const alias=select;export const props=alias({theme:'base'});`,
+      },
+    })
+    expect(
+      app.modules['app.ts']!.code.includes('alias({theme:'),
+    ).toMatchInlineSnapshot('true')
+  })
   test('destructures named selectors from packed full configurations', () => {
     const library = Graph.compile({
       modules: {
@@ -191,42 +209,19 @@ describe('create', () => {
           'app.ts': `import { css, theme, select } from 'library'; export const styles={card:css({color:select.mint.tokens.color.ink})}; export const mint=select.mint.className; export const first=select({theme:'ocean'}); export const second=select({theme:'mint',colorScheme:'dark'}); export const selectTheme=(name:'ocean'|'mint')=>select({theme:name});`,
         },
       })
-      const bundle = await Esbuild.build({
-        bundle: true,
-        format: 'iife',
-        globalName: 'Fixture',
-        write: false,
-        entryPoints: ['app.ts'],
-        plugins: [
-          {
-            name: 'compiled',
-            setup(build) {
-              build.onResolve(
-                { filter: /^(app\.ts|library|\.\/config\.js)$/ },
-                (args) => ({
-                  path:
-                    args.path === 'library'
-                      ? 'index.ts'
-                      : args.path === './config.js'
-                        ? 'config.ts'
-                        : args.path,
-                  namespace: 'compiled',
-                }),
-              )
-              build.onLoad({ filter: /.*/, namespace: 'compiled' }, (args) => ({
-                contents: (app.modules[args.path] ??
-                  library.modules[args.path])!.code,
-                loader: 'ts',
-                resolveDir: process.cwd(),
-              }))
-            },
-          },
-        ],
-        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+      const bundle = await Packed.bundle({
+        entry: 'app.ts',
+        modules: { 'app.ts': app.modules['app.ts']!.code },
+        packages: {
+          library: Object.fromEntries(
+            Object.entries(library.modules).map(([name, module]) => [
+              name,
+              module.code,
+            ]),
+          ),
+        },
       })
-      const result = Vm.runInNewContext(
-        `${bundle.outputFiles[0]!.text};Fixture;`,
-      ) as {
+      const result = Vm.runInNewContext(`${bundle};Fixture;`) as {
         mint: string
         first: Record<string, unknown>
         second: Record<string, unknown>

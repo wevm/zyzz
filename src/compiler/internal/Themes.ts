@@ -198,9 +198,43 @@ export function collect(program: Ast.Program, options: collect.Options) {
       path.unshift(key)
       root = root.object
     }
-    return root.type === 'Identifier'
-      ? configs.get(root.name)?.members?.[JSON.stringify(path)]
-      : undefined
+    const config =
+      root.type === 'Identifier' ? configs.get(root.name) : undefined
+    if (
+      config &&
+      !config.call.selection &&
+      path.length === 1 &&
+      ['themes'].includes(path[0]!)
+    ) {
+      const key = path[0]!
+      if (key === 'themes' && !config.call.options?.themes) return undefined
+
+      const members = Object.fromEntries(
+        Object.entries(config.members ?? {}).flatMap(([name, member]) => {
+          const parts = JSON.parse(name) as string[]
+          return key === 'themes' && parts[0] === 'themes'
+            ? [[JSON.stringify(parts.slice(1)), member]]
+            : []
+        }),
+      )
+      return {
+        ...config,
+        members,
+        binding: `${config.binding}:${key}`,
+        call: {
+          ...config.call,
+          members: Object.fromEntries(
+            Object.entries(members).map(([name, member]) => [
+              name,
+              member.call.name,
+            ]),
+          ),
+          selection: true,
+          type: `${config.call.type}['${key}']`,
+        },
+      }
+    }
+    return config?.members?.[JSON.stringify(path)]
   }
 
   function data(node: Ast.Node): unknown {

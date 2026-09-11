@@ -8,10 +8,10 @@ This documentation describes the implemented web compiler and marks remaining AP
 | `Theme` and `Config.create`              | Compatible themes, named selection, initialization scripts, property aliases, and dedicated spacing groups |
 | Source and packed linking                | Configuration helpers, theme handles, marker relationships, variable contracts, and animation aliases      |
 | Stylesheets and adapters                 | Eager contributions, shared source maps, package-owned relative assets, optional reset, and rebuilds       |
-| Web frameworks                           | React, Vue, Solid, and Svelte integration fixtures; first-paint and hydration evidence in CI               |
+| Web frameworks                           | React, Solid, Svelte, and plain HTML integration fixtures; first-paint and hydration evidence in CI        |
 
 > [!NOTE]
-> Arbitrary imported object records used as `css(record)`, the remaining variants and bundled-theme gates, and native compilation/rendering are still deferred. Inferred authoring types alone do not establish transform or rendering support. See the plan for each remaining acceptance gate.
+> Arbitrary imported object records used as `css(record)`, the remaining variants and bundled-theme gates, Vue SFC integration, and native compilation/rendering are still deferred. Inferred authoring types alone do not establish transform or rendering support. See the plan for each remaining acceptance gate.
 
 Browser support depends on emitted CSS and selected processing targets. Explicit target processing belongs to adapters. Web integration evidence does not establish native rendering parity.
 

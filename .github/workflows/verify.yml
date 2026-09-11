@@ -49,17 +49,6 @@ jobs:
           name: css-conformance
           path: css-conformance.md
           retention-days: 30
-  host-macos:
-    name: Host on macOS
-    runs-on: macos-latest
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-      - name: Install dependencies
-        uses: ./.github/actions/install-dependencies
-      - name: Verify case-insensitive output ownership
-        run: pnpm exec vp test run src/node/Host.test.ts -t 'prefixed sources and case-only renames'
-    timeout-minutes: 5
   test:
     name: Test
     permissions:

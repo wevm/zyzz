@@ -303,7 +303,7 @@ Zyzz.css({ padding: 0 });
             {
               "code": "unsupported_syntax",
               "end": 66,
-              "message": "Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.",
+              "message": "Static spreads require an immutable object literal.",
               "source": "example/errors.ts",
               "start": 55,
               "text": "...defaults",
@@ -367,7 +367,7 @@ Zyzz.css({ padding: 0 });
             {
               "code": "unsupported_syntax",
               "end": 296,
-              "message": "Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.",
+              "message": "Expected a literal string or number; expressions are not evaluated.",
               "source": "example/errors.ts",
               "start": 289,
               "text": "padding",

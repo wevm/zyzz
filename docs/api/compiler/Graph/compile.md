@@ -74,7 +74,7 @@ Graph.compile({ modules: { 'app/card.ts': source } })
 
 - Type: `Readonly<Record<string, string>>`
 
-Compiler-only JSON for modules exporting themes or bound authoring aliases, including re-exports. Each file contains version 1 export bindings and complete graph theme data. Publish it beside the corresponding compiled runtime entrypoint as `<entry>.zyzz.json`; regenerate it together with JavaScript, declarations, and CSS.
+Compiler-only JSON for modules exporting themes or bound authoring aliases, including re-exports. Each file contains versioned export bindings and complete graph theme data. Publish it beside the corresponding compiled runtime entrypoint as `<entry>.zyzz.json`; regenerate it together with JavaScript, declarations, and CSS.
 
 ```ts
 output.contracts['library/index.ts'] // Publish as index.js.zyzz.json after lowering index.ts.
@@ -126,4 +126,17 @@ The graph normalizes configured themes without executing library code. Source ed
 
 When the graph has contributions, the result includes `sharedCss`, containing graph-wide layer declarations, global rules, font faces, and live keyframes. Load this stylesheet once, before the CSS from `modules`. Module CSS remains necessary for local styles. Recompile after source creation, updates, or deletion and replace both the shared stylesheet and affected module styles; contributions that disappear from the graph must also disappear from delivery. Vite handles this lifecycle automatically.
 
-Packed contracts containing query metadata or typography groups use schema version 3. Existing scalar-only theme contracts retain version 1, and scalar-only configuration contracts retain version 2. Matching readers accept all three; older readers reject version 3 explicitly instead of misinterpreting the new groups.
+Packed contracts containing query metadata or typography groups use schema version 3. Existing scalar-only theme contracts retain version 1, and scalar-only configuration contracts retain version 2. Readers accept implemented schema versions and reject unknown future versions explicitly.
+
+The writer selects the lowest version required by the exported capabilities:
+
+| Version | Added capability |
+| --- | --- |
+| 1 | Theme bindings |
+| 2 | Configuration and bound aliases |
+| 3 | Queries and typography |
+| 4 | Callable theme selection and initialization script |
+| 5 | Property mappings |
+| 6 | Marker relationships |
+
+This reader accepts versions 1–6. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.

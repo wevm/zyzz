@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Graph } from 'zyzz/compiler'
+import { Graph, Source } from 'zyzz/compiler'
 const config = `import {Css} from 'zyzz/web';export const card=Css.marker({state:['open','closed'],selected:[true,false]});`
 const app = `import {css} from 'zyzz';import {Css} from 'zyzz/web';import {card} from 'library';export {card};export const styles={ancestor:css({[Css.ancestor(card,{data:{state:'open'}})]:{color:'red'}}),descendant:css({[Css.descendant(card,{data:{selected:false}})]:{color:'blue'}}),before:css({[Css.siblingBefore(card)]:{color:'green'}}),after:css({[Css.siblingAfter(card)]:{color:'purple'}}),either:css({[Css.anySibling(card)]:{color:'orange'}})};`
 function compile() {
@@ -84,6 +84,11 @@ describe('marker', () => {
     expect(() =>
       fixture.card({ state: 'invalid' }),
     ).toThrowErrorMatchingInlineSnapshot(`[Error: Invalid marker state: state]`)
+    expect(() =>
+      fixture.card({ [Symbol('unknown')]: 'open' }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      '[Error: Unknown marker state: symbol]',
+    )
     expect(css).toMatchInlineSnapshot(`
       ".z-style-1e8a67z1uaws1j-127{:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64][data-z-1dwt1t61ri6uf4-card-63-61-72-64-state="open"]) &{color:red;}}
       .z-style-1e8a67z1uaws1j-202{&:where(:has([data-z-1dwt1t61ri6uf4-card-63-61-72-64][data-z-1dwt1t61ri6uf4-card-63-61-72-64-selected="false"])){color:blue;}}
@@ -127,6 +132,48 @@ describe('marker', () => {
       ]
     `)
   })
+  test('respects lexical aliases and compiles literal ampersands, undefined and dynamic relationships', () => {
+    const output = Graph.compile({
+      modules: {
+        'app.ts': `import {css} from 'zyzz';import {Css} from 'zyzz/web';const card=Css.marker(undefined);const alias=card;function other(card:unknown){const alias=card;return alias}export {alias};export const style=css((values:{color:'#123'|'#456'})=>({[Css.ancestor(card,{data:undefined,has:'[href*="&"]'})]:{color:values.color}}));`,
+      },
+    })
+    expect(
+      output.modules['app.ts']!.css.includes('[href*='),
+    ).toMatchInlineSnapshot('true')
+  })
+  test('rejects uncompiled helpers, null data, nested has and NUL states', () => {
+    for (const expression of [
+      `const unused={[Css.ancestor(card)]:{color:'red'}}`,
+      `const style=css({[Css.ancestor(card,{data:null})]:{color:'red'}})`,
+      `const style=css({[Css.descendant(card,{has:'a'})]:{color:'red'}})`,
+      `const invalid=Css.marker({state:['\\0']})`,
+    ])
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.ts': `import {css} from 'zyzz';import {Css} from 'zyzz/web';const card=Css.marker();${expression}`,
+          },
+        }),
+      ).toThrow()
+  })
+  test('unwraps factories and freezes their public rewrite spans', async () => {
+    const source =
+      "import {Css} from 'zyzz/web';export const card=(Css.marker({state:[`open`]}))!"
+    const extracted = Source.extract({ moduleId: 'marker.ts', source })
+    expect(Object.isFrozen(extracted.markerCalls)).toMatchInlineSnapshot('true')
+    expect(Object.isFrozen(extracted.markerCalls![0])).toMatchInlineSnapshot(
+      'true',
+    )
+    const result = Graph.compile({ modules: { 'marker.ts': source } })
+    expect(
+      (
+        await Esbuild.transform(result.modules['marker.ts']!.code, {
+          loader: 'ts',
+        })
+      ).code.includes('zyzz/web'),
+    ).toMatchInlineSnapshot('false')
+  })
   test('observes ancestor, descendant, and sibling direction in Chromium', async () => {
     const { code, css } = await bundle()
     const browser = await chromium.launch()
@@ -140,18 +187,35 @@ describe('marker', () => {
         `for(const id of ['root','child','earlier','later','peer'])for(const [key,value]of Object.entries(Fixture.card({state:'open',selected:false})))document.getElementById(id).setAttribute(key,value);for(const id of ['ancestor','descendant','before','after','either'])document.getElementById(id).className=Fixture.styles[id]().className`,
       )
       expect(
-        await page.evaluate(
-          `['ancestor','descendant','before','after','either'].map(id=>getComputedStyle(document.getElementById(id)).color)`,
-        ),
-      ).toMatchInlineSnapshot(`
-        [
-          "rgb(255, 0, 0)",
-          "rgb(0, 0, 255)",
-          "rgb(0, 128, 0)",
-          "rgb(128, 0, 128)",
-          "rgb(255, 165, 0)",
-        ]
-      `)
+        await page
+          .locator('#ancestor')
+          .evaluate((el) => getComputedStyle(el).color),
+        'ancestor',
+      ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+      expect(
+        await page
+          .locator('#descendant')
+          .evaluate((el) => getComputedStyle(el).color),
+        'descendant',
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+      expect(
+        await page
+          .locator('#before')
+          .evaluate((el) => getComputedStyle(el).color),
+        'before',
+      ).toMatchInlineSnapshot('"rgb(0, 128, 0)"')
+      expect(
+        await page
+          .locator('#after')
+          .evaluate((el) => getComputedStyle(el).color),
+        'after',
+      ).toMatchInlineSnapshot('"rgb(128, 0, 128)"')
+      expect(
+        await page
+          .locator('#either')
+          .evaluate((el) => getComputedStyle(el).color),
+        'either',
+      ).toMatchInlineSnapshot('"rgb(255, 165, 0)"')
       await page.locator('#earlier').evaluate((el) => el.remove())
       expect(
         await page

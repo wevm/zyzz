@@ -366,7 +366,14 @@ export function extract(options: extract.Options): extract.ReturnType {
       const depth = prefix.length + 2
       function localSlot(node: Ast.Node) {
         const slot = resolveDynamic(node)
-        if (slot && prefix.some((key) => !Condition.local(key))) {
+        if (
+          slot &&
+          prefix.some(
+            (key) =>
+              !Condition.local(key) &&
+              ![...markers.conditions.values()].includes(key),
+          )
+        ) {
           report(
             'unsupported_syntax',
             'Dynamic values require conditions that select the styled element.',
@@ -542,11 +549,13 @@ export function extract(options: extract.Options): extract.ReturnType {
               Object.values(dynamic.slots).includes(reference) &&
               reference.type !== 'number'
             ) &&
-            !targets.every((target) =>
-              Binding.accepts(reference.type, target) || dynamic?.accepts(
-                reference as unknown as Binding.Reference,
-                target,
-              ),
+            !targets.every(
+              (target) =>
+                Binding.accepts(reference.type, target) ||
+                dynamic?.accepts(
+                  reference as unknown as Binding.Reference,
+                  target,
+                ),
             )
           ) {
             report(
@@ -723,9 +732,22 @@ export function extract(options: extract.Options): extract.ReturnType {
       error instanceof Themes.InvalidError ? error : contributions.calls[0],
     )
   }
+  for (const [start] of markers.conditions)
+    if (!calls.some((call) => call.start <= start && start < call.end))
+      report(
+        'unsupported_syntax',
+        'Relationship helpers require a compiled style definition.',
+        { start, end: start },
+      )
   if (diagnostics.length) throw new ExtractError(diagnostics)
   return Object.freeze({
-    ...(markers.calls.length ? { markerCalls: markers.calls } : {}),
+    ...(markers.calls.length
+      ? {
+          markerCalls: Object.freeze(
+            markers.calls.map((call) => Object.freeze({ ...call })),
+          ),
+        }
+      : {}),
     ...(contributionData.length ? { contributions: contributionData } : {}),
     ...(contributions.calls.length
       ? { contributionCalls: contributions.calls }

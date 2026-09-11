@@ -34,7 +34,10 @@ for (const [name, rule] of Object.entries(data)) {
   for (const [descriptor, value] of Object.entries(rule.descriptors ?? {}))
     grammars[`${name}/${descriptor}`] = value
 }
-for (const [name, value] of Object.entries(supplements)) grammars[name] = value
+for (const [name, value] of Object.entries(supplements))
+  grammars[name] = Object.hasOwn(grammars, name)
+    ? { upstream: grammars[name], supplement: value }
+    : value
 const previous: Inventory = Fs.existsSync(file)
   ? JSON.parse(Fs.readFileSync(file, 'utf8'))
   : { entries: {}, version: '' }
@@ -54,7 +57,7 @@ for (const name of Object.keys(grammars).sort()) {
   if (!old || old.grammar !== grammar) errors.push(`Grammar changed: ${name}`)
   if (old && !['deferred', 'partial', 'supported'].includes(old.status))
     errors.push(`Invalid status: ${name}`)
-  if (old?.status === 'supported' && !old.evidence.length)
+  if (old && old.status !== 'deferred' && !old.evidence.length)
     errors.push(`Missing evidence: ${name}`)
   for (const evidence of old?.evidence ?? []) {
     const root = Path.resolve(directory, '../..')

@@ -9,7 +9,7 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
 describe('zyzz', () => {
-  test('links local theme imports with Vite timestamp queries', async () => {
+  test('links local theme imports with Vite cache queries in development and production', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-timestamp-vite-'))
     let server: Vite.ViteDevServer | undefined
     try {
@@ -19,7 +19,7 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import {css} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export const styles={card:css({color:theme.tokens.color.brand})};`,
+        `import {css} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export {theme};export const styles={card:css({color:theme.tokens.color.brand})};`,
       )
       server = await Vite.createServer({
         root,
@@ -35,6 +35,40 @@ describe('zyzz', () => {
       )
       const shared = await server.transformRequest('\0zyzz:shared.css')
       expect(shared!.code.includes('red')).toMatchInlineSnapshot(`true`)
+      const development = await server.ssrLoadModule('/app.ts')
+      expect(development.theme.className).toMatchInlineSnapshot(
+        `"z_theme-8emm311c7xzi9-theme"`,
+      )
+      const result = await Vite.build({
+        root,
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [zyzz()],
+        build: {
+          write: false,
+          minify: false,
+          lib: { entry: Path.join(root, 'app.ts'), formats: ['es'] },
+        },
+      })
+      const output = Array.isArray(result) ? result[0] : result
+      if (!output || !('output' in output))
+        throw new Error('Missing build output')
+      const chunk = output.output.find(
+        (file) => file.type === 'chunk' && file.isEntry,
+      )
+      if (!chunk || chunk.type !== 'chunk')
+        throw new Error('Missing entry chunk')
+      const production = await import(
+        `data:text/javascript;base64,${Buffer.from(chunk.code).toString('base64')}`
+      )
+      expect(production.theme.className).toMatchInlineSnapshot(
+        `"z_theme-8emm311c7xzi9-theme"`,
+      )
+      expect(production.styles.card()).toMatchInlineSnapshot(`
+        {
+          "className": "z-1hl3v031oo9bot-base0",
+        }
+      `)
     } finally {
       await server?.close()
       await Fs.rm(root, { recursive: true, force: true })

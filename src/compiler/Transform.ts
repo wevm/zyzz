@@ -471,6 +471,48 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   // Literal and scalar-theme rules each occupy one line at this boundary.
   const prefix = emitted.contributionCss ?? ''
+  const contributions = (extracted.contributions ?? []).map(
+    (definition, index) => ({
+      definition,
+      start: extracted.contributionStarts?.[index],
+    }),
+  )
+  const rank = (kind: string) =>
+    kind === 'import' ? 0 : kind === 'namespace' ? 1 : 2
+  const layered = contributions.find(
+    (value) => value.definition.kind === 'layers',
+  )
+  let contributionLine = 1
+  if (layered) {
+    if (layered.start !== undefined)
+      Mapping.addMapping(cssMap, {
+        generated: { line: contributionLine, column: 0 },
+        original: position(layered.start),
+        source: options.moduleId,
+      })
+    contributionLine++
+  }
+  for (const contribution of contributions.toSorted(
+    (a, b) => rank(a.definition.kind) - rank(b.definition.kind),
+  )) {
+    if (contribution.definition.kind === 'layers') continue
+    const rendered = Css.compile({
+      styles: { styles: [] },
+      contributions: [contribution.definition],
+      themes: Object.keys(extracted.themes).length
+        ? extracted.themes
+        : undefined,
+    }).css
+    for (const _ of rendered.split('\n')) {
+      if (contribution.start !== undefined)
+        Mapping.addMapping(cssMap, {
+          generated: { line: contributionLine, column: 0 },
+          original: position(contribution.start),
+          source: options.moduleId,
+        })
+      contributionLine++
+    }
+  }
   const scoped = emitted.scopedCss ?? emitted.css
   const css = [
     prefix,

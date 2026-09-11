@@ -222,10 +222,16 @@ export function bundle(css: string): string {
   )
   for (const statement of statements)
     output.remove(statement.start, statement.end)
+  const seen = new Set<string>()
   output.prepend(
-    [...new Set(prolog.map((value) => css.slice(value.start, value.end)))].join(
-      '\n',
-    ) + '\n',
+    prolog
+      .flatMap((value) => {
+        const text = css.slice(value.start, value.end)
+        if (value.namespace && seen.has(text)) return []
+        if (value.namespace) seen.add(text)
+        return [text]
+      })
+      .join('\n') + '\n',
   )
   return AtRules.rename(output.toString(), '-zyzz-namespace', 'namespace')
 }

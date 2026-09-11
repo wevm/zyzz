@@ -3,6 +3,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import { describe, expect, test } from 'vite-plus/test'
 import { Host } from 'zyzz/node'
+import * as Watch from '../../test/fixtures/Watch.js'
 
 describe('create', () => {
   test('copies nested stylesheet imports and their relative assets', async () => {
@@ -47,11 +48,14 @@ describe('create', () => {
       expect(
         await Fs.readFile(Path.join(root, 'output/pixel.svg'), 'utf8'),
       ).toMatchInlineSnapshot('"<svg/>"')
-      await Fs.writeFile(
-        Path.join(root, 'styles/nested.css'),
-        'body{color:blue}',
+      const notifications = Watch.create({ path: 'styles/nested.css' })
+      host.watch({ onResult: notifications.onResult })
+      await notifications.next(() =>
+        Watch.write({
+          path: Path.join(root, 'styles/nested.css'),
+          source: 'body{color:blue}',
+        }),
       )
-      await host.build()
       expect(
         await Fs.readFile(Path.join(root, 'output/styles/nested.css'), 'utf8'),
       ).toMatchInlineSnapshot('"body{color:blue}"')

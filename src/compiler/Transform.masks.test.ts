@@ -15,6 +15,7 @@ describe('compile', () => {
       moduleId: 'masks.ts',
       source: Masks.source,
     })
+
     expect(output.css.match(/background-position(?:-x)?:[^;}]+/g))
       .toMatchInlineSnapshot(`
       [
@@ -29,10 +30,12 @@ describe('compile', () => {
         "mask-size:50%!important",
       ]
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('mask-size:50%!important'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -61,15 +64,19 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>.box{width:80px;height:80px;padding:8px;border:8px solid #06c;background:#06c;mask-image:linear-gradient(black,black)}${output.css}</style><div id="actual" class="box ${module.mask.className}"></div><div id="control" class="box" style="${Masks.control}"></div><div id="unmasked" class="box" style="mask-image:none"></div>`,
       )
+
       expect(
         await page.evaluate(() => {
           const a = getComputedStyle(document.getElementById('actual')!)
           const b = getComputedStyle(document.getElementById('control')!)
+
           return [
             'background-position',
             'image-rendering',
@@ -95,9 +102,11 @@ describe('compile', () => {
           .locator('#actual')
           .evaluate((element) => getComputedStyle(element).backgroundPosition),
       ).toMatchInlineSnapshot(`"100% 50%"`)
+
       const actual = await page.locator('#actual').screenshot()
       const control = await page.locator('#control').screenshot()
       const unmasked = await page.locator('#unmasked').screenshot()
+
       expect(actual.equals(control)).toMatchInlineSnapshot(`true`)
       expect(actual.equals(unmasked)).toMatchInlineSnapshot(`false`)
     } finally {

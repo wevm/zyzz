@@ -9,6 +9,7 @@ import type * as Literal from './internal/Literal.js'
 import * as Token from './internal/Token.js'
 import * as Value from './internal/Value.js'
 import type * as Theme from './Theme.js'
+
 /** Validates only authored keys, recursively retaining nested token inference. */
 export type Accepted<
   style,
@@ -42,7 +43,9 @@ export type Accepted<
             : never
       }
     : never)
+
 type Keys<value> = value extends unknown ? keyof value : never
+
 type Exact<
   styles extends Record<string, unknown>,
   tokens extends Theme.Tokens,
@@ -70,6 +73,7 @@ type Exact<
         : Accepted<styles[name], tokens>
     : never
 }
+
 const nesting = Symbol('zyzz.style.nesting')
 
 /** A typed declaration; order is significant for future cascade processing. */
@@ -127,6 +131,7 @@ export function define(
         message: 'Nested styles exceed the depth limit.',
       },
     ])
+
   const diagnostics: Diagnostic[] = []
   const output: NamedStyle[] = []
   // One definition owns one theme; only validated references are reused within this call.
@@ -134,6 +139,7 @@ export function define(
     keyof Literal.Properties,
     Map<string | number, Token.Reference>
   >()
+
   function report(
     code: Diagnostic['code'],
     path: readonly string[],
@@ -144,9 +150,11 @@ export function define(
         location.path.length === path.length &&
         location.path.every((part, i) => part === path[i]),
     )
+
     const location = span
       ? Object.freeze({ ...span, path: Object.freeze([...span.path]) })
       : undefined
+
     diagnostics.push(
       Object.freeze({
         code,
@@ -156,6 +164,7 @@ export function define(
       }),
     )
   }
+
   function entries(
     value: unknown,
     path: readonly string[],
@@ -169,6 +178,7 @@ export function define(
       prototype &&
       prototype !== Object.prototype &&
       Object.getOwnPropertyDescriptor(prototype, 'constructor')?.value
+
     if (
       typeof value !== 'object' ||
       value === null ||
@@ -185,11 +195,15 @@ export function define(
         path,
         'Expected a plain object with enumerable data properties.',
       )
+
       return []
     }
+
     const result: [string, unknown][] = []
+
     for (const key of Reflect.ownKeys(value)) {
       const descriptor = Object.getOwnPropertyDescriptor(value, key)
+
       if (
         typeof key !== 'string' ||
         !descriptor?.enumerable ||
@@ -202,22 +216,29 @@ export function define(
         )
         continue
       }
+
       result.push([key, descriptor.value])
     }
+
     return result
   }
+
   for (const [name, style] of entries(styles, [])) {
     if (name.length === 0)
       report('invalid_structure', [name], 'Style names must not be empty.')
+
     const mappings = options.theme?.[Token.definition].contract.shorthands
     const authored = entries(style, [name])
+
     const properties = authored.flatMap(([property, input]) =>
       (mappings?.[property] ?? [property]).map(
         (target) => [target, input, property] as const,
       ),
     )
+
     if (properties.some(([key]) => Condition.is(key))) {
       const rules: Rule[] = []
+
       for (const [key, input] of authored) {
         try {
           const condition = Condition.is(key)
@@ -230,7 +251,9 @@ export function define(
                 },
               )
             : undefined
+
           if (condition !== undefined) Condition.normalize(condition)
+
           const nested = (
             define as (
               styles: Record<string, unknown>,
@@ -256,6 +279,7 @@ export function define(
                 ),
             },
           )
+
           rules.push(
             Object.freeze({
               ...(condition === undefined
@@ -302,6 +326,7 @@ export function define(
             report('invalid_structure', [name, key], (error as Error).message)
         }
       }
+
       output.push(
         Object.freeze({
           name,
@@ -311,10 +336,13 @@ export function define(
       )
       continue
     }
+
     const declarations: Declaration[] = []
+
     for (const [property, input, authoredProperty] of properties) {
       const key = property as keyof Literal.Properties
       const inputs: unknown[] = []
+
       if (Array.isArray(input)) {
         if (!input.length) {
           report(
@@ -324,11 +352,13 @@ export function define(
           )
           continue
         }
+
         for (let index = 0; index < input.length; index++) {
           const descriptor = Object.getOwnPropertyDescriptor(
             input,
             String(index),
           )
+
           if (!descriptor || !('value' in descriptor)) {
             report(
               'invalid_structure',
@@ -337,10 +367,13 @@ export function define(
             )
             continue
           }
+
           inputs.push(descriptor.value)
         }
+
         if (inputs.length !== input.length) continue
       } else inputs.push(input)
+
       for (const entry of inputs) {
         if (
           typeof entry === 'object' &&
@@ -355,26 +388,37 @@ export function define(
           )
           continue
         }
+
         const parsed = Value.parse(entry, key)
         const scalar = parsed ? parsed.value : entry
+
         const resolved = (() => {
           if (!options.theme) return scalar
+
           if (typeof scalar !== 'string' && typeof scalar !== 'number')
             return scalar
+
           const cached = references.get(key)?.get(scalar)
           if (cached) return cached
+
           const resolved = Token.resolve(scalar, {
             property: key,
             theme: options.theme,
           })
+
           if (Token.is(resolved)) {
             let values = references.get(key)
+
             if (!values) references.set(key, (values = new Map()))
+
             values.set(scalar, resolved)
           }
+
           return resolved
         })()
+
         const value = parsed && resolved === '0' ? 0 : resolved
+
         declarations.push(
           Object.freeze({
             ...(parsed?.important ? { important: true } : {}),
@@ -389,11 +433,14 @@ export function define(
         )
       }
     }
+
     output.push(
       Object.freeze({ declarations: Object.freeze(declarations), name }),
     )
   }
+
   if (diagnostics.length) throw new InvalidError(diagnostics)
+
   // Validated names are precisely the input's enumerable string keys.
   return Object.freeze({
     styles: Object.freeze(output),

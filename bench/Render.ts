@@ -30,6 +30,7 @@ export type Group = Options & {
 export function commands() {
   const directory = process.env.BENCH_RENDER_OUTPUT ?? 'bench/results'
   const cache = new Map<string, string>()
+
   const prepareRender: BrowserCommand<[Options], string> = async (
     _,
     options,
@@ -37,7 +38,9 @@ export function commands() {
     const key = `${options.components}/${options.kind}/${options.library}`
     const cached = cache.get(key)
     if (cached) return cached
+
     const output = await Runtime.create(options)
+
     const result = await Esbuild.build({
       bundle: true,
       define: { 'process.env.NODE_ENV': '"production"' },
@@ -52,20 +55,26 @@ export function commands() {
       },
       write: false,
     })
+
     const javascript = result.outputFiles[0]!.text
     const sizes = {
       cssGzip: Zlib.gzipSync(output.css).byteLength,
       javascriptGzip: Zlib.gzipSync(javascript).byteLength,
     }
+
     await Fs.mkdir(Path.join(directory, 'render', key), { recursive: true })
     await Fs.writeFile(
       Path.join(directory, 'render', key, 'sizes.json'),
       JSON.stringify(sizes),
     )
+
     const html = `<!doctype html><html><head><style>body{margin:0}main{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}article{box-sizing:border-box}h2,p{margin:0;font:12px sans-serif}${output.css}</style></head><body><div id="app"></div><script>${javascript.replace(/<\/script/gi, '<\\/script')}</script></body></html>`
+
     cache.set(key, html)
+
     return html
   }
+
   const saveRender: BrowserCommand<[readonly Group[], string], void> = async (
     _,
     groups,
@@ -77,5 +86,6 @@ export function commands() {
       JSON.stringify({ groups, userAgent, version: 1 }, null, 2),
     )
   }
+
   return { prepareRender, saveRender }
 }

@@ -44,6 +44,7 @@ describe('define theme', () => {
       color: { brand: '#123456' },
       spacing: { 4: '1rem' },
     })
+
     theme.css({ color: 'brand', padding: 4 })
     // @ts-expect-error Concrete theme colors retain hex constraints.
     Theme.define({ color: { brand: '#12345' } })

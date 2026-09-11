@@ -9,6 +9,7 @@ export function fontFace<const options extends fontFace.Options>(
   void options
   throw new MissingTransformError()
 }
+
 /** Supported font-face descriptor contracts. */
 export declare namespace fontFace {
   /** Source and family plus standard scalar font selection descriptors. */

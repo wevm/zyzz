@@ -22,11 +22,14 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${Identifiers.native}${output.css}</style><div id="container" class="${module.container.className}"><span id="probe" class="probe">probe</span></div><div id="motion" class="${module.motion.className}"></div><div id="control" style="animation-name:Fade;animation-duration:1s;animation-delay:-250ms;animation-play-state:paused;animation-timing-function:linear;animation-fill-mode:both"></div><div id="names" class="${module.names.className}"></div>`,
       )
+
       expect(
         await page
           .locator('#motion')

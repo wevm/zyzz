@@ -17,6 +17,7 @@ export const overridden = styles.card({ className: 'external', style: { marginTo
 export const dynamic = styles.dynamic({ width: '25%', style: { opacity: 0.5 } });`,
       },
     })
+
     const bundle = await Esbuild.build({
       alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
       bundle: true,
@@ -29,6 +30,7 @@ export const dynamic = styles.dynamic({ width: '25%', style: { opacity: 0.5 } })
       },
       write: false,
     })
+
     const values = Vm.runInNewContext(
       `${bundle.outputFiles[0]!.text}; Fixture;`,
     ) as {
@@ -36,6 +38,7 @@ export const dynamic = styles.dynamic({ width: '25%', style: { opacity: 0.5 } })
       overridden: { class: string; style: string }
       dynamic: { class: string; style: string }
     }
+
     expect(typeof values.plain.class).toMatchInlineSnapshot('"string"')
     expect(values.plain.className).toMatchInlineSnapshot('undefined')
     expect(values.overridden.class.endsWith(' external')).toMatchInlineSnapshot(

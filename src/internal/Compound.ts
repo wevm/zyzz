@@ -2,6 +2,7 @@
 import type * as Literal from './Literal.js'
 
 type Angle = `${number}${'deg' | 'grad' | 'rad' | 'turn'}` | Literal.Calculation
+
 type Box =
   | 'border-box'
   | 'content-box'
@@ -10,18 +11,22 @@ type Box =
   | 'padding-box'
   | 'stroke-box'
   | 'view-box'
+
 // Delimiters and closed tokens can separate CSS components without whitespace.
 type Chain<value extends string | number> =
   | value
   | (value extends `${string}${')' | ']' | '%' | '"' | "'"}`
       ? `${value}${string}`
       : `${value}${' ' | '/' | '"' | "'" | '#' | '['}${string}`)
+
 type List<value extends string | number> = value | `${value},${string}`
 type Dimension = Literal.Length | Literal.Calculation
 type Numeric = number | Literal.Calculation
 type Percentage = `${number}%` | Literal.Calculation
+
 type Filter =
   `${'blur' | 'brightness' | 'contrast' | 'drop-shadow' | 'grayscale' | 'hue-rotate' | 'invert' | 'opacity' | 'saturate' | 'sepia'}(${string})`
+
 type Position = Chain<
   | Dimension
   | 'bottom'
@@ -31,9 +36,12 @@ type Position = Chain<
   | 'top'
   | `anchor(${string})`
 >
+
 type Quoted = `"${string}"` | `'${string}'`
+
 type Shape =
   `${'circle' | 'ellipse' | 'inset' | 'path' | 'polygon' | 'rect' | 'shape' | 'xywh'}(${string})`
+
 type Area =
   | 'none'
   | Chain<
@@ -54,13 +62,16 @@ type Area =
       | `${'' | 'span-'}${'block' | 'inline' | 'self-block' | 'self-inline' | 'x' | 'x-self' | 'y' | 'y-self'}-${'end' | 'start'}`
       | `span-${'bottom' | 'left' | 'right' | 'top'}`
     >
+
 type Shadow = Chain<Dimension | Literal.Color | 'inset'>
+
 type Track =
   | Literal.GridTracks
   | `repeat(${string})${string}`
   | `[${string}`
   | 'subgrid'
   | 'none'
+
 type Variant =
   | 'normal'
   | 'none'

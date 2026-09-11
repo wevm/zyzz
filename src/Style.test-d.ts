@@ -22,6 +22,7 @@ import { components } from '../test/fixtures/components.js'
 describe('intrinsic scalar prefixes', () => {
   test('rejects optional unknown keys on broad style annotations', () => {
     const box = {} as Style.Properties & { widht?: string }
+
     // @ts-expect-error Broad annotations must still reject unknown keys.
     Style.define({ box })
   })
@@ -148,7 +149,9 @@ describe('percentage values', () => {
 describe('css', () => {
   test('geometric values expose structured transform shapes', () => {
     Style.define(Geometry.styles)
+
     for (const transform of Geometry.functions) css({ transform })
+
     css({
       aspectRatio: 'auto 16/9',
       rotate: '0 1 0 45deg',
@@ -271,7 +274,9 @@ describe('css', () => {
     css({ visibility: 0 })
     // @ts-expect-error Display keywords do not name visibility states.
     css({ visibility: 'none' })
+
     const interactionTheme = Theme.define({ spacing: { control: '8px' } })
+
     // @ts-expect-error Interaction keywords do not accept theme tokens.
     interactionTheme.css({ cursor: interactionTheme.tokens.spacing.control })
   })
@@ -297,7 +302,9 @@ describe('css', () => {
     css({ captionSide: 'center' })
     // @ts-expect-error Border collapse is not a border style.
     css({ borderCollapse: 'solid' })
+
     const tableTheme = Theme.define({ spacing: { gutter: '8px' } })
+
     // @ts-expect-error Unconstrained spacing tokens can contain percentages.
     tableTheme.css({ borderSpacing: tableTheme.tokens.spacing.gutter })
     // @ts-expect-error Named spacing tokens are not supported for border spacing.
@@ -311,11 +318,13 @@ describe('css', () => {
       textDecorationThickness: '10%',
       textUnderlineOffset: '-.2em',
     })
+
     const decorationTheme = Theme.define({
       color: { ink: '#06c' },
       textColor: { ink: '#f00' },
       spacing: { stroke: '2px' },
     })
+
     decorationTheme.css({
       textDecorationColor: 'ink',
       textDecorationThickness: 'stroke',
@@ -352,9 +361,11 @@ describe('css', () => {
       wordSpacing: '-.2em',
       textIndent: '10%',
     })
+
     const textTheme = Theme.define({
       spacing: { indent: '12px', portion: '10%' },
     })
+
     textTheme.css({ textIndent: 'indent', whiteSpace: 'pre-wrap' })
     Config.create({ theme: textTheme }).css({
       textIndent: textTheme.tokens.spacing.portion,
@@ -388,7 +399,9 @@ describe('css', () => {
       scrollSnapAlign: 'center end',
       scrollSnapStop: 'normal',
     })
+
     const snapTheme = Theme.define({ spacing: { edge: '10px' } })
+
     snapTheme.css({ scrollPadding: 'edge', scrollSnapType: 'inline mandatory' })
     Config.create({ theme: snapTheme }).css({
       scrollSnapType: 'block proximity',
@@ -415,9 +428,11 @@ describe('css', () => {
   test('scrolling properties', () => {
     Style.define(Scrolling.styles)
     css({ scrollMargin: '-2px!', scrollPaddingInline: ['auto', '10%'] })
+
     const scrollTheme = Theme.define({
       spacing: { offset: '20px', portion: '10%' },
     })
+
     scrollTheme.css({ scrollPaddingTop: 'offset!' })
     Config.create({ theme: scrollTheme }).css({
       scrollPaddingBlock: ['auto', scrollTheme.tokens.spacing.portion],
@@ -446,11 +461,13 @@ describe('css', () => {
 
   test('borders and outlines', () => {
     Style.define({ box: Borders.styles })
+
     const borderTheme = Theme.define({
       color: { brand: '#fff' },
       borderColor: { brand: '#06c' },
       borderRadius: { round: '50%' },
     })
+
     borderTheme.css({
       borderInlineStartColor: 'brand!',
       borderTopLeftRadius: 'round',
@@ -485,10 +502,12 @@ describe('css', () => {
       inset: 'auto',
       inlineSize: 'auto',
     })
+
     const logicalTheme = Theme.define({
       spacing: { md: '12px' },
       color: { brand: '#fff' },
     })
+
     logicalTheme.css({
       inlineSize: 'md',
       insetBlock: 'md!',
@@ -537,7 +556,9 @@ describe('css', () => {
       maxBlockSize: 'fit-content',
       flexBasis: 'content',
     })
+
     const sizingTheme = Theme.define({ spacing: { 'min-content': '24px' } })
+
     Config.create({ theme: sizingTheme }).css({
       width: ['min-content', sizingTheme.tokens.spacing['min-content']],
     })
@@ -564,10 +585,12 @@ describe('css', () => {
       overflowX: 'auto',
       overflowY: 'scroll',
     })
+
     const flexTheme = Theme.define({
       spacing: { basis: '60px' },
       color: { brand: '#fff' },
     })
+
     flexTheme.css({ flexBasis: 'basis!' })
     Style.define({ item: { flexBasis: flexTheme.tokens.spacing.basis } })
     Config.create({ theme: flexTheme }).css({ flexBasis: ['auto', 'basis'] })
@@ -589,12 +612,14 @@ describe('css', () => {
 describe('define', () => {
   test('literal definitions and readonly output', () => {
     const definition = Style.define(components)
+
     expectTypeOf(definition.styles[0]!.name).toEqualTypeOf<
       'card' | 'hidden' | 'label'
     >()
     expectTypeOf(definition).toEqualTypeOf<
       Style.Definition<'card' | 'hidden' | 'label'>
     >()
+
     Style.define({
       valid: {
         color: '#fff',
@@ -604,7 +629,9 @@ describe('define', () => {
         padding: 0,
       },
     })
+
     const typo = { card: { colour: '#fff', padding: '1rem' } } as const
+
     // @ts-expect-error Excess properties must also fail through aliased input.
     Style.define(typo)
     // @ts-expect-error Unknown CSS properties are rejected.
@@ -630,22 +657,30 @@ describe('define', () => {
 
   test('numeric style names', () => {
     const numeric = Style.define({ 0: { color: '#fff' }, 1.5: { padding: 0 } })
+
     expectTypeOf(numeric).toEqualTypeOf<Style.Definition<'0' | '1.5'>>()
   })
 
   test('union inputs', () => {
     const invalidUnion = {} as { color: '#fff' } | { colour: '#fff' }
+
     // @ts-expect-error Every possible union branch must have supported keys.
     Style.define({ card: invalidUnion })
+
     const overlappingUnion = {} as
       | { padding: 0 }
       | { colour: '#fff'; padding: 0 }
+
     // @ts-expect-error Shared valid properties must not hide a branch's typo.
     Style.define({ card: overlappingUnion })
+
     const callbackUnion = {} as (() => { color: '#fff' }) | { color: '#fff' }
+
     // @ts-expect-error A union with an executable branch is not literal data.
     Style.define({ card: callbackUnion })
+
     const validUnion = {} as { color: '#fff' } | { padding: 0 }
+
     expectTypeOf(Style.define({ card: validUnion })).toEqualTypeOf<
       Style.Definition<'card'>
     >()
@@ -660,7 +695,9 @@ describe('define', () => {
       { card: { color: 'brand', padding: 4 } },
       { theme },
     )
+
     expectTypeOf(themed).toEqualTypeOf<Style.Definition<'card'>>()
+
     // @ts-expect-error Theme inference cannot widen to accept unknown tokens.
     Style.define({ card: { color: 'missing' } }, { theme })
     // @ts-expect-error Tokens remain property-specific.
@@ -669,17 +706,23 @@ describe('define', () => {
     Style.define({ card: { color: 'brand' } })
 
     type Tokens = { color: { brand: '#06c' }; spacing: { 4: '1rem' } }
+
     // @ts-expect-error A token-aware option bag requires a theme.
     const missingTheme: Style.define.Options<Tokens> = {}
     // @ts-expect-error A token-aware option bag cannot explicitly omit the theme.
     const undefinedTheme: Style.define.Options<Tokens> = { theme: undefined }
+
     void missingTheme
     void undefinedTheme
+
     const presentTheme: Style.define.Options<Tokens> = { theme }
+
     expectTypeOf(
       Style.define({ card: { color: 'brand' } }, presentTheme),
     ).toEqualTypeOf<Style.Definition<'card'>>()
+
     const optionalTheme = {} as { theme?: typeof theme | undefined }
+
     Style.define({ card: { color: '#fff' } }, optionalTheme)
     // @ts-expect-error A potentially absent theme cannot enable shorthand names.
     Style.define({ card: { color: 'brand' } }, optionalTheme)
@@ -687,6 +730,7 @@ describe('define', () => {
     Style.define<{ card: { color: 'brand' } }, Tokens>({
       card: { color: 'brand' },
     })
+
     if (optionalTheme.theme)
       Style.define({ card: { color: 'brand' } }, { theme: optionalTheme.theme })
   })
@@ -699,9 +743,11 @@ describe('css', () => {
       opacity: '0.5 !important',
       padding: [0, '8px!'],
     })
+
     const configured = Config.create({
       theme: { color: { brand: '#06c' }, spacing: { md: '8px' } },
     })
+
     configured.css({
       color: ['#fff', 'brand!', configured.theme.tokens.color.brand],
       padding: ['md!', 0],
@@ -729,7 +775,9 @@ describe('css', () => {
       padding: '1lh',
       width: '80ch',
     })
+
     const lengthTheme = Theme.define({ spacing: { space: '2cqi' } })
+
     Style.define({ card: { padding: 'space!' } }, { theme: lengthTheme })
     // @ts-expect-error A time unit is not a CSS length.
     css({ width: '1ms' })
@@ -743,7 +791,9 @@ describe('css', () => {
     const extendedLengths = Theme.extend(lengthTheme, {
       spacing: { space: '1dvh' },
     })
+
     expectTypeOf(extendedLengths).toEqualTypeOf<typeof lengthTheme>()
+
     // @ts-expect-error Overrides cannot introduce token paths.
     Theme.extend(lengthTheme, { spacing: { missing: '1lh' } })
     // @ts-expect-error Overrides cannot change length tokens to colors.
@@ -768,12 +818,16 @@ describe('css', () => {
     css({ width: '10 dvh' })
     // @ts-expect-error Style.define checks the same numeric spellings.
     Style.define({ card: { padding: '0x10px' } })
+
     const configured = Config.create({
       theme: { color: { brand: '#06c' }, spacing: { md: '8px' } },
     })
+
     // @ts-expect-error Config-bound values use the same inferred checks.
     configured.css({ width: '0b10cqi!' })
+
     const numericNames = Theme.define({ spacing: { '0x10px': '8px' } })
+
     numericNames.css({ padding: '0x10px!' })
 
     // @ts-expect-error Binary values also fail for units with overlapping suffixes.
@@ -797,10 +851,12 @@ describe('css', () => {
       orphans: 2,
       widows: 3,
     })
+
     const theme = Theme.define({
       color: { rule: '#06c' },
       spacing: { gutter: '8px' },
     })
+
     theme.css({
       columnRuleColor: 'rule',
       columnRuleStyle: 'solid',
@@ -868,10 +924,12 @@ describe('css', () => {
       backgroundSize: ['auto', 'cover!'],
       mixBlendMode: 'plus-lighter',
     })
+
     const theme = Theme.define({
       color: { auto: '#06c' },
       spacing: { gap: '2px' },
     })
+
     theme.css({ accentColor: 'auto', caretColor: theme.tokens.color.auto })
     Config.create({ theme }).css({
       colorScheme: 'only dark',
@@ -914,7 +972,9 @@ describe('css', () => {
       lightingColor: 'white',
       strokeOpacity: 0.5,
     })
+
     const zyzz = Config.create({ theme: { color: { ink: '#06c' } } })
+
     zyzz.css({ fill: 'ink', stroke: zyzz.theme.tokens.color.ink })
     css({ fill: 'url(#gradient)' })
     css({ paintOrder: 'stroke fill' })
@@ -947,7 +1007,9 @@ describe('css', () => {
       textJustify: 'inter-character',
       textOrientation: 'upright',
     })
+
     const zyzz = Config.create({ theme: { color: { accent: '#06c' } } })
+
     zyzz.css({ textEmphasisColor: 'accent' })
     css({ fontVariantNumeric: 'tabular-nums slashed-zero' })
     css({ textEmphasisStyle: '"*"' })
@@ -1085,11 +1147,13 @@ describe('css', () => {
       textDecorationColor: 'grey',
       textEmphasisColor: 'papayawhip',
     })
+
     const zyzz = Config.create({
       theme: {
         color: { red: 'blue', accent: { dark: 'gold', light: 'navy' } },
       },
     })
+
     zyzz.css({
       color: 'red',
       backgroundColor: zyzz.theme.tokens.color.red,

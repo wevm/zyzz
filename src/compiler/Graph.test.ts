@@ -26,6 +26,7 @@ describe('compile', () => {
         'pkg/card.ts': `import { css, theme } from './index.js'; export const styles = { card: css({padding:'md'}), label: css({color:theme.tokens.color.brand}) }; export const props = styles.card(); export const scope = theme.className;`,
       },
     })
+
     expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-spacing_2e_md:8px;--z-t1g1qfxjzbnv3-css-color_2e_brand:#06c;}
       .z-5ngs574r5xr9-base1{padding:var(--z-t1g1qfxjzbnv3-css-spacing_2e_md,8px);}
@@ -36,6 +37,7 @@ describe('compile', () => {
       import { Props as __zyzzProps } from 'zyzz/runtime';
       import { css, theme } from './index.js'; export const styles = { card: __zyzzProps.create({className:"z-5ngs574r5xr9-base1"}), label: __zyzzProps.create({className:"z-5ngs574r5xr9-base0"}) }; export const props = styles.card(); export const scope = "z_theme-1g1qfxjzbnv3-css-theme";"
     `)
+
     const packed = Graph.compile({
       contracts: { 'library/index.js': output.contracts['pkg/index.ts']! },
       modules: {
@@ -43,6 +45,7 @@ describe('compile', () => {
       },
       imports: { 'app/card.ts': { library: 'library/index.js' } },
     })
+
     expect(packed.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:#06c;--z-t1g1qfxjzbnv3-css-spacing_2e_md:8px;}
       .z-ujlnau19561g8-base0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,#06c);}"
@@ -55,6 +58,7 @@ describe('compile', () => {
         'app/card.ts': `import { Config } from 'zyzz'; const { css: styled, theme: palette } = Config.create({theme:{color:{brand:'#06c'}}}); export const styles = { card: styled({color:palette.tokens.color.brand}) };`,
       },
     })
+
     expect(output.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-ujlnau19561g8-styled-theme{--z-tujlnau19561g8-styled-color_2e_brand:#06c;}
       .z-ujlnau19561g8-base0{color:var(--z-tujlnau19561g8-styled-color_2e_brand,#06c);}"
@@ -75,6 +79,7 @@ export const props = other.css({color:'brand'})();
 export const scope = mint.className;`,
       },
     })
+
     expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1g1qfxjzbnv3-zyzz-theme{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand:#06c;}
       .z_theme-1g1qfxjzbnv3-mint{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand:#175;}
@@ -93,6 +98,7 @@ export const scope = mint.className;`,
         'pkg/config.ts': `import { Config } from 'zyzz'; const zyzz = Config.create({theme:{color:{brand:{500:'#06c'}},spacing:{2:'8px'}}}); export const props = zyzz.css({color:'brand.500',padding:zyzz.theme.tokens.spacing[2]})();`,
       },
     })
+
     expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1g1qfxjzbnv3-zyzz-theme{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand_2e_500:#06c;--z-t1g1qfxjzbnv3-zyzz-spacing_2e_2:8px;}
       .z-1g1qfxjzbnv3-base0{color:var(--z-t1g1qfxjzbnv3-zyzz-color_2e_brand_2e_500,#06c);padding:var(--z-t1g1qfxjzbnv3-zyzz-spacing_2e_2,8px);}"
@@ -114,6 +120,7 @@ export const scope = mint.className;`,
         'pkg/config.js': `import { Config } from 'zyzz'; export const zyzz = Config.create({defaultTheme:'brand.dark',themes:{'brand.dark':{color:{brand:'#06c'}}}}); export const props = zyzz.css({color:'brand'})(); export const scope = zyzz.themes['brand.dark'].className;`,
       },
     })
+
     expect(library.modules['pkg/config.js']!.code).toMatchInlineSnapshot(
       `
       "
@@ -121,6 +128,7 @@ export const scope = mint.className;`,
        export const zyzz = ({script:__zyzzAppearance.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]),theme:{"className":"z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"},themes:/*#__PURE__*/__zyzzSelection.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]],false)}); export const props = ({className:"z-1fzmg4ts3ctu1-base0"}); export const scope = "z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark";"
     `,
     )
+
     const options = {
       contracts: { 'library/index.js': library.contracts['pkg/config.js']! },
       imports: { 'app/card.js': { '@acme/theme': 'library/index.js' } },
@@ -128,6 +136,7 @@ export const scope = mint.className;`,
         'app/card.js': `import { zyzz } from '@acme/theme'; export const props = zyzz.css({color:zyzz.themes['brand.dark'].tokens.color.brand})(); export const scope = zyzz.themes['brand.dark'].className;`,
       },
     }
+
     expect(Graph.compile(options).modules['app/card.js']!.css)
       .toMatchInlineSnapshot(`
       ".z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark{--z-t1fzmg4ts3ctu1-zyzz-color_2e_brand:#06c;}
@@ -153,6 +162,7 @@ export const scope = mint.className;`,
   test('configuration defaults, aliases, edits, and packed metadata retain the same contract', () => {
     const compiler = Graph.create()
     const output = compiler.compile({ modules: ConfigFixture.modules })
+
     expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-69adjg15dlzyu-zyzz-mint{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#175,#afa);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:12px;}
       .z_theme-69adjg15dlzyu-zyzz-base{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#06c,#9cf);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:8px;}
@@ -168,6 +178,7 @@ export const scope = mint.className;`,
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
       `"import { design } from './index.js'; const zyzz = (design as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); const { css } = (zyzz as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); export const props = ({className:"z-5ngs574r5xr9-base0"}); export const scope = "z_theme-69adjg15dlzyu-zyzz-mint";"`,
     )
+
     const updated = compiler.compile({
       modules: {
         ...ConfigFixture.modules,
@@ -176,15 +187,19 @@ export const scope = mint.className;`,
         ].replace("'#175'", "'#f00'"),
       },
     })
+
     expect(updated.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-69adjg15dlzyu-zyzz-mint{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#f00,#afa);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:12px;}
       .z_theme-69adjg15dlzyu-zyzz-base{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#06c,#9cf);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:8px;}
       .z-5ngs574r5xr9-base0{color:var(--z-t69adjg15dlzyu-zyzz-color_2e_brand,light-dark(#06c,#9cf));padding:var(--z-t69adjg15dlzyu-zyzz-spacing_2e_md,8px);}"
     `)
+
     const mapping = new Trace.TraceMap(output.modules['pkg/card.ts']!.cssMap)
+
     expect(
       Trace.originalPositionFor(mapping, { line: 1, column: 0 }).source,
     ).toMatchInlineSnapshot(`"pkg/zyzz.config.ts"`)
+
     const packed = Graph.compile({
       contracts: { 'library/index.js': output.contracts['pkg/index.ts']! },
       imports: { 'app/card.ts': { '@acme/theme': 'library/index.js' } },
@@ -192,6 +207,7 @@ export const scope = mint.className;`,
         'app/card.ts': `import { design as zyzz } from '@acme/theme'; export const props = zyzz.css({color:'brand',padding:'md'})(); export const scope = zyzz.themes.mint.className;`,
       },
     })
+
     expect(packed.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1h7j9xm1yzxb90-base{--z-t1h7j9xm1yzxb90-base-color_2e_brand:light-dark(#06c,#9cf);--z-t1h7j9xm1yzxb90-base-spacing_2e_md:8px;}
       .z_theme-69adjg15dlzyu-zyzz-mint{--z-t69adjg15dlzyu-zyzz-color_2e_brand:light-dark(#175,#afa);--z-t69adjg15dlzyu-zyzz-spacing_2e_md:12px;}
@@ -209,6 +225,7 @@ export const scope = mint.className;`,
         'pkg/config.ts': `import { Config, Theme } from 'zyzz'; export const empty = Config.create(); const base = Theme.define({color:{brand:'#06c'}}); export const zyzz = Config.create({theme:base}); const theme = zyzz.theme; export const mint = Theme.extend(zyzz.theme,{color:{brand:'#175'}}); export const props = zyzz.css({color:theme.tokens.color.brand})(); export const plain = empty.css({padding:'8px'})();`,
       },
     })
+
     expect(output.modules['pkg/config.ts']!.code).toMatchInlineSnapshot(
       `
       "
@@ -261,7 +278,9 @@ export const scope = mint.className;`,
         'library/index.ts': `export * from './theme.js';`,
       },
     })
+
     const compiler = Graph.create()
+
     const options = {
       contracts: { 'library/index.js': library.contracts['library/index.ts']! },
       imports: {
@@ -271,7 +290,9 @@ export const scope = mint.className;`,
         'app/card.ts': `import { css, theme, mint } from '@acme/theme'; import { Theme } from 'zyzz'; export const local = Theme.extend(theme,{color:{brand:'#f00'}}); export const props = css({color:theme.tokens.color.brand,padding:'md'})(); export const scope = mint.className;`,
       },
     }
+
     const output = compiler.compile(options)
+
     expect(output.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-18pt0w1ocy15n-theme{--z-t18pt0w1ocy15n-theme-color_2e_brand:#06c;--z-t18pt0w1ocy15n-theme-spacing_2e_md:8px;}
       .z_theme-18pt0w1ocy15n-mint{--z-t18pt0w1ocy15n-theme-color_2e_brand:#175;--z-t18pt0w1ocy15n-theme-spacing_2e_md:8px;}
@@ -281,6 +302,7 @@ export const scope = mint.className;`,
     expect(output.modules['app/card.ts']!.code).toMatchInlineSnapshot(
       `"import { css, theme, mint } from '@acme/theme';  export const local = ({className:"z_theme-ujlnau19561g8-local"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>); export const props = ({className:"z-ujlnau19561g8-base0"}); export const scope = "z_theme-18pt0w1ocy15n-mint";"`,
     )
+
     const updated = compiler.compile({
       ...options,
       contracts: {
@@ -290,6 +312,7 @@ export const scope = mint.className;`,
         ),
       },
     })
+
     expect(updated.modules['app/card.ts']!.classes).toMatchInlineSnapshot(`
       {
         "style-ujlnau19561g8-164": "z-ujlnau19561g8-base0",
@@ -318,6 +341,7 @@ export const scope = mint.className;`,
   test('unchanged and edited consumers retain one imported contract identity', () => {
     const library = Graph.compile({ modules: Fixture.modules })
     const compiler = Graph.create()
+
     const options = {
       contracts: { 'library/index.js': library.contracts['pkg/index.ts']! },
       imports: {
@@ -329,7 +353,9 @@ export const scope = mint.className;`,
         'app/b.ts': `import { style } from '@acme/theme'; export const b = style({padding:'md'})();`,
       },
     }
+
     compiler.compile(options)
+
     const next = {
       ...options,
       modules: {
@@ -340,7 +366,9 @@ export const scope = mint.className;`,
         ),
       },
     }
+
     const output = compiler.compile(next)
+
     expect(output.modules['app/a.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;--z-t1p8at5ioin1tk-theme-spacing_2e_unused:99px;}
       .z_theme-18i5hb1ihk25d-mint{--z-t1p8at5ioin1tk-theme-color_2e_brand:#175;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;--z-t1p8at5ioin1tk-theme-spacing_2e_unused:99px;}
@@ -359,6 +387,7 @@ export const scope = mint.className;`,
   test('conflicting installed copies fail before compiling consumers', () => {
     const library = Graph.compile({ modules: Fixture.modules })
     const contract = library.contracts['pkg/index.ts']!
+
     expect(() =>
       Graph.compile({
         contracts: {
@@ -382,6 +411,7 @@ export const scope = mint.className;`,
         'pkg/card.ts': `import { toString } from './utility.js'; export const value = toString();`,
       },
     })
+
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
       `"import { toString } from './utility.js'; export const value = toString();"`,
     )
@@ -409,6 +439,7 @@ export const scope = mint.className;`,
         'pkg/card.ts': `import { theme } from './index.js'; export const value = theme.css('ordinary');`,
       },
     })
+
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
       `"import { theme } from './index.js'; export const value = theme.css('ordinary');"`,
     )
@@ -433,6 +464,7 @@ export const scope = mint.className;`,
         'pkg/types.ts': `import type { Theme } from './missing.js'; export type Contract = Theme;`,
       },
     })
+
     expect(output.dependencies).toMatchInlineSnapshot(`
       {
         "pkg/types.ts": [],
@@ -446,6 +478,7 @@ export const scope = mint.className;`,
         'pkg/card.ts': `import { css } from './theme.js'; export function run(css: (value: string) => string) { return css('ordinary') } export const props = css({color:'brand'})();`,
       },
     })
+
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
       `"import { css } from './theme.js'; export function run(css: (value: string) => string) { return css('ordinary') } export const props = ({className:"z-5ngs574r5xr9-base0"});"`,
     )
@@ -453,6 +486,7 @@ export const scope = mint.className;`,
 
   test('imports, aliases, extensions and re-exports share token identities and source maps', async () => {
     const output = Graph.compile({ modules })
+
     expect(output.dependencies).toMatchInlineSnapshot(`
       {
         "pkg/alternate.ts": [
@@ -489,13 +523,17 @@ export const scope = mint.className;`,
         "source": "pkg/theme.ts",
       }
     `)
+
     const directory = await Fs.mkdtemp(Path.join(root, '.fixture-graph-'))
+
     try {
       for (const [name, module] of Object.entries(output.modules)) {
         const file = Path.join(directory, name)
+
         await Fs.mkdir(Path.dirname(file), { recursive: true })
         await Fs.writeFile(file, module.code)
       }
+
       const bundle = await Esbuild.build({
         entryPoints: [Path.join(directory, 'pkg/card.ts')],
         bundle: true,
@@ -503,21 +541,27 @@ export const scope = mint.className;`,
         metafile: true,
         write: false,
       })
+
       expect(
         Object.keys(bundle.metafile!.inputs).some((path) =>
           /Theme\.ts|compiler\//.test(path),
         ),
       ).toMatchInlineSnapshot(`false`)
+
       const path = Path.join(directory, 'bundle.cjs')
+
       await Fs.writeFile(path, bundle.outputFiles[0]!.text)
+
       const executed = await Util.promisify(ChildProcess.execFile)(
         process.execPath,
         ['-e', `console.log(JSON.stringify(require(${JSON.stringify(path)})))`],
       )
+
       expect(executed.stdout).toMatchInlineSnapshot(`
         "{"props":{"className":"z-5ngs574r5xr9-base0"},"scope":"z_theme-18i5hb1ihk25d-mint"}
         "
       `)
+
       const checked = await Util.promisify(ChildProcess.execFile)(
         process.execPath,
         [
@@ -535,6 +579,7 @@ export const scope = mint.className;`,
         ],
         { timeout: 30_000 },
       )
+
       expect(checked.stdout).toMatchInlineSnapshot(`""`)
     } finally {
       await Fs.rm(directory, { recursive: true, force: true })
@@ -543,12 +588,14 @@ export const scope = mint.className;`,
 
   test('token edits preserve identities and removing the last use removes declarations', () => {
     const before = Graph.compile({ modules })
+
     const after = Graph.compile({
       modules: {
         ...modules,
         'pkg/theme.ts': modules['pkg/theme.ts'].replace("'#06c'", "'#f00'"),
       },
     })
+
     expect(after.modules['pkg/card.ts']!.classes).toMatchInlineSnapshot(`
       {
         "style-5ngs574r5xr9-70": "z-5ngs574r5xr9-base0",
@@ -565,12 +612,14 @@ export const scope = mint.className;`,
         "style-5ngs574r5xr9-70": "z-5ngs574r5xr9-base0",
       }
     `)
+
     const removed = Graph.compile({
       modules: {
         ...modules,
         'pkg/card.ts': `import { mint } from './alternate.js'; export const scope = mint.className;`,
       },
     })
+
     expect(removed.modules['pkg/alternate.ts']!.css).toMatchInlineSnapshot(`""`)
     expect(removed.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`""`)
     expect(removed.modules['pkg/index.ts']!.css).toMatchInlineSnapshot(`""`)
@@ -580,38 +629,46 @@ export const scope = mint.className;`,
   test('linked scopes render inherited values in Chromium', async () => {
     const output = Graph.compile({ modules })
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent('<main id="scope"><div id="card">Card</div></main>')
       await page.addStyleTag({
         content: Object.values(output.modules)
           .map((module) => module.css)
           .join('\n'),
       })
+
       const classes = Object.values(output.modules['pkg/card.ts']!.classes)[0]!
+
       await page
         .locator('#card')
         .evaluate(
           (element, classes) => element.setAttribute('class', classes),
           classes,
         )
+
       expect(
         await page
           .locator('#card')
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(0, 102, 204)"`)
+
       const scope =
         output.modules['pkg/card.ts']!.themes[
           Object.keys(output.modules['pkg/card.ts']!.themes).find((name) =>
             name.endsWith('-mint'),
           )!
         ]!
+
       await page
         .locator('#scope')
         .evaluate(
           (element, scope) => element.setAttribute('class', scope),
           scope,
         )
+
       expect(
         await page
           .locator('#card')
@@ -649,6 +706,7 @@ export const scope = mint.className;`,
             [`pkg/theme${suffix}.${extension}`]: modules['pkg/theme.ts'],
           },
         })
+
         expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
           `"import { theme } from './theme'; export const props = ({className:"z-5ngs574r5xr9-base0"});"`,
         )
@@ -725,6 +783,7 @@ describe('create', () => {
   test('unchanged snapshots reuse results within an isolated compiler', () => {
     const compiler = Graph.create()
     const before = compiler.compile({ modules })
+
     expect(
       compiler.compile({ modules: { ...modules } }) === before,
     ).toMatchInlineSnapshot(`true`)
@@ -737,8 +796,11 @@ describe('create', () => {
     const compiler = Graph.create()
     const sources = Fixture.project(3)
     const before = compiler.compile({ modules: sources })
+
     sources['pkg/card0.ts'] = sources['pkg/card0.ts']!.replace('0px', '20px')
+
     const after = compiler.compile({ modules: sources })
+
     expect(
       after.modules['pkg/card1.ts'] === before.modules['pkg/card1.ts'],
     ).toMatchInlineSnapshot(`true`)
@@ -759,7 +821,9 @@ describe('create', () => {
 
   test('theme edits propagate through re-exports and preserve defining source maps', () => {
     const compiler = Graph.create()
+
     compiler.compile({ modules })
+
     const after = compiler.compile({
       modules: {
         ...modules,
@@ -767,12 +831,15 @@ describe('create', () => {
           '\n' + modules['pkg/theme.ts'].replace("'#06c'", "'#f00'"),
       },
     })
+
     expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#f00;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;}
       .z_theme-18i5hb1ihk25d-mint{--z-t1p8at5ioin1tk-theme-color_2e_brand:#175;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;}
       .z-5ngs574r5xr9-base0{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#f00);padding:var(--z-t1p8at5ioin1tk-theme-spacing_2e_md,8px);}"
     `)
+
     const map = new Trace.TraceMap(after.modules['pkg/card.ts']!.cssMap)
+
     expect(Trace.originalPositionFor(map, { column: 0, line: 1 }))
       .toMatchInlineSnapshot(`
       {
@@ -800,6 +867,7 @@ describe('create', () => {
       'pkg/card.ts': `import { css } from './theme.js'; export const props = css({color:'brand'})();`,
     }
     const before = compiler.compile({ modules: sources })
+
     const after = compiler.compile({
       modules: {
         ...sources,
@@ -809,6 +877,7 @@ describe('create', () => {
         ),
       },
     })
+
     expect(
       after.modules['pkg/card.ts'] === before.modules['pkg/card.ts'],
     ).toMatchInlineSnapshot(`false`)
@@ -826,19 +895,23 @@ describe('create', () => {
 
   test('import edits preserve the new graph scope order', () => {
     const compiler = Graph.create()
+
     const sources = {
       'pkg/a.ts': `export const value = 1;`,
       'pkg/b.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#000'}});`,
       'pkg/c.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#fff'}});`,
       'pkg/style.ts': `import { theme } from './b.js'; export const props = theme.css({color:'brand'})();`,
     }
+
     const before = compiler.compile({ modules: sources })
+
     const after = compiler.compile({
       modules: {
         ...sources,
         'pkg/a.ts': `import './c.js'; export const value = 1;`,
       },
     })
+
     expect(
       after.modules['pkg/style.ts'] === before.modules['pkg/style.ts'],
     ).toMatchInlineSnapshot(`false`)
@@ -853,12 +926,16 @@ describe('create', () => {
 
   test('edited imports replace dependency edges before later theme edits', () => {
     const compiler = Graph.create()
+
     compiler.compile({ modules })
+
     const sources = {
       ...modules,
       'pkg/card.ts': `import { mint } from './alternate.js'; export const props = mint.css({color:'brand'})();`,
     }
+
     compiler.compile({ modules: sources })
+
     const after = compiler.compile({
       modules: {
         ...sources,
@@ -868,6 +945,7 @@ describe('create', () => {
         ),
       },
     })
+
     expect(after.dependencies['pkg/card.ts']).toMatchInlineSnapshot(`
       [
         "pkg/alternate.ts",
@@ -883,6 +961,7 @@ describe('create', () => {
   test('failed edits retain the last successful graph and recover', () => {
     const compiler = Graph.create()
     const before = compiler.compile({ modules })
+
     expect(() =>
       compiler.compile({
         modules: {
@@ -896,12 +975,14 @@ describe('create', () => {
     expect(compiler.compile({ modules }) === before).toMatchInlineSnapshot(
       `true`,
     )
+
     const after = compiler.compile({
       modules: {
         ...modules,
         'pkg/card.ts': `export const value = 'recovered';`,
       },
     })
+
     expect(after.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
       `"export const value = 'recovered';"`,
     )
@@ -915,6 +996,7 @@ describe('create', () => {
       'pkg/card.ts': `import { css } from './theme'; export const props = css({color:'brand'})();`,
     }
     const before = compiler.compile({ modules: sources })
+
     expect(() =>
       compiler.compile({
         modules: {
@@ -928,12 +1010,14 @@ describe('create', () => {
     expect(
       compiler.compile({ modules: sources }) === before,
     ).toMatchInlineSnapshot(`true`)
+
     const after = compiler.compile({
       modules: {
         'pkg/card.ts': sources['pkg/card.ts'],
         'pkg/theme.ts': sources['pkg/theme.ts'],
       },
     })
+
     expect(after.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;}
       .z-5ngs574r5xr9-base0{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#06c);}"
@@ -959,23 +1043,28 @@ describe('create', () => {
     const compiler = Graph.create()
     const before = compiler.compile({ modules })
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
       const scope = before.modules['pkg/card.ts']!.themes['18i5hb1ihk25d-mint']!
       const className = Object.values(
         before.modules['pkg/card.ts']!.classes,
       ).join(' ')
+
       await page.setContent(
         `<main class="${scope}"><div id="card" class="${className}">Card</div></main>`,
       )
+
       const sheet = await page.addStyleTag({
         content: before.modules['pkg/card.ts']!.css,
       })
+
       expect(
         await page
           .locator('#card')
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
+
       const after = compiler.compile({
         modules: {
           ...modules,
@@ -985,9 +1074,11 @@ describe('create', () => {
           ),
         },
       })
+
       await sheet.evaluate((element, css) => {
         element.textContent = css
       }, after.modules['pkg/card.ts']!.css)
+
       expect(
         await page
           .locator('#card')
@@ -1007,19 +1098,25 @@ describe('create', () => {
 describe('create', () => {
   test('host resolution controls aliases and invalidates changed targets', () => {
     const compiler = Graph.create()
+
     const modules = {
       'pkg/a.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#000'}});`,
       'pkg/b.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#fff'}});`,
       'pkg/card.ts': `import { theme } from '@theme'; export const props = theme.css({color:'brand'})();`,
     }
+
     const imports = {
       'pkg/a.ts': { zyzz: null },
       'pkg/b.ts': { zyzz: null },
       'pkg/card.ts': { '@theme': 'pkg/a.ts' },
     }
+
     const before = compiler.compile({ imports, modules })
+
     imports['pkg/card.ts']['@theme'] = 'pkg/b.ts'
+
     const after = compiler.compile({ imports, modules })
+
     expect(after.dependencies['pkg/card.ts']).toMatchInlineSnapshot(`
       [
         "pkg/b.ts",

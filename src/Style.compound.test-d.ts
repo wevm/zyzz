@@ -46,10 +46,12 @@ describe('css', () => {
     Style.define({
       card: { color: ['BLUE', 'ReD!', '#ABC!ImPoRtAnT'], margin: '1EM' },
     })
+
     const theme = Theme.define({
       color: { Brand: 'blue' },
       spacing: { Gap: '2px' },
     })
+
     theme.css({ color: 'ReD', padding: '2PX' })
     theme.css({ color: 'Brand', padding: 'Gap' })
     Config.create({ theme, layers: ['components'] }).css({

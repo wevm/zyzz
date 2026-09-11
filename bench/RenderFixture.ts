@@ -27,6 +27,7 @@ export function create(options: create.Options) {
 
   function Tree({ phase }: { phase: number }) {
     React.useLayoutEffect(() => complete())
+
     return React.createElement(
       'main',
       null,
@@ -49,24 +50,32 @@ export function create(options: create.Options) {
 
   async function render(phase: number, fresh: boolean) {
     const start = performance.now()
+
     if (fresh) root = ReactDom.createRoot(container)
+
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(
         () => reject(new Error('React commit timed out')),
         10000,
       )
+
       complete = () => {
         clearTimeout(timeout)
         resolve()
       }
       root!.render(React.createElement(Tree, { phase }))
     })
+
     const commit = performance.now() - start
+
     container.lastElementChild!.lastElementChild!.getBoundingClientRect()
+
     const commitLayout = performance.now() - start
+
     await new Promise<void>((resolve) =>
       requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
     )
+
     return { commit, commitLayout, frame: performance.now() - start }
   }
 
@@ -74,11 +83,13 @@ export function create(options: create.Options) {
     const cards = container.querySelectorAll('article')
     if (cards.length !== options.components)
       throw new Error('Incorrect card count')
+
     // Match the full grid, including fractional tracks and intrinsic content.
     // Prepare all controls before reading layout to avoid one layout per card.
     const control = container.firstElementChild!.cloneNode(true) as HTMLElement
     const references = control.querySelectorAll('article')
     const input = options.inputs[phase]!
+
     for (const [index, reference] of references.entries()) {
       reference.removeAttribute('class')
       reference.removeAttribute('style')
@@ -91,7 +102,9 @@ export function create(options: create.Options) {
           : {},
       )
     }
+
     container.append(control)
+
     try {
       for (const [index, card] of cards.entries()) {
         const literal =
@@ -99,6 +112,7 @@ export function create(options: create.Options) {
         const reference = references[index]!
         const actualStyle = getComputedStyle(card)
         const expectedStyle = getComputedStyle(reference)
+
         for (const key of new Set([
           ...Object.keys(literal),
           ...Object.keys(input.style ?? {}),
@@ -117,8 +131,10 @@ export function create(options: create.Options) {
               `Card ${index}: ${property} differs (${actualStyle.getPropertyValue(property)} versus ${expectedStyle.getPropertyValue(property)})`,
             )
         }
+
         if (card.textContent !== `Card ${index}Phase ${phase}`)
           throw new Error('Incorrect card content')
+
         if (
           options.kind !== 'callable' &&
           input.className &&
@@ -137,26 +153,35 @@ export function create(options: create.Options) {
       root?.unmount()
       root = undefined
       container.getBoundingClientRect()
+
       const mount = await render(0, true)
+
       verify(0)
       previous = container.querySelector('article')
+
       const update = await render(1, false)
       if (previous !== container.querySelector('article'))
         throw new Error('Update replaced DOM')
+
       verify(1)
       // Removal is outside remount timing. The existing React root is retained.
       await new Promise<void>((resolve) => {
         function Empty() {
           React.useLayoutEffect(resolve, [])
+
           return null
         }
+
         root!.render(React.createElement(Empty))
       })
       container.getBoundingClientRect()
+
       const remount = await render(0, false)
       if (previous === container.querySelector('article'))
         throw new Error('Remount reused DOM')
+
       verify(0)
+
       return [
         { ...mount, operation: 'mount' },
         { ...update, operation: 'update' },

@@ -46,9 +46,12 @@ for (const mode of [
         iterations: 3,
         setup: async () => {
           directory = await Fs.mkdtemp(Path.resolve('.fixture-host-bench-'))
+
           const root = Path.join(directory, 'src')
+
           await Fs.mkdir(root)
           await Fs.writeFile(Path.join(root, 'cards.ts'), source)
+
           const options = {
             outDir: Path.join(directory, 'output'),
             packageId: 'benchmark',
@@ -68,6 +71,7 @@ for (const mode of [
               },
               write: false,
             })
+
             // Generated process driver, not repository source.
             await Fs.writeFile(
               Path.join(directory, 'driver.mjs'),
@@ -76,8 +80,10 @@ for (const mode of [
             await run(process.execPath, [Path.join(directory, 'driver.mjs')])
           } else {
             host = await Host.create(options)
+
             if (mode === 'watch edit') {
               notifications = Watch.create({ path: 'cards.ts.css' })
+
               try {
                 await notifications.next(async () => {
                   host!.watch({ onResult: notifications.onResult })
@@ -94,6 +100,7 @@ for (const mode of [
           // Tinybench does not await teardown before the next setup.
           const previousDirectory = directory
           const previousHost = host
+
           await previousHost?.close()
           await Fs.rm(previousDirectory, { force: true, recursive: true })
         },

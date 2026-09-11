@@ -9,6 +9,7 @@ const corpus = await Promise.all(
     .filter((name) => name.endsWith('.ts') && !name.includes('.test.'))
     .map(async (name) => {
       const fixture = await import(new URL(name, directory).href)
+
       return { name, source: fixture.source as string | undefined }
     }),
 )
@@ -24,6 +25,7 @@ for (const count of [10, 100, 1000]) {
       (_, index) =>
         `export const body${index}=theme.css({fontSize:"body",fontWeight:"medium"})()`,
     ).join('\n')
+
   describe(`compile / typography and queries / ${count} styles`, () => {
     bench(
       'source',

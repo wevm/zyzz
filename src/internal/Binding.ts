@@ -54,6 +54,7 @@ export type Properties<kind extends Kind> = {
           : Compatible<kind, property>
       : never
 }[keyof Literal.Properties]
+
 type Compatible<
   kind extends Kind,
   property extends keyof Literal.Properties,
@@ -112,6 +113,7 @@ export type Checked<style> = {
       ? Checked<style[property]>
       : unknown
 }
+
 /** Rejects reserved callback field names and importance-bearing value domains. */
 export type Inputs<values> = {
   [key in keyof values]: key extends
@@ -136,7 +138,9 @@ export type Inputs<values> = {
 export function is(value: unknown): value is Reference {
   if (typeof value !== 'object' || value === null || !Object.isFrozen(value))
     return false
+
   const fields = Object.getOwnPropertyDescriptors(value)
+
   return (
     ['name', 'type', 'variable'].every(
       (key) => fields[key] && 'value' in fields[key]!,
@@ -161,6 +165,7 @@ export function accepts(
   property: keyof Literal.Properties,
 ): boolean {
   if (property.startsWith('--')) return true
+
   return (BindingDomains.properties[kind] as readonly string[]).includes(
     property,
   )

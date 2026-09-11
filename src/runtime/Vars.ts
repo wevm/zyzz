@@ -8,6 +8,7 @@ export function create<const schema extends Variables.Schema>(
   const references = Object.fromEntries(
     Object.entries(slots).map(([key, slot]) => [key, Object.freeze(slot)]),
   )
+
   Object.defineProperty(references, 'set', {
     value: (values: Variables.Values<schema>) =>
       Object.freeze(
@@ -20,5 +21,6 @@ export function create<const schema extends Variables.Schema>(
       ),
     enumerable: false,
   })
+
   return Object.freeze(references) as Variables.Definition<schema>
 }

@@ -13,9 +13,11 @@ describe('create', () => {
       packageId: 'example',
       root: 'src',
     })
+
     expectTypeOf(host.build()).toEqualTypeOf<Promise<Host.Build>>()
     expectTypeOf(host[Symbol.asyncDispose]()).toEqualTypeOf<Promise<void>>()
     expectTypeOf(host.close()).toEqualTypeOf<Promise<void>>()
+
     // @ts-expect-error Package identity must be explicit.
     void Host.create({ outDir: 'dist', root: 'src' })
 

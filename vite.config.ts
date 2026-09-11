@@ -4,6 +4,7 @@
  */
 import * as Path from 'node:path'
 import { defineConfig } from 'vite-plus'
+
 export default defineConfig({
   fmt: {
     ignorePatterns: [

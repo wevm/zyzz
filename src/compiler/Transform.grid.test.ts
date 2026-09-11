@@ -15,6 +15,7 @@ describe('compile', () => {
       moduleId: 'grid.ts',
       source: Grid.source,
     })
+
     expect(output.css.match(/grid-column-start:[^;}]+/g))
       .toMatchInlineSnapshot(`
       [
@@ -25,10 +26,12 @@ describe('compile', () => {
     expect(output.css.includes('grid-auto-columns:1fr')).toMatchInlineSnapshot(
       `true`,
     )
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('grid-column-start:2!important'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -57,15 +60,19 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><section id="actual" class="${module.grid.className}"><div class="${module.cell.className}">Span</div></section><section id="control" style="${Grid.controls.grid}"><div style="${Grid.controls.cell}">Span</div></section>`,
       )
+
       expect(
         await page.evaluate(() => {
           const a = getComputedStyle(document.getElementById('actual')!)
           const b = getComputedStyle(document.getElementById('control')!)
+
           return [
             'grid-auto-columns',
             'grid-auto-rows',
@@ -102,6 +109,7 @@ describe('compile', () => {
           const b = document
             .querySelector('#control > div')!
             .getBoundingClientRect()
+
           return a.width === b.width && a.height === b.height
         }),
       ).toMatchInlineSnapshot(`true`)

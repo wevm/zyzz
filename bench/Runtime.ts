@@ -82,18 +82,22 @@ export async function create(options: create.Options): Promise<Bundle> {
   const fixture = await Compilation.create(workload)
   const literals = literalStyles(count)
   const names = literals.map((_, index) => `card${index}`)
+
   const application = (expressions: readonly string[], direct = false) => {
     if (kind === 'direct')
       return `export function apply(index) { switch(index) { ${expressions.map((expression, index) => `case ${index}:return ${direct ? `({className:${expression}})` : expression};`).join('')} } }`
+
     if (kind === 'cached')
       return `const applications = [${expressions.map((expression) => (direct ? `({className:${expression}})` : expression)).join(',')}];
         export function apply(index) { return applications[index]; }`
+
     if (direct)
       return `const classes = [${expressions.join(',')}];
         export function apply(index, overrides) {
           const className = classes[index];
           ${kind === 'callable' ? 'return { className };' : `return { className: overrides.className ? className + ' ' + overrides.className : className, style: overrides.style };`}
         }`
+
     return `const applications = [${expressions.map((expression) => `() => (${expression})`).join(',')}];
       export function apply(index, overrides) {
         const props = applications[index]();
@@ -107,17 +111,20 @@ export async function create(options: create.Options): Promise<Bundle> {
         if (library === 'zyzz') {
           const definitions = literals.map((style) => {
             const { width: _width, opacity: _opacity, ...fixed } = style
+
             return `css((values:{width:\`\${number}px\`;alpha:number})=>({${JSON.stringify(fixed).slice(1, -1)},width:values.width,opacity:values.alpha}))`
           })
           const output = Transform.compile({
             moduleId: 'benchmark/runtime.ts',
             source: `import {css} from 'zyzz';const applications=[${definitions.join(',')}];export function apply(index,input){return applications[index](input)}`,
           })
+
           return {
             css: Compilation.minify(output.css),
             javascript: await bundle(output.code),
           }
         }
+
         const css = literals
           .map(
             (style, index) =>
@@ -133,6 +140,7 @@ export async function create(options: create.Options): Promise<Bundle> {
                 .join(';')}}`,
           )
           .join('')
+
         return {
           css: Compilation.minify(css),
           javascript: await bundle(
@@ -140,15 +148,19 @@ export async function create(options: create.Options): Promise<Bundle> {
           ),
         }
       }
+
       if (library === 'zyzz') {
         const definitions = literals.map(
           (style, index) => `${names[index]}: css(${JSON.stringify(style)})`,
         )
+
         const source = (() => {
           if (kind === 'direct')
             return `import {css} from 'zyzz'; const styles={${definitions.join(',')}}; ${application(names.map((name) => `styles.${name}()`))}`
+
           if (kind === 'cached')
             return `import { css } from 'zyzz'; ${application(literals.map((style) => `css(${JSON.stringify(style)})()`))}`
+
           return `import { css } from 'zyzz';
             const styles = { ${definitions.join(',')} };
             const applications = [${names.map((name) => `styles.${name}`).join(',')}];
@@ -156,15 +168,18 @@ export async function create(options: create.Options): Promise<Bundle> {
               return applications[index](${kind === 'overrides' ? 'overrides' : ''});
             }`
         })()
+
         const output = Transform.compile({
           moduleId: 'benchmark/runtime.ts',
           source,
         })
+
         return {
           css: Compilation.minify(output.css),
           javascript: await bundle(output.code),
         }
       }
+
       if (library === 'baseline') {
         const css = literals
           .map(
@@ -177,6 +192,7 @@ export async function create(options: create.Options): Promise<Bundle> {
                 .join(';')}}`,
           )
           .join('')
+
         return {
           css: Compilation.minify(css),
           javascript: await bundle(
@@ -187,6 +203,7 @@ export async function create(options: create.Options): Promise<Bundle> {
           ),
         }
       }
+
       if (library === 'panda') {
         await Fs.writeFile(
           Path.join(fixture.directory, 'panda.ts'),
@@ -197,7 +214,9 @@ export async function create(options: create.Options): Promise<Bundle> {
           Path.join(fixture.directory, 'panda.ts'),
           '\nexport const classes = apply;',
         )
+
         const output = await Compilation.panda(fixture)
+
         return {
           ...output,
           javascript: await bundle(
@@ -205,13 +224,17 @@ export async function create(options: create.Options): Promise<Bundle> {
           ),
         }
       }
+
       if (library === 'stylex') {
         fixture.stylex = `import * as stylex from '@stylexjs/stylex';
           const styles = stylex.create(${JSON.stringify(Object.fromEntries(literals.map((style, index) => [names[index], style])))});
           ${application(names.map((name) => `stylex.props(styles.${name})`))}`
+
         return Compilation.stylex(fixture)
       }
+
       const output = await Compilation.compilers[library](fixture)
+
       return {
         ...output,
         javascript: await bundle(
@@ -222,12 +245,14 @@ export async function create(options: create.Options): Promise<Bundle> {
         ),
       }
     })()
+
     // Only compiled, bundled fixture code executes; authoring remains build-time.
     const exports = Vm.runInThisContext(
       `(() => {${compiled.javascript}; return fixture;})()`,
     ) as Pick<Bundle, 'apply'>
     if (typeof exports.apply !== 'function')
       throw new Error(`${library} emitted no application.`)
+
     return { ...compiled, apply: exports.apply }
   } finally {
     await Fs.rm(fixture.directory, { force: true, recursive: true })
@@ -253,32 +278,41 @@ export async function verify(
   options: create.Options,
 ): Promise<void> {
   const browser = await chromium.launch()
+
   try {
     const page = await browser.newPage()
+
     await page.setContent(
       '<!doctype html><html><head></head><body></body></html>',
     )
     await page.addStyleTag({ content: output.css })
     await page.addScriptTag({ content: output.javascript })
+
     const differences = await page.evaluate(
       ({ kind, literals, overrides }) => {
         const { apply } = (
           window as unknown as { fixture: Pick<Bundle, 'apply'> }
         ).fixture
         const differences: string[] = []
+
         for (const [index, literal] of literals.entries()) {
           const actual = document.createElement('div')
           const reference = document.createElement('div')
+
           document.body.append(actual, reference)
+
           for (const input of overrides) {
             const props = apply(index, input)
+
             actual.className = props.className
             actual.removeAttribute('style')
+
             for (const [key, value] of Object.entries(props.style ?? {})) {
               if (key.startsWith('--'))
                 actual.style.setProperty(key, String(value))
               else Object.assign(actual.style, { [key]: value })
             }
+
             reference.removeAttribute('style')
             Object.assign(
               reference.style,
@@ -288,8 +322,10 @@ export async function verify(
                 ? { width: input.width, opacity: input.alpha }
                 : {},
             )
+
             const actualStyle = getComputedStyle(actual)
             const referenceStyle = getComputedStyle(reference)
+
             for (const property of new Set([
               ...Object.keys(literal),
               'paddingLeft',
@@ -299,12 +335,14 @@ export async function verify(
                 /[A-Z]/g,
                 (letter) => `-${letter.toLowerCase()}`,
               )
+
               if (
                 actualStyle.getPropertyValue(key) !==
                 referenceStyle.getPropertyValue(key)
               )
                 differences.push(`${index}: ${key}`)
             }
+
             if (
               (kind === 'overrides' || kind === 'dynamic') &&
               input.className &&
@@ -312,9 +350,11 @@ export async function verify(
             )
               differences.push(`${index}: external class`)
           }
+
           actual.remove()
           reference.remove()
         }
+
         return differences
       },
       {
@@ -345,6 +385,7 @@ async function bundle(source: string): Promise<string> {
     stdin: { contents: source, loader: 'ts', resolveDir: process.cwd() },
     write: false,
   })
+
   return result.outputFiles[0]!.text
 }
 
@@ -358,6 +399,7 @@ export function literalStyles(
         Object.entries<unknown>(style).map(([key, value]) => {
           if (typeof value !== 'string' && typeof value !== 'number')
             throw new Error('Runtime corpus requires scalar declarations.')
+
           return [key, value]
         }),
       ),

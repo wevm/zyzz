@@ -95,6 +95,7 @@ export async function verify(options: verify.Options) {
     )
     expect(checked.stdout).toMatchInlineSnapshot(`""`)
     server = await Vite.createServer(config)
+    await server.listen()
     const ssr = (await server.ssrLoadModule('/server.tsx')) as {
       render: () =>
         | { html: string; script: string }
@@ -107,7 +108,6 @@ export async function verify(options: verify.Options) {
       Path.join(root, 'index.html'),
       `<!doctype html><html><head>${rendered.script}</head><body><div id="app">${rendered.html}</div><button id="dispose">Dispose</button><script type="module" src="/client.tsx"></script></body></html>`,
     )
-    await server.listen()
     browser = await chromium.launch({ headless: true })
     const page = await browser.newPage()
     const errors: string[] = []
@@ -187,10 +187,13 @@ export async function verify(options: verify.Options) {
           'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
         )
       }
+      await page.waitForFunction(
+        'document.querySelector("#card")?.isConnected && getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
+      )
       expect(
-        await page
-          .locator('#card')
-          .evaluate((element) => getComputedStyle(element).backgroundColor),
+        await page.evaluate(
+          'getComputedStyle(document.querySelector("#card")).backgroundColor',
+        ),
       ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
       await page.locator('#dispose').click()
       await page.waitForFunction(

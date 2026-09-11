@@ -7,7 +7,7 @@ let expanded = $state(false);
 onMount(() => { document.documentElement.dataset.ready = 'true' });
 </script>
 <main style="width:400px"><section class={theme.className} style:color-scheme={expanded ? 'dark' : 'light'}>
-<div id="card" {...styles.card({ width: expanded ? '75%' : '25%', ...(expanded ? {} : { style: { marginTop: '12px', opacity: 0.5, '--note': '"<&>' } }) })}>Card</div>
+<div id="card" {...styles.card({ width: expanded ? '75%' : '25%', ...(expanded ? {} : { style: { marginTop: '12px', opacity: 0.5, '--note': '"<&>"' } }) })}>Card</div>
 <button id="toggle" onclick={() => expanded = !expanded}>Toggle</button>
 </section></main>`,
   'client.tsx': `import { flushSync, hydrate, unmount } from 'svelte'; import App from './App.svelte';

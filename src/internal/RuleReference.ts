@@ -13,13 +13,14 @@ export type Reference<kind extends Kind> = (kind extends 'counterStyle'
   readonly [reference]: kind
 }
 /** Rejects named references outside their property's CSS identity domain. */
-export type Check<value, property> = value extends readonly unknown[]
-  ? { [index in keyof value]: Check<value[index], property> }
-  : value extends Reference<infer kind>
-    ? kind extends Domain<property>
-      ? unknown
-      : never
+export type Check<value, property> = typeof reference extends keyof value
+  ? value[typeof reference] extends Domain<property>
+    ? unknown
+    : never
+  : value extends readonly unknown[]
+    ? { [index in keyof value]: Check<value[index], property> }
     : unknown
+
 type Domain<property> = property extends
   | 'fallback'
   | 'listStyle'

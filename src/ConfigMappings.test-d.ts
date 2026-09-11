@@ -1,8 +1,18 @@
 /** Checks exact alias keys and every expanded target's token/value domain. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, css } from 'zyzz'
+import { Config, css, Theme } from 'zyzz'
 
 describe('create', () => {
+  test('preserves configured aliases through theme extensions', () => {
+    const { theme } = Config.create({
+      theme: { spacing: { sm: '4px' } },
+      shorthands: { 'padding-x': ['paddingLeft', 'paddingRight'] },
+    })
+    const extended = Theme.extend(theme, { spacing: { sm: '8px' } })
+    extended.css({ 'padding-x': 'sm' })
+    // @ts-expect-error extension retains finite alias names
+    extended.css({ unknownAlias: 'sm' })
+  })
   test('infers aliases through nested styles and bound handles', () => {
     const { css: configured, theme } = Config.create({
       shorthands: {

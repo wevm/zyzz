@@ -13,14 +13,16 @@ import type * as Themes from './Themes.js'
 /** Reads versioned JSON as validated data; never evaluates package code. */
 export function read(source: string, identities: Map<string, Token.Contract>) {
   const data = record(JSON.parse(source))
-  if (![1, 2, 3, 4].includes(data.version as number))
+  if (![1, 2, 3, 4, 5, 6, 7].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
+    const shorthands = entry.shorthands ? Shorthands.read(entry.shorthands) : undefined
     let contract = identities.get(identity)
+    if (contract && JSON.stringify(contract.shorthands) !== JSON.stringify(shorthands)) throw new Error('Conflicting packed shorthand mappings for one theme identity.')
     if (!contract) {
       contract = Object.freeze({
         ...(entry.shorthands
@@ -197,7 +199,7 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(links).some(
+    version: Object.values(links).some(link => link.kind === 'marker') ? 6 : Object.values(themes).some(theme => theme[Token.definition].contract.shorthands) ? 5 : Object.values(links).some(
       (link) =>
         link.call.selection ||
         link.call.initialization ||

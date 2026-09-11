@@ -170,6 +170,27 @@ export function scan(
             exports[node.id.name] = link
         }
       }
+      if (node.type === 'MemberExpression') {
+        const name = method(node)
+        if (
+          name &&
+          [
+            'marker',
+            'ancestor',
+            'descendant',
+            'siblingBefore',
+            'siblingAfter',
+            'anySibling',
+          ].includes(name)
+        ) {
+          const container = ancestors.at(-2)
+          if (container?.type !== 'CallExpression' || container.callee !== node)
+            throw new Themes.InvalidError(
+              'Marker helpers require direct calls.',
+              node,
+            )
+        }
+      }
       if (node.type !== 'CallExpression') return
       const name = method(node.callee)
       if (name === 'marker') {
@@ -201,11 +222,12 @@ export function scan(
         try {
           const input = node.arguments[0] ? data(node.arguments[0]) : undefined
           const schema = Marker.schema(input === undefined ? {} : input)
-          const id = `data-z-${namespace}-${variable.id.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-')}-${Array.from(
-            variable.id.name,
-          )
-            .map((char) => char.codePointAt(0)!.toString(16))
-            .join('-')}`
+          const id =
+            `data-z-${namespace}-${variable.id.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-')}-${Array.from(
+              variable.id.name,
+            )
+              .map((char) => char.codePointAt(0)!.toString(16))
+              .join('-')}` as const
           const definition = Object.freeze({ id, schema })
           const link: Themes.Link = {
             binding: id,

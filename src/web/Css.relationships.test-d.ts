@@ -1,6 +1,7 @@
 /** Checks marker state inference and relationship-key authoring without broad state domains. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css, Style } from 'zyzz'
+import { Marker } from 'zyzz/runtime'
 import { Css, global } from 'zyzz/web'
 describe('marker', () => {
   test('retains finite states and typed relationships', () => {
@@ -59,6 +60,10 @@ describe('marker', () => {
 describe('global', () => {
   test('excludes marker relationships from global declarations', () => {
     const card = Css.marker()
+    // @ts-expect-error ordinary nested conditions cannot hide relationships
+    global({ body: { ':hover': { [Css.ancestor(card)]: { color: 'red' } } } })
+    // @ts-expect-error runtime identities must remain private data attributes
+    Marker.create({ id: 'className', schema: Marker.schema({}) })
     // @ts-expect-error global rules cannot contain marker relationship keys
     global({ body: { [Css.ancestor(card)]: { color: 'red' } } })
   })

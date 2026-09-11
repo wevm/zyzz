@@ -291,7 +291,7 @@ export function zyzz(): Plugin {
     const connected = new Set(files)
     for (const [file, source] of await discover(entry.environment, host)) {
       if (files.has(file)) continue
-      let selected = contributionFiles.get(entry.environment)?.has(file)
+      const selected = contributionFiles.get(entry.environment)?.has(file)
       if (allSources && !selected) {
         const { program } = Parser.parseSync('source.tsx', source, {
           sourceType: 'module',
@@ -319,9 +319,18 @@ export function zyzz(): Plugin {
           if (!Path.isAbsolute(physical) || !/\.[cm]?[jt]sx?$/.test(physical))
             continue
           try {
-            await Fs.access(`${physical}.zyzz.json`)
-            selected = true
-            break
+            const sidecar = `${physical}.zyzz.json`
+            contracts[resolved.id] = await Fs.readFile(sidecar, 'utf8')
+            host.watch(sidecar)
+            files.add(sidecar)
+            // Discover the package contribution without compiling unrelated authoring
+            // expressions in an otherwise unreachable source file.
+            const discovery = `${sourceId(file)}.zyzz-discovery`
+            modules[discovery] =
+              (modules[discovery] ?? '') +
+              `import ${JSON.stringify(specifier)};\n`
+            ;(imports[discovery] ??= Object.create(null))[specifier] =
+              resolved.id
           } catch (error) {
             if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
           }
@@ -363,7 +372,8 @@ export function zyzz(): Plugin {
       styles.push(output.css)
       line += output.css.split('\n').length
     }
-    const owners = new Set<string>([await Fs.realpath(root)])
+    const appRoot = await Fs.realpath(root)
+    const owners = new Map<string, string>()
     for (const id of Object.keys(result.sharedAssets ?? {}).length
       ? Object.keys(contracts)
       : []) {
@@ -372,7 +382,7 @@ export function zyzz(): Plugin {
       for (;;) {
         try {
           await Fs.access(Path.join(directory, 'package.json'))
-          owners.add(await Fs.realpath(directory))
+          owners.set(id, await Fs.realpath(directory))
           break
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
@@ -384,7 +394,7 @@ export function zyzz(): Plugin {
       }
     }
     const assetUrls = new Map<string, string>()
-    for (const target of Object.values(result.sharedAssets ?? {})) {
+    for (const [key, target] of Object.entries(result.sharedAssets ?? {})) {
       const raw = target.split(/[?#]/)[0]!
       const file = await Fs.realpath(
         target.startsWith('app/')
@@ -395,19 +405,24 @@ export function zyzz(): Plugin {
                 throw new Error('Asset path escapes the Vite graph.')
               })(),
       )
+      const identity = result.sharedAssetOwners?.[key]
+      const owner = identity?.startsWith('app/')
+        ? appRoot
+        : identity
+          ? owners.get(identity)
+          : undefined
+      const relative = owner ? Path.relative(owner, file) : '..'
       if (
-        ![...owners].some((owner) => {
-          const relative = Path.relative(owner, file)
-          return (
-            relative !== '..' &&
-            !relative.startsWith(`..${Path.sep}`) &&
-            !Path.isAbsolute(relative)
-          )
-        })
+        relative === '..' ||
+        relative.startsWith(`..${Path.sep}`) ||
+        Path.isAbsolute(relative)
       )
         throw new Error('Asset path escapes its owning package.')
       host.watch(file)
-      assetUrls.set(target, `/@fs/${file}${target.slice(raw.length)}`)
+      assetUrls.set(
+        target,
+        `/@fs/${file.replaceAll('\\', '/')}${target.slice(raw.length)}`,
+      )
     }
     const shared = !Object.keys(result.sharedAssets ?? {}).length
       ? {

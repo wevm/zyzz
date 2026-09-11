@@ -46,6 +46,8 @@ export declare namespace compile {
     readonly sharedCss?: string | undefined
     /** Source map for source-owned and packed global contributions. */
     readonly sharedCssMap?: Mapping.EncodedSourceMap | undefined
+    /** Trusted source or contract owner for each shared asset placeholder. */
+    readonly sharedAssetOwners?: Readonly<Record<string, string>> | undefined
     /** Portable asset targets keyed by emitted compiler URL placeholders. */
     readonly sharedAssets?: Readonly<Record<string, string>> | undefined
     /** Rewritten modules and their stylesheets/maps. Load the CSS for the graph together. */
@@ -453,6 +455,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       id,
       library.stylesheets.map((section) => ({
         ...section,
+        owner: id,
         source: Stylesheets.resolve(id, section.source),
       })),
     )
@@ -470,9 +473,18 @@ function build(options: compile.Options, cache?: Cache): Cache {
     ]
   }
   const sharedVisited = new Set<string>()
-  const shared = Stylesheets.render(
-    ids.flatMap((id) => reachable(id, sharedVisited)),
-  )
+  const shared = (() => {
+    try {
+      return Stylesheets.render(
+        ids.flatMap((id) => reachable(id, sharedVisited)),
+      )
+    } catch (error) {
+      return fail(
+        error instanceof Stylesheets.ConflictError ? error.source : ids[0]!,
+        (error as Error).message,
+      )
+    }
+  })()
   const sharedCss = shared.css
   // Every stylesheet includes all graph scopes, including unimported alternatives.
   const names = Object.keys(themes)
@@ -509,7 +521,12 @@ function build(options: compile.Options, cache?: Cache): Cache {
     resolutions: Object.freeze(resolutions),
     result: Object.freeze({
       ...(sharedCss
-        ? { sharedCss, sharedCssMap: shared.map, sharedAssets: shared.assets }
+        ? {
+            sharedCss,
+            sharedCssMap: shared.map,
+            sharedAssets: shared.assets,
+            sharedAssetOwners: shared.owners,
+          }
         : {}),
       contracts: Object.freeze(
         Object.fromEntries(
@@ -526,6 +543,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
                 sharedThemes,
                 reachable(id).map((section) => ({
                   ...section,
+                  owner: undefined,
                   source: Stylesheets.relative(id, section.source),
                 })),
               ),

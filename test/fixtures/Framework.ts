@@ -132,6 +132,9 @@ export async function verify(options: verify.Options) {
       expect(
         await page.evaluate('document.documentElement.dataset.identity'),
       ).toMatchInlineSnapshot(`"true"`)
+      await page.waitForFunction(
+        'getComputedStyle(document.querySelector("#card")).width === "100px"',
+      )
       expect(
         await page
           .locator('#card')

@@ -111,19 +111,31 @@ export function scan(
     )
   }
   function method(node: Ast.Node): string | undefined {
-    if (
-      node.type !== 'MemberExpression' ||
-      node.computed ||
-      node.optional ||
-      node.object.type !== 'Identifier' ||
-      node.property.type !== 'Identifier'
-    )
+    if (node.type !== 'MemberExpression' || node.object.type !== 'Identifier')
       return undefined
     const declaration = scope.getDeclaration(node.object.name)
-    return declaration?.type === 'Import' &&
-      namespaces.has(declaration.node.start)
-      ? node.property.name
-      : undefined
+    if (
+      declaration?.type !== 'Import' ||
+      !namespaces.has(declaration.node.start)
+    )
+      return undefined
+    if (node.optional)
+      throw new Themes.InvalidError(
+        'Marker helpers require direct calls.',
+        node,
+      )
+    if (!node.computed && node.property.type === 'Identifier')
+      return node.property.name
+    if (
+      node.computed &&
+      node.property.type === 'Literal' &&
+      typeof node.property.value === 'string'
+    )
+      return node.property.value
+    throw new Themes.InvalidError(
+      'Marker helpers require static property names.',
+      node,
+    )
   }
   function resolve(node: Ast.Node): Themes.Link | undefined {
     node = Expression.unwrap(node)

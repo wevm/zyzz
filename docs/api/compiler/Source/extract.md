@@ -125,3 +125,7 @@ Direct literal fallback arrays expand into repeated declarations without reorder
 ### staticThemeReferences
 
 Theme-token and variable reads consumed through immutable style records are returned with their source spans and serialized CSS-variable values. `Transform.compile` replaces those retained initializer reads, so the emitted module does not access an erased authoring factory. Imported arbitrary static records remain unsupported.
+
+### markerCalls
+
+Optional immutable rewrite spans for module-owned `Css.marker` calls. Each entry has inclusive `start`, exclusive `end`, and a `definition` containing the generated attribute `id` and finite `schema`. The field is absent when no marker factories are declared. Extraction-only hosts must replace these spans with compiled runtime handles; `Transform.compile` performs that replacement automatically.

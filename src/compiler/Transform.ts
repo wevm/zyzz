@@ -205,14 +205,14 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   for (const call of extracted.markerCalls ?? []) {
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
-      ? ` as ReturnType<typeof import('zyzz/web').Css.marker<${`{${Object.entries(
+      ? ` as import('zyzz/web').Css.marker.ReturnType<${`{${Object.entries(
           call.definition.schema,
         )
           .map(
             ([key, values]) =>
               `${JSON.stringify(key)}:readonly [${values.map((value) => JSON.stringify(value)).join(',')}]`,
           )
-          .join(';')}}`}>>`
+          .join(';')}}`}>`
       : ''
     module.overwrite(
       call.start,

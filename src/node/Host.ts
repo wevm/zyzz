@@ -176,7 +176,8 @@ export async function create(options: create.Options): Promise<Runtime> {
                     filename.startsWith('../') ||
                     filename.startsWith('/') ||
                     filename.includes('\\') ||
-                    filename.includes('\0')
+                    filename.includes('\0') ||
+                    filename.includes(':')
                   )
                     throw new Error('Asset path escapes the package root.')
                   if (

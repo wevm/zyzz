@@ -50,7 +50,9 @@ export function schema(input: unknown): Schema {
       if (
         (typeof value !== 'string' && typeof value !== 'boolean') ||
         (typeof value === 'string' &&
-          (value.includes('\0') || value.includes('\r'))) ||
+          (value.includes('\0') ||
+            value.includes('\r') ||
+            !value.isWellFormed())) ||
         serialized.has(String(value))
       )
         throw new Error(

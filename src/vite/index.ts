@@ -290,24 +290,38 @@ export function zyzz(): Plugin {
     await visit(entry.file, code)
     const connected = new Set(files)
     for (const [file, source] of await discover(entry.environment, host)) {
-      if (files.has(file)) continue
+      if (files.has(file) && !allSources) continue
       const selected = contributionFiles.get(entry.environment)?.has(file)
-      if (allSources && !selected) {
+      if (allSources) {
         const { program } = Parser.parseSync('source.tsx', source, {
           sourceType: 'module',
         })
-        for (const node of program.body) {
+        const dynamic: import('@oxc-project/types').ImportExpression[] = []
+        Walker.walk(program, {
+          enter(node) {
+            if (
+              node.type === 'ImportExpression' &&
+              node.source.type === 'Literal' &&
+              typeof node.source.value === 'string'
+            )
+              dynamic.push(node)
+          },
+        })
+        for (const node of [...program.body, ...dynamic]) {
           if (
-            (node.type !== 'ImportDeclaration' &&
+            (node.type !== 'ImportExpression' &&
+              node.type !== 'ImportDeclaration' &&
               node.type !== 'ExportNamedDeclaration' &&
               node.type !== 'ExportAllDeclaration') ||
             !node.source
           )
             continue
           if (
-            node.type === 'ImportDeclaration'
-              ? node.importKind === 'type'
-              : node.exportKind === 'type'
+            node.type === 'ImportExpression'
+              ? false
+              : node.type === 'ImportDeclaration'
+                ? node.importKind === 'type'
+                : node.exportKind === 'type'
           )
             continue
           if (
@@ -319,6 +333,11 @@ export function zyzz(): Plugin {
                 : specifier.type === 'ExportSpecifier' &&
                   specifier.exportKind === 'type',
             )
+          )
+            continue
+          if (
+            node.source.type !== 'Literal' ||
+            typeof node.source.value !== 'string'
           )
             continue
           const specifier = node.source.value
@@ -430,6 +449,7 @@ export function zyzz(): Plugin {
       )
         throw new Error('Asset path escapes its owning package.')
       host.watch(file)
+      files.add(file)
       assetUrls.set(
         target,
         `/@fs/${file.replaceAll('\\', '/')}${target.slice(raw.length)}`,

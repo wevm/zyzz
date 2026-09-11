@@ -171,6 +171,8 @@ describe('marker', () => {
       `const style=css({[Css.descendant(card,{has:'a'})]:{color:'red'}})`,
       `const invalid=Css.marker({state:['\\0']})`,
       `const invalid=Css.marker({state:['\\r']})`,
+      `const invalid=Css.marker({state:['\\ud800']})`,
+      `const invalid=css({[Css.descendant(card,':visited')]:{color:'red'}})`,
     ])
       expect(() =>
         Graph.compile({

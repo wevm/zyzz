@@ -29,7 +29,12 @@ export function define<const schema extends Schema>(
               schema[key]['initialValue']
             > &
               Initial<kind> &
-              Independent<schema[key]['initialValue']>
+              Independent<schema[key]['initialValue']> &
+              (kind extends 'length'
+                ? schema[key]['initialValue'] extends `-${string}`
+                  ? never
+                  : unknown
+                : unknown)
           }
         : unknown
     },

@@ -532,6 +532,12 @@ export function marker<const schema extends Marker.Schema = {}>(
   throw new Error('Markers require the Zyzz source transform.')
 }
 
+/** Compiled marker handle retaining its finite schema. */
+export declare namespace marker {
+  type ReturnType<schema extends Marker.Schema = {}> =
+    Relationships.Handle<schema>
+}
+
 /** Selects the styled element by a marked ancestor relationship with zero predicate specificity. */
 export function ancestor<
   schema extends Marker.Schema,
@@ -563,7 +569,7 @@ export function anySibling<
   condition?: condition &
     NoInfer<
       condition extends string
-        ? condition extends Relationships.Pseudo
+        ? condition extends Exclude<Relationships.Pseudo, ':visited'>
           ? unknown
           : never
         : condition extends Relationships.Condition<schema>
@@ -585,7 +591,7 @@ export function descendant<
   condition?: condition &
     NoInfer<
       condition extends string
-        ? condition extends Relationships.Pseudo
+        ? condition extends Exclude<Relationships.Pseudo, ':visited'>
           ? unknown
           : never
         : condition extends Relationships.Condition<schema>
@@ -607,7 +613,7 @@ export function siblingAfter<
   condition?: condition &
     NoInfer<
       condition extends string
-        ? condition extends Relationships.Pseudo
+        ? condition extends Exclude<Relationships.Pseudo, ':visited'>
           ? unknown
           : never
         : condition extends Relationships.Condition<schema>

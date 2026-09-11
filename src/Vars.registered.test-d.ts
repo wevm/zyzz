@@ -41,7 +41,21 @@ describe('define', () => {
   })
 })
 
-test('reserves prototype keys in variable schemas', () => {
-  // @ts-expect-error prototype syntax cannot define an assignable own slot
-  Vars.define({ __proto__: 'length' })
+describe('define', () => {
+  test('reserves prototype keys in variable schemas', () => {
+    // @ts-expect-error prototype syntax cannot define an assignable own slot
+    Vars.define({ __proto__: 'length' })
+  })
+})
+
+describe('define', () => {
+  test('keeps unsigned registration defaults nonnegative', () => {
+    Vars.define({
+      // @ts-expect-error unsigned length defaults cannot be negative
+      gap: { type: 'length', inherits: false, initialValue: '-1px' },
+    })
+    Vars.define({
+      gap: { type: 'signedLength', inherits: false, initialValue: '-1px' },
+    })
+  })
 })

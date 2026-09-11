@@ -1,4 +1,5 @@
 /** Declares a native CSS custom function without evaluating its body in JavaScript. @module */
+import type * as Literal from '../internal/Literal.js'
 import type * as FunctionValue from '../internal/FunctionValue.js'
 import { MissingTransformError } from '../css.js'
 /** Emits a CSS function and returns a callable that formats its fixed CSS expression. */
@@ -84,10 +85,16 @@ export declare namespace cssFunction {
     : parameter extends { syntax: '<percentage>' }
       ? `${number}%`
       : parameter extends { syntax: '<length>' }
-        ?
-            | 0
-            | `${number}${'px' | 'rem' | 'em' | 'cm' | 'mm' | 'in' | 'pt' | 'vw' | 'vh'}`
-        : string | number
+        ? Exclude<Literal.Length, `${number}%`>
+        : parameter extends { syntax: '<length-percentage>' }
+          ? Literal.Length
+          : parameter extends { syntax: '<angle>' }
+            ? `${number}${'deg' | 'grad' | 'rad' | 'turn'}`
+            : parameter extends { syntax: '<time>' }
+              ? Literal.Time
+              : parameter extends { syntax: '<color>' }
+                ? Literal.Color
+                : string | number
 }
 
 type Checked<body> = {

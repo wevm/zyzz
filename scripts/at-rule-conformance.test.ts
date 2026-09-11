@@ -29,12 +29,21 @@ describe('at-rule conformance', () => {
       Fs.copyFileSync(source, file)
       expect(run().status).toMatchInlineSnapshot('0')
       const inventory = JSON.parse(Fs.readFileSync(file, 'utf8'))
+      inventory.entries['@media'].status = 'supported'
+      inventory.entries['@media'].evidence = [
+        'scripts/at-rule-conformance.test.ts',
+      ]
       inventory.entries['@media'].grammar = 'stale'
       Fs.writeFileSync(file, JSON.stringify(inventory))
       expect(run().stderr.trim()).toMatchInlineSnapshot(
         '"Grammar changed: @media"',
       )
       expect(run('--update').status).toMatchInlineSnapshot('0')
+      const refreshed = JSON.parse(Fs.readFileSync(file, 'utf8')).entries[
+        '@media'
+      ]
+      expect(refreshed.status).toMatchInlineSnapshot('"deferred"')
+      expect(refreshed.evidence).toMatchInlineSnapshot('[]')
       expect(run('--require-full').status).toMatchInlineSnapshot('1')
       inventory.entries['@media'].grammar = JSON.parse(
         Fs.readFileSync(file, 'utf8'),
@@ -45,6 +54,11 @@ describe('at-rule conformance', () => {
       expect(run().stderr.trim()).toMatchInlineSnapshot(
         '"Missing evidence: @media"',
       )
+      for (const evidence of ['.', 'src', '../outside-proof']) {
+        inventory.entries['@media'].evidence = [evidence]
+        Fs.writeFileSync(file, JSON.stringify(inventory))
+        expect(run().status).toMatchInlineSnapshot('1')
+      }
       expect(run('--require-full', '--update').status).toMatchInlineSnapshot(
         '1',
       )

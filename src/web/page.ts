@@ -25,7 +25,7 @@ export declare namespace page {
     /** Bleed beyond the page box. */
     readonly bleed?:
       | 'auto'
-      | `${number}${'cm' | 'mm' | 'in' | 'pt' | 'px'}`
+      | `${number}${'cm' | 'mm' | 'in' | 'pt' | 'px' | 'pc' | 'Q'}`
       | 0
       | undefined
     /** Printer marks outside the page box. */
@@ -57,42 +57,46 @@ export declare namespace page {
       | 'letter'
       | 'legal'
       | 'ledger'
-      | `${number}${'mm' | 'cm' | 'in' | 'px' | 'pt'}`
-      | `${number}${'mm' | 'cm' | 'in' | 'px' | 'pt'} ${number}${'mm' | 'cm' | 'in' | 'px' | 'pt'}`
-      | `${'A3' | 'A4' | 'A5' | 'B4' | 'B5' | 'letter' | 'legal' | 'ledger'} ${'portrait' | 'landscape'}`
+      | `${number}${'mm' | 'cm' | 'in' | 'px' | 'pt' | 'pc' | 'Q'}`
+      | `${number}${'mm' | 'cm' | 'in' | 'px' | 'pt' | 'pc' | 'Q'} ${number}${'mm' | 'cm' | 'in' | 'px' | 'pt' | 'pc' | 'Q'}`
+      | `${'A3' | 'A4' | 'A5' | 'B4' | 'B5' | 'JIS-B4' | 'JIS-B5' | 'letter' | 'legal' | 'ledger'} ${'portrait' | 'landscape'}`
+      | `${'portrait' | 'landscape'} ${'A3' | 'A4' | 'A5' | 'B4' | 'B5' | 'JIS-B4' | 'JIS-B5' | 'letter' | 'legal' | 'ledger'}`
       | undefined
   }
   /** Element properties applying to a page context. */
   type Properties = Pick<
     Style.DeclarationProperties,
-    Extract<
-      keyof Style.DeclarationProperties,
-      | `background${string}`
-      | `border${string}`
-      | `font${string}`
-      | `margin${string}`
-      | `padding${string}`
-      | `outline${string}`
-      | 'color'
-      | 'counterIncrement'
-      | 'counterReset'
-      | 'direction'
-      | 'height'
-      | 'letterSpacing'
-      | 'lineHeight'
-      | 'maxHeight'
-      | 'maxWidth'
-      | 'minHeight'
-      | 'minWidth'
-      | 'quotes'
-      | 'textAlign'
-      | 'textDecoration'
-      | 'textIndent'
-      | 'textTransform'
-      | 'visibility'
-      | 'whiteSpace'
-      | 'width'
-      | 'wordSpacing'
+    Exclude<
+      Extract<
+        keyof Style.DeclarationProperties,
+        | `background${string}`
+        | `border${string}`
+        | `font${string}`
+        | `margin${string}`
+        | `padding${string}`
+        | `outline${string}`
+        | 'color'
+        | 'counterIncrement'
+        | 'counterReset'
+        | 'direction'
+        | 'height'
+        | 'letterSpacing'
+        | 'lineHeight'
+        | 'maxHeight'
+        | 'maxWidth'
+        | 'minHeight'
+        | 'minWidth'
+        | 'quotes'
+        | 'textAlign'
+        | 'textDecoration'
+        | 'textIndent'
+        | 'textTransform'
+        | 'visibility'
+        | 'whiteSpace'
+        | 'width'
+        | 'wordSpacing'
+      >,
+      'borderCollapse' | 'borderSpacing'
     >
   >
   /** Additional properties available in page-margin boxes. */
@@ -113,7 +117,21 @@ export declare namespace page {
         ? Style.Accepted<body[key]> &
             Record<Exclude<keyof body[key], keyof MarginProperties>, never>
         : key extends keyof Descriptors
-          ? Descriptors[key]
+          ? body[key] extends string
+            ? Keyword<body[key]> extends Keyword<
+                Extract<Descriptors[key], string>
+              >
+              ? body[key]
+              : never
+            : Descriptors[key]
           : never
     }
 }
+
+/** Normalized keyword spelling for descriptor literal inference. */
+type Keyword<value extends string> =
+  value extends `${' ' | '\t' | '\n' | '\r' | '\f'}${infer rest}`
+    ? Keyword<rest>
+    : value extends `${infer rest}${' ' | '\t' | '\n' | '\r' | '\f'}`
+      ? Keyword<rest>
+      : Lowercase<value>

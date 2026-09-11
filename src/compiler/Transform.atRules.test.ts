@@ -2,6 +2,7 @@
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
+import { Css } from 'zyzz/web'
 
 describe('compile', () => {
   test('preserves grouped font descriptors and timeline range stops', () => {
@@ -29,6 +30,74 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
     expect(output.css).toMatchInlineSnapshot(
       `".z-style-mond465apgew-53{@scope (.outer) to (.stop){@layer components{color:red;@container scroll-state(stuck: top){color:blue;}}}}"`,
     )
+  })
+  test('defaults undefined contexts and accepts anonymous and CSS-whitespace groups', () => {
+    const output = Transform.compile({
+      moduleId: 'contexts.ts',
+      source: `import {fontFace,keyframes,global} from 'zyzz/web';fontFace({fontFamily:'Body',src:'url(/body)'},undefined);export const fade=keyframes({from:{opacity:0},to:{opacity:1}},void 0);fontFace({fontFamily:'Layered',src:'url(/body)'},{within:['@layer']});global({'@media\\nscreen':{body:{color:'red'}},'@supports(display:grid)':{body:{display:'grid'}},'@media/**/print':{body:{color:'blue'}}});`,
+    })
+    expect(output.css).toMatchInlineSnapshot(`
+      "@font-face{font-family:Body;src:url(/body);}
+      @keyframes z-k4rx34s72jf3i-66-61-64-65{from{opacity:0;}to{opacity:1;}}
+      @layer{@font-face{font-family:Layered;src:url(/body);}}
+      @media
+      screen{body{color:red;}}
+      @supports(display:grid){body{display:grid;}}
+      @media/**/print{body{color:blue;}}"
+    `)
+  })
+  test('Chromium applies local scope and layer rules as a scroll-state query changes', async () => {
+    const output = Transform.compile({
+      moduleId: 'nested.ts',
+      source: `import {css} from 'zyzz';export const styles={item:css({'@scope (&) to (.stop)':{'@layer components':{'& .item':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}}})};`,
+    })
+    const name = Object.values(output.classes)[0]!
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<div class="outer ${name}" style="height:80px;overflow:auto"><div style="container-type:scroll-state;position:sticky;top:0"><span id="inside" class="item">inside</span><div class="stop"><span id="outside" class="item">outside</span></div></div><div style="height:300px"></div></div>`,
+      )
+      await page.addStyleTag({ content: output.css })
+      expect(
+        await page
+          .locator('#inside')
+          .evaluate((el) => getComputedStyle(el).color),
+      ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+      await page.locator('.outer').evaluate((el) => {
+        el.scrollTop = 40
+      })
+      await page.waitForFunction(
+        () =>
+          getComputedStyle(document.querySelector('#inside')!).color ===
+          'rgb(0, 0, 255)',
+      )
+      expect(
+        await page
+          .locator('#inside')
+          .evaluate((el) => getComputedStyle(el).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+      expect(
+        await page
+          .locator('#outside')
+          .evaluate((el) => getComputedStyle(el).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 0)"')
+    } finally {
+      await browser.close()
+    }
+  })
+  test('keeps layer order top-level without empty conditional wrappers', () => {
+    expect(
+      Css.compile({
+        styles: { styles: [] },
+        contributions: [
+          { kind: 'layers', names: ['base'], within: ['@media screen'] },
+        ],
+      }).css,
+    ).toMatchInlineSnapshot(`
+      "@layer base;
+      @media screen{}"
+    `)
   })
   test('Chromium applies scope boundaries', async () => {
     const output = Transform.compile({

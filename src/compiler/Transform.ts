@@ -43,12 +43,13 @@ export function compile(options: compile.Options): compile.ReturnType {
       call.start,
       call.end,
       (() => {
+        const typed = /\.[cm]?tsx?$/.test(options.moduleId)
         if (call.kind === 'cssFunction')
-          return `((...args: readonly (string | number)[]) => ${JSON.stringify(call.name + '(')} + args.join(',') + ')') as import('zyzz/web').cssFunction.Reference<${JSON.stringify(call.function?.parameters ?? [])}, ${JSON.stringify(call.function?.returns ?? '*')}>`
+          return `((...args${typed ? ': readonly (string | number)[]' : ''}) => ${JSON.stringify(call.name + '(')} + args.join(',') + ')')${typed ? ` as import('zyzz/web').cssFunction.Reference<${JSON.stringify(call.function?.parameters ?? [])}, ${JSON.stringify(call.function?.returns ?? '*')}>` : ''}`
         if (call.kind === 'customMedia')
-          return `${JSON.stringify(`@media (${call.name})`)} as unknown as import('zyzz/web').customMedia.Reference`
+          return `${JSON.stringify(`@media (${call.name})`)}${typed ? ` as unknown as import('zyzz/web').customMedia.Reference` : ''}`
         if (!call.name) return 'void 0'
-        return `${JSON.stringify(call.name)}${call.kind === 'keyframes' ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
+        return `${JSON.stringify(call.name)}${call.kind === 'keyframes' || !typed ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
       })(),
     )
   type Span = Pick<Ast.Node, 'end' | 'start'>
@@ -496,13 +497,15 @@ export function compile(options: compile.Options): compile.ReturnType {
     (a, b) => rank(a.definition.kind) - rank(b.definition.kind),
   )) {
     if (contribution.definition.kind === 'layers') continue
-    const rendered = Css.compile({
-      styles: { styles: [] },
-      contributions: [contribution.definition],
-      themes: Object.keys(extracted.themes).length
-        ? extracted.themes
-        : undefined,
-    }).css
+    const rendered =
+      Css.compile({
+        styles: { styles: [] },
+        contributions: [contribution.definition],
+        themes: Object.keys(extracted.themes).length
+          ? extracted.themes
+          : undefined,
+      }).contributionCss ?? ''
+    if (!rendered) continue
     for (const _ of rendered.split('\n')) {
       if (contribution.start !== undefined)
         Mapping.addMapping(cssMap, {

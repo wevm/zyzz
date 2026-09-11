@@ -15,6 +15,31 @@ importCss({url:'https://example.com/base.css'});
 global({'s|item':{color:'red'}});`
 
 describe('compile', () => {
+  test('counts contribution CSS separately from theme output', () => {
+    const output = Transform.compile({
+      moduleId: 'theme.ts',
+      source: `import {Config} from 'zyzz';import {counterStyle,fontFace} from 'zyzz/web';
+const config=Config.create({theme:{color:{brand:'red'}}});
+export const dots=counterStyle({symbols:'"x"'});
+fontFace({fontFamily:'Evidence',src:'url(/font.ttf)'});
+export const styles={text:config.css({color:'brand'})};`,
+    })
+    const trace = new Trace.TraceMap(output.cssMap)
+    const line =
+      output.css
+        .split('\n')
+        .findIndex((line) => line.startsWith('@font-face')) + 1
+    expect(
+      Trace.originalPositionFor(trace, { line, column: 0 }),
+    ).toMatchInlineSnapshot(`
+      {
+        "column": 0,
+        "line": 4,
+        "name": null,
+        "source": "theme.ts",
+      }
+    `)
+  })
   test('maps hoisted declarations back to their source calls in direct and packed output', () => {
     const direct = Transform.compile({ moduleId: 'rules.ts', source })
     const library = Graph.compile({ modules: { 'rules.ts': source } })

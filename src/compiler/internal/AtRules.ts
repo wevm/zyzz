@@ -8,19 +8,19 @@ export function transform<C extends Lightning.CustomAtRules>(
   const source = new TextDecoder().decode(options.code)
   // The pinned visitor cannot round-trip the nested Option used for anonymous import layers.
   // Give emitted anonymous layers a temporary name while URL visitors run, then restore them.
-  let marker = 'zyzz-anonymous-import'
-  while (source.includes(marker)) marker += '-x'
+  let importMarker = 'zyzz-anonymous-import'
+  while (source.includes(importMarker)) importMarker += '-x'
   const imports = options.visitor
     ? source.replace(
         /^(\s*@import\s+(?:url\()?"(?:\\.|[^"\\])*"\)?\s+)layer(?=[\s;])/gm,
-        `$1layer(${marker})`,
+        `$1layer(${importMarker})`,
       )
     : source
-  const renamed = rename(
-    imports,
-    'font-feature-values',
-    '-zyzz-font-feature-values',
-  )
+  let marker = '-zyzz-ffv-000000000'
+  let suffix = 0
+  while (source.toLowerCase().includes(marker))
+    marker = `-zyzz-ffv-${(++suffix).toString(36).padStart(9, '0')}`
+  const renamed = rename(imports, 'font-feature-values', marker)
   if (source === renamed) return Lightning.transform(options)
   const result = Lightning.transform({
     ...options,
@@ -32,8 +32,8 @@ export function transform<C extends Lightning.CustomAtRules>(
       rename(
         new TextDecoder()
           .decode(result.code)
-          .replaceAll(`layer(${marker})`, 'layer'),
-        '-zyzz-font-feature-values',
+          .replaceAll(`layer(${importMarker})`, 'layer'),
+        marker,
         'font-feature-values',
       ),
     ),

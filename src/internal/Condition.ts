@@ -7,6 +7,7 @@ type Case<text extends string> = text extends `${infer first}${infer rest}`
 type Media = Case<'all' | 'print' | 'screen'>
 /** Explicit scoped selectors and standard conditional rule forms. */
 export type Raw =
+  | `@${'media' | 'supports' | 'container' | 'scope' | 'layer'}${'\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`
   | `${string}&${string}`
   | `:${string}`
   | `@document ${string}`
@@ -70,7 +71,7 @@ export function is(key: string): boolean {
     nested(key) ||
     key.startsWith(':') ||
     ['@starting-style', '@scope', '@layer'].includes(key) ||
-    /^@(media|supports|container|scope|layer|document) /.test(key)
+    /^@(media|supports|container|scope|layer|document)(?=[\t\n\r\f (]|\/\*)/.test(key)
   )
 }
 

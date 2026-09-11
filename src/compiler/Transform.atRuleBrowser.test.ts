@@ -41,19 +41,32 @@ page({descriptors:{size:'A4','@top-center':{content:'"Page"'}}});`,
             .opacity,
           svg: getComputedStyle(document.querySelector('#svg')!).fill,
           html: getComputedStyle(document.querySelector('#html')!).fill,
-          fallback:
-            document.querySelector('#tooltip')!.getBoundingClientRect()
-              .bottom <=
-            document.querySelector('#anchor')!.getBoundingClientRect().top,
         })),
       ).toMatchInlineSnapshot(`
         {
-          "fallback": true,
           "html": "rgb(0, 0, 0)",
           "loaded": true,
           "opacity": "0.5",
           "svg": "rgb(255, 0, 0)",
           "width": 60,
+        }
+      `)
+      expect(
+        await page.locator('#tooltip').evaluate((element) => {
+          const box = element.getBoundingClientRect()
+          return {
+            bottom: box.bottom,
+            height: box.height,
+            left: box.left,
+            width: box.width,
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+        {
+          "bottom": 180,
+          "height": 30,
+          "left": 85,
+          "width": 50,
         }
       `)
       expect(

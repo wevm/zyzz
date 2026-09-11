@@ -4,10 +4,25 @@ import type * as Context from './internal/Context.js'
 
 /** Emits eager font feature aliases in authored block and declaration order. */
 export function fontFeatureValues<
-  const options extends fontFeatureValues.Options,
+  const options extends Omit<fontFeatureValues.Options, 'fontDisplay'> & {
+    readonly fontDisplay?: string | undefined
+  },
 >(
   options: options &
-    Record<Exclude<keyof options, keyof fontFeatureValues.Options>, never>,
+    Record<Exclude<keyof options, keyof fontFeatureValues.Options>, never> & {
+      readonly fontDisplay?: Checked<
+        options['fontDisplay'],
+        Exclude<fontFeatureValues.Options['fontDisplay'], undefined>
+      >
+    } & {
+      readonly features: Record<
+        Exclude<
+          keyof options['features'],
+          keyof fontFeatureValues.Options['features']
+        >,
+        never
+      >
+    },
   context: Context.Options = {},
 ): void {
   void options
@@ -49,3 +64,16 @@ export declare namespace fontFeatureValues {
       | undefined
   }
 }
+
+type Keyword<value extends string> =
+  value extends `${' ' | '\t' | '\n' | '\r' | '\f'}${infer rest}`
+    ? Keyword<rest>
+    : value extends `${infer rest}${' ' | '\t' | '\n' | '\r' | '\f'}`
+      ? Keyword<rest>
+      : Lowercase<value>
+
+type Checked<value, domain> = value extends string
+  ? Keyword<value> extends domain
+    ? value
+    : never
+  : undefined

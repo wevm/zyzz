@@ -141,6 +141,12 @@ export function read(
 function scalar(
   node: Ast.Node,
 ): 'number' | 'string' | 'zero-string' | undefined {
+  if (node.type === 'TSIntersectionType') {
+    const kinds = node.types.map(scalar)
+    return kinds.length && kinds.every((kind) => kind === kinds[0])
+      ? kinds[0]
+      : undefined
+  }
   if (node.type === 'TSNumberKeyword') return 'number'
   if (node.type === 'TSStringKeyword') return 'string'
   if (
@@ -185,6 +191,16 @@ function scalar(
 }
 
 function numbers(node: Ast.Node): readonly number[] | undefined {
+  if (node.type === 'TSIntersectionType') {
+    const domains = node.types
+      .filter((type) => type.type !== 'TSNumberKeyword')
+      .map(numbers)
+    if (!domains.length || domains.some((domain) => domain === undefined))
+      return undefined
+    return domains[0]!.filter((value) =>
+      domains.every((domain) => domain!.includes(value)),
+    )
+  }
   if (node.type === 'TSUnionType') {
     const members = node.types.map(numbers)
     return members.every((member) => member !== undefined)

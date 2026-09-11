@@ -98,7 +98,8 @@ export function render(sections: readonly Section[]) {
       code: new TextEncoder().encode(section.css),
       visitor: {
         Url(url) {
-          if (/^(?:\/|#|[a-z][a-z\d+.-]*:)/i.test(url.url)) return
+          if (!url.url || /^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url.url))
+            return
           changed = true
           const target = resolve(section.source, url.url)
           const key = `zyzz-asset:${encodeURIComponent(target)}`

@@ -1,9 +1,9 @@
 /** Resolves immutable module data and finite local type bindings without executing source. @module */
 import type * as Ast from '@oxc-project/types'
-import * as Walker from 'oxc-walker'
 import * as Expression from './Expression.js'
 import type * as Scope from './Scope.js'
 import * as Themes from './Themes.js'
+import * as Walker from 'oxc-walker'
 
 /** Collects lexical immutable values and local scalar/object type declarations. */
 export function collect(program: Ast.Program, scope: Scope.Tracker) {
@@ -238,6 +238,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
                 'TSNonNullExpression',
                 'TSTypeAssertion',
                 'ExportNamedDeclaration',
+                'ExportDefaultDeclaration',
                 'ExportSpecifier',
               ].includes(node.type),
           )
@@ -394,10 +395,62 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
         return {
           ...node,
           type: 'TSTypeLiteral',
-          members: parts.flatMap((part) =>
-            part.type === 'TSTypeLiteral' ? part.members : [],
-          ),
+          members: parts
+            .flatMap((part) =>
+              part.type === 'TSTypeLiteral' ? part.members : [],
+            )
+            .reduce<Ast.TSSignature[]>((members, member) => {
+              if (
+                member.type !== 'TSPropertySignature' ||
+                member.computed ||
+                !member.typeAnnotation
+              )
+                return [...members, member]
+              const key =
+                member.key.type === 'Identifier'
+                  ? member.key.name
+                  : member.key.type === 'Literal'
+                    ? member.key.value
+                    : undefined
+              const index = members.findIndex(
+                (value) =>
+                  value.type === 'TSPropertySignature' &&
+                  !value.computed &&
+                  value.typeAnnotation &&
+                  key !== undefined &&
+                  key ===
+                    (value.key.type === 'Identifier'
+                      ? value.key.name
+                      : value.key.type === 'Literal'
+                        ? value.key.value
+                        : undefined),
+              )
+              const previous = members[index]
+              if (
+                previous?.type !== 'TSPropertySignature' ||
+                !previous.typeAnnotation
+              )
+                return [...members, member]
+              members[index] = {
+                ...previous,
+                optional: previous.optional && member.optional,
+                typeAnnotation: {
+                  ...previous.typeAnnotation,
+                  typeAnnotation: {
+                    type: 'TSIntersectionType',
+                    start: previous.start,
+                    end: member.end,
+                    types: [
+                      previous.typeAnnotation.typeAnnotation,
+                      member.typeAnnotation.typeAnnotation,
+                    ],
+                  },
+                },
+              }
+              return members
+            }, []),
         } as Ast.TSTypeLiteral
+      return { ...node, types: parts } as Ast.TSIntersectionType
     }
     if (node.type === 'TSUnionType')
       return {

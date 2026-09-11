@@ -7,6 +7,18 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 import { Marker } from 'zyzz/runtime'
 describe('marker', () => {
+  test('compiles relationship keys through transparent TypeScript wrappers', () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {css} from 'zyzz';import {Css} from 'zyzz/web';const card=Css.marker();export const styles={a:css({[Css.ancestor(card) satisfies symbol]:{color:'red'}}),b:css({[Css.descendant(card)!]:{color:'blue'}})};`,
+      },
+    })
+    expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-style-1e8a67z1uaws1j-101{:where([data-z-1e8a67z1uaws1j-card-63-61-72-64]) &{color:red;}}
+      .z-style-1e8a67z1uaws1j-162{&:where(:has([data-z-1e8a67z1uaws1j-card-63-61-72-64])){color:blue;}}"
+    `)
+  })
+
   test('validates direct runtime schemas and rejects namespace authoring', () => {
     expect(() =>
       Marker.create({

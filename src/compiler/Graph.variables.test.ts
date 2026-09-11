@@ -7,6 +7,44 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 describe('compile', () => {
+  test('attributes invalid registration CSS to its descriptor', () => {
+    try {
+      Graph.compile({
+        modules: {
+          'app.ts': `import {Vars} from 'zyzz';
+export const vars=Vars.define({
+  gap:{type:'length',inherits:false,initialValue:'}'}
+});`,
+        },
+      })
+      throw new Error('Expected invalid registration')
+    } catch (error) {
+      expect((error as import('zyzz/compiler').Source.ExtractError).diagnostics)
+        .toMatchInlineSnapshot(`
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 112,
+            "message": "Unexpected end of input",
+            "source": "app.ts",
+            "start": 61,
+          },
+        ]
+      `)
+    }
+  })
+  test('compiles overlapping dynamic fields and default exported static records', () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {css} from 'zyzz';const base={color:'red'};export default base;type Values={width:string;zIndex:number}&{width:'10px';zIndex:1|2};export const styles={card:css(base),dynamic:css((v:Values)=>({width:v.width,zIndex:v.zIndex}))};`,
+      },
+    })
+    expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-1e8a67z1uaws1j-base0{color:red;}
+      .z-1e8a67z1uaws1j-base1{width:var(--z-d1e8a67z1uaws1j-181-77-69-64-74-68);z-index:var(--z-d1e8a67z1uaws1j-181-7a-49-6e-64-65-78);}"
+    `)
+  })
+
   test('shares defining variable identities across package entrypoint sidecars', () => {
     const library = Graph.compile({
       modules: {

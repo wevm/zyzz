@@ -5,9 +5,32 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Trace from '@jridgewell/trace-mapping'
 import { describe, expect, test } from 'vite-plus/test'
-import { Graph, Source } from 'zyzz/compiler'
+import { Graph, Source, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 describe('compile', () => {
+  test('preserves suffix URLs and rejects relative assets without a graph host', () => {
+    const source = `import {global} from 'zyzz/web';global({body:{backgroundImage:'url("?v=1")'},html:{backgroundImage:'url("")'}});`
+    const result = Graph.compile({ modules: { 'app.ts': source } })
+    expect(result.sharedAssets).toMatchInlineSnapshot(`{}`)
+    expect(result.sharedCss).toMatchInlineSnapshot(`
+      "body{background-image:url("?v=1");}
+      html{background-image:url("");}"
+    `)
+    expect(Transform.compile({ moduleId: 'app.ts', source }).css)
+      .toMatchInlineSnapshot(`
+      "body{background-image:url("?v=1");}
+      html{background-image:url("");}"
+    `)
+    expect(() =>
+      Transform.compile({
+        moduleId: 'app.ts',
+        source: `import {global} from 'zyzz/web';global({body:{backgroundImage:'url("./image.svg")'}});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:32: Relative contribution assets require Graph.compile and a relocation host.]`,
+    )
+  })
+
   test('rejects conflicting source maps and attributes layer failures to packed owners', () => {
     const library = Graph.compile({
       modules: {

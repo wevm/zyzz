@@ -730,6 +730,24 @@ export function extract(options: extract.Options): extract.ReturnType {
   let contributionData: readonly Css.Contribution[] = []
   const contributionStarts = [...variables.registrationStarts]
   try {
+    for (const [index, registration] of variables.registrations.entries()) {
+      try {
+        const css = Css.compile({
+          styles: { styles: [] },
+          contributions: [registration],
+        }).css
+        Lightning.transform({
+          filename: options.moduleId,
+          code: new TextEncoder().encode(css),
+          errorRecovery: false,
+        })
+      } catch (error) {
+        throw new Themes.InvalidError(
+          (error as Error).message,
+          variables.registrationLocations[index]!,
+        )
+      }
+    }
     contributionData = [
       ...variables.registrations,
       ...Contributions.extract(
@@ -758,6 +776,21 @@ export function extract(options: extract.Options): extract.ReturnType {
         filename: options.moduleId,
         code: new TextEncoder().encode(rendered),
         errorRecovery: false,
+        ...(!options[Themes.context]
+          ? {
+              visitor: {
+                Url(url) {
+                  if (
+                    url.url &&
+                    !/^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url.url)
+                  )
+                    throw new Error(
+                      'Relative contribution assets require Graph.compile and a relocation host.',
+                    )
+                },
+              },
+            }
+          : {}),
       })
     }
   } catch (error) {

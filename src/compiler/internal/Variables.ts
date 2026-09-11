@@ -63,6 +63,7 @@ export function collect(
   const bound = new Map<string, Themes.Link>()
   const registrations: Css.Contribution[] = []
   const registrationStarts: number[] = []
+  const registrationLocations: Ast.Node[] = []
   const calls: Call[] = []
   const definitions = new Map<number, Call>()
   const references = new Map<
@@ -229,6 +230,7 @@ export function collect(
               value,
             )
           registrationStarts.push(property.start)
+          registrationLocations.push(property)
           registrations.push({
             kind: 'property',
             name,
@@ -348,6 +350,7 @@ export function collect(
     references,
     registrations,
     registrationStarts,
+    registrationLocations,
     exports,
   }
 }

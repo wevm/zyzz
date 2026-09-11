@@ -48,11 +48,21 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     const options =
       entry.options === undefined ? undefined : record(entry.options)
     if (options) Config.create(options as Config.create.Options)
+    const catalogOnly =
+      !!options?.themes &&
+      ((data.version as number) < 4 || entry.catalogOnly === true)
+    const configType = options
+      ? `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
+      : ''
+    const outputType = catalogOnly
+      ? `(Omit<${configType},'themes'> & {readonly themes:Pick<${configType}['themes'],keyof ${configType}['themes']>})`
+      : configType
     if (entry.kind === 'config' && !options)
       throw new Error('Missing configuration options.')
     return {
       binding: string(entry.binding),
       call: {
+        ...(catalogOnly ? { catalogOnly: true } : {}),
         end: -1,
         name: theme,
         start: -1,
@@ -61,7 +71,7 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
         ...(options
           ? {
               options,
-              type: `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>${entry.selection === true ? "['themes']" : ''}`,
+              type: `${outputType}${entry.selection === true ? "['themes']" : ''}`,
             }
           : {}),
         ...(members
@@ -134,6 +144,7 @@ export function write(
       binding: link.binding,
       kind: link.kind,
       theme: link.call.name,
+      ...(link.call.catalogOnly ? { catalogOnly: true } : {}),
       ...(link.call.selection ? { selection: true } : {}),
       ...(link.call.options ? { options: link.call.options } : {}),
       ...(link.members

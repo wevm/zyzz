@@ -210,11 +210,7 @@ export const scope = mint.className;`,
       },
     })
     expect(output.modules['pkg/config.ts']!.code).toMatchInlineSnapshot(
-      `
-      "
-      import { Appearance as __zyzzAppearance } from 'zyzz/runtime';
-       export const empty = ({script:__zyzzAppearance.create([])} as import('zyzz').Config.create.ReturnType<{}>); const base = ({className:"z_theme-1g1qfxjzbnv3-base"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const zyzz = ({script:__zyzzAppearance.create([]),theme:{"className":"z_theme-1g1qfxjzbnv3-zyzz-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"#06c"}}}>); const theme = (zyzz.theme as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const mint = ({className:"z_theme-1g1qfxjzbnv3-mint"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const props = ({className:"z-1g1qfxjzbnv3-base0"}); export const plain = ({className:"z-1g1qfxjzbnv3-base1"});"
-    `,
+      `" export const empty = ({} as import('zyzz').Config.create.ReturnType<{}>); const base = ({className:"z_theme-1g1qfxjzbnv3-base"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const zyzz = ({"theme":{"className":"z_theme-1g1qfxjzbnv3-zyzz-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"#06c"}}}>); const theme = (zyzz.theme as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const mint = ({className:"z_theme-1g1qfxjzbnv3-mint"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const props = ({className:"z-1g1qfxjzbnv3-base0"}); export const plain = ({className:"z-1g1qfxjzbnv3-base1"});"`,
     )
     expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1g1qfxjzbnv3-zyzz-theme{--z-t1g1qfxjzbnv3-zyzz-color_2e_brand:#06c;}

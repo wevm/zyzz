@@ -20,6 +20,7 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  readonly catalogOnly?: boolean | undefined
   /** Config helper represented by this linked binding. */
   readonly selection?: boolean | undefined
   /** Validated inline configuration options retained for packed declarations. */
@@ -706,8 +707,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
         parent.type === 'CallExpression' &&
         parent.callee === node &&
         !parent.optional
-      )
+      ) {
+        if (config.call.selection && config.call.catalogOnly)
+          fail(
+            'This legacy catalog is not callable; rebuild its library.',
+            node,
+          )
         return true
+      }
       let target: Ast.Node = node
       const path: string[] = []
       for (let index = ancestors.length - 2; index >= 0; index--) {
@@ -749,6 +756,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
         ) {
           if (!config.call.options?.themes)
             fail('Theme selection requires a named catalog.', target)
+          if (config.call.catalogOnly)
+            fail(
+              'This legacy catalog is not callable; rebuild its library.',
+              target,
+            )
           return true
         }
         if (path.length === 1 && path[0] === 'css') {

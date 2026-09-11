@@ -3,7 +3,9 @@
 > [!NOTE]
 > Initial compiler support: direct named imports and module-level literal calls.
 
-Contribute eager global selectors and nested stylesheet rules.
+Contribute eager global selectors and nested grouping rules.
+
+The [accepted at-rule API](at-rules.md) places stylesheet declarations in dedicated top-level functions such as `page` and `counterStyle`. Those additions remain planned; `global` is not a descriptor or statement declaration API.
 
 ```ts
 import { global } from 'zyzz/web'

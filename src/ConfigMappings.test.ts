@@ -22,6 +22,40 @@ function compile() {
   return { app, library }
 }
 describe('create', () => {
+  test('rejects conflicting packed mappings before reusing theme identities', () => {
+    const { library } = compile()
+    const original = library.contracts['config.ts']!
+    const changed = JSON.parse(original)
+    expect(changed.version).toMatchInlineSnapshot('5')
+    for (const value of Object.values(changed.themes) as {
+      shorthands: Record<string, string[]>
+    }[])
+      value.shorthands.px = ['marginLeft', 'marginRight']
+    expect(() =>
+      Graph.compile({
+        contracts: { 'a.js': original, 'b.js': JSON.stringify(changed) },
+        imports: { 'app.ts': { a: 'a.js', b: 'b.js' } },
+        modules: {
+          'app.ts': `import {css as a} from 'a';import {css as b} from 'b';export const styles={a:a({px:'sm'}),b:b({px:'sm'})}`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: b.js:0: Invalid library contract: Conflicting packed shorthand mappings for one theme identity.]`,
+    )
+  })
+  test('accepts quoted aliases and independently validates numeric targets', () => {
+    const graph = Graph.compile({
+      modules: {
+        'app.ts': `import {Config,Theme} from 'zyzz';const {css,theme}=Config.create({shorthands:{'padding-x':['paddingLeft','paddingRight'],mixed:['scale','order']},theme:{spacing:{sm:'4px'}}});const extended=Theme.extend(theme,{spacing:{sm:'8px'}});export const styles={card:extended.css({'padding-x':'sm'}),dynamic:css((values:{n:1|2})=>({mixed:values.n}))}`,
+      },
+    })
+    expect(graph.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1e8a67z1uaws1j-css-theme{--z-t1e8a67z1uaws1j-css-spacing_2e_sm:4px;}
+      .z_theme-1e8a67z1uaws1j-extended{--z-t1e8a67z1uaws1j-css-spacing_2e_sm:8px;}
+      .z-1e8a67z1uaws1j-base0{padding-left:var(--z-t1e8a67z1uaws1j-css-spacing_2e_sm,8px);padding-right:var(--z-t1e8a67z1uaws1j-css-spacing_2e_sm,8px);}
+      .z-1e8a67z1uaws1j-base1{scale:var(--z-d1e8a67z1uaws1j-299-6e);order:var(--z-d1e8a67z1uaws1j-299-6e);}"
+    `)
+  })
   test('preserves ordered targets and spacing precedence across packed imports', () => {
     const { app } = compile()
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(`

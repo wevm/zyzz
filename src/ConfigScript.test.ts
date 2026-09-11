@@ -11,6 +11,18 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 
 describe('create', () => {
+  test('keeps css-only packed exports compatible with earlier contract readers', () => {
+    const graph = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const {css}=Config.create({});`,
+      },
+    })
+    const contract = JSON.parse(graph.contracts['config.ts']!)
+    expect(contract.version).toMatchInlineSnapshot('2')
+    expect(Object.hasOwn(contract.exports.css, 'script')).toMatchInlineSnapshot(
+      'false',
+    )
+  })
   test('omits initialization from static configured styles', () => {
     for (const options of [
       '{}',

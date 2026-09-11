@@ -214,6 +214,9 @@ export function zyzz(): Plugin {
           ...entry.environment.depsOptimizer?.metadata.discovered,
         }).find((item) => item.file === resolved.id.split('?')[0])
         if (optimized?.src) return { ...resolved, id: optimized.src }
+        // Vite's dependency version changes caching, not module semantics.
+        if (/^[^?#]+\?v=[\da-f]+$/.test(resolved.id))
+          return { ...resolved, id: resolved.id.split('?')[0]! }
       }
       return resolved
     }

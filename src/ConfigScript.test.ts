@@ -1,4 +1,5 @@
 /** Exercises compiled appearance scripts through package linking and a real browser origin. @module */
+import * as Packed from '../test/fixtures/Packed.js'
 import * as Crypto from 'node:crypto'
 import * as Esbuild from 'esbuild'
 import * as Http from 'node:http'
@@ -11,6 +12,28 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 
 describe('create', () => {
+  test('retains initialization for local and packed property aliases', async () => {
+    const library = Graph.compile({
+      modules: {
+        'index.ts': `import {Config} from 'zyzz';const config=Config.create({defaultTheme:'base',themes:{base:{}}});export const restore=config.script;export const script=restore();`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'lib.js': library.contracts['index.ts']! },
+      imports: { 'app.ts': { lib: 'lib.js' } },
+      modules: {
+        'app.ts': `import {restore,script} from 'lib';export const same=script===restore();`,
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: { 'app.ts': app.modules['app.ts']!.code },
+      packages: { lib: { 'index.ts': library.modules['index.ts']!.code } },
+    })
+    expect(Vm.runInNewContext(`${code};Fixture.same;`)).toMatchInlineSnapshot(
+      'true',
+    )
+  })
   test('rejects script destructuring from legacy and selection contracts', () => {
     const library = Graph.compile({
       modules: {
@@ -37,7 +60,7 @@ describe('create', () => {
     expect(errors).toMatchInlineSnapshot(`
       [
         [Source.ExtractError: app.js:34: This configuration helper is not available on the linked contract.],
-        [Source.ExtractError: app.js:34: This configuration helper is not available on the linked contract.],
+        [Source.ExtractError: app.js:34: Destructure only css and the configured single theme; other helpers remain unsupported.],
       ]
     `)
   })

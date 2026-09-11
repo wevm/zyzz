@@ -25,9 +25,9 @@ describe('create', () => {
     })
     const app = Graph.compile({
       contracts: { 'library/index.js': library.contracts['index.ts']! },
-      imports: { 'app.ts': { library: 'library/index.js' } },
+      imports: { 'app.ts': { library: 'library/index.js', zyzz: null } },
       modules: {
-        'app.ts': `import {theme,staticStyle} from 'library';const bound=theme.css;export const dynamic=bound((values:{width:'4px'|'8px'})=>({px:values.width}))({width:'8px'});export const direct=theme.css({px:'sm'})();export const source=staticStyle();`,
+        'app.ts': `import {Theme} from 'zyzz';import {theme,staticStyle} from 'library';const extended=Theme.extend(theme,{padding:{sm:'12px'}});export const extension=extended.css({px:'sm'})();const {css}=theme;export const destructured=css({px:'sm'})();const bound=theme.css;export const dynamic=bound((values:{width:'4px'|'8px'})=>({px:values.width}))({width:'8px'});export const direct=theme.css({px:'sm'})();export const source=staticStyle();`,
       },
     })
     const code = await Packed.bundle({
@@ -36,22 +36,31 @@ describe('create', () => {
       packages: { library: { 'index.ts': library.modules['index.ts']!.code } },
     })
     const result = Vm.runInNewContext(`${code};Fixture;`)
+    for (const props of [
+      result.direct,
+      result.source,
+      result.dynamic,
+      result.extension,
+      result.destructured,
+    ]) {
+      expect(typeof props.class).toMatchInlineSnapshot('"string"')
+      expect(props.className).toMatchInlineSnapshot('undefined')
+    }
+    expect(typeof result.dynamic.style).toMatchInlineSnapshot('"string"')
     expect(result.direct).toMatchInlineSnapshot(`
       {
-        "class": "z-style-1e8a67z1uaws1j-177",
+        "class": "z-style-1e8a67z1uaws1j-371",
       }
     `)
     expect(result.source).toMatchInlineSnapshot(`
       {
-        "className": "z-1wfnqsmu0q6os-base0",
+        "class": "z-1wfnqsmu0q6os-base0",
       }
     `)
     expect(result.dynamic).toMatchInlineSnapshot(`
       {
-        "className": "z-style-1e8a67z1uaws1j-85",
-        "style": {
-          "--z-d1e8a67z1uaws1j-85-77-69-64-74-68": "8px",
-        },
+        "class": "z-style-1e8a67z1uaws1j-279",
+        "style": "--z-d1e8a67z1uaws1j-279-77-69-64-74-68:8px",
       }
     `)
   })

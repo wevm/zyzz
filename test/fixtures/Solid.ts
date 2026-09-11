@@ -6,7 +6,7 @@ export function App() {
   const [expanded, setExpanded] = createSignal(false);
   onMount(() => { document.documentElement.dataset.ready = 'true' });
   return <main style="width:400px"><section class={theme.className} style={{ 'color-scheme': expanded() ? 'dark' : 'light' }}>
-    <div id="card" {...styles.card({ width: expanded() ? '75%' : '25%', ...(expanded() ? {} : { style: { marginTop: '12px', opacity: 0.5, '--note': '"<&>' } }) })}>Card</div>
+    <div id="card" {...styles.card({ width: expanded() ? '75%' : '25%', ...(expanded() ? {} : { style: { marginTop: '12px', opacity: 0.5, '--note': '"<&>"' } }) })}>Card</div>
     <button id="toggle" onClick={() => setExpanded(value => !value)}>Toggle</button>
   </section></main>;
 }`,

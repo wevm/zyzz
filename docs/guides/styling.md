@@ -29,9 +29,6 @@ Pass `className` and `style` overrides to the styling function. Keep events, chi
 
 #### Add Hover and Responsive Styles
 
-> [!NOTE]
-> Conditions are not yet implemented.
-
 ```ts
 import { css } from 'zyzz'
 
@@ -49,9 +46,6 @@ Nest pseudo styles and queries inside a definition. Nested conditions combine wi
 Use [Dynamic Values](styling.md#dynamic-values) for typed per-instance bindings.
 
 ### Share Styles
-
-> [!NOTE]
-> Preview API; not yet implemented.
 
 Keep exported definitions in an ordinary source module and import them where needed. Config remains an explicit dependency.
 
@@ -74,7 +68,7 @@ export function Button() {
 }
 ```
 
-The bundler integration resolves and transforms source imports. Consumers never import generated component copies. For precompiled packages, follow [Publish Libraries](compilation.md#publish-libraries).
+The bundler integration resolves and transforms imports of compiled `css(...)` definitions. Imported arbitrary object records passed into a separate `css(record)` call remain preview. Consumers never import generated component copies. For precompiled packages, follow [Publish Libraries](compilation.md#publish-libraries).
 
 ### Override Styles
 
@@ -105,9 +99,6 @@ Keep events and accessibility props on the component. Multiple JSX spreads repla
 
 ### Dynamic Values
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 ```tsx
 import { css } from 'zyzz'
 
@@ -119,7 +110,7 @@ const styles = {
 const example = <div {...styles.bar({ width: '50%' })} />
 ```
 
-Callbacks bind values without generating CSS. Use `Vars` only when a shared variable contract is needed.
+Callbacks use explicitly typed scalar inputs and compile to fixed CSS-variable slots. Local finite aliases and interfaces are supported; rule structure, arbitrary runtime expressions, generic/imported dynamic types, and native output remain outside this boundary. Callbacks bind values without generating CSS. Use `Vars` only when a shared variable contract is needed.
 
 ```ts
 const styles = {

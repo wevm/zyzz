@@ -50,8 +50,13 @@ export type Checked<
   condition,
   allowHas extends boolean = true,
 > = condition extends string
-  ? condition
+  ? allowHas extends false
+    ? Exclude<condition, ':visited'>
+    : condition
   : condition &
+      (allowHas extends false
+        ? { readonly pseudo?: Exclude<Pseudo, ':visited'> | undefined }
+        : unknown) &
       Record<
         Exclude<
           keyof condition,
@@ -177,6 +182,13 @@ export function selector(
       'Relationship conditions require a pseudo or options record.',
     )
   const values = options as Record<string, unknown>
+  if (
+    !['ancestor', 'siblingBefore'].includes(kind) &&
+    values.pseudo === ':visited'
+  )
+    throw new Error(
+      'Visited predicates cannot be observed through has-based relationships.',
+    )
   if (
     Object.keys(values).some((key) => !['data', 'has', 'pseudo'].includes(key))
   )

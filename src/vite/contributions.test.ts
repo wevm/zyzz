@@ -109,6 +109,34 @@ describe('zyzz', () => {
         `import 'effects'; import {css} from 'zyzz'; // @ts-expect-error
 css({color:123})`,
       )
+      const directRoot = Path.join(root, 'node_modules/direct-effects')
+      await Fs.mkdir(directRoot, { recursive: true })
+      const directLibrary = Graph.compile({
+        modules: {
+          'index.ts': `import {global} from 'zyzz/web';global({body:{outlineWidth:'23px'}});`,
+        },
+      })
+      await Fs.writeFile(
+        Path.join(directRoot, 'package.json'),
+        JSON.stringify({
+          name: 'direct-effects',
+          type: 'module',
+          exports: './index.js',
+          sideEffects: false,
+        }),
+      )
+      await Fs.writeFile(
+        Path.join(directRoot, 'index.js'),
+        directLibrary.modules['index.ts']!.code,
+      )
+      await Fs.writeFile(
+        Path.join(directRoot, 'index.js.zyzz.json'),
+        directLibrary.contracts['index.ts']!,
+      )
+      await Fs.appendFile(
+        Path.join(root, 'app.ts'),
+        `;globalThis.direct=()=>import('direct-effects')`,
+      )
       const typeRoot = Path.join(root, 'node_modules/type-effects')
       await Fs.mkdir(typeRoot, { recursive: true })
       const typeLibrary = Graph.compile({
@@ -158,6 +186,7 @@ css({color:123})`,
         )
         .map((value) => (value.type === 'asset' ? String(value.source) : ''))
         .join('\n')
+      expect(css.includes('23px')).toMatchInlineSnapshot('true')
       expect(css.includes('37px')).toMatchInlineSnapshot('false')
       expect(css.includes('background-image')).toMatchInlineSnapshot('true')
       expect(

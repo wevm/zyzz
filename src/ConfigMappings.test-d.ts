@@ -13,6 +13,17 @@ describe('create', () => {
     // @ts-expect-error extension retains finite alias names
     extended.css({ unknownAlias: 'sm' })
   })
+  test('does not infer aliases from a widened mapping record', () => {
+    const { css } = Config.create({
+      shorthands: { px: ['paddingLeft'] } as NonNullable<
+        Config.create.Options['shorthands']
+      >,
+    })
+    // @ts-expect-error widened metadata declares no finite alias names
+    css({ missing: 'inherit' })
+    // @ts-expect-error numeric keys are not source alias names
+    Config.create({ shorthands: { 1: ['paddingLeft'] } })
+  })
   test('infers aliases through nested styles and bound handles', () => {
     const { css: configured, theme } = Config.create({
       shorthands: {

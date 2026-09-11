@@ -60,7 +60,7 @@ export const styles = {
 element.className = `${theme.className} ${styles.card().className}`
 ```
 
-`defaultTheme` selects shorthand token fallbacks for named catalogs. Use `themes({ theme: 'mint' })` to select a scope, with an optional `colorScheme` override. Config edits rebuild dependent styles. Direct literal calls, immutable aliases, and named re-exports are supported. Dynamic member access, escaping config objects, variants, and layer bodies remain unsupported.
+`defaultTheme` selects shorthand token fallbacks for named catalogs. Use `themes({ theme: 'mint' })` to select a scope, with an optional `colorScheme` override. Config edits rebuild dependent styles. Direct literal calls, immutable aliases, and named re-exports are supported. Dynamic member access, escaping config objects, and variants remain unsupported.
 
 ## Theme Libraries
 

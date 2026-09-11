@@ -15,7 +15,10 @@ export type Accepted<
   tokens extends Theme.Tokens = {},
   literal extends boolean = false,
 > = Record<
-  Exclude<Keys<style>, keyof Literal.Properties | Condition.Keys<tokens>>,
+  Exclude<
+    Keys<style>,
+    keyof Literal.Properties | Condition.Keys<tokens, Keys<style>>
+  >,
   never
 > &
   (style extends unknown
@@ -28,7 +31,7 @@ export type Accepted<
                 : DeclarationProperties<tokens>
             >[key] &
               Value.Checked<Pick<style, key>, tokens>[key]
-          : key extends Condition.Keys<tokens>
+          : key extends Condition.Keys<tokens, key>
             ? [style[key]] extends [undefined]
               ? never
               : NonNullable<style[key]> extends Record<string, unknown>

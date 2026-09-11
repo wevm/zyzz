@@ -5,7 +5,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Trace from '@jridgewell/trace-mapping'
 import { describe, expect, test } from 'vite-plus/test'
-import { Graph } from 'zyzz/compiler'
+import { Graph, Source } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 const source = `import {fontFace,global,keyframes,layers} from 'zyzz/web';layers(['reset','components']);fontFace({fontFamily:'App',src:'url(./assets/app.woff2)'});global({body:{backgroundImage:'url(./assets/pixel.png)'}});export const fade=keyframes({from:{opacity:0},to:{opacity:1}});`
 describe('compile', () => {
@@ -49,6 +49,108 @@ describe('compile', () => {
     expect(
       map.sourcesContent?.some((content) => content === source),
     ).toMatchInlineSnapshot('true')
+  })
+  test('maps separate contribution calls to their own authored positions', () => {
+    const source = `import {global} from 'zyzz/web';
+global({body:{color:'red'}});
+
+global({html:{color:'blue'}});`
+    const library = Graph.compile({ modules: { 'effects.ts': source } })
+    const output = Graph.compile({
+      modules: { 'app.ts': `import 'lib'` },
+      imports: { 'app.ts': { lib: 'lib/index.js' } },
+      contracts: { 'lib/index.js': library.contracts['effects.ts']! },
+    })
+    const map = new Trace.TraceMap(output.sharedCssMap!)
+    const line =
+      output.sharedCss!.split('\n').findIndex((line) => line.includes('html')) +
+      1
+    expect(
+      Trace.originalPositionFor(map, { line, column: 0 }).line,
+    ).toMatchInlineSnapshot('4')
+  })
+  test('does not capture nested shadows of imported animations', () => {
+    const output = Graph.compile({
+      modules: {
+        'effects.ts': source,
+        'app.ts': `import {fade} from './effects.js';function other(fade:unknown){let alias=fade;return alias}export {fade}`,
+      },
+    })
+    expect(output.sharedCss?.includes('@keyframes')).toMatchInlineSnapshot(
+      'true',
+    )
+  })
+  test('attributes malformed packed CSS and rejects conflicting layer metadata', () => {
+    const library = Graph.compile({ modules: { 'effects.ts': source } })
+    const contract = JSON.parse(library.contracts['effects.ts']!)
+    contract.stylesheets[1].css = '@import ;'
+    expect(() =>
+      Graph.compile({
+        modules: { 'app.ts': `import 'lib'` },
+        imports: { 'app.ts': { lib: 'lib/index.js' } },
+        contracts: { 'lib/index.js': JSON.stringify(contract) },
+      }),
+    ).toThrow(Source.ExtractError)
+    const first = JSON.parse(library.contracts['effects.ts']!)
+    const second = JSON.parse(library.contracts['effects.ts']!)
+    second.stylesheets[0].layers = [['different']]
+    expect(() =>
+      Graph.compile({
+        modules: { 'app.ts': `import 'a';import 'b'` },
+        imports: { 'app.ts': { a: 'lib/a.js', b: 'lib/b.js' } },
+        contracts: {
+          'lib/a.js': JSON.stringify(first),
+          'lib/b.js': JSON.stringify(second),
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      '[Error: Conflicting packed stylesheet contributions.]',
+    )
+  })
+  test('normalizes encoded asset traversal and rejects generated or control-file collisions', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-assets-paths-'))
+    try {
+      await Fs.mkdir(Path.join(root, 'sub'))
+      await Fs.writeFile(
+        Path.join(root, 'asset.png'),
+        new Uint8Array([1, 2, 3]),
+      )
+      await Fs.writeFile(
+        Path.join(root, 'sub/effects.ts'),
+        `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(%2e%2e/asset.png)'}})`,
+      )
+      await using host = await Host.create({
+        root,
+        outDir: Path.join(root, 'out'),
+        packageId: 'pkg',
+      })
+      await host.build()
+      expect((await host.build()).changed).toMatchInlineSnapshot('[]')
+      for (const name of [
+        'zyzz.shared.css',
+        '.ZYZZ.JSON',
+        'sub/effects.ts.css',
+      ]) {
+        await Fs.writeFile(Path.join(root, name), 'asset')
+        await Fs.writeFile(
+          Path.join(root, 'sub/effects.ts'),
+          `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(../${name})'}})`,
+        )
+        await expect(host.build()).rejects.toThrow(/conflicts/)
+      }
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+  test('retains animations exported through a specifier list', () => {
+    const output = Graph.compile({
+      modules: {
+        'effects.ts': `import {keyframes} from 'zyzz/web';const fade=keyframes({from:{opacity:0},to:{opacity:1}});export {fade}`,
+      },
+    })
+    expect(output.sharedCss?.includes('@keyframes')).toMatchInlineSnapshot(
+      'true',
+    )
   })
   test('serves relocated assets and layers with the optional reset in Chromium', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-assets-browser-'))

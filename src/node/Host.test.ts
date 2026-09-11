@@ -634,6 +634,13 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           'result' in event &&
           event.result.changed.includes('nested/button.ts.css'),
       )
+      await expect
+        .poll(async () =>
+          (
+            await Fs.readFile(Path.join(outDir, 'nested/button.ts.css'), 'utf8')
+          ).includes('padding: 2px;'),
+        )
+        .toBe(true)
       expect(
         await Fs.readFile(Path.join(outDir, 'nested/button.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(`

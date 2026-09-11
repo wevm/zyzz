@@ -567,7 +567,7 @@ export function anySibling<
           ? unknown
           : never
         : condition extends Relationships.Condition<schema>
-          ? Relationships.Checked<schema, condition>
+          ? Relationships.Checked<schema, condition, false>
           : never
     >,
 ): Relationships.Key {
@@ -589,7 +589,7 @@ export function descendant<
           ? unknown
           : never
         : condition extends Relationships.Condition<schema>
-          ? Relationships.Checked<schema, condition>
+          ? Relationships.Checked<schema, condition, false>
           : never
     >,
 ): Relationships.Key {
@@ -611,7 +611,7 @@ export function siblingAfter<
           ? unknown
           : never
         : condition extends Relationships.Condition<schema>
-          ? Relationships.Checked<schema, condition>
+          ? Relationships.Checked<schema, condition, false>
           : never
     >,
 ): Relationships.Key {

@@ -22,6 +22,22 @@ describe('marker', () => {
       [Css.descendant(card)]: { color: 'red' },
       [Css.siblingBefore(card, ':checked')]: { color: 'blue' },
     })
+    const arbitrary = Symbol()
+    // @ts-expect-error arbitrary symbols are not relationship keys
+    css({ [arbitrary]: { color: 'red' } })
+    // @ts-expect-error descendant has would require forbidden nested :has
+    Css.descendant(card, { has: 'a' })
+    // @ts-expect-error following-sibling has would require forbidden nested :has
+    Css.siblingAfter(card, { has: 'a' })
+    // @ts-expect-error invalid state-name characters
+    Css.marker({ 'not ok': ['open'] })
+    // @ts-expect-error case-folded duplicate names
+    Css.marker({ State: ['open'], state: ['closed'] })
+    Css.marker(undefined)
+    Css.ancestor(card, { data: undefined })
+    css((values: { color: '#123' | '#456' }) => ({
+      [Css.ancestor(card)]: { color: values.color },
+    }))
     const extra = { state: 'open' as const, unknown: 'value' }
     // @ts-expect-error state keys stay exact through variables
     Css.ancestor(card, { data: extra })

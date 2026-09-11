@@ -276,10 +276,18 @@ export function extract(
   function value(node: Ast.Node): unknown {
     const reference = tokens.get(node.start)
     if (reference?.end === node.end) return reference.reference
+    node = Expression.unwrap(node)
     const animation = scanned.references.get(node.start)
     if (animation) return animation
     node = Expression.unwrap(node)
     if (scanned.undefinedValues.has(node.start)) return undefined
+    if (
+      node.type === 'UnaryExpression' &&
+      node.operator === 'void' &&
+      node.argument.type === 'Literal' &&
+      node.argument.value === 0
+    )
+      return undefined
     if (
       node.type === 'Literal' &&
       (typeof node.value === 'string' || typeof node.value === 'number')
@@ -466,8 +474,9 @@ export function extract(
         if (call.exported || scanned.used.has(call.name!))
           result.push({ kind: 'keyframes', name: call.name!, frames })
       }
-      if (call.context) {
-        const context = record(value(call.context))
+      const contextValue = call.context ? value(call.context) : undefined
+      if (contextValue !== undefined) {
+        const context = record(contextValue)
         if (Object.keys(context).some((key) => key !== 'within'))
           throw new Error('Unknown contribution context option.')
         const within = context.within ?? []
@@ -476,7 +485,12 @@ export function extract(
           within.some(
             (header) =>
               typeof header !== 'string' ||
-              !/^@(media|supports|container|layer) .+/.test(header),
+              !(
+                header === '@layer' ||
+                /^@(media|supports|container|layer)(?=[\t\n\r\f (/])/.test(
+                  header,
+                )
+              ),
           )
         )
           throw new Error('Expected enclosing conditional or layer headers.')

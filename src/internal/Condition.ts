@@ -7,6 +7,7 @@ type Case<text extends string> = text extends `${infer first}${infer rest}`
 type Media = Case<'all' | 'print' | 'screen'>
 /** Explicit scoped selectors and standard conditional rule forms. */
 export type Raw =
+  | `@${'media' | 'supports' | 'container' | 'scope' | 'layer'}${'\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`
   | `${string}&${string}`
   | `:${string}`
   | '@starting-style'
@@ -62,7 +63,7 @@ export function is(key: string): boolean {
     nested(key) ||
     key.startsWith(':') ||
     ['@starting-style', '@scope', '@layer'].includes(key) ||
-    /^@(media|supports|container|scope|layer) /.test(key)
+    /^@(media|supports|container|scope|layer)(?=[\t\n\r\f (]|\/\*)/.test(key)
   )
 }
 
@@ -97,124 +98,1484 @@ export function normalize(key: string): string {
   const stack: string[] = []
   let quote = ''
   let output = ''
-  let scoped = false
-  let list = false
-  for (let index = 0; index < key.length; index++) {
-    const char = key[index]!
-    if (!quote && char === '/' && key[index + 1] === '*') {
-      const end = key.indexOf('*/', index + 2)
-      if (end === -1) throw new Error('Unterminated condition comment.')
-      output += key.slice(index, end + 2).replace(/[\n\r\f]/g, ' ')
-      index = end + 1
-      continue
+  let sco…49595 tokens truncated…  },
+      "content-list": {
+        "grammar": "6b15b2e3447495c6bc9304e7dd8e6941565687173e78d1f2c56593354a60acf1",
+        "status": "deferred"
+      },
+      "content-position": {
+        "grammar": "f840c4fd58821f9ca4d9f0ba8285e197cb3c38446a6b14a8e33822c22fba37c6",
+        "status": "deferred"
+      },
+      "content-replacement": {
+        "grammar": "851fd88ba61e18e49433817d8e95e8fd947a4e7c4401acdd0172f5969407fdca",
+        "status": "deferred"
+      },
+      "contextual-alt-values": {
+        "grammar": "7e74d5662045755506ec173d878d5fd5a76c9c20095443a11440767e91d5a57d",
+        "status": "partial"
+      },
+      "contrast()": {
+        "grammar": "865c01466f07ae290918d83162fb7781cf424de305a7abf3239a2e6ad1fad5bf",
+        "status": "deferred"
+      },
+      "coord-box": {
+        "grammar": "a0e41376ff6eb4c3f656af8b6dce15dafb8b4b76546e5a44e4dd79228e00e5ed",
+        "status": "deferred"
+      },
+      "corner-shape-value": {
+        "grammar": "128f7ad92d26375041e50879ddb1169995158baed088d0bbc1034c03f5e0aaee",
+        "status": "deferred"
+      },
+      "cos()": {
+        "grammar": "483cd1058b7da12c7b143987dba7f4cea242930f4400f3d0d937784b80bb08e4",
+        "status": "deferred"
+      },
+      "counter": {
+        "grammar": "83094fbd589571b22348c2dc1b079f7a733d2727cbe7bee97056b9465d056d46",
+        "status": "deferred"
+      },
+      "counter()": {
+        "grammar": "922d64fbb5effee65eddf92003dcd51851f90c1df0fd3276d9039d1d29cacc96",
+        "status": "deferred"
+      },
+      "counter-name": {
+        "grammar": "354314376ab45802348bf9e990ebae2478930f2ee31dd4a2e47c9f18eca35bfd",
+        "status": "deferred"
+      },
+      "counter-style": {
+        "grammar": "72872f02b8c358d8c3e506697dda3f0e97a25143d2018993f5ff2a623098df3b",
+        "status": "deferred"
+      },
+      "counter-style-name": {
+        "grammar": "354314376ab45802348bf9e990ebae2478930f2ee31dd4a2e47c9f18eca35bfd",
+        "status": "deferred"
+      },
+      "counters()": {
+        "grammar": "1900d321a6a8ce70bf095c99050f2ca58798f2ddd52d4181098b324f8a9859ba",
+        "status": "deferred"
+      },
+      "cross-fade()": {
+        "grammar": "93db11a1102e0ca5b5bf4cd45c6155531ad39b1353c7f732dd2f68e04341e947",
+        "status": "deferred"
+      },
+      "cubic-bezier()": {
+        "grammar": "c9c1956699b4067d1dc895e5f931be96c899450bf9bf129e796c3b5292bcfd5a",
+        "status": "partial"
+      },
+      "cubic-bezier-easing-function": {
+        "grammar": "7d72d8736ec6abd49bb32483c33cac9449e980f85dceca8c8294143326c6e687",
+        "status": "partial"
+      },
+      "cursor-predefined": {
+        "grammar": "0aaa8384ac221f2796dc35a7cb3e79462f0733de04b0cb8ee33e8e70fc1a8157",
+        "status": "deferred"
+      },
+      "custom-color-space": {
+        "grammar": "d75cee2a6cf1ea937cc2967b0a2991c992317e65ae19c9563a8b10ee7c7b76ae",
+        "status": "deferred"
+      },
+      "custom-params": {
+        "grammar": "c3eb4a33b278d30eac5bb15b054475a807be200ce9d4a50abcb86c89aabf7adf",
+        "status": "deferred"
+      },
+      "dasharray": {
+        "grammar": "9d0eeb9f68bbd5ccdc5163832c84f760a002df49c65efa7894edea6ab73d631d",
+        "status": "deferred"
+      },
+      "dashndashdigit-ident": {
+        "grammar": "2e252e528fd79587b710eac27146325a25405c1a189b4dc35031342dddb830f2",
+        "status": "deferred"
+      },
+      "deprecated-system-color": {
+        "grammar": "754523989e3165339e583a55158e0477bea56260a921c346f50194313cd9807e",
+        "status": "deferred"
+      },
+      "discretionary-lig-values": {
+        "grammar": "c9ed24a6831321b611762af229f15a0affc2390fbf76cb905be4fa78b839fd71",
+        "status": "partial"
+      },
+      "display-box": {
+        "grammar": "1eac73f669f578d2ac5561a6030c131138890cc0fcc08de46d4244a026ec8f3b",
+        "status": "deferred"
+      },
+      "display-inside": {
+        "grammar": "b0d2e3f1c8a13077a88e26104036c7dd8c366020ac5761bc4690ecdca325f48c",
+        "status": "deferred"
+      },
+      "display-internal": {
+        "grammar": "5f264dedc1b2913eee396862b0fa610d502bd6f02f4a1a90768001b55437a5dd",
+        "status": "deferred"
+      },
+      "display-legacy": {
+        "grammar": "20c914a322f7e359d689e099407447b5c80814d9949cf148edf22de5b44dd62e",
+        "status": "deferred"
+      },
+      "display-listitem": {
+        "grammar": "b03789304e7353734d0e1a81265e94f0f3dedc85f76b4bf85e4d9e13f369e8ef",
+        "status": "deferred"
+      },
+      "display-outside": {
+        "grammar": "b3d32097c79a08608da3429595799fc635121a6210cce559eccb088b2152c88f",
+        "status": "deferred"
+      },
+      "drop-shadow()": {
+        "grammar": "31a8b99b83acebf4968f2cc929586ca7c905b6ec8330c48d19150828633d46a7",
+        "status": "deferred"
+      },
+      "dynamic-range-limit-mix()": {
+        "grammar": "bf641d68af9317cce4cb6077c5c9705a49de10f66136afc5e00ae2e48139c797",
+        "status": "deferred"
+      },
+      "easing-function": {
+        "grammar": "4137bca0e9b6f0164e16181cb0acff6b3877abdbc1c1075e03cc900e39389b45",
+        "status": "partial"
+      },
+      "east-asian-variant-values": {
+        "grammar": "dea70621cacdffcc76f757c9bfcac6aceaa4f1ec9abc90019fa8ca5e93660bb9",
+        "status": "partial"
+      },
+      "east-asian-width-values": {
+        "grammar": "17009792ae63b7e6d0b4a8e466642b3572639423638a5cf3c7088b7eb8d55330",
+        "status": "partial"
+      },
+      "element()": {
+        "grammar": "810bc0ea9824f2a0e2bd6cdd86ac5d893c29158a4587a36d9f9d8973fa6de903",
+        "status": "deferred"
+      },
+      "ellipse()": {
+        "grammar": "96cefebdd1df0137965a69499ea3f82dcd60902c7771a807d517cab424479fc7",
+        "status": "deferred"
+      },
+      "env()": {
+        "grammar": "bdfcd2bed723ba7538a3541a7c080dddef043fd67ca14b4828e453f5f205c4bd",
+        "status": "deferred"
+      },
+      "exp()": {
+        "grammar": "db919967ae2604dfbe7de76f095b7a0696e74e05f3ecb0e5db68b9071d7e63a4",
+        "status": "deferred"
+      },
+      "explicit-track-list": {
+        "grammar": "14f4fe7eee4637dbfaa0f53c83b09b392134b76a91a868aba8070684f2f6e543",
+        "status": "deferred"
+      },
+      "family-name": {
+        "grammar": "249af5a65067eaf6219712dfec745b314cd5b47899c055bea283ce7cfa6dab25",
+        "status": "deferred"
+      },
+      "feature-tag-value": {
+        "grammar": "4e0789645afdb558ca2eca176cc356ba349a803393ef7042c01a9759d98f5592",
+        "status": "deferred"
+      },
+      "feature-type": {
+        "grammar": "c364436a5caf4bdc35c2f7edd5b2909306a584a726bb0099e3d526fc6fd2cf18",
+        "status": "deferred"
+      },
+      "feature-value-block": {
+        "grammar": "02d1be572abc512874a90d2701ca7c9036b9c9228635a84af5721efcf118381b",
+        "status": "deferred"
+      },
+      "feature-value-block-list": {
+        "grammar": "7c9479521362cc4944611ed2aa14b18670a0776a84037211c74b25d611a686dc",
+        "status": "deferred"
+      },
+      "feature-value-declaration": {
+        "grammar": "4a576012acbfb199cb061fba5bc3ab5bb763ca881c2e7e81e3ad455f9cc79d15",
+        "status": "deferred"
+      },
+      "feature-value-declaration-list": {
+        "grammar": "84e76669ca653fbd10852df49a97654d7eb97aedd50b84fc4e6c44b03ac4eb67",
+        "status": "deferred"
+      },
+      "feature-value-name": {
+        "grammar": "354314376ab45802348bf9e990ebae2478930f2ee31dd4a2e47c9f18eca35bfd",
+        "status": "deferred"
+      },
+      "filter-function": {
+        "grammar": "db58ecf7935ce43501f4fd52a9a1399717f870d9753d1fd3bebf10e772e3ef81",
+        "status": "deferred"
+      },
+      "filter-value-list": {
+        "grammar": "f8fa873c910dc3d31caccd96893b65220bf882801e13a91774a03dcc889cc8d8",
+        "status": "deferred"
+      },
+      "final-bg-layer": {
+        "grammar": "96bf0d22f8fb288b88b8b9f0198209d7dbb6ee3f2e6f02bf10788b6e30e150b1",
+        "status": "deferred"
+      },
+      "fit-content()": {
+        "grammar": "e7899946d3cadcaf6eb91e17e89f5360e2472511b9dee4ec9d110a872c42accd",
+        "status": "partial"
+      },
+      "fixed-breadth": {
+        "grammar": "cd2cdc4fbf70280b613808caa8c2dd794bcb9c287659546ad8dc21f8f48d3c4a",
+        "status": "deferred"
+      },
+      "fixed-repeat": {
+        "grammar": "691fedb8944cd53abbed8b33c5fe26c5ea9b3ca0468cbcbdaf1abdf70ffd1664",
+        "status": "deferred"
+      },
+      "fixed-size": {
+        "grammar": "f4a57c618c05510a1f4a6459fbccd648607da3e82bf5d0559b573077bb5cd7d2",
+        "status": "deferred"
+      },
+      "font-stretch-absolute": {
+        "grammar": "a1ead2311b43e90588c52c09fc3007fb518f2905358b407ffb62764e490526ab",
+        "status": "deferred"
+      },
+      "font-variant-css2": {
+        "grammar": "6b35ed50e9d1d134f9613a66aa6a716cd709bb705e301f95042060ea973364ae",
+        "status": "deferred"
+      },
+      "font-weight-absolute": {
+        "grammar": "fbccf6f11dd918d24d3f30d0bef855b52c06a5e9a0d757591d640f21fb448f20",
+        "status": "deferred"
+      },
+      "font-width-css3": {
+        "grammar": "d069875beb4b58564c486774e057426a318852578e2486d37ca80dc5c9e689fd",
+        "status": "deferred"
+      },
+      "form-control-identifier": {
+        "grammar": "27cc8ead7fdfbf5d8e7463e86e7b7858292d2e7edb776a8e39c4b2ccd9d93bef",
+        "status": "deferred"
+      },
+      "frequency-percentage": {
+        "grammar": "97f291f0fd27b123abbce86f5d52226c6b58966ed1480ca9857a0b0e292c5ec0",
+        "status": "deferred"
+      },
+      "general-enclosed": {
+        "grammar": "8ec4975feae4337aa5b28e8b772b8ec10a1cd5eb71b15db9870a6dc442ca168b",
+        "status": "deferred"
+      },
+      "generic-complete": {
+        "grammar": "d45b623f0babbf106a2f68e79d6630567935a8cfcf08f44162bcd8d08ee3608e",
+        "status": "deferred"
+      },
+      "generic-family": {
+        "grammar": "1fad3f767fefc8aa547c4d3c168d2dc2d4ed560861b14a944a95fb8c9cd186df",
+        "status": "deferred"
+      },
+      "generic-incomplete": {
+        "grammar": "c2d318ef8df2cf477564321cc542ea11d841fca7304efc691f75c3daa137e6dc",
+        "status": "deferred"
+      },
+      "geometry-box": {
+        "grammar": "e881bbccf52d38c0bec162bda97cc2c5ab6b087adc63a72cdf7caa2f14237975",
+        "status": "deferred"
+      },
+      "gradient": {
+        "grammar": "633e0da7966288f8fb612c5c98044e589393ee51b4af6d0dd7a0527fca30a023",
+        "status": "deferred"
+      },
+      "grayscale()": {
+        "grammar": "fedf296c299d472dc299fcf3cbada0030deb10ba7e079bcd83a7c5b03168e14c",
+        "status": "deferred"
+      },
+      "grid-line": {
+        "grammar": "5156bd86acae13d9e387345083f2bd9fecccddf7a5baae9571e7804d1747a6de",
+        "status": "deferred"
+      },
+      "historical-lig-values": {
+        "grammar": "3d463a2908440922f21563512de5176128d527939234fe0cf9f999bbe4a1c64e",
+        "status": "partial"
+      },
+      "hsl()": {
+        "grammar": "98d22014d73af9a25f7003176405b5b2e29c1e435884a0973493bd3e5d6cc3a3",
+        "status": "partial"
+      },
+      "hsla()": {
+        "grammar": "de8e11b6e25e038aab0ff1ac2d87801e96bc01dd755b876ec828e191fd5c26f6",
+        "status": "partial"
+      },
+      "hue": {
+        "grammar": "82cab00c23e9a3c43122aec56e8c803512b97d8001de06943c7a5457edb19736",
+        "status": "deferred"
+      },
+      "hue-interpolation-method": {
+        "grammar": "5b249eb70323ebf2feb891cdbd2f2dfc8090e4070e5aa118fed96eb7092d9f3d",
+        "status": "deferred"
+      },
+      "hue-rotate()": {
+        "grammar": "1826c289038bbfc7ef7095b39b2c4c470a44bb2cd3d6f2d456b8fb58c01665f9",
+        "status": "deferred"
+      },
+      "hwb()": {
+        "grammar": "d5c8e7db0c2bc61041e32709991e1cc873f4487363563be33b3fe46020b1f7f4",
+        "status": "partial"
+      },
+      "hypot()": {
+        "grammar": "fb877bde4626302697f9484711202f5230cd97aaaee098bda3476fe7454611b9",
+        "status": "deferred"
+      },
+      "id-selector": {
+        "grammar": "83679346745d38f1107b6c4094d5a5823770e9486011149103991717c3868b25",
+        "status": "deferred"
+      },
+      "image": {
+        "grammar": "cac9b48ce839dae49ca76ffca06bbfeebbee8ba950867a71648f7bb501c45482",
+        "status": "deferred"
+      },
+      "image()": {
+        "grammar": "ff05c8a2603e44f826116883a3a49a6c4f6981356c1670994832faef1e37c5db",
+        "status": "deferred"
+      },
+      "image-set()": {
+        "grammar": "549a3286c947e6fe1a1b11bd991f1a9ba42e56d7e0c4ceb9737f09ddf5b9302a",
+        "status": "deferred"
+      },
+      "image-set-option": {
+        "grammar": "063165969b3ff6e20b42b4323e8c2a9fdc070b4d79ad8daf083391281d33013c",
+        "status": "deferred"
+      },
+      "image-src": {
+        "grammar": "9da495acc68413b39a5e2d198673d6b3d17e567bd8d379fe5934556b721fbc66",
+        "status": "deferred"
+      },
+      "image-tags": {
+        "grammar": "fa9e18d6125d1817e4d32d5c682b48ee6e936c698b94cc4b7e4c061f7df967e1",
+        "status": "deferred"
+      },
+      "inflexible-breadth": {
+        "grammar": "c047f333539909cd75fba1baac67872d9991c1f79d62ca99a693ac6a0c4d3247",
+        "status": "deferred"
+      },
+      "inset()": {
+        "grammar": "ad657f15c8afc026f7871b1fd2f1416100c19f9c06ab7f965b6553a1fce1b009",
+        "status": "deferred"
+      },
+      "integer": {
+        "grammar": "630b4ba924f1ef2c7ee021a9cce8ce89886d6d723ba7596c91815f233a1b0943",
+        "status": "deferred"
+      },
+      "invert()": {
+        "grammar": "b7f5ca9567d8e7068833492014a87c871ae1929ed50b97b8ac3fe2079d9489cc",
+        "status": "deferred"
+      },
+      "keyframe-block": {
+        "grammar": "a552d7287c82c534d028b92719533123a7492f9c1c1e121efa6f70ba3d895e34",
+        "status": "deferred"
+      },
+      "keyframe-selector": {
+        "grammar": "1b43e70f8a7b39a15760ccba6239c0d1918786ea41e5a0f07445456f932c4aa1",
+        "status": "deferred"
+      },
+      "keyframes-name": {
+        "grammar": "6a2dbe2581071e10422ec023d695970f733ee7b677f6b65f8b7baa48b3af1605",
+        "status": "deferred"
+      },
+      "lab()": {
+        "grammar": "d580c641a7889e936173346e1967323ef93c542b02b4a7fe33ebaaa5be3439f1",
+        "status": "partial"
+      },
+      "layer()": {
+        "grammar": "9469a646ac993bcbabdb9325655fd14d5d66cb028c28ac852b8acdb0efecfbf8",
+        "status": "deferred"
+      },
+      "layer-name": {
+        "grammar": "83e9cc40d428559c1acaaad7fc1187c8cdc92927f8bf9e61c3b7c19197a11748",
+        "status": "deferred"
+      },
+      "lch()": {
+        "grammar": "493bee8a9cbf000d1d8c112b87016d2c945ad21bf13c0707b4b11586a05cf16e",
+        "status": "partial"
+      },
+      "leader()": {
+        "grammar": "6b417072049124ea49f18ba450a3581fa920c00ef29d63936b647ac8b8b9b2fa",
+        "status": "deferred"
+      },
+      "leader-type": {
+        "grammar": "cee43a64c857505332628680f412d327e646d6a046cf18458a80907d7939fc1f",
+        "status": "deferred"
+      },
+      "length-percentage": {
+        "grammar": "ac56c078e06e3c1f8ea4bbb46f3a5355bfb8be39091bcecc18d60fabd07b736c",
+        "status": "deferred"
+      },
+      "light-dark()": {
+        "grammar": "588e53dc69941a671bb731e2a38fcadb4c4fe19f74f02f04d64be4d4e15847c1",
+        "status": "deferred"
+      },
+      "line-name-list": {
+        "grammar": "f89876bda839066e73e1b93c1a92850d32f9174a1b9d7c5018269a9a411f5a66",
+        "status": "deferred"
+      },
+      "line-names": {
+        "grammar": "8404babf399f13175f1e8960e17fbd7d7d6e705a7276a52926bed20798b29092",
+        "status": "deferred"
+      },
+      "line-style": {
+        "grammar": "9e23380c18b26af261d6623c2bb568b05c8bb7b1d7fea510bfadcf29fe83a758",
+        "status": "partial"
+      },
+      "line-width": {
+        "grammar": "a0eef4aae96203751c64cc12e548944fb60929a2a4f1e146d6e9ab025a294b65",
+        "status": "partial"
+      },
+      "linear()": {
+        "grammar": "dd462df66ff4c13642bd0d3b8537199301d53a4c1d109a7ef5b89815b55b328c",
+        "status": "partial"
+      },
+      "linear-color-hint": {
+        "grammar": "cd2cdc4fbf70280b613808caa8c2dd794bcb9c287659546ad8dc21f8f48d3c4a",
+        "status": "deferred"
+      },
+      "linear-color-stop": {
+        "grammar": "c7932167690be2085533c9608300061277d5cda1d46c1bc179a8f5f1cb5f4a72",
+        "status": "deferred"
+      },
+      "linear-easing-function": {
+        "grammar": "d14564f26a99803e41a1eb3abd1d20a6e48bf07e16fa101cab3ae77e0c91617b",
+        "status": "partial"
+      },
+      "linear-gradient()": {
+        "grammar": "294f5701508b21212d132ac09be144e1e1ba571cbeb9081107e22c95acfcd6c5",
+        "status": "deferred"
+      },
+      "linear-gradient-syntax": {
+        "grammar": "2c4154d99ffc0feecca2d8b38d64c824e781f679151351444d957eb4c1351d92",
+        "status": "deferred"
+      },
+      "log()": {
+        "grammar": "51a3841d16f59fc14c84f4ac8a23584eabef72f8865a00b59b10ac74df62cc9c",
+        "status": "deferred"
+      },
+      "mask-layer": {
+        "grammar": "aa0289607a5753e9fc8e650efa71b9a8b22fe11f6929e18d45795643972392c9",
+        "status": "deferred"
+      },
+      "mask-position": {
+        "grammar": "1443c9dbd937e4647bbf484b424e48a6a2763405cd39ae99e69e7fcf33fcb4a6",
+        "status": "deferred"
+      },
+      "mask-reference": {
+        "grammar": "344aff8bc2d189d6d56f55a802f6469e7df6d06fcb608ea40a0b47cd0a77c636",
+        "status": "deferred"
+      },
+      "mask-source": {
+        "grammar": "a938c3781db468fd3446d7ecf35f5892d643325274281a4238b9674f86409a0e",
+        "status": "deferred"
+      },
+      "masking-mode": {
+        "grammar": "2fc688e56cdd3a423ae8c0b92c608e30e9e3150d41374bf068b564063c7126fe",
+        "status": "deferred"
+      },
+      "matrix()": {
+        "grammar": "cf6d9dfb9ef2929d9e8bcfa9e4c82ed43c518f838f579cf20485c6793b23454c",
+        "status": "partial"
+      },
+      "matrix3d()": {
+        "grammar": "caf1f8fc23646b6c746c52fa8162bc2be2099a44ea5b974ed66bb920528bc112",
+        "status": "partial"
+      },
+      "max()": {
+        "grammar": "0006940ad61749d37ccc8fe33bd20fa564e7dc456f9e0a05bf34532fb3f4fb80",
+        "status": "partial"
+      },
+      "media-and": {
+        "grammar": "6db8ff96b01e51851c830be58aca7d30676924787f46ff43365b95cb4fe5844a",
+        "status": "deferred"
+      },
+      "media-condition": {
+        "grammar": "6a6b2350c17beac92ac4d5c6493e8bc170577002a5596965747953502c236cfa",
+        "status": "deferred"
+      },
+      "media-condition-without-or": {
+        "grammar": "bb803750db8a499494e9783cd908772190f5e3dd8c3db8478fd59d01d91e18e8",
+        "status": "deferred"
+      },
+      "media-feature": {
+        "grammar": "4201599eff8cb01cdf358bb93cb730a6f3046db68fb93d0b3d565a3c737b28b7",
+        "status": "deferred"
+      },
+      "media-in-parens": {
+        "grammar": "064303176ffe93e2ac6682251984809643d1e6959c0e51cd47b7d87211f412a6",
+        "status": "deferred"
+      },
+      "media-not": {
+        "grammar": "32a5b8e075d52833acfa3aad207951a8e997ab73d9960e8802efb9ba455219db",
+        "status": "deferred"
+      },
+      "media-or": {
+        "grammar": "746cdd807a246c1b31743d6867de5ae08a4ca65c73e2d9bfb6e397bd0cab1fec",
+        "status": "deferred"
+      },
+      "media-query": {
+        "grammar": "2a0d40784c016b3666f864a8d797dd51cbe71eb504b7be4f9cb4de6759b0316c",
+        "status": "deferred"
+      },
+      "media-query-list": {
+        "grammar": "14730df78c01f62f317fefc99c7c2a5d3f3bd41bb3c5c9501e26f586b1681620",
+        "status": "deferred"
+      },
+      "media-type": {
+        "grammar": "5e902aba16d4451f5b2c328048f07656b2d5b83e739e34096213f2bf719931b4",
+        "status": "deferred"
+      },
+      "mf-boolean": {
+        "grammar": "2971756611622ad2bb7e2bdc332f3e645e34949bacb7c0b1c8286a3a8d043f8c",
+        "status": "deferred"
+      },
+      "mf-name": {
+        "grammar": "5e902aba16d4451f5b2c328048f07656b2d5b83e739e34096213f2bf719931b4",
+        "status": "deferred"
+      },
+      "mf-plain": {
+        "grammar": "155dcabe7ac5924c6130fb99f93b9ac67a1ec0f243cf5cb082f20f339cba9e77",
+        "status": "deferred"
+      },
+      "mf-range": {
+        "grammar": "4ca3292eb9e24f29a6184cfb6a2e79f1a5f85c09b72888fa764f181c677dbbbf",
+        "status": "deferred"
+      },
+      "mf-value": {
+        "grammar": "5c02cc9d62d4ffaf5d9549926cca568897fb948353bcc98682754d38692ca6e9",
+        "status": "deferred"
+      },
+      "min()": {
+        "grammar": "57ebc7961b6e20fe313b6da2bd68bf9b4b510d34d0ca9214a25be4e3ff103ad2",
+        "status": "partial"
+      },
+      "minmax()": {
+        "grammar": "2ac9bd8e006bed95338b067c4bf53690fec5ba2070e723248cf8cd5b4577860c",
+        "status": "partial"
+      },
+      "mod()": {
+        "grammar": "25e3ee619aeb7cac127b34c792412025de012f1c85d2f06d19da86f4b2dc4564",
+        "status": "deferred"
+      },
+      "n-dimension": {
+        "grammar": "3ed19f6a3c4ab32954e37e4be215ea718dc815350a295c4ea731c5620dbbdda3",
+        "status": "deferred"
+      },
+      "name-repeat": {
+        "grammar": "3bb0cc69478d074e142554d2301b6b6f8715375013de7ea06230fb96ce4b7c7b",
+        "status": "deferred"
+      },
+      "named-color": {
+        "grammar": "bf0252b4186a5f5c02f3b223cdf9bb335690aeab740fbc90ecd4d16c64a530a9",
+        "status": "partial"
+      },
+      "namespace-prefix": {
+        "grammar": "5e902aba16d4451f5b2c328048f07656b2d5b83e739e34096213f2bf719931b4",
+        "status": "deferred"
+      },
+      "ndash-dimension": {
+        "grammar": "3ed19f6a3c4ab32954e37e4be215ea718dc815350a295c4ea731c5620dbbdda3",
+        "status": "deferred"
+      },
+      "ndashdigit-dimension": {
+        "grammar": "3ed19f6a3c4ab32954e37e4be215ea718dc815350a295c4ea731c5620dbbdda3",
+        "status": "deferred"
+      },
+      "ndashdigit-ident": {
+        "grammar": "2e252e528fd79587b710eac27146325a25405c1a189b4dc35031342dddb830f2",
+        "status": "deferred"
+      },
+      "ns-prefix": {
+        "grammar": "367b8213048c810cba1783f869673eb7ac1f77d4ad0ad915ad48558b7a75185e",
+        "status": "deferred"
+      },
+      "number-percentage": {
+        "grammar": "4d47e194bc1214adb497f633488ed71d8e32393d13659f8b3545c9467c079a7c",
+        "status": "deferred"
+      },
+      "numeric-figure-values": {
+        "grammar": "3459f9b34b3945635e7df8d00f77217f045760bdc6b3b57bf203977ed21cf4b6",
+        "status": "partial"
+      },
+      "numeric-fraction-values": {
+        "grammar": "67e12894d0912ef2e1e94ec297e21bb020513b89a13d89b01bde58f68216ee3b",
+        "status": "partial"
+      },
+      "numeric-spacing-values": {
+        "grammar": "facee8c447e485fc204e30f8f122d59bb0a20e84027b64332261f0ee36963d24",
+        "status": "partial"
+      },
+      "offset-path": {
+        "grammar": "563adf872e324f80f1c60595c0c5cda7d1918cab7aca20dc6a5bf4c73150e210",
+        "status": "deferred"
+      },
+      "oklab()": {
+        "grammar": "b9fbaa391a3b5e2d564994c2503ea3d149a5d1e5d593870871b0c2a323bd9274",
+        "status": "partial"
+      },
+      "oklch()": {
+        "grammar": "a4a35d3166048b8d51dd1526dfb0e47ff0cb8b41b620c1b8d41ff58b5dc7745d",
+        "status": "partial"
+      },
+      "opacity()": {
+        "grammar": "e5baa1d46ee5df0b72ee4740af122e733b6829fb1a3f47844e03e2906894dca4",
+        "status": "deferred"
+      },
+      "opacity-value": {
+        "grammar": "4d47e194bc1214adb497f633488ed71d8e32393d13659f8b3545c9467c079a7c",
+        "status": "deferred"
+      },
+      "outline-line-style": {
+        "grammar": "c2038ab5af512535f81b0d830db27618b06ab27f13cf3e691c81211abeef7b50",
+        "status": "deferred"
+      },
+      "outline-radius": {
+        "grammar": "ac56c078e06e3c1f8ea4bbb46f3a5355bfb8be39091bcecc18d60fabd07b736c",
+        "status": "deferred"
+      },
+      "overflow-position": {
+        "grammar": "ceb204fe3bad06f7a6dc0c2efb3a9087e870c62ad25ea5f906234b80c752b2a0",
+        "status": "deferred"
+      },
+      "page-body": {
+        "grammar": "444152bd42c9cd7273a8b0b543014e5d2680aa1dc75075238818babd13f8b943",
+        "status": "deferred"
+      },
+      "page-margin-box": {
+        "grammar": "b21c63a77f4b3bfb07200d9b1851769d9dcbf7f6de5bcc82a0f14bb204bf2a2d",
+        "status": "deferred"
+      },
+      "page-margin-box-type": {
+        "grammar": "f53466f3e898556035830d211e17aea61a349677ce61d55f8360b1876b3fe9bd",
+        "status": "deferred"
+      },
+      "page-selector": {
+        "grammar": "f3d3f4bfd5a2197fcd1fdb95cb2d66c0d7eab3c7e1023668d294ccd6222a9eec",
+        "status": "deferred"
+      },
+      "page-selector-list": {
+        "grammar": "2e24ff4b244379f1bbea99c1f3d0d73a00172ef799389a5542e97b35268039ea",
+        "status": "deferred"
+      },
+      "page-size": {
+        "grammar": "5b14927334169337b1d0f98e07a8e092889d18aaadb5f635071c9f097e2fdc77",
+        "status": "deferred"
+      },
+      "paint": {
+        "grammar": "8a0f6ed2b9911b3d5aefd358b9a7ee26d705d40292575d57de8cc68127732d03",
+        "status": "deferred"
+      },
+      "paint()": {
+        "grammar": "7edae579f9a1b95262083733f414905c1b470c31d6716456a1d281d49102b0f2",
+        "status": "deferred"
+      },
+      "paint-box": {
+        "grammar": "f8fc97e3904b930cb2eb96830c30b59d6dcb1b93340cf294ad937b9f548a750f",
+        "status": "deferred"
+      },
+      "palette-identifier": {
+        "grammar": "d75cee2a6cf1ea937cc2967b0a2991c992317e65ae19c9563a8b10ee7c7b76ae",
+        "status": "deferred"
+      },
+      "palette-mix()": {
+        "grammar": "c69fbadae766e2a0f5addf973d8d895c266fbb4f2b505384ae6cd8d1dc57169d",
+        "status": "deferred"
+      },
+      "path()": {
+        "grammar": "e1bd5133980b3483930e09d79bc9c277238795ac655efc1c45cb340e918bae55",
+        "status": "deferred"
+      },
+      "perspective()": {
+        "grammar": "2aa2563fc8ca40f1250860f1d32dbaf66bd7be5339f132929843629146172e98",
+        "status": "partial"
+      },
+      "polar-color-space": {
+        "grammar": "8b20d22db4a95ed7ce063ab4f141ead281d5d755c493f0d0ae43c3bfa5d12e2d",
+        "status": "deferred"
+      },
+      "polygon()": {
+        "grammar": "4f8179193ff6a874aaf522f3bd514eb2d98371d4159afc407b8d449ee2756973",
+        "status": "deferred"
+      },
+      "position": {
+        "grammar": "f3b4879b8c4a668d0e606bbe630e457e0edc464152f69ce7cc6bfe3b314f5f69",
+        "status": "deferred"
+      },
+      "position-area": {
+        "grammar": "5a67295f8aa793a1176ec5b649f46997166d899af43faf6b17ae432bd24cd3bb",
+        "status": "deferred"
+      },
+      "pow()": {
+        "grammar": "a9c04bdda5d64e32649a08706307d0bd10ac451839a9456f892a4d2ea9812127",
+        "status": "deferred"
+      },
+      "predefined-rgb": {
+        "grammar": "4abc4ab60c4b72c52f796dab4d9e08c21f0db5f541913c75eb3c9e719d2d7a6b",
+        "status": "deferred"
+      },
+      "predefined-rgb-params": {
+        "grammar": "e4d82b184564a8e5a12d3d74649b8520a30fba1a3b9993ace18d801c11a48ae7",
+        "status": "deferred"
+      },
+      "pseudo-class-selector": {
+        "grammar": "8209cd7a75828ee6d1bcd45752e38807a157c142c81701db474dee42866fd05e",
+        "status": "deferred"
+      },
+      "pseudo-element-selector": {
+        "grammar": "8a603b6270735dfca251c12477a1a97809ae18d273ce05ed047d0f7c4c31e6c6",
+        "status": "deferred"
+      },
+      "pseudo-page": {
+        "grammar": "6f58f0ef1efd42718647245339d7d23c6c91b0dfbb6361eb792a8f9c307ed265",
+        "status": "deferred"
+      },
+      "query-in-parens": {
+        "grammar": "a73396737e1e8dc6981e14215c9be8a69f715c3e98d60b4e586f9fea0f0fdfb6",
+        "status": "deferred"
+      },
+      "quote": {
+        "grammar": "5e248fa0e3fb0dad17194b546675030d250abd512e4a551d5d705cb7eea42128",
+        "status": "deferred"
+      },
+      "radial-extent": {
+        "grammar": "9c3ddfc0cfc6cab6d119bf58becd930e2ada9aa43b1550f3040577fc733c559a",
+        "status": "deferred"
+      },
+      "radial-gradient()": {
+        "grammar": "5cb8152e6519c2f146d413ae89a4829f432a611cc16f0a79f3183d11a768618a",
+        "status": "deferred"
+      },
+      "radial-gradient-syntax": {
+        "grammar": "0737f4e793f5d095cbf575e64c67ba21d32837a1102014bb89b9e405573c456a",
+        "status": "deferred"
+      },
+      "radial-shape": {
+        "grammar": "4c119d8b87f8cf861c2a873206bb979f5b8a0af30dc3bbe89e1159dbf4e5e4a6",
+        "status": "deferred"
+      },
+      "radial-size": {
+        "grammar": "581fb95604ffaf0c9c7bf8c617c8c3ac68889bf94f09350b9654d876ca1cf3ff",
+        "status": "deferred"
+      },
+      "ratio": {
+        "grammar": "6d4c4acba3d994cc79c7fd50ea8c7caf3a94321f398e8454b1a00654ae733da3",
+        "status": "partial"
+      },
+      "ray()": {
+        "grammar": "c3814551eb061c024a91c7d9a0d2564aae808daa81407740c05b9119080dca32",
+        "status": "deferred"
+      },
+      "ray-size": {
+        "grammar": "c2f664f581f6e37f22731394ff5b6188a91730ca39bb8a57ac7db2d25e5ad0cf",
+        "status": "deferred"
+      },
+      "rect()": {
+        "grammar": "8cf7b97099e5155485dfa3ca16eda17475908310f30e48244dd5e83d163878c3",
+        "status": "deferred"
+      },
+      "rectangular-color-space": {
+        "grammar": "f88590dfebc660c8008a78ed9e50b07047e895c639bde1f6cb4689d7b370d064",
+        "status": "deferred"
+      },
+      "relative-selector": {
+        "grammar": "955734ab86a14d2fb0810a6f0d7a7b8aa74e140168b4fdc9689b2cfcaf678ade",
+        "status": "deferred"
+      },
+      "relative-selector-list": {
+        "grammar": "5bbd1f6535904c081b60d8b07e3fb1e50cb8adf07209028a6bd1939213f20693",
+        "status": "deferred"
+      },
+      "relative-size": {
+        "grammar": "85066d052093c927d3c5b604d80271b4208872e45989c96facd1d46f051e034a",
+        "status": "deferred"
+      },
+      "rem()": {
+        "grammar": "c3c18ed5a20446911229136c64a465c8e61de45e4b7186d9c2019fbf3837c662",
+        "status": "deferred"
+      },
+      "repeat-style": {
+        "grammar": "b4af59c2aad2b917921b81d8c45541518b89153990916fdda603cea6993854db",
+        "status": "deferred"
+      },
+      "repeating-conic-gradient()": {
+        "grammar": "a302a2a4bf57284db9bd883d388267f1d13eec0ae1acdde12fa033bdfcf922b5",
+        "status": "deferred"
+      },
+      "repeating-linear-gradient()": {
+        "grammar": "eb1cad9c720df4d6fb0e9b2fc283b3a6d198b3b6a732bb339956ffa68e3be869",
+        "status": "deferred"
+      },
+      "repeating-radial-gradient()": {
+        "grammar": "4a9f12caecba3cfb5e7494b8bb251887aa3915e77c6778507f30891ec7352c9c",
+        "status": "deferred"
+      },
+      "reversed-counter-name": {
+        "grammar": "b66669048443a47d4bab895b33b9029f2600c73ac60c53c89919d70541ac7232",
+        "status": "deferred"
+      },
+      "rgb()": {
+        "grammar": "5b1eb34434ddf003eac949555791985b88ed1c6e112d6de8e87caba3e456e1d8",
+        "status": "partial"
+      },
+      "rgba()": {
+        "grammar": "c3b947bc569a60329ea7172548f3f989b1b41f91ef10040f8140b30ea30cd3df",
+        "status": "partial"
+      },
+      "rotate()": {
+        "grammar": "4f021c89727c5e02cac7f28891831b4e7cddd450bfb0b10487f42cf683753f6e",
+        "status": "partial"
+      },
+      "rotate3d()": {
+        "grammar": "cd146aff2a61e9adbdfcfb668d7dd2e2f6c5a93cfa6bb651c26e998c49e963b0",
+        "status": "partial"
+      },
+      "rotateX()": {
+        "grammar": "a853dd761780f18f6cc7bd28f7a6c1577da54501fa3406cdcc7647c422f30a6b",
+        "status": "partial"
+      },
+      "rotateY()": {
+        "grammar": "6f95086363162f1ccd9e24414ea63ce40b66657b06c412ed98898a7caec07d09",
+        "status": "partial"
+      },
+      "rotateZ()": {
+        "grammar": "9eb293348a47247e95aa917d40fdd98298a60ee666ac24972b3c0b7ea807c4bb",
+        "status": "partial"
+      },
+      "round()": {
+        "grammar": "296a64677568a201815f990b4e41b378fa9e8eb89ed65a8ce8ea3a87678bea1a",
+        "status": "deferred"
+      },
+      "rounding-strategy": {
+        "grammar": "ab0143ca0ae809517ac5783b4e2b705f813587b47678cbb2724295bdde81b5d4",
+        "status": "deferred"
+      },
+      "saturate()": {
+        "grammar": "21137ac5688d19f729bed28fed3f37e2b60be58ca29226b635f58a7a9059746e",
+        "status": "deferred"
+      },
+      "scale()": {
+        "grammar": "f9bddc90a7956176b02ab3932cffbd53d1d630a5537fa6a09a6ab9432f2e5fcb",
+        "status": "partial"
+      },
+      "scale3d()": {
+        "grammar": "e8993347e1f1e1a876fdc661bbba1cb387de83c2b292d036060297427edcdfe1",
+        "status": "partial"
+      },
+      "scaleX()": {
+        "grammar": "0f034e2f043a6688b486cc43c6fedaca55dfd2d5394e5c6c13abac25724105ed",
+        "status": "partial"
+      },
+      "scaleY()": {
+        "grammar": "8119306938a63e82f44f7d644a56e2c126335320cede718ff30c41a0e4840063",
+        "status": "partial"
+      },
+      "scaleZ()": {
+        "grammar": "b7c05bf99ad213f99a6faee7bbeb8dbb74176ac8b71a3ecd10c2a820374f5d7b",
+        "status": "partial"
+      },
+      "scope-end": {
+        "grammar": "fb3fad9239add485ebf21ae9368c51cc371a7f89400dd19b8b4ff134004941c6",
+        "status": "deferred"
+      },
+      "scope-start": {
+        "grammar": "fb3fad9239add485ebf21ae9368c51cc371a7f89400dd19b8b4ff134004941c6",
+        "status": "deferred"
+      },
+      "scroll()": {
+        "grammar": "0db0597f6ee76c7cb2d6117509a93c4145b2e18b7a5ff18f160c3c5303270762",
+        "status": "deferred"
+      },
+      "scroll-state-feature": {
+        "grammar": "613f7d048311b1e553bd86bcdb97a001e8e494d1aa926cf2c18697b7fdabda74",
+        "status": "deferred"
+      },
+      "scroll-state-in-parens": {
+        "grammar": "25a6ec4c302c4a048669de7f58e8888c1dfcd349b822f72b8af00cb38de87701",
+        "status": "deferred"
+      },
+      "scroll-state-query": {
+        "grammar": "65781b0f917568790396a96870880ea4d5a6db2653e3e58882a56857356feb2b",
+        "status": "deferred"
+      },
+      "scroller": {
+        "grammar": "88ba8784017eaa47fa7e2bda4a7b3f1201c86880f82d98b2342ddbd5a7322246",
+        "status": "deferred"
+      },
+      "selector-list": {
+        "grammar": "899bdca606add1fb98b88570b9ba67b7314a308604c0f7b8a76004a235d6666d",
+        "status": "deferred"
+      },
+      "self-position": {
+        "grammar": "6c555f8cda319df6e78d49f1ee00e58932a655ff3c4c4c19040e3321fdf83012",
+        "status": "deferred"
+      },
+      "sepia()": {
+        "grammar": "8568bfa375c4361f6a8bf45f7f6ab3da20871649538b55cde559d3c53c50a786",
+        "status": "deferred"
+      },
+      "shadow": {
+        "grammar": "5bf633fc9b36762c53ed5a36016da2b9fdba34b8048d26a03b8335501c213658",
+        "status": "deferred"
+      },
+      "shadow-t": {
+        "grammar": "fd970cc01273e9c6103c8a5c54d54dc0c99a990e8a40b1083225a0aa5e92599c",
+        "status": "deferred"
+      },
+      "shape": {
+        "grammar": "bf172f8162775c7e0630d5d316931a3eea2a19c979f2226418535b1a76094a90",
+        "status": "deferred"
+      },
+      "shape-box": {
+        "grammar": "211f6599abaed16305d39830f7b913ea823ae9a1d8de8a7dbca40a5eb4dd72f6",
+        "status": "deferred"
+      },
+      "side-or-corner": {
+        "grammar": "96983db2be0982d10aa5643a1bd97a53a57a405669d3b0bc80bd8e0376e3ab33",
+        "status": "deferred"
+      },
+      "sign()": {
+        "grammar": "754945b2e4abd5a54fcfd13ccc8c035e82be80e593ea073d621b630b6f660a85",
+        "status": "deferred"
+      },
+      "signed-integer": {
+        "grammar": "630b4ba924f1ef2c7ee021a9cce8ce89886d6d723ba7596c91815f233a1b0943",
+        "status": "deferred"
+      },
+      "signless-integer": {
+        "grammar": "630b4ba924f1ef2c7ee021a9cce8ce89886d6d723ba7596c91815f233a1b0943",
+        "status": "deferred"
+      },
+      "sin()": {
+        "grammar": "b5601857e7bb3d61cfb47969d0f765dd2d3e3eb9cdcc9504e20535314b0c2011",
+        "status": "deferred"
+      },
+      "single-animation": {
+        "grammar": "bfe79d5488f9967622527e156ff0de68733c2da73337ff2362f7f47e529018a7",
+        "status": "deferred"
+      },
+      "single-animation-composition": {
+        "grammar": "8678e0090f6f37aab51609e14c77dc332384f5cafc610242940a076cd7e58e03",
+        "status": "deferred"
+      },
+      "single-animation-direction": {
+        "grammar": "a531be41dd01d133fb2a43392646c77b1cd54b57c6f1dcc69eaed49943a0126e",
+        "status": "deferred"
+      },
+      "single-animation-fill-mode": {
+        "grammar": "3b333febfeb51060076a6473578b369eb962d36e3cce6434a8f3c8f3653f6b6c",
+        "status": "deferred"
+      },
+      "single-animation-iteration-count": {
+        "grammar": "8875d17e13c51c03b5c274f6edd9ee967cede75e55a6ac58e9d7128888cdd65c",
+        "status": "deferred"
+      },
+      "single-animation-play-state": {
+        "grammar": "e59e7ef448f6da7e4a033af96d7636c7550c7d3d50924c5207646fc5640971c8",
+        "status": "deferred"
+      },
+      "single-animation-timeline": {
+        "grammar": "d74df1580512fa363af6a6f85e58ab587f4b153d470a8ab1ccacb2a6359e5213",
+        "status": "deferred"
+      },
+      "single-transition": {
+        "grammar": "48ff0a7076122670d7d5c541b9d3faadf4a6c20a2c7f50536c09fe5275afee86",
+        "status": "deferred"
+      },
+      "single-transition-property": {
+        "grammar": "55393d080123a6311ed65929819bdab6c57f4123401ae61b5c5d318a915f29d7",
+        "status": "deferred"
+      },
+      "size": {
+        "grammar": "7e2837ed46ed7763e585524d4ea41f545690c50e0d00effc5c0110232315ae6d",
+        "status": "deferred"
+      },
+      "size-feature": {
+        "grammar": "613f7d048311b1e553bd86bcdb97a001e8e494d1aa926cf2c18697b7fdabda74",
+        "status": "deferred"
+      },
+      "skew()": {
+        "grammar": "9eae1bbe56b7df71d3a15ef3b07de2d2d7dad99638a77cb8c89455194a53e487",
+        "status": "partial"
+      },
+      "skewX()": {
+        "grammar": "3713630a65bf39702fbb9401656d2911d8925259bda5b2f1cda5f350ac2c4b12",
+        "status": "partial"
+      },
+      "skewY()": {
+        "grammar": "a236b425216eecaa5eb00692ef79a476082e0bed7235db79b7d77e1b50f5a532",
+        "status": "partial"
+      },
+      "sqrt()": {
+        "grammar": "271cbcee665689009197d3f3d7509cd686a37198bef1ce7d66c82be7d8bb2e92",
+        "status": "deferred"
+      },
+      "step-easing-function": {
+        "grammar": "a9ac65bbea10cf8f08dac3090dffc0a3723add478d4d8d333e25812170b17e29",
+        "status": "partial"
+      },
+      "step-position": {
+        "grammar": "3d00c386a8e4bafcb5f754083edfb7bea07ef76a8b8dfe1d3ff2252d953ba10a",
+        "status": "deferred"
+      },
+      "steps()": {
+        "grammar": "13da83d1c53b0b2fc88f7fc7a102ee0eb6054c6f1e266de407a15bc83c531b97",
+        "status": "partial"
+      },
+      "style-feature": {
+        "grammar": "cb223a11082927ee25582a7d217bb88e5f709260950ae9b7165ce00f998b11b6",
+        "status": "deferred"
+      },
+      "style-in-parens": {
+        "grammar": "3068e709bfc391aa87ced198fa1d14381e83ee3a1d406e02c86e087a6b12ac1a",
+        "status": "deferred"
+      },
+      "style-query": {
+        "grammar": "c7af8ffcf559ed8fe96ca1b4bb7193bddcc460acc4d1c8ba5198eae5b3752551",
+        "status": "deferred"
+      },
+      "subclass-selector": {
+        "grammar": "062ba457fb6a9f7f85cf7e835def193653bd4d50eaa33abba883461310758c68",
+        "status": "deferred"
+      },
+      "superellipse()": {
+        "grammar": "f7fca2f5373f06b6659bc8b7d3ac14ae6e1861aa8cd3572fe42e6b58ac9eef5d",
+        "status": "deferred"
+      },
+      "supports-condition": {
+        "grammar": "ab19d4f527a127083867eb321c6b62b292442fdcececdbba1212836b1697ba6b",
+        "status": "deferred"
+      },
+      "supports-decl": {
+        "grammar": "b7cbb20017683eb24a2c332912a36b7a3d8328cfcead5d9444936dc3c4e7c62b",
+        "status": "deferred"
+      },
+      "supports-feature": {
+        "grammar": "1c3969133e8b7863b1a918bb1a255d50d832e40b6c1da793e7da582e41312fcd",
+        "status": "deferred"
+      },
+      "supports-in-parens": {
+        "grammar": "141171d76f423498f3e2b88a5a03ff7591bbbb3be08f11dcbe314511d4eeea64",
+        "status": "deferred"
+      },
+      "supports-selector-fn": {
+        "grammar": "9921f25f5701c6082d7583479a3a44a4707ab9774a9aed37d9255dd533f8cd51",
+        "status": "deferred"
+      },
+      "symbol": {
+        "grammar": "fdcdc9596b308a2d555422b656e1e5a166b008b3a01c1ae4e9cc6c409e34d3b1",
+        "status": "deferred"
+      },
+      "symbols()": {
+        "grammar": "88e7e9ea46e0ffe86dc3b0ad71d2f99613e9cc64e92702c008dfba9c90b47e2a",
+        "status": "deferred"
+      },
+      "symbols-type": {
+        "grammar": "25d7a8543093e0c69ddaa044e090af6a28104d474f6706ac40ae7069e2d5d9bd",
+        "status": "deferred"
+      },
+      "system-color": {
+        "grammar": "c0bb38f9877c8ac9b74c8896cb7d8aa4c2a2bc9a904c274b3051afde6d593098",
+        "status": "partial"
+      },
+      "system-family-name": {
+        "grammar": "ac753cfc235359e05d35736df370d4f77b0a6a528cc1e1489cb536957d941395",
+        "status": "deferred"
+      },
+      "tan()": {
+        "grammar": "4012d2cf5ed5cce4bcc9fc98b1011e52fe469d8c6d0fbb4bbc16ec37d8f646ae",
+        "status": "deferred"
+      },
+      "target": {
+        "grammar": "3f7849046ddeef4f7ab72859b6bd356780bde878266960b97cfc6f9aa6088051",
+        "status": "deferred"
+      },
+      "target-counter()": {
+        "grammar": "fef785326a698588bbc7924b6fa78087a9d69c7f233251bb9695b2c8e0ce895c",
+        "status": "deferred"
+      },
+      "target-counters()": {
+        "grammar": "17913b8a617508eb1db9767dd8507dc4a430eb30b3db14de0f535bdf050e9171",
+        "status": "deferred"
+      },
+      "target-text()": {
+        "grammar": "bd2eb14013ade43e046a12c5e4a0ae0207cb5c7d01082e2933793ab4f45421df",
+        "status": "deferred"
+      },
+      "text-edge": {
+        "grammar": "e99bb4b94f7bc134588255704ef601af7df7745543f2af29a00c68e7caf68697",
+        "status": "deferred"
+      },
+      "time-percentage": {
+        "grammar": "509f486cfa93cfbef034bde5fa2821a6dc643421b5d269ff26d44f8f0f51003e",
+        "status": "deferred"
+      },
+      "timeline-range-name": {
+        "grammar": "d2e4cd0e87f837493c607e65024f7a41b7a86c7af5cabbf8122165ecc178a7c8",
+        "status": "deferred"
+      },
+      "track-breadth": {
+        "grammar": "8c281a930dc302bceb94b89c1de1f2957f7ac579e6575854e7693d710f4c8d7d",
+        "status": "deferred"
+      },
+      "track-list": {
+        "grammar": "6259dc1f9946740fa543600f21f65700f2b4d1287cebdc16864099c9f7282c92",
+        "status": "partial"
+      },
+      "track-repeat": {
+        "grammar": "25926afda001110f2f0f3dc1e2bc1cc5a06b63160b688e781900a7a814f844b3",
+        "status": "deferred"
+      },
+      "track-size": {
+        "grammar": "c235b90d00197f248c0ecdd2b0b5af76aacbbcb836172b15588d53f68dc1f5ac",
+        "status": "partial"
+      },
+      "transform-function": {
+        "grammar": "37bbf241b4a326d7952b91ef6f08463044e2035c39e4f544117400aa74850417",
+        "status": "partial"
+      },
+      "transform-list": {
+        "grammar": "257f2f9dba07ec9be7c0a381d7bed2317ed77535e6fe58c4be3a5b1acfa14fdf",
+        "status": "partial"
+      },
+      "transition-behavior-value": {
+        "grammar": "395b238e78b972d605e314eb547fc93543e23d3347df56240c8bda917cc6fe6f",
+        "status": "deferred"
+      },
+      "translate()": {
+        "grammar": "00e63d81115fdcb2fd39b3cdecb973d15a700e1b844c5d2904d0b523297bc6d0",
+        "status": "partial"
+      },
+      "translate3d()": {
+        "grammar": "154a1b48c6b9771e3b041d850fd889c921af073165d33cc98e54077e6548cb88",
+        "status": "partial"
+      },
+      "translateX()": {
+        "grammar": "a9a26e2b996e0a2cae5979582f1aac0b356e55feb15df8e2d43d9a1fe448a1b3",
+        "status": "partial"
+      },
+      "translateY()": {
+        "grammar": "725aa6539c873db633cbc1f4918a7fa386207d1cfaaa5f53163e2e670371762b",
+        "status": "partial"
+      },
+      "translateZ()": {
+        "grammar": "4c7285503c8fa5aa9b8c255fa5d79370c52de89ec7ff2c686cdbcf3cc3ccf01a",
+        "status": "partial"
+      },
+      "try-size": {
+        "grammar": "214b85e09f43c2d756a0a80960aaf7f2cdb31f7300bce6b1a00f5bf5914f2d73",
+        "status": "deferred"
+      },
+      "try-tactic": {
+        "grammar": "efac7bbeeccbbeba53831e922852ff46241dbfc9abf7c2a309bff314204bad61",
+        "status": "deferred"
+      },
+      "type-or-unit": {
+        "grammar": "4965e0942c9fcf99fb0d367e4be37672e0e111b7cb73e25728f13535e592cf3f",
+        "status": "deferred"
+      },
+      "type-selector": {
+        "grammar": "e903c78396a313bf0e07d2def83dc3a659575ecf7196ab68fcf47f3d07da6805",
+        "status": "deferred"
+      },
+      "var()": {
+        "grammar": "84262feff8b8f27429049eed434690984fbb5e4069d3dad853b01f87d9ee2d92",
+        "status": "partial"
+      },
+      "view()": {
+        "grammar": "79394af59c6f38ce1345e63c6e98d061ef1a5aca71b34e21da668abec06be378",
+        "status": "deferred"
+      },
+      "viewport-length": {
+        "grammar": "fb47ad117f3aa528be720babbcc93ad548d3a54018a204adc2a058f7bc11de53",
+        "status": "deferred"
+      },
+      "visual-box": {
+        "grammar": "728167958fb95391c8a50f4588a157bd798c5a02599557b4b5e5022d00b5ca5f",
+        "status": "deferred"
+      },
+      "wq-name": {
+        "grammar": "ef3b1f6f53faef4a74adc849513158de7e15c70abe8db50992ad7ebfe8df24c2",
+        "status": "deferred"
+      },
+      "xywh()": {
+        "grammar": "95b5589629cbe2dc5011a82dece00ee7a6940ffa5e749eafd2e9566551997fdd",
+        "status": "deferred"
+      },
+      "xyz": {
+        "grammar": "2472b87f259fd30c4662411967fc26b1f8984fab220d9e6f8399d319d34577be",
+        "status": "deferred"
+      },
+      "xyz-params": {
+        "grammar": "12d67ee5a95b9bd92a5e982b2a276a03477d1eb53822077924f54a32f0d13236",
+        "status": "deferred"
+      }
+    },
+    "types": {
+      "angle": {
+        "grammar": "1ef71a02b694ffb85032c4c2d66305e62136958456ed82cd8bcf8075b52c764f",
+        "status": "deferred"
+      },
+      "angle-percentage": {
+        "grammar": "b0a95cd7a53fae20bacfdadfe21bd4ef56fe2490529a39983754af6aa98ecf6c",
+        "status": "deferred"
+      },
+      "basic-shape": {
+        "grammar": "b64ec897e6fd8f6007762b2ac40cfba76e6fd6181969422838bba833ceaba977",
+        "status": "deferred"
+      },
+      "blend-mode": {
+        "grammar": "e9922e237292834581c99b9263bd51f669088921919269ac3d8ec54055679eb2",
+        "status": "deferred"
+      },
+      "color": {
+        "grammar": "ec0c8735c5fc730f7b78b7cd848649181488d18861e5a81673b367225ce645bc",
+        "status": "deferred"
+      },
+      "custom-ident": {
+        "grammar": "c2caa496048766da516b46cc2920670ddece9cb3f9d73dc18762a8d6f78ef5f6",
+        "status": "partial"
+      },
+      "dashed-ident": {
+        "grammar": "6b9abcdc4d227444aeebbe08739866f912d3809a642cee8690093c95ea3c3659",
+        "status": "partial"
+      },
+      "dimension": {
+        "grammar": "8082977abd43fe0d63907d5956bd9a216b9bbaddcafc339c57cfcf12b3807658",
+        "status": "deferred"
+      },
+      "display-box": {
+        "grammar": "1b7328285424e6fc8950b254da093ccd713036c96b73bdee62bd3a8526ce4506",
+        "status": "deferred"
+      },
+      "display-inside": {
+        "grammar": "7ec5c54382153255ee718caabed015b0ca9e97c384695f0ec274e58e8570e5ac",
+        "status": "deferred"
+      },
+      "display-internal": {
+        "grammar": "1bf000e24188f0bcee7d1c9caedea3bb07c9435cde5489e0543294c210060957",
+        "status": "deferred"
+      },
+      "display-legacy": {
+        "grammar": "f262e22091ecbd07828dc3dfcfb5b9ba13061bb7c5f977bd0165a07aa74a660d",
+        "status": "deferred"
+      },
+      "display-listitem": {
+        "grammar": "eeda114423e20befecab2af1f3437cc4aed125609d27255cd40170192dec6001",
+        "status": "deferred"
+      },
+      "display-outside": {
+        "grammar": "ac8c9799fa0b6190d688dd448c2e5fecd30520f650b8e932645f55f384478694",
+        "status": "deferred"
+      },
+      "easing-function": {
+        "grammar": "e6f1063c4b607445c649b52fbb5592b8249b8f3a591f2827894d7e38bd7844e9",
+        "status": "deferred"
+      },
+      "filter-function": {
+        "grammar": "b2bbb4c6c76b0ed457746ed05cc2927877db6e869187c3b85aae799345077a81",
+        "status": "deferred"
+      },
+      "flex": {
+        "grammar": "bb3d2fd278bcb42e73196914d2302dfc6fbaf50173de69c3800218c189338313",
+        "status": "deferred"
+      },
+      "frequency": {
+        "grammar": "2b1fe80c4b1ded27907bbc1b569275b8ebcc20bc665f7f6b9f4551077920abb5",
+        "status": "deferred"
+      },
+      "frequency-percentage": {
+        "grammar": "8b712bf81d38757a1ec7fd37ba96edb74db0cb2746cb5d4a59c367c402e2b462",
+        "status": "deferred"
+      },
+      "gradient": {
+        "grammar": "503f2384c6ba3e33f711588e4aa225a3bb44813a9693a3f83ecaac55adbef933",
+        "status": "deferred"
+      },
+      "ident": {
+        "grammar": "08140a2c9a791bfaddf15949a211493b2569815c18a46ccba469f300f5806422",
+        "status": "deferred"
+      },
+      "image": {
+        "grammar": "2ff6b95220a903f5a845669cc728a9bc4b09bb67993dc378c45fc1849f5b18b7",
+        "status": "deferred"
+      },
+      "integer": {
+        "grammar": "0abec8acaa220c1149d715a21915f49f70274cf23c8181a15f2d5d5946731813",
+        "status": "deferred"
+      },
+      "length": {
+        "grammar": "ab60db9e6b3291b509810ead41743eb06c28cf4cc22dfa32540ab8789ae70103",
+        "status": "deferred"
+      },
+      "length-percentage": {
+        "grammar": "da0aea8ac7c0d199545cb0db49677e9c06f6d3cc12dfd5d1cf391f29baa80a47",
+        "status": "deferred"
+      },
+      "line-style": {
+        "grammar": "2995ef06e2c4c3f437aba618117487a35fe596f02bea71fd4844393f2a2ed364",
+        "status": "deferred"
+      },
+      "number": {
+        "grammar": "b58923b8759be4171eadcc31a17e9b2a91fb22c56362ebb3bf1432aca224ec4f",
+        "status": "deferred"
+      },
+      "overflow": {
+        "grammar": "557a319ce7ff8957af1fb5a078de4619b937b077c254e81ee93677b53fb42546",
+        "status": "deferred"
+      },
+      "percentage": {
+        "grammar": "602496d97a5e445d85769022d0494d71f71495c2692985953f36a563f87da80c",
+        "status": "deferred"
+      },
+      "position": {
+        "grammar": "77811624bee03508376b17b7ace6458d7c88bac1b8d61493240accddd393d059",
+        "status": "deferred"
+      },
+      "ratio": {
+        "grammar": "277cd06c772c5477c73b2c2cf989d498aefd660e86c48a781b70398f9d1be021",
+        "status": "deferred"
+      },
+      "resolution": {
+        "grammar": "36288bdd22489e8aed0ab91bc6900279464c318ebbe359011ece3165754e5e4a",
+        "status": "deferred"
+      },
+      "shape": {
+        "grammar": "fe401024a60fa91671ffbf6578433aea637cb3074fc1a942a89d3b3cf02acaba",
+        "status": "deferred"
+      },
+      "string": {
+        "grammar": "910f813fb12053affea792e9386aafc5f076db2a8ce2e21465aee70cbf68532b",
+        "status": "deferred"
+      },
+      "text-edge": {
+        "grammar": "bad447f87bd47682391f0da5bf2e736820245439190c8efe44805715f971f7f0",
+        "status": "deferred"
+      },
+      "time": {
+        "grammar": "618fc1382756adb224a4dc5870053625cc03aaaf734f1b4b7caa8839a5695229",
+        "status": "deferred"
+      },
+      "time-percentage": {
+        "grammar": "31d1c6337d46e18d2f1c92b335f599e1742eb42c4c9b3f719a4490c3f21943c9",
+        "status": "deferred"
+      },
+      "transform-function": {
+        "grammar": "9df5a3211c825142dab83e2d4c6bfb99785f31bf732dd13f2bdf674a2a5c01a9",
+        "status": "deferred"
+      },
+      "url": {
+        "grammar": "b3d2da8e808a55c477684202cbcf182717c4e41bc77f822c58e15e7c5f6be80f",
+        "status": "deferred"
+      }
+    },
+    "units": {
+      "Hz": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "Q": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "cap": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "ch": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "cm": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "deg": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "dpcm": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "dpi": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "dppx": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "em": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "ex": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "fr": {
+        "grammar": "5caa937f6dab56a8b8494db95379c099d8653d11d1976207f70db34bc11aeda1",
+        "status": "deferred"
+      },
+      "grad": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "ic": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "in": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "kHz": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "mm": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "ms": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "pc": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "pt": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "px": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "rad": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "rem": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "s": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "turn": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "vh": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "vmax": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "vmin": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "vw": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      },
+      "x": {
+        "grammar": "b49f995043b8c2a91b4c9c9ac48233e448e84c1351160351a11925acc23d2b41",
+        "status": "deferred"
+      }
     }
-    if (char === '\\') {
-      const next = key[++index]
-      if (next === undefined) throw new Error('Incomplete condition escape.')
-      if (next !== '\n' && next !== '\r' && next !== '\f') output += char + next
-      else if (next === '\r' && key[index + 1] === '\n') index++
-      continue
-    }
-    if (quote) {
-      output += char
-      if (char === quote) quote = ''
-      continue
-    }
-    if (char === '"' || char === "'") quote = char
-    else if (char === '(' || char === '[') stack.push(char === '(' ? ')' : ']')
-    else if (char === ')' || char === ']') {
-      if (stack.pop() !== char)
-        throw new Error('Unbalanced condition delimiters.')
-    } else if (char === '{' || char === '}')
-      throw new Error('Unexpected condition block delimiter.')
-    else if (char === '&') scoped = true
-    else if (char === ',' && !stack.length && !key.startsWith('@')) {
-      if (!scoped)
-        throw new Error('Selector lists require explicit & selectors.')
-      scoped = false
-      list = true
-    }
-    output += /[\n\r\f]/.test(char) ? ' ' : char
-  }
-  if (quote || stack.length) throw new Error('Unbalanced condition delimiters.')
-  if (list && !scoped)
-    throw new Error('Selector lists require explicit & selectors.')
-  return output
-}
-
-/** Identifies conservative same-element selectors for private inline callback variables. */
-export function local(key: string): boolean {
-  if (key.startsWith('@')) return true
-  let nesting = 0
-  let quoted = ''
-  for (let index = 0; index < key.length; index++) {
-    const char = key[index]!
-    if (!quoted && char === '/' && key[index + 1] === '*') {
-      const end = key.indexOf('*/', index + 2)
-      if (end < 0) return false
-      index = end + 1
-      continue
-    }
-    if (char === '\\') {
-      index++
-      continue
-    }
-    if (quoted) {
-      if (char === quoted) quoted = ''
-      continue
-    }
-    if (char === '"' || char === "'") quoted = char
-    else if (char === '(' || char === '[') nesting++
-    else if (char === ')' || char === ']') nesting--
-    else if (char === ',' && !nesting)
-      return (
-        local(key.slice(0, index).trim()) && local(key.slice(index + 1).trim())
-      )
-  }
-  if (!key.startsWith('&') && (!key.startsWith(':') || nested(key)))
-    return false
-  let depth = 0
-  let quote = ''
-  for (let index = 0; index < key.length; index++) {
-    const char = key[index]!
-    if (!quote && char === '/' && key[index + 1] === '*') {
-      const end = key.indexOf('*/', index + 2)
-      if (end < 0) return false
-      index = end + 1
-      continue
-    }
-    if (char === '\\') {
-      index++
-      continue
-    }
-    if (quote) {
-      if (char === quote) quote = ''
-      continue
-    }
-    if (char === '"' || char === "'") {
-      quote = char
-      continue
-    }
-    if (!depth && char === ':' && key[index + 1] === ':') {
-      const name = /^::([a-z-]+)/i.exec(key.slice(index))?.[1]?.toLowerCase()
-      if (
-        !name ||
-        ![
-          'before',
-          'after',
-          'first-letter',
-          'first-line',
-          'marker',
-          'placeholder',
-          'selection',
-        ].includes(name)
-      )
-        return false
-    }
-    if (char === '(' || char === '[') depth++
-    else if (char === ')' || char === ']') depth--
-    else if (!depth && (/[\s+~>,]/.test(char) || (char === '&' && index !== 0)))
-      return false
-  }
-  return true
+  },
+  "version": "2.35.0"
 }

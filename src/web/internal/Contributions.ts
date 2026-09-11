@@ -142,8 +142,8 @@ export function render(
   return [
     layers.length ? `@layer ${layers.join(',')};` : '',
     ...definitions.map((value) => {
+      if (value.kind === 'layers') return ''
       const css = (() => {
-        if (value.kind === 'layers') return ''
         if (value.kind === 'block')
           return `${value.header}{${Block.render(value.entries, style)}}`
         if (value.kind === 'rule')

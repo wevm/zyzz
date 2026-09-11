@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Graph } from 'zyzz/compiler'
+import { Graph, Source } from 'zyzz/compiler'
 
 describe('create', () => {
   test('rejects selectors on configurations without named catalogs', () => {
@@ -41,6 +41,48 @@ describe('create', () => {
       `${bundle.outputFiles[0]!.text};Fixture.selected`,
     )
     expect(value.style.colorScheme).toMatchInlineSnapshot('"dark"')
+  })
+  test('preserves legacy static catalogs while rejecting callable selection', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}}}})`,
+      },
+    })
+    const legacy = JSON.parse(library.contracts['config.ts']!)
+    legacy.version = 2
+    const contracts = { 'lib.js': JSON.stringify(legacy) },
+      imports = { 'app.ts': { lib: 'lib.js' } }
+    const staticOutput = Graph.compile({
+      contracts,
+      imports,
+      modules: {
+        'app.ts': `import {config} from 'lib';export const name=config.themes.base.className`,
+      },
+    })
+    expect(
+      staticOutput.modules['app.ts']!.code.includes('z_theme'),
+    ).toMatchInlineSnapshot('true')
+    for (const source of [
+      `import {config} from 'lib';config.themes({theme:'base'})`,
+      `import {config} from 'lib';const {themes}=config;themes({theme:'base'})`,
+    ])
+      expect(() =>
+        Graph.compile({ contracts, imports, modules: { 'app.ts': source } }),
+      ).toThrow(Source.ExtractError)
+    const forwarded = Graph.compile({
+      contracts,
+      imports,
+      modules: { 'app.ts': `export {config} from 'lib'` },
+    })
+    expect(() =>
+      Graph.compile({
+        contracts: { 'forward.js': forwarded.contracts['app.ts']! },
+        imports: { 'main.ts': { forward: 'forward.js' } },
+        modules: {
+          'main.ts': `import {config} from 'forward';config.themes({theme:'base'})`,
+        },
+      }),
+    ).toThrow(/legacy catalog is not callable/)
   })
   test('rejects unchecked selector names, fields, and schemes', async () => {
     const graph = Graph.compile({

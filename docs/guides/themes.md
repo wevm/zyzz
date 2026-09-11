@@ -7,7 +7,7 @@ Define shared tokens, apply theme scopes, and choose light or dark mode. See [Ge
 ### Use Themes
 
 > [!NOTE]
-> Config authoring is a preview. For current support, see [Compile Local Theme Source](#compile-local-theme-source).
+> Config-bound CSS and named theme selection are implemented through Vite and the graph compiler. Variants retain a separate implementation gate. See [Compile Local Theme Source](#compile-local-theme-source) for the standalone transform boundary.
 
 Export bound helpers directly from the config:
 

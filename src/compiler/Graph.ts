@@ -559,8 +559,8 @@ function build(options: compile.Options, cache?: Cache): Cache {
   )
   const layerNames = [
     ...new Set(
-      [...sections.values()].flatMap((sections) =>
-        sections.flatMap((section) => section.layers.flat()),
+      ids.flatMap((id) =>
+        reachable(id).flatMap((section) => section.layers.flat()),
       ),
     ),
   ].filter((name) => name !== 'reset')

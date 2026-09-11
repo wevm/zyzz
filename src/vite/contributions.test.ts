@@ -9,6 +9,38 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
 describe('zyzz', () => {
+  test('links local theme imports with Vite timestamp queries', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-timestamp-vite-'))
+    let server: Vite.ViteDevServer | undefined
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'theme.ts'),
+        `import {Theme} from 'zyzz';export const theme=Theme.define({color:{brand:'red'}});`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import {css} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export const styles={card:css({color:theme.tokens.color.brand})};`,
+      )
+      server = await Vite.createServer({
+        root,
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [zyzz()],
+        server: { port: 0 },
+      })
+      await server.listen()
+      const transformed = await server.transformRequest('/app.ts')
+      expect(transformed!.code.includes('theme.tokens')).toMatchInlineSnapshot(
+        `false`,
+      )
+      const shared = await server.transformRequest('\0zyzz:shared.css')
+      expect(shared!.code.includes('red')).toMatchInlineSnapshot(`true`)
+    } finally {
+      await server?.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('retains asset ownership through a repacked nested dependency', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-repacked-vite-'))
     const external = await Fs.mkdtemp(Path.join(Os.tmpdir(), 'zyzz-sidecar-'))

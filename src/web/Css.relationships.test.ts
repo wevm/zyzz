@@ -7,6 +7,26 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 import { Marker } from 'zyzz/runtime'
 describe('marker', () => {
+  test('preserves statically computed non-marker namespace destructuring', () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {Css} from 'zyzz/web';const {['compile']:compile}=Css;export {compile};`,
+      },
+    })
+    expect(result.modules['app.ts']!.code).toMatchInlineSnapshot(
+      `"import {Css} from 'zyzz/web';const {['compile']:compile}=Css;export {compile};"`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {Css} from 'zyzz/web';const {['marker']:marker}=Css;export const card=marker();`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:35: Marker helpers require direct Css member calls.]`,
+    )
+  })
+
   test('rejects destructured factories and canonically sorts packed state domains', () => {
     expect(() =>
       Graph.compile({

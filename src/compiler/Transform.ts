@@ -270,19 +270,6 @@ export function compile(options: compile.Options): compile.ReturnType {
       : ''
     module.overwrite(alias.start, alias.end, `(${value}${assertion})`)
   }
-  for (const reference of extracted.staticThemeReferences ?? [])
-    module.overwrite(
-      reference.start,
-      reference.end,
-      JSON.stringify(reference.value),
-    )
-  for (const reference of extracted.themeReferences)
-    module.overwrite(
-      reference.start,
-      reference.end,
-      JSON.stringify(emitted.themes[reference.name]),
-    )
-
   const replacements = [
     ...extracted.calls.map((call) => ({
       end: applications.get(call.start)!.end,
@@ -293,8 +280,6 @@ export function compile(options: compile.Options): compile.ReturnType {
     ...(extracted.variableCalls ?? []),
     ...extracted.themeAliases,
     ...extracted.themeCalls,
-    ...extracted.themeReferences,
-    ...(extracted.staticThemeReferences ?? []),
   ].sort((a, b) => a.start - b.start)
 
   function replaced(reference: Span) {
@@ -309,6 +294,27 @@ export function compile(options: compile.Options): compile.ReturnType {
     const call = replacements[low - 1]
     return call !== undefined && reference.end <= call.end
   }
+
+  for (const reference of extracted.staticThemeReferences ?? [])
+    if (!replaced(reference))
+      module.overwrite(
+        reference.start,
+        reference.end,
+        JSON.stringify(reference.value),
+      )
+  for (const reference of extracted.themeReferences)
+    if (!replaced(reference))
+      module.overwrite(
+        reference.start,
+        reference.end,
+        JSON.stringify(emitted.themes[reference.name]),
+      )
+
+  replacements.push(
+    ...extracted.themeReferences,
+    ...(extracted.staticThemeReferences ?? []),
+  )
+  replacements.sort((a, b) => a.start - b.start)
 
   for (const node of program.body) {
     if (

@@ -187,7 +187,7 @@ export function scan(
           node.id.properties.some(
             (property) =>
               property.type === 'RestElement' ||
-              property.computed ||
+              (property.computed && property.key.type !== 'Literal') ||
               [
                 'marker',
                 'ancestor',

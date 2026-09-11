@@ -8,6 +8,21 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 describe('compile', () => {
+  test('excludes unreachable library layers from reset ordering', () => {
+    const library = Graph.compile({
+      modules: {
+        'unused.ts': `import {layers} from 'zyzz/web';layers(['unused']);`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'unused.js': library.contracts['unused.ts']! },
+      modules: {
+        'app.ts': `import 'zyzz/reset.css';export const loaded=true;`,
+      },
+    })
+    expect(app.sharedCss).toMatchInlineSnapshot(`"@layer reset;"`)
+  })
+
   test('invalidates repacked ownership when only contract resolutions change', () => {
     const dependency = Graph.compile({
       modules: {

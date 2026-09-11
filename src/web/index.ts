@@ -10,3 +10,8 @@ export { fontFace } from './fontFace.js'
 export { global } from './global.js'
 export { keyframes } from './keyframes.js'
 export { layers } from './layers.js'
+
+export { colorProfile } from './colorProfile.js'
+export { counterStyle } from './counterStyle.js'
+export { fontPaletteValues } from './fontPaletteValues.js'
+export { positionTry } from './positionTry.js'

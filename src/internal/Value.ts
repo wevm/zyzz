@@ -2,6 +2,7 @@
  * Describes declaration fallbacks and separates importance from scalar values.
  * @module
  */
+import type * as RuleReference from './RuleReference.js'
 import type * as Grid from './Grid.js'
 import * as Lexical from './Lexical.js'
 import * as Literal from './Literal.js'
@@ -45,36 +46,37 @@ type Fold<value> = value extends string
 
 /** Refines concrete scalar spellings; already-broad property contracts need no literal refinement. */
 export type Checked<style, tokens = {}> = {
-  [property in keyof style]: Literal.Properties extends style
-    ? unknown
-    : property extends keyof typeof Literal.rules
-      ? style[property] extends (property extends
-          | 'gridArea'
-          | 'gridColumn'
-          | 'gridColumnEnd'
-          | 'gridColumnStart'
-          | 'gridRow'
-          | 'gridRowEnd'
-          | 'gridRowStart'
-          ? Fold<style[property]> extends Grid.Checked<
-              Fold<style[property]>,
-              property extends 'gridArea'
-                ? 4
-                : property extends 'gridColumn' | 'gridRow'
-                  ? 2
-                  : 1
+  [property in keyof style]: RuleReference.Check<style[property], property> &
+    (Literal.Properties extends style
+      ? unknown
+      : property extends keyof typeof Literal.rules
+        ? style[property] extends (property extends
+            | 'gridArea'
+            | 'gridColumn'
+            | 'gridColumnEnd'
+            | 'gridColumnStart'
+            | 'gridRow'
+            | 'gridRowEnd'
+            | 'gridRowStart'
+            ? Fold<style[property]> extends Grid.Checked<
+                Fold<style[property]>,
+                property extends 'gridArea'
+                  ? 4
+                  : property extends 'gridColumn' | 'gridRow'
+                    ? 2
+                    : 1
+              >
+              ? unknown
+              : never
+            : unknown) &
+            Check<
+              style[property],
+              Token.Names<tokens, property>,
+              (typeof Literal.rules)[property]
             >
-            ? unknown
-            : never
-          : unknown) &
-          Check<
-            style[property],
-            Token.Names<tokens, property>,
-            (typeof Literal.rules)[property]
-          >
-        ? unknown
-        : never
-      : unknown
+          ? unknown
+          : never
+        : unknown)
 }
 
 type Check<input, names, rule> = input extends readonly unknown[]

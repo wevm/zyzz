@@ -19,7 +19,7 @@ export function read(
   moduleId = '',
 ) {
   const data = record(JSON.parse(source))
-  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(data.version as number))
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
@@ -105,6 +105,37 @@ export function read(
                 ),
               }
             : {}),
+        },
+      }
+    }
+    if (entry.kind === 'rule-reference') {
+      const name = string(entry.name)
+      const reference = string(entry.reference)
+      if (
+        data.version !== 9 ||
+        ![
+          'colorProfile',
+          'counterStyle',
+          'fontPaletteValues',
+          'positionTry',
+        ].includes(reference) ||
+        !/^(?:--)?z-[a-z0-9-]+$/.test(name) ||
+        !name.startsWith(
+          `${reference === 'counterStyle' ? '' : '--'}z-${reference.toLowerCase()}`,
+        ) ||
+        entry.binding !== name
+      )
+        throw new Error('Invalid named stylesheet identity.')
+      return {
+        binding: string(entry.binding),
+        kind: 'rule-reference',
+        definition: Theme.define({}),
+        call: {
+          start: -1,
+          end: -1,
+          name,
+          tokenType: '{}',
+          reference: reference as NonNullable<Themes.Call['reference']>,
         },
       }
     }
@@ -283,6 +314,13 @@ export function write(
           ? { source: Stylesheets.relative(moduleId, link.call.variableOwner) }
           : {}),
       }
+    if (link.kind === 'rule-reference')
+      return {
+        binding: link.binding,
+        kind: link.kind,
+        name: link.call.name,
+        reference: link.call.reference,
+      }
     if (link.kind === 'animation')
       return { binding: link.binding, kind: link.kind, name: link.call.name }
     if (link.kind === 'marker')
@@ -335,57 +373,59 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(links).some((link) => link.kind === 'variables')
-      ? 8
-      : stylesheets.length ||
-          Object.values(links).some((link) => link.kind === 'animation')
-        ? 7
-        : Object.values(links).some((link) => link.kind === 'marker')
-          ? 6
-          : Object.values(themes).some(
-                (theme) =>
-                  theme[Token.definition].contract.shorthands ||
-                  Object.hasOwn(theme.tokens, 'margin') ||
-                  Object.hasOwn(theme.tokens, 'padding'),
-              ) ||
-              Object.values(links).some(
-                (link) =>
-                  link.call.output === 'html' ||
-                  Object.values(link.members ?? {}).some(
-                    (member) => member.call.output === 'html',
-                  ),
-              )
-            ? 5
-            : stylesheets.length ||
+    version: Object.values(links).some((link) => link.kind === 'rule-reference')
+      ? 9
+      : Object.values(links).some((link) => link.kind === 'variables')
+        ? 8
+        : stylesheets.length ||
+            Object.values(links).some((link) => link.kind === 'animation')
+          ? 7
+          : Object.values(links).some((link) => link.kind === 'marker')
+            ? 6
+            : Object.values(themes).some(
+                  (theme) =>
+                    theme[Token.definition].contract.shorthands ||
+                    Object.hasOwn(theme.tokens, 'margin') ||
+                    Object.hasOwn(theme.tokens, 'padding'),
+                ) ||
                 Object.values(links).some(
                   (link) =>
-                    link.call.selection ||
-                    (link.kind === 'config' && !!link.call.options?.themes) ||
-                    link.call.initialization ||
-                    (link.kind === 'config' && link.call.script) ||
-                    link.kind === 'marker' ||
-                    link.kind === 'animation' ||
-                    link.kind === 'variables',
+                    link.call.output === 'html' ||
+                    Object.values(link.members ?? {}).some(
+                      (member) => member.call.output === 'html',
+                    ),
                 )
-              ? 4
-              : Object.values(themes).some(
-                    (theme) =>
-                      theme[Token.definition].queries ||
-                      Object.keys(theme.tokens).some((group) =>
-                        [
-                          'fontFamily',
-                          'fontSize',
-                          'fontWeight',
-                          'lineHeight',
-                          'letterSpacing',
-                        ].includes(group),
-                      ),
+              ? 5
+              : stylesheets.length ||
+                  Object.values(links).some(
+                    (link) =>
+                      link.call.selection ||
+                      (link.kind === 'config' && !!link.call.options?.themes) ||
+                      link.call.initialization ||
+                      (link.kind === 'config' && link.call.script) ||
+                      link.kind === 'marker' ||
+                      link.kind === 'animation' ||
+                      link.kind === 'variables',
                   )
-                ? 3
-                : Object.values(links).some(
-                      (link) => link.kind === 'config' || link.call.type,
+                ? 4
+                : Object.values(themes).some(
+                      (theme) =>
+                        theme[Token.definition].queries ||
+                        Object.keys(theme.tokens).some((group) =>
+                          [
+                            'fontFamily',
+                            'fontSize',
+                            'fontWeight',
+                            'lineHeight',
+                            'letterSpacing',
+                          ].includes(group),
+                        ),
                     )
-                  ? 2
-                  : 1,
+                  ? 3
+                  : Object.values(links).some(
+                        (link) => link.kind === 'config' || link.call.type,
+                      )
+                    ? 2
+                    : 1,
   })
 }

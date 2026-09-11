@@ -41,7 +41,9 @@ export function compile(options: compile.Options): compile.ReturnType {
     module.overwrite(
       call.start,
       call.end,
-      call.kind === 'keyframes' ? JSON.stringify(call.name) : 'void 0',
+      call.name
+        ? `${JSON.stringify(call.name)}${call.kind === 'keyframes' ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
+        : 'void 0',
     )
   type Span = Pick<Ast.Node, 'end' | 'start'>
   const applications = new Map<number, { end: number; folded: boolean }>()
@@ -331,7 +333,17 @@ export function compile(options: compile.Options): compile.ReturnType {
         !(
           node.source.value === 'zyzz'
             ? ['Config', 'css', 'Theme', 'Vars']
-            : ['Css', 'global', 'fontFace', 'keyframes', 'layers']
+            : [
+                'Css',
+                'colorProfile',
+                'counterStyle',
+                'fontPaletteValues',
+                'global',
+                'fontFace',
+                'keyframes',
+                'layers',
+                'positionTry',
+              ]
         ).includes(
           specifier.imported.type === 'Identifier'
             ? specifier.imported.name

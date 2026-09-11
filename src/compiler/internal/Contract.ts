@@ -171,6 +171,7 @@ export function write(
     version: Object.values(links).some(
       (link) =>
         link.call.selection ||
+        (link.kind === 'config' && !!link.call.options?.themes) ||
         link.call.initialization ||
         (link.kind === 'config' && link.call.script),
     )

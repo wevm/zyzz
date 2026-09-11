@@ -15,3 +15,6 @@ export * as Html from './Html.js'
 
 /** Server-safe root appearance initialization script generation. */
 export * as Appearance from './Appearance.js'
+
+/** Validated selection of compiler-owned theme catalogs. */
+export * as Selection from './Selection.js'

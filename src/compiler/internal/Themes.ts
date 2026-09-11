@@ -762,6 +762,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
           (ancestors[index - 1] as Ast.CallExpression).callee === target &&
           !(ancestors[index - 1] as Ast.CallExpression).optional
         ) {
+          if (path[0] === 'themes' && !config.call.options?.themes)
+            fail('Theme selection requires a named catalog.', target)
           if (path[0] === 'script') {
             if (!config.call.script)
               fail(

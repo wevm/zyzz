@@ -116,6 +116,28 @@ describe('compile', () => {
       graph.modules['static.ts']!.code.includes('values:Values'),
     ).toMatchInlineSnapshot('false')
   })
+  test('keeps module type aliases when unrelated nested declarations shadow their names', () => {
+    const output = Graph.compile({
+      modules: {
+        'app.ts': `import {css,Vars} from 'zyzz';type Values={width:'10px'};function unrelated(){type Values={width:unknown}}export const vars=Vars.define({gap:{type:'length',inherits:true,initialValue:'4px',syntax:undefined}});export const style=css((values:Values)=>({width:values.width}));`,
+      },
+    })
+    expect(
+      output.modules['app.ts']!.css.includes('width:var('),
+    ).toMatchInlineSnapshot('true')
+    expect(output.sharedCss?.includes('@property')).toMatchInlineSnapshot(
+      'true',
+    )
+  })
+  test('rejects mutation through nested record aliases', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {css} from 'zyzz';const base={width:'10px'};const holder={nested:{base}};holder.nested.base.width='20px';export const style=css(base);`,
+        },
+      }),
+    ).toThrow(/cannot be mutated/)
+  })
   test('does not resolve a shadowed type alias using the outer declaration', () => {
     expect(() =>
       Graph.compile({
@@ -124,7 +146,7 @@ describe('compile', () => {
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: shadow.ts:110: Dynamic styles require a finite object type.]`,
+      `[Source.ExtractError: shadow.ts:83: Dynamic values require explicit string or number scalar types.]`,
     )
   })
   test('rejects mutated and escaping static records through aliases', () => {

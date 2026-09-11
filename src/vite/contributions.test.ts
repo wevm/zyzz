@@ -3,6 +3,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Vite from 'vite'
 import { describe, expect, test } from 'vite-plus/test'
+import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
 describe('zyzz', () => {
   test('emits unimported global styles once in a production build', async () => {
@@ -56,6 +57,79 @@ describe('zyzz', () => {
         body{margin:0;}@layer app { body { color: blue } }
         .z-hdbty1i04nhy-base0{color:blue;}"
       `)
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+  test('aggregates lazy packed contributions and resolves package-owned assets', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-packed-vite-'))
+    try {
+      const packageRoot = Path.join(root, 'node_modules/effects')
+      await Fs.mkdir(packageRoot, { recursive: true })
+      const library = Graph.compile({
+        modules: {
+          'index.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}})`,
+        },
+      })
+      await Fs.writeFile(
+        Path.join(packageRoot, 'package.json'),
+        JSON.stringify({
+          name: 'effects',
+          type: 'module',
+          exports: './index.js',
+          sideEffects: true,
+        }),
+      )
+      await Fs.writeFile(
+        Path.join(packageRoot, 'index.js'),
+        library.modules['index.ts']!.code,
+      )
+      await Fs.writeFile(
+        Path.join(packageRoot, 'index.js.zyzz.json'),
+        library.contracts['index.ts']!,
+      )
+      await Fs.writeFile(
+        Path.join(packageRoot, 'pixel.svg'),
+        '<svg xmlns="http://www.w3.org/2000/svg"/>',
+      )
+      await Fs.writeFile(
+        Path.join(root, 'index.html'),
+        '<script type="module" src="/app.ts"></script>',
+      )
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import {css} from 'zyzz';document.body.className=css({color:'red'})().className;globalThis.load=()=>import('./lazy.ts')`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'lazy.ts'),
+        `import 'effects';export const loaded=true`,
+      )
+      const result = await Vite.build({
+        root,
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [zyzz()],
+        build: {
+          write: false,
+          minify: false,
+          cssMinify: false,
+          assetsInlineLimit: 0,
+        },
+      })
+      const outputs = (Array.isArray(result) ? result : [result]).flatMap(
+        (value) => ('output' in value ? value.output : []),
+      )
+      const css = outputs
+        .filter(
+          (value) => value.type === 'asset' && value.fileName.endsWith('.css'),
+        )
+        .map((value) => (value.type === 'asset' ? String(value.source) : ''))
+        .join('\n')
+      expect(css.includes('background-image')).toMatchInlineSnapshot('true')
+      expect(
+        outputs.some((value) => value.fileName.endsWith('.svg')),
+      ).toMatchInlineSnapshot('true')
+      expect(css.includes('zyzz-asset:')).toMatchInlineSnapshot('false')
     } finally {
       await Fs.rm(root, { recursive: true, force: true })
     }

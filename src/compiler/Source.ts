@@ -142,6 +142,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       return Variables.collect(
         program,
         identity(options.moduleId),
+        scopeTracker,
         options[Themes.context]?.links,
       )
     } catch (error) {
@@ -397,7 +398,14 @@ export function extract(options: extract.Options): extract.ReturnType {
       const depth = prefix.length + 2
       function localSlot(node: Ast.Node) {
         const slot = resolveDynamic(node)
-        if (slot && prefix.some((key) => !Condition.local(key))) {
+        if (
+          slot &&
+          prefix.some(
+            (key) =>
+              !Condition.local(key) &&
+              ![...markers.conditions.values()].includes(key),
+          )
+        ) {
           report(
             'unsupported_syntax',
             'Dynamic values require conditions that select the styled element.',
@@ -719,10 +727,15 @@ export function extract(options: extract.Options): extract.ReturnType {
         )
     }
   let contributionData: readonly Css.Contribution[] = []
+  const contributionStarts = [...variables.registrationStarts]
   try {
     contributionData = [
       ...variables.registrations,
-      ...Contributions.extract(contributions, themes?.tokens ?? new Map()),
+      ...Contributions.extract(
+        contributions,
+        themes?.tokens ?? new Map(),
+        contributionStarts,
+      ),
       ...(themes?.calls ?? []).flatMap((call) =>
         call.options?.layers
           ? [
@@ -753,10 +766,25 @@ export function extract(options: extract.Options): extract.ReturnType {
       error instanceof Themes.InvalidError ? error : contributions.calls[0],
     )
   }
+  for (const [start] of markers.conditions)
+    if (!calls.some((call) => call.start <= start && start < call.end))
+      report(
+        'unsupported_syntax',
+        'Relationship helpers require a compiled style definition.',
+        { start, end: start },
+      )
   if (diagnostics.length) throw new ExtractError(diagnostics)
   return Object.freeze({
-    ...(markers.calls.length ? { markerCalls: markers.calls } : {}),
-    ...(contributionData.length ? { contributions: contributionData } : {}),
+    ...(markers.calls.length
+      ? {
+          markerCalls: Object.freeze(
+            markers.calls.map((call) => Object.freeze({ ...call })),
+          ),
+        }
+      : {}),
+    ...(contributionData.length
+      ? { contributions: contributionData, contributionStarts }
+      : {}),
     ...(contributions.calls.length
       ? { contributionCalls: contributions.calls }
       : {}),
@@ -803,6 +831,7 @@ export declare namespace extract {
     /** Marker factories replaced with fixed data-attribute callables. */
     readonly markerCalls?: readonly Markers.Call[] | undefined
     /** Static stylesheet effects and their source replacements. */
+    readonly contributionStarts?: readonly number[] | undefined
     readonly contributions?: readonly Css.Contribution[] | undefined
     readonly contributionCalls?: readonly Contributions.Call[] | undefined
     /** Explicit variable contracts replaced by fixed slot data. */

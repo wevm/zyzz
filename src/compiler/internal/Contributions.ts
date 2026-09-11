@@ -88,7 +88,15 @@ export function scan(
         node.id.type === 'Identifier' &&
         node.init?.type === 'Identifier'
       ) {
-        const link = linkedNames.get(node.init.name)
+        const declaration = scope.getDeclaration(node.init.name)
+        const identity = declaration
+          ? imported.get(declaration.node.start)
+          : undefined
+        const link = identity
+          ? [...linkedNames.values()].find(
+              (link) => link.call.name === identity,
+            )
+          : undefined
         if (link) {
           if (parent?.type !== 'VariableDeclaration' || parent.kind !== 'const')
             throw new Themes.InvalidError(
@@ -96,7 +104,11 @@ export function scan(
               node,
             )
           imported.set(node.start, link.call.name)
-          linkedNames.set(node.id.name, link)
+          if (
+            ancestors.at(-3)?.type === 'Program' ||
+            ancestors.at(-3)?.type === 'ExportNamedDeclaration'
+          )
+            linkedNames.set(node.id.name, link)
           if (ancestors.some((node) => node.type === 'ExportNamedDeclaration'))
             exported[node.id.name] = link
         }
@@ -212,12 +224,14 @@ export function scan(
             ? specifier.local.name
             : specifier.local.value
         const link = linkedNames.get(name)
-        if (link)
+        if (link) {
+          used.add(link.call.name)
           exported[
             specifier.exported.type === 'Identifier'
               ? specifier.exported.name
               : specifier.exported.value
           ] = link
+        }
       }
   return { calls, references, read, used, undefinedValues, exports: exported }
 }
@@ -226,6 +240,7 @@ export function scan(
 export function extract(
   scanned: ReturnType<typeof scan>,
   tokens: ReadonlyMap<number, { end: number; reference: Token.Reference }>,
+  starts?: number[],
 ): readonly Css.Contribution[] {
   const result: Css.Contribution[] = []
   function value(node: Ast.Node): unknown {
@@ -324,6 +339,7 @@ export function extract(
     }
   }
   for (const call of scanned.calls) {
+    const before = result.length
     try {
       const input = value(call.argument)
       if (call.kind === 'layers') {
@@ -406,6 +422,8 @@ export function extract(
         if (call.exported || scanned.used.has(call.name!))
           result.push({ kind: 'keyframes', name: call.name!, frames })
       }
+      for (let index = before; index < result.length; index++)
+        starts?.push(call.start)
     } catch (error) {
       throw new Themes.InvalidError((error as Error).message, call)
     }

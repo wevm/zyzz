@@ -22,6 +22,30 @@ function compile() {
   return { app, library }
 }
 describe('create', () => {
+  test('accepts reordered alias keys with identical target tuples', () => {
+    const { library } = compile()
+    const first = JSON.parse(library.contracts['config.ts']!)
+    const second = JSON.parse(library.contracts['config.ts']!)
+    for (const theme of Object.values(second.themes) as {
+      shorthands: Record<string, string[]>
+    }[])
+      theme.shorthands = Object.fromEntries(
+        Object.entries(theme.shorthands).reverse(),
+      )
+    const output = Graph.compile({
+      contracts: {
+        'a.js': JSON.stringify(first),
+        'b.js': JSON.stringify(second),
+      },
+      imports: { 'app.ts': { a: 'a.js', b: 'b.js' } },
+      modules: {
+        'app.ts': `import {css as a} from 'a';import {css as b} from 'b';export const card=a({px:'sm'})`,
+      },
+    })
+    expect(
+      output.modules['app.ts']!.css.includes('padding-left'),
+    ).toMatchInlineSnapshot('true')
+  })
   test('rejects conflicting packed mappings before reusing theme identities', () => {
     const { library } = compile()
     const original = library.contracts['config.ts']!
@@ -120,6 +144,41 @@ describe('create', () => {
     expect(
       after.modules['app.ts']!.css.includes('padding-top:'),
     ).toMatchInlineSnapshot('true')
+  })
+  test('rejects packed option mappings that disagree with the linked theme', () => {
+    const { library } = compile()
+    const contract = JSON.parse(library.contracts['config.ts']!)
+    contract.exports.css.options.shorthands = {
+      mx: ['marginLeft', 'marginRight'],
+    }
+    expect(() =>
+      Graph.compile({
+        contracts: { 'lib.js': JSON.stringify(contract) },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: {
+          'app.ts': `import {css} from 'lib';export const card=css({mx:'sm'})`,
+        },
+      }),
+    ).toThrow(/mappings disagree/)
+  })
+  test('rejects present falsy packed mappings', () => {
+    const { library } = compile()
+    for (const value of [null, false, 0, '']) {
+      const contract = JSON.parse(library.contracts['config.ts']!)
+      for (const theme of Object.values(contract.themes) as {
+        shorthands: unknown
+      }[])
+        theme.shorthands = value
+      expect(() =>
+        Graph.compile({
+          contracts: { 'lib.js': JSON.stringify(contract) },
+          imports: { 'app.ts': { lib: 'lib.js' } },
+          modules: {
+            'app.ts': `import {css} from 'lib';export const card=css({color:'red'})`,
+          },
+        }),
+      ).toThrow(/shorthands must be/)
+    }
   })
   test('rejects invalid mappings', () => {
     const invalid = [

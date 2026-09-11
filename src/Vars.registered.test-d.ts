@@ -3,6 +3,18 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Vars, css } from 'zyzz'
 describe('define', () => {
   test('preserves scalar assignment types for registration descriptors', () => {
+    Vars.define({
+      // @ts-expect-error currentcolor is element-dependent in every supported spelling
+      color: { type: 'color', inherits: false, initialValue: 'currentcolor' },
+    })
+    Vars.define({
+      color: {
+        type: 'color',
+        inherits: false,
+        // @ts-expect-error nested currentcolor remains element-dependent
+        initialValue: 'color-mix(in srgb, currentColor, red)',
+      },
+    })
     const vars = Vars.define({
       amount: { type: 'percentage', inherits: false, initialValue: '0%' },
       gap: { type: 'length', inherits: true, initialValue: '4px' },

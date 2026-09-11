@@ -28,7 +28,8 @@ export function define<const schema extends Schema>(
             readonly initialValue: Literal.Checked<
               schema[key]['initialValue']
             > &
-              Initial<kind>
+              Initial<kind> &
+              Independent<schema[key]['initialValue']>
           }
         : unknown
     },
@@ -51,8 +52,16 @@ export type Initial<kind extends Binding.Kind> = kind extends
   | 'signedLength'
   ? 0 | `${number}${'px' | 'in' | 'cm' | 'mm' | 'q' | 'pt' | 'pc'}`
   : kind extends 'color'
-    ? Exclude<Binding.Value<kind>, 'currentColor'>
+    ? Exclude<
+        Binding.Value<kind>,
+        'currentColor' | 'currentcolor' | `light-dark(${string})`
+      >
     : Binding.Value<kind>
+type Independent<value> = value extends string
+  ? Lowercase<value> extends `${string}${'currentcolor' | 'var(' | 'env(' | 'light-dark('}${string}`
+    ? never
+    : value
+  : value
 /** Optional CSS registration attached to one existing scalar variable slot. */
 export type Registration<kind extends Binding.Kind = Binding.Kind> =
   kind extends unknown

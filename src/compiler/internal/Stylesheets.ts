@@ -7,13 +7,15 @@ import * as Contributions from '../../web/internal/Contributions.js'
 export type Section = {
   /** Portable identity of the contributing source module. */
   readonly source: string
+  /** Stable contribution identity within its source module. */
+  readonly key?: string | undefined
   /** Ordered emitted CSS before host asset relocation. */
   readonly css: string
   /** Authored layer-order constraints retained across packages. */
   readonly layers: readonly (readonly string[])[]
   /** Original source text, when available for source maps. */
   readonly content?: string | undefined
-  /** Start offset of the first contribution in original source text. */
+  /** Start offset of this contribution in original source text. */
   readonly start?: number | undefined
 }
 /** Resolves a relative path within a portable graph, retaining query/hash suffixes. */
@@ -43,13 +45,15 @@ export function relative(owner: string, source: string): string {
 export function render(sections: readonly Section[]) {
   const seen = new Map<string, string>()
   const ordered = sections.filter((section) => {
-    const prior = seen.get(section.source)
+    const signature = JSON.stringify([section.css, section.layers])
+    const identity = JSON.stringify([section.source, section.key])
+    const prior = seen.get(identity)
     if (prior !== undefined) {
-      if (prior !== section.css)
+      if (prior !== signature)
         throw new Error('Conflicting packed stylesheet contributions.')
       return false
     }
-    seen.set(section.source, section.css)
+    seen.set(identity, signature)
     return true
   })
   const layers = Contributions.order(
@@ -106,6 +110,7 @@ export function read(value: unknown): readonly Section[] {
       typeof section !== 'object' ||
       typeof section.source !== 'string' ||
       typeof section.css !== 'string' ||
+      (section.key !== undefined && typeof section.key !== 'string') ||
       !Array.isArray(section.layers) ||
       section.layers.some(
         (list: unknown) =>
@@ -113,8 +118,15 @@ export function read(value: unknown): readonly Section[] {
       )
     )
       throw new Error('Invalid packed stylesheet section.')
+    if (section.css)
+      Lightning.transform({
+        filename: section.source,
+        code: new TextEncoder().encode(section.css),
+        errorRecovery: false,
+      })
     return {
       source: section.source,
+      ...(section.key !== undefined ? { key: section.key } : {}),
       css: section.css,
       layers: section.layers,
       ...(typeof section.content === 'string'

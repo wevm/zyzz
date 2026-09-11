@@ -22,20 +22,22 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
-    const shorthands = entry.shorthands
-      ? Shorthands.read(entry.shorthands)
-      : undefined
+    const shorthands =
+      entry.shorthands !== undefined
+        ? Shorthands.read(entry.shorthands)
+        : undefined
     let contract = identities.get(identity)
     if (
       contract &&
-      JSON.stringify(contract.shorthands) !== JSON.stringify(shorthands)
+      Shorthands.signature(contract.shorthands) !==
+        Shorthands.signature(shorthands)
     )
       throw new Error(
         'Conflicting packed shorthand mappings for one theme identity.',
       )
     if (!contract) {
       contract = Object.freeze({
-        ...(entry.shorthands
+        ...(entry.shorthands !== undefined
           ? { shorthands: Shorthands.read(entry.shorthands) }
           : {}),
         [Token.complete]: true,
@@ -134,7 +136,16 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
         : undefined
     const options =
       entry.options === undefined ? undefined : record(entry.options)
-    if (options) Config.create(options as Config.create.Options)
+    if (options) {
+      Config.create(options as Config.create.Options)
+      if (
+        Shorthands.signature(options.shorthands) !==
+        Shorthands.signature(definition[Token.definition].contract.shorthands)
+      )
+        throw new Error(
+          'Configuration mappings disagree with linked theme metadata.',
+        )
+    }
     if (entry.kind === 'config' && !options)
       throw new Error('Missing configuration options.')
     return {
@@ -294,6 +305,7 @@ export function write(
                 Object.values(links).some(
                   (link) =>
                     link.call.selection ||
+                    (link.kind === 'config' && !!link.call.options?.themes) ||
                     link.call.initialization ||
                     (link.kind === 'config' && link.call.script) ||
                     link.kind === 'marker' ||

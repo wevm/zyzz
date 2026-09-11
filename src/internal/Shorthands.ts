@@ -1,39 +1,10 @@
 /** Validates ordered configuration property aliases without interpreting CSS values. @module */
 import * as Literal from './Literal.js'
 
-/** Standard properties accepted as alias targets. */
-export type Property = Exclude<keyof Literal.Properties, `--${string}`>
 /** Explicit aliases, each expanding in its declared target order. */
 export type Map = Readonly<Record<string, readonly [Property, ...Property[]]>>
-/** Rejects duplicate targets and names reserved by the authoring surface. */
-export type Validated<mappings extends Map> = {
-  [key in keyof mappings]: key extends
-    | keyof Literal.Properties
-    | `:${string}`
-    | `@${string}`
-    | `${string}&${string}`
-    | 'css'
-    | 'theme'
-    | 'themes'
-    | 'script'
-    | 'variants'
-    | '__proto__'
-    | ''
-    ? never
-    : Unique<mappings[key]>
-}
-type Unique<
-  targets extends readonly Property[],
-  seen extends Property = never,
-> = targets extends readonly [
-  infer target extends Property,
-  ...infer rest extends readonly Property[],
-]
-  ? target extends seen
-    ? never
-    : Unique<rest, seen | target>
-  : unknown
-
+/** Standard properties accepted as alias targets. */
+export type Property = Exclude<keyof Literal.Properties, `--${string}`>
 /** Copies validated configuration data; throws for invalid aliases or targets. */
 export function read(value: unknown): Map {
   if (!value || typeof value !== 'object' || Array.isArray(value))
@@ -92,3 +63,43 @@ export function read(value: unknown): Map {
     ),
   ) as Map
 }
+
+/** Canonicalizes alias names while preserving each ordered target tuple. */
+export function signature(value: unknown): string {
+  return JSON.stringify(
+    Object.entries(read(value === undefined ? {} : value)).sort(([a], [b]) =>
+      a < b ? -1 : a > b ? 1 : 0,
+    ),
+  )
+}
+
+/** Rejects duplicate targets and names reserved by the authoring surface. */
+export type Validated<mappings extends Map> = {
+  [key in keyof mappings]: key extends string
+    ? key extends
+        | keyof Literal.Properties
+        | `:${string}`
+        | `@${string}`
+        | `${string}&${string}`
+        | 'css'
+        | 'theme'
+        | 'themes'
+        | 'script'
+        | 'variants'
+        | '__proto__'
+        | ''
+      ? never
+      : Unique<mappings[key]>
+    : never
+}
+type Unique<
+  targets extends readonly Property[],
+  seen extends Property = never,
+> = targets extends readonly [
+  infer target extends Property,
+  ...infer rest extends readonly Property[],
+]
+  ? target extends seen
+    ? never
+    : Unique<rest, seen | target>
+  : unknown

@@ -33,9 +33,15 @@ type Containers<tokens> = tokens extends {
 }
   ? name
   : never
+declare const relationship: unique symbol
+/** Opaque key returned only by typed relationship authoring helpers. */
+export type Relationship = symbol & { readonly [relationship]: true }
 /** Keys inferred from the bound theme's own threshold groups. */
-export type Keys<tokens extends Theme.Tokens = {}> =
-  | symbol
+export type Keys<
+  tokens extends Theme.Tokens = {},
+  key extends PropertyKey = never,
+> =
+  | (symbol extends key ? symbol : Relationship)
   | Raw
   | `@media ${Alias<Names<tokens, 'breakpoints'>>}`
   | `@container ${Alias<Names<tokens, 'containers'>>}`

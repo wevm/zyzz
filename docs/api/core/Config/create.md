@@ -39,7 +39,7 @@ Config.create({
 - Type: `readonly string[]` (literal names inferred)
 - Default: No configured layers.
 
-Ordered plain or dotted CSS identifiers, without duplicates or CSS-wide keywords. The tuple infers exact bound `@layer <name>` keys. Unicode/escaped layer identifiers and layer emission remain planned.
+Ordered plain or dotted CSS identifiers, without duplicates or CSS-wide keywords. The tuple infers exact bound `@layer <name>` keys. Layer order and bodies compile to CSS. Unicode and escaped layer identifiers remain planned.
 
 ```ts
 Config.create({ layers: ['base', 'components'] })
@@ -61,6 +61,8 @@ const styles = {
   card: css({ px: 'md' }),
 }
 ```
+
+Dedicated `margin` and `padding` groups take precedence over `spacing` for their properties. Margin tokens accept signed lengths; padding tokens require nonnegative lengths. Empty or duplicate target lists, alias chains, unknown targets, and names colliding with authoring keys are rejected.
 
 See [Property Mappings](../../../guides/themes.md#property-mappings) for aliases and property-specific token scales.
 
@@ -88,22 +90,6 @@ Config.create({
   themes: { base: { spacing: { md: '1rem' } } },
 })
 ```
-
-### shorthands
-
-- Type: `Readonly<Record<string, readonly [Property, ...Property[]]>>`
-
-Optional aliases for standard properties. Each expands in place and in tuple order. Values must satisfy every target; each target resolves its own tokens. The aliases belong to this config and its theme handles. Root `css` has no default aliases.
-
-```ts
-const { css } = Config.create({
-  shorthands: { px: ['paddingLeft', 'paddingRight'] },
-  theme: { spacing: { sm: '4px' }, padding: { sm: '8px' } },
-})
-const card = css({ px: 'sm', paddingLeft: '2px' })
-```
-
-Dedicated `margin` and `padding` groups take precedence over `spacing` for their properties. Margin tokens accept signed lengths; padding tokens require nonnegative lengths. Empty or duplicate target lists, alias chains, unknown targets, and names colliding with authoring keys are rejected.
 
 ## Returns
 

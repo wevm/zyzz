@@ -10,7 +10,8 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
   const values = new Map<number, Ast.Node>()
   const references = new Map<number, number>()
   const usages = new Map<number, readonly Ast.Node[][]>()
-  const types = new Map<string, Ast.Node>()
+  const types = new Map<number, Ast.Node>()
+  const typeReferences = new Map<number, number>()
   const used = new Set<number>()
   for (const statement of program.body) {
     const node =
@@ -22,28 +23,34 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
         if (declaration.id.type === 'Identifier' && declaration.init) {
           values.set(declaration.start, declaration.init)
         }
-    if (node?.type === 'TSTypeAliasDeclaration')
-      types.set(node.id.name, node.typeAnnotation)
-    if (node?.type === 'TSInterfaceDeclaration') {
-      if (node.extends?.length) continue
-      types.set(node.id.name, {
-        ...node.body,
-        type: 'TSTypeLiteral',
-        members: node.body.body,
-      } as Ast.TSTypeLiteral)
-    }
   }
   const ancestors: Ast.Node[] = []
   Walker.walk(program, {
     scopeTracker: scope,
     enter(node, parent) {
       ancestors.push(node)
+      if (node.type === 'TSTypeAliasDeclaration' && !node.typeParameters)
+        types.set(node.id.start, node.typeAnnotation)
       if (
-        (node.type === 'TSTypeAliasDeclaration' ||
-          node.type === 'TSInterfaceDeclaration') &&
-        ancestors.some((value) => value.type === 'BlockStatement')
+        node.type === 'TSInterfaceDeclaration' &&
+        !node.extends?.length &&
+        !node.typeParameters
       )
-        types.delete(node.id.name)
+        types.set(node.id.start, {
+          ...node.body,
+          type: 'TSTypeLiteral',
+          members: node.body.body,
+        } as Ast.TSTypeLiteral)
+      if (
+        node.type === 'TSTypeReference' &&
+        node.typeName.type === 'Identifier' &&
+        !node.typeArguments
+      ) {
+        const declaration = scope.getDeclaration(node.typeName.name, {
+          mode: 'type',
+        })
+        if (declaration) typeReferences.set(node.start, declaration.node.start)
+      }
       if (
         node.type !== 'Identifier' ||
         !parent ||
@@ -69,29 +76,31 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
     while (node.type === 'MemberExpression') node = node.object
     return node.type === 'Identifier' ? references.get(node.start) : undefined
   }
-  for (const [id, input] of values) {
+  function owners(input: Ast.Node): number[] {
     const node = Expression.unwrap(input)
-    const candidates =
-      node.type === 'ObjectExpression'
-        ? node.properties.flatMap((property) =>
-            property.type === 'SpreadElement'
-              ? [property.argument]
-              : property.type === 'Property'
-                ? [property.value]
-                : [],
-          )
-        : node.type === 'ArrayExpression'
-          ? node.elements.filter(
-              (node): node is Ast.Expression =>
-                !!node && node.type !== 'SpreadElement',
+    const owner = root(node)
+    if (owner !== undefined) return [owner]
+    if (node.type === 'ObjectExpression')
+      return node.properties.flatMap((property) =>
+        property.type === 'SpreadElement'
+          ? owners(property.argument)
+          : property.type === 'Property'
+            ? owners(property.value)
+            : [],
+      )
+    if (node.type === 'ArrayExpression')
+      return node.elements.flatMap((element) =>
+        element
+          ? owners(
+              element.type === 'SpreadElement' ? element.argument : element,
             )
-          : [node]
-    for (const candidate of candidates) {
-      const owner = root(candidate)
-      if (owner !== undefined)
-        aliases.set(owner, [...(aliases.get(owner) ?? []), id])
-    }
+          : [],
+      )
+    return []
   }
+  for (const [id, input] of values)
+    for (const owner of owners(input))
+      aliases.set(owner, [...(aliases.get(owner) ?? []), id])
   function paths(
     binding: number,
     seen = new Set<number>(),
@@ -247,13 +256,14 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
     }
     return [...result.values()]
   }
-  function type(node: Ast.Node, active = new Set<string>()): Ast.Node {
+  function type(node: Ast.Node, active = new Set<number>()): Ast.Node {
     if (
       node.type === 'TSTypeReference' &&
       node.typeName.type === 'Identifier'
     ) {
-      const name = node.typeName.name,
-        value = types.get(name)
+      const name = typeReferences.get(node.start)
+      if (name === undefined) return node
+      const value = types.get(name)
       if (!value) return node
       if (active.has(name))
         throw new Themes.InvalidError(

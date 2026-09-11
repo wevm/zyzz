@@ -5,9 +5,79 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Trace from '@jridgewell/trace-mapping'
 import { describe, expect, test } from 'vite-plus/test'
-import { Graph, Source } from 'zyzz/compiler'
+import { Graph, Source, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 describe('compile', () => {
+  test('preserves suffix URLs and rejects relative assets without a graph host', () => {
+    const source = `import {global} from 'zyzz/web';global({body:{backgroundImage:'url("?v=1")'},html:{backgroundImage:'url("")'}});`
+    const result = Graph.compile({ modules: { 'app.ts': source } })
+    expect(result.sharedAssets).toMatchInlineSnapshot(`{}`)
+    expect(result.sharedCss).toMatchInlineSnapshot(`
+      "body{background-image:url("?v=1");}
+      html{background-image:url("");}"
+    `)
+    expect(Transform.compile({ moduleId: 'app.ts', source }).css)
+      .toMatchInlineSnapshot(`
+      "body{background-image:url("?v=1");}
+      html{background-image:url("");}"
+    `)
+    expect(() =>
+      Transform.compile({
+        moduleId: 'app.ts',
+        source: `import {global} from 'zyzz/web';global({body:{backgroundImage:'url("./image.svg")'}});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:32: Relative contribution assets require Graph.compile and a relocation host.]`,
+    )
+  })
+
+  test('rejects conflicting source maps and attributes layer failures to packed owners', () => {
+    const library = Graph.compile({
+      modules: {
+        'effects.ts': `import {global,layers} from 'zyzz/web';layers(['a','b']);global({body:{color:'red'}});`,
+      },
+    })
+    const first = JSON.parse(library.contracts['effects.ts']!)
+    const second = JSON.parse(library.contracts['effects.ts']!)
+    second.stylesheets[0].content += '\n'
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'pkg/first.js': JSON.stringify(first),
+          'pkg/second.js': JSON.stringify(second),
+        },
+        imports: { 'app.ts': { a: 'pkg/first.js', b: 'pkg/second.js' } },
+        modules: { 'app.ts': `import 'a';import 'b';` },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/second.js:0: Conflicting packed stylesheet contributions.]`,
+    )
+    const errors = [['bad name'], ['a', 'a'], ['b', 'a']].map((layers) => {
+      const contract = JSON.parse(library.contracts['effects.ts']!)
+      contract.stylesheets.push({
+        source: 'effects.ts',
+        key: 'extra',
+        css: '',
+        layers: [layers],
+      })
+      try {
+        Graph.compile({
+          contracts: { 'pkg/index.js': JSON.stringify(contract) },
+          modules: { 'app.ts': `export {}` },
+        })
+        return 'accepted'
+      } catch (error) {
+        return error
+      }
+    })
+    expect(errors).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: pkg/index.js:0: Invalid library contract: Invalid layer name.],
+        [Source.ExtractError: pkg/index.js:0: Invalid library contract: Duplicate layer name.],
+        [Source.ExtractError: pkg/index.js:0: Invalid library contract: Conflicting layer order constraints.],
+      ]
+    `)
+  })
   test('packs source content once and links TypeScript animation aliases', () => {
     const source = `import {global,keyframes} from 'zyzz/web';global({body:{color:'red'}});const fade=keyframes({from:{opacity:0},to:{opacity:1}});export const enter=fade satisfies string;`
     const library = Graph.compile({ modules: { 'index.ts': source } })

@@ -24,6 +24,7 @@ export function scan(
   links: Readonly<Record<string, Themes.Link>> = {},
 ) {
   const namespaces = new Set<number>()
+  const modules = new Set<number>()
   const bindings = new Map<number, Themes.Link>()
   const names = new Map<string, Themes.Link>()
   const exports: Record<string, Themes.Link> = Object.create(null)
@@ -45,6 +46,11 @@ export function scan(
           : specifier.imported.value) === 'Css'
       )
         namespaces.add(specifier.start)
+      if (
+        specifier.type === 'ImportNamespaceSpecifier' &&
+        statement.source.value === 'zyzz/web'
+      )
+        modules.add(specifier.start)
       const link = links[specifier.local.name]
       if (link?.kind === 'marker') {
         bindings.set(specifier.start, {
@@ -55,7 +61,8 @@ export function scan(
       }
     }
   }
-  if (!namespaces.size && !bindings.size) return { calls, conditions, exports }
+  if (!namespaces.size && !bindings.size && !modules.size)
+    return { calls, conditions, exports }
   function data(node: Ast.Node): unknown {
     node = Expression.unwrap(node)
     if (node.type === 'Literal') return node.value
@@ -111,6 +118,22 @@ export function scan(
     )
   }
   function method(node: Ast.Node): string | undefined {
+    if (node.type === 'MemberExpression' && node.object.type === 'Identifier') {
+      const binding = scope.getDeclaration(node.object.name)
+      if (binding?.type === 'Import' && modules.has(binding.node.start)) {
+        const key =
+          node.property.type === 'Identifier' && !node.computed
+            ? node.property.name
+            : node.property.type === 'Literal'
+              ? node.property.value
+              : undefined
+        if (key === 'Css' || key === undefined)
+          throw new Themes.InvalidError(
+            'Marker helpers require the named Css import from zyzz/web.',
+            node,
+          )
+      }
+    }
     if (node.type !== 'MemberExpression' || node.object.type !== 'Identifier')
       return undefined
     const declaration = scope.getDeclaration(node.object.name)
@@ -146,7 +169,7 @@ export function scan(
   const ancestors: Ast.Node[] = []
   Walker.walk(program, {
     scopeTracker: scope,
-    enter(node, parent) {
+    enter(node) {
       ancestors.push(node)
       if (
         node.type === 'VariableDeclarator' &&
@@ -260,11 +283,11 @@ export function scan(
           'siblingBefore',
         ].includes(name)
       ) {
-        if (
-          parent?.type !== 'Property' ||
-          parent.key !== node ||
-          !parent.computed
+        const property = ancestors.findLast(
+          (value) =>
+            value.type === 'Property' && Expression.unwrap(value.key) === node,
         )
+        if (property?.type !== 'Property' || !property.computed)
           throw new Themes.InvalidError(
             'Relationship helpers must be computed style keys.',
             node,

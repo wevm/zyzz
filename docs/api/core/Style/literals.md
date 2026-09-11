@@ -484,7 +484,10 @@ All 148 canonical lowercase CSS named colors and 19 canonical system-color keywo
 
 ## Container and Field Sizing
 
-`containerType` accepts `normal`, `size`, `inline-size`, `scroll-state`, and either size mode combined with `scroll-state` in either order. `fieldSizing` accepts `content` or `fixed`; `interpolateSize` accepts `allow-keywords` or `numeric-only`. Fallbacks and importance use the shared literal pipeline. That historical inventory tracked 301 partial mappings; container names, query authoring, and interpolation functions remain deferred. Browser evidence covers native container-query responses and content-sized inputs; scroll-state queries and animated intrinsic-size interpolation remain separate gates.
+`containerType` accepts `normal`, `size`, `inline-size`, `scroll-state`, and either size mode combined with `scroll-state` in either order. `fieldSizing` accepts `content` or `fixed`; `interpolateSize` accepts `allow-keywords` or `numeric-only`. Fallbacks and importance use the shared literal pipeline. That historical inventory tracked 301 partial mappings. Named containers and breakpoint/container query authoring are implemented, with Chromium fixtures for named thresholds and content-sized inputs.
+
+> [!NOTE]
+> Scroll-state query behavior and animated intrinsic-size interpolation remain separate browser acceptance gates.
 
 ## Reading Order
 

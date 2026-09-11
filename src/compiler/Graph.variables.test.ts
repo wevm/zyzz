@@ -7,6 +7,78 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 describe('compile', () => {
+  test('attributes invalid registration CSS to its descriptor', () => {
+    try {
+      Graph.compile({
+        modules: {
+          'app.ts': `import {Vars} from 'zyzz';
+export const vars=Vars.define({
+  gap:{type:'length',inherits:false,initialValue:'}'}
+});`,
+        },
+      })
+      throw new Error('Expected invalid registration')
+    } catch (error) {
+      expect((error as import('zyzz/compiler').Source.ExtractError).diagnostics)
+        .toMatchInlineSnapshot(`
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 112,
+            "message": "Unexpected end of input",
+            "source": "app.ts",
+            "start": 61,
+          },
+        ]
+      `)
+    }
+  })
+  test('compiles overlapping dynamic fields and default exported static records', () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {css} from 'zyzz';const base={color:'red'};export default base;type Values={width:string;zIndex:number}&{width:'10px';zIndex:1|2};export const styles={card:css(base),dynamic:css((v:Values)=>({width:v.width,zIndex:v.zIndex}))};`,
+      },
+    })
+    expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-1e8a67z1uaws1j-base0{color:red;}
+      .z-1e8a67z1uaws1j-base1{width:var(--z-d1e8a67z1uaws1j-181-77-69-64-74-68);z-index:var(--z-d1e8a67z1uaws1j-181-7a-49-6e-64-65-78);}"
+    `)
+  })
+
+  test('shares defining variable identities across package entrypoint sidecars', () => {
+    const library = Graph.compile({
+      modules: {
+        'vars.ts': `import {Vars} from 'zyzz';export const vars=Vars.define({gap:'length'});`,
+        'index.ts': `export {vars} from './vars.js';`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: {
+        'pkg/vars.js': library.contracts['vars.ts']!,
+        'pkg/index.js': library.contracts['index.ts']!,
+      },
+      imports: {
+        'app.ts': { a: 'pkg/vars.js', b: 'pkg/index.js', zyzz: null },
+      },
+      modules: {
+        'app.ts': `import {vars as a} from 'a';import {vars as b} from 'b';import {css} from 'zyzz';export const styles={card:css({width:a.gap,padding:b.gap})};`,
+      },
+    })
+    expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-1e8a67z1uaws1j-base0{width:var(--z-v4t4nbe1og4cic-76-61-72-73--67-61-70);padding:var(--z-v4t4nbe1og4cic-76-61-72-73--67-61-70);}"`,
+    )
+  })
+  test('allows scalar copies and asserted static token bindings', () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {Config} from 'zyzz';const {theme,css}=Config.create({theme:{color:{ink:'#123'}}});const dimensions={width:'10px',nested:{width:'20px'}};const width=dimensions.width;consume(width);consume(dimensions.width);const color=(theme.tokens.color.ink as string);export const styles={card:css({width:dimensions.width,color})};`,
+      },
+    })
+    expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1e8a67z1uaws1j-theme-theme{--z-t1e8a67z1uaws1j-theme-color_2e_ink:#123;}
+      .z-1e8a67z1uaws1j-base0{width:10px;color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,#123);}"
+    `)
+  })
   test('links default variable exports through packed contracts', () => {
     const library = Graph.compile({
       modules: {
@@ -374,8 +446,8 @@ describe('compile', () => {
     })
     expect(errors).toMatchInlineSnapshot(`
       [
-        [Source.ExtractError: app.js:51: Static data cannot be mutated or escape through unsupported expressions.],
-        [Source.ExtractError: app.js:51: Static data cannot be mutated or escape through unsupported expressions.],
+        "accepted",
+        "accepted",
       ]
     `)
     expect(() =>

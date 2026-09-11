@@ -2,13 +2,15 @@
 /** Finite authored state domains. */
 export type Schema = Readonly<Record<string, readonly (boolean | string)[]>>
 /** Portable marker identity and state schema. */
-export type Definition = {
+export type Definition<schema extends Schema = Schema> = {
   /** Compiler-assigned presence attribute name. */
   readonly id: `data-z-${string}`
   /** Finite state names and accepted values. */
-  readonly schema: Schema
+  readonly schema: schema
 }
 /** Copies and validates finite state schemas without reading accessors. */
+export function schema<const input extends Schema>(input: input): input
+export function schema(input: unknown): Schema
 export function schema(input: unknown): Schema {
   if (
     !input ||
@@ -66,32 +68,41 @@ export function schema(input: unknown): Schema {
   return Object.freeze(result)
 }
 /** Creates a callable marker; emits only presence and selected state attributes. */
-export function create(definition: Definition) {
+export function create<const schema extends Schema>(
+  definition: Definition<schema>,
+) {
   if (!/^data-z-[a-z0-9_-]+$/.test(definition.id))
     throw new Error(
       'Marker identities require compiler-owned data-z attributes.',
     )
-  return (
-    input: Readonly<Record<string, boolean | string | undefined>> = {},
+  const states = schema(definition.schema)
+  const id = definition.id
+  type State = {
+    readonly [key in keyof schema]?: schema[key][number] | undefined
+  }
+  return <const input extends State = State>(
+    input: input &
+      Record<Exclude<keyof input, keyof schema>, never> = {} as input &
+      Record<Exclude<keyof input, keyof schema>, never>,
   ) => {
     if (!input || typeof input !== 'object' || Array.isArray(input))
       throw new Error('Marker input must be a state record.')
     if (Object.getOwnPropertySymbols(input).length)
       throw new Error('Unknown marker state: symbol')
-    const result: Record<string, string> = { [definition.id]: '' }
+    const result: Record<string, string> = { [id]: '' }
     for (const [name, descriptor] of Object.entries(
       Object.getOwnPropertyDescriptors(input),
     )) {
-      if (!('value' in descriptor) || !Object.hasOwn(definition.schema, name))
+      if (!('value' in descriptor) || !Object.hasOwn(states, name))
         throw new Error(`Unknown marker state: ${name}`)
       const value: unknown = descriptor.value
       if (value === undefined) continue
       if (
         (typeof value !== 'string' && typeof value !== 'boolean') ||
-        !definition.schema[name]!.includes(value)
+        !states[name]!.includes(value)
       )
         throw new Error(`Invalid marker state: ${name}`)
-      result[`${definition.id}-${name.toLowerCase()}`] = String(value)
+      result[`${id}-${name.toLowerCase()}`] = String(value)
     }
     return Object.freeze(result)
   }

@@ -86,19 +86,18 @@ describe('compile', () => {
     `)
   })
 
-  test.each([
-    'unknown',
-    '(()=>{throw Error("executed")})()',
-    '({toString(){throw Error("executed")}})',
-    '[]',
-    '/x/',
-    '1e999',
-    '+12n',
-    'String.raw`x`',
-    '1 + 2',
-  ])(
-    'rejects runtime expression %s without executing application code',
-    (expression) => {
+  test('reports exact diagnostics for unsupported template expressions', () => {
+    const diagnostics = [
+      'unknown',
+      '(()=>{throw Error("executed")})()',
+      '({toString(){throw Error("executed")}})',
+      '[]',
+      '/x/',
+      '1e999',
+      '+12n',
+      'String.raw`x`',
+      '1 + 2',
+    ].map((expression) => {
       const source =
         'import { css } from "zyzz"; css({ width: `${' + expression + '}px` })'
       try {
@@ -106,16 +105,95 @@ describe('compile', () => {
         throw new Error('Expected extraction failure')
       } catch (error) {
         if (!(error instanceof Source.ExtractError)) throw error
-        expect(error.diagnostics.map((item) => item.code)).toEqual([
-          'unsupported_syntax',
-        ])
-        const diagnostic = error.diagnostics[0]!
-        expect(diagnostic.start).toBeGreaterThanOrEqual(source.indexOf('`${'))
-        expect(diagnostic.end).toBeLessThanOrEqual(source.lastIndexOf('`') + 1)
-        expect(diagnostic.end).toBeGreaterThan(diagnostic.start)
+        return error.diagnostics
       }
-    },
-  )
+    })
+    expect(diagnostics).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 55,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 81,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 81,
+            "message": "Static data requires literal property keys without methods.",
+            "source": "invalid.ts",
+            "start": 46,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 50,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 51,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 53,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 52,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 61,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 53,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+      ]
+    `)
+  })
 
   test('matches native CSS for template fallbacks, math, and importance', async () => {
     const output = Transform.compile({

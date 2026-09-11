@@ -20,6 +20,8 @@ export type Section = {
   readonly source: string
   /** Trusted graph owner; ignored when reading external metadata. */
   readonly owner?: string | undefined
+  /** Import chain to the declaring contract when repacked through dependencies. */
+  readonly dependency?: readonly string[] | undefined
   /** Stable contribution identity within its source module. */
   readonly key?: string | undefined
   /** Ordered emitted CSS before host asset relocation. */
@@ -61,7 +63,12 @@ export function relative(owner: string, source: string): string {
 export function render(sections: readonly Section[]) {
   const seen = new Map<string, string>()
   const ordered = sections.filter((section) => {
-    const signature = JSON.stringify([section.css, section.layers])
+    const signature = JSON.stringify([
+      section.css,
+      section.layers,
+      section.content,
+      section.start,
+    ])
     const identity = JSON.stringify([section.source, section.key])
     const prior = seen.get(identity)
     if (prior !== undefined) {
@@ -91,7 +98,8 @@ export function render(sections: readonly Section[]) {
       code: new TextEncoder().encode(section.css),
       visitor: {
         Url(url) {
-          if (/^(?:\/|#|[a-z][a-z\d+.-]*:)/i.test(url.url)) return
+          if (!url.url || /^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url.url))
+            return
           changed = true
           const target = resolve(section.source, url.url)
           const key = `zyzz-asset:${encodeURIComponent(target)}`
@@ -138,6 +146,15 @@ export function read(value: unknown): readonly Section[] {
       typeof section.source !== 'string' ||
       typeof section.css !== 'string' ||
       (section.key !== undefined && typeof section.key !== 'string') ||
+      (section.dependency !== undefined &&
+        (!Array.isArray(section.dependency) ||
+          !section.dependency.length ||
+          section.dependency.some(
+            (specifier: unknown) =>
+              typeof specifier !== 'string' ||
+              !specifier ||
+              specifier.includes('\0'),
+          ))) ||
       !Array.isArray(section.layers) ||
       section.layers.some(
         (list: unknown) =>
@@ -159,6 +176,9 @@ export function read(value: unknown): readonly Section[] {
       })
     return {
       source: section.source,
+      ...(section.dependency !== undefined
+        ? { dependency: [...section.dependency] }
+        : {}),
       ...(section.key !== undefined ? { key: section.key } : {}),
       css: section.css,
       layers: section.layers,
@@ -170,6 +190,7 @@ export function read(value: unknown): readonly Section[] {
         : {}),
     } as Section
   })
+  Contributions.order(sections.flatMap((section) => section.layers))
   return sections.map((section) => ({
     ...section,
     ...(contents.has(section.source)

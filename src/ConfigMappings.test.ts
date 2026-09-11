@@ -132,7 +132,7 @@ describe('create', () => {
       )
       await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
       await page.evaluate(
-        `for(const id of ['card','mixed','dynamic']){const props=Fixture.styles[id](id==='dynamic'?{width:'20px'}:{});const el=document.getElementById(id);el.className=props.className;Object.assign(el.style,props.style)}`,
+        `for(const id of ['card','mixed','dynamic']){const props=Fixture.styles[id](id==='dynamic'?{width:'20px'}:{});const el=document.getElementById(id);el.className=props.className;for(const [key,value]of Object.entries(props.style??{})){if(key.startsWith('--'))el.style.setProperty(key,String(value));else el.style[key]=value}}`,
       )
       expect(
         await page

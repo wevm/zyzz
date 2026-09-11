@@ -1,7 +1,7 @@
 # Config.create
 
 > [!NOTE]
-> The factory, destructured `css`/single `theme` exports, and direct `css` calls are implemented. Theme `vars` references are supported. Callable theme selection, `script`, `variants`, and layer emission remain planned. Layer keys are inferred but are not yet accepted by source compilation.
+> Named config exports, callable theme selection, variables, and layer compilation are implemented. `script` and `variants` remain planned.
 
 Bind style authoring to explicit theme and layer contracts. Export helpers directly from `zyzz.config.ts` and consume them through named imports.
 
@@ -39,7 +39,7 @@ Config.create({
 - Type: `readonly string[]` (literal names inferred)
 - Default: No configured layers.
 
-Ordered plain or dotted CSS identifiers, without duplicates or CSS-wide keywords. The tuple infers exact bound `@layer <name>` keys. Unicode/escaped layer identifiers and layer emission remain planned.
+Ordered plain or dotted CSS identifiers, without duplicates or CSS-wide keywords. The tuple infers exact bound `@layer <name>` keys. Layer order and bodies compile to CSS. Unicode and escaped layer identifiers remain planned.
 
 ```ts
 Config.create({ layers: ['base', 'components'] })
@@ -109,16 +109,13 @@ const styles = {
 
 - Type: Normalized callable single-theme definition
 
-Present for single-theme configuration. Call `theme({ colorScheme: 'light dark' })` to spread root props onto `<html>`. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
+Present for single-theme configuration and as the default theme of a named catalog. The default `theme` is a reference handle. Callable standalone theme application remains preview; use `themes({ theme: defaultName, colorScheme: 'light dark' })` for a named catalog. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
 
 ```ts
 theme.tokens.spacing.md
 ```
 
 ### themes
-
-> [!NOTE]
-> Callable selection is planned. The current factory exposes a catalog of theme definitions; the callable examples describe the target API.
 
 - Type: `(options: { theme: Name; colorScheme?: 'light' | 'dark' | 'light dark' }) => ThemeProps` (provisional names)
 

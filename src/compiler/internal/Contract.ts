@@ -11,7 +11,7 @@ import type * as Themes from './Themes.js'
 /** Reads versioned JSON as validated data; never evaluates package code. */
 export function read(source: string, identities: Map<string, Token.Contract>) {
   const data = record(JSON.parse(source))
-  if (data.version !== 1 && data.version !== 2 && data.version !== 3)
+  if (![1, 2, 3, 4].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
@@ -48,19 +48,30 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     const options =
       entry.options === undefined ? undefined : record(entry.options)
     if (options) Config.create(options as Config.create.Options)
+    const catalogOnly =
+      !!options?.themes &&
+      ((data.version as number) < 4 || entry.catalogOnly === true)
+    const configType = options
+      ? `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
+      : ''
+    const outputType = catalogOnly
+      ? `({readonly [key in keyof ${configType} as key extends 'themes' ? never : key]:${configType}[key]} & {readonly themes:{readonly [key in keyof ${configType}['themes']]:${configType}['themes'][key]}})`
+      : configType
     if (entry.kind === 'config' && !options)
       throw new Error('Missing configuration options.')
     return {
       binding: string(entry.binding),
       call: {
+        ...(catalogOnly ? { catalogOnly: true } : {}),
         end: -1,
         name: theme,
         start: -1,
         tokenType: types[theme]!,
+        ...(entry.selection === true ? { selection: true } : {}),
         ...(options
           ? {
               options,
-              type: `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`,
+              type: `${outputType}${entry.selection === true ? "['themes']" : ''}`,
             }
           : {}),
         ...(members
@@ -133,6 +144,8 @@ export function write(
       binding: link.binding,
       kind: link.kind,
       theme: link.call.name,
+      ...(link.call.catalogOnly ? { catalogOnly: true } : {}),
+      ...(link.call.selection ? { selection: true } : {}),
       ...(link.call.options ? { options: link.call.options } : {}),
       ...(link.members
         ? {
@@ -159,24 +172,30 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(themes).some(
-      (theme) =>
-        theme[Token.definition].queries ||
-        Object.keys(theme.tokens).some((group) =>
-          [
-            'fontFamily',
-            'fontSize',
-            'fontWeight',
-            'lineHeight',
-            'letterSpacing',
-          ].includes(group),
-        ),
+    version: Object.values(links).some(
+      (link) =>
+        link.call.selection ||
+        (link.kind === 'config' && !!link.call.options?.themes),
     )
-      ? 3
-      : Object.values(links).some(
-            (link) => link.kind === 'config' || link.call.type,
+      ? 4
+      : Object.values(themes).some(
+            (theme) =>
+              theme[Token.definition].queries ||
+              Object.keys(theme.tokens).some((group) =>
+                [
+                  'fontFamily',
+                  'fontSize',
+                  'fontWeight',
+                  'lineHeight',
+                  'letterSpacing',
+                ].includes(group),
+              ),
           )
-        ? 2
-        : 1,
+        ? 3
+        : Object.values(links).some(
+              (link) => link.kind === 'config' || link.call.type,
+            )
+          ? 2
+          : 1,
   })
 }

@@ -8,7 +8,7 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 | [fontFace](fontFace.md)   | Contribute a static font-face rule.                            |
 | [global](global.md)       | Contribute eager global selectors and nested stylesheet rules. |
 | [keyframes](keyframes.md) | Define an animation with a stable typed name reference.        |
-| [layers](layers.md) | Contribute ordered cascade layer names. |
+| [layers](layers.md)       | Contribute ordered cascade layer names.                        |
 
 ## At-Rule Functions
 

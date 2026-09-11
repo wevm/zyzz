@@ -20,6 +20,9 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  readonly catalogOnly?: boolean | undefined
+  /** Config helper represented by this linked binding. */
+  readonly selection?: boolean | undefined
   /** Validated inline configuration options retained for packed declarations. */
   readonly options?: Readonly<Record<string, unknown>> | undefined
   /** JSON-encoded member path tuples and their compiled scope keys. */
@@ -195,9 +198,43 @@ export function collect(program: Ast.Program, options: collect.Options) {
       path.unshift(key)
       root = root.object
     }
-    return root.type === 'Identifier'
-      ? configs.get(root.name)?.members?.[JSON.stringify(path)]
-      : undefined
+    const config =
+      root.type === 'Identifier' ? configs.get(root.name) : undefined
+    if (
+      config &&
+      !config.call.selection &&
+      path.length === 1 &&
+      ['themes'].includes(path[0]!)
+    ) {
+      const key = path[0]!
+      if (key === 'themes' && !config.call.options?.themes) return undefined
+
+      const members = Object.fromEntries(
+        Object.entries(config.members ?? {}).flatMap(([name, member]) => {
+          const parts = JSON.parse(name) as string[]
+          return key === 'themes' && parts[0] === 'themes'
+            ? [[JSON.stringify(parts.slice(1)), member]]
+            : []
+        }),
+      )
+      return {
+        ...config,
+        members,
+        binding: `${config.binding}:${key}`,
+        call: {
+          ...config.call,
+          members: Object.fromEntries(
+            Object.entries(members).map(([name, member]) => [
+              name,
+              member.call.name,
+            ]),
+          ),
+          selection: true,
+          type: `${config.call.type}['${key}']`,
+        },
+      }
+    }
+    return config?.members?.[JSON.stringify(path)]
   }
 
   function data(node: Ast.Node): unknown {
@@ -375,7 +412,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
             themes[member.call.name] = member.definition
           themes[link.call.name] = link.definition
           for (const { key, id } of bindings) {
-            if (key === 'css') {
+            if (key === 'css' && !link.call.selection) {
               const alias = { ...link.call, destructured: false }
               aliasBindings.set(id.start, alias)
               aliasNames.set(id.name, alias)
@@ -385,6 +422,40 @@ export function collect(program: Ast.Program, options: collect.Options) {
                   binding: `${options.namespace}-${id.name}`,
                   kind: 'css',
                 }
+              continue
+            }
+            if (
+              !link.call.selection &&
+              key === 'themes' &&
+              link.call.options?.themes
+            ) {
+              const members = Object.fromEntries(
+                Object.entries(link.members ?? {}).flatMap(([key, member]) => {
+                  const path = JSON.parse(key) as string[]
+                  return path[0] === 'themes'
+                    ? [[JSON.stringify(path.slice(1)), member]]
+                    : []
+                }),
+              )
+              const selection = {
+                ...link,
+                members,
+                call: {
+                  ...link.call,
+                  members: Object.fromEntries(
+                    Object.entries(members).map(([key, member]) => [
+                      key,
+                      member.call.name,
+                    ]),
+                  ),
+                  selection: true,
+                  type: `${link.call.type}['themes']`,
+                },
+              }
+              configs.set(id.name, selection)
+              configBindings.set(id.start, selection)
+              if (statement.type === 'ExportNamedDeclaration')
+                exports[id.name] = selection
               continue
             }
             const member = link.members?.[JSON.stringify([key])]
@@ -467,6 +538,96 @@ export function collect(program: Ast.Program, options: collect.Options) {
     const expression = variable.init
     if (!expression) return
     const linked = resolve(expression)
+    if (linked?.kind === 'config' && variable.id.type === 'ObjectPattern') {
+      if (statement.type === 'ExportNamedDeclaration' && !options.linked)
+        fail(
+          'Exported configuration destructuring requires source linking.',
+          variable,
+        )
+      if (declaration.kind !== 'const')
+        fail('Configuration destructuring requires const bindings.', variable)
+      const link = linked
+      const bindings = variable.id.properties.map((property) => {
+        if (
+          property.type !== 'Property' ||
+          property.computed ||
+          property.key.type !== 'Identifier' ||
+          property.value.type !== 'Identifier'
+        )
+          return fail(
+            'Configuration destructuring requires named bindings without defaults or rest.',
+            property,
+          )
+        return { key: property.key.name, id: property.value }
+      })
+      aliasReferences.add(expression.start)
+      aliases.push({
+        ...link.call,
+        start: expression.start,
+        end: expression.end,
+        destructured: false,
+        retained: true,
+      })
+      for (const { key, id } of bindings) {
+        if (key === 'css' && !link.call.selection) {
+          const alias = { ...link.call, destructured: false }
+          aliasBindings.set(id.start, alias)
+          aliasNames.set(id.name, alias)
+          if (statement.type === 'ExportNamedDeclaration')
+            exports[id.name] = {
+              ...link,
+              binding: `${options.namespace}-${id.name}`,
+              kind: 'css',
+            }
+          continue
+        }
+        if (
+          !link.call.selection &&
+          key === 'themes' &&
+          link.call.options?.themes
+        ) {
+          const members = Object.fromEntries(
+            Object.entries(link.members ?? {}).flatMap(([key, member]) => {
+              const path = JSON.parse(key) as string[]
+              return path[0] === 'themes'
+                ? [[JSON.stringify(path.slice(1)), member]]
+                : []
+            }),
+          )
+          const selection = {
+            ...link,
+            members,
+            call: {
+              ...link.call,
+              members: Object.fromEntries(
+                Object.entries(members).map(([key, member]) => [
+                  key,
+                  member.call.name,
+                ]),
+              ),
+              selection: true,
+              type: `${link.call.type}['themes']`,
+            },
+          }
+          configs.set(id.name, selection)
+          configBindings.set(id.start, selection)
+          if (statement.type === 'ExportNamedDeclaration')
+            exports[id.name] = selection
+          continue
+        }
+        const member = link.members?.[JSON.stringify([key])]
+        if (!member)
+          fail(
+            'Destructure only css and the configured single theme; other helpers remain unsupported.',
+            id,
+          )
+        definitions.set(id.start, member.call)
+        names.set(id.name, member.call)
+        if (statement.type === 'ExportNamedDeclaration')
+          exports[id.name] = member
+      }
+      return
+    }
     if (linked && variable.id.type === 'Identifier') {
       if (expression.start < linked.call.end)
         fail('Authoring aliases must follow their definition.', expression)
@@ -660,6 +821,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         ? configBindings.get(binding.node.start)
         : undefined
     if (config) {
+      if (node.start === binding!.node.start) return true
       if (exportReferences.has(node.start) || aliasReferences.has(node.start))
         return true
       if (
@@ -668,6 +830,19 @@ export function collect(program: Ast.Program, options: collect.Options) {
         binding?.type !== 'Import'
       )
         fail('Configuration references must follow their definition.', node)
+      if (
+        config.call.selection &&
+        parent.type === 'CallExpression' &&
+        parent.callee === node &&
+        !parent.optional
+      ) {
+        if (config.call.selection && config.call.catalogOnly)
+          fail(
+            'This legacy catalog is not callable; rebuild its library.',
+            node,
+          )
+        return true
+      }
       let target: Ast.Node = node
       const path: string[] = []
       for (let index = ancestors.length - 2; index >= 0; index--) {
@@ -700,6 +875,22 @@ export function collect(program: Ast.Program, options: collect.Options) {
           factoryReferences.has(target.start)
         )
           return true
+        if (
+          path.length === 1 &&
+          path[0] === 'themes' &&
+          ancestors[index - 1]?.type === 'CallExpression' &&
+          (ancestors[index - 1] as Ast.CallExpression).callee === target &&
+          !(ancestors[index - 1] as Ast.CallExpression).optional
+        ) {
+          if (!config.call.options?.themes)
+            fail('Theme selection requires a named catalog.', target)
+          if (config.call.catalogOnly)
+            fail(
+              'This legacy catalog is not callable; rebuild its library.',
+              target,
+            )
+          return true
+        }
         if (path.length === 1 && path[0] === 'css') {
           const call = ancestors[index - 1]
           if (

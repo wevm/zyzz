@@ -24,6 +24,12 @@ Identifier evaluation and recognized theme variable interpolation remain separat
 
 Local validation: ten extraction/transform integrations, native type/lint checks, package build, and the 670/670 gate pass. Ordinary TypeScript and browser verification remain with CI. Matched 10/100/1000-style extraction means: 0.873/11.500/72.863 ms before and 0.851/9.489/74.794 ms after; uncertainty overlaps. The template fixture measures 0.371 ms. No speedup is established.
 
+## Remaining Phase 2 Stack
+
+Stack after framework PR #79: callable named-theme selection, root initialization script, property mappings and margin/padding groups, typed relationship helpers, stylesheet completion, variable/extraction completion, then acceptance reconciliation. Larger areas may use multiple dependent PRs. Vue remains deferred.
+
+Callable named selections support destructured exports, aliases/re-exports, packed contracts, default token references, and React/HTML props. Seven focused linked/packed/renderer regressions, three configuration integrations, focused lint/types, and the package build pass locally. Matched 100-style config graph means: 10.138 ms ±10.81% before and 9.197 ms ±7.81% after; uncertainty overlaps. Browser scope verification remains required because Chromium download timed out. Initialization and hydration follow separately.
+
 ## Phase 2 PR Stack
 
 1. Theme variable references: typed direct values and template interpolation, live fallbacks, imported/config/packed contracts. Standalone variable destructuring remains deferred.

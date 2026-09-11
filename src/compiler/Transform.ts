@@ -47,12 +47,29 @@ export function compile(options: compile.Options): compile.ReturnType {
   const applications = new Map<number, { end: number; folded: boolean }>()
   const calls = new Map(extracted.calls.map((call) => [call.start, call]))
   const definitions = new Map<number, Ast.ObjectExpression>()
+  const unusedSelections = new Set<number>()
   const identifiers = new Map<string, Span[]>()
 
   const localApplications = Applications.create(program, extracted.calls)
   Walker.walk(program, {
     enter(node, parent) {
       localApplications?.enter(node, parent)
+      if (
+        node.type === 'VariableDeclarator' &&
+        node.init &&
+        node.id.type === 'ObjectPattern' &&
+        node.id.properties.every(
+          (property) =>
+            property.type === 'Property' &&
+            (property.key.type === 'Identifier'
+              ? property.key.name
+              : property.key.type === 'Literal'
+                ? property.key.value
+                : undefined) !== 'themes',
+        )
+      )
+        unusedSelections.add(Expression.unwrap(node.init).start)
+
       if (node.type === 'Identifier') {
         const references = identifiers.get(node.name) ?? []
         references.push(node)
@@ -90,6 +107,10 @@ export function compile(options: compile.Options): compile.ReturnType {
   let html = '__zyzzHtml'
   while (identifiers.has(html)) html += '_'
   let usesHtml = false
+
+  let selection = '__zyzzSelection'
+  while (identifiers.has(selection)) selection += '_'
+  let usesSelection = false
 
   let variables = '__zyzzVars'
   while (identifiers.has(variables)) variables += '_'
@@ -182,17 +203,25 @@ export function compile(options: compile.Options): compile.ReturnType {
     const props = (() => {
       if (!call.members)
         return `{className:${JSON.stringify(emitted.themes[call.name])}}`
+      if (call.options?.themes) {
+        const catalog = Object.fromEntries(
+          Object.entries(call.members)
+            .filter(([key]) => (JSON.parse(key) as string[]).length === 2)
+            .map(([key, name]) => [
+              (JSON.parse(key) as string[])[1]!,
+              emitted.themes[name],
+            ]),
+        )
+        const entries = JSON.stringify(Object.entries(catalog))
+        if (unusedSelections.has(call.start))
+          return `{theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
+
+        usesSelection = true
+        return `{theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:/*#__PURE__*/${selection}.create(${entries},${call.options.output === 'html'})}`
+      }
       if (Object.hasOwn(call.members, '["theme"]'))
         return JSON.stringify({ theme: scope(call.members['["theme"]']!) })
-      if (!Object.keys(call.members).length) return JSON.stringify({})
-      return JSON.stringify({
-        themes: Object.fromEntries(
-          Object.entries(call.members).map(([key, name]) => [
-            (JSON.parse(key) as readonly string[])[1]!,
-            scope(name),
-          ]),
-        ),
-      })
+      return '{}'
     })()
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
       ? ` as ${call.type ?? `import('zyzz').Theme.Definition<${call.tokenType}>`}`
@@ -312,7 +341,12 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable || usesHtml || extracted.variableCalls?.length) {
+  if (
+    usesSelection ||
+    callable ||
+    usesHtml ||
+    extracted.variableCalls?.length
+  ) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -324,7 +358,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesSelection ? `Selection as ${selection}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

@@ -1,0 +1,177 @@
+# At-Rules
+
+> [!NOTE]
+> Accepted API direction; new helpers and expanded grammar are not implemented. Existing `fontFace`, `global`, `keyframes`, and `layers` retain their current compiler boundaries.
+
+Stylesheet declarations use direct named imports from `zyzz/web`. Conditional and grouping rules remain native `@…` keys in valid style contexts. `global` owns global selectors and their grouping rules; descriptor and statement rules have dedicated functions.
+
+## Functions
+
+Signatures below describe the accepted call shapes. Multi-field helpers receive one named object parameter. New public TypeScript type names and unresolved options remain provisional.
+
+| CSS rule               | Authoring                                                                | Result                                   |
+| ---------------------- | ------------------------------------------------------------------------ | ---------------------------------------- |
+| `@charset`             | Stylesheet output encoding option; spelling to be designed               | Output metadata                          |
+| `@color-profile`       | `colorProfile(descriptors)`                                              | Typed profile reference                  |
+| `@container`           | `'@container …'` in style bodies                                         | Nested declarations or selectors         |
+| `@counter-style`       | `counterStyle(descriptors)`                                              | Typed counter-style reference            |
+| `@custom-media`        | `customMedia(query)`                                                     | Typed query reference                    |
+| `@document`            | Explicit legacy grouping support; helper/context spelling to be designed | Conditional global rules                 |
+| `@font-face`           | `fontFace(descriptors)`                                                  | Eager stylesheet effect                  |
+| `@font-feature-values` | `fontFeatureValues({ families, features })`                              | Font-family-associated stylesheet effect |
+| `@font-palette-values` | `fontPaletteValues(descriptors)`                                         | Typed palette reference                  |
+| `@function`            | `cssFunction(definition)`                                                | Callable CSS function reference          |
+| `@import`              | `importCss({ layer, media, supports, url })`                             | Ordered stylesheet import                |
+| `@keyframes`           | `keyframes(frames)`                                                      | Typed animation reference                |
+| `@layer`               | `layers(names)` and declared `'@layer …'` keys                           | Layer order and grouped rules            |
+| `@media`               | `'@media …'` in style bodies                                             | Nested declarations or selectors         |
+| `@namespace`           | `namespace({ prefix, uri })`; omit `prefix` for the default namespace    | Stylesheet namespace declaration         |
+| `@page`                | `page({ descriptors, selector })`; `selector` is optional                | Eager page rule                          |
+| `@position-try`        | `positionTry(declarations)`                                              | Typed fallback reference                 |
+| `@property`            | Registration descriptors on `Vars.define`                                | Existing variable references and `.set`  |
+| `@scope`               | `'@scope …'` in valid style/grouping bodies                              | Scoped rules                             |
+| `@starting-style`      | `'@starting-style'` in valid style/grouping bodies                       | Starting declarations or selectors       |
+| `@supports`            | `'@supports …'` in style bodies                                          | Nested declarations or selectors         |
+| `@view-transition`     | `viewTransition(descriptors)`                                            | Eager stylesheet effect                  |
+
+The coverage inventory follows [MDN's at-rule reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules), including descriptors, nested page-margin rules, font-feature blocks, and statement/block forms. Experimental and legacy rules remain explicit inventory entries. Compiler support and browser availability are separate claims.
+
+Import options `layer`, `media`, and `supports` are optional; `url` is required. Font feature values require both `families` and `features`. Page rules require `descriptors`; `selector` is optional. Namespace declarations require `uri`; `prefix` is optional. None of these functions has an optional positional options bag.
+
+## Declarations
+
+Descriptor keys use camelCase. CSS string values retain required quoting. Bodies have rule-specific types: `navigation` belongs to `viewTransition`, page margin boxes belong to `page`, and `positionTry` accepts only declarations permitted by that rule.
+
+```ts
+import {
+  fontFace,
+  fontFeatureValues,
+  importCss,
+  page,
+  viewTransition,
+} from 'zyzz/web'
+
+importCss({ layer: 'reset', url: './reset.css' })
+importCss({ media: 'print', url: './print.css' })
+
+fontFace({
+  fontFamily: '"Inter"',
+  fontFeatureSettings: '"cv11"',
+  fontVariationSettings: '"wght" 450',
+  src: 'url("./inter.woff2")',
+})
+
+fontFeatureValues({
+  families: '"Example Font"',
+  features: {
+    '@styleset': { editorial: '1 3' },
+    '@swash': { decorative: 2 },
+  },
+})
+
+page({
+  descriptors: {
+    size: 'A4',
+    margin: '2cm',
+    '@bottom-center': { content: 'counter(page)' },
+  },
+})
+
+page({ descriptors: { marginTop: '4cm' }, selector: ':first' })
+viewTransition({ navigation: 'auto' })
+```
+
+Repeated calls preserve distinct rules and authored order. The optional page selector supports named pages and page pseudo-classes; omission targets all pages. Font feature values retain their special nested block grammar.
+
+## Named References
+
+Reusable named definitions return domain-specific references. The compiler assigns stable package/module/binding names and preserves them through aliases, imports, re-exports, packed libraries, and rebuilds. Definitions do not require handwritten CSS names.
+
+```ts
+import { counterStyle, fontPaletteValues, positionTry } from 'zyzz/web'
+
+export const circled = counterStyle({
+  system: 'fixed',
+  symbols: '"①" "②" "③"',
+  suffix: '" "',
+})
+
+export const brandPalette = fontPaletteValues({
+  fontFamily: '"Brand Icons"',
+  basePalette: 0,
+  overrideColors: '0 #ff5500, 1 #111111',
+})
+
+export const above = positionTry({
+  positionArea: 'top',
+  marginBottom: '0.5rem',
+})
+```
+
+```ts
+import { css } from './zyzz.config.js'
+import { above, brandPalette, circled } from './stylesheets.js'
+
+export const styles = {
+  icon: css({ fontPalette: brandPalette }),
+  list: css({ listStyleType: circled }),
+  tooltip: css({
+    position: 'absolute',
+    positionTryFallbacks: above,
+  }),
+}
+```
+
+References retain their domains: a palette reference cannot become an animation name. Typed consumption also needs coverage in lists, shorthands, templates, cross-definition references, and CSS function arguments. External/global-name overrides require explicit ownership and collision semantics before exposing an option.
+
+## Nested Rules
+
+Grouping remains available in `css`, `variants`, compound variants, and global selector maps wherever CSS permits that context. Scope roots/limits retain native nesting and specificity semantics.
+
+```ts
+import { css } from './zyzz.config.js'
+
+export const styles = {
+  card: css({
+    '@scope (&) to (.boundary)': {
+      '& h2': { color: 'red' },
+    },
+    '@container scroll-state(stuck: top)': {
+      boxShadow: '0 2px 8px #0002',
+    },
+    '@starting-style': { opacity: 0 },
+  }),
+}
+```
+
+Scroll-state conditions require a separately configured query container; they query an eligible ancestor. Complete query grammar includes named, unnamed, combined, negated, size, style, and scroll-state forms.
+
+Keyframes also gain named timeline-range stops while preserving existing stops and authored order:
+
+```ts
+import { keyframes } from 'zyzz/web'
+
+export const reveal = keyframes({
+  'entry 0%': { opacity: 0 },
+  'entry 100%': { opacity: 1 },
+})
+```
+
+## Open Contracts
+
+These decisions precede implementation of the affected helper. They do not defer any rule out of the full-support goal.
+
+- **Contexts:** define one ordered mechanism for conditional/layered helper declarations, anonymous layers, nesting, repeated blocks, and legal rule placement. Keep descriptors in dedicated functions. Do not introduce an application-executing callback DSL or runtime registration.
+- **CSS functions:** specify parameters, defaults, return domains, local custom properties, permitted nested rules, and typed invocation. Calls create CSS expressions; the browser evaluates the CSS function.
+- **Query and profile references:** define how `customMedia` enters query keys and `colorProfile` enters `color()` without losing reference identity.
+- **External names:** define explicit names, counter fallback/extension references, font-feature aliases, named pages, and collisions across packages.
+- **Statements:** define import supports/layer/media options, anonymous import layers, relative asset ownership, and default namespace emission. Preserve namespace meaning across combined source modules; never hoist across a semantic boundary merely to produce valid syntax.
+- **Encoding and legacy rules:** define the UTF-8 output/charset policy and explicit `@document` compatibility syntax. No ambient encoding or browser-dependent compiler behavior.
+
+## Compilation and Evidence
+
+All helpers are static authoring operations. Calls compile away; no stylesheet generation, registration, or authoring validation is added to runtime `css`/`variants` applications. Use static types for authoring constraints and source diagnostics for extraction, ordering, identity, and unsupported target semantics.
+
+Eager effects survive JavaScript tree shaking. Named definitions follow reachability with exported and externally observable names handled explicitly. Preserve declaration and rule order, URL ownership, source maps, HMR replacement/deletion, and packed-library metadata.
+
+Full support requires independent type, extraction, emission, map, packaging, and applicable browser fixtures for every inventory entry. Track unavailable browser features explicitly; accepted strings or emitted snapshots cannot substitute for rendering evidence. Web-only operations retain explicit native-target diagnostics.

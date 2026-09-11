@@ -564,18 +564,24 @@ function build(options: compile.Options, cache?: Cache): Cache {
       ),
     ),
   ].filter((name) => name !== 'reset')
-  for (const resetOwner of resetOwners)
+  for (const resetOwner of resetOwners) {
+    const entryLayers = [
+      ...new Set(
+        reachable(resetOwner).flatMap((section) => section.layers.flat()),
+      ),
+    ].filter((name) => name !== 'reset')
     sections.set(resetOwner, [
       {
         source: resetOwner,
         key: 'optional-reset-order',
         css: '',
-        layers: layerNames.length
-          ? layerNames.map((name) => ['reset', name])
+        layers: entryLayers.length
+          ? entryLayers.map((name) => ['reset', name])
           : [['reset']],
       },
       ...(sections.get(resetOwner) ?? []),
     ])
+  }
   function dependencyPath(from: string, to: string): readonly string[] {
     const queue = [{ id: from, path: [] as string[] }]
     const seen = new Set<string>()
@@ -611,9 +617,26 @@ function build(options: compile.Options, cache?: Cache): Cache {
   const sharedVisited = new Set<string>()
   const shared = (() => {
     try {
-      return Stylesheets.render(
-        ids.flatMap((id) => reachable(id, sharedVisited)),
-      )
+      const sharedSections = ids.flatMap((id) => reachable(id, sharedVisited))
+      const resetSource =
+        resetOwners[0] ??
+        sharedSections.find((section) => section.key === 'optional-reset-order')
+          ?.source
+      return Stylesheets.render([
+        ...(resetSource === undefined
+          ? []
+          : [
+              {
+                source: resetSource,
+                key: 'optional-reset-graph-order',
+                css: '',
+                layers: layerNames.length
+                  ? layerNames.map((name) => ['reset', name])
+                  : [['reset']],
+              },
+            ]),
+        ...sharedSections,
+      ])
     } catch (error) {
       return fail(
         error instanceof Stylesheets.ConflictError ? error.source : ids[0]!,

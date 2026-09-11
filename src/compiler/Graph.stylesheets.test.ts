@@ -8,6 +8,34 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 describe('compile', () => {
+  test('isolates packed reset layers while retaining graph-wide ordering', () => {
+    const library = Graph.compile({
+      modules: {
+        'a.ts': `import 'zyzz/reset.css';import {layers} from 'zyzz/web';layers(['a']);`,
+        'b.ts': `import 'zyzz/reset.css';import {layers} from 'zyzz/web';layers(['b']);`,
+      },
+    })
+    expect(library.sharedCss).toMatchInlineSnapshot(`"@layer reset,a,b;"`)
+    const app = Graph.compile({
+      contracts: { 'lib/a.js': library.contracts['a.ts']! },
+      imports: { 'app.ts': { lib: 'lib/a.js' } },
+      modules: { 'app.ts': `import 'lib';` },
+    })
+    expect(app.sharedCss).toMatchInlineSnapshot(`"@layer reset,a;"`)
+    const consumer = Graph.compile({
+      contracts: { 'lib/a.js': library.contracts['a.ts']! },
+      imports: {
+        'app.ts': { lib: 'lib/a.js' },
+        'extra.ts': { 'zyzz/web': null },
+      },
+      modules: {
+        'app.ts': `import 'lib';`,
+        'extra.ts': `import {layers} from 'zyzz/web';layers(['extra']);`,
+      },
+    })
+    expect(consumer.sharedCss).toMatchInlineSnapshot(`"@layer reset,a,extra;"`)
+  })
+
   test('excludes unreachable library layers from reset ordering', () => {
     const library = Graph.compile({
       modules: {

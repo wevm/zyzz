@@ -293,7 +293,10 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
         const entries = properties(object, allowed)
         if (
           entries.some(
-            (property) => property.type === 'Property' && property.computed,
+            (property) =>
+              property.type === 'Property' &&
+              property.computed &&
+              property.key.type !== 'Literal',
           )
         )
           throw new Themes.InvalidError(
@@ -368,7 +371,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
             'Static object prototypes are unsupported.',
             entry,
           )
-        if (entry.computed) {
+        if (entry.computed && entry.key.type !== 'Literal') {
           result.set(`computed:${entry.start}`, entry)
           continue
         }
@@ -378,12 +381,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
             : entry.key.type === 'Literal'
               ? String(entry.key.value)
               : undefined
-        if (
-          key === undefined ||
-          entry.computed ||
-          entry.method ||
-          entry.kind !== 'init'
-        )
+        if (key === undefined || entry.method || entry.kind !== 'init')
           throw new Themes.InvalidError(
             'Static data requires literal property keys without methods.',
             entry,

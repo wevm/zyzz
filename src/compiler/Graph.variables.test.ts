@@ -7,6 +7,19 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 describe('compile', () => {
+  test('resolves computed literal static keys with authored override order', () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {css} from 'zyzz';const first={width:'5px',['width']:'10px'};const second={['width']:'20px',width:'30px'};const third={['width']:'40px'};export const styles={a:css({width:first.width}),b:css({width:second.width}),c:css({width:third.width})};`,
+      },
+    })
+    expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-style-1e8a67z1uaws1j-167{width:10px;}
+      .z-style-1e8a67z1uaws1j-194{width:30px;}
+      .z-style-1e8a67z1uaws1j-222{width:40px;}"
+    `)
+  })
+
   test('rejects indexed folding across array spreads', () => {
     expect(() =>
       Graph.compile({

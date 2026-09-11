@@ -635,7 +635,9 @@ export function extract(
             if (
               typeof options.fontDisplay !== 'string' ||
               !['auto', 'block', 'fallback', 'optional', 'swap'].includes(
-                options.fontDisplay.trim().toLowerCase(),
+                options.fontDisplay
+                  .trim()
+                  .replace(/[A-Z]/g, (letter) => letter.toLowerCase()),
               )
             )
               throw new Error('Invalid font display descriptor.')
@@ -703,7 +705,11 @@ export function extract(
               (key !== 'navigation' && key !== 'types') ||
               typeof value !== 'string' ||
               (key === 'navigation' &&
-                !['auto', 'none'].includes(value.trim().toLowerCase()))
+                !['auto', 'none'].includes(
+                  value
+                    .trim()
+                    .replace(/[A-Z]/g, (letter) => letter.toLowerCase()),
+                ))
             )
               throw new Error(
                 'Expected navigation or types view-transition descriptors.',

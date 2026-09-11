@@ -1,4 +1,5 @@
 /** Declares named OpenType feature sets for a font family list. @module */
+import type * as Lexical from '../internal/Lexical.js'
 import { MissingTransformError } from '../css.js'
 import type * as Context from './internal/Context.js'
 
@@ -70,7 +71,7 @@ type Keyword<value extends string> =
     ? Keyword<rest>
     : value extends `${infer rest}${' ' | '\t' | '\n' | '\r' | '\f'}`
       ? Keyword<rest>
-      : Lowercase<value>
+      : Lexical.Fold<value>
 
 type Checked<value, domain> = value extends string
   ? Keyword<value> extends domain

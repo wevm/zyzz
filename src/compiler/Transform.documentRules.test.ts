@@ -19,6 +19,14 @@ viewTransition({navigation:' AUTO '});`,
     `)
   })
   test('rejects reserved aliases, malformed families, and table-only page properties', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'bad.ts',
+        source: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Body',fontDisplay:'blocK',features:{}});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: bad.ts:43: Invalid font display descriptor.]`,
+    )
     for (const name of [
       'initial',
       'inherit',

@@ -137,7 +137,7 @@ export function write(
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
     return {
-      ...(link.call.script ? { script: true } : {}),
+      ...(link.call.script && (link.kind === 'config' || link.call.initialization) ? { script: true } : {}),
       binding: link.binding,
       kind: link.kind,
       theme: link.call.name,
@@ -174,7 +174,7 @@ export function write(
     ),
     version: Object.values(links).some(
       (link) =>
-        link.call.selection || link.call.initialization || link.call.script,
+        link.call.selection || link.call.initialization || (link.kind === 'config' && link.call.script),
     )
       ? 4
       : Object.values(themes).some(

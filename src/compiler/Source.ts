@@ -757,9 +757,9 @@ export declare namespace extract {
     readonly styles: Style.Definition
     /** Local bound-authoring initializers and their retained token types. */
     readonly themeAliases: readonly Themes.Alias[]
-    /** Local factory spans replaced by compiled scope data. */
     /** Configuration identities retaining their initialization helper. */
     readonly themeScripts?: readonly string[] | undefined
+    /** Local factory spans replaced by compiled scope data. */
     readonly themeCalls: readonly Themes.Call[]
     /** Scope reads replaced by class constants. */
     readonly themeReferences: readonly Themes.Reference[]

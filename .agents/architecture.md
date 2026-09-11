@@ -819,6 +819,14 @@ Animation tests inspect paused/seeked animation progress through the real browse
 
 These authoring calls compile away into explicit stylesheet contributions. Preserve global/font-face side effects through tree shaking; emit reachable keyframes with stable references. Pure in-memory compilation receives extracted contributions as data and never relies on module registration. Native rejects these web-only operations; fonts are loaded through platform mechanisms.
 
+### Complete At-Rule Authoring
+
+Accepted direction: [top-level stylesheet functions](../docs/api/web/at-rules.md). New helpers remain unimplemented until their Phase 2.5 evidence gates pass. Descriptor/statement rules use direct `zyzz/web` imports; `global` retains selectors and grouping rules.
+
+Named helpers return domain-specific references with compiler-owned identities. Eager helpers retain stylesheet effects. Existing `fontFace`, `keyframes`, `layers`, and `Vars.define` gain complete grammar coverage; variable registration stays on `Vars.define`.
+
+The linked contract specifies every MDN at-rule, descriptor contexts, repeated calls, page/font subrules, and examples. Conditional/layered declarations, query/profile reference consumption, external names, CSS functions, encoding, and namespace boundaries remain explicit design gates. New authoring APIs add no runtime validation or registration.
+
 ### Layer and Global Collection
 
 Accepted API for 2.4c: `Config.create({ layers, ... })` declares semantic layer order and binds inferred `@layer <name>` keys on `css` and `variants`. `global(styles)` contributes global selector rules and supported nested at-rules anywhere at module scope. The [configuration contract](#configuration-and-inferred-authoring) replaces computed layer-reference keys in config-bound examples.
@@ -1216,7 +1224,7 @@ Before implementing variable registration, decide how `Vars.define` expresses op
 
 Renderer output also needs an explicit adapter contract: `className` plus a style object is not the same as DOM `class` plus a serialized style attribute. Keep application-time style definitions callable and spreadable; serialize at the target boundary with correct escaping and retain recipe attributes. The adapter belongs outside the agnostic core.
 
-Later web capabilities include `@scope`, container style/scroll-state queries, view transitions, anchor fallbacks, scroll-driven animations, counter styles, and paged media. Track grammar, identity, reachability, target constraints, and browser evidence separately. Raw CSS syntax is an authoring form, not permission to silently pass unsupported constructs through every target.
+Full at-rule authoring is assigned to [Phase 2.5](plan.md#full-at-rule-support), using dedicated stylesheet functions and native grouping keys. Related property values and browser orchestration retain separate gates. Track grammar, identity, reachability, target constraints, and browser evidence independently; raw passthrough does not establish support.
 
 ### CLI Commands and Defaults
 

@@ -594,6 +594,8 @@ Specify required/missing contract leaves, domain inference, external name mappin
 
 ## 20. View Transitions
 
+Accepted Phase 2.5 API: `viewTransition(descriptors)` from `zyzz/web` declares `@view-transition`. Implementation is pending. Scoped transition names/classes, pseudo-elements, and application navigation remain separate capabilities.
+
 Sources: StyleX `viewTransitionClass`, vanilla-extract `createViewTransition`, ordinary CSS in Tailwind. **Deferred:** typed scoped names/classes and transition pseudo-element contributions. Illustrative external stylesheet integration:
 
 ```ts
@@ -618,6 +620,8 @@ The declaration itself awaits property support. Define uniqueness, imported name
 
 ## 21. Anchor Positioning and Position Fallbacks
 
+Accepted Phase 2.5 API: `positionTry(declarations)` from `zyzz/web` returns a typed reference consumed by `positionTryFallbacks`. Implementation is pending; the CSS below illustrates the target semantics, not a requirement to author handwritten names.
+
 Sources: StyleX `positionTry` and ordinary CSS positioning elsewhere. **Deferred:** declarations, restricted `@position-try` descriptors, and scoped references. External CSS target:
 
 ```ts
@@ -641,6 +645,8 @@ const styles = {
 These declarations await capability support. Validate fallback-only descriptors and names; they are not ordinary element style blocks. Anchor layout does not provide popover behavior or accessibility semantics.
 
 ## 22. Advanced Conditions, Timelines, and Stylesheet Rules
+
+The [complete at-rule contract](../docs/api/web/at-rules.md) assigns all MDN rules and descriptors to [Phase 2.5](plan.md#full-at-rule-support). Dedicated top-level functions own stylesheet declarations; grouping rules remain in style bodies. External CSS examples below illustrate semantics and do not satisfy implementation or type gates.
 
 Sources: standard CSS reachable through the libraries; extensions beyond their dedicated helpers are tracked explicitly. **Deferred:** `@scope`, container style/scroll-state queries, scroll-driven timelines, `@counter-style`, paged media, and emerging functions. External CSS target examples:
 

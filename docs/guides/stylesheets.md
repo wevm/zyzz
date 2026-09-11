@@ -2,6 +2,34 @@
 
 Declare global rules, cascade order, fonts, and animations. Begin with [Getting Started](../introduction/getting-started.md) to connect compilation.
 
+## At-Rule Functions
+
+> [!NOTE]
+> The following helpers are planned. See the [complete API proposal](../api/web/at-rules.md) for signatures, reference behavior, and remaining design gates.
+
+Declare stylesheet rules through direct functions:
+
+```ts
+import { page, positionTry, viewTransition } from 'zyzz/web'
+
+export const above = positionTry({
+  positionArea: 'top',
+  marginBottom: '0.5rem',
+})
+
+page({
+  size: 'A4',
+  margin: '2cm',
+  '@bottom-center': { content: 'counter(page)' },
+})
+
+viewTransition({ navigation: 'auto' })
+```
+
+Named helpers return typed references, following `keyframes`. For example, `above` becomes a `positionTryFallbacks` value. Repeated calls preserve distinct stylesheet rules; helper calls compile away.
+
+Use `global` for global selectors and nested grouping. Keep `@media`, `@supports`, `@container`, `@scope`, `@starting-style`, and declared `@layer` keys in valid style bodies. Expanded grammar remains part of the proposal.
+
 ## Recipes
 
 ### Global Styles

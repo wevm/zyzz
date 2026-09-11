@@ -9,3 +9,10 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 | [global](global.md)       | Contribute eager global selectors and nested stylesheet rules. |
 | [keyframes](keyframes.md) | Define an animation with a stable typed name reference.        |
 | [layers](layers.md) | Contribute ordered cascade layer names. |
+
+## At-Rule Functions
+
+> [!NOTE]
+> The [complete at-rule API](at-rules.md) is an accepted design; new helpers are not implemented.
+
+Planned direct imports include `counterStyle`, `positionTry`, `fontPaletteValues`, `colorProfile`, `fontFeatureValues`, `page`, `viewTransition`, `importCss`, `namespace`, `customMedia`, and `cssFunction`. Conditional/grouping rules remain native keys in valid style bodies. Registration extends `Vars.define`.

@@ -95,7 +95,7 @@ describe('stylesheet contributions', () => {
       'if(true) global({body:{color:"red"}})',
       'global({"[":{color:"red"}})',
       'layers(["one","two"]); layers(["two","one"])',
-      'const frames=keyframes({"101%":{opacity:0}})',
+      'export const frames=keyframes({"101%":{opacity:0}})',
     ].map((source) => {
       try {
         Transform.compile({
@@ -109,10 +109,10 @@ describe('stylesheet contributions', () => {
     })
     expect(failures).toMatchInlineSnapshot(`
       [
-        "bad.ts:58: Stylesheet contributions require direct module-level calls and constant animation bindings.",
+        "bad.ts:58: Stylesheet contributions require direct module-level calls and constant named stylesheet bindings.",
         "bad.ts:49: Unexpected end of input",
         "bad.ts:49: ["contributions"]: Conflicting layer order constraints.",
-        "bad.ts:62: Keyframe stops must be from, to, or percentages from 0 to 100.",
+        "bad.ts:69: Keyframe stops must be from, to, or percentages from 0 to 100.",
       ]
     `)
   })

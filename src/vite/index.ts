@@ -649,11 +649,36 @@ export function zyzz(): Plugin {
             typeof output.source === 'string'
               ? output.source
               : new TextDecoder().decode(output.source)
-          output.source = AtRules.rename(
-            Namespaces.bundle(css),
-            '-zyzz-font-feature-values',
+          const external = bundle[`${output.fileName}.map`]
+          const inline = css.match(
+            /\/\*# sourceMappingURL=data:application\/json(?:;charset=[^;,]+)?;base64,([A-Za-z0-9+/=]+)\s*\*\//,
+          )
+          const previous =
+            external?.type === 'asset'
+              ? (JSON.parse(
+                  typeof external.source === 'string'
+                    ? external.source
+                    : new TextDecoder().decode(external.source),
+                ) as Mapping.EncodedSourceMap)
+              : inline
+                ? (JSON.parse(
+                    Buffer.from(inline[1]!, 'base64').toString(),
+                  ) as Mapping.EncodedSourceMap)
+                : undefined
+          const result = Namespaces.bundle(css, previous)
+          let restored = AtRules.rename(
+            result.css,
+            '-zyzz-ffv-000000000',
             'font-feature-values',
           )
+          if (result.map && external?.type === 'asset')
+            external.source = JSON.stringify(result.map)
+          if (result.map && inline)
+            restored = restored.replace(
+              inline[0],
+              `/*# sourceMappingURL=data:application/json;base64,${Buffer.from(JSON.stringify(result.map)).toString('base64')} */`,
+            )
+          output.source = restored
         }
       },
     },
@@ -714,7 +739,7 @@ export function zyzz(): Plugin {
           ? AtRules.rename(
               Namespaces.protect(css),
               'font-feature-values',
-              '-zyzz-font-feature-values',
+              '-zyzz-ffv-000000000',
             )
           : css
       if (id === sharedId)

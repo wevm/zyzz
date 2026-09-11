@@ -4,6 +4,27 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 
 describe('compile', () => {
+  test('prunes unused named statements and emits JavaScript function formatters', async () => {
+    const output = Transform.compile({
+      moduleId: 'functions.js',
+      source: `import {css} from 'zyzz';import {cssFunction,customMedia} from 'zyzz/web';const unused=customMedia(false);const dead=cssFunction({parameters:[],body:{result:1}});const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],returns:'<number>',body:{result:'calc(var(--x)*2)'}});export const styles={box:css({opacity:twice(+1)})};`,
+    })
+    expect(
+      (await Esbuild.transform(output.code, { loader: 'js' })).warnings,
+    ).toMatchInlineSnapshot('[]')
+    expect(output.css).toMatchInlineSnapshot(`
+      "@function --z-cssfunction172pj15vy9qt-74-77-69-63-65(--x <number>) returns <number>{result:calc(var(--x)*2);}
+      .z-172pj15vy9qt-base0{opacity:--z-cssfunction172pj15vy9qt-74-77-69-63-65(1);}"
+    `)
+  })
+  test('rejects unsupported CSS function arguments without emitting a bare identity', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'bad.ts',
+        source: `import {css} from 'zyzz';import {cssFunction} from 'zyzz/web';const amount=2;const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],body:{result:2}});export const styles={box:css({opacity:twice(amount)})};`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: bad.ts:202: Expected a literal string or number; expressions are not evaluated.]`)
+  })
   test('hoists conditioned imports before namespace and ordinary rules', () => {
     const output = Graph.compile({
       modules: {

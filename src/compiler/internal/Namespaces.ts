@@ -1,5 +1,5 @@
 /** Isolates CSS namespace selectors and composes their generated source maps. @module */
-import MagicString from 'magic-string'
+import MagicString, { Bundle } from 'magic-string'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Trace from '@jridgewell/trace-mapping'
 import type * as Lightning from 'lightningcss'
@@ -162,12 +162,12 @@ export function read(value: unknown): readonly Namespace.Definition[] {
 
 /** Shields namespaces until Vite has concatenated and minified its CSS chunks. */
 export function protect(css: string): string {
-  return AtRules.rename(css, 'namespace', '-zyzz-namespace')
+  return AtRules.rename(css, 'namespace', '-zyzz-ns-')
 }
 
 /** Restores namespace declarations to the stylesheet prolog after bundling. */
-export function bundle(css: string): string {
-  if (!css.includes('@-zyzz-namespace')) return css
+export function bundle(css: string, previous?: Mapping.EncodedSourceMap) {
+  if (!css.includes('@-zyzz-ns-')) return { css, map: previous }
   const lines = [0]
   for (let index = 0; index < css.length; index++)
     if (css[index] === '\n') lines.push(index + 1)
@@ -179,7 +179,7 @@ export function bundle(css: string): string {
       StyleSheet(sheet) {
         for (const rule of sheet.rules) {
           const namespace =
-            rule.type === 'unknown' && rule.value.name === '-zyzz-namespace'
+            rule.type === 'unknown' && rule.value.name === '-zyzz-ns-'
           if (
             !namespace &&
             rule.type !== 'import' &&
@@ -216,16 +216,70 @@ export function bundle(css: string): string {
       },
     },
   })
-  const output = new MagicString(css)
-  const prolog = statements.toSorted(
+  const original = new MagicString(css, { filename: 'bundle.css' })
+  const output = new Bundle({ separator: '' })
+  const remaining = original.clone()
+  const seen = new Set<string>()
+  for (const statement of statements.toSorted(
     (a, b) => Number(a.namespace) - Number(b.namespace),
+  )) {
+    const text = css.slice(statement.start, statement.end)
+    remaining.remove(statement.start, statement.end)
+    if (statement.namespace && seen.has(text)) continue
+    if (statement.namespace) seen.add(text)
+    output.addSource({
+      content: original.snip(statement.start, statement.end),
+      filename: 'bundle.css',
+    })
+  }
+  output.addSource({ content: remaining, filename: 'bundle.css' })
+  const restored = AtRules.rename(output.toString(), '-zyzz-ns-', 'namespace')
+  if (!previous) return { css: restored, map: previous }
+  const input = new Trace.TraceMap(previous)
+  const map = new Mapping.GenMapping({ file: previous.file ?? 'bundle.css' })
+  Trace.eachMapping(
+    new Trace.TraceMap(
+      output.generateMap({ hires: true, includeContent: true }).toString(),
+    ),
+    (entry) => {
+      if (entry.originalLine === null || entry.originalColumn === null) return
+      const original = Trace.originalPositionFor(input, {
+        line: entry.originalLine,
+        column: entry.originalColumn,
+      })
+      if (
+        original.source === null ||
+        original.line === null ||
+        original.column === null
+      )
+        return
+      const generated = {
+        line: entry.generatedLine,
+        column: entry.generatedColumn,
+      }
+      const position = { line: original.line, column: original.column }
+      if (original.name)
+        Mapping.addMapping(map, {
+          generated,
+          original: position,
+          source: original.source,
+          name: original.name,
+        })
+      else
+        Mapping.addMapping(map, {
+          generated,
+          original: position,
+          source: original.source,
+        })
+    },
   )
-  for (const statement of statements)
-    output.remove(statement.start, statement.end)
-  output.prepend(
-    [...new Set(prolog.map((value) => css.slice(value.start, value.end)))].join(
-      '\n',
-    ) + '\n',
-  )
-  return AtRules.rename(output.toString(), '-zyzz-namespace', 'namespace')
+  previous.sources.forEach((source, index) => {
+    if (source !== null)
+      Mapping.setSourceContent(
+        map,
+        source,
+        previous.sourcesContent?.[index] ?? null,
+      )
+  })
+  return { css: restored, map: Mapping.toEncodedMap(map) }
 }

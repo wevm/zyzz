@@ -71,6 +71,8 @@ export function create(definition: Definition) {
     throw new Error(
       'Marker identities require compiler-owned data-z attributes.',
     )
+  const states = schema(definition.schema)
+  const id = definition.id
   return (
     input: Readonly<Record<string, boolean | string | undefined>> = {},
   ) => {
@@ -78,20 +80,20 @@ export function create(definition: Definition) {
       throw new Error('Marker input must be a state record.')
     if (Object.getOwnPropertySymbols(input).length)
       throw new Error('Unknown marker state: symbol')
-    const result: Record<string, string> = { [definition.id]: '' }
+    const result: Record<string, string> = { [id]: '' }
     for (const [name, descriptor] of Object.entries(
       Object.getOwnPropertyDescriptors(input),
     )) {
-      if (!('value' in descriptor) || !Object.hasOwn(definition.schema, name))
+      if (!('value' in descriptor) || !Object.hasOwn(states, name))
         throw new Error(`Unknown marker state: ${name}`)
       const value: unknown = descriptor.value
       if (value === undefined) continue
       if (
         (typeof value !== 'string' && typeof value !== 'boolean') ||
-        !definition.schema[name]!.includes(value)
+        !states[name]!.includes(value)
       )
         throw new Error(`Invalid marker state: ${name}`)
-      result[`${definition.id}-${name.toLowerCase()}`] = String(value)
+      result[`${id}-${name.toLowerCase()}`] = String(value)
     }
     return Object.freeze(result)
   }

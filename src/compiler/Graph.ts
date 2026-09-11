@@ -200,7 +200,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
   function resolve(
     moduleId: string,
     specifier: string,
-    node: Ast.Node,
+    node: Pick<Ast.Node, 'start' | 'end'> = { start: 0, end: 0 },
   ): string | undefined {
     if (options.imports !== undefined) {
       const imports = options.imports[moduleId]
@@ -475,12 +475,43 @@ function build(options: compile.Options, cache?: Cache): Cache {
   for (const [id, library] of Object.entries(libraries))
     sections.set(
       id,
-      library.stylesheets.map((section) => ({
-        ...section,
-        owner: id,
-        source: Stylesheets.resolve(id, section.source),
-      })),
+      library.stylesheets.map((section) => {
+        let owner = id
+        for (const specifier of section.dependency ?? []) {
+          const target = resolve(owner, specifier)
+          if (!target || !Object.hasOwn(libraries, target))
+            fail(
+              id,
+              'Repacked stylesheet dependencies require supplied library contracts.',
+            )
+          owner = target
+        }
+        return {
+          ...section,
+          owner,
+          source: Stylesheets.resolve(owner, section.source),
+        }
+      }),
     )
+  function dependencyPath(from: string, to: string): readonly string[] {
+    const queue = [{ id: from, path: [] as string[] }]
+    const seen = new Set<string>()
+    while (queue.length) {
+      const current = queue.shift()!
+      if (current.id === to) return current.path
+      if (seen.has(current.id)) continue
+      seen.add(current.id)
+      for (const [specifier, target] of Object.entries(
+        options.imports?.[current.id] ?? {},
+      ))
+        if (target)
+          queue.push({ id: target, path: [...current.path, specifier] })
+    }
+    fail(
+      from,
+      'Repacked stylesheet ownership requires a resolved dependency path.',
+    )
+  }
   function reachable(
     id: string,
     visited = new Set<string>(),
@@ -566,7 +597,14 @@ function build(options: compile.Options, cache?: Cache): Cache {
                 reachable(id).map((section) => ({
                   ...section,
                   owner: undefined,
-                  source: Stylesheets.relative(id, section.source),
+                  dependency:
+                    section.owner && section.owner !== id
+                      ? dependencyPath(id, section.owner)
+                      : undefined,
+                  source: Stylesheets.relative(
+                    section.owner ?? id,
+                    section.source,
+                  ),
                 })),
               ),
             ]),

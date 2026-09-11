@@ -7,6 +7,31 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 import { Marker } from 'zyzz/runtime'
 describe('marker', () => {
+  test('validates direct runtime schemas and rejects namespace authoring', () => {
+    expect(() =>
+      Marker.create({
+        id: 'data-z-card',
+        schema: { State: ['open'], state: ['closed'] },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Marker state names must be distinct data-name fragments without reserved keys.]`,
+    )
+    const input = { state: ['open'] }
+    const marker = Marker.create({ id: 'data-z-card', schema: input })
+    input.state.push('closed')
+    expect(() =>
+      marker({ state: 'closed' }),
+    ).toThrowErrorMatchingInlineSnapshot(`[Error: Invalid marker state: state]`)
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import * as Web from 'zyzz/web';export const card=Web.Css.marker();`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:50: Marker helpers require the named Css import from zyzz/web.]`,
+    )
+  })
   test('rejects indirect authoring factories and invalid runtime identities', () => {
     expect(() =>
       Source.extract({

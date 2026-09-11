@@ -126,6 +126,19 @@ export async function verify(options: verify.Options) {
         ? preview!.resolvedUrls!.local[0]!
         : server!.resolvedUrls!.local[0]!
       await page.goto(url)
+      if (!production) {
+        const optimizer = server!.environments.client.depsOptimizer
+        await optimizer?.scanProcessing
+        await Promise.all(
+          Object.values({
+            ...optimizer?.metadata.optimized,
+            ...optimizer?.metadata.discovered,
+          }).flatMap((dependency) =>
+            dependency.processing ? [dependency.processing] : [],
+          ),
+        )
+        await page.waitForLoadState('networkidle')
+      }
       await page.waitForFunction(
         'document.documentElement.dataset.ready === "true"',
       )

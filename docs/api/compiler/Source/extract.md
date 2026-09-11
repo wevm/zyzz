@@ -121,3 +121,7 @@ See [Source](README.md) for related methods and types.
 ## Declaration Values
 
 Direct literal fallback arrays expand into repeated declarations without reordering. Each entry retains its own source-map position and diagnostics. Trailing `!` and `!important` apply to that entry before literal/token resolution. Sparse arrays, spreads, nested arrays, and arbitrary expressions are rejected without evaluation.
+
+### markerCalls
+
+Optional immutable rewrite spans for module-owned `Css.marker` calls. Each entry has inclusive `start`, exclusive `end`, and a `definition` containing the generated attribute `id` and finite `schema`. The field is absent when no marker factories are declared. Extraction-only hosts must replace these spans with compiled runtime handles; `Transform.compile` performs that replacement automatically.

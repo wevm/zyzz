@@ -1,6 +1,6 @@
 /** Checks marker state inference and relationship-key authoring without broad state domains. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { css } from 'zyzz'
+import { css, Style } from 'zyzz'
 import { Css, global } from 'zyzz/web'
 describe('marker', () => {
   test('retains finite states and typed relationships', () => {
@@ -56,13 +56,29 @@ describe('marker', () => {
   })
 })
 
-test('excludes marker relationships from global declarations', () => {
-  const card = Css.marker()
-  // @ts-expect-error global rules cannot contain marker relationship keys
-  global({ body: { [Css.ancestor(card)]: { color: 'red' } } })
+describe('global', () => {
+  test('excludes marker relationships from global declarations', () => {
+    const card = Css.marker()
+    // @ts-expect-error global rules cannot contain marker relationship keys
+    global({ body: { [Css.ancestor(card)]: { color: 'red' } } })
+  })
 })
 
-test('requires compiler marker provenance', () => {
-  // @ts-expect-error arbitrary callables do not carry marker provenance
-  Css.ancestor(() => ({}))
+describe('relationships', () => {
+  test('requires compiler marker provenance', () => {
+    // @ts-expect-error arbitrary callables do not carry marker provenance
+    Css.ancestor(() => ({}))
+  })
+})
+
+describe('define', () => {
+  test('excludes source-only relationships from core definitions', () => {
+    const card = Css.marker()
+    // @ts-expect-error core definitions do not compile marker helpers
+    Style.define({ target: { [Css.ancestor(card)]: { color: 'red' } } })
+    // @ts-expect-error visited cannot be observed through has
+    Css.descendant(card, ':visited')
+    // @ts-expect-error visited cannot be observed through has
+    Css.siblingAfter(card, { pseudo: ':visited' })
+  })
 })

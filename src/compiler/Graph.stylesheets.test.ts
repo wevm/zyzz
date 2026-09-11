@@ -79,6 +79,15 @@ describe('compile', () => {
       await expect(host.build()).rejects.toThrow(
         'Asset path conflicts with generated output.',
       )
+      await Fs.mkdir(Path.join(root, 'assets'))
+      await Fs.writeFile(Path.join(root, 'assets/icon:dark.svg'), 'icon')
+      await Fs.writeFile(
+        Path.join(root, 'effects.ts'),
+        `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./assets/icon:dark.svg)'}})`,
+      )
+      await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
+        `[Error: Asset path escapes the package root.]`,
+      )
       await host.close()
     } finally {
       await Fs.rm(root, { recursive: true, force: true })

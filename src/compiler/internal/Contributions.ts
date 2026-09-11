@@ -1,4 +1,5 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
+import * as Condition from '../../internal/Condition.js'
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
 import * as Theme from '../../Theme.js'
@@ -15,6 +16,7 @@ export type Call = {
   readonly start: number
   readonly end: number
   readonly kind: Kind
+  readonly context?: Ast.Node | undefined
   readonly argument: Ast.Node
   readonly name?: string | undefined
   readonly binding?: number | undefined
@@ -128,7 +130,9 @@ export function scan(
       const statement = variable ? ancestors.at(-3) : parent
       if (
         node.optional ||
-        node.arguments.length !== 1 ||
+        (node.arguments.length !== 1 &&
+          (!['fontFace', 'keyframes'].includes(type) ||
+            node.arguments.length !== 2)) ||
         (!variable && parent?.type !== 'ExpressionStatement') ||
         ancestors
           .slice(0, -1)
@@ -167,6 +171,7 @@ export function scan(
         start: node.start,
         end: node.end,
         argument: node.arguments[0]!,
+        context: node.arguments[1],
         ...(type === 'keyframes'
           ? {
               name,
@@ -353,13 +358,20 @@ export function extract(
       ) => Style.Definition
     )({ contribution: record(value) }).styles[0]!
   }
+  function grouping(selector: string): boolean {
+    if (!selector.startsWith('@')) return false
+    if (!Condition.is(selector))
+      throw new Error('Expected a selector or supported grouping rule.')
+    Condition.normalize(selector)
+    return true
+  }
   function global(input: unknown): Style.NamedStyle {
     return {
       name: 'global',
       declarations: [],
       rules: Object.entries(record(input)).map(([selector, input]) => ({
         condition: selector,
-        style: selector.startsWith('@') ? global(input) : style(input),
+        style: grouping(selector) ? global(input) : style(input),
       })),
     }
   }
@@ -379,7 +391,7 @@ export function extract(
           result.push({
             kind: 'rule',
             selector,
-            style: selector.startsWith('@') ? global(child) : style(child),
+            style: grouping(selector) ? global(child) : style(child),
           })
       } else if (call.kind === 'fontFace') {
         const declarations = record(input)
@@ -391,6 +403,8 @@ export function extract(
           )
             delete declarations[key]
         const keys = [
+          'fontFeatureSettings',
+          'fontVariationSettings',
           'fontFamily',
           'src',
           'fontDisplay',
@@ -423,7 +437,12 @@ export function extract(
         const frames = Object.entries(record(input)).map(([stop, input]) => {
           if (
             stop.split(',').some((part) => {
-              part = part.trim()
+              part = part
+                .trim()
+                .replace(
+                  /^(contain|cover|entry|entry-crossing|exit|exit-crossing)\s+/,
+                  '',
+                )
               return (
                 !['from', 'to'].includes(part) &&
                 (!/^(?:\d+(?:\.\d+)?|\.\d+)%$/.test(part) ||
@@ -446,6 +465,26 @@ export function extract(
         })
         if (call.exported || scanned.used.has(call.name!))
           result.push({ kind: 'keyframes', name: call.name!, frames })
+      }
+      if (call.context) {
+        const context = record(value(call.context))
+        if (Object.keys(context).some((key) => key !== 'within'))
+          throw new Error('Unknown contribution context option.')
+        const within = context.within ?? []
+        if (
+          !Array.isArray(within) ||
+          within.some(
+            (header) =>
+              typeof header !== 'string' ||
+              !/^@(media|supports|container|layer) .+/.test(header),
+          )
+        )
+          throw new Error('Expected enclosing conditional or layer headers.')
+        const headers = within.map((header: string) =>
+          Condition.normalize(header),
+        )
+        for (let index = before; index < result.length; index++)
+          result[index] = { ...result[index]!, within: headers }
       }
       for (let index = before; index < result.length; index++)
         starts?.push(call.start)

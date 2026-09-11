@@ -10,6 +10,15 @@ export type Raw =
   | `${string}&${string}`
   | `:${string}`
   | '@starting-style'
+  | '@scope'
+  | '@layer'
+  | `@scope (${string}`
+  | `@scope to (${string}`
+  | `@layer ${string}`
+  | `@container scroll-state(${string}`
+  | `@container ${string} scroll-state(${string}`
+  | `@container not ${string}`
+  | `@supports selector(${string}`
   | `@supports ${string}(${string}`
   | `@media (${string}`
   | `@media ${Media}`
@@ -52,8 +61,8 @@ export function is(key: string): boolean {
   return (
     nested(key) ||
     key.startsWith(':') ||
-    key === '@starting-style' ||
-    /^@(media|supports|container) /.test(key)
+    ['@starting-style', '@scope', '@layer'].includes(key) ||
+    /^@(media|supports|container|scope|layer) /.test(key)
   )
 }
 

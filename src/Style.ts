@@ -211,17 +211,14 @@ export function define(
       report('invalid_structure', [name], 'Style names must not be empty.')
     const mappings = options.theme?.[Token.definition].contract.shorthands
     const authored = entries(style, [name])
-    const properties = mappings
-      ? authored.flatMap(
-          ([property, input]) =>
-            mappings?.[property]?.map((target) => [target, input] as const) ?? [
-              [property, input] as const,
-            ],
-        )
-      : authored
+    const properties = authored.flatMap(([property, input]) =>
+      (mappings?.[property] ?? [property]).map(
+        (target) => [target, input, property] as const,
+      ),
+    )
     if (properties.some(([key]) => Condition.is(key))) {
       const rules: Rule[] = []
-      for (const [key, input] of properties) {
+      for (const [key, input] of authored) {
         try {
           const condition = Condition.is(key)
             ? Query.resolve(
@@ -315,14 +312,14 @@ export function define(
       continue
     }
     const declarations: Declaration[] = []
-    for (const [property, input] of properties) {
+    for (const [property, input, authoredProperty] of properties) {
       const key = property as keyof Literal.Properties
       const inputs: unknown[] = []
       if (Array.isArray(input)) {
         if (!input.length) {
           report(
             'invalid_value',
-            [name, property],
+            [name, authoredProperty],
             'Fallback arrays must be nonempty.',
           )
           continue
@@ -335,7 +332,7 @@ export function define(
           if (!descriptor || !('value' in descriptor)) {
             report(
               'invalid_structure',
-              [name, property, String(index)],
+              [name, authoredProperty, String(index)],
               'Fallback arrays require dense data entries without accessors.',
             )
             continue
@@ -353,7 +350,7 @@ export function define(
         ) {
           report(
             'invalid_structure',
-            [name, property],
+            [name, authoredProperty],
             'Invalid compiler binding reference.',
           )
           continue

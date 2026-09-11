@@ -37,6 +37,7 @@ export type Call = {
   /** Config helper represented by this linked binding. */
   readonly selection?: boolean | undefined
   /** Legacy packed catalogs have static members but are not callable. */
+  /** Legacy packed catalog exposes members but lacks callable-selection capability. */
   readonly catalogOnly?: boolean | undefined
   /** Validated inline configuration options retained for packed declarations. */
   readonly options?: Readonly<Record<string, unknown>> | undefined

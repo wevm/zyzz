@@ -7,6 +7,58 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 describe('compile', () => {
+  test('resolves computed literal static keys with authored override order', () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {css} from 'zyzz';const first={width:'5px',['width']:'10px'};const second={['width']:'20px',width:'30px'};const third={['width']:'40px'};export const styles={a:css({width:first.width}),b:css({width:second.width}),c:css({width:third.width})};`,
+      },
+    })
+    expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-style-1e8a67z1uaws1j-167{width:10px;}
+      .z-style-1e8a67z1uaws1j-194{width:30px;}
+      .z-style-1e8a67z1uaws1j-222{width:40px;}"
+    `)
+  })
+
+  test('rejects indexed folding across array spreads', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {css} from 'zyzz';const prefix=['5px','6px'];const sizes=['10px',...prefix,'20px'];export const styles={card:css({width:sizes[2]})};`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:127: Static array indexes cannot cross spread elements.]`,
+    )
+  })
+
+  test('rejects source/packed slot collisions and unresolved computed overrides', () => {
+    const library = Graph.compile({
+      modules: {
+        'vars.ts': `import {Vars} from 'zyzz';export const vars=Vars.define({gap:'length'});`,
+      },
+    })
+    expect(() =>
+      Graph.compile({
+        contracts: { 'lib/vars.js': library.contracts['vars.ts']! },
+        modules: {
+          'vars.ts': `import {Vars} from 'zyzz';export const vars=Vars.define({gap:'length'});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: vars.ts:44: Conflicting variable identity: --z-v4t4nbe1og4cic-76-61-72-73--67-61-70; compile libraries with package-qualified module IDs.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {css} from 'zyzz';const base={width:'10px',[key]:'20px'};export const styles={card:css({width:base.width})};`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:101: Static member reads cannot cross unresolved computed keys.]`,
+    )
+  })
+
   test('normalizes wrapped compound static values and rejects loop mutation', () => {
     const source =
       "import {css} from 'zyzz';const size=10;export const styles={card:css({width:(`${size}px` as const)})};"

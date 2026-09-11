@@ -125,6 +125,12 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
         key !== undefined &&
         /^(?:0|[1-9]\d*)$/.test(key)
       ) {
+        if (
+          object.elements
+            .slice(0, Number(key) + 1)
+            .some((element) => element?.type === 'SpreadElement')
+        )
+          return undefined
         const element = object.elements[Number(key)]
         return element && element.type !== 'SpreadElement'
           ? initial(element, seen)
@@ -284,7 +290,20 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
             ? String(node.property.value)
             : undefined
       if (key !== undefined && object.type === 'ObjectExpression') {
-        const property = properties(object, allowed).find(
+        const entries = properties(object, allowed)
+        if (
+          entries.some(
+            (property) =>
+              property.type === 'Property' &&
+              property.computed &&
+              property.key.type !== 'Literal',
+          )
+        )
+          throw new Themes.InvalidError(
+            'Static member reads cannot cross unresolved computed keys.',
+            node,
+          )
+        const property = entries.find(
           (property) =>
             property.type === 'Property' &&
             (property.key.type === 'Identifier'
@@ -301,6 +320,15 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
         object.type === 'ArrayExpression' &&
         /^(?:0|[1-9]\d*)$/.test(key)
       ) {
+        if (
+          object.elements
+            .slice(0, Number(key) + 1)
+            .some((element) => element?.type === 'SpreadElement')
+        )
+          throw new Themes.InvalidError(
+            'Static array indexes cannot cross spread elements.',
+            node,
+          )
         const element = object.elements[Number(key)]
         if (element && element.type !== 'SpreadElement')
           return resolve(element, allowed, active)
@@ -343,7 +371,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
             'Static object prototypes are unsupported.',
             entry,
           )
-        if (entry.computed) {
+        if (entry.computed && entry.key.type !== 'Literal') {
           result.set(`computed:${entry.start}`, entry)
           continue
         }
@@ -353,12 +381,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
             : entry.key.type === 'Literal'
               ? String(entry.key.value)
               : undefined
-        if (
-          key === undefined ||
-          entry.computed ||
-          entry.method ||
-          entry.kind !== 'init'
-        )
+        if (key === undefined || entry.method || entry.kind !== 'init')
           throw new Themes.InvalidError(
             'Static data requires literal property keys without methods.',
             entry,

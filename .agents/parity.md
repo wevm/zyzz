@@ -1,10 +1,13 @@
-# CSS Capability Union
+# CSS Capability Union — Historical Audit
 
 Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the capabilities from the [StyleX API](https://stylexjs.com/docs/api), [Tailwind reference](https://tailwindcss.com/docs/hover-focus-and-other-states), [vanilla-extract API](https://vanilla-extract.style/documentation/api/style/), and [Panda CSS docs](https://panda-css.com/docs/concepts/writing-styles). Each capability appears once, with its source equivalents and Zyzz usage. It is an API union, not exhaustive CSS standards conformance.
 
 **Partial** means only the stated subset works today. **Planned** means an existing architecture contract awaits implementation. **Proposal** means an API shape is offered for review. **Deferred** means a later capability; external CSS examples demonstrate interoperability, not implemented Zyzz authoring support. Examples are independent unless they explicitly share a definition.
 
-Current implementation: 298 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
+> [!NOTE]
+> This is the historical 2026-09-08 API comparison. Implementation labels and examples below describe that snapshot. Current support, PR evidence, and remaining gates are maintained in [the implementation plan](plan.md) and [Compatibility](../docs/introduction/compatibility.md).
+
+Implementation at that audit: 298 literal properties, six scalar theme groups, portable token references, inherited in-memory scopes, and token-name resolution. Source rewriting handles direct literal root `css` calls. Bound `theme.css` has inference but still requires theme-aware source linking. Broad values, selectors, queries, stylesheet contributions, callbacks, recipes, CLI, and native output are pending.
 
 ## 01. Typed Styles and Inline Authoring
 

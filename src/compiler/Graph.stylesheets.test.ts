@@ -8,6 +8,198 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 describe('compile', () => {
+  test('isolates packed reset layers while retaining graph-wide ordering', () => {
+    const library = Graph.compile({
+      modules: {
+        'a.ts': `import 'zyzz/reset.css';import {layers} from 'zyzz/web';layers(['a']);`,
+        'b.ts': `import 'zyzz/reset.css';import {layers} from 'zyzz/web';layers(['b']);`,
+      },
+    })
+    expect(library.sharedCss).toMatchInlineSnapshot(`"@layer reset,a,b;"`)
+    const app = Graph.compile({
+      contracts: { 'lib/a.js': library.contracts['a.ts']! },
+      imports: { 'app.ts': { lib: 'lib/a.js' } },
+      modules: { 'app.ts': `import 'lib';` },
+    })
+    expect(app.sharedCss).toMatchInlineSnapshot(`"@layer reset,a;"`)
+    const consumer = Graph.compile({
+      contracts: { 'lib/a.js': library.contracts['a.ts']! },
+      imports: {
+        'app.ts': { lib: 'lib/a.js' },
+        'extra.ts': { 'zyzz/web': null },
+      },
+      modules: {
+        'app.ts': `import 'lib';`,
+        'extra.ts': `import {layers} from 'zyzz/web';layers(['extra']);`,
+      },
+    })
+    expect(consumer.sharedCss).toMatchInlineSnapshot(`"@layer reset,a,extra;"`)
+  })
+
+  test('excludes unreachable library layers from reset ordering', () => {
+    const library = Graph.compile({
+      modules: {
+        'unused.ts': `import {layers} from 'zyzz/web';layers(['unused']);`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'unused.js': library.contracts['unused.ts']! },
+      modules: {
+        'app.ts': `import 'zyzz/reset.css';export const loaded=true;`,
+      },
+    })
+    expect(app.sharedCss).toMatchInlineSnapshot(`"@layer reset;"`)
+  })
+
+  test('invalidates repacked ownership when only contract resolutions change', () => {
+    const dependency = Graph.compile({
+      modules: {
+        'index.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}});`,
+      },
+    })
+    const wrapper = Graph.compile({
+      contracts: { 'dep/index.js': dependency.contracts['index.ts']! },
+      imports: { 'wrapper/index.ts': { dep: 'dep/index.js' } },
+      modules: { 'wrapper/index.ts': `import 'dep';export const loaded=true;` },
+    })
+    const contracts = {
+      'wrapper/index.js': wrapper.contracts['wrapper/index.ts']!,
+      'a/index.js': dependency.contracts['index.ts']!,
+      'b/index.js': dependency.contracts['index.ts']!,
+    }
+    const modules = { 'app.ts': `import 'wrapper';` }
+    const compiler = Graph.create()
+    const first = compiler.compile({
+      contracts,
+      modules,
+      imports: {
+        'app.ts': { wrapper: 'wrapper/index.js' },
+        'wrapper/index.js': { dep: 'a/index.js' },
+      },
+    })
+    expect(Object.values(first.sharedAssets ?? {})).toMatchInlineSnapshot(`
+      [
+        "a/pixel.svg",
+      ]
+    `)
+    const second = compiler.compile({
+      contracts,
+      modules,
+      imports: {
+        'app.ts': { wrapper: 'wrapper/index.js' },
+        'wrapper/index.js': { dep: 'b/index.js' },
+      },
+    })
+    expect(Object.values(second.sharedAssets ?? {})).toMatchInlineSnapshot(`
+      [
+        "b/pixel.svg",
+      ]
+    `)
+    expect(Object.values(second.sharedAssetOwners ?? {}))
+      .toMatchInlineSnapshot(`
+      [
+        "b/index.js",
+      ]
+    `)
+  })
+  test('retains reset ordering in every independent packed entry', () => {
+    const library = Graph.compile({
+      modules: {
+        'a.ts': `import 'zyzz/reset.css';import {Config} from 'zyzz';const config=Config.create({layers:['components']});import {global} from 'zyzz/web';global({'@layer components':{body:{color:'red'}}});`,
+        'b.ts': `import 'zyzz/reset.css';import {Config} from 'zyzz';const config=Config.create({layers:['components']});import {global} from 'zyzz/web';global({'@layer components':{body:{color:'blue'}}});`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'lib/b.js': library.contracts['b.ts']! },
+      imports: { 'app.ts': { lib: 'lib/b.js' } },
+      modules: { 'app.ts': `import 'lib';` },
+    })
+    expect(app.sharedCss).toMatchInlineSnapshot(`
+      "@layer reset,components;
+      @layer components{body{color:blue;}}"
+    `)
+  })
+  test('rejects malformed optional packed source-map fields', () => {
+    const library = Graph.compile({
+      modules: {
+        'index.ts': `import {global} from 'zyzz/web';global({body:{color:'red'}});`,
+      },
+    })
+    for (const invalid of [
+      { content: 1 },
+      { content: null },
+      { start: -1 },
+      { start: 0.5 },
+      { start: '0' },
+    ]) {
+      const contract = JSON.parse(library.contracts['index.ts']!)
+      Object.assign(contract.stylesheets[0], invalid)
+      expect(() =>
+        Graph.compile({
+          contracts: { 'lib/index.js': JSON.stringify(contract) },
+          modules: { 'app.ts': 'export {}' },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: lib/index.js:0: Invalid library contract: Invalid packed stylesheet section.]`,
+      )
+    }
+  })
+
+  test('rejects conflicting packed animations and orders optional reset first', () => {
+    const first = Graph.compile({
+      modules: {
+        'index.ts': `import {keyframes} from 'zyzz/web';export const fade=keyframes({from:{opacity:0},to:{opacity:1}});`,
+      },
+    })
+    const second = Graph.compile({
+      modules: {
+        'index.ts': `import {keyframes} from 'zyzz/web';export const fade=keyframes({from:{opacity:1},to:{opacity:0}});`,
+      },
+    })
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'a/index.js': first.contracts['index.ts']!,
+          'b/index.js': second.contracts['index.ts']!,
+        },
+        imports: { 'app.ts': { a: 'a/index.js', b: 'b/index.js' } },
+        modules: { 'app.ts': `import 'a';import 'b';` },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: b/index.js:0: Conflicting animation identity: z-k1wfnqsmu0q6os-66-61-64-65; compile libraries with package-qualified module IDs.]`,
+    )
+    const source = `import 'zyzz/reset.css';import {Config} from 'zyzz';const config=Config.create({layers:['base','components']});import {global} from 'zyzz/web';global({'@layer components':{button:{fontSize:'24px'},img:{maxWidth:'none'}}});`
+    expect(Graph.compile({ modules: { 'app.ts': source } }).sharedCss)
+      .toMatchInlineSnapshot(`
+      "@layer reset,base,components;
+      @layer components{button{font-size:24px;}img{max-width:none;}}"
+    `)
+  })
+  test('keeps optional reset below component layers in Chromium', async () => {
+    const source = `import 'zyzz/reset.css';import {Config} from 'zyzz';const config=Config.create({layers:['base','components']});import {global} from 'zyzz/web';global({'@layer components':{button:{fontSize:'24px'},img:{maxWidth:'none'}}});`
+    const result = Graph.compile({ modules: { 'app.ts': source } })
+    const reset = await Fs.readFile(Path.resolve('src/reset.css'), 'utf8')
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${result.sharedCss}\n${reset}</style><button>Button</button><img>`,
+      )
+      expect(
+        await page
+          .locator('button')
+          .evaluate((node) => getComputedStyle(node).fontSize),
+      ).toMatchInlineSnapshot('"24px"')
+      expect(
+        await page
+          .locator('img')
+          .evaluate((node) => getComputedStyle(node).maxWidth),
+      ).toMatchInlineSnapshot('"none"')
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('links default-exported keyframes from packed libraries', () => {
     const library = Graph.compile({
       modules: {

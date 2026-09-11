@@ -206,6 +206,15 @@ export function zyzz(): Plugin {
     code?: string,
     allSources = false,
   ) {
+    function resource(id: string) {
+      const query = id.split('?')[1]?.split('#')[0]
+      return (
+        query !== undefined &&
+        [...new URLSearchParams(query).keys()].some(
+          (key) => !['v', 't', 'import'].includes(key),
+        )
+      )
+    }
     async function resolve(source: string, importer: string) {
       const resolved = await host.resolve(source, importer)
       if (resolved && entry.environment.mode === 'dev') {
@@ -214,6 +223,9 @@ export function zyzz(): Plugin {
           ...entry.environment.depsOptimizer?.metadata.discovered,
         }).find((item) => item.file === resolved.id.split('?')[0])
         if (optimized?.src) return { ...resolved, id: optimized.src }
+        // Vite cache queries do not change module semantics.
+        if (resolved.id.includes('?') && !resource(resolved.id))
+          return { ...resolved, id: resolved.id.split('?')[0]! }
       }
       return resolved
     }
@@ -278,6 +290,10 @@ export function zyzz(): Plugin {
               start: node.start,
             },
           ])
+        if (resource(specifier) || resource(resolved.id)) {
+          resolutions[specifier] = null
+          continue
+        }
         if (resolved.external || !eligible(resolved.id)) {
           const physical = resolved.id.split('?')[0]!.split('#')[0]!
           const sidecar = `${physical}.zyzz.json`
@@ -358,6 +374,7 @@ export function zyzz(): Plugin {
           const resolved = await resolve(specifier, file)
           if (!resolved || (!resolved.external && eligible(resolved.id)))
             continue
+          if (resource(specifier) || resource(resolved.id)) continue
           const physical = resolved.id.split(/[?#]/)[0]!
           if (!Path.isAbsolute(physical) || !/\.[cm]?[jt]sx?$/.test(physical))
             continue

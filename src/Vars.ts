@@ -58,7 +58,7 @@ export type Kind<value> = value extends Binding.Kind
 export type Initial<kind extends Binding.Kind> = kind extends
   | 'length'
   | 'signedLength'
-  ? 0 | `${number}${'px' | 'in' | 'cm' | 'mm' | 'q' | 'pt' | 'pc'}`
+  ? 0 | '0' | `${number}${'px' | 'in' | 'cm' | 'mm' | 'q' | 'pt' | 'pc'}`
   : kind extends 'color'
     ? Exclude<
         Binding.Value<kind>,

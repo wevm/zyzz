@@ -73,8 +73,7 @@ Do not concatenate classes to establish override priority. See [Style Relationsh
 
 Use a typed marker to style an element when an ancestor has a matching data state.
 
-> [!NOTE]
-> Preview API; not yet implemented.
+These helpers compile inside web `css(...)` definitions. Use marker callables as ordinary element attributes; core `Style.define` and global declarations do not accept relationship keys.
 
 ```tsx
 import { css } from 'zyzz'

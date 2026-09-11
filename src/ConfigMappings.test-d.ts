@@ -10,6 +10,10 @@ describe('create', () => {
       shorthands: { px: ['paddingLeft', 'paddingRight'] },
     })
     expectTypeOf(theme.css({ px: 'sm' })()).toHaveProperty('class')
+    const extended = Theme.extend(theme, { padding: { sm: '8px' } })
+    expectTypeOf(extended.css({ px: 'sm' })()).toHaveProperty('class')
+    // @ts-expect-error HTML output does not expose React className
+    void extended.css({ px: 'sm' })().className
     expectTypeOf(
       theme.css((values: { width: '4px' | '8px' }) => ({ px: values.width }))({
         width: '4px',

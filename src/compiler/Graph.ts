@@ -94,16 +94,18 @@ function build(options: compile.Options, cache?: Cache): Cache {
     ),
   )
   const resolutions = Object.fromEntries(
-    ids.map((id) => [
-      id,
-      options.imports === undefined
-        ? 'relative'
-        : JSON.stringify(
-            Object.entries(options.imports[id] ?? {}).sort(([a], [b]) =>
-              a.localeCompare(b),
+    [...new Set([...ids, ...Object.keys(options.imports ?? {})])]
+      .sort()
+      .map((id) => [
+        id,
+        options.imports === undefined
+          ? 'relative'
+          : JSON.stringify(
+              Object.entries(options.imports[id] ?? {}).sort(([a], [b]) =>
+                a.localeCompare(b),
+              ),
             ),
-          ),
-    ]),
+      ]),
   )
   // File-set changes can alter extensionless resolution even without source edits.
   const previous = (() => {
@@ -119,6 +121,11 @@ function build(options: compile.Options, cache?: Cache): Cache {
   })()
   if (
     previous &&
+    Object.keys(resolutions).length ===
+      Object.keys(previous.resolutions).length &&
+    Object.entries(resolutions).every(
+      ([id, value]) => value === previous.resolutions[id],
+    ) &&
     ids.every(
       (id) =>
         options.modules[id] === previous.sources[id] &&
@@ -148,10 +155,12 @@ function build(options: compile.Options, cache?: Cache): Cache {
       const { id, schema } = link.call.marker
       const signature = JSON.stringify(
         Object.entries(schema)
-          .sort(([a], [b]) => a.localeCompare(b))
+          .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
           .map(([key, values]) => [
             key,
-            [...values].sort((a, b) => String(a).localeCompare(String(b))),
+            [...values].sort((a, b) =>
+              String(a) < String(b) ? -1 : String(a) > String(b) ? 1 : 0,
+            ),
           ]),
       )
       const previous = markerIdentities.get(id)
@@ -449,6 +458,25 @@ function build(options: compile.Options, cache?: Cache): Cache {
     result: Source.extract.ReturnType,
     imports: readonly string[],
   ): Source.extract.ReturnType {
+    for (const call of result.variableCalls ?? [])
+      for (const slot of Object.values(call.slots)) {
+        const owner = moduleId.replace(/\.[cm]?[jt]sx?$/, '')
+        const previous = variableSlots.get(slot.name)
+        if (
+          previous &&
+          (previous.owner !== owner || previous.type !== slot.type)
+        )
+          fail(
+            moduleId,
+            `Conflicting variable identity: ${slot.name}; compile libraries with package-qualified module IDs.`,
+            call,
+          )
+        variableSlots.set(slot.name, {
+          owner,
+          binding: `source:${call.start}`,
+          type: slot.type,
+        })
+      }
     extracted.set(moduleId, result)
     dependencies[moduleId] = imports
     for (const call of result.themeCalls)
@@ -518,6 +546,42 @@ function build(options: compile.Options, cache?: Cache): Cache {
         }
       }),
     )
+  const resetOwners = ids.filter(
+    (id) =>
+      options.modules[id]!.includes('zyzz/reset.css') &&
+      Parser.parseSync('source.tsx', options.modules[id]!, {
+        sourceType: 'module',
+      }).program.body.some(
+        (node) =>
+          node.type === 'ImportDeclaration' &&
+          node.source.value === 'zyzz/reset.css',
+      ),
+  )
+  const layerNames = [
+    ...new Set(
+      ids.flatMap((id) =>
+        reachable(id).flatMap((section) => section.layers.flat()),
+      ),
+    ),
+  ].filter((name) => name !== 'reset')
+  for (const resetOwner of resetOwners) {
+    const entryLayers = [
+      ...new Set(
+        reachable(resetOwner).flatMap((section) => section.layers.flat()),
+      ),
+    ].filter((name) => name !== 'reset')
+    sections.set(resetOwner, [
+      {
+        source: resetOwner,
+        key: 'optional-reset-order',
+        css: '',
+        layers: entryLayers.length
+          ? entryLayers.map((name) => ['reset', name])
+          : [['reset']],
+      },
+      ...(sections.get(resetOwner) ?? []),
+    ])
+  }
   function dependencyPath(from: string, to: string): readonly string[] {
     const queue = [{ id: from, path: [] as string[] }]
     const seen = new Set<string>()
@@ -553,9 +617,26 @@ function build(options: compile.Options, cache?: Cache): Cache {
   const sharedVisited = new Set<string>()
   const shared = (() => {
     try {
-      return Stylesheets.render(
-        ids.flatMap((id) => reachable(id, sharedVisited)),
-      )
+      const sharedSections = ids.flatMap((id) => reachable(id, sharedVisited))
+      const resetSource =
+        resetOwners[0] ??
+        sharedSections.find((section) => section.key === 'optional-reset-order')
+          ?.source
+      return Stylesheets.render([
+        ...(resetSource === undefined
+          ? []
+          : [
+              {
+                source: resetSource,
+                key: 'optional-reset-graph-order',
+                css: '',
+                layers: layerNames.length
+                  ? layerNames.map((name) => ['reset', name])
+                  : [['reset']],
+              },
+            ]),
+        ...sharedSections,
+      ])
     } catch (error) {
       return fail(
         error instanceof Stylesheets.ConflictError ? error.source : ids[0]!,

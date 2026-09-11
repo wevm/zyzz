@@ -37,9 +37,6 @@ const example = <div {...styles.card()}>Card</div>
 
 ## Configuration
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 `Config.create` binds authoring functions to explicit tokens and layers. Export `const { css, theme } = Config.create(...)` from `zyzz.config.ts` and import `{ css, theme }`. Integrations follow this binding to the originating config; no default export is required. The compiler reads static data without executing application code.
 
 ```ts
@@ -93,12 +90,9 @@ Use [Compile Themes](guides/themes.md#compile-themes) for the current pipeline.
 
 ### Theme Scopes
 
-> [!NOTE]
-> Preview API; not yet implemented.
+Named `themes({ theme, colorScheme? })` selections return generated scope classes and optional inline color-scheme props. Apply them to `<html>` for the whole document or an ancestor for a subtree. Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
 
-Callable themes return generated scope classes and optional inline color-scheme props. Apply them to `<html>` for the whole document or an ancestor for a subtree. Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
-
-Use the instance handles from a [named-theme config](guides/themes.md#selecting-a-theme):
+Use the selector from a [named-theme config](guides/themes.md#selecting-a-theme):
 
 ```tsx
 import { themes } from './zyzz.config.js'
@@ -152,9 +146,6 @@ const example = <button {...styles.button({ size: 'sm' })}>Save</button>
 
 ## Conditions
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 Pseudo styles, media queries, container queries, and feature queries keep their CSS meaning. Nested conditions combine with AND while preserving property/token inference.
 
 ```ts
@@ -172,9 +163,6 @@ Query aliases resolve from theme metadata to literal conditions. Theme scope cha
 See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style States](guides/conditions.md#style-states).
 
 ## Relationships
-
-> [!NOTE]
-> Preview API; not yet implemented.
 
 Typed markers describe element identity and finite data states. Applying a marker emits attributes; another definition can reference that identity.
 
@@ -196,7 +184,7 @@ See [Style Relationships](guides/conditions.md#style-relationships) for applicat
 ## Dynamic Values
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> Finite local scalar callback types are supported. Imported arbitrary type definitions, dynamic fallback groups, and native bindings remain deferred.
 
 Token names infer by property. A text-color token cannot become a spacing token.
 
@@ -223,9 +211,6 @@ Calls accept declared inputs plus `className`/`style` overrides. Keep other comp
 
 ## Layers and Stylesheets
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
 ```ts
 import { global } from 'zyzz/web'
 
@@ -233,7 +218,7 @@ import { global } from 'zyzz/web'
 global({ '@layer base': { body: { margin: 0 } } })
 ```
 
-- **Collection:** scans configured sources, including unimported modules; excludes tests, generated output, and dependencies by default.
+- **Collection:** scans configured sources, including unimported modules; excludes tests and generated output; reachable packed contributions are discovered through package sidecars.
 - **Delivery:** globals are eager, including declarations beside lazy components. The initial stylesheet includes the shared layer prelude.
 - **Helpers:** import `fontFace`, `global`, and `keyframes` directly. Keyframes have separate reachability rules.
 - **Ordering:** constraints merge deterministically; cycles produce located errors. Preserve authored order, unlayered rules, and important reversal.
@@ -253,4 +238,4 @@ See [stylesheet usage](guides/stylesheets.md#global-styles) for fonts and motion
 CLI and build integrations share compiler semantics. Libraries distribute matching code, CSS, declarations, and required metadata. Standard downstream tooling handles minification.
 
 > [!NOTE]
-> CLI/plugins and native output are previews. Native will select precompiled styles and theme/scheme tables, with explicit errors for unsupported web selectors and stylesheet operations.
+> The Vite plugin is implemented. The CLI entrypoint, Next.js adapter, and native output remain previews. Native will select precompiled styles and theme/scheme tables, with explicit errors for unsupported web selectors and stylesheet operations.

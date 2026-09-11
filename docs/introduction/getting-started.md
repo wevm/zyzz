@@ -3,7 +3,7 @@
 Import bound styling helpers and spread their applied props onto a component. Imports always refer to authored source files.
 
 > [!NOTE]
-> Config authoring, package installation, and integrations below describe the planned release. Use the [compiler APIs](../guides/compilation.md#publish-libraries) for the current literal pipeline.
+> The Config/Vite source workflow below is implemented. CLI, Next.js, and native integrations retain separate implementation gates. Custom hosts can use the [compiler APIs](../guides/compilation.md#publish-libraries).
 
 ## Install
 
@@ -49,10 +49,10 @@ Import `Button` normally. The named helpers retain inferred tokens; compilation 
 ## Choose Compilation
 
 - **Bundler:** follow [Vite Setup](vite.md). The plugin transforms source imports and delivers CSS automatically.
-- **Next.js:** follow [Next.js Setup](next.md). The wrapper configures source transformation and CSS delivery for the selected bundler.
-- **CLI:** follow [CLI Setup](cli.md). The standalone compiler emits modules and CSS for a downstream build or library distribution.
+- **Next.js:** the [proposed setup](next.md) remains unimplemented.
+- **CLI:** the [proposed command-line setup](cli.md) remains unimplemented. Custom hosts can use the compiler APIs for downstream builds and library distribution.
 
-Importing config alone does not compile styles. The CLI is a source-transform path; it cannot make untouched authoring calls executable by emitting CSS alone.
+Importing config alone does not compile styles. Source transformation supplies executable modules; emitting CSS alone cannot make untouched authoring calls executable.
 
 ## Continue
 

@@ -103,6 +103,35 @@ output.modules['app/card.ts']?.css
 
 Scope and variable identities retain the defining module/binding. CSS maps trace source scope rules to their factory and declarations to the consuming style. Imported metadata scope rules are unmapped because their original source is not present. JavaScript/JSX lowering remains the consuming build's responsibility.
 
+### sharedCssMap
+
+Type: `EncodedSourceMap | undefined`. Maps the combined shared stylesheet to its source-owned and packed contributions. Present with nonempty shared CSS; source content is retained when published by its owner.
+
+```ts
+import * as fs from 'node:fs/promises'
+
+if (output.sharedCssMap)
+  await fs.writeFile('zyzz.shared.css.map', JSON.stringify(output.sharedCssMap))
+```
+
+### sharedAssets
+
+Type: `Readonly<Record<string, string>> | undefined`. Maps compiler URL placeholders to portable asset targets. The host resolves and publishes those targets, then rewrites matching placeholders in shared CSS.
+
+```ts
+for (const [placeholder, target] of Object.entries(output.sharedAssets ?? {}))
+  console.log(placeholder, target)
+```
+
+### sharedAssetOwners
+
+Type: `Readonly<Record<string, string>> | undefined`. Maps each asset placeholder to its trusted source or declaring contract identity. Hosts use that identity to enforce package-root ownership, including repacked dependencies.
+
+```ts
+for (const placeholder of Object.keys(output.sharedAssets ?? {}))
+  console.log(output.sharedAssetOwners?.[placeholder])
+```
+
 ## Errors
 
 `Source.ExtractError` or `Css.CompileError`; no partial result is returned. Missing modules, ambiguous exports, namespace theme imports, and static cycles are rejected. Dynamic source imports are rejected in standalone mode. Library authoring requires matching contract metadata; runtime JavaScript alone cannot supply token definitions.
@@ -148,3 +177,5 @@ This reader accepts versions 1–8. Publish metadata together with its matching 
 Compile independent libraries with package-qualified module IDs (the file host supplies these from `packageId`). Packed variable sidecars retain their canonical defining module, so multiple package entrypoints can share one contract. The graph rejects accidental slot collisions between distinct defining modules and conflicting schemas for one marker identity. Bare contract IDs provide no package provenance and remain isolated; package-qualified IDs are required for multi-entry sharing.
 
 Repacked stylesheet sections retain an import chain to their declaring contract. Hosts must supply each chain edge in `imports` and its adjacent sidecar in `contracts`; Vite resolves and watches these dependencies recursively, including nested package installations. Asset validation uses the declaring package root. Source content and offsets participate in packed contribution conflict checks, and each sidecar validates its layer constraints before rendering.
+
+Importing `zyzz/reset.css` adds reset-first layer constraints to shared CSS and packed output. Conflicting configured orders fail compilation. Packed animations and variable slots must have nonconflicting identities; package-qualified source module IDs prevent independent libraries from generating the same private names.

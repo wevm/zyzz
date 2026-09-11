@@ -4,10 +4,43 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Os from 'node:os'
 import * as Vite from 'vite'
+import * as Util from 'node:util'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
 describe('zyzz', () => {
+  test('links local theme imports with Vite timestamp queries', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-timestamp-vite-'))
+    let server: Vite.ViteDevServer | undefined
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'theme.ts'),
+        `import {Theme} from 'zyzz';export const theme=Theme.define({color:{brand:'red'}});`,
+      )
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import {css} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export const styles={card:css({color:theme.tokens.color.brand})};`,
+      )
+      server = await Vite.createServer({
+        root,
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [zyzz()],
+        server: { port: 0 },
+      })
+      await server.listen()
+      const transformed = await server.transformRequest('/app.ts')
+      expect(transformed!.code.includes('theme.tokens')).toMatchInlineSnapshot(
+        `false`,
+      )
+      const shared = await server.transformRequest('\0zyzz:shared.css')
+      expect(shared!.code.includes('red')).toMatchInlineSnapshot(`true`)
+    } finally {
+      await server?.close()
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
   test('retains asset ownership through a repacked nested dependency', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-repacked-vite-'))
     const external = await Fs.mkdtemp(Path.join(Os.tmpdir(), 'zyzz-sidecar-'))
@@ -39,6 +72,11 @@ describe('zyzz', () => {
           'index.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}});`,
         },
       })
+      const raw = Graph.compile({
+        modules: {
+          'raw.ts': `import {global} from 'zyzz/web';global({body:{outlineColor:'pink'}});`,
+        },
+      })
       const wrapper = Graph.compile({
         contracts: { 'dep/index.js': dependency.contracts['index.ts']! },
         imports: { 'wrapper/index.ts': { dep: 'dep/index.js' } },
@@ -49,6 +87,12 @@ describe('zyzz', () => {
       const wrapperRoot = Path.join(root, 'node_modules/wrapper'),
         dependencyRoot = Path.join(wrapperRoot, 'node_modules/dep')
       for (const [directory, name, module, contract] of [
+        [
+          Path.join(root, 'node_modules/raw-effects'),
+          'raw-effects',
+          raw.modules['raw.ts']!.code,
+          raw.contracts['raw.ts']!,
+        ],
         [
           dependencyRoot,
           'dep',
@@ -88,7 +132,7 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import ${JSON.stringify(Path.join(external, 'index.js'))};import 'wrapper';import {css} from 'zyzz';document.body.className=css({color:'red'})().className;`,
+        `import ${JSON.stringify(Path.join(external, 'index.js'))};import('raw-effects?raw');import 'wrapper';import {css} from 'zyzz';document.body.className=css({color:'red'})().className;`,
       )
       const result = await Vite.build({
         root,
@@ -119,6 +163,7 @@ describe('zyzz', () => {
         .map((output) => (output.type === 'asset' ? String(output.source) : ''))
         .join('\n')
       expect(css.includes('background-image')).toMatchInlineSnapshot('true')
+      expect(css.includes('outline')).toMatchInlineSnapshot('false')
       await Fs.writeFile(Path.join(external, 'index.js.zyzz.json'), '{')
       try {
         await Vite.build({
@@ -131,7 +176,7 @@ describe('zyzz', () => {
         throw new Error('Expected invalid sidecar')
       } catch (error) {
         expect(
-          (error as Error).message
+          Util.stripVTControlCharacters((error as Error).message)
             .replaceAll(root, '<root>')
             .replaceAll(external, '<external>')
             .split(/\n\s+at /)[0],

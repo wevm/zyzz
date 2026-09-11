@@ -525,9 +525,13 @@ function identifier(value: string): string {
 }
 
 /** Defines a marker with finite data states; source compilation assigns its identity. */
-export function marker<const schema extends Marker.Schema = {}>(
-  schema?: schema & NoInfer<Relationships.Validated<schema>>,
-): Relationships.Handle<schema> {
+export function marker(schema?: undefined): Relationships.Handle<{}>
+export function marker<const schema extends Marker.Schema>(
+  schema: schema & NoInfer<Relationships.Validated<schema>>,
+): Relationships.Handle<schema>
+export function marker(
+  schema?: Marker.Schema,
+): Relationships.Handle<Marker.Schema> {
   void schema
   throw new Error('Markers require the Zyzz source transform.')
 }

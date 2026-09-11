@@ -117,7 +117,7 @@ export const scope = mint.className;`,
     expect(library.modules['pkg/config.js']!.code).toMatchInlineSnapshot(
       `
       "
-      import { Selection as __zyzzSelection, Appearance as __zyzzAppearance } from 'zyzz/runtime';
+      import { Appearance as __zyzzAppearance, Selection as __zyzzSelection } from 'zyzz/runtime';
        export const zyzz = ({script:__zyzzAppearance.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]),theme:{"className":"z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"},themes:/*#__PURE__*/__zyzzSelection.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]],false)}); export const props = ({className:"z-1fzmg4ts3ctu1-base0"}); export const scope = "z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark";"
     `,
     )
@@ -161,7 +161,7 @@ export const scope = mint.className;`,
     expect(output.modules['pkg/zyzz.config.ts']!.code).toMatchInlineSnapshot(
       `
       "
-      import { Selection as __zyzzSelection, Appearance as __zyzzAppearance } from 'zyzz/runtime';
+      import { Appearance as __zyzzAppearance, Selection as __zyzzSelection } from 'zyzz/runtime';
        import { base } from './base.js'; export const zyzz = ({script:__zyzzAppearance.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]]),theme:{"className":"z_theme-69adjg15dlzyu-zyzz-base"},themes:/*#__PURE__*/__zyzzSelection.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]],false)} as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>);"
     `,
     )

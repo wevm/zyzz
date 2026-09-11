@@ -7,7 +7,7 @@ Define shared tokens, apply theme scopes, and choose light or dark mode. See [Ge
 ### Use Themes
 
 > [!NOTE]
-> Config authoring is a preview. For current support, see [Compile Local Theme Source](#compile-local-theme-source).
+> Config-bound CSS and named theme selection are implemented through Vite and the graph compiler. Variants retain a separate implementation gate. See [Compile Local Theme Source](#compile-local-theme-source) for the standalone transform boundary.
 
 Export bound helpers directly from the config:
 
@@ -69,25 +69,7 @@ The example uses `padding.sm` for `px`, `margin.gutter` for margin, and `textCol
 
 ### Selecting a Theme
 
-> [!NOTE]
-> Config authoring is a preview.
-
-Apply the single theme's scope to the document root:
-
-```tsx
-import { theme } from './zyzz.config.js'
-
-const example = (
-  <html {...theme()}>
-    <head>
-      <title>My App</title>
-    </head>
-    <body>Content</body>
-  </html>
-)
-```
-
-For alternatives, configure a named catalog with a shared token contract:
+Configure a named catalog with a shared token contract:
 
 ```ts
 // zyzz.config.ts
@@ -131,13 +113,13 @@ Changing the scope updates inherited token values while component styles stay th
 
 ### Color Schemes
 
-Color tokens accept a shared string or a `{ dark, light }` pair, as in [Use Themes](#use-themes). Pass the scheme when applying the theme:
+Color tokens accept a shared string or a `{ dark, light }` pair, as in [Use Themes](#use-themes). Use the named catalog above and pass the scheme when selecting a theme:
 
 ```tsx
-import { theme } from './zyzz.config.js'
+import { themes } from './zyzz.config.js'
 
 const example = (
-  <html {...theme({ colorScheme: 'light dark' })}>
+  <html {...themes({ theme: 'base', colorScheme: 'light dark' })}>
     <head>
       <title>My App</title>
     </head>
@@ -195,8 +177,7 @@ React's `suppressHydrationWarning` is limited to the root attributes changed bef
 
 ### Shared Configuration
 
-> [!NOTE]
-> Cross-module config authoring is a preview.
+Cross-module configuration is implemented through the Vite adapter and `Graph.compile`. Standalone single-module transforms require their imported contracts to be linked through the graph.
 
 Keep reusable tokens in a shared module and pass them into each application's config:
 

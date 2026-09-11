@@ -88,6 +88,7 @@ export function render(sections: readonly Section[]) {
   const map = new Mapping.GenMapping({ file: 'zyzz.shared.css' })
   const assets: Record<string, string> = Object.create(null)
   const owners: Record<string, string> = Object.create(null)
+  const animations = new Map<string, { source: string; signature: string }>()
   const chunks: string[] = layers.length ? [`@layer ${layers.join(',')};`] : []
   let line = chunks.length + 1
   for (const section of ordered) {
@@ -97,6 +98,22 @@ export function render(sections: readonly Section[]) {
       filename: section.source,
       code: new TextEncoder().encode(section.css),
       visitor: {
+        Rule(rule) {
+          if (rule.type !== 'keyframes') return
+          const name = rule.value.name.value
+          const signature = JSON.stringify(rule.value.keyframes)
+          const previous = animations.get(name)
+          if (
+            previous &&
+            (previous.source !== section.source ||
+              previous.signature !== signature)
+          )
+            throw new ConflictError(
+              section.owner ?? section.source,
+              `Conflicting animation identity: ${name}; compile libraries with package-qualified module IDs.`,
+            )
+          animations.set(name, { source: section.source, signature })
+        },
         Url(url) {
           if (!url.url || /^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url.url))
             return
@@ -145,6 +162,9 @@ export function read(value: unknown): readonly Section[] {
       typeof section !== 'object' ||
       typeof section.source !== 'string' ||
       typeof section.css !== 'string' ||
+      (section.content !== undefined && typeof section.content !== 'string') ||
+      (section.start !== undefined &&
+        (!Number.isSafeInteger(section.start) || section.start < 0)) ||
       (section.key !== undefined && typeof section.key !== 'string') ||
       (section.dependency !== undefined &&
         (!Array.isArray(section.dependency) ||

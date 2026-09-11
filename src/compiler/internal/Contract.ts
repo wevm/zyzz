@@ -48,6 +48,8 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
   }
   function link(value: unknown): Themes.Link {
     const entry = record(value)
+    if (entry.output !== undefined && entry.output !== 'html')
+      throw new Error('Invalid theme output.')
     const theme = string(entry.theme)
     const definition = themes[theme]
     if (!definition || !['config', 'css', 'theme'].includes(String(entry.kind)))
@@ -92,15 +94,17 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
     return {
       binding: string(entry.binding),
       call: {
+        ...(entry.output === 'html' ? { output: 'html' as const } : {}),
         ...(catalogOnly ? { catalogOnly: true } : {}),
         ...(entry.script === true ? { script: true } : {}),
         end: -1,
         name: theme,
         start: -1,
         tokenType: types[theme]!,
-        ...(definition[Token.definition].contract.shorthands
+        ...(definition[Token.definition].contract.shorthands ||
+        entry.output === 'html'
           ? {
-              type: `import('zyzz').Config.create.ReturnType<{theme:${types[theme]!};shorthands:${Configurations.type(definition[Token.definition].contract.shorthands!)}}>['theme']`,
+              type: `import('zyzz').Config.create.ReturnType<{theme:${types[theme]!};${entry.output === 'html' ? "output:'html';" : ''}shorthands:${Configurations.type(definition[Token.definition].contract.shorthands ?? {})}}>['theme']`,
             }
           : {}),
         ...(entry.selection === true ? { selection: true } : {}),
@@ -178,6 +182,7 @@ export function write(
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
     return {
+      ...(link.call.output ? { output: link.call.output } : {}),
       ...(link.call.script &&
       (link.kind === 'config' || link.call.initialization)
         ? { script: true }
@@ -217,36 +222,47 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(themes).some(
-      (theme) => theme[Token.definition].contract.shorthands,
-    )
-      ? 5
-      : Object.values(links).some(
-            (link) =>
-              link.call.selection ||
-              (link.kind === 'config' && !!link.call.options?.themes) ||
-              link.call.initialization ||
-              (link.kind === 'config' && link.call.script),
-          )
-        ? 4
-        : Object.values(themes).some(
-              (theme) =>
-                theme[Token.definition].queries ||
-                Object.keys(theme.tokens).some((group) =>
-                  [
-                    'fontFamily',
-                    'fontSize',
-                    'fontWeight',
-                    'lineHeight',
-                    'letterSpacing',
-                  ].includes(group),
-                ),
+    version:
+      Object.values(themes).some(
+        (theme) =>
+          theme[Token.definition].contract.shorthands ||
+          Object.hasOwn(theme.tokens, 'margin') ||
+          Object.hasOwn(theme.tokens, 'padding'),
+      ) ||
+      Object.values(links).some(
+        (link) =>
+          link.call.output === 'html' ||
+          Object.values(link.members ?? {}).some(
+            (member) => member.call.output === 'html',
+          ),
+      )
+        ? 5
+        : Object.values(links).some(
+              (link) =>
+                link.call.selection ||
+                (link.kind === 'config' && !!link.call.options?.themes) ||
+                link.call.initialization ||
+                (link.kind === 'config' && link.call.script),
             )
-          ? 3
-          : Object.values(links).some(
-                (link) => link.kind === 'config' || link.call.type,
+          ? 4
+          : Object.values(themes).some(
+                (theme) =>
+                  theme[Token.definition].queries ||
+                  Object.keys(theme.tokens).some((group) =>
+                    [
+                      'fontFamily',
+                      'fontSize',
+                      'fontWeight',
+                      'lineHeight',
+                      'letterSpacing',
+                    ].includes(group),
+                  ),
               )
-            ? 2
-            : 1,
+            ? 3
+            : Object.values(links).some(
+                  (link) => link.kind === 'config' || link.call.type,
+                )
+              ? 2
+              : 1,
   })
 }

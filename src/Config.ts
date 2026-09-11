@@ -197,14 +197,20 @@ export declare namespace create {
     ? {
         /** Isolated single-theme contract. */ readonly theme: Handle<
           ExtractTokens<input>,
-          Mappings<options>
+          Mappings<options>,
+          options extends { output: infer output extends css.Output }
+            ? output
+            : 'react'
         >
       }
     : options extends { themes: infer catalog }
       ? {
           /** Shared default token and variable contract. */ readonly theme: Handle<
             Tokens<options>,
-            Mappings<options>
+            Mappings<options>,
+            options extends { output: infer output extends css.Output }
+              ? output
+              : 'react'
           >
           /** Selects a compiled named scope; catalog members retain compatibility. */ readonly themes: (<
             const selection extends {
@@ -221,7 +227,10 @@ export declare namespace create {
           >) & {
             readonly [name in keyof catalog]: Handle<
               ExtractTokens<catalog[name]>,
-              Mappings<options>
+              Mappings<options>,
+              options extends { output: infer output extends css.Output }
+                ? output
+                : 'react'
             >
           }
         }
@@ -238,8 +247,9 @@ type Mappings<options> = options extends {
 type Handle<
   tokens extends Theme.Tokens,
   mappings extends Shorthands.Map,
+  output extends css.Output,
 > = Omit<Theme.Definition<tokens>, 'css'> & {
-  readonly css: Css<tokens, never, 'react', mappings>
+  readonly css: Css<tokens, never, output, mappings>
 }
 type Css<
   tokens extends Theme.Tokens,

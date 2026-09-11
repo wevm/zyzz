@@ -8,6 +8,61 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 describe('compile', () => {
+  test('rejects conflicting packed animations and orders optional reset first', () => {
+    const first = Graph.compile({
+      modules: {
+        'index.ts': `import {keyframes} from 'zyzz/web';export const fade=keyframes({from:{opacity:0},to:{opacity:1}});`,
+      },
+    })
+    const second = Graph.compile({
+      modules: {
+        'index.ts': `import {keyframes} from 'zyzz/web';export const fade=keyframes({from:{opacity:1},to:{opacity:0}});`,
+      },
+    })
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'a/index.js': first.contracts['index.ts']!,
+          'b/index.js': second.contracts['index.ts']!,
+        },
+        imports: { 'app.ts': { a: 'a/index.js', b: 'b/index.js' } },
+        modules: { 'app.ts': `import 'a';import 'b';` },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: b/index.js:0: Conflicting animation identity: z-k1wfnqsmu0q6os-66-61-64-65; compile libraries with package-qualified module IDs.]`,
+    )
+    const source = `import 'zyzz/reset.css';import {Config} from 'zyzz';const config=Config.create({layers:['base','components']});import {global} from 'zyzz/web';global({'@layer components':{button:{fontSize:'24px'},img:{maxWidth:'none'}}});`
+    expect(Graph.compile({ modules: { 'app.ts': source } }).sharedCss)
+      .toMatchInlineSnapshot(`
+      "@layer reset,base,components;
+      @layer components{button{font-size:24px;}img{max-width:none;}}"
+    `)
+  })
+  test('keeps optional reset below component layers in Chromium', async () => {
+    const source = `import 'zyzz/reset.css';import {Config} from 'zyzz';const config=Config.create({layers:['base','components']});import {global} from 'zyzz/web';global({'@layer components':{button:{fontSize:'24px'},img:{maxWidth:'none'}}});`
+    const result = Graph.compile({ modules: { 'app.ts': source } })
+    const reset = await Fs.readFile(Path.resolve('src/reset.css'), 'utf8')
+    const browser = await chromium.launch({ headless: true })
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${result.sharedCss}\n${reset}</style><button>Button</button><img>`,
+      )
+      expect(
+        await page
+          .locator('button')
+          .evaluate((node) => getComputedStyle(node).fontSize),
+      ).toMatchInlineSnapshot('"24px"')
+      expect(
+        await page
+          .locator('img')
+          .evaluate((node) => getComputedStyle(node).maxWidth),
+      ).toMatchInlineSnapshot('"none"')
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('links default-exported keyframes from packed libraries', () => {
     const library = Graph.compile({
       modules: {

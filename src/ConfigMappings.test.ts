@@ -4,9 +4,68 @@ import * as Packed from '../test/fixtures/Packed.js'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
-import { Config } from 'zyzz'
+import { Config, Style } from 'zyzz'
 
 describe('create', () => {
+  test('retains alias source paths in structural diagnostics', () => {
+    const { theme } = Config.create({
+      theme: {},
+      shorthands: { px: ['paddingLeft', 'paddingRight'] },
+    })
+    try {
+      Style.define(
+        // @ts-expect-error exercise unchecked invalid fallback input
+        { card: { px: [] } },
+        {
+          theme,
+          locations: [
+            { path: ['card', 'px'], source: 'app.ts', start: 10, end: 12 },
+          ],
+        },
+      )
+      throw new Error('Expected invalid fallback')
+    } catch (error) {
+      expect((error as Style.InvalidError).diagnostics).toMatchInlineSnapshot(`
+      [
+        {
+          "code": "invalid_value",
+          "location": {
+            "end": 12,
+            "path": [
+              "card",
+              "px",
+            ],
+            "source": "app.ts",
+            "start": 10,
+          },
+          "message": "Fallback arrays must be nonempty.",
+          "path": [
+            "card",
+            "px",
+          ],
+        },
+        {
+          "code": "invalid_value",
+          "location": {
+            "end": 12,
+            "path": [
+              "card",
+              "px",
+            ],
+            "source": "app.ts",
+            "start": 10,
+          },
+          "message": "Fallback arrays must be nonempty.",
+          "path": [
+            "card",
+            "px",
+          ],
+        },
+      ]
+    `)
+    }
+  })
+
   test('writes version five for dedicated spacing groups without aliases', () => {
     const result = Graph.compile({
       modules: {

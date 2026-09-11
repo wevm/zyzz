@@ -58,7 +58,7 @@ export function define<const tokens extends Tokens>(
 /** A theme contract with immutable, property-aware portable token references. */
 export type Definition<
   tokens extends Tokens = Tokens,
-  boundCss extends Css<tokens> = Css<tokens>,
+  boundCss extends (...args: never[]) => unknown = Css<tokens>,
 > = {
   /** Compiled scope class; reading untransformed authoring throws. */
   readonly className: string
@@ -80,7 +80,7 @@ export type Definition<
 export function extend<
   const tokens extends Tokens,
   const overrides extends Record<string, unknown>,
-  const boundCss extends Css<tokens> = Css<tokens>,
+  const boundCss extends (...args: never[]) => unknown = Css<tokens>,
 >(
   theme: Definition<tokens, boundCss>,
   overrides: overrides &

@@ -180,8 +180,6 @@ export declare namespace create {
   )
   /** Bound authoring and the handles corresponding to the selected theme mode. */
   type ReturnType<options extends Options = Options> = {
-    /** Generates synchronous HTML-safe root preference restoration. */
-    readonly script: (options?: ScriptOptions) => string
     /** Inferred callable authoring; execution requires a source transform. */
     readonly css: Css<
       Tokens<options>,
@@ -193,6 +191,8 @@ export declare namespace create {
         : 'react',
       Mappings<options>
     >
+    /** Generates synchronous HTML-safe root preference restoration. */
+    readonly script: (options?: ScriptOptions) => string
   } & (options extends { theme: infer input }
     ? {
         /** Isolated single-theme contract. */ readonly theme: Handle<

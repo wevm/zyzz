@@ -173,6 +173,45 @@ export function scan(
       ancestors.push(node)
       if (
         node.type === 'VariableDeclarator' &&
+        node.id.type === 'ObjectPattern' &&
+        node.init
+      ) {
+        const init = Expression.unwrap(node.init)
+        const declaration =
+          init.type === 'Identifier'
+            ? scope.getDeclaration(init.name)
+            : undefined
+        if (
+          declaration?.type === 'Import' &&
+          namespaces.has(declaration.node.start) &&
+          node.id.properties.some(
+            (property) =>
+              property.type === 'RestElement' ||
+              property.computed ||
+              [
+                'marker',
+                'ancestor',
+                'descendant',
+                'anySibling',
+                'siblingAfter',
+                'siblingBefore',
+              ].includes(
+                property.key.type === 'Identifier'
+                  ? property.key.name
+                  : property.key.type === 'Literal' &&
+                      typeof property.key.value === 'string'
+                    ? property.key.value
+                    : '',
+              ),
+          )
+        )
+          throw new Themes.InvalidError(
+            'Marker helpers require direct Css member calls.',
+            node,
+          )
+      }
+      if (
+        node.type === 'VariableDeclarator' &&
         node.id.type === 'Identifier' &&
         node.init
       ) {

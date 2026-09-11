@@ -34,7 +34,9 @@ describe('marker', () => {
     Css.marker({ 'not ok': ['open'] })
     // @ts-expect-error case-folded duplicate names
     Css.marker({ State: ['open'], state: ['closed'] })
-    Css.marker(undefined)
+    const presence = Css.marker(undefined)
+    // @ts-expect-error explicit undefined is presence-only
+    presence({ unknown: 'open' })
     Css.ancestor(card, { data: undefined })
     css((values: { color: '#123' | '#456' }) => ({
       [Css.ancestor(card)]: { color: values.color },

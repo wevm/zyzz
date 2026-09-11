@@ -278,6 +278,10 @@ export function zyzz(): Plugin {
               start: node.start,
             },
           ])
+        if (/[?#]/.test(resolved.id)) {
+          resolutions[specifier] = null
+          continue
+        }
         if (resolved.external || !eligible(resolved.id)) {
           const physical = resolved.id.split('?')[0]!.split('#')[0]!
           const sidecar = `${physical}.zyzz.json`
@@ -358,6 +362,7 @@ export function zyzz(): Plugin {
           const resolved = await resolve(specifier, file)
           if (!resolved || (!resolved.external && eligible(resolved.id)))
             continue
+          if (/[?#]/.test(resolved.id)) continue
           const physical = resolved.id.split(/[?#]/)[0]!
           if (!Path.isAbsolute(physical) || !/\.[cm]?[jt]sx?$/.test(physical))
             continue

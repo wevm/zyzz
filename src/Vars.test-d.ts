@@ -3,6 +3,12 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css, Vars } from 'zyzz'
 
 describe('define', () => {
+  test('accepts string zero for registered lengths', () => {
+    Vars.define({
+      gap: { type: 'length', inherits: false, initialValue: '0' },
+      offset: { type: 'signedLength', inherits: false, initialValue: '0' },
+    })
+  })
   test('reserves the assignment method name', () => {
     // @ts-expect-error The contract owns the set method.
     Vars.define({ set: 'number' })

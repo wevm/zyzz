@@ -7,6 +7,33 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 describe('compile', () => {
+  test('rejects source/packed slot collisions and unresolved computed overrides', () => {
+    const library = Graph.compile({
+      modules: {
+        'vars.ts': `import {Vars} from 'zyzz';export const vars=Vars.define({gap:'length'});`,
+      },
+    })
+    expect(() =>
+      Graph.compile({
+        contracts: { 'lib/vars.js': library.contracts['vars.ts']! },
+        modules: {
+          'vars.ts': `import {Vars} from 'zyzz';export const vars=Vars.define({gap:'length'});`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: vars.ts:44: Conflicting variable identity: --z-v4t4nbe1og4cic-76-61-72-73--67-61-70; compile libraries with package-qualified module IDs.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {css} from 'zyzz';const base={width:'10px',[key]:'20px'};export const styles={card:css({width:base.width})};`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:101: Static member reads cannot cross unresolved computed keys.]`,
+    )
+  })
+
   test('normalizes wrapped compound static values and rejects loop mutation', () => {
     const source =
       "import {css} from 'zyzz';const size=10;export const styles={card:css({width:(`${size}px` as const)})};"

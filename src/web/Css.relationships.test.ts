@@ -7,6 +7,41 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 import { Marker } from 'zyzz/runtime'
 describe('marker', () => {
+  test('rejects destructured factories and canonically sorts packed state domains', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'app.ts': `import {Css} from 'zyzz/web';const {marker}=Css;export const card=marker();`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:35: Marker helpers require direct Css member calls.]`,
+    )
+    const first = Graph.compile({
+      modules: {
+        'index.ts': `import {Css} from 'zyzz/web';export const card=Css.marker({state:['é','é']});`,
+      },
+    })
+    const second = Graph.compile({
+      modules: {
+        'index.ts': `import {Css} from 'zyzz/web';export const card=Css.marker({state:['é','é']});`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: {
+        'a.js': first.contracts['index.ts']!,
+        'b.js': second.contracts['index.ts']!,
+      },
+      imports: { 'app.ts': { a: 'a.js', zyzz: null, 'zyzz/web': null } },
+      modules: {
+        'app.ts': `import {card} from 'a';import {css} from 'zyzz';import {Css} from 'zyzz/web';export const styles={card:css({[Css.ancestor(card)]:{color:'red'}})};`,
+      },
+    })
+    expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-style-1e8a67z1uaws1j-103{:where([data-z-1wfnqsmu0q6os-card-63-61-72-64]) &{color:red;}}"`,
+    )
+  })
+
   test('captures the runtime marker identity before validation', () => {
     let reads = 0
     const definition = {

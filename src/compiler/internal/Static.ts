@@ -284,7 +284,17 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
             ? String(node.property.value)
             : undefined
       if (key !== undefined && object.type === 'ObjectExpression') {
-        const property = properties(object, allowed).find(
+        const entries = properties(object, allowed)
+        if (
+          entries.some(
+            (property) => property.type === 'Property' && property.computed,
+          )
+        )
+          throw new Themes.InvalidError(
+            'Static member reads cannot cross unresolved computed keys.',
+            node,
+          )
+        const property = entries.find(
           (property) =>
             property.type === 'Property' &&
             (property.key.type === 'Identifier'

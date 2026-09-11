@@ -42,27 +42,28 @@ describe('create', () => {
     })
     const data = JSON.parse(library.contracts['config.ts']!)
     delete data.exports.config.script
-    const errors = [
-      `import {config} from 'lib';const {script}=config;script()`,
-      `import {select} from 'lib';const {script}=select;script()`,
-    ].map((source) => {
-      try {
-        Graph.compile({
-          contracts: { 'lib.js': JSON.stringify(data) },
-          imports: { 'app.js': { lib: 'lib.js' } },
-          modules: { 'app.js': source },
-        })
-        return 'accepted'
-      } catch (error) {
-        return error
-      }
-    })
-    expect(errors).toMatchInlineSnapshot(`
-      [
-        [Source.ExtractError: app.js:34: This configuration helper is not available on the linked contract.],
-        [Source.ExtractError: app.js:34: Destructure only css and the configured single theme; other helpers remain unsupported.],
-      ]
-    `)
+    expect(() =>
+      Graph.compile({
+        contracts: { 'lib.js': JSON.stringify(data) },
+        imports: { 'app.js': { lib: 'lib.js' } },
+        modules: {
+          'app.js': `import {config} from 'lib';const {script}=config;script()`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.js:34: This configuration helper is not available on the linked contract.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        contracts: { 'lib.js': JSON.stringify(data) },
+        imports: { 'app.js': { lib: 'lib.js' } },
+        modules: {
+          'app.js': `import {select} from 'lib';const {script}=select;script()`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.js:34: Destructure only css and the configured single theme; other helpers remain unsupported.]`,
+    )
   })
   test('omits unavailable script methods from legacy alias declarations', () => {
     const library = Graph.compile({

@@ -4,6 +4,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Os from 'node:os'
 import * as Vite from 'vite'
+import * as Util from 'node:util'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
@@ -39,6 +40,11 @@ describe('zyzz', () => {
           'index.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}});`,
         },
       })
+      const raw = Graph.compile({
+        modules: {
+          'raw.ts': `import {global} from 'zyzz/web';global({body:{outlineColor:'pink'}});`,
+        },
+      })
       const wrapper = Graph.compile({
         contracts: { 'dep/index.js': dependency.contracts['index.ts']! },
         imports: { 'wrapper/index.ts': { dep: 'dep/index.js' } },
@@ -49,6 +55,12 @@ describe('zyzz', () => {
       const wrapperRoot = Path.join(root, 'node_modules/wrapper'),
         dependencyRoot = Path.join(wrapperRoot, 'node_modules/dep')
       for (const [directory, name, module, contract] of [
+        [
+          Path.join(root, 'node_modules/raw-effects'),
+          'raw-effects',
+          raw.modules['raw.ts']!.code,
+          raw.contracts['raw.ts']!,
+        ],
         [
           dependencyRoot,
           'dep',
@@ -88,7 +100,7 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import ${JSON.stringify(Path.join(external, 'index.js'))};import 'wrapper';import {css} from 'zyzz';document.body.className=css({color:'red'})().className;`,
+        `import ${JSON.stringify(Path.join(external, 'index.js'))};import('raw-effects?raw');import 'wrapper';import {css} from 'zyzz';document.body.className=css({color:'red'})().className;`,
       )
       const result = await Vite.build({
         root,
@@ -119,6 +131,7 @@ describe('zyzz', () => {
         .map((output) => (output.type === 'asset' ? String(output.source) : ''))
         .join('\n')
       expect(css.includes('background-image')).toMatchInlineSnapshot('true')
+      expect(css.includes('outline')).toMatchInlineSnapshot('false')
       await Fs.writeFile(Path.join(external, 'index.js.zyzz.json'), '{')
       try {
         await Vite.build({
@@ -131,7 +144,7 @@ describe('zyzz', () => {
         throw new Error('Expected invalid sidecar')
       } catch (error) {
         expect(
-          (error as Error).message
+          Util.stripVTControlCharacters((error as Error).message)
             .replaceAll(root, '<root>')
             .replaceAll(external, '<external>')
             .split(/\n\s+at /)[0],

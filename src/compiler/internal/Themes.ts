@@ -73,7 +73,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const references: Reference[] = []
   const styles = new Map<
     number,
-    { call: Ast.CallExpression; theme: Theme.Definition }
+    {
+      call: Ast.CallExpression
+      output?: 'html' | undefined
+      theme: Theme.Definition
+    }
   >()
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const tokens = new Map<number, { end: number; reference: Token.Reference }>()
@@ -644,7 +648,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
           'Theme css aliases support direct calls only; exporting or escaping them requires source linking.',
           node,
         )
-      styles.set(parent.start, { call: parent, theme: themes[alias.name]! })
+      styles.set(parent.start, {
+        call: parent,
+        theme: themes[alias.name]!,
+        output: alias.options?.output === 'html' ? 'html' : undefined,
+      })
       return true
     }
     const config =
@@ -700,7 +708,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
             call.optional
           )
             break
-          styles.set(call.start, { call, theme: config.definition })
+          styles.set(call.start, {
+            call,
+            theme: config.definition,
+            output: config.call.options?.output === 'html' ? 'html' : undefined,
+          })
           return true
         }
         const linked = config.members?.[JSON.stringify(path)]

@@ -87,6 +87,10 @@ export function compile(options: compile.Options): compile.ReturnType {
   let runtime = '__zyzzProps'
   while (identifiers.has(runtime)) runtime += '_'
 
+  let html = '__zyzzHtml'
+  while (identifiers.has(html)) html += '_'
+  let usesHtml = false
+
   let variables = '__zyzzVars'
   while (identifiers.has(variables)) variables += '_'
 
@@ -122,10 +126,10 @@ export function compile(options: compile.Options): compile.ReturnType {
   let callable = false
   for (const call of extracted.calls) {
     const application = applications.get(call.start)!
-    const props = `{className:${JSON.stringify(classes[call.name])}}`
+    const props = `{${call.output === 'html' ? 'class' : 'className'}:${JSON.stringify(classes[call.name])}}`
     const replacement = (() => {
       if (call.slots) {
-        const type = `import('zyzz').css.Dynamic<${call.valuesType}>`
+        const type = `import('zyzz').css.Dynamic<${call.valuesType}${call.output === 'html' ? ',"html"' : ''}>`
         const typed = /\.[cm]?tsx?$/.test(options.moduleId)
         const slots = Object.entries(call.slots)
         const reads = slots
@@ -141,22 +145,35 @@ export function compile(options: compile.Options): compile.ReturnType {
           .join(',')
         const className = JSON.stringify(classes[call.name])
         const value = `(input${typed ? `:Parameters<${type}>[0]` : ''})=>{${reads}const external=input.className;const style=input.style;return {className:external?${className}+" "+external:${className},style:{...style,${assignments}}}}`
-        return typed ? `((${value}) as ${type})` : `(${value})`
+        const result =
+          call.output === 'html' ? `${html}.bind(${value})` : `(${value})`
+        if (call.output === 'html') usesHtml = true
+        return typed ? `(${result} as ${type})` : result
       }
       if (application.folded) return `(${props})`
+      if (call.output === 'html') {
+        usesHtml = true
+        return `${html}.create({className:${JSON.stringify(classes[call.name])}})`
+      }
       return `${runtime}.create(${props})`
     })()
     module.overwrite(call.start, application.end, replacement)
-    if (!call.slots && !application.folded) callable = true
+    if (!call.slots && !application.folded && call.output !== 'html')
+      callable = true
   }
 
   for (const application of localApplications?.find() ?? []) {
     const className = JSON.stringify(classes[application.name])
+    const key =
+      extracted.calls.find((call) => call.name === application.name)?.output ===
+      'html'
+        ? 'class'
+        : 'className'
     // Keep a callable guard so bundlers also retain failures before initialization.
     module.overwrite(
       application.start,
       application.end,
-      `(${options.source.slice(application.start, application.calleeEnd)}?{className:${className}}:${options.source.slice(application.start, application.calleeEnd)}())`,
+      `(${options.source.slice(application.start, application.calleeEnd)}?{${key}:${className}}:${options.source.slice(application.start, application.calleeEnd)}())`,
     )
   }
 
@@ -295,7 +312,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   }
 
-  if (callable || extracted.variableCalls?.length) {
+  if (callable || usesHtml || extracted.variableCalls?.length) {
     // Insertion after a hashbang keeps executable module syntax intact.
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
@@ -307,7 +324,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

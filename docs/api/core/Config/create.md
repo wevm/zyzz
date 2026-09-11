@@ -188,3 +188,14 @@ const output = Css.compile({
   themes: { base: theme },
 })
 ```
+
+## Renderer Output
+
+`output` defaults to `'react'`, returning `className` and an inline style object. Select `'html'` for native attribute binding in Solid, Vue, and Svelte:
+
+```ts
+export const { css } = Config.create({ output: 'html' })
+const styles = { card: css({ padding: '8px' }) }
+```
+
+`styles.card()` returns `class` and an optional serialized CSS `style` string. Styling overrides retain the same `className` and typed `style` inputs. Conversion belongs to compiled bindings; application code spreads or binds the result directly.

@@ -45,6 +45,8 @@ Initial support covers React, Vue, Solid, Svelte, and plain DOM/HTML, with Vite 
 
 Follow with Nuxt, SvelteKit, SolidStart, Astro, TanStack Start, and Preact integration fixtures. Angular, Qwik, and native rendering remain later work. Base renderer support does not establish application-framework support.
 
+Renderer output uses `Config.create({ output: 'html' })` for direct `styles.card()` binding in Solid, Vue, and Svelte; React props remain the default. Conversion is compiler-owned, with no application-site adapter. Framework integration gates remain open until their dedicated fixtures pass.
+
 Implement in this order:
 
 1. **Renderer output:** define typed output for DOM `class`, `className`, inline style objects, and serialized style attributes. Preserve classes, CSS variables, theme scopes, owned data attributes, escaping, units, existing class/style override merging, and removal of stale values. Verify React and plain DOM consumers through the shared compiler.

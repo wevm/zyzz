@@ -143,3 +143,5 @@ The writer selects the lowest version required by the exported capabilities:
 This reader accepts versions 1–7. Publish metadata together with its matching runtime entrypoint, declarations, stylesheets, assets, and maps.
 
 `sharedAssetOwners` associates each relocated URL placeholder with its trusted source or packed-contract identity. Hosts validate package ownership before serving or publishing assets. Conflicting packed sections raise `Source.ExtractError` attributed to the contributing contract.
+
+Packed marker aliases sharing an identity must carry the same state schema; conflicting schemas are rejected across loaded contracts.

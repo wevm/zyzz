@@ -11,6 +11,7 @@ export * as Dynamic from './Dynamic.js'
 /** Compiler-owned HTML attribute binding. */
 export * as Html from './Html.js'
 
+/** Compiler-owned marker attribute bindings and schema validation. */
 export * as Marker from './Marker.js'
 
 /** Runtime props binding without parsing, compilation, or theme data. */

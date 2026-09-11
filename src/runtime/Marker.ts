@@ -4,7 +4,7 @@ export type Schema = Readonly<Record<string, readonly (boolean | string)[]>>
 /** Portable marker identity and state schema. */
 export type Definition = {
   /** Compiler-assigned presence attribute name. */
-  readonly id: string
+  readonly id: `data-z-${string}`
   /** Finite state names and accepted values. */
   readonly schema: Schema
 }
@@ -67,6 +67,10 @@ export function schema(input: unknown): Schema {
 }
 /** Creates a callable marker; emits only presence and selected state attributes. */
 export function create(definition: Definition) {
+  if (!/^data-z-[a-z0-9_-]+$/.test(definition.id))
+    throw new Error(
+      'Marker identities require compiler-owned data-z attributes.',
+    )
   return (
     input: Readonly<Record<string, boolean | string | undefined>> = {},
   ) => {

@@ -412,7 +412,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
             themes[member.call.name] = member.definition
           themes[link.call.name] = link.definition
           for (const { key, id } of bindings) {
-            if (key === 'css') {
+            if (key === 'css' && !link.call.selection) {
               const alias = { ...link.call, destructured: false }
               aliasBindings.set(id.start, alias)
               aliasNames.set(id.name, alias)
@@ -424,7 +424,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
                 }
               continue
             }
-            if (key === 'themes' && link.call.options?.themes) {
+            if (
+              !link.call.selection &&
+              key === 'themes' &&
+              link.call.options?.themes
+            ) {
               const members = Object.fromEntries(
                 Object.entries(link.members ?? {}).flatMap(([key, member]) => {
                   const path = JSON.parse(key) as string[]
@@ -535,6 +539,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (!expression) return
     const linked = resolve(expression)
     if (linked?.kind === 'config' && variable.id.type === 'ObjectPattern') {
+      if (statement.type === 'ExportNamedDeclaration' && !options.linked)
+        fail(
+          'Exported configuration destructuring requires source linking.',
+          variable,
+        )
       if (declaration.kind !== 'const')
         fail('Configuration destructuring requires const bindings.', variable)
       const link = linked
@@ -560,7 +569,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         retained: true,
       })
       for (const { key, id } of bindings) {
-        if (key === 'css') {
+        if (key === 'css' && !link.call.selection) {
           const alias = { ...link.call, destructured: false }
           aliasBindings.set(id.start, alias)
           aliasNames.set(id.name, alias)
@@ -572,7 +581,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
             }
           continue
         }
-        if (key === 'themes' && link.call.options?.themes) {
+        if (
+          !link.call.selection &&
+          key === 'themes' &&
+          link.call.options?.themes
+        ) {
           const members = Object.fromEntries(
             Object.entries(link.members ?? {}).flatMap(([key, member]) => {
               const path = JSON.parse(key) as string[]

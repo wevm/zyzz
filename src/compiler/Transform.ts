@@ -79,7 +79,8 @@ export function compile(options: compile.Options): compile.ReturnType {
         : undefined
       if (argument?.type === 'ArrowFunctionExpression')
         argument = Expression.unwrap(argument.body) as Ast.Expression
-      if (argument?.type === 'ObjectExpression')
+      if (call.body) definitions.set(call.start, call.body)
+      else if (argument?.type === 'ObjectExpression')
         definitions.set(call.start, argument)
     },
   })

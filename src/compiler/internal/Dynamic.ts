@@ -9,7 +9,11 @@ import * as Themes from './Themes.js'
 export type Slots = Readonly<Record<string, Binding.Reference>>
 
 /** Reads a finite explicitly typed parameter and a concise static object body. */
-export function read(node: Ast.Node, identity: string) {
+export function read(
+  node: Ast.Node,
+  identity: string,
+  resolveType: (node: Ast.Node) => Ast.Node = (node) => node,
+) {
   node = Expression.unwrap(node)
   if (node.type !== 'ArrowFunctionExpression') return undefined
   if (node.async || node.params.length !== 1)
@@ -18,19 +22,21 @@ export function read(node: Ast.Node, identity: string) {
       node,
     )
   const parameter = node.params[0]!
-  if (
-    parameter.type !== 'Identifier' ||
-    !parameter.typeAnnotation ||
-    parameter.typeAnnotation.typeAnnotation.type !== 'TSTypeLiteral'
-  )
+  if (parameter.type !== 'Identifier' || !parameter.typeAnnotation)
     throw new Themes.InvalidError(
       'Dynamic styles require an explicit finite object type on the values parameter.',
+      parameter,
+    )
+  const fields = resolveType(parameter.typeAnnotation.typeAnnotation)
+  if (fields.type !== 'TSTypeLiteral')
+    throw new Themes.InvalidError(
+      'Dynamic styles require a finite object type.',
       parameter,
     )
   const parameterName = parameter.name
   const slots: Record<string, Binding.Reference> = Object.create(null)
   const numeric = new Map<Binding.Reference, readonly number[]>()
-  for (const member of parameter.typeAnnotation.typeAnnotation.members) {
+  for (const member of fields.members) {
     const key =
       member.type === 'TSPropertySignature'
         ? member.key.type === 'Identifier'
@@ -55,7 +61,7 @@ export function read(node: Ast.Node, identity: string) {
         'Dynamic values require unique required scalar fields without styling override keys.',
         member,
       )
-    const type = member.typeAnnotation.typeAnnotation
+    const type = resolveType(member.typeAnnotation.typeAnnotation)
     const kind = scalar(type)
     if (!kind)
       throw new Themes.InvalidError(

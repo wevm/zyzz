@@ -388,7 +388,7 @@ describe('compile', () => {
           'import { css } from "zyzz"; css((values:{width:string})=>({...values}))',
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:59: Only explicit literal properties are supported; spreads, computed keys, shorthand, and methods are not evaluated.]`,
+      `[Source.ExtractError: invalid.ts:59: Static spreads require an immutable object literal.]`,
     )
   })
 })

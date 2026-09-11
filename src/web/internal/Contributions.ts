@@ -4,6 +4,13 @@ import type * as Style from '../../Style.js'
 /** Explicit stylesheet data supplied by source adapters or in-memory callers. */
 export type Definition =
   | {
+      readonly kind: 'property'
+      readonly name: `--${string}`
+      readonly syntax: string
+      readonly inherits: boolean
+      readonly initialValue: number | string
+    }
+  | {
       readonly kind: 'rule'
       readonly selector: string
       readonly style: Style.NamedStyle
@@ -110,6 +117,8 @@ export function render(
       if (value.kind === 'layers') return ''
       if (value.kind === 'rule')
         return `${value.selector}{${style(value.style)}}`
+      if (value.kind === 'property')
+        return `@property ${value.name}{syntax:${JSON.stringify(value.syntax)};inherits:${value.inherits};initial-value:${value.initialValue};}`
       if (value.kind === 'font-face')
         return `@font-face{${Object.entries(value.declarations)
           .map(

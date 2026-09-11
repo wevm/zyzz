@@ -3,6 +3,7 @@
  * @module
  */
 import * as Condition from '../internal/Condition.js'
+import * as Static from './internal/Static.js'
 import * as Markers from './internal/Markers.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Css from '../web/Css.js'
@@ -30,6 +31,8 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Expanded immutable source data retained for declaration mapping. */
+  readonly body?: Ast.ObjectExpression | undefined
   /** Alias targets retained for declaration source locations. */
   readonly shorthands?: Shorthands.Map | undefined
   /** Native HTML attribute output selected by the bound configuration. */
@@ -119,6 +122,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
   Walker.walk(program, { scopeTracker })
   scopeTracker.freeze()
+  const staticData = Static.collect(program, scopeTracker)
   const contributions = (() => {
     try {
       return Contributions.scan(
@@ -135,7 +139,11 @@ export function extract(options: extract.Options): extract.ReturnType {
   })()
   const variables = (() => {
     try {
-      return Variables.collect(program, identity(options.moduleId))
+      return Variables.collect(
+        program,
+        identity(options.moduleId),
+        options[Themes.context]?.links,
+      )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
       report('unsupported_syntax', error.message, error)
@@ -315,6 +323,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   if (themes)
     for (const entry of themes.styles.values()) pending.push(entry.call)
   pending.sort((a, b) => a.start - b.start)
+  const staticCalls = new Set(pending.map((call) => call.start))
   for (const call of pending) {
     let argument = call.arguments[0]
     while (
@@ -322,6 +331,15 @@ export function extract(options: extract.Options): extract.ReturnType {
       argument?.type === 'TSSatisfiesExpression'
     )
       argument = argument.expression
+    const original = argument
+    try {
+      if (argument)
+        argument = staticData.normalize(argument, staticCalls) as Ast.Expression
+    } catch (error) {
+      if (!(error instanceof Themes.InvalidError)) throw error
+      report('unsupported_syntax', error.message, error)
+      continue
+    }
     const diagnosticCount = diagnostics.length
     const dynamic = (() => {
       if (!argument) return undefined
@@ -329,6 +347,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         return Dynamic.read(
           argument,
           `${identity(options.moduleId)}-${call.start}`,
+          staticData.type,
         )
       } catch (error) {
         if (!(error instanceof Themes.InvalidError)) throw error
@@ -346,7 +365,18 @@ export function extract(options: extract.Options): extract.ReturnType {
         return undefined
       }
     }
-    if (dynamic) argument = dynamic.body
+    if (dynamic) {
+      try {
+        argument = staticData.normalize(
+          dynamic.body,
+          staticCalls,
+        ) as Ast.Expression
+      } catch (error) {
+        if (!(error instanceof Themes.InvalidError)) throw error
+        report('unsupported_syntax', error.message, error)
+        continue
+      }
+    }
     if (call.arguments.length !== 1 || argument?.type !== 'ObjectExpression') {
       report(
         'unsupported_syntax',
@@ -543,11 +573,13 @@ export function extract(options: extract.Options): extract.ReturnType {
               Object.values(dynamic.slots).includes(reference) &&
               reference.type !== 'number'
             ) &&
-            !targets.every((target) =>
-              Binding.accepts(reference.type, target) || dynamic?.accepts(
-                reference as unknown as Binding.Reference,
-                target,
-              ),
+            !targets.every(
+              (target) =>
+                Binding.accepts(reference.type, target) ||
+                dynamic?.accepts(
+                  reference as unknown as Binding.Reference,
+                  target,
+                ),
             )
           ) {
             report(
@@ -640,6 +672,10 @@ export function extract(options: extract.Options): extract.ReturnType {
       const shorthands = themes?.styles.get(call.start)?.theme[Token.definition]
         .contract.shorthands
       calls.push({
+        ...(argument !== (dynamic?.body ?? original) &&
+        argument.type === 'ObjectExpression'
+          ? { body: argument }
+          : {}),
         ...(shorthands ? { shorthands } : {}),
         ...(themes?.styles.get(call.start)?.output
           ? { output: 'html' as const }
@@ -685,6 +721,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   let contributionData: readonly Css.Contribution[] = []
   try {
     contributionData = [
+      ...variables.registrations,
       ...Contributions.extract(contributions, themes?.tokens ?? new Map()),
       ...(themes?.calls ?? []).flatMap((call) =>
         call.options?.layers
@@ -729,6 +766,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             ...themes?.exports,
             ...markers.exports,
             ...contributions.exports,
+            ...variables.exports,
           }),
         }
       : {}),

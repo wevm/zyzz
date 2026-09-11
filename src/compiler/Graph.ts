@@ -450,7 +450,10 @@ function build(options: compile.Options, cache?: Cache): Cache {
               css: content,
               layers,
               content: options.modules[id]!,
-              start: extractedModule.contributionCalls?.[0]?.start ?? 0,
+              start:
+                extractedModule.contributionCalls?.[0]?.start ??
+                extractedModule.variableCalls?.[0]?.start ??
+                0,
             },
           ]
         : [],

@@ -1,6 +1,9 @@
 /** Extracts module-owned explicit slot contracts without executing application code. @module */
 import type * as Ast from '@oxc-project/types'
 import type * as Walker from 'oxc-walker'
+import type * as Css from '../../web/Css.js'
+import * as Theme from '../../Theme.js'
+import type * as Themes from './Themes.js'
 import type * as Binding from '../../internal/Binding.js'
 import * as Expression from './Expression.js'
 import { InvalidError } from './Themes.js'
@@ -16,7 +19,11 @@ export type Call = {
 }
 
 /** Collects constant schemas and resolves references with the host's lexical bindings. */
-export function collect(program: Ast.Program, namespace: string) {
+export function collect(
+  program: Ast.Program,
+  namespace: string,
+  links: Readonly<Record<string, Themes.Link>> = {},
+) {
   const imports = new Set<number>()
   const names = new Set<string>()
   for (const node of program.body)
@@ -36,12 +43,28 @@ export function collect(program: Ast.Program, namespace: string) {
           imports.add(specifier.start)
           names.add(specifier.local.name)
         }
+  const exports: Record<string, Themes.Link> = Object.create(null)
+  const bound = new Map<string, Themes.Link>()
+  const registrations: Css.Contribution[] = []
   const calls: Call[] = []
   const definitions = new Map<number, Call>()
   const references = new Map<
     number,
     { end: number; reference: Binding.Reference }
   >()
+  for (const statement of program.body)
+    if (statement.type === 'ImportDeclaration')
+      for (const specifier of statement.specifiers) {
+        const link = links[specifier.local.name]
+        if (link?.kind === 'variables' && link.call.variables) {
+          bound.set(specifier.local.name, link)
+          definitions.set(specifier.start, {
+            start: -1,
+            end: -1,
+            slots: link.call.variables,
+          })
+        }
+      }
   for (const statement of program.body) {
     const node =
       statement.type === 'ExportNamedDeclaration'
@@ -51,6 +74,20 @@ export function collect(program: Ast.Program, namespace: string) {
     for (const declaration of node.declarations) {
       if (declaration.id.type !== 'Identifier' || !declaration.init) continue
       const call = Expression.unwrap(declaration.init)
+      if (call.type === 'Identifier') {
+        const link = bound.get(call.name)
+        if (link?.call.variables) {
+          bound.set(declaration.id.name, link)
+          definitions.set(declaration.start, {
+            start: declaration.start,
+            end: declaration.end,
+            slots: link.call.variables,
+          })
+          if (statement.type === 'ExportNamedDeclaration')
+            exports[declaration.id.name] = link
+          continue
+        }
+      }
       if (
         call.type !== 'CallExpression' ||
         call.optional ||
@@ -86,11 +123,53 @@ export function collect(program: Ast.Program, namespace: string) {
               ? String(property.key.value)
               : undefined
         const value = Expression.unwrap(property.value)
+        const descriptor: Record<string, string | number | boolean> =
+          Object.create(null)
+        if (value.type === 'ObjectExpression')
+          for (const entry of value.properties) {
+            if (
+              entry.type !== 'Property' ||
+              entry.computed ||
+              entry.method ||
+              entry.kind !== 'init'
+            )
+              throw new InvalidError(
+                'Variable registrations require literal descriptors.',
+                value,
+              )
+            const key =
+              entry.key.type === 'Identifier'
+                ? entry.key.name
+                : entry.key.type === 'Literal'
+                  ? String(entry.key.value)
+                  : ''
+            const input = Expression.unwrap(entry.value)
+            const literal =
+              input.type === 'Literal'
+                ? input.value
+                : input.type === 'UnaryExpression' &&
+                    ['+', '-'].includes(input.operator) &&
+                    input.argument.type === 'Literal' &&
+                    typeof input.argument.value === 'number'
+                  ? (input.operator === '-' ? -1 : 1) * input.argument.value
+                  : undefined
+            if (
+              !['type', 'syntax', 'inherits', 'initialValue'].includes(key) ||
+              Object.hasOwn(descriptor, key) ||
+              !['string', 'number', 'boolean'].includes(typeof literal)
+            )
+              throw new InvalidError(
+                'Invalid variable registration descriptor.',
+                entry,
+              )
+            descriptor[key] = literal as string | number | boolean
+          }
+        const kind = value.type === 'Literal' ? value.value : descriptor.type
         if (
           !key ||
           key === 'set' ||
           Object.hasOwn(slots, key) ||
-          value.type !== 'Literal' ||
+          (value.type !== 'Literal' && value.type !== 'ObjectExpression') ||
           ![
             'color',
             'length',
@@ -98,7 +177,7 @@ export function collect(program: Ast.Program, namespace: string) {
             'percentage',
             'signedLength',
             'signedPercentage',
-          ].includes(String(value.value))
+          ].includes(String(kind))
         )
           throw new InvalidError(
             'Variable schemas require unique names and supported scalar domains.',
@@ -106,9 +185,33 @@ export function collect(program: Ast.Program, namespace: string) {
           )
         const name =
           `--z-v${namespace}-${encode(declaration.id.name)}--${encode(key)}` as const
+        if (value.type === 'ObjectExpression') {
+          const syntax =
+            kind === 'signedLength'
+              ? '<length>'
+              : kind === 'signedPercentage'
+                ? '<percentage>'
+                : `<${kind}>`
+          if (
+            typeof descriptor.inherits !== 'boolean' ||
+            !['string', 'number'].includes(typeof descriptor.initialValue) ||
+            (descriptor.syntax !== undefined && descriptor.syntax !== syntax)
+          )
+            throw new InvalidError(
+              'Registration requires matching syntax, inherits, and an independent initialValue.',
+              value,
+            )
+          registrations.push({
+            kind: 'property',
+            name,
+            syntax,
+            inherits: descriptor.inherits,
+            initialValue: descriptor.initialValue as string | number,
+          })
+        }
         slots[key] = Object.freeze({
           name,
-          type: value.value as Binding.Kind,
+          type: kind as Binding.Kind,
           variable: true,
         })
       }
@@ -119,6 +222,21 @@ export function collect(program: Ast.Program, namespace: string) {
       })
       calls.push(entry)
       definitions.set(declaration.start, entry)
+      const link: Themes.Link = {
+        binding: `${namespace}-${declaration.id.name}`,
+        kind: 'variables',
+        definition: Theme.define({}),
+        call: {
+          start: call.start,
+          end: call.end,
+          name: `${namespace}-${declaration.id.name}`,
+          tokenType: '{}',
+          variables: entry.slots,
+        },
+      }
+      bound.set(declaration.id.name, link)
+      if (statement.type === 'ExportNamedDeclaration')
+        exports[declaration.id.name] = link
     }
   }
   function reference(
@@ -140,7 +258,7 @@ export function collect(program: Ast.Program, namespace: string) {
         node,
       )
     }
-    if (binding?.type !== 'Variable') return false
+    if (binding?.type !== 'Variable' && binding?.type !== 'Import') return false
     const definition = definitions.get(binding.node.start)
     if (!definition) return false
     if (node.start < definition.end)
@@ -166,7 +284,22 @@ export function collect(program: Ast.Program, namespace: string) {
     }
     return true
   }
-  return { calls, reference, references }
+  for (const statement of program.body)
+    if (statement.type === 'ExportNamedDeclaration' && !statement.source)
+      for (const specifier of statement.specifiers) {
+        const name =
+          specifier.local.type === 'Identifier'
+            ? specifier.local.name
+            : specifier.local.value
+        const link = bound.get(name)
+        if (link)
+          exports[
+            specifier.exported.type === 'Identifier'
+              ? specifier.exported.name
+              : specifier.exported.value
+          ] = link
+      }
+  return { calls, reference, references, registrations, exports }
 }
 
 function encode(value: string): string {

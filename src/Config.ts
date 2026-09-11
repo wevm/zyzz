@@ -226,7 +226,9 @@ export declare namespace create {
 type Mappings<options> = options extends {
   shorthands: infer map extends Shorthands.Map
 }
-  ? map
+  ? string extends keyof map
+    ? {}
+    : map
   : {}
 type Handle<
   tokens extends Theme.Tokens,

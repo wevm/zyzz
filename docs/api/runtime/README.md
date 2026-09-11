@@ -1,11 +1,10 @@
 # zyzz/runtime
 
-Bind compiled class lists and private variables without generating CSS.
+Apply compiled styling props and data attributes without generating CSS.
 
-| API                          | Description                                             |
-| ---------------------------- | ------------------------------------------------------- |
-| [Props](Props/README.md)     | Small binding helpers used by compiled code.            |
-| [Vars](Vars/README.md)       | Compiled variable contracts with bound assignments.     |
-| [Dynamic](Dynamic/README.md) | Fixed private-variable bindings for compiled callbacks. |
-
-| [Appearance](Appearance/README.md) | Serialized root theme and scheme initialization. |
+| API                                | Description                                          |
+| ---------------------------------- | ---------------------------------------------------- |
+| [Appearance](Appearance/README.md) | Serialize root theme and scheme initialization.      |
+| [Dynamic](Dynamic/README.md)       | Bind fixed private variables for compiled callbacks. |
+| [Props](Props/README.md)           | Bind compiled classes and styling overrides.         |
+| [Vars](Vars/README.md)             | Assign values through compiled variable contracts.   |

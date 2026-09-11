@@ -43,6 +43,32 @@ describe('create', () => {
       `[Source.ExtractError: b.js:0: Invalid library contract: Conflicting packed shorthand mappings for one theme identity.]`,
     )
   })
+  test('retains mapped extension annotations through packed exports', () => {
+    const library = Graph.compile({
+      modules: {
+        'theme.ts': `import {Config,Theme} from 'zyzz';const {theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight']},theme:{spacing:{sm:'4px'}}});export const extended=Theme.extend(theme,{spacing:{sm:'8px'}});`,
+      },
+    })
+    expect(
+      library.modules['theme.ts']!.code.includes('shorthands:'),
+    ).toMatchInlineSnapshot('true')
+    const consumer = Graph.compile({
+      contracts: { 'lib.js': library.contracts['theme.ts']! },
+      imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
+      modules: {
+        'app.ts': `import {Theme} from 'zyzz';import {extended} from 'lib';export const next=Theme.extend(extended,{spacing:{sm:'12px'}});export const card=next.css({px:'sm'});`,
+      },
+    })
+    expect(
+      consumer.modules['app.ts']!.code.includes('shorthands:'),
+    ).toMatchInlineSnapshot('true')
+    expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1xn44ix111xh3v-theme-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:4px;}
+      .z_theme-1xn44ix111xh3v-extended{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:8px;}
+      .z_theme-1e8a67z1uaws1j-next{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:12px;}
+      .z-1e8a67z1uaws1j-base0{padding-left:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);padding-right:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);}"
+    `)
+  })
   test('accepts quoted aliases and independently validates numeric targets', () => {
     const graph = Graph.compile({
       modules: {
@@ -94,6 +120,41 @@ describe('create', () => {
     expect(
       after.modules['app.ts']!.css.includes('padding-top:'),
     ).toMatchInlineSnapshot('true')
+  })
+  test('rejects packed option mappings that disagree with the linked theme', () => {
+    const { library } = compile()
+    const contract = JSON.parse(library.contracts['config.ts']!)
+    contract.exports.css.options.shorthands = {
+      mx: ['marginLeft', 'marginRight'],
+    }
+    expect(() =>
+      Graph.compile({
+        contracts: { 'lib.js': JSON.stringify(contract) },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: {
+          'app.ts': `import {css} from 'lib';export const card=css({mx:'sm'})`,
+        },
+      }),
+    ).toThrow(/mappings disagree/)
+  })
+  test('rejects present falsy packed mappings', () => {
+    const { library } = compile()
+    for (const value of [null, false, 0, '']) {
+      const contract = JSON.parse(library.contracts['config.ts']!)
+      for (const theme of Object.values(contract.themes) as {
+        shorthands: unknown
+      }[])
+        theme.shorthands = value
+      expect(() =>
+        Graph.compile({
+          contracts: { 'lib.js': JSON.stringify(contract) },
+          imports: { 'app.ts': { lib: 'lib.js' } },
+          modules: {
+            'app.ts': `import {css} from 'lib';export const card=css({color:'red'})`,
+          },
+        }),
+      ).toThrow(/shorthands must be/)
+    }
   })
   test('rejects invalid mappings', () => {
     const invalid = [

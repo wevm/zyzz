@@ -12,19 +12,28 @@ import type * as Themes from './Themes.js'
 /** Reads versioned JSON as validated data; never evaluates package code. */
 export function read(source: string, identities: Map<string, Token.Contract>) {
   const data = record(JSON.parse(source))
-  if (![1, 2, 3, 4, 5, 6, 7].includes(data.version as number))
+  if (![1, 2, 3, 4, 5].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
-    const shorthands = entry.shorthands ? Shorthands.read(entry.shorthands) : undefined
+    const shorthands =
+      entry.shorthands !== undefined
+        ? Shorthands.read(entry.shorthands)
+        : undefined
     let contract = identities.get(identity)
-    if (contract && JSON.stringify(contract.shorthands) !== JSON.stringify(shorthands)) throw new Error('Conflicting packed shorthand mappings for one theme identity.')
+    if (
+      contract &&
+      JSON.stringify(contract.shorthands) !== JSON.stringify(shorthands)
+    )
+      throw new Error(
+        'Conflicting packed shorthand mappings for one theme identity.',
+      )
     if (!contract) {
       contract = Object.freeze({
-        ...(entry.shorthands
+        ...(entry.shorthands !== undefined
           ? { shorthands: Shorthands.read(entry.shorthands) }
           : {}),
         [Token.complete]: true,
@@ -53,7 +62,17 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
         : undefined
     const options =
       entry.options === undefined ? undefined : record(entry.options)
-    if (options) Config.create(options as Config.create.Options)
+    if (options) {
+      Config.create(options as Config.create.Options)
+      if (
+        JSON.stringify(options.shorthands) !==
+        JSON.stringify(definition[Token.definition].contract.shorthands)
+      )
+        throw new Error(
+          'Configuration mappings disagree with linked theme metadata.',
+        )
+    }
+
     if (entry.kind === 'config' && !options)
       throw new Error('Missing configuration options.')
     return {
@@ -64,6 +83,11 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
         name: theme,
         start: -1,
         tokenType: types[theme]!,
+        ...(definition[Token.definition].contract.shorthands
+          ? {
+              type: `import('zyzz').Config.create.ReturnType<{theme:${types[theme]!};shorthands:${Configurations.type(definition[Token.definition].contract.shorthands!)}}>['theme']`,
+            }
+          : {}),
         ...(entry.selection === true ? { selection: true } : {}),
         ...(entry.initialization === true ? { initialization: true } : {}),
         ...(options
@@ -139,7 +163,10 @@ export function write(
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
     return {
-      ...(link.call.script && (link.kind === 'config' || link.call.initialization) ? { script: true } : {}),
+      ...(link.call.script &&
+      (link.kind === 'config' || link.call.initialization)
+        ? { script: true }
+        : {}),
       binding: link.binding,
       kind: link.kind,
       theme: link.call.name,
@@ -174,29 +201,35 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(themes).some(theme => theme[Token.definition].contract.shorthands) ? 5 : Object.values(links).some(
-      (link) =>
-        link.call.selection || link.call.initialization || (link.kind === 'config' && link.call.script),
+    version: Object.values(themes).some(
+      (theme) => theme[Token.definition].contract.shorthands,
     )
-      ? 4
-      : Object.values(themes).some(
-            (theme) =>
-              theme[Token.definition].queries ||
-              Object.keys(theme.tokens).some((group) =>
-                [
-                  'fontFamily',
-                  'fontSize',
-                  'fontWeight',
-                  'lineHeight',
-                  'letterSpacing',
-                ].includes(group),
-              ),
+      ? 5
+      : Object.values(links).some(
+            (link) =>
+              link.call.selection ||
+              link.call.initialization ||
+              (link.kind === 'config' && link.call.script),
           )
-        ? 3
-        : Object.values(links).some(
-              (link) => link.kind === 'config' || link.call.type,
+        ? 4
+        : Object.values(themes).some(
+              (theme) =>
+                theme[Token.definition].queries ||
+                Object.keys(theme.tokens).some((group) =>
+                  [
+                    'fontFamily',
+                    'fontSize',
+                    'fontWeight',
+                    'lineHeight',
+                    'letterSpacing',
+                  ].includes(group),
+                ),
             )
-          ? 2
-          : 1,
+          ? 3
+          : Object.values(links).some(
+                (link) => link.kind === 'config' || link.call.type,
+              )
+            ? 2
+            : 1,
   })
 }

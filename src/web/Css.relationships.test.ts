@@ -1,69 +1,90 @@
 /** Exercises packed marker identity, runtime state attributes, and CSS relationships. @module */
 import * as Esbuild from 'esbuild'
-import * as Path from 'node:path'
+import * as Packed from '../../test/fixtures/Packed.js'
 import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 import { Marker } from 'zyzz/runtime'
-const config = `import {Css} from 'zyzz/web';export const card=Css.marker({state:['open','closed'],selected:[true,false]});`
-const app = `import {css} from 'zyzz';import {Css} from 'zyzz/web';import {card} from 'library';export {card};export const styles={ancestor:css({[Css.ancestor(card,{data:{state:'open'}})]:{color:'red'}}),descendant:css({[Css.descendant(card,{data:{selected:false}})]:{color:'blue'}}),before:css({[Css.siblingBefore(card)]:{color:'green'}}),after:css({[Css.siblingAfter(card)]:{color:'purple'}}),either:css({[Css.anySibling(card)]:{color:'orange'}})};`
-function compile() {
-  const library = Graph.compile({
-    modules: {
-      'marker.ts': config,
-      'index.ts': `export {card} from './marker.js';`,
-    },
-  })
-  const output = Graph.compile({
-    contracts: { 'library/index.js': library.contracts['index.ts']! },
-    imports: {
-      'app.ts': { library: 'library/index.js', zyzz: null, 'zyzz/web': null },
-    },
-    modules: { 'app.ts': app },
-  })
-  return { library, output }
-}
-async function bundle() {
-  const { library, output } = compile()
-  const result = await Esbuild.build({
-    stdin: {
-      contents: output.modules['app.ts']!.code,
-      loader: 'ts',
-      resolveDir: process.cwd(),
-    },
-    bundle: true,
-    write: false,
-    format: 'iife',
-    globalName: 'Fixture',
-    alias: {
-      'zyzz/runtime': Path.resolve('src/runtime/index.ts'),
-      'zyzz/web': Path.resolve('src/web/index.ts'),
-      zyzz: Path.resolve('src/index.ts'),
-    },
-    plugins: [
-      {
-        name: 'library',
-        setup(build) {
-          build.onResolve({ filter: /^library$/ }, () => ({
-            path: 'marker',
-            namespace: 'fixture',
-          }))
-          build.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({
-            contents: library.modules['marker.ts']!.code,
-            loader: 'ts',
-            resolveDir: process.cwd(),
-          }))
-        },
-      },
-    ],
-  })
-  return {
-    code: result.outputFiles[0]!.text,
-    css: output.modules['app.ts']!.css,
-  }
-}
 describe('marker', () => {
+  test('rejects indirect authoring factories and invalid runtime identities', () => {
+    expect(() =>
+      Source.extract({
+        moduleId: 'app.ts',
+        source: `import {Css} from 'zyzz/web';const factory=Css.marker;export const card=factory();`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:43: Marker helpers require direct calls.]`,
+    )
+    expect(() =>
+      Marker.create({ id: 'className', schema: Marker.schema({}) } as never),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Marker identities require compiler-owned data-z attributes.]`,
+    )
+  })
+  test('rejects conflicting schemas for one packed marker identity', () => {
+    const first = Graph.compile({
+      modules: {
+        'marker.ts': `import {Css} from 'zyzz/web';export const card=Css.marker({state:['open']});`,
+      },
+    })
+    const second = Graph.compile({
+      modules: {
+        'marker.ts': `import {Css} from 'zyzz/web';export const card=Css.marker({state:['closed']});`,
+      },
+    })
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'first.js': first.contracts['marker.ts']!,
+          'second.js': second.contracts['marker.ts']!,
+        },
+        imports: { 'app.ts': { first: 'first.js', second: 'second.js' } },
+        modules: {
+          'app.ts': `import {card as first} from 'first';import {card as second} from 'second';export {first,second};`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: second.js:0: Invalid library contract: Conflicting packed marker schema: data-z-1dwt1t61ri6uf4-card-63-61-72-64]`,
+    )
+  })
+  const config = `import {Css} from 'zyzz/web';export const card=Css.marker({state:['open','closed'],selected:[true,false]});`
+  const app = `import {css} from 'zyzz';import {Css} from 'zyzz/web';import {card} from 'library';export {card};export const styles={ancestor:css({[Css.ancestor(card,{data:{state:'open'}})]:{color:'red'}}),descendant:css({[Css.descendant(card,{data:{selected:false}})]:{color:'blue'}}),before:css({[Css.siblingBefore(card)]:{color:'green'}}),after:css({[Css.siblingAfter(card)]:{color:'purple'}}),either:css({[Css.anySibling(card)]:{color:'orange'}})};`
+  function compile() {
+    const library = Graph.compile({
+      modules: {
+        'marker.ts': config,
+        'index.ts': `export {card} from './marker.js';`,
+      },
+    })
+    const output = Graph.compile({
+      contracts: { 'library/index.js': library.contracts['index.ts']! },
+      imports: {
+        'app.ts': { library: 'library/index.js', zyzz: null, 'zyzz/web': null },
+      },
+      modules: { 'app.ts': app },
+    })
+    return { library, output }
+  }
+  async function bundle() {
+    const { library, output } = compile()
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: { 'app.ts': output.modules['app.ts']!.code },
+      packages: {
+        library: Object.fromEntries(
+          Object.entries(library.modules).map(([name, module]) => [
+            name,
+            module.code,
+          ]),
+        ),
+      },
+    })
+    return {
+      code,
+      css: output.modules['app.ts']!.css,
+    }
+  }
   test('retains mutable marker aliases used only at runtime', () => {
     const result = Graph.compile({
       modules: {

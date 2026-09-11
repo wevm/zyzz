@@ -7,8 +7,34 @@ import * as Trace from '@jridgewell/trace-mapping'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
-const source = `import {fontFace,global,keyframes,layers} from 'zyzz/web';layers(['reset','components']);fontFace({fontFamily:'App',src:'url(./assets/app.woff2)'});global({body:{backgroundImage:'url(./assets/pixel.png)'}});export const fade=keyframes({from:{opacity:0},to:{opacity:1}});`
 describe('compile', () => {
+  test('packs source content once and links TypeScript animation aliases', () => {
+    const source = `import {global,keyframes} from 'zyzz/web';global({body:{color:'red'}});const fade=keyframes({from:{opacity:0},to:{opacity:1}});export const enter=fade satisfies string;`
+    const library = Graph.compile({ modules: { 'index.ts': source } })
+    const sections = JSON.parse(library.contracts['index.ts']!).stylesheets
+    expect(
+      sections.filter(
+        (section: { content?: string }) => section.content !== undefined,
+      ).length,
+    ).toMatchInlineSnapshot('1')
+    const app = Graph.compile({
+      contracts: { 'lib.js': library.contracts['index.ts']! },
+      imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
+      modules: {
+        'app.ts': `import {enter} from 'lib';import {css} from 'zyzz';export const styles={card:css({animationName:enter})};`,
+      },
+    })
+    expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-1e8a67z1uaws1j-base0{animation-name:z-k1wfnqsmu0q6os-66-61-64-65;}"`,
+    )
+    expect(new Trace.TraceMap(app.sharedCssMap!).sourcesContent)
+      .toMatchInlineSnapshot(`
+      [
+        "import {global,keyframes} from 'zyzz/web';global({body:{color:'red'}});const fade=keyframes({from:{opacity:0},to:{opacity:1}});export const enter=fade satisfies string;",
+      ]
+    `)
+  })
+  const source = `import {fontFace,global,keyframes,layers} from 'zyzz/web';layers(['reset','components']);fontFace({fontFamily:'App',src:'url(./assets/app.woff2)'});global({body:{backgroundImage:'url(./assets/pixel.png)'}});export const fade=keyframes({from:{opacity:0},to:{opacity:1}});`
   test('links relocated animation aliases and preserves packed side effects once', () => {
     const library = Graph.compile({
       modules: {

@@ -24,7 +24,10 @@ export function define<const schema extends Schema>(
   schema: schema &
     Record<Extract<keyof schema, 'set' | '__proto__'>, never> & {
       [key in keyof schema]: schema[key] extends Registration<infer kind>
-        ? {
+        ? Record<
+            Exclude<keyof schema[key], keyof Registration<kind>>,
+            never
+          > & {
             readonly initialValue: Literal.Checked<
               schema[key]['initialValue']
             > &

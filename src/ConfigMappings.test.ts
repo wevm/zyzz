@@ -1,12 +1,60 @@
 /** Exercises property aliases and dedicated spacing tokens through packed compilation and browser rendering. @module */
-import * as Esbuild from 'esbuild'
-import * as Path from 'node:path'
+import * as Vm from 'node:vm'
+import * as Packed from '../test/fixtures/Packed.js'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { Config } from 'zyzz'
 
 describe('create', () => {
+  test('writes version five for dedicated spacing groups without aliases', () => {
+    const result = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const {theme}=Config.create({theme:{margin:{gap:'-4px'},padding:{gap:'4px'}}});`,
+      },
+    })
+    expect(
+      JSON.parse(result.contracts['config.ts']!).version,
+    ).toMatchInlineSnapshot('5')
+  })
+  test('preserves mapped HTML theme handles through source and packed aliases', async () => {
+    const library = Graph.compile({
+      modules: {
+        'index.ts': `import {Config} from 'zyzz';const config=Config.create({output:'html',theme:{padding:{sm:'4px'}},shorthands:{px:['paddingLeft','paddingRight']}});export const theme=config.theme;export const bound=theme.css;export const staticStyle=bound({px:'sm'});`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'library/index.js': library.contracts['index.ts']! },
+      imports: { 'app.ts': { library: 'library/index.js' } },
+      modules: {
+        'app.ts': `import {theme,staticStyle} from 'library';const bound=theme.css;export const dynamic=bound((values:{width:'4px'|'8px'})=>({px:values.width}))({width:'8px'});export const direct=theme.css({px:'sm'})();export const source=staticStyle();`,
+      },
+    })
+    const code = await Packed.bundle({
+      entry: 'app.ts',
+      modules: { 'app.ts': app.modules['app.ts']!.code },
+      packages: { library: { 'index.ts': library.modules['index.ts']!.code } },
+    })
+    const result = Vm.runInNewContext(`${code};Fixture;`)
+    expect(result.direct).toMatchInlineSnapshot(`
+      {
+        "class": "z-style-1e8a67z1uaws1j-177",
+      }
+    `)
+    expect(result.source).toMatchInlineSnapshot(`
+      {
+        "className": "z-1wfnqsmu0q6os-base0",
+      }
+    `)
+    expect(result.dynamic).toMatchInlineSnapshot(`
+      {
+        "className": "z-style-1e8a67z1uaws1j-85",
+        "style": {
+          "--z-d1e8a67z1uaws1j-85-77-69-64-74-68": "8px",
+        },
+      }
+    `)
+  })
   const config = `import {Config} from 'zyzz';export const {css,theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight'],paddingX:['paddingLeft','paddingRight'],space:['marginLeft','paddingLeft']},theme:{spacing:{sm:'4px'},margin:{sm:'-8px'},padding:{sm:'12px'}}});`
   const source = `import {css,theme} from 'library';export const styles={card:css({px:'sm',paddingLeft:'2px',':hover':{paddingX:'sm!'}}),mixed:css({space:'sm'}),handle:theme.css({px:'sm'}),dynamic:css((values:{width:'10px'|'20px'})=>({px:values.width}))};`
   function compile() {
@@ -226,36 +274,10 @@ describe('create', () => {
   })
   test('renders alias order, nested importance, and dynamic slots in Chromium', async () => {
     const { app, library } = compile()
-    const bundle = await Esbuild.build({
-      stdin: {
-        contents: app.modules['app.ts']!.code.replace(
-          "from 'library'",
-          "from './config.ts'",
-        ),
-        loader: 'ts',
-        resolveDir: process.cwd(),
-      },
-      bundle: true,
-      format: 'iife',
-      globalName: 'Fixture',
-      write: false,
-      alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
-      plugins: [
-        {
-          name: 'config',
-          setup(build) {
-            build.onResolve({ filter: /^\.\/config\.ts$/ }, () => ({
-              path: 'config.ts',
-              namespace: 'fixture',
-            }))
-            build.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({
-              contents: library.modules['config.ts']!.code,
-              loader: 'ts',
-              resolveDir: process.cwd(),
-            }))
-          },
-        },
-      ],
+    const bundle = await Packed.bundle({
+      entry: 'app.ts',
+      modules: { 'app.ts': app.modules['app.ts']!.code },
+      packages: { library: { 'index.ts': library.modules['config.ts']!.code } },
     })
     const browser = await chromium.launch()
     try {
@@ -263,7 +285,7 @@ describe('create', () => {
       await page.setContent(
         `<style>${app.modules['app.ts']!.css}</style><div id="card">Card</div><div id="mixed"></div><div id="dynamic"></div>`,
       )
-      await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+      await page.addScriptTag({ content: bundle })
       await page.evaluate(
         `for(const id of ['card','mixed','dynamic']){const props=Fixture.styles[id](id==='dynamic'?{width:'20px'}:{});const el=document.getElementById(id);el.className=props.className;for(const [key,value]of Object.entries(props.style??{})){if(key.startsWith('--'))el.style.setProperty(key,String(value));else el.style[key]=value}}`,
       )

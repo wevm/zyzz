@@ -130,7 +130,8 @@ export function read(value: unknown): readonly Section[] {
   if (value === undefined) return []
   if (!Array.isArray(value))
     throw new Error('Invalid packed stylesheet sections.')
-  return value.map((section) => {
+  const contents = new Map<string, string>()
+  const sections = value.map((section) => {
     if (
       !section ||
       typeof section !== 'object' ||
@@ -144,6 +145,12 @@ export function read(value: unknown): readonly Section[] {
       )
     )
       throw new Error('Invalid packed stylesheet section.')
+    if (typeof section.content === 'string') {
+      const existing = contents.get(section.source)
+      if (existing !== undefined && existing !== section.content)
+        throw new Error('Conflicting packed source content.')
+      contents.set(section.source, section.content)
+    }
     if (section.css)
       Lightning.transform({
         filename: section.source,
@@ -162,5 +169,22 @@ export function read(value: unknown): readonly Section[] {
         ? { start: section.start }
         : {}),
     } as Section
+  })
+  return sections.map((section) => ({
+    ...section,
+    ...(contents.has(section.source)
+      ? { content: contents.get(section.source)! }
+      : {}),
+  }))
+}
+
+/** Serializes source text once per packed source identity. */
+export function write(sections: readonly Section[]): readonly Section[] {
+  const sources = new Set<string>()
+  return sections.map((section) => {
+    const { content, ...rest } = section
+    if (content === undefined || sources.has(section.source)) return rest
+    sources.add(section.source)
+    return { ...rest, content }
   })
 }

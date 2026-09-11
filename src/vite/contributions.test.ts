@@ -68,7 +68,7 @@ describe('zyzz', () => {
       await Fs.mkdir(packageRoot, { recursive: true })
       const library = Graph.compile({
         modules: {
-          'index.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}})`,
+          'index.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel%23dark.svg)'}})`,
         },
       })
       await Fs.writeFile(
@@ -89,7 +89,7 @@ describe('zyzz', () => {
         library.contracts['index.ts']!,
       )
       await Fs.writeFile(
-        Path.join(packageRoot, 'pixel.svg'),
+        Path.join(packageRoot, 'pixel#dark.svg'),
         '<svg xmlns="http://www.w3.org/2000/svg"/>',
       )
       await Fs.writeFile(
@@ -165,6 +165,33 @@ css({color:123})`,
         Path.join(root, 'only-types.ts'),
         `import {type Foo} from 'type-effects';export {type Foo as Bar} from 'type-effects';`,
       )
+      const server = await Vite.createServer({
+        root,
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [zyzz()],
+        server: { port: 0 },
+      })
+      try {
+        await server.listen()
+        await server.transformRequest('/app.ts')
+        const shared = await server.transformRequest('\0zyzz:shared.css')
+        expect(shared!.code.includes('pixel%23dark.svg')).toMatchInlineSnapshot(
+          'true',
+        )
+        const address = server.httpServer!.address()
+        if (!address || typeof address === 'string')
+          throw new Error('Missing server address')
+        const path = shared!.code.match(/\/@zyzz\/asset\/[^"\\\s)]+/)?.[0]
+        if (!path) throw new Error('Missing asset URL')
+        const response = await fetch(`http://localhost:${address.port}${path}`)
+        expect(response.status).toMatchInlineSnapshot('200')
+        expect(await response.text()).toMatchInlineSnapshot(
+          `"<svg xmlns="http://www.w3.org/2000/svg"/>"`,
+        )
+      } finally {
+        await server.close()
+      }
       const result = await Vite.build({
         root,
         configFile: false,

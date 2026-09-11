@@ -68,7 +68,10 @@ export function Button() {
 }
 ```
 
-The bundler integration resolves and transforms imports of compiled `css(...)` definitions. Imported arbitrary object records passed into a separate `css(record)` call remain preview. Consumers never import generated component copies. For precompiled packages, follow [Publish Libraries](compilation.md#publish-libraries).
+The bundler integration resolves and transforms imports of compiled `css(...)` definitions. Consumers never import generated component copies. For precompiled packages, follow [Publish Libraries](compilation.md#publish-libraries).
+
+> [!NOTE]
+> Imported arbitrary object records passed into a separate `css(record)` call remain preview.
 
 ### Override Styles
 

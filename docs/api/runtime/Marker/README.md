@@ -34,3 +34,5 @@ marker({ open: false })
 ## Errors
 
 Schema errors and unknown or invalid application states throw `Error`. Omitted or undefined states emit no state attribute; `false` emits the string `'false'`. Replacing an element's applied props is the framework's responsibility.
+
+`Marker.create` validates and copies its schema before creating the callable. Later mutations to the input record or state arrays do not change the accepted state domain. Identities must use the compiler-owned `data-z-` attribute form.

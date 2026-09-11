@@ -84,8 +84,67 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
     while (node.type === 'MemberExpression') node = node.object
     return node.type === 'Identifier' ? references.get(node.start) : undefined
   }
+  function initial(
+    input: Ast.Node,
+    seen = new Set<number>(),
+  ): Ast.Node | undefined {
+    const node = Expression.unwrap(input)
+    if (node.type === 'Identifier') {
+      const binding = references.get(node.start)
+      if (binding === undefined || seen.has(binding)) return undefined
+      const value = values.get(binding)
+      if (!value) return undefined
+      seen.add(binding)
+      return initial(value, seen)
+    }
+    if (node.type === 'MemberExpression' && !node.optional) {
+      const object = initial(node.object, seen)
+      const key =
+        !node.computed && node.property.type === 'Identifier'
+          ? node.property.name
+          : node.property.type === 'Literal'
+            ? String(node.property.value)
+            : undefined
+      if (object?.type === 'ObjectExpression' && key !== undefined) {
+        for (const property of [...object.properties].reverse()) {
+          if (property.type === 'SpreadElement') return undefined
+          const name =
+            property.key.type === 'Identifier' && !property.computed
+              ? property.key.name
+              : property.key.type === 'Literal'
+                ? String(property.key.value)
+                : undefined
+          if (name === key)
+            return property.method || property.kind !== 'init'
+              ? undefined
+              : initial(property.value, seen)
+        }
+      }
+      if (
+        object?.type === 'ArrayExpression' &&
+        key !== undefined &&
+        /^(?:0|[1-9]\d*)$/.test(key)
+      ) {
+        const element = object.elements[Number(key)]
+        return element && element.type !== 'SpreadElement'
+          ? initial(element, seen)
+          : undefined
+      }
+      return undefined
+    }
+    return node
+  }
+  function scalar(node: Ast.Node): boolean {
+    const value = initial(node)
+    return (
+      value?.type === 'Literal' ||
+      value?.type === 'TemplateLiteral' ||
+      (value?.type === 'UnaryExpression' && value.operator !== 'delete')
+    )
+  }
   function owners(input: Ast.Node): number[] {
     const node = Expression.unwrap(input)
+    if (scalar(node)) return []
     const owner = root(node)
     if (owner !== undefined) return [owner]
     if (node.type === 'ObjectExpression')
@@ -150,6 +209,18 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
       ) {
         for (const path of paths(binding)) {
           if (path.some((node) => allowed.has(node.start))) continue
+          if (
+            !path.some(
+              (node) =>
+                node.type === 'AssignmentExpression' ||
+                node.type === 'UpdateExpression' ||
+                (node.type === 'UnaryExpression' && node.operator === 'delete'),
+            ) &&
+            path.some(
+              (node) => node.type === 'MemberExpression' && scalar(node),
+            )
+          )
+            continue
           const unsupported = path.find(
             (node) =>
               ![

@@ -145,6 +145,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         identity(options.moduleId),
         scopeTracker,
         options[Themes.context]?.links,
+        options.moduleId,
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
@@ -477,14 +478,10 @@ export function extract(options: extract.Options): extract.ReturnType {
           const unwrapped = Expression.unwrap(node)
           const token =
             variables.references.get(unwrapped.start) ??
-            themes?.tokens.get(node.start)
+            themes?.tokens.get(unwrapped.start)
           const reference =
             localSlot(node) ??
-            (token &&
-            token.end ===
-              (Binding.is(token?.reference) ? unwrapped.end : node.end)
-              ? token.reference
-              : undefined)
+            (token && token.end === unwrapped.end ? token.reference : undefined)
           if (
             dynamic &&
             reference &&
@@ -778,7 +775,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         { start, end: start },
       )
   for (const token of themes?.staticTokens ?? [])
-    if (!staticData.used.has(token.start))
+    if (!staticData.used.has(Expression.unwrap(token).start))
       report(
         'unsupported_syntax',
         'Token references must be direct property values in bound theme css calls.',

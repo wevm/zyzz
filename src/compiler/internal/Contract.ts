@@ -13,7 +13,11 @@ import * as Theme from '../../Theme.js'
 import type * as Themes from './Themes.js'
 
 /** Reads versioned JSON as validated data; never evaluates package code. */
-export function read(source: string, identities: Map<string, Token.Contract>) {
+export function read(
+  source: string,
+  identities: Map<string, Token.Contract>,
+  moduleId = '',
+) {
   const data = record(JSON.parse(source))
   if (![1, 2, 3, 4, 5, 6, 7, 8].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
@@ -93,6 +97,14 @@ export function read(source: string, identities: Map<string, Token.Contract>) {
           name: binding,
           tokenType: '{}',
           variables: Object.freeze(slots),
+          ...(entry.source !== undefined
+            ? {
+                variableOwner: Stylesheets.resolve(
+                  moduleId,
+                  string(entry.source),
+                ),
+              }
+            : {}),
         },
       }
     }
@@ -259,6 +271,7 @@ export function write(
   links: Readonly<Record<string, Themes.Link>>,
   themes: Readonly<Record<string, Theme.Definition>>,
   stylesheets: readonly Stylesheets.Section[] = [],
+  moduleId = '',
 ): string {
   function entry(link: Themes.Link): Record<string, unknown> {
     if (link.kind === 'variables')
@@ -266,6 +279,9 @@ export function write(
         binding: link.binding,
         kind: link.kind,
         variables: link.call.variables,
+        ...(link.call.variableOwner
+          ? { source: Stylesheets.relative(moduleId, link.call.variableOwner) }
+          : {}),
       }
     if (link.kind === 'animation')
       return { binding: link.binding, kind: link.kind, name: link.call.name }

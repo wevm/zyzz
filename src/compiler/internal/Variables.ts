@@ -25,6 +25,7 @@ export function collect(
   namespace: string,
   scope: Scope.Tracker,
   links: Readonly<Record<string, Themes.Link>> = {},
+  moduleId = namespace,
 ) {
   const imports = new Set<number>()
   const names = new Set<string>()
@@ -259,6 +260,7 @@ export function collect(
           name: `${namespace}-${declaration.id.name}`,
           tokenType: '{}',
           variables: entry.slots,
+          variableOwner: moduleId.replace(/\.[cm]?[jt]sx?$/, ''),
         },
       }
       bound.set(declaration.id.name, link)

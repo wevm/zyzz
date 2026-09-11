@@ -7,6 +7,7 @@ import type * as Walker from 'oxc-walker'
 import type * as Binding from '../../internal/Binding.js'
 import type * as Marker from '../../runtime/Marker.js'
 import * as Config from '../../Config.js'
+import * as Expression from './Expression.js'
 import * as Configurations from './Configurations.js'
 import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
@@ -22,6 +23,8 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Canonical defining module for multi-entry variable contracts. */
+  readonly variableOwner?: string | undefined
   readonly output?: 'html' | undefined
   /** Portable explicit variable references. */
   readonly variables?: Readonly<Record<string, Binding.Reference>> | undefined
@@ -1213,6 +1216,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
           )
       }
       tokens.set(valueTarget.start, { end: valueTarget.end, reference })
+      const unwrapped = Expression.unwrap(valueTarget)
+      tokens.set(unwrapped.start, { end: unwrapped.end, reference })
       return true
     }
     if (

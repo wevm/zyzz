@@ -8,6 +8,53 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
 describe('compile', () => {
+  test('rejects conflicting source maps and attributes layer failures to packed owners', () => {
+    const library = Graph.compile({
+      modules: {
+        'effects.ts': `import {global,layers} from 'zyzz/web';layers(['a','b']);global({body:{color:'red'}});`,
+      },
+    })
+    const first = JSON.parse(library.contracts['effects.ts']!)
+    const second = JSON.parse(library.contracts['effects.ts']!)
+    second.stylesheets[0].content += '\n'
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'pkg/first.js': JSON.stringify(first),
+          'pkg/second.js': JSON.stringify(second),
+        },
+        imports: { 'app.ts': { a: 'pkg/first.js', b: 'pkg/second.js' } },
+        modules: { 'app.ts': `import 'a';import 'b';` },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: pkg/second.js:0: Conflicting packed stylesheet contributions.]`,
+    )
+    const errors = [['bad name'], ['a', 'a'], ['b', 'a']].map((layers) => {
+      const contract = JSON.parse(library.contracts['effects.ts']!)
+      contract.stylesheets.push({
+        source: 'effects.ts',
+        key: 'extra',
+        css: '',
+        layers: [layers],
+      })
+      try {
+        Graph.compile({
+          contracts: { 'pkg/index.js': JSON.stringify(contract) },
+          modules: { 'app.ts': `export {}` },
+        })
+        return 'accepted'
+      } catch (error) {
+        return error
+      }
+    })
+    expect(errors).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: pkg/index.js:0: Invalid library contract: Invalid layer name.],
+        [Source.ExtractError: pkg/index.js:0: Invalid library contract: Duplicate layer name.],
+        [Source.ExtractError: pkg/index.js:0: Invalid library contract: Conflicting layer order constraints.],
+      ]
+    `)
+  })
   test('packs source content once and links TypeScript animation aliases', () => {
     const source = `import {global,keyframes} from 'zyzz/web';global({body:{color:'red'}});const fade=keyframes({from:{opacity:0},to:{opacity:1}});export const enter=fade satisfies string;`
     const library = Graph.compile({ modules: { 'index.ts': source } })

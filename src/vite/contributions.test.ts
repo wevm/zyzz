@@ -6,6 +6,98 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 import { zyzz } from 'zyzz/vite'
 describe('zyzz', () => {
+  test('retains asset ownership through a repacked nested dependency', async () => {
+    const root = await Fs.mkdtemp(Path.resolve('.fixture-repacked-vite-'))
+    try {
+      const dependency = Graph.compile({
+        modules: {
+          'index.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}});`,
+        },
+      })
+      const wrapper = Graph.compile({
+        contracts: { 'dep/index.js': dependency.contracts['index.ts']! },
+        imports: { 'wrapper/index.ts': { dep: 'dep/index.js' } },
+        modules: {
+          'wrapper/index.ts': `import 'dep';export const loaded=true;`,
+        },
+      })
+      const wrapperRoot = Path.join(root, 'node_modules/wrapper'),
+        dependencyRoot = Path.join(wrapperRoot, 'node_modules/dep')
+      for (const [directory, name, module, contract] of [
+        [
+          dependencyRoot,
+          'dep',
+          dependency.modules['index.ts']!.code,
+          dependency.contracts['index.ts']!,
+        ],
+        [
+          wrapperRoot,
+          'wrapper',
+          wrapper.modules['wrapper/index.ts']!.code,
+          wrapper.contracts['wrapper/index.ts']!,
+        ],
+      ]) {
+        await Fs.mkdir(directory!, { recursive: true })
+        await Fs.writeFile(
+          Path.join(directory!, 'package.json'),
+          JSON.stringify({
+            name,
+            type: 'module',
+            exports: './index.js',
+            sideEffects: false,
+          }),
+        )
+        await Fs.writeFile(Path.join(directory!, 'index.js'), module!)
+        await Fs.writeFile(
+          Path.join(directory!, 'index.js.zyzz.json'),
+          contract!,
+        )
+      }
+      await Fs.writeFile(
+        Path.join(dependencyRoot, 'pixel.svg'),
+        '<svg xmlns="http://www.w3.org/2000/svg"/>',
+      )
+      await Fs.writeFile(
+        Path.join(root, 'index.html'),
+        '<script type="module" src="/app.ts"></script>',
+      )
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import 'wrapper';import {css} from 'zyzz';document.body.className=css({color:'red'})().className;`,
+      )
+      const result = await Vite.build({
+        root,
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [zyzz()],
+        build: {
+          write: false,
+          minify: false,
+          cssMinify: false,
+          assetsInlineLimit: 0,
+        },
+      })
+      const outputs = (Array.isArray(result) ? result : [result]).flatMap(
+        (result) => ('output' in result ? result.output : []),
+      )
+      expect(
+        outputs.filter(
+          (output) =>
+            output.type === 'asset' && output.fileName.endsWith('.svg'),
+        ).length,
+      ).toMatchInlineSnapshot('1')
+      const css = outputs
+        .filter(
+          (output) =>
+            output.type === 'asset' && output.fileName.endsWith('.css'),
+        )
+        .map((output) => (output.type === 'asset' ? String(output.source) : ''))
+        .join('\n')
+      expect(css.includes('background-image')).toMatchInlineSnapshot('true')
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
   test('emits unimported global styles once in a production build', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-contributions-vite-'))
     try {

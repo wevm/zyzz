@@ -381,6 +381,39 @@ export function zyzz(): Plugin {
       }
       if (selected) await visit(file, source)
     }
+    const loaded = new Set<string>()
+    async function dependencies(id: string): Promise<void> {
+      if (loaded.has(id)) return
+      loaded.add(id)
+      const metadata = JSON.parse(contracts[id]!)
+      if (!Array.isArray(metadata.stylesheets)) return
+      for (const section of metadata.stylesheets) {
+        if (!Array.isArray(section?.dependency)) continue
+        let owner = id
+        for (const specifier of section.dependency) {
+          if (
+            typeof specifier !== 'string' ||
+            !specifier ||
+            specifier.includes('\0')
+          )
+            throw new Error('Invalid packed stylesheet dependency.')
+          const target = await resolve(specifier, owner)
+          if (!target || !Path.isAbsolute(target.id))
+            throw new Error('Unable to resolve packed stylesheet dependency.')
+          imports[owner] ??= Object.create(null)
+          imports[owner]![specifier] = target.id
+          if (!Object.hasOwn(contracts, target.id)) {
+            const sidecar = `${target.id.split(/[?#]/)[0]}.zyzz.json`
+            contracts[target.id] = await Fs.readFile(sidecar, 'utf8')
+            host.watch(sidecar)
+            files.add(sidecar)
+          }
+          await dependencies(target.id)
+          owner = target.id
+        }
+      }
+    }
+    for (const id of Object.keys(contracts)) await dependencies(id)
     const result = entry.compiler.compile({ contracts, imports, modules })
     const map = new Mapping.GenMapping()
     const styles: string[] = []

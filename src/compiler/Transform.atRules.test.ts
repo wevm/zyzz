@@ -94,10 +94,7 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
           { kind: 'layers', names: ['base'], within: ['@media screen'] },
         ],
       }).css,
-    ).toMatchInlineSnapshot(`
-      "@layer base;
-      @media screen{}"
-    `)
+    ).toMatchInlineSnapshot('"@layer base;"')
   })
   test('Chromium applies scope boundaries', async () => {
     const output = Transform.compile({

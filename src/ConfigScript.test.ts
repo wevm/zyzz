@@ -11,6 +11,26 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
 
 describe('create', () => {
+  test('omits unavailable script methods from legacy alias declarations', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const config=Config.create({theme:{color:{ink:'red'}}});`,
+      },
+    })
+    const data = JSON.parse(library.contracts['config.ts']!)
+    data.version = 2
+    delete data.exports.config.script
+    const app = Graph.compile({
+      contracts: { 'lib.js': JSON.stringify(data) },
+      imports: { 'app.ts': { lib: 'lib.js' } },
+      modules: {
+        'app.ts': `import {config} from 'lib';export const alias=config;`,
+      },
+    })
+    expect(
+      app.modules['app.ts']!.code.includes("key extends 'script'"),
+    ).toMatchInlineSnapshot('true')
+  })
   test('keeps css-only packed exports compatible with earlier contract readers', () => {
     const graph = Graph.compile({
       modules: {

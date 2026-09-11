@@ -518,6 +518,93 @@ export function collect(program: Ast.Program, options: collect.Options) {
     const expression = variable.init
     if (!expression) return
     const linked = resolve(expression)
+    if (linked?.kind === 'config' && variable.id.type === 'ObjectPattern') {
+      if (declaration.kind !== 'const')
+        fail('Configuration destructuring requires const bindings.', variable)
+      const link = linked
+      const bindings = variable.id.properties.map((property) => {
+        if (
+          property.type !== 'Property' ||
+          property.computed ||
+          property.key.type !== 'Identifier' ||
+          property.value.type !== 'Identifier'
+        )
+          return fail(
+            'Configuration destructuring requires named bindings without defaults or rest.',
+            property,
+          )
+        return { key: property.key.name, id: property.value }
+      })
+      aliasReferences.add(expression.start)
+      aliases.push({
+        ...link.call,
+        start: expression.start,
+        end: expression.end,
+        destructured: false,
+        retained: true,
+      })
+      for (const { key, id } of bindings) {
+        if (key === 'css') {
+          const alias = { ...link.call, destructured: false }
+          aliasBindings.set(id.start, alias)
+          aliasNames.set(id.name, alias)
+          if (statement.type === 'ExportNamedDeclaration')
+            exports[id.name] = {
+              ...link,
+              binding: `${options.namespace}-${id.name}`,
+              kind: 'css',
+            }
+          continue
+        }
+        if (
+          key === 'script' ||
+          (key === 'themes' && link.call.options?.themes)
+        ) {
+          if (key === 'script') scripts.add(link.call.name)
+          const members = Object.fromEntries(
+            Object.entries(link.members ?? {}).flatMap(([pathKey, member]) => {
+              const path = JSON.parse(pathKey) as string[]
+              return key === 'themes' && path[0] === 'themes'
+                ? [[JSON.stringify(path.slice(1)), member]]
+                : []
+            }),
+          )
+          const selection = {
+            ...link,
+            members,
+            call: {
+              ...link.call,
+              members: Object.fromEntries(
+                Object.entries(members).map(([key, member]) => [
+                  key,
+                  member.call.name,
+                ]),
+              ),
+              ...(key === 'script'
+                ? { initialization: true }
+                : { selection: true }),
+              type: `${link.call.type}['${key}']`,
+            },
+          }
+          configs.set(id.name, selection)
+          configBindings.set(id.start, selection)
+          if (statement.type === 'ExportNamedDeclaration')
+            exports[id.name] = selection
+          continue
+        }
+        const member = link.members?.[JSON.stringify([key])]
+        if (!member)
+          fail(
+            'Destructure only css and the configured single theme; other helpers remain unsupported.',
+            id,
+          )
+        definitions.set(id.start, member.call)
+        names.set(id.name, member.call)
+        if (statement.type === 'ExportNamedDeclaration')
+          exports[id.name] = member
+      }
+      return
+    }
     if (linked && variable.id.type === 'Identifier') {
       if (expression.start < linked.call.end)
         fail('Authoring aliases must follow their definition.', expression)

@@ -8,6 +8,23 @@ import { Graph, Source } from 'zyzz/compiler'
 import { Config } from 'zyzz'
 
 describe('create', () => {
+  test('destructures named selectors from packed full configurations', () => {
+    const library = Graph.compile({
+      modules: {
+        'config.ts': `import {Config} from 'zyzz';export const config=Config.create({defaultTheme:'base',themes:{base:{color:{ink:'red'}}}});`,
+      },
+    })
+    const app = Graph.compile({
+      contracts: { 'lib.js': library.contracts['config.ts']! },
+      imports: { 'app.ts': { lib: 'lib.js' } },
+      modules: {
+        'app.ts': `import {config} from 'lib';const {themes:select,theme,css}=config;export const props=select({theme:'base'});export const style=css({color:theme.tokens.color.ink});`,
+      },
+    })
+    expect(app.modules['app.ts']!.css.includes('red')).toMatchInlineSnapshot(
+      'true',
+    )
+  })
   test('reports missing transforms and removes unused selection runtime from bundles', async () => {
     const { themes } = Config.create({
       defaultTheme: 'base',
@@ -38,14 +55,24 @@ describe('create', () => {
     ).toMatchInlineSnapshot('false')
   })
   test('rejects selectors on configurations without named catalogs', () => {
-    for (const options of ['{}', "{theme:{color:{ink:'red'}}}"])
-      expect(() =>
+    const errors = ['{}', "{theme:{color:{ink:'red'}}}"].map((options) => {
+      try {
         Graph.compile({
           modules: {
             'app.js': `import {Config} from 'zyzz';const config=Config.create(${options});config.themes({theme:'base'})`,
           },
-        }),
-      ).toThrow(/named catalog/)
+        })
+        return 'accepted'
+      } catch (error) {
+        return error
+      }
+    })
+    expect(errors).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: app.js:59: Theme selection requires a named catalog.],
+        [Source.ExtractError: app.js:84: Theme selection requires a named catalog.],
+      ]
+    `)
   })
   test('versions complete named configurations as callable and isolates builtin bindings', async () => {
     const graph = Graph.compile({
@@ -112,7 +139,9 @@ describe('create', () => {
           'main.ts': `import {config} from 'forward';config.themes({theme:'base'})`,
         },
       }),
-    ).toThrow(/legacy catalog is not callable/)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: main.ts:31: This legacy catalog is not callable; rebuild its library.]`,
+    )
   })
   test('rejects unchecked selector names, fields, and schemes', async () => {
     const graph = Graph.compile({

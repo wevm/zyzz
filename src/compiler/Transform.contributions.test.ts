@@ -120,7 +120,7 @@ describe('stylesheet contributions', () => {
         "bad.ts:58: Stylesheet contributions require direct module-level calls and constant named stylesheet bindings.",
         "bad.ts:49: Unexpected end of input",
         "bad.ts:49: ["contributions"]: Conflicting layer order constraints.",
-        "bad.ts:69: Keyframe stops must be from, to, or percentages from 0 to 100.",
+        "bad.ts:69: Keyframe stops require from, to, 0–100% offsets, or named timeline percentages.",
       ]
     `)
   })

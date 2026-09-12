@@ -24,7 +24,8 @@ export type Accepted<style, properties> = {
     ? FunctionValue.Is<style[property]> extends true
       ? FunctionValue.Accepted<
           style[property],
-          Exclude<properties[property], undefined>
+          Exclude<properties[property], undefined>,
+          property
         >
       : Exclude<style[property], undefined> extends Exclude<
             properties[property],

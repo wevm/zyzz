@@ -1,6 +1,7 @@
 *.tgz
 *.tsbuildinfo
 .fixture-*/
+.venv/
 bench/results/
 coverage/
 dist/

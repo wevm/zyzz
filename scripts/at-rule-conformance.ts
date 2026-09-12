@@ -19,6 +19,7 @@ if (update && full)
   throw new Error('--require-full cannot be combined with --update')
 type Entry = {
   evidence: readonly string[]
+  gaps: readonly string[]
   grammar: string
   status: 'deferred' | 'partial' | 'supported'
 }
@@ -51,6 +52,10 @@ for (const name of Object.keys(grammars).sort()) {
   const old = previous.entries[name]
   current.entries[name] = {
     evidence: old?.grammar === grammar ? old.evidence : [],
+    gaps:
+      old?.grammar === grammar && Array.isArray(old.gaps)
+        ? old.gaps
+        : ['Review changed grammar and implementation evidence.'],
     grammar,
     status: old?.grammar === grammar ? old.status : 'deferred',
   }
@@ -59,6 +64,17 @@ for (const name of Object.keys(grammars).sort()) {
     errors.push(`Invalid status: ${name}`)
   if (old && old.status !== 'deferred' && !old.evidence.length)
     errors.push(`Missing evidence: ${name}`)
+  if (
+    old &&
+    (!Array.isArray(old.gaps) ||
+      old.gaps.some((gap) => typeof gap !== 'string' || !gap.trim()))
+  )
+    errors.push(`Invalid acceptance gaps: ${name}`)
+  else if (old?.status === 'supported' && old.gaps.length)
+    errors.push(`Supported entry has unresolved gaps: ${name}`)
+  else if (old && old.status !== 'supported' && !old.gaps.length)
+    errors.push(`Missing acceptance gaps: ${name}`)
+
   for (const evidence of old?.evidence ?? []) {
     const root = Path.resolve(directory, '../..')
     const path = Path.resolve(root, evidence)
@@ -84,7 +100,7 @@ for (const name of Object.keys(previous.entries))
 if (previous.version !== version) errors.push(`MDN version changed: ${version}`)
 if (update) Fs.writeFileSync(file, `${JSON.stringify(current, null, 2)}\n`)
 else {
-  console.log('# At-rule Conformance\n')
+  console.log('# At-rule Inventory and Legacy Combined Acceptance\n')
   console.log(
     `Pinned MDN data: ${version}. Supplementary rules and nested blocks are reviewed separately.\n`,
   )
@@ -99,7 +115,8 @@ else {
   }
   if (full)
     for (const [name, entry] of Object.entries(current.entries))
-      if (entry.status !== 'supported') errors.push(`Incomplete: ${name}`)
+      if (entry.status !== 'supported')
+        errors.push(`Incomplete: ${name}: ${entry.gaps.join(' ')}`)
   if (errors.length) {
     console.error(errors.join('\n'))
     process.exitCode = 1

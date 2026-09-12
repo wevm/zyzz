@@ -22,5 +22,10 @@ describe('fontPaletteValues', () => {
       fontFamily: 'Evidence',
       overrideColors: '0 red, 1 blue',
     })
+    fontPaletteValues({
+      basePalette: 'dark',
+      fontFamily: 'Evidence, "Second Family"',
+      overrideColors: '0 color(display-p3 0 1 0)',
+    })
   })
 })

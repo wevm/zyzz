@@ -1,0 +1,4099 @@
+{
+  "cases": {
+    "charset.bytes": {
+      "file": "src/node/Host.statements.test.ts",
+      "test": "create publishes UTF-8 stylesheet bytes without a BOM or encoding declaration"
+    },
+    "charset.packed": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile retains Unicode, import ordering, and source maps without a BOM or charset contribution"
+    },
+    "descriptors.contexts": {
+      "file": "src/compiler/Transform.namedRules.test.ts",
+      "test": "compile rejects unsupported descriptor keys and position declarations at the source call"
+    },
+    "descriptors.counter": {
+      "file": "src/compiler/Transform.descriptorAcceptance.test.ts",
+      "test": "compile retains every counter descriptor across packed publication with maps"
+    },
+    "descriptors.counter.types": {
+      "file": "src/web/counterStyle.test-d.ts"
+    },
+    "descriptors.counter.watch": {
+      "file": "src/node/Host.descriptorAcceptance.test.ts",
+      "test": "create replaces counter descriptors and retains source-owned names during watch"
+    },
+    "descriptors.font": {
+      "file": "src/compiler/Transform.descriptorAcceptance.test.ts",
+      "test": "compile retains every font descriptor across packed publication with maps"
+    },
+    "descriptors.font.types": {
+      "file": "src/web/fontFace.test-d.ts"
+    },
+    "descriptors.font.watch": {
+      "file": "src/node/Host.descriptorAcceptance.test.ts",
+      "test": "create replaces font descriptors and retains source-owned names during watch"
+    },
+    "descriptors.invalid": {
+      "file": "src/compiler/Transform.descriptorAcceptance.test.ts",
+      "test": "compile rejects invalid font counter and palette descriptor grammar before output"
+    },
+    "descriptors.palette": {
+      "file": "src/compiler/Transform.descriptorAcceptance.test.ts",
+      "test": "compile retains every palette descriptor across packed publication with maps"
+    },
+    "descriptors.palette.types": {
+      "file": "src/web/fontPaletteValues.test-d.ts"
+    },
+    "descriptors.palette.watch": {
+      "file": "src/node/Host.descriptorAcceptance.test.ts",
+      "test": "create replaces palette descriptors and retains source-owned names during watch"
+    },
+    "descriptors.position": {
+      "file": "src/compiler/Transform.descriptorAcceptance.test.ts",
+      "test": "compile retains every position descriptor across packed publication with maps"
+    },
+    "descriptors.position.types": {
+      "file": "src/web/positionTry.test-d.ts"
+    },
+    "descriptors.position.watch": {
+      "file": "src/node/Host.descriptorAcceptance.test.ts",
+      "test": "create replaces position descriptors and retains source-owned names during watch"
+    },
+    "descriptors.references": {
+      "file": "src/compiler/Transform.namedRules.test.ts",
+      "test": "compile preserves aliases and re-exports through packed metadata and rebuilds"
+    },
+    "features.grammar": {
+      "file": "src/compiler/Transform.fontFeatures.test.ts",
+      "test": "compile rejects invalid alias indices across every nested feature block"
+    },
+    "features.identifiers": {
+      "file": "src/compiler/Transform.documentRules.test.ts",
+      "test": "compile rejects reserved aliases, malformed families, and table-only page properties"
+    },
+    "features.transport": {
+      "file": "src/compiler/Transform.fontFeatures.test.ts",
+      "test": "compile retains every feature alias block and display keyword with packed maps"
+    },
+    "features.types": {
+      "file": "src/web/fontFeatureValues.test-d.ts"
+    },
+    "features.watch": {
+      "file": "src/node/Host.fontFeatures.test.ts",
+      "test": "create replaces every feature alias block and font display policy during watch"
+    },
+    "final.contexts": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile rejects forbidden enclosing and element contexts for final descriptor families"
+    },
+    "final.function.grammar": {
+      "file": "src/compiler/Transform.functionAcceptance.test.ts",
+      "test": "compile rejects invalid list items arity escaped names and declaration injection"
+    },
+    "final.function.source": {
+      "file": "src/compiler/Transform.functionAcceptance.test.ts",
+      "test": "compile retains escaped syntax nested references and conditional results through packed publication"
+    },
+    "final.function.types": {
+      "file": "src/web/cssFunction.test-d.ts"
+    },
+    "final.function.watch": {
+      "file": "src/node/Host.finalAcceptance.test.ts",
+      "test": "create replaces function definitions during source watch"
+    },
+    "final.packed.grammar": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile rejects invalid page property and function grammar from packed stylesheets"
+    },
+    "final.page.grammar": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile rejects invalid page lengths descriptors and selectors"
+    },
+    "final.page.source": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile retains page grammar and contexts in packed output with source maps"
+    },
+    "final.page.types": {
+      "file": "src/web/page.test-d.ts"
+    },
+    "final.page.watch": {
+      "file": "src/node/Host.finalAcceptance.test.ts",
+      "test": "create replaces page definitions during source watch"
+    },
+    "final.property.grammar": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile rejects invalid registrations and computational dependencies"
+    },
+    "final.property.source": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile retains property grammar and contexts in packed output with source maps"
+    },
+    "final.property.types": {
+      "file": "src/web/property.test-d.ts"
+    },
+    "final.property.watch": {
+      "file": "src/node/Host.finalAcceptance.test.ts",
+      "test": "create replaces property definitions during source watch"
+    },
+    "function.integer": {
+      "file": "src/compiler/Transform.functionSyntax.test.ts",
+      "test": "compile rejects non-integer token 1px in source and packed calls"
+    },
+    "function.packed": {
+      "file": "src/compiler/Transform.functionSyntax.test.ts",
+      "test": "compile retains composite signatures and default invocation across packed re-exports"
+    },
+    "function.types": {
+      "file": "src/web/cssFunction.test-d.ts"
+    },
+    "groups.container": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves container grammar in global and nested packed output with maps"
+    },
+    "groups.container.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces container groups through source watch"
+    },
+    "groups.invalid": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile rejects malformed grouping productions at their source boundary"
+    },
+    "groups.layer": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves layer grammar in global and nested packed output with maps"
+    },
+    "groups.layer.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces layer groups through source watch"
+    },
+    "groups.media": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves media grammar in global and nested packed output with maps"
+    },
+    "groups.media.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces media groups through source watch"
+    },
+    "groups.nesting": {
+      "file": "src/compiler/Transform.atRules.test.ts",
+      "test": "compile keeps scope, layer, and scroll-state nesting in authored order"
+    },
+    "groups.references": {
+      "file": "src/compiler/Transform.conditions.test.ts",
+      "test": "compile resolves imported thresholds through the packed contract"
+    },
+    "groups.scope": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves scope grammar in global and nested packed output with maps"
+    },
+    "groups.scope.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces scope groups through source watch"
+    },
+    "groups.startingStyle": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves startingStyle grammar in global and nested packed output with maps"
+    },
+    "groups.startingStyle.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces startingStyle groups through source watch"
+    },
+    "groups.supports": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves supports grammar in global and nested packed output with maps"
+    },
+    "groups.supports.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces supports groups through source watch"
+    },
+    "groups.types": {
+      "file": "src/web/groupingAcceptance.test-d.ts"
+    },
+    "import.assets": {
+      "file": "src/node/Host.statements.test.ts",
+      "test": "create copies nested stylesheet imports and their relative assets"
+    },
+    "keyframes.invalid": {
+      "file": "src/compiler/Transform.keyframeAcceptance.test.ts",
+      "test": "compile rejects malformed and out-of-range ordinary frame selectors"
+    },
+    "keyframes.transport": {
+      "file": "src/compiler/Transform.keyframeAcceptance.test.ts",
+      "test": "compile retains escaped stops exponent offsets and unrestricted timeline percentages through packed references"
+    },
+    "keyframes.types": {
+      "file": "src/web/keyframes.test-d.ts"
+    },
+    "keyframes.watch": {
+      "file": "src/node/Host.keyframeAcceptance.test.ts",
+      "test": "create replaces named timeline keyframes while retaining animation references during watch"
+    },
+    "namespace.binding": {
+      "file": "src/compiler/Transform.namespace.test.ts",
+      "test": "compile resolves equivalent escaped prefixes using the last module binding and retains packed maps"
+    },
+    "namespace.rendering": {
+      "file": "src/compiler/Transform.namespace.test.ts",
+      "test": "compile keeps empty and default namespaces distinct in Chromium"
+    },
+    "namespace.types": {
+      "file": "src/web/namespace.test-d.ts"
+    },
+    "namespace.uri": {
+      "file": "src/compiler/Transform.namespace.test.ts",
+      "test": "compile preserves namespace URI control characters through packed output and native matching"
+    },
+    "namespace.version": {
+      "file": "src/compiler/Transform.namespace.test.ts",
+      "test": "compile versions namespace metadata while reading legacy ASCII contracts"
+    },
+    "namespace.watch": {
+      "file": "src/node/Host.namespace.test.ts",
+      "test": "create rebuilds Unicode namespace bindings and preserves unrelated module scopes"
+    },
+    "page.margins": {
+      "file": "src/compiler/Transform.page.test.ts",
+      "test": "compile retains every margin box and its source call through a packed library dependency"
+    },
+    "page.rendering": {
+      "file": "src/compiler/Transform.page.browser.test.ts",
+      "test": "compile prints named pages, pseudo-pages, counters, and all sixteen margin boxes"
+    },
+    "page.types": {
+      "file": "src/web/page.test-d.ts"
+    },
+    "page.watch": {
+      "file": "src/node/Host.page.test.ts",
+      "test": "create replaces all page-margin contents without retaining stale declarations"
+    },
+    "print.icc": {
+      "file": "src/compiler/Transform.print.test.ts",
+      "test": "compile paints packed ICC references and reports unsupported relative-profile rendering"
+    },
+    "print.marks": {
+      "file": "src/compiler/Transform.print.test.ts",
+      "test": "compile prints packed bleed and marks with independent geometry and raster controls"
+    },
+    "profile.grammar": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile validates all profile descriptor grammars before source and packed publication"
+    },
+    "profile.intent": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile rejects an unknown rendering intent"
+    },
+    "profile.invalid": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile rejects invalid component lists instead of emitting an unusable profile"
+    },
+    "profile.invalidPacked": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile rejects malformed profile descriptors from packed libraries"
+    },
+    "profile.origin": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile retains referenced origins before relative profile names in packed output"
+    },
+    "profile.packed": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile preserves profile components and color expressions across packed aliases"
+    },
+    "profile.references": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile rejects a profile interpolated outside color()"
+    },
+    "profile.types": {
+      "file": "src/web/colorProfile.test-d.ts"
+    },
+    "profile.url": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile requires a URL source"
+    },
+    "profile.watch": {
+      "file": "src/node/Host.profile.test.ts",
+      "test": "create replaces profile components intent and source assets through watch"
+    },
+    "property.references": {
+      "file": "src/compiler/Graph.variables.test.ts",
+      "test": "compile links registered variable references and assignments through packed aliases"
+    },
+    "statements.customMedia": {
+      "file": "src/compiler/Transform.statementAcceptance.test.ts",
+      "test": "compile retains custom-media query productions and imported computed references"
+    },
+    "statements.customMedia.watch": {
+      "file": "src/node/Host.statementAcceptance.test.ts",
+      "test": "create replaces customMedia definitions during source watch"
+    },
+    "statements.document": {
+      "file": "src/compiler/Transform.statementAcceptance.test.ts",
+      "test": "compile retains legacy document matching functions across packed publication with maps"
+    },
+    "statements.document.watch": {
+      "file": "src/node/Host.statementAcceptance.test.ts",
+      "test": "create replaces document definitions during source watch"
+    },
+    "statements.import": {
+      "file": "src/compiler/Transform.statementAcceptance.test.ts",
+      "test": "compile retains import layer supports and media combinations with packed ordering and maps"
+    },
+    "statements.import.watch": {
+      "file": "src/node/Host.statementAcceptance.test.ts",
+      "test": "create replaces import definitions during source watch"
+    },
+    "statements.invalid": {
+      "file": "src/compiler/Transform.statementAcceptance.test.ts",
+      "test": "compile rejects malformed queries and legacy matching functions before publication"
+    },
+    "statements.types": {
+      "file": "src/web/statements.test-d.ts"
+    },
+    "transition.capture": {
+      "file": "src/compiler/Transform.viewTransition.browser.test.ts",
+      "test": "compile captures navigation, activates declared types, and obeys conditional opt-out"
+    },
+    "transition.grammar": {
+      "file": "src/compiler/Transform.viewTransition.test.ts",
+      "test": "compile validates transition identifiers and preserves conditional packed descriptors"
+    },
+    "transition.invalid": {
+      "file": "src/compiler/Transform.viewTransition.test.ts",
+      "test": "compile rejects malformed transition types and forbidden enclosing contexts"
+    },
+    "transition.invalidPacked": {
+      "file": "src/compiler/Transform.viewTransition.test.ts",
+      "test": "compile rejects invalid packed transition descriptors before parser recovery"
+    },
+    "transition.types": {
+      "file": "src/web/viewTransition.test-d.ts"
+    },
+    "transition.watch": {
+      "file": "src/node/Host.viewTransition.test.ts",
+      "test": "create replaces navigation and types through source watch updates"
+    }
+  },
+  "entries": {
+    "@charset": {
+      "compiler": {
+        "contexts": {
+          "notApplicable": "UTF-8 output policy has no authoring helper, name, or enclosing context."
+        },
+        "grammar": {
+          "cases": ["charset.bytes"]
+        },
+        "maps": {
+          "notApplicable": "The output policy emits no encoding declaration to map."
+        },
+        "output": {
+          "cases": ["charset.bytes"]
+        },
+        "packed": {
+          "cases": ["charset.packed"]
+        },
+        "references": {
+          "notApplicable": "UTF-8 output policy has no authoring helper, name, or enclosing context."
+        },
+        "source": {
+          "cases": ["charset.bytes"]
+        },
+        "types": {
+          "notApplicable": "UTF-8 output policy has no authoring helper, name, or enclosing context."
+        },
+        "watch": {
+          "cases": ["charset.bytes"]
+        }
+      },
+      "rendering": {
+        "output-policy": {
+          "status": "verified",
+          "cases": ["charset.bytes"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "9126274fe957e9d6ff46fe3931bc6b8e6024eaf14000e69bb2a343389649b755"
+    },
+    "@color-profile": {
+      "compiler": {
+        "contexts": {
+          "cases": ["profile.grammar", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "profile.grammar",
+            "profile.invalid",
+            "profile.url",
+            "profile.intent",
+            "profile.invalidPacked"
+          ]
+        },
+        "maps": {
+          "cases": ["profile.packed"]
+        },
+        "output": {
+          "cases": ["profile.packed"]
+        },
+        "packed": {
+          "cases": ["profile.packed", "profile.invalidPacked"]
+        },
+        "references": {
+          "cases": ["profile.packed", "profile.references", "profile.origin"]
+        },
+        "source": {
+          "cases": ["profile.packed"]
+        },
+        "types": {
+          "cases": ["profile.types"]
+        },
+        "watch": {
+          "cases": ["profile.watch"]
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "partial",
+          "cases": ["print.icc"],
+          "limitations": [
+            "Absolute ICC color painting is verified. Relative-profile colors are unsupported in the pinned engine; rendering intents remain unverified."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "4ea47129d114b697f8512e2e7063026fe403dd924147ace27bafaaa4dc0dd584"
+    },
+    "@color-profile/components": {
+      "compiler": {
+        "contexts": {
+          "cases": ["profile.grammar", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "profile.grammar",
+            "profile.invalid",
+            "profile.url",
+            "profile.intent",
+            "profile.invalidPacked"
+          ]
+        },
+        "maps": {
+          "cases": ["profile.packed"]
+        },
+        "output": {
+          "cases": ["profile.packed"]
+        },
+        "packed": {
+          "cases": ["profile.packed", "profile.invalidPacked"]
+        },
+        "references": {
+          "cases": ["profile.packed", "profile.references", "profile.origin"]
+        },
+        "source": {
+          "cases": ["profile.packed"]
+        },
+        "types": {
+          "cases": ["profile.types"]
+        },
+        "watch": {
+          "cases": ["profile.watch"]
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "partial",
+          "cases": ["print.icc"],
+          "limitations": [
+            "Absolute ICC color painting is verified. Relative-profile colors are unsupported in the pinned engine; rendering intents remain unverified."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "84c54f045fdfb11d41cb44b127e48fcd97aa9b0ccd3e5092bc5857162bf64773"
+    },
+    "@color-profile/rendering-intent": {
+      "compiler": {
+        "contexts": {
+          "cases": ["profile.grammar", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "profile.grammar",
+            "profile.invalid",
+            "profile.url",
+            "profile.intent",
+            "profile.invalidPacked"
+          ]
+        },
+        "maps": {
+          "cases": ["profile.packed"]
+        },
+        "output": {
+          "cases": ["profile.packed"]
+        },
+        "packed": {
+          "cases": ["profile.packed", "profile.invalidPacked"]
+        },
+        "references": {
+          "cases": ["profile.packed", "profile.references", "profile.origin"]
+        },
+        "source": {
+          "cases": ["profile.packed"]
+        },
+        "types": {
+          "cases": ["profile.types"]
+        },
+        "watch": {
+          "cases": ["profile.watch"]
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "partial",
+          "cases": ["print.icc"],
+          "limitations": [
+            "Absolute ICC color painting is verified. Relative-profile colors are unsupported in the pinned engine; rendering intents remain unverified."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "82d5fc212890a7d8a3acc272ef4d2666ba69ee219cbd5a76a7129c0139540010"
+    },
+    "@color-profile/src": {
+      "compiler": {
+        "contexts": {
+          "cases": ["profile.grammar", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "profile.grammar",
+            "profile.invalid",
+            "profile.url",
+            "profile.intent",
+            "profile.invalidPacked"
+          ]
+        },
+        "maps": {
+          "cases": ["profile.packed"]
+        },
+        "output": {
+          "cases": ["profile.packed"]
+        },
+        "packed": {
+          "cases": ["profile.packed", "profile.invalidPacked"]
+        },
+        "references": {
+          "cases": ["profile.packed", "profile.references", "profile.origin"]
+        },
+        "source": {
+          "cases": ["profile.packed"]
+        },
+        "types": {
+          "cases": ["profile.types"]
+        },
+        "watch": {
+          "cases": ["profile.watch"]
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "partial",
+          "cases": ["print.icc"],
+          "limitations": [
+            "Absolute ICC color painting is verified. Relative-profile colors are unsupported in the pinned engine; rendering intents remain unverified."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "9195c0fd7a8705fa31d69d85d0b438c556a067db50063c0ac97fb0fad48e8f15"
+    },
+    "@container": {
+      "compiler": {
+        "contexts": {
+          "cases": ["groups.container", "groups.nesting"]
+        },
+        "grammar": {
+          "cases": ["groups.container", "groups.invalid"]
+        },
+        "maps": {
+          "cases": ["groups.container"]
+        },
+        "output": {
+          "cases": ["groups.container"]
+        },
+        "packed": {
+          "cases": ["groups.container"]
+        },
+        "source": {
+          "cases": ["groups.container", "groups.invalid"]
+        },
+        "types": {
+          "cases": ["groups.types"]
+        },
+        "watch": {
+          "cases": ["groups.container.watch"]
+        },
+        "references": {
+          "cases": ["groups.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete named, style, and scroll-state query contexts and browser behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "db5a939b0b4c3f36f9ef051a09d81ad6a82f451ae374c2b6e96773d88e40a11b"
+    },
+    "@counter-style": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.counter", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.counter"]
+        },
+        "output": {
+          "cases": ["descriptors.counter"]
+        },
+        "packed": {
+          "cases": ["descriptors.counter", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.counter", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.counter.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "47cb037a685291f20a105520dbc1962bf5dfaadf4f263f217f54e8e735f877a6"
+    },
+    "@counter-style/additive-symbols": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.counter", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.counter"]
+        },
+        "output": {
+          "cases": ["descriptors.counter"]
+        },
+        "packed": {
+          "cases": ["descriptors.counter", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.counter", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.counter.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "0fba72d7a68fd266f5afd14c07725fd67cfb59ecad642971d138faaf461b95ed"
+    },
+    "@counter-style/fallback": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.counter", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.counter"]
+        },
+        "output": {
+          "cases": ["descriptors.counter"]
+        },
+        "packed": {
+          "cases": ["descriptors.counter", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.counter", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.counter.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "b16d040f3d41d56a9b71140c1dfefa4f9903bac12b52026f5f13108d923dd769"
+    },
+    "@counter-style/negative": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.counter", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.counter"]
+        },
+        "output": {
+          "cases": ["descriptors.counter"]
+        },
+        "packed": {
+          "cases": ["descriptors.counter", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.counter", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.counter.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "5d2d39e6d1b6f74cc3883dc6ed2157493533c3b1ce2106b92c4c75a8d1980e4d"
+    },
+    "@counter-style/pad": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.counter", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.counter"]
+        },
+        "output": {
+          "cases": ["descriptors.counter"]
+        },
+        "packed": {
+          "cases": ["descriptors.counter", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.counter", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.counter.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "d5cdbcfb5c0f4fe389f7cce10cd58c567e939a6676a909277c4cc412a0d050ad"
+    },
+    "@counter-style/prefix": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.counter", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.counter"]
+        },
+        "output": {
+          "cases": ["descriptors.counter"]
+        },
+        "packed": {
+          "cases": ["descriptors.counter", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.counter", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.counter.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "9b02ada0b25e4ece5c50229f29ec27059c197809976f6bc6837f2506e62b3e47"
+    },
+    "@counter-style/range": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.counter", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.counter"]
+        },
+        "output": {
+          "cases": ["descriptors.counter"]
+        },
+        "packed": {
+          "cases": ["descriptors.counter", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.counter", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.counter.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "51d96e8d1564deb54ea7822f88dcb1d0461c62e0d3b64c5de71ec6721e30e4ac"
+    },
+    "@counter-style/speak-as": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.counter", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.counter"]
+        },
+        "output": {
+          "cases": ["descriptors.counter"]
+        },
+        "packed": {
+          "cases": ["descriptors.counter", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.counter", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.counter.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "1fa40473a4fcea03faf21e5dc719d80b76ba5c8b48e7997419b4f0d05c7e32d2"
+    },
+    "@counter-style/suffix": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.counter", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.counter"]
+        },
+        "output": {
+          "cases": ["descriptors.counter"]
+        },
+        "packed": {
+          "cases": ["descriptors.counter", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.counter", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.counter.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "a39e403fc0e998142f7f7ce60528af2a8c807aad7f1a5ba5f12e951f8ed043c3"
+    },
+    "@counter-style/symbols": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.counter", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.counter"]
+        },
+        "output": {
+          "cases": ["descriptors.counter"]
+        },
+        "packed": {
+          "cases": ["descriptors.counter", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.counter", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.counter.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "5ca217aa2d7ccf55a830bd9133c61120d17d4024af7050cb764c697549df379b"
+    },
+    "@counter-style/system": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.counter", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.counter"]
+        },
+        "output": {
+          "cases": ["descriptors.counter"]
+        },
+        "packed": {
+          "cases": ["descriptors.counter", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.counter", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.counter.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "fb62a3c655b35a322bd8815ae95feacb57788f1343bc24585509ab6ebfc67982"
+    },
+    "@custom-media": {
+      "compiler": {
+        "contexts": {
+          "cases": ["statements.customMedia", "statements.invalid"]
+        },
+        "grammar": {
+          "cases": ["statements.customMedia", "statements.invalid"]
+        },
+        "maps": {
+          "cases": ["statements.customMedia"]
+        },
+        "output": {
+          "cases": ["statements.customMedia"]
+        },
+        "packed": {
+          "cases": ["statements.customMedia"]
+        },
+        "source": {
+          "cases": ["statements.customMedia", "statements.invalid"]
+        },
+        "types": {
+          "cases": ["statements.types"]
+        },
+        "watch": {
+          "cases": ["statements.customMedia.watch"]
+        },
+        "references": {
+          "cases": ["statements.customMedia"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Native query evaluation and complete query-reference placement."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "d7d28aa0512ca01731f311c3a97c568d456ff66675a114807592b4979b74c2b0"
+    },
+    "@document": {
+      "compiler": {
+        "contexts": {
+          "cases": ["statements.document", "statements.invalid"]
+        },
+        "grammar": {
+          "cases": ["statements.document", "statements.invalid"]
+        },
+        "maps": {
+          "cases": ["statements.document"]
+        },
+        "output": {
+          "cases": ["statements.document"]
+        },
+        "packed": {
+          "cases": ["statements.document"]
+        },
+        "source": {
+          "cases": ["statements.document", "statements.invalid"]
+        },
+        "types": {
+          "cases": ["groups.types"]
+        },
+        "watch": {
+          "cases": ["statements.document.watch"]
+        },
+        "references": {
+          "notApplicable": "This rule emits authored URLs or matching functions and does not create a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Legacy-engine rendering and complete matching-function grammar."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "672c3b65fe46eb2357ef19e03b340e64d3615c2b5be5f1623047abb44316a414"
+    },
+    "@font-face": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "b61f3c3a0c07012e73bb4d4c18158a70f1ae3455d917cb2d4b38232755e0b8a0"
+    },
+    "@font-face/ascent-override": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "7ff7617d15cc919ff34d85af755539daf392cdd7e258cd10e25f91d8c5b1eb17"
+    },
+    "@font-face/descent-override": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "7ba0ad7bc82c808bf1830b7d857d9d4f4c59f600e447d5ddd1bc112781d508bb"
+    },
+    "@font-face/font-display": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "85890362316d8d2425f25aa9b1bd4df801cd31980781eb8e46eebe9709836659"
+    },
+    "@font-face/font-family": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "755be7380e68ca77bde27176424b4b4fd2b1a90497f157cf27dfb7c96ac0ae1c"
+    },
+    "@font-face/font-feature-settings": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "be905fe8f3612f0144ced96c9fac4b676c06b95b1612b16afb13f6c8e6ac8fa9"
+    },
+    "@font-face/font-stretch": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "404f0ceb00cef0d178fe1ce806383c64a3fd544c49460d13cac345ac8605da01"
+    },
+    "@font-face/font-style": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "9f2a57837871b0a8390f087fd77e60e18035de2709e5969de8a8f0d3ffff4d7a"
+    },
+    "@font-face/font-variation-settings": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "c6bf9ad482a6e3c8e978d6289303e0ec979ba44c2aa66bed508d622cf66d462d"
+    },
+    "@font-face/font-weight": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "c07bc7925ad5b97bcc8ed71f0ef8be9f48e25b7dabe027b7bef3dd9d5b744c1f"
+    },
+    "@font-face/line-gap-override": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "f1c79c2a4e882e76ff0daf18088ef1f2d2e18c32fd7ff3952056bac681e8e1d7"
+    },
+    "@font-face/size-adjust": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "699f7fed3ab1827ffdf2a5d3c6783adf70257901b023cb73231a8a28e2ec9a21"
+    },
+    "@font-face/src": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "bc27b9efb4551bafa14ee893bb708db14cdc0a769223773e1081413ad1482869"
+    },
+    "@font-face/unicode-range": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.font", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.font"]
+        },
+        "output": {
+          "cases": ["descriptors.font"]
+        },
+        "packed": {
+          "cases": ["descriptors.font", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.font", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.font.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "df1937f4e13e1374261d535663d4bfe8a8e53594ebaf4ad46d8edb193a9ba4d2"
+    },
+    "@font-feature-values": {
+      "compiler": {
+        "contexts": {
+          "cases": ["features.transport", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
+        },
+        "maps": {
+          "cases": ["features.transport"]
+        },
+        "output": {
+          "cases": ["features.transport"]
+        },
+        "packed": {
+          "cases": ["features.transport"]
+        },
+        "source": {
+          "cases": ["features.transport", "features.grammar"]
+        },
+        "types": {
+          "cases": ["features.types"]
+        },
+        "watch": {
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "3754bd856e50d7c118742d30f9a803782a1510fb12ad16c6f655ac50260e1376"
+    },
+    "@font-feature-values/@annotation": {
+      "compiler": {
+        "contexts": {
+          "cases": ["features.transport", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
+        },
+        "maps": {
+          "cases": ["features.transport"]
+        },
+        "output": {
+          "cases": ["features.transport"]
+        },
+        "packed": {
+          "cases": ["features.transport"]
+        },
+        "source": {
+          "cases": ["features.transport", "features.grammar"]
+        },
+        "types": {
+          "cases": ["features.types"]
+        },
+        "watch": {
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "0d279e9718aebeb22026a303a5147f597494247a5d5ac8c9b24d35000edc9d3a"
+    },
+    "@font-feature-values/@character-variant": {
+      "compiler": {
+        "contexts": {
+          "cases": ["features.transport", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
+        },
+        "maps": {
+          "cases": ["features.transport"]
+        },
+        "output": {
+          "cases": ["features.transport"]
+        },
+        "packed": {
+          "cases": ["features.transport"]
+        },
+        "source": {
+          "cases": ["features.transport", "features.grammar"]
+        },
+        "types": {
+          "cases": ["features.types"]
+        },
+        "watch": {
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "d4bd34d30be82034ecc945c14687b6d619ecdad53d7b651f105b6008bf201520"
+    },
+    "@font-feature-values/@ornaments": {
+      "compiler": {
+        "contexts": {
+          "cases": ["features.transport", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
+        },
+        "maps": {
+          "cases": ["features.transport"]
+        },
+        "output": {
+          "cases": ["features.transport"]
+        },
+        "packed": {
+          "cases": ["features.transport"]
+        },
+        "source": {
+          "cases": ["features.transport", "features.grammar"]
+        },
+        "types": {
+          "cases": ["features.types"]
+        },
+        "watch": {
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "abc7372a008841855cb9944a4b94fa6628f40130b5ad7581672a4e1b02d14f3b"
+    },
+    "@font-feature-values/@styleset": {
+      "compiler": {
+        "contexts": {
+          "cases": ["features.transport", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
+        },
+        "maps": {
+          "cases": ["features.transport"]
+        },
+        "output": {
+          "cases": ["features.transport"]
+        },
+        "packed": {
+          "cases": ["features.transport"]
+        },
+        "source": {
+          "cases": ["features.transport", "features.grammar"]
+        },
+        "types": {
+          "cases": ["features.types"]
+        },
+        "watch": {
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "1f5dd04932693c28799125bdfe749441fbb87636d807fd4b370e73658f7b499d"
+    },
+    "@font-feature-values/@stylistic": {
+      "compiler": {
+        "contexts": {
+          "cases": ["features.transport", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
+        },
+        "maps": {
+          "cases": ["features.transport"]
+        },
+        "output": {
+          "cases": ["features.transport"]
+        },
+        "packed": {
+          "cases": ["features.transport"]
+        },
+        "source": {
+          "cases": ["features.transport", "features.grammar"]
+        },
+        "types": {
+          "cases": ["features.types"]
+        },
+        "watch": {
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "5f76f2d98b4ba97b2823e13b817ed452a614939cf5930a48e77855907eafad97"
+    },
+    "@font-feature-values/@swash": {
+      "compiler": {
+        "contexts": {
+          "cases": ["features.transport", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
+        },
+        "maps": {
+          "cases": ["features.transport"]
+        },
+        "output": {
+          "cases": ["features.transport"]
+        },
+        "packed": {
+          "cases": ["features.transport"]
+        },
+        "source": {
+          "cases": ["features.transport", "features.grammar"]
+        },
+        "types": {
+          "cases": ["features.types"]
+        },
+        "watch": {
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "1ab4512e8d299a61f91fa4ac135dc9b7c9d737efbeaaf507581c1d6fb7ca3166"
+    },
+    "@font-feature-values/font-display": {
+      "compiler": {
+        "contexts": {
+          "cases": ["features.transport", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
+        },
+        "maps": {
+          "cases": ["features.transport"]
+        },
+        "output": {
+          "cases": ["features.transport"]
+        },
+        "packed": {
+          "cases": ["features.transport"]
+        },
+        "source": {
+          "cases": ["features.transport", "features.grammar"]
+        },
+        "types": {
+          "cases": ["features.types"]
+        },
+        "watch": {
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "bdc8347bf5aee554d985c51afb61ca1747fcb5c33a48d204392b8bf35b7adbbb"
+    },
+    "@font-palette-values": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.palette", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.palette",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.palette"]
+        },
+        "output": {
+          "cases": ["descriptors.palette"]
+        },
+        "packed": {
+          "cases": ["descriptors.palette", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.palette", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.palette.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.palette.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "c92fb9d52767a438e3d0d7141be105380c6847deaba860da1dc5ac77a734cb23"
+    },
+    "@font-palette-values/base-palette": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.palette", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.palette",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.palette"]
+        },
+        "output": {
+          "cases": ["descriptors.palette"]
+        },
+        "packed": {
+          "cases": ["descriptors.palette", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.palette", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.palette.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.palette.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "61e5538faa46312030b20ae0445541f34bf0a2fcbabec6d22e9fd8722e9c241f"
+    },
+    "@font-palette-values/font-family": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.palette", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.palette",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.palette"]
+        },
+        "output": {
+          "cases": ["descriptors.palette"]
+        },
+        "packed": {
+          "cases": ["descriptors.palette", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.palette", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.palette.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.palette.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "9a054710db711c9af74be4ce1d1f0f65e4cf9b635585b2de9b866d54d8ebb6bb"
+    },
+    "@font-palette-values/override-colors": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.palette", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.palette",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.palette"]
+        },
+        "output": {
+          "cases": ["descriptors.palette"]
+        },
+        "packed": {
+          "cases": ["descriptors.palette", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.palette", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.palette.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.palette.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "33323137ab3f40a509b44de89db3f5f0b20d2c23a4ec396a0f06c78b3c80c45a"
+    },
+    "@function": {
+      "compiler": {
+        "contexts": {
+          "cases": ["final.function.source", "final.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "final.function.source",
+            "final.function.grammar",
+            "final.packed.grammar"
+          ]
+        },
+        "maps": {
+          "cases": ["final.function.source"]
+        },
+        "output": {
+          "cases": ["final.function.source"]
+        },
+        "packed": {
+          "cases": ["final.function.source", "final.packed.grammar"]
+        },
+        "references": {
+          "cases": ["final.function.source"]
+        },
+        "source": {
+          "cases": ["final.function.source"]
+        },
+        "types": {
+          "cases": ["final.function.types"]
+        },
+        "watch": {
+          "cases": ["final.function.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Escaped identifiers, list argument refinements, nested function references, and complete permitted contexts."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "c16af7ef56ad43f650cc030be6e99eacce62f9f8689d6089e841cb75ec1650f0"
+    },
+    "@function/result": {
+      "compiler": {
+        "contexts": {
+          "cases": ["final.function.source", "final.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "final.function.source",
+            "final.function.grammar",
+            "final.packed.grammar"
+          ]
+        },
+        "maps": {
+          "cases": ["final.function.source"]
+        },
+        "output": {
+          "cases": ["final.function.source"]
+        },
+        "packed": {
+          "cases": ["final.function.source", "final.packed.grammar"]
+        },
+        "references": {
+          "cases": ["final.function.source"]
+        },
+        "source": {
+          "cases": ["final.function.source"]
+        },
+        "types": {
+          "cases": ["final.function.types"]
+        },
+        "watch": {
+          "cases": ["final.function.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Escaped identifiers, list argument refinements, nested function references, and complete permitted contexts."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "63901b65a4ee8d6171e904cbeee319eebe1fa1f7b8957a17681394ee7b1820bd"
+    },
+    "@import": {
+      "compiler": {
+        "contexts": {
+          "cases": ["statements.import", "statements.invalid"]
+        },
+        "grammar": {
+          "cases": ["statements.import", "statements.invalid"]
+        },
+        "maps": {
+          "cases": ["statements.import"]
+        },
+        "output": {
+          "cases": ["statements.import"]
+        },
+        "packed": {
+          "cases": ["statements.import"]
+        },
+        "source": {
+          "cases": ["statements.import", "statements.invalid"]
+        },
+        "types": {
+          "cases": ["statements.types"]
+        },
+        "watch": {
+          "cases": ["statements.import.watch", "import.assets"]
+        },
+        "references": {
+          "notApplicable": "This rule emits authored URLs or matching functions and does not create a compiler-owned identity."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Browser loading and cascade across layer, supports, and media combinations."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "7ffb43eb2f0707bad7c6701bf95b87fa82825bf600c2f9e395a3a74562829ef1"
+    },
+    "@keyframes": {
+      "compiler": {
+        "contexts": {
+          "cases": ["keyframes.transport"]
+        },
+        "grammar": {
+          "cases": ["keyframes.transport", "keyframes.invalid"]
+        },
+        "maps": {
+          "cases": ["keyframes.transport"]
+        },
+        "output": {
+          "cases": ["keyframes.transport"]
+        },
+        "packed": {
+          "cases": ["keyframes.transport"]
+        },
+        "references": {
+          "cases": ["keyframes.transport"]
+        },
+        "source": {
+          "cases": ["keyframes.transport", "keyframes.invalid"]
+        },
+        "types": {
+          "cases": ["keyframes.types"]
+        },
+        "watch": {
+          "cases": ["keyframes.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Timeline-range animation rendering and complete stop spelling grammar."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "4ad39b964931f1ec90a222a88d60cff78c827ae8cc1143bf7e3c718b0cc9ae22"
+    },
+    "@layer": {
+      "compiler": {
+        "contexts": {
+          "cases": ["groups.layer", "groups.nesting"]
+        },
+        "grammar": {
+          "cases": ["groups.layer", "groups.invalid"]
+        },
+        "maps": {
+          "cases": ["groups.layer"]
+        },
+        "output": {
+          "cases": ["groups.layer"]
+        },
+        "packed": {
+          "cases": ["groups.layer"]
+        },
+        "source": {
+          "cases": ["groups.layer", "groups.invalid"]
+        },
+        "types": {
+          "cases": ["groups.types"]
+        },
+        "watch": {
+          "cases": ["groups.layer.watch"]
+        },
+        "references": {
+          "notApplicable": "Grouping syntax retains authored CSS names and selectors without creating a compiler-owned reference."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete anonymous/nested context, escaped name, and ordering grammar review."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "990de8dcc807b3a3c32455de4e9dab8d0e2c954ed4830133a4afe0cda9ebead1"
+    },
+    "@media": {
+      "compiler": {
+        "contexts": {
+          "cases": ["groups.media", "groups.nesting"]
+        },
+        "grammar": {
+          "cases": ["groups.media", "groups.invalid"]
+        },
+        "maps": {
+          "cases": ["groups.media"]
+        },
+        "output": {
+          "cases": ["groups.media"]
+        },
+        "packed": {
+          "cases": ["groups.media"]
+        },
+        "source": {
+          "cases": ["groups.media", "groups.invalid"]
+        },
+        "types": {
+          "cases": ["groups.types"]
+        },
+        "watch": {
+          "cases": ["groups.media.watch"]
+        },
+        "references": {
+          "cases": ["groups.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete conditional grammar and legal placement review against the pinned inventory."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "90e99bc58b75597a7e743d7c2dab2f5275d2d18c9bd48966bd3a82bd63357b56"
+    },
+    "@namespace": {
+      "compiler": {
+        "contexts": {
+          "cases": ["namespace.binding"]
+        },
+        "grammar": {
+          "cases": ["namespace.binding"]
+        },
+        "maps": {
+          "cases": ["namespace.binding"]
+        },
+        "output": {
+          "cases": ["namespace.uri"]
+        },
+        "packed": {
+          "cases": ["namespace.binding", "namespace.version"]
+        },
+        "references": {
+          "cases": ["namespace.binding"]
+        },
+        "source": {
+          "cases": ["namespace.binding"]
+        },
+        "types": {
+          "cases": ["namespace.types"]
+        },
+        "watch": {
+          "cases": ["namespace.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["namespace.rendering", "namespace.uri"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "effa4464034525f00bd0c9a3d3e8cd2640de141c1f9f4e7aac526f1e778149a0"
+    },
+    "@page": {
+      "compiler": {
+        "contexts": {
+          "cases": ["final.page.source", "final.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "final.page.source",
+            "final.page.grammar",
+            "final.packed.grammar"
+          ]
+        },
+        "maps": {
+          "cases": ["final.page.source"]
+        },
+        "output": {
+          "cases": ["final.page.source"]
+        },
+        "packed": {
+          "cases": ["final.page.source", "final.packed.grammar"]
+        },
+        "references": {
+          "notApplicable": "Page selectors use authored CSS names and pseudo-classes; page() creates no opaque reference identity."
+        },
+        "source": {
+          "cases": ["final.page.source"]
+        },
+        "types": {
+          "cases": ["final.page.types"]
+        },
+        "watch": {
+          "cases": ["final.page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "b4b26ca90beda50527050bc521cfbdf1e8b27a5f60deec0b710c6d8772ba4008"
+    },
+    "@page/@bottom-center": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "47aef8d1cc9dde57713943038f873d2fd7bfd6a8b52d0ea76ab2391179629ec4"
+    },
+    "@page/@bottom-left": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "874c88c7e872549e1d3dd1e1dd223ac6be3d48e76c8e28b1e4596f8b03317849"
+    },
+    "@page/@bottom-left-corner": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f2d9aac4bc3e99557c4696c08187b18a964287d1af9ce1b2ce6f2b4610a51d3f"
+    },
+    "@page/@bottom-right": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "567829cdd2d5d522fdead951fd5d87e5dd6781600d2b49d09d330e4761c52631"
+    },
+    "@page/@bottom-right-corner": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "d1ac38d92ad52b8d8acc3d762d6b11d3957710e9f73ddfad523c98a6921a5f5b"
+    },
+    "@page/@left-bottom": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f9573086a7f02c9c1bf7393b3f3bcf16e6dbc98f37703712acac39209e0b72cd"
+    },
+    "@page/@left-middle": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f26bb7d9f86b73a19338d37185c2a29c607efdb906c2c823ed79cfbb26babe3d"
+    },
+    "@page/@left-top": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "bbfce9c8b5e16cc3409d3bc5bd18a1da579971e08a07af9d1464169e9d773b60"
+    },
+    "@page/@right-bottom": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "dbd4e4fceeeafcf3f4fa312aa55755bf1988f2e247c8e6405fbbf9aa2df42265"
+    },
+    "@page/@right-middle": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "95d6340b60be27f2203bc88cb13ec1d7af29aa1a03b34cd5658a72f73cd90bc8"
+    },
+    "@page/@right-top": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f3aeb3a256fd424de4dfcffd4230f421f7da1db13085bdeef7a22f84bf57135d"
+    },
+    "@page/@top-center": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "15ffd8470b49eee165034a6944dfd07e25f76d84196d59448c404e6dbdf4557f"
+    },
+    "@page/@top-left": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f58aab052417a5d1c8ea039476cb3d74e3be472cf0f1ebb88e4eeaabaf3fcd85"
+    },
+    "@page/@top-left-corner": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "35a83109c2f4415f83666c7bb34b78d72f9ab9900c4dac402fc880e81bdc5e2b"
+    },
+    "@page/@top-right": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f1ce42d00144f196a1b81c409318368b126011b3ab195c6a9b680b69906689bc"
+    },
+    "@page/@top-right-corner": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "0162fa26a55c40deec12fbda4084058146b5d3d61a09b03bf097949cb20797d2"
+    },
+    "@page/bleed": {
+      "compiler": {
+        "contexts": {
+          "cases": ["final.page.source", "final.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "final.page.source",
+            "final.page.grammar",
+            "final.packed.grammar"
+          ]
+        },
+        "maps": {
+          "cases": ["final.page.source"]
+        },
+        "output": {
+          "cases": ["final.page.source"]
+        },
+        "packed": {
+          "cases": ["final.page.source", "final.packed.grammar"]
+        },
+        "references": {
+          "notApplicable": "Page selectors use authored CSS names and pseudo-classes; page() creates no opaque reference identity."
+        },
+        "source": {
+          "cases": ["final.page.source"]
+        },
+        "types": {
+          "cases": ["final.page.types"]
+        },
+        "watch": {
+          "cases": ["final.page.watch"]
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "verified",
+          "cases": ["print.marks"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "2f3468fb52d55f9fa4229cbe0db9a2a9db0debda864c4ccfe54efc543c0ef9b2"
+    },
+    "@page/marks": {
+      "compiler": {
+        "contexts": {
+          "cases": ["final.page.source", "final.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "final.page.source",
+            "final.page.grammar",
+            "final.packed.grammar"
+          ]
+        },
+        "maps": {
+          "cases": ["final.page.source"]
+        },
+        "output": {
+          "cases": ["final.page.source"]
+        },
+        "packed": {
+          "cases": ["final.page.source", "final.packed.grammar"]
+        },
+        "references": {
+          "notApplicable": "Page selectors use authored CSS names and pseudo-classes; page() creates no opaque reference identity."
+        },
+        "source": {
+          "cases": ["final.page.source"]
+        },
+        "types": {
+          "cases": ["final.page.types"]
+        },
+        "watch": {
+          "cases": ["final.page.watch"]
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "verified",
+          "cases": ["print.marks"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "ea1e5a6082c997f54d06126571c73ef479e06bcb38922e8147ef99c929161c26"
+    },
+    "@page/page-orientation": {
+      "compiler": {
+        "contexts": {
+          "cases": ["final.page.source", "final.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "final.page.source",
+            "final.page.grammar",
+            "final.packed.grammar"
+          ]
+        },
+        "maps": {
+          "cases": ["final.page.source"]
+        },
+        "output": {
+          "cases": ["final.page.source"]
+        },
+        "packed": {
+          "cases": ["final.page.source", "final.packed.grammar"]
+        },
+        "references": {
+          "notApplicable": "Page selectors use authored CSS names and pseudo-classes; page() creates no opaque reference identity."
+        },
+        "source": {
+          "cases": ["final.page.source"]
+        },
+        "types": {
+          "cases": ["final.page.types"]
+        },
+        "watch": {
+          "cases": ["final.page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "369a1c7f3142934614c6bd4f00ac3d3a4b50423f6a134f4d3d15f6a9f9d79898"
+    },
+    "@page/size": {
+      "compiler": {
+        "contexts": {
+          "cases": ["final.page.source", "final.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "final.page.source",
+            "final.page.grammar",
+            "final.packed.grammar"
+          ]
+        },
+        "maps": {
+          "cases": ["final.page.source"]
+        },
+        "output": {
+          "cases": ["final.page.source"]
+        },
+        "packed": {
+          "cases": ["final.page.source", "final.packed.grammar"]
+        },
+        "references": {
+          "notApplicable": "Page selectors use authored CSS names and pseudo-classes; page() creates no opaque reference identity."
+        },
+        "source": {
+          "cases": ["final.page.source"]
+        },
+        "types": {
+          "cases": ["final.page.types"]
+        },
+        "watch": {
+          "cases": ["final.page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "1b3469516fd0b456cb85ca4fd15340bcd2c93848e950e142355cf834e0658872"
+    },
+    "@position-try": {
+      "compiler": {
+        "contexts": {
+          "cases": ["descriptors.position", "descriptors.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "descriptors.position",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
+        },
+        "maps": {
+          "cases": ["descriptors.position"]
+        },
+        "output": {
+          "cases": ["descriptors.position"]
+        },
+        "packed": {
+          "cases": ["descriptors.position", "descriptors.references"]
+        },
+        "source": {
+          "cases": ["descriptors.position", "descriptors.invalid"]
+        },
+        "types": {
+          "cases": ["descriptors.position.types"]
+        },
+        "watch": {
+          "cases": ["descriptors.position.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete allowed-declaration/context grammar and fallback rendering combinations."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "895dc25b9b3e1b8ccda99525913066aba33020782bad50cdef8b6d8ee3eebe65"
+    },
+    "@property": {
+      "compiler": {
+        "contexts": {
+          "cases": ["final.property.source", "final.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "final.property.source",
+            "final.property.grammar",
+            "final.packed.grammar"
+          ]
+        },
+        "maps": {
+          "cases": ["final.property.source"]
+        },
+        "output": {
+          "cases": ["final.property.source"]
+        },
+        "packed": {
+          "cases": ["final.property.source", "final.packed.grammar"]
+        },
+        "references": {
+          "cases": ["property.references", "final.property.source"]
+        },
+        "source": {
+          "cases": ["final.property.source"]
+        },
+        "types": {
+          "cases": ["final.property.types"]
+        },
+        "watch": {
+          "cases": ["final.property.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete registration syntax/initial-value combinations and associated rendering evidence."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "3824fe15582d4b37949890dc7f1e920c9ddc93ea647f3d5445ea0b20498b3162"
+    },
+    "@property/inherits": {
+      "compiler": {
+        "contexts": {
+          "cases": ["final.property.source", "final.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "final.property.source",
+            "final.property.grammar",
+            "final.packed.grammar"
+          ]
+        },
+        "maps": {
+          "cases": ["final.property.source"]
+        },
+        "output": {
+          "cases": ["final.property.source"]
+        },
+        "packed": {
+          "cases": ["final.property.source", "final.packed.grammar"]
+        },
+        "references": {
+          "cases": ["property.references", "final.property.source"]
+        },
+        "source": {
+          "cases": ["final.property.source"]
+        },
+        "types": {
+          "cases": ["final.property.types"]
+        },
+        "watch": {
+          "cases": ["final.property.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete registration syntax/initial-value combinations and associated rendering evidence."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "0196d12d9379884df1b96634c1ba6236eee9080f5a03bad67055dd7040da9d96"
+    },
+    "@property/initial-value": {
+      "compiler": {
+        "contexts": {
+          "cases": ["final.property.source", "final.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "final.property.source",
+            "final.property.grammar",
+            "final.packed.grammar"
+          ]
+        },
+        "maps": {
+          "cases": ["final.property.source"]
+        },
+        "output": {
+          "cases": ["final.property.source"]
+        },
+        "packed": {
+          "cases": ["final.property.source", "final.packed.grammar"]
+        },
+        "references": {
+          "cases": ["property.references", "final.property.source"]
+        },
+        "source": {
+          "cases": ["final.property.source"]
+        },
+        "types": {
+          "cases": ["final.property.types"]
+        },
+        "watch": {
+          "cases": ["final.property.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete registration syntax/initial-value combinations and associated rendering evidence."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "09451c2f14a95568b465565208d185a32491a6300a6dcdce8c050409f590981c"
+    },
+    "@property/syntax": {
+      "compiler": {
+        "contexts": {
+          "cases": ["final.property.source", "final.contexts"]
+        },
+        "grammar": {
+          "cases": [
+            "final.property.source",
+            "final.property.grammar",
+            "final.packed.grammar"
+          ]
+        },
+        "maps": {
+          "cases": ["final.property.source"]
+        },
+        "output": {
+          "cases": ["final.property.source"]
+        },
+        "packed": {
+          "cases": ["final.property.source", "final.packed.grammar"]
+        },
+        "references": {
+          "cases": ["property.references", "final.property.source"]
+        },
+        "source": {
+          "cases": ["final.property.source"]
+        },
+        "types": {
+          "cases": ["final.property.types"]
+        },
+        "watch": {
+          "cases": ["final.property.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete registration syntax/initial-value combinations and associated rendering evidence."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "04dc4830cc0cefd0bf07ef675a992674d48f46f3856a52db5f97c38437c6d4c9"
+    },
+    "@scope": {
+      "compiler": {
+        "contexts": {
+          "cases": ["groups.scope", "groups.nesting"]
+        },
+        "grammar": {
+          "cases": ["groups.scope", "groups.invalid"]
+        },
+        "maps": {
+          "cases": ["groups.scope"]
+        },
+        "output": {
+          "cases": ["groups.scope"]
+        },
+        "packed": {
+          "cases": ["groups.scope"]
+        },
+        "source": {
+          "cases": ["groups.scope", "groups.invalid"]
+        },
+        "types": {
+          "cases": ["groups.types"]
+        },
+        "watch": {
+          "cases": ["groups.scope.watch"]
+        },
+        "references": {
+          "notApplicable": "Grouping syntax retains authored CSS names and selectors without creating a compiler-owned reference."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete root/limit nesting, specificity, and allowed-context review."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "1f8d256d219cfd88f4fd94066917ccc7f4203dbd94d41393ae368cfbc67f01e7"
+    },
+    "@starting-style": {
+      "compiler": {
+        "contexts": {
+          "cases": ["groups.startingStyle", "groups.nesting"]
+        },
+        "grammar": {
+          "cases": ["groups.startingStyle", "groups.invalid"]
+        },
+        "maps": {
+          "cases": ["groups.startingStyle"]
+        },
+        "output": {
+          "cases": ["groups.startingStyle"]
+        },
+        "packed": {
+          "cases": ["groups.startingStyle"]
+        },
+        "source": {
+          "cases": ["groups.startingStyle", "groups.invalid"]
+        },
+        "types": {
+          "cases": ["groups.types"]
+        },
+        "watch": {
+          "cases": ["groups.startingStyle.watch"]
+        },
+        "references": {
+          "notApplicable": "Grouping syntax retains authored CSS names and selectors without creating a compiler-owned reference."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Transition-start rendering and complete style/grouping placement."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "84cfab49cedbd5591e889206988100c2fd6e73a24473949b7122a40309db5eab"
+    },
+    "@supports": {
+      "compiler": {
+        "contexts": {
+          "cases": ["groups.supports", "groups.nesting"]
+        },
+        "grammar": {
+          "cases": ["groups.supports", "groups.invalid"]
+        },
+        "maps": {
+          "cases": ["groups.supports"]
+        },
+        "output": {
+          "cases": ["groups.supports"]
+        },
+        "packed": {
+          "cases": ["groups.supports"]
+        },
+        "source": {
+          "cases": ["groups.supports", "groups.invalid"]
+        },
+        "types": {
+          "cases": ["groups.types"]
+        },
+        "watch": {
+          "cases": ["groups.supports.watch"]
+        },
+        "references": {
+          "notApplicable": "Grouping syntax retains authored CSS names and selectors without creating a compiler-owned reference."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete condition grammar and allowed-context review."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "dfa8c2aae2ccb2707e48096978e79cad532b7584b61f969264b1fce809c4ff28"
+    },
+    "@view-transition": {
+      "compiler": {
+        "contexts": {
+          "cases": ["transition.grammar", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "transition.grammar",
+            "transition.invalid",
+            "transition.invalidPacked"
+          ]
+        },
+        "maps": {
+          "cases": ["transition.grammar"]
+        },
+        "output": {
+          "cases": ["transition.grammar"]
+        },
+        "packed": {
+          "cases": ["transition.grammar", "transition.invalidPacked"]
+        },
+        "source": {
+          "cases": ["transition.grammar", "transition.invalid"]
+        },
+        "types": {
+          "cases": ["transition.types"]
+        },
+        "watch": {
+          "cases": ["transition.watch"]
+        },
+        "references": {
+          "notApplicable": "View-transition emits an eager document rule; type names are CSS custom identifiers and do not create compiler-owned references."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "partial",
+          "cases": ["transition.capture"],
+          "limitations": [
+            "Native capture, active types, and conditional opt-out are verified; complete target behavior review remains."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "1d1a5902aefa8e5c53028f8344ffefd115621cf460e93a81df3267ee85cc7881"
+    },
+    "@view-transition/navigation": {
+      "compiler": {
+        "contexts": {
+          "cases": ["transition.grammar", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "transition.grammar",
+            "transition.invalid",
+            "transition.invalidPacked"
+          ]
+        },
+        "maps": {
+          "cases": ["transition.grammar"]
+        },
+        "output": {
+          "cases": ["transition.grammar"]
+        },
+        "packed": {
+          "cases": ["transition.grammar", "transition.invalidPacked"]
+        },
+        "source": {
+          "cases": ["transition.grammar", "transition.invalid"]
+        },
+        "types": {
+          "cases": ["transition.types"]
+        },
+        "watch": {
+          "cases": ["transition.watch"]
+        },
+        "references": {
+          "notApplicable": "View-transition emits an eager document rule; type names are CSS custom identifiers and do not create compiler-owned references."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "partial",
+          "cases": ["transition.capture"],
+          "limitations": [
+            "Native capture, active types, and conditional opt-out are verified; complete target behavior review remains."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "43dca31c3fc2f472daa8a1fa85ff2e874e8f85dd1f791649e323bcd081b7a305"
+    },
+    "@view-transition/types": {
+      "compiler": {
+        "contexts": {
+          "cases": ["transition.grammar", "transition.invalid"]
+        },
+        "grammar": {
+          "cases": [
+            "transition.grammar",
+            "transition.invalid",
+            "transition.invalidPacked"
+          ]
+        },
+        "maps": {
+          "cases": ["transition.grammar"]
+        },
+        "output": {
+          "cases": ["transition.grammar"]
+        },
+        "packed": {
+          "cases": ["transition.grammar", "transition.invalidPacked"]
+        },
+        "source": {
+          "cases": ["transition.grammar", "transition.invalid"]
+        },
+        "types": {
+          "cases": ["transition.types"]
+        },
+        "watch": {
+          "cases": ["transition.watch"]
+        },
+        "references": {
+          "notApplicable": "View-transition emits an eager document rule; type names are CSS custom identifiers and do not create compiler-owned references."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "partial",
+          "cases": ["transition.capture"],
+          "limitations": [
+            "Native capture, active types, and conditional opt-out are verified; complete target behavior review remains."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "d2d542ffa7166dfbe5d5595021ee66ea065d6cb5bc369128fc7855b2fbfb8f79"
+    }
+  },
+  "version": 1
+}

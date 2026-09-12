@@ -3,8 +3,9 @@ import MagicString, { Bundle } from 'magic-string'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Trace from '@jridgewell/trace-mapping'
 import type * as Lightning from 'lightningcss'
-import type * as Namespace from '../../web/internal/Namespace.js'
+import * as Namespace from '../../web/internal/Namespace.js'
 import * as AtRules from './AtRules.js'
+import * as Identifiers from './Identifiers.js'
 
 /** Rewrites namespace-sensitive selectors using native selector ASTs. */
 export function rewrite(
@@ -14,7 +15,13 @@ export function rewrite(
   includeDeclarations = false,
 ) {
   if (!namespaces.length || !css) return { css, map: previous }
-  const names = new Map(namespaces.map((value) => [value.prefix, value.name]))
+  // Last bindings win across the module, including equivalent escaped spellings.
+  const names = new Map(
+    namespaces.map((value) => [
+      value.prefix === undefined ? undefined : Identifiers.read(value.prefix),
+      value.name,
+    ]),
+  )
   function selector(input: Lightning.Selector): Lightning.Selector {
     const output: Lightning.Selector = []
     let first = true
@@ -81,9 +88,7 @@ export function rewrite(
   const declarations = includeDeclarations
     ? namespaces
         .filter((value) => !declared.has(value.name))
-        .map(
-          (value) => `@namespace ${value.name} ${JSON.stringify(value.uri)};`,
-        )
+        .map(Namespace.statement)
     : []
   const output = [
     ...declarations,
@@ -141,21 +146,20 @@ export function rewrite(
 export function read(value: unknown): readonly Namespace.Definition[] {
   if (value === undefined) return []
   if (!Array.isArray(value)) throw new Error('Invalid packed namespaces.')
-  const names = new Set<string | undefined>()
   return value.map((entry: unknown) => {
     if (!entry || typeof entry !== 'object')
       throw new Error('Invalid packed namespace.')
     const { name, prefix, uri } = entry as Partial<Namespace.Definition>
+    const decoded =
+      typeof prefix === 'string' ? Identifiers.read(prefix) : undefined
     if (
       typeof name !== 'string' ||
       !/^z-n[a-z0-9-]+$/.test(name) ||
       typeof uri !== 'string' ||
       (prefix !== undefined &&
-        (typeof prefix !== 'string' || !/^-?[_a-zA-Z][\w-]*$/.test(prefix))) ||
-      names.has(prefix)
+        (typeof prefix !== 'string' || decoded === undefined))
     )
       throw new Error('Invalid packed namespace.')
-    names.add(prefix)
     return { name, uri, ...(prefix !== undefined ? { prefix } : {}) }
   })
 }

@@ -1,0 +1,88 @@
+/** Complete descriptor publication fixtures for named rules and font faces. @module */
+export const definitions = {
+  counter: `export const name=counterStyle({system:'additive',additiveSymbols:'10 "X", 1 "I", 0 "O"',fallback:'decimal',negative:'"(" ")"',pad:'2 "0"',prefix:'"["',range:'0 99',speakAs:'numbers',suffix:'"]"',symbols:'"I"'},{within:['@layer names','@media print']});global({body:{listStyleType:name}});`,
+  font: `fontFace({fontFamily:'Body',src:'local("Body"),url(/body.woff2) format("woff2")',fontDisplay:'swap',fontFeatureSettings:'"kern" 1',fontVariationSettings:'"wght" 450',fontStretch:'75% 125%',fontStyle:'oblique 0deg 20deg',fontWeight:'100 900',unicodeRange:'U+0-7F,U+4??',ascentOverride:'90%',descentOverride:'20%',lineGapOverride:'5%',sizeAdjust:'110%'},{within:['@layer names','@media print']});`,
+  palette: `export const name=fontPaletteValues({fontFamily:'Body, "Other Body"',basePalette:'dark',overrideColors:'0 red, 1 color(display-p3 0 1 0), 1 #00f'},{within:['@layer names','@media print']});global({body:{fontPalette:name}});`,
+  position: `export const name=positionTry({positionArea:'bottom',positionAnchor:'--target',margin:'4px',marginBlock:'1px 2px',marginInline:'3px 4px',marginBlockStart:'1px',marginBlockEnd:'2px',marginInlineStart:'3px',marginInlineEnd:'4px',marginTop:'1px',marginBottom:'2px',marginLeft:'3px',marginRight:'4px',width:'100px',height:'20px',minWidth:'1px',maxWidth:'200px',minHeight:'1px',maxHeight:'50px',blockSize:'20px',inlineSize:'100px',minBlockSize:'1px',maxBlockSize:'50px',minInlineSize:'1px',maxInlineSize:'200px',inset:'auto',insetBlock:'auto',insetInline:'auto',insetBlockStart:'auto',insetBlockEnd:'auto',insetInlineStart:'auto',insetInlineEnd:'auto',top:'auto',right:'auto',bottom:'auto',left:'auto',alignSelf:'center',justifySelf:'center',placeSelf:'center'},{within:['@layer names','@media print']});global({body:{positionTryFallbacks:name}});`,
+} as const
+
+/** Adds an independently replaceable authored contribution to every fixture. */
+export function source(
+  family: keyof typeof definitions,
+  color = 'red',
+): string {
+  return `import {counterStyle,fontFace,fontPaletteValues,positionTry,global} from 'zyzz/web';\n${definitions[family]}\nglobal({body:{color:${JSON.stringify(color)}}});`
+}
+
+/** Descriptor spellings whose transport is required independently of helper emission. */
+export const keys = {
+  counter: [
+    'system',
+    'additive-symbols',
+    'fallback',
+    'negative',
+    'pad',
+    'prefix',
+    'range',
+    'speak-as',
+    'suffix',
+    'symbols',
+  ],
+  font: [
+    'font-family',
+    'src',
+    'font-display',
+    'font-feature-settings',
+    'font-variation-settings',
+    'font-stretch',
+    'font-style',
+    'font-weight',
+    'unicode-range',
+    'ascent-override',
+    'descent-override',
+    'line-gap-override',
+    'size-adjust',
+  ],
+  palette: ['font-family', 'base-palette', 'override-colors'],
+  position: [
+    'position-area',
+    'position-anchor',
+    'margin',
+    'margin-block',
+    'margin-inline',
+    'margin-block-start',
+    'margin-block-end',
+    'margin-inline-start',
+    'margin-inline-end',
+    'margin-top',
+    'margin-bottom',
+    'margin-left',
+    'margin-right',
+    'width',
+    'height',
+    'min-width',
+    'max-width',
+    'min-height',
+    'max-height',
+    'block-size',
+    'inline-size',
+    'min-block-size',
+    'max-block-size',
+    'min-inline-size',
+    'max-inline-size',
+    'inset',
+    'inset-block',
+    'inset-inline',
+    'inset-block-start',
+    'inset-block-end',
+    'inset-inline-start',
+    'inset-inline-end',
+    'top',
+    'right',
+    'bottom',
+    'left',
+    'align-self',
+    'justify-self',
+    'place-self',
+  ],
+} as const

@@ -8,6 +8,46 @@ import { describe, expect, test } from 'vite-plus/test'
 import { zyzz } from 'zyzz/vite'
 
 describe('zyzz', () => {
+  test.each([false, 'esbuild', 'lightningcss'] as const)(
+    'preserves font palette family lists through %s CSS minification',
+    async (cssMinify) => {
+      const root = await Fs.mkdtemp(Path.resolve('.fixture-palette-list-'))
+      try {
+        await Fs.writeFile(
+          Path.join(root, 'index.html'),
+          '<script type="module" src="/main.ts"></script>',
+        )
+        await Fs.writeFile(
+          Path.join(root, 'main.ts'),
+          `import {fontPaletteValues,global} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Evidence, "Second Family"',basePalette:1});global({body:{fontPalette:palette}});`,
+        )
+        const build = await Vite.build({
+          root,
+          configFile: false,
+          logLevel: 'silent',
+          plugins: [zyzz()],
+          build: { write: false, minify: false, cssMinify },
+        })
+        if (!('output' in build)) throw new Error('Expected one Rollup output')
+        const css = build.output
+          .filter(
+            (value) =>
+              value.type === 'asset' && value.fileName.endsWith('.css'),
+          )
+          .map((value) => (value.type === 'asset' ? String(value.source) : ''))
+          .join('\n')
+        expect(css.includes('@font-palette-values')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(
+          /font-family:\s*Evidence,\s*"Second Family"/.test(css),
+        ).toMatchInlineSnapshot('true')
+        expect(css.includes('@-zyzz-')).toMatchInlineSnapshot('false')
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    },
+  )
   test.each(['external', 'inline'] as const)(
     'composes %s maps after namespace hoisting',
     async (mode) => {

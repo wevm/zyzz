@@ -53,3 +53,50 @@ export function accepts(kind: Kind, property: string): boolean {
     return ['positionTry', 'positionTryFallbacks'].includes(property)
   return false
 }
+
+/** Permits profile identities only as the color-space argument of color(). */
+export function acceptsExpression(
+  kind: Kind,
+  property: string,
+  prefix: string,
+): boolean {
+  if (kind === 'colorProfile') {
+    const text = prefix.replace(/\/\*[\s\S]*?\*\//g, ' ')
+    const groups: { name: string; start: number }[] = []
+    let quote = ''
+    for (let index = 0; index < text.length; index++) {
+      const char = text[index]!
+      if (char === '\\') {
+        index++
+        continue
+      }
+      if (quote) {
+        if (char === quote) quote = ''
+        continue
+      }
+      if (char === '"' || char === "'") {
+        quote = char
+        continue
+      }
+      if (char === '(')
+        groups.push({
+          name:
+            text
+              .slice(0, index)
+              .match(/[\w-]+$/)?.[0]
+              ?.toLowerCase() ?? '',
+          start: index + 1,
+        })
+      else if (char === ')') groups.pop()
+    }
+
+    const group = groups.at(-1)
+    if (quote || group?.name !== 'color') return false
+    const body = text.slice(group.start)
+    if (!body.trim()) return true
+
+    return /^\s*from\s+(?:#[\da-f]+|[-\w]+(?:\([\s\S]*\))?)\s+$/i.test(body)
+  }
+
+  return accepts(kind, property)
+}

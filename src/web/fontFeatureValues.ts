@@ -1,7 +1,7 @@
 /** Declares named OpenType feature sets for a font family list. @module */
+import type * as Context from './internal/Context.js'
 import type * as Lexical from '../internal/Lexical.js'
 import { MissingTransformError } from '../css.js'
-import type * as Context from './internal/Context.js'
 
 /** Emits eager font feature aliases in authored block and declaration order. */
 export function fontFeatureValues<
@@ -74,7 +74,7 @@ type Keyword<value extends string> =
       : Lexical.Fold<value>
 
 type Checked<value, domain> = value extends string
-  ? Keyword<value> extends domain
+  ? Keyword<Lexical.Normalized<value>> extends domain
     ? value
     : never
   : undefined

@@ -133,6 +133,9 @@ ${configuration ? "zyzz.css({'@layer components':{color:'brand'}});\n// @ts-expe
 
         expect(checked.stdout).toMatchInlineSnapshot(`""`)
 
+        // Remove negative type probes before the eager application source scan.
+        await Fs.rm(Path.join(root, 'types.ts'))
+
         await Fs.writeFile(
           Path.join(root, 'index.html'),
           '<script type="module" src="/app.ts"></script>',

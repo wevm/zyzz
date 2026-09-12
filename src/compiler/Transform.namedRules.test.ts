@@ -1,8 +1,8 @@
 /** Exercises named descriptor identities through source and packed-library compilation. @module */
-import * as Esbuild from 'esbuild'
-import * as Trace from '@jridgewell/trace-mapping'
 import { describe, expect, test } from 'vite-plus/test'
+import * as Esbuild from 'esbuild'
 import { Graph, Transform } from 'zyzz/compiler'
+import * as Trace from '@jridgewell/trace-mapping'
 
 describe('compile', () => {
   test('rejects property templates with palette identities', () => {
@@ -181,7 +181,7 @@ export namespace styles {
       export const dots="z-counterstyle141558i1cjhj8q-64-6f-74-73" as import('zyzz/web').counterStyle.Reference;
       export const palette="--z-fontpalettevalues141558i1cjhj8q-70-61-6c-65-74-74-65" as import('zyzz/web').fontPaletteValues.Reference;
       export const below="--z-positiontry141558i1cjhj8q-62-65-6c-6f-77" as import('zyzz/web').positionTry.Reference;
-      export const profile="--z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65";
+      export const profile="--z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65" as import('zyzz/web').colorProfile.Reference;
       export namespace styles {
         export const list = __zyzzProps.create({className:"z-141558i1cjhj8q-base0"})
       }"

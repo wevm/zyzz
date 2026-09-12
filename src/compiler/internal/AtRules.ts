@@ -1,11 +1,31 @@
 /** Adapts standard descriptor extensions that precede the pinned parser's grammar. @module */
+import * as ColorProfiles from './ColorProfiles.js'
+import * as Descriptors from './Descriptors.js'
+import * as Functions from './Functions.js'
+import * as Identifiers from './Identifiers.js'
+import * as Keyframes from './Keyframes.js'
 import * as Lightning from 'lightningcss'
+import * as Properties from './Properties.js'
+import * as ViewTransitions from './ViewTransitions.js'
 
-/** Parses structured contributions while retaining the font-display extension to font feature values. */
+/** Parses structured contributions while retaining newer font descriptors. */
 export function transform<C extends Lightning.CustomAtRules>(
   options: Lightning.TransformOptions<C>,
 ): Lightning.TransformResult {
+  // Stylesheets without an @ byte cannot require at-keyword transport.
+  if (!options.code.includes(64)) return Lightning.transform(options)
+
   const source = new TextDecoder().decode(options.code)
+  if (
+    /@(?:counter-style|custom-media|document|font-face|font-palette-values|page)\b/i.test(
+      source,
+    )
+  )
+    Descriptors.validate(source)
+  if (/@function\b/i.test(source)) Functions.validate(source)
+  const properties = /@property\b/i.test(source) && Properties.validate(source)
+  let propertyMarker = 'zyzz-property'
+  while (source.includes(propertyMarker)) propertyMarker += '-x'
   validateFeatures(source)
   // The pinned visitor cannot round-trip the nested Option used for anonymous import layers.
   // Give emitted anonymous layers a temporary name while URL visitors run, then restore them.
@@ -17,11 +37,32 @@ export function transform<C extends Lightning.CustomAtRules>(
         `$1layer(${importMarker})`,
       )
     : source
+  const lower = source.toLowerCase()
   let marker = '-zyzz-ffv-000000000'
   let suffix = 0
-  while (source.toLowerCase().includes(marker))
+  while (lower.includes(marker))
     marker = `-zyzz-ffv-${(++suffix).toString(36).padStart(9, '0')}`
-  const renamed = rename(imports, 'font-feature-values', marker)
+  let paletteMarker = '-zyzz-fpv-000000000'
+  let paletteSuffix = 0
+  while (lower.includes(paletteMarker))
+    paletteMarker = `-zyzz-fpv-${(++paletteSuffix).toString(36).padStart(9, '0')}`
+  // The pinned parser silently drops font-family lists from palette rules.
+  const registered = properties
+    ? rename(imports, 'property', propertyMarker)
+    : imports
+  const features = lower.includes('@font-feature-values')
+    ? rename(registered, 'font-feature-values', marker)
+    : registered
+  const renamed = lower.includes('@font-palette-values')
+    ? rename(features, 'font-palette-values', paletteMarker)
+    : features
+  if (lower.includes('@color-profile')) ColorProfiles.validate(renamed)
+  if (lower.includes('@keyframes')) Keyframes.validate(renamed)
+  if (source.toLowerCase().includes('@view-transition')) {
+    let marker = '-zyzz-view-transition'
+    while (source.includes(marker)) marker += '-x'
+    ViewTransitions.validate(rename(renamed, 'view-transition', marker), marker)
+  }
   if (source === renamed) return Lightning.transform(options)
   const result = Lightning.transform({
     ...options,
@@ -31,11 +72,19 @@ export function transform<C extends Lightning.CustomAtRules>(
     ...result,
     code: new TextEncoder().encode(
       rename(
-        new TextDecoder()
-          .decode(result.code)
-          .replaceAll(`layer(${importMarker})`, 'layer'),
-        marker,
-        'font-feature-values',
+        rename(
+          rename(
+            new TextDecoder()
+              .decode(result.code)
+              .replaceAll(`layer(${importMarker})`, 'layer'),
+            propertyMarker,
+            'property',
+          ),
+          marker,
+          'font-feature-values',
+        ),
+        paletteMarker,
+        'font-palette-values',
       ),
     ),
   }
@@ -125,10 +174,15 @@ function validateFeatures(source: string): void {
         const close = masked.indexOf('}', end)
         const boundary = finish >= 0 && finish < close ? finish : close
         if (boundary < 0) throw new Error('Invalid font-display descriptor.')
-        const descriptor = masked.slice(end, boundary)
+        const descriptor = source.slice(end, boundary)
+        const names = Identifiers.list(
+          descriptor.slice(descriptor.indexOf(':') + 1),
+          'space',
+        )
         if (
-          !/^font-display\s*:\s*(?:auto|block|fallback|optional|swap)\s*$/i.test(
-            descriptor,
+          names?.length !== 1 ||
+          !['auto', 'block', 'fallback', 'optional', 'swap'].includes(
+            names[0]!.replace(/[A-Z]/g, (letter) => letter.toLowerCase()),
           )
         )
           throw new Error('Invalid font-display descriptor.')

@@ -1,6 +1,6 @@
 /** Pure ordered stylesheet contribution data and layer ordering. @module */
-import type * as Namespace from './Namespace.js'
 import * as Block from './Block.js'
+import * as Namespace from './Namespace.js'
 import type * as Style from '../../Style.js'
 
 /** Explicit stylesheet data supplied by source adapters or in-memory callers. */
@@ -12,7 +12,7 @@ export type Definition = {
       /** Whether the registered value inherits from its parent element. */
       readonly inherits: boolean
       /** Computationally independent initial CSS value. */
-      readonly initialValue: number | string
+      readonly initialValue?: number | string | undefined
       /** Emits a CSS custom-property registration rule. */
       readonly kind: 'property'
       /** Registered custom-property name, including the -- prefix. */
@@ -180,8 +180,7 @@ export function render(
       .map((value) => {
         if (value.kind === 'layers') return ''
         const css = (() => {
-          if (value.kind === 'namespace')
-            return `@namespace ${value.name} ${JSON.stringify(value.uri)};`
+          if (value.kind === 'namespace') return Namespace.statement(value)
           if (value.kind === 'custom-media')
             return `@custom-media ${value.name} ${value.query};`
           if (value.kind === 'import')
@@ -191,7 +190,7 @@ export function render(
           if (value.kind === 'rule')
             return `${value.selector}{${style(value.style)}}`
           if (value.kind === 'property')
-            return `@property ${value.name}{syntax:${JSON.stringify(value.syntax)};inherits:${value.inherits};initial-value:${value.initialValue};}`
+            return `@property ${value.name}{syntax:${JSON.stringify(value.syntax)};inherits:${value.inherits};${value.initialValue === undefined ? '' : `initial-value:${value.initialValue};`}}`
           if (value.kind === 'font-face' || value.kind === 'descriptor')
             return `@${value.kind === 'font-face' ? 'font-face' : `${value.rule} ${value.name}`}{${Object.entries(
               value.declarations,

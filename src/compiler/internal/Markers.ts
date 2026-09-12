@@ -26,6 +26,15 @@ export function scan(
 ) {
   const namespaces = new Set<number>()
   const modules = new Set<number>()
+  const helpers = new Map<number, string>()
+  const helperNames = [
+    'ancestor',
+    'anySibling',
+    'descendant',
+    'ref',
+    'siblingAfter',
+    'siblingBefore',
+  ]
   const bindings = new Map<number, Themes.Link>()
   const names = new Map<string, Themes.Link>()
   const exports: Record<string, Themes.Link> = Object.create(null)
@@ -40,6 +49,18 @@ export function scan(
       continue
 
     for (const specifier of statement.specifiers) {
+      if (
+        specifier.type === 'ImportSpecifier' &&
+        specifier.importKind !== 'type' &&
+        statement.source.value === 'zyzz/web'
+      ) {
+        const name =
+          specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value
+        if (helperNames.includes(name)) helpers.set(specifier.start, name)
+      }
+
       if (
         specifier.type === 'ImportSpecifier' &&
         specifier.importKind !== 'type' &&
@@ -68,7 +89,7 @@ export function scan(
     }
   }
 
-  if (!namespaces.size && !bindings.size && !modules.size)
+  if (!namespaces.size && !bindings.size && !modules.size && !helpers.size)
     return { calls, conditions, exports }
 
   function data(node: Ast.Node): unknown {
@@ -138,6 +159,13 @@ export function scan(
   }
 
   function method(node: Ast.Node): string | undefined {
+    if (node.type === 'Identifier') {
+      const binding = scope.getDeclaration(node.name)
+      return binding?.type === 'Import'
+        ? helpers.get(binding.node.start)
+        : undefined
+    }
+
     if (node.type === 'MemberExpression' && node.object.type === 'Identifier') {
       const binding = scope.getDeclaration(node.object.name)
 
@@ -148,6 +176,11 @@ export function scan(
             : node.property.type === 'Literal'
               ? node.property.value
               : undefined
+        if (typeof key === 'string' && helperNames.includes(key))
+          throw new Themes.InvalidError(
+            'Relationship helpers require direct named imports from zyzz/web.',
+            node,
+          )
         if (key === 'Css' || key === undefined)
           throw new Themes.InvalidError(
             'Marker helpers require the named Css import from zyzz/web.',
@@ -223,7 +256,7 @@ export function scan(
               property.type === 'RestElement' ||
               (property.computed && property.key.type !== 'Literal') ||
               [
-                'marker',
+                'ref',
                 'ancestor',
                 'descendant',
                 'anySibling',
@@ -272,13 +305,26 @@ export function scan(
         }
       }
 
-      if (node.type === 'MemberExpression') {
+      if (
+        node.type === 'MemberExpression' ||
+        (node.type === 'Identifier' &&
+          ancestors.at(-2) &&
+          Walker.isReferenceIdentifier(node, ancestors.at(-2)!) &&
+          !ancestors.some((value) =>
+            [
+              'TSTypeQuery',
+              'TSTypeReference',
+              'TSQualifiedName',
+              'TSTypeAnnotation',
+            ].includes(value.type),
+          ))
+      ) {
         const name = method(node)
 
         if (
           name &&
           [
-            'marker',
+            'ref',
             'ancestor',
             'descendant',
             'siblingBefore',
@@ -299,7 +345,7 @@ export function scan(
 
       const name = method(node.callee)
 
-      if (name === 'marker') {
+      if (name === 'ref') {
         const index = ancestors.findLastIndex(
           (value) =>
             value.type === 'VariableDeclarator' &&

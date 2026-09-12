@@ -1,45 +1,45 @@
-# Css.ancestor
+# ancestor
 
 A qualifying ancestor at any depth.
 
 ```ts
 import { css } from 'zyzz'
-import { Css } from 'zyzz/web'
+import { ancestor, ref } from 'zyzz/web'
 
-const target = Css.marker({ state: ['closed', 'open'] })
+const target = ref({ state: ['closed', 'open'] })
 namespace styles {
   export const targetStyle = css({
-    [Css.ancestor(target, { data: { state: 'open' } })]: { opacity: 1 },
+    [ancestor(target, { state: 'open' })]: { opacity: 1 },
   })
 }
 ```
 
 ## Signature
 
-`Css.ancestor(marker, condition?)`
+`ancestor(ref, condition?)`
 
 ## Parameters
 
-### marker
+### ref
 
-- Type: Typed identity returned by `Css.marker`
+- Type: Typed identity returned by `ref`
 - Required: Yes.
 
 Element identity used to match related elements.
 
 ```ts
-Css.ancestor(target)
+ancestor(target)
 ```
 
 ### condition
 
-- Type: Simple pseudo or typed data/pseudo/has predicates
-- Default: Marker presence.
+- Type: Simple pseudo or flattened typed states with optional `pseudo`/`has` predicates
+- Default: Ref presence.
 
 Combined predicates must match the same marked element.
 
 ```ts
-Css.ancestor(target, { data: { state: 'open' } })
+ancestor(target, { state: 'open' })
 ```
 
 ## Returns
@@ -51,15 +51,15 @@ Css.ancestor(target, { data: { state: 'open' } })
 Use as a computed style key. Helpers add zero condition specificity; raw authored selectors retain their specificity.
 
 ```ts
-css({ [Css.ancestor(target, { data: { state: 'open' } })]: { opacity: 1 } })
+css({ [ancestor(target, { state: 'open' })]: { opacity: 1 } })
 ```
 
 ## Errors
 
-Reject undeclared marker states, unsupported nested `:has()` combinations, and unsupported native semantics.
+Reject undeclared ref states, unsupported nested `:has()` combinations, and unsupported native semantics.
 
-See [Style Relationships](../../../guides/conditions.md#style-relationships). Ancestors match any qualifying instance, not the nearest marker boundary.
+See [Style Relationships](../../guides/conditions.md#style-relationships). Ancestors match any qualifying instance, not the nearest ref boundary.
 
-See [Css](README.md) for related methods and types.
+See [Web](README.md) for related methods and types.
 
 Requires the source transform. Marker identities survive aliases, named re-exports, and packed-library contracts. Relationship helpers must appear directly as computed style keys. Browser rendering follows ordinary CSS matching, including any-depth ancestry and directional nonadjacent siblings.

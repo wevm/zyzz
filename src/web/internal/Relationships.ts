@@ -40,14 +40,13 @@ export type Handle<schema extends Marker.Schema> = {
   readonly [stateSchema]: schema
 }
 
-/** Optional conjunction of marker data, an element pseudo, and descendant selector. */
+/** Optional conjunction of ref states, an element pseudo, and descendant selector. */
 export type Condition<schema extends Marker.Schema> =
   | Pseudo
-  | {
-      readonly data?: State<schema> | undefined
+  | (State<schema> & {
       readonly has?: string | undefined
       readonly pseudo?: Pseudo | undefined
-    }
+    })
 
 /** Rejects unknown option and state keys even through intermediate variables. */
 export type Checked<
@@ -65,18 +64,10 @@ export type Checked<
       Record<
         Exclude<
           keyof condition,
-          'data' | 'pseudo' | (allowHas extends true ? 'has' : never)
+          keyof schema | 'pseudo' | (allowHas extends true ? 'has' : never)
         >,
         never
-      > &
-      (condition extends { data: infer data }
-        ? {
-            readonly data: data extends undefined
-              ? undefined
-              : data &
-                  Record<Exclude<keyof NonNullable<data>, keyof schema>, never>
-          }
-        : {})
+      >
 
 /** Requires finite, unambiguous state domains. */
 export type Validated<schema extends Marker.Schema> = {
@@ -92,6 +83,8 @@ export type Validated<schema extends Marker.Schema> = {
             | 'style'
             | 'key'
             | 'ref'
+            | 'has'
+            | 'pseudo'
             | '__proto__'
           ? never
           : number extends schema[key]['length']
@@ -205,23 +198,13 @@ export function selector(
       'Relationship conditions require a pseudo or options record.',
     )
 
-  const values = options as Record<string, unknown>
-  if (
-    !['ancestor', 'siblingBefore'].includes(kind) &&
-    values.pseudo === ':visited'
-  )
+  const { has, pseudo, ...state } = options as Record<string, unknown>
+  if (!['ancestor', 'siblingBefore'].includes(kind) && pseudo === ':visited')
     throw new Error(
       'Visited predicates cannot be observed through has-based relationships.',
     )
 
-  if (
-    Object.keys(values).some((key) => !['data', 'has', 'pseudo'].includes(key))
-  )
-    throw new Error('Unknown relationship condition option.')
-
-  const attrs = Marker.create(marker)(
-    (values.data === undefined ? {} : values.data) as State<Marker.Schema>,
-  )
+  const attrs = Marker.create(marker)(state as State<Marker.Schema>)
 
   const escape = (value: string) =>
     Array.from(value)
@@ -242,34 +225,34 @@ export function selector(
     )
     .join('')
 
-  if (values.pseudo !== undefined) {
+  if (pseudo !== undefined) {
     if (
-      typeof values.pseudo !== 'string' ||
+      typeof pseudo !== 'string' ||
       !/^:(active|checked|disabled|empty|enabled|focus|focus-visible|focus-within|hover|indeterminate|invalid|optional|read-only|read-write|required|valid|visited)$/.test(
-        values.pseudo,
+        pseudo,
       )
     )
       throw new Error('Unsupported marker pseudo.')
 
-    predicate += values.pseudo
+    predicate += pseudo
   }
 
-  if (values.has !== undefined) {
+  if (has !== undefined) {
     if (!['ancestor', 'siblingBefore'].includes(kind))
       throw new Error('has is supported only by ancestor and siblingBefore.')
 
     if (
-      typeof values.has !== 'string' ||
-      !values.has.trim() ||
+      typeof has !== 'string' ||
+      !has.trim() ||
       [
-        ...values.has.matchAll(
+        ...has.matchAll(
           /\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\\.|(&)/gs,
         ),
       ].some((match) => match[1])
     )
       throw new Error('has requires a descendant selector without nesting.')
 
-    predicate += `:has(${values.has})`
+    predicate += `:has(${has})`
   }
 
   if (kind === 'ancestor') return `:where(${predicate}) &`

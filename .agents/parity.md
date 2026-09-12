@@ -325,22 +325,22 @@ namespace styles {
 }
 ```
 
-Cover interactive/form/structural states, ARIA/data/direction, open/popover/inert, negation, and all supported pseudo-elements, including selection, marker, file selector, first letter/line, and backdrop. `& > *` selects direct children; `& *` selects descendants. Retain CSS specificity and explicit pseudo-element content. Raw selectors remain available with compiler grammar validation; types cannot prove DOM structure.
+Cover interactive/form/structural states, ARIA/data/direction, open/popover/inert, negation, and all supported pseudo-elements, including selection, ref, file selector, first letter/line, and backdrop. `& > *` selects direct children; `& *` selects descendants. Retain CSS specificity and explicit pseudo-element content. Raw selectors remain available with compiler grammar validation; types cannot prove DOM structure.
 
 ## 11. Typed Ancestors, Groups, Peers, and Descendants
 
-Sources: [StyleX contextual selectors](https://stylexjs.com/docs/api/javascript/when), [Tailwind groups/peers and group descendants](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-the-descendants-of-a-group), vanilla-extract selector composition, and Panda group/peer conditions. **Planned (API accepted):** `Css.marker` and relational selector functions in 2.4b.
+Sources: [StyleX contextual selectors](https://stylexjs.com/docs/api/javascript/when), [Tailwind groups/peers and group descendants](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-the-descendants-of-a-group), vanilla-extract selector composition, and Panda group/peer conditions. **Planned (API accepted):** `ref` and relational selector functions in 2.4b.
 
 ```tsx
 import { css } from 'zyzz'
-import { Css } from 'zyzz/web'
+import { ancestor, ref } from 'zyzz/web'
 
-const card = Css.marker({ state: ['closed', 'open'] })
+const card = ref({ state: ['closed', 'open'] })
 namespace styles {
   export const title = css({
     color: '#666',
-    [Css.ancestor(card, ':hover')]: { color: '#06c' },
-    [Css.ancestor(card, { data: { state: 'open' } })]: { fontWeight: 600 },
+    [ancestor(card, ':hover')]: { color: '#06c' },
+    [ancestor(card, { state: 'open' })]: { fontWeight: 600 },
   })
 }
 
@@ -351,29 +351,29 @@ const profile = (
 )
 ```
 
-The schema infers data keys and allowed values in both marker application and conditions. Simple pseudos autocomplete. Unknown keys, values, and pseudo typos are errors. Marker calls return only private data attributes; separate styling spreads do not overwrite them. These attributes express visual state and do not replace real ARIA or control attributes.
+The schema infers data keys and allowed values in both ref application and conditions. Simple pseudos autocomplete. Unknown keys, values, and pseudo typos are errors. Marker calls return only private data attributes; separate styling spreads do not overwrite them. These attributes express visual state and do not replace real ARIA or control attributes.
 
 ```ts
-const choice = Css.marker()
+const choice = ref()
 namespace styles {
   export const indicator = css({
     opacity: 0,
-    [Css.ancestor(card, { has: 'a' })]: { opacity: 1 },
+    [ancestor(card, { has: 'a' })]: { opacity: 1 },
   })
 
   export const hint = css({
-    [Css.siblingBefore(choice, ':checked')]: { color: '#06c' },
+    [siblingBefore(choice, ':checked')]: { color: '#06c' },
   })
 
   export const section = css({
-    [Css.descendant(choice, ':checked')]: { borderColor: '#06c' },
+    [descendant(choice, ':checked')]: { borderColor: '#06c' },
   })
 }
 ```
 
 Place `choice()` on the real checkbox. `siblingBefore` means the marked sibling precedes the styled element; `siblingAfter` reverses that direction, and `anySibling` covers either. `has: 'a'` checks descendants of the marked ancestor, not the styled element. Combined `data`, `pseudo`, and `has` conditions match the same marked element with AND. Full contracts and lowering are in [architecture](architecture.md#typed-markers-and-ancestors).
 
-Imported marker identity survives packaging. Helpers use explicitly documented zero-specificity relation conditions; raw selectors preserve authored specificity. Repeated instances of one marker retain normal any-matching-ancestor semantics, not an implicit nearest boundary. No runtime DOM lookup or CSS generation occurs.
+Imported ref identity survives packaging. Helpers use explicitly documented zero-specificity relation conditions; raw selectors preserve authored specificity. Repeated instances of one ref retain normal any-matching-ancestor semantics, not an implicit nearest boundary. No runtime DOM lookup or CSS generation occurs.
 
 ## 12. Media, Container, and Feature Conditions
 
@@ -401,7 +401,7 @@ namespace styles {
 }
 ```
 
-Apply `region()` to an ancestor and `content()` to its child. Aliases infer from the correct theme groups and resolve to literal conditions, never CSS variables. Named-container private identities across packages remain a design gate. Containers select the nearest eligible ancestor, independently of marker ancestor semantics.
+Apply `region()` to an ancestor and `content()` to its child. Aliases infer from the correct theme groups and resolve to literal conditions, never CSS variables. Named-container private identities across packages remain a design gate. Containers select the nearest eligible ancestor, independently of ref ancestor semantics.
 
 ```ts
 namespace styles {

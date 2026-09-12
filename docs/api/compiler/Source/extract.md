@@ -64,7 +64,7 @@ Source.extract({
 
 - Type: Optional readonly array of `{ start: number; end: number; slots: Readonly<Record<string, Binding.Reference>> }`
 
-Module-owned `Vars.define` calls with inclusive start and exclusive end offsets and immutable slot references. Each slot has a fixed custom-property `name`, scalar `type`, and `variable: true` marker. Hosts implementing rewriting must replace these spans with compiled contracts; `Transform.compile` does so automatically. The field is absent when no variable contracts are declared.
+Module-owned `Vars.define` calls with inclusive start and exclusive end offsets and immutable slot references. Each slot has a fixed custom-property `name`, scalar `type`, and `variable: true` ref. Hosts implementing rewriting must replace these spans with compiled contracts; `Transform.compile` does so automatically. The field is absent when no variable contracts are declared.
 
 ### calls
 
@@ -128,4 +128,4 @@ Theme-token and variable reads consumed through immutable style records are retu
 
 ### markerCalls
 
-Optional immutable rewrite spans for module-owned `Css.marker` calls. Each entry has inclusive `start`, exclusive `end`, and a `definition` containing the generated attribute `id` and finite `schema`. The field is absent when no marker factories are declared. Extraction-only hosts must replace these spans with compiled runtime handles; `Transform.compile` performs that replacement automatically.
+Optional immutable rewrite spans for module-owned `ref` calls. Each entry has inclusive `start`, exclusive `end`, and a `definition` containing the generated attribute `id` and finite `schema`. The field is absent when no ref factories are declared. Extraction-only hosts must replace these spans with compiled runtime handles; `Transform.compile` performs that replacement automatically.

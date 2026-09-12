@@ -1,4 +1,5 @@
 /** Declares page descriptors and page-margin boxes in authored order. @module */
+import type * as Literal from '../internal/Literal.js'
 import type * as Lexical from '../internal/Lexical.js'
 import { MissingTransformError } from '../css.js'
 import type * as Style from '../Style.js'
@@ -58,8 +59,8 @@ export declare namespace page {
       | 'letter'
       | 'legal'
       | 'ledger'
-      | `${number}${'mm' | 'cm' | 'in' | 'px' | 'pt' | 'pc' | 'Q'}`
-      | `${number}${'mm' | 'cm' | 'in' | 'px' | 'pt' | 'pc' | 'Q'} ${number}${'mm' | 'cm' | 'in' | 'px' | 'pt' | 'pc' | 'Q'}`
+      | Exclude<Literal.Length, `${number}%`>
+      | `${Exclude<Literal.Length, `${number}%`>} ${Exclude<Literal.Length, `${number}%`>}`
       | `${'A3' | 'A4' | 'A5' | 'B4' | 'B5' | 'JIS-B4' | 'JIS-B5' | 'letter' | 'legal' | 'ledger'} ${'portrait' | 'landscape'}`
       | `${'portrait' | 'landscape'} ${'A3' | 'A4' | 'A5' | 'B4' | 'B5' | 'JIS-B4' | 'JIS-B5' | 'letter' | 'legal' | 'ledger'}`
       | undefined

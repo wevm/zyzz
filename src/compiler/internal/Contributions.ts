@@ -1,4 +1,5 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
+import * as FunctionSyntax from '../../internal/FunctionSyntax.js'
 import type { cssFunction } from '../../web/cssFunction.js'
 import type * as Block from '../../web/internal/Block.js'
 import * as RuleReference from '../../internal/RuleReference.js'
@@ -344,7 +345,10 @@ export function scan(
             node: parent,
           })
         if (args.every((value) => value !== undefined))
-          references.set(parent.start, `${name}(${args.join(',')})`)
+          references.set(
+            parent.start,
+            `${name}(${args.map((value) => (typeof value === 'string' && value.includes(',') && !value.trimStart().startsWith('{') ? `{${value}}` : value)).join(',')})`,
+          )
       }
       used.add(imported.get(binding.node.start)!)
 
@@ -648,17 +652,6 @@ export function extract(
         result.push({ kind: 'custom-media', name: call.name!, query: input })
       } else if (call.kind === 'cssFunction') {
         const options = record(input)
-        const syntaxes = [
-          '*',
-          '<color>',
-          '<length>',
-          '<length-percentage>',
-          '<number>',
-          '<percentage>',
-          '<integer>',
-          '<angle>',
-          '<time>',
-        ]
         if (
           Object.keys(options).some(
             (key) => !['body', 'parameters', 'returns'].includes(key),
@@ -666,7 +659,7 @@ export function extract(
           !Array.isArray(options.parameters) ||
           (options.returns !== undefined &&
             (typeof options.returns !== 'string' ||
-              !syntaxes.includes(options.returns)))
+              !FunctionSyntax.accepts(options.returns)))
         )
           throw new Error(
             'Expected CSS function parameters, body, and optional return syntax.',
@@ -683,7 +676,7 @@ export function extract(
             names.has(parameter.name) ||
             (parameter.syntax !== undefined &&
               (typeof parameter.syntax !== 'string' ||
-                !syntaxes.includes(parameter.syntax))) ||
+                !FunctionSyntax.accepts(parameter.syntax))) ||
             (parameter.default !== undefined &&
               typeof parameter.default !== 'string' &&
               typeof parameter.default !== 'number')
@@ -1235,8 +1228,13 @@ export function extract(
     if (
       input.values.some(
         (value, index) =>
-          input.signature.parameters[index]?.syntax === '<integer>' &&
-          (value === undefined || !/^[+-]?\d+$/.test(value)),
+          FunctionSyntax.integerOnly(
+            input.signature.parameters[index]?.syntax ?? '*',
+          ) &&
+          value !== undefined &&
+          /^[+-]?(?:\d|\.\d)/.test(value) &&
+          !/^[+-]?\d+$/.test(value) &&
+          !/[^\d.eE+-]/.test(value),
       )
     )
       throw new Themes.InvalidError(

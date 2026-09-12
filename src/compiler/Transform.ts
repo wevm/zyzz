@@ -47,7 +47,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       (() => {
         const typed = /\.[cm]?tsx?$/.test(options.moduleId)
         if (call.kind === 'cssFunction')
-          return `((...args${typed ? ': readonly (string | number)[]' : ''}) => ${JSON.stringify(call.name + '(')} + args.join(',') + ')')${typed ? ` as import('zyzz/web').cssFunction.Reference<${JSON.stringify(call.function?.parameters ?? [])}, ${JSON.stringify(call.function?.returns ?? '*')}>` : ''}`
+          return `((...args${typed ? ': readonly (string | number)[]' : ''}) => ${JSON.stringify(call.name + '(')} + args.map(value => typeof value === 'string' && value.includes(',') && !value.trimStart().startsWith('{') ? '{' + value + '}' : value).join(',') + ')')${typed ? ` as import('zyzz/web').cssFunction.Reference<${JSON.stringify(call.function?.parameters ?? [])}, ${JSON.stringify(call.function?.returns ?? '*')}>` : ''}`
         if (call.kind === 'customMedia')
           return `${JSON.stringify(`@media (${call.name})`)}${typed ? ` as unknown as import('zyzz/web').customMedia.Reference` : ''}`
         if (!call.name) return 'void 0'

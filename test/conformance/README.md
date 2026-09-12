@@ -78,7 +78,7 @@ The acceptance fixtures cover direct and packed declaration source maps, Unicode
 
 CI uploads `at-rule-browser-capabilities.json` for experimental and legacy syntax. A browser accepting a rule is not proof of every descriptor or rendering behavior.
 
-`@charset` and `colorProfile` remain deferred. Implemented entries are conservatively partial pending complete context/grammar review. Remaining gaps include composite CSS function signatures, real color-profile rendering, and complete paged-output behavior. The full-completion command deliberately remains red until those requirements are met.
+`@charset` now follows the verified UTF-8 output policy. Profile components, composite CSS function signatures, and native paged-output fixtures have landed. The [acceptance review](./at-rule-acceptance.md) and per-entry ledger list the remaining grammar, context, packaging/watch, and rendering gaps. Chromium 153 rejects color profiles; the public helper remains gated. The full-completion command remains red.
 
 Declaration benchmarks measure source transforms with maps and packed consumption at 10/100 families. Existing framework compilation lanes now collect at least 20 samples over one second, with unchanged performance thresholds; the earlier 100ms lanes could be dominated by scheduler stalls.
 

@@ -18,10 +18,11 @@ for (const count of [10, 100]) {
           await compile(fixture)
         },
         {
-          iterations: 3,
-          time: 100,
-          warmupIterations: 1,
-          warmupTime: 50,
+          // Keep short theme lanes from being dominated by a single scheduler stall.
+          iterations: 20,
+          time: 1000,
+          warmupIterations: 3,
+          warmupTime: 300,
           setup: async () => {
             fixture = await Themes.create(count)
 

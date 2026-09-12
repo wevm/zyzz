@@ -11,6 +11,7 @@ import * as Path from 'node:path'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Scope from '../compiler/internal/Scope.js'
+import * as Svelte from './internal/Svelte.js'
 import type { Environment, Plugin } from 'vite'
 import * as Graph from '../compiler/Graph.js'
 import * as Source from '../compiler/Source.js'
@@ -18,6 +19,8 @@ import * as Source from '../compiler/Source.js'
 /**
  * Compiles physical project source without executing authoring code.
  * Vite owns resolution, transpilation, CSS processing, watching, and HMR.
+ * Svelte components contribute their top-level script blocks; the compiled
+ * script is spliced back into the component before the Svelte plugin runs.
  * @returns A Vite 8 plugin with isolated state for each environment.
  */
 export function zyzz(): Plugin {
@@ -64,9 +67,14 @@ export function zyzz(): Plugin {
       Path.isAbsolute(id) &&
       !relative.startsWith('..') &&
       !relative.split(Path.sep).includes('node_modules') &&
-      /\.[cm]?[jt]sx?$/.test(id) &&
+      /\.(?:[cm]?[jt]sx?|svelte)$/.test(id) &&
       !/\.(?:d|test|test-d|bench)\.[cm]?[jt]sx?$/.test(id)
     )
+  }
+
+  // Svelte components enter the compiler as their concatenated script blocks.
+  function script(file: string, source: string) {
+    return file.endsWith('.svelte') ? Svelte.extract(source).code : source
   }
 
   function discover(environment: Environment, host: Host) {
@@ -109,7 +117,7 @@ export function zyzz(): Plugin {
 
               sources.set(file, source)
 
-              if (contributes(source)) eagerFiles.add(file)
+              if (contributes(script(file, source))) eagerFiles.add(file)
             }
           }
         }
@@ -259,7 +267,8 @@ export function zyzz(): Plugin {
 
       sources.set(file, source)
 
-      if (contributes(source)) contributionFiles.get(environment)?.add(file)
+      if (contributes(script(file, source)))
+        contributionFiles.get(environment)?.add(file)
       else contributionFiles.get(environment)?.delete(file)
     }
   }
@@ -291,6 +300,7 @@ export function zyzz(): Plugin {
     > = Object.create(null)
     const contracts: Record<string, string> = Object.create(null)
     const modules: Record<string, string> = Object.create(null)
+    const documents = new Map<string, Svelte.extract.ReturnType>()
     const files = new Set<string>()
 
     async function visit(file: string, source?: string) {
@@ -300,7 +310,16 @@ export function zyzz(): Plugin {
       host.watch(file)
 
       const id = sourceId(file)
-      const text = source ?? (await Fs.readFile(file, 'utf8'))
+      const raw = source ?? (await Fs.readFile(file, 'utf8'))
+      const text = (() => {
+        if (!file.endsWith('.svelte')) return raw
+
+        const document = Svelte.extract(raw)
+
+        documents.set(id, document)
+
+        return document.code
+      })()
 
       modules[id] = text
 
@@ -349,16 +368,21 @@ export function zyzz(): Plugin {
         }
 
         const resolved = await resolve(specifier, file)
-        if (!resolved)
+        if (!resolved) {
+          const document = documents.get(id)
+
           throw new Source.ExtractError([
             {
               code: 'unsupported_syntax',
-              end: node.end,
+              end: document ? Svelte.original(document, node.end) : node.end,
               message: `Unable to resolve ${JSON.stringify(specifier)}`,
               source: file,
-              start: node.start,
+              start: document
+                ? Svelte.original(document, node.start)
+                : node.start,
             },
           ])
+        }
 
         if (resource(specifier) || resource(resolved.id)) {
           resolutions[specifier] = null
@@ -401,9 +425,11 @@ export function zyzz(): Plugin {
       const selected = contributionFiles.get(entry.environment)?.has(file)
 
       if (allSources) {
-        const { program } = Parser.parseSync('source.tsx', source, {
-          sourceType: 'module',
-        })
+        const { program } = Parser.parseSync(
+          'source.tsx',
+          script(file, source),
+          { sourceType: 'module' },
+        )
         const dynamic: import('@oxc-project/types').ImportExpression[] = []
 
         Walker.walk(program, {
@@ -545,7 +571,28 @@ export function zyzz(): Plugin {
 
     for (const id of Object.keys(contracts)) await dependencies(id)
 
-    const result = entry.compiler.compile({ contracts, imports, modules })
+    const result = (() => {
+      try {
+        return entry.compiler.compile({ contracts, imports, modules })
+      } catch (error) {
+        if (!(error instanceof Source.ExtractError) || !documents.size)
+          throw error
+
+        // Diagnostics address the concatenated script; report component offsets.
+        throw new Source.ExtractError(
+          error.diagnostics.map((diagnostic) => {
+            const document = documents.get(diagnostic.source)
+            if (!document) return diagnostic
+
+            return {
+              ...diagnostic,
+              end: Svelte.original(document, diagnostic.end),
+              start: Svelte.original(document, diagnostic.start),
+            }
+          }),
+        )
+      }
+    })()
     const map = new Mapping.GenMapping()
     const styles: string[] = []
     let line = 0
@@ -738,6 +785,31 @@ export function zyzz(): Plugin {
     }
   }
 
+  function host(context: HostContext): Host {
+    return {
+      asset: async (file) => {
+        const reference = context.emitFile({
+          type: 'asset',
+          name: Path.basename(file).replace(/[?#%]/g, '_'),
+          source: await Fs.readFile(file),
+        })
+
+        // Vite's CSS asset placeholder preserves its configured base and output naming.
+        return `__VITE_ASSET__${reference}__`
+      },
+      resolve: (source, importer) => context.resolve(source, importer),
+      // Vite links watched files as imports of the requesting module. Eligible
+      // sources are graph modules already and hotUpdate invalidates their
+      // dependents, so relinking them in development only forms import cycles,
+      // which make the client reload the page whenever an update fails to load.
+      watch: (file) => {
+        if (context.environment.mode === 'dev' && eligible(file)) return
+
+        context.addWatchFile(file)
+      },
+    }
+  }
+
   return {
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
@@ -830,6 +902,17 @@ export function zyzz(): Plugin {
             timestamp,
             true,
           )
+
+          // An entry that nothing imports and that does not accept updates
+          // would only dead-end propagation into a full reload; it recompiles
+          // on its next load while its stylesheets update in place.
+          if (
+            id === entry.file &&
+            !module.isSelfAccepting &&
+            !module.importers.size
+          )
+            continue
+
           affected.add(module)
         }
       }
@@ -851,20 +934,7 @@ export function zyzz(): Plugin {
 
       const output = await compile(
         entry,
-        {
-          resolve: (source, importer) => this.resolve(source, importer),
-          watch: (file) => this.addWatchFile(file),
-          asset: async (file) => {
-            const reference = this.emitFile({
-              type: 'asset',
-              name: Path.basename(file).replace(/[?#%]/g, '_'),
-              source: await Fs.readFile(file),
-            })
-
-            // Vite's CSS asset placeholder preserves its configured base and output naming.
-            return `__VITE_ASSET__${reference}__`
-          },
-        },
+        host(this),
         undefined,
         id === sharedId,
       )
@@ -896,6 +966,9 @@ export function zyzz(): Plugin {
 
       if (!eligible(id)) return
 
+      const document = id.endsWith('.svelte') ? Svelte.extract(code) : undefined
+      if (document && !document.blocks.length) return
+
       const state = entries(this.environment)
       let entry = state.get(id)
 
@@ -909,24 +982,22 @@ export function zyzz(): Plugin {
         state.set(id, entry)
       }
 
-      const output = await compile(
-        entry,
-        {
-          resolve: (source, importer) => this.resolve(source, importer),
-          watch: (file) => this.addWatchFile(file),
-          asset: async (file) => {
-            const reference = this.emitFile({
-              type: 'asset',
-              name: Path.basename(file).replace(/[?#%]/g, '_'),
-              source: await Fs.readFile(file),
-            })
+      const output = await compile(entry, host(this), code)
 
-            // Vite's CSS asset placeholder preserves its configured base and output naming.
-            return `__VITE_ASSET__${reference}__`
-          },
-        },
-        code,
-      )
+      // Svelte hoists imports from either script block, so the stylesheet
+      // dependencies join the first script line without moving later lines.
+      if (document) {
+        const spliced = Svelte.splice({
+          code: output.code,
+          document,
+          file: id,
+          map: output.map,
+          prepend: `import ${JSON.stringify(sharedId)};import ${JSON.stringify(cssId(id))};`,
+          source: code,
+        })
+
+        return { code: spliced.code, map: JSON.stringify(spliced.map) }
+      }
 
       // Keep the CSS dependency even when the current graph has no live rules.
       // Later edits can introduce styles without changing this import boundary.
@@ -1010,6 +1081,17 @@ type Host = {
     id: string
   } | null>
   watch: (file: string) => void
+}
+
+type HostContext = {
+  addWatchFile: (file: string) => void
+  emitFile: (file: {
+    name: string
+    source: Uint8Array
+    type: 'asset'
+  }) => string
+  environment: Environment
+  resolve: Host['resolve']
 }
 
 const prefix = '\0zyzz:'

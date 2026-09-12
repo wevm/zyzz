@@ -1,7 +1,7 @@
 # Vite Setup
 
 > [!NOTE]
-> Initial Vite 8 integration. Supports physical JavaScript/TypeScript within the Vite root, including lazy-loaded modules. Named `Config.create` instances are supported. Cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
+> Initial Vite 8 integration. Supports physical JavaScript/TypeScript and [Svelte script blocks](svelte.md#component-script-blocks) within the Vite root, including lazy-loaded modules. Named `Config.create` instances are supported. Cyclic static graphs remain unsupported. Packed theme authoring requires compiler metadata.
 
 Add the adapter to the existing Vite configuration. Retain the application's framework plugin.
 

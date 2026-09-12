@@ -60,7 +60,7 @@ Libraries expose compiled modules through package exports and document styleshee
 
 ### Server Rendering
 
-Solid and Svelte fixtures verify server-rendered identities and hydration through the Vite adapter. React renderer fixtures use esbuild-compiled output for hydration checks. Plain HTML fixtures verify serialized attributes and client updates.
+Solid and Svelte fixtures verify server-rendered identities and hydration through the Vite adapter, for local configurations, packed libraries, and Svelte component script blocks. React renderer fixtures use esbuild-compiled output for hydration checks. Plain HTML fixtures verify serialized attributes and client updates.
 
 > [!NOTE]
 > Streaming, route-specific stylesheet delivery, and the Next.js adapter remain separate implementation gates.

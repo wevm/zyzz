@@ -10,29 +10,74 @@ import * as Util from 'node:util'
 import * as Ts from 'typescript'
 import { Graph } from 'zyzz/compiler'
 
-/** Packs compiled JavaScript, generated declarations, CSS, and authoring metadata. */
-export async function create(root: string, options: create.Options = {}) {
-  const directory = Path.join(root, 'publisher')
+/** Packs the library, installs the tarball into a fresh consumer, and links the repository as `zyzz`. */
+export async function create(root: string, options: pack.Options = {}) {
   const consumer = Path.join(root, 'consumer')
 
-  await Fs.mkdir(directory, { recursive: true })
   await Fs.mkdir(consumer, { recursive: true })
+
+  const tarball = await pack(Path.join(root, 'publisher'), options)
+  const exec = Util.promisify(ChildProcess.execFile)
+
+  await Fs.writeFile(
+    Path.join(consumer, 'package.json'),
+    '{"private":true,"type":"module"}',
+  )
+  await exec(
+    'npm',
+    [
+      'install',
+      tarball,
+      '--offline',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund',
+      '--no-package-lock',
+    ],
+    { cwd: consumer },
+  )
+  await Fs.symlink(
+    Path.resolve('.'),
+    Path.join(consumer, 'node_modules/zyzz'),
+    'dir',
+  )
+
+  return consumer
+}
+
+/**
+ * Packs compiled JavaScript, generated declarations, CSS, and authoring metadata.
+ * @returns The absolute tarball path for `npm install`.
+ */
+export async function pack(directory: string, options: pack.Options = {}) {
+  await Fs.mkdir(directory, { recursive: true })
 
   const compiled = Graph.compile({
     modules: {
-      '@acme/theme/index.ts': options.configuration
-        ? `import { Config } from 'zyzz';
+      '@acme/theme/index.ts': (() => {
+        // Member exports keep declaration emit isolated; exported binding elements are rejected.
+        if (options.output === 'html')
+          return `import { Config } from 'zyzz';
+export const config = Config.create({ output: 'html', theme: { color: { text: { light: '#000000', dark: '#ffffff' } } } });
+export const css = config.css;
+export const theme = config.theme;
+export const props = css({ color: 'text', padding: '8px' })();`
+
+        if (options.configuration)
+          return `import { Config } from 'zyzz';
 export const zyzz = Config.create({defaultTheme:'base',layers:['components'],themes:{base:{color:{brand:{light:'#06c',dark:'#9cf'}},spacing:{md:'8px'}},mint:{color:{brand:{light:'#175',dark:'#afa'}},spacing:{md:'8px'}}}});
 export const design = zyzz;
 export const theme = zyzz.themes.base;
 export const reusable = Config.create({theme});
 export const css = zyzz.css;
 export const props = zyzz.css({color:'brand',padding:'md'})();`
-        : `import { Theme } from 'zyzz';
+
+        return `import { Theme } from 'zyzz';
 export const theme = Theme.define({color:{brand:{light:'#06c',dark:'#9cf'}},spacing:{md:'8px'}});
 export const mint = Theme.extend(theme,{color:{brand:{light:'#175',dark:'#afa'}}});
 export const css = theme.css;
-export const props = css({color:'brand',padding:'md'})();`,
+export const props = css({color:'brand',padding:'md'})();`
+      })(),
     },
   })
 
@@ -82,39 +127,18 @@ export const props = css({color:'brand',padding:'md'})();`,
     { cwd: directory },
   )
 
-  const [pack] = JSON.parse(packed.stdout) as { filename: string }[]
+  const [result] = JSON.parse(packed.stdout) as { filename: string }[]
 
-  await Fs.writeFile(
-    Path.join(consumer, 'package.json'),
-    '{"private":true,"type":"module"}',
-  )
-  await exec(
-    'npm',
-    [
-      'install',
-      Path.join(directory, pack!.filename),
-      '--offline',
-      '--ignore-scripts',
-      '--no-audit',
-      '--no-fund',
-      '--no-package-lock',
-    ],
-    { cwd: consumer },
-  )
-  await Fs.symlink(
-    Path.resolve('.'),
-    Path.join(consumer, 'node_modules/zyzz'),
-    'dir',
-  )
-
-  return consumer
+  return Path.join(directory, result!.filename)
 }
 
 /** Packed-library fixture inputs. */
-export declare namespace create {
-  /** Selects the configured instance fixture while retaining the standalone theme lane. */
+export declare namespace pack {
+  /** Selects which library source is compiled and packed. */
   type Options = {
-    /** Whether the library exports a named Config.create instance. */
+    /** Whether the library exports a named Config.create instance instead of standalone themes. */
     readonly configuration?: boolean | undefined
+    /** Selects the HTML-output configuration library with a light/dark text token. */
+    readonly output?: 'html' | undefined
   }
 }

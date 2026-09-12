@@ -17,3 +17,25 @@ describe('fontFace', () => {
     fontFace({ fontFamily: 'Body', src: 'url(/font)' }, { within: ['.card'] })
   })
 })
+
+describe('fontFace', () => {
+  test('covers descriptor inventory and context errors', () => {
+    fontFace({
+      ascentOverride: '90%',
+      descentOverride: '10%',
+      fontDisplay: 'swap',
+      fontFamily: 'Evidence',
+      fontFeatureSettings: '"kern"',
+      fontStretch: 'condensed',
+      fontStyle: 'italic',
+      fontVariationSettings: '"wght" 500',
+      fontWeight: '400 700',
+      lineGapOverride: '0%',
+      sizeAdjust: '110%',
+      src: 'url(/font.ttf)',
+      unicodeRange: 'U+0000-00FF',
+    })
+    // @ts-expect-error page descriptors do not belong in font-face bodies
+    fontFace({ fontFamily: 'Evidence', src: 'url(/font.ttf)', size: 'A4' })
+  })
+})

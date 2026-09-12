@@ -21,183 +21,273 @@
       "status": "deferred"
     },
     "@container": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/global.test-d.ts"
+      ],
       "grammar": "db5a939b0b4c3f36f9ef051a09d81ad6a82f451ae374c2b6e96773d88e40a11b",
-      "status": "deferred"
+      "status": "partial"
     },
     "@counter-style": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/counterStyle.test-d.ts"
+      ],
       "grammar": "47cb037a685291f20a105520dbc1962bf5dfaadf4f263f217f54e8e735f877a6",
-      "status": "deferred"
+      "status": "partial"
     },
     "@counter-style/additive-symbols": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/counterStyle.test-d.ts"
+      ],
       "grammar": "0fba72d7a68fd266f5afd14c07725fd67cfb59ecad642971d138faaf461b95ed",
-      "status": "deferred"
+      "status": "partial"
     },
     "@counter-style/fallback": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/counterStyle.test-d.ts"
+      ],
       "grammar": "b16d040f3d41d56a9b71140c1dfefa4f9903bac12b52026f5f13108d923dd769",
-      "status": "deferred"
+      "status": "partial"
     },
     "@counter-style/negative": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/counterStyle.test-d.ts"
+      ],
       "grammar": "5d2d39e6d1b6f74cc3883dc6ed2157493533c3b1ce2106b92c4c75a8d1980e4d",
-      "status": "deferred"
+      "status": "partial"
     },
     "@counter-style/pad": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/counterStyle.test-d.ts"
+      ],
       "grammar": "d5cdbcfb5c0f4fe389f7cce10cd58c567e939a6676a909277c4cc412a0d050ad",
-      "status": "deferred"
+      "status": "partial"
     },
     "@counter-style/prefix": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/counterStyle.test-d.ts"
+      ],
       "grammar": "9b02ada0b25e4ece5c50229f29ec27059c197809976f6bc6837f2506e62b3e47",
-      "status": "deferred"
+      "status": "partial"
     },
     "@counter-style/range": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/counterStyle.test-d.ts"
+      ],
       "grammar": "51d96e8d1564deb54ea7822f88dcb1d0461c62e0d3b64c5de71ec6721e30e4ac",
-      "status": "deferred"
+      "status": "partial"
     },
     "@counter-style/speak-as": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/counterStyle.test-d.ts"
+      ],
       "grammar": "1fa40473a4fcea03faf21e5dc719d80b76ba5c8b48e7997419b4f0d05c7e32d2",
-      "status": "deferred"
+      "status": "partial"
     },
     "@counter-style/suffix": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/counterStyle.test-d.ts"
+      ],
       "grammar": "a39e403fc0e998142f7f7ce60528af2a8c807aad7f1a5ba5f12e951f8ed043c3",
-      "status": "deferred"
+      "status": "partial"
     },
     "@counter-style/symbols": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/counterStyle.test-d.ts"
+      ],
       "grammar": "5ca217aa2d7ccf55a830bd9133c61120d17d4024af7050cb764c697549df379b",
-      "status": "deferred"
+      "status": "partial"
     },
     "@counter-style/system": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/counterStyle.test-d.ts"
+      ],
       "grammar": "fb62a3c655b35a322bd8815ae95feacb57788f1343bc24585509ab6ebfc67982",
-      "status": "deferred"
+      "status": "partial"
     },
     "@custom-media": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.statements.test.ts",
+        "src/web/global.test-d.ts",
+        "src/web/statements.test-d.ts"
+      ],
       "grammar": "d7d28aa0512ca01731f311c3a97c568d456ff66675a114807592b4979b74c2b0",
-      "status": "deferred"
+      "status": "partial"
     },
     "@document": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.statements.test.ts",
+        "src/web/global.test-d.ts",
+        "src/web/statements.test-d.ts"
+      ],
       "grammar": "672c3b65fe46eb2357ef19e03b340e64d3615c2b5be5f1623047abb44316a414",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "b61f3c3a0c07012e73bb4d4c18158a70f1ae3455d917cb2d4b38232755e0b8a0",
       "status": "partial"
     },
     "@font-face/ascent-override": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "7ff7617d15cc919ff34d85af755539daf392cdd7e258cd10e25f91d8c5b1eb17",
       "status": "partial"
     },
     "@font-face/descent-override": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "7ba0ad7bc82c808bf1830b7d857d9d4f4c59f600e447d5ddd1bc112781d508bb",
       "status": "partial"
     },
     "@font-face/font-display": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "85890362316d8d2425f25aa9b1bd4df801cd31980781eb8e46eebe9709836659",
       "status": "partial"
     },
     "@font-face/font-family": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "755be7380e68ca77bde27176424b4b4fd2b1a90497f157cf27dfb7c96ac0ae1c",
       "status": "partial"
     },
     "@font-face/font-feature-settings": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
+      ],
       "grammar": "be905fe8f3612f0144ced96c9fac4b676c06b95b1612b16afb13f6c8e6ac8fa9",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/font-stretch": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "404f0ceb00cef0d178fe1ce806383c64a3fd544c49460d13cac345ac8605da01",
       "status": "partial"
     },
     "@font-face/font-style": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "9f2a57837871b0a8390f087fd77e60e18035de2709e5969de8a8f0d3ffff4d7a",
       "status": "partial"
     },
     "@font-face/font-variation-settings": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
+      ],
       "grammar": "c6bf9ad482a6e3c8e978d6289303e0ec979ba44c2aa66bed508d622cf66d462d",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/font-weight": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "c07bc7925ad5b97bcc8ed71f0ef8be9f48e25b7dabe027b7bef3dd9d5b744c1f",
       "status": "partial"
     },
     "@font-face/line-gap-override": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "f1c79c2a4e882e76ff0daf18088ef1f2d2e18c32fd7ff3952056bac681e8e1d7",
       "status": "partial"
     },
     "@font-face/size-adjust": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "699f7fed3ab1827ffdf2a5d3c6783adf70257901b023cb73231a8a28e2ec9a21",
       "status": "partial"
     },
     "@font-face/src": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "bc27b9efb4551bafa14ee893bb708db14cdc0a769223773e1081413ad1482869",
       "status": "partial"
     },
     "@font-face/unicode-range": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/fontFace.test-d.ts"
       ],
       "grammar": "df1937f4e13e1374261d535663d4bfe8a8e53594ebaf4ad46d8edb193a9ba4d2",
       "status": "partial"
     },
     "@font-feature-values": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/fontFeatureValues.test-d.ts"
       ],
@@ -206,6 +296,7 @@
     },
     "@font-feature-values/@annotation": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/fontFeatureValues.test-d.ts"
       ],
@@ -214,6 +305,7 @@
     },
     "@font-feature-values/@character-variant": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/fontFeatureValues.test-d.ts"
       ],
@@ -222,6 +314,7 @@
     },
     "@font-feature-values/@ornaments": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/fontFeatureValues.test-d.ts"
       ],
@@ -230,6 +323,7 @@
     },
     "@font-feature-values/@styleset": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/fontFeatureValues.test-d.ts"
       ],
@@ -238,6 +332,7 @@
     },
     "@font-feature-values/@stylistic": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/fontFeatureValues.test-d.ts"
       ],
@@ -246,6 +341,7 @@
     },
     "@font-feature-values/@swash": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/fontFeatureValues.test-d.ts"
       ],
@@ -254,6 +350,7 @@
     },
     "@font-feature-values/font-display": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/fontFeatureValues.test-d.ts"
       ],
@@ -261,67 +358,115 @@
       "status": "partial"
     },
     "@font-palette-values": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/fontPaletteValues.test-d.ts"
+      ],
       "grammar": "c92fb9d52767a438e3d0d7141be105380c6847deaba860da1dc5ac77a734cb23",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-palette-values/base-palette": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/fontPaletteValues.test-d.ts"
+      ],
       "grammar": "61e5538faa46312030b20ae0445541f34bf0a2fcbabec6d22e9fd8722e9c241f",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-palette-values/font-family": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/fontPaletteValues.test-d.ts"
+      ],
       "grammar": "9a054710db711c9af74be4ce1d1f0f65e4cf9b635585b2de9b866d54d8ebb6bb",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-palette-values/override-colors": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/fontPaletteValues.test-d.ts"
+      ],
       "grammar": "33323137ab3f40a509b44de89db3f5f0b20d2c23a4ec396a0f06c78b3c80c45a",
-      "status": "deferred"
+      "status": "partial"
     },
     "@function": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.statements.test.ts",
+        "src/web/global.test-d.ts",
+        "src/web/statements.test-d.ts"
+      ],
       "grammar": "c16af7ef56ad43f650cc030be6e99eacce62f9f8689d6089e841cb75ec1650f0",
-      "status": "deferred"
+      "status": "partial"
     },
     "@function/result": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.statements.test.ts",
+        "src/web/global.test-d.ts",
+        "src/web/statements.test-d.ts"
+      ],
       "grammar": "63901b65a4ee8d6171e904cbeee319eebe1fa1f7b8957a17681394ee7b1820bd",
-      "status": "deferred"
+      "status": "partial"
     },
     "@import": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.statements.test.ts",
+        "src/web/global.test-d.ts",
+        "src/web/statements.test-d.ts"
+      ],
       "grammar": "7ffb43eb2f0707bad7c6701bf95b87fa82825bf600c2f9e395a3a74562829ef1",
-      "status": "deferred"
+      "status": "partial"
     },
     "@keyframes": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts",
-        "src/web/contributions.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/keyframes.test-d.ts"
       ],
       "grammar": "4ad39b964931f1ec90a222a88d60cff78c827ae8cc1143bf7e3c718b0cc9ae22",
       "status": "partial"
     },
     "@layer": {
       "evidence": [
-        "src/compiler/Transform.contributions.test.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/global.test-d.ts"
       ],
       "grammar": "990de8dcc807b3a3c32455de4e9dab8d0e2c954ed4830133a4afe0cda9ebead1",
       "status": "partial"
     },
     "@media": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/global.test-d.ts"
+      ],
       "grammar": "90e99bc58b75597a7e743d7c2dab2f5275d2d18c9bd48966bd3a82bd63357b56",
-      "status": "deferred"
+      "status": "partial"
     },
     "@namespace": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.statements.test.ts",
+        "src/web/global.test-d.ts",
+        "src/web/statements.test-d.ts"
+      ],
       "grammar": "effa4464034525f00bd0c9a3d3e8cd2640de141c1f9f4e7aac526f1e778149a0",
-      "status": "deferred"
+      "status": "partial"
     },
     "@page": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -330,6 +475,7 @@
     },
     "@page/@bottom-center": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -338,6 +484,7 @@
     },
     "@page/@bottom-left": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -346,6 +493,7 @@
     },
     "@page/@bottom-left-corner": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -354,6 +502,7 @@
     },
     "@page/@bottom-right": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -362,6 +511,7 @@
     },
     "@page/@bottom-right-corner": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -370,6 +520,7 @@
     },
     "@page/@left-bottom": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -378,6 +529,7 @@
     },
     "@page/@left-middle": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -386,6 +538,7 @@
     },
     "@page/@left-top": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -394,6 +547,7 @@
     },
     "@page/@right-bottom": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -402,6 +556,7 @@
     },
     "@page/@right-middle": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -410,6 +565,7 @@
     },
     "@page/@right-top": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -418,6 +574,7 @@
     },
     "@page/@top-center": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -426,6 +583,7 @@
     },
     "@page/@top-left": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -434,6 +592,7 @@
     },
     "@page/@top-left-corner": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -442,6 +601,7 @@
     },
     "@page/@top-right": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -450,6 +610,7 @@
     },
     "@page/@top-right-corner": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -458,6 +619,7 @@
     },
     "@page/bleed": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -466,6 +628,7 @@
     },
     "@page/marks": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -474,6 +637,7 @@
     },
     "@page/page-orientation": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -482,6 +646,7 @@
     },
     "@page/size": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/page.test-d.ts"
       ],
@@ -489,59 +654,81 @@
       "status": "partial"
     },
     "@position-try": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.namedRules.browser.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/positionTry.test-d.ts"
+      ],
       "grammar": "895dc25b9b3e1b8ccda99525913066aba33020782bad50cdef8b6d8ee3eebe65",
-      "status": "deferred"
+      "status": "partial"
     },
     "@property": {
       "evidence": [
+        "src/Vars.test-d.ts",
         "src/compiler/Graph.variables.test.ts",
-        "src/Vars.registered.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/web/global.test-d.ts"
       ],
       "grammar": "3824fe15582d4b37949890dc7f1e920c9ddc93ea647f3d5445ea0b20498b3162",
       "status": "partial"
     },
     "@property/inherits": {
       "evidence": [
+        "src/Vars.test-d.ts",
         "src/compiler/Graph.variables.test.ts",
-        "src/Vars.registered.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/web/global.test-d.ts"
       ],
       "grammar": "0196d12d9379884df1b96634c1ba6236eee9080f5a03bad67055dd7040da9d96",
       "status": "partial"
     },
     "@property/initial-value": {
       "evidence": [
+        "src/Vars.test-d.ts",
         "src/compiler/Graph.variables.test.ts",
-        "src/Vars.registered.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/web/global.test-d.ts"
       ],
       "grammar": "09451c2f14a95568b465565208d185a32491a6300a6dcdce8c050409f590981c",
       "status": "partial"
     },
     "@property/syntax": {
       "evidence": [
+        "src/Vars.test-d.ts",
         "src/compiler/Graph.variables.test.ts",
-        "src/Vars.registered.test-d.ts"
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/web/global.test-d.ts"
       ],
       "grammar": "04dc4830cc0cefd0bf07ef675a992674d48f46f3856a52db5f97c38437c6d4c9",
       "status": "partial"
     },
     "@scope": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/global.test-d.ts"
+      ],
       "grammar": "1f8d256d219cfd88f4fd94066917ccc7f4203dbd94d41393ae368cfbc67f01e7",
-      "status": "deferred"
+      "status": "partial"
     },
     "@starting-style": {
-      "evidence": [],
+      "evidence": ["src/compiler/Transform.conditions.test.ts"],
       "grammar": "84cfab49cedbd5591e889206988100c2fd6e73a24473949b7122a40309db5eab",
-      "status": "deferred"
+      "status": "partial"
     },
     "@supports": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.atRules.test.ts",
+        "src/web/global.test-d.ts"
+      ],
       "grammar": "dfa8c2aae2ccb2707e48096978e79cad532b7584b61f969264b1fce809c4ff28",
-      "status": "deferred"
+      "status": "partial"
     },
     "@view-transition": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/viewTransition.test-d.ts"
       ],
@@ -550,6 +737,7 @@
     },
     "@view-transition/navigation": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/viewTransition.test-d.ts"
       ],
@@ -558,6 +746,7 @@
     },
     "@view-transition/types": {
       "evidence": [
+        "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/web/viewTransition.test-d.ts"
       ],

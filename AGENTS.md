@@ -127,7 +127,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 - Describe behavior in technical terms rather than by the experience it produces. Prefer `answers before acquisition finishes` over `keeps the editor feeling fast`.
 - State an invariant or a reason the code cannot show on its own. Leave out justification the code already makes plain.
 - Vary sentence construction. One shape repeated across a file, such as an assertion followed by a colon and its reason, reads as a writing style rather than as information.
-- Keep pull request titles and descriptions brief and concrete. Explain the problem and resulting behavior in a few sentences, include a small usage example or before/after snippet when applicable, and summarize validation in one line. Link detailed reports instead of copying logs, test inventories, or benchmark methodology into the body. Omit product framing.
+- Keep PR titles and bodies short and concrete. Explain the problem and resulting behavior in a few sentences, include one small example, and add one validation line. Use a usage snippet, before/after behavior, or relevant command. Link detailed reports.
 
 ## Testing Conventions
 

@@ -29,3 +29,33 @@ describe('page', () => {
     page({ descriptors: { '@top-center': { size: 'A4' } } })
   })
 })
+
+describe('page', () => {
+  test('covers descriptor inventory and context errors', () => {
+    page({
+      descriptors: {
+        bleed: '3mm',
+        marks: 'crop cross',
+        pageOrientation: 'upright',
+        size: 'A4 landscape',
+        margin: '1cm',
+        '@top-left-corner': { content: '"x"' },
+        '@top-left': { content: '"x"' },
+        '@top-center': { content: '"x"' },
+        '@top-right': { content: '"x"' },
+        '@top-right-corner': { content: '"x"' },
+        '@bottom-left-corner': { content: '"x"' },
+        '@bottom-left': { content: '"x"' },
+        '@bottom-center': { content: '"x"' },
+        '@bottom-right': { content: '"x"' },
+        '@bottom-right-corner': { content: '"x"' },
+        '@left-top': { content: '"x"' },
+        '@left-middle': { content: '"x"' },
+        '@left-bottom': { content: '"x"' },
+        '@right-top': { content: '"x"' },
+        '@right-middle': { content: '"x"' },
+        '@right-bottom': { content: '"x"' },
+      },
+    })
+  })
+})

@@ -14,3 +14,18 @@ describe('positionTry', () => {
     positionTry({ color: 'red' })
   })
 })
+
+describe('positionTry', () => {
+  test('covers descriptor inventory and context errors', () => {
+    positionTry({
+      positionAnchor: '--target',
+      positionArea: 'top',
+      margin: '2px',
+      inset: 'auto',
+      width: '10px',
+      maxHeight: '30px',
+      alignSelf: 'center',
+      justifySelf: 'center',
+    })
+  })
+})

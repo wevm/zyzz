@@ -10,3 +10,9 @@ describe('viewTransition', () => {
     viewTransition({ navigation: 'always' })
   })
 })
+
+describe('viewTransition', () => {
+  test('covers descriptor inventory and context errors', () => {
+    viewTransition({ navigation: 'auto', types: 'slide forwards' })
+  })
+})

@@ -18,3 +18,26 @@ describe('counterStyle', () => {
     counterStyle({ system: 'additive' })
   })
 })
+
+describe('counterStyle', () => {
+  test('covers descriptor inventory and context errors', () => {
+    counterStyle({
+      system: 'additive',
+      additiveSymbols: '10 "X", 1 "I"',
+      fallback: 'decimal',
+      negative: '"(" ")"',
+      pad: '2 "0"',
+      prefix: '"["',
+      range: '1 99',
+      speakAs: 'numbers',
+      suffix: '"]"',
+      symbols: '"I"',
+    })
+    counterStyle({
+      system: 'cyclic',
+      symbols: '"x"',
+      // @ts-expect-error a palette reference cannot select a counter fallback
+      fallback: fontPaletteValues({ fontFamily: 'Evidence', basePalette: 0 }),
+    })
+  })
+})

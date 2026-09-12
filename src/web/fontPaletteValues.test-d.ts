@@ -14,3 +14,13 @@ describe('fontPaletteValues', () => {
     fontPaletteValues({ basePalette: 0 })
   })
 })
+
+describe('fontPaletteValues', () => {
+  test('covers descriptor inventory and context errors', () => {
+    fontPaletteValues({
+      basePalette: 'light',
+      fontFamily: 'Evidence',
+      overrideColors: '0 red, 1 blue',
+    })
+  })
+})

@@ -28,3 +28,25 @@ describe('fontFeatureValues', () => {
     })
   })
 })
+
+describe('fontFeatureValues', () => {
+  test('covers descriptor inventory and context errors', () => {
+    fontFeatureValues({
+      families: ['Evidence', 'Fallback'],
+      fontDisplay: 'swap',
+      features: {
+        '@annotation': { a: 1 },
+        '@character-variant': { a: [1, 2] },
+        '@ornaments': { a: 1 },
+        '@styleset': { a: [1, 2, 3] },
+        '@stylistic': { a: 1 },
+        '@swash': { a: 1 },
+      },
+    })
+    fontFeatureValues({
+      families: 'Evidence',
+      // @ts-expect-error font feature blocks have distinct tuple domains
+      features: { '@stylistic': { a: [1, 2] } },
+    })
+  })
+})

@@ -69,3 +69,17 @@ The review covers finite keywords and combinations, upstream dimensional units, 
 Grid indexes use nonzero integers, and span counts use positive integers, including signed and zero-padded spellings. The restrictions follow [CSS Grid line placement](https://www.w3.org/TR/css-grid-2/#line-placement); the pinned grammar alone does not exclude zero.
 
 The matched theme/graph integrations took 8.43 seconds before the grid change and 8.38 seconds after it on the same machine. Each TypeScript subprocess now has a ten-second deadline inside a fifteen-second integration budget. The full-coverage arithmetic still rejects 669/670 and stale fingerprints.
+
+## At-rule acceptance
+
+The independent at-rule ledger accounts for 22 top-level rules and 61 descriptors/nested blocks. Implemented entries link evidence; partial remains zero credit toward `check:at-rules:full`. Inventory drift and missing evidence fail the normal gate. No generic-string or parser-passthrough acceptance establishes full grammar support.
+
+The acceptance fixtures cover direct and packed declaration source maps, Unicode and legacy output, nested CSS asset watch updates, descriptor type domains, and real Chromium font loading, counter rendering, animation progress, namespace boundaries, and anchor fallbacks.
+
+CI uploads `at-rule-browser-capabilities.json` for experimental and legacy syntax. A browser accepting a rule is not proof of every descriptor or rendering behavior.
+
+`@charset` and `colorProfile` remain deferred. Implemented entries are conservatively partial pending complete context/grammar review. Remaining gaps include composite CSS function signatures, real color-profile rendering, and complete paged-output behavior. The full-completion command deliberately remains red until those requirements are met.
+
+Declaration benchmarks measure source transforms with maps and packed consumption at 10/100 families. Existing framework compilation lanes now collect at least 20 samples over one second, with unchanged performance thresholds; the earlier 100ms lanes could be dominated by scheduler stalls.
+
+A local sparse lane collected 612 Zyzz samples at 1.635ms ±1.50%; this is diagnostic evidence, not a cross-machine speed claim.

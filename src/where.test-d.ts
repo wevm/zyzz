@@ -21,11 +21,11 @@ describe('where', () => {
   test('rejects props, arbitrary functions, strings, and invalid values', () => {
     const card = css({})
     // @ts-expect-error Applied props do not identify a definition.
-    where`${card()} &`
+    void where`${card()} &`
     // @ts-expect-error Arbitrary functions are not css definitions.
-    where`${() => ({ className: 'card' })} &`
+    void where`${() => ({ className: 'card' })} &`
     // @ts-expect-error Interpolations are style identities, not selector strings.
-    where`${'.card'} &`
+    void where`${'.card'} &`
     // @ts-expect-error Nested declarations retain their CSS value contracts.
     css({ [where`${card} &`]: { display: 'unknown-display' } })
   })

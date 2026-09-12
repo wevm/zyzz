@@ -21,7 +21,9 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import {css} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export {theme};export const styles={card:css({color:theme.tokens.color.brand})};`,
+        `import {css} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export {theme};export namespace style {
+  export const card = css({color:theme.tokens.color.brand})
+}`,
       )
       server = await Vite.createServer({
         root,
@@ -77,7 +79,7 @@ describe('zyzz', () => {
       expect(production.theme.className).toMatchInlineSnapshot(
         `"z_theme-8emm311c7xzi9-theme"`,
       )
-      expect(production.styles.card()).toMatchInlineSnapshot(`
+      expect(production.style.card()).toMatchInlineSnapshot(`
         {
           "className": "z-1hl3v031oo9bot-base0",
         }

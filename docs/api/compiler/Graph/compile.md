@@ -13,7 +13,9 @@ const output = Graph.compile({
     `,
     'app/card.ts': `
       import { theme } from './theme.js'
-      export const styles = { card: theme.css({ color: 'brand' }) }
+      export namespace style {
+        export const card = theme.css({ color: 'brand' })
+      }
     `,
   },
 })
@@ -143,8 +145,8 @@ Named `Config.create` exports and bound aliases retain token and layer inference
 ```ts
 import { css, theme } from '@acme/theme'
 
-export const styles = {
-  card: css({ color: 'brand' }),
+export namespace style {
+  export const card = css({ color: 'brand' })
 }
 export const scope = theme.className
 ```

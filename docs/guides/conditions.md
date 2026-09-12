@@ -25,20 +25,21 @@ export const { css, theme } = Config.create({
 ```tsx
 import { css } from './zyzz.config.js'
 
-const styles = {
-  region: css({
+namespace style {
+  export const region = css({
     containerName: 'sidebar',
     containerType: 'inline-size',
-  }),
-  content: css({
+  })
+
+  export const content = css({
     padding: 'sm',
     '@container sidebar >=card': { display: 'grid' },
     '@media tablet': { padding: 'md' },
-  }),
+  })
 }
 const example = (
-  <aside {...styles.region()}>
-    <div {...styles.content()}>Content</div>
+  <aside {...style.region()}>
+    <div {...style.content()}>Content</div>
   </aside>
 )
 ```
@@ -52,16 +53,16 @@ Use pseudo styles for browser state and data attributes for application state. K
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  button: css({
+namespace style {
+  export const button = css({
     ':disabled': { opacity: 0.5 },
     ':focus-visible': { outline: '2px solid currentColor' },
     ':hover': { opacity: 0.8 },
     '&[data-state="open"]': { backgroundColor: '#eee' },
-  }),
+  })
 }
 const example = (
-  <button {...styles.button()} aria-expanded={true} data-state="open">
+  <button {...style.button()} aria-expanded={true} data-state="open">
     Details
   </button>
 )
@@ -80,15 +81,15 @@ import { css } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const card = Css.marker({ state: ['closed', 'open'] })
-const styles = {
-  label: css({
+namespace style {
+  export const label = css({
     [Css.ancestor(card, { data: { state: 'open' } })]: { opacity: 1 },
-  }),
+  })
 }
 const example = (
   <section {...card({ state: 'open' })}>
     <div>
-      <span {...styles.label()}>Details</span>
+      <span {...style.label()}>Details</span>
     </div>
   </section>
 )

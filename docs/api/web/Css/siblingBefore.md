@@ -7,10 +7,10 @@ import { css } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const target = Css.marker({ state: ['closed', 'open'] })
-const styles = {
-  style: css({
+namespace style {
+  export const targetStyle = css({
     [Css.siblingBefore(target, { data: { state: 'open' } })]: { opacity: 1 },
-  }),
+  })
 }
 ```
 

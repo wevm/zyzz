@@ -23,7 +23,11 @@ describe('compile', () => {
       modules: {
         'pkg/config.ts': `import { Config } from 'zyzz'; export const { css, theme } = Config.create({theme:{color:{brand:'#06c'},spacing:{md:'8px'}}});`,
         'pkg/index.ts': `export { css, theme } from './config.js';`,
-        'pkg/card.ts': `import { css, theme } from './index.js'; export const styles = { card: css({padding:'md'}), label: css({color:theme.tokens.color.brand}) }; export const props = styles.card(); export const scope = theme.className;`,
+        'pkg/card.ts': `import { css, theme } from './index.js'; export namespace style {
+  export const card = css({padding:'md'})
+
+  export const label = css({color:theme.tokens.color.brand})
+} export const props = style.card(); export const scope = theme.className;`,
       },
     })
 
@@ -35,13 +39,19 @@ describe('compile', () => {
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      import { css, theme } from './index.js'; export const styles = { card: __zyzzProps.create({className:"z-5ngs574r5xr9-base1"}), label: __zyzzProps.create({className:"z-5ngs574r5xr9-base0"}) }; export const props = styles.card(); export const scope = "z_theme-1g1qfxjzbnv3-css-theme";"
+      import { css, theme } from './index.js'; export namespace style {
+        export const card = __zyzzProps.create({className:"z-5ngs574r5xr9-base1"})
+
+        export const label = __zyzzProps.create({className:"z-5ngs574r5xr9-base0"})
+      } export const props = style.card(); export const scope = "z_theme-1g1qfxjzbnv3-css-theme";"
     `)
 
     const packed = Graph.compile({
       contracts: { 'library/index.js': output.contracts['pkg/index.ts']! },
       modules: {
-        'app/card.ts': `import { css, theme } from 'library'; export const styles = { card: css({color:'brand'}) }; export const scope = theme.className;`,
+        'app/card.ts': `import { css, theme } from 'library'; export namespace style {
+  export const card = css({color:'brand'})
+} export const scope = theme.className;`,
       },
       imports: { 'app/card.ts': { library: 'library/index.js' } },
     })
@@ -55,7 +65,9 @@ describe('compile', () => {
   test('renamed destructured config bindings retain token inference during compilation', () => {
     const output = Graph.compile({
       modules: {
-        'app/card.ts': `import { Config } from 'zyzz'; const { css: styled, theme: palette } = Config.create({theme:{color:{brand:'#06c'}}}); export const styles = { card: styled({color:palette.tokens.color.brand}) };`,
+        'app/card.ts': `import { Config } from 'zyzz'; const { css: styled, theme: palette } = Config.create({theme:{color:{brand:'#06c'}}}); export namespace style {
+  export const card = styled({color:palette.tokens.color.brand})
+}`,
       },
     })
 

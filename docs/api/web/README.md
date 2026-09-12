@@ -32,8 +32,11 @@ const double = cssFunction({
   returns: '<length>',
   body: { result: 'calc(var(--size) * 2)' },
 })
-const styles = {
-  box: css({ width: double('2rem'), [compact]: { display: 'none' } }),
+namespace style {
+  export const box = css({
+    width: double('2rem'),
+    [compact]: { display: 'none' },
+  })
 }
 ```
 

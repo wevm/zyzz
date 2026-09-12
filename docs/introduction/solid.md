@@ -23,16 +23,16 @@ import { Config } from 'zyzz'
 
 const { css } = Config.create({ output: 'html' })
 
-const styles = {
-  bar: css((values: { width: `${number}%` }) => ({
+namespace style {
+  export const bar = css((values: { width: `${number}%` }) => ({
     height: '20px',
     width: values.width,
-  })),
+  }))
 }
 
 export function Progress() {
   const [width] = createSignal<`${number}%`>('25%')
-  return <div {...styles.bar({ width: width() })} />
+  return <div {...style.bar({ width: width() })} />
 }
 ```
 

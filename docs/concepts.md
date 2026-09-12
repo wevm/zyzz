@@ -15,8 +15,8 @@ How styles, tokens, and compilation behave. Use [Guides](guides/README.md) for c
 ```ts
 import { css } from 'zyzz'
 
-const styles = {
-  card: css({ padding: '1rem' }),
+namespace style {
+  export const card = css({ padding: '1rem' })
 }
 ```
 
@@ -29,10 +29,10 @@ Definitions describe static rules. Calling a definition returns styling props; i
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  card: css({ padding: '1rem' }),
+namespace style {
+  export const card = css({ padding: '1rem' })
 }
-const example = <div {...styles.card()}>Card</div>
+const example = <div {...style.card()}>Card</div>
 ```
 
 ## Configuration
@@ -58,8 +58,8 @@ Named alternatives share the default's token paths and domains. Config returns c
 ```ts
 import { css } from './zyzz.config.js'
 
-const styles = {
-  card: css({ padding: 'md' }),
+namespace style {
+  export const card = css({ padding: 'md' })
 }
 ```
 
@@ -117,11 +117,12 @@ Use `cx` to compose generated styles with override rules. Multiple JSX spreads r
 ```tsx
 import { css, cx } from 'zyzz'
 
-const styles = {
-  compact: css({ padding: '0.5rem' }),
-  roomy: css({ padding: '1rem' }),
+namespace style {
+  export const compact = css({ padding: '0.5rem' })
+
+  export const roomy = css({ padding: '1rem' })
 }
-const example = <button {...cx(styles.compact(), styles.roomy())}>Save</button>
+const example = <button {...cx(style.compact(), style.roomy())}>Save</button>
 ```
 
 Later generated conflicts win within matching conditions, subject to importance. Owned variable bindings and recipe attributes stay attached. See [Override Styles](guides/styling.md#override-styles).
@@ -136,12 +137,12 @@ A recipe styles one element and returns one props object. Axes, defaults, and co
 ```tsx
 import { variants } from 'zyzz'
 
-const styles = {
-  button: variants({
+namespace style {
+  export const button = variants({
     variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
-  }),
+  })
 }
-const example = <button {...styles.button({ size: 'sm' })}>Save</button>
+const example = <button {...style.button({ size: 'sm' })}>Save</button>
 ```
 
 ## Conditions
@@ -151,10 +152,10 @@ Pseudo styles, media queries, container queries, and feature queries keep their 
 ```ts
 import { css } from 'zyzz'
 
-const styles = {
-  button: css({
+namespace style {
+  export const button = css({
     ':hover': { '@media (hover: hover)': { opacity: 0.8 } },
-  }),
+  })
 }
 ```
 
@@ -199,12 +200,12 @@ Callbacks bind per-instance values to precompiled custom properties. Their rule 
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  bar: css((values: { width: `${number}%` }) => ({
+namespace style {
+  export const bar = css((values: { width: `${number}%` }) => ({
     width: values.width,
-  })),
+  }))
 }
-const example = <div {...styles.bar({ width: '50%' })} aria-hidden="true" />
+const example = <div {...style.bar({ width: '50%' })} aria-hidden="true" />
 ```
 
 Calls accept declared inputs plus `className`/`style` overrides. Keep other component props on the element.

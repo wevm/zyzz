@@ -15,25 +15,26 @@ const { css: htmlCss } = Config.create({ output: 'html' });
 import * as React from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-const styles = {
-  card: css((values: { width: \`\${number}%\` }) => ({
+namespace style {
+  export const card = css((values: { width: \`\${number}%\` }) => ({
     backgroundColor: '#0066cc', height: '20px', width: values.width,
-  })),
-  htmlCard: htmlCss((values: { width: \`\${number}%\` }) => ({
+  }))
+
+  export const htmlCard = htmlCss((values: { width: \`\${number}%\` }) => ({
     backgroundColor: '#0066cc', height: '20px', width: values.width,
-  })),
-};
-export function props(width: \`\${number}%\`, overrides = true) {
-  return styles.card({ width, ...(overrides ? { style: { marginTop: '12px', opacity: 0.5, colorScheme: 'dark', '--note': '"<&>"' } } : {}) });
+  }))
 }
-export function html() { return Html.serialize({ ...styles.htmlCard({ width: '25%', style: { marginTop: '12px', opacity: 0.5, colorScheme: 'dark', '--note': '"<&>"' } }), 'data-note': '"<&>' }); }
+export function props(width: \`\${number}%\`, overrides = true) {
+  return style.card({ width, ...(overrides ? { style: { marginTop: '12px', opacity: 0.5, colorScheme: 'dark', '--note': '"<&>"' } } : {}) });
+}
+export function html() { return Html.serialize({ ...style.htmlCard({ width: '25%', style: { marginTop: '12px', opacity: 0.5, colorScheme: 'dark', '--note': '"<&>"' } }), 'data-note': '"<&>' }); }
 let root;
 function Card({ values }) { React.useEffect(() => { document.documentElement.dataset.hydrated = "true" }, []); return React.createElement("div", { id: "card", ...values }); }
 export function hydrate() { root = hydrateRoot(document.querySelector('#react'), React.createElement(Card, { values: props('25%') })); }
 export function update() { flushSync(() => root.render(React.createElement(Card, { values: props('75%', false) }))); }
 export function unmount() { flushSync(() => root.unmount()); }
 export function updateDom(element) {
-  const next = styles.htmlCard({ width: '75%' });
+  const next = style.htmlCard({ width: '75%' });
   element.setAttribute('class', next.class);
   element.setAttribute('style', next.style ?? '');
 }

@@ -6,21 +6,21 @@ Define, reuse, compose, and bind component styles. Begin with [Getting Started](
 
 ### Style Components
 
-Complete [Getting Started](../introduction/getting-started.md) to connect compilation. Group related `css` and `variants` definitions in `const styles = {}` and apply them through descriptive keys.
+Complete [Getting Started](../introduction/getting-started.md) to connect compilation. Group related `css` and `variants` definitions in `namespace style {}` with exported `const` members. Earlier declarations can be reused directly within the namespace.
 
 #### Reuse Styles
 
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  button: css({ padding: '1rem' }),
+namespace style {
+  export const button = css({ padding: '1rem' })
 }
 
 const example = (
   <>
-    <button {...styles.button()}>Save</button>
-    <button {...styles.button({ style: { padding: '2rem' } })}>Continue</button>
+    <button {...style.button()}>Save</button>
+    <button {...style.button({ style: { padding: '2rem' } })}>Continue</button>
   </>
 )
 ```
@@ -32,12 +32,12 @@ Pass `className` and `style` overrides to the styling function. Keep events, chi
 ```ts
 import { css } from 'zyzz'
 
-const styles = {
-  card: css({
+namespace style {
+  export const card = css({
     padding: '1rem',
     ':hover': { opacity: 0.8 },
     '@media (min-width: 48rem)': { padding: '2rem' },
-  }),
+  })
 }
 ```
 
@@ -54,17 +54,17 @@ import { css } from './zyzz.config.js'
 
 // button.styles.ts
 
-export const styles = {
-  button: css({ padding: 'md' }),
+export namespace style {
+  export const button = css({ padding: 'md' })
 }
 ```
 
 ```tsx
 // Button.tsx
-import { styles } from './button.styles.js'
+import { style } from './button.styles.js'
 
 export function Button() {
-  return <button {...styles.button()}>Save</button>
+  return <button {...style.button()}>Save</button>
 }
 ```
 
@@ -83,18 +83,19 @@ Pass styling overrides to a definition. Compose generated declarations through `
 ```tsx
 import { css, cx } from 'zyzz'
 
-const styles = {
-  base: css({ padding: '0.5rem' }),
-  roomy: css({ padding: '1rem' }),
+namespace style {
+  export const base = css({ padding: '0.5rem' })
+
+  export const roomy = css({ padding: '1rem' })
 }
-const example = <button {...cx(styles.base(), styles.roomy())}>Continue</button>
+const example = <button {...cx(style.base(), style.roomy())}>Continue</button>
 ```
 
 Later conflicts win within matching conditions, subject to importance. `cx` preserves owned variables and recipe attributes; incompatible recipe ownership fails. External classes retain normal cascade behavior.
 
 ```tsx
 const custom = (
-  <button {...styles.base({ style: { padding: '2rem' } })}>Save</button>
+  <button {...style.base({ style: { padding: '2rem' } })}>Save</button>
 )
 ```
 
@@ -105,22 +106,22 @@ Keep events and accessibility props on the component. Multiple JSX spreads repla
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  bar: css((values: { width: `${number}%` }) => ({
+namespace style {
+  export const bar = css((values: { width: `${number}%` }) => ({
     width: values.width,
-  })),
+  }))
 }
-const example = <div {...styles.bar({ width: '50%' })} />
+const example = <div {...style.bar({ width: '50%' })} />
 ```
 
 Callbacks use explicitly typed scalar inputs and compile to fixed CSS-variable slots. Local finite aliases and interfaces are supported; rule structure, arbitrary runtime expressions, generic/imported dynamic types, and native output remain outside this boundary. Callbacks bind values without generating CSS. Use `Vars` only when a shared variable contract is needed.
 
 ```ts
-const styles = {
-  label: css({
+namespace style {
+  export const label = css({
     color: 'black!',
     display: ['block', 'flex'],
-  }),
+  })
 }
 ```
 
@@ -131,8 +132,8 @@ Arrays preserve fallback order; a trailing `!` marks importance.
 ```ts
 import { css, theme } from './zyzz.config.js'
 
-const styles = {
-  panel: css({ width: `calc(100% - ${theme.vars.spacing.md})` }),
+namespace style {
+  export const panel = css({ width: `calc(100% - ${theme.vars.spacing.md})` })
 }
 ```
 
@@ -140,15 +141,16 @@ Import `{ css, theme }` from the [config module](../concepts.md#configuration) a
 
 #### Static Bindings
 
-Module-level `const` literals, object spreads, shorthand properties, and literal member reads can supply styles. Extraction preserves property order and rejects mutable or escaping records. Calls and arbitrary expressions are not evaluated.
+Module-level and namespace-local `const` literals, object spreads, shorthand properties, and literal member reads can supply styles. Extraction preserves property order and rejects mutable or escaping records. Calls and arbitrary expressions are not evaluated.
 
 ```ts
-const base = { padding: '8px' } as const
-type Width = '10px' | '30px
-type Values = { width: Width }
-const styles = {
-  card: css({ ...base, color: 'black' }),
-  bar: css((values: Values) => ({ ...base, width: values.width })),
+namespace style {
+  const base = { padding: '8px' } as const
+  type Values = { width: '10px' | '30px' }
+
+  export const card = css({ ...base, color: 'black' })
+
+  export const bar = css((values: Values) => ({ ...base, width: values.width }))
 }
 ```
 

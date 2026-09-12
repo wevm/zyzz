@@ -91,10 +91,12 @@ describe('compile', () => {
   test('prunes unused named statements and emits JavaScript function formatters', async () => {
     const output = Transform.compile({
       moduleId: 'functions.js',
-      source: `import {css} from 'zyzz';import {cssFunction,customMedia} from 'zyzz/web';const unused=customMedia(false);const dead=cssFunction({parameters:[],body:{result:1}});const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],returns:'<number>',body:{result:'calc(var(--x)*2)'}});export const styles={box:css({opacity:twice(+1)})};`,
+      source: `import {css} from 'zyzz';import {cssFunction,customMedia} from 'zyzz/web';const unused=customMedia(false);const dead=cssFunction({parameters:[],body:{result:1}});const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],returns:'<number>',body:{result:'calc(var(--x)*2)'}});export namespace style {
+  export const box = css({opacity:twice(+1)})
+}`,
     })
     expect(
-      (await Esbuild.transform(output.code, { loader: 'js' })).warnings,
+      (await Esbuild.transform(output.code, { loader: 'ts' })).warnings,
     ).toMatchInlineSnapshot('[]')
     expect(output.css).toMatchInlineSnapshot(`
       "@function --z-cssfunction172pj15vy9qt-74-77-69-63-65(--x <number>) returns <number>{result:calc(var(--x)*2);}
@@ -105,10 +107,12 @@ describe('compile', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'bad.ts',
-        source: `import {css} from 'zyzz';import {cssFunction} from 'zyzz/web';const amount=2;const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],body:{result:2}});export const styles={box:css({opacity:twice(amount)})};`,
+        source: `import {css} from 'zyzz';import {cssFunction} from 'zyzz/web';const amount=2;const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],body:{result:2}});export namespace style {
+  export const box = css({opacity:twice(amount)})
+}`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: bad.ts:202: Expected a literal string or number; expressions are not evaluated.]`,
+      `[Source.ExtractError: bad.ts:223: Expected a literal string or number; expressions are not evaluated.]`,
     )
   })
   test('hoists conditioned imports before namespace and ordinary rules', () => {
@@ -151,14 +155,16 @@ describe('compile', () => {
       contracts: { 'lib/query.js': library.contracts['query.ts']! },
       imports: { 'app.ts': { lib: 'lib/query.js', zyzz: null } },
       modules: {
-        'app.ts': `import {css} from 'zyzz';import {compact} from 'lib';export const styles={box:css({[compact]:{color:'red'}})};`,
+        'app.ts': `import {css} from 'zyzz';import {compact} from 'lib';export namespace style {
+  export const box = css({[compact]:{color:'red'}})
+}`,
       },
     })
     expect(output.sharedCss).toMatchInlineSnapshot(
       `"@custom-media --z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74 (width < 40rem);"`,
     )
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-style-1e8a67z1uaws1j-78{@media (--z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74){color:red;}}"`,
+      `".z-style-1e8a67z1uaws1j-99{@media (--z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74){color:red;}}"`,
     )
   })
   test('emits native functions and callable fixed expressions', async () => {
@@ -216,7 +222,9 @@ describe('compile', () => {
       contracts: { 'lib/function.js': library.contracts['function.ts']! },
       imports: { 'app.ts': { lib: 'lib/function.js', zyzz: null } },
       modules: {
-        'app.ts': `import {css} from 'zyzz';import {twice} from 'lib';export const styles={box:css({width:twice('2px')})};`,
+        'app.ts': `import {css} from 'zyzz';import {twice} from 'lib';export namespace style {
+  export const box = css({width:twice('2px')})
+}`,
       },
     })
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(

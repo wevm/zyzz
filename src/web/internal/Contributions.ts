@@ -2,7 +2,10 @@
 import type * as Style from '../../Style.js'
 
 /** Explicit stylesheet data supplied by source adapters or in-memory callers. */
-export type Definition =
+export type Definition = {
+  /** Enclosing groups in authored outermost-first order. */
+  readonly within?: readonly string[] | undefined
+} & (
   | {
       /** Whether the registered value inherits from its parent element. */
       readonly inherits: boolean
@@ -33,6 +36,7 @@ export type Definition =
       }[]
     }
   | { readonly kind: 'layers'; readonly names: readonly string[] }
+)
 
 /** Merges declared ordering constraints with deterministic unconstrained ties. */
 export function order(
@@ -140,22 +144,24 @@ export function render(
     layers.length ? `@layer ${layers.join(',')};` : '',
     ...definitions.map((value) => {
       if (value.kind === 'layers') return ''
-
-      if (value.kind === 'rule')
-        return `${value.selector}{${style(value.style)}}`
-
-      if (value.kind === 'property')
-        return `@property ${value.name}{syntax:${JSON.stringify(value.syntax)};inherits:${value.inherits};initial-value:${value.initialValue};}`
-
-      if (value.kind === 'font-face')
-        return `@font-face{${Object.entries(value.declarations)
-          .map(
-            ([key, value]) =>
-              `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value};`,
-          )
-          .join('')}}`
-
-      return `@keyframes ${value.name}{${value.frames.map((frame) => `${frame.stop}{${style(frame.style)}}`).join('')}}`
+      const css = (() => {
+        if (value.kind === 'rule')
+          return `${value.selector}{${style(value.style)}}`
+        if (value.kind === 'property')
+          return `@property ${value.name}{syntax:${JSON.stringify(value.syntax)};inherits:${value.inherits};initial-value:${value.initialValue};}`
+        if (value.kind === 'font-face')
+          return `@font-face{${Object.entries(value.declarations)
+            .map(
+              ([key, value]) =>
+                `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value};`,
+            )
+            .join('')}}`
+        return `@keyframes ${value.name}{${value.frames.map((frame) => `${frame.stop}{${style(frame.style)}}`).join('')}}`
+      })()
+      return (value.within ?? []).reduceRight(
+        (body, header) => `${header}{${body}}`,
+        css,
+      )
     }),
   ]
     .filter(Boolean)

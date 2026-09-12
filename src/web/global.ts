@@ -1,4 +1,5 @@
 /** Declares eager module-level global stylesheet effects. @module */
+import type * as Condition from '../internal/Condition.js'
 import { MissingTransformError } from '../css.js'
 import type * as Literal from '../internal/Literal.js'
 import type * as Style from '../Style.js'
@@ -16,7 +17,9 @@ export declare namespace global {
   /** Selectors contain exact declarations; at-rules contain further selectors. */
   type Body<styles> = {
     [key in keyof styles]: key extends `@${string}`
-      ? Body<styles[key]>
+      ? key extends Extract<Condition.Raw, `@${string}`>
+        ? Body<styles[key]>
+        : never
       : Style.Accepted<styles[key]> & WithoutRelationships<styles[key]>
   }
 }

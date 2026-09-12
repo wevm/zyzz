@@ -89,9 +89,11 @@ export function extend<
 ): Definition<tokens, boundCss> {
   if (!theme || typeof theme !== 'object')
     throw new InvalidError([], 'Expected a theme definition.')
+
   const data = Object.getOwnPropertyDescriptor(theme, Token.definition)
     ?.value as Token.Metadata | undefined
   if (!data) throw new InvalidError([], 'Expected a theme definition.')
+
   return build(
     overrides,
     data.contract,
@@ -131,6 +133,7 @@ export class InvalidError extends Error {
 export type Overrides<tokens> = {
   readonly [group in keyof tokens]?: OverrideTree<tokens[group], group>
 }
+
 type OverrideTree<tree, group> = tree extends string | number
   ? Scalar<group>
   : tree extends { readonly dark: string; readonly light: string }
@@ -150,6 +153,7 @@ export type References<tokens> = {
     ? group
     : never]: ReferenceTree<tokens[group], Extract<group, Token.Group>>
 }
+
 type ReferenceTree<tree, group extends Token.Group> = tree extends
   | string
   | number
@@ -233,6 +237,7 @@ function build(
     Object.create(null),
     base,
   )
+
   const queries = {
     breakpoints: Object.assign(
       Object.create(null),
@@ -244,6 +249,7 @@ function build(
       baseQueries?.containers,
     ) as Record<string, string>,
   }
+
   let hasQueries = !!baseQueries
   const active = new Set<object>()
 
@@ -255,12 +261,14 @@ function build(
       ['color', 'backgroundColor', 'borderColor', 'textColor'].includes(
         group,
       ) && entries?.some(([name]) => name === 'light' || name === 'dark')
+
     if (scalar || pair) {
       if (base && !Object.hasOwn(base, key))
         throw new InvalidError(
           path,
           'Extensions cannot add or replace token paths.',
         )
+
       if (pair) {
         if (
           !['color', 'backgroundColor', 'borderColor', 'textColor'].includes(
@@ -274,7 +282,9 @@ function build(
             path,
             'Expected a complete light/dark color pair.',
           )
+
         const schemes = Object.fromEntries(entries!)
+
         values[key] = Object.freeze({
           dark: schemes.dark as string,
           light: schemes.light as string,
@@ -282,15 +292,21 @@ function build(
       } else {
         values[key] = value as number | string
       }
+
       return
     }
+
     if (!entries!.length && !base)
       throw new InvalidError(path, 'Token palettes cannot be empty.')
+
     if (base && Object.hasOwn(base, key))
       throw new InvalidError(path, 'A token leaf cannot become a palette.')
+
     if (active.has(value as object))
       throw new InvalidError(path, 'Cyclic palettes are not supported.')
+
     active.add(value as object)
+
     for (const [name, child] of entries!) {
       const next = [...path, name]
       if (
@@ -301,15 +317,19 @@ function build(
         )
       )
         throw new InvalidError(next, 'Extensions cannot add token paths.')
+
       visit(child, group, next)
     }
+
     active.delete(value as object)
   }
 
   for (const [group, palette] of record(input, [])) {
     if (palette === undefined) continue
+
     if (group === 'containerNames') {
       hasQueries = true
+
       if (
         !Array.isArray(palette) ||
         Array.from({ length: palette.length }, (_, index) =>
@@ -340,6 +360,7 @@ function build(
           [group],
           'Expected unique container identifiers.',
         )
+
       if (
         base &&
         JSON.stringify(palette) !== JSON.stringify(baseQueries?.containerNames)
@@ -348,11 +369,14 @@ function build(
           [group],
           'Extensions cannot change container identities.',
         )
+
       queries.containerNames = Object.freeze([...palette])
       continue
     }
+
     if (group === 'breakpoints' || group === 'containers') {
       hasQueries = true
+
       for (const [name, value] of record(palette, [group])) {
         if (
           !/^[a-zA-Z0-9_][a-zA-Z0-9_-]*$/.test(name) ||
@@ -364,15 +388,19 @@ function build(
             [group, name],
             'Expected a named nonnegative length threshold.',
           )
+
         if (base && !Object.hasOwn(queries[group], name))
           throw new InvalidError(
             [group, name],
             'Extensions cannot add query thresholds.',
           )
+
         queries[group][name] = value
       }
+
       continue
     }
+
     if (
       ![
         'backgroundColor',
@@ -391,25 +419,32 @@ function build(
       ].includes(group)
     )
       throw new InvalidError([group], 'Unsupported token group.')
+
     if (palette === undefined) continue
 
     if (base && !Object.keys(base).some((key) => key.startsWith(`${group}.`)))
       throw new InvalidError([group], 'Extensions cannot add token groups.')
+
     // Groups are always records; scalar leaves begin below them.
     const entries = record(palette, [group])
     if (!entries.length && !base)
       throw new InvalidError([group], 'Token palettes cannot be empty.')
+
     for (const [name, value] of entries)
       visit(value, group as Token.Group, [group, name])
   }
 
   type Tree = { [key: string]: Tree | Token.Reference }
+
   const tokens: Tree = Object.create(null)
+
   for (const [path, value] of Object.entries(values)) {
     const parts = path.split('.')
     let tree = tokens
+
     for (const part of parts.slice(0, -1))
       tree = (tree[part] ??= Object.create(null)) as Tree
+
     tree[parts.at(-1)!] = Token.create({
       contract,
       group: parts[0] as Token.Group,
@@ -417,11 +452,15 @@ function build(
       value,
     })
   }
+
   function freeze(tree: Tree) {
     for (const value of Object.values(tree)) if (!Token.is(value)) freeze(value)
+
     Object.freeze(tree)
   }
+
   freeze(tokens)
+
   return Object.freeze(
     Object.defineProperty(
       {
@@ -458,6 +497,7 @@ function record(
 ): readonly (readonly [string, unknown])[] {
   if (!value || typeof value !== 'object')
     throw new InvalidError(path, 'Expected a plain data record.')
+
   const prototype: object | null = Object.getPrototypeOf(value)
   const constructor: unknown =
     prototype &&
@@ -470,7 +510,9 @@ function record(
         Function.prototype.toString.call(Object))
   )
     throw new InvalidError(path, 'Expected a plain data record.')
+
   const entries: [string, unknown][] = []
+
   for (const key of Reflect.ownKeys(value)) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key)!
     if (typeof key === 'string' && key.includes('!'))
@@ -478,6 +520,7 @@ function record(
         [...path, key],
         'Token keys cannot contain !; it is reserved for declaration importance.',
       )
+
     if (
       typeof key !== 'string' ||
       !key ||
@@ -489,8 +532,10 @@ function record(
         path,
         'Expected nonempty keys without dots and enumerable data properties.',
       )
+
     entries.push([key, descriptor.value])
   }
+
   return entries
 }
 
@@ -505,11 +550,13 @@ type Validated<tokens> = Tokens extends tokens
             : ValidPalette<tokens[group], group>
           : never
       }
+
 type ContainerNames<names> = names extends readonly string[]
   ? UniqueNames<names> & {
       [index in keyof names]: ContainerName<names[index]>
     }
   : names
+
 type UniqueNames<
   names extends readonly string[],
   seen extends string = never,
@@ -521,6 +568,7 @@ type UniqueNames<
     ? never
     : UniqueNames<rest, seen | name>
   : unknown
+
 type ContainerName<name> = name extends string
   ? Lowercase<name> extends
       | 'none'
@@ -536,6 +584,7 @@ type ContainerName<name> = name extends string
     ? never
     : name
   : name
+
 type ValidPalette<palette, group> = palette extends undefined
   ? undefined
   : {
@@ -558,6 +607,7 @@ type WeightDigits<
         ? WeightDigits<rest, [...digits, unknown]>
         : false
       : false
+
 type Weight<value> = value extends number
   ? number extends value
     ? value

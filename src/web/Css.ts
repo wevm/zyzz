@@ -33,22 +33,31 @@ export function compile<
   options: compile.Options<name, themeName>,
 ): compile.ReturnType<name, themeName> {
   let theme: ReturnType<typeof Themes.create> | undefined
+
   type Cached = {
     declaration: string
     domain: string
   }
+
   const cache = new Map<string, Map<number | string, Cached>>()
   const references = new Map<object, boolean>()
+
   function isReference(value: unknown): value is Token.Reference {
     if (typeof value !== 'object' || value === null) return false
+
     const previous = references.get(value)
     if (previous !== undefined) return previous
+
     const result = Token.is(value)
+
     references.set(value, result)
+
     return result
   }
+
   // Only primitive declaration lists can be interned without erasing token identity.
   const repeated = new Map<string, Style.NamedStyle>()
+
   const canonicalStyles = options.styles.styles.map((style) => {
     if (
       'rules' in style ||
@@ -57,17 +66,22 @@ export function compile<
       )
     )
       return style
+
     const key = JSON.stringify(style.declarations)
     const previous = repeated.get(key)
     if (previous) return previous
+
     repeated.set(key, style)
+
     return style
   })
+
   const analyzed = [...new Set(canonicalStyles)]
   const classes = Object.create(null) as Record<name, string>
   const diagnostics: Diagnostic[] = []
   const groups = new Map<string, false | string>()
   const nestedComposition = options.styles.styles.some((style) => style.rules)
+
   // Logical dimensions may alias either physical axis in inherited writing modes.
   // Preserve physical-only factoring when no logical dimension is authored.
   const logicalSizing = analyzed.some((style) =>
@@ -75,10 +89,12 @@ export function compile<
       /^(min|max)?(blockSize|inlineSize)$/i.test(property),
     ),
   )
+
   const resets = analyzed.some((style) =>
     style.declarations.some(({ property }) => property === 'all'),
   )
   const combinedLines = new Set<string>()
+
   for (const style of analyzed)
     for (const { property } of style.declarations)
       if (Literal.rule(property)?.kind === 'line') {
@@ -86,13 +102,16 @@ export function compile<
           property in Literal.aliases
             ? Literal.aliases[property as keyof typeof Literal.aliases]
             : property
+
         combinedLines.add(canonical.startsWith('border') ? 'border' : canonical)
       }
+
   function canonical(property: string): string {
     return property in Literal.aliases
       ? Literal.aliases[property as keyof typeof Literal.aliases]
       : property
   }
+
   function domain(property: string): string {
     if (
       resets &&
@@ -101,35 +120,48 @@ export function compile<
       property !== 'unicodeBidi'
     )
       return 'all'
+
     if (/^marker(?:Start|Mid|End)?$/.test(property)) return 'marker'
     if (property.startsWith('corner')) return 'cornerShape'
     if (property.startsWith('containIntrinsic')) return 'containIntrinsicSize'
     if (property.startsWith('interestDelay')) return 'interestDelay'
     if (property.startsWith('backgroundPosition')) return 'backgroundPosition'
+
     if (combinedLines.has('columnRule') && property.startsWith('columnRule'))
       return 'columnRule'
+
     if (combinedLines.has('outline') && property.startsWith('outline'))
       return 'outline'
+
     if (property.startsWith('borderImage')) return 'borderImage'
+
     if (property.startsWith('border')) {
       if (combinedLines.has('border')) return 'border'
+
       if (property.endsWith('Color')) {
         return 'borderColor'
       }
+
       if (property.endsWith('Style')) {
         return 'borderStyle'
       }
+
       if (property.endsWith('Width')) {
         return 'borderWidth'
       }
+
       return 'borderRadius'
     }
+
     if (['flexDirection', 'flexFlow', 'flexWrap'].includes(property))
       return 'flexFlow'
+
     if (/^(pageBreak|break)(After|Before|Inside)$/.test(property))
       return property.replace('pageBreak', 'break')
+
     if (['fontStretch', 'fontWidth'].includes(property)) return 'fontWidth'
     if (property.startsWith('fontSynthesis')) return 'fontSynthesis'
+
     if (
       [
         'whiteSpace',
@@ -140,13 +172,17 @@ export function compile<
       ].includes(property)
     )
       return 'whiteSpace'
+
     if (['wordWrap', 'overflowWrap'].includes(property)) return 'overflowWrap'
+
     if (property.startsWith('margin')) {
       return 'margin'
     }
+
     if (property.startsWith('padding')) {
       return 'padding'
     }
+
     if (
       property === 'overflow' ||
       property === 'overflowX' ||
@@ -156,21 +192,27 @@ export function compile<
     ) {
       return 'overflow'
     }
+
     if (property.startsWith('overscrollBehavior')) {
       return 'overscrollBehavior'
     }
+
     if (property.startsWith('scrollMargin')) {
       return 'scrollMargin'
     }
+
     if (property.startsWith('scrollPadding')) {
       return 'scrollPadding'
     }
+
     if (['columnGap', 'gap', 'rowGap'].includes(property)) {
       return 'gap'
     }
+
     if (/^(inset|top$|right$|bottom$|left$)/.test(property)) {
       return 'inset'
     }
+
     if (
       logicalSizing &&
       /^(min|max)?(width|height|blockSize|inlineSize)$/i.test(property)
@@ -178,74 +220,101 @@ export function compile<
       if (property.startsWith('min')) {
         return 'min-size'
       }
+
       if (property.startsWith('max')) {
         return 'max-size'
       }
+
       return 'size'
     }
+
     return property
   }
+
   const parents = new Map<string, string>()
+
   function root(domain: string): string {
     const parent = parents.get(domain)
     if (!parent) return domain
+
     const result = root(parent)
+
     parents.set(domain, result)
+
     return result
   }
+
   // Union only authored shorthands. Unrelated axes retain their original factoring.
   // Recursion includes nested and reset-only shorthands without parsing CSS values.
   function join(property: string, target: string, visited = new Set<string>()) {
     if (visited.has(property)) return
+
     visited.add(property)
+
     const current = root(domain(canonical(property)))
     const group = root(target)
+
     if (current !== group) parents.set(current, group)
+
     if (Object.hasOwn(Cascade.shorthands, property))
       for (const child of Cascade.shorthands[
         property as keyof typeof Cascade.shorthands
       ])
         join(child, target, visited)
   }
+
   for (const style of analyzed)
     for (const { property } of style.declarations)
       if (Object.hasOwn(Cascade.shorthands, canonical(property)))
         join(canonical(property), domain(canonical(property)))
+
   type Prepared = {
     declarations: readonly Cached[]
     ordered: string
     shared: string
   }
+
   const serialized = new Map<object, string>()
+
   function serialize(input: Style.Declaration['value']): number | string {
     if (typeof input !== 'object' || input === null) return input
+
     const cached = serialized.get(input)
     if (cached !== undefined) return cached
+
     const value = serializeReference(input)
+
     if (typeof value === 'string') serialized.set(input, value)
+
     return value
   }
+
   function serializeReference(
     input: Style.Declaration['value'],
   ): number | string {
     if (Binding.is(input)) return `var(${input.name})`
     if (isReference(input)) return (theme ??= Themes.create()).serialize(input)
+
     if (Token.isExpression(input))
       return input.parts
         .map((part) => (typeof part === 'string' ? part : serialize(part)))
         .join('')
+
     return input as number | string
   }
+
   function nested(style: Style.NamedStyle): string {
     if (style.rules)
       return style.rules
         .map((rule) => {
           const body = nested(rule.style)
+
           return rule.condition === undefined
             ? body
             : `${rule.condition}{${body}}`
         })
         .join('')
+
     return style.declarations
       .map(
         ({ property, value, important }) =>
@@ -253,21 +322,27 @@ export function compile<
       )
       .join('')
   }
+
   const unique = new Map<string, Prepared>()
   const resolved = new Map<Style.NamedStyle, Prepared>()
+
   const prepared = options.styles.styles.map((style, index) => {
     if (style.rules)
       return {
         name: style.name,
         content: { declarations: [], ordered: nested(style), shared: '' },
       }
+
     const canonicalStyle = canonicalStyles[index]!
     const cached = resolved.get(canonicalStyle)
     if (cached) return { content: cached, name: style.name }
+
     let body = ''
     const declarations: Cached[] = []
+
     for (const { important, property, value: input } of style.declarations) {
       let value: number | string
+
       try {
         value = serialize(input)
       } catch (error) {
@@ -278,13 +353,17 @@ export function compile<
         })
         continue
       }
+
       const key = `${important ? 1 : 0}:${property}`
       let values = cache.get(key)
+
       if (!values) {
         values = new Map()
         cache.set(key, values)
       }
+
       let entry = values.get(value)
+
       if (!entry) {
         entry = {
           declaration: `${Literal.name(property)}:${value}${important ? '!important' : ''};`,
@@ -292,32 +371,44 @@ export function compile<
         }
         values.set(value, entry)
       }
+
       const { declaration } = entry
+
       body += declaration
       declarations.push(entry)
     }
+
     const previous = unique.get(body)
+
     if (previous) {
       resolved.set(canonicalStyle, previous)
+
       return { content: previous, name: style.name }
     }
 
     const content = { declarations, ordered: '', shared: '' }
+
     resolved.set(canonicalStyle, content)
     unique.set(body, content)
+
     const domains = new Map<string, string>()
+
     for (const { declaration, domain } of declarations)
       domains.set(domain, (domains.get(domain) ?? '') + declaration)
+
     for (const [domain, signature] of domains) {
       const previous = groups.get(domain)
       if (previous === false) continue
+
       groups.set(
         domain,
         previous === undefined || previous === signature ? signature : false,
       )
     }
+
     return { content, name: style.name }
   })
+
   // Equivalent bodies share factoring work, including repeated tokens.
   for (const content of unique.values())
     for (const { declaration, domain } of content.declarations) {
@@ -325,6 +416,7 @@ export function compile<
         content.ordered += declaration
       else content.shared += declaration
     }
+
   // Sort identities only, never authored declarations or cascade order. Separate
   // prefixes keep generated base identities disjoint from encoded authored names.
   const bases = new Map(
@@ -336,8 +428,10 @@ export function compile<
         `${options.composition === 'independent' ? 'base_' : 'z_base'}${index}`,
       ]),
   )
+
   const identical = new Map<string, string>()
   const rules = new Map<string, string>()
+
   for (const style of prepared) {
     if (!style.name || Object.hasOwn(classes, style.name)) {
       diagnostics.push({
@@ -347,8 +441,10 @@ export function compile<
       })
       continue
     }
+
     const { ordered, shared } = style.content
     const names: string[] = []
+
     // Shared domains have identical ordered declarations everywhere they occur.
     // Ordered composition retains a distinct rule per authored style for conflicts.
     for (const [body, sharedRule] of [
@@ -356,38 +452,50 @@ export function compile<
       [ordered, false],
     ] as const) {
       if (!body) continue
+
       const identity = (() => {
         if (sharedRule) {
           return bases.get(body)!
         }
+
         if (options.composition === 'independent') {
           return identifier(style.name)
         }
+
         return `z-${encode(style.name)}`
       })()
+
       // Independent styles are already complete applications. Reusing a rule
       // cannot affect another application, but would change raw A/B/A composition.
       if (!sharedRule && options.composition === 'independent') {
         const canonical = identical.get(body)
+
         if (canonical) {
           names.push(canonical)
           continue
         }
+
         identical.set(body, identity)
       }
+
       const previous = rules.get(identity)
+
       if (previous !== undefined && previous !== body)
         diagnostics.push({
           code: 'identity_collision',
           message: 'Distinct rules produced the same class identifier.',
           path: [style.name],
         })
+
       rules.set(identity, body)
       names.push(identity)
     }
+
     classes[style.name] = names.join(' ')
   }
+
   if (diagnostics.length) throw new CompileError(diagnostics)
+
   const contributionCss = (() => {
     try {
       return Contributions.render(options.contributions ?? [], nested)
@@ -401,7 +509,9 @@ export function compile<
       ])
     }
   })()
+
   let scopes: ReturnType<NonNullable<typeof theme>['emit']>
+
   try {
     scopes =
       theme || options.themes
@@ -416,12 +526,14 @@ export function compile<
       },
     ])
   }
+
   const scopedCss = [
     scopes.css,
     ...[...rules].map(([name, body]) => `.${name}{${body}}`),
   ]
     .filter(Boolean)
     .join('\n')
+
   return Object.freeze({
     ...(contributionCss ? { contributionCss, scopedCss } : {}),
     classes: Object.freeze(classes),
@@ -453,6 +565,7 @@ export declare namespace compile {
     /** Named scopes; only variables referenced by these styles are emitted. */
     readonly themes?: Readonly<Record<themeName, Theme.Definition>> | undefined
   }
+
   /** Static web artifacts with precisely inferred authored names. */
   type ReturnType<
     name extends string = string,

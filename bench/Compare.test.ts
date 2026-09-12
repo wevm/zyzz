@@ -16,6 +16,7 @@ describe('benchmark report', () => {
     const baseline = Path.join(directory, 'baseline')
     const candidate = Path.join(directory, 'candidate')
     const output = Path.join(directory, 'output')
+
     try {
       for (const root of [baseline, candidate]) {
         await Fs.mkdir(root)
@@ -56,6 +57,7 @@ describe('benchmark report', () => {
           }),
         )
       }
+
       const result = await run(
         process.execPath,
         [Path.resolve('bench/Compare.ts'), candidate, baseline, output],
@@ -69,6 +71,7 @@ describe('benchmark report', () => {
           },
         },
       )
+
       expect(result.stdout).toMatchInlineSnapshot(`
         "## Compared with baseline
 

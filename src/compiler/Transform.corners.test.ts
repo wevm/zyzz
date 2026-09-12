@@ -12,6 +12,7 @@ import * as Corners from '../../test/fixtures/Corners.js'
 describe('compile', () => {
   test('corner and layout values match independent grammar', () => {
     const lexer = Conformance.lexer()
+
     for (const declarations of Object.values(Corners.styles)) {
       for (const [property, value] of Object.entries(declarations)) {
         const output = Transform.compile({
@@ -19,6 +20,7 @@ describe('compile', () => {
           source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
         })
         const name = Conformance.name(property)
+
         expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
           `true`,
         )
@@ -41,14 +43,18 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div id="bevel" class="${module.bevel.className}" style="position:absolute;left:0;top:0"></div><div id="control" style="position:absolute;left:150px;top:0;width:100px;height:100px;background:blue;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)"></div><div id="reset" class="${module.first.className} ${module.reset.className} ${module.last.className}"></div><div id="grid" class="${module.grid.className}"></div>`,
       )
+
       expect(
         await page.evaluate(() => CSS.supports('corner-shape', 'bevel')),
       ).toMatchInlineSnapshot(`true`)
+
       for (const point of [
         { x: 20, y: 20, inside: false },
         { x: 30, y: 30, inside: true },
@@ -70,6 +76,7 @@ describe('compile', () => {
           ),
         ).toMatchInlineSnapshot(`true`)
       }
+
       expect(
         await page
           .locator('#reset')

@@ -9,6 +9,7 @@ describe('stylesheet contributions', () => {
       moduleId: 'effects.ts',
       source: `import {layers,fontFace,global} from 'zyzz/web'; layers(['reset','base']); layers(['components']); fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined}); global({'body::before':{content:'"url(relative)"'}})`,
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       "@layer reset,base,components;
       @font-face{font-family:App;src:url(/app.woff2);}
@@ -45,11 +46,15 @@ describe('stylesheet contributions', () => {
       source:
         'import {global,keyframes,layers} from "zyzz/web"; layers(["reset","base"]); const fade=keyframes({from:{opacity:0},to:{opacity:1}}); global({"@layer reset":{body:{margin:"20px"}},"@layer base":{body:{margin:0}},body:{animationName:fade,animationDuration:"1s",animationTimingFunction:"linear",animationDelay:"-0.5s",animationPlayState:"paused"}})',
     })
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent('<body>Animation</body>')
       await page.addStyleTag({ content: output.css })
+
       expect(
         await page.evaluate(() => getComputedStyle(document.body).margin),
       ).toMatchInlineSnapshot(`"0px"`)
@@ -66,6 +71,7 @@ describe('stylesheet contributions', () => {
       source:
         'import {css} from "zyzz"; import {global,fontFace,keyframes,layers} from "zyzz/web"; layers(["reset","base"]); global({"@layer reset":{"body":{margin:0}},"body":{color:"red"}}); fontFace({fontFamily:"App",src:"url(/font.woff2)",fontDisplay:"swap"}); const unused=keyframes({from:{opacity:0},to:{opacity:1}}); const fade=keyframes({from:{opacity:0},to:{opacity:1}}); export const box=css({animationName:fade})()',
     })
+
     expect(result.css).toMatchInlineSnapshot(`
       "@layer reset,base;
       @layer reset{body{margin:0;}}
@@ -102,11 +108,13 @@ describe('stylesheet contributions', () => {
           moduleId: 'bad.ts',
           source: 'import {global,layers,keyframes} from "zyzz/web";' + source,
         })
+
         return 'accepted'
       } catch (error) {
         return (error as Error).message
       }
     })
+
     expect(failures).toMatchInlineSnapshot(`
       [
         "bad.ts:58: Stylesheet contributions require direct module-level calls and constant animation bindings.",
@@ -118,13 +126,16 @@ describe('stylesheet contributions', () => {
   })
   test('collects unimported effects once and replaces the snapshot on deletion', () => {
     const compiler = Graph.create()
+
     const modules = {
       'app.ts':
         'import {css} from "zyzz"; export const box=css({color:"blue"})()',
       'global.ts':
         'import {global,layers} from "zyzz/web"; layers(["reset","app"]); global({body:{margin:0}})',
     }
+
     const first = compiler.compile({ modules })
+
     expect({
       shared: first.sharedCss,
       modules: Object.values(first.modules).map((value) => value.css),

@@ -6,6 +6,7 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 import { Marker } from 'zyzz/runtime'
+
 describe('marker', () => {
   test('preserves statically computed non-marker namespace destructuring', () => {
     const result = Graph.compile({
@@ -13,6 +14,7 @@ describe('marker', () => {
         'app.ts': `import {Css} from 'zyzz/web';const {['compile']:compile}=Css;export {compile};`,
       },
     })
+
     expect(result.modules['app.ts']!.code).toMatchInlineSnapshot(
       `"import {Css} from 'zyzz/web';const {['compile']:compile}=Css;export {compile};"`,
     )
@@ -37,16 +39,19 @@ describe('marker', () => {
     ).toThrowErrorMatchingInlineSnapshot(
       `[Source.ExtractError: app.ts:35: Marker helpers require direct Css member calls.]`,
     )
+
     const first = Graph.compile({
       modules: {
         'index.ts': `import {Css} from 'zyzz/web';export const card=Css.marker({state:['é','é']});`,
       },
     })
+
     const second = Graph.compile({
       modules: {
         'index.ts': `import {Css} from 'zyzz/web';export const card=Css.marker({state:['é','é']});`,
       },
     })
+
     const app = Graph.compile({
       contracts: {
         'a.js': first.contracts['index.ts']!,
@@ -57,6 +62,7 @@ describe('marker', () => {
         'app.ts': `import {card} from 'a';import {css} from 'zyzz';import {Css} from 'zyzz/web';export const styles={card:css({[Css.ancestor(card)]:{color:'red'}})};`,
       },
     })
+
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
       `".z-style-1e8a67z1uaws1j-103{:where([data-z-1wfnqsmu0q6os-card-63-61-72-64]) &{color:red;}}"`,
     )
@@ -64,13 +70,16 @@ describe('marker', () => {
 
   test('captures the runtime marker identity before validation', () => {
     let reads = 0
+
     const definition = {
       get id() {
         return ++reads === 1 ? 'data-z-card' : 'className'
       },
       schema: {},
     }
+
     const card = Marker.create(definition as Marker.Definition)
+
     expect(card()).toMatchInlineSnapshot(`
       {
         "data-z-card": "",
@@ -85,6 +94,7 @@ describe('marker', () => {
         'app.ts': `import {css} from 'zyzz';import {Css} from 'zyzz/web';const card=Css.marker();export const styles={a:css({[Css.ancestor(card) satisfies symbol]:{color:'red'}}),b:css({[Css.descendant(card)!]:{color:'blue'}})};`,
       },
     })
+
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z-style-1e8a67z1uaws1j-101{:where([data-z-1e8a67z1uaws1j-card-63-61-72-64]) &{color:red;}}
       .z-style-1e8a67z1uaws1j-162{&:where(:has([data-z-1e8a67z1uaws1j-card-63-61-72-64])){color:blue;}}"
@@ -100,9 +110,12 @@ describe('marker', () => {
     ).toThrowErrorMatchingInlineSnapshot(
       `[Error: Marker state names must be distinct data-name fragments without reserved keys.]`,
     )
+
     const input = { state: ['open'] }
     const marker = Marker.create({ id: 'data-z-card', schema: input })
+
     input.state.push('closed')
+
     expect(() =>
       marker({ state: 'closed' }),
     ).toThrowErrorMatchingInlineSnapshot(`[Error: Invalid marker state: state]`)
@@ -137,11 +150,13 @@ describe('marker', () => {
         'marker.ts': `import {Css} from 'zyzz/web';export const card=Css.marker({state:['open']});`,
       },
     })
+
     const second = Graph.compile({
       modules: {
         'marker.ts': `import {Css} from 'zyzz/web';export const card=Css.marker({state:['closed']});`,
       },
     })
+
     expect(() =>
       Graph.compile({
         contracts: {
@@ -157,8 +172,10 @@ describe('marker', () => {
       `[Source.ExtractError: second.js:0: Invalid library contract: Conflicting packed marker schema: data-z-1dwt1t61ri6uf4-card-63-61-72-64]`,
     )
   })
+
   const config = `import {Css} from 'zyzz/web';export const card=Css.marker({state:['open','closed'],selected:[true,false]});`
   const app = `import {css} from 'zyzz';import {Css} from 'zyzz/web';import {card} from 'library';export {card};export const styles={ancestor:css({[Css.ancestor(card,{data:{state:'open'}})]:{color:'red'}}),descendant:css({[Css.descendant(card,{data:{selected:false}})]:{color:'blue'}}),before:css({[Css.siblingBefore(card)]:{color:'green'}}),after:css({[Css.siblingAfter(card)]:{color:'purple'}}),either:css({[Css.anySibling(card)]:{color:'orange'}})};`
+
   function compile() {
     const library = Graph.compile({
       modules: {
@@ -166,6 +183,7 @@ describe('marker', () => {
         'index.ts': `export {card} from './marker.js';`,
       },
     })
+
     const output = Graph.compile({
       contracts: { 'library/index.js': library.contracts['index.ts']! },
       imports: {
@@ -173,10 +191,13 @@ describe('marker', () => {
       },
       modules: { 'app.ts': app },
     })
+
     return { library, output }
   }
+
   async function bundle() {
     const { library, output } = compile()
+
     const code = await Packed.bundle({
       entry: 'app.ts',
       modules: { 'app.ts': output.modules['app.ts']!.code },
@@ -189,17 +210,20 @@ describe('marker', () => {
         ),
       },
     })
+
     return {
       code,
       css: output.modules['app.ts']!.css,
     }
   }
+
   test('retains mutable marker aliases used only at runtime', () => {
     const result = Graph.compile({
       modules: {
         'app.ts': `import {Css} from 'zyzz/web';const card=Css.marker();let active=card;export const attrs=active();`,
       },
     })
+
     expect(
       result.modules['app.ts']!.code.includes('active()'),
     ).toMatchInlineSnapshot('true')
@@ -209,6 +233,7 @@ describe('marker', () => {
     const fixture = Vm.runInNewContext(`${code};Fixture;`) as {
       card: (input?: Record<string, unknown>) => Record<string, string>
     }
+
     expect(fixture.card({ selected: false, state: 'open' }))
       .toMatchInlineSnapshot(`
       {
@@ -241,7 +266,9 @@ describe('marker', () => {
   test('preserves identities across offsets and rejects invalid schemas and predicates', () => {
     const before = Graph.compile({ modules: { 'marker.ts': config } })
     const malformed = JSON.parse(before.contracts['marker.ts']!)
+
     malformed.exports.card.binding = 'data-z-other'
+
     expect(() =>
       Graph.compile({
         contracts: { 'lib.js': JSON.stringify(malformed) },
@@ -251,18 +278,22 @@ describe('marker', () => {
         },
       }),
     ).toThrow()
+
     const after = Graph.compile({
       modules: { 'marker.ts': '// leading edit\n' + config },
     })
+
     expect(
       JSON.parse(before.contracts['marker.ts']!).exports.card.marker.id ===
         JSON.parse(after.contracts['marker.ts']!).exports.card.marker.id,
     ).toMatchInlineSnapshot('true')
+
     const invalid = [
       'Css.marker({state:[]})',
       "Css.marker({state:[false,'false']})",
       "Css.marker({state:['open'],State:['closed']})",
     ]
+
     expect(
       invalid.map((expression) => {
         try {
@@ -271,6 +302,7 @@ describe('marker', () => {
               'app.ts': `import {Css} from 'zyzz/web';export const marker=${expression};`,
             },
           })
+
           return 'accepted'
         } catch (error) {
           return (error as Error).message
@@ -290,6 +322,7 @@ describe('marker', () => {
         'app.ts': `import {css} from 'zyzz';import {Css} from 'zyzz/web';const card=Css.marker(undefined);const alias=card;function other(card:unknown){const alias=card;return alias}export {alias};export const style=css((values:{color:'#123'|'#456'})=>({[Css.ancestor(card,{data:undefined,has:'[href*="&"]/* & */'})]:{color:values.color}}));`,
       },
     })
+
     expect(
       output.modules['app.ts']!.css.includes('[href*='),
     ).toMatchInlineSnapshot('true')
@@ -316,11 +349,14 @@ describe('marker', () => {
     const source =
       "import {Css} from 'zyzz/web';export const card=(Css['marker']({state:[`open`]}))!"
     const extracted = Source.extract({ moduleId: 'marker.ts', source })
+
     expect(Object.isFrozen(extracted.markerCalls)).toMatchInlineSnapshot('true')
     expect(Object.isFrozen(extracted.markerCalls![0])).toMatchInlineSnapshot(
       'true',
     )
+
     const result = Graph.compile({ modules: { 'marker.ts': source } })
+
     expect(
       (
         await Esbuild.transform(result.modules['marker.ts']!.code, {
@@ -333,6 +369,7 @@ describe('marker', () => {
     class Schema {
       state = ['open']
     }
+
     for (const schema of [Object.create({ state: ['open'] }), new Schema()])
       expect(() =>
         Marker.create({ id: 'data-z-card', schema: Marker.schema(schema) })(),
@@ -346,13 +383,16 @@ describe('marker', () => {
         'marker.ts': `import {Css} from 'zyzz/web';const card=Css.marker();type card=typeof card;export type {card}`,
       },
     })
+
     expect(output.contracts['marker.ts']).toMatchInlineSnapshot('undefined')
   })
   test('observes ancestor, descendant, and sibling direction in Chromium', async () => {
     const { code, css } = await bundle()
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${css}</style><main id="root"><span id="ancestor"></span></main><div id="descendant"><input id="child"></div><div><i id="earlier"></i><b id="before"></b></div><div><b id="after"></b><i id="later"></i></div><div><i id="peer"></i><b id="either"></b></div>`,
       )
@@ -360,6 +400,7 @@ describe('marker', () => {
       await page.evaluate(
         `for(const id of ['root','child','earlier','later','peer'])for(const [key,value]of Object.entries(Fixture.card({state:'open',selected:false})))document.getElementById(id).setAttribute(key,value);for(const id of ['ancestor','descendant','before','after','either'])document.getElementById(id).className=Fixture.styles[id]().className`,
       )
+
       expect(
         await page
           .locator('#ancestor')
@@ -390,7 +431,9 @@ describe('marker', () => {
           .evaluate((el) => getComputedStyle(el).color),
         'either',
       ).toMatchInlineSnapshot('"rgb(255, 165, 0)"')
+
       await page.locator('#earlier').evaluate((el) => el.remove())
+
       expect(
         await page
           .locator('#before')

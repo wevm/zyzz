@@ -13,6 +13,7 @@ for (const workload of Corpus.cases) {
   describe(`fresh compilation / ${workload.name}`, () => {
     for (const [library, compile] of Object.entries(Compilation.compilers)) {
       let fixture: Compilation.Fixture
+
       bench(
         library,
         async () => {
@@ -27,9 +28,11 @@ for (const workload of Corpus.cases) {
           // Tinybench setup/teardown run outside timing; Vitest suite hooks are not supported.
           setup: async () => {
             fixture = await Compilation.create(workload)
+
             try {
               const bundle = await compile(fixture)
               const directory = Path.resolve('bench/results', workload.name)
+
               await Fs.mkdir(directory, { recursive: true })
               await Fs.writeFile(
                 Path.join(directory, `${library}.css`),
@@ -40,13 +43,16 @@ for (const workload of Corpus.cases) {
                 Path.join(directory, `${library}.js`),
                 bundle.javascript,
               )
+
               const measure = (value: string) => ({
                 brotli: Zlib.brotliCompressSync(value).byteLength,
                 gzip: Zlib.gzipSync(value).byteLength,
                 raw: Buffer.byteLength(value),
               })
+
               const css = measure(bundle.css)
               const javascript = measure(bundle.javascript)
+
               await Fs.writeFile(
                 Path.join(directory, `${library}.json`),
                 JSON.stringify(

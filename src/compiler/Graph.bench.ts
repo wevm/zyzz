@@ -17,6 +17,7 @@ for (const count of [10, 100]) {
     ...Fixture.modules,
     'pkg/card.ts': `import { style } from './index.js'; ${Array.from({ length: count }, (_, index) => `export const props${index} = style({color:'brand',padding:'${index}px'})();`).join('\n')}`,
   }
+
   describe(`theme graph / ${count} styles`, () => {
     bench(
       'link + extract + emit + rewrite + maps',
@@ -33,12 +34,15 @@ for (const count of [10, 100]) {
           const directory = await Fs.mkdtemp(
             Path.resolve('.fixture-graph-bench-'),
           )
+
           try {
             for (const [name, module] of Object.entries(output.modules)) {
               const path = Path.join(directory, name)
+
               await Fs.mkdir(Path.dirname(path), { recursive: true })
               await Fs.writeFile(path, module.code)
             }
+
             const bundle = await Esbuild.build({
               entryPoints: [Path.join(directory, 'pkg/card.ts')],
               bundle: true,
@@ -46,11 +50,13 @@ for (const count of [10, 100]) {
               minify: true,
               write: false,
             })
+
             const measure = (value: string) => ({
               raw: Buffer.byteLength(value),
               gzip: Zlib.gzipSync(value).byteLength,
               brotli: Zlib.brotliCompressSync(value).byteLength,
             })
+
             const css = measure(
               Compilation.minify(
                 Object.values(output.modules)
@@ -58,7 +64,9 @@ for (const count of [10, 100]) {
                   .join('\n'),
               ),
             )
+
             const javascript = measure(bundle.outputFiles[0]!.text)
+
             await Fs.mkdir('bench/results/graph', { recursive: true })
             await Fs.writeFile(
               `bench/results/graph/${count}-sizes.json`,
@@ -76,6 +84,7 @@ for (const count of [10, 100]) {
           } finally {
             await Fs.rm(directory, { recursive: true, force: true })
           }
+
           await Fs.mkdir('bench/results/graph', { recursive: true })
           await Fs.writeFile(
             `bench/results/graph/${count}.json`,
@@ -91,6 +100,7 @@ for (const count of [10, 100]) {
   for (const edit of ['consumer', 'theme', 'unchanged'] as const) {
     const original = Fixture.project(count)
     const changed = { ...original }
+
     if (edit === 'consumer')
       changed['pkg/card0.ts'] = original['pkg/card0.ts']!.replace('0px', '20px')
     else if (edit === 'theme')
@@ -98,15 +108,19 @@ for (const count of [10, 100]) {
         "'#06c'",
         "'#f00'",
       )
+
     const snapshots = [original, changed]
+
     describe(`incremental graph / ${count} consumers / ${edit}`, () => {
       for (const mode of ['full', 'incremental']) {
         let compiler: Graph.create.ReturnType
         let iteration = 0
+
         bench(
           mode,
           () => {
             const modules = snapshots[++iteration % 2]!
+
             if (mode === 'full') Graph.compile({ modules })
             else compiler.compile({ modules })
           },
@@ -115,6 +129,7 @@ for (const count of [10, 100]) {
             setup: () => {
               compiler = Graph.create()
               compiler.compile({ modules: original })
+
               // Both lanes must deliver the same complete artifacts after an edit.
               const expected = Graph.compile({ modules: changed })
               const actual = compiler.compile({ modules: changed })
@@ -122,6 +137,7 @@ for (const count of [10, 100]) {
                 throw new Error(
                   'Incremental graph artifacts differ from full compilation.',
                 )
+
               compiler.compile({ modules: original })
               iteration = 0
             },
@@ -141,6 +157,7 @@ for (const count of [10, 100]) {
   const modules = {
     'app/card.ts': `import { style } from '@acme/theme'; ${Array.from({ length: count }, (_, index) => `export const props${index} = style({color:'brand',padding:'${index}px'})();`).join('\n')}`,
   }
+
   describe(`packed theme graph / ${count} styles`, () => {
     bench(
       'read contracts + extract + emit + rewrite + maps',
@@ -161,6 +178,7 @@ for (const count of [10, 100]) {
     ...ConfigFixture.modules,
     'pkg/card.ts': `import { design as zyzz } from './index.js'; ${Array.from({ length: count }, (_, index) => `export const props${index} = zyzz.css({color:'brand',padding:'${index}px'})();`).join('\n')}`,
   }
+
   describe(`configuration graph / ${count} styles`, () => {
     bench(
       'normalize + link + extract + emit + rewrite + maps',

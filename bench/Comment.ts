@@ -38,15 +38,19 @@ const print = (title: string, body: string) =>
 console.log('# Benchmark Report\n')
 for (const operation of ['mount', 'update', 'remount']) {
   console.log(`## ${operation[0]!.toUpperCase()}${operation.slice(1)}\n`)
+
   let count = 0
+
   for (const block of render) {
     const match = block.title.match(
       /^(\d+) cards — (\w+) · mount: (.*?) · update: (.*?) · remount: (.*)$/,
     )
     if (!match) continue
+
     const index = operation === 'mount' ? 3 : operation === 'update' ? 4 : 5
     const kind = match[2] === 'callable' ? 'static' : match[2]
     const title = `${Number(match[1]).toLocaleString('en-US')} cards (${kind}): ${compact(match[index]!)}`
+
     const rows = tables(block.body)
       .split('\n')
       .filter(
@@ -56,9 +60,11 @@ for (const operation of ['mount', 'update', 'remount']) {
           line.includes(` | ${operation} | `),
       )
       .join('\n')
+
     print(title, rows)
     count++
   }
+
   if (!count) console.log('Results unavailable.\n')
 }
 console.log('## Compile\n')

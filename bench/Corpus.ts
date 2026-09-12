@@ -39,6 +39,7 @@ export function styles(workload: Case): readonly Style.LiteralDeclarations[] {
     const value = Math.imul(index + 1, 2654435761) >>> 0
     const color = (seed: number) =>
       `#${(seed & 0xffffff).toString(16).padStart(6, '0')}` as const
+
     const base: Style.LiteralDeclarations = {
       backgroundColor: '#fff',
       borderColor: '#000',
@@ -49,6 +50,7 @@ export function styles(workload: Case): readonly Style.LiteralDeclarations[] {
       display: 'block',
       padding: workload.pattern === 'unique' ? `${index}px` : '12px',
     }
+
     switch (workload.pattern) {
       case 'components':
         return [
@@ -88,9 +90,11 @@ export function styles(workload: Case): readonly Style.LiteralDeclarations[] {
           if (index % 3 === 0) {
             return { color: color(value), padding: `${value % 31}px` }
           }
+
           if (index % 3 === 1) {
             return { display: 'flex', gap: `${value % 13}px` }
           }
+
           return {
             ...base,
             backgroundColor: color(value),

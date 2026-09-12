@@ -15,6 +15,7 @@ describe('compile', () => {
       moduleId: 'colors.ts',
       source: Colors.source,
     })
+
     expect(output.css.includes('color:red;')).toMatchInlineSnapshot(`true`)
     expect(output.css.includes('color_2e_red,blue)')).toMatchInlineSnapshot(
       `true`,
@@ -22,10 +23,12 @@ describe('compile', () => {
     expect(
       output.css.includes('color:navy;color:rebeccapurple!important'),
     ).toMatchInlineSnapshot(`true`)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('color:rebeccapurple!important'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -54,11 +57,14 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage({ colorScheme: 'light' })
+
       await page.setContent(
         `<style>:root{color-scheme:light dark}${output.css}#theme-control{color:coral}@media(prefers-color-scheme:dark){#theme-control{color:gold}}</style><div id="literal" class="${module.literal.className}">Literal</div><div id="theme" class="${module.theme.className}">Theme</div><div id="theme-control">Control</div><div id="fallback" class="${module.fallback.className}">Fallback</div><div id="system" class="${module.system.className}">System</div><div id="system-control" style="color:CanvasText;background-color:Canvas;color-scheme:light dark;forced-color-adjust:none">Control</div>`,
       )
+
       expect(
         await page
           .locator('#literal')
@@ -79,10 +85,13 @@ describe('compile', () => {
           .locator('#theme')
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(255, 127, 80)"`)
+
       const lightSystem = await page
         .locator('#system')
         .evaluate((element) => getComputedStyle(element).color)
+
       await page.emulateMedia({ colorScheme: 'dark' })
+
       expect(
         await page
           .locator('#theme')
@@ -103,11 +112,14 @@ describe('compile', () => {
             lightSystem,
           ),
       ).toMatchInlineSnapshot(`true`)
+
       await page.emulateMedia({ forcedColors: 'active' })
+
       expect(
         await page.evaluate(() => {
           const a = getComputedStyle(document.getElementById('system')!)
           const b = getComputedStyle(document.getElementById('system-control')!)
+
           return ['color', 'background-color'].filter(
             (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
           )

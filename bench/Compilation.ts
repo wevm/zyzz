@@ -41,6 +41,7 @@ export async function create(
   options: create.Options = {},
 ): Promise<Fixture> {
   const directory = await Fs.mkdtemp(Path.resolve('.fixture-compilation-'))
+
   // Package-relative file identities must not depend on the random temporary root.
   await Fs.writeFile(
     Path.join(directory, 'package.json'),
@@ -50,8 +51,10 @@ export async function create(
       type: 'module',
     }),
   )
+
   const styles = Corpus.styles(workload)
   const names = styles.map((_, index) => `card${index}`)
+
   await Fs.writeFile(
     Path.join(directory, 'styles.css.ts'),
     `import { style } from '@vanilla-extract/css';\n${styles
@@ -69,6 +72,7 @@ export async function create(
     Path.join(directory, 'panda.ts'),
     `import { css } from './styled-system/css'; export const classes = [${styles.map((style) => `css(${JSON.stringify(style)})`).join(',')}];`,
   )
+
   return {
     count: workload.count,
     directory,
@@ -80,6 +84,7 @@ export async function create(
         .map(([key, value]) => {
           if (typeof value !== 'string' && typeof value !== 'number')
             throw new Error('Comparison fixtures require scalar values.')
+
           return `[${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value}]`
         })
         .join(' '),
@@ -136,6 +141,7 @@ export async function javascript(source: string): Promise<string> {
     },
     write: false,
   })
+
   return result.outputFiles[0]!.text
 }
 
@@ -172,9 +178,13 @@ export async function panda(fixture: Fixture): Promise<Bundle> {
   const context = await Panda.loadConfigAndCreateContext({
     cwd: fixture.directory,
   })
+
   await Panda.codegen(context)
+
   const file = Path.join(fixture.directory, 'panda.css')
+
   await Panda.cssgen(context, { cwd: fixture.directory, outfile: file })
+
   return {
     css: minify(await Fs.readFile(file, 'utf8'), { targets: fixture.targets }),
     javascript: await javascript(
@@ -191,11 +201,14 @@ export async function stylex(fixture: Fixture): Promise<Bundle> {
     filename: Path.join(fixture.directory, 'styles.ts'),
     plugins: [[StylexPlugin, { dev: false, runtimeInjection: false }]],
   })
+
   const metadata = result?.metadata as { stylex?: Rule[] } | undefined
   if (!result?.code || !metadata?.stylex?.length)
     throw new Error('StyleX did not emit a module and CSS rules.')
+
   // The package exports a CommonJS function; its declaration uses an ESM default.
   const plugin = StylexPlugin as unknown as StyleXTransformObj
+
   return {
     css: minify(plugin.processStylexRules(metadata.stylex), {
       targets: fixture.targets,
@@ -207,6 +220,7 @@ export async function stylex(fixture: Fixture): Promise<Bundle> {
 /** Builds Tailwind utilities from prepared candidates; excludes content scanning. */
 export async function tailwind(fixture: Fixture): Promise<Bundle> {
   const compiler = await Tailwind.compile('@tailwind utilities;')
+
   return {
     css: minify(
       compiler.build(fixture.tailwind.flatMap((value) => value.split(' '))),
@@ -232,6 +246,7 @@ export async function vanillaExtract(fixture: Fixture): Promise<Bundle> {
     plugins: [vanillaExtractPlugin({ identifiers: 'short' })],
     write: false,
   })
+
   const css = result.outputFiles.find((file) =>
     file.path.endsWith('.css'),
   )?.text
@@ -240,6 +255,7 @@ export async function vanillaExtract(fixture: Fixture): Promise<Bundle> {
   )?.text
   if (!css || !javascript)
     throw new Error('vanilla-extract did not emit CSS and JavaScript.')
+
   return { css: minify(css, { targets: fixture.targets }), javascript }
 }
 
@@ -249,6 +265,7 @@ export async function zyzz(fixture: Fixture): Promise<Bundle> {
     composition: 'independent',
     styles: fixture.zyzz,
   })
+
   return {
     css: minify(output.css, { targets: fixture.targets }),
     javascript: await javascript(

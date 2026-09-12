@@ -2,6 +2,7 @@
 import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 import * as Corpus from '../../bench/Corpus.js'
+
 for (const workload of Corpus.cases) {
   const source =
     'import {css} from "zyzz";' +
@@ -11,6 +12,7 @@ for (const workload of Corpus.cases) {
           `export const card${index}=css(${JSON.stringify({ ...style, ':hover': style, '@media (width >= 48rem)': style })})()`,
       )
       .join('\n')
+
   describe(`compile / conditions / ${workload.name}`, () => {
     bench(
       'shared corpus',

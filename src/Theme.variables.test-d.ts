@@ -8,6 +8,7 @@ describe('define', () => {
       color: { brand: 'red' },
       spacing: { md: '8px' },
     })
+
     theme.css({
       color: theme.vars.color.brand,
       // oxlint-disable-next-line typescript/no-base-to-string, typescript/restrict-template-expressions -- Source compilation consumes this reference before coercion.
@@ -25,7 +26,9 @@ describe('define', () => {
     css({ width: theme.vars.spacing.md })
     // @ts-expect-error marginTrim is a keyword grammar, not a length.
     theme.css({ marginTrim: theme.vars.spacing.md })
+
     const config = Config.create({ theme })
+
     expectTypeOf(config.theme.vars.color.brand).toEqualTypeOf<
       typeof theme.vars.color.brand
     >()

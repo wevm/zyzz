@@ -11,6 +11,7 @@ type Timing = {
   rme: number
   sampleCount: number
 }
+
 type Report = {
   files: readonly {
     groups: readonly { benchmarks: readonly Timing[]; fullName: string }[]
@@ -54,6 +55,7 @@ console.log(
 for (const count of [10, 100])
   for (const kind of ['cached', 'direct', 'callable', 'overrides', 'dynamic']) {
     const libraries = kind === 'dynamic' ? ['baseline', 'zyzz'] : frameworks
+
     try {
       const passes = [1, 2].map((repeat) => {
         const name = `runtime comparison / ${count} styles / ${kind} / repeat ${repeat}`
@@ -63,6 +65,7 @@ for (const count of [10, 100])
         )
         if (matches.length !== 1)
           throw new Error(`Missing or duplicate group: ${name}`)
+
         return new Map(
           libraries.map((library) => {
             const entries = matches[0]!.benchmarks.filter(
@@ -80,23 +83,28 @@ for (const count of [10, 100])
               timing.sampleCount < 100
             )
               throw new Error(`Invalid timing: ${name} / ${library}`)
+
             return [library, timing] as const
           }),
         )
       })
+
       const faster = (a: Timing, b: Timing) =>
         a.mean * (1 + a.rme / 100) < b.mean * (1 - b.rme / 100)
+
       const losses = libraries.filter(
         (library) =>
           library !== 'baseline' &&
           library !== 'zyzz' &&
           passes.every((pass) => faster(pass.get(library)!, pass.get('zyzz')!)),
       )
+
       const wins = libraries
         .filter((library) => library !== 'baseline' && library !== 'zyzz')
         .every((library) =>
           passes.every((pass) => faster(pass.get('zyzz')!, pass.get(library)!)),
         )
+
       const summary = winner({
         decimals: 1,
         measurements: libraries.map((library) => ({
@@ -108,6 +116,7 @@ for (const count of [10, 100])
         })),
         unit: 'ns',
       })
+
       console.log(
         `<details>\n<summary>${count} Styles — ${kind}: ${summary}</summary>\n`,
       )
@@ -115,8 +124,10 @@ for (const count of [10, 100])
         '| Framework | Pass 1 (ns ±%) | Pass 2 (ns ±%) | Samples | CSS gzip | JS gzip | Total gzip |',
       )
       console.log('| --- | ---: | ---: | ---: | ---: | ---: | ---: |')
+
       for (const library of libraries) {
         const measurements = passes.map((pass) => pass.get(library)!)
+
         const size = JSON.parse(
           Fs.readFileSync(
             Path.join(
@@ -136,18 +147,22 @@ for (const count of [10, 100])
           size.total?.gzip !== size.css.gzip + size.javascript.gzip
         )
           throw new Error(`Invalid delivery sizes: ${library}`)
+
         const status = (() => {
           if (library === 'baseline') return ''
           if (losses.includes(library)) return '🔴 '
           if (library !== 'zyzz') return ''
           if (losses.length) return '🔴 '
           if (kind === 'dynamic') return ''
+
           return wins ? '🟢 ' : '🟡 '
         })()
+
         console.log(
           `| ${status}${names[library]} | ${measurements.map((timing) => `${(timing.mean * 1e6).toFixed(1)} ±${timing.rme.toFixed(1)}%`).join(' | ')} | ${measurements.map((timing) => timing.sampleCount).join(' / ')} | ${size.css.gzip} B | ${size.javascript.gzip} B | ${size.total.gzip} B |`,
         )
       }
+
       console.log('\n</details>\n')
     } catch (error) {
       process.exitCode = 1
@@ -164,21 +179,25 @@ function winner(options: winner.Options): string {
       value: Number(item.value.toFixed(options.decimals)),
     }))
     .sort((a, b) => a.value - b.value)
+
   const first = ranked[0]
   if (
     !first ||
     ranked.some((item) => !Number.isFinite(item.value) || item.value < 0)
   )
     return '🟡 No valid timings'
+
   const tied = ranked.filter((item) => item.value === first.value)
   const time = `${first.value.toFixed(options.decimals)} ${options.unit}`
   if (tied.length > 1)
     return `🟡 Tie: ${tied.map((item) => item.name).join(', ')} — ${time}`
+
   const next = ranked[1]
   const ratio =
     next && first.value > 0
       ? ` · ${(next.value / first.value).toFixed(2)}× as fast as ${next.name}`
       : ''
+
   return `${first.name.startsWith('Zyzz') ? '🟢' : '🔴'} ${first.name} — ${time}${ratio}`
 }
 

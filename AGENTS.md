@@ -47,7 +47,10 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Prefer short names whose meaning is clear from local context, such as `options`, `client`, `entry`, and `fn`.
 - Keep wire formats, ordered tuples, protocol fields, and other order-sensitive shapes explicit. Do not alphabetize data whose order has meaning.
 - Avoid new `any`. Use a precise boundary type, validation, narrowing, or the smallest justified assertion.
-- Separate logical steps with blank lines: setup, validation, transformation, emission, and return paths should form readable groups. Keep tightly related statements together; avoid both dense uninterrupted blocks and a blank line after every statement. Apply the same grouping to test setup, execution, and assertions.
+- Separate distinct contexts and logical steps with one blank line in every maintained module, including source, adapters, scripts, benchmarks, and test fixtures. Group setup, guard clauses, derivation, mutation or emission, and final returns so each step is easy to scan.
+- Keep a lookup with its immediate guard, related local declarations, and consecutive assertions together. Separate independent branches, loops, local helper functions, and the work following a completed control-flow block. Avoid both dense uninterrupted logic and a blank line after every statement.
+- Separate test setup, execution, and assertions; keep each assertion group beside the operation it verifies. Preserve spacing inside generated source strings, snapshots, and other whitespace-sensitive fixtures.
+- Audit logical spacing when adding or editing a module; formatting tools do not infer context boundaries. Review the surrounding function as well as the changed lines, and keep spacing-only edits free of behavior changes.
 - Do not use section-divider comments. Use exports, TSDoc, and whitespace to express module structure.
 - Comment invariants and non-obvious reasons, not line-by-line mechanics. Keep comments independent of plans, task IDs, and prior versions.
 

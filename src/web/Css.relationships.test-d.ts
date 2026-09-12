@@ -3,15 +3,18 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css, Style } from 'zyzz'
 import { Marker } from 'zyzz/runtime'
 import { Css, global } from 'zyzz/web'
+
 describe('marker', () => {
   test('retains finite states and typed relationships', () => {
     const card = Css.marker({
       state: ['open', 'closed'],
       selected: [true, false],
     })
+
     expectTypeOf(card({ selected: false })).toMatchTypeOf<
       Readonly<Record<`data-${string}`, string>>
     >()
+
     css({
       [Css.ancestor(card, {
         data: { state: 'open' },
@@ -23,7 +26,9 @@ describe('marker', () => {
       [Css.descendant(card)]: { color: 'red' },
       [Css.siblingBefore(card, ':checked')]: { color: 'blue' },
     })
+
     const arbitrary = Symbol()
+
     // @ts-expect-error arbitrary symbols are not relationship keys
     css({ [arbitrary]: { color: 'red' } })
     // @ts-expect-error descendant has would require forbidden nested :has
@@ -34,14 +39,18 @@ describe('marker', () => {
     Css.marker({ 'not ok': ['open'] })
     // @ts-expect-error case-folded duplicate names
     Css.marker({ State: ['open'], state: ['closed'] })
+
     const presence = Css.marker(undefined)
+
     // @ts-expect-error explicit undefined is presence-only
     presence({ unknown: 'open' })
     Css.ancestor(card, { data: undefined })
     css((values: { color: '#123' | '#456' }) => ({
       [Css.ancestor(card)]: { color: values.color },
     }))
+
     const extra = { state: 'open' as const, unknown: 'value' }
+
     // @ts-expect-error state keys stay exact through variables
     Css.ancestor(card, { data: extra })
     // @ts-expect-error unknown states do not widen schema
@@ -68,6 +77,7 @@ describe('marker', () => {
 describe('global', () => {
   test('excludes marker relationships from global declarations', () => {
     const card = Css.marker()
+
     // @ts-expect-error ordinary nested conditions cannot hide relationships
     global({ body: { ':hover': { [Css.ancestor(card)]: { color: 'red' } } } })
     // @ts-expect-error runtime identities must remain private data attributes
@@ -87,6 +97,7 @@ describe('relationships', () => {
 describe('define', () => {
   test('excludes source-only relationships from core definitions', () => {
     const card = Css.marker()
+
     // @ts-expect-error core definitions do not compile marker helpers
     Style.define({ target: { [Css.ancestor(card)]: { color: 'red' } } })
     // @ts-expect-error visited cannot be observed through has
@@ -100,20 +111,25 @@ describe('create', () => {
   test('retains runtime marker state domains', () => {
     const mutable = { state: ['open'] }
     const frozen = Marker.schema(mutable)
+
     // @ts-expect-error copied domains are readonly
     frozen.state.push('closed')
     // @ts-expect-error copied schema fields are readonly
     frozen.state = ['closed']
+
     const card = Marker.create({
       id: 'data-z-card',
       schema: Marker.schema({ state: ['open'], selected: [true, false] }),
     })
+
     card({ state: 'open', selected: false })
     // @ts-expect-error invalid state value
     card({ state: 'closed' })
     // @ts-expect-error unknown state key
     card({ unknown: true })
+
     const extra = { state: 'open' as const, unknown: true }
+
     // @ts-expect-error unknown state keys remain invalid through bindings
     card(extra)
   })

@@ -14,6 +14,7 @@ describe('compile', () => {
       moduleId: 'reading.ts',
       source: Reading.source,
     })
+
     expect(output.css.match(/reading-order:[^;}]+/g)).toMatchInlineSnapshot(`
       [
         "reading-order:0",
@@ -40,17 +41,22 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><button id="start">Start</button><div class="${module.visual.className}"><button id="v1">One</button><button id="v2">Two</button><button id="v3">Three</button></div><div style="display:flex;flex-direction:row-reverse;reading-flow:flex-visual"><button id="c1">One</button><button id="c2">Two</button><button id="c3">Three</button></div><div class="${module.ordered.className}"><button id="o1">One</button><button id="o2">Two</button><button id="o3" class="${module.first.className}">Three</button></div><div style="display:flex;reading-flow:source-order"><button id="r1">One</button><button id="r2">Two</button><button id="r3" style="reading-order:-1">Three</button></div><div style="display:flex;flex-direction:row-reverse;reading-flow:normal"><button id="n1">One</button><button id="n2">Two</button><button id="n3">Three</button></div>`,
       )
       await page.locator('#start').focus()
+
       const sequence: string[] = []
+
       for (let index = 0; index < 15; index++) {
         await page.keyboard.press('Tab')
         sequence.push(await page.evaluate(() => document.activeElement!.id))
       }
+
       expect(sequence).toMatchInlineSnapshot(`
         [
           "v3",

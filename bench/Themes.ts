@@ -44,6 +44,7 @@ export async function create(
     )
 
   const directory = await Fs.mkdtemp(Path.resolve('.fixture-themes-'))
+
   try {
     await Fs.writeFile(
       Path.join(directory, 'package.json'),
@@ -53,17 +54,21 @@ export async function create(
         type: 'module',
       }),
     )
+
     const base = {
       background: 'light-dark(#fff,#111)',
       foreground: 'light-dark(#111,#fff)',
       space: '8px',
     }
+
     const alternate = {
       background: 'light-dark(#eee,#222)',
       foreground: 'light-dark(#06c,#9cf)',
       space: '16px',
     }
+
     const indices = Array.from({ length: count }, (_, index) => index)
+
     const styles = (vars: string) =>
       indices
         .map(
@@ -71,6 +76,7 @@ export async function create(
             `card${index}:{backgroundColor:${vars}.background,color:${vars}.foreground,padding:${vars}.space,width:'${index}px'}`,
         )
         .join(',')
+
     await Fs.writeFile(
       Path.join(directory, 'styles.css.ts'),
       `import {createThemeContract,createTheme,style} from '@vanilla-extract/css';
@@ -92,6 +98,7 @@ const styles=stylex.create({${styles('tokens')}});
 export const classes=[${indices.map((index) => `stylex.props(styles.card${index}).className`).join(',')}];
 export const themes={alternate:stylex.props(alternate),base:stylex.props(base)};`,
     )
+
     const pandaTheme = (values: typeof base) => ({
       semanticTokens: {
         colors: {
@@ -101,6 +108,7 @@ export const themes={alternate:stylex.props(alternate),base:stylex.props(base)};
         spacing: { card: { value: values.space } },
       },
     })
+
     await Fs.writeFile(
       Path.join(directory, 'panda.config.ts'),
       `export default ${JSON.stringify({ include: ['./panda.ts'], outdir: 'styled-system', preflight: false, presets: ['@pandacss/preset-base'], staticCss: { themes: ['*'] }, theme: pandaTheme(base), themes: { alternate: pandaTheme(alternate), base: pandaTheme(base) } })}`,
@@ -111,11 +119,13 @@ export const themes={alternate:stylex.props(alternate),base:stylex.props(base)};
 export const classes=[${indices.map((index) => `css({backgroundColor:'background',color:'foreground',padding:'card',width:'${index}px'})`).join(',')}];
 export const themes={alternate:{'data-panda-theme':'alternate'},base:{'data-panda-theme':'base'}};`,
     )
+
     const theme = Theme.define({
       backgroundColor: { surface: { dark: '#111', light: '#fff' } },
       color: { foreground: { dark: '#fff', light: '#111' } },
       spacing: { card: '8px' },
     })
+
     return {
       count,
       directory,
@@ -197,9 +207,13 @@ export async function panda(fixture: Fixture): Promise<Compilation.Bundle> {
   const context = await Panda.loadConfigAndCreateContext({
     cwd: fixture.directory,
   })
+
   await Panda.codegen(context)
+
   const file = Path.join(fixture.directory, 'panda.css')
+
   await Panda.cssgen(context, { cwd: fixture.directory, outfile: file })
+
   return {
     css: Compilation.minify(await Fs.readFile(file, 'utf8'), {
       targets: fixture.targets,
@@ -213,6 +227,7 @@ export async function panda(fixture: Fixture): Promise<Compilation.Bundle> {
 /** Extracts StyleX variable and theme modules using the official Babel plugin. */
 export async function stylex(fixture: Fixture): Promise<Compilation.Bundle> {
   const rules: Rule[] = []
+
   const result = await Esbuild.build({
     absWorkingDir: fixture.directory,
     bundle: true,
@@ -248,9 +263,12 @@ export async function stylex(fixture: Fixture): Promise<Compilation.Bundle> {
                 ],
               },
             )
+
             const metadata = result?.metadata as { stylex?: Rule[] } | undefined
             if (!result?.code) throw new Error('StyleX did not emit a module.')
+
             rules.push(...(metadata?.stylex ?? []))
+
             return { contents: result.code, loader: 'ts' }
           })
         },
@@ -259,7 +277,9 @@ export async function stylex(fixture: Fixture): Promise<Compilation.Bundle> {
     write: false,
   })
   if (!rules.length) throw new Error('StyleX did not emit theme rules.')
+
   const plugin = StylexPlugin as unknown as StyleXTransformObj
+
   return {
     css: Compilation.minify(plugin.processStylexRules(rules), {
       targets: fixture.targets,
@@ -271,6 +291,7 @@ export async function stylex(fixture: Fixture): Promise<Compilation.Bundle> {
 /** Builds Tailwind theme utilities and includes authored scope CSS and exports. */
 export async function tailwind(fixture: Fixture): Promise<Compilation.Bundle> {
   const compiler = await Tailwind.compile(fixture.tailwindCss)
+
   return {
     css: Compilation.minify(
       compiler.build(fixture.tailwind.flatMap((classes) => classes.split(' '))),
@@ -305,6 +326,7 @@ export async function vanillaExtract(
     plugins: [vanillaExtractPlugin({ identifiers: 'short' })],
     write: false,
   })
+
   const css = result.outputFiles.find((file) =>
     file.path.endsWith('.css'),
   )?.text
@@ -313,6 +335,7 @@ export async function vanillaExtract(
   )?.text
   if (!css || !javascript)
     throw new Error('vanilla-extract did not emit theme artifacts.')
+
   return {
     css: Compilation.minify(css, { targets: fixture.targets }),
     javascript,
@@ -326,12 +349,14 @@ export async function zyzz(fixture: Fixture): Promise<Compilation.Bundle> {
     styles: fixture.zyzz,
     themes: fixture.themes,
   })
+
   const themes = Object.fromEntries(
     Object.entries(output.themes).map(([name, className]) => [
       name,
       { className },
     ]),
   )
+
   return {
     css: Compilation.minify(output.css, { targets: fixture.targets }),
     javascript: await Compilation.javascript(

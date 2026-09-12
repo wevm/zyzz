@@ -1,0 +1,54 @@
+/**
+ * Measures type instantiations contributed by the public web compiler contract.
+ * @module
+ */
+import { bench } from '@ark/attest'
+import type * as Zyzz from 'zyzz'
+import type * as Web from 'zyzz/web'
+
+// Type-only imports keep the fixture free of runtime module loading; attest
+// analyzes bench bodies without executing them.
+declare const Css: typeof Web.Css
+declare const Style: typeof Zyzz.Style
+declare const Theme: typeof Zyzz.Theme
+
+/** Resolves the shared authoring contracts before any bench body is measured. */
+export function baseline() {
+  Css.compile({ styles: Style.define({ base: { color: '#000' } }) })
+}
+
+bench('compile / literal styles', () => {
+  const result = Css.compile({
+    styles: Style.define({
+      card: { display: 'flex', padding: '1rem' },
+      label: { color: '#111' },
+    }),
+  })
+
+  void result.classes.card.length
+  void result.css.length
+}).types([9004, 'instantiations'])
+
+bench('compile / independent composition', () => {
+  Css.compile({
+    composition: 'independent',
+    styles: Style.define({ card: { ':hover': { color: '#222' }, padding: 0 } }),
+  })
+}).types([5874, 'instantiations'])
+
+bench('compile / theme scopes', () => {
+  const base = Theme.define({
+    color: { brand: '#06c' },
+    spacing: { md: '8px' },
+  })
+  const alternate = Theme.extend(base, { spacing: { md: '12px' } })
+  const result = Css.compile({
+    styles: Style.define(
+      { card: { color: 'brand', padding: 'md' } },
+      { theme: base },
+    ),
+    themes: { alternate, base },
+  })
+
+  void result.themes.alternate
+}).types([144040, 'instantiations'])

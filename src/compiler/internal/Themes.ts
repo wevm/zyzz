@@ -2,6 +2,7 @@
  * Extracts local theme data and validates its lexical source references.
  * @module
  */
+import type * as RuleReference from '../../internal/RuleReference.js'
 import type * as Ast from '@oxc-project/types'
 import type * as Walker from 'oxc-walker'
 import type * as Binding from '../../internal/Binding.js'
@@ -23,6 +24,8 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Named stylesheet identity domain. */
+  readonly reference?: RuleReference.Kind | undefined
   /** Canonical defining module for multi-entry variable contracts. */
   readonly variableOwner?: string | undefined
   readonly output?: 'html' | undefined
@@ -69,12 +72,15 @@ export type Link = {
     | 'theme'
     | 'marker'
     | 'animation'
+    | 'rule-reference'
     | 'variables'
   readonly members?: Readonly<Record<string, Link>> | undefined
 }
 
 /** Shared graph data; no filesystem or runtime evaluation is involved. */
 export type Context = {
+  /** Locally imported stylesheet factories resolved through source barrels. */
+  readonly factories?: Readonly<Record<string, string>> | undefined
   readonly extracted?: Source.extract.ReturnType | undefined
   readonly links: Readonly<Record<string, Link>>
   readonly owners?:
@@ -159,6 +165,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         !link ||
         link.kind === 'marker' ||
         link.kind === 'animation' ||
+        link.kind === 'rule-reference' ||
         link.kind === 'variables'
       )
         continue

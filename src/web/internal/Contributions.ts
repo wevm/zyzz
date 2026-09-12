@@ -35,6 +35,16 @@ export type Definition = {
         readonly style: Style.NamedStyle
       }[]
     }
+  | {
+      /** Structured named descriptor rule. */
+      readonly kind: 'descriptor'
+      /** Compiler-owned rule name. */
+      readonly name: string
+      /** CSS descriptor rule family. */
+      readonly rule: 'color-profile' | 'counter-style' | 'font-palette-values'
+      /** Authored scalar descriptors. */
+      readonly declarations: Readonly<Record<string, string | number>>
+    }
   | { readonly kind: 'layers'; readonly names: readonly string[] }
 )
 
@@ -149,8 +159,10 @@ export function render(
           return `${value.selector}{${style(value.style)}}`
         if (value.kind === 'property')
           return `@property ${value.name}{syntax:${JSON.stringify(value.syntax)};inherits:${value.inherits};initial-value:${value.initialValue};}`
-        if (value.kind === 'font-face')
-          return `@font-face{${Object.entries(value.declarations)
+        if (value.kind === 'font-face' || value.kind === 'descriptor')
+          return `@${value.kind === 'font-face' ? 'font-face' : `${value.rule} ${value.name}`}{${Object.entries(
+            value.declarations,
+          )
             .map(
               ([key, value]) =>
                 `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:${value};`,

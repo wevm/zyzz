@@ -137,19 +137,13 @@ export function zyzz(): Plugin {
   }
 
   function contributes(source: string) {
-    if (!source.includes('zyzz')) return false
-
     const { program } = Parser.parseSync('source.tsx', source, {
       sourceType: 'module',
     })
     const imports = new Map<number, string>()
 
     for (const node of program.body) {
-      if (
-        node.type !== 'ImportDeclaration' ||
-        node.importKind === 'type' ||
-        !['zyzz', 'zyzz/web'].includes(node.source.value)
-      )
+      if (node.type !== 'ImportDeclaration' || node.importKind === 'type')
         continue
 
       for (const specifier of node.specifiers) {
@@ -166,12 +160,22 @@ export function zyzz(): Plugin {
 
         if (
           node.source.value === 'zyzz/web'
-            ? ['global', 'fontFace', 'keyframes', 'layers'].includes(name)
-            : name === 'Config'
+            ? [
+                'colorProfile',
+                'counterStyle',
+                'fontFace',
+                'fontPaletteValues',
+                'global',
+                'keyframes',
+                'layers',
+                'positionTry',
+              ].includes(name)
+            : name === 'Config' || node.source.value !== 'zyzz'
         )
           imports.set(specifier.start, name)
       }
     }
+    // Local call imports are candidates; Graph follows their re-exports before emission.
 
     if (!imports.size) return false
 

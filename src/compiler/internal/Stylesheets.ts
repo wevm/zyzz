@@ -106,6 +106,7 @@ export function render(sections: readonly Section[]) {
   const assets: Record<string, string> = Object.create(null)
   const owners: Record<string, string> = Object.create(null)
   const animations = new Map<string, { source: string; signature: string }>()
+  const identities = new Map<string, { source: string; signature: string }>()
   const chunks: string[] = layers.length ? [`@layer ${layers.join(',')};`] : []
   let line = chunks.length + 1
 
@@ -119,7 +120,50 @@ export function render(sections: readonly Section[]) {
       code: new TextEncoder().encode(section.css),
       visitor: {
         Rule(rule) {
-          if (rule.type !== 'keyframes') return
+          if (rule.type !== 'keyframes') {
+            const identity = (() => {
+              if (rule.type === 'counter-style' || rule.type === 'position-try')
+                return {
+                  name: rule.value.name,
+                  data: rule.value.declarations,
+                  kind: rule.type,
+                }
+              if (rule.type === 'font-palette-values')
+                return {
+                  name: rule.value.name,
+                  data: rule.value.properties,
+                  kind: rule.type,
+                }
+              if (
+                rule.type === 'unknown' &&
+                rule.value.name === 'color-profile'
+              ) {
+                const name = rule.value.prelude[0]
+                if (name?.type === 'dashed-ident')
+                  return {
+                    name: name.value,
+                    data: rule.value.block,
+                    kind: 'color-profile',
+                  }
+              }
+              return undefined
+            })()
+            if (!identity) return
+            const key = `${identity.kind}:${identity.name}`
+            const signature = JSON.stringify(identity.data)
+            const previous = identities.get(key)
+            if (
+              previous &&
+              (previous.source !== section.source ||
+                previous.signature !== signature)
+            )
+              throw new ConflictError(
+                section.owner ?? section.source,
+                `Conflicting stylesheet identity: ${identity.name}; compile libraries with package-qualified module IDs.`,
+              )
+            identities.set(key, { source: section.source, signature })
+            return
+          }
 
           const name = rule.value.name.value
           const signature = JSON.stringify(rule.value.keyframes)

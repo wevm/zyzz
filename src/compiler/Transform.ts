@@ -43,7 +43,9 @@ export function compile(options: compile.Options): compile.ReturnType {
     module.overwrite(
       call.start,
       call.end,
-      call.kind === 'keyframes' ? JSON.stringify(call.name) : 'void 0',
+      call.name
+        ? `${JSON.stringify(call.name)}${call.kind === 'keyframes' || call.kind === 'colorProfile' || !/\.[cm]?tsx?$/.test(options.moduleId) ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
+        : 'void 0',
     )
 
   type Span = Pick<Ast.Node, 'end' | 'start'>
@@ -392,7 +394,17 @@ export function compile(options: compile.Options): compile.ReturnType {
         !(
           node.source.value === 'zyzz'
             ? ['Config', 'css', 'Theme', 'Vars']
-            : ['Css', 'global', 'fontFace', 'keyframes', 'layers']
+            : [
+                'Css',
+                'colorProfile',
+                'counterStyle',
+                'fontPaletteValues',
+                'global',
+                'fontFace',
+                'keyframes',
+                'layers',
+                'positionTry',
+              ]
         ).includes(
           specifier.imported.type === 'Identifier'
             ? specifier.imported.name
@@ -517,6 +529,43 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   // Literal and scalar-theme rules each occupy one line at this boundary.
   const prefix = emitted.contributionCss ?? ''
+  let contributionLine = 1
+  const contributions = extracted.contributions ?? []
+  const firstLayer = contributions.findIndex(
+    (value) => value.kind === 'layers' && value.names.length > 0,
+  )
+  if (firstLayer >= 0) {
+    const start = extracted.contributionStarts?.[firstLayer]
+    if (start !== undefined)
+      Mapping.addMapping(cssMap, {
+        generated: { line: contributionLine, column: 0 },
+        original: position(start),
+        source: options.moduleId,
+      })
+    contributionLine++
+  }
+  contributions.forEach((contribution, index) => {
+    if (contribution.kind === 'layers') return
+    const css =
+      Css.compile({
+        styles: { styles: [] },
+        contributions: [contribution],
+        themes: Object.keys(extracted.themes).length
+          ? extracted.themes
+          : undefined,
+      }).contributionCss ?? ''
+    if (!css) return
+    const start = extracted.contributionStarts?.[index]
+    for (const _ of css.split('\n')) {
+      if (start !== undefined)
+        Mapping.addMapping(cssMap, {
+          generated: { line: contributionLine, column: 0 },
+          original: position(start),
+          source: options.moduleId,
+        })
+      contributionLine++
+    }
+  })
   const scoped = emitted.scopedCss ?? emitted.css
 
   const css = [

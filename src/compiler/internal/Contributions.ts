@@ -1,4 +1,5 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
+import * as RuleReference from '../../internal/RuleReference.js'
 import * as Condition from '../../internal/Condition.js'
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
@@ -10,7 +11,21 @@ import * as Expression from './Expression.js'
 import * as Themes from './Themes.js'
 import type * as Scope from './Scope.js'
 
-type Kind = 'fontFace' | 'global' | 'keyframes' | 'layers'
+type Kind = 'fontFace' | 'global' | 'keyframes' | 'layers' | RuleReference.Kind
+const named = [
+  'colorProfile',
+  'counterStyle',
+  'fontPaletteValues',
+  'keyframes',
+  'positionTry',
+]
+/** Stylesheet factory exports recognized by source and graph linking. */
+export const factories: readonly string[] = [
+  'fontFace',
+  'global',
+  'layers',
+  ...named,
+]
 
 /** Source-owned factory replacement and optional animation identity. */
 export type Call = {
@@ -30,26 +45,26 @@ export function scan(
   scope: Scope.Tracker,
   namespace: string,
   links: Readonly<Record<string, Themes.Link>> = {},
+  factoryImports: Readonly<Record<string, string>> = {},
 ) {
   const imports = new Map<number, Kind>()
 
   for (const node of program.body)
-    if (
-      node.type === 'ImportDeclaration' &&
-      node.importKind !== 'type' &&
-      node.source.value === 'zyzz/web'
-    )
+    if (node.type === 'ImportDeclaration' && node.importKind !== 'type')
       for (const specifier of node.specifiers)
         if (
           specifier.type === 'ImportSpecifier' &&
           specifier.importKind !== 'type'
         ) {
-          const name =
+          const imported =
             specifier.imported.type === 'Identifier'
               ? specifier.imported.name
               : specifier.imported.value
-
-          if (['fontFace', 'global', 'keyframes', 'layers'].includes(name))
+          const name =
+            node.source.value === 'zyzz/web'
+              ? imported
+              : factoryImports[specifier.local.name]
+          if (name && factories.includes(name))
             imports.set(specifier.start, name as Kind)
         }
 
@@ -61,8 +76,7 @@ export function scan(
     if (node.type === 'ImportDeclaration')
       for (const specifier of node.specifiers) {
         const link = links[specifier.local.name]
-
-        if (link?.kind === 'animation') {
+        if (link?.kind === 'animation' || link?.kind === 'rule-reference') {
           imported.set(specifier.start, link.call.name)
           linkedNames.set(specifier.local.name, link)
         }
@@ -153,7 +167,7 @@ export function scan(
       if (
         node.optional ||
         (node.arguments.length !== 1 &&
-          (!['fontFace', 'keyframes'].includes(type) ||
+          (!['fontFace', ...named].includes(type) ||
             node.arguments.length !== 2)) ||
         (!variable && parent?.type !== 'ExpressionStatement') ||
         ancestors
@@ -174,19 +188,20 @@ export function scan(
             variable.id.type !== 'Identifier'))
       )
         throw new Themes.InvalidError(
-          'Stylesheet contributions require direct module-level calls and constant animation bindings.',
+          'Stylesheet contributions require direct module-level calls and constant named stylesheet bindings.',
           node,
         )
-
-      if (type === 'keyframes' && !variable)
+      if (named.includes(type) && !variable)
         throw new Themes.InvalidError(
-          'Keyframes require a module-level named constant.',
+          'Named stylesheet definitions require a module-level named constant.',
           node,
         )
 
       const name =
         variable?.id.type === 'Identifier'
-          ? `z-k${namespace}-${Array.from(variable.id.name)
+          ? `${type === 'keyframes' ? 'z-k' : `${type === 'counterStyle' ? '' : '--'}z-${type.toLowerCase()}`}${namespace}-${Array.from(
+              variable.id.name,
+            )
               .map((value) => value.codePointAt(0)!.toString(16))
               .join('-')}`
           : undefined
@@ -197,7 +212,7 @@ export function scan(
         end: node.end,
         argument: node.arguments[0]!,
         context: node.arguments[1],
-        ...(type === 'keyframes'
+        ...(named.includes(type)
           ? {
               name,
               binding: variable!.start,
@@ -209,17 +224,19 @@ export function scan(
       }
 
       calls.push(call)
-
-      if (call.kind === 'keyframes' && variable?.id.type === 'Identifier') {
+      if (named.includes(call.kind) && variable?.id.type === 'Identifier') {
         const link: Themes.Link = {
           binding: call.name!,
-          kind: 'animation',
+          kind: call.kind === 'keyframes' ? 'animation' : 'rule-reference',
           definition: Theme.define({}),
           call: {
             start: call.start,
             end: call.end,
             name: call.name!,
             tokenType: '{}',
+            ...(call.kind !== 'keyframes'
+              ? { reference: call.kind as RuleReference.Kind }
+              : {}),
           },
         }
 
@@ -303,8 +320,22 @@ export function scan(
         }
       }
   }
-
-  return { calls, references, read, used, undefinedValues, exports: exported }
+  const kinds = new Map(
+    [...linkedNames.values()].flatMap((link) =>
+      link.call.reference
+        ? [[link.call.name, link.call.reference] as const]
+        : [],
+    ),
+  )
+  return {
+    calls,
+    kinds,
+    references,
+    read,
+    used,
+    undefinedValues,
+    exports: exported,
+  }
 }
 
 /** Builds ordered pure web data after lexical theme references are resolved. */
@@ -314,8 +345,7 @@ export function extract(
   starts?: number[],
 ): readonly Css.Contribution[] {
   const result: Css.Contribution[] = []
-
-  function value(node: Ast.Node): unknown {
+  function value(node: Ast.Node, property?: string): unknown {
     const reference = tokens.get(node.start)
     if (reference?.end === node.end) return reference.reference
     node = Expression.unwrap(node)
@@ -349,13 +379,17 @@ export function extract(
       return node.operator === '-' ? -node.argument.value : node.argument.value
 
     if (node.type === 'TemplateLiteral') {
-      const template = Expression.template(
-        node,
-        0,
-        (expression) =>
-          scanned.references.get(expression.start) ??
-          tokens.get(expression.start)?.reference,
-      )
+      const template = Expression.template(node, 0, (expression) => {
+        const node = Expression.unwrap(expression)
+        const name = scanned.references.get(node.start)
+        const kind = name ? scanned.kinds.get(name) : undefined
+        if (kind && property && !RuleReference.accepts(kind, property))
+          throw new Themes.InvalidError(
+            'Named stylesheet reference is incompatible with this descriptor.',
+            node,
+          )
+        return name ?? tokens.get(node.start)?.reference
+      })
       if (template !== undefined) return template
     }
 
@@ -366,8 +400,7 @@ export function extract(
             'Contribution arrays require dense literal entries.',
             node,
           )
-
-        return value(element)
+        return value(element, property)
       })
 
     if (node.type !== 'ObjectExpression')
@@ -403,8 +436,15 @@ export function extract(
           'Contribution keys must be unique literal strings.',
           property,
         )
-
-      output[key] = value(property.value)
+      const item = Expression.unwrap(property.value)
+      const name = scanned.references.get(item.start)
+      const kind = name ? scanned.kinds.get(name) : undefined
+      if (kind && !RuleReference.accepts(kind, key))
+        throw new Themes.InvalidError(
+          'Named stylesheet reference is incompatible with this descriptor.',
+          item,
+        )
+      output[key] = value(property.value, key)
     }
 
     return output
@@ -448,6 +488,7 @@ export function extract(
 
     try {
       const input = value(call.argument)
+      if (call.name && !call.exported && !scanned.used.has(call.name)) continue
 
       if (call.kind === 'layers') {
         if (
@@ -505,6 +546,151 @@ export function extract(
 
         result.push({
           kind: 'font-face',
+          declarations: declarations as Record<string, string | number>,
+        })
+      } else if (call.kind === 'positionTry') {
+        const declarations = record(input)
+        const keys = [
+          'alignSelf',
+          'blockSize',
+          'bottom',
+          'height',
+          'inlineSize',
+          'inset',
+          'insetBlock',
+          'insetBlockEnd',
+          'insetBlockStart',
+          'insetInline',
+          'insetInlineEnd',
+          'insetInlineStart',
+          'justifySelf',
+          'left',
+          'margin',
+          'marginBlock',
+          'marginBlockEnd',
+          'marginBlockStart',
+          'marginBottom',
+          'marginInline',
+          'marginInlineEnd',
+          'marginInlineStart',
+          'marginLeft',
+          'marginRight',
+          'marginTop',
+          'maxBlockSize',
+          'maxHeight',
+          'maxInlineSize',
+          'maxWidth',
+          'minBlockSize',
+          'minHeight',
+          'minInlineSize',
+          'minWidth',
+          'placeSelf',
+          'positionAnchor',
+          'positionArea',
+          'right',
+          'top',
+          'width',
+        ]
+        if (Object.keys(declarations).some((key) => !keys.includes(key)))
+          throw new Error('Unsupported position-try declaration.')
+        const block = style(declarations)
+        if (block.rules || block.declarations.some((value) => value.important))
+          throw new Error(
+            'Position-try forbids nested rules and important declarations.',
+          )
+        result.push({
+          kind: 'rule',
+          selector: `@position-try ${call.name}`,
+          style: block,
+        })
+      } else if (
+        call.kind === 'colorProfile' ||
+        call.kind === 'counterStyle' ||
+        call.kind === 'fontPaletteValues'
+      ) {
+        const descriptors = {
+          colorProfile: {
+            rule: 'color-profile',
+            keys: ['renderingIntent', 'src'],
+            required: ['src'],
+          },
+          counterStyle: {
+            rule: 'counter-style',
+            keys: [
+              'additiveSymbols',
+              'fallback',
+              'negative',
+              'pad',
+              'prefix',
+              'range',
+              'speakAs',
+              'suffix',
+              'symbols',
+              'system',
+            ],
+            required: [],
+          },
+          fontPaletteValues: {
+            rule: 'font-palette-values',
+            keys: ['basePalette', 'fontFamily', 'overrideColors'],
+            required: ['fontFamily'],
+          },
+        } as const
+        const definition = descriptors[call.kind]
+        const declarations = record(input)
+        for (const key of Object.keys(declarations))
+          if (declarations[key] === undefined) delete declarations[key]
+        if (
+          definition.required.some(
+            (key) => typeof declarations[key] !== 'string',
+          ) ||
+          Object.entries(declarations).some(
+            ([key, value]) =>
+              !(definition.keys as readonly string[]).includes(key) ||
+              (typeof value !== 'string' &&
+                !(
+                  key === 'basePalette' &&
+                  typeof value === 'number' &&
+                  Number.isSafeInteger(value) &&
+                  value >= 0
+                )),
+          )
+        )
+          throw new Error(
+            'Expected supported scalar descriptors and required fields.',
+          )
+        if (call.kind === 'counterStyle') {
+          const system =
+            typeof declarations.system === 'string'
+              ? declarations.system.trim().toLowerCase()
+              : 'symbolic'
+          if (
+            !/^(?:cyclic|numeric|alphabetic|symbolic|additive|fixed(?:\s+[+-]?\d+)?|extends\s+\S+)$/.test(
+              system,
+            )
+          )
+            throw new Error(
+              'Expected a supported counter system, with an integer after fixed.',
+            )
+          const required =
+            system === 'additive'
+              ? 'additiveSymbols'
+              : system.startsWith('extends ')
+                ? undefined
+                : 'symbols'
+          if (
+            required &&
+            (typeof declarations[required] !== 'string' ||
+              !(declarations[required] as string).trim())
+          )
+            throw new Error(
+              'The counter system requires symbols or additiveSymbols.',
+            )
+        }
+        result.push({
+          kind: 'descriptor',
+          rule: definition.rule,
+          name: call.name!,
           declarations: declarations as Record<string, string | number>,
         })
       } else {

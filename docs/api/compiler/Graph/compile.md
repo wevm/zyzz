@@ -159,6 +159,8 @@ When the graph has contributions, the result includes `sharedCss`, containing gr
 
 Packed contracts containing query metadata or typography groups use schema version 3. Existing scalar-only theme contracts retain version 1, and scalar-only configuration contracts retain version 2. Readers accept implemented schema versions and reject unknown future versions explicitly.
 
+Composite CSS function signatures, added scalar primitives, and newly written namespace metadata use version 11. Namespace metadata supports escaped/Unicode prefixes, repeated bindings, and control-character URI transport. Legacy scalar functions retain version 10; existing version-10 namespace libraries remain readable.
+
 The writer selects the lowest version required by the exported capabilities:
 
 | Version | Added capability                                     |

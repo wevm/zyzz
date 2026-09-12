@@ -413,95 +413,97 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(links).some(
-      (link) =>
-        link.call.function &&
-        [
-          link.call.function.returns,
-          ...link.call.function.parameters.map(
-            (parameter) => parameter.syntax ?? '*',
+    version:
+      stylesheets.some((section) => section.namespaces?.length) ||
+      Object.values(links).some(
+        (link) =>
+          link.call.function &&
+          [
+            link.call.function.returns,
+            ...link.call.function.parameters.map(
+              (parameter) => parameter.syntax ?? '*',
+            ),
+          ].some(
+            (syntax) =>
+              // Version 10 readers accepted this fixed scalar subset.
+              !(
+                [
+                  '*',
+                  '<angle>',
+                  '<color>',
+                  '<integer>',
+                  '<length>',
+                  '<length-percentage>',
+                  '<number>',
+                  '<percentage>',
+                  '<time>',
+                ] as readonly string[]
+              ).includes(syntax),
           ),
-        ].some(
-          (syntax) =>
-            // Version 10 readers accepted this fixed scalar subset.
-            !(
-              [
-                '*',
-                '<angle>',
-                '<color>',
-                '<integer>',
-                '<length>',
-                '<length-percentage>',
-                '<number>',
-                '<percentage>',
-                '<time>',
-              ] as readonly string[]
-            ).includes(syntax),
-        ),
-    )
-      ? 11
-      : stylesheets.some((section) => section.namespaces?.length) ||
-          Object.values(links).some(
-            (link) =>
-              link.call.reference === 'cssFunction' ||
-              link.call.reference === 'customMedia',
-          )
-        ? 10
-        : Object.values(links).some((link) => link.kind === 'rule-reference')
-          ? 9
-          : Object.values(links).some((link) => link.kind === 'variables')
-            ? 8
-            : stylesheets.length ||
-                Object.values(links).some((link) => link.kind === 'animation')
-              ? 7
-              : Object.values(links).some((link) => link.kind === 'marker')
-                ? 6
-                : Object.values(themes).some(
-                      (theme) =>
-                        theme[Token.definition].contract.shorthands ||
-                        Object.hasOwn(theme.tokens, 'margin') ||
-                        Object.hasOwn(theme.tokens, 'padding'),
-                    ) ||
-                    Object.values(links).some(
-                      (link) =>
-                        link.call.output === 'html' ||
-                        Object.values(link.members ?? {}).some(
-                          (member) => member.call.output === 'html',
-                        ),
-                    )
-                  ? 5
-                  : stylesheets.length ||
+      )
+        ? 11
+        : Object.values(links).some(
+              (link) =>
+                link.call.reference === 'cssFunction' ||
+                link.call.reference === 'customMedia',
+            )
+          ? 10
+          : Object.values(links).some((link) => link.kind === 'rule-reference')
+            ? 9
+            : Object.values(links).some((link) => link.kind === 'variables')
+              ? 8
+              : stylesheets.length ||
+                  Object.values(links).some((link) => link.kind === 'animation')
+                ? 7
+                : Object.values(links).some((link) => link.kind === 'marker')
+                  ? 6
+                  : Object.values(themes).some(
+                        (theme) =>
+                          theme[Token.definition].contract.shorthands ||
+                          Object.hasOwn(theme.tokens, 'margin') ||
+                          Object.hasOwn(theme.tokens, 'padding'),
+                      ) ||
                       Object.values(links).some(
                         (link) =>
-                          link.call.selection ||
-                          (link.kind === 'config' &&
-                            !!link.call.options?.themes) ||
-                          link.call.initialization ||
-                          (link.kind === 'config' && link.call.script) ||
-                          link.kind === 'marker' ||
-                          link.kind === 'animation' ||
-                          link.kind === 'variables',
+                          link.call.output === 'html' ||
+                          Object.values(link.members ?? {}).some(
+                            (member) => member.call.output === 'html',
+                          ),
                       )
-                    ? 4
-                    : Object.values(themes).some(
-                          (theme) =>
-                            theme[Token.definition].queries ||
-                            Object.keys(theme.tokens).some((group) =>
-                              [
-                                'fontFamily',
-                                'fontSize',
-                                'fontWeight',
-                                'lineHeight',
-                                'letterSpacing',
-                              ].includes(group),
-                            ),
+                    ? 5
+                    : stylesheets.length ||
+                        Object.values(links).some(
+                          (link) =>
+                            link.call.selection ||
+                            (link.kind === 'config' &&
+                              !!link.call.options?.themes) ||
+                            link.call.initialization ||
+                            (link.kind === 'config' && link.call.script) ||
+                            link.kind === 'marker' ||
+                            link.kind === 'animation' ||
+                            link.kind === 'variables',
                         )
-                      ? 3
-                      : Object.values(links).some(
-                            (link) => link.kind === 'config' || link.call.type,
+                      ? 4
+                      : Object.values(themes).some(
+                            (theme) =>
+                              theme[Token.definition].queries ||
+                              Object.keys(theme.tokens).some((group) =>
+                                [
+                                  'fontFamily',
+                                  'fontSize',
+                                  'fontWeight',
+                                  'lineHeight',
+                                  'letterSpacing',
+                                ].includes(group),
+                              ),
                           )
-                        ? 2
-                        : 1,
+                        ? 3
+                        : Object.values(links).some(
+                              (link) =>
+                                link.kind === 'config' || link.call.type,
+                            )
+                          ? 2
+                          : 1,
   })
 }
 

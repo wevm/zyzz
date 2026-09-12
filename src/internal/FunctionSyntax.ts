@@ -172,17 +172,21 @@ export type IntegerOnly<syntax extends string> =
 type NumericKind<syntax extends string> =
   syntax extends `${infer first}|${infer rest}`
     ? NumericKind<Trim<first>> | NumericKind<Trim<rest>>
-    : syntax extends '<number>'
-      ? 'number'
-      : syntax extends '<integer>'
-        ? 'integer'
-        : never
+    : syntax extends `${infer base}+` | `${infer base}#`
+      ? NumericKind<base>
+      : syntax extends '<number>'
+        ? 'number'
+        : syntax extends '<integer>'
+          ? 'integer'
+          : never
 
 /** Finds the integer-only scalar domain in a checked function signature. */
 export function integerOnly(syntax: string): boolean {
   const value = syntax.trim()
   const body = value.startsWith('type(') ? value.slice(5, -1) : value
-  const alternatives = body.split('|').map((value) => value.trim())
+  const alternatives = body
+    .split('|')
+    .map((value) => value.trim().replace(/[+#]$/, ''))
 
   return (
     alternatives.includes('<integer>') && !alternatives.includes('<number>')

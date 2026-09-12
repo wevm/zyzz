@@ -124,6 +124,33 @@ export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns
     },
   )
 
+  test.each(['+', '#'])(
+    'accepts one-item numbers in repeated %s alternatives through packed calls',
+    (repeat) => {
+      const library = Graph.compile({
+        modules: {
+          'fn.ts': `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({parameters:[{name:'--x',syntax:'type(<integer> | <number>${repeat})'}],body:{result:'var(--x)'}});`,
+        },
+      })
+      const packed = Graph.compile({
+        contracts: { 'lib.js': library.contracts['fn.ts']! },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: {
+          'app.ts': `import {fn} from 'lib';export const value=fn(1.5);`,
+        },
+      })
+      expect(
+        packed.modules['app.ts']!.code.includes('(1.5)'),
+      ).toMatchInlineSnapshot('true')
+
+      const output = Transform.compile({
+        moduleId: 'lists.ts',
+        source: `import {cssFunction} from 'zyzz/web';const fn=cssFunction({parameters:[{name:'--x',syntax:'<integer>${repeat}'}],body:{result:'var(--x)'}});fn('${repeat === '+' ? '1 2' : '1, 2'}');`,
+      })
+      expect(output.css.includes('@function')).toMatchInlineSnapshot('true')
+    },
+  )
+
   test('retains scalar contract compatibility and valid alternative arguments', () => {
     const source = `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({parameters:[{name:'--n',syntax:'<integer>'}],returns:'<integer>',body:{result:'var(--n)'}});fn(2);`
     const library = Graph.compile({ modules: { 'fn.ts': source } })

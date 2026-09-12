@@ -12,6 +12,35 @@ describe('cssFunction', () => {
     // @ts-expect-error integer parameters reject fractional literals
     fn(1.5)
   })
+  test('accepts scalar numbers through repeated alternatives', () => {
+    const comma = cssFunction({
+      parameters: [{ name: '--x', syntax: 'type(<integer> | <number>#)' }],
+      body: { result: 'var(--x)' },
+    })
+    const space = cssFunction({
+      parameters: [{ name: '--x', syntax: 'type(<integer> | <number>+)' }],
+      body: { result: 'var(--x)' },
+    })
+    const number = cssFunction({
+      parameters: [{ name: '--x', syntax: '<number>#' }],
+      body: { result: 'var(--x)' },
+    })
+    const integer = cssFunction({
+      parameters: [{ name: '--x', syntax: '<integer>+' }],
+      body: { result: 'var(--x)' },
+    })
+
+    comma(1.5)
+    comma('1.5, 2')
+    space(1.5)
+    space('1.5 2')
+    number(1.5)
+    integer(2)
+    integer('1 2')
+    // @ts-expect-error repeated integer alternatives still require integer scalar tokens
+    integer(1.5)
+  })
+
   test('keeps image returns out of URL-only properties', () => {
     const image = cssFunction({
       parameters: [],

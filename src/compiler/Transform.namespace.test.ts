@@ -11,6 +11,36 @@ namespace({prefix:${JSON.stringify('\\73 vg')},uri:'http://www.w3.org/2000/svg'}
 namespace({prefix:'图',uri:'http://www.w3.org/2000/svg'});`
 
 describe('compile', () => {
+  test('versions namespace metadata while reading legacy ASCII contracts', () => {
+    for (const prefixes of [
+      ['图'],
+      ['\\73 vg'],
+      ['svg', 'svg'],
+      [undefined, undefined],
+      ['svg'],
+    ]) {
+      const library = Graph.compile({
+        modules: {
+          'names.ts': `import {namespace} from 'zyzz/web';${prefixes.map((prefix, index) => `namespace(${JSON.stringify({ prefix, uri: 'urn:' + index })});`).join('')}`,
+        },
+      })
+      expect(
+        JSON.parse(library.contracts['names.ts']!).version === 11,
+      ).toMatchInlineSnapshot('true')
+
+      const contract = JSON.parse(library.contracts['names.ts']!)
+      if (prefixes.length === 1 && prefixes[0] === 'svg') contract.version = 10
+      const packed = Graph.compile({
+        contracts: { 'lib.js': JSON.stringify(contract) },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+      expect(
+        JSON.parse(packed.contracts['app.ts']!).version === 11,
+      ).toMatchInlineSnapshot('true')
+    }
+  })
+
   test('preserves namespace URI control characters through packed output and native matching', async () => {
     const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
     const browser = await chromium.launch(
@@ -29,6 +59,9 @@ describe('compile', () => {
             'uri.ts': `import {namespace,global} from 'zyzz/web';namespace({prefix:'s',uri:${JSON.stringify(uri)}});global({'s|item':{color:'red'}});`,
           },
         })
+        expect(
+          JSON.parse(library.contracts['uri.ts']!).version,
+        ).toMatchInlineSnapshot('11')
         const output = Graph.compile({
           contracts: { 'lib.js': library.contracts['uri.ts']! },
           imports: { 'app.ts': { lib: 'lib.js' } },

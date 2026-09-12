@@ -125,8 +125,8 @@ type InputSyntax<syntax extends string> =
         | InputSyntax<FunctionSyntax.Trim<rest>>
     : syntax extends '*'
       ? string | number
-      : syntax extends `${string}${'+' | '#'}`
-        ? string
+      : syntax extends `${infer base}+` | `${infer base}#`
+        ? string | InputSyntax<base>
         : syntax extends '<number>' | '<integer>'
           ? number
           : syntax extends '<percentage>'

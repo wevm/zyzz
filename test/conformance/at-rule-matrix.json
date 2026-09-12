@@ -34,6 +34,10 @@
       "file": "src/compiler/Transform.namespace.test.ts",
       "test": "compile preserves namespace URI control characters through packed output and native matching"
     },
+    "namespace.version": {
+      "file": "src/compiler/Transform.namespace.test.ts",
+      "test": "compile versions namespace metadata while reading legacy ASCII contracts"
+    },
     "namespace.watch": {
       "file": "src/node/Host.namespace.test.ts",
       "test": "create rebuilds Unicode namespace bindings and preserves unrelated module scopes"
@@ -2234,7 +2238,7 @@
           "cases": ["namespace.uri"]
         },
         "packed": {
-          "cases": ["namespace.binding"]
+          "cases": ["namespace.binding", "namespace.version"]
         },
         "references": {
           "cases": ["namespace.binding"]

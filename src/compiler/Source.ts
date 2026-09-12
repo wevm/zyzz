@@ -975,7 +975,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     if (!calls.some((call) => call.start <= start && start < call.end))
       report(
         'unsupported_syntax',
-        'Relationship helpers require a compiled style definition.',
+        'Relationship keys require a compiled style definition.',
         { start, end: start },
       )
 

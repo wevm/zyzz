@@ -14,9 +14,6 @@ namespace styles {
 }
 ```
 
-> [!NOTE]
-> `where` is the accepted relationship contract pending compiler support. Current builds export the direction helpers `ancestor`, `descendant`, `siblingBefore`, `siblingAfter`, and `anySibling`, which `where` supersedes.
-
 Refs interpolate as compiler-owned attribute selectors. The compiler wraps each compound containing a ref in `:where()`, so ref predicates add zero specificity while `&` keeps its generated class specificity.
 
 ```css
@@ -70,7 +67,7 @@ css({ [where`${card} &`]: { opacity: 1 } })
 
 ## Errors
 
-Reject non-ref interpolations, undeclared states, invalid selector grammar, selectors without `&`, nested `:has()`, and `:visited` inside `:has()`, which never matches in browsers.
+Reject non-ref interpolations, undeclared states, invalid selector grammar, unknown pseudo-classes, selectors without `&`, nested `:has()`, and `:visited` inside `:has()`, which never matches in browsers.
 
 See [Style Relationships](../../guides/conditions.md#style-relationships). Repeated refs match any qualifying instance, not the nearest boundary.
 

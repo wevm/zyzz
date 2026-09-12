@@ -329,7 +329,7 @@ Cover interactive/form/structural states, ARIA/data/direction, open/popover/iner
 
 ## 11. Typed Ancestors, Groups, Peers, and Descendants
 
-Sources: [StyleX contextual selectors](https://stylexjs.com/docs/api/javascript/when), [Tailwind groups/peers and group descendants](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-the-descendants-of-a-group), vanilla-extract selector composition, and Panda group/peer conditions. **Planned (API accepted):** `ref` and the `where` tagged template. Direction helpers are implemented and superseded.
+Sources: [StyleX contextual selectors](https://stylexjs.com/docs/api/javascript/when), [Tailwind groups/peers and group descendants](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-the-descendants-of-a-group), vanilla-extract selector composition, and Panda group/peer conditions. **Implemented:** `ref` and the `where` tagged template.
 
 ```tsx
 import { css } from 'zyzz'

@@ -174,9 +174,6 @@ const card = ref({ state: ['closed', 'open'] })
 const condition = where`${card({ state: 'open' })} &`
 ```
 
-> [!NOTE]
-> `where` is pending compiler support. Current builds export direction helpers such as `ancestor(card, { state: 'open' })`.
-
 - **Direction:** CSS combinators express direction and distance; `${card} &` matches any depth, `${card} > &` the parent.
 - **Matching:** repeated markers use any qualifying ancestor, not nearest-boundary behavior.
 - **Predicates:** pseudo-classes and declared states attach to the interpolated ref; nested relationship keys combine with AND.

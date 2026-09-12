@@ -11,9 +11,6 @@ const attributes = card({ state: 'open' })
 
 Apply the ref to the related element and interpolate the same identity into a `where` condition. The compiler assigns a unique attribute; no class name or hand-written attribute selector is needed.
 
-> [!NOTE]
-> `where` is pending compiler support. Current builds select refs through the direction helpers, such as `ancestor(card, { state: 'open' })`.
-
 ```tsx
 import { css } from 'zyzz'
 import { ref, where } from 'zyzz/web'
@@ -49,9 +46,6 @@ For presence alone, use `const card = ref()`, apply `card()`, and interpolate `$
 - Default: Presence ref without state domains.
 
 Applications and relationship conditions may select only declared state values. The same call applies the ref in JSX and, interpolated into `where`, narrows a relationship. State names become data-attribute fragments; `class`, `className`, `style`, `key`, and `ref` are reserved.
-
-> [!NOTE]
-> The current implementation also reserves `pseudo` and `has`, which configure predicates in the direction helpers. `where` frees both names.
 
 ```ts
 ref({ state: ['closed', 'open'] })

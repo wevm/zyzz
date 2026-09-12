@@ -614,7 +614,7 @@ Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/r
 
 Accepted API: `ref(schema?)` defines an element identity and optional finite data-state domains. The `where` tagged template composes a scoped selector key from ordinary CSS text and interpolated refs. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
 
-CSS combinators express direction and distance, so `${card} &` matches an ancestor at any depth and `${card} > &` the parent. No direction helpers are reserved. The implemented `ancestor`, `descendant`, `siblingBefore`, `siblingAfter`, and `anySibling` helpers are superseded and are removed when `where` lands. Matching does not imply a nearest boundary.
+CSS combinators express direction and distance, so `${card} &` matches an ancestor at any depth and `${card} > &` the parent. No direction helpers exist or are reserved. Matching does not imply a nearest boundary.
 
 ```tsx
 import { css } from 'zyzz'

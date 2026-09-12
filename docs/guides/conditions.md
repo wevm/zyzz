@@ -74,9 +74,6 @@ Do not concatenate classes to establish override priority. See [Style Relationsh
 
 Use a typed ref to style an element from the state of a related element.
 
-> [!NOTE]
-> `where` is the accepted relationship contract pending compiler support. Current builds export direction helpers such as `ancestor(card, { state: 'open' })`, which `where` supersedes.
-
 Relationship keys compile inside web `css(...)` definitions. Use ref callables as ordinary element attributes; core `Style.define` and global declarations do not accept relationship keys.
 
 ```tsx

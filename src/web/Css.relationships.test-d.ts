@@ -1,19 +1,11 @@
-/** Checks marker state inference and relationship-key authoring without broad state domains. @module */
+/** Checks marker state inference and where relationship authoring without broad state domains. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css, Style } from 'zyzz'
 import { Marker } from 'zyzz/runtime'
-import {
-  ancestor,
-  anySibling,
-  descendant,
-  global,
-  ref,
-  siblingAfter,
-  siblingBefore,
-} from 'zyzz/web'
+import { global, ref, where } from 'zyzz/web'
 
 describe('ref', () => {
-  test('retains finite states and typed relationships', () => {
+  test('retains finite states and typed where interpolations', () => {
     const card = ref({
       state: ['open', 'closed'],
       selected: [true, false],
@@ -24,64 +16,51 @@ describe('ref', () => {
     >()
 
     css({
-      [ancestor(card, {
-        state: 'open',
-        pseudo: ':hover',
-        has: 'a',
-      })]: { color: 'red' },
+      [where`${card({ state: 'open' })}:hover &`]: { color: 'red' },
     })
     css({
-      [descendant(card)]: { color: 'red' },
-      [siblingBefore(card, ':checked')]: { color: 'blue' },
+      [where`&:has(${card})`]: { color: 'red' },
+      [where`${card}:checked ~ &`]: { color: 'blue' },
+      [where`${card}:has(${card({ selected: true })}) &`]: { color: 'green' },
     })
 
     const arbitrary = Symbol()
 
     // @ts-expect-error arbitrary symbols are not relationship keys
     css({ [arbitrary]: { color: 'red' } })
-    // @ts-expect-error descendant has would require forbidden nested :has
-    descendant(card, { has: 'a' })
-    // @ts-expect-error following-sibling has would require forbidden nested :has
-    siblingAfter(card, { has: 'a' })
     // @ts-expect-error invalid state-name characters
     ref({ 'not ok': ['open'] })
     // @ts-expect-error case-folded duplicate names
     ref({ State: ['open'], state: ['closed'] })
+    // @ts-expect-error application keys stay reserved case-insensitively
+    ref({ ClassName: ['open'] })
 
-    // @ts-expect-error Relationship predicates reserve their option names.
-    ref({ pseudo: ['open'] })
-    // @ts-expect-error Relationship predicates reserve their option names case-insensitively.
-    ref({ Has: ['open'] })
+    ref({ pseudo: ['open'], has: ['a'] })
+
     // @ts-expect-error State selection is flat, without a data wrapper.
-    ancestor(card, { data: { state: 'open' } })
-    // @ts-expect-error Descendant selections retain finite state values.
-    descendant(card, { state: 'other' })
-    // @ts-expect-error Sibling selections retain finite state values.
-    siblingBefore(card, { state: 'other' })
-    // @ts-expect-error Sibling selections retain finite state values.
-    siblingAfter(card, { state: 'other' })
-    // @ts-expect-error Sibling selections retain finite state values.
-    anySibling(card, { state: 'other' })
+    void where`${card({ data: { state: 'open' } })} &`
+    // @ts-expect-error Selections retain finite state values.
+    void where`${card({ state: 'other' })} &`
+    // @ts-expect-error Interpolations require refs.
+    void where`${'[data-open]'} &`
+    // @ts-expect-error Hand-written attributes are not ref applications.
+    void where`${{ 'data-z-card': '' }} &`
 
     const presence = ref(undefined)
 
     // @ts-expect-error explicit undefined is presence-only
     presence({ unknown: 'open' })
-    ancestor(card, { state: undefined })
+    void where`${card({ state: undefined })} &`
     css((values: { color: '#123' | '#456' }) => ({
-      [ancestor(card)]: { color: values.color },
+      [where`${card} &`]: { color: values.color },
     }))
 
     const extra = { state: 'open' as const, unknown: 'value' }
 
     // @ts-expect-error state keys stay exact through variables
-    ancestor(card, extra)
+    card(extra)
     // @ts-expect-error unknown states do not widen schema
     card({ status: 'open' })
-    // @ts-expect-error invalid values remain errors
-    ancestor(card, { state: 'other' })
-    // @ts-expect-error unknown conditions remain errors
-    ancestor(card, ':hovr')
     // @ts-expect-error unbounded domains
     ref({ state: [] as string[] })
     // @ts-expect-error widened scalar domain
@@ -102,18 +81,18 @@ describe('global', () => {
     const card = ref()
 
     // @ts-expect-error ordinary nested conditions cannot hide relationships
-    global({ body: { ':hover': { [ancestor(card)]: { color: 'red' } } } })
+    global({ body: { ':hover': { [where`${card} &`]: { color: 'red' } } } })
     // @ts-expect-error runtime identities must remain private data attributes
     Marker.create({ id: 'className', schema: Marker.schema({}) })
     // @ts-expect-error global rules cannot contain marker relationship keys
-    global({ body: { [ancestor(card)]: { color: 'red' } } })
+    global({ body: { [where`${card} &`]: { color: 'red' } } })
   })
 })
 
-describe('relationships', () => {
+describe('where', () => {
   test('requires compiler marker provenance', () => {
     // @ts-expect-error arbitrary callables do not carry marker provenance
-    ancestor(() => ({}))
+    void where`${() => ({})} &`
   })
 })
 
@@ -121,12 +100,8 @@ describe('define', () => {
   test('excludes source-only relationships from core definitions', () => {
     const card = ref()
 
-    // @ts-expect-error core definitions do not compile marker helpers
-    Style.define({ target: { [ancestor(card)]: { color: 'red' } } })
-    // @ts-expect-error visited cannot be observed through has
-    descendant(card, ':visited')
-    // @ts-expect-error visited cannot be observed through has
-    siblingAfter(card, { pseudo: ':visited' })
+    // @ts-expect-error core definitions do not compile marker relationships
+    Style.define({ target: { [where`${card} &`]: { color: 'red' } } })
   })
 })
 

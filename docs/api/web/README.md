@@ -12,9 +12,6 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 | [ref](ref.md)             | Define a callable element identity with optional typed states. |
 | [where](where.md)         | Compose a relationship condition from refs and selector text.  |
 
-> [!NOTE]
-> `where` is pending compiler support. The direction helpers [ancestor](ancestor.md), [anySibling](anySibling.md), [descendant](descendant.md), [siblingAfter](siblingAfter.md), and [siblingBefore](siblingBefore.md) remain exported until it lands and are superseded by it.
-
 ## At-Rule Functions
 
 > [!NOTE]

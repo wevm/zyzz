@@ -37,16 +37,9 @@ export function schema(input: unknown): Schema {
   )) {
     if (
       !/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(name) ||
-      [
-        'class',
-        'classname',
-        'style',
-        'key',
-        'ref',
-        'has',
-        'pseudo',
-        '__proto__',
-      ].includes(name.toLowerCase()) ||
+      ['class', 'classname', 'style', 'key', 'ref', '__proto__'].includes(
+        name.toLowerCase(),
+      ) ||
       names.has(name.toLowerCase())
     )
       throw new Error(

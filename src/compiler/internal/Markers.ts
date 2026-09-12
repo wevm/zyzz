@@ -17,6 +17,54 @@ export type Call = {
   readonly definition: Marker.Definition
 }
 
+/** Parses a composed relationship selector and rejects grammar browsers drop or never match. */
+function validate(selector: string): void {
+  Lightning.transform({
+    filename: 'marker.css',
+    code: new TextEncoder().encode(`.z{${selector}{color:red}}`),
+    errorRecovery: false,
+    visitor: {
+      Selector(value) {
+        check(value, false)
+      },
+    },
+  })
+}
+
+function check(selector: Lightning.Selector, within: boolean): void {
+  for (const component of selector) {
+    if (component.type !== 'pseudo-class') continue
+
+    if (component.kind === 'custom' || component.kind === 'custom-function')
+      throw new Error(`Unknown pseudo-class :${component.name}.`)
+
+    if (component.kind === 'has') {
+      if (within) throw new Error('CSS forbids nested :has().')
+
+      for (const inner of component.selectors) check(inner, true)
+      continue
+    }
+
+    if (component.kind === 'visited' && within)
+      throw new Error(':visited never matches inside :has().')
+
+    if (
+      component.kind === 'where' ||
+      component.kind === 'is' ||
+      component.kind === 'not' ||
+      component.kind === 'any'
+    )
+      for (const inner of component.selectors) check(inner, within)
+    else if (
+      (component.kind === 'nth-child' || component.kind === 'nth-last-child') &&
+      component.of
+    )
+      for (const inner of component.of) check(inner, within)
+    else if (component.kind === 'host' && component.selectors)
+      check(component.selectors, within)
+  }
+}
+
 /** Collects statically declared markers and scoped relationship conditions. */
 export function scan(
   program: Ast.Program,
@@ -27,14 +75,7 @@ export function scan(
   const namespaces = new Set<number>()
   const modules = new Set<number>()
   const helpers = new Map<number, string>()
-  const helperNames = [
-    'ancestor',
-    'anySibling',
-    'descendant',
-    'ref',
-    'siblingAfter',
-    'siblingBefore',
-  ]
+  const helperNames = ['ref', 'where']
   const bindings = new Map<number, Themes.Link>()
   const names = new Map<string, Themes.Link>()
   const exports: Record<string, Themes.Link> = Object.create(null)
@@ -255,14 +296,7 @@ export function scan(
             (property) =>
               property.type === 'RestElement' ||
               (property.computed && property.key.type !== 'Literal') ||
-              [
-                'ref',
-                'ancestor',
-                'descendant',
-                'anySibling',
-                'siblingAfter',
-                'siblingBefore',
-              ].includes(
+              helperNames.includes(
                 property.key.type === 'Identifier'
                   ? property.key.name
                   : property.key.type === 'Literal' &&
@@ -320,25 +354,86 @@ export function scan(
           ))
       ) {
         const name = method(node)
+        const container = ancestors.at(-2)
 
         if (
-          name &&
-          [
-            'ref',
-            'ancestor',
-            'descendant',
-            'siblingBefore',
-            'siblingAfter',
-            'anySibling',
-          ].includes(name)
-        ) {
-          const container = ancestors.at(-2)
-          if (container?.type !== 'CallExpression' || container.callee !== node)
-            throw new Themes.InvalidError(
-              'Marker helpers require direct calls.',
-              node,
-            )
+          (name === 'ref' &&
+            (container?.type !== 'CallExpression' ||
+              container.callee !== node)) ||
+          (name === 'where' &&
+            (container?.type !== 'TaggedTemplateExpression' ||
+              container.tag !== node))
+        )
+          throw new Themes.InvalidError(
+            'Marker helpers require direct calls.',
+            node,
+          )
+      }
+
+      if (node.type === 'TaggedTemplateExpression') {
+        if (method(node.tag) !== 'where') return
+
+        const property = ancestors.findLast(
+          (value) =>
+            value.type === 'Property' && Expression.unwrap(value.key) === node,
+        )
+        if (property?.type !== 'Property' || !property.computed)
+          throw new Themes.InvalidError(
+            'Relationship selectors must be computed style keys.',
+            node,
+          )
+        if (node.typeArguments)
+          throw new Themes.InvalidError(
+            'Relationship selectors do not accept type arguments.',
+            node,
+          )
+
+        try {
+          const parts = node.quasi.expressions.map(
+            (expression): Relationships.Part => {
+              const value = Expression.unwrap(expression)
+              const call = value.type === 'CallExpression' ? value : undefined
+              const link = resolve(call ? call.callee : value)
+
+              if (
+                !link?.call.marker ||
+                (call && (call.arguments.length > 1 || call.optional)) ||
+                (link.call.start >= 0 && node.start < link.call.end)
+              )
+                throw new Themes.InvalidError(
+                  'Relationship selectors interpolate previously declared refs or ref applications.',
+                  expression,
+                )
+
+              return {
+                marker: link.call.marker,
+                state: call?.arguments[0] ? data(call.arguments[0]) : {},
+              }
+            },
+          )
+
+          const quasis = node.quasi.quasis.map((quasi) => {
+            if (quasi.value.cooked === null || quasi.value.cooked === undefined)
+              throw new Themes.InvalidError(
+                'Relationship selectors require valid template escapes.',
+                quasi,
+              )
+
+            return quasi.value.cooked
+          })
+
+          const selector = Relationships.compose(quasis, parts)
+
+          validate(selector)
+          Condition.normalize(selector)
+          conditions.set(node.start, selector)
+        } catch (error) {
+          if (error instanceof Themes.InvalidError) throw error
+
+          throw new Themes.InvalidError((error as Error).message, node)
         }
+
+        return
       }
 
       if (node.type !== 'CallExpression') return
@@ -405,86 +500,6 @@ export function scan(
 
           if (statement?.type === 'ExportNamedDeclaration')
             exports[variable.id.name] = link
-        } catch (error) {
-          if (error instanceof Themes.InvalidError) throw error
-
-          throw new Themes.InvalidError((error as Error).message, node)
-        }
-      } else if (
-        name &&
-        [
-          'ancestor',
-          'anySibling',
-          'descendant',
-          'siblingAfter',
-          'siblingBefore',
-        ].includes(name)
-      ) {
-        const property = ancestors.findLast(
-          (value) =>
-            value.type === 'Property' && Expression.unwrap(value.key) === node,
-        )
-        if (property?.type !== 'Property' || !property.computed)
-          throw new Themes.InvalidError(
-            'Relationship helpers must be computed style keys.',
-            node,
-          )
-
-        const link = node.arguments[0] && resolve(node.arguments[0])
-        if (
-          !link?.call.marker ||
-          node.arguments.length > 2 ||
-          node.optional ||
-          (link.call.start >= 0 && node.start < link.call.end)
-        )
-          throw new Themes.InvalidError(
-            'Relationships require a previously declared marker and one optional condition.',
-            node,
-          )
-
-        try {
-          const condition = node.arguments[1] ? data(node.arguments[1]) : {}
-
-          if (
-            condition &&
-            typeof condition === 'object' &&
-            'has' in condition &&
-            typeof condition.has === 'string'
-          ) {
-            Lightning.transform({
-              filename: 'marker.css',
-              code: new TextEncoder().encode(
-                `:has(${condition.has}){color:red}`,
-              ),
-              visitor: {
-                Rule(rule) {
-                  if (rule.type !== 'style')
-                    throw new Error('has requires a relative selector list.')
-
-                  const selectors = rule.value.selectors
-                  const selector = selectors[0]
-                  const component = selector?.[0]
-                  if (
-                    selectors.length !== 1 ||
-                    selector?.length !== 1 ||
-                    component?.type !== 'pseudo-class' ||
-                    component.kind !== 'has'
-                  )
-                    throw new Error('has requires a relative selector list.')
-                },
-              },
-              errorRecovery: false,
-            })
-          }
-
-          const selector = Relationships.selector(
-            name as Relationships.Kind,
-            link.call.marker,
-            condition,
-          )
-
-          Condition.normalize(selector)
-          conditions.set(node.start, selector)
         } catch (error) {
           if (error instanceof Themes.InvalidError) throw error
 

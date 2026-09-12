@@ -1,26 +1,6 @@
-/** Defines typed marker authoring and lowers marker predicates to scoped CSS selectors. @module */
-import type * as Conditions from '../../internal/Condition.js'
+/** Defines typed marker authoring and composes ref interpolations into scoped CSS selectors. @module */
+import * as Conditions from '../../internal/Condition.js'
 import * as Marker from '../../runtime/Marker.js'
-
-/** Supported element-state predicates; arbitrary selectors belong in has. */
-export type Pseudo =
-  | ':active'
-  | ':checked'
-  | ':disabled'
-  | ':empty'
-  | ':enabled'
-  | ':focus'
-  | ':focus-visible'
-  | ':focus-within'
-  | ':hover'
-  | ':indeterminate'
-  | ':invalid'
-  | ':optional'
-  | ':read-only'
-  | ':read-write'
-  | ':required'
-  | ':valid'
-  | ':visited'
 
 /** Marker state selection, inferred only from its declared schema. */
 export type State<schema extends Marker.Schema> = {
@@ -28,46 +8,27 @@ export type State<schema extends Marker.Schema> = {
 }
 
 declare const stateSchema: unique symbol
+declare const applied: unique symbol
+
 /** Opaque compiler condition key; cannot introduce an arbitrary property index. */
 export type Key = Conditions.Relationship
+
+/** Attributes produced by applying a ref; the brand admits them as `where` interpolations. */
+export type Applied = Readonly<Record<`data-${string}`, string>> & {
+  readonly [applied]: true
+}
 
 /** Marker callable with no styling fields. */
 export type Handle<schema extends Marker.Schema> = {
   <const input extends State<schema> = State<schema>>(
     input?: input & Record<Exclude<keyof input, keyof schema>, never>,
-  ): Readonly<Record<`data-${string}`, string>>
+  ): Applied
   /** Compile-time invariant retaining the schema for relationship inference. */
   readonly [stateSchema]: schema
 }
 
-/** Optional conjunction of ref states, an element pseudo, and descendant selector. */
-export type Condition<schema extends Marker.Schema> =
-  | Pseudo
-  | (State<schema> & {
-      readonly has?: string | undefined
-      readonly pseudo?: Pseudo | undefined
-    })
-
-/** Rejects unknown option and state keys even through intermediate variables. */
-export type Checked<
-  schema extends Marker.Schema,
-  condition,
-  allowHas extends boolean = true,
-> = condition extends string
-  ? allowHas extends false
-    ? Exclude<condition, ':visited'>
-    : condition
-  : condition &
-      (allowHas extends false
-        ? { readonly pseudo?: Exclude<Pseudo, ':visited'> | undefined }
-        : unknown) &
-      Record<
-        Exclude<
-          keyof condition,
-          keyof schema | 'pseudo' | (allowHas extends true ? 'has' : never)
-        >,
-        never
-      >
+/** A ref for presence, or its application for presence plus declared states. */
+export type Interpolation = { readonly [stateSchema]: Marker.Schema } | Applied
 
 /** Requires finite, unambiguous state domains. */
 export type Validated<schema extends Marker.Schema> = {
@@ -83,8 +44,6 @@ export type Validated<schema extends Marker.Schema> = {
             | 'style'
             | 'key'
             | 'ref'
-            | 'has'
-            | 'pseudo'
             | '__proto__'
           ? never
           : number extends schema[key]['length']
@@ -177,88 +136,209 @@ type Unique<
         : Unique<rest, seen | `${first}`>
   : unknown
 
-/** Supported relationship directions relative to the styled element. */
-export type Kind =
-  | 'ancestor'
-  | 'anySibling'
-  | 'descendant'
-  | 'siblingAfter'
-  | 'siblingBefore'
+/** Resolved ref interpolation awaiting selector composition. */
+export type Part = {
+  readonly marker: Marker.Definition
+  readonly state: unknown
+}
 
-/** Lowers validated marker state and direction with zero predicate specificity. */
-export function selector(
-  kind: Kind,
-  marker: Marker.Definition,
-  condition: unknown = {},
+/** Joins template text with ref attribute compounds and wraps each ref compound in `:where()`. */
+export function compose(
+  quasis: readonly string[],
+  parts: readonly Part[],
 ): string {
-  const options =
-    typeof condition === 'string' ? { pseudo: condition } : condition
-  if (!options || typeof options !== 'object' || Array.isArray(options))
-    throw new Error(
-      'Relationship conditions require a pseudo or options record.',
-    )
+  if (quasis.length !== parts.length + 1)
+    throw new Error('where templates require text around every interpolation.')
+  if (!parts.length)
+    throw new Error('where selectors require at least one ref interpolation.')
 
-  const { has, pseudo, ...state } = options as Record<string, unknown>
-  if (!['ancestor', 'siblingBefore'].includes(kind) && pseudo === ':visited')
-    throw new Error(
-      'Visited predicates cannot be observed through has-based relationships.',
-    )
+  let text = ''
+  const ranges: (readonly [number, number])[] = []
 
-  const attrs = Marker.create(marker)(state as State<Marker.Schema>)
+  quasis.forEach((quasi, index) => {
+    text += quasi
+
+    const part = parts[index]
+    if (!part) return
+
+    const start = text.length
+    text += attributes(part)
+    ranges.push([start, text.length])
+  })
+
+  if (!Conditions.nested(text) && !text.startsWith(':'))
+    throw new Error('where selectors require & for the styled element.')
+
+  const { depth, skip } = scan(text)
+  const isBreak = (index: number) =>
+    !skip[index] && /[\s>~+,]/.test(text[index]!)
+  const compounds = new Map<number, number>()
+
+  for (const [start, end] of ranges) {
+    const level = depth[start]!
+    let from = start
+    let to = end
+
+    while (from > 0) {
+      const index = from - 1
+      if (!skip[index]) {
+        if (depth[index]! < level) break
+        if (depth[index] === level && isBreak(index)) break
+      }
+      from = index
+    }
+
+    while (to < text.length) {
+      if (!skip[to]) {
+        if (depth[to]! < level) break
+        if (depth[to] === level && isBreak(to)) break
+      }
+      to++
+    }
+
+    compounds.set(from, Math.max(compounds.get(from) ?? 0, to))
+  }
+
+  const nesting = (from: number, to: number) => {
+    for (let index = from; index < to; index++)
+      if (!skip[index] && text[index] === '&') return true
+
+    return false
+  }
+
+  // Compounds nest through functional pseudo-classes, so render recursively.
+  function render(from: number, to: number, drop: boolean): string {
+    let output = ''
+    let index = from
+
+    while (index < to) {
+      const end = compounds.get(index)
+
+      if (
+        end !== undefined &&
+        end <= to &&
+        !(drop && index === from && end === to)
+      ) {
+        output += `${nesting(index, end) ? '&' : ''}:where(${render(index, end, true)})`
+        index = end
+        continue
+      }
+
+      if (!(drop && !skip[index] && text[index] === '&')) output += text[index]
+      index++
+    }
+
+    return output
+  }
+
+  return render(0, text.length, false)
+}
+
+/** Lowers one ref interpolation to its presence and state attribute selectors. */
+function attributes(part: Part): string {
+  const attrs = Marker.create(part.marker)(part.state as State<Marker.Schema>)
 
   const escape = (value: string) =>
     Array.from(value)
       .map((char) =>
         char === '\0'
-          ? '\ufffd'
+          ? '�'
           : /["\\\n\r\f]/.test(char)
             ? `\\${char.codePointAt(0)!.toString(16)} `
             : char,
       )
       .join('')
 
-  let predicate = Object.entries(attrs)
+  return Object.entries(attrs)
     .map(([key, value]) =>
-      value === '' && key === marker.id
+      value === '' && key === part.marker.id
         ? `[${key}]`
         : `[${key}="${escape(value)}"]`,
     )
     .join('')
+}
 
-  if (pseudo !== undefined) {
-    if (
-      typeof pseudo !== 'string' ||
-      !/^:(active|checked|disabled|empty|enabled|focus|focus-visible|focus-within|hover|indeterminate|invalid|optional|read-only|read-write|required|valid|visited)$/.test(
-        pseudo,
-      )
-    )
-      throw new Error('Unsupported marker pseudo.')
+/** Records parenthesis depth per character and marks quoted, bracketed, and comment text. */
+function scan(text: string) {
+  const depth: number[] = []
+  const skip: boolean[] = []
+  let level = 0
+  let quote = ''
+  let bracket = false
+  let comment = false
 
-    predicate += pseudo
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index]!
+
+    if (comment) {
+      depth[index] = level
+      skip[index] = true
+      if (char === '*' && text[index + 1] === '/') {
+        depth[index + 1] = level
+        skip[index + 1] = true
+        index++
+        comment = false
+      }
+      continue
+    }
+
+    if (quote) {
+      depth[index] = level
+      skip[index] = true
+      if (char === '\\' && index + 1 < text.length) {
+        depth[index + 1] = level
+        skip[index + 1] = true
+        index++
+      } else if (char === quote) quote = ''
+      continue
+    }
+
+    if (bracket) {
+      depth[index] = level
+      skip[index] = true
+      if (char === '"' || char === "'") quote = char
+      else if (char === ']') bracket = false
+      continue
+    }
+
+    if (char === '/' && text[index + 1] === '*') {
+      comment = true
+      depth[index] = level
+      skip[index] = true
+      continue
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char
+      depth[index] = level
+      skip[index] = true
+      continue
+    }
+
+    if (char === '[') {
+      bracket = true
+      depth[index] = level
+      skip[index] = true
+      continue
+    }
+
+    if (char === '(') {
+      depth[index] = level
+      skip[index] = false
+      level++
+      continue
+    }
+
+    if (char === ')') {
+      level = Math.max(0, level - 1)
+      depth[index] = level
+      skip[index] = false
+      continue
+    }
+
+    depth[index] = level
+    skip[index] = false
   }
 
-  if (has !== undefined) {
-    if (!['ancestor', 'siblingBefore'].includes(kind))
-      throw new Error('has is supported only by ancestor and siblingBefore.')
-
-    if (
-      typeof has !== 'string' ||
-      !has.trim() ||
-      [
-        ...has.matchAll(
-          /\/\*[\s\S]*?\*\/|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\\.|(&)/gs,
-        ),
-      ].some((match) => match[1])
-    )
-      throw new Error('has requires a descendant selector without nesting.')
-
-    predicate += `:has(${has})`
-  }
-
-  if (kind === 'ancestor') return `:where(${predicate}) &`
-  if (kind === 'descendant') return `&:where(:has(${predicate}))`
-  if (kind === 'siblingBefore') return `:where(${predicate}) ~ &`
-  if (kind === 'siblingAfter') return `&:where(:has(~ ${predicate}))`
-
-  return `:is(:where(${predicate}) ~ &, &:where(:has(~ ${predicate})))`
+  return { depth, skip }
 }

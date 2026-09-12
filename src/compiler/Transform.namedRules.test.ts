@@ -87,10 +87,12 @@ describe('compile', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'profile.js',
-        source: `import {css} from 'zyzz';import {colorProfile} from 'zyzz/web';const profile=colorProfile({src:'url(/profile.icc)'});export const styles={text:css({color:profile})};`,
+        source: `import {css} from 'zyzz';import {colorProfile} from 'zyzz/web';const profile=colorProfile({src:'url(/profile.icc)'});export namespace styles {
+  export const text = css({color:profile})
+}`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: profile.js:154: Named stylesheet reference is incompatible with this property.]`,
+      `[Source.ExtractError: profile.js:176: Named stylesheet reference is incompatible with this property.]`,
     )
   })
   test('emits valid JavaScript, prunes dead names, and resolves wrapped references', async () => {
@@ -156,7 +158,9 @@ export const dots=counterStyle({system:'cyclic',symbols:'"●"',suffix:'" "'});
 export const palette=fontPaletteValues({fontFamily:'Body',basePalette:0,overrideColors:'0 red'});
 export const below=positionTry({positionArea:'bottom',marginTop:'4px'});
 export const profile=colorProfile({src:'url(/profile.icc)',renderingIntent:'relative-colorimetric'});
-export const styles={list:css({listStyleType:dots,fontPalette:palette,positionTryFallbacks:below})};`,
+export namespace styles {
+  export const list = css({listStyleType:dots,fontPalette:palette,positionTryFallbacks:below})
+}`,
     })
     expect(output.css).toMatchInlineSnapshot(`
       "@counter-style z-counterstyle141558i1cjhj8q-64-6f-74-73{system:cyclic;symbols:"●";suffix:" ";}
@@ -178,7 +182,9 @@ export const styles={list:css({listStyleType:dots,fontPalette:palette,positionTr
       export const palette="--z-fontpalettevalues141558i1cjhj8q-70-61-6c-65-74-74-65" as import('zyzz/web').fontPaletteValues.Reference;
       export const below="--z-positiontry141558i1cjhj8q-62-65-6c-6f-77" as import('zyzz/web').positionTry.Reference;
       export const profile="--z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65";
-      export const styles={list:__zyzzProps.create({className:"z-141558i1cjhj8q-base0"})};"
+      export namespace styles {
+        export const list = __zyzzProps.create({className:"z-141558i1cjhj8q-base0"})
+      }"
     `)
   })
   test('preserves aliases and re-exports through packed metadata and rebuilds', () => {
@@ -192,7 +198,9 @@ export const styles={list:css({listStyleType:dots,fontPalette:palette,positionTr
       contracts: { 'lib/names.js': library.contracts['names.ts']! },
       imports: { 'app.ts': { lib: 'lib/names.js', zyzz: null } },
       modules: {
-        'app.ts': `import {css} from 'zyzz';import {alias} from 'lib';export const styles={list:css({listStyleType:alias})};`,
+        'app.ts': `import {css} from 'zyzz';import {alias} from 'lib';export namespace styles {
+  export const list = css({listStyleType:alias})
+}`,
       },
     }
     const output = compiler.compile(input)

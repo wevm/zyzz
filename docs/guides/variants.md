@@ -14,8 +14,8 @@ Add typed choices to a component. This example imports `{ variants }` from the [
 ```tsx
 import { variants } from './zyzz.config.js'
 
-const styles = {
-  button: variants({
+namespace styles {
+  export const button = variants({
     base: { display: 'inline-flex' },
     compoundVariants: [{ style: { fontWeight: 600 }, when: { size: 'md' } }],
     defaultVariants: { size: 'sm' },
@@ -25,7 +25,7 @@ const styles = {
         sm: { padding: 'sm' },
       },
     },
-  }),
+  })
 }
 
 type ButtonOptions = NonNullable<Parameters<typeof styles.button>[0]>

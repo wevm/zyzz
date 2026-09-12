@@ -1,0 +1,3557 @@
+{
+  "cases": {
+    "charset.bytes": {
+      "file": "src/node/Host.statements.test.ts",
+      "test": "create publishes UTF-8 stylesheet bytes without a BOM or encoding declaration"
+    },
+    "charset.packed": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile retains Unicode, import ordering, and source maps without a BOM or charset contribution"
+    },
+    "namespace.binding": {
+      "file": "src/compiler/Transform.namespace.test.ts",
+      "test": "compile resolves equivalent escaped prefixes using the last module binding and retains packed maps"
+    },
+    "namespace.rendering": {
+      "file": "src/compiler/Transform.namespace.test.ts",
+      "test": "compile keeps empty and default namespaces distinct in Chromium"
+    },
+    "namespace.types": {
+      "file": "src/web/namespace.test-d.ts"
+    },
+    "namespace.uri": {
+      "file": "src/compiler/Transform.namespace.test.ts",
+      "test": "compile preserves namespace URI control characters through packed output and native matching"
+    },
+    "namespace.watch": {
+      "file": "src/node/Host.namespace.test.ts",
+      "test": "create rebuilds Unicode namespace bindings and preserves unrelated module scopes"
+    },
+    "page.margins": {
+      "file": "src/compiler/Transform.page.test.ts",
+      "test": "compile retains every margin box and its source call through a packed library dependency"
+    },
+    "page.rendering": {
+      "file": "src/compiler/Transform.page.browser.test.ts",
+      "test": "compile prints named pages, pseudo-pages, counters, and all sixteen margin boxes"
+    },
+    "page.types": {
+      "file": "src/web/page.test-d.ts"
+    },
+    "page.watch": {
+      "file": "src/node/Host.page.test.ts",
+      "test": "create replaces all page-margin contents without retaining stale declarations"
+    },
+    "print.icc": {
+      "file": "src/compiler/Transform.print.test.ts",
+      "test": "compile paints packed ICC references and reports unsupported relative-profile rendering"
+    },
+    "print.marks": {
+      "file": "src/compiler/Transform.print.test.ts",
+      "test": "compile prints packed bleed and marks with independent geometry and raster controls"
+    },
+    "profile.packed": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile preserves profile components and color expressions across packed aliases"
+    },
+    "profile.references": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile rejects a profile interpolated outside color()"
+    },
+    "transition.capture": {
+      "file": "src/compiler/Transform.viewTransition.browser.test.ts",
+      "test": "compile captures navigation, activates declared types, and obeys conditional opt-out"
+    }
+  },
+  "entries": {
+    "@charset": {
+      "compiler": {
+        "contexts": {
+          "notApplicable": "UTF-8 output policy has no authoring helper, name, or enclosing context."
+        },
+        "grammar": {
+          "cases": ["charset.bytes"]
+        },
+        "maps": {
+          "notApplicable": "The output policy emits no encoding declaration to map."
+        },
+        "output": {
+          "cases": ["charset.bytes"]
+        },
+        "packed": {
+          "cases": ["charset.packed"]
+        },
+        "references": {
+          "notApplicable": "UTF-8 output policy has no authoring helper, name, or enclosing context."
+        },
+        "source": {
+          "cases": ["charset.bytes"]
+        },
+        "types": {
+          "notApplicable": "UTF-8 output policy has no authoring helper, name, or enclosing context."
+        },
+        "watch": {
+          "cases": ["charset.bytes"]
+        }
+      },
+      "rendering": {
+        "output-policy": {
+          "status": "verified",
+          "cases": ["charset.bytes"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "9126274fe957e9d6ff46fe3931bc6b8e6024eaf14000e69bb2a343389649b755"
+    },
+    "@color-profile": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @color-profile."
+        },
+        "grammar": {
+          "gap": "Complete public export, descriptor grammar/types, and source-owned watch evidence."
+        },
+        "maps": {
+          "cases": ["profile.packed"]
+        },
+        "output": {
+          "cases": ["profile.packed"]
+        },
+        "packed": {
+          "cases": ["profile.packed"]
+        },
+        "references": {
+          "cases": ["profile.packed", "profile.references"]
+        },
+        "source": {
+          "cases": ["profile.packed"]
+        },
+        "types": {
+          "gap": "Review types acceptance for @color-profile."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @color-profile."
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "partial",
+          "cases": ["print.icc"],
+          "limitations": [
+            "Absolute ICC color painting is verified. Relative-profile colors are unsupported in the pinned engine; rendering intents remain unverified."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "4ea47129d114b697f8512e2e7063026fe403dd924147ace27bafaaa4dc0dd584"
+    },
+    "@color-profile/components": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @color-profile/components."
+        },
+        "grammar": {
+          "gap": "Complete public export, descriptor grammar/types, and source-owned watch evidence."
+        },
+        "maps": {
+          "cases": ["profile.packed"]
+        },
+        "output": {
+          "cases": ["profile.packed"]
+        },
+        "packed": {
+          "cases": ["profile.packed"]
+        },
+        "references": {
+          "cases": ["profile.packed", "profile.references"]
+        },
+        "source": {
+          "cases": ["profile.packed"]
+        },
+        "types": {
+          "gap": "Review types acceptance for @color-profile/components."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @color-profile/components."
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "partial",
+          "cases": ["print.icc"],
+          "limitations": [
+            "Absolute ICC color painting is verified. Relative-profile colors are unsupported in the pinned engine; rendering intents remain unverified."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "84c54f045fdfb11d41cb44b127e48fcd97aa9b0ccd3e5092bc5857162bf64773"
+    },
+    "@color-profile/rendering-intent": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @color-profile/rendering-intent."
+        },
+        "grammar": {
+          "gap": "Complete public export, descriptor grammar/types, and source-owned watch evidence."
+        },
+        "maps": {
+          "cases": ["profile.packed"]
+        },
+        "output": {
+          "cases": ["profile.packed"]
+        },
+        "packed": {
+          "cases": ["profile.packed"]
+        },
+        "references": {
+          "cases": ["profile.packed", "profile.references"]
+        },
+        "source": {
+          "cases": ["profile.packed"]
+        },
+        "types": {
+          "gap": "Review types acceptance for @color-profile/rendering-intent."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @color-profile/rendering-intent."
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "partial",
+          "cases": ["print.icc"],
+          "limitations": [
+            "Absolute ICC color painting is verified. Relative-profile colors are unsupported in the pinned engine; rendering intents remain unverified."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "82d5fc212890a7d8a3acc272ef4d2666ba69ee219cbd5a76a7129c0139540010"
+    },
+    "@color-profile/src": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @color-profile/src."
+        },
+        "grammar": {
+          "gap": "Complete public export, descriptor grammar/types, and source-owned watch evidence."
+        },
+        "maps": {
+          "cases": ["profile.packed"]
+        },
+        "output": {
+          "cases": ["profile.packed"]
+        },
+        "packed": {
+          "cases": ["profile.packed"]
+        },
+        "references": {
+          "cases": ["profile.packed", "profile.references"]
+        },
+        "source": {
+          "cases": ["profile.packed"]
+        },
+        "types": {
+          "gap": "Review types acceptance for @color-profile/src."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @color-profile/src."
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "partial",
+          "cases": ["print.icc"],
+          "limitations": [
+            "Absolute ICC color painting is verified. Relative-profile colors are unsupported in the pinned engine; rendering intents remain unverified."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "9195c0fd7a8705fa31d69d85d0b438c556a067db50063c0ac97fb0fad48e8f15"
+    },
+    "@container": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @container."
+        },
+        "grammar": {
+          "gap": "Review named, style, and scroll-state query grammar and permitted contexts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @container."
+        },
+        "output": {
+          "gap": "Review output acceptance for @container."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @container."
+        },
+        "references": {
+          "gap": "Review references acceptance for @container."
+        },
+        "source": {
+          "gap": "Review source acceptance for @container."
+        },
+        "types": {
+          "gap": "Review types acceptance for @container."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @container."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete named, style, and scroll-state query contexts and browser behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "db5a939b0b4c3f36f9ef051a09d81ad6a82f451ae374c2b6e96773d88e40a11b"
+    },
+    "@counter-style": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @counter-style."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar and identity/reference contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @counter-style."
+        },
+        "output": {
+          "gap": "Review output acceptance for @counter-style."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @counter-style."
+        },
+        "references": {
+          "gap": "Review references acceptance for @counter-style."
+        },
+        "source": {
+          "gap": "Review source acceptance for @counter-style."
+        },
+        "types": {
+          "gap": "Review types acceptance for @counter-style."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @counter-style."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "47cb037a685291f20a105520dbc1962bf5dfaadf4f263f217f54e8e735f877a6"
+    },
+    "@counter-style/additive-symbols": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @counter-style/additive-symbols."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar and identity/reference contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @counter-style/additive-symbols."
+        },
+        "output": {
+          "gap": "Review output acceptance for @counter-style/additive-symbols."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @counter-style/additive-symbols."
+        },
+        "references": {
+          "gap": "Review references acceptance for @counter-style/additive-symbols."
+        },
+        "source": {
+          "gap": "Review source acceptance for @counter-style/additive-symbols."
+        },
+        "types": {
+          "gap": "Review types acceptance for @counter-style/additive-symbols."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @counter-style/additive-symbols."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "0fba72d7a68fd266f5afd14c07725fd67cfb59ecad642971d138faaf461b95ed"
+    },
+    "@counter-style/fallback": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @counter-style/fallback."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar and identity/reference contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @counter-style/fallback."
+        },
+        "output": {
+          "gap": "Review output acceptance for @counter-style/fallback."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @counter-style/fallback."
+        },
+        "references": {
+          "gap": "Review references acceptance for @counter-style/fallback."
+        },
+        "source": {
+          "gap": "Review source acceptance for @counter-style/fallback."
+        },
+        "types": {
+          "gap": "Review types acceptance for @counter-style/fallback."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @counter-style/fallback."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "b16d040f3d41d56a9b71140c1dfefa4f9903bac12b52026f5f13108d923dd769"
+    },
+    "@counter-style/negative": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @counter-style/negative."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar and identity/reference contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @counter-style/negative."
+        },
+        "output": {
+          "gap": "Review output acceptance for @counter-style/negative."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @counter-style/negative."
+        },
+        "references": {
+          "gap": "Review references acceptance for @counter-style/negative."
+        },
+        "source": {
+          "gap": "Review source acceptance for @counter-style/negative."
+        },
+        "types": {
+          "gap": "Review types acceptance for @counter-style/negative."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @counter-style/negative."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "5d2d39e6d1b6f74cc3883dc6ed2157493533c3b1ce2106b92c4c75a8d1980e4d"
+    },
+    "@counter-style/pad": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @counter-style/pad."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar and identity/reference contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @counter-style/pad."
+        },
+        "output": {
+          "gap": "Review output acceptance for @counter-style/pad."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @counter-style/pad."
+        },
+        "references": {
+          "gap": "Review references acceptance for @counter-style/pad."
+        },
+        "source": {
+          "gap": "Review source acceptance for @counter-style/pad."
+        },
+        "types": {
+          "gap": "Review types acceptance for @counter-style/pad."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @counter-style/pad."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "d5cdbcfb5c0f4fe389f7cce10cd58c567e939a6676a909277c4cc412a0d050ad"
+    },
+    "@counter-style/prefix": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @counter-style/prefix."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar and identity/reference contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @counter-style/prefix."
+        },
+        "output": {
+          "gap": "Review output acceptance for @counter-style/prefix."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @counter-style/prefix."
+        },
+        "references": {
+          "gap": "Review references acceptance for @counter-style/prefix."
+        },
+        "source": {
+          "gap": "Review source acceptance for @counter-style/prefix."
+        },
+        "types": {
+          "gap": "Review types acceptance for @counter-style/prefix."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @counter-style/prefix."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "9b02ada0b25e4ece5c50229f29ec27059c197809976f6bc6837f2506e62b3e47"
+    },
+    "@counter-style/range": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @counter-style/range."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar and identity/reference contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @counter-style/range."
+        },
+        "output": {
+          "gap": "Review output acceptance for @counter-style/range."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @counter-style/range."
+        },
+        "references": {
+          "gap": "Review references acceptance for @counter-style/range."
+        },
+        "source": {
+          "gap": "Review source acceptance for @counter-style/range."
+        },
+        "types": {
+          "gap": "Review types acceptance for @counter-style/range."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @counter-style/range."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "51d96e8d1564deb54ea7822f88dcb1d0461c62e0d3b64c5de71ec6721e30e4ac"
+    },
+    "@counter-style/speak-as": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @counter-style/speak-as."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar and identity/reference contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @counter-style/speak-as."
+        },
+        "output": {
+          "gap": "Review output acceptance for @counter-style/speak-as."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @counter-style/speak-as."
+        },
+        "references": {
+          "gap": "Review references acceptance for @counter-style/speak-as."
+        },
+        "source": {
+          "gap": "Review source acceptance for @counter-style/speak-as."
+        },
+        "types": {
+          "gap": "Review types acceptance for @counter-style/speak-as."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @counter-style/speak-as."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "1fa40473a4fcea03faf21e5dc719d80b76ba5c8b48e7997419b4f0d05c7e32d2"
+    },
+    "@counter-style/suffix": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @counter-style/suffix."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar and identity/reference contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @counter-style/suffix."
+        },
+        "output": {
+          "gap": "Review output acceptance for @counter-style/suffix."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @counter-style/suffix."
+        },
+        "references": {
+          "gap": "Review references acceptance for @counter-style/suffix."
+        },
+        "source": {
+          "gap": "Review source acceptance for @counter-style/suffix."
+        },
+        "types": {
+          "gap": "Review types acceptance for @counter-style/suffix."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @counter-style/suffix."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "a39e403fc0e998142f7f7ce60528af2a8c807aad7f1a5ba5f12e951f8ed043c3"
+    },
+    "@counter-style/symbols": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @counter-style/symbols."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar and identity/reference contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @counter-style/symbols."
+        },
+        "output": {
+          "gap": "Review output acceptance for @counter-style/symbols."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @counter-style/symbols."
+        },
+        "references": {
+          "gap": "Review references acceptance for @counter-style/symbols."
+        },
+        "source": {
+          "gap": "Review source acceptance for @counter-style/symbols."
+        },
+        "types": {
+          "gap": "Review types acceptance for @counter-style/symbols."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @counter-style/symbols."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "5ca217aa2d7ccf55a830bd9133c61120d17d4024af7050cb764c697549df379b"
+    },
+    "@counter-style/system": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @counter-style/system."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar and identity/reference contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @counter-style/system."
+        },
+        "output": {
+          "gap": "Review output acceptance for @counter-style/system."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @counter-style/system."
+        },
+        "references": {
+          "gap": "Review references acceptance for @counter-style/system."
+        },
+        "source": {
+          "gap": "Review source acceptance for @counter-style/system."
+        },
+        "types": {
+          "gap": "Review types acceptance for @counter-style/system."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @counter-style/system."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "fb62a3c655b35a322bd8815ae95feacb57788f1343bc24585509ab6ebfc67982"
+    },
+    "@custom-media": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @custom-media."
+        },
+        "grammar": {
+          "gap": "Complete query-reference placement and target-specific lowering semantics."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @custom-media."
+        },
+        "output": {
+          "gap": "Review output acceptance for @custom-media."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @custom-media."
+        },
+        "references": {
+          "gap": "Review references acceptance for @custom-media."
+        },
+        "source": {
+          "gap": "Review source acceptance for @custom-media."
+        },
+        "types": {
+          "gap": "Review types acceptance for @custom-media."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @custom-media."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Native query evaluation and complete query-reference placement."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "d7d28aa0512ca01731f311c3a97c568d456ff66675a114807592b4979b74c2b0"
+    },
+    "@document": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @document."
+        },
+        "grammar": {
+          "gap": "Review matching-function grammar and define the explicit legacy output target."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @document."
+        },
+        "output": {
+          "gap": "Review output acceptance for @document."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @document."
+        },
+        "references": {
+          "gap": "Review references acceptance for @document."
+        },
+        "source": {
+          "gap": "Review source acceptance for @document."
+        },
+        "types": {
+          "gap": "Review types acceptance for @document."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @document."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Legacy-engine rendering and complete matching-function grammar."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "672c3b65fe46eb2357ef19e03b340e64d3615c2b5be5f1623047abb44316a414"
+    },
+    "@font-face": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "b61f3c3a0c07012e73bb4d4c18158a70f1ae3455d917cb2d4b38232755e0b8a0"
+    },
+    "@font-face/ascent-override": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/ascent-override."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/ascent-override."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/ascent-override."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/ascent-override."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/ascent-override."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/ascent-override."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/ascent-override."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/ascent-override."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "7ff7617d15cc919ff34d85af755539daf392cdd7e258cd10e25f91d8c5b1eb17"
+    },
+    "@font-face/descent-override": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/descent-override."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/descent-override."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/descent-override."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/descent-override."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/descent-override."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/descent-override."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/descent-override."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/descent-override."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "7ba0ad7bc82c808bf1830b7d857d9d4f4c59f600e447d5ddd1bc112781d508bb"
+    },
+    "@font-face/font-display": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/font-display."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/font-display."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/font-display."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/font-display."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/font-display."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/font-display."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/font-display."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/font-display."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "85890362316d8d2425f25aa9b1bd4df801cd31980781eb8e46eebe9709836659"
+    },
+    "@font-face/font-family": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/font-family."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/font-family."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/font-family."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/font-family."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/font-family."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/font-family."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/font-family."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/font-family."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "755be7380e68ca77bde27176424b4b4fd2b1a90497f157cf27dfb7c96ac0ae1c"
+    },
+    "@font-face/font-feature-settings": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/font-feature-settings."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/font-feature-settings."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/font-feature-settings."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/font-feature-settings."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/font-feature-settings."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/font-feature-settings."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/font-feature-settings."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/font-feature-settings."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "be905fe8f3612f0144ced96c9fac4b676c06b95b1612b16afb13f6c8e6ac8fa9"
+    },
+    "@font-face/font-stretch": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/font-stretch."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/font-stretch."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/font-stretch."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/font-stretch."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/font-stretch."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/font-stretch."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/font-stretch."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/font-stretch."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "404f0ceb00cef0d178fe1ce806383c64a3fd544c49460d13cac345ac8605da01"
+    },
+    "@font-face/font-style": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/font-style."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/font-style."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/font-style."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/font-style."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/font-style."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/font-style."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/font-style."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/font-style."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "9f2a57837871b0a8390f087fd77e60e18035de2709e5969de8a8f0d3ffff4d7a"
+    },
+    "@font-face/font-variation-settings": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/font-variation-settings."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/font-variation-settings."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/font-variation-settings."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/font-variation-settings."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/font-variation-settings."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/font-variation-settings."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/font-variation-settings."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/font-variation-settings."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "c6bf9ad482a6e3c8e978d6289303e0ec979ba44c2aa66bed508d622cf66d462d"
+    },
+    "@font-face/font-weight": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/font-weight."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/font-weight."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/font-weight."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/font-weight."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/font-weight."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/font-weight."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/font-weight."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/font-weight."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "c07bc7925ad5b97bcc8ed71f0ef8be9f48e25b7dabe027b7bef3dd9d5b744c1f"
+    },
+    "@font-face/line-gap-override": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/line-gap-override."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/line-gap-override."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/line-gap-override."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/line-gap-override."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/line-gap-override."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/line-gap-override."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/line-gap-override."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/line-gap-override."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "f1c79c2a4e882e76ff0daf18088ef1f2d2e18c32fd7ff3952056bac681e8e1d7"
+    },
+    "@font-face/size-adjust": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/size-adjust."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/size-adjust."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/size-adjust."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/size-adjust."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/size-adjust."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/size-adjust."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/size-adjust."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/size-adjust."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "699f7fed3ab1827ffdf2a5d3c6783adf70257901b023cb73231a8a28e2ec9a21"
+    },
+    "@font-face/src": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/src."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/src."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/src."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/src."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/src."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/src."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/src."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/src."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "bc27b9efb4551bafa14ee893bb708db14cdc0a769223773e1081413ad1482869"
+    },
+    "@font-face/unicode-range": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-face/unicode-range."
+        },
+        "grammar": {
+          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-face/unicode-range."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-face/unicode-range."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-face/unicode-range."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-face/unicode-range."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-face/unicode-range."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-face/unicode-range."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-face/unicode-range."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Descriptor-specific shaping, metrics, variation, and loading behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "df1937f4e13e1374261d535663d4bfe8a8e53594ebaf4ad46d8edb193a9ba4d2"
+    },
+    "@font-feature-values": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-feature-values."
+        },
+        "grammar": {
+          "gap": "Review every alias-block grammar and font-display contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-feature-values."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-feature-values."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-feature-values."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-feature-values."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-feature-values."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-feature-values."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-feature-values."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "3754bd856e50d7c118742d30f9a803782a1510fb12ad16c6f655ac50260e1376"
+    },
+    "@font-feature-values/@annotation": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-feature-values/@annotation."
+        },
+        "grammar": {
+          "gap": "Review every alias-block grammar and font-display contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-feature-values/@annotation."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-feature-values/@annotation."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-feature-values/@annotation."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-feature-values/@annotation."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-feature-values/@annotation."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-feature-values/@annotation."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-feature-values/@annotation."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "0d279e9718aebeb22026a303a5147f597494247a5d5ac8c9b24d35000edc9d3a"
+    },
+    "@font-feature-values/@character-variant": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-feature-values/@character-variant."
+        },
+        "grammar": {
+          "gap": "Review every alias-block grammar and font-display contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-feature-values/@character-variant."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-feature-values/@character-variant."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-feature-values/@character-variant."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-feature-values/@character-variant."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-feature-values/@character-variant."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-feature-values/@character-variant."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-feature-values/@character-variant."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "d4bd34d30be82034ecc945c14687b6d619ecdad53d7b651f105b6008bf201520"
+    },
+    "@font-feature-values/@ornaments": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-feature-values/@ornaments."
+        },
+        "grammar": {
+          "gap": "Review every alias-block grammar and font-display contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-feature-values/@ornaments."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-feature-values/@ornaments."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-feature-values/@ornaments."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-feature-values/@ornaments."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-feature-values/@ornaments."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-feature-values/@ornaments."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-feature-values/@ornaments."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "abc7372a008841855cb9944a4b94fa6628f40130b5ad7581672a4e1b02d14f3b"
+    },
+    "@font-feature-values/@styleset": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-feature-values/@styleset."
+        },
+        "grammar": {
+          "gap": "Review every alias-block grammar and font-display contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-feature-values/@styleset."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-feature-values/@styleset."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-feature-values/@styleset."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-feature-values/@styleset."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-feature-values/@styleset."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-feature-values/@styleset."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-feature-values/@styleset."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "1f5dd04932693c28799125bdfe749441fbb87636d807fd4b370e73658f7b499d"
+    },
+    "@font-feature-values/@stylistic": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-feature-values/@stylistic."
+        },
+        "grammar": {
+          "gap": "Review every alias-block grammar and font-display contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-feature-values/@stylistic."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-feature-values/@stylistic."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-feature-values/@stylistic."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-feature-values/@stylistic."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-feature-values/@stylistic."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-feature-values/@stylistic."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-feature-values/@stylistic."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "5f76f2d98b4ba97b2823e13b817ed452a614939cf5930a48e77855907eafad97"
+    },
+    "@font-feature-values/@swash": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-feature-values/@swash."
+        },
+        "grammar": {
+          "gap": "Review every alias-block grammar and font-display contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-feature-values/@swash."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-feature-values/@swash."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-feature-values/@swash."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-feature-values/@swash."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-feature-values/@swash."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-feature-values/@swash."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-feature-values/@swash."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "1ab4512e8d299a61f91fa4ac135dc9b7c9d737efbeaaf507581c1d6fb7ca3166"
+    },
+    "@font-feature-values/font-display": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-feature-values/font-display."
+        },
+        "grammar": {
+          "gap": "Review every alias-block grammar and font-display contract."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-feature-values/font-display."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-feature-values/font-display."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-feature-values/font-display."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-feature-values/font-display."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-feature-values/font-display."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-feature-values/font-display."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-feature-values/font-display."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Actual font-feature shaping for every nested alias block and font-display behavior."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "bdc8347bf5aee554d985c51afb61ca1747fcb5c33a48d204392b8bf35b7adbbb"
+    },
+    "@font-palette-values": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-palette-values."
+        },
+        "grammar": {
+          "gap": "Complete descriptor grammar/type validation, contexts, and watch acceptance."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-palette-values."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-palette-values."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-palette-values."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-palette-values."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-palette-values."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-palette-values."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-palette-values."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "c92fb9d52767a438e3d0d7141be105380c6847deaba860da1dc5ac77a734cb23"
+    },
+    "@font-palette-values/base-palette": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-palette-values/base-palette."
+        },
+        "grammar": {
+          "gap": "Complete descriptor grammar/type validation, contexts, and watch acceptance."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-palette-values/base-palette."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-palette-values/base-palette."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-palette-values/base-palette."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-palette-values/base-palette."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-palette-values/base-palette."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-palette-values/base-palette."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-palette-values/base-palette."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "61e5538faa46312030b20ae0445541f34bf0a2fcbabec6d22e9fd8722e9c241f"
+    },
+    "@font-palette-values/font-family": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-palette-values/font-family."
+        },
+        "grammar": {
+          "gap": "Complete descriptor grammar/type validation, contexts, and watch acceptance."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-palette-values/font-family."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-palette-values/font-family."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-palette-values/font-family."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-palette-values/font-family."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-palette-values/font-family."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-palette-values/font-family."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-palette-values/font-family."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "9a054710db711c9af74be4ce1d1f0f65e4cf9b635585b2de9b866d54d8ebb6bb"
+    },
+    "@font-palette-values/override-colors": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @font-palette-values/override-colors."
+        },
+        "grammar": {
+          "gap": "Complete descriptor grammar/type validation, contexts, and watch acceptance."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @font-palette-values/override-colors."
+        },
+        "output": {
+          "gap": "Review output acceptance for @font-palette-values/override-colors."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @font-palette-values/override-colors."
+        },
+        "references": {
+          "gap": "Review references acceptance for @font-palette-values/override-colors."
+        },
+        "source": {
+          "gap": "Review source acceptance for @font-palette-values/override-colors."
+        },
+        "types": {
+          "gap": "Review types acceptance for @font-palette-values/override-colors."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @font-palette-values/override-colors."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "33323137ab3f40a509b44de89db3f5f0b20d2c23a4ec396a0f06c78b3c80c45a"
+    },
+    "@function": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @function."
+        },
+        "grammar": {
+          "gap": "Complete escaped identifiers, list arguments, nested references, and contexts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @function."
+        },
+        "output": {
+          "gap": "Review output acceptance for @function."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @function."
+        },
+        "references": {
+          "gap": "Review references acceptance for @function."
+        },
+        "source": {
+          "gap": "Review source acceptance for @function."
+        },
+        "types": {
+          "gap": "Review types acceptance for @function."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @function."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Escaped identifiers, list argument refinements, nested function references, and complete permitted contexts."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "c16af7ef56ad43f650cc030be6e99eacce62f9f8689d6089e841cb75ec1650f0"
+    },
+    "@function/result": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @function/result."
+        },
+        "grammar": {
+          "gap": "Complete escaped identifiers, list arguments, nested references, and contexts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @function/result."
+        },
+        "output": {
+          "gap": "Review output acceptance for @function/result."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @function/result."
+        },
+        "references": {
+          "gap": "Review references acceptance for @function/result."
+        },
+        "source": {
+          "gap": "Review source acceptance for @function/result."
+        },
+        "types": {
+          "gap": "Review types acceptance for @function/result."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @function/result."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Escaped identifiers, list argument refinements, nested function references, and complete permitted contexts."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "63901b65a4ee8d6171e904cbeee319eebe1fa1f7b8957a17681394ee7b1820bd"
+    },
+    "@import": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @import."
+        },
+        "grammar": {
+          "gap": "Review layer/supports/media combinations, ordering, and ownership contracts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @import."
+        },
+        "output": {
+          "gap": "Review output acceptance for @import."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @import."
+        },
+        "references": {
+          "gap": "Review references acceptance for @import."
+        },
+        "source": {
+          "gap": "Review source acceptance for @import."
+        },
+        "types": {
+          "gap": "Review types acceptance for @import."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @import."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Browser loading and cascade across layer, supports, and media combinations."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "7ffb43eb2f0707bad7c6701bf95b87fa82825bf600c2f9e395a3a74562829ef1"
+    },
+    "@keyframes": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @keyframes."
+        },
+        "grammar": {
+          "gap": "Complete timeline-range stop grammar and reference retention."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @keyframes."
+        },
+        "output": {
+          "gap": "Review output acceptance for @keyframes."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @keyframes."
+        },
+        "references": {
+          "gap": "Review references acceptance for @keyframes."
+        },
+        "source": {
+          "gap": "Review source acceptance for @keyframes."
+        },
+        "types": {
+          "gap": "Review types acceptance for @keyframes."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @keyframes."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Timeline-range animation rendering and complete stop spelling grammar."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "4ad39b964931f1ec90a222a88d60cff78c827ae8cc1143bf7e3c718b0cc9ae22"
+    },
+    "@layer": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @layer."
+        },
+        "grammar": {
+          "gap": "Review anonymous/nested contexts, escaped names, and ordering grammar."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @layer."
+        },
+        "output": {
+          "gap": "Review output acceptance for @layer."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @layer."
+        },
+        "references": {
+          "gap": "Review references acceptance for @layer."
+        },
+        "source": {
+          "gap": "Review source acceptance for @layer."
+        },
+        "types": {
+          "gap": "Review types acceptance for @layer."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @layer."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete anonymous/nested context, escaped name, and ordering grammar review."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "990de8dcc807b3a3c32455de4e9dab8d0e2c954ed4830133a4afe0cda9ebead1"
+    },
+    "@media": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @media."
+        },
+        "grammar": {
+          "gap": "Review complete conditional grammar and permitted contexts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @media."
+        },
+        "output": {
+          "gap": "Review output acceptance for @media."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @media."
+        },
+        "references": {
+          "gap": "Review references acceptance for @media."
+        },
+        "source": {
+          "gap": "Review source acceptance for @media."
+        },
+        "types": {
+          "gap": "Review types acceptance for @media."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @media."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete conditional grammar and legal placement review against the pinned inventory."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "90e99bc58b75597a7e743d7c2dab2f5275d2d18c9bd48966bd3a82bd63357b56"
+    },
+    "@namespace": {
+      "compiler": {
+        "contexts": {
+          "cases": ["namespace.binding"]
+        },
+        "grammar": {
+          "cases": ["namespace.binding"]
+        },
+        "maps": {
+          "cases": ["namespace.binding"]
+        },
+        "output": {
+          "cases": ["namespace.uri"]
+        },
+        "packed": {
+          "cases": ["namespace.binding"]
+        },
+        "references": {
+          "cases": ["namespace.binding"]
+        },
+        "source": {
+          "cases": ["namespace.binding"]
+        },
+        "types": {
+          "cases": ["namespace.types"]
+        },
+        "watch": {
+          "cases": ["namespace.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["namespace.rendering", "namespace.uri"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "effa4464034525f00bd0c9a3d3e8cd2640de141c1f9f4e7aac526f1e778149a0"
+    },
+    "@page": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @page."
+        },
+        "grammar": {
+          "gap": "Complete length grammar and descriptor-specific source/packed/map/watch review."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @page."
+        },
+        "output": {
+          "gap": "Review output acceptance for @page."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @page."
+        },
+        "references": {
+          "gap": "Review references acceptance for @page."
+        },
+        "source": {
+          "gap": "Review source acceptance for @page."
+        },
+        "types": {
+          "gap": "Review types acceptance for @page."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @page."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "b4b26ca90beda50527050bc521cfbdf1e8b27a5f60deec0b710c6d8772ba4008"
+    },
+    "@page/@bottom-center": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "47aef8d1cc9dde57713943038f873d2fd7bfd6a8b52d0ea76ab2391179629ec4"
+    },
+    "@page/@bottom-left": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "874c88c7e872549e1d3dd1e1dd223ac6be3d48e76c8e28b1e4596f8b03317849"
+    },
+    "@page/@bottom-left-corner": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f2d9aac4bc3e99557c4696c08187b18a964287d1af9ce1b2ce6f2b4610a51d3f"
+    },
+    "@page/@bottom-right": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "567829cdd2d5d522fdead951fd5d87e5dd6781600d2b49d09d330e4761c52631"
+    },
+    "@page/@bottom-right-corner": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "d1ac38d92ad52b8d8acc3d762d6b11d3957710e9f73ddfad523c98a6921a5f5b"
+    },
+    "@page/@left-bottom": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f9573086a7f02c9c1bf7393b3f3bcf16e6dbc98f37703712acac39209e0b72cd"
+    },
+    "@page/@left-middle": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f26bb7d9f86b73a19338d37185c2a29c607efdb906c2c823ed79cfbb26babe3d"
+    },
+    "@page/@left-top": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "bbfce9c8b5e16cc3409d3bc5bd18a1da579971e08a07af9d1464169e9d773b60"
+    },
+    "@page/@right-bottom": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "dbd4e4fceeeafcf3f4fa312aa55755bf1988f2e247c8e6405fbbf9aa2df42265"
+    },
+    "@page/@right-middle": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "95d6340b60be27f2203bc88cb13ec1d7af29aa1a03b34cd5658a72f73cd90bc8"
+    },
+    "@page/@right-top": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f3aeb3a256fd424de4dfcffd4230f421f7da1db13085bdeef7a22f84bf57135d"
+    },
+    "@page/@top-center": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "15ffd8470b49eee165034a6944dfd07e25f76d84196d59448c404e6dbdf4557f"
+    },
+    "@page/@top-left": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f58aab052417a5d1c8ea039476cb3d74e3be472cf0f1ebb88e4eeaabaf3fcd85"
+    },
+    "@page/@top-left-corner": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "35a83109c2f4415f83666c7bb34b78d72f9ab9900c4dac402fc880e81bdc5e2b"
+    },
+    "@page/@top-right": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "f1ce42d00144f196a1b81c409318368b126011b3ab195c6a9b680b69906689bc"
+    },
+    "@page/@top-right-corner": {
+      "compiler": {
+        "contexts": {
+          "cases": ["page.types"]
+        },
+        "grammar": {
+          "cases": ["page.types", "page.margins"]
+        },
+        "maps": {
+          "cases": ["page.margins"]
+        },
+        "output": {
+          "cases": ["page.margins"]
+        },
+        "packed": {
+          "cases": ["page.margins"]
+        },
+        "references": {
+          "notApplicable": "Margin boxes introduce no named stylesheet identity; declaration references belong to the property contract."
+        },
+        "source": {
+          "cases": ["page.margins"]
+        },
+        "types": {
+          "cases": ["page.types"]
+        },
+        "watch": {
+          "cases": ["page.watch"]
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "verified",
+          "cases": ["page.rendering"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "0162fa26a55c40deec12fbda4084058146b5d3d61a09b03bf097949cb20797d2"
+    },
+    "@page/bleed": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @page/bleed."
+        },
+        "grammar": {
+          "gap": "Complete length grammar and descriptor-specific source/packed/map/watch review."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @page/bleed."
+        },
+        "output": {
+          "cases": ["print.marks"]
+        },
+        "packed": {
+          "cases": ["print.marks"]
+        },
+        "references": {
+          "gap": "Review references acceptance for @page/bleed."
+        },
+        "source": {
+          "gap": "Review source acceptance for @page/bleed."
+        },
+        "types": {
+          "gap": "Review types acceptance for @page/bleed."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @page/bleed."
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "verified",
+          "cases": ["print.marks"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "2f3468fb52d55f9fa4229cbe0db9a2a9db0debda864c4ccfe54efc543c0ef9b2"
+    },
+    "@page/marks": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @page/marks."
+        },
+        "grammar": {
+          "gap": "Complete length grammar and descriptor-specific source/packed/map/watch review."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @page/marks."
+        },
+        "output": {
+          "cases": ["print.marks"]
+        },
+        "packed": {
+          "cases": ["print.marks"]
+        },
+        "references": {
+          "gap": "Review references acceptance for @page/marks."
+        },
+        "source": {
+          "gap": "Review source acceptance for @page/marks."
+        },
+        "types": {
+          "gap": "Review types acceptance for @page/marks."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @page/marks."
+        }
+      },
+      "rendering": {
+        "weasyprint": {
+          "status": "verified",
+          "cases": ["print.marks"],
+          "limitations": [],
+          "compatibility": "native"
+        }
+      },
+      "grammar": "ea1e5a6082c997f54d06126571c73ef479e06bcb38922e8147ef99c929161c26"
+    },
+    "@page/page-orientation": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @page/page-orientation."
+        },
+        "grammar": {
+          "gap": "Complete length grammar and descriptor-specific source/packed/map/watch review."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @page/page-orientation."
+        },
+        "output": {
+          "gap": "Review output acceptance for @page/page-orientation."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @page/page-orientation."
+        },
+        "references": {
+          "gap": "Review references acceptance for @page/page-orientation."
+        },
+        "source": {
+          "gap": "Review source acceptance for @page/page-orientation."
+        },
+        "types": {
+          "gap": "Review types acceptance for @page/page-orientation."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @page/page-orientation."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "369a1c7f3142934614c6bd4f00ac3d3a4b50423f6a134f4d3d15f6a9f9d79898"
+    },
+    "@page/size": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @page/size."
+        },
+        "grammar": {
+          "gap": "Complete length grammar and descriptor-specific source/packed/map/watch review."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @page/size."
+        },
+        "output": {
+          "gap": "Review output acceptance for @page/size."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @page/size."
+        },
+        "references": {
+          "gap": "Review references acceptance for @page/size."
+        },
+        "source": {
+          "gap": "Review source acceptance for @page/size."
+        },
+        "types": {
+          "gap": "Review types acceptance for @page/size."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @page/size."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "1b3469516fd0b456cb85ca4fd15340bcd2c93848e950e142355cf834e0658872"
+    },
+    "@position-try": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @position-try."
+        },
+        "grammar": {
+          "gap": "Review allowed declarations, contexts, and reference combinations."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @position-try."
+        },
+        "output": {
+          "gap": "Review output acceptance for @position-try."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @position-try."
+        },
+        "references": {
+          "gap": "Review references acceptance for @position-try."
+        },
+        "source": {
+          "gap": "Review source acceptance for @position-try."
+        },
+        "types": {
+          "gap": "Review types acceptance for @position-try."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @position-try."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete allowed-declaration/context grammar and fallback rendering combinations."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "895dc25b9b3e1b8ccda99525913066aba33020782bad50cdef8b6d8ee3eebe65"
+    },
+    "@property": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @property."
+        },
+        "grammar": {
+          "gap": "Complete registration syntax and initial-value contracts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @property."
+        },
+        "output": {
+          "gap": "Review output acceptance for @property."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @property."
+        },
+        "references": {
+          "gap": "Review references acceptance for @property."
+        },
+        "source": {
+          "gap": "Review source acceptance for @property."
+        },
+        "types": {
+          "gap": "Review types acceptance for @property."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @property."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete registration syntax/initial-value combinations and associated rendering evidence."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "3824fe15582d4b37949890dc7f1e920c9ddc93ea647f3d5445ea0b20498b3162"
+    },
+    "@property/inherits": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @property/inherits."
+        },
+        "grammar": {
+          "gap": "Complete registration syntax and initial-value contracts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @property/inherits."
+        },
+        "output": {
+          "gap": "Review output acceptance for @property/inherits."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @property/inherits."
+        },
+        "references": {
+          "gap": "Review references acceptance for @property/inherits."
+        },
+        "source": {
+          "gap": "Review source acceptance for @property/inherits."
+        },
+        "types": {
+          "gap": "Review types acceptance for @property/inherits."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @property/inherits."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete registration syntax/initial-value combinations and associated rendering evidence."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "0196d12d9379884df1b96634c1ba6236eee9080f5a03bad67055dd7040da9d96"
+    },
+    "@property/initial-value": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @property/initial-value."
+        },
+        "grammar": {
+          "gap": "Complete registration syntax and initial-value contracts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @property/initial-value."
+        },
+        "output": {
+          "gap": "Review output acceptance for @property/initial-value."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @property/initial-value."
+        },
+        "references": {
+          "gap": "Review references acceptance for @property/initial-value."
+        },
+        "source": {
+          "gap": "Review source acceptance for @property/initial-value."
+        },
+        "types": {
+          "gap": "Review types acceptance for @property/initial-value."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @property/initial-value."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete registration syntax/initial-value combinations and associated rendering evidence."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "09451c2f14a95568b465565208d185a32491a6300a6dcdce8c050409f590981c"
+    },
+    "@property/syntax": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @property/syntax."
+        },
+        "grammar": {
+          "gap": "Complete registration syntax and initial-value contracts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @property/syntax."
+        },
+        "output": {
+          "gap": "Review output acceptance for @property/syntax."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @property/syntax."
+        },
+        "references": {
+          "gap": "Review references acceptance for @property/syntax."
+        },
+        "source": {
+          "gap": "Review source acceptance for @property/syntax."
+        },
+        "types": {
+          "gap": "Review types acceptance for @property/syntax."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @property/syntax."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete registration syntax/initial-value combinations and associated rendering evidence."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "04dc4830cc0cefd0bf07ef675a992674d48f46f3856a52db5f97c38437c6d4c9"
+    },
+    "@scope": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @scope."
+        },
+        "grammar": {
+          "gap": "Review roots, limits, nesting, specificity, and allowed contexts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @scope."
+        },
+        "output": {
+          "gap": "Review output acceptance for @scope."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @scope."
+        },
+        "references": {
+          "gap": "Review references acceptance for @scope."
+        },
+        "source": {
+          "gap": "Review source acceptance for @scope."
+        },
+        "types": {
+          "gap": "Review types acceptance for @scope."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @scope."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete root/limit nesting, specificity, and allowed-context review."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "1f8d256d219cfd88f4fd94066917ccc7f4203dbd94d41393ae368cfbc67f01e7"
+    },
+    "@starting-style": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @starting-style."
+        },
+        "grammar": {
+          "gap": "Review style and grouping placement and extraction contracts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @starting-style."
+        },
+        "output": {
+          "gap": "Review output acceptance for @starting-style."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @starting-style."
+        },
+        "references": {
+          "gap": "Review references acceptance for @starting-style."
+        },
+        "source": {
+          "gap": "Review source acceptance for @starting-style."
+        },
+        "types": {
+          "gap": "Review types acceptance for @starting-style."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @starting-style."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Transition-start rendering and complete style/grouping placement."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "84cfab49cedbd5591e889206988100c2fd6e73a24473949b7122a40309db5eab"
+    },
+    "@supports": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @supports."
+        },
+        "grammar": {
+          "gap": "Review complete condition grammar and permitted contexts."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @supports."
+        },
+        "output": {
+          "gap": "Review output acceptance for @supports."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @supports."
+        },
+        "references": {
+          "gap": "Review references acceptance for @supports."
+        },
+        "source": {
+          "gap": "Review source acceptance for @supports."
+        },
+        "types": {
+          "gap": "Review types acceptance for @supports."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @supports."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "unverified",
+          "cases": [],
+          "limitations": [
+            "Complete condition grammar and allowed-context review."
+          ],
+          "compatibility": "unreviewed"
+        }
+      },
+      "grammar": "dfa8c2aae2ccb2707e48096978e79cad532b7584b61f969264b1fce809c4ff28"
+    },
+    "@view-transition": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @view-transition."
+        },
+        "grammar": {
+          "gap": "Complete transition-type grammar/types and watch acceptance."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @view-transition."
+        },
+        "output": {
+          "gap": "Review output acceptance for @view-transition."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @view-transition."
+        },
+        "references": {
+          "gap": "Review references acceptance for @view-transition."
+        },
+        "source": {
+          "gap": "Review source acceptance for @view-transition."
+        },
+        "types": {
+          "gap": "Review types acceptance for @view-transition."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @view-transition."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "partial",
+          "cases": ["transition.capture"],
+          "limitations": [
+            "Native capture, active types, and conditional opt-out are verified; complete target behavior review remains."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "1d1a5902aefa8e5c53028f8344ffefd115621cf460e93a81df3267ee85cc7881"
+    },
+    "@view-transition/navigation": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @view-transition/navigation."
+        },
+        "grammar": {
+          "gap": "Complete transition-type grammar/types and watch acceptance."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @view-transition/navigation."
+        },
+        "output": {
+          "gap": "Review output acceptance for @view-transition/navigation."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @view-transition/navigation."
+        },
+        "references": {
+          "gap": "Review references acceptance for @view-transition/navigation."
+        },
+        "source": {
+          "gap": "Review source acceptance for @view-transition/navigation."
+        },
+        "types": {
+          "gap": "Review types acceptance for @view-transition/navigation."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @view-transition/navigation."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "partial",
+          "cases": ["transition.capture"],
+          "limitations": [
+            "Native capture, active types, and conditional opt-out are verified; complete target behavior review remains."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "43dca31c3fc2f472daa8a1fa85ff2e874e8f85dd1f791649e323bcd081b7a305"
+    },
+    "@view-transition/types": {
+      "compiler": {
+        "contexts": {
+          "gap": "Review contexts acceptance for @view-transition/types."
+        },
+        "grammar": {
+          "gap": "Complete transition-type grammar/types and watch acceptance."
+        },
+        "maps": {
+          "gap": "Review maps acceptance for @view-transition/types."
+        },
+        "output": {
+          "gap": "Review output acceptance for @view-transition/types."
+        },
+        "packed": {
+          "gap": "Review packed acceptance for @view-transition/types."
+        },
+        "references": {
+          "gap": "Review references acceptance for @view-transition/types."
+        },
+        "source": {
+          "gap": "Review source acceptance for @view-transition/types."
+        },
+        "types": {
+          "gap": "Review types acceptance for @view-transition/types."
+        },
+        "watch": {
+          "gap": "Review watch acceptance for @view-transition/types."
+        }
+      },
+      "rendering": {
+        "chromium": {
+          "status": "partial",
+          "cases": ["transition.capture"],
+          "limitations": [
+            "Native capture, active types, and conditional opt-out are verified; complete target behavior review remains."
+          ],
+          "compatibility": "partial"
+        }
+      },
+      "grammar": "d2d542ffa7166dfbe5d5595021ee66ea065d6cb5bc369128fc7855b2fbfb8f79"
+    }
+  },
+  "version": 1
+}

@@ -21,7 +21,9 @@ describe('zyzz', () => {
       )
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
-        `import {css} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export {theme};export const styles={card:css({color:theme.tokens.color.brand})};`,
+        `import {css} from 'zyzz';import {theme} from './theme.ts?t=123&v=abc';export {theme};export namespace styles {
+  export const card = css({color:theme.tokens.color.brand})
+}`,
       )
       server = await Vite.createServer({
         root,

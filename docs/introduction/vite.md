@@ -54,8 +54,8 @@ export const { css, theme } = Config.create({
 // card.ts
 import { css, theme } from './zyzz.config.js'
 
-export const styles = {
-  card: css({ color: 'brand' }),
+export namespace styles {
+  export const card = css({ color: 'brand' })
 }
 element.className = `${theme.className} ${styles.card().className}`
 ```
@@ -78,10 +78,10 @@ export default defineConfig({
 
 ```ts
 import { css, mint } from '@acme/theme'
-import '@acme/theme/style.css'
+import '@acme/theme/styles.css'
 
-const styles = {
-  card: css({ color: 'brand' }),
+namespace styles {
+  export const card = css({ color: 'brand' })
 }
 element.className = `${mint.className} ${styles.card().className}`
 ```

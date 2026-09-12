@@ -30,7 +30,9 @@ import { Transform } from 'zyzz/compiler'
 const output = Transform.compile({
   moduleId: 'example/button.ts',
   source: `import { css } from 'zyzz';
-export const styles = { button: css({ padding: '1rem' }) };`,
+export namespace styles {
+  export const button = css({ padding: '1rem' })
+}`,
 })
 ```
 
@@ -68,8 +70,8 @@ Apply compiled styles during server rendering and deliver their stylesheet befor
 ```tsx
 import { css } from './zyzz.config.js'
 
-const styles = {
-  card: css({ padding: 'md' }),
+namespace styles {
+  export const card = css({ padding: 'md' })
 }
 
 export function Card() {

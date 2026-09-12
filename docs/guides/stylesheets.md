@@ -69,8 +69,8 @@ export const { css } = Config.create({
 ```ts
 import { css } from './zyzz.config.js'
 
-const styles = {
-  card: css({ '@layer components': { padding: '1rem' } }),
+namespace styles {
+  export const card = css({ '@layer components': { padding: '1rem' } })
 }
 ```
 
@@ -98,13 +98,13 @@ fontFace({
   src: 'url("./app.woff2") format("woff2")',
 })
 const enter = keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })
-const styles = {
-  notice: css({
+namespace styles {
+  export const notice = css({
     animationDuration: '160ms',
     animationName: enter,
     fontFamily: '"App Sans", sans-serif',
     '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
-  }),
+  })
 }
 ```
 

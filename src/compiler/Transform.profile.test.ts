@@ -76,7 +76,14 @@ describe('compile', () => {
         'unicode.ts': `import {global,importCss} from 'zyzz/web';\nglobal({'body::before':{content:'"héllo ● 日本語"'}});\nimportCss({url:'https://example.com/base.css'});`,
       },
     })
-    const css = output.sharedCss!
+    const packed = Graph.compile({
+      contracts: { 'lib/unicode.js': output.contracts['unicode.ts']! },
+      imports: { 'app.ts': { lib: 'lib/unicode.js' } },
+      modules: { 'app.ts': `import 'lib';` },
+    })
+
+    expect(packed.sharedCss).toBe(output.sharedCss)
+    const css = packed.sharedCss!
 
     expect(css).toMatchInlineSnapshot(`
       "@import url("https://example.com/base.css");

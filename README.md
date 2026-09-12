@@ -10,14 +10,15 @@
 
 ## Overview
 
-Zyzz combines typed CSS, design tokens, themes, and variants with ahead-of-time compilation. Group component styles in `const styles = {}`, call them, and spread the resulting props onto elements.
+Zyzz combines typed CSS, design tokens, themes, and variants with ahead-of-time compilation. Group component styles in `namespace styles {}`, call them, and spread the resulting props onto elements.
 
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  button: css({ color: '#06c', padding: '1rem' }),
-  card: css({ display: 'grid', gap: '1rem', padding: '1.5rem' }),
+namespace styles {
+  export const button = css({ color: '#06c', padding: '1rem' })
+
+  export const card = css({ display: 'grid', gap: '1rem', padding: '1.5rem' })
 }
 
 export function Card() {
@@ -128,12 +129,12 @@ Standard CSS properties and values carry TypeScript inference into each definiti
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  button: css({
+namespace styles {
+  export const button = css({
     color: '#06c',
     padding: '1rem',
     ':hover': { opacity: 0.8 },
-  }),
+  })
 }
 
 const example = <button {...styles.button()}>Continue</button>
@@ -150,8 +151,8 @@ The planned `zyzz/themes/default` entrypoint will provide inferred colors, typog
 ```ts
 import { css } from 'zyzz/themes/default'
 
-const styles = {
-  button: css({ color: 'blue.700', padding: 4 }),
+namespace styles {
+  export const button = css({ color: 'blue.700', padding: 4 })
 }
 ```
 
@@ -172,8 +173,8 @@ export const { css, theme, variants } = Config.create({
 ```ts
 import { css } from './zyzz.config.js'
 
-const styles = {
-  button: css({ color: 'blue.700', padding: 4 }),
+namespace styles {
+  export const button = css({ color: 'blue.700', padding: 4 })
 }
 ```
 
@@ -196,8 +197,8 @@ export const { css, theme, variants } = Config.create({
 ```ts
 import { css } from './zyzz.config.js'
 
-const styles = {
-  card: css({ color: 'text', padding: 'sm' }),
+namespace styles {
+  export const card = css({ color: 'text', padding: 'sm' })
 }
 ```
 
@@ -210,8 +211,8 @@ Apply the theme to `<html>` and select a color scheme through its callable props
 ```tsx
 import { css, theme } from './zyzz.config.js'
 
-const styles = {
-  card: css({ color: 'text', padding: 'sm' }),
+namespace styles {
+  export const card = css({ color: 'text', padding: 'sm' })
 }
 
 export function Document() {
@@ -228,7 +229,7 @@ export function Document() {
 }
 ```
 
-The theme returns its generated `className` and `style.colorScheme`. Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` for system preference. Named themes use `themes({ theme: 'mint', colorScheme: 'dark' })`.
+The theme returns its generated `className` and `styles.colorScheme`. Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` for system preference. Named themes use `themes({ theme: 'mint', colorScheme: 'dark' })`.
 
 Color pairs compile to `light-dark()`; the custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme calls can scope a subtree independently.
 
@@ -241,8 +242,8 @@ Describe component choices with inferred props, defaults, and compound rules. Us
 ```tsx
 import { variants } from './zyzz.config.js'
 
-const styles = {
-  button: variants({
+namespace styles {
+  export const button = variants({
     base: { display: 'inline-flex' },
     variants: {
       size: {
@@ -251,7 +252,7 @@ const styles = {
       },
     },
     defaultVariants: { size: 'md' },
-  }),
+  })
 }
 
 type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
@@ -265,13 +266,13 @@ Mix static declarations with typed runtime values in the same callback. Call the
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  bar: css((values: { width: `${number}%` }) => ({
+namespace styles {
+  export const bar = css((values: { width: `${number}%` }) => ({
     backgroundColor: '#06c',
     borderRadius: '0.25rem',
     height: '0.5rem',
     width: values.width,
-  })),
+  }))
 }
 
 export function Bar() {
@@ -291,13 +292,13 @@ Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` p
 ```ts
 import { css, theme } from './zyzz.config.js'
 
-const styles = {
-  panel: css({
+namespace styles {
+  export const panel = css({
     display: ['block', 'grid'],
     color: 'brand!',
     borderColor: theme.vars.color.brand,
     width: `calc(100% - ${theme.vars.spacing.md})`,
-  }),
+  })
 }
 ```
 
@@ -308,9 +309,10 @@ Prefer state attributes for conditional styling. Calls accept `className` and `s
 ```tsx
 import { css, cx } from 'zyzz'
 
-const styles = {
-  base: css({ padding: '0.5rem' }),
-  roomy: css({ padding: '1rem' }),
+namespace styles {
+  export const base = css({ padding: '0.5rem' })
+
+  export const roomy = css({ padding: '1rem' })
 }
 
 const example = (

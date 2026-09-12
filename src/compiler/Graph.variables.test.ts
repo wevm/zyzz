@@ -11,14 +11,20 @@ describe('compile', () => {
   test('resolves computed literal static keys with authored override order', () => {
     const result = Graph.compile({
       modules: {
-        'app.ts': `import {css} from 'zyzz';const first={width:'5px',['width']:'10px'};const second={['width']:'20px',width:'30px'};const third={['width']:'40px'};export const styles={a:css({width:first.width}),b:css({width:second.width}),c:css({width:third.width})};`,
+        'app.ts': `import {css} from 'zyzz';const first={width:'5px',['width']:'10px'};const second={['width']:'20px',width:'30px'};const third={['width']:'40px'};export namespace styles {
+  export const a = css({width:first.width})
+
+  export const b = css({width:second.width})
+
+  export const c = css({width:third.width})
+}`,
       },
     })
 
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-style-1e8a67z1uaws1j-167{width:10px;}
-      .z-style-1e8a67z1uaws1j-194{width:30px;}
-      .z-style-1e8a67z1uaws1j-222{width:40px;}"
+      ".z-style-1e8a67z1uaws1j-189{width:10px;}
+      .z-style-1e8a67z1uaws1j-234{width:30px;}
+      .z-style-1e8a67z1uaws1j-280{width:40px;}"
     `)
   })
 
@@ -26,11 +32,13 @@ describe('compile', () => {
     expect(() =>
       Graph.compile({
         modules: {
-          'app.ts': `import {css} from 'zyzz';const prefix=['5px','6px'];const sizes=['10px',...prefix,'20px'];export const styles={card:css({width:sizes[2]})};`,
+          'app.ts': `import {css} from 'zyzz';const prefix=['5px','6px'];const sizes=['10px',...prefix,'20px'];export namespace styles {
+  export const card = css({width:sizes[2]})
+}`,
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:127: Static array indexes cannot cross spread elements.]`,
+      `[Source.ExtractError: app.ts:149: Static array indexes cannot cross spread elements.]`,
     )
   })
 
@@ -54,17 +62,19 @@ describe('compile', () => {
     expect(() =>
       Graph.compile({
         modules: {
-          'app.ts': `import {css} from 'zyzz';const base={width:'10px',[key]:'20px'};export const styles={card:css({width:base.width})};`,
+          'app.ts': `import {css} from 'zyzz';const base={width:'10px',[key]:'20px'};export namespace styles {
+  export const card = css({width:base.width})
+}`,
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:101: Static member reads cannot cross unresolved computed keys.]`,
+      `[Source.ExtractError: app.ts:123: Static member reads cannot cross unresolved computed keys.]`,
     )
   })
 
   test('normalizes wrapped compound static values and rejects loop mutation', () => {
     const source =
-      "import {css} from 'zyzz';const size=10;export const styles={card:css({width:(`${size}px` as const)})};"
+      "import {css} from 'zyzz';const size=10;export namespace styles {\n  export const card = css({width:(`${size}px` as const)})\n}"
 
     expect(
       Graph.compile({ modules: { 'app.ts': source } }).modules['app.ts']!.css,
@@ -77,7 +87,7 @@ describe('compile', () => {
       try {
         Graph.compile({
           modules: {
-            'app.ts': `import {css} from 'zyzz';const base={width:'10px'};${loop}export const styles={card:css(base)};`,
+            'app.ts': `import {css} from 'zyzz';const base={width:'10px'};${loop}export namespace styles {export const card=css(base);}`,
           },
         })
 
@@ -141,13 +151,17 @@ export const vars=Vars.define({
   test('compiles overlapping dynamic fields and default exported static records', () => {
     const result = Graph.compile({
       modules: {
-        'app.ts': `import {css} from 'zyzz';const base={color:'red'};export default base;type Values={width:string;zIndex:number}&{width:'10px';zIndex:1|2};export const styles={card:css(base),dynamic:css((v:Values)=>({width:v.width,zIndex:v.zIndex}))};`,
+        'app.ts': `import {css} from 'zyzz';const base={color:'red'};export default base;type Values={width:string;zIndex:number}&{width:'10px';zIndex:1|2};export namespace styles {
+  export const card = css(base)
+
+  export const dynamic = css((v:Values)=>({width:v.width,zIndex:v.zIndex}))
+}`,
       },
     })
 
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z-1e8a67z1uaws1j-base0{color:red;}
-      .z-1e8a67z1uaws1j-base1{width:var(--z-d1e8a67z1uaws1j-181-77-69-64-74-68);z-index:var(--z-d1e8a67z1uaws1j-181-7a-49-6e-64-65-78);}"
+      .z-1e8a67z1uaws1j-base1{width:var(--z-d1e8a67z1uaws1j-221-77-69-64-74-68);z-index:var(--z-d1e8a67z1uaws1j-221-7a-49-6e-64-65-78);}"
     `)
   })
 
@@ -168,7 +182,9 @@ export const vars=Vars.define({
         'app.ts': { a: 'pkg/vars.js', b: 'pkg/index.js', zyzz: null },
       },
       modules: {
-        'app.ts': `import {vars as a} from 'a';import {vars as b} from 'b';import {css} from 'zyzz';export const styles={card:css({width:a.gap,padding:b.gap})};`,
+        'app.ts': `import {vars as a} from 'a';import {vars as b} from 'b';import {css} from 'zyzz';export namespace styles {
+  export const card = css({width:a.gap,padding:b.gap})
+}`,
       },
     })
 
@@ -179,7 +195,9 @@ export const vars=Vars.define({
   test('allows scalar copies and asserted static token bindings', () => {
     const result = Graph.compile({
       modules: {
-        'app.ts': `import {Config} from 'zyzz';const {theme,css}=Config.create({theme:{color:{ink:'#123'}}});const dimensions={width:'10px',nested:{width:'20px'}};const width=dimensions.width;consume(width);consume(dimensions.width);const color=(theme.tokens.color.ink as string);export const styles={card:css({width:dimensions.width,color})};`,
+        'app.ts': `import {Config} from 'zyzz';const {theme,css}=Config.create({theme:{color:{ink:'#123'}}});const dimensions={width:'10px',nested:{width:'20px'}};const width=dimensions.width;consume(width);consume(dimensions.width);const color=(theme.tokens.color.ink as string);export namespace styles {
+  export const card = css({width:dimensions.width,color})
+}`,
       },
     })
 
@@ -199,7 +217,9 @@ export const vars=Vars.define({
       contracts: { 'lib.js': library.contracts['vars.ts']! },
       imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
       modules: {
-        'app.ts': `import vars from 'lib';import {css} from 'zyzz';export const styles={card:css({width:vars.gap})};`,
+        'app.ts': `import vars from 'lib';import {css} from 'zyzz';export namespace styles {
+  export const card = css({width:vars.gap})
+}`,
       },
     })
 
@@ -233,7 +253,11 @@ export const vars=Vars.define({
       contracts: { 'lib/index.js': library.contracts['index.ts']! },
       imports: { 'app.ts': { lib: 'lib/index.js', zyzz: null } },
       modules: {
-        'app.ts': `import {css} from 'zyzz';import {layout} from 'lib';export {layout};const base={height:'20px',padding:layout.gap} as const;type Width='10px'|'30px';interface Values {width:Width}export const styles={registered:css({...base,width:layout.amount}),dynamic:css((values:Values)=>({...base,width:values.width}))};`,
+        'app.ts': `import {css} from 'zyzz';import {layout} from 'lib';export {layout};const base={height:'20px',padding:layout.gap} as const;type Width='10px'|'30px';interface Values {width:Width}export namespace styles {
+  export const registered = css({...base,width:layout.amount})
+
+  export const dynamic = css((values:Values)=>({...base,width:values.width}))
+}`,
       },
     })
 
@@ -487,22 +511,26 @@ export const vars=Vars.define({
     expect(css).toMatchInlineSnapshot(`
       "@property --z-v4t4nbe1og4cic-76-61-72-73--61-6d-6f-75-6e-74{syntax:"<percentage>";inherits:false;initial-value:25%;}
       @property --z-v4t4nbe1og4cic-76-61-72-73--67-61-70{syntax:"<length>";inherits:true;initial-value:4px;}.z-1e8a67z1uaws1j-base0{height:20px;padding:var(--z-v4t4nbe1og4cic-76-61-72-73--67-61-70);}
-      .z-style-1e8a67z1uaws1j-210{width:var(--z-v4t4nbe1og4cic-76-61-72-73--61-6d-6f-75-6e-74);}
-      .z-style-1e8a67z1uaws1j-253{width:var(--z-d1e8a67z1uaws1j-253-77-69-64-74-68);}"
+      .z-style-1e8a67z1uaws1j-232{width:var(--z-v4t4nbe1og4cic-76-61-72-73--61-6d-6f-75-6e-74);}
+      .z-style-1e8a67z1uaws1j-293{width:var(--z-d1e8a67z1uaws1j-293-77-69-64-74-68);}"
     `)
   })
   test('expands immutable members and shorthand while retaining dynamic intersections', () => {
     const graph = Graph.compile({
       modules: {
-        'static.ts': `import {css,Vars} from 'zyzz';const dimensions={width:'12px',padding:'4px'} as const;const width=dimensions.width;const base={width,padding:dimensions.padding};type Width='10px'|'30px';type Values={width:Width}&{opacity:0|1};export const count=Vars.define({n:{type:'number',inherits:false,initialValue:-1}});export const styles={card:css({...base,padding:'8px'}),dynamic:css((values:Values)=>({width:values.width,opacity:values.opacity}))};`,
+        'static.ts': `import {css,Vars} from 'zyzz';const dimensions={width:'12px',padding:'4px'} as const;const width=dimensions.width;const base={width,padding:dimensions.padding};type Width='10px'|'30px';type Values={width:Width}&{opacity:0|1};export const count=Vars.define({n:{type:'number',inherits:false,initialValue:-1}});export namespace styles {
+  export const card = css({...base,padding:'8px'})
+
+  export const dynamic = css((values:Values)=>({width:values.width,opacity:values.opacity}))
+}`,
       },
     })
 
     expect(graph.modules['static.ts']!.css).toMatchInlineSnapshot(`
       ".z-15wl7di1emu9we-base1{padding:8px;}
-      .z-style-15wl7di1emu9we-334{width:12px;}
-      .z-15wl7di1emu9we-base0{opacity:var(--z-d15wl7di1emu9we-371-6f-70-61-63-69-74-79);}
-      .z-style-15wl7di1emu9we-371{width:var(--z-d15wl7di1emu9we-371-77-69-64-74-68);}"
+      .z-style-15wl7di1emu9we-356{width:12px;}
+      .z-15wl7di1emu9we-base0{opacity:var(--z-d15wl7di1emu9we-411-6f-70-61-63-69-74-79);}
+      .z-style-15wl7di1emu9we-411{width:var(--z-d15wl7di1emu9we-411-77-69-64-74-68);}"
     `)
     expect(graph.sharedCss).toMatchInlineSnapshot(
       `"@property --z-v15wl7di1emu9we-63-6f-75-6e-74--6e{syntax:"<number>";inherits:false;initial-value:-1;}"`,

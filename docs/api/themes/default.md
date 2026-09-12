@@ -6,8 +6,8 @@
 ```ts
 import { css } from 'zyzz/themes/default'
 
-const styles = {
-  card: css({ color: 'blue.700', padding: 4 }),
+namespace styles {
+  export const card = css({ color: 'blue.700', padding: 4 })
 }
 ```
 

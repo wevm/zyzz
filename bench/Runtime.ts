@@ -151,18 +151,19 @@ export async function create(options: create.Options): Promise<Bundle> {
 
       if (library === 'zyzz') {
         const definitions = literals.map(
-          (style, index) => `${names[index]}: css(${JSON.stringify(style)})`,
+          (style, index) =>
+            `export const ${names[index]} = css(${JSON.stringify(style)});`,
         )
 
         const source = (() => {
           if (kind === 'direct')
-            return `import {css} from 'zyzz'; const styles={${definitions.join(',')}}; ${application(names.map((name) => `styles.${name}()`))}`
+            return `import {css} from 'zyzz'; namespace styles {${definitions.join('')}} ${application(names.map((name) => `styles.${name}()`))}`
 
           if (kind === 'cached')
             return `import { css } from 'zyzz'; ${application(literals.map((style) => `css(${JSON.stringify(style)})()`))}`
 
           return `import { css } from 'zyzz';
-            const styles = { ${definitions.join(',')} };
+            namespace styles { ${definitions.join('')} }
             const applications = [${names.map((name) => `styles.${name}`).join(',')}];
             export function apply(index, overrides) {
               return applications[index](${kind === 'overrides' ? 'overrides' : ''});

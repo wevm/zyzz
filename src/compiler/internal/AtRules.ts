@@ -5,6 +5,9 @@ import * as Lightning from 'lightningcss'
 export function transform<C extends Lightning.CustomAtRules>(
   options: Lightning.TransformOptions<C>,
 ): Lightning.TransformResult {
+  // Stylesheets without an @ byte cannot require at-keyword transport.
+  if (!options.code.includes(64)) return Lightning.transform(options)
+
   const source = new TextDecoder().decode(options.code)
   validateFeatures(source)
   // The pinned visitor cannot round-trip the nested Option used for anonymous import layers.
@@ -17,17 +20,20 @@ export function transform<C extends Lightning.CustomAtRules>(
         `$1layer(${importMarker})`,
       )
     : source
+  const lower = source.toLowerCase()
   let marker = '-zyzz-ffv-000000000'
   let suffix = 0
-  while (source.toLowerCase().includes(marker))
+  while (lower.includes(marker))
     marker = `-zyzz-ffv-${(++suffix).toString(36).padStart(9, '0')}`
   let paletteMarker = '-zyzz-fpv-000000000'
   let paletteSuffix = 0
-  while (source.toLowerCase().includes(paletteMarker))
+  while (lower.includes(paletteMarker))
     paletteMarker = `-zyzz-fpv-${(++paletteSuffix).toString(36).padStart(9, '0')}`
   // The pinned parser silently drops font-family lists from palette rules.
-  const features = rename(imports, 'font-feature-values', marker)
-  const renamed = source.toLowerCase().includes('@font-palette-values')
+  const features = lower.includes('@font-feature-values')
+    ? rename(imports, 'font-feature-values', marker)
+    : imports
+  const renamed = lower.includes('@font-palette-values')
     ? rename(features, 'font-palette-values', paletteMarker)
     : features
   if (source === renamed) return Lightning.transform(options)

@@ -19,9 +19,9 @@ document.querySelector('#dispose')!.addEventListener('click', () => unmount(app)
 export function render() { const result = renderComponent(App); return { html: result.body, script: result.head }; }`,
   'styles.ts': `import { Config } from 'zyzz';
 export const { css, theme } = Config.create({ output: 'html', theme: { color: { text: { light: '#000000', dark: '#ffffff' } } } });
-export const styles = {
-  card: css((values: { width: \`\${number}%\` }) => ({ color: 'text', backgroundColor: '#0066cc', height: '20px', width: values.width })),
-};`,
+export namespace styles {
+  export const card = css((values: { width: \`\${number}%\` }) => ({ color: 'text', backgroundColor: '#0066cc', height: '20px', width: values.width }))
+}`,
   'types.tsx': `import type { HTMLAttributes } from 'svelte/elements'; import { styles } from './styles';
 const attributes: HTMLAttributes<HTMLDivElement> = styles.card({ width: '25%' });
 // @ts-expect-error Dynamic values retain their CSS unit contract.

@@ -100,7 +100,7 @@ for (const name of Object.keys(previous.entries))
 if (previous.version !== version) errors.push(`MDN version changed: ${version}`)
 if (update) Fs.writeFileSync(file, `${JSON.stringify(current, null, 2)}\n`)
 else {
-  console.log('# At-rule Conformance\n')
+  console.log('# At-rule Inventory and Legacy Combined Acceptance\n')
   console.log(
     `Pinned MDN data: ${version}. Supplementary rules and nested blocks are reviewed separately.\n`,
   )

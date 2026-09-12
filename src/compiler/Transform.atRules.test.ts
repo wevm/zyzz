@@ -25,17 +25,23 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
   test('resolves configured queries across CSS whitespace and comment boundaries', () => {
     const output = Transform.compile({
       moduleId: 'queries.ts',
-      source: `import {Theme} from 'zyzz';const theme=Theme.define({breakpoints:{tablet:'48rem'}});export const styles={card:theme.css({'@media\\ttablet':{color:'red'},'@media/**/tablet':{color:'blue'}})};`,
+      source: `import {Theme} from 'zyzz';const theme=Theme.define({breakpoints:{tablet:'48rem'}});export namespace styles {
+  export const card = theme.css({'@media\\ttablet':{color:'red'},'@media/**/tablet':{color:'blue'}})
+}`,
     })
-    expect(output.css).toMatchInlineSnapshot(`".z-style-1df82zi1f2cka-110{@media (width >= 48rem){color:red;}@media (width >= 48rem){color:blue;}}"`)
+    expect(output.css).toMatchInlineSnapshot(
+      `".z-style-1df82zi1f2cka-132{@media (width >= 48rem){color:red;}@media (width >= 48rem){color:blue;}}"`,
+    )
   })
   test('keeps scope, layer, and scroll-state nesting in authored order', () => {
     const output = Transform.compile({
       moduleId: 'scope.ts',
-      source: `import {css} from 'zyzz'; export const styles = {box:css({'@scope (.outer) to (.stop)':{'@layer components':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}})}`,
+      source: `import {css} from 'zyzz'; export namespace styles {
+  export const box = css({'@scope (.outer) to (.stop)':{'@layer components':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}})
+}`,
     })
     expect(output.css).toMatchInlineSnapshot(
-      `".z-style-mond465apgew-53{@scope (.outer) to (.stop){@layer components{color:red;@container scroll-state(stuck: top){color:blue;}}}}"`,
+      `".z-style-mond465apgew-73{@scope (.outer) to (.stop){@layer components{color:red;@container scroll-state(stuck: top){color:blue;}}}}"`,
     )
   })
   test('defaults undefined contexts and accepts anonymous and CSS-whitespace groups', () => {
@@ -56,7 +62,9 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
   test('Chromium applies local scope and layer rules as a scroll-state query changes', async () => {
     const output = Transform.compile({
       moduleId: 'nested.ts',
-      source: `import {css} from 'zyzz';export const styles={item:css({'@scope (&) to (.stop)':{'@layer components':{'& .item':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}}})};`,
+      source: `import {css} from 'zyzz';export namespace styles {
+  export const item = css({'@scope (&) to (.stop)':{'@layer components':{'& .item':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}}})
+}`,
     })
     const name = Object.values(output.classes)[0]!
     const browser = await chromium.launch()

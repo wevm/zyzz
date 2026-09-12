@@ -20,9 +20,9 @@ document.querySelector('#dispose')!.addEventListener('click', () => dispose());`
 export function render() { return { html: renderToString(() => <App />), script: generateHydrationScript() }; }`,
   'styles.ts': `import { Config } from 'zyzz';
 export const { css, theme } = Config.create({ output: 'html', theme: { color: { text: { light: '#000000', dark: '#ffffff' } } } });
-export const styles = {
-  card: css((values: { width: \`\${number}%\` }) => ({ color: 'text', backgroundColor: '#0066cc', height: '20px', width: values.width })),
-};`,
+export namespace styles {
+  export const card = css((values: { width: \`\${number}%\` }) => ({ color: 'text', backgroundColor: '#0066cc', height: '20px', width: values.width }))
+}`,
   'types.tsx': `import { styles } from './styles';
 const attributes = styles.card({ width: '25%' });
 const element = <div {...attributes} />;

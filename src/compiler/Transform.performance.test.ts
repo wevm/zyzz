@@ -28,6 +28,33 @@ async function execute(source: string) {
 }
 
 describe('compile', () => {
+  test('folds local namespace applications and retains escaping namespaces', async () => {
+    const { consumer, output } = await execute(`import {css} from 'zyzz';
+      export function apply(){return styles.card()}
+      export let failed=false;
+      try {apply()} catch(error){failed=error instanceof Error}
+      namespace styles {export const card=css({color:'red'});}`)
+
+    expect(
+      output.code.includes('(styles.card?{className:'),
+    ).toMatchInlineSnapshot('true')
+    expect(consumer.failed).toMatchInlineSnapshot('true')
+    expect(consumer.apply() === consumer.apply()).toMatchInlineSnapshot('false')
+
+    for (const body of [
+      `export namespace styles {export const card=css({color:'red'});} export function apply(){return styles.card()}`,
+      `namespace styles {export const card=css({color:'red'});} export {styles}; export function apply(){return styles.card()}`,
+      `namespace styles {export const card=css({color:'red'});} styles.card=()=>({className:'replaced'}); export function apply(){return styles.card()}`,
+      `namespace styles {export const card=css({color:'red'});} export function apply(styles){return styles.card()}`,
+    ]) {
+      const { output } = await execute(`import {css} from 'zyzz';${body}`)
+
+      expect(output.code.includes('?{className:')).toMatchInlineSnapshot(
+        'false',
+      )
+    }
+  })
+
   test('folds local calls into fresh props while preserving initialization errors', async () => {
     const { consumer, output } = await execute(`import {css} from 'zyzz';
       export function early(){return card()}

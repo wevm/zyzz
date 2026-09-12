@@ -8,11 +8,11 @@ Define finite style choices for one element.
 ```ts
 import { variants } from 'zyzz'
 
-const styles = {
-  button: variants({
+namespace styles {
+  export const button = variants({
     defaultVariants: { size: 'sm' },
     variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
-  }),
+  })
 }
 const props = styles.button({ size: 'md' })
 ```

@@ -19,8 +19,8 @@ Define the application's named config helpers as shown in [Getting Started](gett
 ```tsx
 import { css } from './zyzz.config.js'
 
-const styles = {
-  card: css({ padding: 'md' }),
+namespace styles {
+  export const card = css({ padding: 'md' })
 }
 
 export default function Page() {

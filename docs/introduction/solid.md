@@ -23,11 +23,11 @@ import { Config } from 'zyzz'
 
 const { css } = Config.create({ output: 'html' })
 
-const styles = {
-  bar: css((values: { width: `${number}%` }) => ({
+namespace styles {
+  export const bar = css((values: { width: `${number}%` }) => ({
     height: '20px',
     width: values.width,
-  })),
+  }))
 }
 
 export function Progress() {

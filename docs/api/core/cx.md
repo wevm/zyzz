@@ -8,9 +8,10 @@ Compose applied generated styles while retaining their owned bindings.
 ```ts
 import { css, cx } from 'zyzz'
 
-const styles = {
-  base: css({ padding: '0.5rem' }),
-  roomy: css({ padding: '1rem' }),
+namespace styles {
+  export const base = css({ padding: '0.5rem' })
+
+  export const roomy = css({ padding: '1rem' })
 }
 const props = cx(styles.base(), styles.roomy())
 ```

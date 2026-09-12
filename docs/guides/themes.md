@@ -26,8 +26,8 @@ export const { css, theme, variants } = Config.create({
 ```tsx
 import { css } from './zyzz.config.js'
 
-const styles = {
-  button: css({ backgroundColor: 'brand', padding: 'md' }),
+namespace styles {
+  export const button = css({ backgroundColor: 'brand', padding: 'md' })
 }
 
 const example = <button {...styles.button()}>Save</button>
@@ -56,8 +56,8 @@ export const { css } = Config.create({
   },
 })
 
-const styles = {
-  card: css({ px: 'sm', margin: 'gutter', color: 'primary' }),
+namespace styles {
+  export const card = css({ px: 'sm', margin: 'gutter', color: 'primary' })
 }
 ```
 
@@ -89,8 +89,8 @@ export const { css, script, themes } = Config.create({
 ```tsx
 import { css, themes } from './zyzz.config.js'
 
-const styles = {
-  card: css({ color: 'brand' }),
+namespace styles {
+  export const card = css({ color: 'brand' })
 }
 
 function App({ appearance }: { appearance: 'base' | 'mint' }) {
@@ -128,7 +128,7 @@ const example = (
 )
 ```
 
-Use `light dark` for system preference, or `light` / `dark` to force a scheme. The call returns the scope class and an inline `colorScheme` style. Omitting `colorScheme` preserves inherited CSS behavior. Nested scopes can select a different theme, scheme, or both.
+Use `light dark` for system preference, or `light` / `dark` to force a scheme. The call returns the scope class and an inline `colorScheme` styles. Omitting `colorScheme` preserves inherited CSS behavior. Nested scopes can select a different theme, scheme, or both.
 
 ### Restore Preferences
 
@@ -210,8 +210,8 @@ const alternate = Theme.extend(theme, { color: { brand: '#175' } })
 const { css } = theme
 
 export const scope = alternate.className
-export const styles = {
-  card: css({ color: theme.tokens.color.brand }),
+export namespace styles {
+  export const card = css({ color: theme.tokens.color.brand })
 }
 ```
 

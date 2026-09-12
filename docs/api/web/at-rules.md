@@ -112,13 +112,15 @@ export const above = positionTry({
 import { css } from './zyzz.config.js'
 import { above, brandPalette, circled } from './stylesheets.js'
 
-export const styles = {
-  icon: css({ fontPalette: brandPalette }),
-  list: css({ listStyleType: circled }),
-  tooltip: css({
+export namespace styles {
+  export const icon = css({ fontPalette: brandPalette })
+
+  export const list = css({ listStyleType: circled })
+
+  export const tooltip = css({
     position: 'absolute',
     positionTryFallbacks: above,
-  }),
+  })
 }
 ```
 
@@ -131,8 +133,8 @@ Grouping remains available in `css`, `variants`, compound variants, and global s
 ```ts
 import { css } from './zyzz.config.js'
 
-export const styles = {
-  card: css({
+export namespace styles {
+  export const card = css({
     '@scope (&) to (.boundary)': {
       '& h2': { color: 'red' },
     },
@@ -140,7 +142,7 @@ export const styles = {
       boxShadow: '0 2px 8px #0002',
     },
     '@starting-style': { opacity: 0 },
-  }),
+  })
 }
 ```
 
@@ -197,7 +199,7 @@ CSS functions use ordered parameter records with `name`, optional `syntax`, and 
 
 ## Conformance Evidence
 
-`pnpm check:at-rules` verifies the pinned MDN inventory, supplementary modern rules, descriptor fingerprints, and referenced evidence files. `pnpm check:at-rules:full` also requires every entry to be supported. Inventory coverage alone does not establish type, compiler, packaging, or browser support. Browser limitations remain explicit in the acceptance report.
+`pnpm check:at-rules` verifies the pinned MDN inventory, supplementary modern rules, descriptor fingerprints, and referenced evidence files. `pnpm check:at-rules:full` requires all compiler obligations and executes type/integration evidence. Target compatibility and rendered evidence have separate gates; `check:at-rules:legacy-full` retains the previous combined requirement. Inventory coverage alone does not establish type, compiler, packaging, or browser support. Browser limitations remain explicit in the acceptance report.
 
 > [!NOTE]
 > `colorProfile` is planned and remains unexported until real-browser rendering is verified.
@@ -206,7 +208,7 @@ CSS functions use ordered parameter records with `name`, optional `syntax`, and 
 
 Generated stylesheet files use UTF-8 without a BOM or `@charset`. Source maps and packed sections remain Unicode text; imported CSS assets retain their authored bytes. Serve generated CSS with UTF-8 transport metadata. No nested charset helper or alternative output encoding is exposed.
 
-The private profile implementation preserves `src`, `renderingIntent`, and comma-separated `components`, and links names inside `color(${profile} …)` across source and packed imports. The public export remains gated on real profile rendering evidence.
+The private profile implementation preserves `src`, `renderingIntent`, and comma-separated `components`, and links names inside `color(${profile} …)` across source and packed imports. WeasyPrint 70.0 verifies basic ICC painting. Public descriptor validation, relative profile colors, and rendering-intent evidence remain open.
 
 ## Function Signatures
 
@@ -222,4 +224,4 @@ const size = cssFunction({
 })
 ```
 
-Identifier escapes, complete list-value refinements, and every permitted function context remain acceptance work. The new PDF fixture verifies named pages, first/left selectors, counters, and sixteen margin boxes against native CSS; it does not establish bleed, crop marks, or every fragmentation rule.
+Identifier escapes, complete list-value refinements, and every permitted function context remain acceptance work. The new PDF fixture verifies named pages, first/left selectors, counters, and sixteen margin boxes against native CSS; WeasyPrint adds bleed geometry and printer-mark evidence. Complete fragmentation behavior remains open.

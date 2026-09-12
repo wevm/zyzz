@@ -66,10 +66,30 @@ jobs:
         uses: ./.github/actions/install-dependencies
       - name: Install browser
         run: pnpm exec playwright install --with-deps --only-shell chromium
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          cache: pip
+          cache-dependency-path: test/conformance/requirements.txt
+          python-version: '3.12'
+      - name: Install print engine
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 poppler-utils
+          python -m pip install -r test/conformance/requirements.txt
       - env:
           CI: true
         name: Run tests
-        run: pnpm run test run --coverage
+        run: pnpm run test run --coverage --reporter=default --reporter=json --outputFile=test-results/integration.json
+      - name: Verify named at-rule acceptance cases
+        run: node scripts/at-rule-acceptance.ts --results test-results/integration.json
+      - if: ${{ !cancelled() && hashFiles('test-results/at-rule-print-capabilities.json') != '' }}
+        name: Upload print capabilities
+        uses: actions/upload-artifact@v4
+        with:
+          name: at-rule-print-capabilities
+          path: test-results/at-rule-print-capabilities.json
+          retention-days: 30
       - if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
         name: Report coverage
         uses: davelosert/vitest-coverage-report-action@v2

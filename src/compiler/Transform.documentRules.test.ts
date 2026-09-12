@@ -102,7 +102,9 @@ viewTransition({navigation:' AUTO '});`,
       moduleId: 'maps.ts',
       source: `import {css} from 'zyzz';import {fontFeatureValues} from 'zyzz/web';
 fontFeatureValues({families:'Body',features:{'@styleset':{'\\\\65 ditorial':[1,3]}}});
-export const styles={text:css({color:'red'})};`,
+export namespace styles {
+  export const text = css({color:'red'})
+}`,
     })
     const line =
       output.css.split('\n').findIndex((line) => line.includes('color:red')) + 1
@@ -113,9 +115,9 @@ export const styles={text:css({color:'red'})};`,
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 26,
-        "line": 3,
-        "name": "style-1mqnwyd110b1y9-180",
+        "column": 22,
+        "line": 4,
+        "name": "style-1mqnwyd110b1y9-202",
         "source": "maps.ts",
       }
     `)

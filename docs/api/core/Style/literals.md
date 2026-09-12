@@ -72,12 +72,12 @@ Units use the listed spellings. Signed decimals and finite scientific notation a
 ```ts
 import { css } from 'zyzz'
 
-const styles = {
-  panel: css({
+namespace styles {
+  export const panel = css({
     width: ['80vw', '80cqi'],
     height: '100dvh',
     padding: '1lh!',
-  }),
+  })
 }
 ```
 
@@ -98,13 +98,14 @@ Container units can refer to containment established by ordinary CSS. Zyzz does 
 import { Config } from 'zyzz'
 
 const { css } = Config.create({ theme: { spacing: { header: '4rem' } } })
-const styles = {
-  scroller: css({
+namespace styles {
+  export const scroller = css({
     overflow: 'auto',
     scrollPaddingBlockStart: 'header',
     overscrollBehavior: 'contain',
-  }),
-  section: css({ scrollMarginBlockStart: '1rem' }),
+  })
+
+  export const section = css({ scrollMarginBlockStart: '1rem' })
 }
 ```
 
@@ -125,17 +126,18 @@ Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, a
 ```ts
 import { css } from 'zyzz'
 
-const styles = {
-  carousel: css({
+namespace styles {
+  export const carousel = css({
     display: 'flex',
     overflowX: 'auto',
     scrollSnapType: 'x mandatory',
-  }),
-  slide: css({
+  })
+
+  export const slide = css({
     flexShrink: 0,
     scrollSnapAlign: 'start',
     scrollSnapStop: 'always',
-  }),
+  })
 }
 ```
 
@@ -157,13 +159,13 @@ Snap declarations accept CSS-wide keywords, fallback arrays, and importance in r
 ```ts
 import { css } from 'zyzz'
 
-const styles = {
-  link: css({
+namespace styles {
+  export const link = css({
     textDecorationLine: ['underline', 'underline overline!'],
     textDecorationStyle: 'wavy',
     textDecorationThickness: '2px',
     textUnderlineOffset: '.2em',
-  }),
+  })
 }
 ```
 
@@ -188,14 +190,19 @@ Thickness supports a bounded nonnegative subset of CSS. Percentages use font-rel
 ```ts
 import { css } from 'zyzz'
 
-const styles = {
-  title: css({ letterSpacing: '-.02em', textTransform: 'uppercase' }),
-  excerpt: css({
+namespace styles {
+  export const title = css({
+    letterSpacing: '-.02em',
+    textTransform: 'uppercase',
+  })
+
+  export const excerpt = css({
     overflow: 'hidden',
     whiteSpace: 'nowrap',
     textOverflow: 'ellipsis',
-  }),
-  paragraph: css({ overflowWrap: 'anywhere', textIndent: '1em' }),
+  })
+
+  export const paragraph = css({ overflowWrap: 'anywhere', textIndent: '1em' })
 }
 ```
 
@@ -249,15 +256,20 @@ Border styles include `dashed`, `dotted`, `double`, `groove`, `hidden`, `inset`,
 ## Flex and Overflow
 
 ```ts
-const styles = {
-  row: css({
+namespace styles {
+  export const row = css({
     display: 'flex',
     flexWrap: 'wrap',
     alignContent: 'space-between',
     overflow: 'hidden',
     overflowY: 'auto',
-  }),
-  item: css({ flexBasis: '12rem', alignSelf: 'center', order: -1 }),
+  })
+
+  export const item = css({
+    flexBasis: '12rem',
+    alignSelf: 'center',
+    order: -1,
+  })
 }
 ```
 
@@ -268,14 +280,14 @@ const styles = {
 ## Logical Boxes
 
 ```ts
-const styles = {
-  panel: css({
+namespace styles {
+  export const panel = css({
     inlineSize: '20rem',
     paddingInline: '1rem',
     marginBlockEnd: '0.5rem!',
     position: 'relative',
     insetInlineStart: '-2px',
-  }),
+  })
 }
 ```
 

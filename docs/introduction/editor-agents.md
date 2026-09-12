@@ -5,8 +5,8 @@ Use TypeScript inference from named config helpers such as `css`, `theme`, and `
 ```ts
 import { css } from '../../zyzz.config.js'
 
-const styles = {
-  card: css({ padding: 'md' }),
+namespace styles {
+  export const card = css({ padding: 'md' })
 }
 ```
 

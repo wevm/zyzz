@@ -8,16 +8,15 @@ Vitest Browser Mode controls an isolated iframe containing an esbuild production
 
 Each pass warms three cycles, then measures twenty fresh-root mounts, retained-DOM updates, and remounts after untimed removal. The second pass reverses framework order. Computed CSS is compared with independent native declarations after each operation; updates must preserve DOM identity and remounts must replace it.
 
-| Metric | Boundary |
-| --- | --- |
-| Commit | Scheduling through React rendering and DOM commit to a layout-effect checkpoint |
-| Commit + layout | Commit plus a forced geometry read, including pending style/layout work |
-| Frame | Two animation frames after commit; includes refresh wait, not exact paint CPU time |
+| Metric          | Boundary                                                                           |
+| --------------- | ---------------------------------------------------------------------------------- |
+| Commit          | Scheduling through React rendering and DOM commit to a layout-effect checkpoint    |
+| Commit + layout | Commit plus a forced geometry read, including pending style/layout work            |
+| Frame           | Two animation frames after commit; includes refresh wait, not exact paint CPU time |
 
 These measure warm-code client operations with styles already loaded. They do not measure cold navigation, hydration, GPU presentation, or isolated React CPU time. There is no forced synchronous React flush. Dynamic private slots currently compare only Zyzz and native CSS. Callable and override cases compare all six adapters; variant-recipe APIs need separate equivalent fixtures.
 
 Render timings are the primary runtime report. Performance is advisory until repeated runs establish variance; missing data and correctness failures fail CI. Existing function timings cannot establish a render-performance ranking. Run the old browser diagnostics with `BENCH_RUNTIME=1 pnpm exec vp test run bench/Runtime.browser.test.ts`, or Node diagnostics with `BENCH_MICRO=1 pnpm exec vp test bench --run`.
-
 
 ## Runtime Comparisons
 

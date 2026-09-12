@@ -15,14 +15,15 @@ const { css: htmlCss } = Config.create({ output: 'html' });
 import * as React from 'react';
 import { hydrateRoot } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-const styles = {
-  card: css((values: { width: \`\${number}%\` }) => ({
+namespace styles {
+  export const card = css((values: { width: \`\${number}%\` }) => ({
     backgroundColor: '#0066cc', height: '20px', width: values.width,
-  })),
-  htmlCard: htmlCss((values: { width: \`\${number}%\` }) => ({
+  }))
+
+  export const htmlCard = htmlCss((values: { width: \`\${number}%\` }) => ({
     backgroundColor: '#0066cc', height: '20px', width: values.width,
-  })),
-};
+  }))
+}
 export function props(width: \`\${number}%\`, overrides = true) {
   return styles.card({ width, ...(overrides ? { style: { marginTop: '12px', opacity: 0.5, colorScheme: 'dark', '--note': '"<&>"' } } : {}) });
 }

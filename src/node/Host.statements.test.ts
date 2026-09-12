@@ -33,6 +33,29 @@ describe('create', () => {
       expect(
         bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])),
       ).toMatchInlineSnapshot('false')
+
+      const notifications = Watch.create({ path: 'zyzz.shared.css' })
+      host.watch({ onResult: notifications.onResult })
+      await notifications.next(() =>
+        Watch.write({
+          path: Path.join(root, 'app.ts'),
+          source: `import {global} from 'zyzz/web';global({'body::before':{content:'"été ◇ 한국어"'}});`,
+        }),
+      )
+      const updated = await Fs.readFile(
+        Path.join(root, 'output/zyzz.shared.css'),
+      )
+
+      expect(new TextDecoder('utf-8', { fatal: true }).decode(updated))
+        .toMatchInlineSnapshot(`
+        "body:before {
+          content: "été ◇ 한국어";
+        }
+        "
+      `)
+      expect(
+        updated.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])),
+      ).toMatchInlineSnapshot('false')
     } finally {
       await Fs.rm(root, { recursive: true, force: true })
     }

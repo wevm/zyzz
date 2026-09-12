@@ -73,7 +73,7 @@ Each dependent PR targets the preceding branch. CSS value validation remains sta
 
 Bring renderer output and framework source support forward from Phase 4 into Phase 2. Start immediately after the runtime benchmark work in [PR #74](https://github.com/wevm/zyzz/pull/74), preserving [PR #73](https://github.com/wevm/zyzz/pull/73)'s benchmark priority. Complete these integrations before resuming the remaining Phase 2 feature backlog.
 
-Use one shared CSS compiler with thin source and renderer adapters. Keep framework dependencies outside core, preserve React output, and add no custom JSX runtime, provider, component wrapper, or runtime CSS generation. Group fixture styles in `const styles = {}` and consume named config helpers.
+Use one shared CSS compiler with thin source and renderer adapters. Keep framework dependencies outside core, preserve React output, and add no custom JSX runtime, provider, component wrapper, or runtime CSS generation. Group fixture styles in `namespace styles {}` and consume named config helpers.
 
 Initial support covers React, Vue, Solid, Svelte, and plain DOM/HTML, with Vite and Next.js as application integrations. Remix 3 and React Router are deferred and are not initial acceptance gates.
 
@@ -407,6 +407,12 @@ Accepted direction: [top-level stylesheet functions](../docs/api/web/at-rules.md
 - [ ] **2.5f — Full Acceptance:** require every rule, descriptor, nested form, and supported context to have type/extraction/emission/map evidence, packed-library and watch coverage, and applicable real-browser fixtures. Record experimental/legacy browser availability separately. Add source-owned diagnostics for unsupported native semantics and benchmark compiler/output changes. No runtime authoring validation.
 
 The existing property-conformance percentage does not measure at-rules. Extend the conformance workflow with reviewed upstream grammar fingerprints and per-rule evidence; new upstream entries and regressions must fail inventory checks. Do not mark missing implementations supported through generic string acceptance or raw passthrough.
+
+### At-rule Acceptance Model
+
+PR #107 separates compiler acceptance, target compatibility, and rendering evidence. `check:at-rules:full` requires all nine compiler obligations for every inventory entry and executes type/named integration evidence. Target compatibility is explicit; `check:at-rules:rendering` requires verified rendering for every entry. `check:at-rules:legacy-full` preserves the former combined gate.
+
+The matrix is pinned to inventory grammar fingerprints. Unsupported targets never count as rendered support. Unreviewed compiler or target obligations still block Phase 2 completion. Chromium covers screen/PDF behavior; pinned WeasyPrint 70.0 adds bleed, printer marks, and basic ICC evidence. Relative profile colors and rendering intent remain open.
 
 ### At-rule Completion Follow-up
 

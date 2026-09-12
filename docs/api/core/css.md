@@ -5,8 +5,8 @@ Define callable styles that compile to static CSS and styling props.
 ```ts
 import { css } from 'zyzz'
 
-const styles = {
-  card: css({ padding: '1rem' }),
+namespace styles {
+  export const card = css({ padding: '1rem' })
 }
 const props = styles.card({ style: { padding: '2rem' } })
 ```

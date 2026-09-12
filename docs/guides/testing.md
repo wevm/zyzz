@@ -61,8 +61,8 @@ Migrate one component and its computed styles at a time. Preserve layout, states
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  card: css({ padding: '1rem' }),
+namespace styles {
+  export const card = css({ padding: '1rem' })
 }
 const example = <div {...styles.card()}>Card</div>
 ```

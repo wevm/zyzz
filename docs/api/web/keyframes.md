@@ -37,7 +37,7 @@ keyframes({ from: { opacity: 0 }, to: { opacity: 1 } })
 Reachable definitions preserve stable imported identity.
 
 ```ts
-namespace style {
+namespace styles {
   export const notice = css({ animationName: enter })
 }
 ```

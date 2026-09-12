@@ -8,12 +8,12 @@ Compose applied generated styles while retaining their owned bindings.
 ```ts
 import { css, cx } from 'zyzz'
 
-namespace style {
+namespace styles {
   export const base = css({ padding: '0.5rem' })
 
   export const roomy = css({ padding: '1rem' })
 }
-const props = cx(style.base(), style.roomy())
+const props = cx(styles.base(), styles.roomy())
 ```
 
 ## Signature
@@ -29,7 +29,7 @@ const props = cx(style.base(), style.roomy())
 Compose applied definitions. Bare class strings and unapplied definitions are invalid.
 
 ```ts
-cx(style.base(), style.roomy())
+cx(styles.base(), styles.roomy())
 ```
 
 ## Returns

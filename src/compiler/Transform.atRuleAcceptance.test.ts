@@ -22,7 +22,7 @@ describe('compile', () => {
 const config=Config.create({theme:{color:{brand:'red'}}});
 export const dots=counterStyle({symbols:'"x"'});
 fontFace({fontFamily:'Evidence',src:'url(/font.ttf)'});
-export namespace style {
+export namespace styles {
   export const text = config.css({color:'brand'})
 }`,
     })

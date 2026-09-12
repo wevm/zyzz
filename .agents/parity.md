@@ -16,11 +16,11 @@ Sources: StyleX `create`/`atoms`, Tailwind utilities, vanilla-extract `style`/Sp
 ```tsx
 import { css } from 'zyzz'
 
-export namespace style {
+export namespace styles {
   export const card = css({ display: 'flex', gap: '1rem', padding: '1rem' })
 }
 
-const article = <article {...style.card()} />
+const article = <article {...styles.card()} />
 const label = <span {...css({ color: '#06c' })()} />
 ```
 
@@ -77,16 +77,18 @@ Sources: StyleX `props` and style restriction types; utility composition; vanill
 ```tsx
 import { css, cx } from 'zyzz'
 
-namespace style {
+namespace styles {
   export const base = css({ color: '#06c', padding: '1rem' })
 
   export const compact = css({ padding: '0.5rem' })
 }
 
-const button = <button {...cx(style.base(), style.compact())}>Continue</button>
+const button = (
+  <button {...cx(styles.base(), styles.compact())}>Continue</button>
+)
 const checkout = (
   <button
-    {...style.base({ className: 'checkout', style: { marginTop: '1rem' } })}
+    {...styles.base({ className: 'checkout', style: { marginTop: '1rem' } })}
   />
 )
 ```
@@ -102,7 +104,7 @@ import { css } from 'zyzz'
 
 // Static constants and template expressions remain planned.
 const gap = '1rem'
-namespace style {
+namespace styles {
   export const panel = css({
     color: '#06c!',
     display: ['block', 'grid'],
@@ -125,13 +127,13 @@ const theme = Theme.define({
   spacing: { md: '1rem', sm: '0.5rem' },
 })
 const alternate = Theme.extend(theme, { color: { brand: '#147d32' } })
-namespace style {
+namespace styles {
   export const button = theme.css({ color: 'brand', padding: 'md' })
 }
 
 const example = (
   <section className={alternate.className} style={{ colorScheme: 'dark' }}>
-    <button {...style.button()}>Continue</button>
+    <button {...styles.button()}>Continue</button>
   </section>
 )
 ```
@@ -139,7 +141,7 @@ const example = (
 `backgroundColor`, `borderColor`, and `textColor` augment shared colors only in matching properties. Portable `theme.tokens` references disambiguate token names from literals. CSS variables implement inheritance; scopes select compatible theme values independently of `color-scheme`. Independent definitions remain isolated. StyleX `Theme`/`VarGroup` contracts map to inferred theme/reference types; cross-package assignability remains an acceptance gate.
 
 ```ts
-namespace style {
+namespace styles {
   export const inset = theme.css({
     backgroundColor: `color-mix(in oklab, ${theme.vars.color.brand} 50%, transparent)`,
     borderColor: theme.tokens.color.brand,
@@ -166,7 +168,7 @@ export const { css, themes } = Config.create({
   themes: { base: theme, green: alternate },
 })
 
-namespace style {
+namespace styles {
   export const control = css({ color: 'brand' })
 }
 const selected = (
@@ -174,7 +176,7 @@ const selected = (
     className={themes.green.className}
     style={{ colorScheme: 'light dark' }}
   >
-    <button {...style.control()}>Continue</button>
+    <button {...styles.control()}>Continue</button>
   </section>
 )
 ```
@@ -189,19 +191,19 @@ Sources: StyleX variables, vanilla-extract `createVar`/`assignVars`/`fallbackVar
 import { css, Vars } from 'zyzz'
 
 const progress = Vars.define({ amount: 'percentage' })
-namespace style {
+namespace styles {
   export const bar = css({ width: progress.amount })
 }
 
 const element = (
-  <div {...style.bar({ style: Vars.set(progress, { amount: '42%' }) })} />
+  <div {...styles.bar({ style: Vars.set(progress, { amount: '42%' }) })} />
 )
 ```
 
 Explicit sets are for shared contracts; callbacks in item 07 handle local values. Static custom-property assignments also need typed declaration support. A nested variable fallback is distinct from a declaration fallback array:
 
 ```ts
-namespace style {
+namespace styles {
   export const text = css({
     color: 'var(--app-accent, var(--app-brand, #06c))',
   })
@@ -225,7 +227,7 @@ Until that shape is decided, the interoperability target is an ordinary external
 ```
 
 ```ts
-namespace style {
+namespace styles {
   export const progress = css({ opacity: 'var(--app-progress)' })
 }
 ```
@@ -237,13 +239,13 @@ Specify descriptor grammar, computationally independent initial values, inherita
 Sources: StyleX dynamic styles/atoms, vanilla-extract Dynamic, Tailwind utilities referencing runtime variables. **Planned:** 2.3 bindings, using fixed compiled rules.
 
 ```tsx
-namespace style {
+namespace styles {
   export const bar = css((values: { width: `${number}%` }) => ({
     width: values.width,
   }))
 }
 
-const element = <div {...style.bar({ width: '42%' })} />
+const element = <div {...styles.bar({ width: '42%' })} />
 ```
 
 Callbacks receive only typed inputs and disappear from delivered code. Applications bind values to precompiled slots; rule counts remain fixed. Styling overrides are allowed, while arbitrary component props stay on the component.
@@ -255,7 +257,7 @@ Sources: StyleX variant patterns, Tailwind state-driven utility combinations, va
 ```tsx
 import { variants } from 'zyzz'
 
-namespace style {
+namespace styles {
   export const button = variants({
     base: { display: 'inline-flex' },
     compoundVariants: [
@@ -269,9 +271,9 @@ namespace style {
   })
 }
 
-type ButtonProps = NonNullable<Parameters<typeof style.button>[0]>
+type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
 
-const element = <button {...style.button({ intent: 'ghost' })} />
+const element = <button {...styles.button({ intent: 'ghost' })} />
 ```
 
 Theme-bound `theme.variants` infers tokens. Include boolean choices, array compound matches, omitted/default/null semantics, and declaration-order precedence. Runtime selections produce classes and owned data attributes, without expanding every Cartesian combination.
@@ -281,7 +283,7 @@ Theme-bound `theme.variants` infers tokens. Include boolean choices, array compo
 Sources: dynamic style/recipe composition across the libraries. **Planned:** Phase 3; an additional Zyzz convenience, not a claim of identical APIs in each source.
 
 ```tsx
-namespace style {
+namespace styles {
   export const button = variants({
     variants: {
       size: {
@@ -295,7 +297,7 @@ namespace style {
 }
 
 const element = (
-  <button {...style.button({ size: { custom: { padding: '12px' } } })} />
+  <button {...styles.button({ size: { custom: { padding: '12px' } } })} />
 )
 ```
 
@@ -306,7 +308,7 @@ Selections infer their payloads. Compounds match the choice name, not its contin
 Sources: all four libraries' selector/state systems. **Planned:** 2.4b.
 
 ```ts
-namespace style {
+namespace styles {
   export const field = css({
     ':disabled': { opacity: 0.5 },
     ':focus-visible': { outline: '2px solid currentColor' },
@@ -334,7 +336,7 @@ import { css } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const card = Css.marker({ state: ['closed', 'open'] })
-namespace style {
+namespace styles {
   export const title = css({
     color: '#666',
     [Css.ancestor(card, ':hover')]: { color: '#06c' },
@@ -343,8 +345,8 @@ namespace style {
 }
 
 const profile = (
-  <article {...style.card({ state: 'open' })}>
-    <h2 {...style.title()}>Profile</h2>
+  <article {...styles.card({ state: 'open' })}>
+    <h2 {...styles.title()}>Profile</h2>
   </article>
 )
 ```
@@ -353,7 +355,7 @@ The schema infers data keys and allowed values in both marker application and co
 
 ```ts
 const choice = Css.marker()
-namespace style {
+namespace styles {
   export const indicator = css({
     opacity: 0,
     [Css.ancestor(card, { has: 'a' })]: { opacity: 1 },
@@ -384,7 +386,7 @@ const theme = Theme.define({
   containers: { card: '24rem' },
   spacing: { md: '1rem', sm: '0.5rem' },
 })
-namespace style {
+namespace styles {
   export const region = theme.css({
     containerName: 'sidebar',
     containerType: 'inline-size',
@@ -402,7 +404,7 @@ namespace style {
 Apply `region()` to an ancestor and `content()` to its child. Aliases infer from the correct theme groups and resolve to literal conditions, never CSS variables. Named-container private identities across packages remain a design gate. Containers select the nearest eligible ancestor, independently of marker ancestor semantics.
 
 ```ts
-namespace style {
+namespace styles {
   export const link = css({
     '@media (hover: hover)': { ':hover': { textDecorationLine: 'underline' } },
     '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
@@ -422,7 +424,7 @@ export const focusRing = {
   ':focus-visible': { outline: '2px solid currentColor' },
 } as const
 
-namespace style {
+namespace styles {
   export const button = css({ ...focusRing, padding: '1rem' })
 }
 ```
@@ -437,7 +439,7 @@ const surface = {
   borderRadius: '0.5rem',
   borderWidth: '1px',
 } as const
-namespace style {
+namespace styles {
   export const stack = css({
     ...surface,
     display: 'flex',
@@ -460,7 +462,7 @@ const enter = keyframes({
   from: { opacity: 0, transform: 'translateY(4px)' },
   to: { opacity: 1, transform: 'translateY(0)' },
 })
-namespace style {
+namespace styles {
   export const notice = css({
     animationDuration: '160ms',
     animationName: enter,
@@ -491,7 +493,7 @@ fontFace({
   fontWeight: '100 900',
   src: 'url("/fonts/app.woff2") format("woff2")',
 })
-namespace style {
+namespace styles {
   export const text = css({ fontFamily: '"App Sans", sans-serif' })
 }
 ```
@@ -518,7 +520,7 @@ global({
   },
 })
 
-namespace style {
+namespace styles {
   export const card = css({
     '@layer components': { padding: '1rem' },
   })
@@ -536,11 +538,11 @@ The [collection contract](architecture.md#layer-and-global-collection) specifies
 Sources: [StyleX `props`/`attrs`](https://stylexjs.com/docs/api/javascript/attrs), ordinary class/style consumption elsewhere. **Partial:** web `className`/style-object output. **Proposal required:** DOM attribute adapter in Phase 4.
 
 ```tsx
-namespace style {
+namespace styles {
   export const button = css({ color: '#06c' })
 }
 
-const element = <button {...style.button()}>Continue</button>
+const element = <button {...styles.button()}>Continue</button>
 ```
 
 The non-React target must retain callable application while returning `class`, serialized inline styles where needed, and data attributes. Its public adapter shape is still open; no unsupported `Css.attrs` API is implied. Test escaping, attribute serialization, real template consumers, framework updates, SSR/hydration, and packed output. Do not require framework imports in core.
@@ -555,7 +557,7 @@ import { Transform } from 'zyzz/compiler'
 const result = Transform.compile({
   moduleId: 'app/card.ts',
   source:
-    "import { css } from 'zyzz'; export namespace style {\n  export const card = css({ color: '#06c' })\n}",
+    "import { css } from 'zyzz'; export namespace styles {\n  export const card = css({ color: '#06c' })\n}",
 })
 ```
 
@@ -592,7 +594,7 @@ The immediate interoperability form uses application-owned CSS plus literal refe
 ```
 
 ```ts
-namespace style {
+namespace styles {
   export const card = css({
     animationDuration: '160ms',
     animationName: 'app-enter',
@@ -611,7 +613,7 @@ Accepted Phase 2.5 API: `viewTransition(descriptors)` from `zyzz/web` declares `
 Sources: StyleX `viewTransitionClass`, vanilla-extract `createViewTransition`, ordinary CSS in Tailwind. **Deferred:** typed scoped names/classes and transition pseudo-element contributions. Illustrative external stylesheet integration:
 
 ```ts
-namespace style {
+namespace styles {
   export const avatar = css({ viewTransitionName: 'profile-avatar' })
 }
 ```
@@ -637,7 +639,7 @@ Accepted Phase 2.5 API: `positionTry(declarations)` from `zyzz/web` returns a ty
 Sources: StyleX `positionTry` and ordinary CSS positioning elsewhere. **Deferred:** declarations, restricted `@position-try` descriptors, and scoped references. External CSS target:
 
 ```ts
-namespace style {
+namespace styles {
   export const trigger = css({ anchorName: '--profile-trigger' })
 
   export const popup = css({
@@ -690,7 +692,7 @@ Sources: standard CSS reachable through the libraries; extensions beyond their d
 ```
 
 ```ts
-namespace style {
+namespace styles {
   export const reveal = css({
     animationDuration: 'auto',
     animationName: 'app-reveal',
@@ -729,7 +731,7 @@ Theme labels, schemes, and style names infer from inputs. Unit conversion is exp
 Panda [slot recipes](https://panda-css.com/docs/concepts/slot-recipes), `sva`, and `defineParts` coordinate styles across component elements. **Planned through existing APIs:** Zyzz uses separate `css` or `variants` definitions for each element. Each recipe application returns one props object; the `slots` pattern is excluded from `variants` and `theme.variants`.
 
 ```tsx
-namespace style {
+namespace styles {
   export const button = variants({
     base: { display: 'inline-flex' },
     defaultVariants: { size: 'sm' },
@@ -744,8 +746,8 @@ namespace style {
   export const label = css({ fontWeight: 600 })
 }
 const element = (
-  <button {...style.button({ size: 'sm' })}>
-    <span {...style.label()}>Save</span>
+  <button {...styles.button({ size: 'sm' })}>
+    <span {...styles.label()}>Save</span>
   </button>
 )
 ```
@@ -761,7 +763,7 @@ const palette = { blue: '#06c', paleBlue: '#69f' } as const
 const theme = Theme.define({
   color: { brand: { dark: palette.paleBlue, light: palette.blue } },
 })
-namespace style {
+namespace styles {
   export const button = theme.css({ color: 'brand' })
 }
 ```
@@ -773,7 +775,7 @@ This planned static-expression example reuses values; it is not a live alias bet
 Panda config recipes can expose conditional selections, with restrictions around compounds. **Design required:** Zyzz's dynamic payload selections do not imply responsive variant selection. The existing planned syntax can express a finite responsive choice:
 
 ```ts
-namespace style {
+namespace styles {
   export const button = variants({
     variants: {
       size: {
@@ -786,7 +788,7 @@ namespace style {
     },
   })
 }
-const props = style.button({ size: 'responsive' })
+const props = styles.button({ size: 'responsive' })
 ```
 
 An inferred per-condition selection API still needs a nonambiguous shape alongside `{ custom: payload }`, compound behavior, defaults/null semantics, query ordering, and native errors. Track this explicitly instead of claiming the example provides that API. [Recipes](https://panda-css.com/docs/concepts/recipes)

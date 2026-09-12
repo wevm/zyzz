@@ -112,7 +112,7 @@ export const above = positionTry({
 import { css } from './zyzz.config.js'
 import { above, brandPalette, circled } from './stylesheets.js'
 
-export namespace style {
+export namespace styles {
   export const icon = css({ fontPalette: brandPalette })
 
   export const list = css({ listStyleType: circled })
@@ -133,7 +133,7 @@ Grouping remains available in `css`, `variants`, compound variants, and global s
 ```ts
 import { css } from './zyzz.config.js'
 
-export namespace style {
+export namespace styles {
   export const card = css({
     '@scope (&) to (.boundary)': {
       '& h2': { color: 'red' },

@@ -11,14 +11,14 @@ describe('create', () => {
       modules: {
         'config.ts': `import { Config } from 'zyzz'; export const { css } = Config.create({ output: 'html' });`,
         'card.ts': `import { css } from './config.js';
-namespace style {
+namespace styles {
   export const card = css({ padding: '8px' })
 
   export const dynamic = css((values: { width: \`\${number}%\` }) => ({ width: values.width }))
 }
-export const plain = style.card();
-export const overridden = style.card({ className: 'external', style: { marginTop: '12px' } });
-export const dynamic = style.dynamic({ width: '25%', style: { opacity: 0.5 } });`,
+export const plain = styles.card();
+export const overridden = styles.card({ className: 'external', style: { marginTop: '12px' } });
+export const dynamic = styles.dynamic({ width: '25%', style: { opacity: 0.5 } });`,
       },
     })
 

@@ -14,7 +14,7 @@ Add typed choices to a component. This example imports `{ variants }` from the [
 ```tsx
 import { variants } from './zyzz.config.js'
 
-namespace style {
+namespace styles {
   export const button = variants({
     base: { display: 'inline-flex' },
     compoundVariants: [{ style: { fontWeight: 600 }, when: { size: 'md' } }],
@@ -28,8 +28,8 @@ namespace style {
   })
 }
 
-type ButtonOptions = NonNullable<Parameters<typeof style.button>[0]>
-const example = <button {...style.button({ size: 'md' })}>Save</button>
+type ButtonOptions = NonNullable<Parameters<typeof styles.button>[0]>
+const example = <button {...styles.button({ size: 'md' })}>Save</button>
 ```
 
 Each recipe returns props for one element. Defaults apply to omitted selections; null suppresses a choice and its default. Compounds combine matching choice names. Finite choices compile ahead of time.

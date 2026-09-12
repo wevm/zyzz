@@ -11,7 +11,7 @@ Zyzz puts styling constraints into small, explicit APIs that developers and agen
 ```ts
 import { css } from 'zyzz'
 
-namespace style {
+namespace styles {
   export const card = css({ padding: '1rem' })
 }
 ```

@@ -31,7 +31,7 @@ export const { css, theme } = Config.create({
 // Button.tsx
 import { css, theme } from './zyzz.config.js'
 
-namespace style {
+namespace styles {
   export const button = css({
     backgroundColor: 'brand',
     padding: 'md',
@@ -40,7 +40,7 @@ namespace style {
 }
 
 export function Button() {
-  return <button {...style.button()}>Save</button>
+  return <button {...styles.button()}>Save</button>
 }
 ```
 

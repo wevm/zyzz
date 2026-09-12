@@ -13,7 +13,7 @@ const output = Graph.compile({
     `,
     'app/card.ts': `
       import { theme } from './theme.js'
-      export namespace style {
+      export namespace styles {
         export const card = theme.css({ color: 'brand' })
       }
     `,
@@ -103,7 +103,7 @@ output.modules['app/card.ts']?.code
 output.modules['app/card.ts']?.css
 ```
 
-Scope and variable identities retain the defining module/binding. CSS maps trace source scope rules to their factory and declarations to the consuming style. Imported metadata scope rules are unmapped because their original source is not present. JavaScript/JSX lowering remains the consuming build's responsibility.
+Scope and variable identities retain the defining module/binding. CSS maps trace source scope rules to their factory and declarations to the consuming styles. Imported metadata scope rules are unmapped because their original source is not present. JavaScript/JSX lowering remains the consuming build's responsibility.
 
 ### sharedCssMap
 
@@ -145,7 +145,7 @@ Named `Config.create` exports and bound aliases retain token and layer inference
 ```ts
 import { css, theme } from '@acme/theme'
 
-export namespace style {
+export namespace styles {
   export const card = css({ color: 'brand' })
 }
 export const scope = theme.className

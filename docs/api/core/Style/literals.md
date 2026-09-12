@@ -72,7 +72,7 @@ Units use the listed spellings. Signed decimals and finite scientific notation a
 ```ts
 import { css } from 'zyzz'
 
-namespace style {
+namespace styles {
   export const panel = css({
     width: ['80vw', '80cqi'],
     height: '100dvh',
@@ -98,7 +98,7 @@ Container units can refer to containment established by ordinary CSS. Zyzz does 
 import { Config } from 'zyzz'
 
 const { css } = Config.create({ theme: { spacing: { header: '4rem' } } })
-namespace style {
+namespace styles {
   export const scroller = css({
     overflow: 'auto',
     scrollPaddingBlockStart: 'header',
@@ -126,7 +126,7 @@ Scroll padding accepts spacing tokens, explicit references, ordered fallbacks, a
 ```ts
 import { css } from 'zyzz'
 
-namespace style {
+namespace styles {
   export const carousel = css({
     display: 'flex',
     overflowX: 'auto',
@@ -159,7 +159,7 @@ Snap declarations accept CSS-wide keywords, fallback arrays, and importance in r
 ```ts
 import { css } from 'zyzz'
 
-namespace style {
+namespace styles {
   export const link = css({
     textDecorationLine: ['underline', 'underline overline!'],
     textDecorationStyle: 'wavy',
@@ -190,7 +190,7 @@ Thickness supports a bounded nonnegative subset of CSS. Percentages use font-rel
 ```ts
 import { css } from 'zyzz'
 
-namespace style {
+namespace styles {
   export const title = css({
     letterSpacing: '-.02em',
     textTransform: 'uppercase',
@@ -256,7 +256,7 @@ Border styles include `dashed`, `dotted`, `double`, `groove`, `hidden`, `inset`,
 ## Flex and Overflow
 
 ```ts
-namespace style {
+namespace styles {
   export const row = css({
     display: 'flex',
     flexWrap: 'wrap',
@@ -280,7 +280,7 @@ namespace style {
 ## Logical Boxes
 
 ```ts
-namespace style {
+namespace styles {
   export const panel = css({
     inlineSize: '20rem',
     paddingInline: '1rem',

@@ -23,7 +23,7 @@ import { Config } from 'zyzz'
 
 const { css } = Config.create({ output: 'html' })
 
-namespace style {
+namespace styles {
   export const bar = css((values: { width: `${number}%` }) => ({
     height: '20px',
     width: values.width,
@@ -32,7 +32,7 @@ namespace style {
 
 export function Progress() {
   const [width] = createSignal<`${number}%`>('25%')
-  return <div {...style.bar({ width: width() })} />
+  return <div {...styles.bar({ width: width() })} />
 }
 ```
 

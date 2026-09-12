@@ -15,17 +15,17 @@ export default defineConfig({ plugins: [zyzz(), svelte()] })
 // styles.ts
 import { Config } from 'zyzz'
 export const { css } = Config.create({ output: 'html' })
-export namespace style {
+export namespace styles {
   export const card = css({ padding: '8px' })
 }
 ```
 
 ```svelte
 <script lang="ts">
-import { style } from './styles'
+import { styles } from './styles'
 </script>
 
-<div {...style.card()}>Card</div>
+<div {...styles.card()}>Card</div>
 ```
 
 Apply dynamic styles within the framework's reactive expression. The configured callable supplies native `class` and `style` attributes directly. Framework fixtures exercise SSR, hydration identity, reactive updates, theme schemes, removed overrides, CSS edits, disposal, and production builds.

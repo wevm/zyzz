@@ -8,13 +8,13 @@ Define finite style choices for one element.
 ```ts
 import { variants } from 'zyzz'
 
-namespace style {
+namespace styles {
   export const button = variants({
     defaultVariants: { size: 'sm' },
     variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
   })
 }
-const props = style.button({ size: 'md' })
+const props = styles.button({ size: 'md' })
 ```
 
 ## Signature
@@ -84,7 +84,7 @@ Applying the returned callable produces one props object, including generated re
 Returns props for one element. Infer selections with `NonNullable<Parameters<typeof button>[0]>`.
 
 ```ts
-const props = style.button({ size: 'md' })
+const props = styles.button({ size: 'md' })
 ```
 
 ### className

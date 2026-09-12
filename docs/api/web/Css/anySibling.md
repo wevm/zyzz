@@ -7,7 +7,7 @@ import { css } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const target = Css.marker({ state: ['closed', 'open'] })
-namespace style {
+namespace styles {
   export const targetStyle = css({
     [Css.anySibling(target, { data: { state: 'open' } })]: { opacity: 1 },
   })

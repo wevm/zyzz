@@ -1,5 +1,6 @@
 *.tgz
 *.tsbuildinfo
+.attest/
 .fixture-*/
 bench/results/
 coverage/

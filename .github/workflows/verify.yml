@@ -105,3 +105,51 @@ jobs:
           name: at-rule-browser-capabilities
           path: test-results/at-rule-browser-capabilities.json
           retention-days: 30
+  typescript:
+    name: TypeScript ${{ matrix.typescript }}
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Install TypeScript ${{ matrix.typescript }}
+        run: |
+          pnpm add --save-dev "typescript@${{ matrix.typescript }}"
+          pnpm exec tsc --version
+      - name: Check types
+        run: |
+          set -o pipefail
+          pnpm exec tsc --extendedDiagnostics | tee typescript-diagnostics.txt
+          {
+            printf '## TypeScript %s type check\n\n```\n' "$(pnpm exec tsc --version | sed 's/^Version //')"
+            cat typescript-diagnostics.txt
+            printf '```\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - if: ${{ matrix.compiler == 'javascript' }}
+        name: Check type instantiations
+        run: |
+          set -o pipefail
+          pnpm bench:types | tee type-benches.txt
+          {
+            printf '## TypeScript %s type instantiations\n\n<details>\n<summary>Attest benches</summary>\n\n```\n' "${{ matrix.typescript }}"
+            cat type-benches.txt
+            printf '```\n\n</details>\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - if: ${{ matrix.compiler == 'native' }}
+        name: Report skipped type instantiation benches
+        run: |
+          printf '## TypeScript %s type instantiations\n\nAttest instantiation benches require the JavaScript compiler API, which the native TypeScript package does not ship. Whole-program instantiation counts appear in the type check diagnostics above.\n' "${{ matrix.typescript }}" >> "$GITHUB_STEP_SUMMARY"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: javascript
+            typescript: '5.9'
+          - compiler: javascript
+            typescript: '6.0'
+          - compiler: native
+            typescript: '7.0'
+    timeout-minutes: 45

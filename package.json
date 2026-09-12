@@ -1,6 +1,7 @@
 {
   "scripts": {
     "bench:render": "zile && vp test run --config bench/Render.config.ts --no-file-parallelism",
+    "bench:types": "node scripts/type-benches.ts",
     "build": "zile",
     "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
     "changeset:version": "changeset version",
@@ -13,9 +14,11 @@
     "dev": "zile dev",
     "test": "vp test",
     "update:at-rules": "node scripts/at-rule-conformance.ts --update",
-    "update:css": "node scripts/css-conformance.ts --update"
+    "update:css": "node scripts/css-conformance.ts --update",
+    "update:types": "node scripts/type-benches.ts --update"
   },
   "devDependencies": {
+    "@ark/attest": "0.56.3",
     "@babel/core": "^7.29.7",
     "@changesets/cli": "^3.0.2",
     "@pandacss/node": "^1.12.1",
@@ -55,6 +58,7 @@
   "files": [
     "dist",
     "src",
+    "!src/**/*.bench-d.ts",
     "!src/**/*.bench.ts",
     "!src/**/*.test-d.ts",
     "!src/**/*.test.ts"

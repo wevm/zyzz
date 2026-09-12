@@ -14,13 +14,13 @@ The acceptance model separates compiler correctness, target compatibility, and r
 
 Each target records compatibility (`native`, `partial`, `unsupported`, or `unreviewed`) separately from rendered evidence (`verified`, `partial`, or `unverified`). An unsupported renderer never counts as rendered support. A compiler claim cannot clear a renderer gap, and renderer availability cannot clear a compiler gap.
 
-| Command                           | Contract                                                                                                                                                                                                    |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm check:at-rules`             | Validate inventory drift, all matrix obligations, grammar fingerprints, and evidence paths.                                                                                                                 |
-| `pnpm check:at-rules:full`        | Require every compiler obligation, then run public type checking and all named integration evidence. The matrix reviews 22/22 rules and 62/62 descriptors; completion requires the fresh execution to pass. |
-| `pnpm check:at-rules:rendering`   | Require a fully verified renderer for every entry, then execute named evidence. Currently fails.                                                                                                            |
-| `pnpm check:at-rules:targets`     | Require every listed target to have reviewed compatibility and passing probe evidence. Currently fails.                                                                                                     |
-| `pnpm check:at-rules:legacy-full` | Preserve the original combined acceptance gate and unresolved gaps. Currently fails.                                                                                                                        |
+| Command                           | Contract                                                                                                                                                                                                               |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm check:at-rules`             | Validate inventory drift, all matrix obligations, grammar fingerprints, and evidence paths.                                                                                                                            |
+| `pnpm check:at-rules:full`        | Require every compiler obligation, then run public type checking and all named integration evidence. Passes with 22/22 rules, 62/62 descriptor/nested entries, fresh type checking, and 184 passing integration tests. |
+| `pnpm check:at-rules:rendering`   | Require a fully verified renderer for every entry, then execute named evidence. Currently fails.                                                                                                                       |
+| `pnpm check:at-rules:targets`     | Require every listed target to have reviewed compatibility and passing probe evidence. Currently fails.                                                                                                                |
+| `pnpm check:at-rules:legacy-full` | Preserve the original combined acceptance gate and unresolved gaps. Currently fails.                                                                                                                                   |
 
 CI runs the matrix against the actual integration JSON report. Required tests must appear by exact file and full test name with a passing result; skipped or absent cases fail verification. Type evidence remains checked by the repository TypeScript job. Full acceptance always creates a fresh integration run.
 
@@ -66,6 +66,10 @@ Namespace grammar was reviewed against [CSS Namespaces Level 3](https://www.w3.o
 - `Transform.page.browser.test.ts`: actual PDF page dimensions and drawing-stream parity with independently authored CSS.
 
 The per-entry ledgers retain existing evidence and remaining gaps. Inventory and matrix validation pass; rendering, target, and legacy completion commands remain red while their requirements remain open. Phase 3 variants stays after actual full acceptance.
+
+## Completion Validation
+
+`pnpm check:at-rules:full` exits successfully after fresh TypeScript checking and all 184 required integration tests. The broader integration run has 743 passing tests and five skipped fixtures. Build, lint, named-report verification, and `git diff --check` pass. CI enforces the full compiler gate.
 
 ## Compiler Validation Cost
 

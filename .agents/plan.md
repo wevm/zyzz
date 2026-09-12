@@ -424,9 +424,9 @@ Current follow-up: #103 encoding/profile groundwork → #104 composite functions
 - [x] Compare native PDF dimensions and drawing streams for named/pseudo-pages, counters, and all margin boxes.
 - [x] Verify basic ICC profile rendering in WeasyPrint and expose the public helper; retain relative-color and rendering-intent gaps.
 - [x] Review all 22 rules and 62 descriptor/nested entries for compiler grammar/context and packed/watch acceptance; keep renderer and target gaps separate.
-- [ ] Make `pnpm check:at-rules:full` pass without removing inventory entries or clearing unverified gaps.
+- [x] Make `pnpm check:at-rules:full` pass without removing inventory entries or clearing unverified gaps. Fresh type checking and all 184 named integration tests pass.
 
-Completion follow-up: namespace acceptance now includes escaped/Unicode identifiers, last-declaration binding, source/packed maps, host watching, and native selector isolation. Font palette family lists survive the pinned parser and Vite minifiers; real color-font comparisons cover palette indexes, keyword fallbacks, repeated overrides, alpha, and wide-gamut colors. The full gate remains open.
+Completion follow-up: namespace acceptance now includes escaped/Unicode identifiers, last-declaration binding, source/packed maps, host watching, and native selector isolation. Font palette family lists survive the pinned parser and Vite minifiers; real color-font comparisons cover palette indexes, keyword fallbacks, repeated overrides, alpha, and wide-gamut colors. The full compiler gate passes for 22/22 rules and 62/62 descriptor/nested entries. Target and rendering reviews remain open.
 
 ## Phase 3 — Composition, variants, and target output
 

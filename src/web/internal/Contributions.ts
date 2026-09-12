@@ -72,13 +72,16 @@ export type Definition = {
 )
 
 /**
- * Merges declared ordering constraints into one canonical layer order.
+ * Merges declared ordering constraints into one layer order.
  *
  * Consecutive names in each list constrain the result; dotted names order
- * within their parent. Names left unconstrained at any step follow UTF-16 code
- * unit order, so the result depends only on the set of constraints, not on
- * list order, module traversal, or chunk completion. Throws on invalid or
- * duplicated names and on contradictory constraint cycles.
+ * within their parent. Names left unconstrained at any step keep the order in
+ * which they first appear across the lists, so `[['reset', 'base'],
+ * ['components']]` yields `reset,base,components`. Callers supply lists in
+ * authored order, sorted by module identity across modules, which keeps the
+ * result independent of traversal and chunk completion without sorting layer
+ * names. Throws on invalid or duplicated names and on contradictory
+ * constraint cycles.
  */
 export function order(
   lists: readonly (readonly string[])[],
@@ -152,9 +155,8 @@ export function order(
       const targets = new Set(
         [...graph.values()].flatMap((values) => [...values]),
       )
-      const next = [...graph.keys()]
-        .filter((name) => !targets.has(name))
-        .sort()[0]
+      // Map keys keep first-discovery order, so ties follow authored order.
+      const next = [...graph.keys()].find((name) => !targets.has(name))
       if (next === undefined)
         throw new Error('Conflicting layer order constraints.')
 

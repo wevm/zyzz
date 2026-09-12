@@ -66,7 +66,9 @@ namespace styles {
 - **Named alias:** `@container sidebar >=card` compiles to `@container sidebar (width >= 24rem)` and selects the nearest ancestor named `sidebar` with eligible containment. The name must appear in `containerNames`.
 - **Raw query:** any parenthesized condition passes through unchanged, including names absent from `containerNames`. The source compiler checks the CSS syntax; the browser owns the semantics.
 
-The compiler never adds containment. Declare `containerType: 'inline-size'` or `'size'` on the ancestor for width thresholds, `containerType: 'scroll-state'` for scroll-state conditions, and `containerName` for named queries. Without containment on an ancestor, the condition never matches.
+The compiler never adds containment. Declare `containerType: 'inline-size'` or `'size'` on the ancestor for width thresholds, `containerType: 'scroll-state'` for scroll-state conditions, and `containerName` for named queries. Size and scroll-state conditions never match without that containment on an ancestor.
+
+Raw style queries such as `@container style(--theme: dark)` need no containment declaration. Every element is a style-query container under the default `container-type: normal`, so the condition matches the nearest ancestor whose custom property has that value.
 
 Conditions inside `css` nest within the generated class rule in that module's stylesheet. `global` rules, including `@container` grouping and containment declared on ancestor selectors, compile into the shared stylesheet, which loads before module stylesheets. See [Global Styles](stylesheets.md#global-styles).
 

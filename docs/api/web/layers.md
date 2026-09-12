@@ -22,7 +22,7 @@ layers(['reset', 'base', 'components'])
 - Type: `readonly string[]`
 - Required: Yes.
 
-Static ordered CSS layer names, merged with other project order contributions. Consecutive names constrain the shared prelude; names without constraints sort by code unit order, independently of call, module, or chunk order.
+Static ordered CSS layer names, merged with other project order contributions. Consecutive names constrain the shared prelude; names without constraints keep the order of their first appearance across calls, with modules visited in sorted identity order independently of chunk completion.
 
 ```ts
 layers(['reset', 'base', 'components'])

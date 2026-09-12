@@ -4,19 +4,19 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 
 describe('stylesheet contributions', () => {
-  test('orders unconstrained layers by name and omits optional font descriptors', () => {
+  test('keeps authored order for unconstrained layers and omits optional font descriptors', () => {
     const output = Transform.compile({
       moduleId: 'effects.ts',
       source: `import {layers,fontFace,global} from 'zyzz/web'; layers(['reset','base']); layers(['components']); fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined}); global({'body::before':{content:'"url(relative)"'}})`,
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      "@layer components,reset,base;
+      "@layer reset,base,components;
       @font-face{font-family:App;src:url(/app.woff2);}
       body::before{content:"url(relative)";}"
     `)
   })
-  test('derives one layer order from constraints regardless of call and module order', () => {
+  test('merges constraints across calls and breaks ties by first appearance', () => {
     const calls = [
       `layers(['utilities']); layers(['base','components']); layers(['components','theme.dark']); layers(['theme.light','theme.dark']);`,
       `layers(['theme.light','theme.dark']); layers(['components','theme.dark']); layers(['base','components']); layers(['utilities']);`,
@@ -30,10 +30,15 @@ describe('stylesheet contributions', () => {
         }).css,
     )
 
+    // `base` -> `components` -> `theme.*` and `theme.light` -> `theme.dark` are
+    // constrained, so they keep one relative order. `utilities` is never
+    // constrained, so it stays where it was first authored.
     expect(preludes[0]).toMatchInlineSnapshot(
+      `"@layer utilities,base,components,theme.light,theme.dark;"`,
+    )
+    expect(preludes[1]).toMatchInlineSnapshot(
       `"@layer base,components,theme.light,theme.dark,utilities;"`,
     )
-    expect(preludes[1]).toBe(preludes[0])
 
     const modules = {
       'a.ts': `import {layers} from 'zyzz/web'; layers(['zeta']);`,
@@ -44,7 +49,9 @@ describe('stylesheet contributions', () => {
       modules: Object.fromEntries(Object.entries(modules).reverse()),
     }).sharedCss
 
-    expect(forward).toMatchInlineSnapshot(`"@layer alpha,omega,zeta;"`)
+    // Graph visits modules by sorted identity, so object insertion order does
+    // not change which module's layers are discovered first.
+    expect(forward).toMatchInlineSnapshot(`"@layer zeta,alpha,omega;"`)
     expect(reversed).toBe(forward)
   })
   test('rejects conditional classes and shadowed undefined descriptors', () => {
@@ -137,6 +144,33 @@ describe('stylesheet contributions', () => {
           "padding": "1px",
         }
       `)
+    } finally {
+      await browser.close()
+    }
+  })
+  test('Chromium lets a later unconstrained layer win over an earlier call', async () => {
+    const output = Transform.compile({
+      moduleId: 'split.ts',
+      source:
+        'import {global,layers} from "zyzz/web"; layers(["reset","base"]); layers(["components"]); global({"@layer base":{body:{color:"red"}},"@layer components":{body:{color:"blue"}}})',
+    })
+
+    expect(output.css).toMatchInlineSnapshot(`
+      "@layer reset,base,components;
+      @layer base{body{color:red;}}
+      @layer components{body{color:blue;}}"
+    `)
+
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(`<style>${output.css}</style><body>Split</body>`)
+
+      expect(
+        await page.evaluate(() => getComputedStyle(document.body).color),
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
     } finally {
       await browser.close()
     }

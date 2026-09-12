@@ -84,6 +84,10 @@ global({ '@layer base': { body: { margin: 0 } } })
 
 The initial bundle contains the shared layer prelude. Conflicting order constraints fail; unlayered rules and important declarations retain standard CSS precedence. See [Global Styles](stylesheets.md#global-styles) for collection behavior.
 
+Layer order derives from the merged constraints alone. Names left unconstrained sort by code unit order, so `layers(['base', 'components'])` beside `layers(['utilities'])` emits `@layer base,components,utilities;` in every module and chunk order. Declare a constraint wherever relative order matters.
+
+The browser keeps the first `@layer` statement it parses. An external stylesheet that declares its own order before the shared prelude wins; load the compiled stylesheet first, or align the external order.
+
 ### Fonts and Motion
 
 Declare fonts and keyframes near their owning code. Disable nonessential motion when reduced motion is requested.

@@ -22,7 +22,7 @@ layers(['reset', 'base', 'components'])
 - Type: `readonly string[]`
 - Required: Yes.
 
-Static ordered CSS layer names, merged with other project order contributions.
+Static ordered CSS layer names, merged with other project order contributions. Consecutive names constrain the shared prelude; names without constraints sort by code unit order, independently of call, module, or chunk order.
 
 ```ts
 layers(['reset', 'base', 'components'])
@@ -36,7 +36,7 @@ layers(['reset', 'base', 'components'])
 
 Reject invalid names and contradictory order cycles with source locations.
 
-Bound `@layer` inference derives from config, not ambient global declarations. Normal and important CSS layer precedence remain unchanged.
+Bound `@layer` inference derives from config, not ambient global declarations. Normal and important CSS layer precedence remain unchanged. An external stylesheet parsed before the shared prelude fixes its own layer order first; load the compiled stylesheet earlier or match that order.
 
 See [Css](Css/README.md) for related methods and types.
 

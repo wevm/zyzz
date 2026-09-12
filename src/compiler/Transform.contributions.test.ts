@@ -4,17 +4,48 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 
 describe('stylesheet contributions', () => {
-  test('preserves layer discovery order and omits optional font descriptors', () => {
+  test('orders unconstrained layers by name and omits optional font descriptors', () => {
     const output = Transform.compile({
       moduleId: 'effects.ts',
       source: `import {layers,fontFace,global} from 'zyzz/web'; layers(['reset','base']); layers(['components']); fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined}); global({'body::before':{content:'"url(relative)"'}})`,
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      "@layer reset,base,components;
+      "@layer components,reset,base;
       @font-face{font-family:App;src:url(/app.woff2);}
       body::before{content:"url(relative)";}"
     `)
+  })
+  test('derives one layer order from constraints regardless of call and module order', () => {
+    const calls = [
+      `layers(['utilities']); layers(['base','components']); layers(['components','theme.dark']); layers(['theme.light','theme.dark']);`,
+      `layers(['theme.light','theme.dark']); layers(['components','theme.dark']); layers(['base','components']); layers(['utilities']);`,
+    ]
+
+    const preludes = calls.map(
+      (source) =>
+        Transform.compile({
+          moduleId: 'effects.ts',
+          source: `import {layers} from 'zyzz/web'; ${source}`,
+        }).css,
+    )
+
+    expect(preludes[0]).toMatchInlineSnapshot(
+      `"@layer base,components,theme.light,theme.dark,utilities;"`,
+    )
+    expect(preludes[1]).toBe(preludes[0])
+
+    const modules = {
+      'a.ts': `import {layers} from 'zyzz/web'; layers(['zeta']);`,
+      'b.ts': `import {layers} from 'zyzz/web'; layers(['alpha','omega']);`,
+    }
+    const forward = Graph.compile({ modules }).sharedCss
+    const reversed = Graph.compile({
+      modules: Object.fromEntries(Object.entries(modules).reverse()),
+    }).sharedCss
+
+    expect(forward).toMatchInlineSnapshot(`"@layer alpha,omega,zeta;"`)
+    expect(reversed).toBe(forward)
   })
   test('rejects conditional classes and shadowed undefined descriptors', () => {
     for (const source of [
@@ -61,6 +92,83 @@ describe('stylesheet contributions', () => {
       expect(
         await page.evaluate(() => getComputedStyle(document.body).opacity),
       ).toMatchInlineSnapshot(`"0.5"`)
+    } finally {
+      await browser.close()
+    }
+  })
+  test('Chromium applies layered, unlayered, important, and repeated rule precedence', async () => {
+    const output = Transform.compile({
+      moduleId: 'precedence.ts',
+      source:
+        'import {global,layers} from "zyzz/web"; layers(["base","components"]); global({body:{margin:0,padding:"3px!"},"@layer components":{body:{color:"blue",padding:"2px!"}},"@layer base":{body:{color:"red",margin:"10px",padding:"1px!",letterSpacing:"1px"}}}); global({"@layer base":{body:{letterSpacing:"2px"}}})',
+    })
+
+    expect(output.css).toMatchInlineSnapshot(`
+      "@layer base,components;
+      body{margin:0;padding:3px!important;}
+      @layer components{body{color:blue;padding:2px!important;}}
+      @layer base{body{color:red;margin:10px;padding:1px!important;letter-spacing:1px;}}
+      @layer base{body{letter-spacing:2px;}}"
+    `)
+
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(`<style>${output.css}</style><body>Layers</body>`)
+
+      const computed = await page.evaluate(() => {
+        const style = getComputedStyle(document.body)
+
+        return {
+          color: style.color,
+          letterSpacing: style.letterSpacing,
+          margin: style.margin,
+          padding: style.padding,
+        }
+      })
+
+      expect(computed).toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 0, 255)",
+          "letterSpacing": "2px",
+          "margin": "0px",
+          "padding": "1px",
+        }
+      `)
+    } finally {
+      await browser.close()
+    }
+  })
+  test('Chromium keeps the first declared layer order when an external stylesheet loads earlier', async () => {
+    const output = Transform.compile({
+      moduleId: 'external.ts',
+      source:
+        'import {global,layers} from "zyzz/web"; layers(["base","components"]); global({"@layer base":{body:{color:"red"}},"@layer components":{body:{color:"blue"}}})',
+    })
+    const external = '@layer components,base;'
+
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      await page.setContent(
+        `<style>${output.css}</style><style>${external}</style><body>Compiled first</body>`,
+      )
+
+      expect(
+        await page.evaluate(() => getComputedStyle(document.body).color),
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
+
+      await page.setContent(
+        `<style>${external}</style><style>${output.css}</style><body>External first</body>`,
+      )
+
+      expect(
+        await page.evaluate(() => getComputedStyle(document.body).color),
+      ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
     } finally {
       await browser.close()
     }

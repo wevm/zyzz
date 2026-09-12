@@ -71,7 +71,15 @@ export type Definition = {
   | { readonly kind: 'layers'; readonly names: readonly string[] }
 )
 
-/** Merges declared ordering constraints with deterministic unconstrained ties. */
+/**
+ * Merges declared ordering constraints into one canonical layer order.
+ *
+ * Consecutive names in each list constrain the result; dotted names order
+ * within their parent. Names left unconstrained at any step follow UTF-16 code
+ * unit order, so the result depends only on the set of constraints, not on
+ * list order, module traversal, or chunk completion. Throws on invalid or
+ * duplicated names and on contradictory constraint cycles.
+ */
 export function order(
   lists: readonly (readonly string[])[],
 ): readonly string[] {
@@ -144,7 +152,9 @@ export function order(
       const targets = new Set(
         [...graph.values()].flatMap((values) => [...values]),
       )
-      const next = [...graph.keys()].find((name) => !targets.has(name))
+      const next = [...graph.keys()]
+        .filter((name) => !targets.has(name))
+        .sort()[0]
       if (next === undefined)
         throw new Error('Conflicting layer order constraints.')
 

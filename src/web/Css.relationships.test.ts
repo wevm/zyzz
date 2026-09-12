@@ -184,7 +184,7 @@ export const attrs=card({state:'open'});`,
     `)
   })
 
-  test('validates direct runtime schemas and supports module namespace imports', () => {
+  test('validates direct runtime schemas', () => {
     expect(() =>
       Marker.create({
         id: 'data-z-card',
@@ -202,13 +202,65 @@ export const attrs=card({state:'open'});`,
     expect(() => ref({ state: 'closed' })).toThrowErrorMatchingInlineSnapshot(
       `[Error: Invalid marker state: state]`,
     )
-    expect(
-      Source.extract({
-        moduleId: 'app.ts',
-        source: `import * as Web from 'zyzz/web';export const card=Web.ref();`,
-      }).markerCalls?.length,
-    ).toMatchInlineSnapshot(`1`)
   })
+
+  test('rejects namespace access to every relationship helper', () => {
+    for (const helper of [
+      'ref',
+      'ancestor',
+      'anySibling',
+      'descendant',
+      'siblingAfter',
+      'siblingBefore',
+    ])
+      for (const access of [`Web.${helper}`, `Web['${helper}']`])
+        expect(() =>
+          Source.extract({
+            moduleId: 'app.ts',
+            source: `import * as Web from 'zyzz/web';export const value=${access}();`,
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: app.ts:51: Relationship helpers require direct named imports from zyzz/web.]`,
+        )
+  })
+
+  test('removes direct and aliased helper imports from unbundled output', () => {
+    const results = [false, true].map((aliased) => {
+      const helpers = [
+        'ancestor',
+        'anySibling',
+        'descendant',
+        'siblingAfter',
+        'siblingBefore',
+      ]
+      const binding = (name: string) => (aliased ? `${name}Alias` : name)
+      const imports = ['ref', ...helpers]
+        .map((name) => (aliased ? `${name} as ${binding(name)}` : name))
+        .join(',')
+      const rules = helpers
+        .map((name) => `[${binding(name)}(card)]:{color:'red'}`)
+        .join(',')
+      const result = Graph.compile({
+        modules: {
+          'app.js': `import {css} from 'zyzz';import {${imports},Css} from 'zyzz/web';const card=${binding('ref')}();export const style=css({${rules}});export const compile=Css.compile;`,
+        },
+      })
+      return result.modules['app.js']!.code.match(
+        /import[^;]+from ['"]zyzz\/web['"];?/g,
+      )
+    })
+    expect(results).toMatchInlineSnapshot(`
+      [
+        [
+          "import {Css} from 'zyzz/web';",
+        ],
+        [
+          "import {Css} from 'zyzz/web';",
+        ],
+      ]
+    `)
+  })
+
   test('rejects indirect authoring factories and invalid runtime identities', () => {
     expect(() =>
       Source.extract({

@@ -403,6 +403,12 @@ export function compile(options: compile.Options): compile.ReturnType {
             ? ['Config', 'css', 'Theme', 'Vars']
             : [
                 'Css',
+                'ancestor',
+                'anySibling',
+                'descendant',
+                'ref',
+                'siblingAfter',
+                'siblingBefore',
                 'cssFunction',
                 'customMedia',
                 'importCss',

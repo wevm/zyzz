@@ -176,14 +176,11 @@ export function scan(
             : node.property.type === 'Literal'
               ? node.property.value
               : undefined
-        if (typeof key === 'string' && helperNames.includes(key)) {
-          if (node.optional)
-            throw new Themes.InvalidError(
-              'Marker helpers require direct calls.',
-              node,
-            )
-          return key
-        }
+        if (typeof key === 'string' && helperNames.includes(key))
+          throw new Themes.InvalidError(
+            'Relationship helpers require direct named imports from zyzz/web.',
+            node,
+          )
         if (key === 'Css' || key === undefined)
           throw new Themes.InvalidError(
             'Marker helpers require the named Css import from zyzz/web.',

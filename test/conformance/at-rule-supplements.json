@@ -1,7 +1,12 @@
 {
   "@color-profile": {
     "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules",
-    "syntax": "@color-profile <dashed-ident> { src: <url>; rendering-intent: <intent>; }"
+    "syntax": "@color-profile <dashed-ident> { src: <url>; rendering-intent: <intent>; components: <ident>#; }"
+  },
+  "@color-profile/components": {
+    "context": "@color-profile",
+    "source": "https://www.w3.org/TR/css-color-5/#descdef-color-profile-components",
+    "syntax": "<ident># (excluding ASCII case-insensitive none)"
   },
   "@color-profile/rendering-intent": {
     "context": "@color-profile",

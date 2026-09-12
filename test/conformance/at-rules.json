@@ -1,24 +1,49 @@
 {
   "entries": {
     "@charset": {
-      "evidence": [],
+      "evidence": [
+        "docs/api/web/at-rules.md",
+        "src/compiler/Transform.profile.test.ts",
+        "src/node/Host.statements.test.ts"
+      ],
       "grammar": "9126274fe957e9d6ff46fe3931bc6b8e6024eaf14000e69bb2a343389649b755",
-      "status": "deferred"
+      "status": "supported"
     },
     "@color-profile": {
-      "evidence": [],
-      "grammar": "9a9c77968778e7aab2779d51c1265b7d39444e14dd1253aa13185933a9c6ff09",
-      "status": "deferred"
+      "evidence": [
+        "src/compiler/Transform.profile.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/colorProfile.ts"
+      ],
+      "grammar": "4ea47129d114b697f8512e2e7063026fe403dd924147ace27bafaaa4dc0dd584",
+      "status": "partial"
+    },
+    "@color-profile/components": {
+      "evidence": [
+        "src/compiler/Transform.profile.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/colorProfile.ts"
+      ],
+      "grammar": "84c54f045fdfb11d41cb44b127e48fcd97aa9b0ccd3e5092bc5857162bf64773",
+      "status": "partial"
     },
     "@color-profile/rendering-intent": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.profile.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/colorProfile.ts"
+      ],
       "grammar": "82d5fc212890a7d8a3acc272ef4d2666ba69ee219cbd5a76a7129c0139540010",
-      "status": "deferred"
+      "status": "partial"
     },
     "@color-profile/src": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.profile.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/colorProfile.ts"
+      ],
       "grammar": "9195c0fd7a8705fa31d69d85d0b438c556a067db50063c0ac97fb0fad48e8f15",
-      "status": "deferred"
+      "status": "partial"
     },
     "@container": {
       "evidence": [

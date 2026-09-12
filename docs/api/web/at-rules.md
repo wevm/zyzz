@@ -11,7 +11,7 @@ Signatures below describe the accepted call shapes. Multi-field helpers receive 
 
 | CSS rule               | Authoring                                                                | Result                                   |
 | ---------------------- | ------------------------------------------------------------------------ | ---------------------------------------- |
-| `@charset`             | Stylesheet output encoding option; spelling to be designed               | Output metadata                          |
+| `@charset`             | UTF-8 output without BOM or generated encoding declaration               | Output metadata                          |
 | `@color-profile`       | `colorProfile(descriptors, context?)`                                    | Typed profile reference                  |
 | `@container`           | `'@container …'` in style bodies                                         | Nested declarations or selectors         |
 | `@counter-style`       | `counterStyle(descriptors, context?)`                                    | Typed counter-style reference            |
@@ -199,3 +199,9 @@ CSS functions use ordered parameter records with `name`, optional `syntax`, and 
 
 > [!NOTE]
 > `colorProfile` is planned and remains unexported until real-browser rendering is verified.
+
+## Output Encoding
+
+Generated stylesheet files use UTF-8 without a BOM or `@charset`. Source maps and packed sections remain Unicode text; imported CSS assets retain their authored bytes. Serve generated CSS with UTF-8 transport metadata. No nested charset helper or alternative output encoding is exposed.
+
+The private profile implementation preserves `src`, `renderingIntent`, and comma-separated `components`, and links names inside `color(${profile} …)` across source and packed imports. The public export remains gated on real profile rendering evidence.

@@ -603,7 +603,7 @@ export function extract(options: extract.Options): extract.ReturnType {
 
           const template =
             node.type === 'TemplateLiteral'
-              ? Expression.template(node, 0, (expression) => {
+              ? Expression.template(node, 0, (expression, prefix) => {
                   const animation = contributions.references.get(
                     Expression.unwrap(expression).start,
                   )
@@ -612,7 +612,12 @@ export function extract(options: extract.Options): extract.ReturnType {
                     if (
                       kind &&
                       targets.some(
-                        (target) => !RuleReference.accepts(kind, target),
+                        (target) =>
+                          !RuleReference.acceptsExpression(
+                            kind,
+                            target,
+                            prefix,
+                          ),
                       )
                     ) {
                       report(

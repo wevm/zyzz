@@ -467,11 +467,15 @@ export function extract(
       return node.operator === '-' ? -node.argument.value : node.argument.value
 
     if (node.type === 'TemplateLiteral') {
-      const template = Expression.template(node, 0, (expression) => {
+      const template = Expression.template(node, 0, (expression, prefix) => {
         const node = Expression.unwrap(expression)
         const name = scanned.references.get(node.start)
         const kind = name ? scanned.kinds.get(name) : undefined
-        if (kind && property && !RuleReference.accepts(kind, property))
+        if (
+          kind &&
+          property &&
+          !RuleReference.acceptsExpression(kind, property, prefix)
+        )
           throw new Themes.InvalidError(
             'Named stylesheet reference is incompatible with this descriptor.',
             node,
@@ -1075,7 +1079,7 @@ export function extract(
         const descriptors = {
           colorProfile: {
             rule: 'color-profile',
-            keys: ['renderingIntent', 'src'],
+            keys: ['components', 'renderingIntent', 'src'],
             required: ['src'],
           },
           counterStyle: {

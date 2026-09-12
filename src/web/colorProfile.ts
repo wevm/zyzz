@@ -18,6 +18,8 @@ export function colorProfile<const options extends colorProfile.Options>(
 export declare namespace colorProfile {
   /** Exact CSS descriptor input; declaration order is preserved. */
   type Options = {
+    /** Ordered, comma-separated component names for relative colors. */
+    readonly components?: string | undefined
     /** CSS renderingIntent descriptor. */
     readonly renderingIntent?:
       | 'absolute-colorimetric'

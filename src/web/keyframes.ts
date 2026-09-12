@@ -28,6 +28,7 @@ type Trim<value extends string> = value extends `${Space}${infer rest}`
   : value extends `${infer rest}${Space}`
     ? Trim<rest>
     : value
+
 type Stops<value extends string> = value extends `${infer first},${infer rest}`
   ? Stops<first> extends true
     ? Stops<rest>

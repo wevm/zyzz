@@ -12,6 +12,7 @@ import * as MathExpressions from '../../test/fixtures/MathExpressions.js'
 describe('compile', () => {
   test('dimensional expressions agree with independent CSS grammar', () => {
     const lexer = Conformance.lexer()
+
     for (const [property, value] of [
       ['width', 'clamp(20px, calc(50% - 10px), 200px)'],
       ['padding', 'calc(2px * 3) min(20px, 5%)'],
@@ -28,6 +29,7 @@ describe('compile', () => {
         moduleId: 'math.ts',
         source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}})`,
       })
+
       expect(
         output.css.includes(`${Conformance.name(property)}:${value}`),
       ).toMatchInlineSnapshot(`true`)
@@ -49,17 +51,21 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage({
         viewport: { width: 800, height: 600 },
       })
+
       await page.setContent(
         `<style>${output.css}.parent{width:400px}.grid{width:300px}</style><div class="parent"><div id="actual" class="${module.box.className}"></div><div id="control" style="${MathExpressions.control}"></div></div><div id="grid" class="grid ${module.grid.className}"></div><div id="grid-control" class="grid" style="display:grid;grid-template-columns:minmax(calc(10px + 2px),1fr) clamp(20px,10%,50px)"></div>`,
       )
+
       expect(
         await page.evaluate(() => {
           const a = getComputedStyle(document.getElementById('actual')!)
           const b = getComputedStyle(document.getElementById('control')!)
+
           return [
             'width',
             'height',

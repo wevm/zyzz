@@ -17,6 +17,7 @@ export function create() {
   function serialize(token: Token.Reference): string {
     const value = token.value
     let contract = contracts.get(token.contract)
+
     if (!contract) {
       contract = {
         identity: token.contract[Token.identity],
@@ -24,7 +25,9 @@ export function create() {
       }
       contracts.set(token.contract, contract)
     }
+
     let name = contract.paths.get(token.path)
+
     if (!name) {
       name =
         contract.identity === undefined
@@ -32,36 +35,45 @@ export function create() {
           : variable(contract.identity, token.path)
       contract.paths.set(token.path, name)
     }
+
     return `var(${name},${literal(value)})`
   }
 
   function emit(themes: Readonly<Record<string, Theme.Definition>>) {
     const classes: Record<string, string> = Object.create(null)
     const rules: string[] = []
+
     for (const [name, theme] of Object.entries(themes)) {
       if (!name) throw new Error('Theme names must be nonempty.')
+
       const data =
         theme &&
         (Object.getOwnPropertyDescriptor(theme, Token.definition)?.value as
           | Token.Metadata
           | undefined)
       if (!data) throw new Error('Expected a theme definition.')
+
       // Anonymous contracts are graph-local. Source-owned contracts retain stable
       // identities across separately compiled components and theme scopes.
       const className =
         data.contract[Token.identity] === undefined
           ? `t_${nextScope++}`
           : `z_theme-${encode(name)}`
+
       classes[name] = className
+
       let contract = contracts.get(data.contract)
+
       if (data.contract[Token.complete]) {
         contract ??= {
           identity: data.contract[Token.identity],
           paths: new Map(),
         }
+
         // Separately compiled components may reference tokens absent from this graph.
         for (const path of Object.keys(data.values)) {
           if (contract.paths.has(path)) continue
+
           contract.paths.set(
             path,
             contract.identity === undefined
@@ -69,19 +81,25 @@ export function create() {
               : variable(contract.identity, path),
           )
         }
+
         contracts.set(data.contract, contract)
       }
+
       if (!contract) continue
+
       const body = [...contract.paths]
         .map(([path, name]) => {
           const value = data.values[path]
           if (value === undefined)
             throw new Error('Theme scope is missing a live token.')
+
           return `${name}:${literal(value)};`
         })
         .join('')
+
       rules.push(`.${className}{${body}}`)
     }
+
     return { classes: Object.freeze(classes), css: rules.join('\n') }
   }
 

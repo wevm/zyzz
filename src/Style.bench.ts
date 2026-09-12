@@ -11,6 +11,7 @@ for (const count of [10, 100]) {
     color: { brand: '#06c' },
     spacing: { md: '8px' },
   })
+
   const explicit = Object.fromEntries(
     Array.from({ length: count }, (_, index) => [
       `card-${index}`,
@@ -21,6 +22,7 @@ for (const count of [10, 100]) {
       },
     ]),
   )
+
   const named = Object.fromEntries(
     Array.from({ length: count }, (_, index) => [
       `card-${index}`,
@@ -31,6 +33,7 @@ for (const count of [10, 100]) {
       },
     ]),
   )
+
   describe(`theme resolution and compilation / ${count} styles`, () => {
     bench('explicit references', () => {
       Css.compile({ styles: Style.define(explicit), themes: { base: theme } })

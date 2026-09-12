@@ -1,5 +1,6 @@
 /** Refines CSS numeric token spellings entirely within TypeScript. @module */
 type Digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
+
 type Digits<
   text extends string,
   prefix extends string = '',
@@ -8,6 +9,7 @@ type Digits<
     ? Digits<rest, `${prefix}${first}`>
     : readonly [prefix, text]
   : readonly [prefix, '']
+
 type Exponent<
   text extends string,
   integer extends boolean,

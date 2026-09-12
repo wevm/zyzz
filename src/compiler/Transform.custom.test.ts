@@ -13,6 +13,7 @@ export const child = css({all:'initial', color:'var(--Accent)', backgroundColor:
 describe('compile', () => {
   test('preserves case-sensitive names and custom declaration data', () => {
     const output = Transform.compile({ moduleId: 'custom.ts', source })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z-nhoi651v8vyx9-base0{--Accent:red;--accent:blue;--data:"a;b:c";--count:2;}
       .z-nhoi651v8vyx9-base1{all:initial;color:var(--Accent);background-color:var(--accent);--choice:red;--choice:blue!important;}"
@@ -28,6 +29,7 @@ describe('compile', () => {
         '--space': 'hello\\ !',
       },
     })
+
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
       `".z_base0{--escaped:hello\\!;--escapedWord:hello\\!important;--even:hello\\\\!important;--space:hello\\ !important;}"`,
     )
@@ -45,15 +47,21 @@ describe('compile', () => {
     const classes = ['parent', 'child'].map(
       (name) => module[name].className as string,
     )
+
     expect(classes.length).toMatchInlineSnapshot(`2`)
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div class="${classes[0]}" dir="rtl"><div id="child" class="${classes[1]}"></div></div>`,
       )
+
       const result = await page.locator('#child').evaluate((element) => {
         const style = getComputedStyle(element)
+
         return {
           accent: style.getPropertyValue('--Accent'),
           background: style.backgroundColor,
@@ -62,6 +70,7 @@ describe('compile', () => {
           direction: style.direction,
         }
       })
+
       expect(result).toMatchInlineSnapshot(`
         {
           "accent": "red",

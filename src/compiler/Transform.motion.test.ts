@@ -15,6 +15,7 @@ describe('compile', () => {
       moduleId: 'motion.ts',
       source: Motion.source,
     })
+
     expect(output.css.match(/animation-duration:[^;}]+/g))
       .toMatchInlineSnapshot(`
       [
@@ -22,10 +23,12 @@ describe('compile', () => {
         "animation-duration:2s!important",
       ]
     `)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('animation-duration:2s!important'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -54,15 +57,19 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>@keyframes fade{from{opacity:0}to{opacity:1}}#actual,#control{animation-name:fade}${output.css}</style><div id="actual" class="${module.motion.className}">Motion</div><div id="control" style="${Motion.controls.motion}">Control</div><div id="transition" class="${module.transition.className}">Transition</div><div id="transition-control" style="${Motion.controls.transition}">Control</div>`,
       )
+
       expect(
         await page.evaluate(() => {
           const a = getComputedStyle(document.getElementById('actual')!)
           const b = getComputedStyle(document.getElementById('control')!)
+
           return [
             'animation-delay',
             'animation-duration',
@@ -101,6 +108,7 @@ describe('compile', () => {
           const b = getComputedStyle(
             document.getElementById('transition-control')!,
           )
+
           return [
             'transition-delay',
             'transition-duration',

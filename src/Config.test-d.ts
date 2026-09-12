@@ -8,6 +8,7 @@ import { Config, Theme } from 'zyzz'
 describe('create', () => {
   test('checks configured callback domains', () => {
     const { css } = Config.create()
+
     // @ts-expect-error Configured callbacks cannot use broad numbers for integer slots.
     css((values: { order: number }) => ({ order: values.order }))
     // @ts-expect-error Reserved styling fields cannot be callback slots.
@@ -23,7 +24,9 @@ describe('create', () => {
       card: css({ padding: 'md' }),
       label: css({ color: theme.tokens.color.brand }),
     }
+
     expectTypeOf(styles.card).toEqualTypeOf<typeof styles.label>()
+
     // @ts-expect-error Token names remain constrained after destructuring.
     css({ padding: 'missing' })
     // @ts-expect-error References retain their property domains.
@@ -32,6 +35,7 @@ describe('create', () => {
 
   test('keeps unthemed configuration token-free', () => {
     const empty = Config.create()
+
     empty.css({ color: '#fff', padding: '8px' })
     // @ts-expect-error Root config has no tokens.
     empty.css({ padding: 'md' })
@@ -48,6 +52,7 @@ describe('create', () => {
       layers: ['base', 'components'],
       theme: base,
     })
+
     single.css({ color: 'brand', padding: single.theme.tokens.spacing.md })
     single.css({
       '@layer components': { color: 'brand', '@layer base': { padding: 'md' } },
@@ -72,6 +77,7 @@ describe('create', () => {
       color: { brand: '#06c' },
       spacing: { md: '8px' },
     })
+
     const named = Config.create({
       defaultTheme: 'base',
       themes: {
@@ -82,10 +88,13 @@ describe('create', () => {
         },
       },
     })
+
     named.css({ color: 'brand', padding: 'md' })
+
     expectTypeOf(named.themes.mint.tokens.color.brand).toEqualTypeOf<
       Theme.Reference<'color'>
     >()
+
     // @ts-expect-error Missing default.
     Config.create({ themes: { base } })
     // @ts-expect-error Unknown default.
@@ -110,7 +119,9 @@ describe('create', () => {
         },
       },
     })
+
     const incomplete = Theme.define({ color: { brand: '#175' } })
+
     // @ts-expect-error Reusable definitions must also have complete paths.
     Config.create({ defaultTheme: 'base', themes: { base, incomplete } })
     // @ts-expect-error Wrong inline token group.
@@ -132,6 +143,7 @@ describe('create', () => {
   test('rejects invalid union branches and empty callbacks', () => {
     const { css } = Config.create()
     const styles = {} as { color: '#fff' } | { ':hover': { colour: '#fff' } }
+
     // @ts-expect-error Each disjoint branch must contain valid nested properties.
     css(styles)
     // @ts-expect-error Callbacks require one scalar input parameter.

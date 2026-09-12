@@ -16,10 +16,13 @@ const tokens = {
 describe('define', () => {
   test('bound authoring requires a transform and never generates runtime CSS', () => {
     const theme = Theme.define(tokens)
+
     expect(() => theme.className).toThrowErrorMatchingInlineSnapshot(
       `[css.MissingTransformError: css requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.]`,
     )
+
     const { css } = theme
+
     expect(() =>
       css({ color: 'brand', padding: 'md' }),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -36,6 +39,7 @@ describe('define', () => {
       styles: Style.define({ card: { color: reference } }),
       themes: { base: theme },
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#fff;}
       .z_base0{color:var(--z0,#fff);}"
@@ -49,6 +53,7 @@ describe('define', () => {
     const alternate = Theme.extend(base, {
       color: { brand: { primary: '#06c' }, brand_2e_primary: '#f00' },
     })
+
     const output = Css.compile({
       composition: 'independent',
       styles: Style.define({
@@ -58,6 +63,7 @@ describe('define', () => {
       }),
       themes: { base, 'foo.bar': alternate, foo_2e_bar: base },
     })
+
     expect(output.classes).toMatchInlineSnapshot(`
       {
         "other": "other",
@@ -82,8 +88,10 @@ describe('define', () => {
     `)
 
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(`<style>${output.css}</style>
         <section class="${output.themes['foo.bar']}">
           <div id="nested" class="${output.classes['z_theme-base']}"></div>
@@ -91,6 +99,7 @@ describe('define', () => {
           <div id="collision" class="${output.classes.t_0}"></div>
         </section>
         <section class="${output.themes.foo_2e_bar}"><div id="base" class="${output.classes['z_theme-base']}"></div></section>`)
+
       expect(
         await page
           .locator('#nested')
@@ -119,6 +128,7 @@ describe('define', () => {
   test('portable references compile to live variables and defining fallbacks', () => {
     const theme = Theme.define(tokens)
     const independent = Theme.define(tokens)
+
     const styles = Style.define({
       button: {
         backgroundColor: theme.tokens.backgroundColor.surface,
@@ -127,6 +137,7 @@ describe('define', () => {
       },
       independent: { color: independent.tokens.color.brand },
     })
+
     const result = Css.compile({ styles, themes: { base: theme, independent } })
 
     expect(result.css).toMatchInlineSnapshot(`
@@ -179,6 +190,7 @@ describe('define', () => {
     const styles = Style.define({
       'theme-base': { color: theme.tokens.color.brand },
     })
+
     expect(Css.compile({ styles, themes: { base: theme } }).css)
       .toMatchInlineSnapshot(`
         ".t_0{--z0:#06c;}
@@ -193,27 +205,35 @@ describe('define', () => {
       { color: { 'blue.500': '#fff' } },
       { color: {} },
     ]
+
     for (const input of invalid) {
       let error: unknown
+
       try {
         const theme = Reflect.apply(Theme.define, undefined, [
           input,
         ]) as Theme.Definition
+
         Css.compile({ styles: Style.define({}), themes: { base: theme } })
       } catch (cause) {
         error = cause
       }
+
       expect(error instanceof Theme.InvalidError).toMatchInlineSnapshot('true')
     }
+
     let reads = 0
+
     const input = {
       color: {
         get brand() {
           reads++
+
           return '#fff' as const
         },
       },
     }
+
     expect(() => Theme.define(input)).toThrowErrorMatchingInlineSnapshot(
       `[Theme.InvalidError: ["color"]: Expected nonempty keys without dots and enumerable data properties.]`,
     )
@@ -224,6 +244,7 @@ describe('define', () => {
 describe('extend', () => {
   test('object-shaped length overrides fail at the public boundary', () => {
     const theme = Theme.define({ spacing: { md: '1lh' } })
+
     expect(() =>
       Theme.extend(theme, { spacing: { md: {} } } as never),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -248,6 +269,7 @@ describe('extend', () => {
     })
     const alternate = Theme.extend(theme, { color: { brand: '#fff' } })
     const styles = Style.define({ card: { padding: theme.tokens.spacing.md } })
+
     expect(Css.compile({ styles, themes: { alternate, base: theme } }).css)
       .toMatchInlineSnapshot(`
         ".t_0{--z0:1lh;}
@@ -274,6 +296,7 @@ describe('extend', () => {
     const theme = Theme.define(input)
     const alternate = Theme.extend(theme, { color: { blue: { 500: '#f00' } } })
     const nested = Theme.extend(alternate, { spacing: { md: '12px' } })
+
     const styles = Style.define({
       button: {
         color: theme.tokens.color.blue[500],
@@ -333,6 +356,7 @@ describe('extend', () => {
       spacing: { md: '16px' },
     })
     const nested = Theme.extend(theme, { color: { brand: '#f00' } })
+
     const styles = Style.define({
       button: {
         backgroundColor: theme.tokens.backgroundColor.surface,
@@ -340,13 +364,16 @@ describe('extend', () => {
         padding: theme.tokens.spacing.md,
       },
     })
+
     const output = Css.compile({
       styles,
       themes: { alternate, base: theme, nested },
     })
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage({ colorScheme: 'light' })
+
       await page.setContent(`<style>:root{color-scheme:light dark}${output.css}</style>
         <div id="fallback" class="${output.classes.button}"></div>
         <section class="${output.themes.alternate}">
@@ -354,9 +381,11 @@ describe('extend', () => {
           <section class="${output.themes.nested}"><div id="nested" class="${output.classes.button}"></div></section>
           <div id="forced" style="color-scheme:dark" class="${output.classes.button}"></div>
         </section>`)
+
       async function read(id: string) {
         return page.locator(`#${id}`).evaluate((element) => {
           const style = getComputedStyle(element)
+
           return {
             backgroundColor: style.backgroundColor,
             color: style.color,
@@ -364,6 +393,7 @@ describe('extend', () => {
           }
         })
       }
+
       expect(await read('fallback')).toMatchInlineSnapshot(`
         {
           "backgroundColor": "rgb(255, 255, 255)",
@@ -392,7 +422,9 @@ describe('extend', () => {
           "padding": "16px",
         }
       `)
+
       await page.emulateMedia({ colorScheme: 'dark' })
+
       expect(await read('fallback')).toMatchInlineSnapshot(`
         {
           "backgroundColor": "rgb(17, 17, 17)",

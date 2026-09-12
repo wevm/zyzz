@@ -62,6 +62,7 @@ const commit =
     : ''
 if (output) {
   Fs.mkdirSync(output, { recursive: true })
+
   for (const [name, unit] of [
     ['size', 'B'],
     ['time', 'ms'],
@@ -75,6 +76,7 @@ if (output) {
           unit,
           value: value.value,
         }))
+
     Fs.writeFileSync(
       Path.join(output, `${name}.json`),
       JSON.stringify(benches(current)),
@@ -106,6 +108,7 @@ if (!hasBaseline) {
   console.log('No baseline available.\n')
 } else {
   const repository = process.env.GITHUB_REPOSITORY ?? 'wevm/zyzz'
+
   console.log(
     `Baseline: [${commit.slice(0, 7)}](https://github.com/${repository}/commit/${commit})\n`,
   )
@@ -130,6 +133,7 @@ if (!hasBaseline) {
       .replace(/^.*? > /, '')
       .replaceAll('|', '\\|')
       .replaceAll(/\r?\n/g, ' ')
+
     if (
       currentReport.unavailable.has(key) ||
       previousReport.unavailable.has(key)
@@ -137,18 +141,23 @@ if (!hasBaseline) {
       const previousValue = (() => {
         if (previousReport.unavailable.has(key)) return 'Unavailable'
         if (before) return format(before)
+
         return '—'
       })()
+
       const currentValue = (() => {
         if (currentReport.unavailable.has(key)) return 'Unavailable'
         if (after) return format(after)
+
         return '—'
       })()
+
       console.log(
         `| ${name} | ${previousValue} | ${currentValue} | No timing samples |`,
       )
       continue
     }
+
     if (!before || !after) {
       console.log(
         `| ${name} | ${before ? format(before) : '—'} | ${after ? format(after) : '—'} | ${after ? 'New' : 'Removed'} |`,
@@ -157,38 +166,48 @@ if (!hasBaseline) {
     }
 
     const delta = after.value - before.value
+
     const percent = (() => {
       if (delta === 0) {
         return 0
       }
+
       if (before.value === 0) {
         return undefined
       }
+
       return (delta / before.value) * 100
     })()
+
     const ratio =
       before.value === 0 && after.value === 0 ? 1 : after.value / before.value
     const tolerance = thresholds[after.unit] / 100
     const significant = delta > 0 ? ratio > tolerance : ratio < 2 - tolerance
+
     const light = (() => {
       if (!significant) {
         return '🟡'
       }
+
       if (delta < 0) {
         return '🟢'
       }
+
       return '🔴'
     })()
+
     const change =
       percent === undefined
         ? 'new from zero'
         : `${percent > 0 ? '+' : ''}${percent.toFixed(1)}%`
     const bytes =
       after.unit === 'B' ? `${delta > 0 ? '+' : ''}${delta} B · ` : ''
+
     console.log(
       `| ${name} | ${format(before)} | ${format(after)} | ${light} ${bytes}${change} |`,
     )
   }
+
   console.log('')
 }
 
@@ -202,11 +221,14 @@ function read(directory: string) {
   const timings: Timings = JSON.parse(
     Fs.readFileSync(Path.join(directory, 'timings.json'), 'utf8'),
   )
+
   for (const file of timings.files) {
     for (const group of file.groups) {
       for (const benchmark of group.benchmarks) {
         if (competitors.has(benchmark.name)) continue
+
         const key = `${group.fullName} / ${benchmark.name}`
+
         if (
           typeof benchmark.mean !== 'number' ||
           !Number.isFinite(benchmark.mean) ||
@@ -219,6 +241,7 @@ function read(directory: string) {
           unavailable.add(key)
           continue
         }
+
         measurements.set(key, {
           error: benchmark.rme,
           unit: 'ms',
@@ -232,26 +255,33 @@ function read(directory: string) {
   for (const file of [...Fs.globSync('**/*.json', { cwd: directory })].sort()) {
     if (file === 'timings.json') continue
     if (competitors.has(Path.basename(file, '.json'))) continue
+
     const sizes: Sizes = JSON.parse(
       Fs.readFileSync(Path.join(directory, file), 'utf8'),
     )
     const name = file.replace(/\.json$/, '')
+
     for (const [metric, value] of [
       ['CSS gzip', sizes.css?.gzip ?? sizes.gzip],
       ['JS gzip', sizes.javascript?.gzip],
       ['Total gzip', sizes.total?.gzip],
     ] as const) {
       if (value === undefined) continue
+
       measurements.set(`${name} / ${metric}`, { error: 0, unit: 'B', value })
     }
   }
+
   return { measurements, unavailable }
 }
+
 function threshold(name: string, fallback: number) {
   const input = process.env[name]
   if (input === undefined) return fallback
+
   const value = Number(input)
   if (!input.trim() || !Number.isFinite(value) || value < 100)
     throw new Error(`${name} must be a finite percentage ratio of at least 100`)
+
   return value
 }

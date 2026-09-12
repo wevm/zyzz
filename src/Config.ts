@@ -23,6 +23,7 @@ export function create<const options extends create.Options>(
 ): create.ReturnType<options>
 export function create(options: create.Options = {}): unknown {
   const input = record(options)
+
   for (const key of Object.keys(input))
     if (
       ![
@@ -35,18 +36,23 @@ export function create(options: create.Options = {}): unknown {
       ].includes(key)
     )
       throw new InvalidError(`Unknown configuration option: ${key}`)
+
   if (
     input.output !== undefined &&
     input.output !== 'html' &&
     input.output !== 'react'
   )
     throw new InvalidError('output must be html or react.')
+
   if (input.theme !== undefined && input.themes !== undefined)
     throw new InvalidError('Use either theme or themes, not both.')
+
   if (input.layers !== undefined) {
     if (!Array.isArray(input.layers))
       throw new InvalidError('layers must be an array.')
+
     const seen = new Set<string>()
+
     for (const layer of input.layers) {
       if (
         typeof layer !== 'string' ||
@@ -69,24 +75,31 @@ export function create(options: create.Options = {}): unknown {
         throw new InvalidError(
           'Layer names must be plain CSS identifiers, optionally dotted.',
         )
+
       if (seen.has(layer)) throw new InvalidError(`Duplicate layer: ${layer}`)
+
       seen.add(layer)
     }
   }
+
   const script = () => {
     throw new Error(
       'Appearance initialization requires the Zyzz source transform.',
     )
   }
+
   const shorthands = (() => {
     if (input.shorthands === undefined) return undefined
+
     try {
       return Shorthands.read(input.shorthands)
     } catch (error) {
       throw new InvalidError((error as Error).message)
     }
   })()
+
   const contract = Object.freeze(shorthands ? { shorthands } : {})
+
   if (input.themes !== undefined) {
     const catalog = record(input.themes)
     if (
@@ -94,22 +107,28 @@ export function create(options: create.Options = {}): unknown {
       !Object.hasOwn(catalog, input.defaultTheme)
     )
       throw new InvalidError('defaultTheme must name a theme in the catalog.')
+
     const definitions = Object.fromEntries(
       Object.entries(catalog).map(([name, value]) => {
         if (!name) throw new InvalidError('Theme names must be nonempty.')
+
         return [name, definition(value)]
       }),
     )
+
     const base = definitions[input.defaultTheme]!
     const paths = Object.keys(base[Token.definition].values).sort()
+
     function queries(theme: Theme.Definition) {
       const data = theme[Token.definition].queries
+
       return JSON.stringify({
         breakpoints: Object.keys(data?.breakpoints ?? {}).sort(),
         containers: Object.keys(data?.containers ?? {}).sort(),
         containerNames: [...(data?.containerNames ?? [])].sort(),
       })
     }
+
     for (const [name, value] of Object.entries(definitions)) {
       const candidate = Object.keys(value[Token.definition].values).sort()
       if (
@@ -121,16 +140,20 @@ export function create(options: create.Options = {}): unknown {
           `Theme ${JSON.stringify(name)} must have the default theme's complete token paths and domains.`,
         )
     }
+
     const bound = Object.fromEntries(
       Object.entries(definitions).map(([name, value]) => [
         name,
         Token.bind(value, contract),
       ]),
     )
+
     const select = () => {
       throw new MissingTransformError()
     }
+
     Object.defineProperties(select, Object.getOwnPropertyDescriptors(bound))
+
     return Object.freeze({
       css,
       script,
@@ -138,14 +161,17 @@ export function create(options: create.Options = {}): unknown {
       themes: Object.freeze(select),
     })
   }
+
   if (input.defaultTheme !== undefined)
     throw new InvalidError('defaultTheme requires a named themes catalog.')
+
   if (input.theme !== undefined)
     return Object.freeze({
       css,
       script,
       theme: Token.bind(definition(input.theme), contract),
     })
+
   return Object.freeze({ css, script })
 }
 
@@ -178,6 +204,7 @@ export declare namespace create {
         /** Omit themes for token-free authoring. */ readonly themes?: never
       }
   )
+
   /** Bound authoring and the handles corresponding to the selected theme mode. */
   type ReturnType<options extends Options = Options> = {
     /** Inferred callable authoring; execution requires a source transform. */
@@ -244,6 +271,7 @@ type Mappings<options> = options extends {
     ? {}
     : map
   : {}
+
 type Handle<
   tokens extends Theme.Tokens,
   mappings extends Shorthands.Map,
@@ -251,6 +279,7 @@ type Handle<
 > = Omit<Theme.Definition<tokens>, 'css'> & {
   readonly css: Css<tokens, never, output, mappings>
 }
+
 type Css<
   tokens extends Theme.Tokens,
   layers extends string,
@@ -278,7 +307,9 @@ type Css<
     styles: styles & NoInfer<Body<styles, tokens, layers, mappings>>,
   ): css.ReturnType<output>
 }
+
 type Keys<styles> = styles extends unknown ? keyof styles : never
+
 type Body<
   styles,
   tokens extends Theme.Tokens,
@@ -328,9 +359,11 @@ function definition(value: unknown): Theme.Definition {
       Object.getOwnPropertyDescriptor(value, Token.definition)?.value
     )
       return value as Theme.Definition
+
     return Theme.define(record(value) as Theme.Tokens)
   } catch (error) {
     if (error instanceof InvalidError) throw error
+
     throw new InvalidError((error as Error).message)
   }
 }
@@ -341,6 +374,7 @@ type ExtractTokens<input> =
     : input extends Theme.Tokens
       ? input
       : never
+
 type Input = Theme.Definition | Theme.Tokens
 
 /** Invalid options or incompatible named themes. */
@@ -361,14 +395,18 @@ function record(value: unknown): Record<string, unknown> {
     ![null, Object.prototype].includes(Object.getPrototypeOf(value))
   )
     throw new InvalidError('Expected a plain configuration record.')
+
   const result: Record<string, unknown> = Object.create(null)
+
   for (const [key, descriptor] of Object.entries(
     Object.getOwnPropertyDescriptors(value),
   )) {
     if (!('value' in descriptor))
       throw new InvalidError('Configuration records cannot contain accessors.')
+
     result[key] = descriptor.value
   }
+
   return result
 }
 
@@ -379,11 +417,13 @@ type Tokens<options> = options extends { theme: infer input }
       ? ExtractTokens<catalog[key]>
       : never
     : {}
+
 type ValidInput<input> = input extends Theme.Definition
   ? input
   : input extends Theme.Tokens
     ? Parameters<typeof Theme.define<input>>[0]
     : never
+
 type Match<input, base> = base extends
   | string
   | number
@@ -409,6 +449,7 @@ type Match<input, base> = base extends
           : never
         : never
     }
+
 type Validated<options> = Record<
   Exclude<keyof options, keyof create.Options>,
   never

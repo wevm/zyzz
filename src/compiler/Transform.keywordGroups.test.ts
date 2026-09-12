@@ -12,6 +12,7 @@ import * as KeywordGroups from '../../test/fixtures/KeywordGroups.js'
 describe('compile', () => {
   test('keyword groups agree with independent grammar in authored orders', () => {
     const lexer = Conformance.lexer()
+
     for (const [property, value] of [
       ['contain', 'layout style paint'],
       ['fontSynthesis', 'style weight small-caps'],
@@ -24,6 +25,7 @@ describe('compile', () => {
           moduleId: 'groups.ts',
           source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(words)}})`,
         })
+
         expect(
           output.css.includes(`${Conformance.name(property)}:${words}`),
         ).toMatchInlineSnapshot(`true`)
@@ -46,15 +48,19 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div id="actual" class="${module.text.className}" style="font-variant-numeric:lining-nums">123</div><div id="control" style="${KeywordGroups.control}">123</div>`,
       )
+
       expect(
         await page.evaluate(() => {
           const a = getComputedStyle(document.getElementById('actual')!)
           const b = getComputedStyle(document.getElementById('control')!)
+
           return [
             'contain',
             'font-synthesis',

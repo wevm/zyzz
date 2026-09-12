@@ -1,5 +1,6 @@
 /** Supplies independent compound declaration samples for public conformance tests. @module */
 import type * as Compound from '../../src/internal/Compound.js'
+
 /** Positive samples cover every compound property, including vendor spellings. */
 export const values = {
   alignTracks: ['center', 'start, end'],

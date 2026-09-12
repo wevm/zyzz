@@ -11,6 +11,7 @@ export function global<const styles extends Record<string, unknown>>(
   void styles
   throw new MissingTransformError()
 }
+
 /** Global selector and grouping contracts. */
 export declare namespace global {
   /** Selectors contain exact declarations; at-rules contain further selectors. */

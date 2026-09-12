@@ -18,6 +18,7 @@ describe('compile', () => {
       scrollSnapStop: 'normal',
       scrollSnapType: 'x proximity',
     } as const
+
     const output = Css.compile({
       styles: Style.define({
         a,
@@ -29,6 +30,7 @@ describe('compile', () => {
         c: a,
       }),
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z-a{scroll-snap-align:start end;scroll-snap-stop:normal;scroll-snap-type:x proximity;}
       .z-b{scroll-snap-align:center;scroll-snap-align:none start!important;scroll-snap-stop:always;scroll-snap-type:both mandatory;}
@@ -42,6 +44,7 @@ describe('compile', () => {
       scrollPadding: '8px',
       overscrollBehavior: 'contain',
     } as const
+
     const output = Css.compile({
       styles: Style.define({
         a,
@@ -53,6 +56,7 @@ describe('compile', () => {
         c: a,
       }),
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z-a{scroll-margin:4px;scroll-padding:8px;overscroll-behavior:contain;}
       .z-b{scroll-margin-inline-start:-2px;scroll-padding-block-start:20px;overscroll-behavior-x:none;}
@@ -70,14 +74,17 @@ describe('compile', () => {
         value,
       })),
     )
+
     const input = Object.fromEntries(
       cases.map(({ property, value }) => [property, { [property]: value }]),
     )
+
     const a = {
       scrollMargin: '4px',
       scrollPadding: '8px',
       overscrollBehavior: 'contain',
     } as const
+
     const styles: Record<string, Style.LiteralDeclarations> = {
       ...input,
       a,
@@ -88,13 +95,17 @@ describe('compile', () => {
       },
       c: a,
     }
+
     const output = Css.compile({ styles: Style.define(styles) })
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>main>div{overflow:auto;height:100px;width:100px}${output.css}</style><main>${cases.map(({ property, css }) => `<div id="${property}" class="${output.classes[property]}"></div><div id="${property}-control" style="${css}"></div>`).join('')}<div id="combined" class="${output.classes.a} ${output.classes.b} ${output.classes.c}"></div><div id="combined-control" style="scroll-margin:4px;scroll-padding:8px;overscroll-behavior:contain"></div></main>`,
       )
+
       for (const writingMode of ['horizontal-tb', 'vertical-lr', 'vertical-rl'])
         for (const direction of ['ltr', 'rtl']) {
           await page.locator('main').evaluate(
@@ -104,6 +115,7 @@ describe('compile', () => {
             },
             { direction, writingMode },
           )
+
           expect(
             await page.evaluate((cases) => {
               const properties = [
@@ -119,12 +131,14 @@ describe('compile', () => {
                 'scroll-padding-bottom',
                 'scroll-padding-left',
               ]
+
               const unsupported = cases
                 .filter(
                   ({ css }) =>
                     !CSS.supports(css.split(':')[0]!, css.split(':')[1]!),
                 )
                 .map(({ property }) => property)
+
               const mismatches = [
                 ...cases.map(({ property }) => property),
                 'combined',
@@ -133,12 +147,14 @@ describe('compile', () => {
                 const control = getComputedStyle(
                   document.getElementById(`${id}-control`)!,
                 )
+
                 return properties.some(
                   (property) =>
                     actual.getPropertyValue(property) !==
                     control.getPropertyValue(property),
                 )
               })
+
               return { mismatches, unsupported }
             }, cases),
           ).toMatchInlineSnapshot(`
@@ -155,6 +171,7 @@ describe('compile', () => {
 
   test('border and outline properties match native browser controls in every writing mode', async () => {
     const input: Record<string, Style.LiteralDeclarations> = {}
+
     for (const entry of Borders.cases)
       input[entry.property] = {
         borderStyle: 'solid',
@@ -163,13 +180,17 @@ describe('compile', () => {
         height: '100px',
         [entry.property]: entry.value,
       }
+
     const output = Css.compile({ styles: Style.define(input) })
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><main>${Borders.cases.map((entry) => `<div id="${entry.property}" class="${output.classes[entry.property]}"></div><div id="${entry.property}-control" style="border-style:solid;border-width:10px;width:100px;height:100px;${entry.css}:${entry.value}"></div>`).join('')}</main>`,
       )
+
       for (const writingMode of ['horizontal-tb', 'vertical-lr', 'vertical-rl'])
         for (const direction of ['ltr', 'rtl']) {
           await page.locator('main').evaluate(
@@ -179,6 +200,7 @@ describe('compile', () => {
             },
             { writingMode, direction },
           )
+
           expect(
             await page.evaluate(
               (names) =>
@@ -189,6 +211,7 @@ describe('compile', () => {
                   const expected = getComputedStyle(
                     document.getElementById(`${name}-control`)!,
                   )
+
                   const properties = [
                     'border-top-width',
                     'border-right-width',
@@ -211,6 +234,7 @@ describe('compile', () => {
                     'outline-style',
                     'outline-width',
                   ]
+
                   return properties
                     .filter(
                       (property) =>
@@ -240,6 +264,7 @@ describe('compile', () => {
       borderStyle: 'solid',
       borderWidth: '2px',
     } as const
+
     const output = Css.compile({
       styles: Style.define({
         a,
@@ -252,20 +277,26 @@ describe('compile', () => {
         c: a,
       }),
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z-a{border-color:#000;border-radius:4px;border-style:solid;border-width:2px;}
       .z-b{border-inline-start-color:#fff;border-start-start-radius:8px;border-inline-start-style:dashed;border-inline-start-width:6px;}
       .z-c{border-color:#000;border-radius:4px;border-style:solid;border-width:2px;}"
     `)
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div class="${output.classes.a} ${output.classes.b} ${output.classes.c}"></div>`,
       )
+
       expect(
         await page.locator('div').evaluate((element) => {
           const style = getComputedStyle(element)
+
           return {
             color: style.borderLeftColor,
             radius: style.borderTopLeftRadius,
@@ -294,17 +325,22 @@ describe('compile', () => {
         c: { overflow: 'hidden' },
       }),
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z-a{overflow:hidden;}
       .z-b{overflow-x:scroll;}
       .z-c{overflow:hidden;}"
     `)
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div class="${output.classes.a} ${output.classes.b} ${output.classes.c}"></div>`,
       )
+
       expect(
         await page
           .locator('div')
@@ -323,9 +359,12 @@ describe('compile', () => {
         vertical: { writingMode: 'vertical-rl', direction: 'rtl' },
       }),
     })
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       for (const mode of ['horizontal', 'vertical'] as const) {
         await page.setContent(
           `<style>${output.css}</style><main class="${output.classes[mode]}">${Object.entries(
@@ -337,6 +376,7 @@ describe('compile', () => {
             )
             .join('')}</main>`,
         )
+
         expect(
           await page.evaluate(() => {
             return ['dimensions', 'offsets', 'spacing'].flatMap((name) => {
@@ -344,6 +384,7 @@ describe('compile', () => {
               const expected = getComputedStyle(
                 document.getElementById(`${name}-control`)!,
               )
+
               const properties = [
                 'width',
                 'height',
@@ -364,6 +405,7 @@ describe('compile', () => {
                 'padding-bottom',
                 'padding-left',
               ]
+
               return properties
                 .filter(
                   (property) =>
@@ -403,6 +445,7 @@ describe('compile', () => {
       marginLeft: '6px',
       paddingLeft: '8px',
     } as const
+
     const styles = Style.define({
       a,
       b: {
@@ -415,21 +458,28 @@ describe('compile', () => {
       },
       c: a,
     })
+
     const output = Css.compile({ styles })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z-a{width:80px;min-width:20px;max-width:100px;top:4px;margin-left:6px;padding-left:8px;}
       .z-b{inline-size:40px;min-inline-size:30px;max-inline-size:60px;inset-block-start:12px;margin-inline-start:14px;padding-inline-start:16px;}
       .z-c{width:80px;min-width:20px;max-width:100px;top:4px;margin-left:6px;padding-left:8px;}"
     `)
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>div{position:relative}${output.css}</style><div id="box" class="${output.classes.a} ${output.classes.b} ${output.classes.c}"></div>`,
       )
+
       expect(
         await page.locator('#box').evaluate((element) => {
           const style = getComputedStyle(element)
+
           return {
             maxWidth: style.maxWidth,
             minWidth: style.minWidth,
@@ -460,6 +510,7 @@ describe('compile', () => {
         width: ['1px', ...Lengths.units.map((unit) => `1${unit}` as const)],
       },
     })
+
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
       `".z_base0{width:1px;width:1px;width:1cm;width:1mm;width:1q;width:1Q;width:1in;width:1pc;width:1pt;width:1em;width:1ex;width:1cap;width:1ch;width:1ic;width:1lh;width:1rem;width:1rex;width:1rcap;width:1rch;width:1ric;width:1rlh;width:1vw;width:1vh;width:1vi;width:1vb;width:1vmin;width:1vmax;width:1svw;width:1svh;width:1svi;width:1svb;width:1svmin;width:1svmax;width:1lvw;width:1lvh;width:1lvi;width:1lvb;width:1lvmin;width:1lvmax;width:1dvw;width:1dvh;width:1dvi;width:1dvb;width:1dvmin;width:1dvmax;width:1cqw;width:1cqh;width:1cqi;width:1cqb;width:1cqmin;width:1cqmax;width:1%;}"`,
     )
@@ -471,15 +522,19 @@ describe('compile', () => {
         Lengths.units.map((unit) => [unit, { width: `1${unit}` as const }]),
       ),
     )
+
     const output = Css.compile({ styles })
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage({
         viewport: { width: 800, height: 600 },
       })
+
       await page.setContent(
         `<style>html{font-size:16px;line-height:24px}main{container-type:size;width:400px;height:300px}${output.css}</style><main>${Lengths.units.map((unit) => `<div id="compiled-${unit}" class="${output.classes[unit]}"></div><div id="authored-${unit}" style="width:1${unit}"></div>`).join('')}</main>`,
       )
+
       expect(
         await page.evaluate(
           (units) => units.filter((unit) => !CSS.supports('width', `1${unit}`)),
@@ -511,6 +566,7 @@ describe('compile', () => {
       last: { color: '#fff !important' },
       numeric: { opacity: '0.5!', padding: '0!' },
     })
+
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
       ".z-first{color:#fff!important;color:#000!important;}
       .z-normal{color:#fff;}
@@ -528,7 +584,9 @@ describe('compile', () => {
       base_0: { color: '#555', display: 'block', padding: '5px' },
       empty: {},
     })
+
     const output = Css.compile({ composition: 'independent', styles })
+
     expect(output).toMatchInlineSnapshot(`
       {
         "classes": {
@@ -547,24 +605,32 @@ describe('compile', () => {
         "themes": {},
       }
     `)
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent('<!doctype html><body></body>')
       await page.addStyleTag({ content: output.css })
+
       const rendered = await page.evaluate(
         (classes) =>
           Object.values(classes)
             .filter(Boolean)
             .map((className) => {
               const element = document.createElement('div')
+
               element.className = className
               document.body.append(element)
+
               const style = getComputedStyle(element)
+
               return { color: style.color, padding: style.padding }
             }),
         output.classes,
       )
+
       expect(rendered).toMatchInlineSnapshot(`
       [
         {
@@ -604,7 +670,9 @@ describe('compile', () => {
       ' ': { display: 'block' },
       ['__proto__']: { display: 'block' },
     })
+
     const result = Css.compile({ styles })
+
     expect(result).toMatchInlineSnapshot(`
     {
       "classes": {
@@ -621,9 +689,11 @@ describe('compile', () => {
       "themes": {},
     }
   `)
+
     const reversed = Css.compile({
       styles: { styles: [...styles.styles].reverse() },
     })
+
     expect({
       frozen:
         Object.isFrozen(result) &&
@@ -653,6 +723,7 @@ describe('compile', () => {
 
   test('compiler diagnostics reject duplicate style names without emitting CSS', () => {
     const valid = Style.define({ card: { padding: 0 } })
+
     // A source adapter can supply ordered data directly; invalid literal data still fails.
     const styles: Style.Definition = {
       styles: [
@@ -672,11 +743,13 @@ describe('compile', () => {
         ...valid.styles,
       ],
     }
+
     try {
       Css.compile({ styles })
       throw new Error('Expected compilation to fail')
     } catch (error) {
       if (!(error instanceof Css.CompileError)) throw error
+
       expect({ diagnostics: error.diagnostics, name: error.name })
         .toMatchInlineSnapshot(`
         {
@@ -708,14 +781,18 @@ describe('compile', () => {
       first: { color: '#000' },
       last: { color: '#fff' },
     })
+
     const output = Css.compile({ styles })
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         '<!doctype html><html style="font-size:16px"><body></body></html>',
       )
       await page.addStyleTag({ content: output.css })
+
       const rendered = await page.evaluate((classes) => {
         return [
           classes['1 space:💪'],
@@ -723,9 +800,12 @@ describe('compile', () => {
           `${classes.last} ${classes.first}`,
         ].map((className) => {
           const element = document.createElement('div')
+
           element.className = className
           document.body.append(element)
+
           const style = getComputedStyle(element)
+
           return {
             color: style.color,
             lineHeight: style.lineHeight,
@@ -734,6 +814,7 @@ describe('compile', () => {
           }
         })
       }, output.classes)
+
       expect(rendered).toMatchInlineSnapshot(`
       [
         {
@@ -780,12 +861,16 @@ describe('compile', () => {
         paddingLeft: 0,
       },
     })
+
     const output = Css.compile({ styles })
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent('<!doctype html><body></body>')
       await page.addStyleTag({ content: output.css })
+
       const result = await page.evaluate(
         (classes) =>
           [
@@ -793,9 +878,12 @@ describe('compile', () => {
             `${classes.last} ${classes.middle}`,
           ].map((className) => {
             const element = document.createElement('div')
+
             element.className = className
             document.body.append(element)
+
             const style = getComputedStyle(element)
+
             return {
               color: style.color,
               columnGap: style.columnGap,
@@ -805,6 +893,7 @@ describe('compile', () => {
           }),
         output.classes,
       )
+
       expect(result).toMatchInlineSnapshot(`
       [
         {

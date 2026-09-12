@@ -1,45 +1,45 @@
-# Css.siblingAfter
+# siblingBefore
 
-A qualifying marked sibling following the styled element.
+A qualifying marked sibling preceding the styled element.
 
 ```ts
 import { css } from 'zyzz'
-import { Css } from 'zyzz/web'
+import { marker, siblingBefore } from 'zyzz/web'
 
-const target = Css.marker({ state: ['closed', 'open'] })
+const target = marker({ state: ['closed', 'open'] })
 namespace styles {
   export const targetStyle = css({
-    [Css.siblingAfter(target, { data: { state: 'open' } })]: { opacity: 1 },
+    [siblingBefore(target, { data: { state: 'open' } })]: { opacity: 1 },
   })
 }
 ```
 
 ## Signature
 
-`Css.siblingAfter(marker, condition?)`
+`siblingBefore(marker, condition?)`
 
 ## Parameters
 
 ### marker
 
-- Type: Typed identity returned by `Css.marker`
+- Type: Typed identity returned by `marker`
 - Required: Yes.
 
 Element identity used to match related elements.
 
 ```ts
-Css.siblingAfter(target)
+siblingBefore(target)
 ```
 
 ### condition
 
-- Type: Simple pseudo or typed data/pseudo predicates
+- Type: Simple pseudo or typed data/pseudo/has predicates
 - Default: Marker presence.
 
-Combined predicates must match the same marked element. `has` is unsupported here because this relationship already lowers through `:has()`. Only `ancestor` and `siblingBefore` accept `has`.
+Combined predicates must match the same marked element.
 
 ```ts
-Css.siblingAfter(target, { data: { state: 'open' } })
+siblingBefore(target, { data: { state: 'open' } })
 ```
 
 ## Returns
@@ -51,15 +51,17 @@ Css.siblingAfter(target, { data: { state: 'open' } })
 Use as a computed style key. Helpers add zero condition specificity; raw authored selectors retain their specificity.
 
 ```ts
-css({ [Css.siblingAfter(target, { data: { state: 'open' } })]: { opacity: 1 } })
+css({
+  [siblingBefore(target, { data: { state: 'open' } })]: { opacity: 1 },
+})
 ```
 
 ## Errors
 
 Reject undeclared marker states, unsupported nested `:has()` combinations, and unsupported native semantics.
 
-See [Style Relationships](../../../guides/conditions.md#style-relationships).
+See [Style Relationships](../../guides/conditions.md#style-relationships).
 
-See [Css](README.md) for related methods and types.
+See [Web](README.md) for related methods and types.
 
 Requires the source transform. Marker identities survive aliases, named re-exports, and packed-library contracts. Relationship helpers must appear directly as computed style keys. Browser rendering follows ordinary CSS matching, including any-depth ancestry and directional nonadjacent siblings.

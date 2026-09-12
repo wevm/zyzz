@@ -614,18 +614,18 @@ Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/r
 
 `ancestor` and `descendant` name relationships at any depth. Reserve `parent` and `child` for immediate relationships; they are not aliases or currently accepted additional helpers. The existing helpers do not imply a nearest boundary.
 
-Accepted API for implementation in 2.4b: `Css.marker(schema?)` defines an element identity and optional finite data-state domains. `Css.ancestor(marker, condition?)` creates a scoped selector key referring to that identity. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
+Accepted API for implementation in 2.4b: `marker(schema?)` defines an element identity and optional finite data-state domains. `ancestor(marker, condition?)` creates a scoped selector key referring to that identity. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
 
 ```tsx
 import { css } from 'zyzz'
-import { Css } from 'zyzz/web'
+import { ancestor, marker } from 'zyzz/web'
 
-const card = Css.marker({ state: ['closed', 'open'] })
+const card = marker({ state: ['closed', 'open'] })
 namespace styles {
   export const title = css({
     color: '#666',
-    [Css.ancestor(card, ':hover')]: { color: '#06c' },
-    [Css.ancestor(card, { data: { state: 'open' } })]: { fontWeight: 600 },
+    [ancestor(card, ':hover')]: { color: '#06c' },
+    [ancestor(card, { data: { state: 'open' } })]: { fontWeight: 600 },
   })
 }
 
@@ -636,7 +636,7 @@ const profile = (
 )
 ```
 
-`Css.marker()` also works without a schema. A schema maps case-sensitive state keys to nonempty readonly arrays of string or boolean literals; const inference preserves the literal domains without `as const`. Reject unbounded arrays, duplicate/ambiguous serialized values, invalid data-name fragments, and reserved application keys. Optional marker inputs select any subset of declared states; omitted/undefined fields emit no state attribute. Unknown keys or invalid values are errors, including through variables and untyped calls. False serializes as `"false"`, not attribute omission.
+`marker()` also works without a schema. A schema maps case-sensitive state keys to nonempty readonly arrays of string or boolean literals; const inference preserves the literal domains without `as const`. Reject unbounded arrays, duplicate/ambiguous serialized values, invalid data-name fragments, and reserved application keys. Optional marker inputs select any subset of declared states; omitted/undefined fields emit no state attribute. Unknown keys or invalid values are errors, including through variables and untyped calls. False serializes as `"false"`, not attribute omission.
 
 HTML attribute-name fragments use ASCII-lowercase state keys. Reject schemas with keys colliding after ASCII case folding, such as `state` and `State`, before emission. Application and selector lowering use the same normalization; typed input keys remain case-sensitive.
 
@@ -650,11 +650,11 @@ An ancestor condition is a supported simple pseudo string or an options object w
 namespace styles {
   export const indicator = css({
     opacity: 0,
-    [Css.ancestor(card, { has: 'a' })]: { opacity: 1 },
+    [ancestor(card, { has: 'a' })]: { opacity: 1 },
   })
 
   export const activeTitle = css({
-    [Css.ancestor(card, {
+    [ancestor(card, {
       data: { state: 'open' },
       has: 'a',
       pseudo: ':focus-within',
@@ -664,23 +664,23 @@ namespace styles {
 
 // Expected type errors in the proposed contract.
 styles.card({ state: 'expanded' })
-Css.ancestor(card, { data: { status: 'open' } })
-Css.ancestor(card, ':hovr')
+ancestor(card, { data: { status: 'open' } })
+ancestor(card, ':hovr')
 ```
 
 The marker schema alone determines data inference; condition arguments must not widen it to accept arbitrary keys/values. Preserve that contract through imported aliases, re-exports, and packed declaration files. These types establish declared identity/state compatibility, not that a matching ancestor exists in the rendered DOM or that a marker is attached to a particular HTML element type.
 
-Use the same marker in `Css.descendant`, `Css.siblingBefore`, `Css.siblingAfter`, and `Css.anySibling`. Names describe the marked element relative to the styled element. `siblingBefore` observes an earlier marked sibling, including nonadjacent siblings; `siblingAfter` observes a later one. Immediate siblings and child-only relationships remain expressible through raw CSS until an explicit typed distance contract is needed.
+Use the same marker in `descendant`, `siblingBefore`, `siblingAfter`, and `anySibling`. Names describe the marked element relative to the styled element. `siblingBefore` observes an earlier marked sibling, including nonadjacent siblings; `siblingAfter` observes a later one. Immediate siblings and child-only relationships remain expressible through raw CSS until an explicit typed distance contract is needed.
 
 ```tsx
-const choice = Css.marker()
+const choice = marker()
 namespace styles {
   export const hint = css({
-    [Css.siblingBefore(choice, ':checked')]: { color: '#06c' },
+    [siblingBefore(choice, ':checked')]: { color: '#06c' },
   })
 
   export const fieldset = css({
-    [Css.descendant(choice, ':checked')]: { borderColor: '#06c' },
+    [descendant(choice, ':checked')]: { borderColor: '#06c' },
   })
 }
 
@@ -694,13 +694,13 @@ const example = (
 
 Let `M` be the generated marker selector plus its authored predicates. Helper lowering has this explicit specificity contract:
 
-| Function                               | Selector Shape                           |
-| -------------------------------------- | ---------------------------------------- |
-| `Css.ancestor(marker, condition)`      | `:where(M) &`                            |
-| `Css.anySibling(marker, condition)`    | `:is(:where(M) ~ &, &:where(:has(~ M)))` |
-| `Css.descendant(marker, condition)`    | `&:where(:has(M))`                       |
-| `Css.siblingAfter(marker, condition)`  | `&:where(:has(~ M))`                     |
-| `Css.siblingBefore(marker, condition)` | `:where(M) ~ &`                          |
+| Function                           | Selector Shape                           |
+| ---------------------------------- | ---------------------------------------- |
+| `ancestor(marker, condition)`      | `:where(M) &`                            |
+| `anySibling(marker, condition)`    | `:is(:where(M) ~ &, &:where(:has(~ M)))` |
+| `descendant(marker, condition)`    | `&:where(:has(M))`                       |
+| `siblingAfter(marker, condition)`  | `&:where(:has(~ M))`                     |
+| `siblingBefore(marker, condition)` | `:where(M) ~ &`                          |
 
 The relation predicate adds zero specificity; the current generated class retains its ordinary specificity. This is documented helper behavior, not a rewrite of raw selectors or a hidden relation-priority ladder. Preserve authored ordering, local nested pseudos, and query contexts. Reusing one marker on nested elements matches any qualifying ancestor. A distinct marker separates roles; nearest-instance boundaries require a separate `@scope` design, not an implicit promise.
 

@@ -252,7 +252,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   for (const call of extracted.markerCalls ?? []) {
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
-      ? ` as import('zyzz/web').Css.marker.ReturnType<${`{${Object.entries(
+      ? ` as import('zyzz/web').marker.ReturnType<${`{${Object.entries(
           call.definition.schema,
         )
           .map(

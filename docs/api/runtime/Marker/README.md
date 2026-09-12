@@ -1,6 +1,6 @@
 # Marker
 
-Compiled relationship markers use `Marker` from `zyzz/runtime`. Applications normally author `Css.marker(schema)` from `zyzz/web`.
+Compiled relationship markers use `Marker` from `zyzz/runtime`. Applications normally author `marker(schema)` from `zyzz/web`.
 
 | API                  | Description                                                 |
 | -------------------- | ----------------------------------------------------------- |

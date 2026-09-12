@@ -2,24 +2,25 @@
  * Exposes the pure web CSS compiler independently of source and file adapters.
  * @module
  */
-/** Pure web compilation, separate from target-independent authoring. */
 
-export * as Css from './Css.js'
-
-export { fontFace } from './fontFace.js'
-export { global } from './global.js'
-export { keyframes } from './keyframes.js'
-export { layers } from './layers.js'
-
+export { ancestor } from './ancestor.js'
+export { anySibling } from './anySibling.js'
 export { counterStyle } from './counterStyle.js'
-export { fontPaletteValues } from './fontPaletteValues.js'
-export { positionTry } from './positionTry.js'
-
-export { fontFeatureValues } from './fontFeatureValues.js'
-export { page } from './page.js'
-export { viewTransition } from './viewTransition.js'
-
+export * as Css from './Css.js'
 export { cssFunction } from './cssFunction.js'
 export { customMedia } from './customMedia.js'
+export { descendant } from './descendant.js'
+export { fontFace } from './fontFace.js'
+export { fontFeatureValues } from './fontFeatureValues.js'
+export { fontPaletteValues } from './fontPaletteValues.js'
+export { global } from './global.js'
 export { importCss } from './importCss.js'
+export { keyframes } from './keyframes.js'
+export { layers } from './layers.js'
+export { marker } from './marker.js'
 export { namespace } from './namespace.js'
+export { page } from './page.js'
+export { positionTry } from './positionTry.js'
+export { siblingAfter } from './siblingAfter.js'
+export { siblingBefore } from './siblingBefore.js'
+export { viewTransition } from './viewTransition.js'

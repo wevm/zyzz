@@ -168,10 +168,10 @@ See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style State
 Typed markers describe element identity and finite data states. Applying a marker emits attributes; another definition can reference that identity.
 
 ```ts
-import { Css } from 'zyzz/web'
+import { ancestor, marker } from 'zyzz/web'
 
-const card = Css.marker({ state: ['closed', 'open'] })
-const condition = Css.ancestor(card, { data: { state: 'open' } })
+const card = marker({ state: ['closed', 'open'] })
+const condition = ancestor(card, { data: { state: 'open' } })
 ```
 
 - **Depth:** ancestor/descendant helpers match at any depth; immediate parent/child helpers remain undecided.

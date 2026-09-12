@@ -78,12 +78,12 @@ These helpers compile inside web `css(...)` definitions. Use marker callables as
 
 ```tsx
 import { css } from 'zyzz'
-import { Css } from 'zyzz/web'
+import { ancestor, marker } from 'zyzz/web'
 
-const card = Css.marker({ state: ['closed', 'open'] })
+const card = marker({ state: ['closed', 'open'] })
 namespace styles {
   export const label = css({
-    [Css.ancestor(card, { data: { state: 'open' } })]: { opacity: 1 },
+    [ancestor(card, { data: { state: 'open' } })]: { opacity: 1 },
   })
 }
 const example = (
@@ -95,6 +95,6 @@ const example = (
 )
 ```
 
-This deliberately includes an intermediate element: the marker is an ancestor, not the span's immediate parent. `Css.descendant` checks descendants of the styled element. Helper names describe direction and depth; they do not verify DOM structure through TypeScript.
+This deliberately includes an intermediate element: the marker is an ancestor, not the span's immediate parent. `descendant` checks descendants of the styled element. Helper names describe direction and depth; they do not verify DOM structure through TypeScript.
 
 Dynamic callback values use private variables on the styled element. They are supported inside at-rules and same-element pseudo or attribute selectors. Relationship selectors remain available for static declarations.

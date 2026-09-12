@@ -128,4 +128,4 @@ Theme-token and variable reads consumed through immutable style records are retu
 
 ### markerCalls
 
-Optional immutable rewrite spans for module-owned `Css.marker` calls. Each entry has inclusive `start`, exclusive `end`, and a `definition` containing the generated attribute `id` and finite `schema`. The field is absent when no marker factories are declared. Extraction-only hosts must replace these spans with compiled runtime handles; `Transform.compile` performs that replacement automatically.
+Optional immutable rewrite spans for module-owned `marker` calls. Each entry has inclusive `start`, exclusive `end`, and a `definition` containing the generated attribute `id` and finite `schema`. The field is absent when no marker factories are declared. Extraction-only hosts must replace these spans with compiled runtime handles; `Transform.compile` performs that replacement automatically.

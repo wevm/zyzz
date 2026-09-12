@@ -81,6 +81,7 @@ export function scan(
   const exports: Record<string, Themes.Link> = Object.create(null)
   const calls: Call[] = []
   const conditions = new Map<number, string>()
+  const applications = new Map<number, Relationships.Part>()
 
   for (const statement of program.body) {
     if (
@@ -336,6 +337,28 @@ export function scan(
 
           if (statement?.type === 'ExportNamedDeclaration')
             exports[node.id.name] = link
+        } else if (
+          init.type === 'CallExpression' &&
+          !init.optional &&
+          init.arguments.length <= 1 &&
+          owner?.type === 'VariableDeclaration' &&
+          owner.kind === 'const'
+        ) {
+          // Statically applied refs stay interpolable; dynamic applications remain runtime-only.
+          const target = resolve(init.callee)
+
+          if (
+            target?.call.marker &&
+            !(target.call.start >= 0 && init.start < target.call.end)
+          )
+            try {
+              applications.set(node.id.start, {
+                marker: target.call.marker,
+                state: init.arguments[0] ? data(init.arguments[0]) : {},
+              })
+            } catch {
+              applications.delete(node.id.start)
+            }
         }
       }
 
@@ -394,6 +417,15 @@ export function scan(
               const value = Expression.unwrap(expression)
               const call = value.type === 'CallExpression' ? value : undefined
               const link = resolve(call ? call.callee : value)
+
+              if (!link && value.type === 'Identifier') {
+                const declaration = scope.getDeclaration(value.name)
+                const application = declaration
+                  ? applications.get(declaration.node.start)
+                  : undefined
+
+                if (application) return application
+              }
 
               if (
                 !link?.call.marker ||

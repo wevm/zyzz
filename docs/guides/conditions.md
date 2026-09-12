@@ -112,6 +112,6 @@ namespace styles {
 }
 ```
 
-Disjunction uses a selector list with `&` in each selector, or separate keys with the same body. Finite state domains express negation by naming the complementary values, or with `:not()` around the ref.
+Disjunction uses a selector list with `&` in each selector, or separate keys with the same body. Finite state domains express negation by naming the complementary values, or by keeping presence and negating the state: `${card}:not(${card({ state: 'open' })}) &`. Negating the whole ref compound would also match unmarked ancestors such as `html`.
 
 Dynamic callback values use private variables on the styled element. They are supported inside at-rules and same-element pseudo or attribute selectors. Relationship selectors remain available for static declarations.

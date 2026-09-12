@@ -697,7 +697,7 @@ const example = (
 )
 ```
 
-Let `M` be an interpolated ref together with the pseudo-classes and attribute selectors attached to it in the same compound. The compiler emits `M` as the generated attribute compound wrapped in `:where()`, so every ref compound contributes zero specificity while `&` retains the generated class specificity and unmarked compounds retain their own. `:has()` takes the specificity of its most specific argument, so the wrap holds inside it too.
+Let `M` be an interpolated ref together with the pseudo-classes and attribute selectors attached to it in the same compound. The compiler emits `M` as the generated attribute compound wrapped in `:where()`, so every ref compound contributes zero specificity while `&` retains the generated class specificity and unmarked compounds retain their own. `:has()` takes the specificity of its most specific argument, so the wrap holds inside it too. Only the compound's own `&` moves outside the wrapper; a trailing pseudo-element follows it, and `&` inside a nested functional pseudo-class keeps its position.
 
 | Authored                                             | Emitted                                    |
 | ---------------------------------------------------- | ------------------------------------------ |
@@ -724,7 +724,7 @@ namespace styles {
 }
 ```
 
-Finite state domains express negation by naming the complementary values or with `:not()` around a ref compound. Disjunction uses a selector list with `&` in each selector, or separate keys with the same body. Nearest-instance boundaries remain a separate `@scope` design.
+Finite state domains express negation by naming the complementary values, or by keeping presence and negating the state: `${card}:not(${card({ state: 'open' })}) &`. Negating the whole ref compound would match unmarked ancestors such as `html`. Disjunction uses a selector list with `&` in each selector, or separate keys with the same body. Ref applications bound to a `const` interpolate like inline applications; dynamic applications stay runtime-only. Nearest-instance boundaries remain a separate `@scope` design.
 
 Recognize ref definitions/applications and `where` keys through static source analysis; do not execute application code. Preserve ref identity independently of style deduplication, source traversal order, and runtime state. Exported ref callables retain only attribute construction/validation, with statically known keys; `where` tags disappear. Applications choose state attributes, while the browser evaluates relationships. Server/client output must agree, imports must preserve identity, and unused definitions must not keep CSS alive accidentally.
 

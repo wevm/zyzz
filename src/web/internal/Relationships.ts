@@ -169,7 +169,7 @@ export function compose(
   if (!Conditions.nested(text) && !text.startsWith(':'))
     throw new Error('where selectors require & for the styled element.')
 
-  const { depth, skip } = scan(text)
+  const { depth, skip } = scan(text, ranges)
   const isBreak = (index: number) =>
     !skip[index] && /[\s>~+,]/.test(text[index]!)
   const compounds = new Map<number, number>()
@@ -199,11 +199,34 @@ export function compose(
     compounds.set(from, Math.max(compounds.get(from) ?? 0, to))
   }
 
-  const nesting = (from: number, to: number) => {
+  // Only the compound's own nesting selector moves outside :where(); nested
+  // ampersands inside functional pseudo-classes keep their positions.
+  const subject = (index: number, from: number) =>
+    !skip[index] && text[index] === '&' && depth[index] === depth[from]
+
+  const hasSubject = (from: number, to: number) => {
     for (let index = from; index < to; index++)
-      if (!skip[index] && text[index] === '&') return true
+      if (subject(index, from)) return true
 
     return false
+  }
+
+  // Pseudo-elements cannot be :where() arguments, so they trail the wrapper.
+  const pseudoElement = (from: number, to: number) => {
+    for (let index = from; index < to; index++) {
+      if (skip[index] || depth[index] !== depth[from] || text[index] !== ':')
+        continue
+
+      if (
+        text[index + 1] === ':' ||
+        /^:(?:before|after|first-line|first-letter)(?![\w-])/i.test(
+          text.slice(index, to),
+        )
+      )
+        return index
+    }
+
+    return to
   }
 
   // Compounds nest through functional pseudo-classes, so render recursively.
@@ -219,12 +242,14 @@ export function compose(
         end <= to &&
         !(drop && index === from && end === to)
       ) {
-        output += `${nesting(index, end) ? '&' : ''}:where(${render(index, end, true)})`
+        const split = pseudoElement(index, end)
+
+        output += `${hasSubject(index, split) ? '&' : ''}:where(${render(index, split, true)})${render(split, end, false)}`
         index = end
         continue
       }
 
-      if (!(drop && !skip[index] && text[index] === '&')) output += text[index]
+      if (!(drop && subject(index, from))) output += text[index]
       index++
     }
 
@@ -258,8 +283,9 @@ function attributes(part: Part): string {
     .join('')
 }
 
-/** Records parenthesis depth per character and marks quoted, bracketed, and comment text. */
-function scan(text: string) {
+/** Records parenthesis depth per character and marks ref, quoted, bracketed, escaped, and comment text. */
+function scan(text: string, ranges: readonly (readonly [number, number])[]) {
+  const opaque = new Map(ranges)
   const depth: number[] = []
   const skip: boolean[] = []
   let level = 0
@@ -268,6 +294,23 @@ function scan(text: string) {
   let comment = false
 
   for (let index = 0; index < text.length; index++) {
+    const end = opaque.get(index)
+
+    if (end !== undefined) {
+      if (quote || bracket || comment)
+        throw new Error(
+          'Ref interpolations cannot appear inside quoted, bracketed, or comment text.',
+        )
+
+      for (; index < end; index++) {
+        depth[index] = level
+        skip[index] = true
+      }
+
+      index--
+      continue
+    }
+
     const char = text[index]!
 
     if (comment) {
@@ -296,8 +339,23 @@ function scan(text: string) {
     if (bracket) {
       depth[index] = level
       skip[index] = true
-      if (char === '"' || char === "'") quote = char
+      if (char === '\\' && index + 1 < text.length) {
+        depth[index + 1] = level
+        skip[index + 1] = true
+        index++
+      } else if (char === '"' || char === "'") quote = char
       else if (char === ']') bracket = false
+      continue
+    }
+
+    if (char === '\\') {
+      depth[index] = level
+      skip[index] = true
+      if (index + 1 < text.length) {
+        depth[index + 1] = level
+        skip[index + 1] = true
+        index++
+      }
       continue
     }
 

@@ -10,48 +10,118 @@ import { Marker } from 'zyzz/runtime'
 const imports = `import {css} from 'zyzz';import {ref,where} from 'zyzz/web';`
 
 describe('where', () => {
-  test('lowers ref compounds inside :where() through every combinator', () => {
-    const css = [
-      'where`${card({state:"open",selected:false,data:"loaded"})}:hover &`',
-      'where`${card} > &`',
-      'where`&:has(${card}:checked)`',
-      'where`${card}:checked ~ &`',
-      'where`&:has(~ ${card}:checked)`',
-      'where`${card} ~ &, &:has(~ ${card})`',
-      'where`:root:has(${card({state:"open"})}) &`',
-      'where`${card}:has(${choice}:checked) &`',
-      'where`:not(${card}) &`',
-      'where`&${card({state:"closed"})}`',
-      'where`:has(${choice})`',
-      'where`${card}${choice} &`',
-    ].map((key) => {
-      const result = Graph.compile({
-        modules: {
-          'flat.ts': `${imports}
-const card=ref({state:['open','closed'],selected:[true,false],data:['loaded']});const choice=ref();
+  function compile(key: string, declarations = '') {
+    const result = Graph.compile({
+      modules: {
+        'flat.ts': `${imports}
+const card=ref({state:['open','closed'],selected:[true,false],data:['loaded']});const choice=ref();${declarations}
 export const style=css({[${key}]:{color:'red'}});`,
-        },
-      })
-
-      return result.modules['flat.ts']!.css
+      },
     })
 
-    expect(css).toMatchInlineSnapshot(`
-      [
-        ".z-style-3a68y9giv64x-180{:where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"][data-z-3a68y9giv64x-card-63-61-72-64-selected="false"][data-z-3a68y9giv64x-card-63-61-72-64-data="loaded"]:hover) &{color:red;}}",
-        ".z-style-3a68y9giv64x-180{:where([data-z-3a68y9giv64x-card-63-61-72-64]) > &{color:red;}}",
-        ".z-style-3a68y9giv64x-180{&:has(:where([data-z-3a68y9giv64x-card-63-61-72-64]:checked)){color:red;}}",
-        ".z-style-3a68y9giv64x-180{:where([data-z-3a68y9giv64x-card-63-61-72-64]:checked) ~ &{color:red;}}",
-        ".z-style-3a68y9giv64x-180{&:has(~ :where([data-z-3a68y9giv64x-card-63-61-72-64]:checked)){color:red;}}",
-        ".z-style-3a68y9giv64x-180{:where([data-z-3a68y9giv64x-card-63-61-72-64]) ~ &, &:has(~ :where([data-z-3a68y9giv64x-card-63-61-72-64])){color:red;}}",
-        ".z-style-3a68y9giv64x-180{:root:has(:where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"])) &{color:red;}}",
-        ".z-style-3a68y9giv64x-180{:where([data-z-3a68y9giv64x-card-63-61-72-64]:has(:where([data-z-3a68y9giv64x-choice-63-68-6f-69-63-65]:checked))) &{color:red;}}",
-        ".z-style-3a68y9giv64x-180{:not(:where([data-z-3a68y9giv64x-card-63-61-72-64])) &{color:red;}}",
-        ".z-style-3a68y9giv64x-180{&:where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="closed"]){color:red;}}",
-        ".z-style-3a68y9giv64x-180{&:has(:where([data-z-3a68y9giv64x-choice-63-68-6f-69-63-65])){color:red;}}",
-        ".z-style-3a68y9giv64x-180{:where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-choice-63-68-6f-69-63-65]) &{color:red;}}",
-      ]
-    `)
+    return result.modules['flat.ts']!.css.replace(
+      /^\.z-style-[a-z0-9-]+\{|\{color:red;\}\}$/g,
+      '',
+    )
+  }
+
+  test('lowers ref compounds inside :where() through every combinator', () => {
+    expect(
+      compile(
+        'where`${card({state:"open",selected:false,data:"loaded"})}:hover &`',
+      ),
+    ).toMatchInlineSnapshot(
+      `":where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"][data-z-3a68y9giv64x-card-63-61-72-64-selected="false"][data-z-3a68y9giv64x-card-63-61-72-64-data="loaded"]:hover) &"`,
+    )
+    expect(compile('where`${card} > &`')).toMatchInlineSnapshot(
+      `":where([data-z-3a68y9giv64x-card-63-61-72-64]) > &"`,
+    )
+    expect(compile('where`&:has(${card}:checked)`')).toMatchInlineSnapshot(
+      `"&:has(:where([data-z-3a68y9giv64x-card-63-61-72-64]:checked))"`,
+    )
+    expect(compile('where`${card}:checked ~ &`')).toMatchInlineSnapshot(
+      `":where([data-z-3a68y9giv64x-card-63-61-72-64]:checked) ~ &"`,
+    )
+    expect(compile('where`&:has(~ ${card}:checked)`')).toMatchInlineSnapshot(
+      `"&:has(~ :where([data-z-3a68y9giv64x-card-63-61-72-64]:checked))"`,
+    )
+    expect(
+      compile('where`${card} ~ &, &:has(~ ${card})`'),
+    ).toMatchInlineSnapshot(
+      `":where([data-z-3a68y9giv64x-card-63-61-72-64]) ~ &, &:has(~ :where([data-z-3a68y9giv64x-card-63-61-72-64]))"`,
+    )
+    expect(
+      compile('where`:root:has(${card({state:"open"})}) &`'),
+    ).toMatchInlineSnapshot(
+      `":root:has(:where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"])) &"`,
+    )
+    expect(
+      compile('where`${card}:has(${choice}:checked) &`'),
+    ).toMatchInlineSnapshot(
+      `":where([data-z-3a68y9giv64x-card-63-61-72-64]:has(:where([data-z-3a68y9giv64x-choice-63-68-6f-69-63-65]:checked))) &"`,
+    )
+    expect(compile('where`:has(${choice})`')).toMatchInlineSnapshot(
+      `"&:has(:where([data-z-3a68y9giv64x-choice-63-68-6f-69-63-65]))"`,
+    )
+    expect(compile('where`${card}${choice} &`')).toMatchInlineSnapshot(
+      `":where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-choice-63-68-6f-69-63-65]) &"`,
+    )
+  })
+
+  test('keeps presence while negating a state', () => {
+    expect(
+      compile('where`${card}:not(${card({state:"open"})}) &`'),
+    ).toMatchInlineSnapshot(
+      `":where([data-z-3a68y9giv64x-card-63-61-72-64]:not(:where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"]))) &"`,
+    )
+    expect(compile('where`:not(${card}) &`')).toMatchInlineSnapshot(
+      `":not(:where([data-z-3a68y9giv64x-card-63-61-72-64])) &"`,
+    )
+  })
+
+  test('moves only the subject ampersand outside the wrapper', () => {
+    expect(compile('where`&${card({state:"closed"})}`')).toMatchInlineSnapshot(
+      `"&:where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="closed"])"`,
+    )
+    expect(compile('where`&${card}:has(+ &.active)`')).toMatchInlineSnapshot(
+      `"&:where([data-z-3a68y9giv64x-card-63-61-72-64]:has(+ &.active))"`,
+    )
+  })
+
+  test('keeps pseudo-elements outside the wrapper', () => {
+    expect(compile('where`&${card}::before`')).toMatchInlineSnapshot(
+      `"&:where([data-z-3a68y9giv64x-card-63-61-72-64])::before"`,
+    )
+    expect(compile('where`&${card}:hover:after`')).toMatchInlineSnapshot(
+      `"&:where([data-z-3a68y9giv64x-card-63-61-72-64]:hover):after"`,
+    )
+  })
+
+  test('honors escaped separators when splitting compounds', () => {
+    expect(compile('where`${card}.foo\\\\+bar > &`')).toMatchInlineSnapshot(
+      `":where([data-z-3a68y9giv64x-card-63-61-72-64].foo\\+bar) > &"`,
+    )
+  })
+
+  test('interpolates statically bound ref applications', () => {
+    expect(
+      compile('where`${open}:hover &`', "const open=card({state:'open'});"),
+    ).toMatchInlineSnapshot(
+      `":where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"]:hover) &"`,
+    )
+    expect(() =>
+      compile(
+        'where`${open} &`',
+        "const open=card({state:Math.random()>0.5?'open':'closed'});",
+      ),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:253: Relationship selectors interpolate previously declared refs or ref applications.]`,
+    )
+    expect(() =>
+      compile('where`${open} &`', "let open=card({state:'open'});"),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:224: Relationship selectors interpolate previously declared refs or ref applications.]`,
+    )
   })
 
   test('keeps quoted, commented, and bracketed text out of compound boundaries', () => {
@@ -80,51 +150,92 @@ export const style=css({[where\`\${card({state:'open'})} &\`]:{[where\`\${choice
   })
 
   test('rejects selectors browsers drop, never match, or cannot scope', () => {
-    const errors = [
-      'where`${card}:hover`',
-      'where`${card}:hovr &`',
-      'where`&:has(${card}:has(a))`',
-      'where`&:has(${card}:visited)`',
-      'where`${"[x]"} &`',
-      'where`${card({state:"nope"})} &`',
-      'where`${card({data:{state:"open"}})} &`',
-      'where`${card({state:"open"},1)} &`',
-      'where`${card?.()} &`',
-      'where`${choice} &`.toString()',
-      'where<never>`${card} &`',
-      'where`${card} & {`',
-      'where`${card} &, b`',
-    ].map((key) => {
-      try {
-        Graph.compile({
-          modules: {
-            'app.ts': `${imports}const card=ref({state:['open']});const choice=ref();export const style=css({[${key}]:{color:'red'}});`,
-          },
-        })
+    expect(() =>
+      compile('where`${card}:hover`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: where selectors require & for the styled element.]`,
+    )
+    expect(() =>
+      compile('where`${card}:hovr &`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: Unknown pseudo-class :hovr.]`,
+    )
+    expect(() =>
+      compile('where`&:has(${card}:has(a))`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: CSS forbids nested :has().]`,
+    )
+    expect(() =>
+      compile('where`&:has(${card}:visited)`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: :visited never matches inside :has().]`,
+    )
+    expect(() =>
+      compile('where`${card} & {`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: Unexpected end of input]`,
+    )
+    expect(() =>
+      compile('where`${card} &, b`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: Selector lists require explicit & selectors.]`,
+    )
+  })
 
-        return 'accepted'
-      } catch (error) {
-        return (error as Error).message
-      }
-    })
+  test('rejects interpolations that are not refs or leave selector data', () => {
+    expect(() =>
+      compile('where`${"[x]"} &`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:194: Relationship selectors interpolate previously declared refs or ref applications.]`,
+    )
+    expect(() =>
+      compile('where`${card({state:"nope"})} &`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: Invalid marker state: state]`,
+    )
+    expect(() =>
+      compile('where`${card({data:{state:"open"}})} &`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: Invalid marker state: data]`,
+    )
+    expect(() =>
+      compile('where`${card({state:"open"},1)} &`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:194: Relationship selectors interpolate previously declared refs or ref applications.]`,
+    )
+    expect(() =>
+      compile('where`${card?.()} &`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:194: Relationship selectors interpolate previously declared refs or ref applications.]`,
+    )
+    expect(() =>
+      compile('where`[title="${card}"] &`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: Ref interpolations cannot appear inside quoted, bracketed, or comment text.]`,
+    )
+    expect(() =>
+      compile('where`[${card}] &`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: Ref interpolations cannot appear inside quoted, bracketed, or comment text.]`,
+    )
+    expect(() =>
+      compile('where`/* ${card} */ &`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: Ref interpolations cannot appear inside quoted, bracketed, or comment text.]`,
+    )
+  })
 
-    expect(errors).toMatchInlineSnapshot(`
-      [
-        "app.ts:137: where selectors require & for the styled element.",
-        "app.ts:137: Unknown pseudo-class :hovr.",
-        "app.ts:137: CSS forbids nested :has().",
-        "app.ts:137: :visited never matches inside :has().",
-        "app.ts:145: Relationship selectors interpolate previously declared refs or ref applications.",
-        "app.ts:137: Invalid marker state: state",
-        "app.ts:137: Unknown marker state: data",
-        "app.ts:145: Relationship selectors interpolate previously declared refs or ref applications.",
-        "app.ts:145: Relationship selectors interpolate previously declared refs or ref applications.",
-        "app.ts:137: Relationship selectors must be computed style keys.",
-        "app.ts:137: Relationship selectors do not accept type arguments.",
-        "app.ts:137: Unexpected end of input",
-        "app.ts:137: Selector lists require explicit & selectors.",
-      ]
-    `)
+  test('requires a direct computed key without type arguments', () => {
+    expect(() =>
+      compile('where`${choice} &`.toString()'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: Relationship selectors must be computed style keys.]`,
+    )
+    expect(() =>
+      compile('where<never>`${card} &`'),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: flat.ts:186: Relationship selectors do not accept type arguments.]`,
+    )
   })
 
   test('requires refs declared before the selector', () => {

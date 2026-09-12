@@ -14,7 +14,7 @@ namespace styles {
 }
 ```
 
-Refs interpolate as compiler-owned attribute selectors. The compiler wraps each compound containing a ref in `:where()`, so ref predicates add zero specificity while `&` keeps its generated class specificity.
+Refs interpolate as compiler-owned attribute selectors. The compiler wraps each compound containing a ref in `:where()`, so ref predicates add zero specificity while `&` keeps its generated class specificity. A trailing pseudo-element stays outside the wrapper.
 
 ```css
 :where([data-z-card][data-z-card-state='open']) & {
@@ -47,7 +47,7 @@ Combinators express direction and distance; nothing else is needed.
 - Type: Tagged template of scoped selector text with ref interpolations
 - Required: Yes.
 
-Text follows raw condition key rules: `&` names the styled element, a leading pseudo-class implies `&`, and every selector in a list names `&`. Interpolations accept a ref handle for presence, or a ref application such as `card({ state: 'open' })` for presence plus declared states. Other interpolations are type errors.
+Text follows raw condition key rules: `&` names the styled element, a leading pseudo-class implies `&`, and every selector in a list names `&`. Interpolations accept a ref handle for presence, or a ref application such as `card({ state: 'open' })`, written inline or bound to a `const`, for presence plus declared states. Other interpolations are type errors. Negate a state while keeping presence: `${card}:not(${card({ state: 'open' })}) &`.
 
 ```ts
 where`${card}:focus-within &`
@@ -67,7 +67,7 @@ css({ [where`${card} &`]: { opacity: 1 } })
 
 ## Errors
 
-Reject non-ref interpolations, undeclared states, invalid selector grammar, unknown pseudo-classes, selectors without `&`, nested `:has()`, and `:visited` inside `:has()`, which never matches in browsers.
+Reject non-ref interpolations, interpolations inside quoted or bracketed text, undeclared states, invalid selector grammar, unknown pseudo-classes, selectors that neither contain `&` nor start with a pseudo-class, nested `:has()`, and `:visited` inside `:has()`, which never matches in browsers.
 
 See [Style Relationships](../../guides/conditions.md#style-relationships). Repeated refs match any qualifying instance, not the nearest boundary.
 

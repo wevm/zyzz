@@ -168,10 +168,15 @@ See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style State
 Typed markers describe element identity and finite data states. Applying a ref emits attributes; another definition can reference that identity.
 
 ```ts
+import { css } from 'zyzz'
 import { ref, where } from 'zyzz/web'
 
 const card = ref({ state: ['closed', 'open'] })
-const condition = where`${card({ state: 'open' })} &`
+namespace styles {
+  export const label = css({
+    [where`${card({ state: 'open' })} &`]: { opacity: 1 },
+  })
+}
 ```
 
 - **Direction:** CSS combinators express direction and distance; `${card} &` matches any depth, `${card} > &` the parent.

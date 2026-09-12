@@ -9,17 +9,20 @@ const card = ref({ state: ['closed', 'open'] })
 const attributes = card({ state: 'open' })
 ```
 
-Apply the ref to the related element and reference the same identity from a relationship condition. The compiler assigns a unique attribute; no class name or selector string is needed.
+Apply the ref to the related element and interpolate the same identity into a `where` condition. The compiler assigns a unique attribute; no class name or hand-written attribute selector is needed.
+
+> [!NOTE]
+> `where` is pending compiler support. Current builds select refs through the direction helpers, such as `ancestor(card, { state: 'open' })`.
 
 ```tsx
 import { css } from 'zyzz'
-import { ancestor, ref } from 'zyzz/web'
+import { ref, where } from 'zyzz/web'
 
 const card = ref({ state: ['closed', 'open'] })
 
 namespace styles {
   export const label = css({
-    [ancestor(card, { state: 'open' })]: { color: 'blue' },
+    [where`${card({ state: 'open' })} &`]: { color: 'blue' },
   })
 }
 
@@ -32,7 +35,7 @@ export function Card({ open }: { open: boolean }) {
 }
 ```
 
-For presence alone, use `const card = ref()`, apply `card()`, and select with `ancestor(card)`. State attributes are scoped to the ref identity; semantic attributes such as `aria-expanded` stay on the element that owns them.
+For presence alone, use `const card = ref()`, apply `card()`, and interpolate `${card}`. State attributes are scoped to the ref identity; semantic attributes such as `aria-expanded` stay on the element that owns them.
 
 ## Signature
 
@@ -45,10 +48,10 @@ For presence alone, use `const card = ref()`, apply `card()`, and select with `a
 - Type: Named finite state domains
 - Default: Presence ref without state domains.
 
-Applications and relationship conditions may select only declared state values. The same state object applies the ref and narrows a relationship. State names become data-attribute fragments; `class`, `className`, `style`, `key`, and `ref` are reserved.
+Applications and relationship conditions may select only declared state values. The same call applies the ref in JSX and, interpolated into `where`, narrows a relationship. State names become data-attribute fragments; `class`, `className`, `style`, `key`, and `ref` are reserved.
 
 > [!NOTE]
-> The current implementation also reserves `pseudo` and `has`, which configure predicates in the single-argument condition object. The accepted positional contract moves those predicates to a separate string argument and frees both names.
+> The current implementation also reserves `pseudo` and `has`, which configure predicates in the direction helpers. `where` frees both names.
 
 ```ts
 ref({ state: ['closed', 'open'] })

@@ -329,18 +329,18 @@ Cover interactive/form/structural states, ARIA/data/direction, open/popover/iner
 
 ## 11. Typed Ancestors, Groups, Peers, and Descendants
 
-Sources: [StyleX contextual selectors](https://stylexjs.com/docs/api/javascript/when), [Tailwind groups/peers and group descendants](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-the-descendants-of-a-group), vanilla-extract selector composition, and Panda group/peer conditions. **Planned (API accepted):** `ref` and relational selector functions in 2.4b.
+Sources: [StyleX contextual selectors](https://stylexjs.com/docs/api/javascript/when), [Tailwind groups/peers and group descendants](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-the-descendants-of-a-group), vanilla-extract selector composition, and Panda group/peer conditions. **Planned (API accepted):** `ref` and the `where` tagged template. Direction helpers are implemented and superseded.
 
 ```tsx
 import { css } from 'zyzz'
-import { ancestor, ref } from 'zyzz/web'
+import { ref, where } from 'zyzz/web'
 
 const card = ref({ state: ['closed', 'open'] })
 namespace styles {
   export const title = css({
     color: '#666',
-    [ancestor(card, ':hover')]: { color: '#06c' },
-    [ancestor(card, { state: 'open' })]: { fontWeight: 600 },
+    [where`${card}:hover &`]: { color: '#06c' },
+    [where`${card({ state: 'open' })} &`]: { fontWeight: 600 },
   })
 }
 
@@ -351,29 +351,29 @@ const profile = (
 )
 ```
 
-The schema infers data keys and allowed values in both ref application and conditions. Simple pseudos autocomplete. Unknown keys, values, and pseudo typos are errors. Marker calls return only private data attributes; separate styling spreads do not overwrite them. These attributes express visual state and do not replace real ARIA or control attributes.
+The schema infers data keys and allowed values in both ref application and `where` interpolations. Unknown keys and values are type errors; selector grammar is a compiler diagnostic. Marker calls return only private data attributes; separate styling spreads do not overwrite them. These attributes express visual state and do not replace real ARIA or control attributes.
 
 ```ts
 const choice = ref()
 namespace styles {
   export const indicator = css({
     opacity: 0,
-    [ancestor(card, { has: 'a' })]: { opacity: 1 },
+    [where`${card}:has(a) &`]: { opacity: 1 },
   })
 
   export const hint = css({
-    [siblingBefore(choice, ':checked')]: { color: '#06c' },
+    [where`${choice}:checked ~ &`]: { color: '#06c' },
   })
 
   export const section = css({
-    [descendant(choice, ':checked')]: { borderColor: '#06c' },
+    [where`&:has(${choice}:checked)`]: { borderColor: '#06c' },
   })
 }
 ```
 
-Place `choice()` on the real checkbox. `siblingBefore` means the marked sibling precedes the styled element; `siblingAfter` reverses that direction, and `anySibling` covers either. `has: 'a'` checks descendants of the marked ancestor, not the styled element. Combined `data`, `pseudo`, and `has` conditions match the same marked element with AND. Full contracts and lowering are in [architecture](architecture.md#typed-markers-and-ancestors).
+Place `choice()` on the real checkbox. Combinators carry direction: `${choice} ~ &` means the marked sibling precedes the styled element, `&:has(~ ${choice})` reverses it, and `${card}:has(a) &` checks descendants of the marked ancestor rather than the styled element. Pseudo-classes and states attached to one interpolation match the same marked element with AND. Full contracts and lowering are in [architecture](architecture.md#typed-markers).
 
-Imported ref identity survives packaging. Helpers use explicitly documented zero-specificity relation conditions; raw selectors preserve authored specificity. Repeated instances of one ref retain normal any-matching-ancestor semantics, not an implicit nearest boundary. No runtime DOM lookup or CSS generation occurs.
+Imported ref identity survives packaging. Ref compounds are wrapped in `:where()` and add zero specificity; raw selectors preserve authored specificity. Repeated instances of one ref retain normal any-matching-ancestor semantics, not an implicit nearest boundary. No runtime DOM lookup or CSS generation occurs.
 
 ## 12. Media, Container, and Feature Conditions
 

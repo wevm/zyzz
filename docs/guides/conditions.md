@@ -72,18 +72,21 @@ Do not concatenate classes to establish override priority. See [Style Relationsh
 
 ### Style Relationships
 
-Use a typed ref to style an element when an ancestor has a matching data state.
+Use a typed ref to style an element from the state of a related element.
 
-These helpers compile inside web `css(...)` definitions. Use ref callables as ordinary element attributes; core `Style.define` and global declarations do not accept relationship keys.
+> [!NOTE]
+> `where` is the accepted relationship contract pending compiler support. Current builds export direction helpers such as `ancestor(card, { state: 'open' })`, which `where` supersedes.
+
+Relationship keys compile inside web `css(...)` definitions. Use ref callables as ordinary element attributes; core `Style.define` and global declarations do not accept relationship keys.
 
 ```tsx
 import { css } from 'zyzz'
-import { ancestor, ref } from 'zyzz/web'
+import { ref, where } from 'zyzz/web'
 
 const card = ref({ state: ['closed', 'open'] })
 namespace styles {
   export const label = css({
-    [ancestor(card, { state: 'open' })]: { opacity: 1 },
+    [where`${card({ state: 'open' })} &`]: { opacity: 1 },
   })
 }
 const example = (
@@ -95,27 +98,23 @@ const example = (
 )
 ```
 
-This deliberately includes an intermediate element: the ref is an ancestor, not the span's immediate parent. `descendant` checks descendants of the styled element. Helper names describe direction and depth; they do not verify DOM structure through TypeScript.
+This deliberately includes an intermediate element: the descendant combinator matches at any depth, so the ref is an ancestor, not the span's immediate parent. Write `${card} > &` for the parent, and `&:has(${card})` to check descendants of the styled element. Combinators describe direction and distance; they do not verify DOM structure through TypeScript.
 
-Predicates on the marked element combine with AND. A pseudo string checks browser state; declared states narrow by data attribute. Nesting relationship keys requires several marked elements at once, and nesting under `:hover` adds the styled element's own state.
+Selector text follows raw condition key rules, with `&` as the styled element. Refs lower to compiler-owned attribute selectors wrapped in `:where()`, so ref predicates add zero specificity. Pseudo-classes attach to the interpolated ref, and nested keys require several relationships at once.
 
 ```tsx
-import { ancestor, ref, siblingBefore } from 'zyzz/web'
-
 const choice = ref()
 namespace styles {
   export const hint = css({
-    [siblingBefore(choice, ':checked')]: { color: '#06c' },
-    [ancestor(card, { state: 'open' })]: {
-      [siblingBefore(choice, ':checked')]: { fontWeight: 600 },
+    [where`${choice}:checked ~ &`]: { color: '#06c' },
+    [where`${card({ state: 'open' })} &`]: {
+      [where`${choice}:checked ~ &`]: { fontWeight: 600 },
     },
+    [where`:root:has(${card({ state: 'open' })}) &`]: { filter: 'blur(2px)' },
   })
 }
 ```
 
-> [!NOTE]
-> The accepted contract takes the pseudo as the second argument and declared states as an optional third, pending compiler support: `ancestor(card, ':hover', { state: 'open' })`. The pseudo accepts any same-element pseudo-class chain, including `:not()`, `:nth-child()`, and, for `ancestor` and `siblingBefore`, relative `:has()` lists such as `':focus-within:has(> input:checked)'`. The current implementation takes one condition argument with optional `pseudo` and `has` keys.
-
-Finite state domains express negation by naming the complementary values. Disjunction across different markers uses separate keys with the same body; same-element alternatives use `:is()` inside the pseudo. Referring to a second ref inside `:has()`, and immediate parent, child, or adjacent-sibling distance, remain outside these helpers.
+Disjunction uses a selector list with `&` in each selector, or separate keys with the same body. Finite state domains express negation by naming the complementary values, or with `:not()` around the ref.
 
 Dynamic callback values use private variables on the styled element. They are supported inside at-rules and same-element pseudo or attribute selectors. Relationship selectors remain available for static declarations.

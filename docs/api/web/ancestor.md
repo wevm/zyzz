@@ -2,6 +2,9 @@
 
 A qualifying ancestor at any depth.
 
+> [!NOTE]
+> Superseded by [where](where.md), which writes this relationship as `` where`${target} &` `` and is pending compiler support. This helper remains exported until `where` lands.
+
 ```ts
 import { css } from 'zyzz'
 import { ancestor, ref } from 'zyzz/web'
@@ -16,12 +19,7 @@ namespace styles {
 
 ## Signature
 
-`ancestor(ref, state?)`
-
-`ancestor(ref, pseudo, state?)`
-
-> [!NOTE]
-> The positional `pseudo` argument, a trailing `state` argument, and pseudo-class chains beyond the simple list are the accepted contract pending compiler support. The current implementation takes one `condition` argument: a simple pseudo string, or a flat state object with optional `pseudo` and `has` keys.
+`ancestor(ref, condition?)`
 
 ## Parameters
 
@@ -36,28 +34,15 @@ Element identity used to match related elements.
 ancestor(target)
 ```
 
-### pseudo
+### condition
 
-- Type: Same-element pseudo-class chain, `:${string}`
-- Default: No pseudo predicate.
-
-Pseudo-classes matched on the marked ancestor, including functional `:is()`, `:not()`, `:nth-child()`, and relative `:has()` lists. Compiler parsing rejects pseudo-elements, combinators outside functional arguments, `&`, selector lists, and nested `:has()`.
-
-```ts
-ancestor(target, ':hover')
-ancestor(target, ':focus-within:has(> input:checked)')
-```
-
-### state
-
-- Type: Declared ref states
+- Type: Simple pseudo or flattened typed states with optional `pseudo`/`has` predicates
 - Default: Ref presence.
 
-Selects declared state values on the same marked ancestor, using the same object shape as applying the ref. Without a pseudo, `state` takes the second position.
+Combined predicates must match the same marked element.
 
 ```ts
 ancestor(target, { state: 'open' })
-ancestor(target, ':hover', { state: 'open' })
 ```
 
 ## Returns
@@ -66,7 +51,7 @@ ancestor(target, ':hover', { state: 'open' })
 
 - Type: Typed style condition key
 
-Use as a computed style key. Helpers add zero condition specificity; raw authored selectors retain their specificity. Nested relationship keys combine with AND.
+Use as a computed style key. Helpers add zero condition specificity; raw authored selectors retain their specificity.
 
 ```ts
 css({ [ancestor(target, { state: 'open' })]: { opacity: 1 } })
@@ -74,7 +59,7 @@ css({ [ancestor(target, { state: 'open' })]: { opacity: 1 } })
 
 ## Errors
 
-Reject undeclared ref states, unknown or malformed pseudo-classes, nested `:has()`, and unsupported native semantics.
+Reject undeclared ref states, unsupported nested `:has()` combinations, and unsupported native semantics.
 
 See [Style Relationships](../../guides/conditions.md#style-relationships). Ancestors match any qualifying instance, not the nearest ref boundary.
 

@@ -168,16 +168,19 @@ See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style State
 Typed markers describe element identity and finite data states. Applying a ref emits attributes; another definition can reference that identity.
 
 ```ts
-import { ancestor, ref } from 'zyzz/web'
+import { ref, where } from 'zyzz/web'
 
 const card = ref({ state: ['closed', 'open'] })
-const condition = ancestor(card, { state: 'open' })
+const condition = where`${card({ state: 'open' })} &`
 ```
 
-- **Depth:** ancestor/descendant helpers match at any depth; immediate parent/child helpers remain undecided.
+> [!NOTE]
+> `where` is pending compiler support. Current builds export direction helpers such as `ancestor(card, { state: 'open' })`.
+
+- **Direction:** CSS combinators express direction and distance; `${card} &` matches any depth, `${card} > &` the parent.
 - **Matching:** repeated markers use any qualifying ancestor, not nearest-boundary behavior.
-- **Predicates:** a pseudo-class chain and declared states combine with AND on the same marked element; nested relationship keys combine markers.
-- **Specificity:** helpers add zero condition specificity; raw selectors retain their own.
+- **Predicates:** pseudo-classes and declared states attach to the interpolated ref; nested relationship keys combine with AND.
+- **Specificity:** ref compounds are wrapped in `:where()` and add zero specificity; raw selectors retain their own.
 - **Types:** constrain ref values, not DOM structure or accessibility semantics.
 
 See [Style Relationships](guides/conditions.md#style-relationships) for application and [Css](api/web/Css/README.md) for sibling directions.

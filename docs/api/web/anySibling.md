@@ -2,6 +2,9 @@
 
 A qualifying sibling in either direction.
 
+> [!NOTE]
+> Superseded by [where](where.md), which writes this relationship as `` where`${target} ~ &, &:has(~ ${target})` `` and is pending compiler support. This helper remains exported until `where` lands.
+
 ```ts
 import { css } from 'zyzz'
 import { anySibling, ref } from 'zyzz/web'
@@ -16,12 +19,7 @@ namespace styles {
 
 ## Signature
 
-`anySibling(ref, state?)`
-
-`anySibling(ref, pseudo, state?)`
-
-> [!NOTE]
-> The positional `pseudo` argument, a trailing `state` argument, and pseudo-class chains beyond the simple list are the accepted contract pending compiler support. The current implementation takes one `condition` argument: a simple pseudo string, or a flat state object with an optional `pseudo` key.
+`anySibling(ref, condition?)`
 
 ## Parameters
 
@@ -36,27 +34,15 @@ Element identity used to match related elements.
 anySibling(target)
 ```
 
-### pseudo
+### condition
 
-- Type: Same-element pseudo-class chain, `:${string}`
-- Default: No pseudo predicate.
-
-Pseudo-classes matched on the marked sibling, including functional `:is()`, `:not()`, and `:nth-child()`. The following-sibling half of this relationship lowers through `:has()`, so `:has()` and `:visited` are rejected here; only `ancestor` and `siblingBefore` accept them. Compiler parsing also rejects pseudo-elements, combinators outside functional arguments, `&`, and selector lists.
-
-```ts
-anySibling(target, ':checked')
-```
-
-### state
-
-- Type: Declared ref states
+- Type: Simple pseudo or typed data/pseudo predicates
 - Default: Ref presence.
 
-Selects declared state values on the same marked sibling, using the same object shape as applying the ref. Without a pseudo, `state` takes the second position.
+Combined predicates must match the same marked element. `has` is unsupported here because this relationship already lowers through `:has()`. Only `ancestor` and `siblingBefore` accept `has`.
 
 ```ts
 anySibling(target, { state: 'open' })
-anySibling(target, ':checked', { state: 'open' })
 ```
 
 ## Returns
@@ -65,7 +51,7 @@ anySibling(target, ':checked', { state: 'open' })
 
 - Type: Typed style condition key
 
-Use as a computed style key. Helpers add zero condition specificity; raw authored selectors retain their specificity. Nested relationship keys combine with AND.
+Use as a computed style key. Helpers add zero condition specificity; raw authored selectors retain their specificity.
 
 ```ts
 css({ [anySibling(target, { state: 'open' })]: { opacity: 1 } })
@@ -73,7 +59,7 @@ css({ [anySibling(target, { state: 'open' })]: { opacity: 1 } })
 
 ## Errors
 
-Reject undeclared ref states, unknown or malformed pseudo-classes, `:has()` and `:visited` predicates, and unsupported native semantics.
+Reject undeclared ref states, unsupported nested `:has()` combinations, and unsupported native semantics.
 
 See [Style Relationships](../../guides/conditions.md#style-relationships).
 

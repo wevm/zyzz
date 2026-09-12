@@ -12,6 +12,7 @@ export { keyframes } from './keyframes.js'
 export { layers } from './layers.js'
 
 export { counterStyle } from './counterStyle.js'
+export { colorProfile } from './colorProfile.js'
 export { fontPaletteValues } from './fontPaletteValues.js'
 export { positionTry } from './positionTry.js'
 
@@ -23,3 +24,5 @@ export { cssFunction } from './cssFunction.js'
 export { customMedia } from './customMedia.js'
 export { importCss } from './importCss.js'
 export { namespace } from './namespace.js'
+
+export { property } from './property.js'

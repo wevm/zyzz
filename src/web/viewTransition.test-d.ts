@@ -6,6 +6,19 @@ describe('viewTransition', () => {
     const options: viewTransition.Options = { navigation: 'auto' }
     viewTransition(options)
     viewTransition({ navigation: ' AUTO ', types: 'slide' })
+    viewTransition({ navigation: '\\61 uto', types: 'none' })
+    viewTransition({ types: '\\73 lide 图' })
+    // @ts-expect-error none is standalone
+    viewTransition({ types: 'none slide' })
+    // @ts-expect-error CSS-wide keywords are not descriptor values
+    viewTransition({ types: 'inherit' })
+    // @ts-expect-error transition types are space-separated identifiers
+    viewTransition({ types: 'slide,forwards' })
+    // @ts-expect-error types are identifiers, not numbers
+    viewTransition({ types: 1 })
+    // @ts-expect-error page rules cannot enclose transitions
+    viewTransition({ navigation: 'auto' }, { within: ['@page'] })
+
     // @ts-expect-error navigation has a closed domain
     viewTransition({ navigation: 'always' })
   })

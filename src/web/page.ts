@@ -1,9 +1,9 @@
 /** Declares page descriptors and page-margin boxes in authored order. @module */
-import type * as Literal from '../internal/Literal.js'
+import type * as Context from './internal/Context.js'
 import type * as Lexical from '../internal/Lexical.js'
+import type * as Literal from '../internal/Literal.js'
 import { MissingTransformError } from '../css.js'
 import type * as Style from '../Style.js'
-import type * as Context from './internal/Context.js'
 
 /** Emits an eager page rule, optionally selecting named pages or page pseudo-classes. */
 export function page<const descriptors extends Record<string, unknown>>(
@@ -27,7 +27,8 @@ export declare namespace page {
     /** Bleed beyond the page box. */
     readonly bleed?:
       | 'auto'
-      | `${number}${'cm' | 'mm' | 'in' | 'pt' | 'px' | 'pc' | 'Q'}`
+      | Exclude<Literal.Length, `${number}%`>
+      | Literal.Calculation
       | 0
       | undefined
     /** Printer marks outside the page box. */
@@ -60,7 +61,8 @@ export declare namespace page {
       | 'legal'
       | 'ledger'
       | Exclude<Literal.Length, `${number}%`>
-      | `${Exclude<Literal.Length, `${number}%`>} ${Exclude<Literal.Length, `${number}%`>}`
+      | Literal.Calculation
+      | `${Exclude<Literal.Length, `${number}%`> | Literal.Calculation} ${Exclude<Literal.Length, `${number}%`> | Literal.Calculation}`
       | `${'A3' | 'A4' | 'A5' | 'B4' | 'B5' | 'JIS-B4' | 'JIS-B5' | 'letter' | 'legal' | 'ledger'} ${'portrait' | 'landscape'}`
       | `${'portrait' | 'landscape'} ${'A3' | 'A4' | 'A5' | 'B4' | 'B5' | 'JIS-B4' | 'JIS-B5' | 'letter' | 'legal' | 'ledger'}`
       | undefined
@@ -136,4 +138,4 @@ type Keyword<value extends string> =
     ? Keyword<rest>
     : value extends `${infer rest}${' ' | '\t' | '\n' | '\r' | '\f'}`
       ? Keyword<rest>
-      : Lexical.Fold<value>
+      : Lexical.Fold<Lexical.Normalized<value>>

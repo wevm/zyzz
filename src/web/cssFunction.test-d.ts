@@ -1,8 +1,36 @@
 /** Verifies scalar parameter domains through the public CSS function helper. @module */
-import { describe, test } from 'vite-plus/test'
 import { css } from 'zyzz'
 import { cssFunction } from 'zyzz/web'
+import { describe, test } from 'vite-plus/test'
 describe('cssFunction', () => {
+  test('accepts unbounded transform-function results in transform lists', () => {
+    const transforms = cssFunction({
+      parameters: [],
+      returns: '<transform-function>+',
+      body: { result: 'translateX(1px) rotate(1deg)' },
+    })
+    css({ transform: transforms() })
+    // @ts-expect-error a scalar rotation cannot hold a transform-function list
+    css({ rotate: transforms() })
+  })
+
+  test('accepts Unicode syntax and nested scalar function references', () => {
+    const inner = cssFunction({
+      parameters: [],
+      returns: '<length>',
+      body: { result: '1px' },
+    })
+    const outer = cssFunction({
+      parameters: [{ name: '--x', syntax: '<length>' }],
+      returns: '<length>',
+      body: { result: 'var(--x)' },
+    })
+    outer(inner())
+    cssFunction({
+      parameters: [{ name: '--日本語', syntax: 'type(日本語 | auto)' }],
+      body: { result: 'var(--日本語)' },
+    })
+  })
   test('rejects fractional integer arguments', () => {
     const fn = cssFunction({
       parameters: [{ name: '--n', syntax: '<integer>' }],
@@ -106,6 +134,34 @@ describe('cssFunction', () => {
 })
 
 describe('cssFunction', () => {
+  test('accepts unbounded transform-function results in transform lists', () => {
+    const transforms = cssFunction({
+      parameters: [],
+      returns: '<transform-function>+',
+      body: { result: 'translateX(1px) rotate(1deg)' },
+    })
+    css({ transform: transforms() })
+    // @ts-expect-error a scalar rotation cannot hold a transform-function list
+    css({ rotate: transforms() })
+  })
+
+  test('accepts Unicode syntax and nested scalar function references', () => {
+    const inner = cssFunction({
+      parameters: [],
+      returns: '<length>',
+      body: { result: '1px' },
+    })
+    const outer = cssFunction({
+      parameters: [{ name: '--x', syntax: '<length>' }],
+      returns: '<length>',
+      body: { result: 'var(--x)' },
+    })
+    outer(inner())
+    cssFunction({
+      parameters: [{ name: '--日本語', syntax: 'type(日本語 | auto)' }],
+      body: { result: 'var(--日本語)' },
+    })
+  })
   test('infers composite domains and rejects invalid signatures', () => {
     const size = cssFunction({
       parameters: [{ name: '--x', syntax: 'type(<length> | <percentage>)' }],

@@ -12,6 +12,11 @@ describe('fontFeatureValues', () => {
     }
     fontFeatureValues(options)
     fontFeatureValues({
+      families: 'Body',
+      features: {},
+      fontDisplay: '\\73 wap',
+    })
+    fontFeatureValues({
       families: ['Body'],
       fontDisplay: ' SWAP ',
       features: { '@styleset': { editorial: [1, 3] }, '@swash': undefined },

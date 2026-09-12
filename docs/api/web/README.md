@@ -19,7 +19,7 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 
 `page`, `fontFeatureValues`, and `viewTransition` emit eager document rules with ordered grouping contexts. Page-margin boxes and font-feature aliases use distinct descriptor bodies.
 
-Additional direct imports include `cssFunction`, `customMedia`, `importCss`, and `namespace`. Conditional/grouping rules remain native keys in valid style bodies. Registration extends `Vars.define`.
+Additional direct imports include `cssFunction`, `customMedia`, `importCss`, and `namespace`. Conditional/grouping rules remain native keys in valid style bodies. Use `property` for native registration syntax and `Vars.define` for typed scalar variable bindings.
 
 ```ts
 import { css } from 'zyzz'
@@ -43,4 +43,4 @@ namespace styles {
 These helpers emit native CSS; they do not polyfill experimental browser features. CSS functions accept scalar domains, composite `type(...)` alternatives, and `+`/`#` repetitions. Repeated arguments retain CSS-text list handling; repeated results require a compatible destination. Namespaces are local to their declaring source module, including packed output. Generated CSS is UTF-8 without a BOM or `@charset` declaration. Legacy `@document` remains an explicit grouping key; browser availability is separate from extraction.
 
 > [!NOTE]
-> `colorProfile` remains unexported while public descriptor types and compiler contracts are incomplete. Print-engine compatibility and rendering evidence are tracked separately.
+> `colorProfile` is exported with descriptor validation and domain-specific references. Print-engine compatibility and rendering evidence are tracked separately.

@@ -2,6 +2,10 @@
 import { describe, test } from 'vite-plus/test'
 import { page } from 'zyzz/web'
 describe('page', () => {
+  test('accepts relative lengths and dimensional calculations', () => {
+    page({ descriptors: { bleed: '1em', size: 'calc(10cm + 2mm) 20cm' } })
+    page({ descriptors: { bleed: 'calc(1em + 2px)', size: 'max(10cm, 20cm)' } })
+  })
   test('accepts descriptor grammar and rejects context errors', () => {
     page({
       selector: ':first, :left',
@@ -35,6 +39,10 @@ describe('page', () => {
 })
 
 describe('page', () => {
+  test('accepts relative lengths and dimensional calculations', () => {
+    page({ descriptors: { bleed: '1em', size: 'calc(10cm + 2mm) 20cm' } })
+    page({ descriptors: { bleed: 'calc(1em + 2px)', size: 'max(10cm, 20cm)' } })
+  })
   test('covers descriptor inventory and context errors', () => {
     page({
       descriptors: {

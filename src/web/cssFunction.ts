@@ -1,9 +1,10 @@
 /** Declares a native CSS custom function without evaluating its body in JavaScript. @module */
+import type * as Context from './internal/Context.js'
 import type * as FunctionSyntax from '../internal/FunctionSyntax.js'
-import type * as Literal from '../internal/Literal.js'
 import type * as FunctionValue from '../internal/FunctionValue.js'
-import type * as Numeric from '../internal/Numeric.js'
+import type * as Literal from '../internal/Literal.js'
 import { MissingTransformError } from '../css.js'
+import type * as Numeric from '../internal/Numeric.js'
 /** Emits a CSS function and returns a callable that formats its fixed CSS expression. */
 export function cssFunction<const options extends cssFunction.Options>(
   options: options &
@@ -25,6 +26,7 @@ export function cssFunction<const options extends cssFunction.Options>(
         ? FunctionSyntax.Checked<syntax>
         : undefined
     },
+  context: Context.Options = {},
 ): cssFunction.Reference<
   options['parameters'],
   options extends { returns: infer syntax extends cssFunction.Syntax }
@@ -32,6 +34,7 @@ export function cssFunction<const options extends cssFunction.Options>(
     : '*'
 > {
   void options
+  void context
   throw new MissingTransformError()
 }
 /** CSS function parameter and result contracts. */
@@ -98,11 +101,15 @@ export declare namespace cssFunction {
           : readonly [Input<first>, ...Arguments<rest>]
         : readonly []
   /** Scalar domain implied by an authored parameter syntax. */
-  type Input<parameter extends Parameter> = parameter extends {
-    syntax: infer syntax extends string
-  }
-    ? InputSyntax<FunctionSyntax.Unwrap<syntax>>
-    : string | number
+  type Input<parameter extends Parameter> =
+    | (parameter extends {
+        syntax: infer syntax extends string
+      }
+        ? InputSyntax<FunctionSyntax.Unwrap<syntax>>
+        : string | number)
+    | (parameter extends { syntax: infer syntax extends string }
+        ? FunctionValue.Reference<syntax>
+        : FunctionValue.Reference)
 }
 
 type Checked<body> = {

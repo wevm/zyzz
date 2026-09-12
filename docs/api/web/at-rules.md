@@ -9,30 +9,30 @@ Stylesheet declarations use direct named imports from `zyzz/web`. Conditional an
 
 Signatures below describe the accepted call shapes. Multi-field helpers receive one named object parameter. New public TypeScript type names and unresolved options remain provisional.
 
-| CSS rule               | Authoring                                                                | Result                                   |
-| ---------------------- | ------------------------------------------------------------------------ | ---------------------------------------- |
-| `@charset`             | UTF-8 output without BOM or generated encoding declaration               | Output metadata                          |
-| `@color-profile`       | `colorProfile(descriptors, context?)`                                    | Typed profile reference                  |
-| `@container`           | `'@container …'` in style bodies                                         | Nested declarations or selectors         |
-| `@counter-style`       | `counterStyle(descriptors, context?)`                                    | Typed counter-style reference            |
-| `@custom-media`        | `customMedia(query)`                                                     | Typed query reference                    |
-| `@document`            | Explicit legacy grouping support; helper/context spelling to be designed | Conditional global rules                 |
-| `@font-face`           | `fontFace(descriptors, context?)`                                        | Eager stylesheet effect                  |
-| `@font-feature-values` | `fontFeatureValues({ families, features }, context?)`                    | Font-family-associated stylesheet effect |
-| `@font-palette-values` | `fontPaletteValues(descriptors, context?)`                               | Typed palette reference                  |
-| `@function`            | `cssFunction(definition)`                                                | Callable CSS function reference          |
-| `@import`              | `importCss({ layer, media, supports, url })`                             | Ordered stylesheet import                |
-| `@keyframes`           | `keyframes(frames, context?)`                                            | Typed animation reference                |
-| `@layer`               | `layers(names)` and declared `'@layer …'` keys                           | Layer order and grouped rules            |
-| `@media`               | `'@media …'` in style bodies                                             | Nested declarations or selectors         |
-| `@namespace`           | `namespace({ prefix, uri })`; omit `prefix` for the default namespace    | Stylesheet namespace declaration         |
-| `@page`                | `page({ descriptors, selector }, context?)`; `selector` is optional      | Eager page rule                          |
-| `@position-try`        | `positionTry(declarations, context?)`                                    | Typed fallback reference                 |
-| `@property`            | Registration descriptors on `Vars.define`                                | Existing variable references and `.set`  |
-| `@scope`               | `'@scope …'` in valid style/grouping bodies                              | Scoped rules                             |
-| `@starting-style`      | `'@starting-style'` in valid style/grouping bodies                       | Starting declarations or selectors       |
-| `@supports`            | `'@supports …'` in style bodies                                          | Nested declarations or selectors         |
-| `@view-transition`     | `viewTransition(descriptors, context?)`                                  | Eager stylesheet effect                  |
+| CSS rule               | Authoring                                                                | Result                                           |
+| ---------------------- | ------------------------------------------------------------------------ | ------------------------------------------------ |
+| `@charset`             | UTF-8 output without BOM or generated encoding declaration               | Output metadata                                  |
+| `@color-profile`       | `colorProfile(descriptors, context?)`                                    | Typed profile reference                          |
+| `@container`           | `'@container …'` in style bodies                                         | Nested declarations or selectors                 |
+| `@counter-style`       | `counterStyle(descriptors, context?)`                                    | Typed counter-style reference                    |
+| `@custom-media`        | `customMedia(query)`                                                     | Typed query reference                            |
+| `@document`            | Explicit legacy grouping support; helper/context spelling to be designed | Conditional global rules                         |
+| `@font-face`           | `fontFace(descriptors, context?)`                                        | Eager stylesheet effect                          |
+| `@font-feature-values` | `fontFeatureValues({ families, features }, context?)`                    | Font-family-associated stylesheet effect         |
+| `@font-palette-values` | `fontPaletteValues(descriptors, context?)`                               | Typed palette reference                          |
+| `@function`            | `cssFunction(definition)`                                                | Callable CSS function reference                  |
+| `@import`              | `importCss({ layer, media, supports, url })`                             | Ordered stylesheet import                        |
+| `@keyframes`           | `keyframes(frames, context?)`                                            | Typed animation reference                        |
+| `@layer`               | `layers(names)` and declared `'@layer …'` keys                           | Layer order and grouped rules                    |
+| `@media`               | `'@media …'` in style bodies                                             | Nested declarations or selectors                 |
+| `@namespace`           | `namespace({ prefix, uri })`; omit `prefix` for the default namespace    | Stylesheet namespace declaration                 |
+| `@page`                | `page({ descriptors, selector }, context?)`; `selector` is optional      | Eager page rule                                  |
+| `@position-try`        | `positionTry(declarations, context?)`                                    | Typed fallback reference                         |
+| `@property`            | `property(definition)` or descriptors on `Vars.define`                   | Eager registration; `Vars` references and `.set` |
+| `@scope`               | `'@scope …'` in valid style/grouping bodies                              | Scoped rules                                     |
+| `@starting-style`      | `'@starting-style'` in valid style/grouping bodies                       | Starting declarations or selectors               |
+| `@supports`            | `'@supports …'` in style bodies                                          | Nested declarations or selectors                 |
+| `@view-transition`     | `viewTransition(descriptors, context?)`                                  | Eager stylesheet effect                          |
 
 The coverage inventory follows [MDN's at-rule reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules), including descriptors, nested page-margin rules, font-feature blocks, and statement/block forms. Experimental and legacy rules remain explicit inventory entries. Compiler support and browser availability are separate claims.
 
@@ -202,17 +202,17 @@ CSS functions use ordered parameter records with `name`, optional `syntax`, and 
 `pnpm check:at-rules` verifies the pinned MDN inventory, supplementary modern rules, descriptor fingerprints, and referenced evidence files. `pnpm check:at-rules:full` requires all compiler obligations and executes type/integration evidence. Target compatibility and rendered evidence have separate gates; `check:at-rules:legacy-full` retains the previous combined requirement. Inventory coverage alone does not establish type, compiler, packaging, or browser support. Browser limitations remain explicit in the acceptance report.
 
 > [!NOTE]
-> `colorProfile` remains unexported while its public descriptor types and compiler contracts are incomplete. Print-engine compatibility and rendering evidence are tracked separately.
+> `colorProfile` is exported with descriptor validation and domain-specific references. Print-engine compatibility and rendering evidence are tracked separately.
 
 ## Output Encoding
 
 Generated stylesheet files use UTF-8 without a BOM or `@charset`. Source maps and packed sections remain Unicode text; imported CSS assets retain their authored bytes. Serve generated CSS with UTF-8 transport metadata. No nested charset helper or alternative output encoding is exposed.
 
-The private profile implementation preserves `src`, `renderingIntent`, and comma-separated `components`, and links names inside `color(${profile} …)` across source and packed imports. WeasyPrint 70.0 verifies basic ICC painting. Public descriptor validation, relative profile colors, and rendering-intent evidence remain open.
+`colorProfile` preserves `src`, `renderingIntent`, and comma-separated `components`, and links names inside `color(${profile} …)` across source and packed imports. WeasyPrint 70.0 verifies basic ICC painting. Relative profile colors and rendering-intent evidence remain open for rendering targets.
 
 ## Function Signatures
 
-`cssFunction` accepts single syntax components, `+`/`#` repetition, and `type(...)` alternatives. Scalar alternatives retain argument and result domains through packed libraries. List arguments remain CSS text; commas are enclosed in an argument block during source and runtime expression formatting. Repeated return types cannot flow into bounded shorthands. Comma-list results require a destination with explicit list metadata; custom properties accept unbounded output. Other repeated-result destinations remain acceptance work.
+`cssFunction` accepts single syntax components, `+`/`#` repetition, and `type(...)` alternatives. Scalar alternatives retain argument and result domains through packed libraries. List arguments use CSS text with compiler grammar validation; commas are enclosed in an argument block during source and runtime expression formatting. Repeated return types cannot flow into bounded shorthands. Comma-list results require a destination with explicit list metadata; custom properties accept unbounded output. Space-separated transform-function results are accepted by `transform`; custom properties retain arbitrary repeated domains.
 
 ```ts
 const size = cssFunction({
@@ -224,4 +224,24 @@ const size = cssFunction({
 })
 ```
 
-Identifier escapes, complete list-value refinements, and every permitted function context remain acceptance work. The new PDF fixture verifies named pages, first/left selectors, counters, and sixteen margin boxes against native CSS; WeasyPrint adds bleed geometry and printer-mark evidence. Complete fragmentation behavior remains open.
+Unicode and escaped syntax identifiers, static list arguments, nested function references, defaults, and media/supports/container bodies are validated in source and packed contracts. Extended identifier signatures publish contract version 12. The new PDF fixture verifies named pages, first/left selectors, counters, and sixteen margin boxes against native CSS; WeasyPrint adds bleed geometry and printer-mark evidence. Complete fragmentation behavior remains open.
+
+## Native Registrations
+
+`property` emits an eager registration with an authored custom-property name. Syntax supports the Properties and Values API component types, alternatives, and `+`/`#` multipliers. Non-universal registrations require a computationally independent initial value. `Vars.define` retains its scalar reference and assignment contracts.
+
+```ts
+import { property } from 'zyzz/web'
+
+property({
+  name: '--spacing',
+  syntax: '<length>+ | auto',
+  inherits: false,
+  initialValue: '4px 8px',
+})
+property({ name: '--payload', syntax: '*', inherits: true })
+```
+
+An optional `{ within: ['@layer defaults', '@media screen'] }` argument encloses the registration. Registration changes CSS computed-value behavior; it does not evaluate values in JavaScript. Compiler diagnostics reject invalid syntax, mismatched initial values, computational dependencies, and injected declarations.
+
+Page `bleed` accepts relative lengths and dimensional calculations. Page `size` accepts one or two lengths or calculations, as well as named paper sizes and orientation. Percentages and dimensionally incompatible calculations are rejected.

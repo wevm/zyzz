@@ -42,7 +42,11 @@ type Repeated<syntax, name> = [Repetition<syntax>] extends [never]
         ? (typeof Literal.rules)[name] extends { list: true }
           ? true
           : false
-        : false
+        : name extends 'transform'
+          ? syntax extends '<transform-function>+'
+            ? true
+            : false
+          : false
       : false
 
 type Representative<syntax> = syntax extends `${infer first}|${infer rest}`

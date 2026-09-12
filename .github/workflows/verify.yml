@@ -81,8 +81,8 @@ jobs:
           CI: true
         name: Run tests
         run: pnpm run test run --coverage --reporter=default --reporter=json --outputFile=test-results/integration.json
-      - name: Verify named at-rule acceptance cases
-        run: node scripts/at-rule-acceptance.ts --results test-results/integration.json
+      - name: Enforce full at-rule compiler acceptance
+        run: node scripts/at-rule-acceptance.ts --require-full --results test-results/integration.json
       - if: ${{ !cancelled() && hashFiles('test-results/at-rule-print-capabilities.json') != '' }}
         name: Upload print capabilities
         uses: actions/upload-artifact@v4

@@ -1,27 +1,33 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
-import * as FunctionSyntax from '../../internal/FunctionSyntax.js'
-import * as Literal from '../../internal/Literal.js'
-import type { cssFunction } from '../../web/cssFunction.js'
-import type * as Block from '../../web/internal/Block.js'
-import * as RuleReference from '../../internal/RuleReference.js'
-import * as Condition from '../../internal/Condition.js'
 import type * as Ast from '@oxc-project/types'
-import * as Walker from 'oxc-walker'
-import * as Lightning from 'lightningcss'
-import * as Theme from '../../Theme.js'
-import * as Style from '../../Style.js'
-import type * as Token from '../../internal/Token.js'
+import type * as Block from '../../web/internal/Block.js'
+import * as Condition from '../../internal/Condition.js'
 import type * as Css from '../../web/Css.js'
+import type { cssFunction } from '../../web/cssFunction.js'
+import * as Descriptors from './Descriptors.js'
 import * as Expression from './Expression.js'
+import * as Functions from './Functions.js'
+import * as FunctionSyntax from '../../internal/FunctionSyntax.js'
 import * as Identifiers from './Identifiers.js'
-import * as Themes from './Themes.js'
+import * as Keyframes from './Keyframes.js'
+import * as Lexical from '../../internal/Lexical.js'
+import * as Lightning from 'lightningcss'
+import * as Literal from '../../internal/Literal.js'
+import * as Properties from './Properties.js'
+import * as RuleReference from '../../internal/RuleReference.js'
 import type * as Scope from './Scope.js'
+import * as Style from '../../Style.js'
+import * as Theme from '../../Theme.js'
+import * as Themes from './Themes.js'
+import type * as Token from '../../internal/Token.js'
+import * as Walker from 'oxc-walker'
 
 type Kind =
   | 'importCss'
   | 'namespace'
   | 'fontFeatureValues'
   | 'page'
+  | 'property'
   | 'viewTransition'
   | 'fontFace'
   | 'global'
@@ -46,6 +52,7 @@ export const factories: readonly string[] = [
   'global',
   'layers',
   'page',
+  'property',
   'viewTransition',
   ...named,
 ]
@@ -109,9 +116,10 @@ export function scan(
 
   const calls: Call[] = []
   const functionInputs: {
+    name: string
     signature: NonNullable<Themes.Call['function']>
     values: readonly (string | undefined)[]
-    node: Ast.Node
+    node: Extract<Ast.Node, { type: 'CallExpression' }>
   }[] = []
   const bindings = new Map<number, Call>()
   const references = new Map<number, string>()
@@ -202,6 +210,7 @@ export function scan(
             'fontFace',
             'fontFeatureValues',
             'page',
+            'property',
             'viewTransition',
             ...named.filter((kind) => kind !== 'customMedia'),
           ].includes(type) ||
@@ -342,6 +351,7 @@ export function scan(
         })
         if (link.call.function)
           functionInputs.push({
+            name,
             signature: link.call.function,
             values: args,
             node: parent,
@@ -427,6 +437,26 @@ export function scan(
     used,
     undefinedValues,
     exports: exported,
+  }
+}
+
+/** Resolves nested static invocations after lexical reference discovery. */
+export function resolve(scanned: ReturnType<typeof scan>): void {
+  for (const input of [...scanned.functionInputs].reverse()) {
+    input.values = input.values.map((value, index) => {
+      const node = Expression.unwrap(input.node.arguments[index]!)
+      return (
+        value ??
+        (node.type === 'CallExpression'
+          ? scanned.references.get(node.start)
+          : undefined)
+      )
+    })
+    if (input.values.every((value) => value !== undefined))
+      scanned.references.set(
+        input.node.start,
+        `${input.name}(${input.values.map((value) => (value!.includes(',') && !value!.trimStart().startsWith('{') ? `{${value}}` : value)).join(',')})`,
+      )
   }
 }
 
@@ -567,6 +597,13 @@ export function extract(
     if (!selector.startsWith('@')) return false
     if (!Condition.is(selector))
       throw new Error('Expected a selector or supported grouping rule.')
+    if (
+      /^@container(?=[\t\n\r\f (/])/.test(selector) &&
+      !selector.includes('(')
+    )
+      throw new Error(
+        'Container rules require a query after the optional name.',
+      )
     Condition.normalize(selector)
     return true
   }
@@ -644,6 +681,7 @@ export function extract(
       } else if (call.kind === 'customMedia') {
         if (typeof input !== 'string' && typeof input !== 'boolean')
           throw new Error('Expected a media query or boolean.')
+        if (typeof input === 'string') Descriptors.media(input)
         result.push({ kind: 'custom-media', name: call.name!, query: input })
       } else if (call.kind === 'cssFunction') {
         const options = record(input)
@@ -667,8 +705,8 @@ export function extract(
               (key) => !['default', 'name', 'syntax'].includes(key),
             ) ||
             typeof parameter.name !== 'string' ||
-            !/^--[_a-zA-Z][\w-]*$/.test(parameter.name) ||
-            names.has(parameter.name) ||
+            !dashed(parameter.name) ||
+            names.has(Identifiers.read(parameter.name)!) ||
             (parameter.syntax !== undefined &&
               (typeof parameter.syntax !== 'string' ||
                 !FunctionSyntax.accepts(parameter.syntax))) ||
@@ -679,7 +717,12 @@ export function extract(
             throw new Error(
               'Expected unique CSS parameters with supported syntaxes and scalar defaults.',
             )
-          names.add(parameter.name)
+          names.add(Identifiers.read(parameter.name)!)
+          if (parameter.default !== undefined)
+            Functions.value(
+              String(parameter.syntax ?? '*'),
+              String(parameter.default),
+            )
           return `${parameter.name}${parameter.syntax ? ` ${parameter.syntax === '*' ? 'type(*)' : parameter.syntax}` : ''}${parameter.default !== undefined ? `: ${parameter.default}` : ''}`
         })
         function body(input: unknown): readonly Block.Entry[] {
@@ -695,12 +738,13 @@ export function extract(
                   },
                 ]
               if (
-                (key !== 'result' && !/^--[_a-zA-Z][\w-]*$/.test(key)) ||
+                (key !== 'result' && !dashed(key)) ||
                 (typeof value !== 'string' && typeof value !== 'number')
               )
                 throw new Error(
                   'CSS function bodies accept result, local variables, and conditional groups.',
                 )
+              Functions.value('*', String(value))
               return [{ kind: 'descriptor', name: key, value }]
             },
           )
@@ -767,9 +811,45 @@ export function extract(
             'Font faces require family/source and scalar supported descriptors.',
           )
 
+        for (const [name, value] of Object.entries(declarations))
+          Descriptors.check({ rule: 'font-face', name, value: String(value) })
         result.push({
           kind: 'font-face',
           declarations: declarations as Record<string, string | number>,
+        })
+      } else if (call.kind === 'property') {
+        const options = record(input)
+        const names =
+          typeof options.name === 'string'
+            ? Identifiers.list(options.name, 'space')
+            : undefined
+        if (
+          Object.keys(options).some(
+            (key) =>
+              !['name', 'syntax', 'inherits', 'initialValue'].includes(key),
+          ) ||
+          names?.length !== 1 ||
+          !names[0]!.startsWith('--') ||
+          names[0]!.length <= 2 ||
+          typeof options.syntax !== 'string' ||
+          typeof options.inherits !== 'boolean' ||
+          (options.initialValue !== undefined &&
+            typeof options.initialValue !== 'string' &&
+            typeof options.initialValue !== 'number')
+        )
+          throw new Error(
+            'Expected a native property registration with scalar descriptors.',
+          )
+        if (options.initialValue !== undefined)
+          Properties.initial(String(options.initialValue))
+        result.push({
+          kind: 'property',
+          name: options.name as `--${string}`,
+          syntax: options.syntax,
+          inherits: options.inherits,
+          ...(options.initialValue !== undefined
+            ? { initialValue: options.initialValue as string | number }
+            : {}),
         })
       } else if (call.kind === 'page') {
         const options = record(input)
@@ -837,6 +917,11 @@ export function extract(
               ) {
                 if (typeof value !== 'string' && typeof value !== 'number')
                   throw new Error('Expected a scalar page descriptor.')
+                Descriptors.check({
+                  rule: 'page',
+                  name: key,
+                  value: String(value),
+                })
                 return [
                   {
                     kind: 'descriptor',
@@ -921,9 +1006,9 @@ export function extract(
             if (
               typeof options.fontDisplay !== 'string' ||
               !['auto', 'block', 'fallback', 'optional', 'swap'].includes(
-                options.fontDisplay
-                  .trim()
-                  .replace(/[A-Z]/g, (letter) => letter.toLowerCase()),
+                Identifiers.list(options.fontDisplay, 'space')
+                  ?.join(' ')
+                  .replace(/[A-Z]/g, (letter) => letter.toLowerCase()) ?? '',
               )
             )
               throw new Error('Invalid font display descriptor.')
@@ -992,14 +1077,35 @@ export function extract(
               typeof value !== 'string' ||
               (key === 'navigation' &&
                 !['auto', 'none'].includes(
-                  value
-                    .trim()
-                    .replace(/[A-Z]/g, (letter) => letter.toLowerCase()),
+                  Identifiers.list(value, 'space')?.join(' ').toLowerCase() ??
+                    '',
                 ))
             )
               throw new Error(
                 'Expected navigation or types view-transition descriptors.',
               )
+            if (key === 'types') {
+              const names = Identifiers.list(value, 'space')
+              if (
+                !names ||
+                names.some(
+                  (name) =>
+                    [
+                      'default',
+                      'inherit',
+                      'initial',
+                      'revert',
+                      'revert-layer',
+                      'unset',
+                    ].includes(name.toLowerCase()) ||
+                    (name.toLowerCase() === 'none' && names.length !== 1),
+                )
+              )
+                throw new Error(
+                  'Expected none or a list of view-transition custom identifiers.',
+                )
+            }
+            Functions.value('*', String(value))
             return [{ kind: 'descriptor', name: key, value }]
           },
         )
@@ -1115,19 +1221,54 @@ export function extract(
           throw new Error(
             'Expected supported scalar descriptors and required fields.',
           )
+        if (call.kind === 'colorProfile') {
+          if (!Identifiers.url(declarations.src as string))
+            throw new Error('Color-profile src requires one URL.')
+          if (typeof declarations.components === 'string') {
+            const names = Identifiers.list(declarations.components, 'comma')
+            if (!names || names.some((name) => name.toLowerCase() === 'none'))
+              throw new Error(
+                'Color-profile components require comma-separated identifiers other than none.',
+              )
+          }
+          if (typeof declarations.renderingIntent === 'string') {
+            const names = Identifiers.list(
+              declarations.renderingIntent,
+              'space',
+            )
+            if (
+              names?.length !== 1 ||
+              ![
+                'absolute-colorimetric',
+                'relative-colorimetric',
+                'perceptual',
+                'saturation',
+              ].includes(names[0]!.toLowerCase())
+            )
+              throw new Error('Invalid color-profile rendering intent.')
+          }
+        }
         if (call.kind === 'counterStyle') {
           const system =
             typeof declarations.system === 'string'
-              ? declarations.system.trim().toLowerCase()
+              ? Lexical.normalize(declarations.system)
+                  .trim()
+                  .replace(/[A-Z]/g, (letter) => letter.toLowerCase())
               : 'symbolic'
-          if (
-            !/^(?:cyclic|numeric|alphabetic|symbolic|additive|fixed(?:\s+[+-]?\d+)?|extends\s+\S+)$/.test(
-              system,
-            )
-          )
+          try {
+            Descriptors.check({
+              rule: 'counter-style',
+              name: 'system',
+              value:
+                typeof declarations.system === 'string'
+                  ? declarations.system
+                  : 'symbolic',
+            })
+          } catch {
             throw new Error(
               'Expected a supported counter system, with an integer after fixed.',
             )
+          }
           const required =
             system === 'additive'
               ? 'additiveSymbols'
@@ -1143,6 +1284,13 @@ export function extract(
               'The counter system requires symbols or additiveSymbols.',
             )
         }
+        if (call.kind !== 'colorProfile')
+          for (const [name, value] of Object.entries(declarations))
+            Descriptors.check({
+              rule: definition.rule,
+              name,
+              value: String(value),
+            })
         result.push({
           kind: 'descriptor',
           rule: definition.rule,
@@ -1151,24 +1299,9 @@ export function extract(
         })
       } else {
         const frames = Object.entries(record(input)).map(([stop, input]) => {
-          if (
-            stop.split(',').some((part) => {
-              part = part
-                .trim()
-                .replace(
-                  /^(contain|cover|entry|entry-crossing|exit|exit-crossing)\s+/,
-                  '',
-                )
-
-              return (
-                !['from', 'to'].includes(part) &&
-                (!/^(?:\d+(?:\.\d+)?|\.\d+)%$/.test(part) ||
-                  parseFloat(part) > 100)
-              )
-            })
-          )
+          if (!Keyframes.accepts(stop))
             throw new Error(
-              'Keyframe stops must be from, to, or percentages from 0 to 100.',
+              'Keyframe stops require from, to, 0–100% offsets, or named timeline percentages.',
             )
 
           const frame = style(input)
@@ -1276,7 +1409,34 @@ export function extract(
         input.node,
       )
 
+  for (const input of scanned.functionInputs) {
+    const required =
+      input.signature.parameters.findLastIndex(
+        (parameter) => parameter.default === undefined,
+      ) + 1
+    if (
+      input.values.length < required ||
+      input.values.length > input.signature.parameters.length
+    )
+      throw new Themes.InvalidError(
+        'CSS function arguments must match the declared parameter count.',
+        input.node,
+      )
+    for (const [index, value] of input.values.entries()) {
+      if (value === undefined) continue
+      try {
+        Functions.value(input.signature.parameters[index]?.syntax ?? '*', value)
+      } catch (error) {
+        throw new Themes.InvalidError((error as Error).message, input.node)
+      }
+    }
+  }
   return result
+}
+
+function dashed(value: string): boolean {
+  const name = Identifiers.read(value)
+  return name !== undefined && name.startsWith('--') && name.length > 2
 }
 
 // CSS identifiers allow non-ASCII code points and escaped identifier characters.

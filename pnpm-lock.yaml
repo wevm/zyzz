@@ -17,6 +17,9 @@ importers:
       '@oxc-project/types':
         specifier: 0.148.0
         version: 0.148.0
+      css-tree:
+        specifier: 3.2.1
+        version: 3.2.1
       lightningcss:
         specifier: ^1.33.0
         version: 1.33.0
@@ -72,9 +75,6 @@ importers:
       '@vitest/coverage-v8':
         specifier: 4.1.9
         version: 4.1.9(@vitest/browser@4.1.9)(vitest@4.1.9)
-      css-tree:
-        specifier: 3.2.1
-        version: 3.2.1
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2

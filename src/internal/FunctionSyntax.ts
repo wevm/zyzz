@@ -61,6 +61,42 @@ type Component<value extends string> = value extends `${infer base}${'+' | '#'}`
     : Atom<base>
   : Atom<value>
 
+type AsciiOther =
+  | ' '
+  | '\t'
+  | '\n'
+  | '\r'
+  | '\f'
+  | '!'
+  | '"'
+  | '#'
+  | '$'
+  | '%'
+  | '&'
+  | "'"
+  | '('
+  | ')'
+  | '*'
+  | '+'
+  | ','
+  | '.'
+  | '/'
+  | ':'
+  | ';'
+  | '<'
+  | '='
+  | '>'
+  | '?'
+  | '@'
+  | '['
+  | '\\'
+  | ']'
+  | '^'
+  | '`'
+  | '{'
+  | '|'
+  | '}'
+  | '~'
 type Letter =
   | 'a'
   | 'b'
@@ -106,7 +142,9 @@ type Tail<value extends string> = value extends ''
         | '8'
         | '9'
       ? Tail<rest>
-      : false
+      : first extends AsciiOther
+        ? false
+        : Tail<rest>
     : false
 type Identifier<value extends string> = value extends `--${infer rest}`
   ? Tail<rest>
@@ -115,19 +153,23 @@ type Identifier<value extends string> = value extends `--${infer rest}`
     : value extends `${infer first}${infer rest}`
       ? Lowercase<first> extends Letter | '_'
         ? Tail<rest>
-        : false
+        : first extends AsciiOther | `${number}`
+          ? false
+          : Tail<rest>
       : false
-type Atom<value extends string> = value extends Primitive
+type Atom<value extends string> = value extends `${string}\\${string}`
   ? true
-  : Lowercase<value> extends
-        | 'default'
-        | 'inherit'
-        | 'initial'
-        | 'revert'
-        | 'revert-layer'
-        | 'unset'
-    ? false
-    : Identifier<value>
+  : value extends Primitive
+    ? true
+    : Lowercase<value> extends
+          | 'default'
+          | 'inherit'
+          | 'initial'
+          | 'revert'
+          | 'revert-layer'
+          | 'unset'
+      ? false
+      : Identifier<value>
 
 /** Checks a source-extracted signature without executing application code. */
 export function accepts(value: string): boolean {
@@ -139,26 +181,61 @@ export function accepts(value: string): boolean {
   if (wrapped && body === '*') return true
   if (!wrapped && body.includes('|')) return false
 
-  return body.split('|').every((part) => {
-    const component = part.trim()
-    const repeated = /[+#]$/.test(component)
-    const atom = repeated ? component.slice(0, -1) : component
-    if (atom === '<transform-list>' && repeated) return false
-    if ((primitives as readonly string[]).includes(atom.toLowerCase()))
-      return true
-
-    return (
-      /^(?:--|-?[_a-zA-Z])[\w-]*$/.test(atom) &&
-      ![
-        'default',
-        'inherit',
-        'initial',
-        'revert',
-        'revert-layer',
-        'unset',
-      ].includes(atom.toLowerCase())
-    )
-  })
+  const escape = String.raw`\\(?:[0-9a-fA-F]{1,6}[ \t\n\r\f]?|[^\n\r\f0-9a-fA-F])`
+  const start = `(?:[_a-zA-Z\\u0080-\\uFFFF]|${escape})`
+  const tail = `(?:[-_a-zA-Z0-9\\u0080-\\uFFFF]|${escape})*`
+  const component = new RegExp(
+    `(?:<[-a-z]+>|(?:--|-${start}|${start})${tail})([+#])?`,
+    'y',
+  )
+  let index = 0
+  while (index < body.length) {
+    while (/[ \t\n\r\f]/.test(body[index] ?? '') && index < body.length) index++
+    component.lastIndex = index
+    const match = component.exec(body)
+    if (!match) return false
+    const atom = match[0].slice(0, match[0].length - (match[1]?.length ?? 0))
+    if (atom.startsWith('<')) {
+      if (
+        !(primitives as readonly string[]).includes(atom) ||
+        (atom === '<transform-list>' && match[1])
+      )
+        return false
+    } else {
+      const decoded = atom.replace(
+        /\\([0-9a-fA-F]{1,6})[ \t\n\r\f]?|\\([^\n\r\f])/g,
+        (_, hex: string | undefined, literal: string | undefined) => {
+          const point = hex ? Number.parseInt(hex, 16) : 0
+          return hex
+            ? String.fromCodePoint(
+                point === 0 ||
+                  point > 0x10ffff ||
+                  (point >= 0xd800 && point <= 0xdfff)
+                  ? 0xfffd
+                  : point,
+              )
+            : literal!
+        },
+      )
+      if (
+        [
+          'default',
+          'inherit',
+          'initial',
+          'revert',
+          'revert-layer',
+          'unset',
+        ].includes(decoded.replace(/[A-Z]/g, (c) => c.toLowerCase()))
+      )
+        return false
+    }
+    index = component.lastIndex
+    while (index < body.length && /[ \t\n\r\f]/.test(body[index]!)) index++
+    if (index === body.length) return true
+    if (!wrapped || body[index++] !== '|') return false
+    if (index === body.length) return false
+  }
+  return false
 }
 
 /** Whether numeric arguments are restricted to integer tokens by every alternative. */

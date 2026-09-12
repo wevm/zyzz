@@ -419,11 +419,11 @@ The matrix is pinned to inventory grammar fingerprints. Unsupported targets neve
 Current follow-up: #103 encoding/profile groundwork → #104 composite functions and paged-output evidence → acceptance audit. This stack stops before Phase 3 and does not claim Phase 2.5 completion.
 
 - [x] Pin UTF-8 output without BOM or generated `@charset`, including host bytes.
-- [x] Preserve private profile components and `color()` identities through packed imports.
+- [x] Preserve public profile components and `color()` identities through packed imports.
 - [x] Compile composite/repetition function signatures and grouped comma arguments; verify native defaults and conditional results.
 - [x] Compare native PDF dimensions and drawing streams for named/pseudo-pages, counters, and all margin boxes.
-- [ ] Verify real profile rendering and expose the public helper.
-- [ ] Finish the [per-rule acceptance gaps](../test/conformance/at-rule-acceptance.md), including complete grammar/context and packed/watch evidence.
+- [x] Verify basic ICC profile rendering in WeasyPrint and expose the public helper; retain relative-color and rendering-intent gaps.
+- [x] Review all 22 rules and 62 descriptor/nested entries for compiler grammar/context and packed/watch acceptance; keep renderer and target gaps separate.
 - [ ] Make `pnpm check:at-rules:full` pass without removing inventory entries or clearing unverified gaps.
 
 Completion follow-up: namespace acceptance now includes escaped/Unicode identifiers, last-declaration binding, source/packed maps, host watching, and native selector isolation. Font palette family lists survive the pinned parser and Vite minifiers; real color-font comparisons cover palette indexes, keyword fallbacks, repeated overrides, alpha, and wide-gamut colors. The full gate remains open.

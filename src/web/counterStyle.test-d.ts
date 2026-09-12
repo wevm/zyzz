@@ -1,8 +1,10 @@
 /** Checks counterStyle through its public descriptor contract. @module */
-import { describe, test, expectTypeOf } from 'vite-plus/test'
 import { counterStyle, fontPaletteValues } from 'zyzz/web'
+import { describe, test, expectTypeOf } from 'vite-plus/test'
 describe('counterStyle', () => {
   test('preserves its descriptor and identity domains', () => {
+    counterStyle({ system: ' ADDITIVE ', additiveSymbols: '1 "I"' })
+    counterStyle({ system: '\\63 yclic', symbols: '"x"' })
     const dots = counterStyle({ system: 'fixed -1', symbols: '"x"' })
     expectTypeOf(dots).toEqualTypeOf<counterStyle.Reference>()
     const palette = fontPaletteValues({ fontFamily: 'Body' })

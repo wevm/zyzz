@@ -1,13 +1,110 @@
 /** Verifies profile identities, descriptor output, and packed source ownership. @module */
-import * as Trace from '@jridgewell/trace-mapping'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
+import * as Trace from '@jridgewell/trace-mapping'
 
 const source = `import {colorProfile, global} from 'zyzz/web';
 export const profile = colorProfile({src:'url(./print.icc)',components:'c, m, y, k',renderingIntent:'relative-colorimetric'});
 global({body:{color:\`color(\${profile} 0 1 1 0)\`}});`
 
 describe('compile', () => {
+  test('requires a URL source', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'local(profile)'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:59: Color-profile src requires one URL.]`,
+    )
+  })
+
+  test('rejects an unknown rendering intent', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(/p.icc)',renderingIntent:'auto'});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:59: Invalid color-profile rendering intent.]`,
+    )
+  })
+
+  test('rejects malformed profile descriptors from packed libraries', () => {
+    const library = Graph.compile({
+      modules: {
+        'profile.ts': `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(/p.icc)'});`,
+      },
+    })
+    const contract = JSON.parse(library.contracts['profile.ts']!)
+    contract.stylesheets[0].css =
+      '@color-profile --profile{src:url(/p.icc);components:r,none,b;}'
+    expect(() =>
+      Graph.compile({
+        contracts: { 'lib.js': JSON.stringify(contract) },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: lib.js:0: Invalid library contract: Color-profile components require comma-separated identifiers other than none.]`,
+    )
+  })
+
+  test('validates all profile descriptor grammars before source and packed publication', () => {
+    for (const components of [
+      'r,g,b',
+      '图, \\72 ed, pi',
+      'inherit, default, --custom',
+      'r,r,b',
+    ]) {
+      for (const renderingIntent of [
+        'absolute-colorimetric',
+        'relative-colorimetric',
+        'perceptual',
+        'saturation',
+      ]) {
+        const library = Graph.compile({
+          modules: {
+            'profile.ts': `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(/print.icc)',components:${JSON.stringify(components)},renderingIntent:${JSON.stringify(renderingIntent)}},{within:['@layer colors','@media print']});`,
+          },
+        })
+        const packed = Graph.compile({
+          contracts: { 'lib.js': library.contracts['profile.ts']! },
+          imports: { 'app.ts': { lib: 'lib.js' } },
+          modules: { 'app.ts': `export {profile} from 'lib';` },
+        })
+        expect(
+          packed.sharedCss?.includes('rendering-intent:'),
+        ).toMatchInlineSnapshot('true')
+        expect(packed.sharedCss?.includes('components:')).toMatchInlineSnapshot(
+          'true',
+        )
+      }
+    }
+  })
+  test('rejects invalid component lists instead of emitting an unusable profile', () => {
+    for (const components of [
+      '',
+      'r g b',
+      'none',
+      'r,NoNe,b',
+      'r,\\6e one,b',
+      'r,,b',
+      'r,b,',
+      '1r,g,b',
+      '"r",g,b',
+    ]) {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(/print.icc)',components:${JSON.stringify(components)}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:59: Color-profile components require comma-separated identifiers other than none.]`,
+      )
+    }
+  })
+
   test('preserves profile components and color expressions across packed aliases', () => {
     const library = Graph.compile({ modules: { 'profiles.ts': source } })
     const output = Graph.compile({

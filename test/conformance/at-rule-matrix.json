@@ -8,6 +8,134 @@
       "file": "src/compiler/Transform.profile.test.ts",
       "test": "compile retains Unicode, import ordering, and source maps without a BOM or charset contribution"
     },
+    "descriptors.contexts": {
+      "file": "src/compiler/Transform.namedRules.test.ts",
+      "test": "compile rejects unsupported descriptor keys and position declarations at the source call"
+    },
+    "descriptors.counter": {
+      "file": "src/compiler/Transform.descriptorAcceptance.test.ts",
+      "test": "compile retains every counter descriptor across packed publication with maps"
+    },
+    "descriptors.counter.types": {
+      "file": "src/web/counterStyle.test-d.ts"
+    },
+    "descriptors.counter.watch": {
+      "file": "src/node/Host.descriptorAcceptance.test.ts",
+      "test": "create replaces counter descriptors and retains source-owned names during watch"
+    },
+    "descriptors.font": {
+      "file": "src/compiler/Transform.descriptorAcceptance.test.ts",
+      "test": "compile retains every font descriptor across packed publication with maps"
+    },
+    "descriptors.font.types": {
+      "file": "src/web/fontFace.test-d.ts"
+    },
+    "descriptors.font.watch": {
+      "file": "src/node/Host.descriptorAcceptance.test.ts",
+      "test": "create replaces font descriptors and retains source-owned names during watch"
+    },
+    "descriptors.invalid": {
+      "file": "src/compiler/Transform.descriptorAcceptance.test.ts",
+      "test": "compile rejects invalid font counter and palette descriptor grammar before output"
+    },
+    "descriptors.palette": {
+      "file": "src/compiler/Transform.descriptorAcceptance.test.ts",
+      "test": "compile retains every palette descriptor across packed publication with maps"
+    },
+    "descriptors.palette.types": {
+      "file": "src/web/fontPaletteValues.test-d.ts"
+    },
+    "descriptors.palette.watch": {
+      "file": "src/node/Host.descriptorAcceptance.test.ts",
+      "test": "create replaces palette descriptors and retains source-owned names during watch"
+    },
+    "descriptors.position": {
+      "file": "src/compiler/Transform.descriptorAcceptance.test.ts",
+      "test": "compile retains every position descriptor across packed publication with maps"
+    },
+    "descriptors.position.types": {
+      "file": "src/web/positionTry.test-d.ts"
+    },
+    "descriptors.position.watch": {
+      "file": "src/node/Host.descriptorAcceptance.test.ts",
+      "test": "create replaces position descriptors and retains source-owned names during watch"
+    },
+    "descriptors.references": {
+      "file": "src/compiler/Transform.namedRules.test.ts",
+      "test": "compile preserves aliases and re-exports through packed metadata and rebuilds"
+    },
+    "features.grammar": {
+      "file": "src/compiler/Transform.fontFeatures.test.ts",
+      "test": "compile rejects invalid alias indices across every nested feature block"
+    },
+    "features.identifiers": {
+      "file": "src/compiler/Transform.documentRules.test.ts",
+      "test": "compile rejects reserved aliases, malformed families, and table-only page properties"
+    },
+    "features.transport": {
+      "file": "src/compiler/Transform.fontFeatures.test.ts",
+      "test": "compile retains every feature alias block and display keyword with packed maps"
+    },
+    "features.types": {
+      "file": "src/web/fontFeatureValues.test-d.ts"
+    },
+    "features.watch": {
+      "file": "src/node/Host.fontFeatures.test.ts",
+      "test": "create replaces every feature alias block and font display policy during watch"
+    },
+    "final.contexts": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile rejects forbidden enclosing and element contexts for final descriptor families"
+    },
+    "final.function.grammar": {
+      "file": "src/compiler/Transform.functionAcceptance.test.ts",
+      "test": "compile rejects invalid list items arity escaped names and declaration injection"
+    },
+    "final.function.source": {
+      "file": "src/compiler/Transform.functionAcceptance.test.ts",
+      "test": "compile retains escaped syntax nested references and conditional results through packed publication"
+    },
+    "final.function.types": {
+      "file": "src/web/cssFunction.test-d.ts"
+    },
+    "final.function.watch": {
+      "file": "src/node/Host.finalAcceptance.test.ts",
+      "test": "create replaces function definitions during source watch"
+    },
+    "final.packed.grammar": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile rejects invalid page property and function grammar from packed stylesheets"
+    },
+    "final.page.grammar": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile rejects invalid page lengths descriptors and selectors"
+    },
+    "final.page.source": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile retains page grammar and contexts in packed output with source maps"
+    },
+    "final.page.types": {
+      "file": "src/web/page.test-d.ts"
+    },
+    "final.page.watch": {
+      "file": "src/node/Host.finalAcceptance.test.ts",
+      "test": "create replaces page definitions during source watch"
+    },
+    "final.property.grammar": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile rejects invalid registrations and computational dependencies"
+    },
+    "final.property.source": {
+      "file": "src/compiler/Transform.finalAcceptance.test.ts",
+      "test": "compile retains property grammar and contexts in packed output with source maps"
+    },
+    "final.property.types": {
+      "file": "src/web/property.test-d.ts"
+    },
+    "final.property.watch": {
+      "file": "src/node/Host.finalAcceptance.test.ts",
+      "test": "create replaces property definitions during source watch"
+    },
     "function.integer": {
       "file": "src/compiler/Transform.functionSyntax.test.ts",
       "test": "compile rejects non-integer token 1px in source and packed calls"
@@ -18,6 +146,88 @@
     },
     "function.types": {
       "file": "src/web/cssFunction.test-d.ts"
+    },
+    "groups.container": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves container grammar in global and nested packed output with maps"
+    },
+    "groups.container.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces container groups through source watch"
+    },
+    "groups.invalid": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile rejects malformed grouping productions at their source boundary"
+    },
+    "groups.layer": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves layer grammar in global and nested packed output with maps"
+    },
+    "groups.layer.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces layer groups through source watch"
+    },
+    "groups.media": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves media grammar in global and nested packed output with maps"
+    },
+    "groups.media.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces media groups through source watch"
+    },
+    "groups.nesting": {
+      "file": "src/compiler/Transform.atRules.test.ts",
+      "test": "compile keeps scope, layer, and scroll-state nesting in authored order"
+    },
+    "groups.references": {
+      "file": "src/compiler/Transform.conditions.test.ts",
+      "test": "compile resolves imported thresholds through the packed contract"
+    },
+    "groups.scope": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves scope grammar in global and nested packed output with maps"
+    },
+    "groups.scope.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces scope groups through source watch"
+    },
+    "groups.startingStyle": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves startingStyle grammar in global and nested packed output with maps"
+    },
+    "groups.startingStyle.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces startingStyle groups through source watch"
+    },
+    "groups.supports": {
+      "file": "src/compiler/Transform.groupingAcceptance.test.ts",
+      "test": "compile preserves supports grammar in global and nested packed output with maps"
+    },
+    "groups.supports.watch": {
+      "file": "src/node/Host.groupingAcceptance.test.ts",
+      "test": "create replaces supports groups through source watch"
+    },
+    "groups.types": {
+      "file": "src/web/groupingAcceptance.test-d.ts"
+    },
+    "import.assets": {
+      "file": "src/node/Host.statements.test.ts",
+      "test": "create copies nested stylesheet imports and their relative assets"
+    },
+    "keyframes.invalid": {
+      "file": "src/compiler/Transform.keyframeAcceptance.test.ts",
+      "test": "compile rejects malformed and out-of-range ordinary frame selectors"
+    },
+    "keyframes.transport": {
+      "file": "src/compiler/Transform.keyframeAcceptance.test.ts",
+      "test": "compile retains escaped stops exponent offsets and unrestricted timeline percentages through packed references"
+    },
+    "keyframes.types": {
+      "file": "src/web/keyframes.test-d.ts"
+    },
+    "keyframes.watch": {
+      "file": "src/node/Host.keyframeAcceptance.test.ts",
+      "test": "create replaces named timeline keyframes while retaining animation references during watch"
     },
     "namespace.binding": {
       "file": "src/compiler/Transform.namespace.test.ts",
@@ -65,6 +275,22 @@
       "file": "src/compiler/Transform.print.test.ts",
       "test": "compile prints packed bleed and marks with independent geometry and raster controls"
     },
+    "profile.grammar": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile validates all profile descriptor grammars before source and packed publication"
+    },
+    "profile.intent": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile rejects an unknown rendering intent"
+    },
+    "profile.invalid": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile rejects invalid component lists instead of emitting an unusable profile"
+    },
+    "profile.invalidPacked": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile rejects malformed profile descriptors from packed libraries"
+    },
     "profile.origin": {
       "file": "src/compiler/Transform.profile.test.ts",
       "test": "compile retains referenced origins before relative profile names in packed output"
@@ -77,9 +303,74 @@
       "file": "src/compiler/Transform.profile.test.ts",
       "test": "compile rejects a profile interpolated outside color()"
     },
+    "profile.types": {
+      "file": "src/web/colorProfile.test-d.ts"
+    },
+    "profile.url": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile requires a URL source"
+    },
+    "profile.watch": {
+      "file": "src/node/Host.profile.test.ts",
+      "test": "create replaces profile components intent and source assets through watch"
+    },
+    "property.references": {
+      "file": "src/compiler/Graph.variables.test.ts",
+      "test": "compile links registered variable references and assignments through packed aliases"
+    },
+    "statements.customMedia": {
+      "file": "src/compiler/Transform.statementAcceptance.test.ts",
+      "test": "compile retains custom-media query productions and imported computed references"
+    },
+    "statements.customMedia.watch": {
+      "file": "src/node/Host.statementAcceptance.test.ts",
+      "test": "create replaces customMedia definitions during source watch"
+    },
+    "statements.document": {
+      "file": "src/compiler/Transform.statementAcceptance.test.ts",
+      "test": "compile retains legacy document matching functions across packed publication with maps"
+    },
+    "statements.document.watch": {
+      "file": "src/node/Host.statementAcceptance.test.ts",
+      "test": "create replaces document definitions during source watch"
+    },
+    "statements.import": {
+      "file": "src/compiler/Transform.statementAcceptance.test.ts",
+      "test": "compile retains import layer supports and media combinations with packed ordering and maps"
+    },
+    "statements.import.watch": {
+      "file": "src/node/Host.statementAcceptance.test.ts",
+      "test": "create replaces import definitions during source watch"
+    },
+    "statements.invalid": {
+      "file": "src/compiler/Transform.statementAcceptance.test.ts",
+      "test": "compile rejects malformed queries and legacy matching functions before publication"
+    },
+    "statements.types": {
+      "file": "src/web/statements.test-d.ts"
+    },
     "transition.capture": {
       "file": "src/compiler/Transform.viewTransition.browser.test.ts",
       "test": "compile captures navigation, activates declared types, and obeys conditional opt-out"
+    },
+    "transition.grammar": {
+      "file": "src/compiler/Transform.viewTransition.test.ts",
+      "test": "compile validates transition identifiers and preserves conditional packed descriptors"
+    },
+    "transition.invalid": {
+      "file": "src/compiler/Transform.viewTransition.test.ts",
+      "test": "compile rejects malformed transition types and forbidden enclosing contexts"
+    },
+    "transition.invalidPacked": {
+      "file": "src/compiler/Transform.viewTransition.test.ts",
+      "test": "compile rejects invalid packed transition descriptors before parser recovery"
+    },
+    "transition.types": {
+      "file": "src/web/viewTransition.test-d.ts"
+    },
+    "transition.watch": {
+      "file": "src/node/Host.viewTransition.test.ts",
+      "test": "create replaces navigation and types through source watch updates"
     }
   },
   "entries": {
@@ -126,10 +417,16 @@
     "@color-profile": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @color-profile."
+          "cases": ["profile.grammar", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Complete public export, descriptor grammar/types, and source-owned watch evidence."
+          "cases": [
+            "profile.grammar",
+            "profile.invalid",
+            "profile.url",
+            "profile.intent",
+            "profile.invalidPacked"
+          ]
         },
         "maps": {
           "cases": ["profile.packed"]
@@ -138,7 +435,7 @@
           "cases": ["profile.packed"]
         },
         "packed": {
-          "cases": ["profile.packed"]
+          "cases": ["profile.packed", "profile.invalidPacked"]
         },
         "references": {
           "cases": ["profile.packed", "profile.references", "profile.origin"]
@@ -147,10 +444,10 @@
           "cases": ["profile.packed"]
         },
         "types": {
-          "gap": "Review types acceptance for @color-profile."
+          "cases": ["profile.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @color-profile."
+          "cases": ["profile.watch"]
         }
       },
       "rendering": {
@@ -168,10 +465,16 @@
     "@color-profile/components": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @color-profile/components."
+          "cases": ["profile.grammar", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Complete public export, descriptor grammar/types, and source-owned watch evidence."
+          "cases": [
+            "profile.grammar",
+            "profile.invalid",
+            "profile.url",
+            "profile.intent",
+            "profile.invalidPacked"
+          ]
         },
         "maps": {
           "cases": ["profile.packed"]
@@ -180,7 +483,7 @@
           "cases": ["profile.packed"]
         },
         "packed": {
-          "cases": ["profile.packed"]
+          "cases": ["profile.packed", "profile.invalidPacked"]
         },
         "references": {
           "cases": ["profile.packed", "profile.references", "profile.origin"]
@@ -189,10 +492,10 @@
           "cases": ["profile.packed"]
         },
         "types": {
-          "gap": "Review types acceptance for @color-profile/components."
+          "cases": ["profile.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @color-profile/components."
+          "cases": ["profile.watch"]
         }
       },
       "rendering": {
@@ -210,10 +513,16 @@
     "@color-profile/rendering-intent": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @color-profile/rendering-intent."
+          "cases": ["profile.grammar", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Complete public export, descriptor grammar/types, and source-owned watch evidence."
+          "cases": [
+            "profile.grammar",
+            "profile.invalid",
+            "profile.url",
+            "profile.intent",
+            "profile.invalidPacked"
+          ]
         },
         "maps": {
           "cases": ["profile.packed"]
@@ -222,7 +531,7 @@
           "cases": ["profile.packed"]
         },
         "packed": {
-          "cases": ["profile.packed"]
+          "cases": ["profile.packed", "profile.invalidPacked"]
         },
         "references": {
           "cases": ["profile.packed", "profile.references", "profile.origin"]
@@ -231,10 +540,10 @@
           "cases": ["profile.packed"]
         },
         "types": {
-          "gap": "Review types acceptance for @color-profile/rendering-intent."
+          "cases": ["profile.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @color-profile/rendering-intent."
+          "cases": ["profile.watch"]
         }
       },
       "rendering": {
@@ -252,10 +561,16 @@
     "@color-profile/src": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @color-profile/src."
+          "cases": ["profile.grammar", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Complete public export, descriptor grammar/types, and source-owned watch evidence."
+          "cases": [
+            "profile.grammar",
+            "profile.invalid",
+            "profile.url",
+            "profile.intent",
+            "profile.invalidPacked"
+          ]
         },
         "maps": {
           "cases": ["profile.packed"]
@@ -264,7 +579,7 @@
           "cases": ["profile.packed"]
         },
         "packed": {
-          "cases": ["profile.packed"]
+          "cases": ["profile.packed", "profile.invalidPacked"]
         },
         "references": {
           "cases": ["profile.packed", "profile.references", "profile.origin"]
@@ -273,10 +588,10 @@
           "cases": ["profile.packed"]
         },
         "types": {
-          "gap": "Review types acceptance for @color-profile/src."
+          "cases": ["profile.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @color-profile/src."
+          "cases": ["profile.watch"]
         }
       },
       "rendering": {
@@ -294,31 +609,31 @@
     "@container": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @container."
+          "cases": ["groups.container", "groups.nesting"]
         },
         "grammar": {
-          "gap": "Review named, style, and scroll-state query grammar and permitted contexts."
+          "cases": ["groups.container", "groups.invalid"]
         },
         "maps": {
-          "gap": "Review maps acceptance for @container."
+          "cases": ["groups.container"]
         },
         "output": {
-          "gap": "Review output acceptance for @container."
+          "cases": ["groups.container"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @container."
-        },
-        "references": {
-          "gap": "Review references acceptance for @container."
+          "cases": ["groups.container"]
         },
         "source": {
-          "gap": "Review source acceptance for @container."
+          "cases": ["groups.container", "groups.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @container."
+          "cases": ["groups.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @container."
+          "cases": ["groups.container.watch"]
+        },
+        "references": {
+          "cases": ["groups.references"]
         }
       },
       "rendering": {
@@ -336,31 +651,35 @@
     "@counter-style": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @counter-style."
+          "cases": ["descriptors.counter", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar and identity/reference contract."
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @counter-style."
+          "cases": ["descriptors.counter"]
         },
         "output": {
-          "gap": "Review output acceptance for @counter-style."
+          "cases": ["descriptors.counter"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @counter-style."
-        },
-        "references": {
-          "gap": "Review references acceptance for @counter-style."
+          "cases": ["descriptors.counter", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @counter-style."
+          "cases": ["descriptors.counter", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @counter-style."
+          "cases": ["descriptors.counter.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @counter-style."
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -378,31 +697,35 @@
     "@counter-style/additive-symbols": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @counter-style/additive-symbols."
+          "cases": ["descriptors.counter", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar and identity/reference contract."
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @counter-style/additive-symbols."
+          "cases": ["descriptors.counter"]
         },
         "output": {
-          "gap": "Review output acceptance for @counter-style/additive-symbols."
+          "cases": ["descriptors.counter"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @counter-style/additive-symbols."
-        },
-        "references": {
-          "gap": "Review references acceptance for @counter-style/additive-symbols."
+          "cases": ["descriptors.counter", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @counter-style/additive-symbols."
+          "cases": ["descriptors.counter", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @counter-style/additive-symbols."
+          "cases": ["descriptors.counter.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @counter-style/additive-symbols."
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -420,31 +743,35 @@
     "@counter-style/fallback": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @counter-style/fallback."
+          "cases": ["descriptors.counter", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar and identity/reference contract."
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @counter-style/fallback."
+          "cases": ["descriptors.counter"]
         },
         "output": {
-          "gap": "Review output acceptance for @counter-style/fallback."
+          "cases": ["descriptors.counter"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @counter-style/fallback."
-        },
-        "references": {
-          "gap": "Review references acceptance for @counter-style/fallback."
+          "cases": ["descriptors.counter", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @counter-style/fallback."
+          "cases": ["descriptors.counter", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @counter-style/fallback."
+          "cases": ["descriptors.counter.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @counter-style/fallback."
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -462,31 +789,35 @@
     "@counter-style/negative": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @counter-style/negative."
+          "cases": ["descriptors.counter", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar and identity/reference contract."
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @counter-style/negative."
+          "cases": ["descriptors.counter"]
         },
         "output": {
-          "gap": "Review output acceptance for @counter-style/negative."
+          "cases": ["descriptors.counter"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @counter-style/negative."
-        },
-        "references": {
-          "gap": "Review references acceptance for @counter-style/negative."
+          "cases": ["descriptors.counter", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @counter-style/negative."
+          "cases": ["descriptors.counter", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @counter-style/negative."
+          "cases": ["descriptors.counter.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @counter-style/negative."
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -504,31 +835,35 @@
     "@counter-style/pad": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @counter-style/pad."
+          "cases": ["descriptors.counter", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar and identity/reference contract."
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @counter-style/pad."
+          "cases": ["descriptors.counter"]
         },
         "output": {
-          "gap": "Review output acceptance for @counter-style/pad."
+          "cases": ["descriptors.counter"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @counter-style/pad."
-        },
-        "references": {
-          "gap": "Review references acceptance for @counter-style/pad."
+          "cases": ["descriptors.counter", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @counter-style/pad."
+          "cases": ["descriptors.counter", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @counter-style/pad."
+          "cases": ["descriptors.counter.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @counter-style/pad."
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -546,31 +881,35 @@
     "@counter-style/prefix": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @counter-style/prefix."
+          "cases": ["descriptors.counter", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar and identity/reference contract."
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @counter-style/prefix."
+          "cases": ["descriptors.counter"]
         },
         "output": {
-          "gap": "Review output acceptance for @counter-style/prefix."
+          "cases": ["descriptors.counter"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @counter-style/prefix."
-        },
-        "references": {
-          "gap": "Review references acceptance for @counter-style/prefix."
+          "cases": ["descriptors.counter", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @counter-style/prefix."
+          "cases": ["descriptors.counter", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @counter-style/prefix."
+          "cases": ["descriptors.counter.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @counter-style/prefix."
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -588,31 +927,35 @@
     "@counter-style/range": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @counter-style/range."
+          "cases": ["descriptors.counter", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar and identity/reference contract."
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @counter-style/range."
+          "cases": ["descriptors.counter"]
         },
         "output": {
-          "gap": "Review output acceptance for @counter-style/range."
+          "cases": ["descriptors.counter"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @counter-style/range."
-        },
-        "references": {
-          "gap": "Review references acceptance for @counter-style/range."
+          "cases": ["descriptors.counter", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @counter-style/range."
+          "cases": ["descriptors.counter", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @counter-style/range."
+          "cases": ["descriptors.counter.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @counter-style/range."
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -630,31 +973,35 @@
     "@counter-style/speak-as": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @counter-style/speak-as."
+          "cases": ["descriptors.counter", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar and identity/reference contract."
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @counter-style/speak-as."
+          "cases": ["descriptors.counter"]
         },
         "output": {
-          "gap": "Review output acceptance for @counter-style/speak-as."
+          "cases": ["descriptors.counter"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @counter-style/speak-as."
-        },
-        "references": {
-          "gap": "Review references acceptance for @counter-style/speak-as."
+          "cases": ["descriptors.counter", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @counter-style/speak-as."
+          "cases": ["descriptors.counter", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @counter-style/speak-as."
+          "cases": ["descriptors.counter.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @counter-style/speak-as."
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -672,31 +1019,35 @@
     "@counter-style/suffix": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @counter-style/suffix."
+          "cases": ["descriptors.counter", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar and identity/reference contract."
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @counter-style/suffix."
+          "cases": ["descriptors.counter"]
         },
         "output": {
-          "gap": "Review output acceptance for @counter-style/suffix."
+          "cases": ["descriptors.counter"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @counter-style/suffix."
-        },
-        "references": {
-          "gap": "Review references acceptance for @counter-style/suffix."
+          "cases": ["descriptors.counter", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @counter-style/suffix."
+          "cases": ["descriptors.counter", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @counter-style/suffix."
+          "cases": ["descriptors.counter.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @counter-style/suffix."
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -714,31 +1065,35 @@
     "@counter-style/symbols": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @counter-style/symbols."
+          "cases": ["descriptors.counter", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar and identity/reference contract."
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @counter-style/symbols."
+          "cases": ["descriptors.counter"]
         },
         "output": {
-          "gap": "Review output acceptance for @counter-style/symbols."
+          "cases": ["descriptors.counter"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @counter-style/symbols."
-        },
-        "references": {
-          "gap": "Review references acceptance for @counter-style/symbols."
+          "cases": ["descriptors.counter", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @counter-style/symbols."
+          "cases": ["descriptors.counter", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @counter-style/symbols."
+          "cases": ["descriptors.counter.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @counter-style/symbols."
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -756,31 +1111,35 @@
     "@counter-style/system": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @counter-style/system."
+          "cases": ["descriptors.counter", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar and identity/reference contract."
+          "cases": [
+            "descriptors.counter",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @counter-style/system."
+          "cases": ["descriptors.counter"]
         },
         "output": {
-          "gap": "Review output acceptance for @counter-style/system."
+          "cases": ["descriptors.counter"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @counter-style/system."
-        },
-        "references": {
-          "gap": "Review references acceptance for @counter-style/system."
+          "cases": ["descriptors.counter", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @counter-style/system."
+          "cases": ["descriptors.counter", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @counter-style/system."
+          "cases": ["descriptors.counter.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @counter-style/system."
+          "cases": ["descriptors.counter.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -798,31 +1157,31 @@
     "@custom-media": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @custom-media."
+          "cases": ["statements.customMedia", "statements.invalid"]
         },
         "grammar": {
-          "gap": "Complete query-reference placement and target-specific lowering semantics."
+          "cases": ["statements.customMedia", "statements.invalid"]
         },
         "maps": {
-          "gap": "Review maps acceptance for @custom-media."
+          "cases": ["statements.customMedia"]
         },
         "output": {
-          "gap": "Review output acceptance for @custom-media."
+          "cases": ["statements.customMedia"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @custom-media."
-        },
-        "references": {
-          "gap": "Review references acceptance for @custom-media."
+          "cases": ["statements.customMedia"]
         },
         "source": {
-          "gap": "Review source acceptance for @custom-media."
+          "cases": ["statements.customMedia", "statements.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @custom-media."
+          "cases": ["statements.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @custom-media."
+          "cases": ["statements.customMedia.watch"]
+        },
+        "references": {
+          "cases": ["statements.customMedia"]
         }
       },
       "rendering": {
@@ -840,31 +1199,31 @@
     "@document": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @document."
+          "cases": ["statements.document", "statements.invalid"]
         },
         "grammar": {
-          "gap": "Review matching-function grammar and define the explicit legacy output target."
+          "cases": ["statements.document", "statements.invalid"]
         },
         "maps": {
-          "gap": "Review maps acceptance for @document."
+          "cases": ["statements.document"]
         },
         "output": {
-          "gap": "Review output acceptance for @document."
+          "cases": ["statements.document"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @document."
-        },
-        "references": {
-          "gap": "Review references acceptance for @document."
+          "cases": ["statements.document"]
         },
         "source": {
-          "gap": "Review source acceptance for @document."
+          "cases": ["statements.document", "statements.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @document."
+          "cases": ["groups.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @document."
+          "cases": ["statements.document.watch"]
+        },
+        "references": {
+          "notApplicable": "This rule emits authored URLs or matching functions and does not create a compiler-owned identity."
         }
       },
       "rendering": {
@@ -882,31 +1241,35 @@
     "@font-face": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -924,31 +1287,35 @@
     "@font-face/ascent-override": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/ascent-override."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/ascent-override."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/ascent-override."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/ascent-override."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/ascent-override."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/ascent-override."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/ascent-override."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/ascent-override."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -966,31 +1333,35 @@
     "@font-face/descent-override": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/descent-override."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/descent-override."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/descent-override."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/descent-override."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/descent-override."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/descent-override."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/descent-override."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/descent-override."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1008,31 +1379,35 @@
     "@font-face/font-display": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/font-display."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/font-display."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/font-display."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/font-display."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/font-display."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/font-display."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/font-display."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/font-display."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1050,31 +1425,35 @@
     "@font-face/font-family": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/font-family."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/font-family."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/font-family."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/font-family."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/font-family."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/font-family."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/font-family."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/font-family."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1092,31 +1471,35 @@
     "@font-face/font-feature-settings": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/font-feature-settings."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/font-feature-settings."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/font-feature-settings."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/font-feature-settings."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/font-feature-settings."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/font-feature-settings."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/font-feature-settings."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/font-feature-settings."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1134,31 +1517,35 @@
     "@font-face/font-stretch": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/font-stretch."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/font-stretch."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/font-stretch."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/font-stretch."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/font-stretch."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/font-stretch."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/font-stretch."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/font-stretch."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1176,31 +1563,35 @@
     "@font-face/font-style": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/font-style."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/font-style."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/font-style."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/font-style."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/font-style."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/font-style."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/font-style."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/font-style."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1218,31 +1609,35 @@
     "@font-face/font-variation-settings": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/font-variation-settings."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/font-variation-settings."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/font-variation-settings."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/font-variation-settings."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/font-variation-settings."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/font-variation-settings."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/font-variation-settings."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/font-variation-settings."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1260,31 +1655,35 @@
     "@font-face/font-weight": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/font-weight."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/font-weight."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/font-weight."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/font-weight."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/font-weight."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/font-weight."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/font-weight."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/font-weight."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1302,31 +1701,35 @@
     "@font-face/line-gap-override": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/line-gap-override."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/line-gap-override."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/line-gap-override."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/line-gap-override."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/line-gap-override."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/line-gap-override."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/line-gap-override."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/line-gap-override."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1344,31 +1747,35 @@
     "@font-face/size-adjust": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/size-adjust."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/size-adjust."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/size-adjust."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/size-adjust."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/size-adjust."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/size-adjust."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/size-adjust."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/size-adjust."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1386,31 +1793,35 @@
     "@font-face/src": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/src."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/src."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/src."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/src."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/src."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/src."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/src."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/src."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1428,31 +1839,35 @@
     "@font-face/unicode-range": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-face/unicode-range."
+          "cases": ["descriptors.font", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review every descriptor grammar/type contract and source-owned updates."
+          "cases": [
+            "descriptors.font",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-face/unicode-range."
+          "cases": ["descriptors.font"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-face/unicode-range."
+          "cases": ["descriptors.font"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-face/unicode-range."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-face/unicode-range."
+          "cases": ["descriptors.font", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-face/unicode-range."
+          "cases": ["descriptors.font", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-face/unicode-range."
+          "cases": ["descriptors.font.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-face/unicode-range."
+          "cases": ["descriptors.font.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-face uses authored family names and source URLs rather than returning a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1470,31 +1885,35 @@
     "@font-feature-values": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-feature-values."
+          "cases": ["features.transport", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Review every alias-block grammar and font-display contract."
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-feature-values."
+          "cases": ["features.transport"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-feature-values."
+          "cases": ["features.transport"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-feature-values."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-feature-values."
+          "cases": ["features.transport"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-feature-values."
+          "cases": ["features.transport", "features.grammar"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-feature-values."
+          "cases": ["features.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-feature-values."
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1512,31 +1931,35 @@
     "@font-feature-values/@annotation": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-feature-values/@annotation."
+          "cases": ["features.transport", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Review every alias-block grammar and font-display contract."
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-feature-values/@annotation."
+          "cases": ["features.transport"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-feature-values/@annotation."
+          "cases": ["features.transport"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-feature-values/@annotation."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-feature-values/@annotation."
+          "cases": ["features.transport"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-feature-values/@annotation."
+          "cases": ["features.transport", "features.grammar"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-feature-values/@annotation."
+          "cases": ["features.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-feature-values/@annotation."
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1554,31 +1977,35 @@
     "@font-feature-values/@character-variant": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-feature-values/@character-variant."
+          "cases": ["features.transport", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Review every alias-block grammar and font-display contract."
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-feature-values/@character-variant."
+          "cases": ["features.transport"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-feature-values/@character-variant."
+          "cases": ["features.transport"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-feature-values/@character-variant."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-feature-values/@character-variant."
+          "cases": ["features.transport"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-feature-values/@character-variant."
+          "cases": ["features.transport", "features.grammar"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-feature-values/@character-variant."
+          "cases": ["features.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-feature-values/@character-variant."
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1596,31 +2023,35 @@
     "@font-feature-values/@ornaments": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-feature-values/@ornaments."
+          "cases": ["features.transport", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Review every alias-block grammar and font-display contract."
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-feature-values/@ornaments."
+          "cases": ["features.transport"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-feature-values/@ornaments."
+          "cases": ["features.transport"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-feature-values/@ornaments."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-feature-values/@ornaments."
+          "cases": ["features.transport"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-feature-values/@ornaments."
+          "cases": ["features.transport", "features.grammar"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-feature-values/@ornaments."
+          "cases": ["features.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-feature-values/@ornaments."
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1638,31 +2069,35 @@
     "@font-feature-values/@styleset": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-feature-values/@styleset."
+          "cases": ["features.transport", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Review every alias-block grammar and font-display contract."
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-feature-values/@styleset."
+          "cases": ["features.transport"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-feature-values/@styleset."
+          "cases": ["features.transport"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-feature-values/@styleset."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-feature-values/@styleset."
+          "cases": ["features.transport"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-feature-values/@styleset."
+          "cases": ["features.transport", "features.grammar"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-feature-values/@styleset."
+          "cases": ["features.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-feature-values/@styleset."
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1680,31 +2115,35 @@
     "@font-feature-values/@stylistic": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-feature-values/@stylistic."
+          "cases": ["features.transport", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Review every alias-block grammar and font-display contract."
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-feature-values/@stylistic."
+          "cases": ["features.transport"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-feature-values/@stylistic."
+          "cases": ["features.transport"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-feature-values/@stylistic."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-feature-values/@stylistic."
+          "cases": ["features.transport"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-feature-values/@stylistic."
+          "cases": ["features.transport", "features.grammar"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-feature-values/@stylistic."
+          "cases": ["features.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-feature-values/@stylistic."
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1722,31 +2161,35 @@
     "@font-feature-values/@swash": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-feature-values/@swash."
+          "cases": ["features.transport", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Review every alias-block grammar and font-display contract."
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-feature-values/@swash."
+          "cases": ["features.transport"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-feature-values/@swash."
+          "cases": ["features.transport"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-feature-values/@swash."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-feature-values/@swash."
+          "cases": ["features.transport"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-feature-values/@swash."
+          "cases": ["features.transport", "features.grammar"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-feature-values/@swash."
+          "cases": ["features.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-feature-values/@swash."
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1764,31 +2207,35 @@
     "@font-feature-values/font-display": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-feature-values/font-display."
+          "cases": ["features.transport", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Review every alias-block grammar and font-display contract."
+          "cases": [
+            "features.transport",
+            "features.grammar",
+            "features.identifiers"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-feature-values/font-display."
+          "cases": ["features.transport"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-feature-values/font-display."
+          "cases": ["features.transport"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-feature-values/font-display."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-feature-values/font-display."
+          "cases": ["features.transport"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-feature-values/font-display."
+          "cases": ["features.transport", "features.grammar"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-feature-values/font-display."
+          "cases": ["features.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-feature-values/font-display."
+          "cases": ["features.watch"]
+        },
+        "references": {
+          "notApplicable": "Font-feature aliases use authored family and alias names; the eager declaration helper does not return a compiler-owned identity."
         }
       },
       "rendering": {
@@ -1806,31 +2253,35 @@
     "@font-palette-values": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-palette-values."
+          "cases": ["descriptors.palette", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Complete descriptor grammar/type validation, contexts, and watch acceptance."
+          "cases": [
+            "descriptors.palette",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-palette-values."
+          "cases": ["descriptors.palette"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-palette-values."
+          "cases": ["descriptors.palette"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-palette-values."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-palette-values."
+          "cases": ["descriptors.palette", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-palette-values."
+          "cases": ["descriptors.palette", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-palette-values."
+          "cases": ["descriptors.palette.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-palette-values."
+          "cases": ["descriptors.palette.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -1848,31 +2299,35 @@
     "@font-palette-values/base-palette": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-palette-values/base-palette."
+          "cases": ["descriptors.palette", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Complete descriptor grammar/type validation, contexts, and watch acceptance."
+          "cases": [
+            "descriptors.palette",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-palette-values/base-palette."
+          "cases": ["descriptors.palette"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-palette-values/base-palette."
+          "cases": ["descriptors.palette"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-palette-values/base-palette."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-palette-values/base-palette."
+          "cases": ["descriptors.palette", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-palette-values/base-palette."
+          "cases": ["descriptors.palette", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-palette-values/base-palette."
+          "cases": ["descriptors.palette.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-palette-values/base-palette."
+          "cases": ["descriptors.palette.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -1890,31 +2345,35 @@
     "@font-palette-values/font-family": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-palette-values/font-family."
+          "cases": ["descriptors.palette", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Complete descriptor grammar/type validation, contexts, and watch acceptance."
+          "cases": [
+            "descriptors.palette",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-palette-values/font-family."
+          "cases": ["descriptors.palette"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-palette-values/font-family."
+          "cases": ["descriptors.palette"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-palette-values/font-family."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-palette-values/font-family."
+          "cases": ["descriptors.palette", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-palette-values/font-family."
+          "cases": ["descriptors.palette", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-palette-values/font-family."
+          "cases": ["descriptors.palette.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-palette-values/font-family."
+          "cases": ["descriptors.palette.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -1932,31 +2391,35 @@
     "@font-palette-values/override-colors": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @font-palette-values/override-colors."
+          "cases": ["descriptors.palette", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Complete descriptor grammar/type validation, contexts, and watch acceptance."
+          "cases": [
+            "descriptors.palette",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @font-palette-values/override-colors."
+          "cases": ["descriptors.palette"]
         },
         "output": {
-          "gap": "Review output acceptance for @font-palette-values/override-colors."
+          "cases": ["descriptors.palette"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @font-palette-values/override-colors."
-        },
-        "references": {
-          "gap": "Review references acceptance for @font-palette-values/override-colors."
+          "cases": ["descriptors.palette", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @font-palette-values/override-colors."
+          "cases": ["descriptors.palette", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @font-palette-values/override-colors."
+          "cases": ["descriptors.palette.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @font-palette-values/override-colors."
+          "cases": ["descriptors.palette.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -1974,31 +2437,35 @@
     "@function": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @function."
+          "cases": ["final.function.source", "final.contexts"]
         },
         "grammar": {
-          "gap": "Complete escaped identifiers, list arguments, nested references, and contexts."
+          "cases": [
+            "final.function.source",
+            "final.function.grammar",
+            "final.packed.grammar"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @function."
+          "cases": ["final.function.source"]
         },
         "output": {
-          "gap": "Review output acceptance for @function."
+          "cases": ["final.function.source"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @function."
+          "cases": ["final.function.source", "final.packed.grammar"]
         },
         "references": {
-          "gap": "Review references acceptance for @function."
+          "cases": ["final.function.source"]
         },
         "source": {
-          "gap": "Review source acceptance for @function."
+          "cases": ["final.function.source"]
         },
         "types": {
-          "gap": "Review types acceptance for @function."
+          "cases": ["final.function.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @function."
+          "cases": ["final.function.watch"]
         }
       },
       "rendering": {
@@ -2016,31 +2483,35 @@
     "@function/result": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @function/result."
+          "cases": ["final.function.source", "final.contexts"]
         },
         "grammar": {
-          "gap": "Complete escaped identifiers, list arguments, nested references, and contexts."
+          "cases": [
+            "final.function.source",
+            "final.function.grammar",
+            "final.packed.grammar"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @function/result."
+          "cases": ["final.function.source"]
         },
         "output": {
-          "gap": "Review output acceptance for @function/result."
+          "cases": ["final.function.source"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @function/result."
+          "cases": ["final.function.source", "final.packed.grammar"]
         },
         "references": {
-          "gap": "Review references acceptance for @function/result."
+          "cases": ["final.function.source"]
         },
         "source": {
-          "gap": "Review source acceptance for @function/result."
+          "cases": ["final.function.source"]
         },
         "types": {
-          "gap": "Review types acceptance for @function/result."
+          "cases": ["final.function.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @function/result."
+          "cases": ["final.function.watch"]
         }
       },
       "rendering": {
@@ -2058,31 +2529,31 @@
     "@import": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @import."
+          "cases": ["statements.import", "statements.invalid"]
         },
         "grammar": {
-          "gap": "Review layer/supports/media combinations, ordering, and ownership contracts."
+          "cases": ["statements.import", "statements.invalid"]
         },
         "maps": {
-          "gap": "Review maps acceptance for @import."
+          "cases": ["statements.import"]
         },
         "output": {
-          "gap": "Review output acceptance for @import."
+          "cases": ["statements.import"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @import."
-        },
-        "references": {
-          "gap": "Review references acceptance for @import."
+          "cases": ["statements.import"]
         },
         "source": {
-          "gap": "Review source acceptance for @import."
+          "cases": ["statements.import", "statements.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @import."
+          "cases": ["statements.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @import."
+          "cases": ["statements.import.watch", "import.assets"]
+        },
+        "references": {
+          "notApplicable": "This rule emits authored URLs or matching functions and does not create a compiler-owned identity."
         }
       },
       "rendering": {
@@ -2100,31 +2571,31 @@
     "@keyframes": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @keyframes."
+          "cases": ["keyframes.transport"]
         },
         "grammar": {
-          "gap": "Complete timeline-range stop grammar and reference retention."
+          "cases": ["keyframes.transport", "keyframes.invalid"]
         },
         "maps": {
-          "gap": "Review maps acceptance for @keyframes."
+          "cases": ["keyframes.transport"]
         },
         "output": {
-          "gap": "Review output acceptance for @keyframes."
+          "cases": ["keyframes.transport"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @keyframes."
+          "cases": ["keyframes.transport"]
         },
         "references": {
-          "gap": "Review references acceptance for @keyframes."
+          "cases": ["keyframes.transport"]
         },
         "source": {
-          "gap": "Review source acceptance for @keyframes."
+          "cases": ["keyframes.transport", "keyframes.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @keyframes."
+          "cases": ["keyframes.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @keyframes."
+          "cases": ["keyframes.watch"]
         }
       },
       "rendering": {
@@ -2142,31 +2613,31 @@
     "@layer": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @layer."
+          "cases": ["groups.layer", "groups.nesting"]
         },
         "grammar": {
-          "gap": "Review anonymous/nested contexts, escaped names, and ordering grammar."
+          "cases": ["groups.layer", "groups.invalid"]
         },
         "maps": {
-          "gap": "Review maps acceptance for @layer."
+          "cases": ["groups.layer"]
         },
         "output": {
-          "gap": "Review output acceptance for @layer."
+          "cases": ["groups.layer"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @layer."
-        },
-        "references": {
-          "gap": "Review references acceptance for @layer."
+          "cases": ["groups.layer"]
         },
         "source": {
-          "gap": "Review source acceptance for @layer."
+          "cases": ["groups.layer", "groups.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @layer."
+          "cases": ["groups.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @layer."
+          "cases": ["groups.layer.watch"]
+        },
+        "references": {
+          "notApplicable": "Grouping syntax retains authored CSS names and selectors without creating a compiler-owned reference."
         }
       },
       "rendering": {
@@ -2184,31 +2655,31 @@
     "@media": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @media."
+          "cases": ["groups.media", "groups.nesting"]
         },
         "grammar": {
-          "gap": "Review complete conditional grammar and permitted contexts."
+          "cases": ["groups.media", "groups.invalid"]
         },
         "maps": {
-          "gap": "Review maps acceptance for @media."
+          "cases": ["groups.media"]
         },
         "output": {
-          "gap": "Review output acceptance for @media."
+          "cases": ["groups.media"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @media."
-        },
-        "references": {
-          "gap": "Review references acceptance for @media."
+          "cases": ["groups.media"]
         },
         "source": {
-          "gap": "Review source acceptance for @media."
+          "cases": ["groups.media", "groups.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @media."
+          "cases": ["groups.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @media."
+          "cases": ["groups.media.watch"]
+        },
+        "references": {
+          "cases": ["groups.references"]
         }
       },
       "rendering": {
@@ -2266,31 +2737,35 @@
     "@page": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @page."
+          "cases": ["final.page.source", "final.contexts"]
         },
         "grammar": {
-          "gap": "Complete length grammar and descriptor-specific source/packed/map/watch review."
+          "cases": [
+            "final.page.source",
+            "final.page.grammar",
+            "final.packed.grammar"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @page."
+          "cases": ["final.page.source"]
         },
         "output": {
-          "gap": "Review output acceptance for @page."
+          "cases": ["final.page.source"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @page."
+          "cases": ["final.page.source", "final.packed.grammar"]
         },
         "references": {
-          "gap": "Review references acceptance for @page."
+          "notApplicable": "Page selectors use authored CSS names and pseudo-classes; page() creates no opaque reference identity."
         },
         "source": {
-          "gap": "Review source acceptance for @page."
+          "cases": ["final.page.source"]
         },
         "types": {
-          "gap": "Review types acceptance for @page."
+          "cases": ["final.page.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @page."
+          "cases": ["final.page.watch"]
         }
       },
       "rendering": {
@@ -2948,31 +3423,35 @@
     "@page/bleed": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @page/bleed."
+          "cases": ["final.page.source", "final.contexts"]
         },
         "grammar": {
-          "gap": "Complete length grammar and descriptor-specific source/packed/map/watch review."
+          "cases": [
+            "final.page.source",
+            "final.page.grammar",
+            "final.packed.grammar"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @page/bleed."
+          "cases": ["final.page.source"]
         },
         "output": {
-          "cases": ["print.marks"]
+          "cases": ["final.page.source"]
         },
         "packed": {
-          "cases": ["print.marks"]
+          "cases": ["final.page.source", "final.packed.grammar"]
         },
         "references": {
-          "gap": "Review references acceptance for @page/bleed."
+          "notApplicable": "Page selectors use authored CSS names and pseudo-classes; page() creates no opaque reference identity."
         },
         "source": {
-          "gap": "Review source acceptance for @page/bleed."
+          "cases": ["final.page.source"]
         },
         "types": {
-          "gap": "Review types acceptance for @page/bleed."
+          "cases": ["final.page.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @page/bleed."
+          "cases": ["final.page.watch"]
         }
       },
       "rendering": {
@@ -2988,31 +3467,35 @@
     "@page/marks": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @page/marks."
+          "cases": ["final.page.source", "final.contexts"]
         },
         "grammar": {
-          "gap": "Complete length grammar and descriptor-specific source/packed/map/watch review."
+          "cases": [
+            "final.page.source",
+            "final.page.grammar",
+            "final.packed.grammar"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @page/marks."
+          "cases": ["final.page.source"]
         },
         "output": {
-          "cases": ["print.marks"]
+          "cases": ["final.page.source"]
         },
         "packed": {
-          "cases": ["print.marks"]
+          "cases": ["final.page.source", "final.packed.grammar"]
         },
         "references": {
-          "gap": "Review references acceptance for @page/marks."
+          "notApplicable": "Page selectors use authored CSS names and pseudo-classes; page() creates no opaque reference identity."
         },
         "source": {
-          "gap": "Review source acceptance for @page/marks."
+          "cases": ["final.page.source"]
         },
         "types": {
-          "gap": "Review types acceptance for @page/marks."
+          "cases": ["final.page.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @page/marks."
+          "cases": ["final.page.watch"]
         }
       },
       "rendering": {
@@ -3028,31 +3511,35 @@
     "@page/page-orientation": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @page/page-orientation."
+          "cases": ["final.page.source", "final.contexts"]
         },
         "grammar": {
-          "gap": "Complete length grammar and descriptor-specific source/packed/map/watch review."
+          "cases": [
+            "final.page.source",
+            "final.page.grammar",
+            "final.packed.grammar"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @page/page-orientation."
+          "cases": ["final.page.source"]
         },
         "output": {
-          "gap": "Review output acceptance for @page/page-orientation."
+          "cases": ["final.page.source"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @page/page-orientation."
+          "cases": ["final.page.source", "final.packed.grammar"]
         },
         "references": {
-          "gap": "Review references acceptance for @page/page-orientation."
+          "notApplicable": "Page selectors use authored CSS names and pseudo-classes; page() creates no opaque reference identity."
         },
         "source": {
-          "gap": "Review source acceptance for @page/page-orientation."
+          "cases": ["final.page.source"]
         },
         "types": {
-          "gap": "Review types acceptance for @page/page-orientation."
+          "cases": ["final.page.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @page/page-orientation."
+          "cases": ["final.page.watch"]
         }
       },
       "rendering": {
@@ -3070,31 +3557,35 @@
     "@page/size": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @page/size."
+          "cases": ["final.page.source", "final.contexts"]
         },
         "grammar": {
-          "gap": "Complete length grammar and descriptor-specific source/packed/map/watch review."
+          "cases": [
+            "final.page.source",
+            "final.page.grammar",
+            "final.packed.grammar"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @page/size."
+          "cases": ["final.page.source"]
         },
         "output": {
-          "gap": "Review output acceptance for @page/size."
+          "cases": ["final.page.source"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @page/size."
+          "cases": ["final.page.source", "final.packed.grammar"]
         },
         "references": {
-          "gap": "Review references acceptance for @page/size."
+          "notApplicable": "Page selectors use authored CSS names and pseudo-classes; page() creates no opaque reference identity."
         },
         "source": {
-          "gap": "Review source acceptance for @page/size."
+          "cases": ["final.page.source"]
         },
         "types": {
-          "gap": "Review types acceptance for @page/size."
+          "cases": ["final.page.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @page/size."
+          "cases": ["final.page.watch"]
         }
       },
       "rendering": {
@@ -3112,31 +3603,35 @@
     "@position-try": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @position-try."
+          "cases": ["descriptors.position", "descriptors.contexts"]
         },
         "grammar": {
-          "gap": "Review allowed declarations, contexts, and reference combinations."
+          "cases": [
+            "descriptors.position",
+            "descriptors.invalid",
+            "descriptors.contexts"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @position-try."
+          "cases": ["descriptors.position"]
         },
         "output": {
-          "gap": "Review output acceptance for @position-try."
+          "cases": ["descriptors.position"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @position-try."
-        },
-        "references": {
-          "gap": "Review references acceptance for @position-try."
+          "cases": ["descriptors.position", "descriptors.references"]
         },
         "source": {
-          "gap": "Review source acceptance for @position-try."
+          "cases": ["descriptors.position", "descriptors.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @position-try."
+          "cases": ["descriptors.position.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @position-try."
+          "cases": ["descriptors.position.watch"]
+        },
+        "references": {
+          "cases": ["descriptors.references"]
         }
       },
       "rendering": {
@@ -3154,31 +3649,35 @@
     "@property": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @property."
+          "cases": ["final.property.source", "final.contexts"]
         },
         "grammar": {
-          "gap": "Complete registration syntax and initial-value contracts."
+          "cases": [
+            "final.property.source",
+            "final.property.grammar",
+            "final.packed.grammar"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @property."
+          "cases": ["final.property.source"]
         },
         "output": {
-          "gap": "Review output acceptance for @property."
+          "cases": ["final.property.source"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @property."
+          "cases": ["final.property.source", "final.packed.grammar"]
         },
         "references": {
-          "gap": "Review references acceptance for @property."
+          "cases": ["property.references", "final.property.source"]
         },
         "source": {
-          "gap": "Review source acceptance for @property."
+          "cases": ["final.property.source"]
         },
         "types": {
-          "gap": "Review types acceptance for @property."
+          "cases": ["final.property.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @property."
+          "cases": ["final.property.watch"]
         }
       },
       "rendering": {
@@ -3196,31 +3695,35 @@
     "@property/inherits": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @property/inherits."
+          "cases": ["final.property.source", "final.contexts"]
         },
         "grammar": {
-          "gap": "Complete registration syntax and initial-value contracts."
+          "cases": [
+            "final.property.source",
+            "final.property.grammar",
+            "final.packed.grammar"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @property/inherits."
+          "cases": ["final.property.source"]
         },
         "output": {
-          "gap": "Review output acceptance for @property/inherits."
+          "cases": ["final.property.source"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @property/inherits."
+          "cases": ["final.property.source", "final.packed.grammar"]
         },
         "references": {
-          "gap": "Review references acceptance for @property/inherits."
+          "cases": ["property.references", "final.property.source"]
         },
         "source": {
-          "gap": "Review source acceptance for @property/inherits."
+          "cases": ["final.property.source"]
         },
         "types": {
-          "gap": "Review types acceptance for @property/inherits."
+          "cases": ["final.property.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @property/inherits."
+          "cases": ["final.property.watch"]
         }
       },
       "rendering": {
@@ -3238,31 +3741,35 @@
     "@property/initial-value": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @property/initial-value."
+          "cases": ["final.property.source", "final.contexts"]
         },
         "grammar": {
-          "gap": "Complete registration syntax and initial-value contracts."
+          "cases": [
+            "final.property.source",
+            "final.property.grammar",
+            "final.packed.grammar"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @property/initial-value."
+          "cases": ["final.property.source"]
         },
         "output": {
-          "gap": "Review output acceptance for @property/initial-value."
+          "cases": ["final.property.source"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @property/initial-value."
+          "cases": ["final.property.source", "final.packed.grammar"]
         },
         "references": {
-          "gap": "Review references acceptance for @property/initial-value."
+          "cases": ["property.references", "final.property.source"]
         },
         "source": {
-          "gap": "Review source acceptance for @property/initial-value."
+          "cases": ["final.property.source"]
         },
         "types": {
-          "gap": "Review types acceptance for @property/initial-value."
+          "cases": ["final.property.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @property/initial-value."
+          "cases": ["final.property.watch"]
         }
       },
       "rendering": {
@@ -3280,31 +3787,35 @@
     "@property/syntax": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @property/syntax."
+          "cases": ["final.property.source", "final.contexts"]
         },
         "grammar": {
-          "gap": "Complete registration syntax and initial-value contracts."
+          "cases": [
+            "final.property.source",
+            "final.property.grammar",
+            "final.packed.grammar"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @property/syntax."
+          "cases": ["final.property.source"]
         },
         "output": {
-          "gap": "Review output acceptance for @property/syntax."
+          "cases": ["final.property.source"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @property/syntax."
+          "cases": ["final.property.source", "final.packed.grammar"]
         },
         "references": {
-          "gap": "Review references acceptance for @property/syntax."
+          "cases": ["property.references", "final.property.source"]
         },
         "source": {
-          "gap": "Review source acceptance for @property/syntax."
+          "cases": ["final.property.source"]
         },
         "types": {
-          "gap": "Review types acceptance for @property/syntax."
+          "cases": ["final.property.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @property/syntax."
+          "cases": ["final.property.watch"]
         }
       },
       "rendering": {
@@ -3322,31 +3833,31 @@
     "@scope": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @scope."
+          "cases": ["groups.scope", "groups.nesting"]
         },
         "grammar": {
-          "gap": "Review roots, limits, nesting, specificity, and allowed contexts."
+          "cases": ["groups.scope", "groups.invalid"]
         },
         "maps": {
-          "gap": "Review maps acceptance for @scope."
+          "cases": ["groups.scope"]
         },
         "output": {
-          "gap": "Review output acceptance for @scope."
+          "cases": ["groups.scope"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @scope."
-        },
-        "references": {
-          "gap": "Review references acceptance for @scope."
+          "cases": ["groups.scope"]
         },
         "source": {
-          "gap": "Review source acceptance for @scope."
+          "cases": ["groups.scope", "groups.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @scope."
+          "cases": ["groups.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @scope."
+          "cases": ["groups.scope.watch"]
+        },
+        "references": {
+          "notApplicable": "Grouping syntax retains authored CSS names and selectors without creating a compiler-owned reference."
         }
       },
       "rendering": {
@@ -3364,31 +3875,31 @@
     "@starting-style": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @starting-style."
+          "cases": ["groups.startingStyle", "groups.nesting"]
         },
         "grammar": {
-          "gap": "Review style and grouping placement and extraction contracts."
+          "cases": ["groups.startingStyle", "groups.invalid"]
         },
         "maps": {
-          "gap": "Review maps acceptance for @starting-style."
+          "cases": ["groups.startingStyle"]
         },
         "output": {
-          "gap": "Review output acceptance for @starting-style."
+          "cases": ["groups.startingStyle"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @starting-style."
-        },
-        "references": {
-          "gap": "Review references acceptance for @starting-style."
+          "cases": ["groups.startingStyle"]
         },
         "source": {
-          "gap": "Review source acceptance for @starting-style."
+          "cases": ["groups.startingStyle", "groups.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @starting-style."
+          "cases": ["groups.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @starting-style."
+          "cases": ["groups.startingStyle.watch"]
+        },
+        "references": {
+          "notApplicable": "Grouping syntax retains authored CSS names and selectors without creating a compiler-owned reference."
         }
       },
       "rendering": {
@@ -3406,31 +3917,31 @@
     "@supports": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @supports."
+          "cases": ["groups.supports", "groups.nesting"]
         },
         "grammar": {
-          "gap": "Review complete condition grammar and permitted contexts."
+          "cases": ["groups.supports", "groups.invalid"]
         },
         "maps": {
-          "gap": "Review maps acceptance for @supports."
+          "cases": ["groups.supports"]
         },
         "output": {
-          "gap": "Review output acceptance for @supports."
+          "cases": ["groups.supports"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @supports."
-        },
-        "references": {
-          "gap": "Review references acceptance for @supports."
+          "cases": ["groups.supports"]
         },
         "source": {
-          "gap": "Review source acceptance for @supports."
+          "cases": ["groups.supports", "groups.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @supports."
+          "cases": ["groups.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @supports."
+          "cases": ["groups.supports.watch"]
+        },
+        "references": {
+          "notApplicable": "Grouping syntax retains authored CSS names and selectors without creating a compiler-owned reference."
         }
       },
       "rendering": {
@@ -3448,31 +3959,35 @@
     "@view-transition": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @view-transition."
+          "cases": ["transition.grammar", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Complete transition-type grammar/types and watch acceptance."
+          "cases": [
+            "transition.grammar",
+            "transition.invalid",
+            "transition.invalidPacked"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @view-transition."
+          "cases": ["transition.grammar"]
         },
         "output": {
-          "gap": "Review output acceptance for @view-transition."
+          "cases": ["transition.grammar"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @view-transition."
-        },
-        "references": {
-          "gap": "Review references acceptance for @view-transition."
+          "cases": ["transition.grammar", "transition.invalidPacked"]
         },
         "source": {
-          "gap": "Review source acceptance for @view-transition."
+          "cases": ["transition.grammar", "transition.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @view-transition."
+          "cases": ["transition.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @view-transition."
+          "cases": ["transition.watch"]
+        },
+        "references": {
+          "notApplicable": "View-transition emits an eager document rule; type names are CSS custom identifiers and do not create compiler-owned references."
         }
       },
       "rendering": {
@@ -3490,31 +4005,35 @@
     "@view-transition/navigation": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @view-transition/navigation."
+          "cases": ["transition.grammar", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Complete transition-type grammar/types and watch acceptance."
+          "cases": [
+            "transition.grammar",
+            "transition.invalid",
+            "transition.invalidPacked"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @view-transition/navigation."
+          "cases": ["transition.grammar"]
         },
         "output": {
-          "gap": "Review output acceptance for @view-transition/navigation."
+          "cases": ["transition.grammar"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @view-transition/navigation."
-        },
-        "references": {
-          "gap": "Review references acceptance for @view-transition/navigation."
+          "cases": ["transition.grammar", "transition.invalidPacked"]
         },
         "source": {
-          "gap": "Review source acceptance for @view-transition/navigation."
+          "cases": ["transition.grammar", "transition.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @view-transition/navigation."
+          "cases": ["transition.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @view-transition/navigation."
+          "cases": ["transition.watch"]
+        },
+        "references": {
+          "notApplicable": "View-transition emits an eager document rule; type names are CSS custom identifiers and do not create compiler-owned references."
         }
       },
       "rendering": {
@@ -3532,31 +4051,35 @@
     "@view-transition/types": {
       "compiler": {
         "contexts": {
-          "gap": "Review contexts acceptance for @view-transition/types."
+          "cases": ["transition.grammar", "transition.invalid"]
         },
         "grammar": {
-          "gap": "Complete transition-type grammar/types and watch acceptance."
+          "cases": [
+            "transition.grammar",
+            "transition.invalid",
+            "transition.invalidPacked"
+          ]
         },
         "maps": {
-          "gap": "Review maps acceptance for @view-transition/types."
+          "cases": ["transition.grammar"]
         },
         "output": {
-          "gap": "Review output acceptance for @view-transition/types."
+          "cases": ["transition.grammar"]
         },
         "packed": {
-          "gap": "Review packed acceptance for @view-transition/types."
-        },
-        "references": {
-          "gap": "Review references acceptance for @view-transition/types."
+          "cases": ["transition.grammar", "transition.invalidPacked"]
         },
         "source": {
-          "gap": "Review source acceptance for @view-transition/types."
+          "cases": ["transition.grammar", "transition.invalid"]
         },
         "types": {
-          "gap": "Review types acceptance for @view-transition/types."
+          "cases": ["transition.types"]
         },
         "watch": {
-          "gap": "Review watch acceptance for @view-transition/types."
+          "cases": ["transition.watch"]
+        },
+        "references": {
+          "notApplicable": "View-transition emits an eager document rule; type names are CSS custom identifiers and do not create compiler-owned references."
         }
       },
       "rendering": {

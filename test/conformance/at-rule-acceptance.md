@@ -1,35 +1,10 @@
 # At-rule Acceptance Review
 
-Phase 2.5 remains incomplete. The inventory tracks 22 rules and 62 descriptors/nested blocks. `@charset` has a reviewed UTF-8 policy, and `@namespace` has source, packed, map, watch, and native selector evidence.
+The compiler matrix reviews all 22 rules and 62 descriptor/nested entries. Every compiler obligation names public type fixtures, source/packed integrations, source maps, reference behavior, or real Host watch tests. Rendering and target compatibility retain their independent incomplete states.
 
-All sixteen page-margin blocks also have dedicated source, packed dependency, source-map, watch, and native PDF evidence. Other families retain explicit acceptance work. A supported entry cannot retain unresolved gaps.
+The completion pass adds descriptor validation before output-parser recovery, public color-profile and native property-registration authoring, relative page lengths and calculations, Unicode/escaped function syntax, nested calls, and static list-argument checks. No inventory entries or gate assertions are removed.
 
-Chromium 153.0.8010.0 rejects `@color-profile`, its `color()` expressions, and the `CSSColorProfileRule` interface. The profile helper remains private. Native PDF output verifies named pages, first/left selectors, counters, and sixteen margin boxes against handwritten CSS; WeasyPrint 70.0 independently verifies bleed geometry, printer marks, and basic ICC painting. Relative profile colors remain unsupported there, and rendering-intent behavior remains unverified.
-
-| Rule                   | Status    | Remaining acceptance                                                                                                                           |
-| ---------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@charset`             | supported | UTF-8 policy verified through graph and host output.                                                                                           |
-| `@color-profile`       | partial   | Public descriptor types/grammar, rendering intents, and relative components; basic ICC painting is verified in WeasyPrint.                     |
-| `@container`           | partial   | Complete named, style, and scroll-state query contexts and browser behavior.                                                                   |
-| `@counter-style`       | partial   | Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior.                                            |
-| `@custom-media`        | partial   | Native query evaluation and complete query-reference placement.                                                                                |
-| `@document`            | partial   | Legacy-engine rendering and complete matching-function grammar.                                                                                |
-| `@font-face`           | partial   | Descriptor-specific shaping, metrics, variation, and loading behavior.                                                                         |
-| `@font-feature-values` | partial   | Actual font-feature shaping for every nested alias block and font-display behavior.                                                            |
-| `@font-palette-values` | partial   | Descriptor grammar/types, CPAL metadata, root-dependent values, contexts, and watch acceptance.                                                |
-| `@function`            | partial   | Escaped identifiers, list argument refinements, nested function references, and complete permitted contexts.                                   |
-| `@import`              | partial   | Browser loading and cascade across layer, supports, and media combinations.                                                                    |
-| `@keyframes`           | partial   | Timeline-range animation rendering and complete stop spelling grammar.                                                                         |
-| `@layer`               | partial   | Complete anonymous/nested context, escaped name, and ordering grammar review.                                                                  |
-| `@media`               | partial   | Complete conditional grammar and legal placement review against the pinned inventory.                                                          |
-| `@namespace`           | supported | Unicode/escaped prefixes, last bindings, default/empty namespaces, import ordering, packed maps, watch updates, and native selector isolation. |
-| `@page`                | partial   | Rotation, fragmentation, complete page length grammar, and remaining compiler/descriptor reviews; bleed and marks have WeasyPrint evidence.    |
-| `@position-try`        | partial   | Complete allowed-declaration/context grammar and fallback rendering combinations.                                                              |
-| `@property`            | partial   | Complete registration syntax/initial-value combinations and associated rendering evidence.                                                     |
-| `@scope`               | partial   | Complete root/limit nesting, specificity, and allowed-context review.                                                                          |
-| `@starting-style`      | partial   | Transition-start rendering and complete style/grouping placement.                                                                              |
-| `@supports`            | partial   | Complete condition grammar and allowed-context review.                                                                                         |
-| `@view-transition`     | partial   | Transition-type grammar/type validation and host watch acceptance.                                                                             |
+Chromium 153.0.8010.0 rejects `@color-profile`, its `color()` expressions, and `CSSColorProfileRule`. The public profile helper preserves valid CSS for compatible targets. WeasyPrint 70.0 verifies basic ICC painting, bleed geometry, and printer marks. Relative ICC colors, rendering intents, complete page rotation/fragmentation, and other per-renderer reviews remain open.
 
 ## Acceptance Contract
 
@@ -39,17 +14,17 @@ The acceptance model separates compiler correctness, target compatibility, and r
 
 Each target records compatibility (`native`, `partial`, `unsupported`, or `unreviewed`) separately from rendered evidence (`verified`, `partial`, or `unverified`). An unsupported renderer never counts as rendered support. A compiler claim cannot clear a renderer gap, and renderer availability cannot clear a compiler gap.
 
-| Command                           | Contract                                                                                                                                                  |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm check:at-rules`             | Validate inventory drift, all matrix obligations, grammar fingerprints, and evidence paths.                                                               |
-| `pnpm check:at-rules:full`        | Require every compiler obligation, then run public type checking and all named integration evidence. Currently fails at 2/22 and 16/62 reviewed complete. |
-| `pnpm check:at-rules:rendering`   | Require a fully verified renderer for every entry, then execute named evidence. Currently fails.                                                          |
-| `pnpm check:at-rules:targets`     | Require every listed target to have reviewed compatibility and passing probe evidence. Currently fails.                                                   |
-| `pnpm check:at-rules:legacy-full` | Preserve the original combined acceptance gate and unresolved gaps. Currently fails.                                                                      |
+| Command                           | Contract                                                                                                                                                                                                    |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm check:at-rules`             | Validate inventory drift, all matrix obligations, grammar fingerprints, and evidence paths.                                                                                                                 |
+| `pnpm check:at-rules:full`        | Require every compiler obligation, then run public type checking and all named integration evidence. The matrix reviews 22/22 rules and 62/62 descriptors; completion requires the fresh execution to pass. |
+| `pnpm check:at-rules:rendering`   | Require a fully verified renderer for every entry, then execute named evidence. Currently fails.                                                                                                            |
+| `pnpm check:at-rules:targets`     | Require every listed target to have reviewed compatibility and passing probe evidence. Currently fails.                                                                                                     |
+| `pnpm check:at-rules:legacy-full` | Preserve the original combined acceptance gate and unresolved gaps. Currently fails.                                                                                                                        |
 
 CI runs the matrix against the actual integration JSON report. Required tests must appear by exact file and full test name with a passing result; skipped or absent cases fail verification. Type evidence remains checked by the repository TypeScript job. Full acceptance always creates a fresh integration run.
 
-The migration carries reviewed namespace, charset, and margin-box evidence only. Other existing suites remain useful evidence to review, but unreviewed compiler obligations are deliberately incomplete. Phase 2 and Phase 3's prerequisite remain open until all compiler obligations and target reviews are complete.
+The matrix now includes every family, with descriptor-specific grammar and shared source/packed/watch cases. The original combined ledger retains its renderer gaps. Phase 2 and Phase 3's prerequisite remain open until all compiler obligations and target reviews are complete.
 
 ## Print Engine Setup
 
@@ -70,7 +45,7 @@ The ICC fixture is an embedded sRGB profile generated by LittleCMS, without netw
 
 - Profile templates retain opaque prior substitutions during color-space position validation; a real theme variable survives the relative-color origin through packed output. Token objects remain restricted to their existing direct-value contexts.
 
-- Integer-only function arguments reject fractional, exponent, dimension, and percentage tokens in source and packed calls. Composite signatures retain declared dimensional and keyword alternatives. Widened signatures and newly added primitives publish contract version 11; only the fixed legacy scalar subset keeps version 10. New namespace contracts also use version 11, including Unicode/escaped or repeated prefixes and control-character URI transport. Existing version-10 namespace libraries remain readable. Repeated number alternatives accept a scalar fraction as a one-item list. Image results include both URL and gradient domains in public property compatibility checks. Unbounded results are rejected by bounded shorthands; comma-list outputs require explicit list metadata, and custom properties retain open token-list output. Other unbounded destinations remain an explicit type-review gap.
+- Integer-only function arguments reject fractional, exponent, dimension, and percentage tokens in source and packed calls. Composite signatures retain declared dimensional and keyword alternatives. Widened signatures and newly added primitives publish contract version 11; only the fixed legacy scalar subset keeps version 10. New namespace contracts also use version 11, including Unicode/escaped or repeated prefixes and control-character URI transport. Existing version-10 namespace libraries remain readable. Repeated number alternatives accept a scalar fraction as a one-item list. Image results include both URL and gradient domains in public property compatibility checks. Unbounded results are rejected by bounded shorthands; comma-list outputs require explicit list metadata, and custom properties retain open token-list output. Space-repeated transform-function results are accepted by `transform`; incompatible or unproven result domains remain type errors. Extended identifier signatures use version 12.
 
 - `Transform.page.test.ts` and `Host.page.test.ts`: every margin box survives a packed library dependency, maps to its owning source call, and replaces its contents during a real host watch update. Public type probes and independent PDF comparisons complete the sixteen nested-block entries. Removing each box separately changes the PDF drawing stream. The parent `@page` rule remains partial.
 
@@ -80,7 +55,7 @@ The ICC fixture is an embedded sRGB profile generated by LittleCMS, without netw
 
 - `Transform.fontPalette.test.ts`: packed palette aliases and maps, conflicting identities, and native color-font screenshot comparisons for indexes, light/dark fallback, out-of-range fallback, repeated overrides, alpha, wide-gamut colors, and multi-family palettes. `vite/statements.test.ts` verifies family-list preservation with unminified CSS, esbuild, and Lightning CSS.
 
-The pinned parser drops multi-family palette descriptors. Compiler and Vite transport now protect the palette rule through parsing and restore its original at-keyword afterward. This preserves its descriptors and identity checks. Palette grammar/type validation, CPAL metadata selection, root-dependent values, contexts, and watch acceptance remain open.
+The pinned parser drops multi-family palette descriptors. Compiler and Vite transport now protect the palette rule through parsing and restore its original at-keyword afterward. This preserves its descriptors and identity checks. Palette grammar/types, absolute-color restrictions, contexts, and watch updates have compiler evidence. Broader CPAL metadata and per-renderer behavior remain separate reviews.
 
 Namespace grammar was reviewed against [CSS Namespaces Level 3](https://www.w3.org/TR/css-namespaces-3/) and [CSS Syntax Level 3](https://www.w3.org/TR/css-syntax-3/). Bindings remain module-owned; the last declaration of each decoded prefix applies throughout its module. URI strings, including the empty string, remain identities rather than fetched assets.
 
@@ -90,7 +65,22 @@ Namespace grammar was reviewed against [CSS Namespaces Level 3](https://www.w3.o
 - `Transform.functionSyntax.browser.test.ts`: native composite functions, defaults, conditional results, and comma-list arguments.
 - `Transform.page.browser.test.ts`: actual PDF page dimensions and drawing-stream parity with independently authored CSS.
 
-The per-entry ledgers retain existing evidence and remaining gaps. Inventory and matrix validation pass; all completion commands intentionally fail while their requirements remain open. Phase 3 variants stays after actual full acceptance.
+The per-entry ledgers retain existing evidence and remaining gaps. Inventory and matrix validation pass; rendering, target, and legacy completion commands remain red while their requirements remain open. Phase 3 variants stays after actual full acceptance.
+
+## Compiler Validation Cost
+
+Two matched pairs compare the preceding PR tree (`5484d53`, local equivalent `b756fd5`) against this completion pass on Node 24.19.0 and Vitest 4.1.9. Both use the same dependencies and unchanged benchmark corpus, without concurrent heavy jobs. Additional grammar and descriptor validation increases compilation time; no benchmark thresholds changed.
+
+| Workload             | Previous PR mean | Completion mean |  Change |
+| -------------------- | ---------------: | --------------: | ------: |
+| Source, 10 families  |         4.608 ms |       10.964 ms | +138.0% |
+| Packed, 10 families  |         6.144 ms |       17.104 ms | +178.4% |
+| Source, 100 families |        35.725 ms |      104.280 ms | +191.9% |
+| Packed, 100 families |        78.917 ms |      222.718 ms | +182.2% |
+
+The table reports the second pair. Candidate relative error is 2.48–4.03%; baseline error is 2.50–10.34%. The first pair also showed increases in every lane. These costs affect compilation and packed consumption, not runtime style selection. `css-tree` 3.2.1 moves from development-only to compiler runtime dependencies; core authoring remains parser-free.
+
+Reproduce on each tree with `node_modules/.bin/vp test bench src/compiler/Transform.atRules.bench.ts --run --no-file-parallelism --outputJson bench/results/gate.json`. Raw reports remain in ignored `bench/results/gate-{baseline,candidate}{,-repeat}.json` within their respective worktrees.
 
 ## Matched Benchmark Sample
 

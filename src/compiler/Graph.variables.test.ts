@@ -140,7 +140,7 @@ export const vars=Vars.define({
           {
             "code": "unsupported_syntax",
             "end": 112,
-            "message": "Unexpected end of input",
+            "message": "Registered initial values must match the declared syntax.",
             "source": "app.ts",
             "start": 61,
           },

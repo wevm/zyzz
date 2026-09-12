@@ -46,6 +46,30 @@ const example = (
 
 Media thresholds measure the viewport; container thresholds measure the eligible ancestor. Aliases compile to literals, so switching theme scopes does not change them. Raw CSS queries and `@supports` remain supported design paths.
 
+### Container Selection
+
+Container conditions query an ancestor, never the styled element. Three forms share one `css` body.
+
+```tsx
+import { css } from './zyzz.config.js'
+
+namespace styles {
+  export const panel = css({
+    '@container >=card': { gap: 'md' },
+    '@container sidebar >=card': { display: 'grid' },
+    '@container sidebar (min-width: 30rem)': { padding: 'md' },
+  })
+}
+```
+
+- **Nearest eligible container:** `@container >=card` compiles to `@container (width >= 24rem)`. The browser evaluates it against the nearest ancestor with size containment on the queried axis, whatever its name.
+- **Named alias:** `@container sidebar >=card` compiles to `@container sidebar (width >= 24rem)` and selects the nearest ancestor named `sidebar` with eligible containment. The name must appear in `containerNames`.
+- **Raw query:** any parenthesized condition passes through unchanged, including names absent from `containerNames`. The source compiler checks the CSS syntax; the browser owns the semantics.
+
+The compiler never adds containment. Declare `containerType: 'inline-size'` or `'size'` on the ancestor for width thresholds, `containerType: 'scroll-state'` for scroll-state conditions, and `containerName` for named queries. Without containment on an ancestor, the condition never matches.
+
+Conditions inside `css` nest within the generated class rule in that module's stylesheet. `global` rules, including `@container` grouping and containment declared on ancestor selectors, compile into the shared stylesheet, which loads before module stylesheets. See [Global Styles](stylesheets.md#global-styles).
+
 ### Style States
 
 Use pseudo styles for browser state and data attributes for application state. Keep accessibility attributes on the real control.

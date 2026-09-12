@@ -39,3 +39,5 @@ See the [public declarations](../../../../src/Theme.ts) for complete generic sig
 ## Typography and queries
 
 Scalar `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight` groups retain property-specific inference and inherited variables. `breakpoints`, `containers`, and `containerNames` are separate compile-time metadata; they never become declaration variables. See the opt-in [default theme](../../themes/default.md).
+
+Container aliases compile to literal width conditions. An unnamed alias queries the nearest ancestor with eligible containment; a named alias queries the nearest ancestor carrying that `containerName`. `containerNames` validates alias names only; raw parenthesized queries keep any name, and containment stays an application declaration. See [Container Selection](../../../guides/conditions.md#container-selection).

@@ -1,5 +1,6 @@
 /** Exercises property aliases and dedicated spacing tokens through packed compilation and browser rendering. @module */
 import * as Vm from 'node:vm'
+import * as Mappings from '../test/fixtures/Mappings.js'
 import * as Packed from '../test/fixtures/Packed.js'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
@@ -131,16 +132,7 @@ describe('create', () => {
     `)
   })
 
-  const config = `import {Config} from 'zyzz';export const {css,theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight'],paddingX:['paddingLeft','paddingRight'],space:['marginLeft','paddingLeft']},theme:{spacing:{sm:'4px'},margin:{sm:'-8px'},padding:{sm:'12px'}}});`
-  const source = `import {css,theme} from 'library';export namespace styles {
-  export const card = css({px:'sm',paddingLeft:'2px',':hover':{paddingX:'sm!'}})
-
-  export const mixed = css({space:'sm'})
-
-  export const handle = theme.css({px:'sm'})
-
-  export const dynamic = css((values:{width:'10px'|'20px'})=>({px:values.width}))
-}`
+  const { config, source } = Mappings
 
   function compile() {
     const library = Graph.compile({

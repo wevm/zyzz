@@ -165,20 +165,20 @@ See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style State
 
 ## Relationships
 
-Typed markers describe element identity and finite data states. Applying a marker emits attributes; another definition can reference that identity.
+Typed markers describe element identity and finite data states. Applying a ref emits attributes; another definition can reference that identity.
 
 ```ts
-import { ancestor, marker } from 'zyzz/web'
+import { ancestor, ref } from 'zyzz/web'
 
-const card = marker({ state: ['closed', 'open'] })
-const condition = ancestor(card, { data: { state: 'open' } })
+const card = ref({ state: ['closed', 'open'] })
+const condition = ancestor(card, { state: 'open' })
 ```
 
 - **Depth:** ancestor/descendant helpers match at any depth; immediate parent/child helpers remain undecided.
 - **Matching:** repeated markers use any qualifying ancestor, not nearest-boundary behavior.
 - **Predicates:** combined predicates must match the same marked element.
 - **Specificity:** helpers add zero condition specificity; raw selectors retain their own.
-- **Types:** constrain marker values, not DOM structure or accessibility semantics.
+- **Types:** constrain ref values, not DOM structure or accessibility semantics.
 
 See [Style Relationships](guides/conditions.md#style-relationships) for application and [Css](api/web/Css/README.md) for sibling directions.
 

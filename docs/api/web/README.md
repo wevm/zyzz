@@ -13,7 +13,7 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 | [ancestor](ancestor.md) | Match a marked ancestor. |
 | [anySibling](anySibling.md) | Match a marked sibling in either direction. |
 | [descendant](descendant.md) | Match a marked descendant. |
-| [marker](marker.md) | Define a callable element identity with optional typed states. |
+| [ref](ref.md) | Define a callable element identity with optional typed states. |
 | [siblingAfter](siblingAfter.md) | Match a marked sibling following the styled element. |
 | [siblingBefore](siblingBefore.md) | Match a marked sibling preceding the styled element. |
 

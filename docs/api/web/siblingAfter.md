@@ -4,25 +4,25 @@ A qualifying marked sibling following the styled element.
 
 ```ts
 import { css } from 'zyzz'
-import { marker, siblingAfter } from 'zyzz/web'
+import { ref, siblingAfter } from 'zyzz/web'
 
-const target = marker({ state: ['closed', 'open'] })
+const target = ref({ state: ['closed', 'open'] })
 namespace styles {
   export const targetStyle = css({
-    [siblingAfter(target, { data: { state: 'open' } })]: { opacity: 1 },
+    [siblingAfter(target, { state: 'open' })]: { opacity: 1 },
   })
 }
 ```
 
 ## Signature
 
-`siblingAfter(marker, condition?)`
+`siblingAfter(ref, condition?)`
 
 ## Parameters
 
-### marker
+### ref
 
-- Type: Typed identity returned by `marker`
+- Type: Typed identity returned by `ref`
 - Required: Yes.
 
 Element identity used to match related elements.
@@ -34,12 +34,12 @@ siblingAfter(target)
 ### condition
 
 - Type: Simple pseudo or typed data/pseudo predicates
-- Default: Marker presence.
+- Default: Ref presence.
 
 Combined predicates must match the same marked element. `has` is unsupported here because this relationship already lowers through `:has()`. Only `ancestor` and `siblingBefore` accept `has`.
 
 ```ts
-siblingAfter(target, { data: { state: 'open' } })
+siblingAfter(target, { state: 'open' })
 ```
 
 ## Returns
@@ -51,12 +51,12 @@ siblingAfter(target, { data: { state: 'open' } })
 Use as a computed style key. Helpers add zero condition specificity; raw authored selectors retain their specificity.
 
 ```ts
-css({ [siblingAfter(target, { data: { state: 'open' } })]: { opacity: 1 } })
+css({ [siblingAfter(target, { state: 'open' })]: { opacity: 1 } })
 ```
 
 ## Errors
 
-Reject undeclared marker states, unsupported nested `:has()` combinations, and unsupported native semantics.
+Reject undeclared ref states, unsupported nested `:has()` combinations, and unsupported native semantics.
 
 See [Style Relationships](../../guides/conditions.md#style-relationships).
 

@@ -31,7 +31,7 @@ export function scan(
     'ancestor',
     'anySibling',
     'descendant',
-    'marker',
+    'ref',
     'siblingAfter',
     'siblingBefore',
   ]
@@ -259,7 +259,7 @@ export function scan(
               property.type === 'RestElement' ||
               (property.computed && property.key.type !== 'Literal') ||
               [
-                'marker',
+                'ref',
                 'ancestor',
                 'descendant',
                 'anySibling',
@@ -327,7 +327,7 @@ export function scan(
         if (
           name &&
           [
-            'marker',
+            'ref',
             'ancestor',
             'descendant',
             'siblingBefore',
@@ -348,7 +348,7 @@ export function scan(
 
       const name = method(node.callee)
 
-      if (name === 'marker') {
+      if (name === 'ref') {
         const index = ancestors.findLastIndex(
           (value) =>
             value.type === 'VariableDeclarator' &&

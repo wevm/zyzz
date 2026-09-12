@@ -7,29 +7,80 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 import { Marker } from 'zyzz/runtime'
 
-describe('marker', () => {
+describe('ref', () => {
+  test('compiles flat states and pseudo predicates in every relationship direction', () => {
+    const css = [
+      'ancestor',
+      'anySibling',
+      'descendant',
+      'siblingAfter',
+      'siblingBefore',
+    ].map((helper) => {
+      const result = Graph.compile({
+        modules: {
+          'flat.ts': `import {css} from 'zyzz';import {ref,${helper}} from 'zyzz/web';
+const card=ref({state:['open','closed'],selected:[true,false],data:['loaded']});
+export const style=css({[${helper}(card,{state:'open',selected:false,data:'loaded',pseudo:':hover'})]:{color:'red'}});`,
+        },
+      })
+
+      return result.modules['flat.ts']!.css
+    })
+
+    expect(css).toMatchInlineSnapshot(`
+      [
+        ".z-style-3a68y9giv64x-164{:where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"][data-z-3a68y9giv64x-card-63-61-72-64-selected="false"][data-z-3a68y9giv64x-card-63-61-72-64-data="loaded"]:hover) &{color:red;}}",
+        ".z-style-3a68y9giv64x-166{:is(:where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"][data-z-3a68y9giv64x-card-63-61-72-64-selected="false"][data-z-3a68y9giv64x-card-63-61-72-64-data="loaded"]:hover) ~ &, &:where(:has(~ [data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"][data-z-3a68y9giv64x-card-63-61-72-64-selected="false"][data-z-3a68y9giv64x-card-63-61-72-64-data="loaded"]:hover))){color:red;}}",
+        ".z-style-3a68y9giv64x-166{&:where(:has([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"][data-z-3a68y9giv64x-card-63-61-72-64-selected="false"][data-z-3a68y9giv64x-card-63-61-72-64-data="loaded"]:hover)){color:red;}}",
+        ".z-style-3a68y9giv64x-168{&:where(:has(~ [data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"][data-z-3a68y9giv64x-card-63-61-72-64-selected="false"][data-z-3a68y9giv64x-card-63-61-72-64-data="loaded"]:hover)){color:red;}}",
+        ".z-style-3a68y9giv64x-169{:where([data-z-3a68y9giv64x-card-63-61-72-64][data-z-3a68y9giv64x-card-63-61-72-64-state="open"][data-z-3a68y9giv64x-card-63-61-72-64-selected="false"][data-z-3a68y9giv64x-card-63-61-72-64-data="loaded"]:hover) ~ &{color:red;}}",
+      ]
+    `)
+  })
+
+  test('rejects nested state wrappers and schema collisions with predicate options', () => {
+    for (const schema of ["{pseudo:['open']}", "{Has:['open']}"])
+      expect(() =>
+        Source.extract({
+          moduleId: 'reserved.ts',
+          source: `import {ref} from 'zyzz/web';const card=ref(${schema});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: reserved.ts:40: Marker state names must be distinct data-name fragments without reserved keys.]`,
+      )
+
+    expect(() =>
+      Source.extract({
+        moduleId: 'nested.ts',
+        source: `import {css} from 'zyzz';import {ancestor,ref} from 'zyzz/web';const card=ref({state:['open']});css({[ancestor(card,{data:{state:'open'}})]:{color:'red'}});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: nested.ts:102: Unknown marker state: data]`,
+    )
+  })
+
   test('resolves renamed direct helpers without capturing shadowed functions', () => {
     const result = Graph.compile({
       modules: {
         'app.ts': `import {css} from 'zyzz';
-import {marker as identify, ancestor as inside} from 'zyzz/web';
+import {ref as identify, ancestor as inside} from 'zyzz/web';
 const card=identify({state:['open','closed']});
-export const label=css({[inside(card,{data:{state:'open'}})]:{color:'blue'}});
+export const label=css({[inside(card,{state:'open'})]:{color:'blue'}});
 export function unrelated(identify:()=>string){return identify()}
-type Handle=import('zyzz/web').marker.ReturnType;
+type Handle=import('zyzz/web').ref.ReturnType;
 export const attrs=card({state:'open'});`,
       },
     })
 
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-style-1e8a67z1uaws1j-158{:where([data-z-1e8a67z1uaws1j-card-63-61-72-64][data-z-1e8a67z1uaws1j-card-63-61-72-64-state="open"]) &{color:blue;}}"`,
+      `".z-style-1e8a67z1uaws1j-155{:where([data-z-1e8a67z1uaws1j-card-63-61-72-64][data-z-1e8a67z1uaws1j-card-63-61-72-64-state="open"]) &{color:blue;}}"`,
     )
     expect(
       result.modules['app.ts']!.code.includes('return identify()'),
     ).toMatchInlineSnapshot('true')
     expect(
       result.modules['app.ts']!.code.includes(
-        "import('zyzz/web').marker.ReturnType",
+        "import('zyzz/web').ref.ReturnType",
       ),
     ).toMatchInlineSnapshot('true')
   })
@@ -47,7 +98,7 @@ export const attrs=card({state:'open'});`,
     expect(() =>
       Graph.compile({
         modules: {
-          'app.ts': `import {Css} from 'zyzz/web';const {['marker']:marker}=Css;export const card=marker();`,
+          'app.ts': `import {Css} from 'zyzz/web';const {['ref']:ref}=Css;export const card=ref();`,
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -59,7 +110,7 @@ export const attrs=card({state:'open'});`,
     expect(() =>
       Graph.compile({
         modules: {
-          'app.ts': `import {Css} from 'zyzz/web';const {marker}=Css;export const card=marker();`,
+          'app.ts': `import {Css} from 'zyzz/web';const {ref}=Css;export const card=ref();`,
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -68,13 +119,13 @@ export const attrs=card({state:'open'});`,
 
     const first = Graph.compile({
       modules: {
-        'index.ts': `import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';export const card=marker({state:['é','é']});`,
+        'index.ts': `import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';export const card=ref({state:['é','é']});`,
       },
     })
 
     const second = Graph.compile({
       modules: {
-        'index.ts': `import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';export const card=marker({state:['é','é']});`,
+        'index.ts': `import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';export const card=ref({state:['é','é']});`,
       },
     })
 
@@ -85,14 +136,14 @@ export const attrs=card({state:'open'});`,
       },
       imports: { 'app.ts': { a: 'a.js', zyzz: null, 'zyzz/web': null } },
       modules: {
-        'app.ts': `import {card as target} from 'a';import {css} from 'zyzz';import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';export namespace styles {
+        'app.ts': `import {card as target} from 'a';import {css} from 'zyzz';import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';export namespace styles {
   export const card = css({[ancestor(target)]:{color:'red'}})
 }`,
       },
     })
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-style-1e8a67z1uaws1j-196{:where([data-z-1wfnqsmu0q6os-card-63-61-72-64]) &{color:red;}}"`,
+      `".z-style-1e8a67z1uaws1j-193{:where([data-z-1wfnqsmu0q6os-card-63-61-72-64]) &{color:red;}}"`,
     )
   })
 
@@ -119,7 +170,7 @@ export const attrs=card({state:'open'});`,
   test('compiles relationship keys through transparent TypeScript wrappers', () => {
     const result = Graph.compile({
       modules: {
-        'app.ts': `import {css} from 'zyzz';import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';const card=marker();export namespace styles {
+        'app.ts': `import {css} from 'zyzz';import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';const card=ref();export namespace styles {
   export const a = css({[ancestor(card) satisfies symbol]:{color:'red'}})
 
   export const b = css({[descendant(card)!]:{color:'blue'}})
@@ -128,8 +179,8 @@ export const attrs=card({state:'open'});`,
     })
 
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-style-1e8a67z1uaws1j-180{:where([data-z-1e8a67z1uaws1j-card-63-61-72-64]) &{color:red;}}
-      .z-style-1e8a67z1uaws1j-255{&:where(:has([data-z-1e8a67z1uaws1j-card-63-61-72-64])){color:blue;}}"
+      ".z-style-1e8a67z1uaws1j-174{:where([data-z-1e8a67z1uaws1j-card-63-61-72-64]) &{color:red;}}
+      .z-style-1e8a67z1uaws1j-249{&:where(:has([data-z-1e8a67z1uaws1j-card-63-61-72-64])){color:blue;}}"
     `)
   })
 
@@ -144,17 +195,17 @@ export const attrs=card({state:'open'});`,
     )
 
     const input = { state: ['open'] }
-    const marker = Marker.create({ id: 'data-z-card', schema: input })
+    const ref = Marker.create({ id: 'data-z-card', schema: input })
 
     input.state.push('closed')
 
-    expect(() =>
-      marker({ state: 'closed' }),
-    ).toThrowErrorMatchingInlineSnapshot(`[Error: Invalid marker state: state]`)
+    expect(() => ref({ state: 'closed' })).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Invalid marker state: state]`,
+    )
     expect(
       Source.extract({
         moduleId: 'app.ts',
-        source: `import * as Web from 'zyzz/web';export const card=Web.marker();`,
+        source: `import * as Web from 'zyzz/web';export const card=Web.ref();`,
       }).markerCalls?.length,
     ).toMatchInlineSnapshot(`1`)
   })
@@ -162,10 +213,10 @@ export const attrs=card({state:'open'});`,
     expect(() =>
       Source.extract({
         moduleId: 'app.ts',
-        source: `import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';const factory=marker;export const card=factory();`,
+        source: `import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';const factory=ref;export const card=factory();`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:104: Marker helpers require direct calls.]`,
+      `[Source.ExtractError: app.ts:101: Marker helpers require direct calls.]`,
     )
     expect(() =>
       Marker.create({ id: 'className', schema: Marker.schema({}) } as never),
@@ -176,13 +227,13 @@ export const attrs=card({state:'open'});`,
   test('rejects conflicting schemas for one packed marker identity', () => {
     const first = Graph.compile({
       modules: {
-        'marker.ts': `import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';export const card=marker({state:['open']});`,
+        'marker.ts': `import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';export const card=ref({state:['open']});`,
       },
     })
 
     const second = Graph.compile({
       modules: {
-        'marker.ts': `import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';export const card=marker({state:['closed']});`,
+        'marker.ts': `import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';export const card=ref({state:['closed']});`,
       },
     })
 
@@ -202,11 +253,11 @@ export const attrs=card({state:'open'});`,
     )
   })
 
-  const config = `import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';export const card=marker({state:['open','closed'],selected:[true,false]});`
-  const app = `import {css} from 'zyzz';import {ancestor as parent,anySibling,descendant as child,marker,siblingAfter,siblingBefore} from 'zyzz/web';import {card} from 'library';export {card};export namespace styles {
-  export const ancestor = css({[parent(card,{data:{state:'open'}})]:{color:'red'}})
+  const config = `import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';export const card=ref({state:['open','closed'],selected:[true,false]});`
+  const app = `import {css} from 'zyzz';import {ancestor as parent,anySibling,descendant as child,ref,siblingAfter,siblingBefore} from 'zyzz/web';import {card} from 'library';export {card};export namespace styles {
+  export const ancestor = css({[parent(card,{state:'open'})]:{color:'red'}})
 
-  export const descendant = css({[child(card,{data:{selected:false}})]:{color:'blue'}})
+  export const descendant = css({[child(card,{selected:false})]:{color:'blue'}})
 
   export const before = css({[siblingBefore(card)]:{color:'green'}})
 
@@ -259,7 +310,7 @@ export const attrs=card({state:'open'});`,
   test('retains mutable marker aliases used only at runtime', () => {
     const result = Graph.compile({
       modules: {
-        'app.ts': `import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';const card=marker();let active=card;export const attrs=active();`,
+        'app.ts': `import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';const card=ref();let active=card;export const attrs=active();`,
       },
     })
 
@@ -295,11 +346,11 @@ export const attrs=card({state:'open'});`,
       '[Error: Unknown marker state: symbol]',
     )
     expect(css).toMatchInlineSnapshot(`
-      ".z-style-1e8a67z1uaws1j-229{:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64][data-z-1dwt1t61ri6uf4-card-63-61-72-64-state="open"]) &{color:red;}}
-      .z-style-1e8a67z1uaws1j-316{&:where(:has([data-z-1dwt1t61ri6uf4-card-63-61-72-64][data-z-1dwt1t61ri6uf4-card-63-61-72-64-selected="false"])){color:blue;}}
-      .z-style-1e8a67z1uaws1j-401{:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64]) ~ &{color:green;}}
-      .z-style-1e8a67z1uaws1j-470{&:where(:has(~ [data-z-1dwt1t61ri6uf4-card-63-61-72-64])){color:purple;}}
-      .z-style-1e8a67z1uaws1j-540{:is(:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64]) ~ &, &:where(:has(~ [data-z-1dwt1t61ri6uf4-card-63-61-72-64]))){color:orange;}}"
+      ".z-style-1e8a67z1uaws1j-226{:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64][data-z-1dwt1t61ri6uf4-card-63-61-72-64-state="open"]) &{color:red;}}
+      .z-style-1e8a67z1uaws1j-306{&:where(:has([data-z-1dwt1t61ri6uf4-card-63-61-72-64][data-z-1dwt1t61ri6uf4-card-63-61-72-64-selected="false"])){color:blue;}}
+      .z-style-1e8a67z1uaws1j-384{:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64]) ~ &{color:green;}}
+      .z-style-1e8a67z1uaws1j-453{&:where(:has(~ [data-z-1dwt1t61ri6uf4-card-63-61-72-64])){color:purple;}}
+      .z-style-1e8a67z1uaws1j-523{:is(:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64]) ~ &, &:where(:has(~ [data-z-1dwt1t61ri6uf4-card-63-61-72-64]))){color:orange;}}"
     `)
   })
   test('preserves identities across offsets and rejects invalid schemas and predicates', () => {
@@ -313,7 +364,7 @@ export const attrs=card({state:'open'});`,
         contracts: { 'lib.js': JSON.stringify(malformed) },
         imports: { 'app.ts': { lib: 'lib.js', zyzz: null, 'zyzz/web': null } },
         modules: {
-          'app.ts': `import {card} from 'lib';import {css} from 'zyzz';import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';export const style=css({[ancestor(card)]:{color:'red'}});`,
+          'app.ts': `import {card} from 'lib';import {css} from 'zyzz';import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';export const style=css({[ancestor(card)]:{color:'red'}});`,
         },
       }),
     ).toThrow()
@@ -328,9 +379,9 @@ export const attrs=card({state:'open'});`,
     ).toMatchInlineSnapshot('true')
 
     const invalid = [
-      'marker({state:[]})',
-      "marker({state:[false,'false']})",
-      "marker({state:['open'],State:['closed']})",
+      'ref({state:[]})',
+      "ref({state:[false,'false']})",
+      "ref({state:['open'],State:['closed']})",
     ]
 
     expect(
@@ -338,7 +389,7 @@ export const attrs=card({state:'open'});`,
         try {
           Graph.compile({
             modules: {
-              'app.ts': `import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';export const target=${expression};`,
+              'app.ts': `import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';export const target=${expression};`,
             },
           })
 
@@ -349,16 +400,16 @@ export const attrs=card({state:'open'});`,
       }),
     ).toMatchInlineSnapshot(`
       [
-        "app.ts:110: Marker states require nonempty finite value arrays.",
-        "app.ts:110: Marker values must be distinct strings or booleans, including their serialization.",
-        "app.ts:110: Marker state names must be distinct data-name fragments without reserved keys.",
+        "app.ts:107: Marker states require nonempty finite value arrays.",
+        "app.ts:107: Marker values must be distinct strings or booleans, including their serialization.",
+        "app.ts:107: Marker state names must be distinct data-name fragments without reserved keys.",
       ]
     `)
   })
   test('respects lexical aliases and compiles literal ampersands, undefined and dynamic relationships', () => {
     const output = Graph.compile({
       modules: {
-        'app.ts': `import {css} from 'zyzz';import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';const card=marker(undefined);const alias=card;function other(card:unknown){const alias=card;return alias}export {alias};export const style=css((values:{color:'#123'|'#456'})=>({[ancestor(card,{data:undefined,has:'[href*="&"]/* & */'})]:{color:values.color}}));`,
+        'app.ts': `import {css} from 'zyzz';import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';const card=ref(undefined);const alias=card;function other(card:unknown){const alias=card;return alias}export {alias};export const style=css((values:{color:'#123'|'#456'})=>({[ancestor(card,{has:'[href*="&"]/* & */'})]:{color:values.color}}));`,
       },
     })
 
@@ -371,22 +422,22 @@ export const attrs=card({state:'open'});`,
       `const unused={[ancestor(card)]:{color:'red'}}`,
       `const style=css({[ancestor(card,{data:null})]:{color:'red'}})`,
       `const style=css({[descendant(card,{has:'a'})]:{color:'red'}})`,
-      `const invalid=marker({state:['\\0']})`,
-      `const invalid=marker({state:['\\r']})`,
-      `const invalid=marker({state:['\\ud800']})`,
+      `const invalid=ref({state:['\\0']})`,
+      `const invalid=ref({state:['\\r']})`,
+      `const invalid=ref({state:['\\ud800']})`,
       `const invalid=css({[descendant(card,':visited')]:{color:'red'}})`,
     ])
       expect(() =>
         Graph.compile({
           modules: {
-            'app.ts': `import {css} from 'zyzz';import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';const card=marker();${expression}`,
+            'app.ts': `import {css} from 'zyzz';import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';const card=ref();${expression}`,
           },
         }),
       ).toThrow()
   })
   test('unwraps factories and freezes their public rewrite spans', async () => {
     const source =
-      "import {Css} from 'zyzz/web';export const card=(Css['marker']({state:[`open`]}))!"
+      "import {Css} from 'zyzz/web';export const card=(Css['ref']({state:[`open`]}))!"
     const extracted = Source.extract({ moduleId: 'marker.ts', source })
 
     expect(Object.isFrozen(extracted.markerCalls)).toMatchInlineSnapshot('true')
@@ -419,7 +470,7 @@ export const attrs=card({state:'open'});`,
   test('does not publish a marker through a type-only export', () => {
     const output = Graph.compile({
       modules: {
-        'marker.ts': `import {ancestor,anySibling,descendant,marker,siblingAfter,siblingBefore} from 'zyzz/web';const card=marker();type card=typeof card;export type {card}`,
+        'marker.ts': `import {ancestor,anySibling,descendant,ref,siblingAfter,siblingBefore} from 'zyzz/web';const card=ref();type card=typeof card;export type {card}`,
       },
     })
 

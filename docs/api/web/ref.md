@@ -1,25 +1,25 @@
-# marker
+# ref
 
 Define a typed identity and finite data states for element relationships.
 
 ```ts
-import { marker } from 'zyzz/web'
+import { ref } from 'zyzz/web'
 
-const card = marker({ state: ['closed', 'open'] })
+const card = ref({ state: ['closed', 'open'] })
 const attributes = card({ state: 'open' })
 ```
 
-Apply the marker to the related element and reference the same identity from a relationship condition. The compiler assigns a unique attribute; no class name or selector string is needed.
+Apply the ref to the related element and reference the same identity from a relationship condition. The compiler assigns a unique attribute; no class name or selector string is needed.
 
 ```tsx
 import { css } from 'zyzz'
-import { ancestor, marker } from 'zyzz/web'
+import { ancestor, ref } from 'zyzz/web'
 
-const card = marker({ state: ['closed', 'open'] })
+const card = ref({ state: ['closed', 'open'] })
 
 namespace styles {
   export const label = css({
-    [ancestor(card, { data: { state: 'open' } })]: { color: 'blue' },
+    [ancestor(card, { state: 'open' })]: { color: 'blue' },
   })
 }
 
@@ -32,30 +32,30 @@ export function Card({ open }: { open: boolean }) {
 }
 ```
 
-For presence alone, use `const card = marker()`, apply `card()`, and select with `ancestor(card)`. State attributes are scoped to the marker identity; semantic attributes such as `aria-expanded` stay on the element that owns them.
+For presence alone, use `const card = ref()`, apply `card()`, and select with `ancestor(card)`. State attributes are scoped to the ref identity; semantic attributes such as `aria-expanded` stay on the element that owns them.
 
 ## Signature
 
-`marker(schema?)`
+`ref(schema?)`
 
 ## Parameters
 
 ### schema
 
 - Type: Named finite state domains
-- Default: Presence marker without state domains.
+- Default: Presence ref without state domains.
 
-Applications may select only declared state values.
+Applications and relationship conditions may select only declared state values. Relationship states appear directly in the condition object. `pseudo` and `has` are reserved schema names because they configure relationship predicates.
 
 ```ts
-marker({ state: ['closed', 'open'] })
+ref({ state: ['closed', 'open'] })
 ```
 
 ## Returns
 
-### marker
+### ref
 
-- Type: Typed callable marker identity
+- Type: Typed callable ref identity
 
 Produces owned attributes when applied. Imported identity survives package boundaries. This does not validate DOM structure or supply ARIA attributes.
 

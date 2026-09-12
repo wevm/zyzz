@@ -327,53 +327,26 @@ namespace styles {
 
 Cover interactive/form/structural states, ARIA/data/direction, open/popover/inert, negation, and all supported pseudo-elements, including selection, ref, file selector, first letter/line, and backdrop. `& > *` selects direct children; `& *` selects descendants. Retain CSS specificity and explicit pseudo-element content. Raw selectors remain available with compiler grammar validation; types cannot prove DOM structure.
 
-## 11. Typed Ancestors, Groups, Peers, and Descendants
+## 11. Style References
 
-Sources: [StyleX contextual selectors](https://stylexjs.com/docs/api/javascript/when), [Tailwind groups/peers and group descendants](https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-the-descendants-of-a-group), vanilla-extract selector composition, and Panda group/peer conditions. **Planned (API accepted):** `ref` and relational selector functions in 2.4b.
-
-```tsx
-import { css } from 'zyzz'
-import { ancestor, ref } from 'zyzz/web'
-
-const card = ref({ state: ['closed', 'open'] })
-namespace styles {
-  export const title = css({
-    color: '#666',
-    [ancestor(card, ':hover')]: { color: '#06c' },
-    [ancestor(card, { state: 'open' })]: { fontWeight: 600 },
-  })
-}
-
-const profile = (
-  <article {...styles.card({ state: 'open' })}>
-    <h2 {...styles.title()}>Profile</h2>
-  </article>
-)
-```
-
-The schema infers data keys and allowed values in both ref application and conditions. Simple pseudos autocomplete. Unknown keys, values, and pseudo typos are errors. Marker calls return only private data attributes; separate styling spreads do not overwrite them. These attributes express visual state and do not replace real ARIA or control attributes.
+`where` templates interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css({})` supplies identity without declarations.
 
 ```ts
-const choice = ref()
+import { css, where } from 'zyzz'
+
 namespace styles {
-  export const indicator = css({
-    opacity: 0,
-    [ancestor(card, { has: 'a' })]: { opacity: 1 },
-  })
-
-  export const hint = css({
-    [siblingBefore(choice, ':checked')]: { color: '#06c' },
-  })
-
-  export const section = css({
-    [descendant(choice, ':checked')]: { borderColor: '#06c' },
+  export const card = css({})
+  export const label = css({
+    [where`${card}:hover &`]: { color: 'blue' },
+    [where`${card}[data-state="open"] > &`]: { opacity: 1 },
+    [where`${card} > &:nth-child(even)`]: { opacity: 0.5 },
   })
 }
 ```
 
-Place `choice()` on the real checkbox. `siblingBefore` means the marked sibling precedes the styled element; `siblingAfter` reverses that direction, and `anySibling` covers either. `has: 'a'` checks descendants of the marked ancestor, not the styled element. Combined `data`, `pseudo`, and `has` conditions match the same marked element with AND. Full contracts and lowering are in [architecture](architecture.md#typed-markers-and-ancestors).
+References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. TypeScript checks interpolation identities and nested declaration values; it does not validate selector text or prove DOM structure.
 
-Imported ref identity survives packaging. Helpers use explicitly documented zero-specificity relation conditions; raw selectors preserve authored specificity. Repeated instances of one ref retain normal any-matching-ancestor semantics, not an implicit nearest boundary. No runtime DOM lookup or CSS generation occurs.
+Specificity follows the authored selector. Use explicit `:where(...)` to lower condition specificity. Application-owned state remains in ordinary data/ARIA attributes. No runtime selector parsing, DOM lookup, or CSS generation is involved.
 
 ## 12. Media, Container, and Feature Conditions
 
@@ -752,7 +725,7 @@ const element = (
 )
 ```
 
-Pass shared component inputs to separate recipes when multiple elements vary together. Use ordinary data attributes or the typed markers in item 11 for DOM relationships. Portals require directly applied styles because ancestor selectors do not cross DOM boundaries. Shared component inputs and separate element definitions also apply to native; DOM selectors remain web-specific.
+Pass shared component inputs to separate recipes when multiple elements vary together. Use ordinary data attributes or the style references in item 11 for DOM relationships. Portals require directly applied styles because ancestor selectors do not cross DOM boundaries. Shared component inputs and separate element definitions also apply to native; DOM selectors remain web-specific.
 
 ## 25. Semantic Token Aliases and Conditional Tokens
 

@@ -8,7 +8,7 @@ export function create(
   const { className } = options
   const slots = Object.entries(options.slots)
 
-  return (input) => {
+  return ((input: Record<string, string | number> & css.Options) => {
     const values = slots.map(([key]) => {
       const value = input[key]!
 
@@ -27,7 +27,7 @@ export function create(
           : external || className,
       style,
     }
-  }
+  }) as css.Dynamic<Record<string, string | number>>
 }
 
 /** Contracts for compiler-generated dynamic callables. */

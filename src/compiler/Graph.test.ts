@@ -40,9 +40,9 @@ describe('compile', () => {
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
       import { css, theme } from './index.js'; export namespace styles {
-        export const card = __zyzzProps.create({className:"z-5ngs574r5xr9-base1"})
+        export const card = __zyzzProps.create({className:"z-5ngs574r5xr9-base1 z-style-5ngs574r5xr9-89"})
 
-        export const label = __zyzzProps.create({className:"z-5ngs574r5xr9-base0"})
+        export const label = __zyzzProps.create({className:"z-5ngs574r5xr9-base0 z-style-5ngs574r5xr9-133"})
       } export const props = styles.card(); export const scope = "z_theme-1g1qfxjzbnv3-css-theme";"
     `)
 

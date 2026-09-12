@@ -131,10 +131,6 @@ export function compile(options: compile.Options): compile.ReturnType {
   while (identifiers.has(html)) html += '_'
 
   let usesHtml = false
-  let marker = '__zyzzMarker'
-
-  while (identifiers.has(marker)) marker += '_'
-
   let appearance = '__zyzzAppearance'
 
   while (identifiers.has(appearance)) appearance += '_'
@@ -168,15 +164,25 @@ export function compile(options: compile.Options): compile.ReturnType {
         name.startsWith('z_base') ? `z-${scope}-${name.slice(2)}` : name,
       )
 
+  const identities = new Map(
+    extracted.calls
+      .filter((call) => call.identity)
+      .map((call) => [call.name, call.identity!]),
+  )
+
   const classes = Object.freeze(
     Object.fromEntries(
       Object.entries(emitted.classes).map(([name, value]) => [
         name,
-        value
-          .split(' ')
-          .filter(Boolean)
-          .map((part) => names.get(part)!)
-          .join(' '),
+        [
+          ...new Set([
+            ...value
+              .split(' ')
+              .filter(Boolean)
+              .map((part) => names.get(part)!),
+            ...(identities.has(name) ? [identities.get(name)!] : []),
+          ]),
+        ].join(' '),
       ]),
     ),
   )
@@ -247,25 +253,6 @@ export function compile(options: compile.Options): compile.ReturnType {
       application.start,
       application.end,
       `(${options.source.slice(application.start, application.calleeEnd)}?{${key}:${className}}:${options.source.slice(application.start, application.calleeEnd)}())`,
-    )
-  }
-
-  for (const call of extracted.markerCalls ?? []) {
-    const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
-      ? ` as import('zyzz/web').ref.ReturnType<${`{${Object.entries(
-          call.definition.schema,
-        )
-          .map(
-            ([key, values]) =>
-              `${JSON.stringify(key)}:readonly [${values.map((value) => JSON.stringify(value)).join(',')}]`,
-          )
-          .join(';')}}`}>`
-      : ''
-
-    module.overwrite(
-      call.start,
-      call.end,
-      `(${marker}.create(${JSON.stringify(call.definition)})${assertion})`,
     )
   }
 
@@ -340,7 +327,6 @@ export function compile(options: compile.Options): compile.ReturnType {
       start: call.start,
     })),
     ...(extracted.contributionCalls ?? []),
-    ...(extracted.markerCalls ?? []),
     ...(extracted.variableCalls ?? []),
     ...extracted.themeAliases,
     ...extracted.themeCalls,
@@ -400,15 +386,9 @@ export function compile(options: compile.Options): compile.ReturnType {
         specifier.importKind === 'type' ||
         !(
           node.source.value === 'zyzz'
-            ? ['Config', 'css', 'Theme', 'Vars']
+            ? ['Config', 'css', 'Theme', 'Vars', 'where']
             : [
                 'Css',
-                'ancestor',
-                'anySibling',
-                'descendant',
-                'ref',
-                'siblingAfter',
-                'siblingBefore',
                 'cssFunction',
                 'customMedia',
                 'importCss',
@@ -480,7 +460,6 @@ export function compile(options: compile.Options): compile.ReturnType {
     callable ||
     usesHtml ||
     usesSelection ||
-    extracted.markerCalls?.length ||
     usesAppearance ||
     extracted.variableCalls?.length
   ) {
@@ -497,7 +476,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesHtml ? `Html as ${html}` : '', extracted.markerCalls?.length ? `Marker as ${marker}` : '', callable ? `Props as ${runtime}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

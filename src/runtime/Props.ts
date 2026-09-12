@@ -14,7 +14,7 @@ import type { css } from '../css.js'
 export function create(options: create.Options): css.ReturnType {
   const { className } = options
 
-  return (overrides?: css.Options) => {
+  return ((overrides?: css.Options) => {
     if (overrides === undefined) return { className }
 
     const { className: external, style } = overrides
@@ -24,7 +24,7 @@ export function create(options: create.Options): css.ReturnType {
     return style === undefined
       ? { className: merged }
       : { className: merged, style }
-  }
+  }) as css.ReturnType
 }
 
 /** Contracts for generated static web callables. */

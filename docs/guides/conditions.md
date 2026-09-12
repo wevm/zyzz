@@ -72,29 +72,23 @@ Do not concatenate classes to establish override priority. See [Style Relationsh
 
 ### Style Relationships
 
-Use a typed ref to style an element when an ancestor has a matching data state.
+`where` templates interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css({})` supplies identity without declarations.
 
-These helpers compile inside web `css(...)` definitions. Use ref callables as ordinary element attributes; core `Style.define` and global declarations do not accept relationship keys.
+```ts
+import { css, where } from 'zyzz'
 
-```tsx
-import { css } from 'zyzz'
-import { ancestor, ref } from 'zyzz/web'
-
-const card = ref({ state: ['closed', 'open'] })
 namespace styles {
+  export const card = css({})
   export const label = css({
-    [ancestor(card, { state: 'open' })]: { opacity: 1 },
+    [where`${card}:hover &`]: { color: 'blue' },
+    [where`${card}[data-state="open"] > &`]: { opacity: 1 },
+    [where`${card} > &:nth-child(even)`]: { opacity: 0.5 },
   })
 }
-const example = (
-  <section {...card({ state: 'open' })}>
-    <div>
-      <span {...styles.label()}>Details</span>
-    </div>
-  </section>
-)
 ```
 
-This deliberately includes an intermediate element: the ref is an ancestor, not the span's immediate parent. `descendant` checks descendants of the styled element. Helper names describe direction and depth; they do not verify DOM structure through TypeScript.
+References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. TypeScript checks interpolation identities and nested declaration values; it does not validate selector text or prove DOM structure.
 
-Dynamic callback values use private variables on the styled element. They are supported inside at-rules and same-element pseudo or attribute selectors. Relationship selectors remain available for static declarations.
+Specificity follows the authored selector. Use explicit `:where(...)` to lower condition specificity. Application-owned state remains in ordinary data/ARIA attributes. No runtime selector parsing, DOM lookup, or CSS generation is involved.
+
+Dynamic callback values require same-element selectors because their private variables live on the styled element.

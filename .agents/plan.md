@@ -4,23 +4,23 @@
 
 Reconciled against `main` through [#111](https://github.com/wevm/zyzz/pull/111) on 2026-09-12. Phase 1 is complete. Phase 2 feature slices, the at-rule compiler gate, and the first framework integrations are merged; the remaining Phase 2 acceptance gates are listed in place below.
 
-| Area                     | State                                                                                                                                 |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Renderer output          | Merged in [#76](https://github.com/wevm/zyzz/pull/76): `Config.create({ output: 'html' })`, React default, DOM/React browser coverage |
-| Solid                    | Merged in [#77](https://github.com/wevm/zyzz/pull/77); packed-library and lifecycle recovery gates open                               |
-| Svelte                   | Merged in [#79](https://github.com/wevm/zyzz/pull/79); inline script-block authoring and packed-library gates open                    |
-| Vue                      | Draft [#78](https://github.com/wevm/zyzz/pull/78) closed without merge; deferred                                                      |
-| Next.js                  | Not started; `zyzz/next` is documented as a preview and has no entrypoint                                                             |
-| At-rules                 | Compiler gate passes 22/22 rules and 62/62 entries ([#107](https://github.com/wevm/zyzz/pull/107)); rendering and target reviews open |
-| CSS properties           | 670/670 mapped under the static authoring contract ([#63](https://github.com/wevm/zyzz/pull/63))                                      |
-| Render benchmarks        | Suite merged in [#74](https://github.com/wevm/zyzz/pull/74); timing remains advisory pending repeatability                            |
-| Type contract benchmarks | Attest instantiation benches and a TypeScript 5.9/6.0/7.0 matrix merged in [#111](https://github.com/wevm/zyzz/pull/111)              |
+| Area                     | State                                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Renderer output          | Merged in [#76](https://github.com/wevm/zyzz/pull/76): `Config.create({ output: 'html' })`, React default, DOM/React browser coverage                                                |
+| Solid                    | Merged in [#77](https://github.com/wevm/zyzz/pull/77); packed-library and lifecycle recovery gates open                                                                              |
+| Svelte                   | Merged in [#79](https://github.com/wevm/zyzz/pull/79); inline script-block authoring and packed-library gates open                                                                   |
+| Vue                      | Draft [#78](https://github.com/wevm/zyzz/pull/78) closed without merge; deferred                                                                                                     |
+| Next.js                  | Not started; `zyzz/next` is documented as a preview and has no entrypoint                                                                                                            |
+| At-rules                 | Compiler gate passes 22/22 rules and 62/62 entries ([#107](https://github.com/wevm/zyzz/pull/107)); rendering and target reviews open                                                |
+| CSS properties           | 670/670 mapped under the static authoring contract ([#63](https://github.com/wevm/zyzz/pull/63))                                                                                     |
+| Render benchmarks        | Suite merged in [#74](https://github.com/wevm/zyzz/pull/74); local repeatability measured in this branch with an opt-in same-runner check; CI enforcement waits on runner dispersion |
+| Type contract benchmarks | Attest instantiation benches and a TypeScript 5.9/6.0/7.0 matrix merged in [#111](https://github.com/wevm/zyzz/pull/111)                                                             |
 
 Next steps, in order:
 
 1. Close the open Solid and Svelte gates: packed-library consumers, add/edit/remove/rename recovery, and Svelte script-block authoring.
 2. Reopen Vue on the merged renderer output, then implement and verify `zyzz(nextConfig)` under both Next.js bundlers.
-3. Establish render-timing repeatability before adding regression gates.
+3. Record repeated render runs in the workflow and confirm runner dispersion before enabling `BENCH_RENDER_THRESHOLD`.
 4. Resume the Phase 2 backlog: the remaining at-rule rendering/target reviews, layer-order browser evidence, library CSS/metadata publication, `zyzz/themes/default` publication after variants, and the other unchecked items below.
 5. Start Phase 3 (`cx`, `variants`, atomic emission, native `StyleSheet`) only after the Phase 2 gates close.
 

@@ -12,6 +12,7 @@ export function template(
   depth = 0,
   resolve?: (
     node: Ast.Node,
+    prefix: string,
   ) => string | Token.Reference | Binding.Reference | undefined,
 ): string | Token.Expression | undefined {
   if (depth >= 128) return undefined
@@ -27,7 +28,10 @@ export function template(
     if (!expression) continue
 
     const value = unwrap(expression)
-    const reference = resolve?.(expression) ?? resolve?.(value)
+    const prefix = parts
+      .filter((part): part is string => typeof part === 'string')
+      .join('')
+    const reference = resolve?.(expression, prefix) ?? resolve?.(value, prefix)
 
     if (reference) {
       if (

@@ -53,3 +53,14 @@ export function accepts(kind: Kind, property: string): boolean {
     return ['positionTry', 'positionTryFallbacks'].includes(property)
   return false
 }
+
+/** Permits profile identities only as the color-space argument of color(). */
+export function acceptsExpression(
+  kind: Kind,
+  property: string,
+  prefix: string,
+): boolean {
+  if (kind === 'colorProfile') return /(?:^|[^\w-])color\(\s*$/i.test(prefix)
+
+  return accepts(kind, property)
+}

@@ -91,6 +91,39 @@ export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns
     },
   )
 
+  test.each([
+    '<custom-ident>',
+    '<image>',
+    '<resolution>',
+    '<string>',
+    '<transform-function>',
+    '<transform-list>',
+    '<url>',
+  ])(
+    'versions added scalar syntax %s separately from the legacy contract',
+    (syntax) => {
+      for (const returns of [syntax, '<color>']) {
+        const library = Graph.compile({
+          modules: {
+            'fn.ts': `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({parameters:[{name:'--x',syntax:${JSON.stringify(syntax)}}],returns:${JSON.stringify(returns)},body:{result:'var(--x)'}});`,
+          },
+        })
+        expect(
+          JSON.parse(library.contracts['fn.ts']!).version,
+        ).toMatchInlineSnapshot('11')
+
+        const packed = Graph.compile({
+          contracts: { 'lib.js': library.contracts['fn.ts']! },
+          imports: { 'app.ts': { lib: 'lib.js' } },
+          modules: { 'app.ts': `import {fn} from 'lib';export {fn};` },
+        })
+        expect(
+          JSON.parse(packed.contracts['app.ts']!).version,
+        ).toMatchInlineSnapshot('11')
+      }
+    },
+  )
+
   test('retains scalar contract compatibility and valid alternative arguments', () => {
     const source = `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({parameters:[{name:'--n',syntax:'<integer>'}],returns:'<integer>',body:{result:'var(--n)'}});fn(2);`
     const library = Graph.compile({ modules: { 'fn.ts': source } })

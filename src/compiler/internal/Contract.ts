@@ -423,8 +423,19 @@ export function write(
           ),
         ].some(
           (syntax) =>
+            // Version 10 readers accepted this fixed scalar subset.
             !(
-              ['*', ...FunctionSyntax.primitives] as readonly string[]
+              [
+                '*',
+                '<angle>',
+                '<color>',
+                '<integer>',
+                '<length>',
+                '<length-percentage>',
+                '<number>',
+                '<percentage>',
+                '<time>',
+              ] as readonly string[]
             ).includes(syntax),
         ),
     )

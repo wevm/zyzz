@@ -72,7 +72,7 @@ The matched theme/graph integrations took 8.43 seconds before the grid change an
 
 ## At-rule acceptance
 
-The independent at-rule ledger accounts for 22 top-level rules and 61 descriptors/nested blocks. Implemented entries link evidence; partial remains zero credit toward `check:at-rules:full`. Inventory drift and missing evidence fail the normal gate. No generic-string or parser-passthrough acceptance establishes full grammar support.
+The independent at-rule ledger accounts for 22 top-level rules and 62 descriptors/nested blocks. Implemented entries link evidence; partial remains zero credit toward `check:at-rules:full`. Inventory drift and missing evidence fail the normal gate. No generic-string or parser-passthrough acceptance establishes full grammar support.
 
 The acceptance fixtures cover direct and packed declaration source maps, Unicode and legacy output, nested CSS asset watch updates, descriptor type domains, and real Chromium font loading, counter rendering, animation progress, namespace boundaries, and anchor fallbacks.
 

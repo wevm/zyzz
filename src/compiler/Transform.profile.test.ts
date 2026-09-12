@@ -47,6 +47,18 @@ describe('compile', () => {
     `)
   })
 
+  test('preserves relative colors and nested profile interpolation', () => {
+    const output = Transform.compile({
+      moduleId: 'relative.ts',
+      source: `import {colorProfile,global} from 'zyzz/web';const profile=colorProfile({src:'url(/print.icc)',components:'c,m,y,k'});global({body:{color:\`color(from rgb(1 2 3) \${profile} c m y k)\`,backgroundColor:\`color(\${\`\${profile}\`} 0 0 0 1)\`}});`,
+    })
+
+    expect(output.css).toMatchInlineSnapshot(`
+      "@color-profile --z-colorprofile1f6rnh81dpdeum-70-72-6f-66-69-6c-65{src:url(/print.icc);components:c,m,y,k;}
+      body{color:color(from rgb(1 2 3) --z-colorprofile1f6rnh81dpdeum-70-72-6f-66-69-6c-65 c m y k);background-color:color(--z-colorprofile1f6rnh81dpdeum-70-72-6f-66-69-6c-65 0 0 0 1);}"
+    `)
+  })
+
   test('rejects a profile interpolated outside color()', () => {
     expect(() =>
       Transform.compile({

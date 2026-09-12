@@ -14,6 +14,7 @@ export function template(
     node: Ast.Node,
     prefix: string,
   ) => string | Token.Reference | Binding.Reference | undefined,
+  context = '',
 ): string | Token.Expression | undefined {
   if (depth >= 128) return undefined
 
@@ -28,9 +29,9 @@ export function template(
     if (!expression) continue
 
     const value = unwrap(expression)
-    const prefix = parts
-      .filter((part): part is string => typeof part === 'string')
-      .join('')
+    const prefix =
+      context +
+      parts.filter((part): part is string => typeof part === 'string').join('')
     const reference = resolve?.(expression, prefix) ?? resolve?.(value, prefix)
 
     if (reference) {
@@ -78,7 +79,7 @@ export function template(
     ) {
       parts.push(String(-value.argument.value))
     } else if (value.type === 'TemplateLiteral') {
-      const nested = template(value, depth + 1, resolve)
+      const nested = template(value, depth + 1, resolve, prefix)
       if (nested === undefined) return undefined
 
       if (typeof nested === 'string') parts.push(nested)

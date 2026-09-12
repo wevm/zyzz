@@ -408,6 +408,18 @@ Accepted direction: [top-level stylesheet functions](../docs/api/web/at-rules.md
 
 The existing property-conformance percentage does not measure at-rules. Extend the conformance workflow with reviewed upstream grammar fingerprints and per-rule evidence; new upstream entries and regressions must fail inventory checks. Do not mark missing implementations supported through generic string acceptance or raw passthrough.
 
+### At-rule Completion Follow-up
+
+Current follow-up: #103 encoding/profile groundwork → #104 composite functions and paged-output evidence → acceptance audit. This stack stops before Phase 3 and does not claim Phase 2.5 completion.
+
+- [x] Pin UTF-8 output without BOM or generated `@charset`, including host bytes.
+- [x] Preserve private profile components and `color()` identities through packed imports.
+- [x] Compile composite/repetition function signatures and grouped comma arguments; verify native defaults and conditional results.
+- [x] Compare native PDF dimensions and drawing streams for named/pseudo-pages, counters, and all margin boxes.
+- [ ] Verify real profile rendering and expose the public helper.
+- [ ] Finish the [per-rule acceptance gaps](../test/conformance/at-rule-acceptance.md), including complete grammar/context and packed/watch evidence.
+- [ ] Make `pnpm check:at-rules:full` pass without removing inventory entries or clearing unverified gaps.
+
 ## Phase 3 — Composition, variants, and target output
 
 - [ ] Keep `variants` scoped to one element, returning one props object with no `slots` option. Cover multipart components through separate `css`/`variants` definitions and shared component inputs; use data attributes or typed markers for supported DOM relationships.

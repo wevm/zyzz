@@ -78,6 +78,7 @@ describe('at-rule conformance', () => {
       expect(run().status).toMatchInlineSnapshot('0')
       const inventory = JSON.parse(Fs.readFileSync(file, 'utf8'))
       inventory.entries['@media'].status = 'supported'
+      inventory.entries['@media'].gaps = []
       inventory.entries['@media'].evidence = [
         'scripts/at-rule-conformance.test.ts',
       ]
@@ -97,16 +98,27 @@ describe('at-rule conformance', () => {
         Fs.readFileSync(file, 'utf8'),
       ).entries['@media'].grammar
       inventory.entries['@media'].status = 'supported'
+      inventory.entries['@media'].gaps = []
       inventory.entries['@media'].evidence = []
       Fs.writeFileSync(file, JSON.stringify(inventory))
       expect(run().stderr.trim()).toMatchInlineSnapshot(
         '"Missing evidence: @media"',
       )
       inventory.entries['@media'].status = 'partial'
+      inventory.entries['@media'].gaps = ['Remaining media grammar review.']
       Fs.writeFileSync(file, JSON.stringify(inventory))
       expect(run().stderr.trim()).toMatchInlineSnapshot(
         '"Missing evidence: @media"',
       )
+      inventory.entries['@media'].evidence = [
+        'scripts/at-rule-conformance.test.ts',
+      ]
+      inventory.entries['@media'].status = 'supported'
+      Fs.writeFileSync(file, JSON.stringify(inventory))
+      expect(run().stderr.trim()).toMatchInlineSnapshot(
+        '"Supported entry has unresolved gaps: @media"',
+      )
+      inventory.entries['@media'].status = 'partial'
       for (const evidence of ['.', 'src', '../outside-proof']) {
         inventory.entries['@media'].evidence = [evidence]
         Fs.writeFileSync(file, JSON.stringify(inventory))

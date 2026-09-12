@@ -222,9 +222,14 @@ if (!errors.length && resultsIndex !== -1)
   verifyResults(Path.resolve(process.argv[resultsIndex + 1]!))
 
 if (!errors.length && (compiler || rendering || targets)) {
-  const run = (command: string, args: readonly string[]) => {
+  const run = (
+    command: string,
+    args: readonly string[],
+    env: Readonly<Record<string, string>> = {},
+  ) => {
     const result = ChildProcess.spawnSync(command, args, {
       cwd: root,
+      env: { ...process.env, ...env },
       stdio: 'inherit',
       timeout: 900_000,
     })
@@ -232,7 +237,13 @@ if (!errors.length && (compiler || rendering || targets)) {
     if (result.status !== 0)
       throw new Error(`Acceptance command failed: ${command} ${args.join(' ')}`)
   }
-  if (compiler) run('pnpm', ['check:types'])
+  // The complete type suite exceeds Node's default heap; match the Verify
+  // workflow's allowance while preserving caller-supplied options.
+  if (compiler)
+    run('pnpm', ['check:types'], {
+      NODE_OPTIONS:
+        `${process.env.NODE_OPTIONS ?? ''} --max-old-space-size=4096`.trim(),
+    })
 
   const selected = Object.values(matrix.cases).filter((value) => value.test)
   if (selected.length) {

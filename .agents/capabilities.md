@@ -74,19 +74,19 @@ A native emitter is not implemented. Neither these web fixtures nor accepted cor
 
 ## Deferred Surface
 
-| Capability                                                  | Current disposition                                    | Plan              |
-| ----------------------------------------------------------- | ------------------------------------------------------ | ----------------- |
-| Wider property families and functional CSS strings          | Rejected by scalar validation                          | 2.3               |
-| Static templates/expressions and `theme.vars`               | Not extracted                                          | 2.3 follow-ups    |
-| Registered/explicit variables and dynamic value callbacks   | Not implemented                                        | 2.3 follow-ups    |
-| Bundled tokens, typography, media/container thresholds      | Not implemented                                        | 2.4a              |
-| Selectors, nesting, and conditional at-rules                | Not extracted or emitted                               | 2.4b              |
-| Cascade layer bodies, global rules, keyframes, fonts, reset | Layer names have types only; contributions not emitted | 2.4c              |
-| Recipes, responsive selections, multipart styling           | Not implemented                                        | Phase 3 and later |
+| Capability                                                  | Current disposition                                                                                                                                                            | Plan                                    |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| Wider property families and functional CSS strings          | All 670 pinned properties map under the static authoring contract; remaining lexical and functional gaps are listed in the sections above                                      | Completed in #63                        |
+| Static templates/expressions and `theme.vars`               | Untagged templates, primitive interpolation, and typed `theme.vars` references are extracted and emitted                                                                       | Completed in #64 and #65                |
+| Registered/explicit variables and dynamic value callbacks   | `Vars.define`/`Vars.set`, registered `property` descriptors, and dynamic `css((values) => style)` slots compile to fixed rules                                                 | Completed in #66, #68, and #87          |
+| Bundled tokens, typography, media/container thresholds      | Scalar typography groups and `breakpoints`/`containers` metadata are implemented; the `zyzz/themes/default` entrypoint stays unpublished until variants land                   | #69; entrypoint after Phase 3           |
+| Selectors, nesting, and conditional at-rules                | Nested selectors, `@media`/`@container`/`@supports` conditions, and typed relationship helpers are extracted and emitted; structural/form pseudo browser evidence remains open | #70 and #85; residual gates in the plan |
+| Cascade layer bodies, global rules, keyframes, fonts, reset | `layers`, `global`, `keyframes`, `fontFace`, the optional reset, and the full at-rule helper set are emitted with packed contributions; library layer namespacing remains open | #71, #86, and #107                      |
+| Recipes, responsive selections, multipart styling           | Not implemented                                                                                                                                                                | Phase 3 and later                       |
 
 Quoted/escaped exclamation marks do not become importance markers. Quoted string-content properties remain outside the supported grammar. Functional values use explicit property-domain validators. Empty, sparse, nested, accessor-backed, spread, and invalid fallback entries produce diagnostics before emission. Runtime inline-style overrides retain their scalar contract.
 
-Update this versioned inventory with type, extraction, emission, mapping, target, integration, and benchmark evidence whenever a capability expands. The numbered union in the plan remains the complete cross-phase backlog.
+Update this versioned inventory with type, extraction, emission, mapping, target, integration, and benchmark evidence whenever a capability expands. The unchecked items in [the plan](plan.md) are the cross-phase backlog; the numbered union in [parity.md](parity.md) is the archived 2026-09-08 audit.
 
 ## Column Properties
 

@@ -39,7 +39,7 @@ bench('cssFunction / typed parameters', () => {
   })
 
   css({ width: mix(2, 'red', '50%') })
-}).types([7622, 'instantiations'])
+}).types([12673, 'instantiations'])
 
 bench('importCss and namespace / statement options', () => {
   importCss({

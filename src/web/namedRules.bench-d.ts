@@ -34,7 +34,7 @@ bench('counterStyle / descriptor inventory and identity', () => {
   })
 
   css({ listStyleType: dots })
-}).types([511, 'instantiations'])
+}).types([746, 'instantiations'])
 
 bench('fontPaletteValues and positionTry / identities', () => {
   const palette = fontPaletteValues({
@@ -50,7 +50,7 @@ bench('fontPaletteValues and positionTry / identities', () => {
   })
 
   css({ fontPalette: palette, positionTryFallbacks: below })
-}).types([243304, 'instantiations'])
+}).types([243657, 'instantiations'])
 
 bench('page / margin boxes', () => {
   page({
@@ -64,7 +64,7 @@ bench('page / margin boxes', () => {
     },
     selector: ':first, :left',
   })
-}).types([47279, 'instantiations'])
+}).types([394096, 'instantiations'])
 
 bench('fontFeatureValues and viewTransition / descriptors', () => {
   fontFeatureValues({
@@ -77,4 +77,4 @@ bench('fontFeatureValues and viewTransition / descriptors', () => {
     fontDisplay: 'swap',
   })
   viewTransition({ navigation: 'auto', types: 'slide forwards' })
-}).types([709, 'instantiations'])
+}).types([1182, 'instantiations'])

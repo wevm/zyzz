@@ -75,6 +75,13 @@ for (const fixture of fixtures) {
     console.error(error instanceof Error ? error.message : String(error))
   }
 
+  // Attest reports an exceeded type baseline through the process exit code
+  // rather than by throwing, so the code is read and cleared per fixture.
+  if (process.exitCode) {
+    if (!failures.includes(relative)) failures.push(relative)
+    process.exitCode = undefined
+  }
+
   console.log(
     `${relative}: ${((performance.now() - started) / 1000).toFixed(1)}s`,
   )

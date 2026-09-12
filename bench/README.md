@@ -168,7 +168,7 @@ Colocated `src/**/*.bench-d.ts` fixtures measure the TypeScript instantiations c
 
 `pnpm bench:types` runs every fixture in one process against the installed `typescript` package and fails when a body exceeds its baseline by more than 20%. `pnpm update:types` rewrites the inline baselines after an intentional contract change. Counts are deterministic for one compiler release and can differ between releases, so establish baselines under the pinned version. Check time and memory are not part of these benches; `tsc --extendedDiagnostics` reports them in the TypeScript workflow matrix.
 
-The Verify workflow runs the type check and these benches for TypeScript 5.9, 6.0, and 7.0. Attest needs the JavaScript compiler API, which the native 7.x package does not ship, so that lane reports whole-program diagnostics without per-bench counts.
+The Verify workflow runs the type check and these benches for TypeScript 5.9, 6.0, and 7.0. JavaScript releases replace the pinned `typescript` package so attest and repository scripts import the version under test. The native 7.x package ships no compiler API, which `scripts/binding-domains.ts` and `test/fixtures/Library.ts` import, so that lane installs it beside the pinned package under an alias, runs only its `tsc` binary, and reports whole-program diagnostics without per-bench counts.
 
 ## File Host
 

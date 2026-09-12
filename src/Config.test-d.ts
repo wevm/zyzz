@@ -20,12 +20,10 @@ describe('create', () => {
     const { css, theme } = Config.create({
       theme: { color: { brand: '#06c' }, spacing: { md: '8px' } },
     })
-    const styles = {
-      card: css({ padding: 'md' }),
-      label: css({ color: theme.tokens.color.brand }),
-    }
+    const card = css({ padding: 'md' })
+    const label = css({ color: theme.tokens.color.brand })
 
-    expectTypeOf(styles.card).toEqualTypeOf<typeof styles.label>()
+    expectTypeOf(card).toEqualTypeOf<typeof label>()
 
     // @ts-expect-error Token names remain constrained after destructuring.
     css({ padding: 'missing' })

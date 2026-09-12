@@ -12,7 +12,7 @@ export function create(
   )
 
   const candidates: {
-    declaration: Ast.VariableDeclarator & {
+    declaration: {
       id: Extract<Ast.Node, { type: 'Identifier' }>
     }
     direct: Source.Call | undefined
@@ -20,6 +20,53 @@ export function create(
   }[] = []
 
   for (const statement of program.body) {
+    if (
+      statement.type === 'TSModuleDeclaration' &&
+      statement.id.type === 'Identifier' &&
+      statement.body?.type === 'TSModuleBlock'
+    ) {
+      const members = new Map<string, Source.Call>()
+      let valid = true
+
+      for (const member of statement.body.body) {
+        const node =
+          member.type === 'ExportNamedDeclaration'
+            ? member.declaration
+            : undefined
+
+        if (node?.type !== 'VariableDeclaration' || node.kind !== 'const') {
+          valid = false
+          break
+        }
+
+        for (const declaration of node.declarations) {
+          const call =
+            declaration.init && definitions.get(declaration.init.start)
+
+          if (
+            declaration.id.type !== 'Identifier' ||
+            declaration.init?.type !== 'CallExpression' ||
+            declaration.init.end !== call?.end ||
+            members.has(declaration.id.name)
+          ) {
+            valid = false
+            break
+          }
+
+          members.set(declaration.id.name, call)
+        }
+      }
+
+      if (valid && members.size)
+        candidates.push({
+          declaration: { id: statement.id },
+          direct: undefined,
+          members,
+        })
+
+      continue
+    }
+
     // Exported values can escape and object members can subsequently be replaced.
     if (statement.type !== 'VariableDeclaration' || statement.kind !== 'const')
       continue

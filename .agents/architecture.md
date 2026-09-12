@@ -83,13 +83,13 @@ The default determines token paths/domains and unscoped fallback values. Named a
 ```ts
 import { css } from './zyzz.config.js'
 
-const styles = {
-  button: css({
+namespace style {
+  export const button = css({
     '@layer components': {
       backgroundColor: 'brand',
       ':hover': { opacity: 0.8 },
     },
-  }),
+  })
 }
 ```
 
@@ -107,7 +107,7 @@ const example = (
       <title>My App</title>
     </head>
     <body>
-      <button {...styles.button()}>Save</button>
+      <button {...style.button()}>Save</button>
     </body>
   </html>
 )
@@ -186,8 +186,8 @@ export const { css, script, theme, variants } = Config.create({
   },
 })
 
-const styles = {
-  card: css({ px: 'sm', margin: 'gutter', color: 'primary' }),
+namespace style {
+  export const card = css({ px: 'sm', margin: 'gutter', color: 'primary' })
 }
 ```
 
@@ -216,12 +216,12 @@ Every `css` definition returns a callable. Calling it returns plain props to spr
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  button: css({ color: '#06c', padding: '1rem' }),
+namespace style {
+  export const button = css({ color: '#06c', padding: '1rem' })
 }
 
 export function Button() {
-  return <button {...styles.button({ className: 'checkout' })}>Continue</button>
+  return <button {...style.button({ className: 'checkout' })}>Continue</button>
 }
 ```
 
@@ -230,10 +230,10 @@ Theme-bound and bundled functions follow the same contract, with inferred tokens
 ```tsx
 import { css } from 'zyzz/themes/default'
 
-const styles = {
-  button: css({ padding: 4, color: 'blue.700' }),
+namespace style {
+  export const button = css({ padding: 4, color: 'blue.700' })
 }
-const element = <button {...styles.button()} />
+const element = <button {...style.button()} />
 ```
 
 `Theme.define` returns bound `css` and `variants`, portable `tokens`, web variable references through `vars`, and a scope `className`. Destructuring, aliases, and re-exports retain inference. Static and dynamic definitions may be inline, module-level, exported, or imported. Extraction recognizes the authoring binding independently of markup position.
@@ -241,18 +241,18 @@ const element = <button {...styles.button()} />
 ```tsx
 const { css, variants } = theme
 
-export const styles = {
-  button: css({
+export namespace style {
+  export const button = css({
     backgroundColor: 'surface',
     color: 'primary',
     borderColor: 'subtle',
     padding: 'md',
     borderRadius: 'md',
     ':hover': { backgroundColor: 'brand' },
-  }),
+  })
 }
 
-const element = <button {...styles.button()}>Continue</button>
+const element = <button {...style.button()}>Continue</button>
 ```
 
 Inline usage is also valid: `<button {...css({ padding: '1rem' })()} />`. Extraction replaces definitions with small props-binding functions and can fold fully static applications into constants. No runtime style generation occurs. Untransformed authoring calls fail with an actionable missing-transform diagnostic.
@@ -266,14 +266,14 @@ The in-memory equivalent is `Style.define({ card: { color: 'brand', padding: 'md
 Importance uses a trailing `!` on a string. Fallbacks use a nonempty array of values, in declaration order. CSS expressions are ordinary strings or template literals. There is no helper context or helper callback.
 
 ```ts
-const styles = {
-  panel: theme.css({
+namespace style {
+  export const panel = theme.css({
     display: ['block', 'grid'],
     color: 'brand!',
     backgroundColor: 'oklch(60% 0.2 250)',
     borderColor: theme.vars.color.brand,
     width: `calc(100% - ${theme.vars.spacing.md})`,
-  }),
+  })
 }
 ```
 
@@ -298,17 +298,17 @@ Applied web props contain a readonly `className` and optional `style`, plus vali
 Prefer platform state attributes and custom data attributes over conditional class concatenation:
 
 ```tsx
-const styles = {
-  button: theme.css({
+namespace style {
+  export const button = theme.css({
     ':disabled': { opacity: 0.5 },
     '&[aria-expanded="true"]': { backgroundColor: 'brand' },
     '&[data-loading="true"]': { cursor: 'progress' },
-  }),
+  })
 }
 
 const example = (
   <button
-    {...styles.button()}
+    {...style.button()}
     disabled={disabled}
     aria-expanded={expanded}
     data-loading={loading}
@@ -331,17 +331,18 @@ An expression-bodied callback receives only the runtime values record. An annota
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  track: css({ height: '0.5rem' }),
-  bar: css((values: { width: `${number}%` }) => ({
+namespace style {
+  export const track = css({ height: '0.5rem' })
+
+  export const bar = css((values: { width: `${number}%` }) => ({
     width: values.width,
-  })),
+  }))
 }
 
 export function Progress() {
   return (
-    <div {...styles.track()}>
-      <div {...styles.bar({ width: '50%', className: 'progress' })} />
+    <div {...style.track()}>
+      <div {...style.bar({ width: '50%', className: 'progress' })} />
     </div>
   )
 }
@@ -352,19 +353,19 @@ Static applications accept optional styling overrides. Dynamic applications comb
 ```tsx
 type PanelValues = { readonly width: `${number}px`; readonly opacity: number }
 
-const styles = {
-  panel: theme.css((values: PanelValues) => ({
+namespace style {
+  export const panel = theme.css((values: PanelValues) => ({
     width: values.width,
     opacity: values.opacity,
     color: theme.vars.color.brand,
     padding: 'md',
     ':hover': { opacity: values.opacity },
-  })),
+  }))
 }
 
 const element = (
   <section
-    {...styles.panel({
+    {...style.panel({
       width: '320px',
       opacity: 0.8,
       className: 'checkout',
@@ -401,11 +402,13 @@ Integration gates cover static and dynamic calls, repeated updates, nested insta
 import { Vars, css } from 'zyzz'
 
 const progress = Vars.define({ amount: 'percentage' })
-const styles = { bar: css({ width: progress.amount }) }
+namespace style {
+  export const bar = css({ width: progress.amount })
+}
 
 const example = (
   <div
-    {...styles.bar({ style: Vars.set(progress, { amount: `${percent}%` }) })}
+    {...style.bar({ style: Vars.set(progress, { amount: `${percent}%` }) })}
   />
 )
 ```
@@ -423,8 +426,8 @@ Dynamic assignment is allowed; dynamic rule generation is not. The core never re
 Each recipe styles one element and returns one spreadable props object when applied. Multipart components use separate `css` or `variants` definitions for their elements. Shared selections use ordinary component inputs; DOM relationships use data attributes or typed markers. Recipes have no `slots` option or map of part props.
 
 ```tsx
-const styles = {
-  button: theme.variants({
+namespace style {
+  export const button = theme.variants({
     base: { display: 'inline-flex' },
     variants: {
       intent: {
@@ -447,12 +450,12 @@ const styles = {
       },
     ],
     defaultVariants: { intent: 'primary', size: 'md', loading: false },
-  }),
+  })
 }
 
-type ButtonVariants = NonNullable<Parameters<typeof styles.button>[0]>
+type ButtonVariants = NonNullable<Parameters<typeof style.button>[0]>
 const element = (
-  <button {...styles.button({ intent: 'ghost', size: 'sm', loading })} />
+  <button {...style.button({ intent: 'ghost', size: 'sm', loading })} />
 )
 ```
 
@@ -461,11 +464,11 @@ const element = (
 ```ts
 import { variants } from 'zyzz'
 
-const styles = {
-  button: variants({
+namespace style {
+  export const button = variants({
     variants: { size: { sm: { padding: '0.5rem' }, md: { padding: '1rem' } } },
     defaultVariants: { size: 'md' },
-  }),
+  })
 }
 ```
 
@@ -486,8 +489,8 @@ The native target consumes the same recipe definition and selection types, emitt
 Each choice accepts a static style object or a typed value callback. The callback follows the dynamic `css` contract and compiles to the same binding slots; runtime values remain local to that axis and choice.
 
 ```tsx
-const styles = {
-  button: theme.variants({
+namespace style {
+  export const button = theme.variants({
     base: { display: 'inline-flex' },
     variants: {
       size: {
@@ -502,12 +505,12 @@ const styles = {
     compoundVariants: [
       { when: { size: 'custom' }, style: { fontWeight: 600 } },
     ],
-  }),
+  })
 }
 
 const element = (
   <button
-    {...styles.button({
+    {...style.button({
       size: { custom: { padding: '12px' } },
       className,
       style,
@@ -537,8 +540,8 @@ Integration coverage must include real source compilation and rendering, active-
 Style objects accept standard CSS properties, scoped selectors, and conditional at-rules. Nested declarations retain the same property types and theme-token inference at every depth.
 
 ```ts
-const styles = {
-  control: theme.css({
+namespace style {
+  export const control = theme.css({
     display: 'inline-flex',
     color: 'primary',
     ':hover': { backgroundColor: 'brand' },
@@ -554,7 +557,7 @@ const styles = {
     '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
     '@container (width >= 30rem)': { flexDirection: 'row' },
     '@supports (display: grid)': { display: 'grid' },
-  }),
+  })
 }
 ```
 
@@ -571,17 +574,17 @@ This is the planned selector API, not implemented source syntax. Use standard ps
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  indicator: css({
+namespace style {
+  export const indicator = css({
     opacity: 0,
     ':where([data-group="profile"]:has(a)) &': { opacity: 1 },
-  }),
+  })
 }
 
 const profile = (
   <article data-group="profile">
     <a href="/profile">Profile</a>
-    <span {...styles.indicator()}>Has a link</span>
+    <span {...style.indicator()}>Has a link</span>
   </article>
 )
 ```
@@ -618,17 +621,17 @@ import { css } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 const card = Css.marker({ state: ['closed', 'open'] })
-const styles = {
-  title: css({
+namespace style {
+  export const title = css({
     color: '#666',
     [Css.ancestor(card, ':hover')]: { color: '#06c' },
     [Css.ancestor(card, { data: { state: 'open' } })]: { fontWeight: 600 },
-  }),
+  })
 }
 
 const profile = (
-  <article {...styles.card({ state: 'open' })}>
-    <h2 {...styles.title()}>Profile</h2>
+  <article {...style.card({ state: 'open' })}>
+    <h2 {...style.title()}>Profile</h2>
   </article>
 )
 ```
@@ -644,22 +647,23 @@ Separate marker and styling spreads have disjoint fields: `<article {...card({ s
 An ancestor condition is a supported simple pseudo string or an options object with optional `data`, `pseudo`, and `has`. `data` infers a partial state selection from the first marker argument. `pseudo` is one supported nonfunctional pseudo-class such as `:focus-within` or `:hover`; offer completion and reject `:hovr` and pseudo-elements. `has` is a statically parsed relative-selector list such as `'a'` or `'> input:checked'`. Combined fields are AND predicates on the same marked ancestor. Omission matches marker presence.
 
 ```ts
-const styles = {
-  indicator: css({
+namespace style {
+  export const indicator = css({
     opacity: 0,
     [Css.ancestor(card, { has: 'a' })]: { opacity: 1 },
-  }),
-  activeTitle: css({
+  })
+
+  export const activeTitle = css({
     [Css.ancestor(card, {
       data: { state: 'open' },
       has: 'a',
       pseudo: ':focus-within',
     })]: { color: '#06c' },
-  }),
+  })
 }
 
 // Expected type errors in the proposed contract.
-styles.card({ state: 'expanded' })
+style.card({ state: 'expanded' })
 Css.ancestor(card, { data: { status: 'open' } })
 Css.ancestor(card, ':hovr')
 ```
@@ -670,19 +674,20 @@ Use the same marker in `Css.descendant`, `Css.siblingBefore`, `Css.siblingAfter`
 
 ```tsx
 const choice = Css.marker()
-const styles = {
-  hint: css({
+namespace style {
+  export const hint = css({
     [Css.siblingBefore(choice, ':checked')]: { color: '#06c' },
-  }),
-  fieldset: css({
+  })
+
+  export const fieldset = css({
     [Css.descendant(choice, ':checked')]: { borderColor: '#06c' },
-  }),
+  })
 }
 
 const example = (
-  <fieldset {...styles.fieldset()}>
+  <fieldset {...style.fieldset()}>
     <input {...choice()} aria-label="Select option" type="checkbox" />
-    <span {...styles.hint()}>Selected</span>
+    <span {...style.hint()}>Selected</span>
   </fieldset>
 )
 ```
@@ -718,20 +723,21 @@ const { css } = Theme.define({
   containers: { card: '24rem', panel: '40rem' },
 })
 
-export const styles = {
-  layout: css({
+export namespace style {
+  export const layout = css({
     padding: 'sm',
     '@media tablet': {
       padding: 'md',
       ':hover': { opacity: 0.9 },
     },
     '@container card': { display: 'grid' },
-  }),
-  region: css({ containerType: 'inline-size' }),
+  })
+
+  export const region = css({ containerType: 'inline-size' })
 }
 const example = (
-  <section {...styles.region()}>
-    <div {...styles.layout()} />
+  <section {...style.region()}>
+    <div {...style.layout()} />
   </section>
 )
 ```
@@ -786,11 +792,11 @@ fontFace({
   fontWeight: '100 900',
   fontDisplay: 'swap',
 })
-const styles = {
-  animated: theme.css({
+namespace style {
+  export const animated = theme.css({
     animationName: fadeIn,
     animationDuration: '200ms',
-  }),
+  })
 }
 ```
 
@@ -803,13 +809,13 @@ const enter = keyframes({
   from: { opacity: 0, transform: 'translateY(4px)' },
   to: { opacity: 1, transform: 'translateY(0)' },
 })
-const styles = {
-  notice: theme.css({
+namespace style {
+  export const notice = theme.css({
     animationDuration: '160ms',
     animationName: enter,
     '@media (prefers-reduced-motion: reduce)': { animationName: 'none' },
     ':focus-visible': { outline: '2px solid currentColor' },
-  }),
+  })
 }
 ```
 
@@ -851,10 +857,10 @@ global({
   },
 })
 
-export const styles = {
-  button: css({
+export namespace style {
+  export const button = css({
     '@layer components': { padding: '1rem' },
-  }),
+  })
 }
 ```
 

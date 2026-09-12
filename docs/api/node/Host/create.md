@@ -28,7 +28,12 @@ await host.build()
 Process emitted stylesheets with Lightning CSS. Set `false` to preserve intermediate CSS for another processor. Options are captured when the lifecycle is created. Source maps are composed in both formatted and minified output; JavaScript output is unchanged.
 
 ```ts
-Host.create({ css: false, outDir: 'dist', packageId: 'my-library', root: 'src' })
+Host.create({
+  css: false,
+  outDir: 'dist',
+  packageId: 'my-library',
+  root: 'src',
+})
 ```
 
 ### options.css.minify
@@ -39,7 +44,9 @@ Host.create({ css: false, outDir: 'dist', packageId: 'my-library', root: 'src' }
 Minify each emitted stylesheet.
 
 ```ts
-css: { minify: true }
+css: {
+  minify: true
+}
 ```
 
 ### options.css.targets
@@ -97,7 +104,11 @@ Returns `Promise<Host.Runtime>`. Await creation before calling the returned oper
 Runs the same cleanup as `close` when an `await using` scope exits, including after an error. Stops watchers, drains pending builds, and releases the output lock. Keep watch scopes alive for the intended watch lifetime.
 
 ```ts
-await using host = await Host.create({ outDir: 'dist', packageId: 'my-library', root: 'src' })
+await using host = await Host.create({
+  outDir: 'dist',
+  packageId: 'my-library',
+  root: 'src',
+})
 await host.build()
 ```
 

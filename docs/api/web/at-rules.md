@@ -112,13 +112,15 @@ export const above = positionTry({
 import { css } from './zyzz.config.js'
 import { above, brandPalette, circled } from './stylesheets.js'
 
-export const styles = {
-  icon: css({ fontPalette: brandPalette }),
-  list: css({ listStyleType: circled }),
-  tooltip: css({
+export namespace style {
+  export const icon = css({ fontPalette: brandPalette })
+
+  export const list = css({ listStyleType: circled })
+
+  export const tooltip = css({
     position: 'absolute',
     positionTryFallbacks: above,
-  }),
+  })
 }
 ```
 
@@ -131,8 +133,8 @@ Grouping remains available in `css`, `variants`, compound variants, and global s
 ```ts
 import { css } from './zyzz.config.js'
 
-export const styles = {
-  card: css({
+export namespace style {
+  export const card = css({
     '@scope (&) to (.boundary)': {
       '& h2': { color: 'red' },
     },
@@ -140,7 +142,7 @@ export const styles = {
       boxShadow: '0 2px 8px #0002',
     },
     '@starting-style': { opacity: 0 },
-  }),
+  })
 }
 ```
 

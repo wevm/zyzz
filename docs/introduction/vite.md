@@ -54,10 +54,10 @@ export const { css, theme } = Config.create({
 // card.ts
 import { css, theme } from './zyzz.config.js'
 
-export const styles = {
-  card: css({ color: 'brand' }),
+export namespace style {
+  export const card = css({ color: 'brand' })
 }
-element.className = `${theme.className} ${styles.card().className}`
+element.className = `${theme.className} ${style.card().className}`
 ```
 
 `defaultTheme` selects shorthand token fallbacks for named catalogs. Use `themes({ theme: 'mint' })` to select a scope, with an optional `colorScheme` override. Config edits rebuild dependent styles. Direct literal calls, immutable aliases, and named re-exports are supported. Dynamic member access, escaping config objects, and variants remain unsupported.
@@ -80,10 +80,10 @@ export default defineConfig({
 import { css, mint } from '@acme/theme'
 import '@acme/theme/style.css'
 
-const styles = {
-  card: css({ color: 'brand' }),
+namespace style {
+  export const card = css({ color: 'brand' })
 }
-element.className = `${mint.className} ${styles.card().className}`
+element.className = `${mint.className} ${style.card().className}`
 ```
 
 Light/dark pairs require final CSS targets with native `light-dark()` support. The profile above preserves it; Vite's default minification targets can lower it to scheme helper variables, which do not preserve arbitrary inherited or inline `color-scheme` selection. Zyzz does not override the host's target policy.

@@ -14,12 +14,12 @@ How Zyzz, Tailwind, StyleX, and vanilla-extract approach typed styling, themes, 
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  button: css({ color: '#06c', padding: '1rem' }),
+namespace style {
+  export const button = css({ color: '#06c', padding: '1rem' })
 }
 
 export function Button() {
-  return <button {...styles.button()}>Continue</button>
+  return <button {...style.button()}>Continue</button>
 }
 ```
 
@@ -82,12 +82,12 @@ const theme = Theme.define({
   spacing: { md: '1rem' },
 })
 
-const styles = {
-  panel: theme.css({
+namespace style {
+  export const panel = theme.css({
     color: 'text',
     padding: 'md',
     colorScheme: 'light dark',
-  }),
+  })
 }
 ```
 
@@ -168,8 +168,8 @@ const theme = Theme.define({
   containers: { card: '24rem' },
 })
 
-const styles = {
-  panel: theme.css({
+namespace style {
+  export const panel = theme.css({
     display: ['block', 'grid'],
     padding: 'sm',
     ':hover': { opacity: 0.8 },
@@ -177,7 +177,7 @@ const styles = {
     '@media tablet': { padding: 'md' },
     '@container card': { gap: 'md' },
     width: `calc(100% - ${theme.vars.spacing.md})`,
-  }),
+  })
 }
 ```
 
@@ -245,8 +245,8 @@ export const panel = style({
 import { Theme } from 'zyzz'
 
 const theme = Theme.define({ spacing: { sm: '0.5rem', md: '1rem' } })
-const styles = {
-  button: theme.variants({
+namespace style {
+  export const button = theme.variants({
     base: { display: 'inline-flex' },
     variants: {
       size: {
@@ -258,13 +258,13 @@ const styles = {
       },
     },
     defaultVariants: { size: 'md' },
-  }),
+  })
 }
 
-type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
+type ButtonProps = NonNullable<Parameters<typeof style.button>[0]>
 
 export function Button(props: ButtonProps) {
-  return <button {...styles.button(props)}>Continue</button>
+  return <button {...style.button(props)}>Continue</button>
 }
 ```
 
@@ -334,14 +334,14 @@ export type ButtonProps = RecipeVariants<typeof button>
 ```tsx
 import { css } from 'zyzz'
 
-const styles = {
-  bar: css((values: { width: `${number}%` }) => ({
+namespace style {
+  export const bar = css((values: { width: `${number}%` }) => ({
     width: values.width,
-  })),
+  }))
 }
 
 export function Bar() {
-  return <div {...styles.bar({ width: '50%', className: 'progress' })} />
+  return <div {...style.bar({ width: '50%', className: 'progress' })} />
 }
 ```
 

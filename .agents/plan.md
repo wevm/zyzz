@@ -73,13 +73,13 @@ Each dependent PR targets the preceding branch. CSS value validation remains sta
 
 Bring renderer output and framework source support forward from Phase 4 into Phase 2. Start immediately after the runtime benchmark work in [PR #74](https://github.com/wevm/zyzz/pull/74), preserving [PR #73](https://github.com/wevm/zyzz/pull/73)'s benchmark priority. Complete these integrations before resuming the remaining Phase 2 feature backlog.
 
-Use one shared CSS compiler with thin source and renderer adapters. Keep framework dependencies outside core, preserve React output, and add no custom JSX runtime, provider, component wrapper, or runtime CSS generation. Group fixture styles in `const styles = {}` and consume named config helpers.
+Use one shared CSS compiler with thin source and renderer adapters. Keep framework dependencies outside core, preserve React output, and add no custom JSX runtime, provider, component wrapper, or runtime CSS generation. Group fixture styles in `namespace style {}` and consume named config helpers.
 
 Initial support covers React, Vue, Solid, Svelte, and plain DOM/HTML, with Vite and Next.js as application integrations. Remix 3 and React Router are deferred and are not initial acceptance gates.
 
 Follow with Nuxt, SvelteKit, SolidStart, Astro, TanStack Start, and Preact integration fixtures. Angular, Qwik, and native rendering remain later work. Base renderer support does not establish application-framework support.
 
-Renderer output uses `Config.create({ output: 'html' })` for direct `styles.card()` binding in Solid, Vue, and Svelte; React props remain the default. Conversion is compiler-owned, with no application-site adapter. Framework integration gates remain open until their dedicated fixtures pass.
+Renderer output uses `Config.create({ output: 'html' })` for direct `style.card()` binding in Solid, Vue, and Svelte; React props remain the default. Conversion is compiler-owned, with no application-site adapter. Framework integration gates remain open until their dedicated fixtures pass.
 
 Implement in this order:
 

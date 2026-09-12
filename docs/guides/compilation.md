@@ -30,11 +30,13 @@ import { Transform } from 'zyzz/compiler'
 const output = Transform.compile({
   moduleId: 'example/button.ts',
   source: `import { css } from 'zyzz';
-export const styles = { button: css({ padding: '1rem' }) };`,
+export namespace style {
+  export const button = css({ padding: '1rem' })
+}`,
 })
 ```
 
-Bundle the returned `code` and load its matching `css`. Keep their source maps together. Apply the exported `styles.button()` props to an element. A stable package-relative module ID prevents unrelated modules sharing identities. Source extraction alone does not rewrite executable calls.
+Bundle the returned `code` and load its matching `css`. Keep their source maps together. Apply the exported `style.button()` props to an element. A stable package-relative module ID prevents unrelated modules sharing identities. Source extraction alone does not rewrite executable calls.
 
 For filesystem builds, `await Host.create({ outDir, packageId, root })` from `zyzz/node` resolves to build/watch/close operations. It writes module and CSS sidecars; loading CSS and lowering TypeScript/JSX remain application build responsibilities.
 
@@ -68,12 +70,12 @@ Apply compiled styles during server rendering and deliver their stylesheet befor
 ```tsx
 import { css } from './zyzz.config.js'
 
-const styles = {
-  card: css({ padding: 'md' }),
+namespace style {
+  export const card = css({ padding: 'md' })
 }
 
 export function Card() {
-  return <article {...styles.card()}>Content</article>
+  return <article {...style.card()}>Content</article>
 }
 ```
 

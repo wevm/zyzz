@@ -40,7 +40,9 @@ describe('create', () => {
         moduleId: 'app.ts',
         source: `import {Config} from 'zyzz';const config=Config.create();export const {css}=config;`,
       }),
-    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: app.ts:70: Exported configuration destructuring requires source linking.]`)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:70: Exported configuration destructuring requires source linking.]`,
+    )
   })
 
   for (const output of ['react', 'html']) {
@@ -55,7 +57,9 @@ describe('create', () => {
         contracts: { 'lib.js': library.contracts['index.ts']! },
         imports: { 'app.ts': { lib: 'lib.js' } },
         modules: {
-          'app.ts': `import {css,themes} from 'lib';export const styles={card:css({color:'ink'})};export const select=themes;`,
+          'app.ts': `import {css,themes} from 'lib';export namespace style {
+  export const card = css({color:'ink'})
+}export const select=themes;`,
         },
       })
 
@@ -76,7 +80,7 @@ describe('create', () => {
         await page.addScriptTag({ content: code })
 
         const colors = await page.evaluate(
-          `(()=>{const el=document.getElementById('card'),scope=document.getElementById('scope'),props=Fixture.styles.card();el.className=props.class??props.className;return [['base','light'],['mint','dark']].map(([theme,colorScheme])=>{const props=Fixture.select({theme,colorScheme});scope.className=props.class??props.className;if(typeof props.style==='string')scope.setAttribute('style',props.style);else Object.assign(scope.style,props.style);return getComputedStyle(el).color})})()`,
+          `(()=>{const el=document.getElementById('card'),scope=document.getElementById('scope'),props=Fixture.style.card();el.className=props.class??props.className;return [['base','light'],['mint','dark']].map(([theme,colorScheme])=>{const props=Fixture.select({theme,colorScheme});scope.className=props.class??props.className;if(typeof props.style==='string')scope.setAttribute('style',props.style);else Object.assign(scope.style,props.style);return getComputedStyle(el).color})})()`,
         )
 
         expect(colors).toMatchInlineSnapshot(`
@@ -315,7 +319,9 @@ describe('create', () => {
         contracts: { 'library/index.js': library.contracts['index.ts']! },
         imports: { 'app.ts': { library: 'library/index.js' } },
         modules: {
-          'app.ts': `import { css, theme, select } from 'library'; export const styles={card:css({color:select.mint.tokens.color.ink})}; export const mint=select.mint.className; export const first=select({theme:'ocean'}); export const second=select({theme:'mint',colorScheme:'dark'}); export const selectTheme=(name:'ocean'|'mint')=>select({theme:name});`,
+          'app.ts': `import { css, theme, select } from 'library'; export namespace style {
+  export const card = css({color:select.mint.tokens.color.ink})
+} export const mint=select.mint.className; export const first=select({theme:'ocean'}); export const second=select({theme:'mint',colorScheme:'dark'}); export const selectTheme=(name:'ocean'|'mint')=>select({theme:name});`,
         },
       })
 
@@ -367,7 +373,9 @@ describe('create', () => {
   test('nested selections inherit tokens and independently force color schemes in a browser', async () => {
     const result = Graph.compile({
       modules: {
-        'app.ts': `import {Config} from 'zyzz'; const {css,themes}=Config.create({defaultTheme:'a',themes:{a:{color:{ink:{light:'#123456',dark:'#abcdef'}}},b:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}}); export const styles={card:css({color:'ink'})}; export const outer=themes({theme:'a',colorScheme:'light'}); export const inner=themes({theme:'b',colorScheme:'dark'});`,
+        'app.ts': `import {Config} from 'zyzz'; const {css,themes}=Config.create({defaultTheme:'a',themes:{a:{color:{ink:{light:'#123456',dark:'#abcdef'}}},b:{color:{ink:{light:'#008844',dark:'#aaffcc'}}}}}); export namespace style {
+  export const card = css({color:'ink'})
+} export const outer=themes({theme:'a',colorScheme:'light'}); export const inner=themes({theme:'b',colorScheme:'dark'});`,
       },
     })
 

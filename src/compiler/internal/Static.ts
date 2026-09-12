@@ -14,18 +14,28 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
   const typeReferences = new Map<number, number>()
   const used = new Set<number>()
 
-  for (const statement of program.body) {
-    const node =
-      statement.type === 'ExportNamedDeclaration'
-        ? statement.declaration
-        : statement
+  function collectValues(statements: readonly Ast.Statement[]) {
+    for (const statement of statements) {
+      const node =
+        statement.type === 'ExportNamedDeclaration'
+          ? statement.declaration
+          : statement
 
-    if (node?.type === 'VariableDeclaration' && node.kind === 'const')
-      for (const declaration of node.declarations)
-        if (declaration.id.type === 'Identifier' && declaration.init) {
-          values.set(declaration.start, declaration.init)
-        }
+      if (
+        node?.type === 'TSModuleDeclaration' &&
+        node.body?.type === 'TSModuleBlock'
+      )
+        collectValues(node.body.body)
+
+      if (node?.type === 'VariableDeclaration' && node.kind === 'const')
+        for (const declaration of node.declarations)
+          if (declaration.id.type === 'Identifier' && declaration.init) {
+            values.set(declaration.start, declaration.init)
+          }
+    }
   }
+
+  collectValues(program.body)
 
   const ancestors: Ast.Node[] = []
 
@@ -285,6 +295,8 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
             (node) =>
               ![
                 'Program',
+                'TSModuleDeclaration',
+                'TSModuleBlock',
                 'VariableDeclaration',
                 'VariableDeclarator',
                 'Identifier',

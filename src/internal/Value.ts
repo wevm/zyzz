@@ -2,6 +2,7 @@
  * Describes declaration fallbacks and separates importance from scalar values.
  * @module
  */
+import type * as FunctionValue from './FunctionValue.js'
 import type * as RuleReference from './RuleReference.js'
 import type * as Grid from './Grid.js'
 import * as Lexical from './Lexical.js'
@@ -20,21 +21,26 @@ export type Atom<value> =
  */
 export type Accepted<style, properties> = {
   [property in keyof style]: property extends keyof properties
-    ? Exclude<style[property], undefined> extends Exclude<
-        properties[property],
-        undefined
-      >
-      ? Exclude<style[property], undefined>
-      : property extends keyof Literal.Properties
-        ? style[property] extends string | readonly (number | string)[]
-          ? Fold<style[property]> extends Input<
-              | Lowercase<Extract<Literal.Properties[property], string>>
-              | Extract<Literal.Properties[property], number>
-            >
-            ? style[property]
+    ? FunctionValue.Is<style[property]> extends true
+      ? FunctionValue.Accepted<
+          style[property],
+          Exclude<properties[property], undefined>
+        >
+      : Exclude<style[property], undefined> extends Exclude<
+            properties[property],
+            undefined
+          >
+        ? Exclude<style[property], undefined>
+        : property extends keyof Literal.Properties
+          ? style[property] extends string | readonly (number | string)[]
+            ? Fold<style[property]> extends Input<
+                | Lowercase<Extract<Literal.Properties[property], string>>
+                | Extract<Literal.Properties[property], number>
+              >
+              ? style[property]
+              : Exclude<properties[property], undefined>
             : Exclude<properties[property], undefined>
           : Exclude<properties[property], undefined>
-        : Exclude<properties[property], undefined>
     : never
 }
 
@@ -79,24 +85,27 @@ export type Checked<style, tokens = {}> = {
           : unknown)
 }
 
-type Check<input, names, rule> = input extends readonly unknown[]
-  ? { [key in keyof input]: Check<input[key], names, rule> }
-  : input extends names
+type Check<input, names, rule> =
+  FunctionValue.Is<input> extends true
     ? input
-    : input extends string
-      ? Plain<input> extends names
+    : input extends readonly unknown[]
+      ? { [key in keyof input]: Check<input[key], names, rule> }
+      : input extends names
         ? input
-        : Literal.Checked<
-              Lexical.Fold<Plain<Normalized<Lexical.Normalized<input>>>>
-            > extends never
-          ? never
-          : Scalar<
-                Lexical.Fold<Plain<Normalized<Lexical.Normalized<input>>>>,
-                rule
-              > extends never
-            ? never
-            : input
-      : Scalar<input, rule>
+        : input extends string
+          ? Plain<input> extends names
+            ? input
+            : Literal.Checked<
+                  Lexical.Fold<Plain<Normalized<Lexical.Normalized<input>>>>
+                > extends never
+              ? never
+              : Scalar<
+                    Lexical.Fold<Plain<Normalized<Lexical.Normalized<input>>>>,
+                    rule
+                  > extends never
+                ? never
+                : input
+          : Scalar<input, rule>
 
 type Scalar<input, rule> = number extends input
   ? input

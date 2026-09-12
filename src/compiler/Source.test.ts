@@ -179,6 +179,7 @@ type Definition = ReturnType<typeof define>;
               "start": 317,
             },
           ],
+          "namespaces": [],
           "styles": {
             "styles": [
               {
@@ -263,6 +264,7 @@ const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 
     ).toMatchInlineSnapshot(`
       {
         "calls": [],
+        "namespaces": [],
         "styles": {
           "styles": [],
         },

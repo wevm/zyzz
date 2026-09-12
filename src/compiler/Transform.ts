@@ -2,6 +2,7 @@
  * Rewrites extracted style calls into executable modules with CSS and source maps.
  * @module
  */
+import * as Namespaces from './internal/Namespaces.js'
 import * as Applications from './internal/Applications.js'
 import * as Expression from './internal/Expression.js'
 import * as Mapping from '@jridgewell/gen-mapping'
@@ -43,9 +44,15 @@ export function compile(options: compile.Options): compile.ReturnType {
     module.overwrite(
       call.start,
       call.end,
-      call.name
-        ? `${JSON.stringify(call.name)}${call.kind === 'keyframes' || call.kind === 'colorProfile' || !/\.[cm]?tsx?$/.test(options.moduleId) ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
-        : 'void 0',
+      (() => {
+        const typed = /\.[cm]?tsx?$/.test(options.moduleId)
+        if (call.kind === 'cssFunction')
+          return `((...args${typed ? ': readonly (string | number)[]' : ''}) => ${JSON.stringify(call.name + '(')} + args.join(',') + ')')${typed ? ` as import('zyzz/web').cssFunction.Reference<${JSON.stringify(call.function?.parameters ?? [])}, ${JSON.stringify(call.function?.returns ?? '*')}>` : ''}`
+        if (call.kind === 'customMedia')
+          return `${JSON.stringify(`@media (${call.name})`)}${typed ? ` as unknown as import('zyzz/web').customMedia.Reference` : ''}`
+        if (!call.name) return 'void 0'
+        return `${JSON.stringify(call.name)}${call.kind === 'keyframes' || call.kind === 'colorProfile' || !typed ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
+      })(),
     )
 
   type Span = Pick<Ast.Node, 'end' | 'start'>
@@ -396,6 +403,10 @@ export function compile(options: compile.Options): compile.ReturnType {
             ? ['Config', 'css', 'Theme', 'Vars']
             : [
                 'Css',
+                'cssFunction',
+                'customMedia',
+                'importCss',
+                'namespace',
                 'colorProfile',
                 'counterStyle',
                 'fontPaletteValues',
@@ -532,43 +543,51 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   // Literal and scalar-theme rules each occupy one line at this boundary.
   const prefix = emitted.contributionCss ?? ''
-  let contributionLine = 1
-  const contributions = extracted.contributions ?? []
-  const firstLayer = contributions.findIndex(
-    (value) => value.kind === 'layers' && value.names.length > 0,
+  const contributions = (extracted.contributions ?? []).map(
+    (definition, index) => ({
+      definition,
+      start: extracted.contributionStarts?.[index],
+    }),
   )
-  if (firstLayer >= 0) {
-    const start = extracted.contributionStarts?.[firstLayer]
-    if (start !== undefined)
+  const rank = (kind: string) =>
+    kind === 'import' ? 0 : kind === 'namespace' ? 1 : 2
+  const layered = contributions.find(
+    (value) =>
+      value.definition.kind === 'layers' && value.definition.names.length > 0,
+  )
+  let contributionLine = 1
+  if (layered) {
+    if (layered.start !== undefined)
       Mapping.addMapping(cssMap, {
         generated: { line: contributionLine, column: 0 },
-        original: position(start),
+        original: position(layered.start),
         source: options.moduleId,
       })
     contributionLine++
   }
-  contributions.forEach((contribution, index) => {
-    if (contribution.kind === 'layers') return
-    const css =
+  for (const contribution of contributions.toSorted(
+    (a, b) => rank(a.definition.kind) - rank(b.definition.kind),
+  )) {
+    if (contribution.definition.kind === 'layers') continue
+    const rendered =
       Css.compile({
         styles: { styles: [] },
-        contributions: [contribution],
+        contributions: [contribution.definition],
         themes: Object.keys(extracted.themes).length
           ? extracted.themes
           : undefined,
       }).contributionCss ?? ''
-    if (!css) return
-    const start = extracted.contributionStarts?.[index]
-    for (const _ of css.split('\n')) {
-      if (start !== undefined)
+    if (!rendered) continue
+    for (const _ of rendered.split('\n')) {
+      if (contribution.start !== undefined)
         Mapping.addMapping(cssMap, {
           generated: { line: contributionLine, column: 0 },
-          original: position(start),
+          original: position(contribution.start),
           source: options.moduleId,
         })
       contributionLine++
     }
-  })
+  }
   const scoped = emitted.scopedCss ?? emitted.css
 
   const css = [
@@ -731,11 +750,17 @@ export function compile(options: compile.Options): compile.ReturnType {
     source: options.moduleId,
   })
 
+  const namespaced = Namespaces.rewrite(
+    css,
+    extracted.namespaces ?? [],
+    Mapping.toEncodedMap(cssMap),
+    true,
+  )
   return Object.freeze({
     classes,
     code: module.toString(),
-    css,
-    cssMap: Mapping.toEncodedMap(cssMap),
+    css: namespaced.css,
+    cssMap: namespaced.map ?? Mapping.toEncodedMap(cssMap),
     map: {
       file: options.moduleId,
       mappings: map.mappings,

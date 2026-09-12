@@ -4,6 +4,8 @@ declare const reference: unique symbol
 export type Kind =
   | 'colorProfile'
   | 'counterStyle'
+  | 'cssFunction'
+  | 'customMedia'
   | 'fontPaletteValues'
   | 'positionTry'
 /** A fixed CSS name whose domain remains visible to authoring types. */
@@ -35,6 +37,8 @@ export type Checked<value> = { [key in keyof value]: Check<value[key], key> }
 
 /** Checks the domain of a compiler-owned identity at untyped source boundaries. */
 export function accepts(kind: Kind, property: string): boolean {
+  if (kind === 'cssFunction') return true
+  if (kind === 'customMedia') return false
   if (property.startsWith('--')) return true
   if (kind === 'counterStyle')
     return [

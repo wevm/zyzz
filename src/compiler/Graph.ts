@@ -704,6 +704,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       id,
       contributions.map((contribution, index) => ({
         source: id,
+        namespaces: extractedModule.namespaces,
         key: String(index),
         css:
           contribution.kind === 'layers'

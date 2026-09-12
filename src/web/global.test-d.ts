@@ -2,6 +2,11 @@
 import { describe, test } from 'vite-plus/test'
 import { global } from 'zyzz/web'
 describe('global', () => {
+  test('rejects ordinary symbols as grouping keys', () => {
+    const key = Symbol('query')
+    // @ts-expect-error grouping symbols must be compiler-owned queries
+    global({ [key]: { body: { color: 'red' } } })
+  })
   test('checks grouping contexts', () => {
     global({
       '@scope': { body: { color: 'red' } },

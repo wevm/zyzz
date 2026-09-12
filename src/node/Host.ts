@@ -164,6 +164,50 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     if (graph.sharedCss) {
       const assets = new Map<string, string>()
+      function relocate(
+        url: LightningCss.Url,
+        target = graph.sharedAssets?.[url.url],
+      ) {
+        if (!target) return
+        if (!target.startsWith(`${options.packageId}/`))
+          throw new Error('Asset path escapes the package root.')
+        const relative = target.slice(options.packageId.length + 1)
+        const decoded = decodeURIComponent(relative.split(/[?#]/)[0]!)
+        const filename = Path.posix.normalize(decoded)
+        if (
+          filename === '..' ||
+          filename.startsWith('../') ||
+          filename.startsWith('/') ||
+          filename.includes('\\') ||
+          filename.includes('\0') ||
+          filename.includes(':')
+        )
+          throw new Error('Asset path escapes the package root.')
+        if (
+          filename.split('/').some((_, index, parts) => {
+            const ancestor = parts.slice(0, index + 1).join('/')
+            return generated.has(
+              insensitive ? ancestor.toLowerCase() : ancestor,
+            )
+          })
+        )
+          throw new Error('Asset path conflicts with generated output.')
+        if (
+          filename
+            .split('/')
+            .some((part) =>
+              ['.zyzz.json', '.zyzz-lock'].includes(part.toLowerCase()),
+            )
+        )
+          throw new Error('Asset path conflicts with host control files.')
+        assets.set(filename, Path.join(root, filename))
+        return {
+          ...url,
+          url:
+            filename.split('/').map(encodeURIComponent).join('/') +
+            relative.slice(relative.split(/[?#]/)[0]!.length),
+        }
+      }
 
       const shared =
         css === false && !Object.keys(graph.sharedAssets ?? {}).length
@@ -179,61 +223,16 @@ export async function create(options: create.Options): Promise<Runtime> {
               minify: css === false ? false : css.minify,
               ...(css === false ? {} : { targets: css.targets }),
               visitor: {
-                Url(url) {
-                  const target = graph.sharedAssets?.[url.url]
-                  if (!target) return
+                Rule(rule) {
+                  if (rule.type !== 'import') return
+                  const url = relocate({
+                    url: rule.value.url,
+                    loc: rule.value.loc,
+                  })
+                  if (url) return AtRules.relocateImport(rule.value, url.url)
 
-                  if (!target.startsWith(`${options.packageId}/`))
-                    throw new Error('Asset path escapes the package root.')
-
-                  const relative = target.slice(options.packageId.length + 1)
-                  const decoded = decodeURIComponent(relative.split(/[?#]/)[0]!)
-                  const filename = Path.posix.normalize(decoded)
-                  if (
-                    filename === '..' ||
-                    filename.startsWith('../') ||
-                    filename.startsWith('/') ||
-                    filename.includes('\\') ||
-                    filename.includes('\0') ||
-                    filename.includes(':')
-                  )
-                    throw new Error('Asset path escapes the package root.')
-
-                  if (
-                    filename.split('/').some((_, index, parts) => {
-                      const ancestor = parts.slice(0, index + 1).join('/')
-
-                      return generated.has(
-                        insensitive ? ancestor.toLowerCase() : ancestor,
-                      )
-                    })
-                  )
-                    throw new Error(
-                      'Asset path conflicts with generated output.',
-                    )
-
-                  if (
-                    filename
-                      .split('/')
-                      .some((part) =>
-                        ['.zyzz.json', '.zyzz-lock'].includes(
-                          part.toLowerCase(),
-                        ),
-                      )
-                  )
-                    throw new Error(
-                      'Asset path conflicts with host control files.',
-                    )
-
-                  assets.set(filename, Path.join(root, filename))
-
-                  return {
-                    ...url,
-                    url:
-                      filename.split('/').map(encodeURIComponent).join('/') +
-                      relative.slice(relative.split(/[?#]/)[0]!.length),
-                  }
                 },
+                Url: relocate,
               },
             })
 
@@ -241,8 +240,28 @@ export async function create(options: create.Options): Promise<Runtime> {
         const real = await Fs.realpath(file)
         if (!inside(root, real))
           throw new Error('Asset path escapes the package root.')
+        const content = await Fs.readFile(real)
+        if (name.endsWith('.css')) {
+          function discover(url: string) {
+            if (!url || /^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url)) return
+            const target = `${options.packageId}/${Path.posix.join(Path.posix.dirname(name), url)}`
+            relocate({ url, loc: { line: 1, column: 1 } }, target)
+          }
+          AtRules.transform({
+            filename: name,
+            code: content,
+            visitor: {
+              Rule(rule) {
+                if (rule.type === 'import') discover(rule.value.url)
+              },
+              Url(url) {
+                discover(url.url)
+              },
+            },
+          })
+        }
+        artifacts.set(name, content)
 
-        artifacts.set(name, await Fs.readFile(real))
       }
 
       artifacts.set('zyzz.shared.css', Buffer.from(shared.code).toString())

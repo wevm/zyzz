@@ -12,6 +12,7 @@ export type Raw =
   | `@${'media' | 'supports' | 'container' | 'scope' | 'layer'}${'\t' | '\n' | '\r' | '\f' | '(' | `/*${string}*/`}${string}`
   | `${string}&${string}`
   | `:${string}`
+  | `@document ${string}`
   | '@starting-style'
   | '@scope'
   | '@layer'
@@ -48,6 +49,9 @@ type Containers<tokens> = tokens extends {
 }
   ? name
   : never
+declare const query: unique symbol
+/** Opaque grouping key emitted by a custom-media declaration. */
+export type Query = symbol & { readonly [query]: true }
 
 declare const relationship: unique symbol
 /** Opaque key returned only by typed relationship authoring helpers. */
@@ -58,7 +62,11 @@ export type Keys<
   tokens extends Theme.Tokens = {},
   key extends PropertyKey = never,
 > =
-  | ([key] extends [never] ? never : symbol extends key ? symbol : Relationship)
+  | ([key] extends [never]
+      ? never
+      : symbol extends key
+        ? symbol
+        : Relationship | Query)
   | Raw
   | `@media ${Alias<Names<tokens, 'breakpoints'>>}`
   | `@container ${Alias<Names<tokens, 'containers'>>}`
@@ -72,7 +80,7 @@ export function is(key: string): boolean {
     nested(key) ||
     key.startsWith(':') ||
     ['@starting-style', '@scope', '@layer'].includes(key) ||
-    /^@(media|supports|container|scope|layer)(?=[\t\n\r\f (]|\/\*)/.test(key)
+    /^@(media|supports|container|scope|layer|document)(?=[\t\n\r\f (]|\/\*)/.test(key)
   )
 }
 

@@ -1,5 +1,7 @@
 /** Carries source-owned stylesheet sections across packed boundaries and rebases their assets. @module */
 import * as Mapping from '@jridgewell/gen-mapping'
+import type * as Namespace from '../../web/internal/Namespace.js'
+import * as Namespaces from './Namespaces.js'
 import * as AtRules from './AtRules.js'
 import * as Contributions from '../../web/internal/Contributions.js'
 
@@ -17,6 +19,8 @@ export class ConflictError extends Error {
 
 /** Ordered CSS owned by one portable source module. */
 export type Section = {
+  /** Isolated selector namespaces belonging to the source owner. */
+  readonly namespaces?: readonly Namespace.Definition[] | undefined
   /** Portable identity of the contributing source module. */
   readonly source: string
   /** Trusted graph owner; ignored when reading external metadata. */
@@ -76,6 +80,7 @@ export function render(sections: readonly Section[]) {
   const ordered = sections.filter((section) => {
     const signature = JSON.stringify([
       section.css,
+      section.namespaces,
       section.layers,
       section.content,
       section.start,
@@ -98,6 +103,18 @@ export function render(sections: readonly Section[]) {
 
     return true
   })
+  ordered.sort((a, b) => rank(a.css) - rank(b.css))
+  const namespaceUris = new Map<string, string>()
+  for (const section of ordered)
+    for (const entry of section.namespaces ?? []) {
+      const previous = namespaceUris.get(entry.name)
+      if (previous !== undefined && previous !== entry.uri)
+        throw new ConflictError(
+          section.owner ?? section.source,
+          'Conflicting namespace identity.',
+        )
+      namespaceUris.set(entry.name, entry.uri)
+    }
 
   const layers = Contributions.order(
     ordered.flatMap((section) => section.layers),
@@ -112,13 +129,31 @@ export function render(sections: readonly Section[]) {
 
   for (const section of ordered) {
     if (!section.css) continue
-
-    let changed = false
+    const namespaced = Namespaces.rewrite(
+      section.css,
+      section.namespaces ?? [],
+    ).css
+    let changed = namespaced !== section.css
+    function relocate(url: string): string {
+      if (!url || /^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url)) return url
+      changed = true
+      const target = resolve(section.source, url)
+      const key = `zyzz-asset:${encodeURIComponent(target)}`
+      assets[key] = target
+      owners[key] = section.owner ?? section.source
+      return key
+    }
     const rewritten = AtRules.transform({
       filename: section.source,
-      code: new TextEncoder().encode(section.css),
+      code: new TextEncoder().encode(namespaced),
       visitor: {
         Rule(rule) {
+          if (rule.type === 'import') {
+            const url = relocate(rule.value.url)
+            if (url !== rule.value.url)
+              return AtRules.relocateImport(rule.value, url)
+            return
+          }
           if (rule.type !== 'keyframes') {
             const identity = (() => {
               if (rule.type === 'counter-style' || rule.type === 'position-try')
@@ -135,14 +170,20 @@ export function render(sections: readonly Section[]) {
                 }
               if (
                 rule.type === 'unknown' &&
-                rule.value.name === 'color-profile'
+                ['color-profile', 'function', 'custom-media'].includes(
+                  rule.value.name,
+                )
               ) {
                 const name = rule.value.prelude[0]
-                if (name?.type === 'dashed-ident')
+                if (
+                  name?.type === 'dashed-ident' ||
+                  (rule.value.name === 'function' && name?.type === 'function')
+                )
                   return {
-                    name: name.value,
-                    data: rule.value.block,
-                    kind: 'color-profile',
+                    name:
+                      name.type === 'function' ? name.value.name : name.value,
+                    data: [rule.value.prelude, rule.value.block],
+                    kind: rule.value.name,
                   }
               }
               return undefined
@@ -180,18 +221,8 @@ export function render(sections: readonly Section[]) {
           animations.set(name, { source: section.source, signature })
         },
         Url(url) {
-          if (!url.url || /^(?:\/|[?#]|[a-z][a-z\d+.-]*:)/i.test(url.url))
-            return
-
-          changed = true
-
-          const target = resolve(section.source, url.url)
-          const key = `zyzz-asset:${encodeURIComponent(target)}`
-
-          assets[key] = target
-          owners[key] = section.owner ?? section.source
-
-          return { ...url, url: key }
+          const value = relocate(url.url)
+          if (value !== url.url) return { ...url, url: value }
         },
       },
       errorRecovery: false,
@@ -278,6 +309,9 @@ export function read(value: unknown): readonly Section[] {
 
     return {
       source: section.source,
+      ...(section.namespaces !== undefined
+        ? { namespaces: Namespaces.read(section.namespaces) }
+        : {}),
       ...(section.dependency !== undefined
         ? { dependency: [...section.dependency] }
         : {}),
@@ -315,4 +349,10 @@ export function write(sections: readonly Section[]): readonly Section[] {
 
     return { ...rest, content }
   })
+}
+
+function rank(css: string): number {
+  if (css.startsWith('@import ')) return 0
+  if (css.startsWith('@namespace ')) return 1
+  return 2
 }

@@ -2,6 +2,7 @@
  * Connects static Zyzz source compilation to Vite resolution and CSS delivery.
  * @module
  */
+import * as Namespaces from '../compiler/internal/Namespaces.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Crypto from 'node:crypto'
@@ -163,12 +164,16 @@ export function zyzz(): Plugin {
             ? [
                 'colorProfile',
                 'counterStyle',
+                'cssFunction',
+                'customMedia',
                 'fontFace',
                 'fontFeatureValues',
                 'fontPaletteValues',
                 'global',
+                'importCss',
                 'keyframes',
                 'layers',
+                'namespace',
                 'page',
                 'positionTry',
                 'viewTransition',
@@ -688,6 +693,15 @@ export function zyzz(): Plugin {
               Mapping.toEncodedMap(new Mapping.GenMapping()),
           ),
           visitor: {
+            Rule(rule) {
+              if (rule.type !== 'import') return
+              const target = result.sharedAssets?.[rule.value.url]
+              if (target)
+                return AtRules.relocateImport(
+                  rule.value,
+                  assetUrls.get(target)!,
+                )
+            },
             Url(url) {
               const target = result.sharedAssets?.[url.url]
               if (!target) return
@@ -747,6 +761,49 @@ export function zyzz(): Plugin {
       root = config.root
     },
     enforce: 'pre',
+    generateBundle: {
+      order: 'post',
+      handler(_, bundle) {
+        for (const output of Object.values(bundle)) {
+          if (output.type !== 'asset' || !output.fileName.endsWith('.css'))
+            continue
+          const css =
+            typeof output.source === 'string'
+              ? output.source
+              : new TextDecoder().decode(output.source)
+          const external = bundle[`${output.fileName}.map`]
+          const inline = css.match(
+            /\/\*# sourceMappingURL=data:application\/json(?:;charset=[^;,]+)?;base64,([A-Za-z0-9+/=]+)\s*\*\//,
+          )
+          const previous =
+            external?.type === 'asset'
+              ? (JSON.parse(
+                  typeof external.source === 'string'
+                    ? external.source
+                    : new TextDecoder().decode(external.source),
+                ) as Mapping.EncodedSourceMap)
+              : inline
+                ? (JSON.parse(
+                    Buffer.from(inline[1]!, 'base64').toString(),
+                  ) as Mapping.EncodedSourceMap)
+                : undefined
+          const result = Namespaces.bundle(css, previous)
+          let restored = AtRules.rename(
+            result.css,
+            '-zyzz-ffv-000000000',
+            'font-feature-values',
+          )
+          if (result.map && external?.type === 'asset')
+            external.source = JSON.stringify(result.map)
+          if (result.map && inline)
+            restored = restored.replace(
+              inline[0],
+              `/*# sourceMappingURL=data:application/json;base64,${Buffer.from(JSON.stringify(result.map)).toString('base64')} */`,
+            )
+          output.source = restored
+        }
+      },
+    },
     async watchChange(file, change) {
       await updateDiscovery(this.environment, file, change.event)
     },
@@ -807,13 +864,20 @@ export function zyzz(): Plugin {
         undefined,
         id === sharedId,
       )
+      const transport = (css: string) =>
+        this.environment.config.command === 'build'
+          ? AtRules.rename(
+              Namespaces.protect(css),
+              'font-feature-values',
+              '-zyzz-ffv-000000000',
+            )
+          : css
       if (id === sharedId)
         return {
-          code: output.sharedCss,
+          code: transport(output.sharedCss),
           map: JSON.stringify(output.sharedCssMap),
         }
-
-      return { code: output.css, map: JSON.stringify(output.cssMap) }
+      return { code: transport(output.css), map: JSON.stringify(output.cssMap) }
     },
     name: 'zyzz',
     resolveId(id) {

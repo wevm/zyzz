@@ -19,6 +19,10 @@ describe('page', () => {
       },
     })
     page({ descriptors: { size: '1pc 2Q' } })
+    page({ descriptors: { size: '20em 30em' } })
+    page({ descriptors: { size: 0 } })
+    // @ts-expect-error page dimensions cannot be percentages
+    page({ descriptors: { size: '50%' } })
     // @ts-expect-error element display does not apply to pages
     page({ descriptors: { display: 'flex' } })
     // @ts-expect-error table border collapse does not apply to pages

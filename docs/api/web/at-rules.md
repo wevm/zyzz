@@ -205,3 +205,19 @@ CSS functions use ordered parameter records with `name`, optional `syntax`, and 
 Generated stylesheet files use UTF-8 without a BOM or `@charset`. Source maps and packed sections remain Unicode text; imported CSS assets retain their authored bytes. Serve generated CSS with UTF-8 transport metadata. No nested charset helper or alternative output encoding is exposed.
 
 The private profile implementation preserves `src`, `renderingIntent`, and comma-separated `components`, and links names inside `color(${profile} …)` across source and packed imports. The public export remains gated on real profile rendering evidence.
+
+## Function Signatures
+
+`cssFunction` accepts single syntax components, `+`/`#` repetition, and `type(...)` alternatives. Scalar alternatives retain argument and result domains through packed libraries. List arguments remain CSS text; commas are enclosed in an argument block during source and runtime expression formatting.
+
+```ts
+const size = cssFunction({
+  parameters: [
+    { name: '--size', syntax: 'type(<length> | <percentage>)', default: '25%' },
+  ],
+  returns: 'type(<length> | <percentage>)',
+  body: { result: 'calc(var(--size) * 2)' },
+})
+```
+
+Identifier escapes, complete list-value refinements, and every permitted function context remain acceptance work. The new PDF fixture verifies named pages, first/left selectors, counters, and sixteen margin boxes against native CSS; it does not establish bleed, crop marks, or every fragmentation rule.

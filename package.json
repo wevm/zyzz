@@ -33,6 +33,7 @@
     "css-tree": "3.2.1",
     "esbuild": "^0.28.2",
     "mdn-data": "2.35.0",
+    "pdf-lib": "1.17.1",
     "pkg-pr-new": "^0.0.88",
     "playwright": "^1.63.0",
     "quickjs-emscripten": "^0.32.0",

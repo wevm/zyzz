@@ -2,6 +2,7 @@
  * Serializes validated theme authoring data for independently compiled libraries.
  * @module
  */
+import * as FunctionSyntax from '../../internal/FunctionSyntax.js'
 import * as Stylesheets from './Stylesheets.js'
 import type * as Binding from '../../internal/Binding.js'
 import * as Marker from '../../runtime/Marker.js'
@@ -480,19 +481,8 @@ export function write(
 
 function signature(input: unknown): NonNullable<Themes.Call['function']> {
   const value = record(input)
-  const syntaxes = [
-    '*',
-    '<color>',
-    '<length>',
-    '<length-percentage>',
-    '<number>',
-    '<percentage>',
-    '<integer>',
-    '<angle>',
-    '<time>',
-  ]
   if (
-    !syntaxes.includes(string(value.returns)) ||
+    !FunctionSyntax.accepts(string(value.returns)) ||
     !Array.isArray(value.parameters)
   )
     throw new Error('Invalid packed CSS function signature.')
@@ -504,7 +494,7 @@ function signature(input: unknown): NonNullable<Themes.Call['function']> {
       !/^--[_a-zA-Z][\w-]*$/.test(name) ||
       names.has(name) ||
       (parameter.syntax !== undefined &&
-        !syntaxes.includes(string(parameter.syntax))) ||
+        !FunctionSyntax.accepts(string(parameter.syntax))) ||
       (parameter.default !== undefined &&
         typeof parameter.default !== 'number' &&
         typeof parameter.default !== 'string')

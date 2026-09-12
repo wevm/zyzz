@@ -1,6 +1,8 @@
 # At-rule Acceptance Review
 
-Phase 2.5 remains incomplete. The inventory tracks 22 rules and 62 descriptors/nested blocks. `@charset` has a reviewed UTF-8 policy, and `@namespace` has source, packed, map, watch, and native selector evidence. Other families retain explicit acceptance work. A supported entry cannot retain unresolved gaps.
+Phase 2.5 remains incomplete. The inventory tracks 22 rules and 62 descriptors/nested blocks. `@charset` has a reviewed UTF-8 policy, and `@namespace` has source, packed, map, watch, and native selector evidence.
+
+All sixteen page-margin blocks also have dedicated source, packed dependency, source-map, watch, and native PDF evidence. Other families retain explicit acceptance work. A supported entry cannot retain unresolved gaps.
 
 Chromium 153.0.8010.0 rejects `@color-profile`, its `color()` expressions, and the `CSSColorProfileRule` interface. The profile helper remains private. Native PDF output verifies named pages, first/left selectors, counters, and sixteen margin boxes against handwritten CSS; it does not prove printer marks or bleed.
 
@@ -27,9 +29,13 @@ Chromium 153.0.8010.0 rejects `@color-profile`, its `color()` expressions, and t
 | `@scope`               | partial   | Complete root/limit nesting, specificity, and allowed-context review.                                                                          |
 | `@starting-style`      | partial   | Transition-start rendering and complete style/grouping placement.                                                                              |
 | `@supports`            | partial   | Complete condition grammar and allowed-context review.                                                                                         |
-| `@view-transition`     | partial   | Real navigation/capture behavior and transition-type context coverage.                                                                         |
+| `@view-transition`     | partial   | Transition-type grammar/type validation and host watch acceptance.                                                                             |
 
 ## Evidence Added
+
+- `Transform.page.test.ts` and `Host.page.test.ts`: every margin box survives a packed library dependency, maps to its owning source call, and replaces its contents during a real host watch update. Public type probes and independent PDF comparisons complete the sixteen nested-block entries. Removing each box separately changes the PDF drawing stream. The parent `@page` rule remains partial.
+
+- `Transform.viewTransition.browser.test.ts`: a real HTTP server and same-origin link navigation exercise packed CSS alongside independently authored native CSS. Successful capture activates both declared transition types and generated transition images; a narrower viewport disables capture through the authored media condition. Descriptor grammar/type validation and watch acceptance still block promotion.
 
 - `Transform.namespace.test.ts`, `Host.namespace.test.ts`, and `namespace.test-d.ts`: CSS identifier spellings, repeated declarations, URI string encoding, source and packed diagnostics, map attribution, watch updates, and Chromium comparison with independently authored namespace stylesheets. Existing `vite/statements.test.ts` covers production prolog ordering and source-map composition.
 

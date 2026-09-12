@@ -3,6 +3,7 @@ import * as Pdf from 'pdf-lib'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
+import * as Margins from '../../test/fixtures/PageMargins.js'
 
 describe('compile', () => {
   test('prints named pages, pseudo-pages, counters, and all sixteen margin boxes', async () => {
@@ -63,26 +64,43 @@ body{margin:0;font-family:Arial;font-size:8px}section{break-after:page}section:l
       expect(native.getPageCount()).toMatchInlineSnapshot('3')
       for (const [index, page] of compiled.getPages().entries()) {
         const reference = native.getPage(index)
-        const streams = (page: Pdf.PDFPage) => {
-          const contents = page.node.Contents()
-          const entries =
-            contents instanceof Pdf.PDFArray ? contents.asArray() : [contents]
-          return Buffer.concat(
-            entries.map((entry) => {
-              const stream = page.doc.context.lookup(entry)
-              if (!(stream instanceof Pdf.PDFRawStream))
-                throw new Error('Expected a PDF page content stream.')
-              return Buffer.from(Pdf.decodePDFRawStream(stream).decode())
-            }),
-          )
-        }
 
         expect(
           Buffer.compare(streams(page), streams(reference)) === 0,
         ).toMatchInlineSnapshot('true')
+      }
+      // Each box must affect the PDF; equality alone could hide rules ignored by both paths.
+      for (const box of Margins.boxes) {
+        await page.setContent(html)
+        await page.addStyleTag({
+          content: reference.replace(new RegExp(`${box}\\{[^}]*\\}`, 'g'), ''),
+        })
+        const omitted = await Pdf.PDFDocument.load(
+          await page.pdf({ preferCSSPageSize: true, printBackground: true }),
+        )
+        expect(
+          Buffer.compare(
+            streams(native.getPage(1)),
+            streams(omitted.getPage(1)),
+          ) === 0,
+        ).toMatchInlineSnapshot('false')
       }
     } finally {
       await browser.close()
     }
   })
 })
+
+function streams(page: Pdf.PDFPage) {
+  const contents = page.node.Contents()
+  const entries =
+    contents instanceof Pdf.PDFArray ? contents.asArray() : [contents]
+  return Buffer.concat(
+    entries.map((entry) => {
+      const stream = page.doc.context.lookup(entry)
+      if (!(stream instanceof Pdf.PDFRawStream))
+        throw new Error('Expected a PDF page content stream.')
+      return Buffer.from(Pdf.decodePDFRawStream(stream).decode())
+    }),
+  )
+}

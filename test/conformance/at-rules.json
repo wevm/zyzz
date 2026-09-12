@@ -676,208 +676,208 @@
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "47aef8d1cc9dde57713943038f873d2fd7bfd6a8b52d0ea76ab2391179629ec4",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@bottom-left": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "874c88c7e872549e1d3dd1e1dd223ac6be3d48e76c8e28b1e4596f8b03317849",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@bottom-left-corner": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f2d9aac4bc3e99557c4696c08187b18a964287d1af9ce1b2ce6f2b4610a51d3f",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@bottom-right": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "567829cdd2d5d522fdead951fd5d87e5dd6781600d2b49d09d330e4761c52631",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@bottom-right-corner": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "d1ac38d92ad52b8d8acc3d762d6b11d3957710e9f73ddfad523c98a6921a5f5b",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@left-bottom": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f9573086a7f02c9c1bf7393b3f3bcf16e6dbc98f37703712acac39209e0b72cd",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@left-middle": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f26bb7d9f86b73a19338d37185c2a29c607efdb906c2c823ed79cfbb26babe3d",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@left-top": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "bbfce9c8b5e16cc3409d3bc5bd18a1da579971e08a07af9d1464169e9d773b60",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@right-bottom": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "dbd4e4fceeeafcf3f4fa312aa55755bf1988f2e247c8e6405fbbf9aa2df42265",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@right-middle": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "95d6340b60be27f2203bc88cb13ec1d7af29aa1a03b34cd5658a72f73cd90bc8",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@right-top": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f3aeb3a256fd424de4dfcffd4230f421f7da1db13085bdeef7a22f84bf57135d",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@top-center": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "15ffd8470b49eee165034a6944dfd07e25f76d84196d59448c404e6dbdf4557f",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@top-left": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f58aab052417a5d1c8ea039476cb3d74e3be472cf0f1ebb88e4eeaabaf3fcd85",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@top-left-corner": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "35a83109c2f4415f83666c7bb34b78d72f9ab9900c4dac402fc880e81bdc5e2b",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@top-right": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f1ce42d00144f196a1b81c409318368b126011b3ab195c6a9b680b69906689bc",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/@top-right-corner": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
         "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "0162fa26a55c40deec12fbda4084058146b5d3d61a09b03bf097949cb20797d2",
-      "status": "partial",
-      "gaps": [
-        "Dedicated packed, source-map, and watch evidence for this margin box; native PDF rendering is covered."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page/bleed": {
       "evidence": [
@@ -1030,36 +1030,39 @@
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.viewTransition.browser.test.ts",
         "src/web/viewTransition.test-d.ts"
       ],
       "grammar": "1d1a5902aefa8e5c53028f8344ffefd115621cf460e93a81df3267ee85cc7881",
       "status": "partial",
       "gaps": [
-        "Real navigation/capture behavior and transition-type context coverage."
+        "Complete transition-type grammar/type validation and source-owned watch acceptance; packed navigation, native capture, active types, and conditional opt-out are verified."
       ]
     },
     "@view-transition/navigation": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.viewTransition.browser.test.ts",
         "src/web/viewTransition.test-d.ts"
       ],
       "grammar": "43dca31c3fc2f472daa8a1fa85ff2e874e8f85dd1f791649e323bcd081b7a305",
       "status": "partial",
       "gaps": [
-        "Real navigation/capture behavior and transition-type context coverage."
+        "Complete transition-type grammar/type validation and source-owned watch acceptance; packed navigation, native capture, active types, and conditional opt-out are verified."
       ]
     },
     "@view-transition/types": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.viewTransition.browser.test.ts",
         "src/web/viewTransition.test-d.ts"
       ],
       "grammar": "d2d542ffa7166dfbe5d5595021ee66ea065d6cb5bc369128fc7855b2fbfb8f79",
       "status": "partial",
       "gaps": [
-        "Real navigation/capture behavior and transition-type context coverage."
+        "Complete transition-type grammar/type validation and source-owned watch acceptance; packed navigation, native capture, active types, and conditional opt-out are verified."
       ]
     }
   },

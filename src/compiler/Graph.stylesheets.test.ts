@@ -238,7 +238,7 @@ describe('compile', () => {
       contracts: { 'lib/index.js': library.contracts['effects.ts']! },
       imports: { 'app.ts': { lib: 'lib/index.js', zyzz: null } },
       modules: {
-        'app.ts': `import fade from 'lib';import {css} from 'zyzz';export namespace style {
+        'app.ts': `import fade from 'lib';import {css} from 'zyzz';export namespace styles {
   export const card = css({animationName:fade})
 }`,
       },
@@ -346,7 +346,7 @@ describe('compile', () => {
       contracts: { 'lib.js': library.contracts['index.ts']! },
       imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
       modules: {
-        'app.ts': `import {enter} from 'lib';import {css} from 'zyzz';export namespace style {
+        'app.ts': `import {enter} from 'lib';import {css} from 'zyzz';export namespace styles {
   export const card = css({animationName:enter})
 }`,
       },
@@ -381,7 +381,7 @@ describe('compile', () => {
         'app/main.ts': { lib: 'app/node_modules/lib/index.js', zyzz: null },
       },
       modules: {
-        'app/main.ts': `import {fade as enter} from 'lib';import {css} from 'zyzz';const alias=enter;export namespace style {
+        'app/main.ts': `import {fade as enter} from 'lib';import {css} from 'zyzz';const alias=enter;export namespace styles {
   export const card = css({animationName:alias})
 }`,
       },

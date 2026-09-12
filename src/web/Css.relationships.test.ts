@@ -59,14 +59,14 @@ describe('marker', () => {
       },
       imports: { 'app.ts': { a: 'a.js', zyzz: null, 'zyzz/web': null } },
       modules: {
-        'app.ts': `import {card as marker} from 'a';import {css} from 'zyzz';import {Css} from 'zyzz/web';export namespace style {
+        'app.ts': `import {card as marker} from 'a';import {css} from 'zyzz';import {Css} from 'zyzz/web';export namespace styles {
   export const card = css({[Css.ancestor(marker)]:{color:'red'}})
 }`,
       },
     })
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-style-1e8a67z1uaws1j-134{:where([data-z-1wfnqsmu0q6os-card-63-61-72-64]) &{color:red;}}"`,
+      `".z-style-1e8a67z1uaws1j-135{:where([data-z-1wfnqsmu0q6os-card-63-61-72-64]) &{color:red;}}"`,
     )
   })
 
@@ -93,7 +93,7 @@ describe('marker', () => {
   test('compiles relationship keys through transparent TypeScript wrappers', () => {
     const result = Graph.compile({
       modules: {
-        'app.ts': `import {css} from 'zyzz';import {Css} from 'zyzz/web';const card=Css.marker();export namespace style {
+        'app.ts': `import {css} from 'zyzz';import {Css} from 'zyzz/web';const card=Css.marker();export namespace styles {
   export const a = css({[Css.ancestor(card) satisfies symbol]:{color:'red'}})
 
   export const b = css({[Css.descendant(card)!]:{color:'blue'}})
@@ -102,8 +102,8 @@ describe('marker', () => {
     })
 
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-style-1e8a67z1uaws1j-122{:where([data-z-1e8a67z1uaws1j-card-63-61-72-64]) &{color:red;}}
-      .z-style-1e8a67z1uaws1j-201{&:where(:has([data-z-1e8a67z1uaws1j-card-63-61-72-64])){color:blue;}}"
+      ".z-style-1e8a67z1uaws1j-123{:where([data-z-1e8a67z1uaws1j-card-63-61-72-64]) &{color:red;}}
+      .z-style-1e8a67z1uaws1j-202{&:where(:has([data-z-1e8a67z1uaws1j-card-63-61-72-64])){color:blue;}}"
     `)
   })
 
@@ -180,7 +180,7 @@ describe('marker', () => {
   })
 
   const config = `import {Css} from 'zyzz/web';export const card=Css.marker({state:['open','closed'],selected:[true,false]});`
-  const app = `import {css} from 'zyzz';import {Css} from 'zyzz/web';import {card} from 'library';export {card};export namespace style {
+  const app = `import {css} from 'zyzz';import {Css} from 'zyzz/web';import {card} from 'library';export {card};export namespace styles {
   export const ancestor = css({[Css.ancestor(card,{data:{state:'open'}})]:{color:'red'}})
 
   export const descendant = css({[Css.descendant(card,{data:{selected:false}})]:{color:'blue'}})
@@ -272,11 +272,11 @@ describe('marker', () => {
       '[Error: Unknown marker state: symbol]',
     )
     expect(css).toMatchInlineSnapshot(`
-      ".z-style-1e8a67z1uaws1j-148{:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64][data-z-1dwt1t61ri6uf4-card-63-61-72-64-state="open"]) &{color:red;}}
-      .z-style-1e8a67z1uaws1j-241{&:where(:has([data-z-1dwt1t61ri6uf4-card-63-61-72-64][data-z-1dwt1t61ri6uf4-card-63-61-72-64-selected="false"])){color:blue;}}
-      .z-style-1e8a67z1uaws1j-335{:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64]) ~ &{color:green;}}
-      .z-style-1e8a67z1uaws1j-408{&:where(:has(~ [data-z-1dwt1t61ri6uf4-card-63-61-72-64])){color:purple;}}
-      .z-style-1e8a67z1uaws1j-482{:is(:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64]) ~ &, &:where(:has(~ [data-z-1dwt1t61ri6uf4-card-63-61-72-64]))){color:orange;}}"
+      ".z-style-1e8a67z1uaws1j-149{:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64][data-z-1dwt1t61ri6uf4-card-63-61-72-64-state="open"]) &{color:red;}}
+      .z-style-1e8a67z1uaws1j-242{&:where(:has([data-z-1dwt1t61ri6uf4-card-63-61-72-64][data-z-1dwt1t61ri6uf4-card-63-61-72-64-selected="false"])){color:blue;}}
+      .z-style-1e8a67z1uaws1j-336{:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64]) ~ &{color:green;}}
+      .z-style-1e8a67z1uaws1j-409{&:where(:has(~ [data-z-1dwt1t61ri6uf4-card-63-61-72-64])){color:purple;}}
+      .z-style-1e8a67z1uaws1j-483{:is(:where([data-z-1dwt1t61ri6uf4-card-63-61-72-64]) ~ &, &:where(:has(~ [data-z-1dwt1t61ri6uf4-card-63-61-72-64]))){color:orange;}}"
     `)
   })
   test('preserves identities across offsets and rejects invalid schemas and predicates', () => {
@@ -414,7 +414,7 @@ describe('marker', () => {
       )
       await page.addScriptTag({ content: code })
       await page.evaluate(
-        `for(const id of ['root','child','earlier','later','peer'])for(const [key,value]of Object.entries(Fixture.card({state:'open',selected:false})))document.getElementById(id).setAttribute(key,value);for(const id of ['ancestor','descendant','before','after','either'])document.getElementById(id).className=Fixture.style[id]().className`,
+        `for(const id of ['root','child','earlier','later','peer'])for(const [key,value]of Object.entries(Fixture.card({state:'open',selected:false})))document.getElementById(id).setAttribute(key,value);for(const id of ['ancestor','descendant','before','after','either'])document.getElementById(id).className=Fixture.styles[id]().className`,
       )
 
       expect(

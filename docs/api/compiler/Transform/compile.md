@@ -8,7 +8,7 @@ import { Transform } from 'zyzz/compiler'
 const output = Transform.compile({
   moduleId: 'app/card.ts',
   source:
-    "import { css } from 'zyzz'; export namespace style {\n  export const card = css({ padding: 0 })\n}",
+    "import { css } from 'zyzz'; export namespace styles {\n  export const card = css({ padding: 0 })\n}",
 })
 ```
 
@@ -29,7 +29,7 @@ Stable portable package-relative module identity.
 Transform.compile({
   moduleId: 'app/card.ts',
   source:
-    "import { css } from 'zyzz'; export namespace style {\n  export const card = css({ padding: 0 })\n}",
+    "import { css } from 'zyzz'; export namespace styles {\n  export const card = css({ padding: 0 })\n}",
 })
 ```
 
@@ -44,7 +44,7 @@ Complete module text parsed as TypeScript with JSX. No source execution or files
 Transform.compile({
   moduleId: 'app/card.ts',
   source:
-    "import { css } from 'zyzz'; export namespace style {\n  export const card = css({ padding: 0 })\n}",
+    "import { css } from 'zyzz'; export namespace styles {\n  export const card = css({ padding: 0 })\n}",
 })
 ```
 

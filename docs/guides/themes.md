@@ -26,11 +26,11 @@ export const { css, theme, variants } = Config.create({
 ```tsx
 import { css } from './zyzz.config.js'
 
-namespace style {
+namespace styles {
   export const button = css({ backgroundColor: 'brand', padding: 'md' })
 }
 
-const example = <button {...style.button()}>Save</button>
+const example = <button {...styles.button()}>Save</button>
 ```
 
 Token names are inferred from the config. Nested palettes use dotted paths; CSS literals win over colliding token names. See [Theme.define](../api/core/Theme/define.md) for supported groups and values.
@@ -56,7 +56,7 @@ export const { css } = Config.create({
   },
 })
 
-namespace style {
+namespace styles {
   export const card = css({ px: 'sm', margin: 'gutter', color: 'primary' })
 }
 ```
@@ -89,7 +89,7 @@ export const { css, script, themes } = Config.create({
 ```tsx
 import { css, themes } from './zyzz.config.js'
 
-namespace style {
+namespace styles {
   export const card = css({ color: 'brand' })
 }
 
@@ -100,7 +100,7 @@ function App({ appearance }: { appearance: 'base' | 'mint' }) {
         <title>My App</title>
       </head>
       <body>
-        <div {...style.card()}>Card</div>
+        <div {...styles.card()}>Card</div>
       </body>
     </html>
   )
@@ -128,7 +128,7 @@ const example = (
 )
 ```
 
-Use `light dark` for system preference, or `light` / `dark` to force a scheme. The call returns the scope class and an inline `colorScheme` style. Omitting `colorScheme` preserves inherited CSS behavior. Nested scopes can select a different theme, scheme, or both.
+Use `light dark` for system preference, or `light` / `dark` to force a scheme. The call returns the scope class and an inline `colorScheme` styles. Omitting `colorScheme` preserves inherited CSS behavior. Nested scopes can select a different theme, scheme, or both.
 
 ### Restore Preferences
 
@@ -210,12 +210,12 @@ const alternate = Theme.extend(theme, { color: { brand: '#175' } })
 const { css } = theme
 
 export const scope = alternate.className
-export namespace style {
+export namespace styles {
   export const card = css({ color: theme.tokens.color.brand })
 }
 ```
 
-Compile this module with [Transform.compile](../api/compiler/Transform/compile.md), load its CSS, and apply `scope` to an ancestor of an element using `style.card()`.
+Compile this module with [Transform.compile](../api/compiler/Transform/compile.md), load its CSS, and apply `scope` to an ancestor of an element using `styles.card()`.
 
 Use explicit `theme.tokens` paths to select tokens whose names collide with CSS literals. Dot access and literal string/numeric brackets are supported.
 

@@ -57,7 +57,7 @@ const { css } = Config.create({
   shorthands: { px: ['paddingLeft', 'paddingRight'] },
   theme: { padding: { md: '1rem' } },
 })
-namespace style {
+namespace styles {
   export const card = css({ px: 'md' })
 }
 ```
@@ -102,7 +102,7 @@ Returns `Config.create.ReturnType<options>`: a frozen object with typed `css`, a
 Infers configured token and layer names, retaining property checking inside layer bodies. Without a theme, authoring remains token-free. Direct literal calls compile through Vite or the source graph/file host. Untransformed calls throw the missing-transform error.
 
 ```ts
-namespace style {
+namespace styles {
   export const card = css({ padding: 'md' })
 }
 ```
@@ -156,7 +156,7 @@ See [Config Script](script.md) for storage, CSP, and hydration behavior.
 Infers the same theme and layer contract as bound css.
 
 ```ts
-namespace style {
+namespace styles {
   export const button = variants({
     variants: { size: { md: { padding: 'md' } } },
   })
@@ -194,11 +194,11 @@ const output = Css.compile({
 
 ```ts
 export const { css } = Config.create({ output: 'html' })
-namespace style {
+namespace styles {
   export const card = css({ padding: '8px' })
 }
 ```
 
-`style.card()` returns `class` and an optional serialized CSS `style` string. Styling overrides retain the same `className` and typed `style` inputs. Conversion belongs to compiled bindings; application code spreads or binds the result directly.
+`styles.card()` returns `class` and an optional serialized CSS `style` string. Styling overrides retain the same `className` and typed `style` inputs. Conversion belongs to compiled bindings; application code spreads or binds the result directly.
 
 Padding token literals are checked as nonnegative during typed authoring. Widened and JavaScript inputs follow the repository-wide contract of no runtime CSS-value validation.

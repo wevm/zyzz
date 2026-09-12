@@ -157,14 +157,14 @@ export async function create(options: create.Options): Promise<Bundle> {
 
         const source = (() => {
           if (kind === 'direct')
-            return `import {css} from 'zyzz'; namespace style {${definitions.join('')}} ${application(names.map((name) => `style.${name}()`))}`
+            return `import {css} from 'zyzz'; namespace styles {${definitions.join('')}} ${application(names.map((name) => `styles.${name}()`))}`
 
           if (kind === 'cached')
             return `import { css } from 'zyzz'; ${application(literals.map((style) => `css(${JSON.stringify(style)})()`))}`
 
           return `import { css } from 'zyzz';
-            namespace style { ${definitions.join('')} }
-            const applications = [${names.map((name) => `style.${name}`).join(',')}];
+            namespace styles { ${definitions.join('')} }
+            const applications = [${names.map((name) => `styles.${name}`).join(',')}];
             export function apply(index, overrides) {
               return applications[index](${kind === 'overrides' ? 'overrides' : ''});
             }`

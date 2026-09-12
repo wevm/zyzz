@@ -102,7 +102,7 @@ viewTransition({navigation:' AUTO '});`,
       moduleId: 'maps.ts',
       source: `import {css} from 'zyzz';import {fontFeatureValues} from 'zyzz/web';
 fontFeatureValues({families:'Body',features:{'@styleset':{'\\\\65 ditorial':[1,3]}}});
-export namespace style {
+export namespace styles {
   export const text = css({color:'red'})
 }`,
     })
@@ -117,7 +117,7 @@ export namespace style {
       {
         "column": 22,
         "line": 4,
-        "name": "style-1mqnwyd110b1y9-201",
+        "name": "style-1mqnwyd110b1y9-202",
         "source": "maps.ts",
       }
     `)

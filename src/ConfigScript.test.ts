@@ -117,7 +117,7 @@ describe('create', () => {
     ]) {
       const graph = Graph.compile({
         modules: {
-          'app.ts': `import {Config} from 'zyzz';const {css}=Config.create(${options});export namespace style {export const card=css({width:'10px'});}`,
+          'app.ts': `import {Config} from 'zyzz';const {css}=Config.create(${options});export namespace styles {export const card=css({width:'10px'});}`,
         },
       })
 

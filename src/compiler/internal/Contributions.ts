@@ -1,8 +1,10 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
+import type * as Block from '../../web/internal/Block.js'
 import * as RuleReference from '../../internal/RuleReference.js'
 import * as Condition from '../../internal/Condition.js'
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
+import * as Lightning from 'lightningcss'
 import * as Theme from '../../Theme.js'
 import * as Style from '../../Style.js'
 import type * as Token from '../../internal/Token.js'
@@ -11,7 +13,15 @@ import * as Expression from './Expression.js'
 import * as Themes from './Themes.js'
 import type * as Scope from './Scope.js'
 
-type Kind = 'fontFace' | 'global' | 'keyframes' | 'layers' | RuleReference.Kind
+type Kind =
+  | 'fontFeatureValues'
+  | 'page'
+  | 'viewTransition'
+  | 'fontFace'
+  | 'global'
+  | 'keyframes'
+  | 'layers'
+  | RuleReference.Kind
 const named = [
   'colorProfile',
   'counterStyle',
@@ -22,8 +32,11 @@ const named = [
 /** Stylesheet factory exports recognized by source and graph linking. */
 export const factories: readonly string[] = [
   'fontFace',
+  'fontFeatureValues',
   'global',
   'layers',
+  'page',
+  'viewTransition',
   ...named,
 ]
 
@@ -167,7 +180,13 @@ export function scan(
       if (
         node.optional ||
         (node.arguments.length !== 1 &&
-          (!['fontFace', ...named].includes(type) ||
+          (![
+            'fontFace',
+            'fontFeatureValues',
+            'page',
+            'viewTransition',
+            ...named,
+          ].includes(type) ||
             node.arguments.length !== 2)) ||
         (!variable && parent?.type !== 'ExpressionStatement') ||
         ancestors
@@ -548,6 +567,239 @@ export function extract(
           kind: 'font-face',
           declarations: declarations as Record<string, string | number>,
         })
+      } else if (call.kind === 'page') {
+        const options = record(input)
+        if (
+          Object.keys(options).some(
+            (key) => !['descriptors', 'selector'].includes(key),
+          ) ||
+          (options.selector !== undefined &&
+            typeof options.selector !== 'string')
+        )
+          throw new Error('Expected page descriptors and an optional selector.')
+        const margins = [
+          'top-left-corner',
+          'top-left',
+          'top-center',
+          'top-right',
+          'top-right-corner',
+          'bottom-left-corner',
+          'bottom-left',
+          'bottom-center',
+          'bottom-right',
+          'bottom-right-corner',
+          'left-top',
+          'left-middle',
+          'left-bottom',
+          'right-top',
+          'right-middle',
+          'right-bottom',
+        ].map((name) => `@${name}`)
+        const properties =
+          /^(?!border(?:Collapse|Spacing)$)(?:background|border|font|margin|padding|outline)/
+        const names = [
+          'color',
+          'counterIncrement',
+          'counterReset',
+          'direction',
+          'height',
+          'letterSpacing',
+          'lineHeight',
+          'maxHeight',
+          'maxWidth',
+          'minHeight',
+          'minWidth',
+          'quotes',
+          'textAlign',
+          'textDecoration',
+          'textIndent',
+          'textTransform',
+          'visibility',
+          'whiteSpace',
+          'width',
+          'wordSpacing',
+        ]
+        function body(input: unknown, margin = false): readonly Block.Entry[] {
+          return Object.entries(record(input)).flatMap(
+            ([key, value]): Block.Entry[] => {
+              if (value === undefined) return []
+              if (!margin && margins.includes(key))
+                return [
+                  { kind: 'block', header: key, entries: body(value, true) },
+                ]
+              if (
+                !margin &&
+                ['bleed', 'marks', 'pageOrientation', 'size'].includes(key)
+              ) {
+                if (typeof value !== 'string' && typeof value !== 'number')
+                  throw new Error('Expected a scalar page descriptor.')
+                return [
+                  {
+                    kind: 'descriptor',
+                    name: key.replace(
+                      /[A-Z]/g,
+                      (letter) => `-${letter.toLowerCase()}`,
+                    ),
+                    value,
+                  },
+                ]
+              }
+              if (
+                !properties.test(key) &&
+                !names.includes(key) &&
+                !(
+                  margin &&
+                  [
+                    'content',
+                    'overflow',
+                    'unicodeBidi',
+                    'verticalAlign',
+                    'zIndex',
+                  ].includes(key)
+                )
+              )
+                throw new Error('Unsupported page or page-margin declaration.')
+              return [{ kind: 'style', style: style({ [key]: value }) }]
+            },
+          )
+        }
+        result.push({
+          kind: 'block',
+          header: Condition.normalize(
+            `@page${options.selector ? ` ${options.selector}` : ''}`,
+          ),
+          entries: body(options.descriptors),
+        })
+      } else if (call.kind === 'fontFeatureValues') {
+        const options = record(input)
+        if (
+          Object.keys(options).some(
+            (key) => !['families', 'features', 'fontDisplay'].includes(key),
+          )
+        )
+          throw new Error('Unknown font-feature-values option.')
+        const families = options.families
+        if (
+          typeof families !== 'string' &&
+          (!Array.isArray(families) ||
+            !families.length ||
+            families.some((value) => typeof value !== 'string'))
+        )
+          throw new Error('Expected a font family list.')
+        const familyList = Array.isArray(families)
+          ? families
+              .map(
+                (value) =>
+                  '"' +
+                  Array.from(value as string, (char) => {
+                    const code = char.codePointAt(0)!
+                    return code < 32 ||
+                      code === 127 ||
+                      char === '"' ||
+                      char === '\\'
+                      ? `\\${code.toString(16)} `
+                      : char
+                  }).join('') +
+                  '"',
+              )
+              .join(',')
+          : families
+        // Validate the native prelude before shielding newer body descriptors.
+        Lightning.transform({
+          filename: 'font-feature-values.css',
+          code: new TextEncoder().encode(
+            `@font-feature-values ${familyList} {}`,
+          ),
+        })
+        const entries: Block.Entry[] = []
+        for (const key of Object.keys(options)) {
+          if (key === 'fontDisplay' && options.fontDisplay !== undefined) {
+            if (
+              typeof options.fontDisplay !== 'string' ||
+              !['auto', 'block', 'fallback', 'optional', 'swap'].includes(
+                options.fontDisplay
+                  .trim()
+                  .replace(/[A-Z]/g, (letter) => letter.toLowerCase()),
+              )
+            )
+              throw new Error('Invalid font display descriptor.')
+            entries.push({
+              kind: 'descriptor',
+              name: 'font-display',
+              value: options.fontDisplay,
+            })
+          }
+          if (key !== 'features') continue
+          for (const [header, input] of Object.entries(
+            record(options.features),
+          )) {
+            if (input === undefined) continue
+            if (
+              ![
+                '@annotation',
+                '@character-variant',
+                '@ornaments',
+                '@styleset',
+                '@stylistic',
+                '@swash',
+              ].includes(header)
+            )
+              throw new Error('Unknown font feature block.')
+            const declarations: Block.Entry[] = Object.entries(
+              record(input),
+            ).map(([name, value]) => {
+              const values = Array.isArray(value) ? value : [value]
+              const maximum =
+                header === '@styleset'
+                  ? Infinity
+                  : header === '@character-variant'
+                    ? 2
+                    : 1
+              if (
+                !identifier(name) ||
+                !values.length ||
+                values.length > maximum ||
+                values.some(
+                  (value) =>
+                    typeof value !== 'number' ||
+                    !Number.isSafeInteger(value) ||
+                    value < 0,
+                )
+              )
+                throw new Error(
+                  'Expected feature aliases with nonnegative integer indices.',
+                )
+              return { kind: 'descriptor', name, value: values.join(' ') }
+            })
+            entries.push({ kind: 'block', header, entries: declarations })
+          }
+        }
+        result.push({
+          kind: 'block',
+          header: `@font-feature-values ${familyList}`,
+          entries,
+        })
+      } else if (call.kind === 'viewTransition') {
+        const entries = Object.entries(record(input)).flatMap(
+          ([key, value]): Block.Entry[] => {
+            if (value === undefined) return []
+            if (
+              (key !== 'navigation' && key !== 'types') ||
+              typeof value !== 'string' ||
+              (key === 'navigation' &&
+                !['auto', 'none'].includes(
+                  value
+                    .trim()
+                    .replace(/[A-Z]/g, (letter) => letter.toLowerCase()),
+                ))
+            )
+              throw new Error(
+                'Expected navigation or types view-transition descriptors.',
+              )
+            return [{ kind: 'descriptor', name: key, value }]
+          },
+        )
+        result.push({ kind: 'block', header: '@view-transition', entries })
       } else if (call.kind === 'positionTry') {
         const declarations = record(input)
         const keys = [
@@ -765,4 +1017,25 @@ export function extract(
   }
 
   return result
+}
+
+// CSS identifiers allow non-ASCII code points and escaped identifier characters.
+function identifier(value: string): boolean {
+  const escape = String.raw`\\(?:[\da-fA-F]{1,6}(?:\r\n|[ \t\n\r\f])?|[^\n\r\f\da-fA-F])`
+  const start = `(?:[_a-zA-Z\\u0080-\\u{10FFFF}]|${escape})`
+  const rest = `(?:[_a-zA-Z0-9-\\u0080-\\u{10FFFF}]|${escape})`
+  if (!new RegExp(`^(?:--|-?${start})${rest}*$`, 'u').test(value)) return false
+  const decoded = value.replace(
+    /\\([\da-fA-F]{1,6})(?:\r\n|[ \t\n\r\f])?|\\([^\n\r\f])/g,
+    (_, hex: string | undefined, char: string) =>
+      hex ? String.fromCodePoint(Math.min(parseInt(hex, 16), 0x10ffff)) : char,
+  )
+  return ![
+    'default',
+    'inherit',
+    'initial',
+    'revert',
+    'revert-layer',
+    'unset',
+  ].includes(decoded.toLowerCase())
 }

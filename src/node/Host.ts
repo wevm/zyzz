@@ -2,7 +2,8 @@
  * Processes standalone CSS and publishes incremental file builds with watch recovery.
  * @module
  */
-import * as LightningCss from 'lightningcss'
+import type * as LightningCss from 'lightningcss'
+import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Crypto from 'node:crypto'
 import * as NativeFs from 'node:fs'
 import * as Fs from 'node:fs/promises'
@@ -170,7 +171,7 @@ export async function create(options: create.Options): Promise<Runtime> {
               code: Buffer.from(graph.sharedCss),
               map: Buffer.from(JSON.stringify(graph.sharedCssMap)),
             }
-          : LightningCss.transform({
+          : AtRules.transform({
               filename: 'zyzz.shared.css',
               code: Buffer.from(graph.sharedCss),
               sourceMap: true,
@@ -264,7 +265,7 @@ export async function create(options: create.Options): Promise<Runtime> {
         if (css === false)
           stylesheet = { code: output.css, map: JSON.stringify(output.cssMap) }
         else {
-          const result = LightningCss.transform({
+          const result = AtRules.transform({
             code: Buffer.from(output.css),
             filename: `${options.packageId}/${name}.css`,
             inputSourceMap: JSON.stringify(output.cssMap),

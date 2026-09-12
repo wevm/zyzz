@@ -1,8 +1,7 @@
 # At-Rules
 
 > [!NOTE]
-> `colorProfile` remains planned and is not exported until real-browser rendering is verified.
-> Grouping contexts, expanded font-face descriptors, and timeline-range keyframes are implemented. New descriptor and statement helpers remain planned in the dependent PRs; full conformance is tracked separately.
+> Grouping, font, named descriptor, page, and view-transition helpers are implemented. Statement helpers remain planned in the dependent PR; full conformance is tracked separately.
 
 Stylesheet declarations use direct named imports from `zyzz/web`. Conditional and grouping rules remain native `@…` keys in valid style contexts. `global` owns global selectors and their grouping rules; descriptor and statement rules have dedicated functions.
 
@@ -65,7 +64,7 @@ fontFace({
 fontFeatureValues({
   families: '"Example Font"',
   features: {
-    '@styleset': { editorial: '1 3' },
+    '@styleset': { editorial: [1, 3] },
     '@swash': { decorative: 2 },
   },
 })
@@ -197,3 +196,6 @@ CSS functions use ordered parameter records with `name`, optional `syntax`, and 
 ## Conformance Evidence
 
 `pnpm check:at-rules` verifies the pinned MDN inventory, supplementary modern rules, descriptor fingerprints, and referenced evidence files. `pnpm check:at-rules:full` also requires every entry to be supported. Inventory coverage alone does not establish type, compiler, packaging, or browser support. Browser limitations remain explicit in the acceptance report.
+
+> [!NOTE]
+> `colorProfile` is planned and remains unexported until real-browser rendering is verified.

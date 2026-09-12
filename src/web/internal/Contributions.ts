@@ -1,4 +1,5 @@
 /** Pure ordered stylesheet contribution data and layer ordering. @module */
+import * as Block from './Block.js'
 import type * as Style from '../../Style.js'
 
 /** Explicit stylesheet data supplied by source adapters or in-memory callers. */
@@ -44,6 +45,14 @@ export type Definition = {
       readonly rule: 'color-profile' | 'counter-style' | 'font-palette-values'
       /** Authored scalar descriptors. */
       readonly declarations: Readonly<Record<string, string | number>>
+    }
+  | {
+      /** Structured document-level descriptor rule. */
+      readonly kind: 'block'
+      /** CSS rule header. */
+      readonly header: string
+      /** Descriptors and nested blocks in authored order. */
+      readonly entries: readonly Block.Entry[]
     }
   | { readonly kind: 'layers'; readonly names: readonly string[] }
 )
@@ -155,6 +164,8 @@ export function render(
     ...definitions.map((value) => {
       if (value.kind === 'layers') return ''
       const css = (() => {
+        if (value.kind === 'block')
+          return `${value.header}{${Block.render(value.entries, style)}}`
         if (value.kind === 'rule')
           return `${value.selector}{${style(value.style)}}`
         if (value.kind === 'property')

@@ -67,6 +67,7 @@ type Ascii = {
   readonly '5f': '_'
   readonly '2d': '-'
 }
+
 type Hex =
   | '0'
   | '1'
@@ -84,7 +85,9 @@ type Hex =
   | 'd'
   | 'e'
   | 'f'
+
 type Space = ' ' | '\t' | '\n' | '\r' | '\f'
+
 type Boundary =
   | Space
   | '('
@@ -101,18 +104,22 @@ type Boundary =
   | '"'
   | "'"
   | '%'
+
 type StripZeros<text extends string> = text extends `0${infer rest}`
   ? StripZeros<rest>
   : text
+
 type Code<text extends string> =
   StripZeros<Lowercase<text>> extends keyof Ascii
     ? Ascii[StripZeros<Lowercase<text>>]
     : '�'
+
 type AfterHex<text extends string> = text extends `\r\n${infer rest}`
   ? rest
   : text extends `${Space}${infer rest}`
     ? rest
     : text
+
 type Escape<
   text extends string,
   digits extends string = '',
@@ -126,6 +133,7 @@ type Escape<
         ? readonly [first extends Ascii[keyof Ascii] ? first : '�', rest]
         : readonly [Code<digits>, AfterHex<text>]
     : readonly [Code<digits>, '']
+
 type Prefix<text extends string> = [Numeric.Parse<text>] extends [never]
   ? ''
   : Numeric.Parse<text> extends readonly [infer unit extends string, boolean]
@@ -135,6 +143,7 @@ type Prefix<text extends string> = [Numeric.Parse<text>] extends [never]
         ? prefix
         : ''
     : ''
+
 // Escapes belong to identifiers, never the numeric part of a dimension token.
 type Token<raw extends string, decoded extends string> =
   Prefix<raw> extends Prefix<decoded>
@@ -142,6 +151,7 @@ type Token<raw extends string, decoded extends string> =
       ? decoded
       : '�'
     : '�'
+
 type Scan<
   text extends string,
   output extends string = '',
@@ -179,10 +189,12 @@ export function normalize(text: string): string {
       /\/\*(?:[^*]|\*(?!\/))*\*\/|\\(?:[\da-f]{1,6}(?:\r\n|[ \t\n\r\f])?|[^\n\r\f])/gi,
       (token) => {
         if (token.startsWith('/*')) return ' '
+
         const body = token.slice(1)
         const decoded = /^[\da-f]/i.test(body)
           ? String.fromCodePoint(Math.min(Number.parseInt(body, 16), 0x10ffff))
           : body
+
         return /^[\w-]$/.test(decoded) ? decoded : '�'
       },
     )

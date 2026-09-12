@@ -17,6 +17,7 @@ describe('compile', () => {
       second: { markerStart: 'url(#second)' },
       third: { marker: 'url(#first)', opacity: 0.5 },
     })
+
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
       ".z_base0{background-image:url("image.png");background-image:linear-gradient(red, blue)!important;}
       .z-first{marker:url(#first);}
@@ -24,7 +25,9 @@ describe('compile', () => {
       .z_base1{opacity:0.5;}
       .z-third{marker:url(#first);}"
     `)
+
     const lexer = Conformance.lexer()
+
     for (const value of [
       'url("image.png")',
       'linear-gradient(red, blue)',
@@ -39,13 +42,16 @@ describe('compile', () => {
     const styles = Reflect.apply(Style.define, undefined, [
       { card: { color: '#12', order: 0.5 } },
     ]) as Style.Definition
+
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
       `".z_base0{color:#12;order:0.5;}"`,
     )
+
     const output = Transform.compile({
       moduleId: 'unchecked.ts',
       source: `import { css } from 'zyzz'; export const card = css({ color: '#12', order: 0.5 })();`,
     })
+
     expect(output.css.includes('color:#12;order:0.5;')).toMatchInlineSnapshot(
       `true`,
     )
@@ -64,11 +70,14 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div id="actual" class="${module.image.className}"></div><div id="control" style="background-image:linear-gradient(red, blue)!important;mask-image:linear-gradient(black, transparent)"></div><svg><defs><marker id="arrow" markerWidth="10" markerHeight="10"><path d="M0,0 L10,5 L0,10 Z"/></marker></defs><path id="actual-marker" class="${module.marker.className}" d="M10,10 L50,10"/><path id="control-marker" style="marker:url(#arrow);marker-start:none" d="M10,30 L50,30"/></svg>`,
       )
+
       expect(
         await page.evaluate(() => {
           const actual = getComputedStyle(document.getElementById('actual')!)
@@ -79,6 +88,7 @@ describe('compile', () => {
           const native = getComputedStyle(
             document.getElementById('control-marker')!,
           )
+
           return (
             actual.backgroundImage === control.backgroundImage &&
             actual.maskImage === control.maskImage &&

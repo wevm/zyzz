@@ -39,6 +39,7 @@ export const factories: readonly string[] = [
   'viewTransition',
   ...named,
 ]
+
 /** Source-owned factory replacement and optional animation identity. */
 export type Call = {
   readonly start: number
@@ -50,6 +51,7 @@ export type Call = {
   readonly binding?: number | undefined
   readonly exported?: boolean | undefined
 }
+
 /** Collects lexical macro calls and animation references. */
 export function scan(
   program: Ast.Program,
@@ -59,6 +61,7 @@ export function scan(
   factoryImports: Readonly<Record<string, string>> = {},
 ) {
   const imports = new Map<number, Kind>()
+
   for (const node of program.body)
     if (node.type === 'ImportDeclaration' && node.importKind !== 'type')
       for (const specifier of node.specifiers)
@@ -77,9 +80,11 @@ export function scan(
           if (name && factories.includes(name))
             imports.set(specifier.start, name as Kind)
         }
+
   const exported: Record<string, Themes.Link> = Object.create(null)
   const linkedNames = new Map<string, Themes.Link>()
   const imported = new Map<number, string>()
+
   for (const node of program.body)
     if (node.type === 'ImportDeclaration')
       for (const specifier of node.specifiers) {
@@ -89,31 +94,38 @@ export function scan(
           linkedNames.set(specifier.local.name, link)
         }
       }
+
   const calls: Call[] = []
   const bindings = new Map<number, Call>()
   const references = new Map<number, string>()
   const used = new Set<string>()
   const undefinedValues = new Set<number>()
   const ancestors: Ast.Node[] = []
+
   function kind(node: Ast.Node): Kind | undefined {
     if (node.type === 'Identifier') {
       const binding = scope.getDeclaration(node.name)
       const name =
         binding?.type === 'Import' ? imports.get(binding.node.start) : undefined
+
       return name
     }
+
     return undefined
   }
+
   Walker.walk(program, {
     scopeTracker: scope,
     enter(node, parent) {
       ancestors.push(node)
+
       if (
         node.type === 'Identifier' &&
         node.name === 'undefined' &&
         !scope.getDeclaration(node.name)
       )
         undefinedValues.add(node.start)
+
       if (
         node.type === 'VariableDeclarator' &&
         node.id.type === 'Identifier' &&
@@ -128,30 +140,38 @@ export function scan(
         const identity = declaration
           ? imported.get(declaration.node.start)
           : undefined
+
         const link = identity
           ? [...linkedNames.values()].find(
               (link) => link.call.name === identity,
             )
           : undefined
+
         if (link) {
           if (parent?.type !== 'VariableDeclaration' || parent.kind !== 'const')
             throw new Themes.InvalidError(
               'Animation aliases require const bindings.',
               node,
             )
+
           imported.set(node.start, link.call.name)
+
           if (
             ancestors.at(-3)?.type === 'Program' ||
             ancestors.at(-3)?.type === 'ExportNamedDeclaration'
           )
             linkedNames.set(node.id.name, link)
+
           if (ancestors.some((node) => node.type === 'ExportNamedDeclaration'))
             exported[node.id.name] = link
         }
       }
+
       if (node.type !== 'CallExpression') return
+
       const type = kind(node.callee)
       if (!type) return
+
       const variable =
         parent?.type === 'VariableDeclarator' && parent.init === node
           ? parent
@@ -195,6 +215,7 @@ export function scan(
           'Named stylesheet definitions require a module-level named constant.',
           node,
         )
+
       const name =
         variable?.id.type === 'Identifier'
           ? `${type === 'keyframes' ? 'z-k' : `${type === 'counterStyle' ? '' : '--'}z-${type.toLowerCase()}`}${namespace}-${Array.from(
@@ -203,6 +224,7 @@ export function scan(
               .map((value) => value.codePointAt(0)!.toString(16))
               .join('-')}`
           : undefined
+
       const call: Call = {
         kind: type,
         start: node.start,
@@ -219,6 +241,7 @@ export function scan(
             }
           : {}),
       }
+
       calls.push(call)
       if (named.includes(call.kind) && variable?.id.type === 'Identifier') {
         const link: Themes.Link = {
@@ -235,16 +258,20 @@ export function scan(
               : {}),
           },
         }
+
         imported.set(variable.start, call.name!)
         linkedNames.set(variable.id.name, link)
+
         if (call.exported) exported[variable.id.name] = link
       }
+
       if (call.binding !== undefined) bindings.set(call.binding, call)
     },
     leave() {
       ancestors.pop()
     },
   })
+
   function read(
     node: Extract<Ast.Node, { type: 'Identifier' | 'JSXIdentifier' }>,
     parent: Ast.Node,
@@ -256,18 +283,23 @@ export function scan(
     ) {
       references.set(node.start, imported.get(binding.node.start)!)
       used.add(imported.get(binding.node.start)!)
+
       return
     }
+
     if (binding?.type !== 'Variable') return
+
     const call = bindings.get(binding.node.start)
     if (
       !call?.name ||
       (parent.type === 'VariableDeclarator' && parent.id === node)
     )
       return
+
     references.set(node.start, call.name)
     used.add(call.name)
   }
+
   for (const statement of program.body) {
     if (statement.type === 'ExportDefaultDeclaration') {
       const declaration = Expression.unwrap(statement.declaration)
@@ -275,11 +307,13 @@ export function scan(
         declaration.type === 'Identifier'
           ? linkedNames.get(declaration.name)
           : undefined
+
       if (link) {
         used.add(link.call.name)
         exported.default = link
       }
     }
+
     if (
       statement.type === 'ExportNamedDeclaration' &&
       statement.exportKind !== 'type' &&
@@ -288,11 +322,13 @@ export function scan(
       for (const specifier of statement.specifiers) {
         if ('exportKind' in specifier && specifier.exportKind === 'type')
           continue
+
         const name =
           specifier.local.type === 'Identifier'
             ? specifier.local.name
             : specifier.local.value
         const link = linkedNames.get(name)
+
         if (link) {
           used.add(link.call.name)
           exported[
@@ -328,14 +364,18 @@ export function extract(
   starts?: number[],
 ): readonly Css.Contribution[] {
   const result: Css.Contribution[] = []
-  function value(node: Ast.Node): unknown {
+  function value(node: Ast.Node, property?: string): unknown {
     const reference = tokens.get(node.start)
     if (reference?.end === node.end) return reference.reference
     node = Expression.unwrap(node)
+
     const animation = scanned.references.get(node.start)
     if (animation) return animation
+
     node = Expression.unwrap(node)
+
     if (scanned.undefinedValues.has(node.start)) return undefined
+
     if (
       node.type === 'UnaryExpression' &&
       node.operator === 'void' &&
@@ -348,6 +388,7 @@ export function extract(
     ) {
       return node.value
     }
+
     if (
       node.type === 'UnaryExpression' &&
       (node.operator === '-' || node.operator === '+') &&
@@ -355,16 +396,22 @@ export function extract(
       typeof node.argument.value === 'number'
     )
       return node.operator === '-' ? -node.argument.value : node.argument.value
+
     if (node.type === 'TemplateLiteral') {
-      const template = Expression.template(
-        node,
-        0,
-        (expression) =>
-          scanned.references.get(expression.start) ??
-          tokens.get(expression.start)?.reference,
-      )
+      const template = Expression.template(node, 0, (expression) => {
+        const node = Expression.unwrap(expression)
+        const name = scanned.references.get(node.start)
+        const kind = name ? scanned.kinds.get(name) : undefined
+        if (kind && property && !RuleReference.accepts(kind, property))
+          throw new Themes.InvalidError(
+            'Named stylesheet reference is incompatible with this descriptor.',
+            node,
+          )
+        return name ?? tokens.get(node.start)?.reference
+      })
       if (template !== undefined) return template
     }
+
     if (node.type === 'ArrayExpression')
       return node.elements.map((element) => {
         if (!element || element.type === 'SpreadElement')
@@ -372,14 +419,17 @@ export function extract(
             'Contribution arrays require dense literal entries.',
             node,
           )
-        return value(element)
+        return value(element, property)
       })
+
     if (node.type !== 'ObjectExpression')
       throw new Themes.InvalidError(
         'Stylesheet contributions require literal data.',
         node,
       )
+
     const output: Record<string, unknown> = Object.create(null)
+
     for (const property of node.properties) {
       if (
         property.type !== 'Property' ||
@@ -392,6 +442,7 @@ export function extract(
           'Contribution objects require explicit literal properties.',
           property,
         )
+
       const key =
         property.key.type === 'Identifier'
           ? property.key.name
@@ -412,15 +463,19 @@ export function extract(
           'Named stylesheet reference is incompatible with this descriptor.',
           item,
         )
-      output[key] = value(property.value)
+      output[key] = value(property.value, key)
     }
+
     return output
   }
+
   function record(value: unknown): Record<string, unknown> {
     if (!value || typeof value !== 'object' || Array.isArray(value))
       throw new Error('Expected a contribution object.')
+
     return value as Record<string, unknown>
   }
+
   function style(value: unknown): Style.NamedStyle {
     return (
       Style.define as unknown as (
@@ -435,6 +490,7 @@ export function extract(
     Condition.normalize(selector)
     return true
   }
+
   function global(input: unknown): Style.NamedStyle {
     return {
       name: 'global',
@@ -445,17 +501,21 @@ export function extract(
       })),
     }
   }
+
   for (const call of scanned.calls) {
     const before = result.length
+
     try {
       const input = value(call.argument)
       if (call.name && !call.exported && !scanned.used.has(call.name)) continue
+
       if (call.kind === 'layers') {
         if (
           !Array.isArray(input) ||
           input.some((value) => typeof value !== 'string')
         )
           throw new Error('Layers require a literal string list.')
+
         result.push({ kind: 'layers', names: input })
       } else if (call.kind === 'global') {
         for (const [selector, child] of Object.entries(record(input)))
@@ -466,6 +526,7 @@ export function extract(
           })
       } else if (call.kind === 'fontFace') {
         const declarations = record(input)
+
         for (const key of Object.keys(declarations))
           if (
             declarations[key] === undefined &&
@@ -473,6 +534,7 @@ export function extract(
             key !== 'src'
           )
             delete declarations[key]
+
         const keys = [
           'fontFeatureSettings',
           'fontVariationSettings',
@@ -500,6 +562,7 @@ export function extract(
           throw new Error(
             'Font faces require family/source and scalar supported descriptors.',
           )
+
         result.push({
           kind: 'font-face',
           declarations: declarations as Record<string, string | number>,
@@ -624,12 +687,29 @@ export function extract(
         )
           throw new Error('Expected a font family list.')
         const familyList = Array.isArray(families)
-          ? families.map((value) => JSON.stringify(value)).join(',')
+          ? families
+              .map(
+                (value) =>
+                  '"' +
+                  Array.from(value as string, (char) => {
+                    const code = char.codePointAt(0)!
+                    return code < 32 ||
+                      code === 127 ||
+                      char === '"' ||
+                      char === '\\'
+                      ? `\\${code.toString(16)} `
+                      : char
+                  }).join('') +
+                  '"',
+              )
+              .join(',')
           : families
         // Validate the native prelude before shielding newer body descriptors.
         Lightning.transform({
           filename: 'font-feature-values.css',
-          code: Buffer.from(`@font-feature-values ${familyList} {}`),
+          code: new TextEncoder().encode(
+            `@font-feature-values ${familyList} {}`,
+          ),
         })
         const entries: Block.Entry[] = []
         for (const key of Object.keys(options)) {
@@ -682,7 +762,7 @@ export function extract(
                 values.some(
                   (value) =>
                     typeof value !== 'number' ||
-                    !Number.isInteger(value) ||
+                    !Number.isSafeInteger(value) ||
                     value < 0,
                 )
               )
@@ -820,7 +900,12 @@ export function extract(
             ([key, value]) =>
               !(definition.keys as readonly string[]).includes(key) ||
               (typeof value !== 'string' &&
-                !(key === 'basePalette' && typeof value === 'number')),
+                !(
+                  key === 'basePalette' &&
+                  typeof value === 'number' &&
+                  Number.isSafeInteger(value) &&
+                  value >= 0
+                )),
           )
         )
           throw new Error(
@@ -870,6 +955,7 @@ export function extract(
                   /^(contain|cover|entry|entry-crossing|exit|exit-crossing)\s+/,
                   '',
                 )
+
               return (
                 !['from', 'to'].includes(part) &&
                 (!/^(?:\d+(?:\.\d+)?|\.\d+)%$/.test(part) ||
@@ -880,6 +966,7 @@ export function extract(
             throw new Error(
               'Keyframe stops must be from, to, or percentages from 0 to 100.',
             )
+
           const frame = style(input)
           if (
             frame.rules ||
@@ -888,8 +975,10 @@ export function extract(
             throw new Error(
               'Keyframes forbid nested rules and important declarations.',
             )
+
           return { stop, style: frame }
         })
+
         if (call.exported || scanned.used.has(call.name!))
           result.push({ kind: 'keyframes', name: call.name!, frames })
       }
@@ -919,20 +1008,22 @@ export function extract(
         for (let index = before; index < result.length; index++)
           result[index] = { ...result[index]!, within: headers }
       }
+
       for (let index = before; index < result.length; index++)
         starts?.push(call.start)
     } catch (error) {
       throw new Themes.InvalidError((error as Error).message, call)
     }
   }
+
   return result
 }
 
 // CSS identifiers allow non-ASCII code points and escaped identifier characters.
 function identifier(value: string): boolean {
   const escape = String.raw`\\(?:[\da-fA-F]{1,6}(?:\r\n|[ \t\n\r\f])?|[^\n\r\f\da-fA-F])`
-  const start = `(?:[_a-zA-Z\\u0080-\\uFFFF]|${escape})`
-  const rest = `(?:[_a-zA-Z0-9-\\u0080-\\uFFFF]|${escape})`
+  const start = `(?:[_a-zA-Z\\u0080-\\u{10FFFF}]|${escape})`
+  const rest = `(?:[_a-zA-Z0-9-\\u0080-\\u{10FFFF}]|${escape})`
   if (!new RegExp(`^(?:--|-?${start})${rest}*$`, 'u').test(value)) return false
   const decoded = value.replace(
     /\\([\da-fA-F]{1,6})(?:\r\n|[ \t\n\r\f])?|\\([^\n\r\f])/g,

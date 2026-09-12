@@ -26,11 +26,13 @@ import * as Themes from './internal/Themes.js'
 export function compile(options: compile.Options): compile.ReturnType {
   const extracted =
     options[Themes.context]?.extracted ?? Source.extract(options)
+
   const emitted = Css.compile({
     styles: extracted.styles,
     contributions: extracted.contributions,
     themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
   })
+
   const module = new MagicString(options.source)
   const program = Parser.parseSync('source.tsx', options.source, {
     preserveParens: false,
@@ -45,7 +47,9 @@ export function compile(options: compile.Options): compile.ReturnType {
         ? `${JSON.stringify(call.name)}${call.kind === 'keyframes' || call.kind === 'colorProfile' || !/\.[cm]?tsx?$/.test(options.moduleId) ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
         : 'void 0',
     )
+
   type Span = Pick<Ast.Node, 'end' | 'start'>
+
   const applications = new Map<number, { end: number; folded: boolean }>()
   const calls = new Map(extracted.calls.map((call) => [call.start, call]))
   const definitions = new Map<number, Ast.ObjectExpression>()
@@ -53,9 +57,11 @@ export function compile(options: compile.Options): compile.ReturnType {
   const identifiers = new Map<string, Span[]>()
 
   const localApplications = Applications.create(program, extracted.calls)
+
   Walker.walk(program, {
     enter(node, parent) {
       localApplications?.enter(node, parent)
+
       if (
         node.type === 'VariableDeclarator' &&
         node.init &&
@@ -74,11 +80,13 @@ export function compile(options: compile.Options): compile.ReturnType {
 
       if (node.type === 'Identifier') {
         const references = identifiers.get(node.name) ?? []
+
         references.push(node)
         identifiers.set(node.name, references)
       }
 
       if (node.type !== 'CallExpression') return
+
       const call = calls.get(node.start)
       if (!call || node.end !== call.end) return
 
@@ -88,6 +96,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         parent.callee === node &&
         !parent.optional &&
         parent.arguments.length === 0
+
       applications.set(call.start, {
         end: folded ? parent.end : call.end,
         folded,
@@ -96,8 +105,10 @@ export function compile(options: compile.Options): compile.ReturnType {
       let argument = node.arguments[0]
         ? Expression.unwrap(node.arguments[0])
         : undefined
+
       if (argument?.type === 'ArrowFunctionExpression')
         argument = Expression.unwrap(argument.body) as Ast.Expression
+
       if (call.body) definitions.set(call.start, call.body)
       else if (argument?.type === 'ObjectExpression')
         definitions.set(call.start, argument)
@@ -105,21 +116,31 @@ export function compile(options: compile.Options): compile.ReturnType {
   })
 
   let runtime = '__zyzzProps'
+
   while (identifiers.has(runtime)) runtime += '_'
 
   let html = '__zyzzHtml'
+
   while (identifiers.has(html)) html += '_'
+
   let usesHtml = false
   let marker = '__zyzzMarker'
+
   while (identifiers.has(marker)) marker += '_'
+
   let appearance = '__zyzzAppearance'
+
   while (identifiers.has(appearance)) appearance += '_'
+
   let usesAppearance = false
   let selection = '__zyzzSelection'
+
   while (identifiers.has(selection)) selection += '_'
+
   let usesSelection = false
 
   let variables = '__zyzzVars'
+
   while (identifiers.has(variables)) variables += '_'
 
   for (const call of extracted.variableCalls ?? [])
@@ -128,9 +149,11 @@ export function compile(options: compile.Options): compile.ReturnType {
       call.end,
       `${variables}.create(${JSON.stringify(call.slots)})`,
     )
+
   const first = extracted.calls[0]
   const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
   const names = new Map<string, string>()
+
   for (const classes of Object.values(emitted.classes))
     for (const name of classes.split(' ').filter(Boolean))
       names.set(
@@ -152,51 +175,66 @@ export function compile(options: compile.Options): compile.ReturnType {
   )
 
   let callable = false
+
   for (const call of extracted.calls) {
     const application = applications.get(call.start)!
     const props = `{${call.output === 'html' ? 'class' : 'className'}:${JSON.stringify(classes[call.name])}}`
+
     const replacement = (() => {
       if (call.slots) {
         const type = `import('zyzz').css.Dynamic<${call.valuesType}${call.output === 'html' ? ',"html"' : ''}>`
         const typed = /\.[cm]?tsx?$/.test(options.moduleId)
         const slots = Object.entries(call.slots)
+
         const reads = slots
           .map(
             ([key], index) => `const v${index}=input[${JSON.stringify(key)}];`,
           )
           .join('')
+
         const assignments = slots
           .map(
             ([, slot], index) =>
               `${JSON.stringify(slot.name)}:v${index}===''?' ':v${index}`,
           )
           .join(',')
+
         const className = JSON.stringify(classes[call.name])
         const value = `(input${typed ? `:Parameters<${type}>[0]` : ''})=>{${reads}const external=input.className;const style=input.style;return {className:external?${className}+" "+external:${className},style:{...style,${assignments}}}}`
         const result =
           call.output === 'html' ? `${html}.bind(${value})` : `(${value})`
+
         if (call.output === 'html') usesHtml = true
+
         return typed ? `(${result} as ${type})` : result
       }
+
       if (application.folded) return `(${props})`
+
       if (call.output === 'html') {
         usesHtml = true
+
         return `${html}.create({className:${JSON.stringify(classes[call.name])}})`
       }
+
       return `${runtime}.create(${props})`
     })()
+
     module.overwrite(call.start, application.end, replacement)
+
     if (!call.slots && !application.folded && call.output !== 'html')
       callable = true
   }
 
   for (const application of localApplications?.find() ?? []) {
     const className = JSON.stringify(classes[application.name])
+
     const key =
       extracted.calls.find((call) => call.name === application.name)?.output ===
       'html'
         ? 'class'
         : 'className'
+
     // Keep a callable guard so bundlers also retain failures before initialization.
     module.overwrite(
       application.start,
@@ -216,19 +254,25 @@ export function compile(options: compile.Options): compile.ReturnType {
           )
           .join(';')}}`}>`
       : ''
+
     module.overwrite(
       call.start,
       call.end,
       `(${marker}.create(${JSON.stringify(call.definition)})${assertion})`,
     )
   }
+
   for (const call of extracted.themeCalls) {
     const scope = (name: string) => ({ className: emitted.themes[name] })
+
     const props = (() => {
       if (!call.members)
         return `{className:${JSON.stringify(emitted.themes[call.name])}}`
+
       const script = extracted.themeScripts?.includes(call.name)
+
       if (script) usesAppearance = true
+
       if (call.options?.themes) {
         const catalog = Object.fromEntries(
           Object.entries(call.members)
@@ -238,22 +282,29 @@ export function compile(options: compile.Options): compile.ReturnType {
               emitted.themes[name],
             ]),
         )
+
         const entries = JSON.stringify(Object.entries(catalog))
         if (unusedSelections.has(call.start))
           return `{${script ? `script:${appearance}.create(${entries}),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
 
         usesSelection = true
+
         return `{${script ? `script:${appearance}.create(${entries}),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:/*#__PURE__*/${selection}.create(${entries},${call.options.output === 'html'})}`
       }
+
       if (Object.hasOwn(call.members, '["theme"]'))
         return `{${script ? `script:${appearance}.create([]),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
+
       return script ? `{script:${appearance}.create([])}` : '{}'
     })()
+
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
       ? ` as ${call.type ?? `import('zyzz').Theme.Definition<${call.tokenType}>`}`
       : ''
+
     module.overwrite(call.start, call.end, `(${props}${assertion})`)
   }
+
   for (const alias of extracted.themeAliases) {
     if (alias.retained) {
       if (/\.[cm]?tsx?$/.test(options.moduleId))
@@ -262,16 +313,20 @@ export function compile(options: compile.Options): compile.ReturnType {
           alias.end,
           `(${options.source.slice(alias.start, alias.end)} as ${alias.type ?? `import('zyzz').Theme.Definition<${alias.tokenType}>`})`,
         )
+
       continue
     }
+
     const value = alias.destructured ? '{css:undefined}' : 'undefined'
     const type =
       alias.type ?? `import('zyzz').Theme.Definition<${alias.tokenType}>`
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
       ? ` as unknown as ${alias.destructured ? `{readonly css:${type}['css']}` : `${type}['css']`}`
       : ''
+
     module.overwrite(alias.start, alias.end, `(${value}${assertion})`)
   }
+
   const replacements = [
     ...extracted.calls.map((call) => ({
       end: applications.get(call.start)!.end,
@@ -287,13 +342,16 @@ export function compile(options: compile.Options): compile.ReturnType {
   function replaced(reference: Span) {
     let low = 0
     let high = replacements.length
+
     while (low < high) {
       const middle = (low + high) >>> 1
+
       if (replacements[middle]!.start <= reference.start) low = middle + 1
       else high = middle
     }
 
     const call = replacements[low - 1]
+
     return call !== undefined && reference.end <= call.end
   }
 
@@ -304,6 +362,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         reference.end,
         JSON.stringify(reference.value),
       )
+
   for (const reference of extracted.themeReferences)
     if (!replaced(reference))
       module.overwrite(
@@ -324,7 +383,9 @@ export function compile(options: compile.Options): compile.ReturnType {
       !['zyzz', 'zyzz/web'].includes(node.source.value)
     )
       continue
+
     const removed = new Set<Ast.ImportDeclaration['specifiers'][number]>()
+
     for (const specifier of node.specifiers) {
       if (
         node.importKind === 'type' ||
@@ -363,6 +424,7 @@ export function compile(options: compile.Options): compile.ReturnType {
             !(reference.start >= node.start && reference.end <= node.end) &&
             !replaced(reference),
         )
+
       if (!remaining) removed.add(specifier)
     }
 
@@ -371,6 +433,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     const retained = node.specifiers.filter(
       (specifier) => !removed.has(specifier),
     )
+
     if (!retained.length) module.remove(node.start, node.end)
     else if (
       retained.every((specifier) => specifier.type !== 'ImportSpecifier')
@@ -388,6 +451,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
         const next = node.specifiers[index + 1]
         const previous = node.specifiers[index - 1]
+
         if (next) module.remove(specifier.start, next.start)
         else if (previous) module.remove(previous.end, specifier.end)
       }
@@ -406,8 +470,10 @@ export function compile(options: compile.Options): compile.ReturnType {
     let offset = options.source.startsWith('#!')
       ? options.source.indexOf('\n') + 1
       : 0
+
     for (const node of program.body) {
       if (node.type !== 'ExpressionStatement' || !node.directive) break
+
       offset = node.end
     }
 
@@ -418,17 +484,21 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   const cssMap = new Mapping.GenMapping({ file: `${options.moduleId}.css` })
+
   Mapping.setSourceContent(cssMap, options.moduleId, options.source)
 
   const lines = [0]
+
   for (let index = 0; index < options.source.length; index++)
     if (options.source[index] === '\n') lines.push(index + 1)
 
   function position(offset: number) {
     let low = 0
     let high = lines.length
+
     while (low + 1 < high) {
       const middle = (low + high) >>> 1
+
       if (lines[middle]! <= offset) low = middle
       else high = middle
     }
@@ -437,6 +507,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   const owners = new Map<string, Source.Call>()
+
   for (const call of extracted.calls)
     for (const name of emitted.classes[call.name]!.split(' '))
       if (!owners.has(name)) owners.set(name, call)
@@ -499,6 +570,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
   })
   const scoped = emitted.scopedCss ?? emitted.css
+
   const css = [
     prefix,
     (scoped ? scoped.split('\n') : [])
@@ -507,10 +579,12 @@ export function compile(options: compile.Options): compile.ReturnType {
         const brace = rule.indexOf('{')
         const name = rule.slice(1, brace)
         const linkedOwner = linkedOwners.get(name)
+
         if (linkedOwner) {
           const lines = linkedOwner.source
             .slice(0, linkedOwner.call.start)
             .split('\n')
+
           Mapping.setSourceContent(
             cssMap,
             linkedOwner.moduleId,
@@ -522,9 +596,12 @@ export function compile(options: compile.Options): compile.ReturnType {
             original: { line: lines.length, column: lines.at(-1)!.length },
             source: linkedOwner.moduleId,
           })
+
           return rule
         }
+
         const themeOwner = themeOwners.get(name)
+
         if (themeOwner) {
           Mapping.addMapping(cssMap, {
             generated: { column: 0, line },
@@ -532,15 +609,20 @@ export function compile(options: compile.Options): compile.ReturnType {
             original: position(themeOwner.start),
             source: options.moduleId,
           })
+
           return rule
         }
+
         if (Object.values(emitted.themes).includes(name)) {
           // Packed theme declarations have no authored source in this graph.
           Mapping.addMapping(cssMap, { generated: { column: 0, line } })
+
           return rule
         }
+
         const selector = `.${names.get(name)!}`
         const call = owners.get(name)!
+
         Mapping.addMapping(cssMap, {
           generated: { column: 0, line },
           name: call.name,
@@ -550,6 +632,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
         const body = rule.slice(brace)
         const style = styles.get(call.name)!
+
         function declarations(
           style: Style.NamedStyle,
         ): readonly Style.Declaration[] {
@@ -557,38 +640,49 @@ export function compile(options: compile.Options): compile.ReturnType {
             ? style.rules.flatMap((rule) => declarations(rule.style))
             : style.declarations
         }
+
         const conditionNodes: Extract<Ast.Node, { type: 'Property' }>[] = []
+
         function locations(node: Ast.ObjectExpression): readonly Ast.Node[] {
           return node.properties.flatMap((property) => {
             if (property.type !== 'Property') return []
+
             const value = Expression.unwrap(property.value)
+
             if (value.type === 'ObjectExpression') {
               conditionNodes.push(property)
+
               return locations(value)
             }
+
             const key =
               property.key.type === 'Identifier'
                 ? property.key.name
                 : property.key.type === 'Literal'
                   ? String(property.key.value)
                   : ''
+
             const authoredLocations: readonly Ast.Node[] =
               value.type === 'ArrayExpression'
                 ? value.elements.filter(
                     (node): node is NonNullable<typeof node> => node !== null,
                   )
                 : [property]
+
             return (call.shorthands?.[key] ?? [key]).flatMap(
               () => authoredLocations,
             )
           })
         }
+
         const ordered = declarations(style)
         const authored = locations(definitions.get(call.start)!)
         const conditionStarts = declarationStarts(body, true)
+
         for (const [index, start] of conditionStarts.entries()) {
           const node = conditionNodes[index]
           if (!node) continue
+
           Mapping.addMapping(cssMap, {
             generated: { column: selector.length + start, line },
             name: options.source.slice(node.key.start, node.key.end),
@@ -596,8 +690,10 @@ export function compile(options: compile.Options): compile.ReturnType {
             source: options.moduleId,
           })
         }
+
         const starts = declarationStarts(body)
         let cursor = 1
+
         for (
           let propertyIndex = 0;
           propertyIndex < ordered.length;
@@ -612,6 +708,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           if (start < 0) continue
 
           const location = authored[propertyIndex]!
+
           Mapping.addMapping(cssMap, {
             generated: { column: selector.length + start, line },
             name: declaration.property,
@@ -657,6 +754,7 @@ export declare namespace compile {
   type ErrorType = Css.CompileError | Source.ExtractError
   /** Supplied module identity and source; no file loading occurs. */
   type Options = Source.extract.Options
+
   /** Executable module and stylesheet artifacts; TypeScript/JSX lowering belongs to the host. */
   type ReturnType = {
     /** Module-scoped class lists keyed by extracted definition identity. */
@@ -685,41 +783,55 @@ function declarationStarts(
   let blocks = 0
   let custom = false
   let quote = ''
+
   for (let index = 0; index < body.length; index++) {
     const char = body[index]!
+
     if (char === '\\') {
       index++
       continue
     }
+
     if (quote) {
       if (char === quote) quote = ''
+
       continue
     }
+
     if (char === '"' || char === "'") {
       quote = char
       continue
     }
+
     if (char === '/' && body[index + 1] === '*') {
       const end = body.indexOf('*/', index + 2)
+
       if (end < 0) break
+
       index = end + 1
       continue
     }
+
     if (char === '(' || char === '[') {
       depth++
       continue
     }
+
     if (char === ')' || char === ']') {
       depth--
       continue
     }
+
     if (depth) continue
+
     if (char === ':' && body.slice(start, index).trimStart().startsWith('--'))
       custom = true
+
     if (char === '{') {
       if (custom) blocks++
       else {
         if (conditions && index > start) starts.push(start)
+
         start = index + 1
       }
     } else if (char === '}') {
@@ -730,10 +842,13 @@ function declarationStarts(
       }
     } else if (char === ';' && !blocks) {
       while (/\s/.test(body[start] ?? '') && start < index) start++
+
       if (!conditions) starts.push(start)
+
       start = index + 1
       custom = false
     }
   }
+
   return starts
 }

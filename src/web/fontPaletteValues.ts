@@ -9,7 +9,14 @@ export function fontPaletteValues<
 >(
   options: options &
     Record<Exclude<keyof options, keyof fontPaletteValues.Options>, never> &
-    RuleReference.Checked<options>,
+    RuleReference.Checked<options> &
+    (options extends { basePalette: infer value extends number }
+      ? `${value}` extends `${bigint}`
+        ? `${value}` extends `-${string}`
+          ? never
+          : unknown
+        : never
+      : unknown),
   context: Context.Options = {},
 ): fontPaletteValues.Reference {
   void options

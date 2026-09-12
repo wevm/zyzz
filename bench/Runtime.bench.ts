@@ -22,9 +22,11 @@ for (const count of [10, 100])
             repeat === 1
               ? Runtime.librariesFor(kind)
               : [...Runtime.librariesFor(kind)].reverse()
+
           for (const library of libraries) {
             let apply: Runtime.Bundle['apply']
             let index = 0
+
             bench(
               library,
               () => {
@@ -39,23 +41,29 @@ for (const count of [10, 100])
                 setup: async () => {
                   const key = `${count}/${kind}/${library}`
                   let output = bundles.get(key)
+
                   if (!output) {
                     output = await Runtime.create({ count, kind, library })
                     await Runtime.verify(output, { count, kind, library })
                     bundles.set(key, output)
+
                     const directory = Path.resolve(
                       'bench/results/runtime',
                       String(count),
                       kind,
                     )
+
                     await Fs.mkdir(directory, { recursive: true })
+
                     const measure = (value: string) => ({
                       brotli: Zlib.brotliCompressSync(value).byteLength,
                       gzip: Zlib.gzipSync(value).byteLength,
                       raw: Buffer.byteLength(value),
                     })
+
                     const css = measure(output.css)
                     const javascript = measure(output.javascript)
+
                     await Fs.writeFile(
                       Path.join(directory, `${library}.json`),
                       JSON.stringify(
@@ -84,6 +92,7 @@ for (const count of [10, 100])
                       output.javascript,
                     )
                   }
+
                   apply = output.apply
                 },
                 teardown: () => {
@@ -92,6 +101,7 @@ for (const count of [10, 100])
                     throw new Error(
                       'Runtime benchmark produced no observable props.',
                     )
+
                   results.length = 0
                 },
               },

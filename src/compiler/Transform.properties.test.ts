@@ -16,14 +16,19 @@ const properties: Record<
 describe('compile', () => {
   test('every property preserves native declaration and computed-style behavior', async () => {
     const samples = new Map<string, Conformance.Case[]>()
+
     for (const entry of Conformance.cases()) {
       const group = samples.get(entry.property) ?? []
+
       group.push(entry)
       samples.set(entry.property, group)
     }
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       const selected = await page.evaluate(
         (groups) =>
           groups.map(([property, entries]) => ({
@@ -43,10 +48,12 @@ describe('compile', () => {
             ] as const,
         ),
       )
+
       const unsupported = selected
         .filter(({ entries }) => !entries.length)
         .map(({ property }) => Conformance.name(property))
         .sort()
+
       await Fs.mkdir('test-results', { recursive: true })
       await Fs.writeFile(
         'test-results/css-browser-capabilities.json',
@@ -65,8 +72,10 @@ describe('compile', () => {
           2,
         ),
       )
+
       const cases = selected.flatMap(({ entries }) => entries)
       const covered = new Set(cases.map(({ name }) => name))
+
       expect(
         [
           'background',
@@ -80,7 +89,9 @@ describe('compile', () => {
           'transition',
         ].filter((name) => !covered.has(name)),
       ).toMatchInlineSnapshot(`[]`)
+
       const failures: string[] = []
+
       for (let start = 0; start < cases.length; start += 100) {
         const batch = cases.slice(start, start + 100)
         const source = `import { css } from 'zyzz';\n${batch.map(({ property, value }, index) => `export const p${index} = css({${JSON.stringify(property)}: ${JSON.stringify(value)}})();`).join('\n')}`
@@ -95,34 +106,46 @@ describe('compile', () => {
         const classes = batch.map(
           (_, index) => module[`p${index}`].className as string,
         )
+
         expect(classes.length === batch.length).toMatchInlineSnapshot(`true`)
+
         failures.push(
           ...(await page.evaluate(
             ({ batch, classes, css }) => {
               const sheet = document.createElement('style')
+
               sheet.textContent = css
               document.head.append(sheet)
+
               const failures: string[] = []
+
               for (const [index, { name, value }] of batch.entries()) {
                 const actual = document.createElement('div')
                 const control = document.createElement('div')
+
                 actual.className = classes[index]!
                 control.style.setProperty(name, String(value))
                 document.body.append(actual, control)
+
                 const compiled = getComputedStyle(actual).getPropertyValue(name)
                 const native = getComputedStyle(control).getPropertyValue(name)
+
                 if (compiled !== native)
                   failures.push(`${name}: ${value}: ${compiled} != ${native}`)
+
                 actual.remove()
                 control.remove()
               }
+
               sheet.remove()
+
               return failures
             },
             { batch, classes, css: output.css },
           )),
         )
       }
+
       expect(failures).toMatchInlineSnapshot(`[]`)
     } finally {
       await browser.close()
@@ -132,12 +155,15 @@ describe('compile', () => {
   test('all browser-supported shorthand relationships retain repeated overrides', async () => {
     const cases = Conformance.cases()
     const byName = new Map<string, (string | number)[]>()
+
     for (const { property, value } of cases) {
       const name = Conformance.name(property)
       const group = byName.get(name) ?? []
+
       group.push(value)
       byName.set(name, group)
     }
+
     // Reset-only relationships are specified independently of shorthand value grammar.
     const resets: Record<string, readonly string[]> = {
       animation: [
@@ -156,23 +182,28 @@ describe('compile', () => {
       'text-decoration': ['text-decoration-thickness'],
       'view-timeline': ['view-timeline-inset'],
     }
+
     function children(
       name: string,
       seen = new Set<string>(),
     ): readonly string[] {
       if (seen.has(name)) return []
+
       seen.add(name)
+
       const initial = properties[name]?.initial
       const direct = [
         ...(Array.isArray(initial) ? initial : []),
         ...(resets[name] ?? []),
       ]
+
       return [
         ...new Set(
           direct.flatMap((child) => [child, ...children(child, seen)]),
         ),
       ]
     }
+
     const pairs = Object.keys(properties).flatMap((shorthand) =>
       children(shorthand).map((longhand) => ({
         shorthand,
@@ -180,16 +211,23 @@ describe('compile', () => {
         values: byName.get(longhand) ?? [],
       })),
     )
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       const probes = await page.evaluate((pairs) => {
         const element = document.createElement('div')
+
         document.body.append(element)
+
         const output: { shorthand: string; longhand: string; value: string }[] =
           []
+
         for (const { shorthand, longhand, values } of pairs) {
           if (!CSS.supports(shorthand, 'initial')) continue
+
           for (const candidate of values) {
             const value = String(candidate)
             if (
@@ -203,10 +241,14 @@ describe('compile', () => {
               !CSS.supports(longhand, value)
             )
               continue
+
             element.style.cssText = ''
             element.style.setProperty(longhand, value)
+
             const before = getComputedStyle(element).getPropertyValue(longhand)
+
             element.style.setProperty(shorthand, 'initial')
+
             if (
               getComputedStyle(element).getPropertyValue(longhand) !== before
             ) {
@@ -215,11 +257,16 @@ describe('compile', () => {
             }
           }
         }
+
         element.remove()
+
         return output
       }, pairs)
+
       expect(probes.length > 100).toMatchInlineSnapshot(`true`)
+
       const failures: string[] = []
+
       for (const { shorthand, longhand, value } of probes) {
         const camel = (name: string) =>
           name.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase())
@@ -237,30 +284,40 @@ describe('compile', () => {
         const classes = ['a', 'b', 'c'].map(
           (name) => module[name].className as string,
         )
+
         expect(classes.length).toMatchInlineSnapshot(`3`)
+
         const result = await page.evaluate(
           ({ classes, css, longhand, shorthand, value }) => {
             const sheet = document.createElement('style')
+
             sheet.textContent = css
             document.head.append(sheet)
+
             const actual = document.createElement('div')
             const control = document.createElement('div')
+
             actual.className = classes.join(' ')
             control.style.setProperty(shorthand, 'initial')
             control.style.setProperty(longhand, value)
             document.body.append(actual, control)
+
             const equal =
               getComputedStyle(actual).getPropertyValue(longhand) ===
               getComputedStyle(control).getPropertyValue(longhand)
+
             actual.remove()
             control.remove()
             sheet.remove()
+
             return equal
           },
           { classes, css: output.css, longhand, shorthand, value },
         )
+
         if (!result) failures.push(`${shorthand} resets ${longhand}`)
       }
+
       expect(failures).toMatchInlineSnapshot(`[]`)
     } finally {
       await browser.close()

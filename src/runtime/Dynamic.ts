@@ -7,15 +7,19 @@ export function create(
 ): css.Dynamic<Record<string, string | number>> {
   const { className } = options
   const slots = Object.entries(options.slots)
+
   return (input) => {
     const values = slots.map(([key]) => {
       const value = input[key]!
+
       return value === '' ? ' ' : value
     })
     const external = input.className
     const style = { ...input.style }
+
     for (let index = 0; index < slots.length; index++)
       style[slots[index]![1].name] = values[index]!
+
     return {
       className:
         className && external

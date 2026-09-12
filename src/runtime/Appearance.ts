@@ -13,6 +13,7 @@ export function create(
   return (options = {}) => {
     const catalog = serialize(entries)
     const key = serialize(options.storageKey ?? 'zyzz')
+
     return `(()=>{try{const value=JSON.parse(localStorage.getItem(${key})||"null");if(!value||typeof value!=="object"||Array.isArray(value))return;const root=document.documentElement;const catalog=new Map(${catalog});if(Object.hasOwn(value,"theme")&&typeof value.theme==="string"&&catalog.has(value.theme)){root.classList.remove(...catalog.values());root.classList.add(catalog.get(value.theme))}if(Object.hasOwn(value,"colorScheme")&&["light","dark","light dark"].includes(value.colorScheme))root.style.colorScheme=value.colorScheme}catch{}})();`
   }
 }

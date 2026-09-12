@@ -14,6 +14,7 @@ describe('compile', () => {
       moduleId: 'backgrounds.ts',
       source: Backgrounds.source,
     })
+
     expect(output.css.match(/background-position-[xy]:[^;}]+/g))
       .toMatchInlineSnapshot(`
       [
@@ -47,8 +48,10 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>input{width:100px;height:40px}${output.css}</style>${Object.entries(
           Backgrounds.controls,
@@ -59,6 +62,7 @@ describe('compile', () => {
           )
           .join('')}`,
       )
+
       expect(
         await page.evaluate(
           (names) =>
@@ -67,6 +71,7 @@ describe('compile', () => {
               const b = getComputedStyle(
                 document.getElementById(`${name}-control`)!,
               )
+
               return [
                 'accent-color',
                 'background-attachment',

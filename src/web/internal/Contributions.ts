@@ -63,17 +63,22 @@ export function order(
 ): readonly string[] {
   const scopes = new Map<string, Map<string, Set<string>>>()
   const authored = new Set<string>()
+
   function scope(parent: string) {
     let graph = scopes.get(parent)
+
     if (!graph) {
       graph = new Map()
       scopes.set(parent, graph)
     }
+
     return graph
   }
+
   for (const list of lists) {
     if (new Set(list).size !== list.length)
       throw new Error('Duplicate layer name.')
+
     for (const name of list) {
       if (
         !/^(?:--|-?[_a-zA-Z])[\w-]*(?:\.(?:--|-?[_a-zA-Z])[\w-]*)*$/.test(
@@ -93,25 +98,34 @@ export function order(
           )
       )
         throw new Error('Invalid layer name.')
+
       authored.add(name)
+
       const parts = name.split('.')
+
       for (let index = 0; index < parts.length; index++) {
         const graph = scope(parts.slice(0, index).join('.'))
+
         if (!graph.has(parts[index]!)) graph.set(parts[index]!, new Set())
       }
     }
+
     for (let index = 1; index < list.length; index++) {
       const before = list[index - 1]!.split('.'),
         after = list[index]!.split('.')
       const at = before.findIndex((value, index) => value !== after[index])
+
       if (at >= 0 && after[at] !== undefined)
         scope(before.slice(0, at).join('.')).get(before[at]!)!.add(after[at]!)
     }
   }
+
   const result: string[] = []
+
   function emit(parent: string) {
     const graph = scopes.get(parent)
     if (!graph) return
+
     while (graph.size) {
       const targets = new Set(
         [...graph.values()].flatMap((values) => [...values]),
@@ -119,13 +133,18 @@ export function order(
       const next = [...graph.keys()].find((name) => !targets.has(name))
       if (next === undefined)
         throw new Error('Conflicting layer order constraints.')
+
       const name = parent ? `${parent}.${next}` : next
+
       if (authored.has(name)) result.push(name)
+
       graph.delete(next)
       emit(name)
     }
   }
+
   emit('')
+
   return result
 }
 
@@ -139,6 +158,7 @@ export function render(
       value.kind === 'layers' ? [value.names] : [],
     ),
   )
+
   return [
     layers.length ? `@layer ${layers.join(',')};` : '',
     ...definitions.map((value) => {

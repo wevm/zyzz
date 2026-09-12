@@ -13,17 +13,20 @@ describe('compile', () => {
     const source =
       'import {css} from "zyzz"; css((v:{alpha:number})=>({"&/* state, & */:hover":{opacity:v.alpha},"@media SCREEN":{color:"red"}}))'
     const output = Transform.compile({ moduleId: 'comments.ts', source })
+
     expect(output.css).toContain('@media SCREEN')
     expect(output.css).toContain('opacity:var(')
   })
   test('reports invalid condition grammar at each authored key', () => {
     const source =
       'import {css} from "zyzz"; css({"@supports display: grid":{color:"red"},"@supports color: red":{color:"blue"}})'
+
     try {
       Transform.compile({ moduleId: 'locations.ts', source })
       throw new Error('Expected source diagnostics')
     } catch (error) {
       if (!(error instanceof Source.ExtractError)) throw error
+
       expect(error.diagnostics.map((diagnostic) => diagnostic.start)).toEqual([
         source.indexOf('"@supports display'),
         source.indexOf('"@supports color'),
@@ -35,6 +38,7 @@ describe('compile', () => {
       moduleId: 'data.ts',
       source: `import { css } from 'zyzz'; css({ ':hover[data-token="a&b"]': { color: 'red' } })`,
     })
+
     expect(output.css).toContain('&:hover[data-token="a&b"]')
     expect(() =>
       Transform.compile({
@@ -47,11 +51,13 @@ describe('compile', () => {
     const source = `import {css} from 'zyzz'; css((v:{alpha:number})=>({'&:hover, &:focus':{opacity:v.alpha},'@media screen':{color:'red'}}))`
     const output = Transform.compile({ moduleId: 'keys.ts', source })
     const map = new Trace.TraceMap(output.cssMap)
+
     for (const key of ['&:hover, &:focus', '@media screen']) {
       const location = Trace.originalPositionFor(map, {
         line: 1,
         column: output.css.indexOf(key),
       })
+
       expect(location.column).toBe(source.indexOf(`'${key}'`))
     }
   })
@@ -73,8 +79,11 @@ describe('compile', () => {
       throw new Error('Expected validation failure')
     } catch (error) {
       expect(error).toBeInstanceOf(Style.InvalidError)
+
       if (!(error instanceof Style.InvalidError)) throw error
+
       const diagnostic = error.diagnostics[0]!
+
       expect(
         [
           diagnostic,
@@ -103,6 +112,7 @@ describe('compile', () => {
       'import {css} from "zyzz"; css({"@supports (display:grid)":{display:"grid"}})'
     const output = Transform.compile({ moduleId: 'supports.ts', source })
     const column = output.css.lastIndexOf('display:')
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: 1,
@@ -135,6 +145,7 @@ describe('compile', () => {
       source:
         'import {css} from "zyzz"; css({":is(:hover,:focus)":{color:"red"},"@media (width > 1px)\\n and (hover: hover)":{padding:"2px"}})',
     })
+
     expect(output.css).toMatchInlineSnapshot(
       `".z-style-1xoh7zjj7hyhn-26{&:is(:hover,:focus){color:red;}@media (width > 1px)  and (hover: hover){padding:2px;}}"`,
     )
@@ -156,17 +167,22 @@ describe('compile', () => {
         c: { marginLeft: '2px' },
       }),
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z-a{margin-left:2px;}
       .z-b{margin-left:4px;&:hover{color:red;}}
       .z-c{margin-left:2px;}"
     `)
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div id="box" class="${output.classes.a} ${output.classes.b} ${output.classes.c}">Box</div>`,
       )
+
       expect(
         await page
           .locator('#box')
@@ -180,10 +196,13 @@ describe('compile', () => {
     const source =
       'import {css} from "zyzz"; css({color:"red","@media screen, print":{padding:"2px"}})'
     const output = Transform.compile({ moduleId: 'mapped.ts', source })
+
     expect(output.css).toMatchInlineSnapshot(
       `".z-style-cqzv9l1th5n7r-26{color:red;@media screen, print{padding:2px;}}"`,
     )
+
     const column = output.css.indexOf('padding:')
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: 1,
@@ -206,6 +225,7 @@ describe('compile', () => {
           source: `import {css} from 'zyzz'; css({${JSON.stringify(selector)}:{color:'red'}})`,
         }),
       ).toThrow('Selector lists require explicit & selectors.')
+
     expect(
       Transform.compile({
         moduleId: 'list.ts',
@@ -250,6 +270,7 @@ describe('compile', () => {
           'import {Theme} from "zyzz"; export const theme=Theme.define({breakpoints:{tablet:"48rem"}})',
       },
     })
+
     const output = Graph.compile({
       contracts: { 'library.js': library.contracts['theme.ts']! },
       imports: { 'app.ts': { library: 'library.js' } },
@@ -258,6 +279,7 @@ describe('compile', () => {
           'import {theme} from "library"; export const box=theme.css({"@media tablet":{width:"100px"}})()',
       },
     })
+
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1xn44ix111xh3v-theme{}
       .z-style-1e8a67z1uaws1j-48{@media (width >= 48rem){width:100px;}}"
@@ -296,20 +318,26 @@ describe('compile', () => {
       source:
         'import {Theme} from "zyzz"; const theme=Theme.define({containers:{card:"24rem"},containerNames:["sidebar"]}); export const box=theme.css({width:"40px","@container sidebar >=card":{width:"100px"}})()',
     })
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><section id="container" style="container-type:inline-size;container-name:sidebar;width:500px"><div id="box" class="${Object.values(output.classes)[0]}"></div></section>`,
       )
+
       expect(
         await page
           .locator('#box')
           .evaluate((element) => getComputedStyle(element).width),
       ).toMatchInlineSnapshot(`"100px"`)
+
       await page
         .locator('#container')
         .evaluate((element) => ((element as HTMLElement).style.width = '300px'))
+
       expect(
         await page
           .locator('#box')
@@ -325,34 +353,44 @@ describe('compile', () => {
       source:
         'import {css} from "zyzz"; export const box=css({width:"40px",height:"20px",":hover":{width:"80px"},"@media (width >= 800px)":{height:"40px"},"&[data-active]":{opacity:0.5}})()',
     })
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage({
         viewport: { width: 600, height: 500 },
       })
+
       await page.setContent(
         `<style>${output.css}</style><div id="box" class="${Object.values(output.classes)[0]}"></div>`,
       )
+
       expect(
         await page
           .locator('#box')
           .evaluate((element) => getComputedStyle(element).width),
       ).toMatchInlineSnapshot(`"40px"`)
+
       await page.locator('#box').hover()
+
       expect(
         await page
           .locator('#box')
           .evaluate((element) => getComputedStyle(element).width),
       ).toMatchInlineSnapshot(`"80px"`)
+
       await page.setViewportSize({ width: 900, height: 500 })
+
       expect(
         await page
           .locator('#box')
           .evaluate((element) => getComputedStyle(element).height),
       ).toMatchInlineSnapshot(`"40px"`)
+
       await page
         .locator('#box')
         .evaluate((element) => element.setAttribute('data-active', ''))
+
       expect(
         await page
           .locator('#box')

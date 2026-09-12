@@ -11,9 +11,11 @@ import * as Themes from './Themes.js'
 describe('create', () => {
   test('token-name resolution retains identical CSS and JavaScript delivery', async () => {
     const fixture = await Themes.create(10)
+
     try {
       const explicit = await Themes.zyzz(fixture)
       const named = await Themes.zyzzTokens(fixture)
+
       expect(named.css === explicit.css).toMatchInlineSnapshot('true')
       expect(named.javascript === explicit.javascript).toMatchInlineSnapshot(
         'true',
@@ -26,10 +28,12 @@ describe('create', () => {
   test('real theme adapters emit executable exports and nonempty stylesheets', async () => {
     const fixture = await Themes.create(10)
     const other = await Themes.create(10)
+
     try {
       for (const [library, compile] of Object.entries(Themes.compilers)) {
         const bundle = await compile(fixture)
         const repeated = await compile(other)
+
         expect(repeated.css === bundle.css, library).toMatchInlineSnapshot(
           'true',
         )
@@ -38,10 +42,12 @@ describe('create', () => {
           library,
         ).toMatchInlineSnapshot('true')
         expect(bundle.css.length > 0, library).toMatchInlineSnapshot('true')
+
         const output = Vm.runInNewContext(`${bundle.javascript};fixture;`) as {
           classes: string[]
           themes: Record<string, Record<string, string>>
         }
+
         expect(output.classes.length, library).toMatchInlineSnapshot('10')
         expect(Object.keys(output.themes), library).toMatchInlineSnapshot(`
           [
@@ -59,10 +65,12 @@ describe('create', () => {
   test('a caller profile reaches every real compiler without changing their exports', async () => {
     const modern = await Themes.create(10, { targets: { chrome: 123 << 16 } })
     const baseline = await Themes.create(10)
+
     try {
       for (const [library, compile] of Object.entries(Themes.compilers)) {
         const current = await compile(modern)
         const original = await compile(baseline)
+
         expect(
           current.css.includes('light-dark('),
           library,
@@ -94,10 +102,12 @@ describe('create', () => {
     test(`theme scopes, nesting, and schemes agree in Chromium / ${count} styles`, async () => {
       const fixture = await Themes.create(count)
       const browser = await chromium.launch()
+
       try {
         for (const [library, compile] of Object.entries(Themes.compilers)) {
           const bundle = await compile(fixture)
           const page = await browser.newPage({ colorScheme: 'light' })
+
           try {
             await page.setContent(
               `<style>:root{color-scheme:light dark}${bundle.css}</style>`,
@@ -108,39 +118,52 @@ describe('create', () => {
                 classes: string[]
                 themes: Record<'alternate' | 'base', Record<string, string>>
               }
+
               const output = (window as unknown as { fixture: Exports }).fixture
+
               function scope(
                 name: 'alternate' | 'base',
                 parent: HTMLElement,
                 id: string,
               ) {
                 const element = document.createElement('section')
+
                 element.id = id
+
                 for (const [key, value] of Object.entries(output.themes[name]))
                   element.setAttribute(
                     key === 'className' ? 'class' : key,
                     value,
                   )
+
                 parent.append(element)
+
                 for (const className of output.classes) {
                   const card = document.createElement('div')
+
                   card.className = className
                   element.append(card)
                 }
+
                 return element
               }
+
               scope('base', document.body, 'base')
+
               const alternate = scope('alternate', document.body, 'alternate')
+
               scope('base', alternate, 'nested')
               scope('alternate', document.body, 'forced').style.colorScheme =
                 'dark'
             })
+
             async function read(id: string) {
               return page
                 .locator(`#${id} > div`)
                 .first()
                 .evaluate((element) => {
                   const style = getComputedStyle(element)
+
                   return {
                     backgroundColor: style.backgroundColor,
                     color: style.color,
@@ -148,6 +171,7 @@ describe('create', () => {
                   }
                 })
             }
+
             expect(await read('base'), library).toMatchInlineSnapshot(`
               {
                 "backgroundColor": "rgb(255, 255, 255)",
@@ -188,7 +212,9 @@ describe('create', () => {
                 ),
               library,
             ).toMatchInlineSnapshot('[]')
+
             await page.emulateMedia({ colorScheme: 'dark' })
+
             expect(await read('base'), library).toMatchInlineSnapshot(`
               {
                 "backgroundColor": "rgb(17, 17, 17)",
@@ -203,6 +229,7 @@ describe('create', () => {
                 "padding": "16px",
               }
             `)
+
             // Selection changes attributes only; the same compiled component classes remain.
             await page.locator('#alternate').evaluate((element) => {
               const output = (
@@ -210,11 +237,14 @@ describe('create', () => {
                   fixture: { themes: { base: Record<string, string> } }
                 }
               ).fixture
+
               element.removeAttribute('class')
               element.removeAttribute('data-panda-theme')
+
               for (const [key, value] of Object.entries(output.themes.base))
                 element.setAttribute(key === 'className' ? 'class' : key, value)
             })
+
             expect(await read('alternate'), library).toMatchInlineSnapshot(`
               {
                 "backgroundColor": "rgb(17, 17, 17)",

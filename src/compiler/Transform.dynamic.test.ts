@@ -23,6 +23,7 @@ describe('compile', () => {
           source: 'import {css} from "zyzz"; css(' + callback + ')',
         }).css,
       ).toContain('opacity:var(')
+
     for (const body of [
       '{color:`#${v.hex}`}',
       '{fontFamily:`prefix${v.hex}`}',
@@ -44,6 +45,7 @@ describe('compile', () => {
       source:
         'import {css} from "zyzz"; export const style=css((v:{width:0|`${number}px`})=>({width:v.width}))',
     })
+
     const built = await Esbuild.build({
       stdin: {
         contents: output.code,
@@ -56,13 +58,16 @@ describe('compile', () => {
       conditions: ['src'],
       format: 'esm',
     })
+
     const result = await import(
       `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
     )
+
     expect(Object.values(result.style({ width: 0 }).style)).toEqual([0])
     expect(Object.values(result.style({ width: '10px' }).style)).toEqual([
       '10px',
     ])
+
     for (const source of [
       'css((v:{color:"initial"|"red"})=>({color:v.color}))',
       'css((v:{text:string})=>({content:`"${v.text}"`}))',
@@ -80,7 +85,9 @@ describe('compile', () => {
       moduleId: 'scalars.ts',
       source: `import {css} from 'zyzz'; export const style = css(((v: {'item-size': string; order: -1 | 1}) => ({marginLeft: v['item-size'], order: v.order})) satisfies unknown)`,
     })
+
     expect(output.css).toContain('order:var(')
+
     const built = await Esbuild.build({
       stdin: {
         contents: output.code,
@@ -93,9 +100,11 @@ describe('compile', () => {
       conditions: ['src'],
       format: 'esm',
     })
+
     const result = await import(
       `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
     )
+
     expect(Object.values(result.style({ 'item-size': '', order: -1 }).style))
       .toMatchInlineSnapshot(`
       [
@@ -127,11 +136,13 @@ describe('compile', () => {
           moduleId: 'invalid.ts',
           source: 'import {css} from "zyzz"; ' + source,
         })
+
         return 'accepted'
       } catch (error) {
         return String(error)
       }
     })
+
     expect(errors).toMatchInlineSnapshot(`
       [
         "Source.ExtractError: invalid.ts:59: Variable domain is incompatible with this property.",
@@ -171,6 +182,7 @@ describe('compile', () => {
       source:
         'import {css} from "zyzz"; export const card=css({display:"block"})',
     })
+
     const built = await Esbuild.build({
       stdin: {
         contents: output.code,
@@ -182,6 +194,7 @@ describe('compile', () => {
       metafile: true,
       conditions: ['src'],
     })
+
     expect(
       Object.keys(built.metafile!.inputs)
         .filter((path) => path.endsWith('/runtime/Dynamic.ts'))
@@ -221,11 +234,13 @@ describe('compile', () => {
   })
   test('compiles callbacks to fixed rules and preserves callable values', async () => {
     const output = Transform.compile({ moduleId: 'dynamic.ts', source })
+
     expect(output.css).toMatchInlineSnapshot(
       `".z-1h5dayl7tfv4v-base0{display:block;width:var(--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74);margin-left:calc(var(--z-d1h5dayl7tfv4v-47-67-61-70) + 2px);opacity:var(--z-d1h5dayl7tfv4v-47-61-6c-70-68-61);}"`,
     )
     expect(output.code.includes('values.amount')).toMatchInlineSnapshot(`false`)
     expect(output.code.includes('css.Dynamic')).toMatchInlineSnapshot(`true`)
+
     const built = await Esbuild.build({
       stdin: {
         contents: output.code,
@@ -238,9 +253,11 @@ describe('compile', () => {
       conditions: ['src'],
       format: 'esm',
     })
+
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
     )
+
     expect(module.first).toMatchInlineSnapshot(`
       {
         "className": "z-1h5dayl7tfv4v-base0",
@@ -270,7 +287,9 @@ describe('compile', () => {
         },
       }
     `)
+
     const key = Object.keys(module.first.style)[0]!
+
     expect(
       module.bar({
         amount: '50%',
@@ -283,6 +302,7 @@ describe('compile', () => {
 
   test('Chromium updates values with stable classes and rule counts', async () => {
     const output = Transform.compile({ moduleId: 'dynamic.ts', source })
+
     const built = await Esbuild.build({
       stdin: {
         contents: output.code,
@@ -296,9 +316,12 @@ describe('compile', () => {
       format: 'iife',
       globalName: 'fixture',
     })
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div style="width:200px"><div id="bar"></div></div>`,
       )
@@ -307,15 +330,19 @@ describe('compile', () => {
           built.outputFiles[0]!.text +
           `;globalThis.update = (amount) => { const props = fixture.bar({amount,gap:'0px',alpha:1}); const element = document.getElementById('bar'); element.className = props.className; for(const [key,value] of Object.entries(props.style)) element.style.setProperty(key,String(value)); }; globalThis.update('25%');`,
       })
+
       expect(
         await page
           .locator('#bar')
           .evaluate((element) => getComputedStyle(element).width),
       ).toMatchInlineSnapshot(`"50px"`)
+
       const original = await page.locator('#bar').getAttribute('class')
+
       await page.addScriptTag({
         content: `for(let i=0;i<20;i++) globalThis.update('75%')`,
       })
+
       expect(
         await page
           .locator('#bar')

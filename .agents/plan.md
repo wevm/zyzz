@@ -391,12 +391,15 @@ Gate: two compatible themes each work in both schemes. Switching a scope changes
 
 ### Full At-Rule Support
 
+Document declarations have type, extraction, ordering, map, and packed-contract evidence in `Transform.documentRules.test.ts` and their public type fixtures. Their inventory entries remain partial; full browser and watch acceptance is tracked separately in 2.5f.
+
+
 Accepted direction: [top-level stylesheet functions](../docs/api/web/at-rules.md), alongside native grouping keys in `css`/`variants`. Descriptor and statement rules do not become properties under `global`. This is Phase 2 standard-authoring follow-up after the existing framework/stylesheet/variable stack; current PR acceptance remains separate.
 
 - [ ] **2.5a — Inventory and Context Contracts:** pin the full MDN at-rule/descriptor inventory, including nested page/font rules and alternate forms. Set a 100% inventory-accounting gate immediately; keep implementation coverage separate and require 100% before claiming full support. Finalize ordered conditional/layered helper contexts, external names, query/profile references, and CSS-function signatures.
 - [ ] **2.5b — Nested Rules and Existing Helpers:** complete `@scope`, all media/supports/container forms including scroll-state queries, legal starting-style/layer contexts, all font-face descriptors, and named timeline-range keyframe stops. Preserve variant/compound inference and CSS nesting semantics.
 - [ ] **2.5c — Named Declarations:** add direct `counterStyle`, `positionTry`, `fontPaletteValues`, and `colorProfile` functions. Preserve domain-specific references through imports, aliases, re-exports, lists/shorthands, packed contracts, and rebuilds. Reuse variable registration from `Vars.define` without duplicating its API.
-- [ ] **2.5d — Document Declarations:** add `page`, all page-margin boxes, `fontFeatureValues` and its nested blocks, and `viewTransition`. Cover repeated calls, conditional/layered placement, eagerness, and CSS order.
+- [x] **2.5d — Document Declarations:** add `page`, all page-margin boxes, `fontFeatureValues` and its nested blocks, and `viewTransition`. Cover repeated calls, conditional/layered placement, eagerness, and CSS order.
 - [ ] **2.5e — Statements and CSS Functions:** add `importCss`, `namespace`, `customMedia`, and `cssFunction`; implement the output charset policy and explicit legacy `@document` support. Preserve namespace boundaries, relative URLs, import ordering/conditions, and CSS function parameter/result domains.
 - [ ] **2.5f — Full Acceptance:** require every rule, descriptor, nested form, and supported context to have type/extraction/emission/map evidence, packed-library and watch coverage, and applicable real-browser fixtures. Record experimental/legacy browser availability separately. Add source-owned diagnostics for unsupported native semantics and benchmark compiler/output changes. No runtime authoring validation.
 

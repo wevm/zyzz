@@ -15,6 +15,7 @@ export function create(
   html = false,
 ) {
   const catalog = Object.fromEntries(entries)
+
   const select = (input: { theme: string; colorScheme?: string }) => {
     if (
       !input ||
@@ -30,6 +31,7 @@ export function create(
         !['light', 'dark', 'light dark'].includes(input.colorScheme))
     )
       throw new TypeError('Invalid theme selection.')
+
     return {
       [html ? 'class' : 'className']: catalog[input.theme],
       ...(input.colorScheme
@@ -41,6 +43,7 @@ export function create(
         : {}),
     }
   }
+
   return Object.defineProperties(
     select,
     Object.getOwnPropertyDescriptors(

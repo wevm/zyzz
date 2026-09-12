@@ -110,10 +110,12 @@ for (const workload of workloads) {
     )
     if (matches.length !== 1)
       throw new Error('Expected exactly one timing group.')
+
     const measurements = new Map<
       string,
       { mean: number; size: number; sizes: Sizes; timing: Timing }
     >()
+
     for (const library of [...workload.lanes, ...competitors]) {
       const timings = matches[0]!.benchmarks.filter(
         (entry) => entry.name === library,
@@ -130,6 +132,7 @@ for (const workload of workloads) {
         timing.sampleCount! < 1
       )
         throw new Error(`Missing or invalid timing: ${library}.`)
+
       const size: Sizes = JSON.parse(
         Fs.readFileSync(
           Path.join(directory, workload.directory, `${library}.json`),
@@ -147,6 +150,7 @@ for (const workload of workloads) {
         size.total.gzip !== size.css.gzip + size.javascript.gzip
       )
         throw new Error(`Missing or invalid size: ${library}.`)
+
       measurements.set(library, {
         mean: timing.mean!,
         size: size.total.gzip,
@@ -154,6 +158,7 @@ for (const workload of workloads) {
         timing,
       })
     }
+
     const summary = winner({
       decimals: 3,
       measurements: [...measurements].map(([library, result]) => ({
@@ -162,33 +167,42 @@ for (const workload of workloads) {
       })),
       unit: 'ms',
     })
+
     console.log(
       `<details>\n<summary>${titles[workload.directory]}: ${summary}</summary>\n`,
     )
     console.log('| Framework | Build (ms) | CSS gzip | JS gzip | Total gzip |')
     console.log('| --- | ---: | ---: | ---: | ---: |')
+
     for (const [library, result] of measurements) {
       const status = (() => {
         if (!workload.lanes.includes(library)) {
           const wins = workload.lanes.some((name) => {
             const zyzz = measurements.get(name)!
+
             return result.mean < zyzz.mean || result.size < zyzz.size
           })
+
           return wins ? '🔴 ' : ''
         }
+
         const faster = competitors.every(
           (name) => result.mean < measurements.get(name)!.mean,
         )
         const smaller = competitors.every(
           (name) => result.size < measurements.get(name)!.size,
         )
+
         if (!faster || !smaller) process.exitCode = 1
+
         return faster && smaller ? '🟢 ' : '🔴 '
       })()
+
       console.log(
         `| ${status}${names[library]} | ${result.mean.toFixed(3)} | ${result.sizes.css.gzip} B | ${result.sizes.javascript.gzip} B | ${result.size} B |`,
       )
     }
+
     console.log('\nFull measurements:\n')
     console.log(
       '| Framework | Error (±%) | Samples | CSS raw | CSS Brotli | JS raw | JS Brotli | Total raw | Total Brotli |',
@@ -196,12 +210,15 @@ for (const workload of workloads) {
     console.log(
       '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
     )
+
     for (const [library, result] of measurements) {
       const { sizes, timing } = result
+
       console.log(
         `| ${names[library]} | ${timing.rme!.toFixed(2)} | ${timing.sampleCount} | ${sizes.css.raw ?? '—'} | ${sizes.css.brotli ?? '—'} | ${sizes.javascript.raw ?? '—'} | ${sizes.javascript.brotli ?? '—'} | ${sizes.total.raw ?? '—'} | ${sizes.total.brotli ?? '—'} |`,
       )
     }
+
     console.log('\n</details>\n')
   } catch (error) {
     process.exitCode = 1
@@ -220,21 +237,25 @@ function winner(options: winner.Options): string {
       value: Number(item.value.toFixed(options.decimals)),
     }))
     .sort((a, b) => a.value - b.value)
+
   const first = ranked[0]
   if (
     !first ||
     ranked.some((item) => !Number.isFinite(item.value) || item.value < 0)
   )
     return '🟡 No valid timings'
+
   const tied = ranked.filter((item) => item.value === first.value)
   const time = `${first.value.toFixed(options.decimals)} ${options.unit}`
   if (tied.length > 1)
     return `🟡 Tie: ${tied.map((item) => item.name).join(', ')} — ${time}`
+
   const next = ranked[1]
   const ratio =
     next && first.value > 0
       ? ` · ${(next.value / first.value).toFixed(2)}× as fast as ${next.name}`
       : ''
+
   return `${first.name.startsWith('Zyzz') ? '🟢' : '🔴'} ${first.name} — ${time}${ratio}`
 }
 

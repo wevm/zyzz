@@ -14,8 +14,10 @@ import { Graph } from 'zyzz/compiler'
 export async function create(root: string, options: create.Options = {}) {
   const directory = Path.join(root, 'publisher')
   const consumer = Path.join(root, 'consumer')
+
   await Fs.mkdir(directory, { recursive: true })
   await Fs.mkdir(consumer, { recursive: true })
+
   const compiled = Graph.compile({
     modules: {
       '@acme/theme/index.ts': options.configuration
@@ -33,16 +35,22 @@ export const css = theme.css;
 export const props = css({color:'brand',padding:'md'})();`,
     },
   })
+
   const output = compiled.modules['@acme/theme/index.ts']!
+
   await Fs.writeFile(Path.join(directory, 'index.ts'), output.code)
+
   const declaration = Ts.transpileDeclaration(output.code, {
     fileName: 'index.ts',
     reportDiagnostics: true,
   })
   if (declaration.diagnostics?.length)
     throw new Error('Library declarations failed to emit.')
+
   await Fs.writeFile(Path.join(directory, 'index.d.ts'), declaration.outputText)
+
   const exec = Util.promisify(ChildProcess.execFile)
+
   await Fs.writeFile(
     Path.join(directory, 'index.js'),
     (await Esbuild.transform(output.code, { format: 'esm', loader: 'ts' }))
@@ -67,12 +75,15 @@ export const props = css({color:'brand',padding:'md'})();`,
       version: '1.0.0',
     }),
   )
+
   const packed = await exec(
     'npm',
     ['pack', '--ignore-scripts', '--offline', '--json'],
     { cwd: directory },
   )
+
   const [pack] = JSON.parse(packed.stdout) as { filename: string }[]
+
   await Fs.writeFile(
     Path.join(consumer, 'package.json'),
     '{"private":true,"type":"module"}',
@@ -95,6 +106,7 @@ export const props = css({color:'brand',padding:'md'})();`,
     Path.join(consumer, 'node_modules/zyzz'),
     'dir',
   )
+
   return consumer
 }
 

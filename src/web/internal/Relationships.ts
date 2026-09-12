@@ -21,13 +21,16 @@ export type Pseudo =
   | ':required'
   | ':valid'
   | ':visited'
+
 /** Marker state selection, inferred only from its declared schema. */
 export type State<schema extends Marker.Schema> = {
   readonly [key in keyof schema]?: schema[key][number] | undefined
 }
+
 declare const stateSchema: unique symbol
 /** Opaque compiler condition key; cannot introduce an arbitrary property index. */
 export type Key = Conditions.Relationship
+
 /** Marker callable with no styling fields. */
 export type Handle<schema extends Marker.Schema> = {
   <const input extends State<schema> = State<schema>>(
@@ -36,6 +39,7 @@ export type Handle<schema extends Marker.Schema> = {
   /** Compile-time invariant retaining the schema for relationship inference. */
   readonly [stateSchema]: schema
 }
+
 /** Optional conjunction of marker data, an element pseudo, and descendant selector. */
 export type Condition<schema extends Marker.Schema> =
   | Pseudo
@@ -44,6 +48,7 @@ export type Condition<schema extends Marker.Schema> =
       readonly has?: string | undefined
       readonly pseudo?: Pseudo | undefined
     }
+
 /** Rejects unknown option and state keys even through intermediate variables. */
 export type Checked<
   schema extends Marker.Schema,
@@ -72,6 +77,7 @@ export type Checked<
                   Record<Exclude<keyof NonNullable<data>, keyof schema>, never>
           }
         : {})
+
 /** Requires finite, unambiguous state domains. */
 export type Validated<schema extends Marker.Schema> = {
   [key in keyof schema]: key extends string
@@ -97,6 +103,7 @@ export type Validated<schema extends Marker.Schema> = {
       : never
     : never
 }
+
 type Letter =
   | 'a'
   | 'b'
@@ -124,6 +131,7 @@ type Letter =
   | 'x'
   | 'y'
   | 'z'
+
 type Name<
   name extends string,
   first extends boolean = true,
@@ -175,6 +183,7 @@ type Unique<
         ? never
         : Unique<rest, seen | `${first}`>
   : unknown
+
 /** Supported relationship directions relative to the styled element. */
 export type Kind =
   | 'ancestor'
@@ -182,6 +191,7 @@ export type Kind =
   | 'descendant'
   | 'siblingAfter'
   | 'siblingBefore'
+
 /** Lowers validated marker state and direction with zero predicate specificity. */
 export function selector(
   kind: Kind,
@@ -194,6 +204,7 @@ export function selector(
     throw new Error(
       'Relationship conditions require a pseudo or options record.',
     )
+
   const values = options as Record<string, unknown>
   if (
     !['ancestor', 'siblingBefore'].includes(kind) &&
@@ -202,13 +213,16 @@ export function selector(
     throw new Error(
       'Visited predicates cannot be observed through has-based relationships.',
     )
+
   if (
     Object.keys(values).some((key) => !['data', 'has', 'pseudo'].includes(key))
   )
     throw new Error('Unknown relationship condition option.')
+
   const attrs = Marker.create(marker)(
     (values.data === undefined ? {} : values.data) as State<Marker.Schema>,
   )
+
   const escape = (value: string) =>
     Array.from(value)
       .map((char) =>
@@ -219,6 +233,7 @@ export function selector(
             : char,
       )
       .join('')
+
   let predicate = Object.entries(attrs)
     .map(([key, value]) =>
       value === '' && key === marker.id
@@ -226,6 +241,7 @@ export function selector(
         : `[${key}="${escape(value)}"]`,
     )
     .join('')
+
   if (values.pseudo !== undefined) {
     if (
       typeof values.pseudo !== 'string' ||
@@ -234,11 +250,14 @@ export function selector(
       )
     )
       throw new Error('Unsupported marker pseudo.')
+
     predicate += values.pseudo
   }
+
   if (values.has !== undefined) {
     if (!['ancestor', 'siblingBefore'].includes(kind))
       throw new Error('has is supported only by ancestor and siblingBefore.')
+
     if (
       typeof values.has !== 'string' ||
       !values.has.trim() ||
@@ -249,11 +268,14 @@ export function selector(
       ].some((match) => match[1])
     )
       throw new Error('has requires a descendant selector without nesting.')
+
     predicate += `:has(${values.has})`
   }
+
   if (kind === 'ancestor') return `:where(${predicate}) &`
   if (kind === 'descendant') return `&:where(:has(${predicate}))`
   if (kind === 'siblingBefore') return `:where(${predicate}) ~ &`
   if (kind === 'siblingAfter') return `&:where(:has(~ ${predicate}))`
+
   return `:is(:where(${predicate}) ~ &, &:where(:has(~ ${predicate})))`
 }

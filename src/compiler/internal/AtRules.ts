@@ -6,6 +6,7 @@ export function transform<C extends Lightning.CustomAtRules>(
   options: Lightning.TransformOptions<C>,
 ): Lightning.TransformResult {
   const source = new TextDecoder().decode(options.code)
+  validateFeatures(source)
   let marker = '-zyzz-ffv-000000000'
   let suffix = 0
   while (source.toLowerCase().includes(marker))
@@ -68,4 +69,50 @@ function rename(source: string, before: string, after: string): string {
     output += char
   }
   return output
+}
+
+// Validate the standard rule before shielding the newer font-display descriptor.
+function validateFeatures(source: string): void {
+  if (!source.toLowerCase().includes('@font-feature-values')) return
+  const masked = source.replace(
+    /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\*[\s\S]*?\*\//g,
+    (value) => ' '.repeat(value.length),
+  )
+  for (const match of masked.matchAll(/@font-feature-values(?=[\s{])/gi)) {
+    const start = match.index
+    const open = masked.indexOf('{', start)
+    if (open < 0) throw new Error('Invalid font-feature-values block.')
+    let depth = 1
+    let end = open + 1
+    let plain = source.slice(start, open + 1)
+    let cursor = open + 1
+    for (; end < masked.length && depth; end++) {
+      const char = masked[end]
+      if (char === '{') depth++
+      else if (char === '}') depth--
+      else if (depth === 1 && masked.slice(end).match(/^font-display\s*:/i)) {
+        const finish = masked.indexOf(';', end)
+        const close = masked.indexOf('}', end)
+        const boundary = finish >= 0 && finish < close ? finish : close
+        if (boundary < 0) throw new Error('Invalid font-display descriptor.')
+        const descriptor = masked.slice(end, boundary)
+        if (
+          !/^font-display\s*:\s*(?:auto|block|fallback|optional|swap)\s*$/i.test(
+            descriptor,
+          )
+        )
+          throw new Error('Invalid font-display descriptor.')
+        plain += source.slice(cursor, end)
+        cursor = boundary + (boundary === finish ? 1 : 0)
+        end = cursor - 1
+      }
+    }
+    if (depth) throw new Error('Invalid font-feature-values block.')
+    plain += source.slice(cursor, end)
+    Lightning.transform({
+      filename: 'font-feature-values.css',
+      code: new TextEncoder().encode(plain),
+      errorRecovery: false,
+    })
+  }
 }

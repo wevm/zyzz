@@ -11,6 +11,7 @@ export type Definition<schema extends Schema = Schema> = References<schema> & {
     } & Record<Exclude<keyof values, keyof schema>, never>,
   ) => Readonly<Record<`--${string}`, number | string>>
 }
+
 /** Compiler-assigned scalar references preserving the schema keys. */
 export type References<schema extends Schema = Schema> = {
   readonly [key in keyof schema]: Binding.Reference<Kind<schema[key]>>
@@ -48,12 +49,14 @@ export function define<const schema extends Schema>(
 
 /** Supported variable names and scalar domains. */
 export type Schema = Readonly<Record<string, Binding.Kind | Registration>>
+
 /** Extracts the scalar domain from a shorthand or registered descriptor. */
 export type Kind<value> = value extends Binding.Kind
   ? value
   : value extends { readonly type: infer kind extends Binding.Kind }
     ? kind
     : never
+
 /** Computationally independent initial values for registered properties. */
 export type Initial<kind extends Binding.Kind> = kind extends
   | 'length'
@@ -65,11 +68,13 @@ export type Initial<kind extends Binding.Kind> = kind extends
         'currentColor' | 'currentcolor' | `light-dark(${string})`
       >
     : Binding.Value<kind>
+
 type Independent<value> = value extends string
   ? Lowercase<value> extends `${string}${'currentcolor' | 'var(' | 'env(' | 'light-dark('}${string}`
     ? never
     : value
   : value
+
 /** Optional CSS registration attached to one existing scalar variable slot. */
 export type Registration<kind extends Binding.Kind = Binding.Kind> =
   kind extends unknown
@@ -84,6 +89,7 @@ export type Registration<kind extends Binding.Kind = Binding.Kind> =
         readonly syntax?: Syntax<kind> | undefined
       }
     : never
+
 /** CSS syntax corresponding to a supported scalar domain. */
 export type Syntax<kind extends Binding.Kind> = kind extends 'signedLength'
   ? '<length>'

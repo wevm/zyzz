@@ -24,22 +24,29 @@ export function from(
     style?: string
     [name: `data-${string}`]: string | undefined
   } = { class: props.className }
+
   if (props.style !== undefined) {
     const declarations: string[] = []
+
     for (const [property, value] of Object.entries(props.style)) {
       if (value === undefined || value === null) continue
+
       const name = property.startsWith('--')
         ? property
         : property
             .replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)
             .replace(/^ms-/, '-ms-')
+
       declarations.push(`${name}:${value}`)
     }
+
     result.style = declarations.join(';')
   }
+
   for (const [name, value] of Object.entries(props))
     if (name.startsWith('data-'))
       result[name as `data-${string}`] = value as string | undefined
+
   return result
 }
 
@@ -62,6 +69,7 @@ function escape(value: string): string {
     if (character === '>') return '&gt;'
     if (character === '"') return '&quot;'
     if (character === "'") return '&#39;'
+
     return `&#${character.charCodeAt(0)};`
   })
 }
@@ -72,6 +80,7 @@ export function bind<input>(
 ): (input: input) => css.Props<'html'> {
   return (input) => from(fn(input))
 }
+
 /** Creates a static HTML style callable without CSS generation. */
 export function create(options: Props.create.Options): css.ReturnType<'html'> {
   return bind(Props.create(options))

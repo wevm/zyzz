@@ -212,7 +212,7 @@ The private profile implementation preserves `src`, `renderingIntent`, and comma
 
 ## Function Signatures
 
-`cssFunction` accepts single syntax components, `+`/`#` repetition, and `type(...)` alternatives. Scalar alternatives retain argument and result domains through packed libraries. List arguments remain CSS text; commas are enclosed in an argument block during source and runtime expression formatting.
+`cssFunction` accepts single syntax components, `+`/`#` repetition, and `type(...)` alternatives. Scalar alternatives retain argument and result domains through packed libraries. List arguments remain CSS text; commas are enclosed in an argument block during source and runtime expression formatting. Repeated return types cannot flow into bounded shorthands. Comma-list results require a destination with explicit list metadata; custom properties accept unbounded output. Other repeated-result destinations remain acceptance work.
 
 ```ts
 const size = cssFunction({

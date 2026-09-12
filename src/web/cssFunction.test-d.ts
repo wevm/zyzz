@@ -52,6 +52,28 @@ describe('cssFunction', () => {
     // @ts-expect-error times require time units
     fn('red', '1pc', '2%', '1turn', 'red')
   })
+
+  test('keeps unbounded results out of bounded property slots', () => {
+    const lengths = cssFunction({
+      parameters: [],
+      returns: '<length>+',
+      body: { result: '1px 2px 3px 4px 5px' },
+    })
+    const images = cssFunction({
+      parameters: [],
+      returns: '<image>#',
+      body: { result: 'url(/a.svg), linear-gradient(red, blue)' },
+    })
+
+    css({ backgroundImage: images() })
+    css({ '--lengths': lengths() })
+    // @ts-expect-error margin permits at most four values, whereas + is unbounded
+    css({ margin: lengths() })
+    // @ts-expect-error a scalar dimension cannot consume a list result
+    css({ width: lengths() })
+    // @ts-expect-error clip-path accepts neither image gradients nor comma lists
+    css({ clipPath: images() })
+  })
 })
 
 describe('cssFunction', () => {

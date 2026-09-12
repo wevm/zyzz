@@ -4,6 +4,7 @@ import { chromium } from 'playwright'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Trace from '@jridgewell/trace-mapping'
+import * as Packed from '../../test/fixtures/Packed.js'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
@@ -682,6 +683,86 @@ global({html:{color:'blue'}});`
         await new Promise<void>((resolve) => server.close(() => resolve()))
 
       await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
+  test('serves published library CSS and packed classes to a plain-CSS application in Chromium', async () => {
+    const library = Graph.compile({
+      modules: {
+        'lib/index.ts': `import {Config} from 'zyzz';import {global,keyframes} from 'zyzz/web';const {css,theme}=Config.create({layers:['components'],theme:{color:{brand:{light:'#06c',dark:'#9cf'}},spacing:{md:'8px'}}});global({'@layer components':{button:{fontSize:'24px'},h2:{margin:'24px'}}});export const fade=keyframes({from:{opacity:0},to:{opacity:1}});export const scope=theme.className;export const card=css({color:'brand',padding:'md',animationName:fade,animationDuration:'1s',animationDelay:'-0.5s',animationPlayState:'paused',animationTimingFunction:'linear'})();`,
+      },
+    })
+    const output = library.modules['lib/index.ts']!
+    const published = [library.sharedCss, output.css].join('\n')
+
+    expect(published).toMatchInlineSnapshot(`
+      "@layer components;
+      @layer components{button{font-size:24px;}h2{margin:24px;}}
+      @keyframes z-kru63ois9esjw-66-61-64-65{from{opacity:0;}to{opacity:1;}}
+      .z_theme-ru63ois9esjw-css-theme{--z-tru63ois9esjw-css-color_2e_brand:light-dark(#06c,#9cf);--z-tru63ois9esjw-css-spacing_2e_md:8px;}
+      .z-ru63ois9esjw-base0{color:var(--z-tru63ois9esjw-css-color_2e_brand,light-dark(#06c,#9cf));padding:var(--z-tru63ois9esjw-css-spacing_2e_md,8px);animation-name:z-kru63ois9esjw-66-61-64-65;animation-duration:1s;animation-delay:-0.5s;animation-play-state:paused;animation-timing-function:linear;}"
+    `)
+
+    const bundle = await Packed.bundle({
+      entry: 'lib/index.ts',
+      modules: { 'lib/index.ts': output.code },
+    })
+    const application =
+      'button{font-size:12px}@layer app{h2{margin:4px}}#dark{color-scheme:dark}'
+    const markup =
+      '<button id="button">Button</button><h2 id="heading">Heading</h2><div id="light"><p id="card"></p></div><div id="dark"><p id="scoped"></p></div>'
+    const browser = await chromium.launch()
+
+    try {
+      const page = await browser.newPage()
+
+      async function render(prelude: string) {
+        await page.setContent(
+          `<style>${prelude}${application}</style><style>${published}</style>${markup}`,
+        )
+        await page.addScriptTag({ content: bundle })
+        await page.evaluate(
+          `document.getElementById('card').className=Fixture.card.className;document.getElementById('dark').className=Fixture.scope;document.getElementById('scoped').className=Fixture.card.className`,
+        )
+
+        return page.evaluate(() => {
+          const read = (id: string, property: string) =>
+            getComputedStyle(document.getElementById(id)!).getPropertyValue(
+              property,
+            )
+
+          return {
+            button: read('button', 'font-size'),
+            cardColor: read('card', 'color'),
+            cardOpacity: read('card', 'opacity'),
+            cardPadding: read('card', 'padding'),
+            heading: read('heading', 'margin'),
+            scopedColor: read('scoped', 'color'),
+          }
+        })
+      }
+
+      expect(await render('@layer components,app;')).toMatchInlineSnapshot(`
+        {
+          "button": "12px",
+          "cardColor": "rgb(0, 102, 204)",
+          "cardOpacity": "0.5",
+          "cardPadding": "8px",
+          "heading": "4px",
+          "scopedColor": "rgb(153, 204, 255)",
+        }
+      `)
+      expect(await render('@layer app,components;')).toMatchInlineSnapshot(`
+        {
+          "button": "12px",
+          "cardColor": "rgb(0, 102, 204)",
+          "cardOpacity": "0.5",
+          "cardPadding": "8px",
+          "heading": "24px",
+          "scopedColor": "rgb(153, 204, 255)",
+        }
+      `)
+    } finally {
+      await browser.close()
     }
   })
   test('publishes binary relative assets with source maps and updates them atomically', async () => {

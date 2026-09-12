@@ -38,6 +38,7 @@
     "@vitest/coverage-v8": "4.1.9",
     "esbuild": "^0.28.2",
     "mdn-data": "2.35.0",
+    "next": "16.3.4",
     "pdf-lib": "1.17.1",
     "pkg-pr-new": "^0.0.88",
     "playwright": "^1.63.0",
@@ -83,6 +84,11 @@
       "types": "./dist/compiler/index.d.ts",
       "default": "./dist/compiler/index.js"
     },
+    "./next": {
+      "src": "./src/next/index.ts",
+      "types": "./dist/next/index.d.ts",
+      "default": "./dist/next/index.js"
+    },
     "./node": {
       "src": "./src/node/index.ts",
       "types": "./dist/node/index.d.ts",
@@ -119,9 +125,13 @@
     "oxc-walker": "1.1.1"
   },
   "peerDependencies": {
+    "next": "^16.0.0",
     "vite": "^8.0.0"
   },
   "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    },
     "vite": {
       "optional": true
     }

@@ -42,6 +42,7 @@ npm install zyzz
 Then:
 
 - [Setup with Vite](#setup-with-vite)
+- [Setup with Next.js](#setup-with-nextjs)
 - [Setup with CLI](#setup-with-cli)
 - [Use Compiler API](#use-compiler-api)
 
@@ -60,6 +61,21 @@ export default defineConfig({
 ```
 
 Import components normally. The plugin transforms source modules and delivers CSS automatically during development and production builds. See [Vite Setup](docs/introduction/vite.md).
+
+### Setup with Next.js
+
+Wrap the existing configuration; the wrapper configures webpack and Turbopack internally:
+
+```ts
+// next.config.ts
+import { zyzz } from 'zyzz/next'
+
+export default zyzz({
+  reactStrictMode: true,
+})
+```
+
+Server Components, client components, and streamed segments receive transformed modules and matching CSS through `next dev` and `next build`. See [Next.js Setup](docs/introduction/next.md).
 
 ### Setup with CLI
 

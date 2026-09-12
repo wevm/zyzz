@@ -1,9 +1,9 @@
 # zyzz
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> Verified with Next.js 16.3.4 App Router applications on webpack and Turbopack. The Pages Router, relative stylesheet assets, and unimported stylesheet contributions remain separate gates.
 
-Wrap Next.js configuration with source transformation, CSS delivery, and dependency watching. Configure Webpack and Turbopack internally through the same public setup.
+Wrap Next.js configuration with source transformation, CSS delivery, and dependency watching. Webpack and Turbopack are configured internally through the same public setup.
 
 ```ts
 import { zyzz } from 'zyzz/next'
@@ -21,22 +21,28 @@ export default zyzz({
 
 ### nextConfig
 
-- Type: Next.js configuration object (`NextConfig`)
+- Type: `NextConfig` from `next`
 - Required: Yes; pass `{}` for an otherwise empty configuration.
 
-Existing application configuration. Preserve its options and compose existing build hooks and rules. Support for asynchronous or function-valued configurations remains to be specified and verified.
+Existing application configuration. Its options are preserved. Existing `turbopack.rules` entries for the same file glob and an existing `webpack` hook run first; the Zyzz rules are appended after them.
 
 ```ts
-zyzz({ reactStrictMode: true })
+zyzz({
+  reactStrictMode: true,
+  turbopack: { rules: { '*.svg': { as: '*.js', loaders: ['@svgr/webpack'] } } },
+  webpack(config) {
+    return config
+  },
+})
 ```
 
 ## Returns
 
 ### nextConfig
 
-- Type: Next.js-compatible configuration; exact public return type remains to be finalized.
+- Type: `NextConfig` from `next`
 
-Configuration with Zyzz integration attached. It is exported from `next.config.ts`; it does not provide the application's `css` or theme helpers.
+Configuration with the Zyzz loader attached to both bundlers. Export it from `next.config.ts`; it does not provide the application's `css` or theme helpers.
 
 ```ts
 export default zyzz({})
@@ -44,8 +50,8 @@ export default zyzz({})
 
 ## Errors
 
-Source and target errors retain their locations. Unsupported configuration combinations must produce actionable diagnostics. Failed development compilation preserves the last complete output. Exact diagnostic types remain an implementation gate.
+Asynchronous and function-valued configurations throw a `TypeError`; pass the resolved object instead. A `webpack` hook that does not return a webpack configuration fails when Next.js builds.
 
-The wrapper requires no separate Babel or PostCSS setup. Underlying loaders or transforms remain internal choices, validated separately for Webpack and Turbopack.
+Extraction and compiler diagnostics keep their source locations and surface in the development overlay for the importing module; the last successful output remains served until the source is fixed. Relative stylesheet assets referenced by contributions fail with an explicit error.
 
-See [Next.js Setup](../../introduction/next.md) and the [entrypoint overview](README.md).
+Both bundlers reuse the graph compiler behind `zyzz/vite`; loader selection remains internal. See [Next.js Setup](../../introduction/next.md) and the [entrypoint overview](README.md).

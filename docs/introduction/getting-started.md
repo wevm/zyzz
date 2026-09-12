@@ -3,7 +3,7 @@
 Import bound styling helpers and spread their applied props onto a component. Imports always refer to authored source files.
 
 > [!NOTE]
-> The Config/Vite source workflow below is implemented. CLI, Next.js, and native integrations retain separate implementation gates. Custom hosts can use the [compiler APIs](../guides/compilation.md#publish-libraries).
+> The Config, Vite, and Next.js source workflows are implemented. The CLI and native integrations retain separate implementation gates. Custom hosts can use the [compiler APIs](../guides/compilation.md#publish-libraries).
 
 ## Install
 
@@ -49,7 +49,7 @@ Import `Button` normally. The named helpers retain inferred tokens; compilation 
 ## Choose Compilation
 
 - **Bundler:** follow [Vite Setup](vite.md). The plugin transforms source imports and delivers CSS automatically.
-- **Next.js:** the [proposed setup](next.md) remains unimplemented.
+- **Next.js:** follow [Next.js Setup](next.md). `zyzz(nextConfig)` wraps the existing configuration for webpack and Turbopack.
 - **CLI:** the [proposed command-line setup](cli.md) remains unimplemented. Custom hosts can use the compiler APIs for downstream builds and library distribution.
 
 Importing config alone does not compile styles. Source transformation supplies executable modules; emitting CSS alone cannot make untouched authoring calls executable.

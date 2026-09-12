@@ -36,6 +36,8 @@ Local validation: ten extraction/transform integrations, native type/lint checks
 | [#87](https://github.com/wevm/zyzz/pull/87) | Registered variables and extraction         | [88d659d](https://github.com/wevm/zyzz/commit/88d659d3e2a3f7bb54a27b86912ae8130f1e0b12) | [Run 34575482212](https://github.com/wevm/zyzz/actions/runs/34575482212) | [Run 34575481925](https://github.com/wevm/zyzz/actions/runs/34575481925) |
 | [#90](https://github.com/wevm/zyzz/pull/90) | Acceptance and documentation reconciliation | [390afe5](https://github.com/wevm/zyzz/commit/390afe592d6a6f6388bd6c15fd3a8db4947bdf0f) | [Run 34578795200](https://github.com/wevm/zyzz/actions/runs/34578795200) | [Run 34578795005](https://github.com/wevm/zyzz/actions/runs/34578795005) |
 
+The Next.js integration branch `claude/next-adapter-dcjo88` records its local evidence under [Framework Integration Priority](#framework-integration-priority); its row joins this table once its pull request and verification run exist.
+
 Feature PRs #81, #82, #83, #85, #86, and #87 are merged. Their rows preserve historical runs, including failed verification on #86 and #87; the snapshot failures and subsequent review findings are corrected in #90. The #90 row pins an integrated verification and benchmark snapshot. Later review corrections are validated at the current PR head; the row is historical evidence, not a claim about a newer commit. Merge acceptance requires successful verification and benchmark checks at the current #90 head, recorded in its PR description. Verification includes consumer types, builds, browser integration, packaging tests, and strict CSS conformance. Benchmark runs include matched compiler workloads and production React rendering.
 
 Checked implementation items below do not close broader browser, native, framework, or benchmark acceptance gates. Variants, native bindings, generic/imported dynamic types, and imported arbitrary static records retain explicit later gates.
@@ -87,12 +89,15 @@ Implement in this order:
 2. **Solid:** integrate the existing TSX/Vite path with normal `class` and dash-separated inline style keys. Verify signal-driven updates, dynamic variable bindings, theme/scheme changes, SSR, hydration, and supported refresh behavior.
 3. **Vue:** support both imported styles from separate TypeScript modules and authoring in Vue single-file component script blocks. Handle SFC/virtual-module identities, source maps, dependency edits, and normal template class/style bindings without passing template syntax into core.
 4. **Svelte:** support imported TypeScript style modules and authoring in Svelte component script blocks. Preserve normal template class/style bindings, reactive updates, source maps, dependency edits, SSR, hydration, and development refresh through the shared compiler.
-5. **Next.js:** bring the existing integration and both bundler acceptance gates into Phase 2. Verify the application build and server-rendering paths independently of React renderer support.
+5. **Next.js:** bring the existing integration and both bundler acceptance gates into Phase 2. Verify the application build and server-rendering paths independently of React renderer support. Implemented as `zyzz(nextConfig)` with one loader for both bundlers; see the evidence below.
 
 Next.js acceptance:
 
-- [ ] Implement `zyzz(nextConfig)` from `zyzz/next` as the single Next.js setup. Preserve existing options and compose build hooks/rules; configure transformation, CSS delivery, and dependency watching internally without requiring separate Babel/PostCSS configuration. Reuse the shared compiler and keep loader/transform selection internal.
-- [ ] Verify Next.js Webpack and Turbopack independently: Server Components, client components, streaming, hydration identities, Fast Refresh, route navigation, imported config/theme edits, production CSS loading, and failure recovery. Record supported Next.js versions and finalize async/function-valued config support before documenting it.
+- [x] Implement `zyzz(nextConfig)` from `zyzz/next` as the single Next.js setup. Preserve existing options and compose build hooks/rules; configure transformation, CSS delivery, and dependency watching internally without requiring separate Babel/PostCSS configuration. Reuse the shared compiler and keep loader/transform selection internal.
+- [x] Verify Next.js Webpack and Turbopack independently: Server Components, client components, streaming, hydration identities, Fast Refresh, route navigation, imported config/theme edits, production CSS loading, and failure recovery. Record supported Next.js versions and finalize async/function-valued config support before documenting it.
+- [ ] Extend the Next.js fixture to the Pages Router, project-wide contribution discovery, relative stylesheet assets, and packed-library consumers. Make applied React `style` props assignable to `React.CSSProperties` so App Router builds type-check without `typescript.ignoreBuildErrors`.
+
+Next.js evidence: `src/next/index.test.ts` installs Next.js 16.3.4 with React 19.2.4 into a temporary App Router application linked to the built package, then runs `next build`/`next start` and `next dev` once with `--webpack` and once with `--turbopack`. Both lanes verify Server Components, a client component, a streamed Suspense segment, hydration identity, client navigation with route CSS, preserved `env`/`webpack`/`turbopack.rules` options, `global` contributions, `light-dark()` scheme switching, imported config edits without a reload, Fast Refresh with preserved client state, a located extraction diagnostic, and recovery after restoring the source. Async/function-valued configurations throw `TypeError`; contributions are collected from statically reachable modules only.
 
 For each integration:
 
@@ -248,7 +253,7 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Next priority: finish the runtime benchmark work, then complete the [Framework Integration Priority](#framework-integration-priority) before resuming the remaining feature backlog.
+Next priority: finish the runtime benchmark work, then complete the [Framework Integration Priority](#framework-integration-priority) before resuming the remaining feature backlog. Solid, Svelte, and Next.js (webpack and Turbopack) fixtures pass; Vue SFCs, per-integration consumer type and packed-consumer fixtures, and the React `style` prop contract remain open.
 
 Current stack: #65 theme variables → #66 explicit variables → #68 dynamic styles → #69 bundled themes/query metadata → #70 nested conditions → stylesheet contribution foundation. These are Phase 2 slices. Remaining acceptance work includes typed relationship markers, bundled variants (Phase 3), imported animation references, relative assets, optional reset, and packed contributions; the broad Phase 2 gates below remain open.
 
@@ -264,7 +269,7 @@ The [historical CSS capability union](parity.md) records the 2026-09-08 API comp
 - [x] Add named `zyzz()` from `zyzz/vite`, using the existing Vite resolver, environment module graph, watcher, and CSS pipeline. Cover aliases, production CSS, real HMR notifications, deletions, missing-file creation, and browser theme updates.
 - [x] Add Lightning CSS to standalone build processing with explicit targets and composed source maps. Preserve the consuming bundler's ownership of final CSS processing.
 - [x] Delegate dynamic imports to Vite. Compile lazy physical modules independently; verify CSS splitting, development loading, SSR, and lazy theme HMR. Standalone graphs retain static-import diagnostics.
-- [ ] Extend host integration to virtual/framework sources, library contracts, and Next.js using native host facilities. Do not add a general package resolver or watcher to the styling compiler.
+- [ ] Extend host integration to virtual/framework sources and library contracts using native host facilities. Next.js now uses the webpack and Turbopack loader runners for resolution, dependency tracking, and CSS delivery. Do not add a general package resolver or watcher to the styling compiler.
 
 ### PR Sequence
 

@@ -1041,7 +1041,7 @@ Application examples import authored components and the named config helpers nor
 ### Next.js Setup
 
 > [!NOTE]
-> The accepted public setup is `zyzz(nextConfig)` from `zyzz/next`; the adapter is not implemented. See [Next.js Setup](../docs/introduction/next.md).
+> The accepted public setup is `zyzz(nextConfig)` from `zyzz/next`; it is implemented and verified with Next.js 16.3.4 App Router applications on webpack and Turbopack. See [Next.js Setup](../docs/introduction/next.md).
 
 ```ts
 import { zyzz } from 'zyzz/next'

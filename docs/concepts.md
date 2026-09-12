@@ -239,4 +239,4 @@ See [stylesheet usage](guides/stylesheets.md#global-styles) for fonts and motion
 CLI and build integrations share compiler semantics. Libraries distribute matching code, CSS, declarations, and required metadata. Standard downstream tooling handles minification.
 
 > [!NOTE]
-> The Vite plugin is implemented. The CLI entrypoint, Next.js adapter, and native output remain previews. Native will select precompiled styles and theme/scheme tables, with explicit errors for unsupported web selectors and stylesheet operations.
+> The Vite plugin and the Next.js wrapper are implemented. The CLI entrypoint and native output remain previews. Native will select precompiled styles and theme/scheme tables, with explicit errors for unsupported web selectors and stylesheet operations.

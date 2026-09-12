@@ -202,7 +202,7 @@ CSS functions use ordered parameter records with `name`, optional `syntax`, and 
 `pnpm check:at-rules` verifies the pinned MDN inventory, supplementary modern rules, descriptor fingerprints, and referenced evidence files. `pnpm check:at-rules:full` requires all compiler obligations and executes type/integration evidence. Target compatibility and rendered evidence have separate gates; `check:at-rules:legacy-full` retains the previous combined requirement. Inventory coverage alone does not establish type, compiler, packaging, or browser support. Browser limitations remain explicit in the acceptance report.
 
 > [!NOTE]
-> `colorProfile` is planned and remains unexported until real-browser rendering is verified.
+> `colorProfile` remains unexported while its public descriptor types and compiler contracts are incomplete. Print-engine compatibility and rendering evidence are tracked separately.
 
 ## Output Encoding
 

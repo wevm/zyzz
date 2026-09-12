@@ -20,7 +20,6 @@ const file =
 if (inventoryIndex !== -1 && !process.argv[inventoryIndex + 1])
   throw new Error('--inventory requires a path')
 const families = [
-  'at-rules',
   'functions',
   'properties',
   'selectors',
@@ -82,7 +81,16 @@ if (process.argv.includes('--update')) {
   )
   console.log('| --- | ---: | ---: | ---: | ---: |')
 
-  for (const [family, entries] of Object.entries(current.families)) {
+  const atRules = JSON.parse(
+    Fs.readFileSync(Path.join(directory, 'at-rules.json'), 'utf8'),
+  ) as { entries: Record<string, Entry> }
+  const reports = {
+    'at-rules': Object.fromEntries(
+      Object.entries(atRules.entries).filter(([name]) => !name.includes('/')),
+    ),
+    ...current.families,
+  }
+  for (const [family, entries] of Object.entries(reports)) {
     const counts = { deferred: 0, partial: 0, supported: 0, unclassified: 0 }
 
     for (const [name, entry] of Object.entries(entries)) {

@@ -20,10 +20,11 @@ for (const workload of Corpus.cases) {
           await compile(fixture)
         },
         {
-          iterations: 3,
-          time: 100,
-          warmupIterations: 1,
-          warmupTime: 50,
+          // Require enough independent samples that one scheduler stall cannot dominate a 100ms lane.
+          iterations: 20,
+          time: 1000,
+          warmupIterations: 3,
+          warmupTime: 300,
           // Tinybench setup/teardown run outside timing; Vitest suite hooks are not supported.
           setup: async () => {
             fixture = await Compilation.create(workload)

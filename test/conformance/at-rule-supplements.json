@@ -1,0 +1,160 @@
+{
+  "@color-profile": {
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules",
+    "syntax": "@color-profile <dashed-ident> { src: <url>; rendering-intent: <intent>; }"
+  },
+  "@color-profile/rendering-intent": {
+    "context": "@color-profile",
+    "source": "https://drafts.csswg.org/css-color-5/#at-profile",
+    "syntax": "relative-colorimetric | absolute-colorimetric | perceptual | saturation"
+  },
+  "@color-profile/src": {
+    "context": "@color-profile",
+    "source": "https://drafts.csswg.org/css-color-5/#at-profile",
+    "syntax": "<url>"
+  },
+  "@custom-media": {
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules",
+    "syntax": "@custom-media <dashed-ident> [ <media-query-list> | true | false ];"
+  },
+  "@font-feature-values/@annotation": {
+    "context": "@font-feature-values",
+    "source": "https://drafts.csswg.org/css-fonts-4/#font-feature-values-syntax",
+    "syntax": "@annotation { <custom-ident>: <integer [0,\u221e]>; }"
+  },
+  "@font-feature-values/@character-variant": {
+    "context": "@font-feature-values",
+    "source": "https://drafts.csswg.org/css-fonts-4/#font-feature-values-syntax",
+    "syntax": "@character-variant { <custom-ident>: <integer [0,\u221e]>{1,2}; }"
+  },
+  "@font-feature-values/@ornaments": {
+    "context": "@font-feature-values",
+    "source": "https://drafts.csswg.org/css-fonts-4/#font-feature-values-syntax",
+    "syntax": "@ornaments { <custom-ident>: <integer [0,\u221e]>; }"
+  },
+  "@font-feature-values/@styleset": {
+    "context": "@font-feature-values",
+    "source": "https://drafts.csswg.org/css-fonts-4/#font-feature-values-syntax",
+    "syntax": "@styleset { <custom-ident>: <integer [0,\u221e]>+; }"
+  },
+  "@font-feature-values/@stylistic": {
+    "context": "@font-feature-values",
+    "source": "https://drafts.csswg.org/css-fonts-4/#font-feature-values-syntax",
+    "syntax": "@stylistic { <custom-ident>: <integer [0,\u221e]>; }"
+  },
+  "@font-feature-values/@swash": {
+    "context": "@font-feature-values",
+    "source": "https://drafts.csswg.org/css-fonts-4/#font-feature-values-syntax",
+    "syntax": "@swash { <custom-ident>: <integer [0,\u221e]>; }"
+  },
+  "@font-feature-values/font-display": {
+    "context": "@font-feature-values",
+    "source": "https://drafts.csswg.org/css-fonts-4/#font-feature-values-syntax",
+    "syntax": "auto | block | swap | fallback | optional"
+  },
+  "@function": {
+    "source": "https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules",
+    "syntax": "@function <dashed-ident>(<parameters>) [returns <syntax>]? { <function-body> }"
+  },
+  "@function/result": {
+    "context": "@function",
+    "source": "https://drafts.csswg.org/css-mixins-1/#function-rule",
+    "syntax": "<declaration-value>?"
+  },
+  "@page/@bottom-center": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@bottom-center { <declaration-list> }"
+  },
+  "@page/@bottom-left": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@bottom-left { <declaration-list> }"
+  },
+  "@page/@bottom-left-corner": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@bottom-left-corner { <declaration-list> }"
+  },
+  "@page/@bottom-right": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@bottom-right { <declaration-list> }"
+  },
+  "@page/@bottom-right-corner": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@bottom-right-corner { <declaration-list> }"
+  },
+  "@page/@left-bottom": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@left-bottom { <declaration-list> }"
+  },
+  "@page/@left-middle": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@left-middle { <declaration-list> }"
+  },
+  "@page/@left-top": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@left-top { <declaration-list> }"
+  },
+  "@page/@right-bottom": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@right-bottom { <declaration-list> }"
+  },
+  "@page/@right-middle": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@right-middle { <declaration-list> }"
+  },
+  "@page/@right-top": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@right-top { <declaration-list> }"
+  },
+  "@page/@top-center": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@top-center { <declaration-list> }"
+  },
+  "@page/@top-left": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@top-left { <declaration-list> }"
+  },
+  "@page/@top-left-corner": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@top-left-corner { <declaration-list> }"
+  },
+  "@page/@top-right": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@top-right { <declaration-list> }"
+  },
+  "@page/@top-right-corner": {
+    "context": "@page",
+    "declarations": "page-margin properties from CSS Paged Media 3 section 5; content, overflow, unicode-bidi, vertical-align, z-index and applicable page box properties",
+    "source": "https://drafts.csswg.org/css-page-3/#margin-at-rules",
+    "syntax": "@top-right-corner { <declaration-list> }"
+  }
+}

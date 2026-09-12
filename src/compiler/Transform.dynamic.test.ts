@@ -260,7 +260,7 @@ describe('compile', () => {
 
     expect(module.first).toMatchInlineSnapshot(`
       {
-        "className": "z-1h5dayl7tfv4v-base0",
+        "className": "z-1h5dayl7tfv4v-base0 z-style-1h5dayl7tfv4v-47",
         "style": {
           "--z-d1h5dayl7tfv4v-47-61-6c-70-68-61": 0.5,
           "--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74": "25%",
@@ -278,7 +278,7 @@ describe('compile', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "className": "z-1h5dayl7tfv4v-base0 external",
+        "className": "z-1h5dayl7tfv4v-base0 z-style-1h5dayl7tfv4v-47 external",
         "style": {
           "--z-d1h5dayl7tfv4v-47-61-6c-70-68-61": 1,
           "--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74": "75%",

@@ -138,6 +138,6 @@ const panel = theme.css({
 
 Threshold aliases support `>=tablet`, `<desktop`, and `tablet..desktop` (inclusive lower/exclusive upper). Named container aliases use `@container sidebar >=card` with declared `containerNames`. Raw named container queries remain available. Applications establish containment with standard `containerType`/`containerName` declarations. Thresholds resolve during compilation; changing a runtime scope cannot change them.
 
-Use explicit selectors for application-owned data/ARIA states and ancestor/sibling relationships. Typed ref relationships compile in web `css` definitions. Core `Style.define` and global declarations reject relationship keys.
+Use explicit selectors for application-owned data/ARIA states and ancestor/sibling relationships. `where` relationships between css definitions compile in web `css` definitions. Core `Style.define` and global declarations reject relationship keys.
 
 Dynamic private values cannot contain CSS-wide keywords (`initial`, `inherit`, `unset`, `revert`, or `revert-layer`), because those keywords would apply to the custom property itself. Numeric zero can accompany string dimension domains. Template substitutions inside quoted CSS strings are rejected; pass the complete quoted scalar as a slot value when authoring dynamic content.

@@ -7,7 +7,6 @@ import * as Config from '../../Config.js'
 import * as Configurations from './Configurations.js'
 import * as FunctionSyntax from '../../internal/FunctionSyntax.js'
 import * as Identifiers from './Identifiers.js'
-import * as Marker from '../../runtime/Marker.js'
 import * as Shorthands from '../../internal/Shorthands.js'
 import * as Stylesheets from './Stylesheets.js'
 import * as Theme from '../../Theme.js'
@@ -21,7 +20,11 @@ export function read(
   moduleId = '',
 ) {
   const data = record(JSON.parse(source))
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(data.version as number))
+  if (
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(
+      data.version as number,
+    )
+  )
     throw new Error('Unsupported Zyzz contract version.')
 
   const themes: Record<string, Theme.Definition> = Object.create(null)
@@ -172,26 +175,35 @@ export function read(
       }
     }
 
-    if (entry.kind === 'marker') {
-      const marker = record(entry.marker)
-      const id = string(marker.id)
-      if (!/^data-z-[a-z0-9_-]+$/.test(id) || entry.binding !== id)
-        throw new Error('Invalid marker identity.')
+    if (entry.kind === 'style') {
+      if ((data.version as number) < 13)
+        throw new Error('Style identities require contract version 13.')
+
+      const name = entry.name === undefined ? '' : string(entry.name)
+      if (name && (!/^style-[a-z0-9-]+$/.test(name) || entry.binding !== name))
+        throw new Error('Invalid style identity.')
+
+      const members =
+        entry.members === undefined
+          ? undefined
+          : Object.fromEntries(
+              Object.entries(record(entry.members)).map(([key, value]) => {
+                const member = link(value)
+                if (member.kind !== 'style' || !member.call.name)
+                  throw new Error('Invalid style namespace member.')
+
+                return [key, member]
+              }),
+            )
+
+      if (!name === !members) throw new Error('Invalid style identity.')
 
       return {
         binding: string(entry.binding),
-        kind: 'marker',
+        kind: 'style',
         definition: Theme.define({}),
-        call: {
-          start: -1,
-          end: -1,
-          name: id,
-          tokenType: '{}',
-          marker: {
-            id: id as `data-z-${string}`,
-            schema: Marker.schema(marker.schema),
-          },
-        },
+        call: { start: -1, end: -1, name, tokenType: '{}' },
+        ...(members ? { members } : {}),
       }
     }
 
@@ -362,11 +374,21 @@ export function write(
     if (link.kind === 'animation')
       return { binding: link.binding, kind: link.kind, name: link.call.name }
 
-    if (link.kind === 'marker')
+    if (link.kind === 'style')
       return {
         binding: link.binding,
         kind: link.kind,
-        marker: link.call.marker,
+        ...(link.call.name ? { name: link.call.name } : {}),
+        ...(link.members
+          ? {
+              members: Object.fromEntries(
+                Object.entries(link.members).map(([key, member]) => [
+                  key,
+                  entry(member),
+                ]),
+              ),
+            }
+          : {}),
       }
 
     return {
@@ -414,53 +436,57 @@ export function write(
         },
       ]),
     ),
-    version: Object.values(links).some(
-      (link) => link.call.function && extended(link.call.function),
-    )
-      ? 12
-      : stylesheets.some((section) => section.namespaces?.length) ||
-          Object.values(links).some(
-            (link) =>
-              link.call.function &&
-              [
-                link.call.function.returns,
-                ...link.call.function.parameters.map(
-                  (parameter) => parameter.syntax ?? '*',
-                ),
-              ].some(
-                (syntax) =>
-                  // Version 10 readers accepted this fixed scalar subset.
-                  !(
-                    [
-                      '*',
-                      '<angle>',
-                      '<color>',
-                      '<integer>',
-                      '<length>',
-                      '<length-percentage>',
-                      '<number>',
-                      '<percentage>',
-                      '<time>',
-                    ] as readonly string[]
-                  ).includes(syntax),
-              ),
+    version: Object.values(links).some((link) => link.kind === 'style')
+      ? 13
+      : Object.values(links).some(
+            (link) => link.call.function && extended(link.call.function),
           )
-        ? 11
-        : Object.values(links).some(
+        ? 12
+        : stylesheets.some((section) => section.namespaces?.length) ||
+            Object.values(links).some(
               (link) =>
-                link.call.reference === 'cssFunction' ||
-                link.call.reference === 'customMedia',
+                link.call.function &&
+                [
+                  link.call.function.returns,
+                  ...link.call.function.parameters.map(
+                    (parameter) => parameter.syntax ?? '*',
+                  ),
+                ].some(
+                  (syntax) =>
+                    // Version 10 readers accepted this fixed scalar subset.
+                    !(
+                      [
+                        '*',
+                        '<angle>',
+                        '<color>',
+                        '<integer>',
+                        '<length>',
+                        '<length-percentage>',
+                        '<number>',
+                        '<percentage>',
+                        '<time>',
+                      ] as readonly string[]
+                    ).includes(syntax),
+                ),
             )
-          ? 10
-          : Object.values(links).some((link) => link.kind === 'rule-reference')
-            ? 9
-            : Object.values(links).some((link) => link.kind === 'variables')
-              ? 8
-              : stylesheets.length ||
-                  Object.values(links).some((link) => link.kind === 'animation')
-                ? 7
-                : Object.values(links).some((link) => link.kind === 'marker')
-                  ? 6
+          ? 11
+          : Object.values(links).some(
+                (link) =>
+                  link.call.reference === 'cssFunction' ||
+                  link.call.reference === 'customMedia',
+              )
+            ? 10
+            : Object.values(links).some(
+                  (link) => link.kind === 'rule-reference',
+                )
+              ? 9
+              : Object.values(links).some((link) => link.kind === 'variables')
+                ? 8
+                : stylesheets.length ||
+                    Object.values(links).some(
+                      (link) => link.kind === 'animation',
+                    )
+                  ? 7
                   : Object.values(themes).some(
                         (theme) =>
                           theme[Token.definition].contract.shorthands ||
@@ -483,7 +509,6 @@ export function write(
                               !!link.call.options?.themes) ||
                             link.call.initialization ||
                             (link.kind === 'config' && link.call.script) ||
-                            link.kind === 'marker' ||
                             link.kind === 'animation' ||
                             link.kind === 'variables',
                         )

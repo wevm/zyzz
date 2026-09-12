@@ -81,7 +81,7 @@ describe('stylesheet contributions', () => {
       .z-11238c6bg65w8-base0{animation-name:z-k11238c6bg65w8-66-61-64-65;}"
     `)
     expect(result.code).toMatchInlineSnapshot(
-      `"  void 0; void 0; void 0; const unused="z-k11238c6bg65w8-75-6e-75-73-65-64"; const fade="z-k11238c6bg65w8-66-61-64-65"; export const box=({className:"z-11238c6bg65w8-base0"})"`,
+      `"  void 0; void 0; void 0; const unused="z-k11238c6bg65w8-75-6e-75-73-65-64"; const fade="z-k11238c6bg65w8-66-61-64-65"; export const box=({className:"z-11238c6bg65w8-base0 z-style-11238c6bg65w8-383"})"`,
     )
   })
   test('keeps theme references live in global rules', () => {

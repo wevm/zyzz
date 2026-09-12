@@ -3,6 +3,7 @@
  * @module
  */
 import * as Contributions from './internal/Contributions.js'
+import * as Relationships from './internal/Relationships.js'
 import * as Binding from '../internal/Binding.js'
 import * as Cascade from '../internal/Cascade.js'
 import * as Literal from '../internal/Literal.js'
@@ -460,7 +461,7 @@ export function compile<
           return identifier(style.name)
         }
 
-        return `z-${encode(style.name)}`
+        return Relationships.identity(style.name)
       })()
 
       // Independent styles are already complete applications. Reusing a rule
@@ -488,6 +489,12 @@ export function compile<
       rules.set(identity, body)
       names.push(identity)
     }
+
+    // Ordered definitions keep one class of their own even when every
+    // declaration is shared, so relationship selectors can name them.
+    const own = Relationships.identity(style.name)
+    if (options.composition !== 'independent' && !names.includes(own))
+      names.push(own)
 
     classes[style.name] = names.join(' ')
   }

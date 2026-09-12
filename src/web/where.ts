@@ -1,12 +1,12 @@
-/** Composes relationship conditions from typed refs and CSS selector text. @module */
+/** Composes relationship conditions from css definitions and CSS selector text. @module */
 import type * as Relationships from './internal/Relationships.js'
 
-/** Selects the styled element through interpolated refs; each ref compound lowers inside `:where()`. */
+/** Selects the styled element through interpolated css definitions; each definition compound lowers inside `:where()`. */
 export function where(
   strings: TemplateStringsArray,
-  ...refs: readonly Relationships.Interpolation[]
+  ...definitions: readonly Relationships.Definition[]
 ): Relationships.Key {
   void strings
-  void refs
+  void definitions
   throw new Error('Relationships require the Zyzz source transform.')
 }

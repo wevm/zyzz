@@ -72,22 +72,22 @@ Do not concatenate classes to establish override priority. See [Style Relationsh
 
 ### Style Relationships
 
-Use a typed ref to style an element from the state of a related element.
+Style an element from the state of a related element by interpolating that element's `css` definition into `where`.
 
-Relationship keys compile inside web `css(...)` definitions. Use ref callables as ordinary element attributes; core `Style.define` and global declarations do not accept relationship keys.
+Relationship keys compile inside web `css(...)` definitions. Applying a definition is what marks the element; core `Style.define` and global declarations do not accept relationship keys.
 
 ```tsx
 import { css } from 'zyzz'
-import { ref, where } from 'zyzz/web'
+import { where } from 'zyzz/web'
 
-const card = ref({ state: ['closed', 'open'] })
 namespace styles {
+  export const card = css({ padding: 16 })
   export const label = css({
-    [where`${card({ state: 'open' })} &`]: { opacity: 1 },
+    [where`${card}[aria-expanded="true"] &`]: { opacity: 1 },
   })
 }
 const example = (
-  <section {...card({ state: 'open' })}>
+  <section {...styles.card()} aria-expanded={true}>
     <div>
       <span {...styles.label()}>Details</span>
     </div>
@@ -95,23 +95,23 @@ const example = (
 )
 ```
 
-This deliberately includes an intermediate element: the descendant combinator matches at any depth, so the ref is an ancestor, not the span's immediate parent. Write `${card} > &` for the parent, and `&:has(${card})` to check descendants of the styled element. Combinators describe direction and distance; they do not verify DOM structure through TypeScript.
+This deliberately includes an intermediate element: the descendant combinator matches at any depth, so the card is an ancestor, not the span's immediate parent. Write `${card} > &` for the parent, and `&:has(${card})` to check descendants of the styled element. Combinators describe direction and distance; they do not verify DOM structure through TypeScript.
 
-Selector text follows raw condition key rules, with `&` as the styled element. Refs lower to compiler-owned attribute selectors wrapped in `:where()`, so ref predicates add zero specificity. Pseudo-classes attach to the interpolated ref, and nested keys require several relationships at once.
+Selector text follows raw condition key rules, with `&` as the styled element. Definitions lower to their identity class wrapped in `:where()`, so definition predicates add zero specificity. State is selector text: real attributes such as `aria-expanded` or `:checked`, or application-owned `data-*` attributes. Nested keys require several relationships at once.
 
 ```tsx
-const choice = ref()
 namespace styles {
+  export const toggle = css({})
   export const hint = css({
-    [where`${choice}:checked ~ &`]: { color: '#06c' },
-    [where`${card({ state: 'open' })} &`]: {
-      [where`${choice}:checked ~ &`]: { fontWeight: 600 },
+    [where`${toggle}:checked ~ &`]: { color: '#06c' },
+    [where`${card}[aria-expanded="true"] &`]: {
+      [where`${toggle}:checked ~ &`]: { fontWeight: 600 },
     },
-    [where`:root:has(${card({ state: 'open' })}) &`]: { filter: 'blur(2px)' },
+    [where`:root:has(${card}[data-busy]) &`]: { filter: 'blur(2px)' },
   })
 }
 ```
 
-Disjunction uses a selector list with `&` in each selector, or separate keys with the same body. Finite state domains express negation by naming the complementary values, or by keeping presence and negating the state: `${card}:not(${card({ state: 'open' })}) &`. Negating the whole ref compound would also match unmarked ancestors such as `html`.
+An empty definition such as `toggle` compiles to an identity class alone, which marks an element without styling it. Disjunction uses a selector list with `&` in each selector, or separate keys with the same body. Negate a state while keeping identity: `${card}:not([aria-expanded="true"]) &`. Negating the whole definition compound would also match unmarked ancestors such as `html`.
 
 Dynamic callback values use private variables on the styled element. They are supported inside at-rules and same-element pseudo or attribute selectors. Relationship selectors remain available for static declarations.

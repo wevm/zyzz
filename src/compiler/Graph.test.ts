@@ -40,9 +40,9 @@ describe('compile', () => {
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
       import { css, theme } from './index.js'; export namespace styles {
-        export const card = __zyzzProps.create({className:"z-5ngs574r5xr9-base1"})
+        export const card = __zyzzProps.create({className:"z-5ngs574r5xr9-base1 z-style-5ngs574r5xr9-89"})
 
-        export const label = __zyzzProps.create({className:"z-5ngs574r5xr9-base0"})
+        export const label = __zyzzProps.create({className:"z-5ngs574r5xr9-base0 z-style-5ngs574r5xr9-133"})
       } export const props = styles.card(); export const scope = "z_theme-1g1qfxjzbnv3-css-theme";"
     `)
 
@@ -137,7 +137,7 @@ export const scope = mint.className;`,
       `
       "
       import { Appearance as __zyzzAppearance, Selection as __zyzzSelection } from 'zyzz/runtime';
-       export const zyzz = ({script:__zyzzAppearance.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]),theme:{"className":"z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"},themes:/*#__PURE__*/__zyzzSelection.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]],false)}); export const props = ({className:"z-1fzmg4ts3ctu1-base0"}); export const scope = "z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark";"
+       export const zyzz = ({script:__zyzzAppearance.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]),theme:{"className":"z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"},themes:/*#__PURE__*/__zyzzSelection.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]],false)}); export const props = ({className:"z-1fzmg4ts3ctu1-base0 z-style-1fzmg4ts3ctu1-161"}); export const scope = "z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark";"
     `,
     )
 
@@ -188,7 +188,7 @@ export const scope = mint.className;`,
     `,
     )
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { design } from './index.js'; const zyzz = (design as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); const { css } = (zyzz as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); export const props = ({className:"z-5ngs574r5xr9-base0"}); export const scope = "z_theme-69adjg15dlzyu-zyzz-mint";"`,
+      `"import { design } from './index.js'; const zyzz = (design as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); const { css } = (zyzz as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>); export const props = ({className:"z-5ngs574r5xr9-base0 z-style-5ngs574r5xr9-101"}); export const scope = "z_theme-69adjg15dlzyu-zyzz-mint";"`,
     )
 
     const updated = compiler.compile({
@@ -227,7 +227,7 @@ export const scope = mint.className;`,
       .z-ujlnau19561g8-base0{color:var(--z-t69adjg15dlzyu-zyzz-color_2e_brand,light-dark(#06c,#9cf));padding:var(--z-t69adjg15dlzyu-zyzz-spacing_2e_md,8px);}"
     `)
     expect(packed.modules['app/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { design as zyzz } from '@acme/theme'; export const props = ({className:"z-ujlnau19561g8-base0"}); export const scope = "z_theme-69adjg15dlzyu-zyzz-mint";"`,
+      `"import { design as zyzz } from '@acme/theme'; export const props = ({className:"z-ujlnau19561g8-base0 z-style-ujlnau19561g8-67"}); export const scope = "z_theme-69adjg15dlzyu-zyzz-mint";"`,
     )
   })
 
@@ -242,7 +242,7 @@ export const scope = mint.className;`,
       `
       "
       import { Appearance as __zyzzAppearance } from 'zyzz/runtime';
-       export const empty = ({script:__zyzzAppearance.create([])} as import('zyzz').Config.create.ReturnType<{}>); const base = ({className:"z_theme-1g1qfxjzbnv3-base"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const zyzz = ({script:__zyzzAppearance.create([]),theme:{"className":"z_theme-1g1qfxjzbnv3-zyzz-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"#06c"}}}>); const theme = (zyzz.theme as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const mint = ({className:"z_theme-1g1qfxjzbnv3-mint"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const props = ({className:"z-1g1qfxjzbnv3-base0"}); export const plain = ({className:"z-1g1qfxjzbnv3-base1"});"
+       export const empty = ({script:__zyzzAppearance.create([])} as import('zyzz').Config.create.ReturnType<{}>); const base = ({className:"z_theme-1g1qfxjzbnv3-base"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const zyzz = ({script:__zyzzAppearance.create([]),theme:{"className":"z_theme-1g1qfxjzbnv3-zyzz-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"#06c"}}}>); const theme = (zyzz.theme as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const mint = ({className:"z_theme-1g1qfxjzbnv3-mint"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const props = ({className:"z-1g1qfxjzbnv3-base0 z-style-1g1qfxjzbnv3-292"}); export const plain = ({className:"z-1g1qfxjzbnv3-base1 z-style-1g1qfxjzbnv3-359"});"
     `,
     )
     expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
@@ -312,7 +312,7 @@ export const scope = mint.className;`,
       .z-ujlnau19561g8-base0{color:var(--z-t18pt0w1ocy15n-theme-color_2e_brand,#06c);padding:var(--z-t18pt0w1ocy15n-theme-spacing_2e_md,8px);}"
     `)
     expect(output.modules['app/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { css, theme, mint } from '@acme/theme';  export const local = ({className:"z_theme-ujlnau19561g8-local"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>); export const props = ({className:"z-ujlnau19561g8-base0"}); export const scope = "z_theme-18pt0w1ocy15n-mint";"`,
+      `"import { css, theme, mint } from '@acme/theme';  export const local = ({className:"z_theme-ujlnau19561g8-local"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>); export const props = ({className:"z-ujlnau19561g8-base0 z-style-ujlnau19561g8-164"}); export const scope = "z_theme-18pt0w1ocy15n-mint";"`,
     )
 
     const updated = compiler.compile({
@@ -327,7 +327,7 @@ export const scope = mint.className;`,
 
     expect(updated.modules['app/card.ts']!.classes).toMatchInlineSnapshot(`
       {
-        "style-ujlnau19561g8-164": "z-ujlnau19561g8-base0",
+        "style-ujlnau19561g8-164": "z-ujlnau19561g8-base0 z-style-ujlnau19561g8-164",
       }
     `)
     expect(updated.modules['app/card.ts']!.css).toMatchInlineSnapshot(`
@@ -490,7 +490,7 @@ export const scope = mint.className;`,
     })
 
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { css } from './theme.js'; export function run(css: (value: string) => string) { return css('ordinary') } export const props = ({className:"z-5ngs574r5xr9-base0"});"`,
+      `"import { css } from './theme.js'; export function run(css: (value: string) => string) { return css('ordinary') } export const props = ({className:"z-5ngs574r5xr9-base0 z-style-5ngs574r5xr9-134"});"`,
     )
   })
 
@@ -513,7 +513,7 @@ export const scope = mint.className;`,
       }
     `)
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
-      `"import { theme, style, mint } from './index.js'; export const props = ({className:"z-5ngs574r5xr9-base0"}); export const scope = "z_theme-18i5hb1ihk25d-mint";"`,
+      `"import { theme, style, mint } from './index.js'; export const props = ({className:"z-5ngs574r5xr9-base0 z-style-5ngs574r5xr9-70"}); export const scope = "z_theme-18i5hb1ihk25d-mint";"`,
     )
     expect(output.modules['pkg/card.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;--z-t1p8at5ioin1tk-theme-spacing_2e_md:8px;}
@@ -568,7 +568,7 @@ export const scope = mint.className;`,
       )
 
       expect(executed.stdout).toMatchInlineSnapshot(`
-        "{"props":{"className":"z-5ngs574r5xr9-base0"},"scope":"z_theme-18i5hb1ihk25d-mint"}
+        "{"props":{"className":"z-5ngs574r5xr9-base0 z-style-5ngs574r5xr9-70"},"scope":"z_theme-18i5hb1ihk25d-mint"}
         "
       `)
 
@@ -608,7 +608,7 @@ export const scope = mint.className;`,
 
     expect(after.modules['pkg/card.ts']!.classes).toMatchInlineSnapshot(`
       {
-        "style-5ngs574r5xr9-70": "z-5ngs574r5xr9-base0",
+        "style-5ngs574r5xr9-70": "z-5ngs574r5xr9-base0 z-style-5ngs574r5xr9-70",
       }
     `)
     expect(after.modules['pkg/card.ts']!.themes).toMatchInlineSnapshot(`
@@ -619,7 +619,7 @@ export const scope = mint.className;`,
     `)
     expect(before.modules['pkg/card.ts']!.classes).toMatchInlineSnapshot(`
       {
-        "style-5ngs574r5xr9-70": "z-5ngs574r5xr9-base0",
+        "style-5ngs574r5xr9-70": "z-5ngs574r5xr9-base0 z-style-5ngs574r5xr9-70",
       }
     `)
 
@@ -718,7 +718,7 @@ export const scope = mint.className;`,
         })
 
         expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
-          `"import { theme } from './theme'; export const props = ({className:"z-5ngs574r5xr9-base0"});"`,
+          `"import { theme } from './theme'; export const props = ({className:"z-5ngs574r5xr9-base0 z-style-5ngs574r5xr9-54"});"`,
         )
       })
     }

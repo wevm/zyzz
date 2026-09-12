@@ -155,34 +155,12 @@ function build(options: compile.Options, cache?: Cache): Cache {
     ReturnType<typeof Contract.read>
   > = Object.create(null)
   const identities = new Map<string, Token.Contract>()
-  const markerIdentities = new Map<string, string>()
   const variableSlots = new Map<
     string,
     { owner: string; binding: string; type: string }
   >()
 
   function validateLibraryLink(link: Themes.Link, owner: string) {
-    if (link.call.marker) {
-      const { id, schema } = link.call.marker
-
-      const signature = JSON.stringify(
-        Object.entries(schema)
-          .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-          .map(([key, values]) => [
-            key,
-            [...values].sort((a, b) =>
-              String(a) < String(b) ? -1 : String(a) > String(b) ? 1 : 0,
-            ),
-          ]),
-      )
-
-      const previous = markerIdentities.get(id)
-      if (previous !== undefined && previous !== signature)
-        throw new Error(`Conflicting packed marker schema: ${id}`)
-
-      markerIdentities.set(id, signature)
-    }
-
     const variableOwner = owner.includes('/')
       ? (link.call.variableOwner ?? owner)
       : owner

@@ -10,7 +10,7 @@ import * as Contributions from './internal/Contributions.js'
 import * as Css from '../web/Css.js'
 import * as Dynamic from './internal/Dynamic.js'
 import * as Expression from './internal/Expression.js'
-import * as Markers from './internal/Markers.js'
+import * as Relationships from './internal/Relationships.js'
 import type * as Namespace from '../web/internal/Namespace.js'
 import * as Parser from 'oxc-parser'
 import * as RuleReference from '../internal/RuleReference.js'
@@ -170,9 +170,9 @@ export function extract(options: extract.Options): extract.ReturnType {
     }
   })()
 
-  const markers = (() => {
+  const relationships = (() => {
     try {
-      return Markers.scan(
+      return Relationships.scan(
         program,
         scopeTracker,
         identity(options.moduleId),
@@ -476,7 +476,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           prefix.some(
             (key) =>
               !Condition.local(key) &&
-              ![...markers.conditions.values()].includes(key),
+              ![...relationships.conditions.values()].includes(key),
           )
         ) {
           report(
@@ -497,10 +497,10 @@ export function extract(options: extract.Options): extract.ReturnType {
           property.kind !== 'init' ||
           property.method ||
           (property.computed &&
-            !markers.conditions.has(property.key.start) &&
+            !relationships.conditions.has(property.key.start) &&
             !contributions.queryKeys.has(property.key.start)) ||
           property.shorthand ||
-          (!markers.conditions.has(property.key.start) &&
+          (!relationships.conditions.has(property.key.start) &&
             property.key.type !== 'Identifier' &&
             (property.key.type !== 'Literal' ||
               typeof property.key.value !== 'string'))
@@ -514,7 +514,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         }
 
         const key =
-          markers.conditions.get(property.key.start) ??
+          relationships.conditions.get(property.key.start) ??
           contributions.queryKeys.get(property.key.start) ??
           (property.key.type === 'Identifier'
             ? property.key.name
@@ -971,11 +971,21 @@ export function extract(options: extract.Options): extract.ReturnType {
     )
   }
 
-  for (const [start] of markers.conditions)
+  const compiled = new Set(calls.map((call) => call.start))
+
+  for (const [start] of relationships.conditions)
     if (!calls.some((call) => call.start <= start && start < call.end))
       report(
         'unsupported_syntax',
         'Relationship keys require a compiled style definition.',
+        { start, end: start },
+      )
+
+  for (const [start, starts] of relationships.references)
+    if (starts.some((value) => !compiled.has(value)))
+      report(
+        'unsupported_syntax',
+        'Relationship selectors interpolate compiled css definitions.',
         { start, end: start },
       )
 
@@ -994,13 +1004,6 @@ export function extract(options: extract.Options): extract.ReturnType {
       (value): value is Extract<Css.Contribution, { kind: 'namespace' }> =>
         value.kind === 'namespace',
     ),
-    ...(markers.calls.length
-      ? {
-          markerCalls: Object.freeze(
-            markers.calls.map((call) => Object.freeze({ ...call })),
-          ),
-        }
-      : {}),
     ...(contributionData.length
       ? { contributions: contributionData, contributionStarts }
       : {}),
@@ -1011,7 +1014,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       ? {
           themeExports: Object.freeze({
             ...themes?.exports,
-            ...markers.exports,
+            ...relationships.exports(compiled),
             ...contributions.exports,
             ...variables.exports,
           }),
@@ -1064,8 +1067,6 @@ export declare namespace extract {
   type ReturnType = {
     /** Module-owned namespace bindings retained when contributions are shared. */
     readonly namespaces?: readonly Namespace.Definition[] | undefined
-    /** Marker factories replaced with fixed data-attribute callables. */
-    readonly markerCalls?: readonly Markers.Call[] | undefined
     /** Static stylesheet effects and their source replacements. */
     readonly contributionStarts?: readonly number[] | undefined
     readonly contributions?: readonly Css.Contribution[] | undefined

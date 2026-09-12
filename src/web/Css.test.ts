@@ -674,21 +674,21 @@ describe('compile', () => {
     const result = Css.compile({ styles })
 
     expect(result).toMatchInlineSnapshot(`
-    {
-      "classes": {
-        " ": "z_base0",
-        "1 space:💪": "z_base1",
-        "_20_": "z_base0",
-        "__proto__": "z_base0",
-        "card": "z_base2",
-        "empty": "",
-      },
-      "css": ".z_base2{padding:1rem;padding-left:0;opacity:0.5;}
-    .z_base1{margin-top:-2px;color:#fff;}
-    .z_base0{display:block;}",
-      "themes": {},
-    }
-  `)
+      {
+        "classes": {
+          " ": "z_base0 z-_20_",
+          "1 space:💪": "z_base1 z-1_20_space_3a__d83d__dcaa_",
+          "_20_": "z_base0 z-_5f_20_5f_",
+          "__proto__": "z_base0 z-_5f__5f_proto_5f__5f_",
+          "card": "z_base2 z-card",
+          "empty": "z-empty",
+        },
+        "css": ".z_base2{padding:1rem;padding-left:0;opacity:0.5;}
+      .z_base1{margin-top:-2px;color:#fff;}
+      .z_base0{display:block;}",
+        "themes": {},
+      }
+    `)
 
     const reversed = Css.compile({
       styles: { styles: [...styles.styles].reverse() },
@@ -705,13 +705,13 @@ describe('compile', () => {
       repeated: Css.compile({ styles }).css === result.css,
       unique: new Set(Object.values(result.classes)).size,
     }).toMatchInlineSnapshot(`
-    {
-      "frozen": true,
-      "reordered": true,
-      "repeated": true,
-      "unique": 4,
-    }
-  `)
+      {
+        "frozen": true,
+        "reordered": true,
+        "repeated": true,
+        "unique": 6,
+      }
+    `)
     expect(Css.compile({ styles: Style.define({}) })).toMatchInlineSnapshot(`
     {
       "classes": {},

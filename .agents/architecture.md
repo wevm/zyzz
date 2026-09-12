@@ -610,41 +610,37 @@ Literal `:hover` remains ordinary CSS. Use `@media (hover: hover)` explicitly fo
 
 Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/removal, nested named groups, and combined queries. Native rejects relational selectors until a separately specified adapter can preserve their meaning.
 
-### Typed Markers
+### Definition Identity and where
 
-Accepted API: `ref(schema?)` defines an element identity and optional finite data-state domains. The `where` tagged template composes a scoped selector key from ordinary CSS text and interpolated refs. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
+Accepted API: every module-level `css` definition is an element identity, and the `where` tagged template composes a scoped selector key from ordinary CSS text and interpolated definitions. There is no separate ref primitive, marker runtime, or finite state schema. `where` is a web authoring value from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
 
 CSS combinators express direction and distance, so `${card} &` matches an ancestor at any depth and `${card} > &` the parent. No direction helpers exist or are reserved. Matching does not imply a nearest boundary.
 
 ```tsx
 import { css } from 'zyzz'
-import { ref, where } from 'zyzz/web'
+import { where } from 'zyzz/web'
 
-const card = ref({ state: ['closed', 'open'] })
 namespace styles {
+  export const card = css({ padding: 16 })
   export const title = css({
     color: '#666',
     [where`${card}:hover &`]: { color: '#06c' },
-    [where`${card({ state: 'open' })} &`]: { fontWeight: 600 },
+    [where`${card}[aria-expanded="true"] &`]: { fontWeight: 600 },
   })
 }
 
 const profile = (
-  <article {...styles.card({ state: 'open' })}>
+  <article {...styles.card()} aria-expanded={true}>
     <h2 {...styles.title()}>Profile</h2>
   </article>
 )
 ```
 
-`ref()` also works without a schema. A schema maps case-sensitive state keys to nonempty readonly arrays of string or boolean literals; const inference preserves the literal domains without `as const`. Reject unbounded arrays, duplicate/ambiguous serialized values, invalid data-name fragments, and reserved application keys. Optional ref inputs select any subset of declared states; omitted/undefined fields emit no state attribute. Unknown keys or invalid values are errors, including through variables and untyped calls. False serializes as `"false"`, not attribute omission.
+`Css.compile` guarantees one identity class per definition, derived from the extracted style name (`z-style-<module>-<offset>`), and emits it even when every declaration is shared into a base class, deduplicated in independent composition, or absent. Two identical definitions therefore never match each other's elements, and `css({})` marks an element without styling it. Applying the definition is the only marking step; nothing else is spread onto the element.
 
-HTML attribute-name fragments use ASCII-lowercase state keys. Reject schemas with keys colliding after ASCII case folding, such as `state` and `State`, before emission. Application and selector lowering use the same normalization; typed input keys remain case-sensitive.
+State is selector text. Real attributes such as `aria-expanded`, `open`, `disabled`, and pseudo-classes such as `:checked` are preferred; application-owned `data-*` attributes remain available. Attributes and pseudo-classes attached to one interpolation match the same element with AND.
 
-Marker application returns readonly data attributes only: a presence attribute plus selected state attributes. For example, a generated identity might use `data-z-card-k3m9=""` and `data-z-card-k3m9-state="open"`. Names are illustrative; derive stable, readable identities from package/module/binding metadata, never runtime counters or caller-provided names. State attributes are private to the ref, so independent markers do not compete for a shared `data-state` property.
-
-Separate ref and styling spreads have disjoint fields: `<article {...card({ state: 'open' })} {...panel()} />` is valid. Markers neither consume nor output `className`, `style`, ARIA, event handlers, or other component props. Apply real `disabled`, `checked`, or `aria-expanded` attributes separately. Ordinary repeated spreads of the same ref replace its attributes; no automatic merge is implied, and ref props do not extend the existing `cx` input contract.
-
-Template text follows raw condition key rules: `&` names the styled element, a leading pseudo-class implies `&`, and every selector in a list names `&`. Interpolations accept exactly two forms. A ref handle lowers to its presence attribute. A ref application such as `card({ state: 'open' })` lowers to presence plus state attributes and is type-checked by the same call signature used in JSX; brand that return type so a hand-written attribute object fails in the editor. Any other interpolation is a type error. `has` and `pseudo` stop being reserved schema names.
+Template text follows raw condition key rules: `&` names the styled element, a leading pseudo-class implies `&`, and every selector in a list names `&`. Interpolations resolve statically to module-level definitions: direct `const` bindings, `namespace` members, object-literal members, and imports of packed `style` contract entries. Applied props, strings, shadowed bindings, and calls that did not compile as `css` are errors.
 
 ```ts
 namespace styles {
@@ -654,32 +650,31 @@ namespace styles {
   })
 
   export const activeTitle = css({
-    [where`${card({ state: 'open' })}:focus-within:has(a) &`]: {
+    [where`${card}[aria-expanded="true"]:focus-within:has(a) &`]: {
       color: '#06c',
     },
   })
 }
 
 // Expected type errors in the accepted contract.
-styles.card({ state: 'expanded' })
-where`${card({ status: 'open' })} &`
-where`${'[data-open]'} &`
+where`${card()} &`
+where`${'.card'} &`
 
 // Expected compiler diagnostics; TypeScript does not check selector grammar.
 where`${card}:hovr &`
 where`${card}:hover`
 where`${card}:has(a:has(b)) &`
+where`${Math.max(1)} &`
 ```
 
-`where` is a tag rather than a plain template literal because of computed-key typing. A computed key of string type widens the style object to a string index signature and hides misspelled properties beside it. A computed key of branded symbol type widens only symbol indices, which source extraction verifies. The tag is the only template syntax that returns a symbol. The compiler parses the joined selector with the CSS parser; new browser pseudo-classes and combinators need no library release.
-
-The ref schema alone determines state inference; condition arguments must not widen it to accept arbitrary keys/values. Preserve that contract through imported aliases, re-exports, and packed declaration files. These types establish declared identity/state compatibility, not that a matching ancestor exists in the rendered DOM or that a ref is attached to a particular HTML element type.
+`where` is a tag rather than a plain template literal because of computed-key typing. A computed key of string type widens the style object to a string index signature and hides misspelled properties beside it. A computed key of branded symbol type widens only symbol indices, which source extraction verifies. The tag is the only template syntax that returns a symbol. Interpolations are typed as callables returning compiled props, so applied props and strings fail in the editor; the compiler proves the callable is a `css` definition. The compiler parses the joined selector with the CSS parser; new browser pseudo-classes and combinators need no library release.
 
 Sibling and descendant relationships use the same combinators as raw CSS. `${choice} ~ &` observes an earlier marked sibling, including nonadjacent siblings; `&:has(~ ${choice})` observes a later one; `+` selects adjacent siblings.
 
 ```tsx
-const choice = ref()
 namespace styles {
+  export const choice = css({})
+
   export const hint = css({
     [where`${choice}:checked ~ &`]: { color: '#06c' },
   })
@@ -691,46 +686,46 @@ namespace styles {
 
 const example = (
   <fieldset {...styles.fieldset()}>
-    <input {...choice()} aria-label="Select option" type="checkbox" />
+    <input {...styles.choice()} aria-label="Select option" type="checkbox" />
     <span {...styles.hint()}>Selected</span>
   </fieldset>
 )
 ```
 
-Let `M` be an interpolated ref together with the pseudo-classes and attribute selectors attached to it in the same compound. The compiler emits `M` as the generated attribute compound wrapped in `:where()`, so every ref compound contributes zero specificity while `&` retains the generated class specificity and unmarked compounds retain their own. `:has()` takes the specificity of its most specific argument, so the wrap holds inside it too. Only the compound's own `&` moves outside the wrapper; a trailing pseudo-element follows it, and `&` inside a nested functional pseudo-class keeps its position.
+Let `M` be an interpolated definition together with the pseudo-classes and attribute selectors attached to it in the same compound. The compiler emits `M` as the identity class compound wrapped in `:where()`, so every definition compound contributes zero specificity while `&` retains the generated class specificity and other compounds retain their own. `:has()` takes the specificity of its most specific argument, so the wrap holds inside it too. Only the compound's own `&` moves outside the wrapper; a trailing pseudo-element follows it, and `&` inside a nested functional pseudo-class keeps its position.
 
-| Authored                                             | Emitted                                    |
-| ---------------------------------------------------- | ------------------------------------------ |
-| `` where`${card}:hover &` ``                         | `:where([c]:hover) &`                      |
-| `` where`&:has(${choice}:checked)` ``                | `&:has(:where([ch]:checked))`              |
-| `` where`${choice}:checked ~ &` ``                   | `:where([ch]:checked) ~ &`                 |
-| `` where`&:has(~ ${choice})` ``                      | `&:has(~ :where([ch]))`                    |
-| `` where`${card} > &` ``                             | `:where([c]) > &`                          |
-| `` where`:root:has(${card({ state: 'open' })}) &` `` | `:root:has(:where([c][c-state="open"])) &` |
+| Authored                                     | Emitted                              |
+| -------------------------------------------- | ------------------------------------ |
+| `` where`${card}:hover &` ``                 | `:where(.c:hover) &`                 |
+| `` where`&:has(${choice}:checked)` ``        | `&:has(:where(.ch:checked))`         |
+| `` where`${choice}:checked ~ &` ``           | `:where(.ch:checked) ~ &`            |
+| `` where`&:has(~ ${choice})` ``              | `&:has(~ :where(.ch))`               |
+| `` where`${card} > &` ``                     | `:where(.c) > &`                     |
+| `` where`:root:has(${card}[aria-busy]) &` `` | `:root:has(:where(.c[aria-busy])) &` |
 
-The wrap is the documented behavior of the `where` tag, not a rewrite of raw string keys, which keep authored specificity. Preserve authored ordering, local nested pseudos, and query contexts. Reusing one ref on nested elements matches any qualifying ancestor. A distinct ref separates roles; nearest-instance boundaries require a separate `@scope` design, not an implicit promise.
+The wrap is the documented behavior of the `where` tag, not a rewrite of raw string keys, which keep authored specificity. Preserve authored ordering, local nested pseudos, and query contexts. Reusing one definition on nested elements matches any qualifying ancestor. A distinct definition separates roles; nearest-instance boundaries require a separate `@scope` design, not an implicit promise.
 
-CSS forbids nested `:has()`, and `:visited` inside `:has()` never matches; both are compiler diagnostics over the parsed selector. Selector text receives compiler validation, not a false claim of complete TypeScript grammar checking. [Selector grammar](https://www.w3.org/TR/selectors-4/#relational)
+CSS forbids nested `:has()`, and `:visited` inside `:has()` never matches; both are compiler diagnostics over the parsed selector, as are unknown pseudo-classes and interpolations inside quoted, bracketed, or comment text. Selector text receives compiler validation, not a false claim of complete TypeScript grammar checking. [Selector grammar](https://www.w3.org/TR/selectors-4/#relational)
 
-Every combinator and pseudo-class the browser supports is available: immediate parent, child, and adjacent-sibling distance, document-wide state through `:root:has()`, several refs in one path, and functional `:is()`, `:not()`, and `:nth-*()`. Nested relationship keys combine with AND through native CSS nesting, and nesting under a same-element pseudo adds the styled element's own state:
+Every combinator and pseudo-class the browser supports is available: immediate parent, child, and adjacent-sibling distance, document-wide state through `:root:has()`, several definitions in one path, and functional `:is()`, `:not()`, and `:nth-*()`. Nested relationship keys combine with AND through native CSS nesting, and nesting under a same-element pseudo adds the styled element's own state:
 
 ```ts
 namespace styles {
   export const hint = css({
-    [where`${card({ state: 'open' })} &`]: {
+    [where`${card}[aria-expanded="true"] &`]: {
       [where`${choice}:checked ~ &`]: { fontWeight: 600 },
     },
   })
 }
 ```
 
-Finite state domains express negation by naming the complementary values, or by keeping presence and negating the state: `${card}:not(${card({ state: 'open' })}) &`. Negating the whole ref compound would match unmarked ancestors such as `html`. Disjunction uses a selector list with `&` in each selector, or separate keys with the same body. Ref applications bound to a `const` interpolate like inline applications; dynamic applications stay runtime-only. Nearest-instance boundaries remain a separate `@scope` design.
+Negate a state while keeping identity: `${card}:not([aria-expanded="true"]) &`. Negating the whole definition compound would match unmarked ancestors such as `html`. Disjunction uses a selector list with `&` in each selector, or separate keys with the same body. Nearest-instance boundaries remain a separate `@scope` design.
 
-Recognize ref definitions/applications and `where` keys through static source analysis; do not execute application code. Preserve ref identity independently of style deduplication, source traversal order, and runtime state. Exported ref callables retain only attribute construction/validation, with statically known keys; `where` tags disappear. Applications choose state attributes, while the browser evaluates relationships. Server/client output must agree, imports must preserve identity, and unused definitions must not keep CSS alive accidentally.
+Recognize definitions and `where` keys through static source analysis; do not execute application code. Definition identity is independent of style deduplication, source traversal order, and runtime state. `where` tags disappear from output; the browser evaluates relationships. Exported definitions publish as `style` entries in packed contracts (version 13), including `namespace` members, so consumers interpolate imported definitions without executing library code. Server/client output must agree, imports must preserve identity, and unused definitions must not keep CSS alive accidentally.
 
-Before implementation acceptance, prove computed selector keys retain nested property/value/token inference and reject misspelled properties both inside and beside relational blocks. TypeScript can widen computed keys; a branded string alone is not proof of this contract. Require consumer fixtures for that case, schema inference without widening, aliases, unknown variable keys, nested conditions, unsupported `has` combinations, and packed declarations. If the keyed syntax cannot pass those fixtures, revise the shape before publishing it rather than weakening property checking.
+Computed selector keys must retain nested property/value/token inference and reject misspelled properties both inside and beside relational blocks; consumer fixtures cover that case, aliases, shadowed bindings, nested conditions, unsupported `:has()` combinations, and packed declarations.
 
-Real browser integration must cover pointer/focus/input updates, DOM insertion/removal, combined predicates, both sibling directions, multiple markers on one element, repeated/nested instances, and imported markers. Compare hand-authored equivalent selectors and existing library relationships before benchmarking. Report generated data-attribute/markup bytes and optional ref application code alongside CSS, JavaScript, and browser recalculation. Native rejects these browser relationships with located diagnostics.
+Real browser integration must cover pointer/focus/input updates, DOM insertion/removal, attribute changes, combined predicates, both sibling directions, repeated/nested instances, and imported definitions. Compare hand-authored equivalent selectors and existing library relationships before benchmarking. Report generated markup bytes alongside CSS, JavaScript, and browser recalculation. Native rejects these browser relationships with located diagnostics.
 
 ## Inferred query thresholds
 

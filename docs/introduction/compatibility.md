@@ -6,7 +6,7 @@ This documentation describes the implemented web compiler and marks remaining AP
 | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `css`, `Style.define`, and `Css.compile` | Static declarations, scalar bindings, conditions, queries, and ordered cascade                                 |
 | `Theme` and `Config.create`              | Compatible themes, named selection, initialization scripts, property aliases, and dedicated spacing groups     |
-| Source and packed linking                | Configuration helpers, theme handles, ref relationships, variable contracts, and animation aliases             |
+| Source and packed linking                | Configuration helpers, theme handles, style identities, variable contracts, and animation aliases              |
 | Stylesheets and adapters                 | Eager contributions, shared source maps, package-owned relative assets, optional reset, and rebuilds           |
 | Web frameworks                           | React, Solid, Svelte, and plain HTML integration fixtures; SSR/hydration and serialized-attribute checks in CI |
 

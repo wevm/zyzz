@@ -69,7 +69,7 @@ describe('compile', () => {
 
     expect(module.box).toMatchInlineSnapshot(`
       {
-        "className": "z-1nogkwjo2b0vl-base0",
+        "className": "z-1nogkwjo2b0vl-base0 z-style-1nogkwjo2b0vl-46",
       }
     `)
     expect(

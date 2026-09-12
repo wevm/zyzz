@@ -131,10 +131,6 @@ export function compile(options: compile.Options): compile.ReturnType {
   while (identifiers.has(html)) html += '_'
 
   let usesHtml = false
-  let marker = '__zyzzMarker'
-
-  while (identifiers.has(marker)) marker += '_'
-
   let appearance = '__zyzzAppearance'
 
   while (identifiers.has(appearance)) appearance += '_'
@@ -250,25 +246,6 @@ export function compile(options: compile.Options): compile.ReturnType {
     )
   }
 
-  for (const call of extracted.markerCalls ?? []) {
-    const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
-      ? ` as import('zyzz/web').ref.ReturnType<${`{${Object.entries(
-          call.definition.schema,
-        )
-          .map(
-            ([key, values]) =>
-              `${JSON.stringify(key)}:readonly [${values.map((value) => JSON.stringify(value)).join(',')}]`,
-          )
-          .join(';')}}`}>`
-      : ''
-
-    module.overwrite(
-      call.start,
-      call.end,
-      `(${marker}.create(${JSON.stringify(call.definition)})${assertion})`,
-    )
-  }
-
   for (const call of extracted.themeCalls) {
     const scope = (name: string) => ({ className: emitted.themes[name] })
 
@@ -340,7 +317,6 @@ export function compile(options: compile.Options): compile.ReturnType {
       start: call.start,
     })),
     ...(extracted.contributionCalls ?? []),
-    ...(extracted.markerCalls ?? []),
     ...(extracted.variableCalls ?? []),
     ...extracted.themeAliases,
     ...extracted.themeCalls,
@@ -403,7 +379,6 @@ export function compile(options: compile.Options): compile.ReturnType {
             ? ['Config', 'css', 'Theme', 'Vars']
             : [
                 'Css',
-                'ref',
                 'where',
                 'cssFunction',
                 'customMedia',
@@ -476,7 +451,6 @@ export function compile(options: compile.Options): compile.ReturnType {
     callable ||
     usesHtml ||
     usesSelection ||
-    extracted.markerCalls?.length ||
     usesAppearance ||
     extracted.variableCalls?.length
   ) {
@@ -493,7 +467,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesHtml ? `Html as ${html}` : '', extracted.markerCalls?.length ? `Marker as ${marker}` : '', callable ? `Props as ${runtime}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

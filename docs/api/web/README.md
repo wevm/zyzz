@@ -1,6 +1,6 @@
 # zyzz/web
 
-Compile web CSS and declare stylesheet contributions and element relationships.
+Compile web CSS and declare stylesheet contributions and element relationships between css definitions.
 
 | API                       | Description                                                    |
 | ------------------------- | -------------------------------------------------------------- |
@@ -9,8 +9,7 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 | [global](global.md)       | Contribute eager global selectors and nested stylesheet rules. |
 | [keyframes](keyframes.md) | Define an animation with a stable typed name reference.        |
 | [layers](layers.md)       | Contribute ordered cascade layer names.                        |
-| [ref](ref.md)             | Define a callable element identity with optional typed states. |
-| [where](where.md)         | Compose a relationship condition from refs and selector text.  |
+| [where](where.md)         | Compose a relationship condition from css definitions.         |
 
 ## At-Rule Functions
 

@@ -54,7 +54,6 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [Css](api/web/Css/README.md): Section index.
 - [Css.compile](api/web/Css/compile.md): Reference and examples.
 - [layers](api/web/layers.md): Reference and examples.
-- [ref](api/web/ref.md): Reference and examples.
 - [where](api/web/where.md): Reference and examples.
 - [fontFace](api/web/fontFace.md): Reference and examples.
 - [global](api/web/global.md): Reference and examples.

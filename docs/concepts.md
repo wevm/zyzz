@@ -165,25 +165,25 @@ See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style State
 
 ## Relationships
 
-Typed markers describe element identity and finite data states. Applying a ref emits attributes; another definition can reference that identity.
+Every `css` definition carries an identity class, so any styled element is addressable. Another definition references it through `where` with ordinary selector text.
 
 ```ts
 import { css } from 'zyzz'
-import { ref, where } from 'zyzz/web'
+import { where } from 'zyzz/web'
 
-const card = ref({ state: ['closed', 'open'] })
 namespace styles {
+  export const card = css({ padding: 16 })
   export const label = css({
-    [where`${card({ state: 'open' })} &`]: { opacity: 1 },
+    [where`${card}[aria-expanded="true"] &`]: { opacity: 1 },
   })
 }
 ```
 
 - **Direction:** CSS combinators express direction and distance; `${card} &` matches any depth, `${card} > &` the parent.
-- **Matching:** repeated markers use any qualifying ancestor, not nearest-boundary behavior.
-- **Predicates:** pseudo-classes and declared states attach to the interpolated ref; nested relationship keys combine with AND.
-- **Specificity:** ref compounds are wrapped in `:where()` and add zero specificity; raw selectors retain their own.
-- **Types:** constrain ref values, not DOM structure or accessibility semantics.
+- **Matching:** repeated applications use any qualifying ancestor, not nearest-boundary behavior.
+- **State:** attributes and pseudo-classes attach to the interpolated definition; nested relationship keys combine with AND.
+- **Specificity:** definition compounds are wrapped in `:where()` and add zero specificity; raw selectors retain their own.
+- **Types:** interpolations must be css definitions; types do not prove DOM structure or accessibility semantics.
 
 See [Style Relationships](guides/conditions.md#style-relationships) for application and [Css](api/web/Css/README.md) for sibling directions.
 

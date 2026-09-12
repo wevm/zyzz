@@ -120,7 +120,7 @@ describe('create', () => {
     `)
     expect(result.source).toMatchInlineSnapshot(`
       {
-        "class": "z-1wfnqsmu0q6os-base0",
+        "class": "z-1wfnqsmu0q6os-base0 z-style-1wfnqsmu0q6os-232",
       }
     `)
     expect(result.dynamic).toMatchInlineSnapshot(`

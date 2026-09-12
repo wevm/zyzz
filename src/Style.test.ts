@@ -728,14 +728,14 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
     const server = Vm.runInNewContext(`${code}; JSON.stringify(fixture.result)`)
 
     expect(JSON.parse(server)).toMatchInlineSnapshot(`
-    {
-      "classes": {
-        "button": "z_base0",
-      },
-      "css": ".z_base0{color:#f00;padding:0;}",
-      "themes": {},
-    }
-  `)
+      {
+        "classes": {
+          "button": "z_base0 z-button",
+        },
+        "css": ".z_base0{color:#f00;padding:0;}",
+        "themes": {},
+      }
+    `)
 
     const worker = new Worker.Worker(
       `${code}; require('node:worker_threads').parentPort.postMessage(JSON.stringify(fixture.result));`,
@@ -749,14 +749,14 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       })
 
       expect(JSON.parse(result)).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "button": "z_base0",
-        },
-        "css": ".z_base0{color:#f00;padding:0;}",
-        "themes": {},
-      }
-    `)
+        {
+          "classes": {
+            "button": "z_base0 z-button",
+          },
+          "css": ".z_base0{color:#f00;padding:0;}",
+          "themes": {},
+        }
+      `)
     } finally {
       await worker.terminate()
     }
@@ -771,14 +771,14 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
 
       try {
         expect(JSON.parse(context.getString(result))).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "button": "z_base0",
-        },
-        "css": ".z_base0{color:#f00;padding:0;}",
-        "themes": {},
-      }
-    `)
+          {
+            "classes": {
+              "button": "z_base0 z-button",
+            },
+            "css": ".z_base0{color:#f00;padding:0;}",
+            "themes": {},
+          }
+        `)
       } finally {
         result.dispose()
       }
@@ -797,14 +797,14 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       await page.addScriptTag({ content: code })
 
       expect(await page.evaluate('fixture.result')).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "button": "z_base0",
-        },
-        "css": ".z_base0{color:#f00;padding:0;}",
-        "themes": {},
-      }
-    `)
+        {
+          "classes": {
+            "button": "z_base0 z-button",
+          },
+          "css": ".z_base0{color:#f00;padding:0;}",
+          "themes": {},
+        }
+      `)
 
       const result = await page.evaluate(async (code) => {
         const url = URL.createObjectURL(
@@ -827,14 +827,14 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       }, code)
 
       expect(result).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "button": "z_base0",
-        },
-        "css": ".z_base0{color:#f00;padding:0;}",
-        "themes": {},
-      }
-    `)
+        {
+          "classes": {
+            "button": "z_base0 z-button",
+          },
+          "css": ".z_base0{color:#f00;padding:0;}",
+          "themes": {},
+        }
+      `)
     } finally {
       await browser.close()
     }

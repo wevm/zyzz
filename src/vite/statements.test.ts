@@ -41,11 +41,16 @@ describe('zyzz', () => {
                     // A real CSS processor supplies the map consumed by the final prolog pass.
                     const result = Lightning.transform({
                       filename: 'before.css',
-                      code: Buffer.from(String(asset.source)),
+                      code: Buffer.from(
+                        '@layer a { .first { color: red } } @layer b,a;' +
+                          String(asset.source),
+                      ),
                       sourceMap: true,
                       minify: true,
                     })
-                    asset.source = result.code.toString()
+                    asset.source =
+                      result.code.toString() +
+                      '@layer x{.late{color:blue}}@layer y,x;'
                     if (mode === 'external') {
                       this.emitFile({
                         type: 'asset',
@@ -105,6 +110,9 @@ describe('zyzz', () => {
             .startsWith('z-n'),
         ).toMatchInlineSnapshot('true')
         expect(css.startsWith('@namespace ')).toMatchInlineSnapshot('true')
+        expect(
+          css.indexOf('@layer x{') < css.indexOf('@layer y,x;'),
+        ).toMatchInlineSnapshot('true')
       } finally {
         await Fs.rm(root, { recursive: true, force: true })
       }

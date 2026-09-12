@@ -6,9 +6,10 @@ import { describe, expect, test } from 'vite-plus/test'
 import { zyzz } from 'zyzz/vite'
 
 describe('zyzz', () => {
-  test.each([false, true])(
+  test.each(['zyzz/web', './web', '@/web'])(
     'retains disconnected named declarations through local barrels: %s',
-    async (barrel) => {
+    async (specifier) => {
+      const barrel = specifier !== 'zyzz/web'
       const root = await Fs.mkdtemp(Path.resolve('.fixture-named-vite-'))
       try {
         await Fs.writeFile(
@@ -29,13 +30,14 @@ describe('zyzz', () => {
         )
         await Fs.writeFile(
           Path.join(root, 'effects.ts'),
-          `import {${barrel ? 'namedCounter as counterStyle' : 'counterStyle'},fontPaletteValues,positionTry} from '${barrel ? './web' : 'zyzz/web'}';export const counter=counterStyle({system:'cyclic',symbols:'"x"'});export const palette=fontPaletteValues({fontFamily:'Body',basePalette:0});export const below=positionTry({top:'1px'});`,
+          `import {${barrel ? 'namedCounter as counterStyle' : 'counterStyle'},fontPaletteValues,positionTry} from '${specifier}';export const counter=counterStyle({system:'cyclic',symbols:'"x"'});export const palette=fontPaletteValues({fontFamily:'Body',basePalette:0});export const below=positionTry({top:'1px'});`,
         )
         const build = await Vite.build({
           root,
           configFile: false,
           logLevel: 'silent',
           plugins: [zyzz()],
+          resolve: { alias: { '@': root } },
           build: { write: false, minify: false, cssMinify: false },
         })
         if (!('output' in build)) throw new Error('Expected one Rollup output')

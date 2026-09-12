@@ -17,6 +17,7 @@ const commands = server.commands as typeof server.commands & {
 
 test('production React mount, update, and remount', async () => {
   const groups: Render.Group[] = []
+
   for (const components of [100, 1000])
     for (const kind of ['callable', 'overrides', 'dynamic'] as const)
       for (const pass of [1, 2]) {
@@ -31,31 +32,41 @@ test('production React mount, update, and remount', async () => {
                 'vanilla-extract',
                 'zyzz',
               ] as const)
+
         for (const library of pass === 1
           ? libraries
           : [...libraries].reverse()) {
           const options = { components, count: components / 10, kind, library }
           const html = await commands.prepareRender(options)
           const iframe = document.createElement('iframe')
+
           iframe.style.cssText =
             'width:1200px;height:900px;border:0;display:block'
+
           const loaded = new Promise<void>((resolve, reject) => {
             iframe.onload = () => resolve()
             iframe.onerror = () => reject(new Error('Fixture load failed'))
           })
+
           iframe.srcdoc = html
           document.body.append(iframe)
+
           try {
             await loaded
+
             const fixture = (
               iframe.contentWindow as unknown as {
                 renderFixture: ReturnType<typeof RenderFixture.create>
               }
             ).renderFixture
+
             for (let warmup = 0; warmup < 3; warmup++) await fixture.cycle()
+
             const samples: RenderFixture.Sample[] = []
+
             for (let sample = 0; sample < 20; sample++)
               samples.push(...(await fixture.cycle()))
+
             groups.push({ ...options, pass, samples })
             fixture.dispose()
             await commands.saveRender(groups, navigator.userAgent)
@@ -64,5 +75,6 @@ test('production React mount, update, and remount', async () => {
           }
         }
       }
+
   expect(groups.length).toMatchInlineSnapshot(`56`)
 })

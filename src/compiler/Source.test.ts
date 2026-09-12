@@ -26,8 +26,10 @@ export { type css as StyleFunction };
 export { css as external } from 'another-package';
 function afterType(style = css({ color: '#f00' })) { var css; }
 `
+
     const result = Source.extract({ moduleId: 'example/parameters.ts', source })
     const output = Css.compile({ styles: result.styles })
+
     expect({
       calls: result.calls.map((call) => source.slice(call.start, call.end)),
       css: output.css,
@@ -55,12 +57,15 @@ export { css };
 const object = { css };
 const element = <Css />;
 `
+
     try {
       const result = Source.extract({ moduleId: 'example/writes.ts', source })
+
       Css.compile({ styles: result.styles })
       throw new Error('Expected extraction failure')
     } catch (error) {
       if (!(error instanceof Source.ExtractError)) throw error
+
       expect(
         error.diagnostics.map((item) => ({
           code: item.code,
@@ -119,8 +124,10 @@ css({ color: unknown });
 export const view = <div {...define({ color: '#fff', opacity: +0.5 })()} />;
 type Definition = ReturnType<typeof define>;
 `
+
     const result = Source.extract({ moduleId: 'example/card.tsx', source })
     const output = Css.compile({ styles: result.styles })
+
     expect({
       calls: result.calls.map((call) => source.slice(call.start, call.end)),
       declarations: result.styles.styles.map((style) => style.declarations),
@@ -172,6 +179,7 @@ type Definition = ReturnType<typeof define>;
               "start": 317,
             },
           ],
+          "namespaces": [],
           "styles": {
             "styles": [
               {
@@ -218,6 +226,7 @@ type Definition = ReturnType<typeof define>;
 const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 1.5 } satisfies {});`
     const first = Source.extract({ moduleId: '@example/ui/card.ts', source })
     const second = Source.extract({ moduleId: '@example/ui/other.ts', source })
+
     expect({
       calls: first.calls.map((call) => source.slice(call.start, call.end)),
       distinct: first.calls.every(
@@ -255,6 +264,7 @@ const a = first({ marginTop: '-2px' } as const); const b = second({ lineHeight: 
     ).toMatchInlineSnapshot(`
       {
         "calls": [],
+        "namespaces": [],
         "styles": {
           "styles": [],
         },
@@ -283,11 +293,13 @@ css = unknown;
 import * as Zyzz from 'zyzz';
 Zyzz.css({ padding: 0 });
 `
+
     try {
       Source.extract({ moduleId: 'example/errors.ts', source })
       throw new Error('Expected extraction failure')
     } catch (error) {
       if (!(error instanceof Source.ExtractError)) throw error
+
       expect({
         diagnostics: error.diagnostics.map((item) => ({
           ...item,
@@ -408,9 +420,11 @@ Zyzz.css({ padding: 0 });
         throw new Error('Expected invalid module ID')
       } catch (error) {
         if (!(error instanceof Source.ExtractError)) throw error
+
         return error.diagnostics
       }
     })
+
     expect(errors).toMatchInlineSnapshot(`
     [
       [
@@ -451,6 +465,7 @@ Zyzz.css({ padding: 0 });
       ],
     ]
   `)
+
     try {
       Source.extract({
         moduleId: 'example/broken.ts',
@@ -459,6 +474,7 @@ Zyzz.css({ padding: 0 });
       throw new Error('Expected parse failure')
     } catch (error) {
       if (!(error instanceof Source.ExtractError)) throw error
+
       expect(error.diagnostics).toMatchInlineSnapshot(`
       [
         {
@@ -481,26 +497,34 @@ const first = css({ color: '#000', padding: '8px', paddingLeft: 0 });
 const middle = css({ color: '#fff', paddingLeft: '3px' });
 const last = css({ color: '#000', padding: '8px', paddingLeft: 0 });`,
     })
+
     const output = Css.compile({ styles: extracted.styles })
     const classes = extracted.calls.map((call) => output.classes[call.name]!)
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent('<!doctype html><body></body>')
       await page.addStyleTag({ content: output.css })
+
       const result = await page.evaluate(
         (classes) =>
           [`${classes[1]} ${classes[0]}`, `${classes[2]} ${classes[1]}`].map(
             (className) => {
               const element = document.createElement('div')
+
               element.className = className
               document.body.append(element)
+
               const computed = getComputedStyle(element)
+
               return { color: computed.color, padding: computed.padding }
             },
           ),
         classes,
       )
+
       expect(result).toMatchInlineSnapshot(`
       [
         {

@@ -9,14 +9,51 @@ describe('compile', () => {
       moduleId: 'document.ts',
       source: `import {page,fontFeatureValues,viewTransition} from 'zyzz/web';
 page({selector:':first, :left',descriptors:{size:'landscape JIS-B4'}},undefined);
-fontFeatureValues({families:'Body',features:{'@swash':undefined,'@styleset':{'--ornament':1,'café':[1,3]}},fontDisplay:' SWAP '},void 0);
+fontFeatureValues({families:'Body',features:{'@swash':undefined,'@styleset':{'--ornament':1,'café':[1,3],'𝒜lternate':2}},fontDisplay:' SWAP '},void 0);
 viewTransition({navigation:' AUTO '});`,
     })
     expect(output.css).toMatchInlineSnapshot(`
       "@page :first, :left{size:landscape JIS-B4;}
-      @font-feature-values Body{@styleset{--ornament:1;café:1 3;}font-display: SWAP ;}
+      @font-feature-values Body{@styleset{--ornament:1;café:1 3;𝒜lternate:2;}font-display: SWAP ;}
       @view-transition{navigation: AUTO ;}"
     `)
+  })
+  test('rejects malformed feature values in packed contracts', () => {
+    const library = Graph.compile({
+      modules: {
+        'library.ts': `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Body',features:{'@swash':{flow:1}}});`,
+      },
+    })
+    const contract = JSON.parse(library.contracts['library.ts']!)
+    contract.stylesheets[0].css = '@font-feature-values Body{@swash{flow:foo;}}'
+    expect(() =>
+      Graph.compile({
+        contracts: { 'lib.js': JSON.stringify(contract) },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: { 'app.ts': `import 'lib'` },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: lib.js:0: Invalid library contract: Invalid value]`,
+    )
+  })
+  test('preserves CSS escapes in family arrays', () => {
+    const output = Transform.compile({
+      moduleId: 'family.ts',
+      source: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:['A\\tB'],features:{'@swash':{flow:1}}});`,
+    })
+    expect(output.css).toMatchInlineSnapshot(
+      `"@font-feature-values "A\\9 B"{@swash{flow:1;}}"`,
+    )
+  })
+  test('rejects feature indexes outside safe decimal integers', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'index.ts',
+        source: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Body',features:{'@swash':{flow:1e21}}});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: index.ts:43: Expected feature aliases with nonnegative integer indices.]`,
+    )
   })
   test('rejects reserved aliases, malformed families, and table-only page properties', () => {
     expect(() =>

@@ -12,11 +12,13 @@ import * as Geometry from '../../test/fixtures/Geometry.js'
 describe('compile', () => {
   test('all canonical transform functions match independent grammar', () => {
     const lexer = Conformance.lexer()
+
     for (const transform of Geometry.functions) {
       const output = Transform.compile({
         moduleId: 'geometry.ts',
         source: `import { css } from 'zyzz'; css({transform:${JSON.stringify(transform)}});`,
       })
+
       expect(
         output.css.includes(`transform:${transform}`),
       ).toMatchInlineSnapshot(`true`)
@@ -38,11 +40,14 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}.positioned{position:absolute;left:100px;top:100px;transform-origin:0 0}</style><div id="aspect" class="${module.aspect.className}"></div><div id="individual" class="positioned ${module.individual.className}"></div><div id="list" class="positioned ${module.list.className}"></div><div id="control" class="positioned" style="${Geometry.controls.list}"></div><div id="spatial" class="${module.spatial.className}"></div><div id="spatial-control" style="${Geometry.controls.spatial}"></div>`,
       )
+
       expect(
         await page
           .locator('#aspect')
@@ -72,6 +77,7 @@ describe('compile', () => {
               .getBoundingClientRect()
               .toJSON(),
           )
+
           return ['individual', 'list'].filter(
             (id) =>
               JSON.stringify(

@@ -21,8 +21,10 @@ export function read(
   const data = record(JSON.parse(source))
   if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
+
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
+
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
@@ -39,6 +41,7 @@ export function read(
       throw new Error(
         'Conflicting packed shorthand mappings for one theme identity.',
       )
+
     if (!contract) {
       contract = Object.freeze({
         ...(entry.shorthands !== undefined
@@ -49,14 +52,19 @@ export function read(
       })
       identities.set(identity, contract)
     }
+
     const definition = Theme.define(record(entry.tokens) as Theme.Tokens)
+
     themes[name] = Token.bind(definition, contract)
     types[name] = type(input(definition))
   }
+
   function link(value: unknown): Themes.Link {
     const entry = record(value)
+
     if (entry.kind === 'variables') {
       const names = new Set<string>()
+
       const slots = Object.fromEntries(
         Object.entries(record(entry.variables)).map(([key, value]) => {
           const slot = record(value)
@@ -75,7 +83,9 @@ export function read(
             ].includes(String(slot.type))
           )
             throw new Error('Invalid packed variable contract.')
+
           names.add(string(slot.name))
+
           return [
             key,
             Object.freeze({
@@ -86,7 +96,9 @@ export function read(
           ]
         }),
       )
+
       const binding = string(entry.binding)
+
       return {
         binding,
         kind: 'variables',
@@ -144,10 +156,12 @@ export function read(
         },
       }
     }
+
     if (entry.kind === 'animation') {
       const name = string(entry.name)
       if (!/^z-k[a-z0-9-]+$/.test(name))
         throw new Error('Invalid animation identity.')
+
       return {
         binding: string(entry.binding),
         kind: 'animation',
@@ -155,11 +169,13 @@ export function read(
         call: { start: -1, end: -1, name, tokenType: '{}' },
       }
     }
+
     if (entry.kind === 'marker') {
       const marker = record(entry.marker)
       const id = string(marker.id)
       if (!/^data-z-[a-z0-9_-]+$/.test(id) || entry.binding !== id)
         throw new Error('Invalid marker identity.')
+
       return {
         binding: string(entry.binding),
         kind: 'marker',
@@ -176,12 +192,15 @@ export function read(
         },
       }
     }
+
     if (entry.output !== undefined && entry.output !== 'html')
       throw new Error('Invalid theme output.')
+
     const theme = string(entry.theme)
     const definition = themes[theme]
     if (!definition || !['config', 'css', 'theme'].includes(String(entry.kind)))
       throw new Error('Invalid Zyzz contract export.')
+
     const members =
       entry.kind === 'config'
         ? Object.fromEntries(
@@ -191,10 +210,13 @@ export function read(
             ]),
           )
         : undefined
+
     const options =
       entry.options === undefined ? undefined : record(entry.options)
+
     if (options) {
       Config.create(options as Config.create.Options)
+
       if (
         Shorthands.signature(options.shorthands) !==
         Shorthands.signature(definition[Token.definition].contract.shorthands)
@@ -203,6 +225,7 @@ export function read(
           'Configuration mappings disagree with linked theme metadata.',
         )
     }
+
     const catalogOnly =
       !!options?.themes &&
       ((data.version as number) < 4 || entry.catalogOnly === true)
@@ -218,6 +241,7 @@ export function read(
       : configType
     if (entry.kind === 'config' && !options)
       throw new Error('Missing configuration options.')
+
     return {
       binding: string(entry.binding),
       call: {
@@ -258,24 +282,28 @@ export function read(
       ...(members ? { members } : {}),
     }
   }
+
   const links = Object.fromEntries(
     Object.entries(record(data.exports)).map(([name, value]) => [
       name,
       link(value),
     ]),
   )
+
   return { links, themes, stylesheets: Stylesheets.read(data.stylesheets) }
 }
 
 function record(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new Error('Expected a Zyzz contract record.')
+
   return value as Record<string, unknown>
 }
 
 function string(value: unknown): string {
   if (typeof value !== 'string' || !value)
     throw new Error('Expected a nonempty Zyzz contract identity.')
+
   return value
 }
 
@@ -297,6 +325,7 @@ function tokens(tree: Theme.References<Theme.Tokens>): Record<string, unknown> {
 function type(value: unknown): string {
   if (Array.isArray(value)) return `readonly [${value.map(type).join(',')}]`
   if (!value || typeof value !== 'object') return JSON.stringify(value)
+
   return `{${Object.entries(value)
     .map(([key, value]) => `readonly ${JSON.stringify(key)}:${type(value)}`)
     .join(';')}}`
@@ -327,14 +356,17 @@ export function write(
         reference: link.call.reference,
         ...(link.call.function ? { function: link.call.function } : {}),
       }
+
     if (link.kind === 'animation')
       return { binding: link.binding, kind: link.kind, name: link.call.name }
+
     if (link.kind === 'marker')
       return {
         binding: link.binding,
         kind: link.kind,
         marker: link.call.marker,
       }
+
     return {
       ...(link.call.output ? { output: link.call.output } : {}),
       ...(link.call.script &&
@@ -360,6 +392,7 @@ export function write(
         : {}),
     }
   }
+
   return JSON.stringify({
     ...(stylesheets.length
       ? { stylesheets: Stylesheets.write(stylesheets) }

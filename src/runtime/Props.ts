@@ -16,9 +16,11 @@ export function create(options: create.Options): css.ReturnType {
 
   return (overrides?: css.Options) => {
     if (overrides === undefined) return { className }
+
     const { className: external, style } = overrides
     const merged =
       className && external ? `${className} ${external}` : external || className
+
     return style === undefined
       ? { className: merged }
       : { className: merged, style }

@@ -28,6 +28,7 @@ export type Build = {
  */
 export async function create(options: create.Options): Promise<Runtime> {
   type Stylesheet = { code: string; map: string }
+
   const css =
     options.css === false
       ? false
@@ -35,27 +36,32 @@ export async function create(options: create.Options): Promise<Runtime> {
           minify: options.css?.minify ?? false,
           targets: { ...options.css?.targets },
         }
+
   const outDir = Path.resolve(options.outDir)
   const root = await Fs.realpath(options.root)
 
   if (inside(outDir, root))
     throw new Error('Output must not contain the source directory.')
+
   Transform.compile({
     moduleId: `${options.packageId}/identity.ts`,
     source: '',
   })
 
   await Fs.mkdir(outDir, { recursive: true })
+
   if ((await Fs.realpath(outDir)) !== outDir)
     throw new Error('Output paths must not contain symbolic links.')
 
   const lockPath = Path.join(outDir, '.zyzz-lock')
   const lock = await Fs.open(lockPath, 'wx')
+
   // Probe the actual output filesystem using the already exclusively owned lock.
   const insensitive = await (async () => {
     try {
       const alternate = await Fs.stat(Path.join(outDir, '.ZYZZ-LOCK'))
       const original = await lock.stat()
+
       return alternate.dev === original.dev && alternate.ino === original.ino
     } catch (error) {
       if (
@@ -65,11 +71,13 @@ export async function create(options: create.Options): Promise<Runtime> {
         error.code === 'ENOENT'
       )
         return false
+
       await lock.close()
       await Fs.rm(lockPath)
       throw error
     }
   })()
+
   const manifestPath = Path.join(outDir, '.zyzz.json')
 
   const compiler = Graph.create()
@@ -100,6 +108,7 @@ export async function create(options: create.Options): Promise<Runtime> {
           ].includes(entry.name)
         )
           continue
+
         if (entry.isDirectory()) await scan(path)
         else if (
           entry.isFile() &&
@@ -115,6 +124,7 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     const artifacts = new Map<string, string | Uint8Array>()
     const sources: Record<string, string> = Object.create(null)
+
     for (const input of inputs) {
       const name = Path.relative(root, input).split(Path.sep).join('/')
       if (
@@ -123,8 +133,10 @@ export async function create(options: create.Options): Promise<Runtime> {
         throw new Error(
           `Source path conflicts with host control files: ${name}`,
         )
+
       sources[name] = await Fs.readFile(input, 'utf8')
     }
+
     const graph = compiler.compile({
       modules: Object.fromEntries(
         Object.entries(sources).map(([name, source]) => [
@@ -133,6 +145,7 @@ export async function create(options: create.Options): Promise<Runtime> {
         ]),
       ),
     })
+
     const generated = new Set(
       [
         'zyzz.shared.css',
@@ -148,6 +161,7 @@ export async function create(options: create.Options): Promise<Runtime> {
         ]),
       ].map((name) => (insensitive ? name.toLowerCase() : name)),
     )
+
     if (graph.sharedCss) {
       const assets = new Map<string, string>()
       function relocate(
@@ -194,6 +208,7 @@ export async function create(options: create.Options): Promise<Runtime> {
             relative.slice(relative.split(/[?#]/)[0]!.length),
         }
       }
+
       const shared =
         css === false && !Object.keys(graph.sharedAssets ?? {}).length
           ? {
@@ -215,10 +230,12 @@ export async function create(options: create.Options): Promise<Runtime> {
                     loc: rule.value.loc,
                   })
                   if (url) return AtRules.relocateImport(rule.value, url.url)
+
                 },
                 Url: relocate,
               },
             })
+
       for (const [name, file] of assets) {
         const real = await Fs.realpath(file)
         if (!inside(root, real))
@@ -244,18 +261,25 @@ export async function create(options: create.Options): Promise<Runtime> {
           })
         }
         artifacts.set(name, content)
+
       }
+
       artifacts.set('zyzz.shared.css', Buffer.from(shared.code).toString())
       artifacts.set('zyzz.shared.css.map', Buffer.from(shared.map!).toString())
     }
+
     for (const name of Object.keys(sources)) {
       const output = graph.modules[`${options.packageId}/${name}`]!
 
       const contract = graph.contracts[`${options.packageId}/${name}`]
+
       if (contract) artifacts.set(`${name}.zyzz.json`, contract)
+
       artifacts.set(name, output.code)
       artifacts.set(`${name}.map`, JSON.stringify(output.map))
+
       let stylesheet = stylesheets.get(output)
+
       if (!stylesheet) {
         if (css === false)
           stylesheet = { code: output.css, map: JSON.stringify(output.cssMap) }
@@ -268,18 +292,22 @@ export async function create(options: create.Options): Promise<Runtime> {
             sourceMap: true,
             targets: css.targets,
           })
+
           stylesheet = {
             code: Buffer.from(result.code).toString(),
             map: Buffer.from(result.map!).toString(),
           }
         }
+
         stylesheets.set(output, stylesheet)
       }
+
       artifacts.set(`${name}.css`, stylesheet.code)
       artifacts.set(`${name}.css.map`, stylesheet.map)
     }
 
     await regular(manifestPath, outDir)
+
     const previous = await read(manifestPath)
     const owned =
       previous === undefined ? {} : manifest(previous, options.packageId)
@@ -288,9 +316,11 @@ export async function create(options: create.Options): Promise<Runtime> {
       Object.keys(owned).map((name) => [key(name), name]),
     )
     const liveNames = new Map<string, string>()
+
     for (const name of artifacts.keys()) {
       if (liveNames.has(key(name)))
         throw new Error(`Output paths differ only in case: ${name}`)
+
       liveNames.set(key(name), name)
     }
 
@@ -301,9 +331,12 @@ export async function create(options: create.Options): Promise<Runtime> {
     for (const name of new Set([...Object.keys(owned), ...artifacts.keys()])) {
       // A case-only rename still owns the same physical file. Do not delete its old alias.
       if (!artifacts.has(name) && liveNames.has(key(name))) continue
+
       const owner = ownedNames.get(key(name))
       const path = Path.join(outDir, name)
+
       await regular(path, outDir)
+
       const content = await read(path, true)
       const expected = owner === undefined ? undefined : owned[owner]
       if (
@@ -315,7 +348,9 @@ export async function create(options: create.Options): Promise<Runtime> {
         )
 
       const next = artifacts.get(name)
+
       if (next !== undefined) hashes[name] = hash(next)
+
       if (
         (content === undefined || next === undefined
           ? content !== next
@@ -332,16 +367,20 @@ export async function create(options: create.Options): Promise<Runtime> {
       packageId: options.packageId,
       version: 1,
     })
+
     if (nextManifest !== previous) before.set('.zyzz.json', previous)
 
     // Compile and verify ownership before publishing. Restore applied writes if publication fails.
     const applied: string[] = []
+
     try {
       for (const [name] of before) {
         const content =
           name === '.zyzz.json' ? nextManifest : artifacts.get(name)
         const path = Path.join(outDir, name)
+
         applied.push(name)
+
         if (content === undefined) await Fs.rm(path, { force: true })
         else await write(path, content)
       }
@@ -349,9 +388,11 @@ export async function create(options: create.Options): Promise<Runtime> {
       for (const name of applied.reverse()) {
         const content = before.get(name)
         const path = Path.join(outDir, name)
+
         if (content === undefined) await Fs.rm(path, { force: true })
         else await write(path, content)
       }
+
       throw error
     }
 
@@ -362,6 +403,7 @@ export async function create(options: create.Options): Promise<Runtime> {
     if (closed) return Promise.reject(new Error('Host is closed.'))
 
     const pending = tail.then(perform)
+
     tail = pending.then(
       () => {},
       () => {},
@@ -372,6 +414,7 @@ export async function create(options: create.Options): Promise<Runtime> {
 
   function close(): Promise<void> {
     if (closing) return closing
+
     closed = true
     watcher?.close()
 
@@ -393,14 +436,18 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     async function flush() {
       if (running) return
+
       running = true
+
       try {
         while (dirty && !closed) {
           dirty = false
+
           const event: Event = await build().then(
             (result) => ({ result }),
             (error: unknown) => ({ error }),
           )
+
           if (!closed) watchOptions.onResult(event)
         }
       } finally {
@@ -410,6 +457,7 @@ export async function create(options: create.Options): Promise<Runtime> {
 
     watcher = NativeFs.watch(root, { recursive: true }, (_event, filename) => {
       if (filename && inside(outDir, Path.resolve(root, filename))) return
+
       dirty = true
       void flush()
     })
@@ -475,6 +523,7 @@ function hash(content: string | Uint8Array) {
 
 function inside(parent: string, child: string) {
   const relative = Path.relative(parent, child)
+
   return (
     !relative ||
     (!relative.startsWith(`..${Path.sep}`) &&
@@ -530,6 +579,7 @@ async function read(
       error.code === 'ENOENT'
     )
       return undefined
+
     throw error
   }
 }
@@ -559,7 +609,9 @@ async function regular(path: string, root: string) {
 
 async function write(path: string, content: string | Uint8Array) {
   await Fs.mkdir(Path.dirname(path), { recursive: true })
+
   const temporary = `${path}.${Crypto.randomUUID()}.tmp`
+
   try {
     await Fs.writeFile(temporary, content, { flag: 'wx' })
     await Fs.rename(temporary, path)

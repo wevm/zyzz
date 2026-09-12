@@ -1,6 +1,6 @@
 # Editor and Agents
 
-Use TypeScript inference from the named `zyzz` export. Keep config values literal so token names and variant choices remain narrow.
+Use TypeScript inference from named config helpers such as `css`, `theme`, and `themes`. Keep config values literal so token names and named theme choices remain narrow.
 
 ```ts
 import { css } from '../../zyzz.config.js'
@@ -11,7 +11,7 @@ const styles = {
 ```
 
 > [!NOTE]
-> Config-bound authoring is a preview. Current root `css` and in-memory theme definitions expose their documented types.
+> Config-bound CSS and named theme selection are implemented through Vite and the graph compiler. Variants and native bindings retain separate implementation gates.
 
 - **Agents:** start from [the documentation index](../llms.txt), then load the relevant method and guide.
 - **Diagnostics:** preserve source locations and resolve errors before consuming new artifacts.

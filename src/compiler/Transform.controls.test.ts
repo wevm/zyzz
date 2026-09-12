@@ -15,6 +15,7 @@ describe('compile', () => {
       moduleId: 'controls.ts',
       source: Controls.source,
     })
+
     expect(output.css.match(/tab-size:[^;}]+/g)).toMatchInlineSnapshot(`
       [
         "tab-size:4",
@@ -24,10 +25,12 @@ describe('compile', () => {
     expect(
       output.css.includes('touch-action:pinch-zoom pan-left pan-up'),
     ).toMatchInlineSnapshot(`true`)
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('tab-size:8!important'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -56,11 +59,14 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>ol{margin:0;padding:10px;width:180px;font:16px monospace;background:white}pre{display:inline-block;font:16px monospace}${output.css}</style><ol id="list" class="${module.list.className}"><li>First</li><li>Second</li></ol><ol id="list-control" style="${Controls.controls.list}"><li>First</li><li>Second</li></ol><ol id="unmarked" style="list-style-type:none"><li>First</li><li>Second</li></ol><pre id="input" class="${module.input.className}">a\tb</pre><pre id="input-control" style="${Controls.controls.input}">a\tb</pre>`,
       )
+
       expect(
         await page.evaluate(() => {
           const properties = {
@@ -82,20 +88,24 @@ describe('compile', () => {
               'unicode-bidi',
             ],
           }
+
           return Object.entries(properties).flatMap(([name, keys]) => {
             const a = getComputedStyle(document.getElementById(name)!)
             const b = getComputedStyle(
               document.getElementById(`${name}-control`)!,
             )
+
             return keys.filter(
               (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
             )
           })
         }),
       ).toMatchInlineSnapshot(`[]`)
+
       const actual = await page.locator('#list').screenshot()
       const control = await page.locator('#list-control').screenshot()
       const unmarked = await page.locator('#unmarked').screenshot()
+
       expect(actual.equals(control)).toMatchInlineSnapshot(`true`)
       expect(actual.equals(unmarked)).toMatchInlineSnapshot(`false`)
       expect(

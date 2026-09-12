@@ -5,6 +5,65 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 
 describe('compile', () => {
+  test('rejects property templates with palette identities', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source:
+          "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=css({listStyleType:`${palette}`});",
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: invalid.ts:173: Expected a literal string or number; expressions are not evaluated.
+      invalid.ts:176: Named stylesheet reference is incompatible with this property.
+      invalid.ts:176: Named stylesheet reference is incompatible with this property.]
+    `)
+  })
+  test('rejects descriptor templates with palette identities', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source:
+          "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=counterStyle({symbols:'\"x\"',fallback:`${palette}`});",
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:154: Named stylesheet reference is incompatible with this descriptor.]`,
+    )
+  })
+  test('rejects negative base palette indexes', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source:
+          "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=fontPaletteValues({fontFamily:\"Body\",basePalette:-1});",
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:154: Expected supported scalar descriptors and required fields.]`,
+    )
+  })
+  test('rejects fractional base palette indexes', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source:
+          "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=fontPaletteValues({fontFamily:\"Body\",basePalette:1.5});",
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:154: Expected supported scalar descriptors and required fields.]`,
+    )
+  })
+  test.each([
+    `export * from 'zyzz/web';export {counterStyle} from './local.js';`,
+    `export * from 'zyzz/web';export function counterStyle(){return 'local'}`,
+  ])('preserves explicit exports before factory star exports: %s', (barrel) => {
+    const output = Graph.compile({
+      modules: {
+        'barrel.ts': barrel,
+        'local.ts': `export function counterStyle(){return 'local'}`,
+        'main.ts': `import {counterStyle} from './barrel.js';export const result=counterStyle();`,
+      },
+    })
+    expect(output.sharedCss).toMatchInlineSnapshot(`undefined`)
+  })
   test('maps contributions after an empty layer list', () => {
     const output = Transform.compile({
       moduleId: 'layers.ts',

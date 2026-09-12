@@ -13,6 +13,7 @@ for (const count of [10, 100]) {
       { color: 'brand' as const, padding: `${index}px` as const },
     ]),
   )
+
   describe(`configuration / ${count} styles`, () => {
     bench(
       'normalize + validate + emit',
@@ -24,6 +25,7 @@ for (const count of [10, 100]) {
             mint: { color: { brand: { light: '#175', dark: '#afa' } } },
           },
         })
+
         Css.compile({
           styles: Style.define(styles, { theme: zyzz.themes.base }),
           themes: zyzz.themes,

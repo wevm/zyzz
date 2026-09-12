@@ -15,27 +15,33 @@ export function read(
   resolveType: (node: Ast.Node) => Ast.Node = (node) => node,
 ) {
   node = Expression.unwrap(node)
+
   if (node.type !== 'ArrowFunctionExpression') return undefined
+
   if (node.async || node.params.length !== 1)
     throw new Themes.InvalidError(
       'Dynamic styles require one typed values parameter.',
       node,
     )
+
   const parameter = node.params[0]!
   if (parameter.type !== 'Identifier' || !parameter.typeAnnotation)
     throw new Themes.InvalidError(
       'Dynamic styles require an explicit finite object type on the values parameter.',
       parameter,
     )
+
   const fields = resolveType(parameter.typeAnnotation.typeAnnotation)
   if (fields.type !== 'TSTypeLiteral')
     throw new Themes.InvalidError(
       'Dynamic styles require a finite object type.',
       parameter,
     )
+
   const parameterName = parameter.name
   const slots: Record<string, Binding.Reference> = Object.create(null)
   const numeric = new Map<Binding.Reference, readonly number[]>()
+
   for (const member of fields.members) {
     const key =
       member.type === 'TSPropertySignature'
@@ -61,6 +67,7 @@ export function read(
         'Dynamic values require unique required scalar fields without styling override keys.',
         member,
       )
+
     const type = resolveType(member.typeAnnotation.typeAnnotation)
     const kind = scalar(type)
     if (!kind)
@@ -68,6 +75,7 @@ export function read(
         'Dynamic values require explicit string or number scalar types.',
         member,
       )
+
     const slot = (slots[key] = Object.freeze({
       name: `--z-d${identity}-${Array.from(key)
         .map((character) => character.codePointAt(0)!.toString(16))
@@ -76,53 +84,67 @@ export function read(
       ...(kind === 'zero-string' ? { zero: true } : {}),
       variable: true,
     }))
+
     const values = numbers(type)
+
     if (values) numeric.set(slot, values)
   }
+
   const body = Expression.unwrap(node.body)
   if (body.type !== 'ObjectExpression')
     throw new Themes.InvalidError(
       'Dynamic styles require a concise static object body.',
       node.body,
     )
+
   function resolve(node: Ast.Node): Binding.Reference | undefined {
     node = Expression.unwrap(node)
+
     if (
       node.type !== 'MemberExpression' ||
       node.object.type !== 'Identifier' ||
       node.object.name !== parameterName
     )
       return undefined
+
     const key = (() => {
       if (node.property.type === 'Identifier' && !node.computed)
         return node.property.name
+
       if (
         node.property.type === 'Literal' &&
         node.computed &&
         typeof node.property.value === 'string'
       )
         return node.property.value
+
       return undefined
     })()
+
     const slot = key === undefined ? undefined : slots[key]
     if (!slot || node.optional)
       throw new Themes.InvalidError(
         'Dynamic reads require declared scalar fields without optional access.',
         node,
       )
+
     return slot
   }
+
   return {
     body,
     accepts(reference: Binding.Reference, property: string) {
       const values = numeric.get(reference)
       const rule = Literal.rules[property as keyof typeof Literal.rules]
       if (!values || !rule) return false
+
       if (rule.kind === 'grid-line')
         return values.every(
           (value) => Number.isSafeInteger(value) && value !== 0,
         )
+
       if (rule.kind !== 'number') return false
+
       return values.every(
         (value) =>
           (!('integer' in rule) ||
@@ -143,25 +165,31 @@ function scalar(
 ): 'number' | 'string' | 'zero-string' | undefined {
   if (node.type === 'TSIntersectionType') {
     const kinds = node.types.map(scalar)
+
     return kinds.length && kinds.every((kind) => kind === kinds[0])
       ? kinds[0]
       : undefined
   }
+
   if (node.type === 'TSNumberKeyword') return 'number'
   if (node.type === 'TSStringKeyword') return 'string'
+
   if (
     node.type === 'TSTemplateLiteralType' &&
     node.types.every((type) => scalar(type) !== undefined) &&
     node.quasis.every((part) => !part.value.raw.includes('!'))
   )
     return 'string'
+
   if (node.type === 'TSLiteralType') {
     if (numbers(node)) return 'number'
+
     if (
       node.literal.type === 'Literal' &&
       typeof node.literal.value === 'number'
     )
       return 'number'
+
     if (
       node.literal.type === 'Literal' &&
       typeof node.literal.value === 'string' &&
@@ -172,6 +200,7 @@ function scalar(
     )
       return 'string'
   }
+
   if (node.type === 'TSUnionType') {
     const kinds = node.types.map(scalar)
     if (
@@ -184,9 +213,11 @@ function scalar(
       )
     )
       return 'zero-string'
+
     if (kinds.length && kinds.every((kind) => kind === kinds[0]))
       return kinds[0]
   }
+
   return undefined
 }
 
@@ -197,20 +228,26 @@ function numbers(node: Ast.Node): readonly number[] | undefined {
       .map(numbers)
     if (!domains.length || domains.some((domain) => domain === undefined))
       return undefined
+
     return domains[0]!.filter((value) =>
       domains.every((domain) => domain!.includes(value)),
     )
   }
+
   if (node.type === 'TSUnionType') {
     const members = node.types.map(numbers)
+
     return members.every((member) => member !== undefined)
       ? members.flat()
       : undefined
   }
+
   if (node.type !== 'TSLiteralType') return undefined
+
   const literal = node.literal
   if (literal.type === 'Literal' && typeof literal.value === 'number')
     return [literal.value]
+
   if (
     literal.type === 'UnaryExpression' &&
     literal.operator === '-' &&
@@ -218,5 +255,6 @@ function numbers(node: Ast.Node): readonly number[] | undefined {
     typeof literal.argument.value === 'number'
   )
     return [-literal.argument.value]
+
   return undefined
 }

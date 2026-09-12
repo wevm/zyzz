@@ -1,6 +1,7 @@
 /** Declares a native CSS custom function without evaluating its body in JavaScript. @module */
 import type * as Literal from '../internal/Literal.js'
 import type * as FunctionValue from '../internal/FunctionValue.js'
+import type * as Numeric from '../internal/Numeric.js'
 import { MissingTransformError } from '../css.js'
 /** Emits a CSS function and returns a callable that formats its fixed CSS expression. */
 export function cssFunction<const options extends cssFunction.Options>(
@@ -64,7 +65,17 @@ export declare namespace cssFunction {
   type Reference<
     parameters extends readonly Parameter[] = readonly Parameter[],
     syntax extends Syntax = '*',
-  > = (...args: Arguments<parameters>) => FunctionValue.Reference<syntax>
+  > = <const args extends Arguments<parameters>>(
+    ...args: args & {
+      [index in keyof args]: index extends keyof parameters
+        ? parameters[index] extends { syntax: '<integer>' }
+          ? args[index] extends string | number
+            ? Numeric.Checked<args[index], true>
+            : args[index]
+          : args[index]
+        : args[index]
+    }
+  ) => FunctionValue.Reference<syntax>
   /** Ordered arguments with optional trailing defaults. */
   type Arguments<parameters extends readonly Parameter[]> =
     number extends parameters['length']

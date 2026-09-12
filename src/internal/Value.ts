@@ -143,6 +143,7 @@ type Range<input, rule> = rule extends
 type Canonical<value extends string> = value extends `${infer body}!important`
   ? `${Zeros<body>}!important`
   : Zeros<value>
+
 type Zeros<value extends string> =
   value extends `${infer before} ${infer after}`
     ? `${Zeros<before>} ${Zeros<after>}`
@@ -151,6 +152,7 @@ type Zeros<value extends string> =
       : value extends `${infer before},${infer after}`
         ? `${Zeros<before>},${Zeros<after>}`
         : Zero<value>
+
 type Zero<value extends string> = [Numeric.Checked<value>] extends [never]
   ? value
   : Numeric.Zero<value> extends true
@@ -164,10 +166,12 @@ type Replace<
 > = value extends `${infer before}${character}${infer after}`
   ? Replace<after, character, `${output}${before} `>
   : `${output}${value}`
+
 type Collapse<value extends string> =
   value extends `${infer before}  ${infer after}`
     ? Collapse<`${before} ${after}`>
     : value
+
 type Spaces<value extends string> = Collapse<
   Replace<Replace<Replace<Replace<value, '\t'>, '\r'>, '\n'>, '\f'>
 >
@@ -180,6 +184,7 @@ type Normalized<value extends string> =
         : `${body}!${Normalized<suffix>}`
       : text
     : never
+
 type TrimStart<value extends string> =
   value extends `${' ' | '\n' | '\r' | '\t' | '\f'}${infer body}`
     ? TrimStart<body>
@@ -190,6 +195,7 @@ type Plain<value extends string> = value extends `${infer body}!${infer suffix}`
     ? Trim<body>
     : `${body}!${Plain<suffix>}`
   : value
+
 type Trim<value extends string> =
   value extends `${infer body}${' ' | '\n' | '\r' | '\t' | '\f'}`
     ? Trim<body>
@@ -214,40 +220,58 @@ export function parse(
       .join('')
     const parsed = parse(text, property)
     if (!parsed || typeof parsed.value === 'object') return undefined
+
     const parts = [...input.parts]
     let remaining = text.length - String(parsed.value).length
+
     for (let index = parts.length - 1; remaining > 0 && index >= 0; index--) {
       const part = parts[index]
       if (typeof part !== 'string') return undefined
+
       const count = Math.min(remaining, part.length)
+
       parts[index] = part.slice(0, part.length - count)
       remaining -= count
     }
+
     return { important: parsed.important, value: Token.compose(parts) }
   }
+
   if (typeof input !== 'string') return undefined
+
   const valueText = input
+
   function escaped(index: number): boolean {
     let count = 0
+
     while (index > 0 && valueText[index - 1] === '\\') {
       count++
       index--
     }
+
     return count % 2 === 1
   }
+
   let marker = input.lastIndexOf('!')
+
   while (marker >= 0) {
     const suffix = Lexical.normalize(input.slice(marker + 1)).replace(
       /^[ \t\n\r\f]+|[ \t\n\r\f]+$/g,
       '',
     )
+
     if (!escaped(marker) && (suffix === '' || suffix === 'important')) break
+
     marker = marker === 0 ? -1 : input.lastIndexOf('!', marker - 1)
   }
+
   if (marker < 0) return undefined
+
   let end = marker
+
   while (end > 0 && /[ \t\n\r\f]/.test(input[end - 1]!) && !escaped(end - 1))
     end--
+
   const text = input.slice(0, end)
   const numeric =
     Literal.rule(property)?.kind === 'number' ||
@@ -256,5 +280,6 @@ export function parse(
     numeric && /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(text)
       ? Number(text)
       : text
+
   return { important: true as const, value }
 }

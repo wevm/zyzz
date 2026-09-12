@@ -4,6 +4,90 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 
 describe('compile', () => {
+  test('rejects fractional CSS integer parameters', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'integer.ts',
+        source: `import {css} from 'zyzz';import {cssFunction} from 'zyzz/web';const fn=cssFunction({parameters:[{name:'--n',syntax:'<integer>'}],body:{result:1}});export const style=css({zIndex:fn(1.5)});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: integer.ts:178: CSS integer parameters require integer tokens.]`,
+    )
+  })
+  test('rejects custom media as a declaration value', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'query.ts',
+        source: `import {css} from 'zyzz';import {customMedia} from 'zyzz/web';const query=customMedia('(width>1px)');export const style=css({color:query});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: query.ts:131: Named stylesheet reference is incompatible with this property.]`,
+    )
+  })
+  test('rejects a context on a custom media statement', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'query.ts',
+        source: `import {customMedia} from 'zyzz/web';export const query=customMedia('(width>1px)',{within:['@layer queries']});`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: query.ts:56: Stylesheet contributions require direct module-level calls and constant named stylesheet bindings.]`,
+    )
+  })
+  test('rejects conflicting packed customMedia identities', () => {
+    const helper = 'customMedia'
+    const expression = `customMedia('(width>1px)')`
+    const library = Graph.compile({
+      modules: {
+        'library.ts': `import {${helper}} from 'zyzz/web';export const rule=${expression};`,
+      },
+    })
+    const first = JSON.parse(library.contracts['library.ts']!)
+    const second = JSON.parse(library.contracts['library.ts']!)
+    second.stylesheets[0].key = 'other'
+    second.stylesheets[0].css = second.stylesheets[0].css
+      .replace('1px', '2px')
+      .replace('result:1', 'result:2')
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'first.js': JSON.stringify(first),
+          'second.js': JSON.stringify(second),
+        },
+        imports: { 'app.ts': { first: 'first.js', second: 'second.js' } },
+        modules: { 'app.ts': `import 'first';import 'second'` },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: second.js:0: Conflicting stylesheet identity: --z-custommediaggnaaj17b3mnh-72-75-6c-65; compile libraries with package-qualified module IDs.]`,
+    )
+  })
+  test('rejects conflicting packed cssFunction identities', () => {
+    const helper = 'cssFunction'
+    const expression = `cssFunction({parameters:[],body:{result:1}})`
+    const library = Graph.compile({
+      modules: {
+        'library.ts': `import {${helper}} from 'zyzz/web';export const rule=${expression};`,
+      },
+    })
+    const first = JSON.parse(library.contracts['library.ts']!)
+    const second = JSON.parse(library.contracts['library.ts']!)
+    second.stylesheets[0].key = 'other'
+    second.stylesheets[0].css = second.stylesheets[0].css
+      .replace('1px', '2px')
+      .replace('result:1', 'result:2')
+    expect(() =>
+      Graph.compile({
+        contracts: {
+          'first.js': JSON.stringify(first),
+          'second.js': JSON.stringify(second),
+        },
+        imports: { 'app.ts': { first: 'first.js', second: 'second.js' } },
+        modules: { 'app.ts': `import 'first';import 'second'` },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: second.js:0: Conflicting stylesheet identity: --z-cssfunctionggnaaj17b3mnh-72-75-6c-65; compile libraries with package-qualified module IDs.]`,
+    )
+  })
   test('prunes unused named statements and emits JavaScript function formatters', async () => {
     const output = Transform.compile({
       moduleId: 'functions.js',
@@ -23,7 +107,9 @@ describe('compile', () => {
         moduleId: 'bad.ts',
         source: `import {css} from 'zyzz';import {cssFunction} from 'zyzz/web';const amount=2;const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],body:{result:2}});export const styles={box:css({opacity:twice(amount)})};`,
       }),
-    ).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: bad.ts:202: Expected a literal string or number; expressions are not evaluated.]`)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: bad.ts:202: Expected a literal string or number; expressions are not evaluated.]`,
+    )
   })
   test('hoists conditioned imports before namespace and ordinary rules', () => {
     const output = Graph.compile({

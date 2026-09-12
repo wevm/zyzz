@@ -21,6 +21,7 @@ describe('define', () => {
       amount: 'percentage',
       count: 'number',
     })
+
     slots.set({ size: '12px', signed: '-12px', amount: '50%' })
     css({ marginLeft: slots.signed, padding: slots.size })
     // @ts-expect-error Nonnegative lengths cannot carry negative values.
@@ -35,6 +36,7 @@ describe('define', () => {
 
   test('rejects partial compound grammars', () => {
     const slots = Vars.define({ size: 'length', count: 'number' })
+
     // @ts-expect-error A font shorthand also requires a family.
     css({ font: slots.size })
     // @ts-expect-error A shadow needs multiple lengths.
@@ -49,6 +51,7 @@ describe('define', () => {
       amount: 'percentage',
       count: 'number',
     })
+
     // @ts-expect-error CSS percentages use decimal numeric spelling.
     slots.set({ amount: '0x10%' })
     // @ts-expect-error Color hashes require hexadecimal digits.
@@ -63,6 +66,7 @@ describe('define', () => {
       count: 'number',
       gap: 'length',
     })
+
     css({
       '--accent': vars.color,
       color: vars.color,
@@ -85,6 +89,7 @@ describe('set', () => {
       ratio: 'signedPercentage',
       count: 'number',
     })
+
     // @ts-expect-error Border widths are implicitly nonnegative.
     css({ border: vars.size })
     // @ts-expect-error Outline widths are implicitly nonnegative.
@@ -98,6 +103,7 @@ describe('set', () => {
   })
   test('excludes percentage bindings from length-only number rules', () => {
     const vars = Vars.define({ size: 'percentage' })
+
     // @ts-expect-error Tab size accepts lengths and integers, not percentages.
     css({ tabSize: vars.size })
   })
@@ -106,6 +112,7 @@ describe('set', () => {
       size: 'signedLength',
       ratio: 'signedPercentage',
     })
+
     // @ts-expect-error Line height cannot accept arbitrary signed lengths.
     css({ lineHeight: vars.size })
     // @ts-expect-error Line height cannot accept arbitrary signed percentages.
@@ -113,9 +120,11 @@ describe('set', () => {
   })
   test('checks partial assignments and rejects unknown names', () => {
     const vars = Vars.define({ amount: 'percentage', count: 'number' })
+
     expectTypeOf(vars.set({ amount: '50%' })).toEqualTypeOf<
       Readonly<Record<`--${string}`, number | string>>
     >()
+
     vars.set({ count: 2 })
     // @ts-expect-error Values retain the declared percentage domain.
     vars.set({ amount: '20px' })

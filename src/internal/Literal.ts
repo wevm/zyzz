@@ -141,6 +141,7 @@ export type Properties = {
 export function rule(property: keyof Properties): Rule | undefined {
   return rules[property as keyof typeof rules]
 }
+
 /** Finite seconds and milliseconds; CSS times always require units. */
 export type Time = `${number}${'ms' | 's'}`
 
@@ -206,6 +207,7 @@ type Rule = {
       readonly negative: boolean
     }
 )
+
 type LengthValue<rule extends Rule> =
   | (rule extends { numeric: true } ? number : never)
   | Calculation
@@ -229,14 +231,17 @@ type Easing =
   | `cubic-bezier(${string})`
   | `steps(${string})`
   | `linear(${string})`
+
 type Keywords<rule> = rule extends {
   keywords: readonly (infer keyword extends string)[]
 }
   ? keyword
   : never
+
 type Listed<value extends string | number, rule> =
   | value
   | (rule extends { list: true } ? `${value},${string}` : never)
+
 type TupleAtom<rule extends Rule> = rule extends {
   atoms: readonly (infer atom)[]
 }
@@ -252,6 +257,7 @@ type TupleAtom<rule extends Rule> = rule extends {
       | ('color' extends atom ? Color : never)
       | Keywords<rule>
   : never
+
 type TupleValue<rule extends Rule> =
   | (rule extends { standalone: readonly (infer keyword extends string)[] }
       ? keyword
@@ -264,6 +270,7 @@ type TupleValue<rule extends Rule> =
   | (rule extends { marker: 'fill'; markerPosition: 'any' }
       ? `fill ${string}`
       : never)
+
 type Value<rule extends Rule> =
   | `${string}var(--${string})${string}`
   | Global
@@ -417,6 +424,7 @@ type Value<rule extends Rule> =
                                             | (rule extends { items: number }
                                                 ? `${Color} ${string}`
                                                 : never))
+
 const blend = {
   kind: 'enum',
   values: [
@@ -852,13 +860,16 @@ export function isLiteral(
   value: string | number,
 ): boolean {
   if (value === 0 || globals.has(String(value).toLowerCase())) return true
+
   const rule: Rule | undefined = rules[property as keyof typeof rules]
   if (!rule) return false
+
   if (typeof value === 'string') {
     const folded = Lexical.normalize(value)
       .replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, '')
       .replace(/[ \t\n\r\f]+/g, ' ')
     if (globals.has(folded)) return true
+
     if (
       rule.kind === 'color' &&
       (colorKeywordSet.has(folded) ||
@@ -866,28 +877,34 @@ export function isLiteral(
         folded === 'currentcolor')
     )
       return true
+
     if (
       'keywords' in rule &&
       rule.keywords?.some((keyword) => keyword.toLowerCase() === folded)
     )
       return true
+
     if (
       rule.kind === 'enum' &&
       rule.values.some((keyword) => keyword.toLowerCase() === folded)
     )
       return true
+
     if ('auto' in rule && rule.auto && folded === 'auto') return true
     // Dimension and expression spellings always retain literal precedence.
     if (dimension.test(value) || /[#()]/.test(value)) return true
   }
+
   return rule.kind === 'number' && typeof value === 'number'
 }
 
 /** Serializes public camel-case property names, including numeric legacy spellings. */
 export function name(property: string): string {
   if (property.startsWith('--')) return property
+
   if (property === 'MsScrollbar3dlightColor')
     return '-ms-scrollbar-3dlight-color'
+
   return property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)
 }
 

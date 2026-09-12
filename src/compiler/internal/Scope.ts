@@ -9,6 +9,7 @@ export class Tracker extends Walker.ScopeTracker {
   protected override getVarScopeKey(): string {
     for (let index = this.scopeOwnerStack.length - 1; index >= 0; index--) {
       const owner = this.scopeOwnerStack[index]!
+
       if (
         owner.type === 'ArrowFunctionExpression' ||
         owner.type === 'FunctionDeclaration' ||
@@ -18,8 +19,10 @@ export class Tracker extends Walker.ScopeTracker {
         // Its existing body scope preserves the enclosing parameter bindings.
         if (this.scopeOwnerStack[index + 1] === owner.body)
           return this.getScopeKeyAt(index + 1)
+
         break
       }
+
       if (
         owner.type === 'Program' ||
         owner.type === 'StaticBlock' ||
@@ -27,6 +30,7 @@ export class Tracker extends Walker.ScopeTracker {
       )
         break
     }
+
     return super.getVarScopeKey()
   }
 }

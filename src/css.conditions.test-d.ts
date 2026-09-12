@@ -7,6 +7,7 @@ describe('css', () => {
     const invalid = null as unknown as
       | { color: '#fff' }
       | { ':hover': { colour: '#fff' } }
+
     // @ts-expect-error Disjoint outer keys do not hide invalid nested declarations.
     css(invalid)
   })
@@ -26,12 +27,14 @@ describe('css', () => {
       '&[data-active]': { opacity: 0.5 },
       '@media (width >= 800px)': { display: 'grid' },
     })
+
     const theme = Theme.define({
       breakpoints: { tablet: '48rem', desktop: '64rem' },
       containers: { card: '24rem' },
       containerNames: ['sidebar'],
       spacing: { gap: '4px' },
     })
+
     theme.css({
       '@media tablet..desktop': { ':hover': { padding: 'gap' } },
       '@container sidebar >=card': { display: 'grid' },

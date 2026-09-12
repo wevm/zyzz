@@ -36,6 +36,7 @@ describe('compile', () => {
       export const second = a satisfies Vars.Definition<{ bc: 'length' }>;
     `,
     })
+
     const built = await Esbuild.build({
       stdin: {
         contents: output.code,
@@ -48,9 +49,11 @@ describe('compile', () => {
       conditions: ['src'],
       format: 'esm',
     })
+
     const result = await import(
       `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
     )
+
     expect(result.first.c.name === result.second.bc.name).toMatchInlineSnapshot(
       `false`,
     )
@@ -84,9 +87,11 @@ describe('compile', () => {
 
   test('emits fixed slots and executes typed assignments without generating rules', async () => {
     const output = Transform.compile({ moduleId: 'slots.ts', source })
+
     expect(output.css).toMatchInlineSnapshot(
       `".z-161esph179x895-base0{width:var(--z-v161esph179x895-76-61-72-73--61-6d-6f-75-6e-74);margin-left:calc(var(--z-v161esph179x895-76-61-72-73--67-61-70) + 2px);}"`,
     )
+
     const built = await Esbuild.build({
       stdin: {
         contents: output.code,
@@ -99,9 +104,11 @@ describe('compile', () => {
       conditions: ['src'],
       format: 'esm',
     })
+
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
     )
+
     expect(module.assignments).toMatchInlineSnapshot(`
       {
         "--z-v161esph179x895-76-61-72-73--61-6d-6f-75-6e-74": "50%",
@@ -120,6 +127,7 @@ describe('compile', () => {
 
   test('updates native widths through fixed variable slots', async () => {
     const output = Transform.compile({ moduleId: 'slots.ts', source })
+
     const built = await Esbuild.build({
       stdin: {
         contents: output.code,
@@ -132,12 +140,15 @@ describe('compile', () => {
       conditions: ['src'],
       format: 'esm',
     })
+
     const module = await import(
       `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div style="width:200px"><div id="bar" class="${module.bar.className}"></div></div>`,
       )
@@ -145,15 +156,18 @@ describe('compile', () => {
         for (const [key, value] of Object.entries(values))
           (element as HTMLElement).style.setProperty(key, String(value))
       }, module.assignments)
+
       expect(
         await page
           .locator('#bar')
           .evaluate((element) => getComputedStyle(element).width),
       ).toMatchInlineSnapshot(`"100px"`)
+
       await page.locator('#bar').evaluate((element, values) => {
         for (const [key, value] of Object.entries(values))
           (element as HTMLElement).style.setProperty(key, String(value))
       }, module.update())
+
       expect(
         await page
           .locator('#bar')

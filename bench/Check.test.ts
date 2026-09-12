@@ -22,6 +22,7 @@ describe('framework gate', () => {
     'invalid size',
   ])('%s', async (scenario) => {
     const directory = await Fs.mkdtemp(Path.resolve('.fixture-framework-'))
+
     try {
       const workloads = [
         ...[
@@ -44,12 +45,16 @@ describe('framework gate', () => {
           lanes: ['zyzz', 'zyzz-tokens'],
         })),
       ]
+
       const groups = []
+
       for (const workload of workloads) {
         const benchmarks = []
+
         await Fs.mkdir(Path.join(directory, workload.directory), {
           recursive: true,
         })
+
         for (const library of [
           ...workload.lanes,
           'panda',
@@ -62,6 +67,7 @@ describe('framework gate', () => {
           const target =
             workload.directory === 'theme-comparison/100' &&
             library === 'zyzz-tokens'
+
           if (
             !(
               scenario === 'missing competitor' &&
@@ -73,14 +79,17 @@ describe('framework gate', () => {
               mean: (() => {
                 if (target && scenario === 'speed loss') return 3
                 if (target && scenario === 'tie') return 2
+
                 return zyzz ? 1 : 2
               })(),
               name: library,
               rme: 1,
               sampleCount: target && scenario === 'no samples' ? 0 : 10,
             })
+
           const css = target && scenario === 'size loss' ? 30 : 10
           const javascript = zyzz ? 5 : 10
+
           await Fs.writeFile(
             Path.join(directory, workload.directory, `${library}.json`),
             JSON.stringify({
@@ -94,6 +103,7 @@ describe('framework gate', () => {
             }),
           )
         }
+
         if (
           !(
             scenario === 'missing group' &&
@@ -105,10 +115,12 @@ describe('framework gate', () => {
             fullName: `bench/example.bench.ts > ${workload.group}`,
           })
       }
+
       await Fs.writeFile(
         Path.join(directory, 'timings.json'),
         JSON.stringify({ files: [{ groups }] }),
       )
+
       const result = await run(process.execPath, [
         Path.resolve('bench/Check.ts'),
         directory,
@@ -119,6 +131,7 @@ describe('framework gate', () => {
           stdout: error.stdout,
         }),
       )
+
       if (scenario === 'win') {
         expect(result.code).toMatchInlineSnapshot('0')
         expect(
@@ -130,6 +143,7 @@ describe('framework gate', () => {
         expect(result.stdout.includes('| 🔴')).toMatchInlineSnapshot('false')
       } else {
         expect(result.code).toMatchInlineSnapshot('1')
+
         if (['speed loss', 'size loss', 'tie'].includes(scenario)) {
           expect(
             result.stdout.includes('<summary>Themes — 100 Components:'),

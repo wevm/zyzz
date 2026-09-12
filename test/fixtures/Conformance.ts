@@ -33,6 +33,7 @@ export function cases(): readonly Case[] {
   const colors = ['named-color', 'system-color'].flatMap((name) =>
     syntaxes[name]!.syntax.split('|').map((value) => value.trim()),
   )
+
   for (const [property, rule] of Object.entries(Literal.rules)) {
     const values: (string | number)[] = [
       'inherit',
@@ -41,71 +42,100 @@ export function cases(): readonly Case[] {
       'revert-layer',
       'unset',
     ]
+
     // Positive scalar probes distinguish dimensional domains; range semantics have separate fixtures.
     for (const value of [1, '1px', '1%', '1deg', '1s', '1dppx'])
       if (!grammar.matchProperty(name(property), String(value)).error)
         values.push(value)
+
     for (const value of keywords(grammar, name(property))) values.push(value)
+
     values.push(
       ...Grammar.values(grammar, name(property)).map((value) =>
         /^[-+]?(?:\d+|\d*\.\d+)$/.test(value) ? Number(value) : value,
       ),
     )
+
     if (rule.kind === 'compound') values.push(...Compound.values[rule.property])
+
     if (rule.kind === 'image' || rule.kind === 'url') {
       values.push('none', 'url("#paint")', 'url(#paint)')
+
       if (rule.kind === 'image') values.push('linear-gradient(red, blue)')
+
       if ('list' in rule) values.push('url("#paint"), none')
     }
+
     if (rule.kind === 'tuple') {
       const atoms: readonly string[] = rule.atoms
+
       if ('standalone' in rule) values.push(...rule.standalone)
+
       if ('keywords' in rule) values.push(...rule.keywords)
+
       if (atoms.includes('color')) {
         values.push('red blue', 'rgb(0 0 0) oklch(60% .1 240)')
+
         if (rule.min === 1) values.push('red')
+
         if (rule.max > 2) values.push('red blue green yellow black white')
       }
+
       if (atoms.includes('length')) values.push(0, '1px', 'calc(1px + 2px)')
+
       if (atoms.includes('number') || atoms.includes('integer'))
         values.push(0, 2, 'calc(1 + 2)')
+
       if (
         (atoms.includes('number') || atoms.includes('integer')) &&
         rule.max > 1
       )
         values.push('1 2')
+
       if (
         (atoms.includes('number') || atoms.includes('integer')) &&
         rule.max > 2
       )
         values.push('1 2 3')
+
       if ('prefixes' in rule) {
         for (const prefix of rule.prefixes) {
           values.push(`${prefix} ${atoms.includes('length') ? '10px' : '.5'}`)
+
           if ('keywords' in rule)
             for (const keyword of rule.keywords)
               values.push(`${prefix} ${keyword}`)
         }
+
         if (rule.max > 1) values.push('auto 10px auto 20px', 'none auto 20px')
       }
+
       if (atoms.includes('percentage')) {
         values.push('10%')
+
         if (rule.max > 1) values.push('10% 20%')
       }
+
       if (atoms.includes('length') && atoms.includes('number'))
         values.push('1px 2 3px 4')
+
       if (atoms.includes('time')) values.push('1s', '1s 200ms', 'normal 200ms')
+
       if ('marker' in rule) {
         values.push('1 2 3 4 fill')
+
         if (rule.markerPosition === 'any') values.push('fill 10% 20%')
       }
+
       if (atoms.includes('integer') && 'keywords' in rule)
         values.push('auto 2 3')
+
       if ('list' in rule) {
         if ('prefixes' in rule) values.push('entry 20%, exit -10px')
         else values.push('auto 10%, 20px')
       }
     }
+
     if (rule.kind === 'corner') {
       values.push(
         'bevel',
@@ -120,12 +150,16 @@ export function cases(): readonly Case[] {
         'superellipse(-infinity)',
         'superellipse(calc(1 + 1))',
       )
+
       if ('items' in rule) values.push('superellipse(2) bevel')
+
       if ('items' in rule && rule.items === 4)
         values.push('bevel notch round scoop')
     }
+
     if (rule.kind === 'ratio')
       values.push(0, 2, 'auto', '16/9', 'auto 4 / 3', '1/0', '4 / 3 auto')
+
     if (rule.kind === 'rotate')
       values.push(
         'none',
@@ -135,10 +169,13 @@ export function cases(): readonly Case[] {
         '90deg 0 1 0',
         'calc(1turn / 4)',
       )
+
     if (rule.kind === 'scale')
       values.push('none', 2, '-1 2', '50% 100% 1', 'calc(1 + .5)')
+
     if (rule.kind === 'translate')
       values.push('none', 0, '10px 20% -3px', 'calc(50% - 10px) 0')
+
     if (rule.kind === 'transform')
       values.push(
         'none',
@@ -152,6 +189,7 @@ export function cases(): readonly Case[] {
         'rotateX(calc(1turn / 2))',
         'translateX(1px)rotateY(20deg)',
       )
+
     if (rule.kind === 'line') {
       values.push(
         0,
@@ -164,27 +202,36 @@ export function cases(): readonly Case[] {
         'solid red 1px',
         'rgb(0 0 255) dashed calc(1px + 2px)',
       )
+
       if ('outline' in rule) values.push('auto', 'auto 1px red')
     }
+
     if (rule.kind === 'identifier') {
       values.push(...rule.keywords, '--Probe', '--other')
+
       if (!('dashed' in rule))
         values.push('Probe', 'name-with-dashes', '_name', 'éclair')
+
       if ('separator' in rule)
         values.push(
           rule.separator === 'comma' ? '--Probe, --other' : '--Probe --other',
         )
     }
+
     if (rule.kind === 'enum') {
       values.push(...rule.values)
+
       if ('groups' in rule)
         values.push(rule.groups.map((group) => group[0]).join(' '))
+
       if ('items' in rule)
         values.push(
           `${rule.values[0]} ${rule.values[1]}`,
           ...(rule.items === 4 ? [rule.values.slice(0, 4).join(' ')] : []),
         )
+
       if ('list' in rule) values.push(`${rule.values[0]}, ${rule.values[1]}`)
+
       if ('easing' in rule)
         values.push(
           'cubic-bezier(0, -1, 1, 2)',
@@ -193,6 +240,7 @@ export function cases(): readonly Case[] {
           'ease, steps(2, end)',
         )
     }
+
     if (rule.kind === 'color') {
       if ('paint' in rule)
         values.push(
@@ -200,12 +248,15 @@ export function cases(): readonly Case[] {
           'url(#gradient) red',
           'url(#gradient) none',
         )
+
       if ('items' in rule)
         values.push(
           'red rgb(0 0 255)',
           ...(rule.items === 4 ? ['red green blue gold'] : []),
         )
+
       if ('keywords' in rule) values.push(...rule.keywords)
+
       values.push(
         ...colors,
         '#123',
@@ -237,20 +288,31 @@ export function cases(): readonly Case[] {
         ].map((space) => `color(${space} .1 .2 .3)`),
       )
     }
+
     if (rule.kind === 'percentage') {
       values.push('0%', '120%', 'calc(50% + 25%)')
+
       if ('keywords' in rule) values.push(...rule.keywords)
     }
+
     if (rule.kind === 'number') {
       values.push('calc(1 + 1)', 'clamp(1, 2, 3)')
+
       if ('keywords' in rule) values.push(...rule.keywords)
+
       if ('list' in rule) values.push('0, 2.5, infinite')
+
       if (Number.isFinite(rule.min)) values.push(rule.min)
+
       values.push(Math.max(1, rule.min))
+
       if ('percentage' in rule) values.push('50%', '120%', 'calc(50% + 25%)')
+
       if (Number.isFinite(rule.max)) values.push(rule.max)
+
       if (!('integer' in rule)) values.push(Math.max(rule.min, 0.5))
     }
+
     if (rule.kind === 'grid-tracks') {
       values.push(
         0,
@@ -261,6 +323,7 @@ export function cases(): readonly Case[] {
         'fit-content(40%)',
         'minmax(min-content, 100px) 2fr',
       )
+
       if (rule.explicit)
         values.push(
           'none',
@@ -270,6 +333,7 @@ export function cases(): readonly Case[] {
           '10px repeat(auto-fit, 20px) 30px',
         )
     }
+
     if (rule.kind === 'grid-line') {
       values.push(
         'auto',
@@ -286,32 +350,47 @@ export function cases(): readonly Case[] {
         'span header 2',
         'header span',
       )
+
       if ('items' in rule) values.push('1 / -1', 'header / span 2')
+
       if ('items' in rule && rule.items === 4) values.push('1 / 2 / 3 / 4')
     }
+
     if (rule.kind === 'time') {
       values.push('calc(1s + 20ms)', 'min(1s, 500ms)')
+
       if ('list' in rule) values.push('0s, 250ms, 1s')
+
       if ('keywords' in rule) values.push(...rule.keywords)
+
       for (const unit of Object.keys(units))
         for (const number of ['0', '1', '.5', '1e2', '-1']) {
           const value = `${number}${unit}`
+
           if (!grammar.matchProperty(name(property), value).error)
             values.push(value)
         }
     }
+
     if (rule.kind === 'length') {
       if ('list' in rule) values.push('0, 1px', 'calc(1px + 2px), 3px')
+
       values.push('calc(1px + 2px)', 'clamp(1px, 2px, 3px)')
+
       if ('axes' in rule) values.push('10px/20%', '1px 2px / 3px 4px 5px 6px')
+
       if ('items' in rule)
         values.push(
           '1px 2px',
           ...(rule.items === 4 ? ['1px 2px 3px', '1px 2px 3px 4px'] : []),
         )
+
       values.push(0)
+
       if (rule.auto) values.push('auto')
+
       if ('keywords' in rule) values.push(...rule.keywords)
+
       // The candidate vocabulary comes from upstream, not Zyzz's length-unit list.
       for (const unit of new Set([
         ...Object.keys(units),
@@ -321,13 +400,16 @@ export function cases(): readonly Case[] {
       ]))
         for (const number of ['0', '1', '.5', '1e2', '-1']) {
           const value = `${number}${unit}`
+
           if (!grammar.matchProperty(name(property), value).error)
             values.push(value)
         }
     }
+
     for (const value of new Set(values))
       output.push({ property: property as Case['property'], value })
   }
+
   return output
 }
 
@@ -342,6 +424,7 @@ export function lexer() {
     string,
     { syntax: string }
   > = require('mdn-data/css/syntaxes.json')
+
   return CssTree.fork({
     properties: Object.fromEntries(
       Object.entries(properties).map(([name, entry]) => [
@@ -374,8 +457,10 @@ export function lexer() {
 /** Converts public property spelling to its standard CSS name. */
 export function name(property: string): string {
   if (property.startsWith('--')) return property
+
   if (property === 'MsScrollbar3dlightColor')
     return '-ms-scrollbar-3dlight-color'
+
   return property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)
 }
 
@@ -436,21 +521,28 @@ export const rejected = [
 function keywords(grammar: CssTree.Lexer, property: string): readonly string[] {
   const found = new Set<string>()
   const visited = new Set<string>()
+
   function visit(kind: 'Property' | 'Type', name: string) {
     const key = `${kind}:${name}`
     if (visited.has(key)) return
+
     visited.add(key)
+
     const syntax = (
       kind === 'Property' ? grammar.getProperty(name) : grammar.getType(name)
     )?.syntax
     if (!syntax || typeof syntax === 'function') return
+
     CssTree.definitionSyntax.walk(syntax, (node) => {
       if (node.type === 'Keyword') found.add(node.name)
+
       if (node.type === 'Property' || node.type === 'Type')
         visit(node.type, node.name)
     })
   }
+
   visit('Property', property)
+
   return [...found].filter(
     (value) => !grammar.matchProperty(property, value).error,
   )
@@ -463,9 +555,11 @@ export function properties(): readonly string[] {
     string,
     unknown
   > = require('mdn-data/css/properties.json')
+
   return Object.keys(entries).map((name) => {
     if (name === '--*') return '--Probe'
     if (name === '-ms-scrollbar-3dlight-color') return 'MsScrollbar3dlightColor'
+
     return name.replace(/-([a-z])/g, (_, letter: string) =>
       letter.toUpperCase(),
     )

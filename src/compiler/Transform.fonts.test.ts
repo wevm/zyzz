@@ -15,6 +15,7 @@ describe('compile', () => {
       moduleId: 'fonts.ts',
       source: Fonts.source,
     })
+
     expect(output.css.match(/font-variant-numeric:[^;}]+/g))
       .toMatchInlineSnapshot(`
       [
@@ -25,10 +26,12 @@ describe('compile', () => {
     expect(output.css.includes('color_2e_accent,#06c)')).toMatchInlineSnapshot(
       `true`,
     )
+
     const lines = output.css.split('\n')
     const line = lines.findIndex((line) =>
       line.includes('font-variant-numeric:tabular-nums!important'),
     )
+
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
         line: line + 1,
@@ -59,11 +62,14 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>body{font:20px monospace}ruby{margin:20px}span{display:inline-block}${output.css}</style><p id="font" class="${module.font.className}">Font 123</p><p id="font-control" style="${Fonts.controls.font}">Font 123</p><ruby id="ruby" class="${module.ruby.className}"><span>base</span><rt>annotation</rt></ruby><ruby id="ruby-control" style="${Fonts.controls.ruby}"><span>base</span><rt>annotation</rt></ruby><span id="vertical" class="${module.vertical.className}">AB</span><span id="vertical-control" style="${Fonts.controls.vertical}">AB</span>`,
       )
+
       expect(
         await page.evaluate(() => {
           const properties = {
@@ -91,11 +97,13 @@ describe('compile', () => {
               'text-combine-upright',
             ],
           }
+
           return Object.entries(properties).flatMap(([name, keys]) => {
             const a = getComputedStyle(document.getElementById(name)!)
             const b = getComputedStyle(
               document.getElementById(`${name}-control`)!,
             )
+
             return keys.filter(
               (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
             )
@@ -108,6 +116,7 @@ describe('compile', () => {
           const annotation = element
             .querySelector('rt')!
             .getBoundingClientRect()
+
           return (
             annotation.top + annotation.height / 2 > base.top + base.height / 2
           )
@@ -116,6 +125,7 @@ describe('compile', () => {
       expect(
         await page.locator('#vertical').evaluate((element) => {
           const bounds = element.getBoundingClientRect()
+
           return bounds.height > bounds.width
         }),
       ).toMatchInlineSnapshot(`true`)

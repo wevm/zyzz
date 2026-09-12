@@ -12,6 +12,7 @@ describe('create', () => {
       theme: {},
       shorthands: { px: ['paddingLeft', 'paddingRight'] },
     })
+
     try {
       Style.define(
         // @ts-expect-error exercise unchecked invalid fallback input
@@ -72,6 +73,7 @@ describe('create', () => {
         'config.ts': `import {Config} from 'zyzz';export const {theme}=Config.create({theme:{margin:{gap:'-4px'},padding:{gap:'4px'}}});`,
       },
     })
+
     expect(
       JSON.parse(result.contracts['config.ts']!).version,
     ).toMatchInlineSnapshot('5')
@@ -82,6 +84,7 @@ describe('create', () => {
         'index.ts': `import {Config} from 'zyzz';const config=Config.create({output:'html',theme:{padding:{sm:'4px'}},shorthands:{px:['paddingLeft','paddingRight']}});export const theme=config.theme;export const bound=theme.css;export const staticStyle=bound({px:'sm'});`,
       },
     })
+
     const app = Graph.compile({
       contracts: { 'library/index.js': library.contracts['index.ts']! },
       imports: { 'app.ts': { library: 'library/index.js', zyzz: null } },
@@ -89,12 +92,15 @@ describe('create', () => {
         'app.ts': `import {Theme} from 'zyzz';import {theme,staticStyle} from 'library';const extended=Theme.extend(theme,{padding:{sm:'12px'}});export const extension=extended.css({px:'sm'})();const {css}=theme;export const destructured=css({px:'sm'})();const bound=theme.css;export const dynamic=bound((values:{width:'4px'|'8px'})=>({px:values.width}))({width:'8px'});export const direct=theme.css({px:'sm'})();export const source=staticStyle();`,
       },
     })
+
     const code = await Packed.bundle({
       entry: 'app.ts',
       modules: { 'app.ts': app.modules['app.ts']!.code },
       packages: { library: { 'index.ts': library.modules['index.ts']!.code } },
     })
+
     const result = Vm.runInNewContext(`${code};Fixture;`)
+
     for (const props of [
       result.direct,
       result.source,
@@ -105,6 +111,7 @@ describe('create', () => {
       expect(typeof props.class).toMatchInlineSnapshot('"string"')
       expect(props.className).toMatchInlineSnapshot('undefined')
     }
+
     expect(typeof result.dynamic.style).toMatchInlineSnapshot('"string"')
     expect(result.direct).toMatchInlineSnapshot(`
       {
@@ -123,8 +130,10 @@ describe('create', () => {
       }
     `)
   })
+
   const config = `import {Config} from 'zyzz';export const {css,theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight'],paddingX:['paddingLeft','paddingRight'],space:['marginLeft','paddingLeft']},theme:{spacing:{sm:'4px'},margin:{sm:'-8px'},padding:{sm:'12px'}}});`
   const source = `import {css,theme} from 'library';export const styles={card:css({px:'sm',paddingLeft:'2px',':hover':{paddingX:'sm!'}}),mixed:css({space:'sm'}),handle:theme.css({px:'sm'}),dynamic:css((values:{width:'10px'|'20px'})=>({px:values.width}))};`
+
   function compile() {
     const library = Graph.compile({
       modules: {
@@ -132,13 +141,16 @@ describe('create', () => {
         'index.ts': `export {css,theme} from './config.js';`,
       },
     })
+
     const app = Graph.compile({
       contracts: { 'library/index.js': library.contracts['index.ts']! },
       imports: { 'app.ts': { library: 'library/index.js' } },
       modules: { 'app.ts': source },
     })
+
     return { app, library }
   }
+
   test('rejects non-record shorthand containers', () => {
     expect(() =>
       Config.create({
@@ -152,12 +164,14 @@ describe('create', () => {
     const { library } = compile()
     const first = JSON.parse(library.contracts['config.ts']!)
     const second = JSON.parse(library.contracts['config.ts']!)
+
     for (const theme of Object.values(second.themes) as {
       shorthands: Record<string, string[]>
     }[])
       theme.shorthands = Object.fromEntries(
         Object.entries(theme.shorthands).reverse(),
       )
+
     const output = Graph.compile({
       contracts: {
         'a.js': JSON.stringify(first),
@@ -168,6 +182,7 @@ describe('create', () => {
         'app.ts': `import {css as a} from 'a';import {css as b} from 'b';export const card=a({px:'sm'})`,
       },
     })
+
     expect(
       output.modules['app.ts']!.css.includes('padding-left'),
     ).toMatchInlineSnapshot('true')
@@ -176,11 +191,14 @@ describe('create', () => {
     const { library } = compile()
     const original = library.contracts['config.ts']!
     const changed = JSON.parse(original)
+
     expect(changed.version).toMatchInlineSnapshot('5')
+
     for (const value of Object.values(changed.themes) as {
       shorthands: Record<string, string[]>
     }[])
       value.shorthands.px = ['marginLeft', 'marginRight']
+
     expect(() =>
       Graph.compile({
         contracts: { 'a.js': original, 'b.js': JSON.stringify(changed) },
@@ -199,9 +217,11 @@ describe('create', () => {
         'theme.ts': `import {Config,Theme} from 'zyzz';const {theme}=Config.create({shorthands:{px:['paddingLeft','paddingRight']},theme:{spacing:{sm:'4px'}}});export const extended=Theme.extend(theme,{spacing:{sm:'8px'}});`,
       },
     })
+
     expect(
       library.modules['theme.ts']!.code.includes('shorthands:'),
     ).toMatchInlineSnapshot('true')
+
     const consumer = Graph.compile({
       contracts: { 'lib.js': library.contracts['theme.ts']! },
       imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
@@ -209,6 +229,7 @@ describe('create', () => {
         'app.ts': `import {Theme} from 'zyzz';import {extended} from 'lib';export const next=Theme.extend(extended,{spacing:{sm:'12px'}});export const card=next.css({px:'sm'});`,
       },
     })
+
     expect(
       consumer.modules['app.ts']!.code.includes('shorthands:'),
     ).toMatchInlineSnapshot('true')
@@ -225,6 +246,7 @@ describe('create', () => {
         'app.ts': `import {Config,Theme} from 'zyzz';const {css,theme}=Config.create({shorthands:{'padding-x':['paddingLeft','paddingRight'],mixed:['scale','order']},theme:{spacing:{sm:'4px'}}});const extended=Theme.extend(theme,{spacing:{sm:'8px'}});export const styles={card:extended.css({'padding-x':'sm'}),dynamic:css((values:{n:1|2})=>({mixed:values.n}))}`,
       },
     })
+
     expect(graph.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1e8a67z1uaws1j-css-theme{--z-t1e8a67z1uaws1j-css-spacing_2e_sm:4px;}
       .z_theme-1e8a67z1uaws1j-extended{--z-t1e8a67z1uaws1j-css-spacing_2e_sm:8px;}
@@ -234,6 +256,7 @@ describe('create', () => {
   })
   test('preserves ordered targets and spacing precedence across packed imports', () => {
     const { app } = compile()
+
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-u8smm21l81sow-css-theme{--z-tu8smm21l81sow-css-padding_2e_sm:12px;--z-tu8smm21l81sow-css-margin_2e_sm:-8px;--z-tu8smm21l81sow-css-spacing_2e_sm:4px;}
       .z-style-1e8a67z1uaws1j-60{padding-left:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);padding-right:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);padding-left:2px;&:hover{padding-left:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px)!important;padding-right:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px)!important;}}
@@ -252,6 +275,7 @@ describe('create', () => {
       'app.ts': `import {css} from './config.js';export const card=css({px:'sm'});`,
     }
     const before = graph.compile({ modules })
+
     const after = graph.compile({
       modules: {
         ...modules,
@@ -261,6 +285,7 @@ describe('create', () => {
         ),
       },
     })
+
     expect(
       before.modules['app.ts']!.css.includes('padding-left:'),
     ).toMatchInlineSnapshot('true')
@@ -274,9 +299,11 @@ describe('create', () => {
   test('rejects packed option mappings that disagree with the linked theme', () => {
     const { library } = compile()
     const contract = JSON.parse(library.contracts['config.ts']!)
+
     contract.exports.css.options.shorthands = {
       mx: ['marginLeft', 'marginRight'],
     }
+
     expect(() =>
       Graph.compile({
         contracts: { 'lib.js': JSON.stringify(contract) },
@@ -291,12 +318,15 @@ describe('create', () => {
   })
   test('rejects present falsy packed mappings', () => {
     const { library } = compile()
+
     for (const value of [null, false, 0, '']) {
       const contract = JSON.parse(library.contracts['config.ts']!)
+
       for (const theme of Object.values(contract.themes) as {
         shorthands: unknown
       }[])
         theme.shorthands = value
+
       expect(() =>
         Graph.compile({
           contracts: { 'lib.js': JSON.stringify(contract) },
@@ -318,6 +348,7 @@ describe('create', () => {
       "{padding:['paddingLeft']}",
       "{px:['paddingX'],paddingX:['paddingLeft']}",
     ]
+
     const errors = invalid.map((shorthands) => {
       try {
         Graph.compile({
@@ -325,11 +356,13 @@ describe('create', () => {
             'config.ts': `import {Config} from 'zyzz';export const config=Config.create({shorthands:${shorthands}});`,
           },
         })
+
         return 'accepted'
       } catch (error) {
         return (error as Error).message
       }
     })
+
     expect(errors).toMatchInlineSnapshot(`
       [
         "config.ts:48: Shorthand px requires a nonempty property tuple.",
@@ -342,14 +375,18 @@ describe('create', () => {
   })
   test('renders alias order, nested importance, and dynamic slots in Chromium', async () => {
     const { app, library } = compile()
+
     const bundle = await Packed.bundle({
       entry: 'app.ts',
       modules: { 'app.ts': app.modules['app.ts']!.code },
       packages: { library: { 'index.ts': library.modules['config.ts']!.code } },
     })
+
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${app.modules['app.ts']!.css}</style><div id="card">Card</div><div id="mixed"></div><div id="dynamic"></div>`,
       )
@@ -357,6 +394,7 @@ describe('create', () => {
       await page.evaluate(
         `for(const id of ['card','mixed','dynamic']){const props=Fixture.styles[id](id==='dynamic'?{width:'20px'}:{});const el=document.getElementById(id);el.className=props.className;for(const [key,value]of Object.entries(props.style??{})){if(key.startsWith('--'))el.style.setProperty(key,String(value));else el.style[key]=value}}`,
       )
+
       expect(
         await page
           .locator('#card')
@@ -382,7 +420,9 @@ describe('create', () => {
           .locator('#dynamic')
           .evaluate((el) => getComputedStyle(el).paddingRight),
       ).toMatchInlineSnapshot('"20px"')
+
       await page.locator('#card').hover()
+
       expect(
         await page
           .locator('#card')

@@ -14,6 +14,7 @@ for (const count of [10, 100]) {
     spacing: { md: '8px' },
   })
   const alternate = Theme.extend(theme, { spacing: { md: '16px' } })
+
   const styles = Style.define(
     Object.fromEntries(
       Array.from({ length: count }, (_, index) => [
@@ -26,7 +27,9 @@ for (const count of [10, 100]) {
       ]),
     ),
   )
+
   const output = Css.compile({ styles, themes: { alternate, base: theme } })
+
   await Fs.mkdir('bench/results/themes', { recursive: true })
   await Fs.writeFile(
     `bench/results/themes/${count}.json`,

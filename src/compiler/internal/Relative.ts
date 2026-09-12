@@ -6,22 +6,29 @@
 /** Resolves only supplied relative source modules; build adapters supply their own edges. */
 export function resolve(options: resolve.Options): string | undefined {
   if (!options.specifier.startsWith('.')) return undefined
+
   if (
     /\.[a-z0-9]+$/i.test(options.specifier) &&
     !/\.[cm]?[jt]sx?$/.test(options.specifier)
   )
     return undefined
+
   const parts = options.moduleId.split('/').slice(0, -1)
+
   for (const part of options.specifier.split('/')) {
     if (part === '.' || !part) continue
+
     if (part === '..') {
       if (!parts.length)
         throw new Error('Source import escapes the supplied graph.')
+
       parts.pop()
     } else parts.push(part)
   }
+
   const path = parts.join('/')
   if (Object.hasOwn(options.modules, path)) return path
+
   const candidates = (() => {
     if (/\.[cm]?jsx?$/.test(path)) {
       return [
@@ -32,6 +39,7 @@ export function resolve(options: resolve.Options): string | undefined {
         path.replace(/\.cjs$/, '.cts'),
       ]
     }
+
     if (!/\.[^/]+$/.test(path)) {
       return [
         '.cjs',
@@ -48,8 +56,10 @@ export function resolve(options: resolve.Options): string | undefined {
         '.tsx',
       ].flatMap((extension) => [path + extension, path + '/index' + extension])
     }
+
     return []
   })()
+
   const matches = [...new Set(candidates)].filter((candidate) =>
     Object.hasOwn(options.modules, candidate),
   )
@@ -59,6 +69,7 @@ export function resolve(options: resolve.Options): string | undefined {
         ? `Ambiguous source import: ${options.specifier}`
         : `Missing source module: ${options.specifier}`,
     )
+
   return matches[0]!
 }
 

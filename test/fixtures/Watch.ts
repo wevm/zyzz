@@ -12,23 +12,30 @@ export function create(options: create.Options) {
     resolve: () => void
     timer: ReturnType<typeof setTimeout>
   }
+
   let pending: Pending | undefined
 
   function next(action?: () => Promise<void>) {
     if (pending) throw new Error('A watch build is already pending.')
+
     return new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
         if (pending !== current) return
+
         pending = undefined
         reject(new Error('Watch build timed out.'))
       }, options.timeoutMs ?? 5000)
+
       const current = { reject, resolve, timer }
+
       pending = current
+
       if (action)
         void Promise.resolve()
           .then(action)
           .catch((error: unknown) => {
             if (pending !== current) return
+
             clearTimeout(pending.timer)
             pending = undefined
             reject(error)
@@ -42,9 +49,12 @@ export function create(options: create.Options) {
       ('result' in event && !event.result.changed.includes(options.path))
     )
       return
+
     const current = pending
+
     clearTimeout(current.timer)
     pending = undefined
+
     if ('error' in event) current.reject(event.error)
     else current.resolve()
   }
@@ -69,6 +79,7 @@ export declare namespace create {
  */
 export async function write(options: write.Options) {
   const temporary = `${options.path}.tmp`
+
   try {
     await Fs.writeFile(temporary, options.source)
     await Fs.rename(temporary, options.path)

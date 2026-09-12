@@ -32,9 +32,12 @@ describe('define', () => {
       fontSize: { body: '1rem' },
       fontWeight: { medium: 500 },
     })
+
     theme.css({ fontSize: 'body', fontWeight: 'medium' })
     css({ fontFamily: 'sans', fontSize: 'base', color: 'blue.500', padding: 4 })
+
     const odd = Theme.define({ spacing: { '01': '1px', '1e3': '2px' } })
+
     odd.css({ padding: '01' })
     // @ts-expect-error Noncanonical numeric keys cannot widen shorthand numbers.
     odd.css({ padding: 999 })

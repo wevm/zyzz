@@ -21,11 +21,13 @@ describe('create', () => {
       Path.join(project, '.fixture-host-contributions-'),
     )
     const outDir = Path.join(root, 'output')
+
     try {
       await Fs.writeFile(
         Path.join(root, 'app.ts'),
         'import { global } from "zyzz/web"; global({body:{color:"blue"}})',
       )
+
       for (const directory of [
         'test',
         'tests',
@@ -39,16 +41,20 @@ describe('create', () => {
           'import { global } from "zyzz/web"; global({body:{color:"red"}})',
         )
       }
+
       await using host = await Host.create({
         root,
         outDir,
         packageId: 'example',
       })
+
       await host.build()
+
       const css = await Fs.readFile(
         Path.join(outDir, 'zyzz.shared.css'),
         'utf8',
       )
+
       expect(css).toContain('#00f')
       expect(css).not.toContain('red')
       expect(css).not.toContain('#f00')
@@ -60,11 +66,13 @@ describe('create', () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-dispose-'))
     const outDir = Path.join(root, 'output')
     const options = { outDir, packageId: 'example', root }
+
     try {
       await Fs.writeFile(Path.join(root, 'button.ts'), source)
       await expect(
         (async () => {
           await using host = await Host.create(options)
+
           void host.build()
           throw new Error('Scope failed')
         })(),
@@ -79,6 +87,7 @@ describe('create', () => {
       `)
 
       await using host = await Host.create(options)
+
       expect((await host.build()).changed).toMatchInlineSnapshot('[]')
     } finally {
       await Fs.rm(root, { force: true, recursive: true })
@@ -88,13 +97,16 @@ describe('create', () => {
   test('processed themes and props render in Chromium', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-css-browser-'))
     const outDir = Path.join(root, 'output')
+
     const host = await Host.create({
       css: { minify: true, targets: { safari: 8 << 16 } },
       outDir,
       packageId: 'example',
       root,
     })
+
     let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+
     try {
       await Fs.writeFile(
         Path.join(root, 'card.ts'),
@@ -105,6 +117,7 @@ export const scope = alternate.className;
 export const card = theme.css({ color: 'brand', display: 'flex', padding: '8px' })();`,
       )
       await host.build()
+
       const bundle = await Esbuild.build({
         alias: { 'zyzz/runtime': Path.join(project, 'src/runtime/index.ts') },
         bundle: true,
@@ -113,8 +126,11 @@ export const card = theme.css({ color: 'brand', display: 'flex', padding: '8px' 
         globalName: 'Fixture',
         write: false,
       })
+
       browser = await chromium.launch()
+
       const page = await browser.newPage()
+
       await page.setContent('<section><div>Card</div></section>')
       await page.addStyleTag({
         content: await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
@@ -126,9 +142,11 @@ export const card = theme.css({ color: 'brand', display: 'flex', padding: '8px' 
             Fixture: { card: { className: string }; scope: string }
           }
         ).Fixture
+
         document.querySelector('section')!.className = fixture.scope
         document.querySelector('div')!.className = fixture.card.className
       })
+
       expect(
         await page
           .locator('div')
@@ -155,28 +173,35 @@ export const card = theme.css({ color: 'brand', display: 'flex', padding: '8px' 
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-css-host-'))
     const outDir = Path.join(root, 'output')
     const options = { minify: true, targets: { safari: 8 << 16 } }
+
     const host = await Host.create({
       css: options,
       outDir,
       packageId: 'example',
       root,
     })
+
     const input = `import { css } from 'zyzz';
 export const card = css({ display: 'flex', color: '#ff0000' });`
     const path = Path.join(root, 'card.ts')
+
     try {
       // The lifecycle captures processing options before callers can mutate them.
       options.targets.safari = 99 << 16
       options.minify = false
       await Fs.writeFile(path, input)
       await host.build()
+
       const css = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
+
       expect(css).toMatchInlineSnapshot(
         `".z-4lx6a318y1wl5-base0{color:red;display:-webkit-flex;display:flex}"`,
       )
+
       const map = new Trace.TraceMap(
         await Fs.readFile(Path.join(outDir, 'card.ts.css.map'), 'utf8'),
       )
+
       expect(Trace.originalPositionFor(map, { column: 0, line: 1 }))
         .toMatchInlineSnapshot(`
         {
@@ -194,17 +219,21 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         ]
       `)
       expect((await host.build()).changed).toMatchInlineSnapshot('[]')
+
       await Fs.writeFile(path, input.replace("'#ff0000'", "'rgb('"))
       await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
         `[SyntaxError: Unexpected token CloseCurlyBracket]`,
       )
+
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(
         `".z-4lx6a318y1wl5-base0{color:red;display:-webkit-flex;display:flex}"`,
       )
+
       await Fs.writeFile(path, input.replace('#ff0000', '#0000ff'))
       await host.build()
+
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(
@@ -219,15 +248,18 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
   test('can preserve intermediate CSS for another processor', async () => {
     const root = await Fs.mkdtemp(Path.join(project, '.fixture-raw-css-'))
     const outDir = Path.join(root, 'output')
+
     const host = await Host.create({
       css: false,
       outDir,
       packageId: 'example',
       root,
     })
+
     try {
       await Fs.writeFile(Path.join(root, 'button.ts'), source)
       await host.build()
+
       expect(
         await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot('".z-12ydhop55omeb-base0{padding:8px;}"')
@@ -244,6 +276,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
     const notifications = Watch.create({ path: 'card.ts.css' })
     const themePath = Path.join(root, 'theme.ts')
     const themeSource = `import { Theme } from 'zyzz'; export const theme = Theme.define({color:{brand:'#06c'}});`
+
     try {
       await Fs.writeFile(themePath, themeSource)
       await Fs.writeFile(
@@ -251,12 +284,15 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         `import { theme } from './theme.js'; export const props = theme.css({color:'brand'})();`,
       )
       await host.build()
+
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
         `"{"exports":{"theme":{"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#06c"}}}},"version":1}"`,
       )
+
       const before = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
+
       expect(before).toMatchInlineSnapshot(`
         ".z_theme-1dre7461ulsxz8-theme {
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #06c;
@@ -268,16 +304,20 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         "
       `)
       expect((await host.build()).changed).toMatchInlineSnapshot(`[]`)
+
       host.watch({ onResult: notifications.onResult })
       await notifications.next(() =>
         Fs.writeFile(themePath, themeSource.replace("'#06c'", "'#175'")),
       )
+
       expect(
         await Fs.readFile(Path.join(outDir, 'theme.ts.zyzz.json'), 'utf8'),
       ).toMatchInlineSnapshot(
         `"{"exports":{"theme":{"binding":"1dre7461ulsxz8-theme","kind":"theme","theme":"1dre7461ulsxz8-theme"}},"themes":{"1dre7461ulsxz8-theme":{"identity":"1dre7461ulsxz8-theme","tokens":{"color":{"brand":"#175"}}}},"version":1}"`,
       )
+
       const after = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
+
       expect(after).toMatchInlineSnapshot(`
         ".z_theme-1dre7461ulsxz8-theme {
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #175;
@@ -288,11 +328,13 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         }
         "
       `)
+
       await expect(
         notifications.next(() => Fs.rm(themePath)),
       ).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Source.ExtractError: example/card.ts:0: Missing source module: ./theme.js]`,
       )
+
       expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
           ".z_theme-1dre7461ulsxz8-theme {
@@ -304,7 +346,9 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           }
           "
         `)
+
       await notifications.next(() => Fs.writeFile(themePath, themeSource))
+
       expect(await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
           ".z_theme-1dre7461ulsxz8-theme {
@@ -327,13 +371,16 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
     const outDir = Path.join(root, 'output')
     const host = await Host.create({ outDir, packageId: 'example', root })
     const source = `import { Theme } from 'zyzz'; const theme = Theme.define({ color: { brand: '#000' } }); export const scope = theme.className; const { css } = theme; export const props = css({ color: theme.tokens.color.brand })();`
+
     try {
       await Fs.writeFile(Path.join(root, 'theme.ts'), source)
       await host.build()
+
       const before = await Fs.readFile(
         Path.join(outDir, 'theme.ts.css'),
         'utf8',
       )
+
       expect(before).toMatchInlineSnapshot(`
         ".z_theme-1dre7461ulsxz8-theme {
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #000;
@@ -349,7 +396,9 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         Path.join(root, 'theme.ts'),
         source.replace("'#000'", "'#fff'"),
       )
+
       const rebuilt = await host.build()
+
       expect(rebuilt.changed).toMatchInlineSnapshot(`
         [
           "theme.ts",
@@ -358,7 +407,9 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           "theme.ts.map",
         ]
       `)
+
       const after = await Fs.readFile(Path.join(outDir, 'theme.ts.css'), 'utf8')
+
       expect(after).toMatchInlineSnapshot(`
         ".z_theme-1dre7461ulsxz8-theme {
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #fff;
@@ -394,7 +445,9 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         Path.join(outDir, 'ignored.ts'),
         'invalid output source',
       )
+
       const result = await host.build()
+
       expect(result.files).toMatchInlineSnapshot(`
       [
         "button.ts",
@@ -408,6 +461,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         moduleId: 'example/button.ts',
         source,
       })
+
       expect(await Fs.readFile(Path.join(outDir, 'button.ts'), 'utf8'))
         .toMatchInlineSnapshot(`
       "
@@ -431,6 +485,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         Path.join(outDir, 'button.ts.css'),
         'utf8',
       )
+
       await Fs.writeFile(
         Path.join(root, 'button.ts'),
         `import { css } from 'zyzz'; css({ padding: unknown });`,
@@ -438,6 +493,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Source.ExtractError: example/button.ts:43: Expected a literal string or number; expressions are not evaluated.]`,
       )
+
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
         ".z-12ydhop55omeb-base0 {
@@ -459,6 +515,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         Path.join(root, 'button.ts'),
         Path.join(root, 'renamed.ts'),
       )
+
       expect((await host.build()).changed).toMatchInlineSnapshot(`
       [
         "button.ts",
@@ -485,6 +542,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
     `)
 
       await Fs.rm(Path.join(root, 'renamed.ts'))
+
       expect((await host.build()).files).toMatchInlineSnapshot('[]')
       expect(
         await Fs.readFile(Path.join(outDir, 'keep.txt'), 'utf8'),
@@ -507,14 +565,17 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       const conflict = await Host.create(options).catch((error: unknown) => {
         if (error && typeof error === 'object' && 'code' in error)
           return error.code
+
         throw error
       })
+
       expect(conflict).toMatchInlineSnapshot('"EEXIST"')
 
       await Fs.writeFile(Path.join(root, 'button.ts'), source)
       await host.build()
       await host.close()
       host = await Host.create(options)
+
       expect((await host.build()).changed).toMatchInlineSnapshot('[]')
 
       await Fs.writeFile(
@@ -524,6 +585,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Refusing to replace an unowned or modified output: button.ts.css]`,
       )
+
       expect(
         await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot('"edited by consumer"')
@@ -553,15 +615,18 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       predicate: (event: Host.Event) => boolean,
     ): Promise<Host.Event> {
       const deadline = Date.now() + 5000
+
       while (true) {
         const event = events.shift()
         if (event && predicate(event)) return event
         if (event) continue
+
         await new Promise<void>((resolve, reject) => {
           const timeout = setTimeout(
             () => reject(new Error('Watch event timed out.')),
             Math.max(0, deadline - Date.now()),
           )
+
           notify = () => {
             clearTimeout(timeout)
             resolve()
@@ -578,6 +643,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           notify = undefined
         },
       })
+
       expect(await next((event) => 'result' in event)).toMatchInlineSnapshot(`
       {
         "result": {
@@ -589,11 +655,13 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
 
       await Fs.mkdir(Path.join(root, 'nested'))
       await Fs.writeFile(Path.join(root, 'nested/button.ts'), source)
+
       const added = await next(
         (event) =>
           'result' in event && event.result.files.includes('nested/button.ts'),
       )
       if (!('result' in added)) throw new Error('Expected build result.')
+
       expect(added.result.files).toMatchInlineSnapshot(`
       [
         "nested/button.ts",
@@ -607,12 +675,14 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         Path.join(root, 'nested/button.ts'),
         `import { css } from 'zyzz'; css({ padding: unknown });`,
       )
+
       const failed = await next((event) => 'error' in event)
       if (
         !('error' in failed) ||
         !(failed.error instanceof Source.ExtractError)
       )
         throw new Error('Expected source error.')
+
       expect(failed.error.diagnostics).toMatchInlineSnapshot(`
       [
         {
@@ -641,6 +711,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           ).includes('padding: 2px;'),
         )
         .toBe(true)
+
       expect(
         await Fs.readFile(Path.join(outDir, 'nested/button.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(`
@@ -658,7 +729,9 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
         `[Error: Host is closed.]`,
       )
+
       const reopened = await Host.create({ outDir, packageId: 'example', root })
+
       await reopened.close()
     } finally {
       await host.close()
@@ -678,6 +751,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       await Fs.writeFile(Path.join(root, '.zyzz-components/Button.ts'), source)
       await Fs.writeFile(Path.join(root, 'Plain.ts'), 'export const value = 1')
       await host.build()
+
       expect((await host.build()).changed).toMatchInlineSnapshot('[]')
 
       await Fs.rename(
@@ -685,6 +759,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         Path.join(root, '.zyzz-components/button.ts'),
       )
       await Fs.rename(Path.join(root, 'Plain.ts'), Path.join(root, 'plain.ts'))
+
       expect((await host.build()).files).toMatchInlineSnapshot(`
       [
         ".zyzz-components/button.ts",
@@ -715,6 +790,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         }
         "
       `)
+
       if (process.platform === 'darwin') {
         // This CI fixture must exercise a real case-insensitive volume.
         expect(
@@ -724,7 +800,9 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
 
       await host.close()
       host = await Host.create(options)
+
       expect((await host.build()).changed).toMatchInlineSnapshot('[]')
+
       await Fs.writeFile(
         Path.join(outDir, '.zyzz-components/button.ts.css'),
         'consumer edit',
@@ -742,11 +820,13 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
     const root = await Fs.mkdtemp(
       Path.join(project, '.fixture-host-notifications-'),
     )
+
     let host = await Host.create({
       outDir: Path.join(root, 'output'),
       packageId: 'example',
       root,
     })
+
     const notifications = Watch.create({
       path: 'cards.ts.css',
       timeoutMs: 1000,
@@ -754,7 +834,9 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
 
     try {
       await Fs.writeFile(Path.join(root, 'cards.ts'), source)
+
       const initial = notifications.next()
+
       host.watch({ onResult: notifications.onResult })
       await initial
 
@@ -779,7 +861,9 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         packageId: 'example',
         root,
       })
+
       const recovery = notifications.next()
+
       host.watch({ onResult: notifications.onResult })
       await recovery
       await expect(

@@ -14,6 +14,7 @@ for (const count of [10, 100]) {
   describe(`vite build / ${count} consumers`, () => {
     let root: string
     let config: Vite.InlineConfig
+
     bench(
       'production build',
       async () => {
@@ -23,13 +24,16 @@ for (const count of [10, 100]) {
         iterations: 30,
         setup: async () => {
           root = await Fs.mkdtemp(Path.resolve('.fixture-vite-bench-'))
+
           for (const [name, content] of Object.entries(Fixture.files))
             await Fs.writeFile(Path.join(root, name), content)
+
           for (let index = 0; index < count; index++)
             await Fs.writeFile(
               Path.join(root, `card${index}.ts`),
               Fixture.files['card.ts'].replace('8px', `${index}px`),
             )
+
           await Fs.writeFile(
             Path.join(root, 'main.ts'),
             [
@@ -55,9 +59,11 @@ for (const count of [10, 100]) {
             },
             root,
           }
+
           const result = await Vite.build(config)
           if (Array.isArray(result) || !('output' in result))
             throw new Error('Expected one Vite build')
+
           const css = result.output
             .flatMap((file) =>
               file.type === 'asset' && file.fileName.endsWith('.css')
@@ -69,17 +75,21 @@ for (const count of [10, 100]) {
                 : [],
             )
             .join('\n')
+
           const javascript = result.output
             .filter((file) => file.type === 'chunk')
             .map((file) => file.code)
             .join('\n')
+
           const measure = (text: string) => ({
             brotli: Zlib.brotliCompressSync(text).length,
             gzip: Zlib.gzipSync(text).length,
             raw: Buffer.byteLength(text),
           })
+
           const cssSize = measure(css)
           const jsSize = measure(javascript)
+
           await Fs.mkdir('bench/results/vite', { recursive: true })
           await Fs.writeFile(
             `bench/results/vite/${count}.json`,

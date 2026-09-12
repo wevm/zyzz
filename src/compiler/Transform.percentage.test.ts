@@ -12,6 +12,7 @@ import * as Percentage from '../../test/fixtures/Percentage.js'
 describe('compile', () => {
   test('percentages preserve units and match independent grammar', () => {
     const lexer = Conformance.lexer()
+
     for (const declarations of Object.values(Percentage.styles)) {
       for (const [property, value] of Object.entries(declarations)) {
         const name = property.replace(
@@ -22,6 +23,7 @@ describe('compile', () => {
           moduleId: 'percentage.ts',
           source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
         })
+
         expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
           `true`,
         )
@@ -44,11 +46,14 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><svg><rect id="high" class="${module.high.className}"/><rect id="low" class="${module.low.className}"/></svg><div id="text" class="${module.text.className}"></div><div id="text-control" style="font-stretch:120%;font-width:125%;zoom:125%"></div>`,
       )
+
       expect(
         await page
           .locator('#high')

@@ -91,29 +91,44 @@
       "status": "deferred"
     },
     "@font-face": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "b61f3c3a0c07012e73bb4d4c18158a70f1ae3455d917cb2d4b38232755e0b8a0",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/ascent-override": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "7ff7617d15cc919ff34d85af755539daf392cdd7e258cd10e25f91d8c5b1eb17",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/descent-override": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "7ba0ad7bc82c808bf1830b7d857d9d4f4c59f600e447d5ddd1bc112781d508bb",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/font-display": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "85890362316d8d2425f25aa9b1bd4df801cd31980781eb8e46eebe9709836659",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/font-family": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "755be7380e68ca77bde27176424b4b4fd2b1a90497f157cf27dfb7c96ac0ae1c",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/font-feature-settings": {
       "evidence": [],
@@ -121,14 +136,20 @@
       "status": "deferred"
     },
     "@font-face/font-stretch": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "404f0ceb00cef0d178fe1ce806383c64a3fd544c49460d13cac345ac8605da01",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/font-style": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "9f2a57837871b0a8390f087fd77e60e18035de2709e5969de8a8f0d3ffff4d7a",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/font-variation-settings": {
       "evidence": [],
@@ -136,29 +157,44 @@
       "status": "deferred"
     },
     "@font-face/font-weight": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "c07bc7925ad5b97bcc8ed71f0ef8be9f48e25b7dabe027b7bef3dd9d5b744c1f",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/line-gap-override": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "f1c79c2a4e882e76ff0daf18088ef1f2d2e18c32fd7ff3952056bac681e8e1d7",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/size-adjust": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "699f7fed3ab1827ffdf2a5d3c6783adf70257901b023cb73231a8a28e2ec9a21",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/src": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "bc27b9efb4551bafa14ee893bb708db14cdc0a769223773e1081413ad1482869",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-face/unicode-range": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "df1937f4e13e1374261d535663d4bfe8a8e53594ebaf4ad46d8edb193a9ba4d2",
-      "status": "deferred"
+      "status": "partial"
     },
     "@font-feature-values": {
       "evidence": [],
@@ -236,14 +272,19 @@
       "status": "deferred"
     },
     "@keyframes": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts",
+        "src/web/contributions.test-d.ts"
+      ],
       "grammar": "4ad39b964931f1ec90a222a88d60cff78c827ae8cc1143bf7e3c718b0cc9ae22",
-      "status": "deferred"
+      "status": "partial"
     },
     "@layer": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.contributions.test.ts"
+      ],
       "grammar": "990de8dcc807b3a3c32455de4e9dab8d0e2c954ed4830133a4afe0cda9ebead1",
-      "status": "deferred"
+      "status": "partial"
     },
     "@media": {
       "evidence": [],
@@ -366,24 +407,36 @@
       "status": "deferred"
     },
     "@property": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Graph.variables.test.ts",
+        "src/Vars.registered.test-d.ts"
+      ],
       "grammar": "3824fe15582d4b37949890dc7f1e920c9ddc93ea647f3d5445ea0b20498b3162",
-      "status": "deferred"
+      "status": "partial"
     },
     "@property/inherits": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Graph.variables.test.ts",
+        "src/Vars.registered.test-d.ts"
+      ],
       "grammar": "0196d12d9379884df1b96634c1ba6236eee9080f5a03bad67055dd7040da9d96",
-      "status": "deferred"
+      "status": "partial"
     },
     "@property/initial-value": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Graph.variables.test.ts",
+        "src/Vars.registered.test-d.ts"
+      ],
       "grammar": "09451c2f14a95568b465565208d185a32491a6300a6dcdce8c050409f590981c",
-      "status": "deferred"
+      "status": "partial"
     },
     "@property/syntax": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Graph.variables.test.ts",
+        "src/Vars.registered.test-d.ts"
+      ],
       "grammar": "04dc4830cc0cefd0bf07ef675a992674d48f46f3856a52db5f97c38437c6d4c9",
-      "status": "deferred"
+      "status": "partial"
     },
     "@scope": {
       "evidence": [],

@@ -14,6 +14,7 @@ describe('compile', () => {
       moduleId: 'layout.ts',
       source: Layout.source,
     })
+
     expect(output.css.match(/z-index:[^;}]+/g)).toMatchInlineSnapshot(`
       [
         "z-index:auto",
@@ -36,8 +37,10 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       const attributes = (
         name: keyof typeof Layout.controls,
         control: boolean,
@@ -45,11 +48,14 @@ describe('compile', () => {
         control
           ? `id="${name}-control" style="${Layout.controls[name]}"`
           : `id="${name}" class="${module[name].className}"`
+
       const markup = (control: boolean) =>
         `<main><div ${attributes('floatBox', control)}>Float</div><div ${attributes('cleared', control)}>Clear</div><section ${attributes('context', control)}><div ${attributes('front', control)}>Front</div><div ${attributes('back', control)}>Back</div></section><img ${attributes('image', control)} width="20" height="20" alt=""></main>`
+
       await page.setContent(
         `<style>${output.css}</style>${markup(false)}${markup(true)}`,
       )
+
       expect(
         await page.evaluate(
           (names) =>
@@ -58,6 +64,7 @@ describe('compile', () => {
               const b = getComputedStyle(
                 document.getElementById(`${name}-control`)!,
               )
+
               return [
                 'backface-visibility',
                 'box-decoration-break',
@@ -91,12 +98,14 @@ describe('compile', () => {
       expect(
         await page.locator('#context').evaluate((element) => {
           const box = element.getBoundingClientRect()
+
           return document.elementFromPoint(box.x + 10, box.y + 10)?.id
         }),
       ).toMatchInlineSnapshot(`"front"`)
       expect(
         await page.locator('#context-control').evaluate((element) => {
           const box = element.getBoundingClientRect()
+
           return document.elementFromPoint(box.x + 10, box.y + 10)?.id
         }),
       ).toMatchInlineSnapshot(`"front-control"`)

@@ -52,14 +52,14 @@ Start with Introduction; use Concepts for semantics, Guides for tasks, and API f
 - [zyzz/themes/default](api/themes/default.md): Reference and examples.
 - [zyzz/web](api/web/README.md): Section index.
 - [Css](api/web/Css/README.md): Section index.
-- [Css.ancestor](api/web/Css/ancestor.md): Reference and examples.
-- [Css.anySibling](api/web/Css/anySibling.md): Reference and examples.
+- [ancestor](api/web/ancestor.md): Reference and examples.
+- [anySibling](api/web/anySibling.md): Reference and examples.
 - [Css.compile](api/web/Css/compile.md): Reference and examples.
-- [Css.descendant](api/web/Css/descendant.md): Reference and examples.
+- [descendant](api/web/descendant.md): Reference and examples.
 - [layers](api/web/layers.md): Reference and examples.
-- [Css.marker](api/web/Css/marker.md): Reference and examples.
-- [Css.siblingAfter](api/web/Css/siblingAfter.md): Reference and examples.
-- [Css.siblingBefore](api/web/Css/siblingBefore.md): Reference and examples.
+- [ref](api/web/ref.md): Reference and examples.
+- [siblingAfter](api/web/siblingAfter.md): Reference and examples.
+- [siblingBefore](api/web/siblingBefore.md): Reference and examples.
 - [fontFace](api/web/fontFace.md): Reference and examples.
 - [global](api/web/global.md): Reference and examples.
 - [keyframes](api/web/keyframes.md): Reference and examples.

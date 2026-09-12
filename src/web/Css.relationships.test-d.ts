@@ -2,11 +2,19 @@
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { css, Style } from 'zyzz'
 import { Marker } from 'zyzz/runtime'
-import { Css, global } from 'zyzz/web'
+import {
+  ancestor,
+  anySibling,
+  descendant,
+  global,
+  ref,
+  siblingAfter,
+  siblingBefore,
+} from 'zyzz/web'
 
-describe('marker', () => {
+describe('ref', () => {
   test('retains finite states and typed relationships', () => {
-    const card = Css.marker({
+    const card = ref({
       state: ['open', 'closed'],
       selected: [true, false],
     })
@@ -16,15 +24,15 @@ describe('marker', () => {
     >()
 
     css({
-      [Css.ancestor(card, {
-        data: { state: 'open' },
+      [ancestor(card, {
+        state: 'open',
         pseudo: ':hover',
         has: 'a',
       })]: { color: 'red' },
     })
     css({
-      [Css.descendant(card)]: { color: 'red' },
-      [Css.siblingBefore(card, ':checked')]: { color: 'blue' },
+      [descendant(card)]: { color: 'red' },
+      [siblingBefore(card, ':checked')]: { color: 'blue' },
     })
 
     const arbitrary = Symbol()
@@ -32,78 +40,93 @@ describe('marker', () => {
     // @ts-expect-error arbitrary symbols are not relationship keys
     css({ [arbitrary]: { color: 'red' } })
     // @ts-expect-error descendant has would require forbidden nested :has
-    Css.descendant(card, { has: 'a' })
+    descendant(card, { has: 'a' })
     // @ts-expect-error following-sibling has would require forbidden nested :has
-    Css.siblingAfter(card, { has: 'a' })
+    siblingAfter(card, { has: 'a' })
     // @ts-expect-error invalid state-name characters
-    Css.marker({ 'not ok': ['open'] })
+    ref({ 'not ok': ['open'] })
     // @ts-expect-error case-folded duplicate names
-    Css.marker({ State: ['open'], state: ['closed'] })
+    ref({ State: ['open'], state: ['closed'] })
 
-    const presence = Css.marker(undefined)
+    // @ts-expect-error Relationship predicates reserve their option names.
+    ref({ pseudo: ['open'] })
+    // @ts-expect-error Relationship predicates reserve their option names case-insensitively.
+    ref({ Has: ['open'] })
+    // @ts-expect-error State selection is flat, without a data wrapper.
+    ancestor(card, { data: { state: 'open' } })
+    // @ts-expect-error Descendant selections retain finite state values.
+    descendant(card, { state: 'other' })
+    // @ts-expect-error Sibling selections retain finite state values.
+    siblingBefore(card, { state: 'other' })
+    // @ts-expect-error Sibling selections retain finite state values.
+    siblingAfter(card, { state: 'other' })
+    // @ts-expect-error Sibling selections retain finite state values.
+    anySibling(card, { state: 'other' })
+
+    const presence = ref(undefined)
 
     // @ts-expect-error explicit undefined is presence-only
     presence({ unknown: 'open' })
-    Css.ancestor(card, { data: undefined })
+    ancestor(card, { state: undefined })
     css((values: { color: '#123' | '#456' }) => ({
-      [Css.ancestor(card)]: { color: values.color },
+      [ancestor(card)]: { color: values.color },
     }))
 
     const extra = { state: 'open' as const, unknown: 'value' }
 
     // @ts-expect-error state keys stay exact through variables
-    Css.ancestor(card, { data: extra })
+    ancestor(card, extra)
     // @ts-expect-error unknown states do not widen schema
     card({ status: 'open' })
     // @ts-expect-error invalid values remain errors
-    Css.ancestor(card, { data: { state: 'other' } })
+    ancestor(card, { state: 'other' })
     // @ts-expect-error unknown conditions remain errors
-    Css.ancestor(card, ':hovr')
+    ancestor(card, ':hovr')
     // @ts-expect-error unbounded domains
-    Css.marker({ state: [] as string[] })
+    ref({ state: [] as string[] })
     // @ts-expect-error widened scalar domain
-    Css.marker({ state: ['open' as string] })
+    ref({ state: ['open' as string] })
     // @ts-expect-error union element does not describe the concrete extracted domain
-    Css.marker({ state: ['open' as 'open' | 'closed'] })
+    ref({ state: ['open' as 'open' | 'closed'] })
     // @ts-expect-error widened boolean element
-    Css.marker({ selected: [true as boolean] })
+    ref({ selected: [true as boolean] })
     // @ts-expect-error empty domains
-    Css.marker({ state: [] })
+    ref({ state: [] })
     // @ts-expect-error serialization ambiguity
-    Css.marker({ state: [false, 'false'] })
+    ref({ state: [false, 'false'] })
   })
 })
 
 describe('global', () => {
   test('excludes marker relationships from global declarations', () => {
-    const card = Css.marker()
+    const card = ref()
 
     // @ts-expect-error ordinary nested conditions cannot hide relationships
-    global({ body: { ':hover': { [Css.ancestor(card)]: { color: 'red' } } } })
+    global({ body: { ':hover': { [ancestor(card)]: { color: 'red' } } } })
     // @ts-expect-error runtime identities must remain private data attributes
     Marker.create({ id: 'className', schema: Marker.schema({}) })
     // @ts-expect-error global rules cannot contain marker relationship keys
-    global({ body: { [Css.ancestor(card)]: { color: 'red' } } })
+    global({ body: { [ancestor(card)]: { color: 'red' } } })
   })
 })
 
 describe('relationships', () => {
   test('requires compiler marker provenance', () => {
     // @ts-expect-error arbitrary callables do not carry marker provenance
-    Css.ancestor(() => ({}))
+    ancestor(() => ({}))
   })
 })
 
 describe('define', () => {
   test('excludes source-only relationships from core definitions', () => {
-    const card = Css.marker()
+    const card = ref()
 
     // @ts-expect-error core definitions do not compile marker helpers
-    Style.define({ target: { [Css.ancestor(card)]: { color: 'red' } } })
+    Style.define({ target: { [ancestor(card)]: { color: 'red' } } })
     // @ts-expect-error visited cannot be observed through has
-    Css.descendant(card, ':visited')
+    descendant(card, ':visited')
     // @ts-expect-error visited cannot be observed through has
-    Css.siblingAfter(card, { pseudo: ':visited' })
+    siblingAfter(card, { pseudo: ':visited' })
   })
 })
 

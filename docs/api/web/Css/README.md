@@ -1,6 +1,6 @@
 # Css
 
-Pure web emission and typed stylesheet relationships.
+Pure web CSS emission.
 
 ```ts
 import { Css } from 'zyzz/web'
@@ -8,15 +8,9 @@ import { Css } from 'zyzz/web'
 
 ## Methods
 
-| API                                   | Description                                                               |
-| ------------------------------------- | ------------------------------------------------------------------------- |
-| [Css.ancestor](ancestor.md)           | A qualifying ancestor at any depth.                                       |
-| [Css.anySibling](anySibling.md)       | A qualifying sibling in either direction.                                 |
-| [Css.compile](compile.md)             | Compile ordered style data into CSS, class lists, and theme scopes.       |
-| [Css.descendant](descendant.md)       | A qualifying descendant at any depth.                                     |
-| [Css.marker](marker.md)               | Define a typed identity and finite data states for element relationships. |
-| [Css.siblingAfter](siblingAfter.md)   | A qualifying marked sibling following the styled element.                 |
-| [Css.siblingBefore](siblingBefore.md) | A qualifying marked sibling preceding the styled element.                 |
+| API                       | Description                                                         |
+| ------------------------- | ------------------------------------------------------------------- |
+| [Css.compile](compile.md) | Compile ordered style data into CSS, class lists, and theme scopes. |
 
 ## Types and Errors
 
@@ -24,6 +18,6 @@ import { Css } from 'zyzz/web'
 
 See the [public declarations](../../../../src/web/Css.ts) for complete generic signatures and documented type properties.
 
-Typed relationship helpers compile marker identities and finite data predicates. `compile` supports scalar declarations and ordered nested selector/condition blocks.
+`compile` supports scalar declarations and ordered nested selector/condition blocks.
 
 Layer order uses the direct [`layers`](../layers.md) export from `zyzz/web`.

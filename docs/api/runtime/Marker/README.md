@@ -1,6 +1,6 @@
 # Marker
 
-Compiled relationship markers use `Marker` from `zyzz/runtime`. Applications normally author `Css.marker(schema)` from `zyzz/web`.
+Compiled relationship markers use `Marker` from `zyzz/runtime`. Applications normally author `ref(schema)` from `zyzz/web`.
 
 | API                  | Description                                                 |
 | -------------------- | ----------------------------------------------------------- |
@@ -20,11 +20,11 @@ Type: `string`. The compiler supplies the private presence attribute name.
 Type: `Marker.Schema`, a readonly record of nonempty string/boolean tuples. Keys remain case-sensitive; emitted attribute fragments use lowercase names.
 
 ```ts
-const marker = Marker.create({
-  id: 'data-z-marker-card',
+const ref = Marker.create({
+  id: 'data-z-ref-card',
   schema: Marker.schema({ open: [true, false] }),
 })
-marker({ open: false })
+ref({ open: false })
 ```
 
 ## schema

@@ -97,7 +97,7 @@ describe('zyzz', () => {
     try {
       const sidecar = Graph.compile({
         modules: {
-          'index.ts': `import {Css} from 'zyzz/web';export const unrelated=Css.marker();`,
+          'index.ts': `import {ref} from 'zyzz/web';export const unrelated=ref();`,
         },
       })
 

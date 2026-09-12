@@ -162,6 +162,14 @@ Setup records final CSS and bundled JavaScript under `bench/results/transform`, 
 
 `src/runtime/Props.bench.ts` measures the actual generated-callable helper with no overrides and with class/style overrides. Creation happens outside timing; the measured operation validates inputs and returns props without generating rules. These are JavaScript binding costs, not browser rendering or framework rerender measurements.
 
+## Type Instantiations
+
+Colocated `src/**/*.bench-d.ts` fixtures measure the TypeScript instantiations contributed by public authoring, compiler, runtime, host, and Vite calls with `@ark/attest`. Each fixture declares its public values from type-only entrypoint imports, warms shared contracts in an exported module-scope `baseline` function, and snapshots each bench body inline. Attest strips the bench statements from the file, type-checks that baseline once, then type-checks the file with each body appended and reports the difference in instantiations. Bench bodies never execute.
+
+`pnpm bench:types` runs every fixture in one process against the installed `typescript` package and fails when a body exceeds its baseline by more than 20%. `pnpm update:types` rewrites the inline baselines after an intentional contract change. Counts are deterministic for one compiler release and can differ between releases, so establish baselines under the pinned version. Check time and memory are not part of these benches; `tsc --extendedDiagnostics` reports them in the TypeScript workflow matrix.
+
+The Verify workflow runs the type check and these benches for TypeScript 5.9, 6.0, and 7.0. JavaScript releases replace the pinned `typescript` package so attest and repository scripts import the version under test. The native 7.x package ships no compiler API, which `scripts/binding-domains.ts` and `test/fixtures/Library.ts` import, so that lane installs it beside the pinned package under an alias, runs only its `tsc` binary, and reports whole-program diagnostics without per-bench counts.
+
 ## File Host
 
 `src/node/Host.bench.ts` measures 100 literal styles in one source module. Cold-process rebuilds include Node startup, compiler loading, source reading, compilation, ownership checks, and closing a new host against an existing output directory. Driver bundling and fixture creation are outside timing. Unchanged rebuilds reuse an open host and its source cache while still reading files and validating output ownership.

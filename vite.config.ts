@@ -29,7 +29,12 @@ export default defineConfig({
       zyzz: Path.resolve(import.meta.dirname, 'src'),
     },
     coverage: {
-      exclude: ['src/**/*.bench.ts', 'src/**/*.test-d.ts', 'src/**/*.test.ts'],
+      exclude: [
+        'src/**/*.bench-d.ts',
+        'src/**/*.bench.ts',
+        'src/**/*.test-d.ts',
+        'src/**/*.test.ts',
+      ],
       include: ['src/**/*.ts'],
       provider: 'v8',
       reporter: ['json', 'json-summary', 'text'],

@@ -134,11 +134,11 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 - Encapsulate every `.test-d.ts` assertion and expected compiler error in a named `test` inside a `describe` for the public function. Keep scenario-specific fixtures inside their tests; module scope is reserved for imports and shared type declarations.
 - Group tests in a `describe` named after the public function under test, such as `describe('create')`. Keep scenario names inside that group and use separate groups for different entry functions. These groups exercise complete integration flows, not isolated function implementations.
 - Runtime coverage is integration-only. Do not write unit tests, private-helper tests, or per-function suites disguised as integration tests.
-- Colocate integration suites, benchmarks, and consumer type fixtures with their owning module: `Style.test.ts`, `Style.bench.ts`, and `Style.test-d.ts` beside `Style.ts`. Keep reusable input projects under `test/fixtures/`. Import public entrypoints and exercise real collaborating modules: authoring and validation, compilation and output, or host and consumer behavior.
+- Colocate integration suites, benchmarks, type benches, and consumer type fixtures with their owning module: `Style.test.ts`, `Style.bench.ts`, `Style.bench-d.ts`, and `Style.test-d.ts` beside `Style.ts`. Keep reusable input projects under `test/fixtures/`. Import public entrypoints and exercise real collaborating modules: authoring and validation, compilation and output, or host and consumer behavior.
 - No mocking, stubbing, fake implementations, module replacements, fake timers, or stubbed globals. Use real compilers, temporary directories, processes, watchers, and browser/native engines. Fixture source and deterministic input data are allowed; replacement implementations are not.
 - Verify web CSS through computed styles in a real browser, including cascade order, theme scopes, schemes, selectors, and queries. Do not use a simulated DOM as proof of browser behavior. Native checks use a real native engine and renderer when rendering is under test.
 - Cover complete supported flows as they land: source to transformed module and CSS, packed-library consumption, watch recovery, and static native theme selection. Before a later stage exists, test the real available public boundary; do not fabricate a downstream stage.
-- Exclude colocated tests, benchmarks, and type fixtures from published files and build outputs.
+- Exclude colocated tests, benchmarks, type benches, and type fixtures from published files and build outputs.
 - Keep consumer type-contract fixtures alongside integration coverage. They validate inference and rejected inputs through public imports and do not replace runtime integration coverage.
 - Snapshot values and results individually. Do not assemble unrelated values into an object or array solely to combine snapshot assertions. Snapshot an object or collection directly when it is the actual result under test; keep separate outputs and checks in separate assertions near the relevant operation.
 - Assert observable runtime results and public diagnostics with inline snapshots (`toMatchInlineSnapshot` or `toThrowErrorMatchingInlineSnapshot`), not external snapshots or other assertion styles. Pass property matchers as the first argument to `toMatchInlineSnapshot` for genuinely nondeterministic fields, such as `expect.any(String)` or `expect.stringMatching(...)` for temporary paths. Keep deterministic values exact; never mask meaningful output. Review generated snapshots before accepting them. Compile-time `expectTypeOf` assertions and expected compiler errors remain in `.test-d.ts` fixtures. Never derive expected output from the implementation under test or treat a CSS snapshot alone as rendering proof.
@@ -151,6 +151,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 ## Benchmark Conventions
 
 - Use the installed Vite Plus/Vitest benchmark runner: import `bench` and `describe` from `vite-plus/test` in colocated `*.bench.ts` files, and run `pnpm exec vp test bench --run --no-file-parallelism`. Keep benchmark APIs aligned with the lockfile.
+- Measure public type instantiation costs with `@ark/attest`: import `bench` from `@ark/attest` in colocated `*.bench-d.ts` fixtures, declare the public values from type-only entrypoint imports, and snapshot each body inline with `.types([count, 'instantiations'])`. Keep one exported module-scope `baseline` function that warms shared contracts without repeating a bench expression. `pnpm bench:types` runs every fixture against the installed TypeScript and fails past the 20% threshold; `pnpm update:types` rewrites the inline baselines after an intentional contract change. CI type-checks and runs these fixtures across the TypeScript matrix. The native 7.x compiler ships no compiler API, so its lane installs it beside the pinned JavaScript package, runs only its `tsc` binary, and reports whole-program diagnostics without attest benches.
 - Benchmark real public workflows using the integration fixture corpus. No mocks, stubs, synthetic replacement compilers, or greeting benchmarks. Benchmark compilation, extraction, rewriting, and watch workloads as those stages land. Zyzz joins compiler comparisons when its real CSS emitter exists; do not benchmark authoring alone.
 - Measure cold and warm compilation, incremental edits, throughput, memory, browser style recalculation, and native table selection separately. Use real browser/host timing for workloads outside the benchmark runner's execution model; do not substitute a function microbenchmark for end-to-end performance.
 - Record emitted CSS, generated JavaScript, class-name/markup bytes, and required runtime helpers separately, plus actual combined transfer. Report raw, gzip, and Brotli sizes without double-counting class strings already included in JavaScript or markup. Package download size is a separate metric.
@@ -162,7 +163,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 ## Workflow Conventions
 
 - Use the smallest repository script that covers the changed behavior. Run focused tests while iterating.
-- Run `pnpm check:types` after TypeScript changes.
+- Run `pnpm check:types` after TypeScript changes, and `pnpm bench:types` after changing public inference or type contracts.
 - Use `pnpm test` for Vite Plus integration tests. Add compiler and renderer workflows only as those boundaries exist.
 - `pnpm check` runs formatting, lint, and type checks with fixes. Inspect and keep only task-related changes.
 - Run `git diff --check` and inspect the final diff before reporting completion.
@@ -186,7 +187,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 ## Repository Layout
 
 - The repository implements the literal `Style.define` boundary with Vite Plus/zile tooling, integration/type coverage, and external compiler benchmarks. Later phases add compilation, source transforms, and component APIs.
-- Add flat PascalCase modules under `src/`; colocate integration scenarios, consumer type fixtures, and benchmarks beside their owning modules. Keep reusable fixtures under `test/fixtures/` and benchmark instructions under `bench/`.
+- Add flat PascalCase modules under `src/`; colocate integration scenarios, consumer type fixtures, type benches, and benchmarks beside their owning modules. Keep reusable fixtures under `test/fixtures/` and benchmark instructions under `bench/`.
 - Export stylesheet authoring functions as direct named leaf imports from `zyzz/web`, following `fontFace`, `global`, `keyframes`, and `layers`. Follow the accepted at-rule contract in `docs/api/web/at-rules.md`: dedicated functions own descriptor/statement rules; `global` owns selectors and grouping rules. Keep `Css` as the pure compiler namespace. New helpers remain planned until their implementation gates pass.
 - Import `where` directly from `zyzz/web`, alongside `global` and `fontFace`. Every module-level `css` definition is an element identity; compose relationship keys by interpolating definitions into the `where` tagged template as computed style keys. Express state with real or `data-*` attributes in the selector text.
 - Export the `css` and `variants` leaf functions directly and bind both on themes; conceptual modules use namespace exports. Infer variant props with standard `Parameters`, without a variant namespace.
@@ -209,4 +210,5 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 - `pnpm check` runs `vp check --fix`; use this single script for formatting, linting, and type checks.
 - `pnpm check:types` runs TypeScript checking; `pnpm test` runs `vp test`.
 - `pnpm exec vp test bench --run --no-file-parallelism` runs benchmarks; append `--outputJson <file>` to save results or `--compare <file>` to compare a baseline.
+- `pnpm bench:types` runs the attest type instantiation benches against the installed TypeScript; `pnpm update:types` rewrites their inline baselines.
 - `pnpm build` runs zile; `pnpm dev` runs `zile dev`.

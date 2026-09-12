@@ -26,6 +26,25 @@ CI runs the matrix against the actual integration JSON report. Required tests mu
 
 The matrix now includes every family, with descriptor-specific grammar and shared source/packed/watch cases. The original combined ledger retains its renderer gaps. Phase 2 and Phase 3's prerequisite remain open until all compiler obligations and target reviews are complete.
 
+## Chromium Target Review
+
+Twenty-five Chromium entries move from `unreviewed` to `native` compatibility with `partial` rendering status, each citing an existing asserting Chromium fixture already run by CI. No gate, inventory entry, or limitation is removed; each review keeps a limitation naming what the fixture does not cover.
+
+| Entries                                                                      | Evidence                                                                     |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `@container`                                                                 | Named size threshold and scroll-state fixtures                               |
+| `@counter-style` with `system`, `symbols`, `suffix`                          | Screenshot equality with native counter references                           |
+| `@font-face` with `font-family`, `src`                                       | Real font loading and glyph width                                            |
+| `@font-palette-values` with `font-family`, `base-palette`, `override-colors` | Screenshot equality with native palette references                           |
+| `@function` with `result`                                                    | Native evaluation of composite parameters, defaults, and conditional results |
+| `@keyframes`, `@layer`, `@media`, `@scope`, `@position-try`                  | Computed animation progress, layer precedence, viewport, scope, and anchors  |
+| `@page` with `size`                                                          | Native PDF page dimensions and drawing streams                               |
+| `@property` with `syntax`, `inherits`, `initial-value`                       | Registered defaults, inheritance, and typed assignment                       |
+
+`pnpm check:at-rules` passes with the new `browser.*` cases. `pnpm check:at-rules:targets` still fails on 32 Chromium entries without an asserting fixture: seven remaining `@counter-style` descriptors, eleven remaining `@font-face` descriptors, `@font-feature-values` and its seven nested entries, `@page/page-orientation`, `@custom-media`, `@document`, `@import`, `@starting-style`, and `@supports`.
+
+The availability probe records `@custom-media`, `@document`, and `@font-feature-values` acceptance in `at-rule-browser-capabilities.json` without asserting it, so those entries remain unreviewed rather than `unsupported`. Rendering status stays `partial` everywhere; `check:at-rules:rendering` remains red.
+
 ## Print Engine Setup
 
 Install [WeasyPrint 70.0](https://doc.courtbouillon.org/weasyprint/stable/api_reference.html#css), its pinned Python dependencies, Pango, and Poppler. Ubuntu setup matches the Verify workflow:

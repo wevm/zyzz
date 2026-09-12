@@ -191,6 +191,8 @@ Named helpers derive stable identities from the source module and constant bindi
 
 Statement helpers emit at stylesheet scope. Imports precede namespaces and ordinary rules; charset is a UTF-8 output policy, never a nested contribution. Namespace declarations have stylesheet scope and require isolation from unrelated modules. Unsupported namespace combinations must fail compilation instead of changing selectors silently.
 
+`namespace` prefixes accept CSS identifier spellings, including Unicode and escapes. Equivalent spellings share a binding, and the last declaration applies throughout its module. Omitting `prefix` creates a default namespace; an empty `uri` selects elements with no namespace. URI strings are identities and are never fetched as assets.
+
 CSS functions use ordered parameter records with `name`, optional `syntax`, and optional `default` fields, an optional `returns` syntax, and a `body` containing `result`, local custom properties, and conditional groups. Custom media owns a query identity; profile identities belong inside CSS color expressions. These contracts remain planned until their corresponding implementation gates pass.
 
 ## Conformance Evidence

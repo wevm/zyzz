@@ -1,5 +1,5 @@
 /** Pure ordered stylesheet contribution data and layer ordering. @module */
-import type * as Namespace from './Namespace.js'
+import * as Namespace from './Namespace.js'
 import * as Block from './Block.js'
 import type * as Style from '../../Style.js'
 
@@ -180,8 +180,7 @@ export function render(
       .map((value) => {
         if (value.kind === 'layers') return ''
         const css = (() => {
-          if (value.kind === 'namespace')
-            return `@namespace ${value.name} ${JSON.stringify(value.uri)};`
+          if (value.kind === 'namespace') return Namespace.statement(value)
           if (value.kind === 'custom-media')
             return `@custom-media ${value.name} ${value.query};`
           if (value.kind === 'import')

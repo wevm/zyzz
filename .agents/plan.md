@@ -420,6 +420,8 @@ Current follow-up: #103 encoding/profile groundwork → #104 composite functions
 - [ ] Finish the [per-rule acceptance gaps](../test/conformance/at-rule-acceptance.md), including complete grammar/context and packed/watch evidence.
 - [ ] Make `pnpm check:at-rules:full` pass without removing inventory entries or clearing unverified gaps.
 
+Completion follow-up: namespace acceptance now includes escaped/Unicode identifiers, last-declaration binding, source/packed maps, host watching, and native selector isolation. Font palette family lists survive the pinned parser and Vite minifiers; real color-font comparisons cover palette indexes, keyword fallbacks, repeated overrides, alpha, and wide-gamut colors. The full gate remains open.
+
 ## Phase 3 — Composition, variants, and target output
 
 - [ ] Keep `variants` scoped to one element, returning one props object with no `slots` option. Cover multipart components through separate `css`/`variants` definitions and shared component inputs; use data attributes or typed markers for supported DOM relationships.

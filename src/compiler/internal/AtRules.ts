@@ -1,7 +1,7 @@
 /** Adapts standard descriptor extensions that precede the pinned parser's grammar. @module */
 import * as Lightning from 'lightningcss'
 
-/** Parses structured contributions while retaining the font-display extension to font feature values. */
+/** Parses structured contributions while retaining newer font descriptors. */
 export function transform<C extends Lightning.CustomAtRules>(
   options: Lightning.TransformOptions<C>,
 ): Lightning.TransformResult {
@@ -21,7 +21,15 @@ export function transform<C extends Lightning.CustomAtRules>(
   let suffix = 0
   while (source.toLowerCase().includes(marker))
     marker = `-zyzz-ffv-${(++suffix).toString(36).padStart(9, '0')}`
-  const renamed = rename(imports, 'font-feature-values', marker)
+  let paletteMarker = '-zyzz-fpv-000000000'
+  let paletteSuffix = 0
+  while (source.toLowerCase().includes(paletteMarker))
+    paletteMarker = `-zyzz-fpv-${(++paletteSuffix).toString(36).padStart(9, '0')}`
+  // The pinned parser silently drops font-family lists from palette rules.
+  const features = rename(imports, 'font-feature-values', marker)
+  const renamed = source.toLowerCase().includes('@font-palette-values')
+    ? rename(features, 'font-palette-values', paletteMarker)
+    : features
   if (source === renamed) return Lightning.transform(options)
   const result = Lightning.transform({
     ...options,
@@ -31,11 +39,15 @@ export function transform<C extends Lightning.CustomAtRules>(
     ...result,
     code: new TextEncoder().encode(
       rename(
-        new TextDecoder()
-          .decode(result.code)
-          .replaceAll(`layer(${importMarker})`, 'layer'),
-        marker,
-        'font-feature-values',
+        rename(
+          new TextDecoder()
+            .decode(result.code)
+            .replaceAll(`layer(${importMarker})`, 'layer'),
+          marker,
+          'font-feature-values',
+        ),
+        paletteMarker,
+        'font-palette-values',
       ),
     ),
   }

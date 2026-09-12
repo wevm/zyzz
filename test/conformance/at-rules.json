@@ -508,12 +508,14 @@
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.namedRules.browser.test.ts",
         "src/compiler/Transform.namedRules.test.ts",
-        "src/web/fontPaletteValues.test-d.ts"
+        "src/web/fontPaletteValues.test-d.ts",
+        "src/compiler/Transform.fontPalette.test.ts",
+        "src/vite/statements.test.ts"
       ],
       "grammar": "c92fb9d52767a438e3d0d7141be105380c6847deaba860da1dc5ac77a734cb23",
       "status": "partial",
       "gaps": [
-        "Palette rendering across named/indexed palettes and override color combinations."
+        "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
       ]
     },
     "@font-palette-values/base-palette": {
@@ -521,12 +523,14 @@
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.namedRules.browser.test.ts",
         "src/compiler/Transform.namedRules.test.ts",
-        "src/web/fontPaletteValues.test-d.ts"
+        "src/web/fontPaletteValues.test-d.ts",
+        "src/compiler/Transform.fontPalette.test.ts",
+        "src/vite/statements.test.ts"
       ],
       "grammar": "61e5538faa46312030b20ae0445541f34bf0a2fcbabec6d22e9fd8722e9c241f",
       "status": "partial",
       "gaps": [
-        "Palette rendering across named/indexed palettes and override color combinations."
+        "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
       ]
     },
     "@font-palette-values/font-family": {
@@ -534,12 +538,14 @@
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.namedRules.browser.test.ts",
         "src/compiler/Transform.namedRules.test.ts",
-        "src/web/fontPaletteValues.test-d.ts"
+        "src/web/fontPaletteValues.test-d.ts",
+        "src/compiler/Transform.fontPalette.test.ts",
+        "src/vite/statements.test.ts"
       ],
       "grammar": "9a054710db711c9af74be4ce1d1f0f65e4cf9b635585b2de9b866d54d8ebb6bb",
       "status": "partial",
       "gaps": [
-        "Palette rendering across named/indexed palettes and override color combinations."
+        "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
       ]
     },
     "@font-palette-values/override-colors": {
@@ -547,12 +553,14 @@
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.namedRules.browser.test.ts",
         "src/compiler/Transform.namedRules.test.ts",
-        "src/web/fontPaletteValues.test-d.ts"
+        "src/web/fontPaletteValues.test-d.ts",
+        "src/compiler/Transform.fontPalette.test.ts",
+        "src/vite/statements.test.ts"
       ],
       "grammar": "33323137ab3f40a509b44de89db3f5f0b20d2c23a4ec396a0f06c78b3c80c45a",
       "status": "partial",
       "gaps": [
-        "Palette rendering across named/indexed palettes and override color combinations."
+        "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
       ]
     },
     "@function": {
@@ -641,13 +649,14 @@
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.statements.test.ts",
         "src/web/global.test-d.ts",
-        "src/web/statements.test-d.ts"
+        "src/web/statements.test-d.ts",
+        "src/compiler/Transform.namespace.test.ts",
+        "src/node/Host.namespace.test.ts",
+        "src/web/namespace.test-d.ts"
       ],
       "grammar": "effa4464034525f00bd0c9a3d3e8cd2640de141c1f9f4e7aac526f1e778149a0",
-      "status": "partial",
-      "gaps": [
-        "Escaped and non-ASCII namespace prefixes and complete placement grammar."
-      ]
+      "status": "supported",
+      "gaps": []
     },
     "@page": {
       "evidence": [

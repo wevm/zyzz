@@ -12,6 +12,7 @@ import * as Style from '../../Style.js'
 import type * as Token from '../../internal/Token.js'
 import type * as Css from '../../web/Css.js'
 import * as Expression from './Expression.js'
+import * as Identifiers from './Identifiers.js'
 import * as Themes from './Themes.js'
 import type * as Scope from './Scope.js'
 
@@ -626,18 +627,11 @@ export function extract(
           typeof options.uri !== 'string' ||
           (options.prefix !== undefined &&
             (typeof options.prefix !== 'string' ||
-              !/^-?[_a-zA-Z][\w-]*$/.test(options.prefix)))
+              Identifiers.read(options.prefix) === undefined))
         )
           throw new Error(
             'Expected a namespace URI and optional identifier prefix.',
           )
-        if (
-          result.some(
-            (value) =>
-              value.kind === 'namespace' && value.prefix === options.prefix,
-          )
-        )
-          throw new Error('Duplicate namespace prefix in one module.')
         result.push({
           kind: 'namespace',
           uri: options.uri,

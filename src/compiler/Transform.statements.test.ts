@@ -231,15 +231,7 @@ describe('compile', () => {
       `".z-1e8a67z1uaws1j-base0{width:--z-cssfunction1sp21u81389mcs-74-77-69-63-65(2px);}"`,
     )
   })
-  test('rejects duplicate namespaces and malformed function parameter data', () => {
-    expect(() =>
-      Transform.compile({
-        moduleId: 'bad.ts',
-        source: `import {namespace} from 'zyzz/web';namespace({uri:'urn:a'});namespace({uri:'urn:b'});`,
-      }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: bad.ts:60: Duplicate namespace prefix in one module.]`,
-    )
+  test('rejects malformed function parameter data', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'bad.ts',

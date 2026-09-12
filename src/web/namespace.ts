@@ -1,6 +1,6 @@
 /** Declares a module-owned CSS namespace. @module */
 import { MissingTransformError } from '../css.js'
-/** Emits an isolated namespace binding for the module's selectors. */
+/** Emits an isolated namespace binding for the module's selectors. The last declaration for each decoded prefix applies throughout the module. */
 export function namespace<const options extends namespace.Options>(
   options: options &
     Record<Exclude<keyof options, keyof namespace.Options>, never>,
@@ -12,7 +12,7 @@ export function namespace<const options extends namespace.Options>(
 export declare namespace namespace {
   /** Namespace URI and optional authored selector prefix. */
   type Options = {
-    /** Selector prefix; omitted creates a default namespace. */
+    /** CSS identifier spelling, including Unicode and escapes; omitted creates a default namespace. */
     readonly prefix?: string | undefined
     /** Namespace URI, never an asset to fetch or relocate. */
     readonly uri: string

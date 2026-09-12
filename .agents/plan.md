@@ -393,7 +393,7 @@ Gate: two compatible themes each work in both schemes. Switching a scope changes
 
 Implementation is stacked in [#95](https://github.com/wevm/zyzz/pull/95), [#96](https://github.com/wevm/zyzz/pull/96), [#97](https://github.com/wevm/zyzz/pull/97), [#99](https://github.com/wevm/zyzz/pull/99), and [#100](https://github.com/wevm/zyzz/pull/100), followed by the acceptance PR. Direct helper APIs, portable references, namespace isolation, ordered statements, and native scalar CSS functions are implemented. Acceptance adds direct/packed source-map ownership, nested asset watch updates, real-font/counter/anchor/browser controls, and declaration benchmarks.
 
-The inventory accounts for 22 rules and 61 descriptors/nested blocks. Implemented entries remain conservatively partial while complete context/grammar and browser evidence is reviewed.
+The inventory accounts for 22 rules and 62 descriptors/nested blocks. Implemented entries remain conservatively partial while complete context/grammar and browser evidence is reviewed.
 
 Composite CSS function `type(...)` signatures, color-profile rendering, and full paged-output behavior remain explicit acceptance gaps. Do not claim 100% at-rule support or enable the full-completion gate prematurely. Browser availability reports distinguish native experimental/legacy support from source emission.
 
@@ -407,6 +407,26 @@ Accepted direction: [top-level stylesheet functions](../docs/api/web/at-rules.md
 - [ ] **2.5f — Full Acceptance:** require every rule, descriptor, nested form, and supported context to have type/extraction/emission/map evidence, packed-library and watch coverage, and applicable real-browser fixtures. Record experimental/legacy browser availability separately. Add source-owned diagnostics for unsupported native semantics and benchmark compiler/output changes. No runtime authoring validation.
 
 The existing property-conformance percentage does not measure at-rules. Extend the conformance workflow with reviewed upstream grammar fingerprints and per-rule evidence; new upstream entries and regressions must fail inventory checks. Do not mark missing implementations supported through generic string acceptance or raw passthrough.
+
+### At-rule Acceptance Model
+
+PR #107 separates compiler acceptance, target compatibility, and rendering evidence. `check:at-rules:full` requires all nine compiler obligations for every inventory entry and executes type/named integration evidence. Target compatibility is explicit; `check:at-rules:rendering` requires verified rendering for every entry. `check:at-rules:legacy-full` preserves the former combined gate.
+
+The matrix is pinned to inventory grammar fingerprints. Unsupported targets never count as rendered support. Unreviewed compiler or target obligations still block Phase 2 completion. Chromium covers screen/PDF behavior; pinned WeasyPrint 70.0 adds bleed, printer marks, and basic ICC evidence. Relative profile colors and rendering intent remain open.
+
+### At-rule Completion Follow-up
+
+Current follow-up: #103 encoding/profile groundwork → #104 composite functions and paged-output evidence → acceptance audit. This stack stops before Phase 3 and does not claim Phase 2.5 completion.
+
+- [x] Pin UTF-8 output without BOM or generated `@charset`, including host bytes.
+- [x] Preserve public profile components and `color()` identities through packed imports.
+- [x] Compile composite/repetition function signatures and grouped comma arguments; verify native defaults and conditional results.
+- [x] Compare native PDF dimensions and drawing streams for named/pseudo-pages, counters, and all margin boxes.
+- [x] Verify basic ICC profile rendering in WeasyPrint and expose the public helper; retain relative-color and rendering-intent gaps.
+- [x] Review all 22 rules and 62 descriptor/nested entries for compiler grammar/context and packed/watch acceptance; keep renderer and target gaps separate.
+- [x] Make `pnpm check:at-rules:full` pass without removing inventory entries or clearing unverified gaps. Fresh type checking and all 184 named integration tests pass.
+
+Completion follow-up: namespace acceptance now includes escaped/Unicode identifiers, last-declaration binding, source/packed maps, host watching, and native selector isolation. Font palette family lists survive the pinned parser and Vite minifiers; real color-font comparisons cover palette indexes, keyword fallbacks, repeated overrides, alpha, and wide-gamut colors. The full compiler gate passes for 22/22 rules and 62/62 descriptor/nested entries. Target and rendering reviews remain open.
 
 ## Phase 3 — Composition, variants, and target output
 

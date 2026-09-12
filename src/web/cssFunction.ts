@@ -1,14 +1,32 @@
 /** Declares a native CSS custom function without evaluating its body in JavaScript. @module */
-import type * as Literal from '../internal/Literal.js'
+import type * as Context from './internal/Context.js'
+import type * as FunctionSyntax from '../internal/FunctionSyntax.js'
 import type * as FunctionValue from '../internal/FunctionValue.js'
-import type * as Numeric from '../internal/Numeric.js'
+import type * as Literal from '../internal/Literal.js'
 import { MissingTransformError } from '../css.js'
+import type * as Numeric from '../internal/Numeric.js'
 /** Emits a CSS function and returns a callable that formats its fixed CSS expression. */
 export function cssFunction<const options extends cssFunction.Options>(
   options: options &
     Record<Exclude<keyof options, keyof cssFunction.Options>, never> & {
       readonly body: Checked<options['body']>
+      readonly parameters: {
+        [index in keyof options['parameters']]: options['parameters'][index] extends {
+          syntax: infer syntax extends string
+        }
+          ? options['parameters'][index] & {
+              readonly syntax: FunctionSyntax.Checked<syntax>
+            }
+          : options['parameters'][index]
+      }
+    } & {
+      readonly returns?: options extends {
+        returns: infer syntax extends string
+      }
+        ? FunctionSyntax.Checked<syntax>
+        : undefined
     },
+  context: Context.Options = {},
 ): cssFunction.Reference<
   options['parameters'],
   options extends { returns: infer syntax extends cssFunction.Syntax }
@@ -16,21 +34,13 @@ export function cssFunction<const options extends cssFunction.Options>(
     : '*'
 > {
   void options
+  void context
   throw new MissingTransformError()
 }
 /** CSS function parameter and result contracts. */
 export declare namespace cssFunction {
   /** CSS value syntax accepted by a parameter or returned value. */
-  type Syntax =
-    | '*'
-    | '<color>'
-    | '<length>'
-    | '<length-percentage>'
-    | '<number>'
-    | '<percentage>'
-    | '<integer>'
-    | '<angle>'
-    | '<time>'
+  type Syntax = string
   /** One ordered parameter with an optional default. */
   type Parameter = {
     /** Parameter custom-property name. */
@@ -68,9 +78,11 @@ export declare namespace cssFunction {
   > = <const args extends Arguments<parameters>>(
     ...args: args & {
       [index in keyof args]: index extends keyof parameters
-        ? parameters[index] extends { syntax: '<integer>' }
-          ? args[index] extends string | number
-            ? Numeric.Checked<args[index], true>
+        ? parameters[index] extends { syntax: infer syntax extends string }
+          ? FunctionSyntax.IntegerOnly<syntax> extends true
+            ? args[index] extends number
+              ? Numeric.Checked<args[index], true>
+              : args[index]
             : args[index]
           : args[index]
         : args[index]
@@ -89,23 +101,15 @@ export declare namespace cssFunction {
           : readonly [Input<first>, ...Arguments<rest>]
         : readonly []
   /** Scalar domain implied by an authored parameter syntax. */
-  type Input<parameter extends Parameter> = parameter extends {
-    syntax: '<number>' | '<integer>'
-  }
-    ? number
-    : parameter extends { syntax: '<percentage>' }
-      ? `${number}%`
-      : parameter extends { syntax: '<length>' }
-        ? Exclude<Literal.Length, `${number}%`>
-        : parameter extends { syntax: '<length-percentage>' }
-          ? Literal.Length
-          : parameter extends { syntax: '<angle>' }
-            ? `${number}${'deg' | 'grad' | 'rad' | 'turn'}`
-            : parameter extends { syntax: '<time>' }
-              ? Literal.Time
-              : parameter extends { syntax: '<color>' }
-                ? Literal.Color
-                : string | number
+  type Input<parameter extends Parameter> =
+    | (parameter extends {
+        syntax: infer syntax extends string
+      }
+        ? InputSyntax<FunctionSyntax.Unwrap<syntax>>
+        : string | number)
+    | (parameter extends { syntax: infer syntax extends string }
+        ? FunctionValue.Reference<syntax>
+        : FunctionValue.Reference)
 }
 
 type Checked<body> = {
@@ -120,3 +124,40 @@ type Checked<body> = {
         ? Checked<body[key]>
         : never
 }
+
+type InputSyntax<syntax extends string> =
+  syntax extends `${infer first}|${infer rest}`
+    ?
+        | InputSyntax<FunctionSyntax.Trim<first>>
+        | InputSyntax<FunctionSyntax.Trim<rest>>
+    : syntax extends '*'
+      ? string | number
+      : syntax extends `${infer base}+` | `${infer base}#`
+        ? string | InputSyntax<base>
+        : syntax extends '<number>' | '<integer>'
+          ? number
+          : syntax extends '<percentage>'
+            ? `${number}%`
+            : syntax extends '<length>'
+              ? Exclude<Literal.Length, `${number}%`>
+              : syntax extends '<length-percentage>'
+                ? Literal.Length
+                : syntax extends '<angle>'
+                  ? `${number}${'deg' | 'grad' | 'rad' | 'turn'}`
+                  : syntax extends '<time>'
+                    ? Literal.Time
+                    : syntax extends '<color>'
+                      ? Literal.Color
+                      : syntax extends '<resolution>'
+                        ? `${number}${'dpi' | 'dpcm' | 'dppx' | 'x'}`
+                        : syntax extends '<url>'
+                          ? `url(${string})`
+                          : syntax extends '<string>'
+                            ? `"${string}"` | `'${string}'`
+                            : syntax extends
+                                  | '<image>'
+                                  | '<custom-ident>'
+                                  | '<transform-function>'
+                                  | '<transform-list>'
+                              ? string
+                              : syntax

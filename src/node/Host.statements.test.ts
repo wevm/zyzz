@@ -6,6 +6,60 @@ import { Host } from 'zyzz/node'
 import * as Watch from '../../test/fixtures/Watch.js'
 
 describe('create', () => {
+  test('publishes UTF-8 stylesheet bytes without a BOM or encoding declaration', async () => {
+    const root = await Fs.mkdtemp(
+      Path.resolve(import.meta.dirname, '../../.fixture-encoding-'),
+    )
+    try {
+      await Fs.writeFile(
+        Path.join(root, 'app.ts'),
+        `import {global} from 'zyzz/web';global({'body::before':{content:'"héllo ● 日本語"'}});`,
+      )
+      await using host = await Host.create({
+        root,
+        outDir: Path.join(root, 'output'),
+        packageId: 'encoding',
+      })
+      await host.build()
+      const bytes = await Fs.readFile(Path.join(root, 'output/zyzz.shared.css'))
+
+      expect(new TextDecoder('utf-8', { fatal: true }).decode(bytes))
+        .toMatchInlineSnapshot(`
+        "body:before {
+          content: "héllo ● 日本語";
+        }
+        "
+      `)
+      expect(
+        bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])),
+      ).toMatchInlineSnapshot('false')
+
+      const notifications = Watch.create({ path: 'zyzz.shared.css' })
+      host.watch({ onResult: notifications.onResult })
+      await notifications.next(() =>
+        Watch.write({
+          path: Path.join(root, 'app.ts'),
+          source: `import {global} from 'zyzz/web';global({'body::before':{content:'"été ◇ 한국어"'}});`,
+        }),
+      )
+      const updated = await Fs.readFile(
+        Path.join(root, 'output/zyzz.shared.css'),
+      )
+
+      expect(new TextDecoder('utf-8', { fatal: true }).decode(updated))
+        .toMatchInlineSnapshot(`
+        "body:before {
+          content: "été ◇ 한국어";
+        }
+        "
+      `)
+      expect(
+        updated.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])),
+      ).toMatchInlineSnapshot('false')
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  })
   test('copies nested stylesheet imports and their relative assets', async () => {
     const root = await Fs.mkdtemp(
       Path.resolve(import.meta.dirname, '../../.fixture-imports-'),

@@ -1,24 +1,62 @@
 {
   "entries": {
     "@charset": {
-      "evidence": [],
+      "evidence": [
+        "docs/api/web/at-rules.md",
+        "src/compiler/Transform.profile.test.ts",
+        "src/node/Host.statements.test.ts"
+      ],
       "grammar": "9126274fe957e9d6ff46fe3931bc6b8e6024eaf14000e69bb2a343389649b755",
-      "status": "deferred"
+      "status": "supported",
+      "gaps": []
     },
     "@color-profile": {
-      "evidence": [],
-      "grammar": "9a9c77968778e7aab2779d51c1265b7d39444e14dd1253aa13185933a9c6ff09",
-      "status": "deferred"
+      "evidence": [
+        "src/compiler/Transform.profile.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/colorProfile.ts"
+      ],
+      "grammar": "4ea47129d114b697f8512e2e7063026fe403dd924147ace27bafaaa4dc0dd584",
+      "status": "partial",
+      "gaps": [
+        "Public descriptor types and real ICC profile rendering, including rendering intents and relative components."
+      ]
+    },
+    "@color-profile/components": {
+      "evidence": [
+        "src/compiler/Transform.profile.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/colorProfile.ts"
+      ],
+      "grammar": "84c54f045fdfb11d41cb44b127e48fcd97aa9b0ccd3e5092bc5857162bf64773",
+      "status": "partial",
+      "gaps": [
+        "Public descriptor types and real ICC profile rendering, including rendering intents and relative components."
+      ]
     },
     "@color-profile/rendering-intent": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.profile.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/colorProfile.ts"
+      ],
       "grammar": "82d5fc212890a7d8a3acc272ef4d2666ba69ee219cbd5a76a7129c0139540010",
-      "status": "deferred"
+      "status": "partial",
+      "gaps": [
+        "Public descriptor types and real ICC profile rendering, including rendering intents and relative components."
+      ]
     },
     "@color-profile/src": {
-      "evidence": [],
+      "evidence": [
+        "src/compiler/Transform.profile.test.ts",
+        "src/compiler/Transform.namedRules.test.ts",
+        "src/web/colorProfile.ts"
+      ],
       "grammar": "9195c0fd7a8705fa31d69d85d0b438c556a067db50063c0ac97fb0fad48e8f15",
-      "status": "deferred"
+      "status": "partial",
+      "gaps": [
+        "Public descriptor types and real ICC profile rendering, including rendering intents and relative components."
+      ]
     },
     "@container": {
       "evidence": [
@@ -27,7 +65,10 @@
         "src/web/global.test-d.ts"
       ],
       "grammar": "db5a939b0b4c3f36f9ef051a09d81ad6a82f451ae374c2b6e96773d88e40a11b",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete named, style, and scroll-state query contexts and browser behavior."
+      ]
     },
     "@counter-style": {
       "evidence": [
@@ -37,7 +78,10 @@
         "src/web/counterStyle.test-d.ts"
       ],
       "grammar": "47cb037a685291f20a105520dbc1962bf5dfaadf4f263f217f54e8e735f877a6",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+      ]
     },
     "@counter-style/additive-symbols": {
       "evidence": [
@@ -47,7 +91,10 @@
         "src/web/counterStyle.test-d.ts"
       ],
       "grammar": "0fba72d7a68fd266f5afd14c07725fd67cfb59ecad642971d138faaf461b95ed",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+      ]
     },
     "@counter-style/fallback": {
       "evidence": [
@@ -57,7 +104,10 @@
         "src/web/counterStyle.test-d.ts"
       ],
       "grammar": "b16d040f3d41d56a9b71140c1dfefa4f9903bac12b52026f5f13108d923dd769",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+      ]
     },
     "@counter-style/negative": {
       "evidence": [
@@ -67,7 +117,10 @@
         "src/web/counterStyle.test-d.ts"
       ],
       "grammar": "5d2d39e6d1b6f74cc3883dc6ed2157493533c3b1ce2106b92c4c75a8d1980e4d",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+      ]
     },
     "@counter-style/pad": {
       "evidence": [
@@ -77,7 +130,10 @@
         "src/web/counterStyle.test-d.ts"
       ],
       "grammar": "d5cdbcfb5c0f4fe389f7cce10cd58c567e939a6676a909277c4cc412a0d050ad",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+      ]
     },
     "@counter-style/prefix": {
       "evidence": [
@@ -87,7 +143,10 @@
         "src/web/counterStyle.test-d.ts"
       ],
       "grammar": "9b02ada0b25e4ece5c50229f29ec27059c197809976f6bc6837f2506e62b3e47",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+      ]
     },
     "@counter-style/range": {
       "evidence": [
@@ -97,7 +156,10 @@
         "src/web/counterStyle.test-d.ts"
       ],
       "grammar": "51d96e8d1564deb54ea7822f88dcb1d0461c62e0d3b64c5de71ec6721e30e4ac",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+      ]
     },
     "@counter-style/speak-as": {
       "evidence": [
@@ -107,7 +169,10 @@
         "src/web/counterStyle.test-d.ts"
       ],
       "grammar": "1fa40473a4fcea03faf21e5dc719d80b76ba5c8b48e7997419b4f0d05c7e32d2",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+      ]
     },
     "@counter-style/suffix": {
       "evidence": [
@@ -117,7 +182,10 @@
         "src/web/counterStyle.test-d.ts"
       ],
       "grammar": "a39e403fc0e998142f7f7ce60528af2a8c807aad7f1a5ba5f12e951f8ed043c3",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+      ]
     },
     "@counter-style/symbols": {
       "evidence": [
@@ -127,7 +195,10 @@
         "src/web/counterStyle.test-d.ts"
       ],
       "grammar": "5ca217aa2d7ccf55a830bd9133c61120d17d4024af7050cb764c697549df379b",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+      ]
     },
     "@counter-style/system": {
       "evidence": [
@@ -137,7 +208,10 @@
         "src/web/counterStyle.test-d.ts"
       ],
       "grammar": "fb62a3c655b35a322bd8815ae95feacb57788f1343bc24585509ab6ebfc67982",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
+      ]
     },
     "@custom-media": {
       "evidence": [
@@ -147,7 +221,10 @@
         "src/web/statements.test-d.ts"
       ],
       "grammar": "d7d28aa0512ca01731f311c3a97c568d456ff66675a114807592b4979b74c2b0",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Native query evaluation and complete query-reference placement."
+      ]
     },
     "@document": {
       "evidence": [
@@ -157,7 +234,10 @@
         "src/web/statements.test-d.ts"
       ],
       "grammar": "672c3b65fe46eb2357ef19e03b340e64d3615c2b5be5f1623047abb44316a414",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Legacy-engine rendering and complete matching-function grammar."
+      ]
     },
     "@font-face": {
       "evidence": [
@@ -166,7 +246,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "b61f3c3a0c07012e73bb4d4c18158a70f1ae3455d917cb2d4b38232755e0b8a0",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/ascent-override": {
       "evidence": [
@@ -175,7 +258,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "7ff7617d15cc919ff34d85af755539daf392cdd7e258cd10e25f91d8c5b1eb17",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/descent-override": {
       "evidence": [
@@ -184,7 +270,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "7ba0ad7bc82c808bf1830b7d857d9d4f4c59f600e447d5ddd1bc112781d508bb",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/font-display": {
       "evidence": [
@@ -193,7 +282,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "85890362316d8d2425f25aa9b1bd4df801cd31980781eb8e46eebe9709836659",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/font-family": {
       "evidence": [
@@ -202,7 +294,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "755be7380e68ca77bde27176424b4b4fd2b1a90497f157cf27dfb7c96ac0ae1c",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/font-feature-settings": {
       "evidence": [
@@ -211,7 +306,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "be905fe8f3612f0144ced96c9fac4b676c06b95b1612b16afb13f6c8e6ac8fa9",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/font-stretch": {
       "evidence": [
@@ -220,7 +318,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "404f0ceb00cef0d178fe1ce806383c64a3fd544c49460d13cac345ac8605da01",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/font-style": {
       "evidence": [
@@ -229,7 +330,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "9f2a57837871b0a8390f087fd77e60e18035de2709e5969de8a8f0d3ffff4d7a",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/font-variation-settings": {
       "evidence": [
@@ -238,7 +342,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "c6bf9ad482a6e3c8e978d6289303e0ec979ba44c2aa66bed508d622cf66d462d",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/font-weight": {
       "evidence": [
@@ -247,7 +354,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "c07bc7925ad5b97bcc8ed71f0ef8be9f48e25b7dabe027b7bef3dd9d5b744c1f",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/line-gap-override": {
       "evidence": [
@@ -256,7 +366,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "f1c79c2a4e882e76ff0daf18088ef1f2d2e18c32fd7ff3952056bac681e8e1d7",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/size-adjust": {
       "evidence": [
@@ -265,7 +378,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "699f7fed3ab1827ffdf2a5d3c6783adf70257901b023cb73231a8a28e2ec9a21",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/src": {
       "evidence": [
@@ -274,7 +390,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "bc27b9efb4551bafa14ee893bb708db14cdc0a769223773e1081413ad1482869",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-face/unicode-range": {
       "evidence": [
@@ -283,7 +402,10 @@
         "src/web/fontFace.test-d.ts"
       ],
       "grammar": "df1937f4e13e1374261d535663d4bfe8a8e53594ebaf4ad46d8edb193a9ba4d2",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Descriptor-specific shaping, metrics, variation, and loading behavior."
+      ]
     },
     "@font-feature-values": {
       "evidence": [
@@ -292,7 +414,10 @@
         "src/web/fontFeatureValues.test-d.ts"
       ],
       "grammar": "3754bd856e50d7c118742d30f9a803782a1510fb12ad16c6f655ac50260e1376",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Actual font-feature shaping for every nested alias block and font-display behavior."
+      ]
     },
     "@font-feature-values/@annotation": {
       "evidence": [
@@ -301,7 +426,10 @@
         "src/web/fontFeatureValues.test-d.ts"
       ],
       "grammar": "0d279e9718aebeb22026a303a5147f597494247a5d5ac8c9b24d35000edc9d3a",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Actual font-feature shaping for every nested alias block and font-display behavior."
+      ]
     },
     "@font-feature-values/@character-variant": {
       "evidence": [
@@ -310,7 +438,10 @@
         "src/web/fontFeatureValues.test-d.ts"
       ],
       "grammar": "d4bd34d30be82034ecc945c14687b6d619ecdad53d7b651f105b6008bf201520",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Actual font-feature shaping for every nested alias block and font-display behavior."
+      ]
     },
     "@font-feature-values/@ornaments": {
       "evidence": [
@@ -319,7 +450,10 @@
         "src/web/fontFeatureValues.test-d.ts"
       ],
       "grammar": "abc7372a008841855cb9944a4b94fa6628f40130b5ad7581672a4e1b02d14f3b",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Actual font-feature shaping for every nested alias block and font-display behavior."
+      ]
     },
     "@font-feature-values/@styleset": {
       "evidence": [
@@ -328,7 +462,10 @@
         "src/web/fontFeatureValues.test-d.ts"
       ],
       "grammar": "1f5dd04932693c28799125bdfe749441fbb87636d807fd4b370e73658f7b499d",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Actual font-feature shaping for every nested alias block and font-display behavior."
+      ]
     },
     "@font-feature-values/@stylistic": {
       "evidence": [
@@ -337,7 +474,10 @@
         "src/web/fontFeatureValues.test-d.ts"
       ],
       "grammar": "5f76f2d98b4ba97b2823e13b817ed452a614939cf5930a48e77855907eafad97",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Actual font-feature shaping for every nested alias block and font-display behavior."
+      ]
     },
     "@font-feature-values/@swash": {
       "evidence": [
@@ -346,7 +486,10 @@
         "src/web/fontFeatureValues.test-d.ts"
       ],
       "grammar": "1ab4512e8d299a61f91fa4ac135dc9b7c9d737efbeaaf507581c1d6fb7ca3166",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Actual font-feature shaping for every nested alias block and font-display behavior."
+      ]
     },
     "@font-feature-values/font-display": {
       "evidence": [
@@ -355,67 +498,102 @@
         "src/web/fontFeatureValues.test-d.ts"
       ],
       "grammar": "bdc8347bf5aee554d985c51afb61ca1747fcb5c33a48d204392b8bf35b7adbbb",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Actual font-feature shaping for every nested alias block and font-display behavior."
+      ]
     },
     "@font-palette-values": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.namedRules.browser.test.ts",
         "src/compiler/Transform.namedRules.test.ts",
-        "src/web/fontPaletteValues.test-d.ts"
+        "src/web/fontPaletteValues.test-d.ts",
+        "src/compiler/Transform.fontPalette.test.ts",
+        "src/vite/statements.test.ts"
       ],
       "grammar": "c92fb9d52767a438e3d0d7141be105380c6847deaba860da1dc5ac77a734cb23",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+      ]
     },
     "@font-palette-values/base-palette": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.namedRules.browser.test.ts",
         "src/compiler/Transform.namedRules.test.ts",
-        "src/web/fontPaletteValues.test-d.ts"
+        "src/web/fontPaletteValues.test-d.ts",
+        "src/compiler/Transform.fontPalette.test.ts",
+        "src/vite/statements.test.ts"
       ],
       "grammar": "61e5538faa46312030b20ae0445541f34bf0a2fcbabec6d22e9fd8722e9c241f",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+      ]
     },
     "@font-palette-values/font-family": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.namedRules.browser.test.ts",
         "src/compiler/Transform.namedRules.test.ts",
-        "src/web/fontPaletteValues.test-d.ts"
+        "src/web/fontPaletteValues.test-d.ts",
+        "src/compiler/Transform.fontPalette.test.ts",
+        "src/vite/statements.test.ts"
       ],
       "grammar": "9a054710db711c9af74be4ce1d1f0f65e4cf9b635585b2de9b866d54d8ebb6bb",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+      ]
     },
     "@font-palette-values/override-colors": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.namedRules.browser.test.ts",
         "src/compiler/Transform.namedRules.test.ts",
-        "src/web/fontPaletteValues.test-d.ts"
+        "src/web/fontPaletteValues.test-d.ts",
+        "src/compiler/Transform.fontPalette.test.ts",
+        "src/vite/statements.test.ts"
       ],
       "grammar": "33323137ab3f40a509b44de89db3f5f0b20d2c23a4ec396a0f06c78b3c80c45a",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
+      ]
     },
     "@function": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.functionSyntax.browser.test.ts",
+        "src/compiler/Transform.functionSyntax.test.ts",
         "src/compiler/Transform.statements.test.ts",
+        "src/web/cssFunction.test-d.ts",
         "src/web/global.test-d.ts",
         "src/web/statements.test-d.ts"
       ],
       "grammar": "c16af7ef56ad43f650cc030be6e99eacce62f9f8689d6089e841cb75ec1650f0",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Escaped identifiers, list argument refinements, nested function references, and complete permitted contexts."
+      ]
     },
     "@function/result": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
+        "src/compiler/Transform.functionSyntax.browser.test.ts",
+        "src/compiler/Transform.functionSyntax.test.ts",
         "src/compiler/Transform.statements.test.ts",
+        "src/web/cssFunction.test-d.ts",
         "src/web/global.test-d.ts",
         "src/web/statements.test-d.ts"
       ],
       "grammar": "63901b65a4ee8d6171e904cbeee319eebe1fa1f7b8957a17681394ee7b1820bd",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Escaped identifiers, list argument refinements, nested function references, and complete permitted contexts."
+      ]
     },
     "@import": {
       "evidence": [
@@ -425,7 +603,10 @@
         "src/web/statements.test-d.ts"
       ],
       "grammar": "7ffb43eb2f0707bad7c6701bf95b87fa82825bf600c2f9e395a3a74562829ef1",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Browser loading and cascade across layer, supports, and media combinations."
+      ]
     },
     "@keyframes": {
       "evidence": [
@@ -434,7 +615,10 @@
         "src/web/keyframes.test-d.ts"
       ],
       "grammar": "4ad39b964931f1ec90a222a88d60cff78c827ae8cc1143bf7e3c718b0cc9ae22",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Timeline-range animation rendering and complete stop spelling grammar."
+      ]
     },
     "@layer": {
       "evidence": [
@@ -443,7 +627,10 @@
         "src/web/global.test-d.ts"
       ],
       "grammar": "990de8dcc807b3a3c32455de4e9dab8d0e2c954ed4830133a4afe0cda9ebead1",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete anonymous/nested context, escaped name, and ordering grammar review."
+      ]
     },
     "@media": {
       "evidence": [
@@ -452,206 +639,297 @@
         "src/web/global.test-d.ts"
       ],
       "grammar": "90e99bc58b75597a7e743d7c2dab2f5275d2d18c9bd48966bd3a82bd63357b56",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete conditional grammar and legal placement review against the pinned inventory."
+      ]
     },
     "@namespace": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.statements.test.ts",
         "src/web/global.test-d.ts",
-        "src/web/statements.test-d.ts"
+        "src/web/statements.test-d.ts",
+        "src/compiler/Transform.namespace.test.ts",
+        "src/node/Host.namespace.test.ts",
+        "src/web/namespace.test-d.ts"
       ],
       "grammar": "effa4464034525f00bd0c9a3d3e8cd2640de141c1f9f4e7aac526f1e778149a0",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "b4b26ca90beda50527050bc521cfbdf1e8b27a5f60deec0b710c6d8772ba4008",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+      ]
     },
     "@page/@bottom-center": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "47aef8d1cc9dde57713943038f873d2fd7bfd6a8b52d0ea76ab2391179629ec4",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@bottom-left": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "874c88c7e872549e1d3dd1e1dd223ac6be3d48e76c8e28b1e4596f8b03317849",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@bottom-left-corner": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f2d9aac4bc3e99557c4696c08187b18a964287d1af9ce1b2ce6f2b4610a51d3f",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@bottom-right": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "567829cdd2d5d522fdead951fd5d87e5dd6781600d2b49d09d330e4761c52631",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@bottom-right-corner": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "d1ac38d92ad52b8d8acc3d762d6b11d3957710e9f73ddfad523c98a6921a5f5b",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@left-bottom": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f9573086a7f02c9c1bf7393b3f3bcf16e6dbc98f37703712acac39209e0b72cd",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@left-middle": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f26bb7d9f86b73a19338d37185c2a29c607efdb906c2c823ed79cfbb26babe3d",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@left-top": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "bbfce9c8b5e16cc3409d3bc5bd18a1da579971e08a07af9d1464169e9d773b60",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@right-bottom": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "dbd4e4fceeeafcf3f4fa312aa55755bf1988f2e247c8e6405fbbf9aa2df42265",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@right-middle": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "95d6340b60be27f2203bc88cb13ec1d7af29aa1a03b34cd5658a72f73cd90bc8",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@right-top": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f3aeb3a256fd424de4dfcffd4230f421f7da1db13085bdeef7a22f84bf57135d",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@top-center": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "15ffd8470b49eee165034a6944dfd07e25f76d84196d59448c404e6dbdf4557f",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@top-left": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f58aab052417a5d1c8ea039476cb3d74e3be472cf0f1ebb88e4eeaabaf3fcd85",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@top-left-corner": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "35a83109c2f4415f83666c7bb34b78d72f9ab9900c4dac402fc880e81bdc5e2b",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@top-right": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "f1ce42d00144f196a1b81c409318368b126011b3ab195c6a9b680b69906689bc",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/@top-right-corner": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
+        "src/compiler/Transform.page.test.ts",
+        "src/node/Host.page.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "0162fa26a55c40deec12fbda4084058146b5d3d61a09b03bf097949cb20797d2",
-      "status": "partial"
+      "status": "supported",
+      "gaps": []
     },
     "@page/bleed": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "2f3468fb52d55f9fa4229cbe0db9a2a9db0debda864c4ccfe54efc543c0ef9b2",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+      ]
     },
     "@page/marks": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "ea1e5a6082c997f54d06126571c73ef479e06bcb38922e8147ef99c929161c26",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+      ]
     },
     "@page/page-orientation": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "369a1c7f3142934614c6bd4f00ac3d3a4b50423f6a134f4d3d15f6a9f9d79898",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+      ]
     },
     "@page/size": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.page.browser.test.ts",
         "src/web/page.test-d.ts"
       ],
       "grammar": "1b3469516fd0b456cb85ca4fd15340bcd2c93848e950e142355cf834e0658872",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+      ]
     },
     "@position-try": {
       "evidence": [
@@ -661,7 +939,10 @@
         "src/web/positionTry.test-d.ts"
       ],
       "grammar": "895dc25b9b3e1b8ccda99525913066aba33020782bad50cdef8b6d8ee3eebe65",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete allowed-declaration/context grammar and fallback rendering combinations."
+      ]
     },
     "@property": {
       "evidence": [
@@ -671,7 +952,10 @@
         "src/web/global.test-d.ts"
       ],
       "grammar": "3824fe15582d4b37949890dc7f1e920c9ddc93ea647f3d5445ea0b20498b3162",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete registration syntax/initial-value combinations and associated rendering evidence."
+      ]
     },
     "@property/inherits": {
       "evidence": [
@@ -681,7 +965,10 @@
         "src/web/global.test-d.ts"
       ],
       "grammar": "0196d12d9379884df1b96634c1ba6236eee9080f5a03bad67055dd7040da9d96",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete registration syntax/initial-value combinations and associated rendering evidence."
+      ]
     },
     "@property/initial-value": {
       "evidence": [
@@ -691,7 +978,10 @@
         "src/web/global.test-d.ts"
       ],
       "grammar": "09451c2f14a95568b465565208d185a32491a6300a6dcdce8c050409f590981c",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete registration syntax/initial-value combinations and associated rendering evidence."
+      ]
     },
     "@property/syntax": {
       "evidence": [
@@ -701,7 +991,10 @@
         "src/web/global.test-d.ts"
       ],
       "grammar": "04dc4830cc0cefd0bf07ef675a992674d48f46f3856a52db5f97c38437c6d4c9",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete registration syntax/initial-value combinations and associated rendering evidence."
+      ]
     },
     "@scope": {
       "evidence": [
@@ -710,12 +1003,18 @@
         "src/web/global.test-d.ts"
       ],
       "grammar": "1f8d256d219cfd88f4fd94066917ccc7f4203dbd94d41393ae368cfbc67f01e7",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete root/limit nesting, specificity, and allowed-context review."
+      ]
     },
     "@starting-style": {
       "evidence": ["src/compiler/Transform.conditions.test.ts"],
       "grammar": "84cfab49cedbd5591e889206988100c2fd6e73a24473949b7122a40309db5eab",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Transition-start rendering and complete style/grouping placement."
+      ]
     },
     "@supports": {
       "evidence": [
@@ -724,34 +1023,47 @@
         "src/web/global.test-d.ts"
       ],
       "grammar": "dfa8c2aae2ccb2707e48096978e79cad532b7584b61f969264b1fce809c4ff28",
-      "status": "partial"
+      "status": "partial",
+      "gaps": ["Complete condition grammar and allowed-context review."]
     },
     "@view-transition": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.viewTransition.browser.test.ts",
         "src/web/viewTransition.test-d.ts"
       ],
       "grammar": "1d1a5902aefa8e5c53028f8344ffefd115621cf460e93a81df3267ee85cc7881",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete transition-type grammar/type validation and source-owned watch acceptance; packed navigation, native capture, active types, and conditional opt-out are verified."
+      ]
     },
     "@view-transition/navigation": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.viewTransition.browser.test.ts",
         "src/web/viewTransition.test-d.ts"
       ],
       "grammar": "43dca31c3fc2f472daa8a1fa85ff2e874e8f85dd1f791649e323bcd081b7a305",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete transition-type grammar/type validation and source-owned watch acceptance; packed navigation, native capture, active types, and conditional opt-out are verified."
+      ]
     },
     "@view-transition/types": {
       "evidence": [
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/compiler/Transform.documentRules.test.ts",
+        "src/compiler/Transform.viewTransition.browser.test.ts",
         "src/web/viewTransition.test-d.ts"
       ],
       "grammar": "d2d542ffa7166dfbe5d5595021ee66ea065d6cb5bc369128fc7855b2fbfb8f79",
-      "status": "partial"
+      "status": "partial",
+      "gaps": [
+        "Complete transition-type grammar/type validation and source-owned watch acceptance; packed navigation, native capture, active types, and conditional opt-out are verified."
+      ]
     }
   },
   "version": "2.35.0"

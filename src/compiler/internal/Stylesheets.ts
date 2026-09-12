@@ -170,9 +170,10 @@ export function render(sections: readonly Section[]) {
                 }
               if (
                 rule.type === 'unknown' &&
-                ['color-profile', 'function', 'custom-media'].includes(
-                  rule.value.name,
-                )
+                (rule.value.name.startsWith('-zyzz-fpv-') ||
+                  ['color-profile', 'function', 'custom-media'].includes(
+                    rule.value.name,
+                  ))
               ) {
                 const name = rule.value.prelude[0]
                 if (
@@ -183,7 +184,9 @@ export function render(sections: readonly Section[]) {
                     name:
                       name.type === 'function' ? name.value.name : name.value,
                     data: [rule.value.prelude, rule.value.block],
-                    kind: rule.value.name,
+                    kind: rule.value.name.startsWith('-zyzz-fpv-')
+                      ? 'font-palette-values'
+                      : rule.value.name,
                   }
               }
               return undefined

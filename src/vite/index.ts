@@ -789,9 +789,13 @@ export function zyzz(): Plugin {
                 : undefined
           const result = Namespaces.bundle(css, previous)
           let restored = AtRules.rename(
-            result.css,
-            '-zyzz-ffv-000000000',
-            'font-feature-values',
+            AtRules.rename(
+              result.css,
+              '-zyzz-ffv-000000000',
+              'font-feature-values',
+            ),
+            '-zyzz-fpv-000000000',
+            'font-palette-values',
           )
           if (result.map && external?.type === 'asset')
             external.source = JSON.stringify(result.map)
@@ -867,9 +871,13 @@ export function zyzz(): Plugin {
       const transport = (css: string) =>
         this.environment.config.command === 'build'
           ? AtRules.rename(
-              Namespaces.protect(css),
-              'font-feature-values',
-              '-zyzz-ffv-000000000',
+              AtRules.rename(
+                Namespaces.protect(css),
+                'font-feature-values',
+                '-zyzz-ffv-000000000',
+              ),
+              'font-palette-values',
+              '-zyzz-fpv-000000000',
             )
           : css
       if (id === sharedId)

@@ -2,6 +2,7 @@
 *.tsbuildinfo
 .attest/
 .fixture-*/
+.venv/
 bench/results/
 coverage/
 dist/

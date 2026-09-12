@@ -19,7 +19,10 @@ page({descriptors:{size:'A4','@top-center':{content:'"Page"'}}});`,
         'svg.ts': `import {namespace,global} from 'zyzz/web';namespace({uri:'http://www.w3.org/2000/svg'});global({'.icon':{fill:'red'}});`,
       },
     })
-    const browser = await chromium.launch()
+    const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+    const browser = await chromium.launch(
+      executablePath ? { executablePath } : {},
+    )
     try {
       const page = await browser.newPage({
         viewport: { width: 300, height: 200 },
@@ -93,12 +96,19 @@ page({descriptors:{size:'A4','@top-center':{content:'"Page"'}}});`,
       fontFeatureValues: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Evidence',fontDisplay:'swap',features:{'@styleset':{editorial:[1,2]}}});`,
       viewTransition: `import {viewTransition} from 'zyzz/web';viewTransition({navigation:'auto',types:'slide'});`,
     }
-    const browser = await chromium.launch()
+    const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+    const browser = await chromium.launch(
+      executablePath ? { executablePath } : {},
+    )
     try {
       const page = await browser.newPage()
       const capabilities: Record<
         string,
-        { accepted: boolean; cssom: readonly string[] }
+        {
+          accepted: boolean
+          cssom: readonly string[]
+          rendering?: 'unavailable' | 'unverified' | 'verified'
+        }
       > = {}
       for (const [name, source] of Object.entries(cases)) {
         const output = Transform.compile({ moduleId: `${name}.ts`, source })
@@ -111,6 +121,10 @@ page({descriptors:{size:'A4','@top-center':{content:'"Page"'}}});`,
           accepted: rules.some((rule) => rule.startsWith('@')),
           cssom: rules,
         }
+        if (name === 'colorProfile')
+          capabilities[name].rendering = capabilities[name].accepted
+            ? 'unverified'
+            : 'unavailable'
         await Fs.mkdir('test-results', { recursive: true })
         await Fs.writeFile(
           'test-results/at-rule-browser-capabilities.json',

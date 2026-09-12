@@ -2,18 +2,18 @@
  * Rewrites extracted style calls into executable modules with CSS and source maps.
  * @module
  */
-import * as Namespaces from './internal/Namespaces.js'
 import * as Applications from './internal/Applications.js'
-import * as Expression from './internal/Expression.js'
-import * as Mapping from '@jridgewell/gen-mapping'
 import type * as Ast from '@oxc-project/types'
-import MagicString from 'magic-string'
-import * as Parser from 'oxc-parser'
-import * as Walker from 'oxc-walker'
 import * as Css from '../web/Css.js'
-import type * as Style from '../Style.js'
+import * as Expression from './internal/Expression.js'
+import MagicString from 'magic-string'
+import * as Mapping from '@jridgewell/gen-mapping'
+import * as Namespaces from './internal/Namespaces.js'
+import * as Parser from 'oxc-parser'
 import * as Source from './Source.js'
+import type * as Style from '../Style.js'
 import * as Themes from './internal/Themes.js'
+import * as Walker from 'oxc-walker'
 
 /**
  * Rewrites literal web styles and local themes without evaluation or file access.
@@ -47,11 +47,11 @@ export function compile(options: compile.Options): compile.ReturnType {
       (() => {
         const typed = /\.[cm]?tsx?$/.test(options.moduleId)
         if (call.kind === 'cssFunction')
-          return `((...args${typed ? ': readonly (string | number)[]' : ''}) => ${JSON.stringify(call.name + '(')} + args.join(',') + ')')${typed ? ` as import('zyzz/web').cssFunction.Reference<${JSON.stringify(call.function?.parameters ?? [])}, ${JSON.stringify(call.function?.returns ?? '*')}>` : ''}`
+          return `((...args${typed ? ': readonly (string | number)[]' : ''}) => ${JSON.stringify(call.name + '(')} + args.map(value => typeof value === 'string' && value.includes(',') && !value.trimStart().startsWith('{') ? '{' + value + '}' : value).join(',') + ')')${typed ? ` as import('zyzz/web').cssFunction.Reference<${JSON.stringify(call.function?.parameters ?? [])}, ${JSON.stringify(call.function?.returns ?? '*')}>` : ''}`
         if (call.kind === 'customMedia')
           return `${JSON.stringify(`@media (${call.name})`)}${typed ? ` as unknown as import('zyzz/web').customMedia.Reference` : ''}`
         if (!call.name) return 'void 0'
-        return `${JSON.stringify(call.name)}${call.kind === 'keyframes' || call.kind === 'colorProfile' || !typed ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
+        return `${JSON.stringify(call.name)}${call.kind === 'keyframes' || !typed ? '' : ` as import('zyzz/web').${call.kind}.Reference`}`
       })(),
     )
 
@@ -418,6 +418,7 @@ export function compile(options: compile.Options): compile.ReturnType {
                 'fontPaletteValues',
                 'fontFeatureValues',
                 'page',
+                'property',
                 'viewTransition',
                 'global',
                 'fontFace',

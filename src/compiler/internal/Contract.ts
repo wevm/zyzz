@@ -2,15 +2,17 @@
  * Serializes validated theme authoring data for independently compiled libraries.
  * @module
  */
-import * as Stylesheets from './Stylesheets.js'
 import type * as Binding from '../../internal/Binding.js'
-import * as Marker from '../../runtime/Marker.js'
 import * as Config from '../../Config.js'
 import * as Configurations from './Configurations.js'
+import * as FunctionSyntax from '../../internal/FunctionSyntax.js'
+import * as Identifiers from './Identifiers.js'
+import * as Marker from '../../runtime/Marker.js'
 import * as Shorthands from '../../internal/Shorthands.js'
-import * as Token from '../../internal/Token.js'
+import * as Stylesheets from './Stylesheets.js'
 import * as Theme from '../../Theme.js'
 import type * as Themes from './Themes.js'
+import * as Token from '../../internal/Token.js'
 
 /** Reads versioned JSON as validated data; never evaluates package code. */
 export function read(
@@ -19,7 +21,7 @@ export function read(
   moduleId = '',
 ) {
   const data = record(JSON.parse(source))
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(data.version as number))
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
 
   const themes: Record<string, Theme.Definition> = Object.create(null)
@@ -124,7 +126,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        (data.version !== 9 && data.version !== 10) ||
+        ![9, 10, 11, 12].includes(data.version as number) ||
         ![
           'cssFunction',
           'customMedia',
@@ -151,7 +153,7 @@ export function read(
           tokenType: '{}',
           reference: reference as NonNullable<Themes.Call['reference']>,
           ...(reference === 'cssFunction'
-            ? { function: signature(entry.function) }
+            ? { function: signature(entry.function, data.version as number) }
             : {}),
         },
       }
@@ -412,105 +414,142 @@ export function write(
         },
       ]),
     ),
-    version:
-      stylesheets.some((section) => section.namespaces?.length) ||
-      Object.values(links).some(
-        (link) =>
-          link.call.reference === 'cssFunction' ||
-          link.call.reference === 'customMedia',
-      )
-        ? 10
-        : Object.values(links).some((link) => link.kind === 'rule-reference')
-          ? 9
-          : Object.values(links).some((link) => link.kind === 'variables')
-            ? 8
-            : stylesheets.length ||
-                Object.values(links).some((link) => link.kind === 'animation')
-              ? 7
-              : Object.values(links).some((link) => link.kind === 'marker')
-                ? 6
-                : Object.values(themes).some(
-                      (theme) =>
-                        theme[Token.definition].contract.shorthands ||
-                        Object.hasOwn(theme.tokens, 'margin') ||
-                        Object.hasOwn(theme.tokens, 'padding'),
-                    ) ||
-                    Object.values(links).some(
-                      (link) =>
-                        link.call.output === 'html' ||
-                        Object.values(link.members ?? {}).some(
-                          (member) => member.call.output === 'html',
-                        ),
-                    )
-                  ? 5
-                  : stylesheets.length ||
+    version: Object.values(links).some(
+      (link) => link.call.function && extended(link.call.function),
+    )
+      ? 12
+      : stylesheets.some((section) => section.namespaces?.length) ||
+          Object.values(links).some(
+            (link) =>
+              link.call.function &&
+              [
+                link.call.function.returns,
+                ...link.call.function.parameters.map(
+                  (parameter) => parameter.syntax ?? '*',
+                ),
+              ].some(
+                (syntax) =>
+                  // Version 10 readers accepted this fixed scalar subset.
+                  !(
+                    [
+                      '*',
+                      '<angle>',
+                      '<color>',
+                      '<integer>',
+                      '<length>',
+                      '<length-percentage>',
+                      '<number>',
+                      '<percentage>',
+                      '<time>',
+                    ] as readonly string[]
+                  ).includes(syntax),
+              ),
+          )
+        ? 11
+        : Object.values(links).some(
+              (link) =>
+                link.call.reference === 'cssFunction' ||
+                link.call.reference === 'customMedia',
+            )
+          ? 10
+          : Object.values(links).some((link) => link.kind === 'rule-reference')
+            ? 9
+            : Object.values(links).some((link) => link.kind === 'variables')
+              ? 8
+              : stylesheets.length ||
+                  Object.values(links).some((link) => link.kind === 'animation')
+                ? 7
+                : Object.values(links).some((link) => link.kind === 'marker')
+                  ? 6
+                  : Object.values(themes).some(
+                        (theme) =>
+                          theme[Token.definition].contract.shorthands ||
+                          Object.hasOwn(theme.tokens, 'margin') ||
+                          Object.hasOwn(theme.tokens, 'padding'),
+                      ) ||
                       Object.values(links).some(
                         (link) =>
-                          link.call.selection ||
-                          (link.kind === 'config' &&
-                            !!link.call.options?.themes) ||
-                          link.call.initialization ||
-                          (link.kind === 'config' && link.call.script) ||
-                          link.kind === 'marker' ||
-                          link.kind === 'animation' ||
-                          link.kind === 'variables',
+                          link.call.output === 'html' ||
+                          Object.values(link.members ?? {}).some(
+                            (member) => member.call.output === 'html',
+                          ),
                       )
-                    ? 4
-                    : Object.values(themes).some(
-                          (theme) =>
-                            theme[Token.definition].queries ||
-                            Object.keys(theme.tokens).some((group) =>
-                              [
-                                'fontFamily',
-                                'fontSize',
-                                'fontWeight',
-                                'lineHeight',
-                                'letterSpacing',
-                              ].includes(group),
-                            ),
+                    ? 5
+                    : stylesheets.length ||
+                        Object.values(links).some(
+                          (link) =>
+                            link.call.selection ||
+                            (link.kind === 'config' &&
+                              !!link.call.options?.themes) ||
+                            link.call.initialization ||
+                            (link.kind === 'config' && link.call.script) ||
+                            link.kind === 'marker' ||
+                            link.kind === 'animation' ||
+                            link.kind === 'variables',
                         )
-                      ? 3
-                      : Object.values(links).some(
-                            (link) => link.kind === 'config' || link.call.type,
+                      ? 4
+                      : Object.values(themes).some(
+                            (theme) =>
+                              theme[Token.definition].queries ||
+                              Object.keys(theme.tokens).some((group) =>
+                                [
+                                  'fontFamily',
+                                  'fontSize',
+                                  'fontWeight',
+                                  'lineHeight',
+                                  'letterSpacing',
+                                ].includes(group),
+                              ),
                           )
-                        ? 2
-                        : 1,
+                        ? 3
+                        : Object.values(links).some(
+                              (link) =>
+                                link.kind === 'config' || link.call.type,
+                            )
+                          ? 2
+                          : 1,
   })
 }
 
-function signature(input: unknown): NonNullable<Themes.Call['function']> {
+function signature(
+  input: unknown,
+  version: number,
+): NonNullable<Themes.Call['function']> {
   const value = record(input)
-  const syntaxes = [
-    '*',
-    '<color>',
-    '<length>',
-    '<length-percentage>',
-    '<number>',
-    '<percentage>',
-    '<integer>',
-    '<angle>',
-    '<time>',
-  ]
   if (
-    !syntaxes.includes(string(value.returns)) ||
+    !FunctionSyntax.accepts(string(value.returns)) ||
     !Array.isArray(value.parameters)
   )
     throw new Error('Invalid packed CSS function signature.')
+  if (
+    version < 12 &&
+    (/[\\\u0080-\uffff]/.test(String(value.returns)) ||
+      value.parameters.some((input) => {
+        const parameter = record(input)
+        return /[\\\u0080-\uffff]/.test(
+          string(parameter.name) + string(parameter.syntax ?? '*'),
+        )
+      }))
+  )
+    throw new Error(
+      'Extended CSS function signatures require contract version 12.',
+    )
   const names = new Set<string>()
   const parameters = value.parameters.map((input: unknown) => {
     const parameter = record(input)
     const name = string(parameter.name)
     if (
-      !/^--[_a-zA-Z][\w-]*$/.test(name) ||
-      names.has(name) ||
+      !Identifiers.read(name)?.startsWith('--') ||
+      Identifiers.read(name) === '--' ||
+      names.has(Identifiers.read(name)!) ||
       (parameter.syntax !== undefined &&
-        !syntaxes.includes(string(parameter.syntax))) ||
+        !FunctionSyntax.accepts(string(parameter.syntax))) ||
       (parameter.default !== undefined &&
         typeof parameter.default !== 'number' &&
         typeof parameter.default !== 'string')
     )
       throw new Error('Invalid packed CSS function parameter.')
-    names.add(name)
+    names.add(Identifiers.read(name)!)
     return {
       name: name as `--${string}`,
       ...(parameter.syntax !== undefined
@@ -529,4 +568,13 @@ function signature(input: unknown): NonNullable<Themes.Call['function']> {
     parameters,
     returns: value.returns as NonNullable<Themes.Call['function']>['returns'],
   }
+}
+
+function extended(signature: NonNullable<Themes.Call['function']>): boolean {
+  return (
+    /[\\\u0080-\uffff]/.test(signature.returns) ||
+    signature.parameters.some((parameter) =>
+      /[\\\u0080-\uffff]/.test(parameter.name + (parameter.syntax ?? '*')),
+    )
+  )
 }

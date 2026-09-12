@@ -612,7 +612,7 @@ Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/r
 
 ### Definition Identity and where
 
-Accepted API: every module-level `css` definition is an element identity, and the `where` tagged template composes a scoped selector key from ordinary CSS text and interpolated definitions. There is no separate ref primitive, marker runtime, or finite state schema. `where` is a web authoring value from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
+Accepted API: any module-level `css` definition serves as an element identity, and the `where` tagged template composes a scoped selector key from ordinary CSS text and interpolated definitions. There is no separate ref primitive, marker runtime, or finite state schema. `where` is a web authoring value from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
 
 CSS combinators express direction and distance, so `${card} &` matches an ancestor at any depth and `${card} > &` the parent. No direction helpers exist or are reserved. Matching does not imply a nearest boundary.
 
@@ -636,7 +636,7 @@ const profile = (
 )
 ```
 
-`Css.compile` guarantees one identity class per definition, derived from the extracted style name (`z-style-<module>-<offset>`), and emits it even when every declaration is shared into a base class, deduplicated in independent composition, or absent. Two identical definitions therefore never match each other's elements, and `css({})` marks an element without styling it. Applying the definition is the only marking step; nothing else is spread onto the element.
+The source transform appends one identity class, derived from the extracted style name (`z-style-<module>-<offset>`), to every definition a `where` template in the module interpolates and to every exported definition a packed consumer may interpolate, even when every declaration is shared into a base class, deduplicated in independent composition, or absent. Two identical definitions therefore never match each other's elements, and `css({})` marks an element without styling it. Definitions that are neither referenced nor exported emit no extra class, so `Css.compile` output and application bundle size are unchanged for ordinary styles. Applying the definition is the only marking step; nothing else is spread onto the element.
 
 State is selector text. Real attributes such as `aria-expanded`, `open`, `disabled`, and pseudo-classes such as `:checked` are preferred; application-owned `data-*` attributes remain available. Attributes and pseudo-classes attached to one interpolation match the same element with AND.
 

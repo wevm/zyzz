@@ -87,11 +87,13 @@ export function compose(
   const subject = (index: number, from: number) =>
     !skip[index] && text[index] === '&' && depth[index] === depth[from]
 
-  const hasSubject = (from: number, to: number) => {
+  // Every hoisted ampersand survives so `&&` keeps its doubled specificity.
+  const subjects = (from: number, to: number) => {
+    let count = 0
     for (let index = from; index < to; index++)
-      if (subject(index, from)) return true
+      if (subject(index, from)) count++
 
-    return false
+    return '&'.repeat(count)
   }
 
   // Pseudo-elements cannot be :where() arguments, so they trail the wrapper.
@@ -127,7 +129,7 @@ export function compose(
       ) {
         const split = pseudoElement(index, end)
 
-        output += `${hasSubject(index, split) ? '&' : ''}:where(${render(index, split, true)})${render(split, end, false)}`
+        output += `${subjects(index, split)}:where(${render(index, split, true)})${render(split, end, false)}`
         index = end
         continue
       }
@@ -184,37 +186,28 @@ function scan(text: string, ranges: readonly (readonly [number, number])[]) {
       continue
     }
 
+    if (char === '\\') {
+      const end = escape(text, index)
+      for (; index < end; index++) {
+        depth[index] = level
+        skip[index] = true
+      }
+      index--
+      continue
+    }
+
     if (quote) {
       depth[index] = level
       skip[index] = true
-      if (char === '\\' && index + 1 < text.length) {
-        depth[index + 1] = level
-        skip[index + 1] = true
-        index++
-      } else if (char === quote) quote = ''
+      if (char === quote) quote = ''
       continue
     }
 
     if (bracket) {
       depth[index] = level
       skip[index] = true
-      if (char === '\\' && index + 1 < text.length) {
-        depth[index + 1] = level
-        skip[index + 1] = true
-        index++
-      } else if (char === '"' || char === "'") quote = char
+      if (char === '"' || char === "'") quote = char
       else if (char === ']') bracket = false
-      continue
-    }
-
-    if (char === '\\') {
-      depth[index] = level
-      skip[index] = true
-      if (index + 1 < text.length) {
-        depth[index + 1] = level
-        skip[index + 1] = true
-        index++
-      }
       continue
     }
 
@@ -258,4 +251,13 @@ function scan(text: string, ranges: readonly (readonly [number, number])[]) {
   }
 
   return { depth, skip }
+}
+
+/** Returns the end of the CSS escape at `index`: up to six hex digits plus one trailing space, or a single character. */
+function escape(text: string, index: number): number {
+  const hex = /^[0-9a-fA-F]{1,6}/.exec(text.slice(index + 1, index + 7))
+  if (!hex) return Math.min(text.length, index + 2)
+
+  const end = index + 1 + hex[0].length
+  return /^[ \t\n\r\f]/.test(text[end] ?? '') ? end + 1 : end
 }

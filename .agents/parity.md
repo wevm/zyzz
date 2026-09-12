@@ -351,7 +351,7 @@ const profile = (
 )
 ```
 
-Every definition has an identity class, so applying it marks the element; no separate ref or data attribute exists. State is selector text over real or `data-*` attributes. Interpolations must be css definitions, which is a type error otherwise; selector grammar is a compiler diagnostic.
+A definition interpolated into `where`, or exported from a packed library, gains an identity class, so applying it marks the element; no separate ref or data attribute exists. State is selector text over real or `data-*` attributes. Interpolations must be css definitions, which is a type error otherwise; selector grammar is a compiler diagnostic.
 
 ```ts
 namespace styles {

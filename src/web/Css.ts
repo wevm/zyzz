@@ -490,12 +490,6 @@ export function compile<
       names.push(identity)
     }
 
-    // Ordered definitions keep one class of their own even when every
-    // declaration is shared, so relationship selectors can name them.
-    const own = Relationships.identity(style.name)
-    if (options.composition !== 'independent' && !names.includes(own))
-      names.push(own)
-
     classes[style.name] = names.join(' ')
   }
 

@@ -107,11 +107,17 @@ export function scan(
     }
   }
 
-  // Module-level definitions by name, plus every declaring node start that
-  // the scope tracker may report for them.
+  // Module-level definitions by name, by every declaring node start the scope
+  // tracker may report for them, and namespace members by their own starts.
   const named = new Map<string, Definition | Group>()
-  const declared = new Set<number>()
+  const byStart = new Map<number, Definition | Group>()
   const exported = new Map<string, string>()
+  const aliases: {
+    readonly name: string
+    readonly starts: readonly number[]
+    readonly target: Ast.Node
+    readonly isExported: boolean
+  }[] = []
 
   function definition(node: Ast.Node): Definition | undefined {
     const value = Expression.unwrap(node)
@@ -127,8 +133,22 @@ export function scan(
     isExported: boolean,
   ) {
     named.set(name, value)
-    for (const start of starts) declared.add(start)
+    for (const start of starts) byStart.set(start, value)
     if (isExported) exported.set(name, name)
+  }
+
+  function linked(
+    link: Themes.Link | undefined,
+  ): Definition | Group | undefined {
+    if (link?.kind !== 'style') return undefined
+    if (!link.members) return { name: link.call.name, start: undefined }
+
+    return new Map(
+      Object.entries(link.members).map(([key, member]) => [
+        key,
+        { name: member.call.name, start: undefined },
+      ]),
+    )
   }
 
   for (const statement of program.body) {
@@ -154,7 +174,7 @@ export function scan(
       declaration.id.type === 'Identifier' &&
       declaration.body?.type === 'TSModuleBlock'
     ) {
-      const members = new Map<string, Definition>()
+      const members: Group = new Map()
 
       for (const member of declaration.body.body) {
         const inner =
@@ -166,7 +186,11 @@ export function scan(
           if (declarator.id.type !== 'Identifier' || !declarator.init) continue
 
           const value = definition(declarator.init)
-          if (value) members.set(declarator.id.name, value)
+          if (!value) continue
+
+          members.set(declarator.id.name, value)
+          byStart.set(declarator.start, value)
+          byStart.set(declarator.id.start, value)
         }
       }
 
@@ -197,9 +221,20 @@ export function scan(
       }
 
       const init = Expression.unwrap(declarator.init)
+
+      if (init.type === 'Identifier' || init.type === 'MemberExpression') {
+        aliases.push({
+          name: declarator.id.name,
+          starts,
+          target: init,
+          isExported,
+        })
+        continue
+      }
+
       if (init.type !== 'ObjectExpression') continue
 
-      const members = new Map<string, Definition>()
+      const members: Group = new Map()
 
       for (const property of init.properties) {
         if (
@@ -220,8 +255,50 @@ export function scan(
     }
   }
 
+  // Immutable aliases of definitions and groups keep their identity, in any
+  // declaration order.
+  for (let progress = true; progress && aliases.length; ) {
+    progress = false
+
+    for (const [index, alias] of [...aliases.entries()].reverse()) {
+      const value = (() => {
+        if (alias.target.type === 'Identifier')
+          return (
+            named.get(alias.target.name) ?? linked(links[alias.target.name])
+          )
+
+        if (
+          alias.target.type !== 'MemberExpression' ||
+          alias.target.computed ||
+          alias.target.optional ||
+          alias.target.object.type !== 'Identifier' ||
+          alias.target.property.type !== 'Identifier'
+        )
+          return undefined
+
+        const group =
+          named.get(alias.target.object.name) ??
+          linked(links[alias.target.object.name])
+
+        return group instanceof Map
+          ? group.get(alias.target.property.name)
+          : undefined
+      })()
+
+      if (!value) continue
+
+      register(alias.name, alias.starts, value, alias.isExported)
+      aliases.splice(index, 1)
+      progress = true
+    }
+  }
+
   if (!tags.size && !modules.size && !exported.size)
-    return { conditions, references, exports: () => ({}) }
+    return {
+      conditions,
+      references,
+      exports: (): Record<string, Themes.Link> => ({}),
+    }
 
   function isTag(node: Ast.Node): boolean {
     const value = Expression.unwrap(node)
@@ -257,24 +334,35 @@ export function scan(
     return false
   }
 
-  function resolve(node: Ast.Node): Definition | undefined {
+  /** Resolves a lexical name to a definition or group, honoring shadowing and namespace blocks. */
+  function lookup(
+    name: string,
+    enclosing: readonly Group[],
+  ): Definition | Group | undefined {
+    const declaration = scope.getDeclaration(name)
+
+    if (declaration?.type === 'Import')
+      return linked(imported.get(declaration.node.start))
+
+    if (declaration) return byStart.get(declaration.node.start)
+
+    for (const group of enclosing) {
+      const member = group.get(name)
+      if (member) return member
+    }
+
+    return named.get(name)
+  }
+
+  function resolve(
+    node: Ast.Node,
+    enclosing: readonly Group[],
+  ): Definition | undefined {
     const value = Expression.unwrap(node)
 
     if (value.type === 'Identifier') {
-      const declaration = scope.getDeclaration(value.name)
-
-      if (declaration?.type === 'Import') {
-        const link = imported.get(declaration.node.start)
-        return link && !link.members
-          ? { name: link.call.name, start: undefined }
-          : undefined
-      }
-
-      const local = named.get(value.name)
-      if (!local || local instanceof Map) return undefined
-      if (declaration && !declared.has(declaration.node.start)) return undefined
-
-      return local
+      const local = lookup(value.name, enclosing)
+      return local instanceof Map ? undefined : local
     }
 
     if (
@@ -286,20 +374,8 @@ export function scan(
     )
       return undefined
 
-    const declaration = scope.getDeclaration(value.object.name)
-
-    if (declaration?.type === 'Import') {
-      const member = imported.get(declaration.node.start)?.members?.[
-        value.property.name
-      ]
-      return member ? { name: member.call.name, start: undefined } : undefined
-    }
-
-    const group = named.get(value.object.name)
-    if (!(group instanceof Map)) return undefined
-    if (declaration && !declared.has(declaration.node.start)) return undefined
-
-    return group.get(value.property.name)
+    const group = lookup(value.object.name, enclosing)
+    return group instanceof Map ? group.get(value.property.name) : undefined
   }
 
   const ancestors: Ast.Node[] = []
@@ -356,9 +432,22 @@ export function scan(
           node,
         )
 
+      // Unqualified names inside a namespace block resolve to that block's
+      // members before module-level bindings.
+      const enclosing = ancestors
+        .filter((value) => value.type === 'TSModuleDeclaration')
+        .reverse()
+        .flatMap((value) => {
+          const group =
+            value.id.type === 'Identifier'
+              ? named.get(value.id.name)
+              : undefined
+          return group instanceof Map ? [group] : []
+        })
+
       try {
         const definitions = node.quasi.expressions.map((expression) => {
-          const value = resolve(expression)
+          const value = resolve(expression, enclosing)
 
           if (!value)
             throw new Themes.InvalidError(

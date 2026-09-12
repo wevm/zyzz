@@ -10,6 +10,7 @@ import MagicString from 'magic-string'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Namespaces from './internal/Namespaces.js'
 import * as Parser from 'oxc-parser'
+import * as Relationships from '../web/internal/Relationships.js'
 import * as Source from './Source.js'
 import type * as Style from '../Style.js'
 import * as Themes from './internal/Themes.js'
@@ -164,16 +165,25 @@ export function compile(options: compile.Options): compile.ReturnType {
         name.startsWith('z_base') ? `z-${scope}-${name.slice(2)}` : name,
       )
 
+  // Definitions that where selectors reference, or that the module exports for
+  // packed consumers, keep their own identity class even when every
+  // declaration is shared or absent.
+  const identities = new Set(extracted.identities ?? [])
+
   const classes = Object.freeze(
     Object.fromEntries(
-      Object.entries(emitted.classes).map(([name, value]) => [
-        name,
-        value
+      Object.entries(emitted.classes).map(([name, value]) => {
+        const parts = value
           .split(' ')
           .filter(Boolean)
           .map((part) => names.get(part)!)
-          .join(' '),
-      ]),
+        const identity = Relationships.identity(name)
+
+        if (identities.has(name) && !parts.includes(identity))
+          parts.push(identity)
+
+        return [name, parts.join(' ')]
+      }),
     ),
   )
 

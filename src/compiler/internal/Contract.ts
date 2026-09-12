@@ -129,7 +129,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12].includes(data.version as number) ||
+        (data.version as number) < 9 ||
         ![
           'cssFunction',
           'customMedia',

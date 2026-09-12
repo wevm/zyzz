@@ -165,7 +165,7 @@ See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style State
 
 ## Relationships
 
-Every `css` definition carries an identity class, so any styled element is addressable. Another definition references it through `where` with ordinary selector text.
+A `css` definition referenced through `where` carries an identity class, so its styled element is addressable. Another definition references it with ordinary selector text.
 
 ```ts
 import { css } from 'zyzz'

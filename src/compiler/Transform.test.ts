@@ -1805,7 +1805,7 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
       const alternate = ({className:"z_theme-1wr3l4n1jk260t-alternate"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>);
       const { css } = ({css:undefined} as unknown as {readonly css:import('zyzz').Theme.Definition<{readonly "color":{readonly "transparent":"#06c";readonly "palette":{readonly 500:"#123"}};readonly "spacing":{readonly 0:"8px";readonly 4:"16px"}}>['css']});
       export const scope = "z_theme-1wr3l4n1jk260t-alternate";
-      export const props = ({className:"z-1wr3l4n1jk260t-base0"});
+      export const props = ({className:"z-1wr3l4n1jk260t-base0 z-style-1wr3l4n1jk260t-341"});
       "
     `)
     expect(result.css).toMatchInlineSnapshot(`
@@ -1842,7 +1842,7 @@ export const props = css({ color: theme.tokens.color.transparent, borderColor: (
       )
 
       expect(executed.stdout).toMatchInlineSnapshot(`
-        "{"className":"z-1wr3l4n1jk260t-base0"}
+        "{"className":"z-1wr3l4n1jk260t-base0 z-style-1wr3l4n1jk260t-341"}
         "
       `)
     } finally {
@@ -1998,7 +1998,7 @@ export const props = theme.css({ color: 'brand', padding: 'md' })();`
       const alternate = ({className:"z_theme-1dre7461ulsxz8-alternate"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":{readonly "dark":"#fff";readonly "light":"#000"}};readonly "spacing":{readonly 1:"4px";readonly "md":"8px"}}>);
       export type Brand = typeof theme.tokens.color.brand;
       export const scope = "z_theme-1dre7461ulsxz8-alternate";
-      export const props = ({className:"z-1dre7461ulsxz8-base0"});"
+      export const props = ({className:"z-1dre7461ulsxz8-base0 z-style-1dre7461ulsxz8-332"});"
     `)
     expect(result.css).toMatchInlineSnapshot(`
       ".z_theme-1dre7461ulsxz8-theme{--z-t1dre7461ulsxz8-theme-color_2e_brand:light-dark(#000,#fff);--z-t1dre7461ulsxz8-theme-spacing_2e_md:8px;}
@@ -2258,7 +2258,7 @@ export const button = ${kind === 'direct' || kind === 'tokens' ? 'theme.css' : '
     expect(transformed.code).toMatchInlineSnapshot(`
       "import { Theme as T } from "zyzz";
       const theme = { className: "z_theme-1kg4lys8lrjea-theme" };
-      export const props = { className: "z-1kg4lys8lrjea-base0" };
+      export const props = { className: "z-1kg4lys8lrjea-base0 z-style-1kg4lys8lrjea-110" };
       export function other(T2) {
         return T2.define({ arbitrary: true });
       }
@@ -2310,8 +2310,8 @@ export function shadow(css: (input: string) => string) { return css('untouched')
       const chained = (undefined as unknown as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['css']);
       const { css: renamed } = ({css:undefined} as unknown as {readonly css:import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"};readonly "spacing":{readonly "md":"8px"}}>['css']});
       export type Styles = Parameters<typeof renamed>[0];
-      export const first = ({className:"z-1ypjmwd1mnjqht-base0"});
-      export const second = ({className:"z-1ypjmwd1mnjqht-base1"});
+      export const first = ({className:"z-1ypjmwd1mnjqht-base0 z-style-1ypjmwd1mnjqht-261"});
+      export const second = ({className:"z-1ypjmwd1mnjqht-base1 z-style-1ypjmwd1mnjqht-314"});
       export function shadow(css: (input: string) => string) { return css('untouched') }
       "
     `)
@@ -2349,8 +2349,8 @@ export function shadow(css: (input: string) => string) { return css('untouched')
       )
 
       expect(executed.stdout).toMatchInlineSnapshot(`
-        "{"className":"z-1ypjmwd1mnjqht-base0"}
-        {"className":"z-1ypjmwd1mnjqht-base1"}
+        "{"className":"z-1ypjmwd1mnjqht-base0 z-style-1ypjmwd1mnjqht-261"}
+        {"className":"z-1ypjmwd1mnjqht-base1 z-style-1ypjmwd1mnjqht-314"}
         untouched
         "
       `)
@@ -2644,10 +2644,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     const row = outputLines.findIndex((line) => line.includes('className'))
 
     expect(result.code).toMatchInlineSnapshot(`
-    "
-    const text = '🎉';
-    export const props = ({className:"z-14fkufe1imnkw4-base0"});"
-  `)
+      "
+      const text = '🎉';
+      export const props = ({className:"z-14fkufe1imnkw4-base0 z-style-14fkufe1imnkw4-70"});"
+    `)
 
     expect(result.css).toMatchInlineSnapshot(
       `".z-14fkufe1imnkw4-base0{color:#f00;padding:8px;}"`,
@@ -2750,27 +2750,27 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     }
 
     expect(outputs).toMatchInlineSnapshot(`
-    [
-      "import other from 'zyzz'; export const props = ({className:""}); export { other };",
-      ""use client";
-    import { Props as __zyzzProps } from 'zyzz/runtime';
-      export const button = __zyzzProps.create({className:""});",
-      "#!/usr/bin/env node
+      [
+        "import other from 'zyzz'; export const props = ({className:"z-style-15sihh01ggr9so-56"}); export { other };",
+        ""use client";
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+        export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-64"});",
+        "#!/usr/bin/env node
 
-    import { Props as __zyzzProps } from 'zyzz/runtime';
-    import { Style } from 'zyzz'; export const button = __zyzzProps.create({className:""}); export { Style };",
-      "import { Style,  } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
-      "import { Style } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
-      "
-    import { Props as __zyzzProps } from 'zyzz/runtime';
-    import { css } from 'zyzz'; export type Signature = typeof css; export const button = __zyzzProps.create({className:""});",
-      "
-    import { Props as __zyzzProps_ } from 'zyzz/runtime';
-     const __zyzzProps = 1; export const el = <button {...({className:"z-15sihh01ggr9so-base0"})} />; export const button = __zyzzProps_.create({className:""});",
-      "import { css } from 'zyzz'; export function f(value = ({className:""})) { var css; return value; }",
-      "export const untouched = '🎉';",
-    ]
-  `)
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+      import { Style } from 'zyzz'; export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-77"}); export { Style };",
+        "import { Style,  } from 'zyzz'; export const a = ({className:"z-style-15sihh01ggr9so-66"}); export const b = ({className:"z-style-15sihh01ggr9so-94"}); export { Style };",
+        "import { Style } from 'zyzz'; export const a = ({className:"z-style-15sihh01ggr9so-66"}); export const b = ({className:"z-style-15sihh01ggr9so-94"}); export { Style };",
+        "
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+      import { css } from 'zyzz'; export type Signature = typeof css; export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-86"});",
+        "
+      import { Props as __zyzzProps_ } from 'zyzz/runtime';
+       const __zyzzProps = 1; export const el = <button {...({className:"z-15sihh01ggr9so-base0"})} />; export const button = __zyzzProps_.create({className:"z-style-15sihh01ggr9so-130"});",
+        "import { css } from 'zyzz'; export function f(value = ({className:""})) { var css; return value; }",
+        "export const untouched = '🎉';",
+      ]
+    `)
   })
 
   test('separately transformed modules render without class collisions in Chromium', async () => {
@@ -2924,10 +2924,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
       ).toMatchInlineSnapshot(`false`)
 
       expect(JSON.parse(consumer.stdout)).toMatchInlineSnapshot(`
-      {
-        "className": "z-fyitz4td647s-base0 external",
-      }
-    `)
+        {
+          "className": "z-fyitz4td647s-base0 z-style-fyitz4td647s-50 external",
+        }
+      `)
 
       expect(
         /\.(?:test|test-d|bench)\.ts/.test(listing.stdout),

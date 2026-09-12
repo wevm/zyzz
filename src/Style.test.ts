@@ -730,7 +730,7 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
     expect(JSON.parse(server)).toMatchInlineSnapshot(`
       {
         "classes": {
-          "button": "z_base0 z-button",
+          "button": "z_base0",
         },
         "css": ".z_base0{color:#f00;padding:0;}",
         "themes": {},
@@ -751,7 +751,7 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(JSON.parse(result)).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z_base0 z-button",
+            "button": "z_base0",
           },
           "css": ".z_base0{color:#f00;padding:0;}",
           "themes": {},
@@ -773,7 +773,7 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
         expect(JSON.parse(context.getString(result))).toMatchInlineSnapshot(`
           {
             "classes": {
-              "button": "z_base0 z-button",
+              "button": "z_base0",
             },
             "css": ".z_base0{color:#f00;padding:0;}",
             "themes": {},
@@ -799,7 +799,7 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(await page.evaluate('fixture.result')).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z_base0 z-button",
+            "button": "z_base0",
           },
           "css": ".z_base0{color:#f00;padding:0;}",
           "themes": {},
@@ -829,7 +829,7 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(result).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z_base0 z-button",
+            "button": "z_base0",
           },
           "css": ".z_base0{color:#f00;padding:0;}",
           "themes": {},

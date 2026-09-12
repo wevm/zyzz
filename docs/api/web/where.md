@@ -14,7 +14,7 @@ namespace styles {
 }
 ```
 
-Every `css` definition carries one identity class, so the element it styles is addressable without extra markup. Interpolating a definition lowers to that class. The compiler wraps each compound containing a definition in `:where()`, so definition predicates add zero specificity while `&` keeps its generated class specificity. A trailing pseudo-element stays outside the wrapper.
+A `css` definition interpolated into `where`, or exported from a packed library, carries one identity class, so the element it styles is addressable without extra markup. Other definitions emit no extra class. Interpolating a definition lowers to that class. The compiler wraps each compound containing a definition in `:where()`, so definition predicates add zero specificity while `&` keeps its generated class specificity. A trailing pseudo-element stays outside the wrapper.
 
 ```css
 :where(.z-card[aria-expanded='true']) & {

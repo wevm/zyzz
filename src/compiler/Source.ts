@@ -989,6 +989,21 @@ export function extract(options: extract.Options): extract.ReturnType {
         { start, end: start },
       )
 
+  const styleExports = relationships.exports(compiled)
+  const identities = new Set<string>()
+
+  for (const starts of relationships.references.values())
+    for (const start of starts) {
+      const call = calls.find((value) => value.start === start)
+      if (call) identities.add(call.name)
+    }
+
+  for (const link of Object.values(styleExports)) {
+    if (link.call.name) identities.add(link.call.name)
+    for (const member of Object.values(link.members ?? {}))
+      identities.add(member.call.name)
+  }
+
   for (const token of themes?.staticTokens ?? [])
     if (!staticData.used.has(Expression.unwrap(token).start))
       report(
@@ -1014,13 +1029,14 @@ export function extract(options: extract.Options): extract.ReturnType {
       ? {
           themeExports: Object.freeze({
             ...themes?.exports,
-            ...relationships.exports(compiled),
+            ...styleExports,
             ...contributions.exports,
             ...variables.exports,
           }),
         }
       : {}),
     calls: Object.freeze(calls.map((call) => Object.freeze(call))),
+    ...(identities.size ? { identities: Object.freeze([...identities]) } : {}),
     styles: Object.freeze({ styles: Object.freeze(styles) }),
     ...(variables.calls.length
       ? { variableCalls: Object.freeze(variables.calls) }
@@ -1075,6 +1091,8 @@ export declare namespace extract {
     readonly variableCalls?: readonly Variables.Call[] | undefined
     /** Direct calls in source order. */
     readonly calls: readonly Call[]
+    /** Definition names carrying an identity class because a `where` template or packed export references them. */
+    readonly identities?: readonly string[] | undefined
     /** Validated definitions accepted by Css.compile. */
     readonly styles: Style.Definition
     /** Local bound-authoring initializers and their retained token types. */

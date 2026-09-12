@@ -81,6 +81,15 @@ export const style=css({[${key}]:{color:'red'}});`,
     )
   })
 
+  test('hoists every repeated subject ampersand', () => {
+    expect(compile('where`&&${card}`')).toMatchInlineSnapshot(
+      `"&&:where(.z-style-3a68y9giv64x-68)"`,
+    )
+    expect(compile('where`&${card}&:hover`')).toMatchInlineSnapshot(
+      `"&&:where(.z-style-3a68y9giv64x-68:hover)"`,
+    )
+  })
+
   test('keeps pseudo-elements outside the wrapper', () => {
     expect(compile('where`&${card}::before`')).toMatchInlineSnapshot(
       `"&:where(.z-style-3a68y9giv64x-68)::before"`,
@@ -94,6 +103,37 @@ export const style=css({[${key}]:{color:'red'}});`,
     expect(compile('where`${card}.foo\\\\+bar > &`')).toMatchInlineSnapshot(
       `":where(.z-style-3a68y9giv64x-68.foo\\+bar) > &"`,
     )
+    expect(compile('where`${card}.foo\\\\2b bar > &`')).toMatchInlineSnapshot(
+      `":where(.z-style-3a68y9giv64x-68.foo\\2b bar) > &"`,
+    )
+    expect(
+      compile('where`${card}[title="a\\\\2b b"] > &`'),
+    ).toMatchInlineSnapshot(
+      `":where(.z-style-3a68y9giv64x-68[title="a\\2b b"]) > &"`,
+    )
+  })
+
+  test('resolves aliases and unqualified names inside namespaces', () => {
+    expect(
+      compile('where`${alias} > &`', 'const alias = card;'),
+    ).toMatchInlineSnapshot(`":where(.z-style-3a68y9giv64x-68) > &"`)
+    expect(
+      compile(
+        'where`${alias} > &`',
+        'const group = { hint: css({margin:0}) };const alias = group.hint;export { group };',
+      ),
+    ).toMatchInlineSnapshot(`":where(.z-style-3a68y9giv64x-129) > &"`)
+
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `${imports}export namespace styles { export const item = css({color:'red'});export const label = css({[where\`\${item} > &\`]:{opacity:1}}) }`,
+      },
+    })
+
+    expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-style-1e8a67z1uaws1j-102{color:red;}
+      .z-style-1e8a67z1uaws1j-142{:where(.z-style-1e8a67z1uaws1j-102) > &{opacity:1;}}"
+    `)
   })
 
   test('keeps quoted, commented, and bracketed text out of compound boundaries', () => {
@@ -290,7 +330,21 @@ export const style=css({[where\`\${card} &\`]:{[where\`\${toggle}:checked ~ &\`]
 })
 
 describe('identity', () => {
-  test('emits one class per definition even when declarations are shared or absent', () => {
+  test('omits identities from definitions that are neither exported nor referenced', () => {
+    const result = Graph.compile({
+      modules: {
+        'app.ts': `import {css} from 'zyzz';const a=css({padding:16});const b=css({});export const attrs=[a(),b()];`,
+      },
+    })
+
+    expect(result.modules['app.ts']!.code).toMatchInlineSnapshot(`
+      "
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+      const a=__zyzzProps.create({className:"z-1e8a67z1uaws1j-base0"});const b=__zyzzProps.create({className:""});export const attrs=[(a?{className:"z-1e8a67z1uaws1j-base0"}:a()),(b?{className:""}:b())];"
+    `)
+  })
+
+  test('emits one class per exported definition even when declarations are shared or absent', () => {
     const result = Graph.compile({
       modules: {
         'app.ts': `import {css} from 'zyzz';export const a=css({padding:16});export const b=css({padding:16});export const marker=css({});`,
@@ -368,6 +422,32 @@ describe('packed', () => {
       import { Props as __zyzzProps } from 'zyzz/runtime';
       import {card, styles, marker} from 'lib';export const label=__zyzzProps.create({className:"z-style-1e8a67z1uaws1j-116"});export const apply=card();"
     `)
+  })
+
+  test('consumes contracts mixing style identities with rule references', () => {
+    const lib = Graph.compile({
+      modules: {
+        'lib.ts': `import {css} from 'zyzz';import {customMedia} from 'zyzz/web';export const card=css({});export const compact=customMedia('(width < 40rem)');`,
+      },
+    })
+
+    expect(JSON.parse(lib.contracts['lib.ts']!).version).toMatchInlineSnapshot(
+      `13`,
+    )
+
+    const app = Graph.compile({
+      contracts: { 'lib/index.js': lib.contracts['lib.ts']! },
+      imports: {
+        'app.ts': { lib: 'lib/index.js', zyzz: null, 'zyzz/web': null },
+      },
+      modules: {
+        'app.ts': `import {card, compact} from 'lib';${imports}export const label=css({[where\`\${card} &\`]:{opacity:1},[compact]:{opacity:0.5}});`,
+      },
+    })
+
+    expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-style-1e8a67z1uaws1j-109{:where(.z-style-1jnw2gv1nkhfi5-80) &{opacity:1;}@media (--z-custommedia1jnw2gv1nkhfi5-63-6f-6d-70-61-63-74){opacity:0.5;}}"`,
+    )
   })
 
   test('rejects malformed style identities', () => {

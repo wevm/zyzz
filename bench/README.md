@@ -16,7 +16,52 @@ Each pass warms three cycles, then measures twenty fresh-root mounts, retained-D
 
 These measure warm-code client operations with styles already loaded. They do not measure cold navigation, hydration, GPU presentation, or isolated React CPU time. There is no forced synchronous React flush. Dynamic private slots currently compare only Zyzz and native CSS. Callable and override cases compare all six adapters; variant-recipe APIs need separate equivalent fixtures.
 
-Render timings are the primary runtime report. Performance is advisory until repeated runs establish variance; missing data and correctness failures fail CI. Existing function timings cannot establish a render-performance ranking. Run the old browser diagnostics with `BENCH_RUNTIME=1 pnpm exec vp test run bench/Runtime.browser.test.ts`, or Node diagnostics with `BENCH_MICRO=1 pnpm exec vp test bench --run`.
+Render timings are the primary runtime report. Performance remains advisory: repeated same-machine runs drift more than the differences between frameworks (see [Render Repeatability](#render-repeatability)). Missing data and correctness failures fail CI. Existing function timings cannot establish a render-performance ranking. Run the old browser diagnostics with `BENCH_RUNTIME=1 pnpm exec vp test run bench/Runtime.browser.test.ts`, or Node diagnostics with `BENCH_MICRO=1 pnpm exec vp test bench --run`.
+
+### Render Repeatability
+
+`node bench/RenderRepeatability.ts <run>...` compares two or more complete runs. Each argument is a `render-timings.json` file or a results directory containing one. The report validates every run like `RenderReport.ts`, then prints per-framework dispersion and Zyzz-versus-competitor interval overlap for every workload, operation, and checkpoint.
+
+The per-run value is the mean of the two pass medians, the statistic `RenderReport.ts` ranks. Spread is max ÷ min − 1 across runs; CV is the sample standard deviation divided by the mean. Overlap compares the min–max interval of Zyzz's per-run values with each competitor's interval. Overlapping intervals are inconclusive; a separated interval reports the direction without a speed claim.
+
+Reproduce with sequential runs on an idle machine, writing each run outside `bench/results/`. Start a run only while the 1-minute load average is below the CPU count, sample `/proc/loadavg` during the run, and discard a run whose in-run load rose above the benchmark's own footprint (about 1.3–2.0 on four vCPUs):
+
+```sh
+for run in 1 2 3 4 5 6; do
+  until awk -v cpus="$(nproc)" '{ exit !($1 < cpus) }' /proc/loadavg; do sleep 60; done
+  cat /proc/loadavg
+  BENCH_RENDER_OUTPUT="$RUNNER_TEMP/render-runs/run-$run" pnpm bench:render
+  cat /proc/loadavg
+done
+node bench/RenderRepeatability.ts "$RUNNER_TEMP"/render-runs/run-*
+```
+
+#### Measured dispersion — 2026-09-12
+
+Five sequential load-gated `pnpm bench:render` runs of commit `b6398e7` on one 4-vCPU Intel Xeon 2.80 GHz Linux 6.18 x86_64 host with 15 GB RAM. Node v22.22.2, React 19.2.4, esbuild 0.28.2, Vitest 4.1.9 through vite-plus 0.2.2, Playwright 1.63.0 launching the locally installed Chromium 141.0.7390.37 (`HeadlessChrome/141.0.0.0`) in place of Playwright's pinned 153.0.8010.12 build. Each run took 329–340 s and passed every computed-style and DOM identity check; in-run 1-minute load peaked at 1.31–1.97, the benchmark's own footprint. Every cell below holds 20 samples per pass, two passes per run, and five runs: 200 samples per framework, operation, and checkpoint.
+
+Two sets were discarded. The host is shared with other worktrees, and an earlier ungated set of six runs overlapped their type checks, builds, and browser suites (15-minute load average later reached 23 on four vCPUs); it spread Zyzz commit + layout medians by up to 50% and commit medians by up to 127%. The first gated run overlapped the tail of that activity (in-run peak load 5.62) and was dropped. Load gating is part of the method because of those runs.
+
+Largest Zyzz run-to-run spread across mount, update, and remount:
+
+| Cards | Workload  | Commit spread | Commit + layout spread | Frame spread |
+| ----: | --------- | ------------: | ---------------------: | -----------: |
+|   100 | callable  |         22.2% |                  14.0% |         2.6% |
+|   100 | overrides |         16.7% |                  15.9% |         3.2% |
+|   100 | dynamic   |         11.1% |                   7.8% |         1.8% |
+|  1000 | callable  |         43.2% |                  16.5% |        18.8% |
+|  1000 | overrides |         41.3% |                  16.3% |        22.6% |
+|  1000 | dynamic   |         29.9% |                  10.3% |         8.9% |
+
+Commit + layout CVs are 1.7–7.9% in every cell. The commit spread comes from 1,000-card remounts, whose sorted medians split into two groups: 6.60 / 6.90 / 9.00 / 9.40 / 9.45 ms for callable (CV 17.0%) and 7.75 / 7.95 / 9.05 / 10.30 / 10.95 ms for overrides. Frame CVs are 0.7–7.8%; the 1,000-card frame spreads of 7–23% reflect the two-frame checkpoint quantizing to refresh intervals.
+
+Of 198 Zyzz-versus-competitor interval comparisons, 170 overlap. Zyzz's interval sits below the competitor's in every run in 20 cells: all against Panda CSS (for example 31.30–34.35 against 43.10–47.40 ms for 1,000-card overrides update commit + layout) except the 100-card callable remount against the plain control (2.45–2.55 against 2.60–2.85 ms). Zyzz's interval sits above in 8 cells: the 1,000-card dynamic mount, update, and remount commit + layout against the native custom-property control (37.10–39.00 against 32.45–34.25 ms; 40.40–44.55 against 36.60–39.50 ms; 41.90–43.55 against 36.70–39.15 ms), that workload's mount commit and frame, and three 100-card callable Panda frame cells. Every StyleX, Tailwind, and vanilla-extract comparison overlaps, so no ranking among them or against Zyzz follows from these runs.
+
+#### Gate decision
+
+`node bench/RenderCheck.ts <results> [base]` compares Zyzz commit + layout means of pass medians with the same-runner base run (`<results>/render-base` by default) for all 18 workload/operation cells. It marks changes above +30%: ratio `130`, about 1.8× the largest clean spread of 16.5%. Without `BENCH_RENDER_THRESHOLD` the check is advisory and exits 0; setting the variable to a percentage ratio of at least 100 enforces it. Commit alone (43% spread) and frame (23%) are not checked.
+
+CI runs the check advisory on pull requests and appends it to the step summary. Enforcement waits until the workflow records at least five repeated runs on its own runner: GitHub runner drift is unmeasured, and the discarded contended set shows that shared hosts drift past 50%. The existing base comparison in `RenderReport.ts`, the compiler timing threshold, and the gzip gates are unchanged.
 
 ## Runtime Comparisons
 

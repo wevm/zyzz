@@ -5,8 +5,13 @@
 [PR #74](https://github.com/wevm/zyzz/pull/74) adds production React mounts, changed-prop updates, and remounts through Vitest Browser Mode in Chromium. Matched native, Panda, StyleX, Tailwind, vanilla-extract, and Zyzz applications verify computed styles and DOM identity outside timing. Function microbenchmarks remain diagnostics.
 
 - [x] Implement 100/1,000-card fixtures, forward/reversed passes, raw samples, and same-runner base comparisons.
-- [ ] Complete browser validation and establish repeatability before introducing render timing regression gates.
+- [x] Complete browser validation and establish repeatability before introducing render timing regression gates. Five load-gated sequential runs of `b6398e7` passed every computed-style and DOM identity check; `bench/RenderRepeatability.ts` reports cross-run dispersion and interval overlap, and `bench/RenderCheck.ts` adds an opt-in commit + layout check.
+- [ ] Record at least five repeated render runs per revision in the workflow and confirm that runner's dispersion before setting `BENCH_RENDER_THRESHOLD`.
 - [ ] Extend the suite with equivalent variant recipes when their supported implementation lands.
+
+Repeatability evidence (Chromium 141, one 4-vCPU host with in-run load at the benchmark's own footprint, 200 samples per cell; full table in [bench/README.md](../bench/README.md#render-repeatability)): Zyzz commit + layout medians drift at most 16.5% between runs (CV 1.7–7.9%); commit medians drift up to 43% on 1,000-card remounts; frame medians up to 23%. An earlier ungated set taken while other worktrees ran heavy jobs drifted up to 50% on commit + layout and is excluded. Of 198 Zyzz-versus-competitor interval comparisons, 170 overlap. Zyzz is lower in every run in 20 cells, all against Panda CSS except one against the plain control, and higher in 8: the 1,000-card dynamic workload against the native custom-property control and three 100-card Panda frame cells. No ranking among StyleX, Tailwind, vanilla-extract, and Zyzz follows.
+
+Decision: `RenderCheck.ts` marks same-runner commit + layout changes above +30% (ratio 130, about 1.8× the largest clean spread) and fails only when `BENCH_RENDER_THRESHOLD` is set. CI runs it advisory; the base comparison, compiler timing threshold, and gzip gates are unchanged.
 
 Commit and forced-layout timings are distinct from frame checkpoints. Cold navigation, hydration, exact paint CPU time, and unchanged rerenders remain separate workloads. No fastest-framework claim follows from function timings.
 

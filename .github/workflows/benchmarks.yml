@@ -200,6 +200,13 @@ jobs:
         run: |
           node bench/RenderReport.ts bench/results > bench/results/render.md
           cat bench/results/render.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Check Zyzz render regressions
+        if: ${{ !cancelled() && steps.render.outcome == 'success' && steps.render-baseline.outcome == 'success' }}
+        # Advisory until repeated runs on this runner justify BENCH_RENDER_THRESHOLD.
+        continue-on-error: true
+        run: |
+          node bench/RenderCheck.ts bench/results > bench/results/render-check.md
+          cat bench/results/render-check.md >> "$GITHUB_STEP_SUMMARY"
       - if: ${{ !cancelled() }}
         name: Upload benchmark results
         uses: actions/upload-artifact@v4

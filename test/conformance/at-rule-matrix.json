@@ -8,6 +8,17 @@
       "file": "src/compiler/Transform.profile.test.ts",
       "test": "compile retains Unicode, import ordering, and source maps without a BOM or charset contribution"
     },
+    "function.integer": {
+      "file": "src/compiler/Transform.functionSyntax.test.ts",
+      "test": "compile rejects non-integer token 1px in source and packed calls"
+    },
+    "function.packed": {
+      "file": "src/compiler/Transform.functionSyntax.test.ts",
+      "test": "compile retains composite signatures and default invocation across packed re-exports"
+    },
+    "function.types": {
+      "file": "src/web/cssFunction.test-d.ts"
+    },
     "namespace.binding": {
       "file": "src/compiler/Transform.namespace.test.ts",
       "test": "compile resolves equivalent escaped prefixes using the last module binding and retains packed maps"
@@ -49,6 +60,10 @@
     "print.marks": {
       "file": "src/compiler/Transform.print.test.ts",
       "test": "compile prints packed bleed and marks with independent geometry and raster controls"
+    },
+    "profile.origin": {
+      "file": "src/compiler/Transform.profile.test.ts",
+      "test": "compile retains referenced origins before relative profile names in packed output"
     },
     "profile.packed": {
       "file": "src/compiler/Transform.profile.test.ts",
@@ -122,7 +137,7 @@
           "cases": ["profile.packed"]
         },
         "references": {
-          "cases": ["profile.packed", "profile.references"]
+          "cases": ["profile.packed", "profile.references", "profile.origin"]
         },
         "source": {
           "cases": ["profile.packed"]
@@ -164,7 +179,7 @@
           "cases": ["profile.packed"]
         },
         "references": {
-          "cases": ["profile.packed", "profile.references"]
+          "cases": ["profile.packed", "profile.references", "profile.origin"]
         },
         "source": {
           "cases": ["profile.packed"]
@@ -206,7 +221,7 @@
           "cases": ["profile.packed"]
         },
         "references": {
-          "cases": ["profile.packed", "profile.references"]
+          "cases": ["profile.packed", "profile.references", "profile.origin"]
         },
         "source": {
           "cases": ["profile.packed"]
@@ -248,7 +263,7 @@
           "cases": ["profile.packed"]
         },
         "references": {
-          "cases": ["profile.packed", "profile.references"]
+          "cases": ["profile.packed", "profile.references", "profile.origin"]
         },
         "source": {
           "cases": ["profile.packed"]

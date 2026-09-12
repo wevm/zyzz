@@ -1,5 +1,6 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
 import * as FunctionSyntax from '../../internal/FunctionSyntax.js'
+import * as Literal from '../../internal/Literal.js'
 import type { cssFunction } from '../../web/cssFunction.js'
 import type * as Block from '../../web/internal/Block.js'
 import * as RuleReference from '../../internal/RuleReference.js'
@@ -1220,16 +1221,48 @@ export function extract(
   }
   for (const input of scanned.functionInputs)
     if (
-      input.values.some(
-        (value, index) =>
-          FunctionSyntax.integerOnly(
-            input.signature.parameters[index]?.syntax ?? '*',
-          ) &&
-          value !== undefined &&
-          /^[+-]?(?:\d|\.\d)/.test(value) &&
-          !/^[+-]?\d+$/.test(value) &&
-          !/[^\d.eE+-]/.test(value),
-      )
+      input.values.some((value, index) => {
+        const syntax = input.signature.parameters[index]?.syntax ?? '*'
+        if (value === undefined || !FunctionSyntax.integerOnly(syntax))
+          return false
+
+        const text = value.trim()
+        if (!/^[+-]?(?:\d|\.\d)/.test(text) || /^[+-]?\d+$/.test(text))
+          return false
+
+        const suffix = /^[+-]?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?(.+)$/.exec(
+          text,
+        )?.[1]
+        const unit =
+          suffix === '%'
+            ? suffix
+            : suffix && Identifiers.read(suffix)?.toLowerCase()
+        const normalized = syntax.trim()
+        const body = normalized.startsWith('type(')
+          ? normalized.slice(5, -1)
+          : normalized
+        const alternatives = body.split('|').map((part) => part.trim())
+
+        return (
+          !unit ||
+          !alternatives.some((alternative) => {
+            if (alternative === '<percentage>') return unit === '%'
+            if (alternative === '<length-percentage>' && unit === '%')
+              return true
+            if (
+              alternative === '<length>' ||
+              alternative === '<length-percentage>'
+            )
+              return (Literal.lengthUnits as readonly string[]).includes(unit)
+            if (alternative === '<angle>')
+              return ['deg', 'grad', 'rad', 'turn'].includes(unit)
+            if (alternative === '<time>') return ['s', 'ms'].includes(unit)
+            if (alternative === '<resolution>')
+              return ['dpi', 'dpcm', 'dppx', 'x'].includes(unit)
+            return false
+          })
+        )
+      })
     )
       throw new Themes.InvalidError(
         'CSS integer parameters require integer tokens.',

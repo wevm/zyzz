@@ -59,6 +59,24 @@ describe('compile', () => {
     `)
   })
 
+  test('retains referenced origins before relative profile names in packed output', () => {
+    const library = Graph.compile({
+      modules: {
+        'relative.ts': `import {Theme} from 'zyzz';import {colorProfile,global} from 'zyzz/web';const theme=Theme.define({color:{base:'red'}});const profile=colorProfile({src:'url(/print.icc)',components:'c,m,y,k'});global({body:{color:\`color(from \${theme.vars.color.base} \${profile} c m y k)\`}});`,
+      },
+    })
+    const packed = Graph.compile({
+      contracts: { 'lib.js': library.contracts['relative.ts']! },
+      imports: { 'app.ts': { lib: 'lib.js' } },
+      modules: { 'app.ts': `import 'lib';` },
+    })
+
+    expect(packed.sharedCss).toMatchInlineSnapshot(`
+      "@color-profile --z-colorprofile1f6rnh81dpdeum-70-72-6f-66-69-6c-65{src:url(/print.icc);components:c,m,y,k;}
+      body{color:color(from var(--z-t1f6rnh81dpdeum-theme-color_2e_base,red) --z-colorprofile1f6rnh81dpdeum-70-72-6f-66-69-6c-65 c m y k);}"
+    `)
+  })
+
   test('rejects a profile interpolated outside color()', () => {
     expect(() =>
       Transform.compile({

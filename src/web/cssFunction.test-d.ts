@@ -12,6 +12,23 @@ describe('cssFunction', () => {
     // @ts-expect-error integer parameters reject fractional literals
     fn(1.5)
   })
+  test('keeps image returns out of URL-only properties', () => {
+    const image = cssFunction({
+      parameters: [],
+      returns: '<image>',
+      body: { result: 'linear-gradient(red, blue)' },
+    })
+    const url = cssFunction({
+      parameters: [],
+      returns: '<url>',
+      body: { result: 'url(/clip.svg)' },
+    })
+
+    css({ backgroundImage: image(), clipPath: url() })
+    // @ts-expect-error an image may be a gradient, which clip-path cannot accept
+    css({ clipPath: image() })
+  })
+
   test('checks every supported scalar parameter syntax', () => {
     const fn = cssFunction({
       parameters: [

@@ -48,16 +48,18 @@ type Representative<syntax> = syntax extends `${infer first}|${infer rest}`
                       ? '1s'
                       : syntax extends '<resolution>'
                         ? '1dppx'
-                        : syntax extends '<url>' | '<image>'
-                          ? 'url(/image.svg)'
-                          : syntax extends '<string>'
-                            ? '"text"'
-                            : syntax extends '<custom-ident>'
-                              ? string
-                              : syntax extends
-                                    | '<transform-function>'
-                                    | '<transform-list>'
-                                ? 'translateX(1px)'
-                                : syntax extends `<${string}>`
-                                  ? never
-                                  : syntax
+                        : syntax extends '<image>'
+                          ? 'url(/image.svg)' | 'linear-gradient(red, blue)'
+                          : syntax extends '<url>'
+                            ? 'url(/image.svg)'
+                            : syntax extends '<string>'
+                              ? '"text"'
+                              : syntax extends '<custom-ident>'
+                                ? string
+                                : syntax extends
+                                      | '<transform-function>'
+                                      | '<transform-list>'
+                                  ? 'translateX(1px)'
+                                  : syntax extends `<${string}>`
+                                    ? never
+                                    : syntax

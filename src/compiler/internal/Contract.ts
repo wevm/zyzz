@@ -20,7 +20,7 @@ export function read(
   moduleId = '',
 ) {
   const data = record(JSON.parse(source))
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(data.version as number))
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(data.version as number))
     throw new Error('Unsupported Zyzz contract version.')
 
   const themes: Record<string, Theme.Definition> = Object.create(null)
@@ -125,7 +125,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        (data.version !== 9 && data.version !== 10) ||
+        ![9, 10, 11].includes(data.version as number) ||
         ![
           'cssFunction',
           'customMedia',
@@ -413,13 +413,28 @@ export function write(
         },
       ]),
     ),
-    version:
-      stylesheets.some((section) => section.namespaces?.length) ||
-      Object.values(links).some(
-        (link) =>
-          link.call.reference === 'cssFunction' ||
-          link.call.reference === 'customMedia',
-      )
+    version: Object.values(links).some(
+      (link) =>
+        link.call.function &&
+        [
+          link.call.function.returns,
+          ...link.call.function.parameters.map(
+            (parameter) => parameter.syntax ?? '*',
+          ),
+        ].some(
+          (syntax) =>
+            !(
+              ['*', ...FunctionSyntax.primitives] as readonly string[]
+            ).includes(syntax),
+        ),
+    )
+      ? 11
+      : stylesheets.some((section) => section.namespaces?.length) ||
+          Object.values(links).some(
+            (link) =>
+              link.call.reference === 'cssFunction' ||
+              link.call.reference === 'customMedia',
+          )
         ? 10
         : Object.values(links).some((link) => link.kind === 'rule-reference')
           ? 9

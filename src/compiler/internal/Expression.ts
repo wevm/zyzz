@@ -31,7 +31,11 @@ export function template(
     const value = unwrap(expression)
     const prefix =
       context +
-      parts.filter((part): part is string => typeof part === 'string').join('')
+      parts
+        .map((part) =>
+          typeof part === 'string' ? part : 'var(--zyzz-expression)',
+        )
+        .join('')
     const reference = resolve?.(expression, prefix) ?? resolve?.(value, prefix)
 
     if (reference) {

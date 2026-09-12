@@ -16,6 +16,7 @@ export type Call = {
   readonly end: number
   readonly definition: Marker.Definition
 }
+
 /** Collects statically declared markers and scoped relationship conditions. */
 export function scan(
   program: Ast.Program,
@@ -30,12 +31,14 @@ export function scan(
   const exports: Record<string, Themes.Link> = Object.create(null)
   const calls: Call[] = []
   const conditions = new Map<number, string>()
+
   for (const statement of program.body) {
     if (
       statement.type !== 'ImportDeclaration' ||
       statement.importKind === 'type'
     )
       continue
+
     for (const specifier of statement.specifiers) {
       if (
         specifier.type === 'ImportSpecifier' &&
@@ -46,12 +49,15 @@ export function scan(
           : specifier.imported.value) === 'Css'
       )
         namespaces.add(specifier.start)
+
       if (
         specifier.type === 'ImportNamespaceSpecifier' &&
         statement.source.value === 'zyzz/web'
       )
         modules.add(specifier.start)
+
       const link = links[specifier.local.name]
+
       if (link?.kind === 'marker') {
         bindings.set(specifier.start, {
           ...link,
@@ -61,19 +67,25 @@ export function scan(
       }
     }
   }
+
   if (!namespaces.size && !bindings.size && !modules.size)
     return { calls, conditions, exports }
+
   function data(node: Ast.Node): unknown {
     node = Expression.unwrap(node)
+
     if (node.type === 'Literal') return node.value
+
     if (node.type === 'TemplateLiteral' && !node.expressions.length)
       return node.quasis[0]!.value.cooked
+
     if (
       node.type === 'Identifier' &&
       node.name === 'undefined' &&
       !scope.getDeclaration(node.name)
     )
       return undefined
+
     if (node.type === 'ArrayExpression')
       return node.elements.map((element) => {
         if (!element || element.type === 'SpreadElement')
@@ -81,10 +93,13 @@ export function scan(
             'Marker arrays require dense literal values.',
             node,
           )
+
         return data(element)
       })
+
     if (node.type === 'ObjectExpression') {
       const result: Record<string, unknown> = Object.create(null)
+
       for (const property of node.properties) {
         if (
           property.type !== 'Property' ||
@@ -97,6 +112,7 @@ export function scan(
             'Markers require explicit static properties.',
             property,
           )
+
         const key =
           property.key.type === 'Identifier'
             ? property.key.name
@@ -108,18 +124,23 @@ export function scan(
             'Marker properties require unique literal keys.',
             property,
           )
+
         result[key] = data(property.value)
       }
+
       return result
     }
+
     throw new Themes.InvalidError(
       'Marker conditions require literal data.',
       node,
     )
   }
+
   function method(node: Ast.Node): string | undefined {
     if (node.type === 'MemberExpression' && node.object.type === 'Identifier') {
       const binding = scope.getDeclaration(node.object.name)
+
       if (binding?.type === 'Import' && modules.has(binding.node.start)) {
         const key =
           node.property.type === 'Identifier' && !node.computed
@@ -134,43 +155,56 @@ export function scan(
           )
       }
     }
+
     if (node.type !== 'MemberExpression' || node.object.type !== 'Identifier')
       return undefined
+
     const declaration = scope.getDeclaration(node.object.name)
     if (
       declaration?.type !== 'Import' ||
       !namespaces.has(declaration.node.start)
     )
       return undefined
+
     if (node.optional)
       throw new Themes.InvalidError(
         'Marker helpers require direct calls.',
         node,
       )
+
     if (!node.computed && node.property.type === 'Identifier')
       return node.property.name
+
     if (
       node.computed &&
       node.property.type === 'Literal' &&
       typeof node.property.value === 'string'
     )
       return node.property.value
+
     throw new Themes.InvalidError(
       'Marker helpers require static property names.',
       node,
     )
   }
+
   function resolve(node: Ast.Node): Themes.Link | undefined {
     node = Expression.unwrap(node)
+
     if (node.type !== 'Identifier') return undefined
+
     const declaration = scope.getDeclaration(node.name)
+
     return declaration ? bindings.get(declaration.node.start) : undefined
   }
+
   const ancestors: Ast.Node[] = []
+
   Walker.walk(program, {
     scopeTracker: scope,
     enter(node) {
       ancestors.push(node)
+
       if (
         node.type === 'VariableDeclarator' &&
         node.id.type === 'ObjectPattern' &&
@@ -210,6 +244,7 @@ export function scan(
             node,
           )
       }
+
       if (
         node.type === 'VariableDeclarator' &&
         node.id.type === 'Identifier' &&
@@ -219,21 +254,27 @@ export function scan(
         const owner = ancestors.at(-2)
         const statement = ancestors.at(-3)
         const link = resolve(init)
+
         if (link) {
           if (owner?.type !== 'VariableDeclaration' || owner.kind !== 'const')
             return
+
           bindings.set(node.id.start, link)
+
           if (
             statement?.type === 'Program' ||
             statement?.type === 'ExportNamedDeclaration'
           )
             names.set(node.id.name, link)
+
           if (statement?.type === 'ExportNamedDeclaration')
             exports[node.id.name] = link
         }
       }
+
       if (node.type === 'MemberExpression') {
         const name = method(node)
+
         if (
           name &&
           [
@@ -253,8 +294,11 @@ export function scan(
             )
         }
       }
+
       if (node.type !== 'CallExpression') return
+
       const name = method(node.callee)
+
       if (name === 'marker') {
         const index = ancestors.findLastIndex(
           (value) =>
@@ -262,6 +306,7 @@ export function scan(
             value.init !== null &&
             Expression.unwrap(value.init) === node,
         )
+
         const owner = ancestors[index]
         const variable =
           owner?.type === 'VariableDeclarator' ? owner : undefined
@@ -281,16 +326,20 @@ export function scan(
             'Markers require module-level const factory bindings.',
             node,
           )
+
         try {
           const input = node.arguments[0] ? data(node.arguments[0]) : undefined
           const schema = Marker.schema(input === undefined ? {} : input)
+
           const id =
             `data-z-${namespace}-${variable.id.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-')}-${Array.from(
               variable.id.name,
             )
               .map((char) => char.codePointAt(0)!.toString(16))
               .join('-')}` as const
+
           const definition = Object.freeze({ id, schema })
+
           const link: Themes.Link = {
             binding: id,
             kind: 'marker',
@@ -303,13 +352,16 @@ export function scan(
               marker: definition,
             },
           }
+
           bindings.set(variable.id.start, link)
           names.set(variable.id.name, link)
           calls.push({ start: node.start, end: node.end, definition })
+
           if (statement?.type === 'ExportNamedDeclaration')
             exports[variable.id.name] = link
         } catch (error) {
           if (error instanceof Themes.InvalidError) throw error
+
           throw new Themes.InvalidError((error as Error).message, node)
         }
       } else if (
@@ -331,6 +383,7 @@ export function scan(
             'Relationship helpers must be computed style keys.',
             node,
           )
+
         const link = node.arguments[0] && resolve(node.arguments[0])
         if (
           !link?.call.marker ||
@@ -342,8 +395,10 @@ export function scan(
             'Relationships require a previously declared marker and one optional condition.',
             node,
           )
+
         try {
           const condition = node.arguments[1] ? data(node.arguments[1]) : {}
+
           if (
             condition &&
             typeof condition === 'object' &&
@@ -359,6 +414,7 @@ export function scan(
                 Rule(rule) {
                   if (rule.type !== 'style')
                     throw new Error('has requires a relative selector list.')
+
                   const selectors = rule.value.selectors
                   const selector = selectors[0]
                   const component = selector?.[0]
@@ -374,15 +430,18 @@ export function scan(
               errorRecovery: false,
             })
           }
+
           const selector = Relationships.selector(
             name as Relationships.Kind,
             link.call.marker,
             condition,
           )
+
           Condition.normalize(selector)
           conditions.set(node.start, selector)
         } catch (error) {
           if (error instanceof Themes.InvalidError) throw error
+
           throw new Themes.InvalidError((error as Error).message, node)
         }
       }
@@ -391,6 +450,7 @@ export function scan(
       ancestors.pop()
     },
   })
+
   for (const statement of program.body) {
     if (
       statement.type !== 'ExportNamedDeclaration' ||
@@ -398,13 +458,16 @@ export function scan(
       statement.exportKind === 'type'
     )
       continue
+
     for (const specifier of statement.specifiers) {
       if (specifier.exportKind === 'type') continue
+
       const name =
         specifier.local.type === 'Identifier'
           ? specifier.local.name
           : specifier.local.value
       const link = names.get(name)
+
       if (link)
         exports[
           specifier.exported.type === 'Identifier'
@@ -413,5 +476,6 @@ export function scan(
         ] = link
     }
   }
+
   return { calls, conditions, exports }
 }

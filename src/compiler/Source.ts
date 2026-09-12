@@ -82,6 +82,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   const diagnostics: Diagnostic[] = []
   const pending: Ast.CallExpression[] = []
   const styles: Style.NamedStyle[] = []
+
   function report(
     code: Diagnostic['code'],
     message: string,
@@ -95,6 +96,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       start: node?.start ?? 0,
     })
   }
+
   if (
     !options.moduleId ||
     options.moduleId.includes('\\') ||
@@ -109,23 +111,31 @@ export function extract(options: extract.Options): extract.ReturnType {
     )
     throw new ExtractError(diagnostics)
   }
+
   const parsed = Parser.parseSync('source.tsx', options.source, {
     preserveParens: false,
     showSemanticErrors: true,
     sourceType: 'module',
   })
+
   if (parsed.errors.length) {
     for (const error of parsed.errors) {
       const span = error.labels[0]
+
       report('syntax_error', error.message, span)
     }
+
     throw new ExtractError(diagnostics)
   }
+
   const program = parsed.program
   const scopeTracker = new Scope.Tracker({ preserveExitedScopes: true })
+
   Walker.walk(program, { scopeTracker })
   scopeTracker.freeze()
+
   const staticData = Static.collect(program, scopeTracker)
+
   const contributions = (() => {
     try {
       return Contributions.scan(
@@ -137,10 +147,12 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
+
       report('unsupported_syntax', error.message, error)
       throw new ExtractError(diagnostics)
     }
   })()
+
   const variables = (() => {
     try {
       return Variables.collect(
@@ -152,10 +164,12 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
+
       report('unsupported_syntax', error.message, error)
       throw new ExtractError(diagnostics)
     }
   })()
+
   const markers = (() => {
     try {
       return Markers.scan(
@@ -166,10 +180,12 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
+
       report('unsupported_syntax', error.message, error)
       throw new ExtractError(diagnostics)
     }
   })()
+
   const themes = (() => {
     try {
       return Themes.collect(program, {
@@ -183,20 +199,25 @@ export function extract(options: extract.Options): extract.ReturnType {
       })
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
+
       report('unsupported_syntax', error.message, error)
       throw new ExtractError(diagnostics)
     }
   })()
+
   const ancestors: Ast.Node[] = []
+
   Walker.walk(program, {
     enter(node, parent) {
       ancestors.push(node)
+
       if (
         (node.type !== 'Identifier' && node.type !== 'JSXIdentifier') ||
         !parent ||
         !Walker.isReferenceIdentifier(node, parent)
       )
         return
+
       // Both passes visit identical scopes; skipping type subtrees changes scope IDs.
       if (
         ancestors.some(
@@ -218,41 +239,55 @@ export function extract(options: extract.Options): extract.ReturnType {
         )
       )
         return
+
       const binding = scopeTracker.getDeclaration(node.name)
+
       contributions.read(node, parent, binding)
+
       try {
         if (variables.reference(node, parent, binding)) return
       } catch (error) {
         if (!(error instanceof Themes.InvalidError)) throw error
+
         report('unsupported_syntax', error.message, error)
+
         return
       }
+
       if (themes)
         try {
           if (themes.reference(node, parent, ancestors, binding)) return
         } catch (error) {
           if (!(error instanceof Themes.InvalidError)) throw error
+
           report('unsupported_syntax', error.message, error)
+
           return
         }
+
       if (
         binding?.type !== 'Import' ||
         binding.importNode.source.value !== 'zyzz' ||
         binding.importNode.importKind === 'type'
       )
         return
+
       const specifier = binding.node
+
       if (specifier.type === 'ImportNamespaceSpecifier') {
         if (parent.type === 'MemberExpression' && parent.object === node) {
           const name = (() => {
             if (parent.property.type === 'Identifier' && !parent.computed) {
               return parent.property.name
             }
+
             if (parent.property.type === 'Literal') {
               return parent.property.value
             }
+
             return undefined
           })()
+
           if (
             name === 'Config' ||
             name === 'css' ||
@@ -265,8 +300,10 @@ export function extract(options: extract.Options): extract.ReturnType {
               parent,
             )
         }
+
         return
       }
+
       if (
         specifier.type !== 'ImportSpecifier' ||
         specifier.importKind === 'type' ||
@@ -275,11 +312,14 @@ export function extract(options: extract.Options): extract.ReturnType {
           : specifier.imported.value) !== 'css'
       )
         return
+
       // Follow only assignment targets; computed keys and default values are reads.
       let target: Ast.Node = node
       let write: Ast.Node | undefined
+
       for (let index = ancestors.length - 2; index >= 0; index--) {
         const ancestor = ancestors[index]!
+
         if (
           (ancestor.type === 'AssignmentExpression' &&
             ancestor.left === target) ||
@@ -292,6 +332,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           write = ancestor
           break
         }
+
         if (
           (ancestor.type === 'Property' && ancestor.value === target) ||
           ancestor.type === 'ObjectPattern' ||
@@ -302,6 +343,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           target = ancestor
         else break
       }
+
       if (write)
         report(
           'unsupported_syntax',
@@ -326,30 +368,41 @@ export function extract(options: extract.Options): extract.ReturnType {
     },
     scopeTracker,
   })
+
   // Imports and reference lists can have a different order from authored calls.
   if (themes)
     for (const entry of themes.styles.values()) pending.push(entry.call)
+
   pending.sort((a, b) => a.start - b.start)
+
   const staticCalls = new Set(pending.map((call) => call.start))
+
   for (const call of pending) {
     let argument = call.arguments[0]
+
     while (
       argument?.type === 'TSAsExpression' ||
       argument?.type === 'TSSatisfiesExpression'
     )
       argument = argument.expression
+
     const original = argument
+
     try {
       if (argument)
         argument = staticData.normalize(argument, staticCalls) as Ast.Expression
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
+
       report('unsupported_syntax', error.message, error)
       continue
     }
+
     const diagnosticCount = diagnostics.length
+
     const dynamic = (() => {
       if (!argument) return undefined
+
       try {
         return Dynamic.read(
           argument,
@@ -358,20 +411,26 @@ export function extract(options: extract.Options): extract.ReturnType {
         )
       } catch (error) {
         if (!(error instanceof Themes.InvalidError)) throw error
+
         report('unsupported_syntax', error.message, error)
+
         return undefined
       }
     })()
     if (diagnostics.length !== diagnosticCount) continue
+
     function resolveDynamic(node: Ast.Node) {
       try {
         return dynamic?.resolve(node)
       } catch (error) {
         if (!(error instanceof Themes.InvalidError)) throw error
+
         report('unsupported_syntax', error.message, error)
+
         return undefined
       }
     }
+
     if (dynamic) {
       try {
         argument = staticData.normalize(
@@ -380,10 +439,12 @@ export function extract(options: extract.Options): extract.ReturnType {
         ) as Ast.Expression
       } catch (error) {
         if (!(error instanceof Themes.InvalidError)) throw error
+
         report('unsupported_syntax', error.message, error)
         continue
       }
     }
+
     if (call.arguments.length !== 1 || argument?.type !== 'ObjectExpression') {
       report(
         'unsupported_syntax',
@@ -392,18 +453,22 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
       continue
     }
+
     const before = diagnostics.length
     const name = `style-${identity(options.moduleId)}-${call.start}`
     const locations: Style.SourceLocation[] = []
     const conditionKeys: Ast.Node[] = []
+
     function object(
       argument: Ast.ObjectExpression,
       prefix: readonly string[] = [],
     ): Record<string, unknown> {
       const values: Record<string, unknown> = Object.create(null)
       const depth = prefix.length + 2
+
       function localSlot(node: Ast.Node) {
         const slot = resolveDynamic(node)
+
         if (
           slot &&
           prefix.some(
@@ -417,10 +482,13 @@ export function extract(options: extract.Options): extract.ReturnType {
             'Dynamic values require conditions that select the styled element.',
             node,
           )
+
           return undefined
         }
+
         return slot
       }
+
       for (const property of argument.properties) {
         if (
           property.type !== 'Property' ||
@@ -442,6 +510,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           )
           continue
         }
+
         const key =
           markers.conditions.get(property.key.start) ??
           contributions.queryKeys.get(property.key.start) ??
@@ -450,6 +519,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             : property.key.type === 'Literal'
               ? String(property.key.value)
               : '')
+
         if (Object.hasOwn(values, key)) {
           report(
             'unsupported_syntax',
@@ -458,9 +528,12 @@ export function extract(options: extract.Options): extract.ReturnType {
           )
           continue
         }
+
         if (Condition.is(key)) {
           conditionKeys.push(property.key)
+
           const input = Expression.unwrap(property.value)
+
           if (input.type !== 'ObjectExpression') {
             report(
               'unsupported_syntax',
@@ -469,6 +542,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             )
             continue
           }
+
           locations.push({
             source: options.moduleId,
             start: property.start,
@@ -478,8 +552,10 @@ export function extract(options: extract.Options): extract.ReturnType {
           values[key] = object(input, [...prefix, key])
           continue
         }
+
         const targets = themes?.styles.get(call.start)?.theme[Token.definition]
           .contract.shorthands?.[key] ?? [key as Style.Declaration['property']]
+
         function value(node: Ast.Node, path: readonly string[]): unknown {
           const unwrapped = Expression.unwrap(node)
           const token =
@@ -488,6 +564,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           const reference =
             localSlot(node) ??
             (token && token.end === unwrapped.end ? token.reference : undefined)
+
           if (
             dynamic &&
             reference &&
@@ -501,9 +578,12 @@ export function extract(options: extract.Options): extract.ReturnType {
               'Dynamic fallback entries are not supported.',
               node,
             )
+
             return undefined
           }
+
           node = Expression.unwrap(node)
+
           const animation = contributions.references.get(node.start)
           if (animation) {
             const kind = contributions.kinds.get(animation)
@@ -520,17 +600,36 @@ export function extract(options: extract.Options): extract.ReturnType {
             }
             return animation
           }
+
           const template =
             node.type === 'TemplateLiteral'
               ? Expression.template(node, 0, (expression) => {
                   const animation = contributions.references.get(
                     Expression.unwrap(expression).start,
                   )
-                  if (animation) return animation
+                  if (animation) {
+                    const kind = contributions.kinds.get(animation)
+                    if (
+                      kind &&
+                      targets.some(
+                        (target) => !RuleReference.accepts(kind, target),
+                      )
+                    ) {
+                      report(
+                        'unsupported_syntax',
+                        'Named stylesheet reference is incompatible with this property.',
+                        expression,
+                      )
+                      return undefined
+                    }
+                    return animation
+                  }
+
                   const token =
                     variables.references.get(expression.start) ??
                     themes?.tokens.get(expression.start)
                   const slot = localSlot(expression)
+
                   if (slot) {
                     if (path.length > depth) {
                       report(
@@ -538,15 +637,19 @@ export function extract(options: extract.Options): extract.ReturnType {
                         'Dynamic fallback entries are not supported.',
                         expression,
                       )
+
                       return undefined
                     }
+
                     return slot
                   }
+
                   return token?.end === expression.end
                     ? token.reference
                     : undefined
                 })
               : undefined
+
           if (Token.isExpression(template)) {
             for (const part of template.parts) {
               if (
@@ -568,10 +671,12 @@ export function extract(options: extract.Options): extract.ReturnType {
                     : 'Theme variable domain is incompatible with this property.',
                   node,
                 )
+
                 return undefined
               }
             }
           }
+
           if (
             reference &&
             Token.is(reference) &&
@@ -590,8 +695,10 @@ export function extract(options: extract.Options): extract.ReturnType {
               'Theme variable domain is incompatible with this property.',
               node,
             )
+
             return undefined
           }
+
           if (
             reference &&
             Binding.is(reference) &&
@@ -614,9 +721,12 @@ export function extract(options: extract.Options): extract.ReturnType {
               'Variable domain is incompatible with this property.',
               node,
             )
+
             return undefined
           }
+
           let result: unknown
+
           if (reference) result = reference
           else if (template !== undefined) result = template
           else if (
@@ -640,8 +750,10 @@ export function extract(options: extract.Options): extract.ReturnType {
                   'Fallback arrays require dense literal entries without spreads.',
                   element ?? node,
                 )
+
                 return undefined
               }
+
               return value(element, [...path, String(index)])
             })
           } else {
@@ -650,32 +762,41 @@ export function extract(options: extract.Options): extract.ReturnType {
               'Expected a literal string or number; expressions are not evaluated.',
               node,
             )
+
             return undefined
           }
+
           locations.push({
             end: node.end,
             path,
             source: options.moduleId,
             start: node.start,
           })
+
           return result
         }
+
         values[key] = value(property.value, [name, ...prefix, key])
       }
+
       return values
     }
+
     const values = object(argument)
     if (diagnostics.length !== before) continue
+
     try {
       const definition = define(
         { [name]: values },
         { locations, theme: themes?.styles.get(call.start)?.theme },
       )
       let conditionIndex = 0
+
       function validate(style: Style.NamedStyle) {
         for (const rule of style.rules ?? []) {
           if (rule.condition !== undefined) {
             const location = conditionKeys[conditionIndex++] ?? call
+
             try {
               AtRules.transform({
                 filename: options.moduleId,
@@ -690,14 +811,20 @@ export function extract(options: extract.Options): extract.ReturnType {
               )
             }
           }
+
           validate(rule.style)
         }
       }
+
       for (const style of definition.styles) validate(style)
+
       if (diagnostics.length !== before) continue
+
       styles.push(...definition.styles)
+
       const shorthands = themes?.styles.get(call.start)?.theme[Token.definition]
         .contract.shorthands
+
       calls.push({
         ...(argument !== (dynamic?.body ?? original) &&
         argument.type === 'ObjectExpression'
@@ -722,6 +849,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       })
     } catch (error) {
       if (!(error instanceof Style.InvalidError)) throw error
+
       for (const diagnostic of error.diagnostics)
         diagnostics.push({
           code: 'invalid_literal',
@@ -732,6 +860,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         })
     }
   }
+
   if (themes && !diagnostics.length)
     for (const [start, token] of themes.tokens) {
       if (
@@ -747,8 +876,10 @@ export function extract(options: extract.Options): extract.ReturnType {
           { start, end: token.end },
         )
     }
+
   let contributionData: readonly Css.Contribution[] = []
   const contributionStarts = [...variables.registrationStarts]
+
   try {
     for (const [index, registration] of variables.registrations.entries()) {
       try {
@@ -768,6 +899,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         )
       }
     }
+
     contributionData = [
       ...variables.registrations,
       ...Contributions.extract(
@@ -786,6 +918,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           : [],
       ),
     ]
+
     if (contributionData.length) {
       const rendered = Css.compile({
         styles: { styles: [] },
@@ -830,6 +963,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       error instanceof Themes.InvalidError ? error : contributions.calls[0],
     )
   }
+
   for (const [start] of markers.conditions)
     if (!calls.some((call) => call.start <= start && start < call.end))
       report(
@@ -837,6 +971,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         'Relationship helpers require a compiled style definition.',
         { start, end: start },
       )
+
   for (const token of themes?.staticTokens ?? [])
     if (!staticData.used.has(Expression.unwrap(token).start))
       report(
@@ -844,7 +979,9 @@ export function extract(options: extract.Options): extract.ReturnType {
         'Token references must be direct property values in bound theme css calls.',
         token,
       )
+
   if (diagnostics.length) throw new ExtractError(diagnostics)
+
   return Object.freeze({
     namespaces: contributionData.filter(
       (value): value is Extract<Css.Contribution, { kind: 'namespace' }> =>
@@ -905,6 +1042,7 @@ export function extract(options: extract.Options): extract.ReturnType {
 export declare namespace extract {
   /** Structured source failure. */
   type ErrorType = ExtractError
+
   /** Source text supplied by an adapter. */
   type Options = {
     /** Portable identity including package and module path; no filesystem access occurs. */
@@ -914,6 +1052,7 @@ export declare namespace extract {
     /** Complete module text, parsed as TypeScript with JSX. */
     readonly source: string
   }
+
   /** Ordered public compiler input and spans for later rewriting. */
   type ReturnType = {
     /** Module-owned namespace bindings retained when contributions are shared. */
@@ -957,6 +1096,7 @@ export class ExtractError extends Error {
   /** Freezes source diagnostics in source order. */
   constructor(diagnostics: readonly Diagnostic[]) {
     const ordered = [...diagnostics].sort((a, b) => a.start - b.start)
+
     super(
       ordered
         .map((item) => `${item.source}:${item.start}: ${item.message}`)
@@ -975,9 +1115,11 @@ export class ExtractError extends Error {
 function identity(value: string): string {
   let first = 2166136261
   let second = 2246822507
+
   for (let index = 0; index < value.length; index++) {
     first = Math.imul(first ^ value.charCodeAt(index), 16777619)
     second = Math.imul(second ^ value.charCodeAt(index), 3266489909)
   }
+
   return `${(first >>> 0).toString(36)}${(second >>> 0).toString(36)}`
 }

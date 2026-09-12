@@ -12,11 +12,13 @@ import * as FunctionalColors from '../../test/fixtures/FunctionalColors.js'
 describe('compile', () => {
   test('functional colors agree with independent CSS grammar', () => {
     const lexer = Conformance.lexer()
+
     for (const color of FunctionalColors.valid) {
       const output = Transform.compile({
         moduleId: 'color.ts',
         source: `import { css } from 'zyzz'; css({color:${JSON.stringify(color)}})`,
       })
+
       expect(output.css.includes(`color:${color}`)).toMatchInlineSnapshot(
         `true`,
       )
@@ -24,10 +26,12 @@ describe('compile', () => {
         `null`,
       )
     }
+
     const output = Transform.compile({
       moduleId: 'color.ts',
       source: FunctionalColors.source,
     })
+
     expect(output.css.match(/background-color:[^;}]+/g)).toMatchInlineSnapshot(`
       [
         "background-color:rgb(255, 0, 0)",
@@ -48,11 +52,14 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div class="${module.scope}"><div id="actual" class="${module.box.className}"><span id="child">child</span></div><svg><rect id="shape" class="${module.svg.className}" /></svg></div><div id="control" style="${FunctionalColors.control}"><span id="control-child">child</span></div><svg><rect id="shape-control" style="fill:lab(50% 20 -30);stroke:oklab(.5 .1 -.1)" /></svg>`,
       )
+
       expect(
         await page.evaluate(() => {
           return [
@@ -75,6 +82,7 @@ describe('compile', () => {
             const b = getComputedStyle(
               document.getElementById(control as string)!,
             )
+
             return (keys as string[]).filter(
               (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
             )
@@ -86,6 +94,7 @@ describe('compile', () => {
           .locator('#actual')
           .evaluate((element) => getComputedStyle(element).backgroundColor),
       ).toMatchInlineSnapshot(`"rgba(64, 191, 64, 0.5)"`)
+
       for (const color of FunctionalColors.valid) {
         expect(
           await page.evaluate((color) => CSS.supports('color', color), color),

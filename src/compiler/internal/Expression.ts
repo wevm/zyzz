@@ -15,14 +15,20 @@ export function template(
   ) => string | Token.Reference | Binding.Reference | undefined,
 ): string | Token.Expression | undefined {
   if (depth >= 128) return undefined
+
   const parts: (string | Token.Reference | Binding.Reference)[] = []
+
   for (const [index, quasi] of node.quasis.entries()) {
     if (quasi.value.cooked === null) return undefined
+
     parts.push(quasi.value.cooked)
+
     const expression = node.expressions[index]
     if (!expression) continue
+
     const value = unwrap(expression)
     const reference = resolve?.(expression) ?? resolve?.(value)
+
     if (reference) {
       if (
         quoted(
@@ -32,6 +38,7 @@ export function template(
         )
       )
         return undefined
+
       // var() substitutions must remain whole CSS tokens.
       if (
         /[%a-zA-Z_\d.-]/.test(
@@ -40,10 +47,12 @@ export function template(
         /[\w.#@+\\-]$/.test(quasi.value.cooked)
       )
         return undefined
+
       parts.push(reference)
     } else if (value.type === 'Literal' && !('regex' in value)) {
       if (typeof value.value === 'number' && !Number.isFinite(value.value))
         return undefined
+
       parts.push(String(value.value))
     } else if (
       value.type === 'UnaryExpression' &&
@@ -67,10 +76,12 @@ export function template(
     } else if (value.type === 'TemplateLiteral') {
       const nested = template(value, depth + 1, resolve)
       if (nested === undefined) return undefined
+
       if (typeof nested === 'string') parts.push(nested)
       else parts.push(...nested.parts)
     } else return undefined
   }
+
   return parts.every((part) => typeof part === 'string')
     ? parts.join('')
     : Token.compose(parts)
@@ -85,25 +96,31 @@ export function unwrap(node: Ast.Node): Ast.Node {
     node.type === 'TSTypeAssertion'
   )
     node = node.expression
+
   return node
 }
 
 function quoted(text: string): boolean {
   let quote = ''
+
   for (let index = 0; index < text.length; index++) {
     const char = text[index]!
+
     if (char === '\\') {
       index++
       continue
     }
+
     if (quote) {
       if (char === quote) quote = ''
     } else if (char === '"' || char === "'") quote = char
     else if (char === '/' && text[index + 1] === '*') {
       const end = text.indexOf('*/', index + 2)
       if (end < 0) return true
+
       index = end + 1
     }
   }
+
   return !!quote
 }

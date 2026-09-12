@@ -185,8 +185,9 @@ jobs:
           BENCH_RENDER_OUTPUT: bench/results/render-base
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          trap 'git restore --source=HEAD --worktree -- src package.json' EXIT
-          git restore --source="$BASE_SHA" --worktree -- src package.json
+          # Compare source revisions with the same installed dependencies and manifest.
+          trap 'git restore --source=HEAD --worktree -- src' EXIT
+          git restore --source="$BASE_SHA" --worktree -- src
           mkdir -p "$BENCH_RENDER_OUTPUT"
           printf '%s\n' "$BASE_SHA" > "$BENCH_RENDER_OUTPUT/commit.txt"
           pnpm bench:render

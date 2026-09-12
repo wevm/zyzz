@@ -16,6 +16,7 @@ export class ConflictError extends Error {
   }
   override name = 'Stylesheets.ConflictError'
 }
+
 /** Ordered CSS owned by one portable source module. */
 export type Section = {
   /** Isolated selector namespaces belonging to the source owner. */
@@ -37,35 +38,45 @@ export type Section = {
   /** Start offset of this contribution in original source text. */
   readonly start?: number | undefined
 }
+
 /** Resolves a relative path within a portable graph, retaining query/hash suffixes. */
 export function resolve(source: string, reference: string): string {
   const suffixStart = reference.search(/[?#]/)
   const pathname = suffixStart < 0 ? reference : reference.slice(0, suffixStart)
   const suffix = suffixStart < 0 ? '' : reference.slice(suffixStart)
   const parts = source.split('/').slice(0, -1)
+
   for (const part of pathname.split('/')) {
     if (!part || part === '.') continue
+
     if (part === '..') {
       if (!parts.length)
         throw new Error('Asset path escapes the supplied graph.')
+
       parts.pop()
     } else parts.push(part)
   }
+
   return parts.join('/') + suffix
 }
+
 /** Makes a module location relative to another module for relocation in a package. */
 export function relative(owner: string, source: string): string {
   const from = owner.split('/').slice(0, -1),
     to = source.split('/')
+
   while (from.length && from[0] === to[0]) {
     from.shift()
     to.shift()
   }
+
   return [...from.map(() => '..'), ...to].join('/')
 }
+
 /** Combines reachable sections, layer constraints, source maps, and asset identities. */
 export function render(sections: readonly Section[]) {
   const seen = new Map<string, string>()
+
   const ordered = sections.filter((section) => {
     const signature = JSON.stringify([
       section.css,
@@ -74,17 +85,22 @@ export function render(sections: readonly Section[]) {
       section.content,
       section.start,
     ])
+
     const identity = JSON.stringify([section.source, section.key])
     const prior = seen.get(identity)
+
     if (prior !== undefined) {
       if (prior !== signature)
         throw new ConflictError(
           section.owner ?? section.source,
           'Conflicting packed stylesheet contributions.',
         )
+
       return false
     }
+
     seen.set(identity, signature)
+
     return true
   })
   ordered.sort((a, b) => rank(a.css) - rank(b.css))
@@ -99,6 +115,7 @@ export function render(sections: readonly Section[]) {
         )
       namespaceUris.set(entry.name, entry.uri)
     }
+
   const layers = Contributions.order(
     ordered.flatMap((section) => section.layers),
   )
@@ -109,6 +126,7 @@ export function render(sections: readonly Section[]) {
   const identities = new Map<string, { source: string; signature: string }>()
   const chunks: string[] = layers.length ? [`@layer ${layers.join(',')};`] : []
   let line = chunks.length + 1
+
   for (const section of ordered) {
     if (!section.css) continue
     const namespaced = Namespaces.rewrite(
@@ -152,14 +170,20 @@ export function render(sections: readonly Section[]) {
                 }
               if (
                 rule.type === 'unknown' &&
-                rule.value.name === 'color-profile'
+                ['color-profile', 'function', 'custom-media'].includes(
+                  rule.value.name,
+                )
               ) {
                 const name = rule.value.prelude[0]
-                if (name?.type === 'dashed-ident')
+                if (
+                  name?.type === 'dashed-ident' ||
+                  (rule.value.name === 'function' && name?.type === 'function')
+                )
                   return {
-                    name: name.value,
-                    data: rule.value.block,
-                    kind: 'color-profile',
+                    name:
+                      name.type === 'function' ? name.value.name : name.value,
+                    data: [rule.value.prelude, rule.value.block],
+                    kind: rule.value.name,
                   }
               }
               return undefined
@@ -180,6 +204,7 @@ export function render(sections: readonly Section[]) {
             identities.set(key, { source: section.source, signature })
             return
           }
+
           const name = rule.value.name.value
           const signature = JSON.stringify(rule.value.keyframes)
           const previous = animations.get(name)
@@ -192,6 +217,7 @@ export function render(sections: readonly Section[]) {
               section.owner ?? section.source,
               `Conflicting animation identity: ${name}; compile libraries with package-qualified module IDs.`,
             )
+
           animations.set(name, { source: section.source, signature })
         },
         Url(url) {
@@ -201,22 +227,27 @@ export function render(sections: readonly Section[]) {
       },
       errorRecovery: false,
     })
+
     const css = changed
       ? new TextDecoder().decode(rewritten.code).trimEnd()
       : section.css
     const lines = (section.content ?? '')
       .slice(0, section.start ?? 0)
       .split('\n')
+
     Mapping.setSourceContent(map, section.source, section.content ?? null)
+
     for (let index = 0; index < css.split('\n').length; index++)
       Mapping.addMapping(map, {
         generated: { line: line + index, column: 0 },
         source: section.source,
         original: { line: lines.length, column: lines.at(-1)!.length },
       })
+
     chunks.push(css)
     line += css.split('\n').length
   }
+
   return {
     css: chunks.join('\n'),
     map: Mapping.toEncodedMap(map),
@@ -224,12 +255,16 @@ export function render(sections: readonly Section[]) {
     owners,
   }
 }
+
 /** Reads packed sections as validated data; CSS is parsed before emission. */
 export function read(value: unknown): readonly Section[] {
   if (value === undefined) return []
+
   if (!Array.isArray(value))
     throw new Error('Invalid packed stylesheet sections.')
+
   const contents = new Map<string, string>()
+
   const sections = value.map((section) => {
     if (
       !section ||
@@ -256,18 +291,22 @@ export function read(value: unknown): readonly Section[] {
       )
     )
       throw new Error('Invalid packed stylesheet section.')
+
     if (typeof section.content === 'string') {
       const existing = contents.get(section.source)
       if (existing !== undefined && existing !== section.content)
         throw new Error('Conflicting packed source content.')
+
       contents.set(section.source, section.content)
     }
+
     if (section.css)
       AtRules.transform({
         filename: section.source,
         code: new TextEncoder().encode(section.css),
         errorRecovery: false,
       })
+
     return {
       source: section.source,
       ...(section.namespaces !== undefined
@@ -287,7 +326,9 @@ export function read(value: unknown): readonly Section[] {
         : {}),
     } as Section
   })
+
   Contributions.order(sections.flatMap((section) => section.layers))
+
   return sections.map((section) => ({
     ...section,
     ...(contents.has(section.source)
@@ -299,10 +340,13 @@ export function read(value: unknown): readonly Section[] {
 /** Serializes source text once per packed source identity. */
 export function write(sections: readonly Section[]): readonly Section[] {
   const sources = new Set<string>()
+
   return sections.map((section) => {
     const { content, ...rest } = section
     if (content === undefined || sources.has(section.source)) return rest
+
     sources.add(section.source)
+
     return { ...rest, content }
   })
 }

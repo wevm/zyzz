@@ -14,7 +14,7 @@ fontFace({fontFamily:'Evidence',src:${JSON.stringify(`url("${Font.url}")`)},font
 export const dots=counterStyle({system:'cyclic',symbols:'"●"',suffix:'" "'});
 export const fade=keyframes({from:{opacity:0},to:{opacity:1}});
 export const above=positionTry({positionArea:'top'});
-global({'#font':{fontFamily:'Evidence',fontSize:'100px',display:'inline-block'},'#animation':{animationName:fade,animationDuration:'1s',animationDelay:'-0.5s',animationPlayState:'paused',animationTimingFunction:'linear'},'#anchor':{anchorName:'--target',position:'absolute',top:'180px',left:'100px',width:'20px',height:'10px'},'#tooltip':{position:'absolute',positionAnchor:'--target',positionArea:'bottom',positionTryFallbacks:above,width:'50px',height:'30px'},'.counter':{listStyleType:dots,listStylePosition:'inside',width:'100px',height:'24px',fontFamily:'Arial',fontSize:'16px'}});
+global({'html':{height:'100%',overflow:'hidden'},'body':{margin:0,height:'100%',overflow:'hidden'},'#font':{fontFamily:'Evidence',fontSize:'100px',display:'inline-block'},'#animation':{animationName:fade,animationDuration:'1s',animationDelay:'-0.5s',animationPlayState:'paused',animationTimingFunction:'linear'},'#anchor':{anchorName:'--target',position:'absolute',top:'180px',left:'100px',width:'20px',height:'10px'},'#tooltip':{position:'absolute',positionAnchor:'--target',positionArea:'bottom',positionTryFallbacks:above,width:'50px',height:'30px'},'.counter':{listStyleType:dots,listStylePosition:'inside',width:'100px',height:'24px',fontFamily:'Arial',fontSize:'16px'}});
 page({descriptors:{size:'A4','@top-center':{content:'"Page"'}}});`,
         'svg.ts': `import {namespace,global} from 'zyzz/web';namespace({uri:'http://www.w3.org/2000/svg'});global({'.icon':{fill:'red'}});`,
       },

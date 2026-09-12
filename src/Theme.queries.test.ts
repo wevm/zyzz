@@ -21,6 +21,7 @@ describe('compile', () => {
           'import {Config,Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem"},containers:{card:"24rem"},containerNames:["sidebar"]}); export const zyzz=Config.create({theme})',
       },
     })
+
     expect(
       JSON.parse(result.contracts['config.ts']!).version,
     ).toMatchInlineSnapshot('4')
@@ -46,6 +47,7 @@ describe('compile', () => {
       fontSize: { '2xl': '1.5rem' },
       borderRadius: { '2xl': '1rem' },
     })
+
     expect(
       Css.compile({
         styles: Style.define(
@@ -66,6 +68,7 @@ describe('compile', () => {
       source.indexOf('export const tokens = ') + 22,
       source.indexOf(' as const'),
     )
+
     const generated = source.slice(
       source.indexOf('export const theme = Theme.define(') + 34,
       source.indexOf(
@@ -73,6 +76,7 @@ describe('compile', () => {
         source.indexOf('export const theme = Theme.define('),
       ),
     )
+
     expect(raw.trim() === generated.trim()).toMatchInlineSnapshot(`true`)
   })
   test('links bundled source through its exported css boundary', async () => {
@@ -80,6 +84,7 @@ describe('compile', () => {
       new URL('./themes/default.ts', import.meta.url),
       'utf8',
     )
+
     const output = Graph.compile({
       modules: {
         'default.ts': source,
@@ -87,10 +92,12 @@ describe('compile', () => {
           'import {css} from "./default.js"; export const body=css({fontFamily:"sans",fontSize:"base",color:"blue.500"})()',
       },
     })
+
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-26ntzho2pyyt-theme{--z-t26ntzho2pyyt-theme-fontFamily_2e_sans:Geist, ui-sans-serif, system-ui, sans-serif;--z-t26ntzho2pyyt-theme-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500:oklch(62.3% 0.214 259.815);}
       .z-1e8a67z1uaws1j-base0{font-family:var(--z-t26ntzho2pyyt-theme-fontFamily_2e_sans,Geist, ui-sans-serif, system-ui, sans-serif);font-size:var(--z-t26ntzho2pyyt-theme-fontSize_2e_base,1rem);color:var(--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500,oklch(62.3% 0.214 259.815));}"
     `)
+
     const built = await Esbuild.build({
       stdin: {
         contents: 'import * as root from "zyzz/compiler"; console.log(root)',
@@ -103,6 +110,7 @@ describe('compile', () => {
       metafile: true,
       conditions: ['src'],
     })
+
     expect(
       Object.keys(built.metafile!.inputs).some((path) =>
         path.includes('themes/default'),
@@ -111,17 +119,23 @@ describe('compile', () => {
   })
   test('rejects sparse and accessor container identities', () => {
     const sparse: string[] = []
+
     sparse.length = 1
+
     expect(() => Theme.define({ containerNames: sparse })).toThrow(
       Theme.InvalidError,
     )
+
     let invoked = false
+
     const names = Object.defineProperty([], '0', {
       get() {
         invoked = true
+
         return 'card'
       },
     })
+
     expect(() => Theme.define({ containerNames: names })).toThrow(
       Theme.InvalidError,
     )
@@ -135,17 +149,21 @@ describe('compile', () => {
       fontSize: { body: '1rem' },
       fontWeight: { medium: 500 },
     })
+
     const alternate = Theme.extend(theme, {
       breakpoints: { tablet: '50rem' },
       fontSize: { body: '1.25rem' },
     })
+
     const styles = Style.define({
       body: {
         fontSize: theme.tokens.fontSize.body,
         fontWeight: theme.tokens.fontWeight.medium,
       },
     })
+
     const output = Css.compile({ styles, themes: { base: theme, alternate } })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:1rem;--z1:500;}
       .t_1{--z0:1.25rem;--z1:500;}
@@ -165,8 +183,11 @@ describe('compile', () => {
           'import {Theme} from "zyzz"; export const theme=Theme.define({breakpoints:{tablet:"48rem"},fontSize:{body:"1rem"}})',
       },
     })
+
     const packed = library.contracts['theme.ts']!
+
     expect(packed.includes('48rem')).toMatchInlineSnapshot(`true`)
+
     const consumer = Graph.compile({
       contracts: { 'library.js': packed },
       imports: { 'app.ts': { library: 'library.js' } },
@@ -175,6 +196,7 @@ describe('compile', () => {
           'import {theme} from "library"; export const body=theme.css({fontSize:"body"})()',
       },
     })
+
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-fontSize_2e_body:1rem;}
       .z-1e8a67z1uaws1j-base0{font-size:var(--z-t1xn44ix111xh3v-theme-fontSize_2e_body,1rem);}"
@@ -187,13 +209,17 @@ describe('compile', () => {
         color: bundled.tokens.color.foreground,
       },
     })
+
     const output = Css.compile({ styles, themes: { base: bundled } })
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}</style><div class="${output.themes.base}" style="color-scheme:light"><p id="body" class="${output.classes.body}">Text</p></div>`,
       )
+
       expect(
         await page
           .locator('#body')
@@ -204,11 +230,13 @@ describe('compile', () => {
           .locator('#body')
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(17, 17, 17)"`)
+
       await page
         .locator('#body')
         .evaluate(
           (element) => (element.parentElement!.style.colorScheme = 'dark'),
         )
+
       expect(
         await page
           .locator('#body')
@@ -227,7 +255,9 @@ describe('compile', () => {
         padding: bundled.tokens.spacing[4],
       },
     })
+
     const output = Css.compile({ styles, themes: { default: bundled } })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:light-dark(#111,#fff);--z1:Geist, ui-sans-serif, system-ui, sans-serif;--z2:1rem;--z3:1rem;}
       .z_base0{color:var(--z0,light-dark(#111,#fff));font-family:var(--z1,Geist, ui-sans-serif, system-ui, sans-serif);font-size:var(--z2,1rem);padding:var(--z3,1rem);}"

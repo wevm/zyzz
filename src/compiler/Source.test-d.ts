@@ -9,11 +9,13 @@ import { Source } from 'zyzz/compiler'
 describe('extract', () => {
   test('preserves extracted metadata and rejects invalid inputs', () => {
     const result = Source.extract({ moduleId: 'example/card.ts', source: '' })
+
     expectTypeOf(result.styles).toEqualTypeOf<Style.Definition>()
     expectTypeOf(result.calls).toEqualTypeOf<readonly Source.Call[]>()
     expectTypeOf(result.themes).toEqualTypeOf<
       Readonly<Record<string, Theme.Definition>>
     >()
+
     // @ts-expect-error Extracted scope maps are readonly.
     result.themes.extra = result.themes.existing!
     // @ts-expect-error A portable host module ID is required.

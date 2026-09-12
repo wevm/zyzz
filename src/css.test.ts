@@ -21,6 +21,7 @@ describe('css', () => {
       },
       write: false,
     })
+
     expect({
       browserBundle: result.outputFiles.length,
       parserIncluded: Object.keys(result.metafile.inputs).some(
@@ -43,6 +44,7 @@ describe('css', () => {
       moduleId: 'example/style.ts',
       source: "import { css } from 'zyzz'; css({ padding: 0 });",
     })
+
     expect(Css.compile({ styles: result.styles }).css).toMatchInlineSnapshot(
       `".z_base0{padding:0;}"`,
     )

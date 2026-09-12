@@ -23,17 +23,15 @@ export type Check<value, property> = typeof reference extends keyof value
     ? { [index in keyof value]: Check<value[index], property> }
     : unknown
 
-type Domain<property> = property extends
-  | 'fallback'
-  | 'listStyle'
-  | 'listStyleType'
-  | 'speakAs'
-  ? 'counterStyle'
-  : property extends 'fontPalette'
-    ? 'fontPaletteValues'
-    : property extends 'positionTry' | 'positionTryFallbacks'
-      ? 'positionTry'
-      : never
+type Domain<property> = property extends `--${string}`
+  ? Kind
+  : property extends 'fallback' | 'listStyle' | 'listStyleType' | 'speakAs'
+    ? 'counterStyle'
+    : property extends 'fontPalette'
+      ? 'fontPaletteValues'
+      : property extends 'positionTry' | 'positionTryFallbacks'
+        ? 'positionTry'
+        : never
 /** Checks domain-sensitive descriptor members without widening literals. */
 export type Checked<value> = { [key in keyof value]: Check<value[key], key> }
 

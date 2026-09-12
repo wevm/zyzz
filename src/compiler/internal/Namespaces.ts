@@ -177,6 +177,7 @@ export function bundle(css: string, previous?: Mapping.EncodedSourceMap) {
     code: new TextEncoder().encode(css),
     visitor: {
       StyleSheet(sheet) {
+        let prolog = true
         for (const rule of sheet.rules) {
           const namespace =
             rule.type === 'unknown' && rule.value.name === '-zyzz-ns-'
@@ -184,6 +185,12 @@ export function bundle(css: string, previous?: Mapping.EncodedSourceMap) {
             !namespace &&
             rule.type !== 'import' &&
             rule.type !== 'layer-statement'
+          )
+            prolog = false
+          if (
+            !namespace &&
+            rule.type !== 'import' &&
+            !(rule.type === 'layer-statement' && prolog)
           )
             continue
           if (!('value' in rule) || !('loc' in rule.value)) continue

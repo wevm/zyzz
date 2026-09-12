@@ -17,6 +17,7 @@ describe('compile', () => {
       textWrap: 'wrap balance',
       pageBreakBefore: 'avoid',
     } as const
+
     const output = Css.compile({
       styles: Style.define({
         a,
@@ -28,6 +29,7 @@ describe('compile', () => {
         c: a,
       }),
     })
+
     expect(output.css).toMatchInlineSnapshot(`
       ".z-a{flex-flow:row nowrap;text-wrap:wrap balance;page-break-before:avoid;}
       .z-b{flex-direction:column;text-wrap-style:pretty;break-before:page;}
@@ -47,13 +49,16 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       const a = {
         flexFlow: 'row nowrap',
         textWrap: 'wrap balance',
         pageBreakBefore: 'avoid',
       } as const
+
       const cascade = Css.compile({
         styles: Style.define({
           a,
@@ -69,9 +74,11 @@ describe('compile', () => {
       await page.setContent(
         `<style>${output.css}${cascade.css}</style><div id="cascade" class="z-a z-b z-c"></div><div id="flow" class="${module.flow.className}"><span>one</span><span>two</span></div><div id="flow-control" style="${TextTimeline.controls.flow}"><span>one</span><span>two</span></div><span id="text" class="${module.text.className}">text</span><span id="text-control" style="${TextTimeline.controls.text}">text</span>`,
       )
+
       expect(
         await page.evaluate(() => {
           const differences: string[] = []
+
           for (const [id, properties] of [
             [
               'flow',
@@ -97,10 +104,12 @@ describe('compile', () => {
             const b = getComputedStyle(
               document.getElementById(`${id}-control`)!,
             )
+
             for (const property of properties)
               if (a.getPropertyValue(property) !== b.getPropertyValue(property))
                 differences.push(property)
           }
+
           return differences
         }),
       ).toMatchInlineSnapshot(`[]`)

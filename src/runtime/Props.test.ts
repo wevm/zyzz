@@ -33,6 +33,7 @@ export const text = '🎉';`
 
     const bind = Props.create({ className: Object.values(result.classes)[0]! })
     const style = { color: '#000', paddingLeft: '2px' } as const
+
     expect(consumer.button()).toMatchInlineSnapshot(`
     {
       "className": "z-12ydhop55omeb-base0 z-style-12ydhop55omeb-50",

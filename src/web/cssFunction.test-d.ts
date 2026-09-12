@@ -2,6 +2,15 @@
 import { describe, test } from 'vite-plus/test'
 import { cssFunction } from 'zyzz/web'
 describe('cssFunction', () => {
+  test('rejects fractional integer arguments', () => {
+    const fn = cssFunction({
+      parameters: [{ name: '--n', syntax: '<integer>' }],
+      body: { result: 1 },
+    })
+    fn(2)
+    // @ts-expect-error integer parameters reject fractional literals
+    fn(1.5)
+  })
   test('checks every supported scalar parameter syntax', () => {
     const fn = cssFunction({
       parameters: [

@@ -11,11 +11,12 @@ export function global<const styles extends Record<string, unknown>>(
   void styles
   throw new MissingTransformError()
 }
+
 /** Global selector and grouping contracts. */
 export declare namespace global {
   /** Selectors contain exact declarations; at-rules contain further selectors. */
   type Body<styles> = {
-    [key in keyof styles]: key extends symbol
+    [key in keyof styles]: key extends Condition.Query
       ? Body<styles[key]>
       : key extends `@${string}`
         ? key extends Extract<Condition.Raw, `@${string}`>

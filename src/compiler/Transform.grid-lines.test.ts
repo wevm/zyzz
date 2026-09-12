@@ -12,12 +12,14 @@ import * as GridLines from '../../test/fixtures/GridLines.js'
 describe('compile', () => {
   test('grid placement preserves named lines and shorthand order', () => {
     const lexer = Conformance.lexer()
+
     for (const [property, value] of Object.entries(GridLines.styles)) {
       const name = Conformance.name(property)
       const output = Transform.compile({
         moduleId: 'grid.ts',
         source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
       })
+
       expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
         `true`,
       )
@@ -25,10 +27,12 @@ describe('compile', () => {
         `null`,
       )
     }
+
     const output = Transform.compile({
       moduleId: 'grid.ts',
       source: GridLines.source,
     })
+
     expect(
       output.css.match(/grid-column:1 \/ 3;/g)?.length,
     ).toMatchInlineSnapshot(`2`)
@@ -46,11 +50,14 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>.grid{display:grid;grid-template-columns:[start] 40px 40px [end] 40px;grid-template-rows:30px 30px;width:120px}${output.css}</style><div class="grid"><div id="actual" class="${module.placement.className}"></div></div><div class="grid"><div id="control" style="grid-area:1 / 2 / 3 / 4"></div></div><div class="grid"><div id="named" class="${module.named.className}"></div></div><div class="grid"><div id="named-control" style="grid-column:start / end;grid-row:1 / span 2"></div></div><div class="grid"><div id="override" class="${module.first.className} ${module.second.className} ${module.third.className}"></div></div>`,
       )
+
       for (const id of ['actual', 'control', 'named', 'named-control']) {
         expect(
           await page
@@ -66,6 +73,7 @@ describe('compile', () => {
           ]
         `)
       }
+
       expect(
         await page
           .locator('#override')

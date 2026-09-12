@@ -14,6 +14,7 @@ describe('compile', () => {
       moduleId: 'box-lists.ts',
       source: BoxLists.source,
     })
+
     expect(output.css.match(/padding:[^;}]+/g)).toMatchInlineSnapshot(`
       [
         "padding:1px 2px",
@@ -38,22 +39,27 @@ describe('compile', () => {
       `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
     )
     const browser = await chromium.launch()
+
     try {
       const page = await browser.newPage()
+
       await page.setContent(
         `<style>${output.css}.box{width:100px;height:100px;position:relative}</style><div id="actual" class="box ${module.box.className}"></div><div id="control" class="box" style="${BoxLists.control}"></div>`,
       )
+
       for (const mode of ['horizontal-tb', 'vertical-rl']) {
         await page.evaluate((mode) => {
           for (const id of ['actual', 'control'])
             document.getElementById(id)!.style.writingMode = mode
         }, mode)
+
         expect(
           await page.evaluate(() => {
             const actual = getComputedStyle(document.getElementById('actual')!)
             const control = getComputedStyle(
               document.getElementById('control')!,
             )
+
             const keys = [
               'top',
               'right',
@@ -67,6 +73,7 @@ describe('compile', () => {
                 `scroll-padding-${side}`,
               ]),
             ]
+
             return keys.filter(
               (key) =>
                 actual.getPropertyValue(key) !== control.getPropertyValue(key),
@@ -74,6 +81,7 @@ describe('compile', () => {
           }),
         ).toMatchInlineSnapshot(`[]`)
       }
+
       expect(
         await page
           .locator('#actual')

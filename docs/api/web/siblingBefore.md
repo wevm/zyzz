@@ -16,7 +16,12 @@ namespace styles {
 
 ## Signature
 
-`siblingBefore(ref, condition?)`
+`siblingBefore(ref, state?)`
+
+`siblingBefore(ref, pseudo, state?)`
+
+> [!NOTE]
+> The positional `pseudo` argument, a trailing `state` argument, and pseudo-class chains beyond the simple list are the accepted contract pending compiler support. The current implementation takes one `condition` argument: a simple pseudo string, or a flat state object with optional `pseudo` and `has` keys.
 
 ## Parameters
 
@@ -31,15 +36,28 @@ Element identity used to match related elements.
 siblingBefore(target)
 ```
 
-### condition
+### pseudo
 
-- Type: Simple pseudo or flattened typed states with optional `pseudo`/`has` predicates
+- Type: Same-element pseudo-class chain, `:${string}`
+- Default: No pseudo predicate.
+
+Pseudo-classes matched on the earlier marked sibling, including functional `:is()`, `:not()`, `:nth-child()`, and relative `:has()` lists. Compiler parsing rejects pseudo-elements, combinators outside functional arguments, `&`, selector lists, and nested `:has()`.
+
+```ts
+siblingBefore(target, ':checked')
+siblingBefore(target, ':has(input:checked)')
+```
+
+### state
+
+- Type: Declared ref states
 - Default: Ref presence.
 
-Combined predicates must match the same marked element.
+Selects declared state values on the same marked sibling, using the same object shape as applying the ref. Without a pseudo, `state` takes the second position.
 
 ```ts
 siblingBefore(target, { state: 'open' })
+siblingBefore(target, ':checked', { state: 'open' })
 ```
 
 ## Returns
@@ -48,7 +66,7 @@ siblingBefore(target, { state: 'open' })
 
 - Type: Typed style condition key
 
-Use as a computed style key. Helpers add zero condition specificity; raw authored selectors retain their specificity.
+Use as a computed style key. Helpers add zero condition specificity; raw authored selectors retain their specificity. Nested relationship keys combine with AND.
 
 ```ts
 css({
@@ -58,7 +76,7 @@ css({
 
 ## Errors
 
-Reject undeclared ref states, unsupported nested `:has()` combinations, and unsupported native semantics.
+Reject undeclared ref states, unknown or malformed pseudo-classes, nested `:has()`, and unsupported native semantics.
 
 See [Style Relationships](../../guides/conditions.md#style-relationships).
 

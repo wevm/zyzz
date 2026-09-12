@@ -614,7 +614,7 @@ Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/r
 
 `ancestor` and `descendant` name relationships at any depth. Reserve `parent` and `child` for immediate relationships; they are not aliases or currently accepted additional helpers. The existing helpers do not imply a nearest boundary.
 
-Accepted API for implementation in 2.4b: `ref(schema?)` defines an element identity and optional finite data-state domains. `ancestor(ref, condition?)` creates a scoped selector key referring to that identity. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
+Accepted API for implementation in 2.4b: `ref(schema?)` defines an element identity and optional finite data-state domains. `ancestor(ref, state?)` and `ancestor(ref, pseudo, state?)` create a scoped selector key referring to that identity. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
 
 ```tsx
 import { css } from 'zyzz'
@@ -644,31 +644,41 @@ Marker application returns readonly data attributes only: a presence attribute p
 
 Separate ref and styling spreads have disjoint fields: `<article {...card({ state: 'open' })} {...panel()} />` is valid. Markers neither consume nor output `className`, `style`, ARIA, event handlers, or other component props. Apply real `disabled`, `checked`, or `aria-expanded` attributes separately. Ordinary repeated spreads of the same ref replace its attributes; no automatic merge is implied, and ref props do not extend the existing `cx` input contract.
 
-An ancestor condition is a supported simple pseudo string or an options object with optional `data`, `pseudo`, and `has`. `data` infers a partial state selection from the first ref argument. `pseudo` is one supported nonfunctional pseudo-class such as `:focus-within` or `:hover`; offer completion and reject `:hovr` and pseudo-elements. `has` is a statically parsed relative-selector list such as `'a'` or `'> input:checked'`. Combined fields are AND predicates on the same marked ancestor. Omission matches ref presence.
+Relationship conditions are positional, with two overloads per helper. `pseudo` is one same-element pseudo-class chain typed as `` `:${string}` ``, such as `':hover'`, `':focus-within:not(:disabled)'`, `':nth-child(2n)'`, or `':has(> input:checked)'`. `state` selects declared states from the first ref argument and has the same object type as applying the ref. Without a pseudo, `state` takes the second position. Combined arguments are AND predicates on the same marked element. Omission matches ref presence.
+
+```ts
+ancestor(ref, state?)
+ancestor(ref, pseudo, state?)
+```
 
 ```ts
 namespace styles {
   export const indicator = css({
     opacity: 0,
-    [ancestor(card, { has: 'a' })]: { opacity: 1 },
+    [ancestor(card, ':has(a)')]: { opacity: 1 },
   })
 
   export const activeTitle = css({
-    [ancestor(card, {
-      state: 'open',
-      has: 'a',
-      pseudo: ':focus-within',
-    })]: { color: '#06c' },
+    [ancestor(card, ':focus-within:has(a)', { state: 'open' })]: {
+      color: '#06c',
+    },
   })
 }
 
-// Expected type errors in the proposed contract.
+// Expected type errors in the accepted contract.
 styles.card({ state: 'expanded' })
 ancestor(card, { status: 'open' })
+ancestor(card, 'hover')
+
+// Expected compiler diagnostics; TypeScript does not enumerate pseudo-classes.
 ancestor(card, ':hovr')
+ancestor(card, '::before')
+ancestor(card, ':hover > a')
 ```
 
-The ref schema alone determines data inference; condition arguments must not widen it to accept arbitrary keys/values. Preserve that contract through imported aliases, re-exports, and packed declaration files. These types establish declared identity/state compatibility, not that a matching ancestor exists in the rendered DOM or that a ref is attached to a particular HTML element type.
+The compiler parses the pseudo string with the CSS parser and rejects unknown pseudo-classes, pseudo-elements, combinators outside functional arguments, `&`, selector lists, and nested `:has()`. Editor completion for common pseudo-classes may come from a documented list, but the type stays a template literal so that new browser pseudo-classes need no library release. The previous single `condition` argument with `pseudo` and `has` keys is superseded; `has` folds into the pseudo string, and `has`/`pseudo` stop being reserved schema names.
+
+The ref schema alone determines state inference; condition arguments must not widen it to accept arbitrary keys/values. Preserve that contract through imported aliases, re-exports, and packed declaration files. These types establish declared identity/state compatibility, not that a matching ancestor exists in the rendered DOM or that a ref is attached to a particular HTML element type.
 
 Use the same ref in `descendant`, `siblingBefore`, `siblingAfter`, and `anySibling`. Names describe the marked element relative to the styled element. `siblingBefore` observes an earlier marked sibling, including nonadjacent siblings; `siblingAfter` observes a later one. Immediate siblings and child-only relationships remain expressible through raw CSS until an explicit typed distance contract is needed.
 
@@ -694,17 +704,31 @@ const example = (
 
 Let `M` be the generated ref selector plus its authored predicates. Helper lowering has this explicit specificity contract:
 
-| Function                        | Selector Shape                           |
-| ------------------------------- | ---------------------------------------- |
-| `ancestor(ref, condition)`      | `:where(M) &`                            |
-| `anySibling(ref, condition)`    | `:is(:where(M) ~ &, &:where(:has(~ M)))` |
-| `descendant(ref, condition)`    | `&:where(:has(M))`                       |
-| `siblingAfter(ref, condition)`  | `&:where(:has(~ M))`                     |
-| `siblingBefore(ref, condition)` | `:where(M) ~ &`                          |
+| Function                              | Selector Shape                           |
+| ------------------------------------- | ---------------------------------------- |
+| `ancestor(ref, pseudo?, state?)`      | `:where(M) &`                            |
+| `anySibling(ref, pseudo?, state?)`    | `:is(:where(M) ~ &, &:where(:has(~ M)))` |
+| `descendant(ref, pseudo?, state?)`    | `&:where(:has(M))`                       |
+| `siblingAfter(ref, pseudo?, state?)`  | `&:where(:has(~ M))`                     |
+| `siblingBefore(ref, pseudo?, state?)` | `:where(M) ~ &`                          |
 
 The relation predicate adds zero specificity; the current generated class retains its ordinary specificity. This is documented helper behavior, not a rewrite of raw selectors or a hidden relation-priority ladder. Preserve authored ordering, local nested pseudos, and query contexts. Reusing one ref on nested elements matches any qualifying ancestor. A distinct ref separates roles; nearest-instance boundaries require a separate `@scope` design, not an implicit promise.
 
-CSS forbids nested `:has()`. Only `ancestor` and `siblingBefore` accept the `has` option. The descendant, following-sibling, and any-sibling options omit it in types because their lowering already uses `:has()`. The parser rejects nested `:has`, pseudo-elements, `&`, and other invalid grammar in `has` arguments. Raw complex selectors receive compiler validation, not a false claim of complete TypeScript grammar checking. [Selector grammar](https://www.w3.org/TR/selectors-4/#relational)
+CSS forbids nested `:has()`. Only `ancestor` and `siblingBefore` accept `:has()` inside the pseudo string. `descendant`, `siblingAfter`, and `anySibling` reject `:has()` and `:visited` as compiler diagnostics because their lowering already uses `:has()`. Raw pseudo strings receive compiler validation, not a false claim of complete TypeScript grammar checking. [Selector grammar](https://www.w3.org/TR/selectors-4/#relational)
+
+The pseudo string covers every same-element pseudo-class the browser supports, including functional `:is()`, `:not()`, `:nth-*()`, and relative `:has()` lists. Nested relationship keys combine markers with AND through native CSS nesting, and nesting under a same-element pseudo adds the styled element's own state:
+
+```ts
+namespace styles {
+  export const hint = css({
+    [ancestor(card, { state: 'open' })]: {
+      [siblingBefore(choice, ':checked')]: { fontWeight: 600 },
+    },
+  })
+}
+```
+
+Finite state domains express negation by naming the complementary values. Disjunction across markers uses separate keys with the same body; same-element alternatives use `:is()` in the pseudo. Three shapes stay outside this contract and are deferred: a second ref inside `:has()` (compiler-owned identities cannot interpolate into a string, so this needs a tagged or nested-key form), a typed distance contract for immediate parent, child, or adjacent siblings, and nearest-instance boundaries, which belong to a separate `@scope` design.
 
 Recognize ref definitions/applications and relational helper keys through static source analysis; do not execute application code. Preserve ref identity independently of style deduplication, source traversal order, and runtime state. Exported ref callables retain only attribute construction/validation, with statically known keys; relation helpers disappear. Applications choose state attributes, while the browser evaluates relationships. Server/client output must agree, imports must preserve identity, and unused definitions must not keep CSS alive accidentally.
 

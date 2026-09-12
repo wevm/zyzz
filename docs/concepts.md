@@ -176,7 +176,7 @@ const condition = ancestor(card, { state: 'open' })
 
 - **Depth:** ancestor/descendant helpers match at any depth; immediate parent/child helpers remain undecided.
 - **Matching:** repeated markers use any qualifying ancestor, not nearest-boundary behavior.
-- **Predicates:** combined predicates must match the same marked element.
+- **Predicates:** a pseudo-class chain and declared states combine with AND on the same marked element; nested relationship keys combine markers.
 - **Specificity:** helpers add zero condition specificity; raw selectors retain their own.
 - **Types:** constrain ref values, not DOM structure or accessibility semantics.
 

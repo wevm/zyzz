@@ -45,7 +45,10 @@ For presence alone, use `const card = ref()`, apply `card()`, and select with `a
 - Type: Named finite state domains
 - Default: Presence ref without state domains.
 
-Applications and relationship conditions may select only declared state values. Relationship states appear directly in the condition object. `pseudo` and `has` are reserved schema names because they configure relationship predicates.
+Applications and relationship conditions may select only declared state values. The same state object applies the ref and narrows a relationship. State names become data-attribute fragments; `class`, `className`, `style`, `key`, and `ref` are reserved.
+
+> [!NOTE]
+> The current implementation also reserves `pseudo` and `has`, which configure predicates in the single-argument condition object. The accepted positional contract moves those predicates to a separate string argument and frees both names.
 
 ```ts
 ref({ state: ['closed', 'open'] })

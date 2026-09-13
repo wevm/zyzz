@@ -333,3 +333,13 @@ These absolute times are not comparable to the GitHub runner. The comparison
 also verified identical JavaScript, CSS, and source maps before/after the
 refactor for exported and local applications at 100 and 1,000 styles.
 The final CI rerun remains the check on this compile-time follow-up.
+
+## Conditional Recipes
+
+Run the static and three-condition recipe workflows together:
+
+```sh
+pnpm exec vp test bench --run src/variants.conditions.bench.ts --no-file-parallelism --outputJson bench/results/conditional-recipes.json
+```
+
+Compilation includes source extraction and CSS/JavaScript rewriting. Selection uses the helpers chosen by the real compiler, with defaults and conditional overrides measured separately. These microbenchmarks do not measure framework rendering or browser style recalculation. Run without competing benchmark jobs; retain the sample counts and variance from the report.

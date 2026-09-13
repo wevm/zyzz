@@ -1,6 +1,9 @@
 /** Lowers static recipe structure into ordered ordinary style conditions. @module */
 import type * as Ast from '@oxc-project/types'
+import type * as Query from '../../internal/Query.js'
+import * as ConditionalRecipe from '../../runtime/ConditionalRecipe.js'
 import type * as Recipe from '../../runtime/Recipe.js'
+import * as RecipeConditions from './RecipeConditions.js'
 import * as Themes from './Themes.js'
 
 type Property = Extract<
@@ -62,7 +65,7 @@ function choice(node: Ast.Node, choices: readonly string[]): string | null {
   return value
 }
 
-function predicate(axis: string, value: string): string {
+function predicate(attribute: string, value: string): string {
   const quoted =
     '"' +
     value.replace(
@@ -71,11 +74,14 @@ function predicate(axis: string, value: string): string {
       (character) => `\\${character.codePointAt(0)!.toString(16)} `,
     ) +
     '"'
-  return `[data-${axis}=${quoted}]`
+  return `[${attribute}=${quoted}]`
 }
 
 /** Expands every finite alternative while retaining authored style-node locations. */
-export function expand(node: Ast.ObjectExpression): {
+export function expand(
+  node: Ast.ObjectExpression,
+  queries?: Query.Metadata,
+): {
   body: Ast.ObjectExpression
   recipe: Recipe.Definition
 } {
@@ -86,41 +92,70 @@ export function expand(node: Ast.ObjectExpression): {
 
   for (const [key, property] of fields)
     if (
-      !['base', 'variants', 'defaultVariants', 'compoundVariants'].includes(key)
+      ![
+        'base',
+        'variants',
+        'defaultVariants',
+        'compoundVariants',
+        'conditions',
+      ].includes(key)
     )
       throw new Themes.InvalidError(`Unknown recipe field: ${key}.`, property)
 
+  const conditions = fields.get('conditions')
+  const named = (conditions ? entries(conditions.value) : []).map(
+    ([name, property]) =>
+      RecipeConditions.read({ name, node: property.value, queries }),
+  )
+  const regions = RecipeConditions.regions(named)
   const base = fields.get('base')
   if (base) {
     entries(base.value)
-    properties.push(...(base.value as Ast.ObjectExpression).properties)
+    if (named.length) properties.push(group(base.value, '&', base.value))
+    else properties.push(...(base.value as Ast.ObjectExpression).properties)
   }
 
-  function append(
-    property: Property,
-    condition: string,
-    value: Ast.Expression,
-  ) {
-    entries(value)
-    properties.push({
-      ...property,
+  function group(node: Ast.Node, key: string, value: Ast.Expression): Property {
+    return {
+      type: 'Property',
+      kind: 'init',
+      method: false,
+      shorthand: false,
+      start: node.start,
+      end: node.end,
       computed: false,
       key: {
         type: 'Literal',
-        value: condition,
-        raw: JSON.stringify(condition),
-        start: property.key.start,
-        end: property.key.end,
+        value: key,
+        raw: JSON.stringify(key),
+        start: node.start,
+        end: node.end,
       },
       value,
-    })
+    }
   }
+
+  type Rule = {
+    matches: readonly (readonly [string, readonly string[]])[]
+    property: Property
+    suffix: string
+  }
+  const rules: Rule[] = []
 
   const variants = fields.get('variants')
   for (const [axis, property] of variants ? entries(variants.value) : []) {
     if (
       !/^[a-z][a-z0-9-]*$/.test(axis) ||
-      ['class', 'className', 'key', 'ref', 'style', 'variables'].includes(axis)
+      axis.startsWith('zyzz-condition-') ||
+      [
+        'class',
+        'className',
+        'conditions',
+        'key',
+        'ref',
+        'style',
+        'variables',
+      ].includes(axis)
     )
       throw new Themes.InvalidError(
         'Recipe axes require lowercase data-attribute names and cannot use reserved props.',
@@ -136,7 +171,7 @@ export function expand(node: Ast.ObjectExpression): {
 
     axes[axis] = choices.map(([key]) => key)
     for (const [key, style] of choices)
-      append(style, `&:where(${predicate(axis, key)})`, style.value)
+      rules.push({ matches: [[axis, [key]]], property: style, suffix: '' })
   }
 
   const defaultVariants = fields.get('defaultVariants')
@@ -172,7 +207,7 @@ export function expand(node: Ast.ObjectExpression): {
           element,
         )
 
-      let condition = '&'
+      const matches: (readonly [string, readonly string[]])[] = []
       for (const [axis, property] of entries(when.value)) {
         if (!Object.hasOwn(axes, axis))
           throw new Themes.InvalidError(
@@ -190,23 +225,89 @@ export function expand(node: Ast.ObjectExpression): {
             property,
           )
 
-        condition += `:where(${values
-          .map((value) => {
+        matches.push([
+          axis,
+          values.map((value) => {
             const selected = choice(value!, axes[axis]!)
             if (selected === null)
               throw new Themes.InvalidError(
                 'Compounds match choice names, not null.',
                 value!,
               )
-            return predicate(axis, selected)
-          })
-          .join(',')})`
+            return selected
+          }),
+        ])
       }
 
       // Distinct zero-specificity suffixes preserve repeated compound groups.
-      append(style, condition + ':where(*)'.repeat(index + 1), style.value)
+      rules.push({
+        matches,
+        property: style,
+        suffix: ':where(*)'.repeat(index + 1),
+      })
     }
   }
 
-  return { body: { ...node, properties }, recipe: { axes, defaults } }
+  const tree: Ast.ObjectExpression = { ...node, properties: [] }
+  for (const region of regions) {
+    let target = tree
+    for (const { node: source, rule } of region.rules) {
+      const existing = target.properties.find(
+        (property) =>
+          property.type === 'Property' &&
+          property.key.type === 'Literal' &&
+          property.key.value === rule,
+      ) as Property | undefined
+      if (existing) target = existing.value as Ast.ObjectExpression
+      else {
+        const nested: Ast.ObjectExpression = { ...node, properties: [] }
+        target.properties.push(group(source, rule, nested))
+        target = nested
+      }
+    }
+
+    for (const { matches, property, suffix } of rules) {
+      entries(property.value)
+      const selector =
+        '&' +
+        matches
+          .map(([axis, choices]) => {
+            const sources = [-1, ...region.active]
+            const alternatives = sources.flatMap((condition, index) => {
+              const attribute =
+                condition === -1
+                  ? `data-${axis}`
+                  : ConditionalRecipe.attribute({ axis, condition })
+              const excluded = sources
+                .slice(index + 1)
+                .map(
+                  (condition) =>
+                    `:not([${ConditionalRecipe.attribute({ axis, condition })}])`,
+                )
+                .join('')
+              return choices.map(
+                (choice) =>
+                  predicate(
+                    attribute,
+                    condition === -1 ? choice : `s${choice}`,
+                  ) + excluded,
+              )
+            })
+            return `:where(${alternatives.join(',')})`
+          })
+          .join('') +
+        suffix
+      target.properties.push(group(property.key, selector, property.value))
+    }
+  }
+  properties.push(...tree.properties)
+
+  return {
+    body: { ...node, properties },
+    recipe: {
+      axes,
+      defaults,
+      ...(named.length ? { conditions: named.map(({ name }) => name) } : {}),
+    },
+  }
 }

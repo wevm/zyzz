@@ -7,12 +7,14 @@ import * as Props from './Props.js'
 export type Definition = {
   /** Ordered axis names and their finite choices. */
   readonly axes: Readonly<Record<string, readonly string[]>>
+  /** Ordered named conditions; only CSS evaluates their queries. */
+  readonly conditions?: readonly string[] | undefined
   /** Normalized default selections. */
   readonly defaults: Readonly<Record<string, string | null>>
 }
 
 /**
- * Binds a recipe class to selection attributes and styling overrides.
+ * Binds an unconditional recipe class to selection attributes and styling overrides.
  * Type checking and compilation validate authoring; this path only selects data.
  * @param options - Precompiled classes, defaults, axes, and renderer output.
  * @returns A selection callable producing fresh props without retaining inputs.
@@ -28,8 +30,9 @@ export function create(options: create.Options) {
     }
 
     for (const axis of axes) {
+      const supplied = Object.hasOwn(input, axis) ? input[axis] : undefined
       const value = (
-        input[axis] === undefined ? options.defaults[axis] : input[axis]
+        supplied === undefined ? options.defaults[axis] : supplied
       ) as string | boolean | null | undefined
       if (value !== null && value !== undefined)
         result[`data-${axis}`] = String(value)
@@ -42,7 +45,7 @@ export function create(options: create.Options) {
 /** Generated recipe initialization inputs. */
 export declare namespace create {
   /** Fixed metadata retained by the compiled callable. */
-  type Options = Definition & {
+  type Options = Pick<Definition, 'axes' | 'defaults'> & {
     /** Complete compiled class list. */
     readonly className: string
     /** Whether to return native HTML attributes. */

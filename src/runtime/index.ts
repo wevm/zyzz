@@ -5,6 +5,9 @@
 /** Server-safe root appearance initialization script generation. */
 export * as Appearance from './Appearance.js'
 
+/** Conditional instructions isolated from unconditional recipes. */
+export * as ConditionalRecipe from './ConditionalRecipe.js'
+
 /** Runtime scalar binding isolated from static props. */
 export * as Dynamic from './Dynamic.js'
 

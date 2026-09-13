@@ -45,7 +45,7 @@ describe('compile', () => {
   test('rejects source/packed slot collisions and unresolved computed overrides', () => {
     const library = Graph.compile({
       modules: {
-        'vars.ts': `import {Vars} from 'zyzz';export const vars=Vars.define({gap:'length'});`,
+        'vars.ts': `import {variable} from 'zyzz';export const vars=({gap:variable('length')});`,
       },
     })
 
@@ -53,11 +53,11 @@ describe('compile', () => {
       Graph.compile({
         contracts: { 'lib/vars.js': library.contracts['vars.ts']! },
         modules: {
-          'vars.ts': `import {Vars} from 'zyzz';export const vars=Vars.define({gap:'length'});`,
+          'vars.ts': `import {variable} from 'zyzz';export const vars=({gap:variable('length')});`,
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: vars.ts:44: Conflicting variable identity: --z-v4t4nbe1og4cic-76-61-72-73--67-61-70; compile libraries with package-qualified module IDs.]`,
+      `[Source.ExtractError: vars.ts:54: Conflicting variable identity: --z-v4t4nbe1og4cic-54; compile libraries with package-qualified module IDs.]`,
     )
     expect(() =>
       Graph.compile({
@@ -126,26 +126,24 @@ describe('compile', () => {
     try {
       Graph.compile({
         modules: {
-          'app.ts': `import {Vars} from 'zyzz';
-export const vars=Vars.define({
-  gap:{type:'length',inherits:false,initialValue:'}'}
-});`,
+          'app.ts': `import {variable} from 'zyzz';
+export const vars=({gap:variable('length', {inherits:false,initialValue:'}'})});`,
         },
       })
       throw new Error('Expected invalid registration')
     } catch (error) {
       expect((error as import('zyzz/compiler').Source.ExtractError).diagnostics)
         .toMatchInlineSnapshot(`
-        [
-          {
-            "code": "unsupported_syntax",
-            "end": 112,
-            "message": "Registered initial values must match the declared syntax.",
-            "source": "app.ts",
-            "start": 61,
-          },
-        ]
-      `)
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 108,
+              "message": "Registered initial values must match the declared syntax.",
+              "source": "app.ts",
+              "start": 55,
+            },
+          ]
+        `)
     }
   })
   test('compiles overlapping dynamic fields and default exported static records', () => {
@@ -168,7 +166,7 @@ export const vars=Vars.define({
   test('shares defining variable identities across package entrypoint sidecars', () => {
     const library = Graph.compile({
       modules: {
-        'vars.ts': `import {Vars} from 'zyzz';export const vars=Vars.define({gap:'length'});`,
+        'vars.ts': `import {variable} from 'zyzz';export const vars=({gap:variable('length')});`,
         'index.ts': `export {vars} from './vars.js';`,
       },
     })
@@ -189,7 +187,7 @@ export const vars=Vars.define({
     })
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-1e8a67z1uaws1j-base0{width:var(--z-v4t4nbe1og4cic-76-61-72-73--67-61-70);padding:var(--z-v4t4nbe1og4cic-76-61-72-73--67-61-70);}"`,
+      `".z-1e8a67z1uaws1j-base0{width:var(--z-v4t4nbe1og4cic-54);padding:var(--z-v4t4nbe1og4cic-54);}"`,
     )
   })
   test('allows scalar copies and asserted static token bindings', () => {
@@ -209,7 +207,7 @@ export const vars=Vars.define({
   test('links default variable exports through packed contracts', () => {
     const library = Graph.compile({
       modules: {
-        'vars.ts': `import {Vars} from 'zyzz';const vars=Vars.define({gap:'length'});export default vars;`,
+        'vars.ts': `import {variable} from 'zyzz';const vars=({gap:variable('length')});export default vars;`,
       },
     })
 
@@ -224,7 +222,7 @@ export const vars=Vars.define({
     })
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-1e8a67z1uaws1j-base0{width:var(--z-v4t4nbe1og4cic-76-61-72-73--67-61-70);}"`,
+      `".z-1e8a67z1uaws1j-base0{width:var(--z-v4t4nbe1og4cic-47);}"`,
     )
   })
   test('rejects static records returned to runtime code', () => {
@@ -239,7 +237,7 @@ export const vars=Vars.define({
     )
   })
 
-  const librarySource = `import {Vars} from 'zyzz';export const vars=Vars.define({amount:{type:'percentage',inherits:false,initialValue:'25%'},gap:{type:'length',inherits:true,initialValue:'4px'}});`
+  const librarySource = `import {variable} from 'zyzz';export const vars=({amount:variable('percentage', {inherits:false,initialValue:'25%'}),gap:variable('length', {inherits:true,initialValue:'4px'})});`
 
   function compile() {
     const library = Graph.compile({
@@ -327,7 +325,7 @@ export const vars=Vars.define({
         modules: { 'app.ts': 'export {}' },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: b.js:0: Invalid library contract: Conflicting packed variable identity: --z-v4t4nbe1og4cic-76-61-72-73--61-6d-6f-75-6e-74; compile libraries with package-qualified module IDs.]`,
+      `[Source.ExtractError: b.js:0: Invalid library contract: Conflicting packed variable identity: --z-v4t4nbe1og4cic-57; compile libraries with package-qualified module IDs.]`,
     )
   })
   test('renders statically expanded theme records in a browser', async () => {
@@ -422,8 +420,8 @@ export const vars=Vars.define({
     const library = Graph.compile({ modules: { 'vars.ts': librarySource } })
     const data = JSON.parse(library.contracts['vars.ts']!)
 
-    data.exports.vars.variables.gap.name =
-      data.exports.vars.variables.amount.name
+    data.exports.vars.members.gap.variables.value.name =
+      data.exports.vars.members.amount.variables.value.name
 
     expect(() =>
       Graph.compile({
@@ -434,7 +432,7 @@ export const vars=Vars.define({
         },
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: lib.js:0: Invalid library contract: Invalid packed variable contract.]`,
+      `[Source.ExtractError: lib.js:0: Invalid library contract: Conflicting packed variable identity: --z-v4t4nbe1og4cic-57; compile libraries with package-qualified module IDs.]`,
     )
   })
   test('merges finite interface declarations and rejects unsafe static records', () => {
@@ -451,13 +449,13 @@ export const vars=Vars.define({
     const errors = [
       `const base={width:'10px'};let alias=base;alias.width='20px';css(base)`,
       `const base={__proto__:'red'};css({color:base.__proto__})`,
-      `const vars=Vars.define({__proto__:'length'});css({width:vars.__proto__})`,
+      `const vars=({__proto__:variable('length')});css({width:vars.__proto__})`,
       `const base={width:'10px'};const alias=flag?base:{};alias.width='20px';css(base)`,
       `const base={width:'10px'};const holder={safe:base,unsafe:flag?base:{}};holder.unsafe.width='20px';css(base)`,
     ].map((source) => {
       try {
         Graph.compile({
-          modules: { 'app.ts': `import {css,Vars} from 'zyzz';${source}` },
+          modules: { 'app.ts': `import {css,variable} from 'zyzz';${source}` },
         })
 
         return 'accepted'
@@ -468,11 +466,11 @@ export const vars=Vars.define({
 
     expect(errors).toMatchInlineSnapshot(`
       [
-        [Source.ExtractError: app.ts:60: Static data cannot be mutated or escape to runtime calls.],
-        [Source.ExtractError: app.ts:42: Static object prototypes are unsupported.],
-        [Source.ExtractError: app.ts:54: Variable schemas require unique names and supported scalar domains.],
-        [Source.ExtractError: app.ts:68: Static data cannot be mutated or escape through unsupported expressions.],
-        [Source.ExtractError: app.ts:87: Static data cannot be mutated or escape through unsupported expressions.],
+        [Source.ExtractError: app.ts:64: Static data cannot be mutated or escape to runtime calls.],
+        [Source.ExtractError: app.ts:46: Static object prototypes are unsupported.],
+        "accepted",
+        [Source.ExtractError: app.ts:72: Static data cannot be mutated or escape through unsupported expressions.],
+        [Source.ExtractError: app.ts:91: Static data cannot be mutated or escape through unsupported expressions.],
       ]
     `)
   })
@@ -480,13 +478,14 @@ export const vars=Vars.define({
   test('links registered variable references and assignments through packed aliases', async () => {
     expect(
       JSON.parse(compile().library.contracts['vars.ts']!).version,
-    ).toMatchInlineSnapshot('8')
+    ).toMatchInlineSnapshot(`14`)
 
     const { code, css } = await bundle()
 
     const value = Vm.runInNewContext(`${code};Fixture;`) as {
       layout: {
-        set: (values: Record<string, string>) => Record<string, string>
+        amount: import('zyzz').variable.Reference<'percentage'>
+        gap: import('zyzz').variable.Reference<'length'>
       }
       styles: {
         dynamic: (values: { width: string }) => {
@@ -495,8 +494,12 @@ export const vars=Vars.define({
       }
     }
 
-    expect(Object.values(value.layout.set({ amount: '50%', gap: '8px' })))
-      .toMatchInlineSnapshot(`
+    expect(
+      Object.values({
+        ...value.layout['amount'].set('50%'),
+        ...value.layout['gap'].set('8px'),
+      }),
+    ).toMatchInlineSnapshot(`
       [
         "50%",
         "8px",
@@ -509,16 +512,16 @@ export const vars=Vars.define({
       ]
     `)
     expect(css).toMatchInlineSnapshot(`
-      "@property --z-v4t4nbe1og4cic-76-61-72-73--61-6d-6f-75-6e-74{syntax:"<percentage>";inherits:false;initial-value:25%;}
-      @property --z-v4t4nbe1og4cic-76-61-72-73--67-61-70{syntax:"<length>";inherits:true;initial-value:4px;}.z-1e8a67z1uaws1j-base0{height:20px;padding:var(--z-v4t4nbe1og4cic-76-61-72-73--67-61-70);}
-      .z-style-1e8a67z1uaws1j-232{width:var(--z-v4t4nbe1og4cic-76-61-72-73--61-6d-6f-75-6e-74);}
+      "@property --z-v4t4nbe1og4cic-57{syntax:"<percentage>";inherits:false;initial-value:25%;}
+      @property --z-v4t4nbe1og4cic-121{syntax:"<length>";inherits:true;initial-value:4px;}.z-1e8a67z1uaws1j-base0{height:20px;padding:var(--z-v4t4nbe1og4cic-121);}
+      .z-style-1e8a67z1uaws1j-232{width:var(--z-v4t4nbe1og4cic-57);}
       .z-style-1e8a67z1uaws1j-293{width:var(--z-d1e8a67z1uaws1j-293-77-69-64-74-68);}"
     `)
   })
   test('expands immutable members and shorthand while retaining dynamic intersections', () => {
     const graph = Graph.compile({
       modules: {
-        'static.ts': `import {css,Vars} from 'zyzz';const dimensions={width:'12px',padding:'4px'} as const;const width=dimensions.width;const base={width,padding:dimensions.padding};type Width='10px'|'30px';type Values={width:Width}&{opacity:0|1};export const count=Vars.define({n:{type:'number',inherits:false,initialValue:-1}});export namespace styles {
+        'static.ts': `import {css, variable} from 'zyzz';const dimensions={width:'12px',padding:'4px'} as const;const width=dimensions.width;const base={width,padding:dimensions.padding};type Width='10px'|'30px';type Values={width:Width}&{opacity:0|1};export const count=({n:variable('number', {inherits:false,initialValue:-1})});export namespace styles {
   export const card = css({...base,padding:'8px'})
 
   export const dynamic = css((values:Values)=>({width:values.width,opacity:values.opacity}))
@@ -533,7 +536,7 @@ export const vars=Vars.define({
       .z-style-15wl7di1emu9we-411{width:var(--z-d15wl7di1emu9we-411-77-69-64-74-68);}"
     `)
     expect(graph.sharedCss).toMatchInlineSnapshot(
-      `"@property --z-v15wl7di1emu9we-63-6f-75-6e-74--6e{syntax:"<number>";inherits:false;initial-value:-1;}"`,
+      `"@property --z-v15wl7di1emu9we-253{syntax:"<number>";inherits:false;initial-value:-1;}"`,
     )
     expect(
       graph.modules['static.ts']!.code.includes('values:Values'),
@@ -542,7 +545,7 @@ export const vars=Vars.define({
   test('keeps module type aliases when unrelated nested declarations shadow their names', () => {
     const output = Graph.compile({
       modules: {
-        'app.ts': `import {css,Vars} from 'zyzz';type Values={width:'10px'};function unrelated(){type Values={width:unknown}}export const vars=Vars.define({gap:{type:'length',inherits:true,initialValue:'4px',syntax:undefined}});export const style=css((values:Values)=>({width:values.width}));`,
+        'app.ts': `import {css, variable} from 'zyzz';type Values={width:'10px'};function unrelated(){type Values={width:unknown}}export const vars=({gap:variable('length', {inherits:true,initialValue:'4px',syntax:undefined})});export const style=css((values:Values)=>({width:values.width}));`,
       },
     })
 
@@ -641,7 +644,7 @@ export const vars=Vars.define({
   test('does not publish values through type-only variable exports', () => {
     const output = Graph.compile({
       modules: {
-        'vars.ts': `import {Vars} from 'zyzz';const vars=Vars.define({gap:'length'});type vars=typeof vars;export type {vars};export {type vars as other}`,
+        'vars.ts': `import {variable} from 'zyzz';const vars=({gap:variable('length')});type vars=typeof vars;export type {vars};export {type vars as other}`,
       },
     })
 
@@ -669,7 +672,7 @@ export const vars=Vars.define({
       ).toMatchInlineSnapshot('"100px"')
 
       await page.evaluate(
-        `for(const [key,value]of Object.entries(Fixture.layout.set({amount:'50%',gap:'8px'})))document.querySelector('main').style.setProperty(key,value)`,
+        `for(const [key,value]of Object.entries(({...Fixture.layout["amount"].set('50%'),...Fixture.layout["gap"].set('8px')})))document.querySelector('main').style.setProperty(key,value)`,
       )
 
       expect(
@@ -684,7 +687,7 @@ export const vars=Vars.define({
       ).toMatchInlineSnapshot('"8px"')
 
       await page.evaluate(
-        `for(const [key,value]of Object.entries(Fixture.layout.set({amount:'75%'})))document.getElementById('card').style.setProperty(key,value)`,
+        `for(const [key,value]of Object.entries(({...Fixture.layout["amount"].set('75%')})))document.getElementById('card').style.setProperty(key,value)`,
       )
 
       expect(

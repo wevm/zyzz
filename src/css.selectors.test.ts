@@ -4,30 +4,25 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 
-const source = `import { css, where } from 'zyzz'
+const source = `import {css} from 'zyzz';
 export namespace styles {
   export const card = css({ padding: '16px' })
   export const empty = css()
-  export const label = css({
-    color: 'black',
-    [where\`\${card}:hover &\`]: { color: 'blue' },
-    [where\`\${card} > &:nth-child(even)\`]: { opacity: 0.5 },
-    [where\`\${empty} + &\`]: { fontWeight: 700 },
-  })
+  export const label = css({color: 'black',selectors:{[\`\${card}:hover &\`]:{ color: 'blue' },[\`\${card} > &:nth-child(even)\`]:{ opacity: 0.5 },[\`\${empty} + &\`]:{ fontWeight: 700 }}})
 }
-export const outside = css({ [where\`\${styles.card} > &\`]: { margin: 0 } })`
+export const outside = css({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }}})`
 
-describe('where', () => {
+describe('selectors', () => {
   test('compiles empty theme and configured HTML definitions', () => {
     const result = Graph.compile({
       modules: {
-        'empty.ts': `import { Config, css, Theme, where } from 'zyzz';
+        'empty.ts': `import {Config, css, Theme} from 'zyzz';
 const theme = Theme.define({});
 const config = Config.create({ output: 'html', theme: {} });
 export const themed = theme.css();
 export const configured = config.css();
 export const bare = css()();
-export const child = config.css({ [where\`\${themed} > &, \${configured} + &\`]: { color: 'red' } });`,
+export const child = config.css({selectors:{[\`\${themed} > &, \${configured} + &\`]:{ color: 'red' }}});`,
       },
     })
 
@@ -37,33 +32,33 @@ export const child = config.css({ [where\`\${themed} > &, \${configured} + &\`]:
 
       const theme = ({className:"z_theme-urrzb11meswl3-theme"} as import('zyzz').Theme.Definition<{}>);
       const config = ({theme:{"className":"z_theme-urrzb11meswl3-config-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{};readonly "output":"html"}>);
-      export const themed = __zyzzProps.create({className:"z-style-urrzb11meswl3-165"});
-      export const configured = __zyzzHtml.create({className:"z-style-urrzb11meswl3-204"});
+      export const themed = __zyzzProps.create({className:"z-style-urrzb11meswl3-156"});
+      export const configured = __zyzzHtml.create({className:"z-style-urrzb11meswl3-195"});
       export const bare = ({className:""});
-      export const child = __zyzzHtml.create({className:"z-style-urrzb11meswl3-268"});"
+      export const child = __zyzzHtml.create({className:"z-style-urrzb11meswl3-259"});"
     `)
     expect(result.modules['empty.ts']!.css).toMatchInlineSnapshot(
-      `".z-style-urrzb11meswl3-268{.z-style-urrzb11meswl3-165 > &, .z-style-urrzb11meswl3-204 + &{color:red;}}"`,
+      `".z-style-urrzb11meswl3-259{.z-style-urrzb11meswl3-156 > &, .z-style-urrzb11meswl3-195 + &{color:red;}}"`,
     )
   })
 
   test('compiles namespace definitions and scoped selectors', () => {
     const result = Graph.compile({ modules: { 'app.ts': source } })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-style-1e8a67z1uaws1j-82{padding:16px;}
-      .z-style-1e8a67z1uaws1j-159{color:black;.z-style-1e8a67z1uaws1j-82:hover &{color:blue;}.z-style-1e8a67z1uaws1j-82 > &:nth-child(even){opacity:0.5;}.z-style-1e8a67z1uaws1j-130 + &{font-weight:700;}}
-      .z-style-1e8a67z1uaws1j-372{.z-style-1e8a67z1uaws1j-82 > &{margin:0;}}"
+      ".z-style-1e8a67z1uaws1j-74{padding:16px;}
+      .z-style-1e8a67z1uaws1j-151{color:black;.z-style-1e8a67z1uaws1j-74:hover &{color:blue;}.z-style-1e8a67z1uaws1j-74 > &:nth-child(even){opacity:0.5;}.z-style-1e8a67z1uaws1j-122 + &{font-weight:700;}}
+      .z-style-1e8a67z1uaws1j-334{.z-style-1e8a67z1uaws1j-74 > &{margin:0;}}"
     `)
     expect(result.modules['app.ts']!.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
 
       export namespace styles {
-        export const card = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-82"})
-        export const empty = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-130"})
-        export const label = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-159"})
+        export const card = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-74"})
+        export const empty = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-122"})
+        export const label = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-151"})
       }
-      export const outside = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-372"})"
+      export const outside = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-334"})"
     `)
   })
 
@@ -74,14 +69,14 @@ export const child = config.css({ [where\`\${themed} > &, \${configured} + &\`]:
         'barrel.ts': `import { card, styles } from './library.js'; export { card as panel, styles }`,
       },
     })
-    const app = `import { css, where as when } from 'zyzz'; import { panel, styles } from './barrel.js'; const alias = panel; export const label = css({ [when\`\${alias} > &, \${styles.button} + &\`]: {color:'blue'} })`
+    const app = `import {css} from 'zyzz'; import { panel, styles } from './barrel.js'; const alias = panel; export const label = css({ selectors: {[\`\${alias} > &, \${styles.button} + &\`]: {color:'blue'}} })`
     const result = Graph.compile({
       modules: { 'app.ts': app },
       contracts: publisher.contracts,
       imports: { 'app.ts': { zyzz: null, './barrel.js': 'barrel.ts' } },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-style-1e8a67z1uaws1j-130{.z-style-ggnaaj17b3mnh-48 > &, .z-style-ggnaaj17b3mnh-103 + &{color:blue;}}"`,
+      `".z-style-1e8a67z1uaws1j-113{.z-style-ggnaaj17b3mnh-48 > &, .z-style-ggnaaj17b3mnh-103 + &{color:blue;}}"`,
     )
     expect(
       JSON.parse(publisher.contracts['barrel.ts']!).version,
@@ -92,46 +87,44 @@ export const child = config.css({ [where\`\${themed} > &, \${configured} + &\`]:
     expect(() =>
       Source.extract({
         moduleId: 'invalid.ts',
-        source:
-          "import {css,where} from 'zyzz'; css({[where`${missing} &`]:{color:'red'}})",
+        source: `import {css} from 'zyzz'; css({selectors:{[\`\${missing} &\`]:{color:'red'}}})`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:46: where interpolations require previously declared css definitions.]`,
+      `[Source.ExtractError: invalid.ts:46: Selector interpolations require previously declared css definitions.]`,
     )
     expect(() =>
       Source.extract({
         moduleId: 'called.ts',
-        source:
-          "import {css,where} from 'zyzz'; const card=css({}); css({[where`${card()} &`]:{color:'red'}})",
+        source: `import {css} from 'zyzz'; const card=css({}); css({selectors:{[\`\${card()} &\`]:{color:'red'}}})`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: called.ts:66: where interpolations require css definitions without calling them.]`,
+      `[Source.ExtractError: called.ts:66: Selector interpolations require css definitions without calling them.]`,
     )
     expect(() =>
       Source.extract({
         moduleId: 'forward.ts',
-        source: `import {css,where} from 'zyzz'; css({[where\`\${card} &\`]:{color:'red'}}); const card=css({})`,
+        source: `import {css} from 'zyzz'; css({selectors:{[\`\${card} &\`]:{color:'red'}}}); const card=css({})`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: forward.ts:46: where interpolations require previously declared css definitions.]`,
+      `[Source.ExtractError: forward.ts:46: Selector interpolations require previously declared css definitions.]`,
     )
     expect(() =>
       Source.extract({
         moduleId: 'scope.ts',
-        source: `import {css,where} from 'zyzz'; const card=css({}); css({[where\`\${card}:hover\`]:{color:'red'}})`,
+        source: `import {css} from 'zyzz'; const card=css({}); css({selectors:{[\`\${card}:hover\`]:{color:'red'}}})`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: scope.ts:58: where selectors require an explicit & target.]`,
+      `[Source.ExtractError: scope.ts:62: Selectors require an explicit & target.]`,
     )
   })
 
   test('keeps lexical aliases and deduplicated definitions distinct', () => {
     const result = Graph.compile({
       modules: {
-        'scoped.ts': `import {css,where} from 'zyzz';
+        'scoped.ts': `import {css} from 'zyzz';
 const card=css({color:'red'}); const alias=card;
 const other=css({color:'red'});
-function nested(){ const card=other; return css({[where\`\${alias}:hover &\`]:{color:'blue'}}) }
+function nested(){ const card=other; return css({selectors:{[\`\${alias}:hover &\`]:{color:'blue'}}}) }
 export {card,other,nested};`,
       },
     })
@@ -139,70 +132,83 @@ export {card,other,nested};`,
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
 
-      const card=__zyzzProps.create({className:"z-style-1kmi93w1julwr4-43"}); const alias=card;
-      const other=__zyzzProps.create({className:"z-style-1kmi93w1julwr4-93"});
-      function nested(){ const card=other; return __zyzzProps.create({className:"z-style-1kmi93w1julwr4-157"}) }
+      const card=__zyzzProps.create({className:"z-style-1kmi93w1julwr4-37"}); const alias=card;
+      const other=__zyzzProps.create({className:"z-style-1kmi93w1julwr4-87"});
+      function nested(){ const card=other; return __zyzzProps.create({className:"z-style-1kmi93w1julwr4-151"}) }
       export {card,other,nested};"
     `)
     expect(result.modules['scoped.ts']!.css).toMatchInlineSnapshot(`
-      ".z-style-1kmi93w1julwr4-43{color:red;}
-      .z-style-1kmi93w1julwr4-93{color:red;}
-      .z-style-1kmi93w1julwr4-157{.z-style-1kmi93w1julwr4-43:hover &{color:blue;}}"
+      ".z-style-1kmi93w1julwr4-37{color:red;}
+      .z-style-1kmi93w1julwr4-87{color:red;}
+      .z-style-1kmi93w1julwr4-151{.z-style-1kmi93w1julwr4-37:hover &{color:blue;}}"
     `)
   })
 
   test('binds dynamic ancestor conditions and rejects descendant slot targets', () => {
     const result = Graph.compile({
       modules: {
-        'dynamic.ts': `import {css,where} from 'zyzz';
-const card=css({}); export const label=css((values:{opacity:number})=>({[where\`\${card}:hover &\`]:{opacity:values.opacity}}));`,
+        'dynamic.ts': `import {css} from 'zyzz';
+const card=css({}); export const label=css((values:{opacity:number})=>({selectors:{[\`\${card}:hover &\`]:{opacity:values.opacity}}}));`,
       },
     })
     expect(result.modules['dynamic.ts']!.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
 
-      const card=__zyzzProps.create({className:"z-style-1h5dayl7tfv4v-43"}); export const label=(((input:Parameters<import('zyzz').css.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"];const external=input.className;const style=input.style;return {className:external?"z-style-1h5dayl7tfv4v-71"+" "+external:"z-style-1h5dayl7tfv4v-71",style:{...style,"--z-d1h5dayl7tfv4v-71-6f-70-61-63-69-74-79":v0===''?' ':v0}}}) as import('zyzz').css.Dynamic<{opacity:number}>);"
+      const card=__zyzzProps.create({className:"z-style-1h5dayl7tfv4v-37"}); export const label=(((input:Parameters<import('zyzz').css.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"];const external=input.className;const style=input.style;return {className:external?"z-style-1h5dayl7tfv4v-65"+" "+external:"z-style-1h5dayl7tfv4v-65",style:{...style,"--z-d1h5dayl7tfv4v-65-6f-70-61-63-69-74-79":v0===''?' ':v0}}}) as import('zyzz').css.Dynamic<{opacity:number}>);"
     `)
     expect(() =>
       Source.extract({
         moduleId: 'descendant.ts',
-        source:
-          "import {css,where} from 'zyzz'; css((values:{opacity:number})=>({[where`& > span`]:{opacity:values.opacity}}))",
+        source: `import {css} from 'zyzz'; css((values:{opacity:number})=>({selectors:{[\`& > span\`]:{opacity:values.opacity}}}))`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: descendant.ts:66: where templates require a compiled style definition.
-      descendant.ts:92: Dynamic values require conditions that select the styled element.
+      [Source.ExtractError: descendant.ts:92: Dynamic values require conditions that select the styled element.
       descendant.ts:92: Expected a literal string or number; expressions are not evaluated.]
     `)
   })
 
-  test('rejects unscoped lists, malformed selectors, and standalone templates', () => {
+  test('rejects unscoped lists, malformed selectors, and missing ampersands', () => {
     expect(() =>
       Source.extract({
         moduleId: 'list.ts',
-        source:
-          "import {css,where} from 'zyzz'; css({[where`&:hover, body`]:{color:'red'}})",
+        source: `import {css} from 'zyzz'; css({selectors:{[\`&:hover, body\`]:{color:'red'}}})`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: list.ts:38: Selector lists require explicit & selectors.]`,
+      `[Source.ExtractError: list.ts:42: Selector lists require explicit & selectors.]`,
     )
     expect(() =>
       Source.extract({
         moduleId: 'syntax.ts',
-        source:
-          "import {css,where} from 'zyzz'; css({[where`& > > span`]:{color:'red'}})",
+        source: `import {css} from 'zyzz'; css({selectors:{[\`& > > span\`]:{color:'red'}}})`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: syntax.ts:38: Invalid dangling combinator in selector]`,
+      `[Source.ExtractError: syntax.ts:42: Invalid dangling combinator in selector]`,
     )
     expect(() =>
       Source.extract({
         moduleId: 'standalone.ts',
-        source: "import {where} from 'zyzz'; const condition=where`&:hover`",
+        source: `import {css} from 'zyzz'; css({selectors: {'body': {color: 'red'}}})`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: standalone.ts:44: where templates must be computed style keys.]`,
+      `[Source.ExtractError: standalone.ts:43: Selectors require an explicit & target.]`,
+    )
+  })
+
+  test('reuses static selector declarations without interpreting unrelated application data', () => {
+    const output = Graph.compile({
+      modules: {
+        'static.ts': `import {css} from 'zyzz';
+const application={selectors:{name:'unrelated'}};
+namespace styles {
+  export const parent=css();
+  const shared={selectors:{[\`\${parent}:hover &\`]:{color:'red'}}};
+  export const child=css(shared);
+}`,
+      },
+    })
+    expect(output.modules['static.ts']!.css).toMatchInlineSnapshot(
+      `".z-style-15wl7di1emu9we-211{.z-style-15wl7di1emu9we-117:hover &{color:red;}}"`,
     )
   })
 

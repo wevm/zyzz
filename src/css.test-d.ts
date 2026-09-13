@@ -3,7 +3,7 @@
  * @module
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { Config, css, Theme, where } from 'zyzz'
+import { Config, css, Theme } from 'zyzz'
 
 describe('css', () => {
   test('accepts empty root, theme, and configured definitions', () => {
@@ -16,7 +16,7 @@ describe('css', () => {
     expectTypeOf(theme.css()).toEqualTypeOf<css.ReturnType>()
     expectTypeOf(config.css()).toEqualTypeOf<css.ReturnType>()
     expectTypeOf(html.css()).toEqualTypeOf<css.ReturnType<'html'>>()
-    css({ [where`${empty} > &`]: { color: 'red' } })
+    css({ selectors: { [`${empty} > &`]: { color: 'red' } } })
     empty({ className: 'external' })
     // @ts-expect-error Empty styles still reject unrelated props.
     empty({ id: 'card' })

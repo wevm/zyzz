@@ -21,7 +21,7 @@ export function read(
 ) {
   const data = record(JSON.parse(source))
   if (
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(
       data.version as number,
     )
   )
@@ -68,6 +68,10 @@ export function read(
     const entry = record(value)
 
     if (entry.kind === 'variables') {
+      if ((data.version as number) < 14)
+        throw new Error(
+          'Legacy variable contracts require recompilation with variable().',
+        )
       const names = new Set<string>()
 
       const slots = Object.fromEntries(
@@ -107,6 +111,16 @@ export function read(
       return {
         binding,
         kind: 'variables',
+        ...(entry.members
+          ? {
+              members: Object.fromEntries(
+                Object.entries(record(entry.members)).map(([name, value]) => [
+                  name,
+                  link(value),
+                ]),
+              ),
+            }
+          : {}),
         definition: Theme.define({}),
         call: {
           start: -1,
@@ -129,7 +143,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13].includes(data.version as number) ||
+        ![9, 10, 11, 12, 13, 14].includes(data.version as number) ||
         ![
           'cssFunction',
           'customMedia',
@@ -355,6 +369,16 @@ export function write(
         binding: link.binding,
         kind: link.kind,
         variables: link.call.variables,
+        ...(link.members
+          ? {
+              members: Object.fromEntries(
+                Object.entries(link.members).map(([name, member]) => [
+                  name,
+                  entry(member),
+                ]),
+              ),
+            }
+          : {}),
         ...(link.call.variableOwner
           ? { source: Stylesheets.relative(moduleId, link.call.variableOwner) }
           : {}),
@@ -433,6 +457,8 @@ export function write(
       ]),
     ),
     version: (() => {
+      if (Object.values(links).some((link) => link.kind === 'variables'))
+        return 14
       if (Object.values(links).some((link) => link.kind === 'style-reference'))
         return 13
 

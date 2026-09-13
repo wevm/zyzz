@@ -10,7 +10,7 @@ import * as Contributions from './internal/Contributions.js'
 import * as Css from '../web/Css.js'
 import * as Dynamic from './internal/Dynamic.js'
 import * as Expression from './internal/Expression.js'
-import * as Where from './internal/Where.js'
+import * as Selectors from './internal/Selectors.js'
 import type * as Namespace from '../web/internal/Namespace.js'
 import * as Parser from 'oxc-parser'
 import * as RuleReference from '../internal/RuleReference.js'
@@ -278,7 +278,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             name === 'Config' ||
             name === 'css' ||
             name === 'Theme' ||
-            name === 'Vars'
+            name === 'variable'
           )
             report(
               'unsupported_syntax',
@@ -363,14 +363,31 @@ export function extract(options: extract.Options): extract.ReturnType {
 
   pending.sort((a, b) => a.start - b.start)
 
-  const where = (() => {
+  const staticCalls = new Set(pending.map((call) => call.start))
+  const opaque = new Set(variables.references.keys())
+  const normalized = new Map<number, Ast.Node | Error>()
+  for (const call of pending) {
+    if (!call.arguments[0]) continue
     try {
-      return Where.scan(
+      normalized.set(
+        call.start,
+        staticData.normalize(call.arguments[0], staticCalls, opaque),
+      )
+    } catch (error) {
+      if (!(error instanceof Themes.InvalidError)) throw error
+      normalized.set(call.start, error)
+    }
+  }
+
+  const selectors = (() => {
+    try {
+      return Selectors.scan(
         program,
         scopeTracker,
         identity(options.moduleId),
         pending,
         options[Themes.context]?.links,
+        staticData.used,
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
@@ -379,8 +396,6 @@ export function extract(options: extract.Options): extract.ReturnType {
       throw new ExtractError(diagnostics)
     }
   })()
-
-  const staticCalls = new Set(pending.map((call) => call.start))
 
   for (const call of pending) {
     let argument = call.arguments[0]
@@ -402,8 +417,9 @@ export function extract(options: extract.Options): extract.ReturnType {
     const original = argument
 
     try {
-      if (argument)
-        argument = staticData.normalize(argument, staticCalls) as Ast.Expression
+      const value = normalized.get(call.start)
+      if (value instanceof Error) throw value
+      if (value) argument = value as Ast.Expression
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
 
@@ -485,7 +501,8 @@ export function extract(options: extract.Options): extract.ReturnType {
         if (
           slot &&
           prefix.some(
-            (key) => !Condition.local(key) && !where.localConditions.has(key),
+            (key) =>
+              !Condition.local(key) && !selectors.localConditions.has(key),
           )
         ) {
           report(
@@ -500,16 +517,67 @@ export function extract(options: extract.Options): extract.ReturnType {
         return slot
       }
 
-      for (const property of argument.properties) {
+      const properties: Ast.ObjectExpression['properties'] = []
+      for (const entry of argument.properties) {
+        const key =
+          entry.type === 'Property' && !entry.computed
+            ? entry.key.type === 'Identifier'
+              ? entry.key.name
+              : entry.key.type === 'Literal'
+                ? entry.key.value
+                : undefined
+            : undefined
+        if (key !== 'selectors' && key !== 'variables') {
+          properties.push(entry)
+          continue
+        }
+        if (
+          entry.type !== 'Property' ||
+          entry.kind !== 'init' ||
+          entry.method ||
+          entry.shorthand ||
+          entry.value.type !== 'ObjectExpression'
+        ) {
+          report(
+            'unsupported_syntax',
+            `${key} requires an explicit literal object.`,
+            entry,
+          )
+          continue
+        }
+        for (const property of entry.value.properties) {
+          if (
+            property.type !== 'Property' ||
+            (key === 'selectors'
+              ? !selectors.conditions.has(property.key.start)
+              : !property.computed ||
+                !variables.references.has(property.key.start))
+          ) {
+            report(
+              'unsupported_syntax',
+              key === 'selectors'
+                ? 'Selectors require explicit & targets.'
+                : 'Variable assignments require declared variable keys.',
+              property,
+            )
+            continue
+          }
+          properties.push(property)
+        }
+      }
+
+      for (const property of properties) {
         if (
           property.type !== 'Property' ||
           property.kind !== 'init' ||
           property.method ||
           (property.computed &&
-            !where.conditions.has(property.key.start) &&
+            !selectors.conditions.has(property.key.start) &&
+            !variables.references.has(property.key.start) &&
             !contributions.queryKeys.has(property.key.start)) ||
           property.shorthand ||
-          (!where.conditions.has(property.key.start) &&
+          (!selectors.conditions.has(property.key.start) &&
+            !variables.references.has(property.key.start) &&
             property.key.type !== 'Identifier' &&
             (property.key.type !== 'Literal' ||
               typeof property.key.value !== 'string'))
@@ -523,7 +591,8 @@ export function extract(options: extract.Options): extract.ReturnType {
         }
 
         const key =
-          where.conditions.get(property.key.start) ??
+          variables.references.get(property.key.start)?.reference.name ??
+          selectors.conditions.get(property.key.start) ??
           contributions.queryKeys.get(property.key.start) ??
           (property.key.type === 'Identifier'
             ? property.key.name
@@ -842,8 +911,8 @@ export function extract(options: extract.Options): extract.ReturnType {
         .contract.shorthands
 
       calls.push({
-        ...(where.identities.has(call.start)
-          ? { identity: where.identities.get(call.start)! }
+        ...(selectors.identities.has(call.start)
+          ? { identity: selectors.identities.get(call.start)! }
           : {}),
         ...(argument !== (dynamic?.body ?? original) &&
         argument.type === 'ObjectExpression'
@@ -983,14 +1052,6 @@ export function extract(options: extract.Options): extract.ReturnType {
     )
   }
 
-  for (const [start] of where.conditions)
-    if (!calls.some((call) => call.start <= start && start < call.end))
-      report(
-        'unsupported_syntax',
-        'where templates require a compiled style definition.',
-        { start, end: start },
-      )
-
   for (const token of themes?.staticTokens ?? [])
     if (!staticData.used.has(Expression.unwrap(token).start))
       report(
@@ -1016,7 +1077,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       ? {
           themeExports: Object.freeze({
             ...themes?.exports,
-            ...where.exports,
+            ...selectors.exports,
             ...contributions.exports,
             ...variables.exports,
           }),

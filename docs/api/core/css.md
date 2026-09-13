@@ -31,7 +31,7 @@ const props = progress({ amount: '50%', className: 'external' })
 - Type: `Style.LiteralProperties`
 - Default: `{}`.
 
-Literal property object at the current source boundary. Omit it for an empty definition, including identity-only references in `where` templates.
+Literal property object at the current source boundary. Omit it for an empty definition, including identity-only references in `selectors` objects.
 
 ```ts
 css({ padding: '1rem' })
@@ -138,6 +138,14 @@ const panel = theme.css({
 
 Threshold aliases support `>=tablet`, `<desktop`, and `tablet..desktop` (inclusive lower/exclusive upper). Named container aliases use `@container sidebar >=card` with declared `containerNames`. Raw named container queries remain available. Applications establish containment with standard `containerType`/`containerName` declarations. Thresholds resolve during compilation; changing a runtime scope cannot change them.
 
-Use explicit selectors for application-owned data/ARIA states and ancestor/sibling relationships. `where` templates interpolate other `css` definitions. Core `Style.define` and global declarations reject relationship keys.
+Use explicit selectors for application-owned data/ARIA states and ancestor/sibling relationships. `selectors` objects interpolate other `css` definitions. Core `Style.define` and global declarations reject relationship keys.
 
 Dynamic private values cannot contain CSS-wide keywords (`initial`, `inherit`, `unset`, `revert`, or `revert-layer`), because those keywords would apply to the custom property itself. Numeric zero can accompany string dimension domains. Template substitutions inside quoted CSS strings are rejected; pass the complete quoted scalar as a slot value when authoring dynamic content.
+
+### selectors
+
+A literal map of scoped selector strings to nested declarations. Every selector requires an explicit `&`. Template keys can interpolate previously declared `css` definitions. See [selectors](selectors.md).
+
+### variables
+
+A literal map of computed `variable()` keys to static scalar assignments. It is also supported inside selectors and conditions. Inline assignments use the reference's `.set(value)` method. See [variable](variable.md).

@@ -593,7 +593,12 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
     return node
   }
 
-  function normalize(node: Ast.Node, allowed: ReadonlySet<number>): Ast.Node {
+  function normalize(
+    node: Ast.Node,
+    allowed: ReadonlySet<number>,
+    opaque: ReadonlySet<number> = new Set(),
+  ): Ast.Node {
+    if (opaque.has(node.start)) return node
     node = resolve(node, allowed)
 
     if (node.type === 'ObjectExpression') {
@@ -602,7 +607,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
       const normalized = expanded.map((property) =>
         property.type === 'Property'
           ? (() => {
-              const value = normalize(property.value, allowed)
+              const value = normalize(property.value, allowed, opaque)
 
               return value === property.value
                 ? property
@@ -622,7 +627,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
     if (node.type === 'ArrayExpression') {
       const elements = node.elements.map((element) =>
         element && element.type !== 'SpreadElement'
-          ? normalize(element, allowed)
+          ? normalize(element, allowed, opaque)
           : element,
       )
 
@@ -635,7 +640,7 @@ export function collect(program: Ast.Program, scope: Scope.Tracker) {
 
     if (node.type === 'TemplateLiteral') {
       const expressions = node.expressions.map((expression) =>
-        normalize(expression, allowed),
+        normalize(expression, allowed, opaque),
       )
 
       return expressions.every(

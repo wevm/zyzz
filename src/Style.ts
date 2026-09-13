@@ -18,29 +18,53 @@ export type Accepted<
 > = Record<
   Exclude<
     Keys<style>,
-    keyof Literal.Properties | Condition.Keys<tokens, Keys<style>>
+    | keyof Literal.Properties
+    | Condition.Keys<tokens, Keys<style>>
+    | 'selectors'
+    | 'variables'
   >,
   never
 > &
   (style extends unknown
     ? {
-        [key in keyof style]: key extends keyof Literal.Properties
-          ? Value.Accepted<
-              Pick<style, key>,
-              literal extends true
-                ? LiteralDeclarations
-                : DeclarationProperties<tokens>
-            >[key] &
-              Value.Checked<Pick<style, key>, tokens>[key]
-          : key extends Condition.Keys<tokens, key>
-            ? [style[key]] extends [undefined]
-              ? never
-              : NonNullable<style[key]> extends Record<string, unknown>
-                ?
-                    | Accepted<NonNullable<style[key]>, tokens, literal>
-                    | Extract<style[key], undefined>
-                : never
+        [key in keyof style]: key extends 'selectors'
+          ? style[key] extends Record<string, unknown>
+            ? {
+                [selector in keyof style[key]]: style[key][selector] extends Record<
+                  string,
+                  unknown
+                >
+                  ? Accepted<style[key][selector], tokens, literal>
+                  : never
+              }
             : never
+          : key extends 'variables'
+            ? style[key] extends Record<string, unknown>
+              ? {
+                  [name in keyof style[key]]: style[key][name] extends
+                    | number
+                    | string
+                    ? Literal.Checked<style[key][name]>
+                    : never
+                }
+              : never
+            : key extends keyof Literal.Properties
+              ? Value.Accepted<
+                  Pick<style, key>,
+                  literal extends true
+                    ? LiteralDeclarations
+                    : DeclarationProperties<tokens>
+                >[key] &
+                  Value.Checked<Pick<style, key>, tokens>[key]
+              : key extends Condition.Keys<tokens, key>
+                ? [style[key]] extends [undefined]
+                  ? never
+                  : NonNullable<style[key]> extends Record<string, unknown>
+                    ?
+                        | Accepted<NonNullable<style[key]>, tokens, literal>
+                        | Extract<style[key], undefined>
+                    : never
+                : never
       }
     : never)
 
@@ -578,7 +602,7 @@ type WithoutRelationships<value> = value extends readonly unknown[]
   ? unknown
   : value extends object
     ? {
-        [key in keyof value]: key extends symbol
+        [key in keyof value]: key extends symbol | 'selectors' | 'variables'
           ? never
           : key extends keyof Literal.Properties
             ? unknown

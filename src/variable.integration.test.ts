@@ -1,0 +1,217 @@
+/** Exercises variable assignments and selector groups from source to browser and packed consumers. @module */
+import * as Esbuild from 'esbuild'
+import * as Path from 'node:path'
+import { chromium } from 'playwright'
+import { describe, expect, test } from 'vite-plus/test'
+import { Graph, Transform } from 'zyzz/compiler'
+
+const library = `import {css, variable} from 'zyzz'
+export namespace variables {
+  export const accent = variable('color')
+  export const gap = variable('length', {inherits: true, initialValue: '4px'})
+}
+export namespace styles {
+  export const card = css({variables: {[variables.accent]: 'tomato', [variables.gap]: '12px'}})
+  export const label = css({
+    color: variables.accent,
+    padding: variables.gap,
+    selectors: {
+      '&:nth-child(even)': {opacity: 0.5},
+      [\`\${card}[data-open] &\`]: {variables: {[variables.accent]: 'purple'}},
+    },
+  })
+}`
+
+describe('variable', () => {
+  test('preserves namespaces, re-exports, registration and assignment order in packed consumers', () => {
+    const publisher = Graph.compile({
+      modules: {
+        'lib/library.ts': library,
+        'lib/barrel.ts': `export {variables, styles} from './library.js'`,
+      },
+    })
+    const consumer = Graph.compile({
+      contracts: publisher.contracts,
+      imports: { 'app.ts': { './barrel.js': 'lib/barrel.ts', zyzz: null } },
+      modules: {
+        'app.ts': `import {css} from 'zyzz'; import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=css({variables:{[accent]:'blue'},color:accent,selectors:{[\`\${styles.card}:hover &\`]:{variables:{[accent]:'green'}}}}); export const inline=accent.set('red')`,
+      },
+    })
+
+    expect(
+      JSON.parse(publisher.contracts['lib/library.ts']!).version,
+    ).toMatchInlineSnapshot(`14`)
+    expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-style-1e8a67z1uaws1j-123{--z-v1ym5zhz14a14rh-88:blue;color:var(--z-v1ym5zhz14a14rh-88);.z-style-1ym5zhz14a14rh-235:hover &{--z-v1ym5zhz14a14rh-88:green;}}"`,
+    )
+    expect(consumer.modules['app.ts']!.code).toMatchInlineSnapshot(`
+      "
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+       import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z-style-1e8a67z1uaws1j-123"}); export const inline=accent.set('red')"
+    `)
+  })
+
+  test('rejects invalid group structures and forward variables without executing source', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {css,variable} from 'zyzz'; css({color:accent});const accent=variable('color')`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:46: Variables must be declared before use.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {css,variable} from 'zyzz'; css({color:variables.accent});namespace variables {export const accent=variable('color')}`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:46: Variables must be declared before use.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {css} from 'zyzz';css({selectors:{'body':{color:'red'}}})`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:41: Selectors require an explicit & target.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {css} from 'zyzz';css({variables:{accent:'red'}})`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:41: Variable assignments require declared variable keys.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {css,variable} from 'zyzz'; const accent=variable('color'); css({variables:{[accent]:{color:'red'}}})`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:92: Expected a literal string or number; expressions are not evaluated.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {variable} from 'zyzz'; function local(){return variable('color')}`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:55: variable requires a module-level constant.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {variable} from 'zyzz'; const fake=()=>variable('color')`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:46: variable requires a module-level constant.]`,
+    )
+  })
+
+  test('renders inherited defaults, conditional assignments and inline updates with fixed rules', async () => {
+    const result = Graph.compile({ modules: { 'library.ts': library } })
+    const built = await Esbuild.build({
+      stdin: {
+        contents: result.modules['library.ts']!.code,
+        loader: 'ts',
+        resolveDir: process.cwd(),
+      },
+      alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+      bundle: true,
+      format: 'iife',
+      globalName: 'Fixture',
+      write: false,
+    })
+    const browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox'],
+    })
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        '<main><span>first</span><span>second</span></main>',
+      )
+      await page.addStyleTag({ content: result.modules['library.ts']!.css })
+      await page.addScriptTag({ content: built.outputFiles[0]!.text })
+      await page.evaluate(`{
+        const card=document.querySelector('main');card.className=Fixture.styles.card().className;
+        for(const span of document.querySelectorAll('span'))span.className=Fixture.styles.label().className;
+      }`)
+      const read = () =>
+        page.locator('span').evaluateAll((nodes) =>
+          nodes.map((node) => {
+            const style = getComputedStyle(node)
+            return [style.color, style.padding, style.opacity]
+          }),
+        )
+      expect(await read()).toMatchInlineSnapshot(`
+        [
+          [
+            "rgb(255, 99, 71)",
+            "12px",
+            "1",
+          ],
+          [
+            "rgb(255, 99, 71)",
+            "12px",
+            "0.5",
+          ],
+        ]
+      `)
+      await page
+        .locator('main')
+        .evaluate((node) => node.setAttribute('data-open', ''))
+      expect(await read()).toMatchInlineSnapshot(`
+        [
+          [
+            "rgb(128, 0, 128)",
+            "12px",
+            "1",
+          ],
+          [
+            "rgb(128, 0, 128)",
+            "12px",
+            "0.5",
+          ],
+        ]
+      `)
+      const count = await page.evaluate(() =>
+        [...document.styleSheets].reduce(
+          (sum, sheet) => sum + sheet.cssRules.length,
+          0,
+        ),
+      )
+      await page.evaluate(`{
+        const [first]=document.querySelectorAll('span');
+        const set=Fixture.variables.accent.set;
+        for(const [key,value]of Object.entries(set('blue')))first.style.setProperty(key,value);
+      }`)
+      expect(await read()).toMatchInlineSnapshot(`
+        [
+          [
+            "rgb(0, 0, 255)",
+            "12px",
+            "1",
+          ],
+          [
+            "rgb(128, 0, 128)",
+            "12px",
+            "0.5",
+          ],
+        ]
+      `)
+      expect(
+        (await page.evaluate(() =>
+          [...document.styleSheets].reduce(
+            (sum, sheet) => sum + sheet.cssRules.length,
+            0,
+          ),
+        )) === count,
+      ).toMatchInlineSnapshot(`true`)
+    } finally {
+      await browser.close()
+    }
+  })
+})

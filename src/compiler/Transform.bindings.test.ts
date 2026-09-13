@@ -6,12 +6,12 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 
 const source = [
-  'import { css, Vars } from "zyzz";',
-  'const vars = Vars.define({ amount: "percentage", count: "number", gap: "length" });',
+  `import {css, variable} from 'zyzz';`,
+  `const vars = ({amount:variable("percentage"),count:variable("number"),gap:variable("length")});`,
   'export const bar = css({width:vars.amount, marginLeft:`calc(${vars.gap} + 2px)`})();',
-  'export const assignments = vars.set({amount:"50%",count:2,gap:"8px"});',
-  'export const update = () => vars.set({amount:"75%"});',
-  'export const assign = (values: any) => vars.set(values);',
+  `export const assignments = ({...vars["amount"].set("50%"),...vars["count"].set(2),...vars["gap"].set("8px")});`,
+  `export const update = () => ({...vars["amount"].set("75%")});`,
+  'export const assign = (values: any) => vars.amount.set(values.amount);',
 ].join('\n')
 
 describe('compile', () => {
@@ -19,8 +19,7 @@ describe('compile', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'bad-template.ts',
-        source:
-          'import {css,Vars} from "zyzz"; const vars=Vars.define({size:"length"}); css({color:`calc(${vars.size})`})',
+        source: `import {css, variable} from 'zyzz'; const vars=({size:variable("length")}); css({color:\`calc(\${vars.size})\`})`,
       }),
     ).toThrow('Variable domain is incompatible with this property.')
   })
@@ -28,12 +27,12 @@ describe('compile', () => {
     const output = Transform.compile({
       moduleId: 'hygiene.ts',
       source: `
-      import { Vars } from 'zyzz';
-      const Object = {}; const __zyzzVars = 0;
-      const ab = Vars.define({ c: 'length' });
-      const a = Vars.define({ bc: 'length' });
-      export const first = ab as Vars.Definition<{ c: 'length' }>;
-      export const second = a satisfies Vars.Definition<{ bc: 'length' }>;
+      import {variable} from 'zyzz';
+      const Object = {}; const __zyzzVariable = 0;
+      const ab = ({c:variable('length')});
+      const a = ({bc:variable('length')});
+      export const first = ab as { c: variable.Reference<'length'> };
+      export const second = a satisfies { bc: variable.Reference<'length'> };
     `,
     })
 
@@ -59,29 +58,27 @@ describe('compile', () => {
     )
     expect(
       Object.isFrozen(result.first) && Object.isFrozen(result.first.c),
-    ).toMatchInlineSnapshot(`true`)
+    ).toMatchInlineSnapshot(`false`)
   })
 
   test('preserves asserted reads and compatible border length templates', () => {
     expect(
       Transform.compile({
         moduleId: 'border.ts',
-        source:
-          'import { css, Vars } from "zyzz"; const border=Vars.define({size:"length"}); css({borderWidth:`calc(${border.size})`,width:(border.size satisfies unknown)})',
+        source: `import {css, variable} from 'zyzz'; const border=({size:variable("length")}); css({borderWidth:\`calc(\${border.size})\`,width:(border.size satisfies unknown)})`,
       }).css,
     ).toMatchInlineSnapshot(
-      `".z-1h19mkqtvuh7e-base0{border-width:calc(var(--z-v1h19mkqtvuh7e-62-6f-72-64-65-72--73-69-7a-65));width:var(--z-v1h19mkqtvuh7e-62-6f-72-64-65-72--73-69-7a-65);}"`,
+      `".z-1h19mkqtvuh7e-base0{border-width:calc(var(--z-v1h19mkqtvuh7e-56));width:var(--z-v1h19mkqtvuh7e-56);}"`,
     )
   })
   test('rejects incompatible direct binding domains', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'bad.ts',
-        source:
-          'import {css,Vars} from "zyzz"; const vars=Vars.define({color:"color"}); css({width:vars.color})',
+        source: `import {css, variable} from 'zyzz'; const vars=({color:variable("color")}); css({width:vars.color})`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: bad.ts:83: Variable domain is incompatible with this property.]`,
+      `[Source.ExtractError: bad.ts:87: Variable domain is incompatible with this property.]`,
     )
   })
 
@@ -89,7 +86,7 @@ describe('compile', () => {
     const output = Transform.compile({ moduleId: 'slots.ts', source })
 
     expect(output.css).toMatchInlineSnapshot(
-      `".z-161esph179x895-base0{width:var(--z-v161esph179x895-76-61-72-73--61-6d-6f-75-6e-74);margin-left:calc(var(--z-v161esph179x895-76-61-72-73--67-61-70) + 2px);}"`,
+      `".z-161esph179x895-base0{width:var(--z-v161esph179x895-58);margin-left:calc(var(--z-v161esph179x895-110) + 2px);}"`,
     )
 
     const built = await Esbuild.build({
@@ -111,18 +108,18 @@ describe('compile', () => {
 
     expect(module.assignments).toMatchInlineSnapshot(`
       {
-        "--z-v161esph179x895-76-61-72-73--61-6d-6f-75-6e-74": "50%",
-        "--z-v161esph179x895-76-61-72-73--63-6f-75-6e-74": 2,
-        "--z-v161esph179x895-76-61-72-73--67-61-70": "8px",
+        "--z-v161esph179x895-110": "8px",
+        "--z-v161esph179x895-58": "50%",
+        "--z-v161esph179x895-87": 2,
       }
     `)
     expect(module.update()).toMatchInlineSnapshot(`
       {
-        "--z-v161esph179x895-76-61-72-73--61-6d-6f-75-6e-74": "75%",
+        "--z-v161esph179x895-58": "75%",
       }
     `)
     expect(Object.values(module.assign({ amount: '60%' }))).toEqual(['60%'])
-    expect(output.code.includes('Vars.define')).toMatchInlineSnapshot(`false`)
+    expect(output.code.includes('variable(')).toMatchInlineSnapshot(`false`)
   })
 
   test('updates native widths through fixed variable slots', async () => {
@@ -182,12 +179,11 @@ describe('compile', () => {
     expect(
       Transform.compile({
         moduleId: 'isolated.ts',
-        source:
-          'import { Vars, css } from "zyzz"; const a = Vars.define({x:"number"}); const b = Vars.define({x:"number"}); css({opacity:a.x})(); css({opacity:b.x})()',
+        source: `import {variable, css} from 'zyzz'; const a = ({x:variable("number")}); const b = ({x:variable("number")}); css({opacity:a.x})(); css({opacity:b.x})()`,
       }).css,
     ).toMatchInlineSnapshot(`
-      ".z-style-b2d2s91jn7xin-108{opacity:var(--z-vb2d2s91jn7xin-61--78);}
-      .z-style-b2d2s91jn7xin-130{opacity:var(--z-vb2d2s91jn7xin-62--78);}"
+      ".z-style-b2d2s91jn7xin-108{opacity:var(--z-vb2d2s91jn7xin-50);}
+      .z-style-b2d2s91jn7xin-130{opacity:var(--z-vb2d2s91jn7xin-86);}"
     `)
   })
 
@@ -195,11 +191,10 @@ describe('compile', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'invalid.ts',
-        source:
-          'import { Vars } from "zyzz"; const a = Vars.define({x: arbitrary()});',
+        source: `import {variable} from 'zyzz'; const a = ({x:variable(arbitrary())});`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:52: Variable schemas require unique names and supported scalar domains.]`,
+      `[Source.ExtractError: invalid.ts:45: variable requires a scalar domain and optional literal registration options.]`,
     )
   })
 })

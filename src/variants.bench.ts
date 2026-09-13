@@ -19,8 +19,13 @@ const button = Recipe.create({
 })
 
 describe('variants', () => {
-  bench('compile / defaults and compounds', () => Transform.compile(options))
-  bench('select / defaults', () => button())
-  bench('select / changed choices and overrides', () =>
-    button({ size: 'lg', loading: true, style: { opacity: 0.75 } }))
+  bench('compile / defaults and compounds', () => {
+    Transform.compile(options)
+  })
+  bench('select / defaults', () => {
+    button()
+  })
+  bench('select / changed choices and overrides', () => {
+    button({ size: 'lg', loading: true, style: { opacity: 0.75 } })
+  })
 })

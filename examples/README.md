@@ -27,10 +27,10 @@ Main deploys each example to a Cloudflare Worker named `zyzz-examples-<folder>`.
 
 Configure these repository secrets and enable the account's workers.dev subdomain:
 
-| Secret | Value |
-| --- | --- |
-| `CLOUDFLARE_ACCOUNT_ID` | Account containing the Workers. |
-| `CLOUDFLARE_API_TOKEN` | API token with Account / Workers Scripts / Edit for that account. |
+| Secret                  | Value                                                             |
+| ----------------------- | ----------------------------------------------------------------- |
+| `CLOUDFLARE_ACCOUNT_ID` | Account containing the Workers.                                   |
+| `CLOUDFLARE_API_TOKEN`  | API token with Account / Workers Scripts / Edit for that account. |
 
 One updating PR comment lists every example in an Example, URL, and Status table. Failed examples do not cancel other examples. Missing credentials appear as skipped, and the table also appears in the workflow summary.
 

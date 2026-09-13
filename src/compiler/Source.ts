@@ -536,6 +536,11 @@ export function extract(options: extract.Options): extract.ReturnType {
     let recipeTypes: Call['recipeTypes']
     if (recipes.has(call.start)) {
       try {
+        if (dynamic)
+          throw new Themes.InvalidError(
+            'Recipes require static top-level objects.',
+            original ?? call,
+          )
         const expanded = Recipes.expand(argument, {
           identity: `${identity(options.moduleId)}-${call.start}`,
           normalize: (node) => staticData.normalize(node, staticCalls, opaque),

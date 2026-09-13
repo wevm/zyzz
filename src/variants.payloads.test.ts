@@ -5,6 +5,71 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source } from 'zyzz/compiler'
 
 describe('variants', () => {
+  test('reads payload getters once and accepts static template defaults', async () => {
+    const source =
+      "import { variants } from 'zyzz'; export const button = variants({ variants: { size: { custom: (values: { padding: `${number}px` }) => ({ padding: values.padding }) } }, defaultVariants: { size: { custom: { padding: `${12}px` } } } });"
+    const output = Graph.compile({ modules: { 'getter.ts': source } }).modules[
+      'getter.ts'
+    ]!
+    const bundled = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: process.cwd() },
+      alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+      bundle: true,
+      format: 'cjs',
+      write: false,
+    })
+    const module = {
+      exports: {} as { button: (input?: object) => { style: object } },
+    }
+    new Function('module', 'exports', bundled.outputFiles![0]!.text)(
+      module,
+      module.exports,
+    )
+    let reads = 0
+    const props = module.exports.button({
+      size: {
+        custom: {
+          get padding() {
+            reads++
+            return '18px'
+          },
+        },
+      },
+    })
+    expect(reads).toMatchInlineSnapshot('1')
+    expect(Object.values(props.style)).toMatchInlineSnapshot(`
+      [
+        "18px",
+      ]
+    `)
+    expect(Object.values(module.exports.button().style)).toMatchInlineSnapshot(`
+      [
+        "12px",
+      ]
+    `)
+  })
+
+  test('rejects magic condition and dynamic choice names', () => {
+    expect(() =>
+      Source.extract({
+        moduleId: 'reserved.ts',
+        source:
+          "import {variants} from 'zyzz'; variants({conditions:{__proto__:'@media screen'}})",
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: reserved.ts:53: Static object prototypes are unsupported.]`,
+    )
+    expect(() =>
+      Source.extract({
+        moduleId: 'reserved.ts',
+        source:
+          "import {variants} from 'zyzz'; variants({variants:{size:{__proto__:(values:{padding:string})=>({padding:values.padding})}}})",
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: reserved.ts:57: Static object prototypes are unsupported.]`,
+    )
+  })
+
   test('rejects malformed callback authoring and incomplete defaults', () => {
     for (const body of [
       'variants:{size:{custom:(values)=>({padding:values.padding})}}',

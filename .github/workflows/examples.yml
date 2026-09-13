@@ -1,0 +1,145 @@
+name: Examples
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: examples-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build React example
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/install-dependencies
+      - name: Build library
+        run: pnpm build
+      - name: Build example
+        run: pnpm --dir examples/react exec vite build --configLoader runner
+      - uses: actions/upload-artifact@v4
+        with:
+          name: example-react
+          path: examples/react/dist
+          if-no-files-found: error
+          retention-days: 7
+    timeout-minutes: 15
+
+  deploy:
+    name: Deploy React example
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    needs: build
+    outputs:
+      url: ${{ steps.deploy.outputs.deployment-url }}
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Cloudflare configuration
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [[ -z "$CLOUDFLARE_ACCOUNT_ID" || -z "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo "::error::Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN repository secrets."
+            exit 1
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: example-react
+          path: public
+      - name: Deploy
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: pages deploy public --project-name=zyzz-example-react --branch=${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}
+          packageManager: npm
+      - name: Require deployment URL
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: test -n "$DEPLOYMENT_URL"
+    timeout-minutes: 10
+
+  report:
+    name: Report example deployments
+    if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    needs: [build, deploy]
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          DEPLOYMENT_URL: ${{ needs.deploy.outputs.url }}
+        with:
+          script: |
+            const marker = '<!-- zyzz-example-deployments -->'
+            const status = (() => {
+              if (process.env.BUILD_RESULT === 'failure') return '❌ Build failed'
+              if (process.env.BUILD_RESULT === 'cancelled') return '⏹️ Cancelled'
+              if (process.env.DEPLOY_RESULT === 'success') return '✅ Deployed'
+              if (process.env.DEPLOY_RESULT === 'failure') return '❌ Deploy failed'
+              if (process.env.DEPLOY_RESULT === 'cancelled') return '⏹️ Cancelled'
+              return '⏭️ Skipped'
+            })()
+            const url = process.env.DEPLOY_RESULT === 'success'
+              ? process.env.DEPLOYMENT_URL
+              : ''
+            const link = url ? `[Preview](${url})` : '—'
+            const body = [
+              marker,
+              '## Examples',
+              '',
+              '| Example | URL | Status |',
+              '| --- | --- | --- |',
+              `| React | ${link} | ${status} |`,
+            ].join('\n')
+
+            await core.summary.addRaw(body).write()
+            if (!context.payload.pull_request) return
+
+            const { data: pull } = await github.rest.pulls.get({
+              ...context.repo,
+              pull_number: context.issue.number,
+            })
+            if (pull.head.sha !== context.payload.pull_request.head.sha) return
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo,
+              issue_number: context.issue.number,
+            })
+            const comment = comments.find((entry) =>
+              entry.user?.login === 'github-actions[bot]' && entry.body?.includes(marker),
+            )
+
+            if (comment) {
+              await github.rest.issues.updateComment({
+                ...context.repo,
+                body,
+                comment_id: comment.id,
+              })
+            } else {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                body,
+                issue_number: context.issue.number,
+              })
+            }
+    timeout-minutes: 5
+
+permissions: {}

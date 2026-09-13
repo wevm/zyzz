@@ -15,6 +15,7 @@ describe('variants', () => {
   beforeAll(async () => {
     // The integration command builds once before workers consume package artifacts.
     await Fs.access(Path.resolve('dist/themes/default.js.zyzz.json'))
+    await Fs.access(Path.resolve('dist/themes/default.d.ts'))
   })
 
   test.each([{ conditions: [] }, { conditions: ['src'] }])(
@@ -42,6 +43,7 @@ describe('variants', () => {
           installed,
           '--strip-components=1',
         ])
+        await Fs.access(Path.join(installed, 'dist/themes/default.d.ts'))
         await Fs.writeFile(
           Path.join(root, 'package.json'),
           '{"private":true,"type":"module"}',

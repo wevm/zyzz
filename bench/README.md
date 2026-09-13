@@ -4,9 +4,9 @@
 
 Compiler and React render benchmarks run on separate runners in parallel. Each job measures its baseline and candidate sequentially on the same runner. Sample counts, warmups, workloads, and performance gates are unchanged. Both artifacts feed one updating PR comment.
 
-Integration tests run in three shards and merge their Vitest blob reports and V8 coverage. At-rule acceptance checks the merged report after the TypeScript matrix passes. Supplying `--results` verifies existing evidence without rerunning tests or types; standalone acceptance commands still run both.
+Integration tests use Vitest's numbered `--shard=i/3` partitions and merge their blob reports and V8 coverage. No module is assigned a dedicated runner. At-rule acceptance checks the merged report after the TypeScript matrix passes. Supplying `--results` verifies existing evidence without rerunning tests or types; standalone acceptance commands still run both.
 
-TypeScript compatibility checks and JavaScript compiler instantiation benches run independently. All three compiler versions and both attest versions remain required jobs. The Checks job retains type-aware linting; the TypeScript matrix owns the explicit `tsc` runs, and property conformance owns the complete CSS inventory check.
+TypeScript compatibility checks and JavaScript compiler instantiation benches run independently. Each attest version runs two sorted fixture partitions with `pnpm bench:types --shard i/2`; add `--list` to inspect a partition. All three compiler versions and both attest versions remain required jobs. The Checks job retains type-aware linting but disables duplicate compiler diagnostics in CI; the TypeScript matrix owns those checks, and property conformance owns the complete CSS inventory check. Local `pnpm check` still includes compiler diagnostics.
 
 ## React Render and Mount Benchmarks
 

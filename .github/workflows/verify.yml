@@ -55,15 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The compiler consumer probe and Next.js builds dominate suite time.
-        # Keep them on separate runners; the remainder includes every new suite.
-        include:
-          - shard: 1
-            args: src/compiler/Transform.test.ts
-          - shard: 2
-            args: src/next/index.test.ts
-          - shard: 3
-            args: --exclude src/compiler/Transform.test.ts --exclude src/next/index.test.ts
+        shard: [1, 2, 3]
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
@@ -88,7 +80,7 @@ jobs:
       - env:
           CI: true
         name: Run tests
-        run: pnpm run test run ${{ matrix.args }} --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
+        run: pnpm run test run --shard=${{ matrix.shard }}/3 --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
       - name: Upload shard results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -248,13 +240,14 @@ jobs:
             typescript: '7.0'
     timeout-minutes: 45
   type-benches:
-    name: Type instantiations ${{ matrix.typescript }}
+    name: Type instantiations ${{ matrix.typescript }} (${{ matrix.shard }}/2)
     env:
       NODE_OPTIONS: --max-old-space-size=4096
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        shard: [1, 2]
         typescript: ['5.9', '6.0']
     steps:
       - name: Clone repository
@@ -266,6 +259,6 @@ jobs:
       - name: Check type instantiations
         run: |
           set -o pipefail
-          pnpm bench:types | tee type-benches.txt
+          pnpm bench:types --shard ${{ matrix.shard }}/2 | tee type-benches.txt
           cat type-benches.txt >> "$GITHUB_STEP_SUMMARY"
     timeout-minutes: 30

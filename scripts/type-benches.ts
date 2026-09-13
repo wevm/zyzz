@@ -34,7 +34,7 @@ const selections = process.argv.flatMap((argument, index) =>
     : [],
 )
 
-const fixtures = Fs.readdirSync(Path.join(root, 'src'), {
+const selected = Fs.readdirSync(Path.join(root, 'src'), {
   recursive: true,
   withFileTypes: true,
 })
@@ -49,13 +49,47 @@ const fixtures = Fs.readdirSync(Path.join(root, 'src'), {
   )
   .sort()
 
-if (!fixtures.length) {
+if (!selected.length) {
   console.error(
     selections.length
       ? `No ${suffix} fixtures match ${selections.join(', ')}.`
       : `No ${suffix} fixtures found under src.`,
   )
   process.exit(1)
+}
+
+// Partition the sorted fixture list without assigning modules to runners.
+const fixtures = (() => {
+  const index = process.argv.indexOf('--shard')
+  if (index === -1) return selected
+
+  const value = process.argv[index + 1] ?? ''
+  const [shard, count] = value.split('/').map(Number)
+
+  if (
+    !/^\d+\/\d+$/.test(value) ||
+    !Number.isSafeInteger(shard) ||
+    !Number.isSafeInteger(count) ||
+    !shard ||
+    !count ||
+    shard > count ||
+    count > selected.length
+  ) {
+    console.error('--shard requires i/n with 1 <= i <= n <= fixture count.')
+    process.exit(1)
+  }
+
+  return selected.slice(
+    Math.floor(((shard - 1) * selected.length) / count),
+    Math.floor((shard * selected.length) / count),
+  )
+})()
+
+if (process.argv.includes('--list')) {
+  console.log(
+    fixtures.map((fixture) => Path.relative(root, fixture)).join('\n'),
+  )
+  process.exit(0)
 }
 
 console.log(`TypeScript ${Ts.version}: ${fixtures.length} type bench fixtures`)

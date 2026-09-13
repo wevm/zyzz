@@ -8,6 +8,11 @@ type Property = Extract<
   { type: 'Property' }
 >
 
+function object(node: Ast.Node): asserts node is Ast.ObjectExpression {
+  if (node.type !== 'ObjectExpression')
+    throw new Themes.InvalidError('Recipes require static object bodies.', node)
+}
+
 function entries(node: Ast.Node): readonly (readonly [string, Property])[] {
   if (node.type !== 'ObjectExpression')
     throw new Themes.InvalidError('Recipes require static object bodies.', node)
@@ -92,7 +97,7 @@ export function expand(node: Ast.ObjectExpression): {
 
   const base = fields.get('base')
   if (base) {
-    entries(base.value)
+    object(base.value)
     properties.push(...(base.value as Ast.ObjectExpression).properties)
   }
 
@@ -101,7 +106,7 @@ export function expand(node: Ast.ObjectExpression): {
     condition: string,
     value: Ast.Expression,
   ) {
-    entries(value)
+    object(value)
     properties.push({
       ...property,
       computed: false,
@@ -134,6 +139,18 @@ export function expand(node: Ast.ObjectExpression): {
         property,
       )
 
+    for (const [key, property] of choices)
+      if (
+        (property.key.type === 'Literal' &&
+          typeof property.key.value === 'number') ||
+        key.includes('\0') ||
+        /[\ud800-\udfff]/u.test(key)
+      )
+        throw new Themes.InvalidError(
+          'Recipe choice names require CSS-safe strings.',
+          property,
+        )
+
     axes[axis] = choices.map(([key]) => key)
     for (const [key, style] of choices)
       append(style, `&:where(${predicate(axis, key)})`, style.value)
@@ -145,6 +162,12 @@ export function expand(node: Ast.ObjectExpression): {
     : []) {
     if (!Object.hasOwn(axes, axis))
       throw new Themes.InvalidError('Unknown default variant axis.', property)
+
+    if (
+      property.value.type === 'Identifier' &&
+      property.value.name === 'undefined'
+    )
+      continue
 
     defaults[axis] = choice(property.value, axes[axis]!)
   }
@@ -204,7 +227,11 @@ export function expand(node: Ast.ObjectExpression): {
       }
 
       // Distinct zero-specificity suffixes preserve repeated compound groups.
-      append(style, condition + ':where(*)'.repeat(index + 1), style.value)
+      append(
+        style,
+        condition + `:where(*, .__zyzz-compound-${index})`,
+        style.value,
+      )
     }
   }
 

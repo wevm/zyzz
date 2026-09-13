@@ -156,6 +156,9 @@ export function create(
         parents.set(node, parent)
 
       if (node.type !== 'Identifier') return
+      // Type-only reads preserve inference without exposing the runtime callable.
+      if (parent?.type === 'TSTypeQuery' || parent?.type === 'TSQualifiedName')
+        return
 
       if (node.name === 'eval') evaluation = true
 

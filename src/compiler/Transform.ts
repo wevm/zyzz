@@ -448,8 +448,6 @@ export function compile(options: compile.Options): compile.ReturnType {
     module.overwrite(alias.start, alias.end, `(${value}${assertion})`)
   }
 
-  if (compositions.length) module.prepend(compositions.join('\n') + '\n')
-
   const replacements = [
     ...extracted.calls.map((call) => ({
       end: applications.get(call.start)!.end,
@@ -610,7 +608,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesComposition ? `Composition as ${composition}` : '', usesCompositionHtml ? `CompositionHtml as ${compositionHtml}` : '', usesConditionalRecipe ? `ConditionalRecipe as ${conditionalRecipe}` : '', usesHtml ? `Html as ${html}` : '', usesPayloadRecipe ? `PayloadRecipe as ${payloadRecipe}` : '', callable ? `Props as ${runtime}` : '', usesRecipe ? `Recipe as ${recipe}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Variable as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesComposition ? `Composition as ${composition}` : '', usesCompositionHtml ? `CompositionHtml as ${compositionHtml}` : '', usesConditionalRecipe ? `ConditionalRecipe as ${conditionalRecipe}` : '', usesHtml ? `Html as ${html}` : '', usesPayloadRecipe ? `PayloadRecipe as ${payloadRecipe}` : '', callable ? `Props as ${runtime}` : '', usesRecipe ? `Recipe as ${recipe}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Variable as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n${compositions.length ? compositions.join('\n') + '\n' : ''}`,
     )
   }
 

@@ -124,7 +124,9 @@ export async function verify(options: verify.Options) {
     )
     browser = await chromium.launch({ headless: true })
 
-    const page = await browser.newPage()
+    const page = await browser.newPage({
+      viewport: { width: 500, height: 800 },
+    })
     const errors: string[] = []
 
     page.on('pageerror', (error) => errors.push(error.message))
@@ -144,6 +146,7 @@ export async function verify(options: verify.Options) {
         ? preview!.resolvedUrls!.local[0]!
         : server!.resolvedUrls!.local[0]!
 
+      await page.setViewportSize({ width: 500, height: 800 })
       await page.goto(url)
 
       if (!production) {
@@ -189,6 +192,30 @@ export async function verify(options: verify.Options) {
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(0, 0, 0)"`)
 
+      const recipe = page.locator('#recipe')
+      const inspectRecipe = () =>
+        recipe.evaluate((element) => {
+          const style = getComputedStyle(element)
+          return [style.padding, style.opacity, style.fontWeight]
+        })
+      expect(await inspectRecipe()).toEqual([
+        production ? '6px' : '4px',
+        '1',
+        '400',
+      ])
+      expect(await page.locator('#empty').getAttribute('data-size')).toBeNull()
+      expect(
+        await page
+          .locator('#empty')
+          .evaluate((element) => getComputedStyle(element).padding),
+      ).toBe('2px')
+      const ruleCount = await page.evaluate(() =>
+        [...document.styleSheets].reduce(
+          (total, sheet) => total + sheet.cssRules.length,
+          0,
+        ),
+      )
+
       await page.evaluate('window.original = document.querySelector("#card")')
       await page.locator('#toggle').click()
       await page.waitForFunction(
@@ -218,15 +245,48 @@ export async function verify(options: verify.Options) {
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(255, 255, 255)"`)
 
+      expect(await inspectRecipe()).toEqual([
+        '12px 12px 12px 3px',
+        '0.5',
+        '700',
+      ])
+      expect(await recipe.getAttribute('data-size')).toBe('custom')
+      await page.setViewportSize({ width: 800, height: 800 })
+      await page.waitForFunction(
+        'getComputedStyle(document.querySelector("#recipe")).opacity === "1"',
+      )
+      expect(await inspectRecipe()).toEqual(['12px 12px 12px 3px', '1', '400'])
+      await page.setViewportSize({ width: 500, height: 800 })
+      await page.waitForFunction(
+        'getComputedStyle(document.querySelector("#recipe")).opacity === "0.5"',
+      )
+
       await page.locator('#toggle').click()
       await page.waitForFunction(
         'getComputedStyle(document.querySelector("#card")).width === "100px"',
       )
+      expect(await inspectRecipe()).toEqual([
+        production ? '6px' : '4px',
+        '1',
+        '400',
+      ])
+      expect(await recipe.getAttribute('data-size')).toBe('sm')
+      expect(await recipe.getAttribute('style')).toBeFalsy()
+      expect(
+        await page.evaluate(() =>
+          [...document.styleSheets].reduce(
+            (total, sheet) => total + sheet.cssRules.length,
+            0,
+          ),
+        ),
+      ).toBe(ruleCount)
 
       if (!production) {
         await Fs.writeFile(
           Path.join(root, 'styles.ts'),
-          options.files['styles.ts'].replace('#0066cc', '#117755'),
+          options.files['styles.ts']
+            .replace('#0066cc', '#117755')
+            .replace("sm: { padding: '4px' }", "sm: { padding: '6px' }"),
         )
         await page.waitForFunction(
           'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
@@ -242,6 +302,10 @@ export async function verify(options: verify.Options) {
           'getComputedStyle(document.querySelector("#card")).backgroundColor',
         ),
       ).toMatchInlineSnapshot(`"rgb(17, 119, 85)"`)
+
+      await page.waitForFunction(
+        'getComputedStyle(document.querySelector("#recipe")).padding === "6px"',
+      )
 
       await page.locator('#dispose').click()
       await page.waitForFunction(

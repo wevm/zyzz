@@ -69,10 +69,31 @@ describe('zyzz', () => {
           Path.join(app, 'app/probe.ttf'),
           Buffer.from(Font.url.split(',')[1]!, 'base64'),
         )
-        const config = `import {Config} from 'zyzz';import {theme as library} from '@acme/theme';export const {css,theme}=Config.create({theme:library});`
+        const config = `import {Config} from 'zyzz';import {theme as library} from '@acme/theme';export const {css,theme,variants}=Config.create({theme:library});`
         const files = {
           'app/fonts.ts': `import {fontFace} from 'zyzz/web';fontFace({fontFamily:'NextEvidence',src:'url(./probe.ttf)'});`,
-          'app/client.tsx': `'use client';import {useEffect,useState} from 'react';import {css} from '@config';namespace styles{export const button=css((values:{opacity:number})=>({color:'brand',opacity:values.opacity}))}export default function Client(){const [active,setActive]=useState(false);const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <button data-ready={ready} {...styles.button({opacity:active?0.5:1})} onClick={()=>setActive(!active)}>Toggle</button>}`,
+          'app/client.tsx': `'use client';
+import {useEffect,useState} from 'react';
+import {cx} from 'zyzz';
+import {css,variants} from '@config';
+namespace styles {
+  export const button=css((values:{opacity:number})=>({color:'brand',opacity:values.opacity}));
+  export const recipe=variants({
+    base:{padding:'2px',borderWidth:'0px',fontWeight:400},
+    conditions:{wide:'@media (width >= 600px)'},
+    variants:{size:{sm:{padding:'4px'},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})},active:{true:{opacity:0.5},false:{opacity:1}}},
+    defaultVariants:{size:'sm',active:false},
+    compoundVariants:[{when:{size:'custom',active:true},style:{fontWeight:700}}]
+  });
+  export const accent=css({paddingLeft:'3px'});
+}
+export default function Client(){
+  const [active,setActive]=useState(false);
+  const [ready,setReady]=useState(false);
+  useEffect(()=>setReady(true),[]);
+  return <><button data-ready={ready} {...styles.button({opacity:active?0.5:1})} onClick={()=>setActive(!active)}>Toggle</button>
+  <button id="recipe" {...cx(styles.recipe(active?{size:{custom:{padding:'12px'}},active:true,conditions:{wide:{active:false}}}:{}),active && styles.accent())}>Recipe</button></>
+}`,
           'app/config.ts': config,
           'app/layout.tsx': `import {theme} from '@config';export default function Layout({children}:{children:React.ReactNode}){return <html className={theme.className}><body>{children}</body></html>}`,
           'app/navigation.tsx': `'use client';import Link from 'next/link';import {useEffect,useState} from 'react';export default function Navigation({href,children}:{href:string;children:React.ReactNode}){const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <Link data-link-ready={ready} href={href}>{children}</Link>}`,
@@ -167,7 +188,9 @@ describe('zyzz', () => {
         }
 
         const production = await start('start')
-        const page = await browser.newPage()
+        const page = await browser.newPage({
+          viewport: { width: 500, height: 800 },
+        })
         let resume!: () => void
         const scripts = new Promise<void>((resolve) => {
           resume = resolve
@@ -232,12 +255,10 @@ describe('zyzz', () => {
             .evaluate((element) => getComputedStyle(element).padding),
         ).toMatchInlineSnapshot('"8px"')
         expect(
-          await page
-            .locator('#default-theme p')
-            .evaluate((element) => ({
-              padding: getComputedStyle(element).padding,
-              font: getComputedStyle(element).fontFamily,
-            })),
+          await page.locator('#default-theme p').evaluate((element) => ({
+            padding: getComputedStyle(element).padding,
+            font: getComputedStyle(element).fontFamily,
+          })),
         ).toEqual({
           padding: '16px',
           font: 'Geist, ui-sans-serif, system-ui, sans-serif',
@@ -300,6 +321,20 @@ describe('zyzz', () => {
         `)
         await streamedPage.close()
 
+        const recipe = page.locator('#recipe')
+        const inspectRecipe = () =>
+          recipe.evaluate((element) => {
+            const style = getComputedStyle(element)
+            return [style.padding, style.opacity, style.fontWeight]
+          })
+        expect(await inspectRecipe()).toEqual(['4px', '1', '400'])
+        const ruleCount = await page.evaluate(() =>
+          [...document.styleSheets].reduce(
+            (total, sheet) => total + sheet.cssRules.length,
+            0,
+          ),
+        )
+
         const classes = await page
           .locator('button[data-ready]')
           .getAttribute('class')
@@ -323,6 +358,36 @@ describe('zyzz', () => {
           (await page.locator('button[data-ready]').getAttribute('class')) ===
             classes,
         ).toMatchInlineSnapshot('true')
+        expect(await inspectRecipe()).toEqual([
+          '12px 12px 12px 3px',
+          '0.5',
+          '700',
+        ])
+        await page.setViewportSize({ width: 800, height: 800 })
+        await page.waitForFunction(
+          'getComputedStyle(document.querySelector("#recipe")).opacity === "1"',
+        )
+        expect(await inspectRecipe()).toEqual([
+          '12px 12px 12px 3px',
+          '1',
+          '400',
+        ])
+        await page.setViewportSize({ width: 500, height: 800 })
+        await page.locator('button[data-ready=true]').click()
+        await page.waitForFunction(
+          'getComputedStyle(document.querySelector("#recipe")).padding === "4px"',
+        )
+        expect(await inspectRecipe()).toEqual(['4px', '1', '400'])
+        expect(await recipe.getAttribute('style')).toBeFalsy()
+        expect(
+          await page.evaluate(() =>
+            [...document.styleSheets].reduce(
+              (total, sheet) => total + sheet.cssRules.length,
+              0,
+            ),
+          ),
+        ).toBe(ruleCount)
+
         await page.locator('a[data-link-ready=true][href="/other"]').click()
         await page.waitForURL(`${production.url}/other`)
         await page.locator('a[data-link-ready=true][href="/"]').click()
@@ -395,7 +460,7 @@ describe('zyzz', () => {
             .evaluate((element) => getComputedStyle(element).opacity),
         ).toMatchInlineSnapshot('"0.5"')
         const changedConfig = (color: string) =>
-          `import {Config,Theme} from 'zyzz';import {theme as library} from '@acme/theme';const changed=Theme.extend(library,{color:{brand:{light:${JSON.stringify(color)},dark:'#9cf'}}});export const {css,theme}=Config.create({theme:changed});`
+          `import {Config,Theme} from 'zyzz';import {theme as library} from '@acme/theme';const changed=Theme.extend(library,{color:{brand:{light:${JSON.stringify(color)},dark:'#9cf'}}});export const {css,theme,variants}=Config.create({theme:changed});`
         await Fs.writeFile(
           Path.join(app, 'app/config.ts'),
           changedConfig('#c00'),

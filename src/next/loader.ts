@@ -92,7 +92,8 @@ async function compile(context: Context, source: string) {
       links[specifier] = null
       if (
         specifier === 'zyzz' ||
-        specifier.startsWith('zyzz/') ||
+        (specifier.startsWith('zyzz/') &&
+          specifier !== 'zyzz/themes/default') ||
         specifier.startsWith('node:')
       )
         continue

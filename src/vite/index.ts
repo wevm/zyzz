@@ -26,6 +26,7 @@ export function zyzz(): Plugin {
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
   const assets = new Map<string, string>()
+  const sourceEntrypoints = new Set<string>()
   let root: string
 
   function entries(environment: Environment) {
@@ -59,6 +60,7 @@ export function zyzz(): Plugin {
   }
 
   function eligible(id: string) {
+    if (sourceEntrypoints.has(normalize(id))) return true
     const relative = Path.relative(root, id)
 
     return (
@@ -369,6 +371,15 @@ export function zyzz(): Plugin {
           continue
         }
 
+        if (
+          specifier === 'zyzz/themes/default' &&
+          /[/\\]src[/\\]themes[/\\]default\.[cm]?ts$/.test(resolved.id)
+        ) {
+          sourceEntrypoints.add(normalize(resolved.id))
+          resolutions[specifier] = sourceId(resolved.id)
+          await visit(resolved.id)
+          continue
+        }
         if (resolved.external || !eligible(resolved.id)) {
           const physical = resolved.id.split('?')[0]!.split('#')[0]!
           const sidecar = `${physical}.zyzz.json`

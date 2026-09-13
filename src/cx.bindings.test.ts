@@ -150,62 +150,116 @@ describe('cx', () => {
       }
     `)
   })
-})
 
-test('preserves TDZ reads for omitted bindings', async () => {
-  for (const sentinel of ['false', 'null', 'undefined']) {
-    const compiled = Transform.compile({
-      moduleId: 'tdz.ts',
-      source: `import {cx} from 'zyzz';const result=render();const p=${sentinel};function render(){return cx(p)};export {result};`,
-    })
-    const directory = await Fs.mkdtemp(
-      Path.join(process.cwd(), '.fixture-tdz-'),
-    )
-    try {
-      const file = Path.join(directory, 'entry.ts')
-      await Fs.writeFile(file, compiled.code)
-      const { stdout } = await Util.promisify(ChildProcess.execFile)(
-        process.execPath,
-        [
-          '--input-type=module',
-          '-e',
-          `import(${JSON.stringify(Url.pathToFileURL(file).href)}).then(()=>console.log('ok')).catch(error=>console.log(error.name))`,
-        ],
+  test('preserves TDZ reads for omitted bindings', async () => {
+    for (const sentinel of ['false', 'null', 'undefined']) {
+      const compiled = Transform.compile({
+        moduleId: 'tdz.ts',
+        source: `import {cx} from 'zyzz';const result=render();const p=${sentinel};function render(){return cx(p)};export {result};`,
+      })
+      const directory = await Fs.mkdtemp(
+        Path.join(process.cwd(), '.fixture-tdz-'),
       )
-      expect(stdout.trim()).toMatchInlineSnapshot('"ReferenceError"')
-    } finally {
-      await Fs.rm(directory, { recursive: true, force: true })
+      try {
+        const file = Path.join(directory, 'entry.ts')
+        await Fs.writeFile(file, compiled.code)
+        const { stdout } = await Util.promisify(ChildProcess.execFile)(
+          process.execPath,
+          [
+            '--input-type=module',
+            '-e',
+            `import(${JSON.stringify(Url.pathToFileURL(file).href)}).then(()=>console.log('ok')).catch(error=>console.log(error.name))`,
+          ],
+        )
+        expect(stdout.trim()).toMatchInlineSnapshot('"ReferenceError"')
+      } finally {
+        await Fs.rm(directory, { recursive: true, force: true })
+      }
     }
-  }
-})
+  })
 
-test('allows asserted JSX spreads and limits HTML metadata to composed applications', async () => {
-  const compiled = Transform.compile({
-    moduleId: 'spread.tsx',
-    source: `import {css,cx} from 'zyzz';const a=css({color:'red'});const p=a();const view=<div {...(p as css.Props)} />;export const composed=cx(p);`,
-  })
-  expect(compiled.code.includes('__zyzzComposition')).toMatchInlineSnapshot(
-    `true`,
-  )
-  const html = Transform.compile({
-    moduleId: 'html.ts',
-    source: `import {Config,cx} from 'zyzz';const {css}=Config.create({output:'html'});const a=css({color:'red'});const p=a();export const composed=cx(p);export const standalone=a();`,
-  })
-  const bundled = await Esbuild.build({
-    stdin: { contents: html.code, loader: 'ts', resolveDir: process.cwd() },
-    alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
-    bundle: true,
-    format: 'iife',
-    globalName: 'App',
-    write: false,
-  })
-  const result = new Function(`${bundled.outputFiles![0]!.text};return App;`)()
-  expect(Reflect.ownKeys(result.standalone)).toMatchInlineSnapshot(`
+  test('allows asserted JSX spreads and limits HTML metadata to composed applications', async () => {
+    const compiled = Transform.compile({
+      moduleId: 'spread.tsx',
+      source: `import {css,cx} from 'zyzz';const a=css({color:'red'});const p=a();const view=<div {...(p as css.Props)} />;export const composed=cx(p);`,
+    })
+    expect(compiled.code.includes('__zyzzComposition')).toMatchInlineSnapshot(
+      `true`,
+    )
+    const html = Transform.compile({
+      moduleId: 'html.ts',
+      source: `import {Config,cx} from 'zyzz';const {css}=Config.create({output:'html'});const a=css({color:'red'});const p=a();export const composed=cx(p);export const standalone=a();`,
+    })
+    const bundled = await Esbuild.build({
+      stdin: { contents: html.code, loader: 'ts', resolveDir: process.cwd() },
+      alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+      bundle: true,
+      format: 'iife',
+      globalName: 'App',
+      write: false,
+    })
+    const result = new Function(
+      `${bundled.outputFiles![0]!.text};return App;`,
+    )()
+    expect(Reflect.ownKeys(result.standalone)).toMatchInlineSnapshot(`
     [
       "class",
     ]
   `)
-  expect(
-    Object.getOwnPropertySymbols(result.composed).length,
-  ).toMatchInlineSnapshot(`1`)
+    expect(
+      Object.getOwnPropertySymbols(result.composed).length,
+    ).toMatchInlineSnapshot(`1`)
+  })
+  test('keeps omitted bindings separate from conditional styles', async () => {
+    const browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox'],
+    })
+    try {
+      for (const output of ['react', 'html']) {
+        for (const sentinel of ['false', 'null', 'undefined']) {
+          const compiled = Transform.compile({
+            moduleId: 'omitted.ts',
+            source: `import {Config,cx} from 'zyzz';const {css}=Config.create({output:'${output}'});const a=css({color:'red'});export function apply(enabled:boolean){const p=${sentinel};return cx(p,enabled && a())}`,
+          })
+          const bundled = await Esbuild.build({
+            stdin: {
+              contents: compiled.code,
+              loader: 'ts',
+              resolveDir: process.cwd(),
+            },
+            alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+            bundle: true,
+            format: 'iife',
+            globalName: 'App',
+            write: false,
+          })
+          const page = await browser.newPage()
+          await page.setContent(
+            `<style>body{color:black}${compiled.css}</style><div></div>`,
+          )
+          await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+          await page.evaluate(
+            `document.querySelector('div').className=App.apply(false).className ?? App.apply(false).class`,
+          )
+          expect(
+            await page
+              .locator('div')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot('"rgb(0, 0, 0)"')
+          await page.evaluate(
+            `document.querySelector('div').className=App.apply(true).className ?? App.apply(true).class`,
+          )
+          expect(
+            await page
+              .locator('div')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+          await page.close()
+        }
+      }
+    } finally {
+      await browser.close()
+    }
+  })
 })

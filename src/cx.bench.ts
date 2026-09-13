@@ -1,14 +1,25 @@
-/** Measures compile-time composition over ordered conflicting declarations. @module */
+/** Measures static composition using complete integration corpus projects. @module */
 import { bench, describe } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
+import * as Fixture from '../test/fixtures/composition.js'
 
-const options = {
-  moduleId: 'compose.ts',
-  source: `import {css,cx} from 'zyzz';const a=css({padding:'8px',color:'red'});const b=css({paddingLeft:'12px',color:'blue'});export const props=cx(a(),b(),a());`,
-}
-
-describe('cx / static composition', () => {
-  bench('compile ordered groups', () => {
-    Transform.compile(options)
+for (const workload of Fixture.cases) {
+  const options = {
+    moduleId: `composition-${workload.name}.ts`,
+    source: Fixture.source({
+      binding: false,
+      conditional: false,
+      output: 'react',
+      workload,
+    }),
+  }
+  describe(`cx / static / ${workload.name} (${workload.count} styles)`, () => {
+    bench(
+      'compile',
+      () => {
+        Transform.compile(options)
+      },
+      { time: 250, warmupTime: 100 },
+    )
   })
-})
+}

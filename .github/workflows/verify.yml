@@ -2,6 +2,9 @@ name: Verify
 on:
   workflow_call:
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     name: Build

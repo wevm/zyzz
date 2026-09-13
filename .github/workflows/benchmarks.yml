@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 concurrency:
   cancel-in-progress: true
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 jobs:
   compiler:
     name: Compiler benchmarks

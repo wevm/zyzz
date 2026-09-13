@@ -61,6 +61,7 @@ export function define<const tokens extends Tokens>(
 export type Definition<
   tokens extends Tokens = Tokens,
   boundCss extends (...args: never[]) => unknown = Css<tokens>,
+  boundVariants extends (...args: never[]) => unknown = variants.Bound<tokens>,
 > = {
   /** Compiled scope class; reading untransformed authoring throws. */
   readonly className: string
@@ -71,7 +72,7 @@ export type Definition<
   /** Inferred references for use in Style.define declarations. */
   readonly tokens: References<tokens>
   /** Token-aware single-element recipe authoring. */
-  readonly variants: variants.Bound<tokens>
+  readonly variants: boundVariants
   /** Web variable references; source templates retain their identity and fallback. */
   readonly vars: Token.Variables<References<tokens>>
 }
@@ -85,12 +86,14 @@ export function extend<
   const tokens extends Tokens,
   const overrides extends Record<string, unknown>,
   const boundCss extends (...args: never[]) => unknown = Css<tokens>,
+  const boundVariants extends (...args: never[]) => unknown =
+    variants.Bound<tokens>,
 >(
-  theme: Definition<tokens, boundCss>,
+  theme: Definition<tokens, boundCss, boundVariants>,
   overrides: overrides &
     NoInfer<Exact<overrides, Overrides<tokens>>> &
     NoInfer<Validated<overrides>>,
-): Definition<tokens, boundCss> {
+): Definition<tokens, boundCss, boundVariants> {
   if (!theme || typeof theme !== 'object')
     throw new InvalidError([], 'Expected a theme definition.')
 
@@ -103,7 +106,7 @@ export function extend<
     data.contract,
     data.values,
     data.queries,
-  ) as unknown as Definition<tokens, boundCss>
+  ) as unknown as Definition<tokens, boundCss, boundVariants>
 }
 
 type Exact<input, shape> = {

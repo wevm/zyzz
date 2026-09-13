@@ -28,6 +28,10 @@ describe('variants', () => {
     expectTypeOf(configured.variants({ base: { px: '4px' } })()).toHaveProperty(
       'class',
     )
+    const extended = Theme.extend(configured, { color: { brand: '#09c' } })
+    expectTypeOf(extended.variants({ base: { px: '4px' } })()).toHaveProperty(
+      'class',
+    )
     // @ts-expect-error Unknown configured layer.
     variants({ base: { '@layer missing': { color: 'brand' } } })
     // @ts-expect-error Unknown configured token.

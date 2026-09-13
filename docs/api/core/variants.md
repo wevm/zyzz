@@ -43,4 +43,18 @@ Precedence is base, then axes in declaration order, then compounds in array orde
 Each recipe owns its emitted `data-*` attributes. Multipart components use separate definitions and shared component inputs. Recipes have no slots. Ordinary JSX spreads replace props; they are not a composition API.
 
 > [!NOTE]
-> Theme/config-bound recipes, responsive selections, dynamic choice payloads, and explicit composition follow in the Phase 3 stack. This initial slice supports root recipes with static choices.
+> Responsive selections, dynamic choice payloads, and explicit composition follow in the Phase 3 stack. Recipes currently support static choices.
+
+## Bound Recipes
+
+`theme.variants` uses the theme's property-aware tokens. `Config.create` returns a bound `variants` function alongside `css`; configured recipes also preserve property mappings, ordered layer names, and React/HTML output.
+
+```ts
+import { Config } from 'zyzz'
+
+export const { css, variants, theme } = Config.create({
+  theme: { color: { brand: '#06c' } },
+})
+```
+
+Bound aliases and re-exports retain their contracts through source graphs and packed libraries. Packed recipe-authoring aliases require version 15 metadata; older consumers must upgrade to read that contract. Existing CSS-only contracts retain their earlier versions.

@@ -73,7 +73,7 @@ Precedence is base, then axes in declaration order, then compounds in array orde
 Each recipe owns its emitted `data-*` attributes. Multipart components use separate definitions and shared component inputs. Recipes have no slots. Ordinary JSX spreads replace props; they are not a composition API.
 
 > [!NOTE]
-> Theme/config-bound recipes, responsive selections, dynamic choice payloads, and explicit composition follow in the Phase 3 stack. This initial slice supports root recipes with static choices.
+> Responsive selections, dynamic choice payloads, and explicit composition follow in the Phase 3 stack. Root and theme/config-bound recipes support static choices.
 
 ## Returns
 

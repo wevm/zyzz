@@ -373,7 +373,10 @@ export function extract(options: extract.Options): extract.ReturnType {
 
   // Imports and reference lists can have a different order from authored calls.
   if (themes)
-    for (const entry of themes.styles.values()) pending.push(entry.call)
+    for (const entry of themes.styles.values()) {
+      pending.push(entry.call)
+      if (entry.recipe) recipes.add(entry.call.start)
+    }
 
   pending.sort((a, b) => a.start - b.start)
 
@@ -528,7 +531,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         if (dynamic)
           throw new Themes.InvalidError(
             'Recipes require static top-level objects.',
-            original,
+            original ?? call,
           )
         const expanded = Recipes.expand(argument)
         argument = expanded.body

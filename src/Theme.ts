@@ -3,6 +3,7 @@
  * @module
  */
 import { css, MissingTransformError } from './css.js'
+import { variants } from './variants.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import * as Query from './internal/Query.js'
@@ -60,6 +61,7 @@ export function define<const tokens extends Tokens>(
 export type Definition<
   tokens extends Tokens = Tokens,
   boundCss extends (...args: never[]) => unknown = Css<tokens>,
+  boundVariants extends (...args: never[]) => unknown = variants.Bound<tokens>,
 > = {
   /** Compiled scope class; reading untransformed authoring throws. */
   readonly className: string
@@ -69,6 +71,8 @@ export type Definition<
   readonly [Token.definition]: Token.Metadata
   /** Inferred references for use in Style.define declarations. */
   readonly tokens: References<tokens>
+  /** Token-aware single-element recipe authoring. */
+  readonly variants: boundVariants
   /** Web variable references; source templates retain their identity and fallback. */
   readonly vars: Token.Variables<References<tokens>>
 }
@@ -82,12 +86,14 @@ export function extend<
   const tokens extends Tokens,
   const overrides extends Record<string, unknown>,
   const boundCss extends (...args: never[]) => unknown = Css<tokens>,
+  const boundVariants extends (...args: never[]) => unknown =
+    variants.Bound<tokens>,
 >(
-  theme: Definition<tokens, boundCss>,
+  theme: Definition<tokens, boundCss, boundVariants>,
   overrides: overrides &
     NoInfer<Exact<overrides, Overrides<tokens>>> &
     NoInfer<Validated<overrides>>,
-): Definition<tokens, boundCss> {
+): Definition<tokens, boundCss, boundVariants> {
   if (!theme || typeof theme !== 'object')
     throw new InvalidError([], 'Expected a theme definition.')
 
@@ -100,7 +106,7 @@ export function extend<
     data.contract,
     data.values,
     data.queries,
-  ) as unknown as Definition<tokens, boundCss>
+  ) as unknown as Definition<tokens, boundCss, boundVariants>
 }
 
 type Exact<input, shape> = {
@@ -470,6 +476,7 @@ function build(
         },
         css,
         tokens,
+        variants,
         vars: Token.variables(tokens),
       },
       Token.definition,

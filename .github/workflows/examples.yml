@@ -1,0 +1,231 @@
+name: Examples
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, closed]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  cancel-in-progress: true
+  group: examples-${{ github.event.pull_request.number || github.ref }}
+
+jobs:
+  discover:
+    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    name: Discover examples
+    outputs:
+      examples: ${{ steps.discover.outputs.examples }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/github-script@v7
+        id: discover
+        with:
+          script: |
+            const fs = require('node:fs')
+            const examples = fs.readdirSync('examples', { withFileTypes: true })
+              .filter((entry) => entry.isDirectory() && fs.existsSync(`examples/${entry.name}/package.json`))
+              .map((entry) => entry.name)
+              .sort()
+
+            for (const name of examples) {
+              if (!/^[a-z][a-z0-9-]{0,30}$/.test(name)) {
+                throw new Error(`Invalid example folder name: ${name}`)
+              }
+              const pkg = JSON.parse(fs.readFileSync(`examples/${name}/package.json`, 'utf8'))
+              if (!pkg.scripts?.build) throw new Error(`examples/${name} needs a build script`)
+            }
+
+            core.setOutput('examples', JSON.stringify(examples))
+    timeout-minutes: 5
+
+  example:
+    if: github.event.action != 'closed' && needs.discover.outputs.examples != '[]'
+    name: Example (${{ matrix.example }})
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example: ${{ fromJSON(needs.discover.outputs.examples) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/actions/install-dependencies
+      - name: Build library
+        run: pnpm build
+      - name: Build example
+        env:
+          EXAMPLE: ${{ matrix.example }}
+        run: pnpm --dir "examples/$EXAMPLE" build
+      - name: Prepare Worker
+        id: config
+        uses: actions/github-script@v7
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          EXAMPLE: ${{ matrix.example }}
+        with:
+          script: |
+            const fs = require('node:fs')
+            const example = process.env.EXAMPLE
+            const suffix = (() => {
+              if (context.payload.pull_request) return `-pr-${context.payload.pull_request.number}`
+              return ''
+            })()
+            const name = `zyzz-examples-${example}${suffix}`
+            if (!fs.existsSync(`examples/${example}/dist/index.html`)) {
+              throw new Error(`examples/${example}/dist/index.html is missing`)
+            }
+
+            // Keep deployment tooling outside the example package and its scripts.
+            fs.mkdirSync('.example-deploy', { recursive: true })
+            fs.writeFileSync('.example-deploy/wrangler.json', JSON.stringify({
+              assets: { directory: `../examples/${example}/dist` },
+              compatibility_date: '2026-09-13',
+              name,
+              workers_dev: true,
+            }))
+            core.setOutput('configured', Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN))
+      - name: Deploy Worker
+        id: deploy
+        if: steps.config.outputs.configured == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: cloudflare/wrangler-action@v4
+        with:
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: deploy --config wrangler.json
+          packageManager: npm
+          workingDirectory: .example-deploy
+      - name: Record result
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          CONFIGURED: ${{ steps.config.outputs.configured }}
+          DEPLOYMENT: ${{ steps.deploy.outcome }}
+          EXAMPLE: ${{ matrix.example }}
+          RESULT: ${{ job.status }}
+          URL: ${{ steps.deploy.outputs.deployment-url }}
+        with:
+          script: |
+            const fs = require('node:fs')
+            const status = (() => {
+              if (process.env.RESULT === 'failure') return '❌ Failed'
+              if (process.env.RESULT === 'cancelled') return '⏹️ Cancelled'
+              if (process.env.DEPLOYMENT === 'success') {
+                if (process.env.URL) return '✅ Deployed'
+                core.setFailed('Worker deployment did not return a URL')
+                return '❌ Missing deployment URL'
+              }
+              if (process.env.CONFIGURED !== 'true') return '⏭️ Missing Cloudflare secrets'
+              return '⏭️ Skipped'
+            })()
+
+            fs.mkdirSync('example-results', { recursive: true })
+            fs.writeFileSync(`example-results/${process.env.EXAMPLE}.json`, JSON.stringify({
+              name: process.env.EXAMPLE,
+              status,
+              url: process.env.DEPLOYMENT === 'success' ? process.env.URL : '',
+            }))
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: example-result-${{ matrix.example }}
+          path: example-results/*.json
+          if-no-files-found: error
+          retention-days: 7
+    timeout-minutes: 20
+
+  cleanup:
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository && needs.discover.outputs.examples != '[]'
+    name: Remove preview (${{ matrix.example }})
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example: ${{ fromJSON(needs.discover.outputs.examples) }}
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          EXAMPLE: ${{ matrix.example }}
+        with:
+          script: |
+            const { CLOUDFLARE_ACCOUNT_ID: account, CLOUDFLARE_API_TOKEN: token, EXAMPLE: example } = process.env
+            if (!account || !token) return
+
+            const name = `zyzz-examples-${example}-pr-${context.payload.pull_request.number}`
+            const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts/${name}`, {
+              headers: { Authorization: `Bearer ${token}` },
+              method: 'DELETE',
+            })
+            if (!response.ok && response.status !== 404) {
+              throw new Error(`Worker deletion failed: ${response.status}`)
+            }
+    timeout-minutes: 5
+
+  report:
+    if: always() && !cancelled() && github.event.action != 'closed' && needs.discover.result == 'success'
+    name: Report example deployments
+    needs: [discover, example]
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: results
+          pattern: example-result-*
+      - uses: actions/github-script@v7
+        env:
+          EXAMPLES: ${{ needs.discover.outputs.examples }}
+        with:
+          script: |
+            const fs = require('node:fs')
+            const marker = '<!-- zyzz-example-deployments -->'
+            const rows = JSON.parse(process.env.EXAMPLES).map((name) => {
+              const path = `results/${name}.json`
+              const result = fs.existsSync(path)
+                ? JSON.parse(fs.readFileSync(path, 'utf8'))
+                : { status: '❌ No result', url: '' }
+              const url = result.url ? `[Open](${result.url})` : '—'
+              return `| ${name} | ${url} | ${result.status} |`
+            })
+            const body = [marker, '## Examples', '', '| Example | URL | Status |', '| --- | --- | --- |', ...rows].join('\n')
+
+            await core.summary.addRaw(body).write()
+            const pull = context.payload.pull_request
+            if (!pull || pull.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`) return
+
+            const { data: current } = await github.rest.pulls.get({
+              ...context.repo,
+              pull_number: pull.number,
+            })
+            if (current.state !== 'open' || current.head.sha !== pull.head.sha) return
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...context.repo,
+              issue_number: pull.number,
+            })
+            const comment = comments.find((entry) =>
+              entry.user?.login === 'github-actions[bot]' && entry.body?.includes(marker),
+            )
+
+            if (comment) {
+              await github.rest.issues.updateComment({ ...context.repo, body, comment_id: comment.id })
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, body, issue_number: pull.number })
+            }
+    timeout-minutes: 5
+
+permissions:
+  contents: read

@@ -99,6 +99,13 @@ jobs:
           name: at-rule-print-capabilities
           path: test-results/at-rule-print-capabilities.json
           retention-days: 30
+      - if: ${{ !cancelled() && hashFiles('bench/results/next-*.json') != '' }}
+        name: Upload Next.js build comparisons
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build-comparisons
+          path: bench/results/next-*.json
+          retention-days: 30
       - if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
         name: Report coverage
         uses: davelosert/vitest-coverage-report-action@v2

@@ -6,16 +6,16 @@ Status reviewed against main `b6398e7` after merged [#107](https://github.com/we
 
 - [x] Complete compiler obligations for 22/22 at-rules and 62/62 descriptor/nested entries: contexts, grammar, maps, output, packed, references, source, types, and watch.
 - [x] Implement UTF-8 output policy, public color profiles and property registrations, composite CSS-function signatures, and page authoring. The recorded local full-gate run passed fresh TypeScript checking and 184 required integrations.
-- [ ] Make the full compiler gate pass on current main in CI. [Main run 34688701548](https://github.com/wevm/zyzz/actions/runs/34688701548/job/103540096011) fails because the gate's fresh `pnpm check:types` subprocess exhausts the JavaScript heap (exit 134). The separate TypeScript 5.9/6.0/7.0 jobs, checks, build, property conformance, and [benchmarks](https://github.com/wevm/zyzz/actions/runs/34688701345) pass. Preserve fresh type and named-test verification while fixing the resource failure.
+- [x] Make the full compiler gate pass in CI. The stack's [#121 verification](https://github.com/wevm/zyzz/actions/runs/34730886409) and [benchmarks](https://github.com/wevm/zyzz/actions/runs/34730886330) pass. #120 gives the gate's fresh type-check subprocess a 4 GiB heap without reducing assertions.
 
 The remaining work is ordered below. Historical checklists remain evidence to reconcile, rather than proof that every unchecked implementation is absent.
 
 | Order | Remaining work                                          | Completion evidence                                                                                                                                                                                                                                                                                                                                   |
 | ----- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Fix full-gate CI resource usage                         | Successful full compiler acceptance on the current main/PR head, with fresh types and all required named integrations; no reduced assertions.                                                                                                                                                                                                         |
+| 1     | Fix full-gate CI resource usage                         | Completed in #120; #121 verification and benchmark workflows pass, retaining fresh types and every required named integration.                                                                                                                                                                                                                        |
 | 2     | Finish target compatibility reviews                     | Completed: all 84 matrix entries have target reviews and `check:at-rules:targets` passes 185 integrations. Current records are 20 native, 60 partial, and four unsupported; no entries remain unreviewed; classify unsupported features explicitly and attach passing versioned probes.                                                               |
 | 3     | Close rendering gaps                                    | Complete relative ICC color and rendering-intent evidence, page rotation/fragmentation, and remaining per-renderer reviews. Current records are 20 verified, 7 partial, and 57 unverified. Basic ICC painting, bleed, marks, and page-margin evidence already exist. Pass `check:at-rules:rendering`; retain unsupported engine limitations honestly. |
-| 4     | Finish framework acceptance already assigned to Phase 2 | Vue is excluded from Phase 2. The Next.js adapter with independent Webpack/Turbopack coverage remains open. Reconcile React/HTML/Solid/Svelte fixtures against development, production, packed consumers, source maps, recovery, and SSR/hydration or HTML serialization/update requirements.                                                         |
+| 4     | Finish framework acceptance already assigned to Phase 2 | Vue is excluded from Phase 2. The Next.js adapter has independent packed Webpack/Turbopack evidence; default browser targets remain open. Reconcile React/HTML/Solid/Svelte fixtures against development, production, packed consumers, source maps, recovery, and SSR/hydration or HTML serialization/update requirements.                           |
 | 5     | Reconcile remaining authoring and lifecycle acceptance  | Audit the open dynamic-binding, theme/scheme, relationship, animation, layer-order, contribution, and imported-static-record items below against named public evidence. Mark implemented subsets complete; implement missing contracts and tests before closing their broader gates.                                                                  |
 | 6     | Complete measurements and final documentation           | Finish repeatable browser timing, complex theme/query and relational workloads, and full delivery measurements. Retain the measured 2.4–2.9× at-rule compile/packed cost; no runtime rendering cost is implied. Reconcile API/compatibility documentation and every remaining Phase 2 checkbox.                                                       |
 
@@ -23,7 +23,7 @@ The current matrix counts above describe target records across 22 rules plus 62 
 
 The bundled `zyzz/themes/default` entrypoint ships with bound `variants` after Phase 3, as documented in its API preview. Native output, variants/composition, and later distribution work retain their assigned phases. No scope transfer silently closes a Phase 2 gate.
 
-The implementation stack continues from #118 to #120 (CI heap budget and Vue scope) and target compatibility review. The local compiler gate passes with the CI heap budget. Rendering and the remaining framework/acceptance work still block phase completion.
+The implementation stack continues from #118 to #120 (CI heap budget and Vue scope), #121 (target review), and the Next.js adapter. Compiler and target gates pass locally and in CI. Rendering and the remaining framework/acceptance work still block phase completion.
 
 Phase 3 starts after Phase 2 acceptance is closed. Its first feature remains single-element variants returning one props object, followed by responsive/conditional selection, source/packed retention, and framework/benchmark acceptance.
 
@@ -117,7 +117,9 @@ Implement in this order:
 
 Next.js acceptance:
 
-- [ ] Implement `zyzz(nextConfig)` from `zyzz/next` as the single Next.js setup. Preserve existing options and compose build hooks/rules; configure transformation, CSS delivery, and dependency watching internally without requiring separate Babel/PostCSS configuration. Reuse the shared compiler and keep loader/transform selection internal.
+The `src/next` adapter and packed integration tests cover Next.js 16.3.5, Webpack and Turbopack, with explicit Chromium 153 targets. Server/client components, production CSS/fonts, navigation, source/theme updates, and failure recovery are exercised. Streaming and hydration-node identity are verified. Default-target `light-dark()` lowering and an adapter-specific source-map trace remain open; preview status is retained.
+
+- [x] Implement `zyzz(nextConfig)` from `zyzz/next` as the single Next.js setup. Preserve existing options and compose build hooks/rules; configure transformation, CSS delivery, and dependency watching internally without requiring separate Babel/PostCSS configuration. Reuse the shared compiler and keep loader/transform selection internal.
 - [ ] Verify Next.js Webpack and Turbopack independently: Server Components, client components, streaming, hydration identities, Fast Refresh, route navigation, imported config/theme edits, production CSS loading, and failure recovery. Record supported Next.js versions and finalize async/function-valued config support before documenting it.
 
 Vue has no implementation or acceptance requirement in this phase.
@@ -276,7 +278,7 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Next priority: verify the full compiler gate with the explicit 4 GiB CI heap budget, then follow the [remaining Phase 2 acceptance sequence](#phase-2-status-after-at-rule-compiler-acceptance).
+Next priority: complete framework and rendering acceptance, following the [remaining Phase 2 acceptance sequence](#phase-2-status-after-at-rule-compiler-acceptance).
 
 Merged implementation includes themes, variables, dynamic styles, conditions, typed relationships, imported animation references, source-relative assets, opt-in reset, packed contributions, and the full at-rule compiler inventory. The remaining work is acceptance and the explicit framework/authoring gaps above. Bundled variants remains Phase 3.
 
@@ -422,7 +424,7 @@ The implementation and acceptance stack through [#107](https://github.com/wevm/z
 
 The compiler matrix accounts for 22/22 rules and 62/62 descriptors/nested blocks with complete compiler obligations. Target compatibility and rendering remain separately incomplete; the original combined ledger retains those gaps.
 
-Composite CSS function `type(...)` signatures are implemented. Relative profile colors, rendering intents, complete paged-output behavior, and target reviews remain acceptance gaps. The full compiler gate is enabled and passed locally; its CI type-check subprocess currently exhausts the heap. Browser availability reports distinguish native experimental/legacy support from source emission.
+Composite CSS function `type(...)` signatures are implemented. Relative profile colors, rendering intents, complete paged-output behavior, and target reviews remain acceptance gaps. The full compiler gate passes locally and in CI with the explicit 4 GiB type-check heap budget. Browser availability reports distinguish native experimental/legacy support from source emission.
 
 Accepted direction: [top-level stylesheet functions](../docs/api/web/at-rules.md), alongside native grouping keys in `css`/`variants`. Descriptor and statement rules do not become properties under `global`. This is Phase 2 standard-authoring follow-up after the existing framework/stylesheet/variable stack; current PR acceptance remains separate.
 
@@ -443,7 +445,7 @@ The matrix is pinned to inventory grammar fingerprints. Unsupported targets neve
 
 ### At-rule Completion Follow-up
 
-The encoding/profile, composite-function, paged-output, and compiler acceptance follow-ups are merged through #107. Remaining work is CI reliability, target review, rendering evidence, and the broader Phase 2 acceptance audit.
+The encoding/profile, composite-function, paged-output, and compiler acceptance follow-ups are merged through #107. CI reliability and target review pass in #120 and #121. Remaining work is rendering evidence and the broader Phase 2 acceptance audit.
 
 - [x] Pin UTF-8 output without BOM or generated `@charset`, including host bytes.
 - [x] Preserve public profile components and `color()` identities through packed imports.
@@ -451,9 +453,9 @@ The encoding/profile, composite-function, paged-output, and compiler acceptance 
 - [x] Compare native PDF dimensions and drawing streams for named/pseudo-pages, counters, and all margin boxes.
 - [x] Verify basic ICC profile rendering in WeasyPrint and expose the public helper; retain relative-color and rendering-intent gaps.
 - [x] Review all 22 rules and 62 descriptor/nested entries for compiler grammar/context and packed/watch acceptance; keep renderer and target gaps separate.
-- [x] Make `pnpm check:at-rules:full` pass without removing inventory entries or clearing unverified gaps. The recorded local run passed fresh type checking and all 184 named integration tests; current CI completion remains unchecked above.
+- [x] Make `pnpm check:at-rules:full` pass without removing inventory entries or clearing unverified gaps. The recorded local run passed fresh type checking and all 184 named integration tests; CI also passes with the explicit heap budget.
 
-Completion follow-up: namespace acceptance now includes escaped/Unicode identifiers, last-declaration binding, source/packed maps, host watching, and native selector isolation. Font palette family lists survive the pinned parser and Vite minifiers; real color-font comparisons cover palette indexes, keyword fallbacks, repeated overrides, alpha, and wide-gamut colors. The full compiler gate passes for 22/22 rules and 62/62 descriptor/nested entries. Target and rendering reviews remain open.
+Completion follow-up: namespace acceptance now includes escaped/Unicode identifiers, last-declaration binding, source/packed maps, host watching, and native selector isolation. Font palette family lists survive the pinned parser and Vite minifiers; real color-font comparisons cover palette indexes, keyword fallbacks, repeated overrides, alpha, and wide-gamut colors. The full compiler gate passes for 22/22 rules and 62/62 descriptor/nested entries. All 84 target records are reviewed in #121; rendering acceptance remains open.
 
 ## Phase 3 — Composition, variants, and target output
 
@@ -487,7 +489,7 @@ Gate: shared definitions render on web and both mobile platforms. Theme/scheme s
 
 ## Phase 4 — Integrations and distribution
 
-Status: planned. Renderer output and Solid, Vue, Svelte, and Next.js source/consumer verification now belong to the Phase 2 [Framework Integration Priority](#framework-integration-priority). The remaining distribution and native gates stay here.
+Status: planned. Renderer output and Solid, Svelte, and Next.js source/consumer verification now belong to the Phase 2 [Framework Integration Priority](#framework-integration-priority). The remaining distribution and native gates stay here.
 
 - [ ] Verify plain document, component, template, and native consumers through their normal class/style APIs.
 - [ ] Build the CLI with `build [src]` and `watch [src]` commands (defaults: `src`, `dist`, `<out-dir>/styles.css`) and optional `--out-dir`, `--css`, and `--minify` flags; rewrite modules alongside CSS and declarations, requiring no styling plugin in consumers.

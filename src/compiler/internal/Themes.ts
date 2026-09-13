@@ -24,6 +24,8 @@ export type Alias = Call & {
 
 /** Theme factory span and generated scope key. */
 export type Call = {
+  /** Whether this bound authoring alias declares recipes. */
+  readonly recipe?: boolean | undefined
   /** Static CSS function signature shared during extraction and packed serialization. */
   readonly function?:
     | {
@@ -114,6 +116,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     number,
     {
       call: Ast.CallExpression
+      recipe?: boolean | undefined
       output?: 'html' | undefined
       theme: Theme.Definition
     }
@@ -531,11 +534,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
           for (const { key, id } of bindings) {
             if (
-              key === 'css' &&
+              (key === 'css' || key === 'variants') &&
               !link.call.selection &&
               !link.call.initialization
             ) {
-              const alias = { ...link.call, destructured: false }
+              const alias = {
+                ...link.call,
+                recipe: key === 'variants',
+                destructured: false,
+              }
 
               aliasBindings.set(id.start, alias)
               aliasNames.set(id.name, alias)
@@ -544,6 +551,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
                 exports[id.name] = {
                   ...link,
                   binding: `${options.namespace}-${id.name}`,
+                  call: alias,
                   kind: 'css',
                 }
 
@@ -753,11 +761,15 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
       for (const { key, id } of bindings) {
         if (
-          key === 'css' &&
+          (key === 'css' || key === 'variants') &&
           !link.call.selection &&
           !link.call.initialization
         ) {
-          const alias = { ...link.call, destructured: false }
+          const alias = {
+            ...link.call,
+            recipe: key === 'variants',
+            destructured: false,
+          }
 
           aliasBindings.set(id.start, alias)
           aliasNames.set(id.name, alias)
@@ -766,6 +778,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
             exports[id.name] = {
               ...link,
               binding: `${options.namespace}-${id.name}`,
+              call: alias,
               kind: 'css',
             }
 
@@ -883,7 +896,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         !expression.computed &&
         !expression.optional &&
         expression.property.type === 'Identifier' &&
-        expression.property.name === 'css'
+        ['css', 'variants'].includes(expression.property.name)
       ) {
         return expression.object
       }
@@ -920,7 +933,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
         property?.type !== 'Property' ||
         property.computed ||
         property.key.type !== 'Identifier' ||
-        property.key.name !== 'css' ||
+        !['css', 'variants'].includes(property.key.name) ||
         property.value.type !== 'Identifier'
       )
         fail(
@@ -944,7 +957,20 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (expression.start < theme.end)
       fail('Theme css aliases must follow their definition.', expression)
 
+    const recipe =
+      expression.type === 'MemberExpression' &&
+      expression.property.type === 'Identifier'
+        ? expression.property.name === 'variants'
+        : variable.id.type === 'ObjectPattern'
+          ? variable.id.properties.some(
+              (property) =>
+                property.type === 'Property' &&
+                property.key.type === 'Identifier' &&
+                property.key.name === 'variants',
+            )
+          : theme.recipe
     const alias = Object.freeze({
+      recipe,
       destructured,
       end: expression.end,
       name: theme.name,
@@ -1061,6 +1087,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
       styles.set(parent.start, {
         call: parent,
+        recipe: alias.recipe,
         theme: themes[alias.name]!,
         output:
           alias.output ??
@@ -1175,7 +1202,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
           return true
         }
 
-        if (path.length === 1 && path[0] === 'css') {
+        if (
+          path.length === 1 &&
+          (path[0] === 'css' || path[0] === 'variants')
+        ) {
           const call = ancestors[index - 1]
 
           if (
@@ -1187,6 +1217,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
           styles.set(call.start, {
             call,
+            recipe: path[0] === 'variants',
             theme: config.definition,
             output: config.call.options?.output === 'html' ? 'html' : undefined,
           })
@@ -1470,13 +1501,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
       )
 
     if (
-      parent.property.name === 'css' &&
+      ['css', 'variants'].includes(parent.property.name) &&
       grandparent?.type === 'CallExpression' &&
       grandparent.callee === parent &&
       !grandparent.optional
     ) {
       styles.set(grandparent.start, {
         call: grandparent,
+        recipe: parent.property.name === 'variants',
         theme: themes[theme.name]!,
         output: theme.output,
       })

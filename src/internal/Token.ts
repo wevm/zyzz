@@ -92,6 +92,7 @@ export function bind<tokens extends Theme.Tokens>(
         },
         css: original.css,
         tokens,
+        variants: original.variants,
         vars: variables(tokens),
       },
       definition,

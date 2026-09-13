@@ -1,6 +1,8 @@
 /** Declares single-element recipes for ahead-of-time compilation. @module */
 import { MissingTransformError } from './css.js'
 import type { css } from './css.js'
+import type * as Config from './Config.js'
+import type * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
 import type * as Theme from './Theme.js'
 
@@ -19,13 +21,25 @@ type Choice<choices> = keyof choices extends infer key
 type Selections<axes> = {
   readonly [axis in keyof axes]?: Choice<axes[axis]> | null | undefined
 }
-type CheckedStyles<style, tokens extends Theme.Tokens> =
+type CheckedStyles<
+  style,
+  tokens extends Theme.Tokens,
+  layers extends string,
+  mappings extends Shorthands.Map,
+> =
   style extends Record<string, unknown>
-    ? Style.Accepted<style, tokens, true>
+    ? [keyof mappings | layers] extends [never]
+      ? Style.Accepted<style, tokens, keyof tokens extends never ? true : false>
+      : Config.Body<style, tokens, layers, mappings>
     : never
-type Checked<definition, tokens extends Theme.Tokens> = {
+type Checked<
+  definition,
+  tokens extends Theme.Tokens,
+  layers extends string,
+  mappings extends Shorthands.Map,
+> = {
   readonly [key in keyof definition]: key extends 'base'
-    ? CheckedStyles<definition[key], tokens>
+    ? CheckedStyles<definition[key], tokens, layers, mappings>
     : key extends 'variants'
       ? {
           readonly [axis in keyof definition[key]]: axis extends
@@ -37,7 +51,9 @@ type Checked<definition, tokens extends Theme.Tokens> = {
             : {
                 readonly [choice in keyof definition[key][axis]]: CheckedStyles<
                   definition[key][axis][choice],
-                  tokens
+                  tokens,
+                  layers,
+                  mappings
                 >
               }
         }
@@ -61,7 +77,12 @@ type Checked<definition, tokens extends Theme.Tokens> = {
                 readonly when: infer when
               }
                 ? {
-                    readonly style: CheckedStyles<style, tokens>
+                    readonly style: CheckedStyles<
+                      style,
+                      tokens,
+                      layers,
+                      mappings
+                    >
                     readonly when: Record<
                       Exclude<keyof when, keyof Axes<definition>>,
                       never
@@ -82,7 +103,7 @@ type Checked<definition, tokens extends Theme.Tokens> = {
  * @throws {MissingTransformError} When authoring executes without compilation.
  */
 export function variants<const definition extends Record<string, unknown>>(
-  definition: definition & NoInfer<Checked<definition, {}>>,
+  definition: definition & NoInfer<Checked<definition, {}, never, {}>>,
 ): variants.ReturnType<definition> {
   void definition
   throw new MissingTransformError()
@@ -94,8 +115,11 @@ export declare namespace variants {
   type Bound<
     tokens extends Theme.Tokens,
     output extends css.Output = 'react',
+    layers extends string = never,
+    mappings extends Shorthands.Map = {},
   > = <const definition extends Record<string, unknown>>(
-    definition: definition & NoInfer<Checked<definition, tokens>>,
+    definition: definition &
+      NoInfer<Checked<definition, tokens, layers, mappings>>,
   ) => ReturnType<definition, output>
 
   /** Callable selection; omitted values use defaults and null suppresses them. */

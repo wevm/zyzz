@@ -3,6 +3,7 @@
  * @module
  */
 import { css, MissingTransformError } from './css.js'
+import { variants } from './variants.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import * as Query from './internal/Query.js'
@@ -69,6 +70,8 @@ export type Definition<
   readonly [Token.definition]: Token.Metadata
   /** Inferred references for use in Style.define declarations. */
   readonly tokens: References<tokens>
+  /** Token-aware single-element recipe authoring. */
+  readonly variants: variants.Bound<tokens>
   /** Web variable references; source templates retain their identity and fallback. */
   readonly vars: Token.Variables<References<tokens>>
 }
@@ -470,6 +473,7 @@ function build(
         },
         css,
         tokens,
+        variants,
         vars: Token.variables(tokens),
       },
       Token.definition,

@@ -5,6 +5,7 @@
 import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
 import { css, MissingTransformError } from './css.js'
+import { variants } from './variants.js'
 import * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
 import * as Theme from './Theme.js'
@@ -156,6 +157,7 @@ export function create(options: create.Options = {}): unknown {
 
     return Object.freeze({
       css,
+      variants,
       script,
       theme: bound[input.defaultTheme],
       themes: Object.freeze(select),
@@ -168,11 +170,12 @@ export function create(options: create.Options = {}): unknown {
   if (input.theme !== undefined)
     return Object.freeze({
       css,
+      variants,
       script,
       theme: Token.bind(definition(input.theme), contract),
     })
 
-  return Object.freeze({ css, script })
+  return Object.freeze({ css, script, variants })
 }
 
 /** Configuration inputs and inferred results. */
@@ -216,6 +219,17 @@ export declare namespace create {
       options extends { output: infer output extends css.Output }
         ? output
         : 'react',
+      Mappings<options>
+    >
+    /** Theme-, layer-, and mapping-aware recipe authoring. */
+    readonly variants: variants.Bound<
+      Tokens<options>,
+      options extends { output: infer output extends css.Output }
+        ? output
+        : 'react',
+      options extends { layers: readonly (infer name extends string)[] }
+        ? name
+        : never,
       Mappings<options>
     >
     /** Generates synchronous HTML-safe root preference restoration. */
@@ -276,8 +290,9 @@ type Handle<
   tokens extends Theme.Tokens,
   mappings extends Shorthands.Map,
   output extends css.Output,
-> = Omit<Theme.Definition<tokens>, 'css'> & {
+> = Omit<Theme.Definition<tokens>, 'css' | 'variants'> & {
   readonly css: Css<tokens, never, output, mappings>
+  readonly variants: variants.Bound<tokens, output, never, mappings>
 }
 
 type Css<
@@ -311,7 +326,8 @@ type Css<
 
 type Keys<styles> = styles extends unknown ? keyof styles : never
 
-type Body<
+/** Checked declaration body shared by configured styles and recipe choices. */
+export type Body<
   styles,
   tokens extends Theme.Tokens,
   layers extends string,

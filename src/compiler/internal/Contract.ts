@@ -21,7 +21,7 @@ export function read(
 ) {
   const data = record(JSON.parse(source))
   if (
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(
       data.version as number,
     )
   )
@@ -144,7 +144,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13, 14].includes(data.version as number) ||
+        ![9, 10, 11, 12, 13, 14, 15].includes(data.version as number) ||
         ![
           'cssFunction',
           'customMedia',
@@ -222,6 +222,14 @@ export function read(
     if (entry.output !== undefined && entry.output !== 'html')
       throw new Error('Invalid theme output.')
 
+    if (
+      entry.recipe !== undefined &&
+      (entry.recipe !== true ||
+        (data.version as number) < 15 ||
+        entry.kind !== 'css')
+    )
+      throw new Error('Invalid bound recipe contract.')
+
     const theme = string(entry.theme)
     const definition = themes[theme]
     if (!definition || !['config', 'css', 'theme'].includes(String(entry.kind)))
@@ -271,6 +279,7 @@ export function read(
     return {
       binding: string(entry.binding),
       call: {
+        ...(entry.recipe === true ? { recipe: true } : {}),
         ...(entry.output === 'html' ? { output: 'html' as const } : {}),
         ...(catalogOnly ? { catalogOnly: true } : {}),
         ...(entry.script === true ? { script: true } : {}),
@@ -413,6 +422,7 @@ export function write(
       }
 
     return {
+      ...(link.call.recipe ? { recipe: true } : {}),
       ...(link.call.output ? { output: link.call.output } : {}),
       ...(link.call.script &&
       (link.kind === 'config' || link.call.initialization)
@@ -458,6 +468,7 @@ export function write(
       ]),
     ),
     version: (() => {
+      if (Object.values(links).some((link) => link.call.recipe)) return 15
       if (Object.values(links).some((link) => link.kind === 'variables'))
         return 14
       if (Object.values(links).some((link) => link.kind === 'style-reference'))

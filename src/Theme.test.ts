@@ -180,6 +180,7 @@ describe('define', () => {
         "className",
         "css",
         "tokens",
+        "variants",
         "vars",
       ]
     `)

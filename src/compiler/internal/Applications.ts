@@ -7,11 +7,7 @@ export function create(
   program: Ast.Program,
   calls: readonly Source.Call[],
 ): Collector | undefined {
-  const definitions = new Map(
-    calls
-      .filter((call) => !call.slots && !call.recipe)
-      .map((call) => [call.start, call]),
-  )
+  const definitions = new Map(calls.map((call) => [call.start, call]))
 
   const candidates: {
     declaration: {
@@ -192,6 +188,8 @@ export function create(
             call = members.get(member.property.name)
             callee = member
           }
+
+          if (call?.slots || call?.recipe) continue
 
           const application = parents.get(callee)
 

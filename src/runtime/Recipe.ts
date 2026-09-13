@@ -28,8 +28,13 @@ export function create(options: create.Options) {
     }
 
     for (const axis of axes) {
+      const selected = Object.hasOwn(input, axis) ? input[axis] : undefined
       const value = (
-        input[axis] === undefined ? options.defaults[axis] : input[axis]
+        selected === undefined
+          ? Object.hasOwn(options.defaults, axis)
+            ? options.defaults[axis]
+            : undefined
+          : selected
       ) as string | boolean | null | undefined
       if (value !== null && value !== undefined)
         result[`data-${axis}`] = String(value)

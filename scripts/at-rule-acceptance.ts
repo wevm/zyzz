@@ -223,7 +223,11 @@ if (!errors.length && resultsIndex !== -1)
 
 // Supplied results are evidence from the current integration run. CI gates this
 // report on the separate TypeScript matrix; standalone checks still execute both.
-if (!errors.length && resultsIndex === -1 && (compiler || rendering || targets)) {
+if (
+  !errors.length &&
+  resultsIndex === -1 &&
+  (compiler || rendering || targets)
+) {
   const run = (command: string, args: readonly string[]) => {
     const result = ChildProcess.spawnSync(command, args, {
       cwd: root,

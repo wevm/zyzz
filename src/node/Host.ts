@@ -230,7 +230,6 @@ export async function create(options: create.Options): Promise<Runtime> {
                     loc: rule.value.loc,
                   })
                   if (url) return AtRules.relocateImport(rule.value, url.url)
-
                 },
                 Url: relocate,
               },
@@ -261,7 +260,6 @@ export async function create(options: create.Options): Promise<Runtime> {
           })
         }
         artifacts.set(name, content)
-
       }
 
       artifacts.set('zyzz.shared.css', Buffer.from(shared.code).toString())

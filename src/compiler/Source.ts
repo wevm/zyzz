@@ -528,6 +528,11 @@ export function extract(options: extract.Options): extract.ReturnType {
     let recipe: Recipe.Definition | undefined
     if (recipes.has(call.start)) {
       try {
+        if (dynamic)
+          throw new Themes.InvalidError(
+            'Recipes require static top-level objects.',
+            original ?? call,
+          )
         const expanded = Recipes.expand(argument)
         argument = expanded.body
         recipe = expanded.recipe

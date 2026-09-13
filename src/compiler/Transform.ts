@@ -142,6 +142,22 @@ export function compile(options: compile.Options): compile.ReturnType {
   let recipe = '__zyzzRecipe'
   while (identifiers.has(recipe)) recipe += '_'
   let usesRecipe = false
+  let compositionHtml = '__zyzzCompositionHtml'
+  while (identifiers.has(compositionHtml)) compositionHtml += '_'
+  let usesCompositionHtml = false
+  const preparedHtml = new Set(
+    extracted.calls.flatMap((call) =>
+      call.output === 'html'
+        ? (call.runtimeComposition ?? []).map((input) => input.name)
+        : [],
+    ),
+  )
+  let composition = '__zyzzComposition'
+  while (identifiers.has(composition)) composition += '_'
+  let usesComposition = false
+  const compositions: string[] = []
+  const compositionArguments = new Map<string, string>()
+
   let appearance = '__zyzzAppearance'
 
   while (identifiers.has(appearance)) appearance += '_'
@@ -206,15 +222,45 @@ export function compile(options: compile.Options): compile.ReturnType {
         call.composition && call.start < node.start && node.end <= call.end,
     )
   for (const call of extracted.calls) {
-    if (composed(call)) continue
+    if (call.compositionCase || composed(call)) continue
     const application = applications.get(call.start)!
     const props = `{${call.output === 'html' ? 'class' : 'className'}:${JSON.stringify(classes[call.name])}}`
 
+    const composeHtml = call.output === 'html' && preparedHtml.has(call.name)
+    if (composeHtml) usesCompositionHtml = true
     const replacement = (() => {
+      if (call.runtimeComposition) {
+        const helper = call.output === 'html' ? compositionHtml : composition
+        if (call.output === 'html') usesCompositionHtml = true
+        else usesComposition = true
+        let factory = `${composition}${call.start}`
+        while (identifiers.has(factory)) factory += '_'
+        const inputs = call.runtimeComposition.map((input) => ({
+          className: classes[input.name]!,
+          owners: input.owners,
+          condition: input.condition,
+        }))
+        compositions.push(
+          `const ${factory}=/*#__PURE__*/${helper}.create(${JSON.stringify({ className: classes[call.name], cases: call.compositionCases?.map((name) => classes[name]!), inputs })});`,
+        )
+        return `${factory}(${call.runtimeComposition
+          .map((input) => {
+            const key = `${input.start}:${input.end}`
+            const value =
+              compositionArguments.get(key) ??
+              module.slice(input.start, input.end)
+            compositionArguments.set(key, value)
+            return value
+          })
+          .join(',')})`
+      }
       if (call.composition)
         return call.composition.reduceRight(
-          (result, guard) => `(${guard}?${result}:${guard}())`,
-          `(${props})`,
+          (result, guard) =>
+            `((${guard}${/\.[cm]?tsx?$/.test(options.moduleId) ? ' as unknown' : ''})?${result}:${guard}())`,
+          composeHtml
+            ? `${compositionHtml}.from({className:${JSON.stringify(classes[call.name])}})`
+            : `(${props})`,
         )
       if (call.recipe) {
         const helper = call.recipe.conditions?.length
@@ -225,10 +271,11 @@ export function compile(options: compile.Options): compile.ReturnType {
 
         const payload = !!call.recipe.payloads?.length
         if (payload) usesPayloadRecipe = true
-        const selection = `${helper}.create(${JSON.stringify({ axes: call.recipe.axes, defaults: call.recipe.defaults, conditions: call.recipe.conditions, className: classes[call.name], ...(!payload && call.output === 'html' ? { html: true } : {}) })})`
+        const selection = `${helper}.create(${JSON.stringify({ axes: call.recipe.axes, defaults: call.recipe.defaults, conditions: call.recipe.conditions, className: classes[call.name], ...(!payload && call.output === 'html' && !composeHtml ? { html: true } : {}) })})`
         const value = payload
-          ? `${payloadRecipe}.create({...${JSON.stringify({ ...call.recipe, html: call.output === 'html' })},select:${selection}})`
+          ? `${payloadRecipe}.create({...${JSON.stringify({ ...call.recipe, html: call.output === 'html' && !composeHtml })},select:${selection}})`
           : selection
+        const bound = composeHtml ? `${compositionHtml}.bind(${value})` : value
         const axes = Object.entries(call.recipe.axes)
           .map(
             ([axis, choices]) =>
@@ -240,8 +287,8 @@ export function compile(options: compile.Options): compile.ReturnType {
           .join(';')
         const type = `import('zyzz').variants.ReturnType<{variants:{${axes}}${conditions ? `;conditions:{${conditions}}` : ''}}${call.output === 'html' ? ',"html"' : ''}>`
         return /\.[cm]?tsx?$/.test(options.moduleId)
-          ? `(${value} as ${type})`
-          : value
+          ? `(${bound} as ${type})`
+          : bound
       }
       if (call.slots) {
         const type = `import('zyzz').css.Dynamic<${call.valuesType}${call.output === 'html' ? ',"html"' : ''}>`
@@ -250,7 +297,8 @@ export function compile(options: compile.Options): compile.ReturnType {
 
         const reads = slots
           .map(
-            ([key], index) => `const v${index}=input[${JSON.stringify(key)}];`,
+            ([key], index) =>
+              `const v${index}=input[${JSON.stringify(key)}]${typed ? ' as string | number' : ''};`,
           )
           .join('')
 
@@ -263,17 +311,27 @@ export function compile(options: compile.Options): compile.ReturnType {
 
         const className = JSON.stringify(classes[call.name])
         const value = `(input${typed ? `:Parameters<${type}>[0]` : ''})=>{${reads}const external=input.className;const style=input.style;return {className:external?${className}+" "+external:${className},style:{...input.variables,...style,${assignments}}}}`
-        const result =
-          call.output === 'html' ? `${html}.bind(${value})` : `(${value})`
+        const result = composeHtml
+          ? `${compositionHtml}.bind(${value})`
+          : call.output === 'html'
+            ? `${html}.bind(${value})`
+            : `(${value})`
 
-        if (call.output === 'html') usesHtml = true
+        if (call.output === 'html' && !composeHtml) usesHtml = true
 
         return typed ? `(${result} as ${type})` : result
       }
 
-      if (application.folded) return `(${props})`
+      if (application.folded)
+        return composeHtml
+          ? `${compositionHtml}.from({className:${JSON.stringify(classes[call.name])}})`
+          : `(${props})`
 
       if (call.output === 'html') {
+        if (composeHtml) {
+          callable = true
+          return `(${compositionHtml}.bind(${runtime}.create({className:${JSON.stringify(classes[call.name])}}))${/\.[cm]?tsx?$/.test(options.moduleId) ? " as import('zyzz').css.ReturnType<'html'>" : ''})`
+        }
         usesHtml = true
 
         return `${html}.create({className:${JSON.stringify(classes[call.name])}})`
@@ -287,6 +345,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     if (
       !call.recipe &&
       !call.slots &&
+      !call.runtimeComposition &&
       !application.folded &&
       call.output !== 'html'
     )
@@ -294,7 +353,15 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   for (const application of localApplications?.find() ?? []) {
-    if (composed(application)) continue
+    if (
+      extracted.calls.some(
+        (call) =>
+          (call.composition || call.runtimeComposition) &&
+          call.start < application.start &&
+          application.end <= call.end,
+      )
+    )
+      continue
     const className = JSON.stringify(classes[application.name])
 
     const key =
@@ -379,6 +446,8 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.overwrite(alias.start, alias.end, `(${value}${assertion})`)
   }
+
+  if (compositions.length) module.prepend(compositions.join('\n') + '\n')
 
   const replacements = [
     ...extracted.calls.map((call) => ({
@@ -518,6 +587,8 @@ export function compile(options: compile.Options): compile.ReturnType {
   if (
     callable ||
     usesRecipe ||
+    usesComposition ||
+    usesCompositionHtml ||
     usesConditionalRecipe ||
     usesPayloadRecipe ||
     usesHtml ||
@@ -538,7 +609,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesConditionalRecipe ? `ConditionalRecipe as ${conditionalRecipe}` : '', usesHtml ? `Html as ${html}` : '', usesPayloadRecipe ? `PayloadRecipe as ${payloadRecipe}` : '', callable ? `Props as ${runtime}` : '', usesRecipe ? `Recipe as ${recipe}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Variable as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesComposition ? `Composition as ${composition}` : '', usesCompositionHtml ? `CompositionHtml as ${compositionHtml}` : '', usesConditionalRecipe ? `ConditionalRecipe as ${conditionalRecipe}` : '', usesHtml ? `Html as ${html}` : '', usesPayloadRecipe ? `PayloadRecipe as ${payloadRecipe}` : '', callable ? `Props as ${runtime}` : '', usesRecipe ? `Recipe as ${recipe}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Variable as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 
@@ -743,7 +814,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         }
 
         const ordered = declarations(style)
-        const authored = locations(definitions.get(call.start)!)
+        const authored = locations(call.body ?? definitions.get(call.start)!)
         const conditionStarts = declarationStarts(body, true)
 
         for (const [index, start] of conditionStarts.entries()) {

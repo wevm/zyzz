@@ -177,7 +177,7 @@ const card=css({}); export const label=css((values:{opacity:number})=>({selector
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
 
-      const card=__zyzzProps.create({className:"z-style-1h5dayl7tfv4v-37"}); export const label=(((input:Parameters<import('zyzz').css.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"];const external=input.className;const style=input.style;return {className:external?"z-style-1h5dayl7tfv4v-65"+" "+external:"z-style-1h5dayl7tfv4v-65",style:{...input.variables,...style,"--z-d1h5dayl7tfv4v-65-6f-70-61-63-69-74-79":v0===''?' ':v0}}}) as import('zyzz').css.Dynamic<{opacity:number}>);"
+      const card=__zyzzProps.create({className:"z-style-1h5dayl7tfv4v-37"}); export const label=(((input:Parameters<import('zyzz').css.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"] as string | number;const external=input.className;const style=input.style;return {className:external?"z-style-1h5dayl7tfv4v-65"+" "+external:"z-style-1h5dayl7tfv4v-65",style:{...input.variables,...style,"--z-d1h5dayl7tfv4v-65-6f-70-61-63-69-74-79":v0===''?' ':v0}}}) as import('zyzz').css.Dynamic<{opacity:number}>);"
     `)
     expect(() =>
       Source.extract({

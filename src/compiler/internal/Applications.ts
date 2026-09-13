@@ -6,10 +6,16 @@ import type * as Source from '../Source.js'
 export function create(
   program: Ast.Program,
   calls: readonly Source.Call[],
+  options: create.Options = {},
 ): Collector | undefined {
   const definitions = new Map(
     calls
-      .filter((call) => !call.slots && !call.recipe && !call.composition)
+      .filter(
+        (call) =>
+          (options.dynamic || (!call.slots && !call.recipe)) &&
+          !call.composition &&
+          !call.runtimeComposition,
+      )
       .map((call) => [call.start, call]),
   )
 
@@ -200,7 +206,7 @@ export function create(
             application?.type !== 'CallExpression' ||
             application.callee !== callee ||
             application.optional ||
-            application.arguments.length
+            (!options.dynamic && application.arguments.length)
           ) {
             valid = false
             break
@@ -240,4 +246,13 @@ type Collector = {
   enter: (node: Ast.Node, parent: Ast.Node | null | undefined) => void
   /** Resolves applications after traversal completes. */
   find: () => readonly Application[]
+}
+
+/** Local application collection modes. */
+export declare namespace create {
+  /** Controls whether arguments are retained for fixed runtime compositions. */
+  type Options = {
+    /** Includes recipe/value applications while preserving their runtime calls. */
+    readonly dynamic?: boolean | undefined
+  }
 }

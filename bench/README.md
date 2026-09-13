@@ -352,3 +352,11 @@ pnpm bench:types --fixture variants.payloads
 ```
 
 The initial one-condition fixture measured 1.26 ms compilation, 0.58 µs default binding, and 0.94 µs base plus conditional binding. Static selection removed payloads in 0.26 µs. These are local helper timings, not framework render measurements. Values bind fixed slots; changing values does not increase stylesheet rules.
+
+Runtime composition benchmarks execute generated modules for both output shapes:
+
+```sh
+pnpm exec vp test bench src/cx.runtime.bench.ts --run
+```
+
+The initial two-argument conditional fixture measured 1.03 µs for React-shaped selection/binding and 2.29 µs for HTML selection/binding/serialization. Omitting the second argument measured 0.72 µs and 1.68 µs respectively. These are diagnostic helper timings, not framework rendering comparisons. Conditional presence emits bounded static groups; runtime calls never add rules.

@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  zile@0.0.30: 0e642638ba4af26d64d1c97e6c591f2d38ca92e2af816c81d3763e6502604cd3
+
 importers:
 
   .:
@@ -119,7 +122,32 @@ importers:
         version: 0.2.2(@types/node@24.13.3)(@vitest/browser-playwright@4.1.9)(@vitest/coverage-v8@4.1.9)(esbuild@0.28.2)(typescript@5.9.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0))(yaml@2.9.0)
       zile:
         specifier: 0.0.30
-        version: 0.0.30(typescript@5.9.3)
+        version: 0.0.30(patch_hash=0e642638ba4af26d64d1c97e6c591f2d38ca92e2af816c81d3763e6502604cd3)(typescript@5.9.3)
+
+  examples/react:
+    dependencies:
+      react:
+        specifier: 19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: 19.2.4
+        version: 19.2.4(react@19.2.4)
+      zyzz:
+        specifier: workspace:*
+        version: link:../..
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.18
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.2.7
+        version: 19.2.7(@types/react@19.2.18)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^8.2.2
+        version: 8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(yaml@2.9.0)
 
 packages:
 
@@ -5794,7 +5822,7 @@ snapshots:
 
   yocto-queue@1.2.2: {}
 
-  zile@0.0.30(typescript@5.9.3):
+  zile@0.0.30(patch_hash=0e642638ba4af26d64d1c97e6c591f2d38ca92e2af816c81d3763e6502604cd3)(typescript@5.9.3):
     dependencies:
       '@clack/prompts': 1.7.0
       cac: 6.7.14

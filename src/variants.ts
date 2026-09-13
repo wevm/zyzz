@@ -1,5 +1,4 @@
 /** Declares single-element recipes for ahead-of-time compilation. @module */
-import { MissingTransformError } from './css.js'
 import type { css } from './css.js'
 import type * as Config from './Config.js'
 import type * as Binding from './internal/Binding.js'
@@ -51,13 +50,30 @@ type CheckedChoice<
       values: values,
     ) => CheckedStyles<body, tokens, layers, mappings> &
       Binding.Checked<body> &
-      (values extends Record<string, string | number> & Binding.Inputs<values>
-        ? unknown
-        : never)
+      (string extends keyof values
+        ? never
+        : values extends Record<string, string | number> &
+              Binding.Inputs<values>
+          ? unknown
+          : never)
   : CheckedStyles<style, tokens, layers, mappings>
+type Keys<value> = value extends unknown ? keyof value : never
 type Selections<axes> = {
   readonly [axis in keyof axes]?: Choice<axes[axis]> | null | undefined
 }
+type Input<definition> = Selections<Axes<definition>> &
+  css.Options &
+  (keyof Conditions<definition> extends never
+    ? {}
+    : {
+        readonly conditions?:
+          | {
+              readonly [name in keyof Conditions<definition>]?:
+                | Selections<Axes<definition>>
+                | undefined
+            }
+          | undefined
+      })
 type CheckedStyles<
   style,
   tokens extends Theme.Tokens,
@@ -100,7 +116,7 @@ type Checked<
         ? {
             readonly [name in keyof definition[key]]: Extract<
               Condition.Keys<tokens>,
-              `@media ${string}` | `@supports ${string}`
+              `@${'media' | 'supports'}${' ' | '(' | '/' | '\t' | '\n' | '\r' | '\f'}${string}`
             >
           }
         : key extends 'defaultVariants'
@@ -169,21 +185,29 @@ export declare namespace variants {
   ) => ReturnType<definition, output>
 
   /** Callable selection; omitted values use defaults and null suppresses them. */
-  type ReturnType<definition, output extends css.Output = 'react'> = (
-    input?: Selections<Axes<definition>> &
-      css.Options &
-      (keyof Conditions<definition> extends never
-        ? {}
-        : {
-            readonly conditions?:
-              | {
-                  readonly [name in keyof Conditions<definition>]?:
-                    | Selections<Axes<definition>>
-                    | undefined
-                }
-              | undefined
-          }),
+  type ReturnType<definition, output extends css.Output = 'react'> = <
+    const input extends Input<definition> = Input<definition>,
+  >(
+    input?: input &
+      Record<Exclude<Keys<input>, keyof Input<definition>>, never>,
   ) => css.Props<output> & {
-    readonly [attribute: `data-${string}`]: string | undefined
+    readonly [axis in keyof Axes<definition> as `data-${axis & string}`]?:
+      | string
+      | undefined
   }
+
+  /** Missing source transformation diagnostic. */
+  type ErrorType = MissingTransformError
+}
+
+/** Executed recipe authoring has not been rewritten. */
+export class MissingTransformError extends Error {
+  /** Explains the required recipe transformation. */
+  constructor() {
+    super(
+      'variants requires a compile-time transform. Do not execute untransformed recipe authoring.',
+    )
+  }
+  /** Stable recipe diagnostic name. */
+  override name = 'variants.MissingTransformError'
 }

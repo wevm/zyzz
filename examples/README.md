@@ -7,4 +7,4 @@ pnpm install
 pnpm examples
 ```
 
-Run commands from the repository root. `pnpm examples` builds the local library and starts Vite. Changes inside the playground reload automatically; restart after library changes. `pnpm examples:build` produces `examples/react/dist`.
+Run commands from the repository root. `pnpm examples` runs `pnpm dev` to link the local library to source, then starts the Vite dev server. No build is required. Playground changes reload automatically.

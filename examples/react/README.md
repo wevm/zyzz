@@ -4,7 +4,7 @@
 pnpm examples
 ```
 
-Run from the repository root after `pnpm install`. No provider, generated component, custom JSX runtime, or manual CSS collection is required. Vite handles JSX and Zyzz handles styles with `plugins: [zyzz()]`. The modern-browser playground preserves native CSS with `build.cssTarget: 'esnext'`, including `light-dark()` for runtime scheme selection.
+Run from the repository root after `pnpm install`. The command runs `pnpm dev` to link Zyzz to source and starts Vite without building. Vite’s config runner loads the source-linked TypeScript plugin. No provider, generated component, custom JSX runtime, or manual CSS collection is required. Vite handles JSX and Zyzz handles styles with `plugins: [zyzz()]`. The modern-browser playground preserves native CSS with `build.cssTarget: 'esnext'`, including `light-dark()` for runtime scheme selection.
 
 ```tsx
 import { css } from './zyzz.config.js'

@@ -9,8 +9,8 @@ concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
 jobs:
-  benchmarks:
-    name: Benchmarks
+  compiler:
+    name: Compiler benchmarks
     env:
       BENCH_SIZE_THRESHOLD: '105'
       BENCH_TIME_THRESHOLD: '110'
@@ -175,6 +175,19 @@ jobs:
           path: bench/results/
           retention-days: 30
     timeout-minutes: 50
+  benchmarks:
+    name: Benchmarks
+    if: ${{ !cancelled() }}
+    needs: [compiler, renders]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require compiler and render benchmarks
+        env:
+          COMPILER_RESULT: ${{ needs.compiler.result }}
+          RENDER_RESULT: ${{ needs.renders.result }}
+        run: |
+          test "$COMPILER_RESULT" = success
+          test "$RENDER_RESULT" = success
   renders:
     name: React renders
     permissions:
@@ -189,6 +202,16 @@ jobs:
       - name: Install dependencies
         id: dependencies
         uses: ./.github/actions/install-dependencies
+      - name: Record render environment
+        run: |
+          mkdir -p bench/results/render-environment
+          git rev-parse HEAD > bench/results/render-environment/commit.txt
+          sha256sum pnpm-lock.yaml > bench/results/render-environment/lockfile.txt
+          lscpu > bench/results/render-environment/cpu.txt
+          free -b > bench/results/render-environment/memory.txt
+          node --version > bench/results/render-environment/node.txt
+          pnpm --version > bench/results/render-environment/pnpm.txt
+          uname -a > bench/results/render-environment/platform.txt
       - name: Remove separate render comment
         if: ${{ !cancelled() && steps.dependencies.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
         uses: marocchino/sticky-pull-request-comment@v2
@@ -234,7 +257,7 @@ jobs:
   report:
     name: Benchmark Report
     if: ${{ !cancelled() }}
-    needs: [benchmarks, renders]
+    needs: [compiler, renders]
     permissions:
       actions: read
       contents: read

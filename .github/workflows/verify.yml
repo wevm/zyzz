@@ -81,7 +81,9 @@ jobs:
           CI: true
         name: Run tests
         run: pnpm run test run --coverage --reporter=default --reporter=json --outputFile=test-results/integration.json
-      - name: Enforce full at-rule compiler acceptance
+      - env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        name: Enforce full at-rule compiler acceptance
         run: node scripts/at-rule-acceptance.ts --require-full --results test-results/integration.json
       - if: ${{ !cancelled() && hashFiles('test-results/at-rule-print-capabilities.json') != '' }}
         name: Upload print capabilities

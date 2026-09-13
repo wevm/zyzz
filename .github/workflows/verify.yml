@@ -52,7 +52,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        # The compiler consumer probe and Next.js builds dominate suite time.
+        # Keep them on separate runners; the remainder includes every new suite.
+        include:
+          - shard: 1
+            args: src/compiler/Transform.test.ts
+          - shard: 2
+            args: src/next/index.test.ts
+          - shard: 3
+            args: --exclude src/compiler/Transform.test.ts --exclude src/next/index.test.ts
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
@@ -72,10 +80,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 poppler-utils
           python -m pip install -r test/conformance/requirements.txt
+      - name: Build package for integration consumers
+        run: pnpm build
       - env:
           CI: true
         name: Run tests
-        run: pnpm run test run --coverage --shard=${{ matrix.shard }}/3 --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
+        run: pnpm run test run ${{ matrix.args }} --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
       - name: Upload shard results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4

@@ -6,6 +6,7 @@ import type * as Composition from '../../runtime/Composition.js'
 import type * as Style from '../../Style.js'
 import type * as Source from '../Source.js'
 import * as Applications from './Applications.js'
+import * as CompositionBindings from './CompositionBindings.js'
 import * as Expression from './Expression.js'
 import * as Scope from './Scope.js'
 import * as Themes from './Themes.js'
@@ -35,11 +36,15 @@ export function collect(options: collect.Options) {
     dynamic: true,
   })
   const scope = new Scope.Tracker()
+  const bindings = CompositionBindings.create({
+    declaration: (name) => scope.getDeclaration(name)?.node,
+  })
   const nodes: Ast.CallExpression[] = []
   Walker.walk(options.program, {
     scopeTracker: scope,
     enter(node, parent) {
       applications?.enter(node, parent)
+      bindings.enter(node, parent)
       if (node.type === 'CallExpression') {
         const call = options.calls.find((call) => call.start === node.start)
         const argument = node.arguments[0]
@@ -150,13 +155,14 @@ export function collect(options: collect.Options) {
       )
     for (const argument of node.arguments) {
       const expression = Expression.unwrap(argument)
+      const resolved = bindings.resolve(expression, nodes)
       const conditional =
-        expression.type === 'LogicalExpression' && expression.operator === '&&'
+        resolved.type === 'LogicalExpression' && resolved.operator === '&&'
       const condition = conditional ? conditions++ : undefined
       const value = conditional
-        ? Expression.unwrap(expression.right)
-        : expression
-      runtime ||= conditional
+        ? bindings.resolve(resolved.right, nodes)
+        : resolved
+      runtime ||= conditional || resolved !== expression
       if (undefinedReads.has(value.start)) continue
       if (
         value.type === 'Literal' &&
@@ -175,6 +181,11 @@ export function collect(options: collect.Options) {
           value,
         )
       const nested = calls.get(value.start)
+      if (nested?.compositionCases && resolved !== expression)
+        throw new Themes.InvalidError(
+          'Conditional composition results must remain direct arguments.',
+          expression,
+        )
       if (nested?.compositionCases) {
         if (conditional)
           throw new Themes.InvalidError(

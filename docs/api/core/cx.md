@@ -18,7 +18,7 @@ The result keeps 8px padding on three sides and 12px on the left. `cx(styles.bas
 `false`, `null`, and `undefined` omit an entry. Bare class strings, unapplied definitions, and component props are invalid. HTML and React props cannot be mixed. Binding guards preserve errors when applications precede initialization, including after bundling. Generated declarations retain their original source locations.
 
 > [!NOTE]
-> Composition supports proven local applications, including dynamic CSS values, recipe selections, and `enabled && style()` arguments. Arbitrary props variables, ternary selections, and independently packed definitions remain unsupported. Conditional nesting must be flattened when an outer conditional wraps a conditional composition. Unsupported applications produce compiler diagnostics.
+> Composition supports proven local applications, including dynamic CSS values, recipe selections, and `enabled && style()` arguments. Immutable local props bindings and const aliases are supported. Escaping or mutated bindings, ternary selections, and independently packed definitions remain unsupported. Conditional nesting must be flattened when an outer conditional wraps a conditional composition. Unsupported applications produce compiler diagnostics.
 
 ## Signature
 
@@ -54,3 +54,15 @@ The compiler emits each conditional presence combination, preserving ordered sho
 Repeated applications replace their private slots and recipe attributes together. Other live shared variables survive. Inline style keys follow argument order, including A/B/A shorthand resets. External classes supplied through styling overrides pass through with normal CSS cascade semantics. Ownership metadata stays in compiled initialization data and never enters DOM props.
 
 HTML compositions retain canonical inputs in a nonenumerable property only on generated applications used by composition. The merged result serializes once, without parsing style strings. Normal HTML applications keep their existing representation; renderer spreads and HTML serialization receive only ordinary attributes.
+
+## Props Bindings
+
+```ts
+const props = dynamic({ padding: readPadding() })
+const alias = props
+const composed = cx(alias, enabled && styles.override())
+```
+
+The initializer runs once at its original location. Composition reads the existing props, preserving values and evaluation order. Bindings must be `const`, follow initialization, and remain within supported composition, alias, or JSX-spread uses. Passing them to arbitrary functions or mutating their fields produces a compiler diagnostic.
+
+A conditional composition result must remain a direct argument; storing that result in a variable for another composition is not supported yet.

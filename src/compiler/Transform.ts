@@ -353,6 +353,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   for (const application of localApplications?.find() ?? []) {
+    if (preparedHtml.has(application.name)) continue
     if (
       extracted.calls.some(
         (call) =>

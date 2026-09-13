@@ -349,6 +349,10 @@
     "statements.types": {
       "file": "src/web/statements.test-d.ts"
     },
+    "targets.retention": {
+      "file": "src/compiler/Transform.targets.test.ts",
+      "test": "compile reviews Chromium rule and descriptor retention against independent native controls"
+    },
     "transition.capture": {
       "file": "src/compiler/Transform.viewTransition.browser.test.ts",
       "test": "compile captures navigation, activates declared types, and obeys conditional opt-out"
@@ -639,11 +643,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete named, style, and scroll-state query contexts and browser behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "db5a939b0b4c3f36f9ef051a09d81ad6a82f451ae374c2b6e96773d88e40a11b"
@@ -685,11 +690,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "47cb037a685291f20a105520dbc1962bf5dfaadf4f263f217f54e8e735f877a6"
@@ -731,11 +737,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "0fba72d7a68fd266f5afd14c07725fd67cfb59ecad642971d138faaf461b95ed"
@@ -777,11 +784,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "b16d040f3d41d56a9b71140c1dfefa4f9903bac12b52026f5f13108d923dd769"
@@ -823,11 +831,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "5d2d39e6d1b6f74cc3883dc6ed2157493533c3b1ce2106b92c4c75a8d1980e4d"
@@ -869,11 +878,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "d5cdbcfb5c0f4fe389f7cce10cd58c567e939a6676a909277c4cc412a0d050ad"
@@ -915,11 +925,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "9b02ada0b25e4ece5c50229f29ec27059c197809976f6bc6837f2506e62b3e47"
@@ -961,11 +972,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "51d96e8d1564deb54ea7822f88dcb1d0461c62e0d3b64c5de71ec6721e30e4ac"
@@ -1007,11 +1019,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "1fa40473a4fcea03faf21e5dc719d80b76ba5c8b48e7997419b4f0d05c7e32d2"
@@ -1053,11 +1066,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "a39e403fc0e998142f7f7ce60528af2a8c807aad7f1a5ba5f12e951f8ed043c3"
@@ -1099,11 +1113,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "5ca217aa2d7ccf55a830bd9133c61120d17d4024af7050cb764c697549df379b"
@@ -1145,11 +1160,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific rendering across counter systems, ranges, fallback chains, and speech behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "fb62a3c655b35a322bd8815ae95feacb57788f1343bc24585509ab6ebfc67982"
@@ -1187,11 +1203,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 drops this rule or descriptor in independent native and source/packed CSSOM probes. No rendered support is claimed.",
             "Native query evaluation and complete query-reference placement."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "unsupported"
         }
       },
       "grammar": "d7d28aa0512ca01731f311c3a97c568d456ff66675a114807592b4979b74c2b0"
@@ -1229,11 +1246,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 drops this rule or descriptor in independent native and source/packed CSSOM probes. No rendered support is claimed.",
             "Legacy-engine rendering and complete matching-function grammar."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "unsupported"
         }
       },
       "grammar": "672c3b65fe46eb2357ef19e03b340e64d3615c2b5be5f1623047abb44316a414"
@@ -1275,11 +1293,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "b61f3c3a0c07012e73bb4d4c18158a70f1ae3455d917cb2d4b38232755e0b8a0"
@@ -1321,11 +1340,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "7ff7617d15cc919ff34d85af755539daf392cdd7e258cd10e25f91d8c5b1eb17"
@@ -1367,11 +1387,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "7ba0ad7bc82c808bf1830b7d857d9d4f4c59f600e447d5ddd1bc112781d508bb"
@@ -1413,11 +1434,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "85890362316d8d2425f25aa9b1bd4df801cd31980781eb8e46eebe9709836659"
@@ -1459,11 +1481,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "755be7380e68ca77bde27176424b4b4fd2b1a90497f157cf27dfb7c96ac0ae1c"
@@ -1505,11 +1528,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "be905fe8f3612f0144ced96c9fac4b676c06b95b1612b16afb13f6c8e6ac8fa9"
@@ -1551,11 +1575,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "404f0ceb00cef0d178fe1ce806383c64a3fd544c49460d13cac345ac8605da01"
@@ -1597,11 +1622,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "9f2a57837871b0a8390f087fd77e60e18035de2709e5969de8a8f0d3ffff4d7a"
@@ -1643,11 +1669,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "c6bf9ad482a6e3c8e978d6289303e0ec979ba44c2aa66bed508d622cf66d462d"
@@ -1689,11 +1716,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "c07bc7925ad5b97bcc8ed71f0ef8be9f48e25b7dabe027b7bef3dd9d5b744c1f"
@@ -1735,11 +1763,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "f1c79c2a4e882e76ff0daf18088ef1f2d2e18c32fd7ff3952056bac681e8e1d7"
@@ -1781,11 +1810,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "699f7fed3ab1827ffdf2a5d3c6783adf70257901b023cb73231a8a28e2ec9a21"
@@ -1827,11 +1857,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "bc27b9efb4551bafa14ee893bb708db14cdc0a769223773e1081413ad1482869"
@@ -1873,11 +1904,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Descriptor-specific shaping, metrics, variation, and loading behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "df1937f4e13e1374261d535663d4bfe8a8e53594ebaf4ad46d8edb193a9ba4d2"
@@ -1919,11 +1951,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Actual font-feature shaping for every nested alias block and font-display behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "3754bd856e50d7c118742d30f9a803782a1510fb12ad16c6f655ac50260e1376"
@@ -1965,11 +1998,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 drops this rule or descriptor in independent native and source/packed CSSOM probes. No rendered support is claimed.",
             "Actual font-feature shaping for every nested alias block and font-display behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "unsupported"
         }
       },
       "grammar": "0d279e9718aebeb22026a303a5147f597494247a5d5ac8c9b24d35000edc9d3a"
@@ -2011,11 +2045,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Actual font-feature shaping for every nested alias block and font-display behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "d4bd34d30be82034ecc945c14687b6d619ecdad53d7b651f105b6008bf201520"
@@ -2057,11 +2092,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Actual font-feature shaping for every nested alias block and font-display behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "abc7372a008841855cb9944a4b94fa6628f40130b5ad7581672a4e1b02d14f3b"
@@ -2103,11 +2139,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Actual font-feature shaping for every nested alias block and font-display behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "1f5dd04932693c28799125bdfe749441fbb87636d807fd4b370e73658f7b499d"
@@ -2149,11 +2186,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Actual font-feature shaping for every nested alias block and font-display behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "5f76f2d98b4ba97b2823e13b817ed452a614939cf5930a48e77855907eafad97"
@@ -2195,11 +2233,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Actual font-feature shaping for every nested alias block and font-display behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "1ab4512e8d299a61f91fa4ac135dc9b7c9d737efbeaaf507581c1d6fb7ca3166"
@@ -2241,11 +2280,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 drops this rule or descriptor in independent native and source/packed CSSOM probes. No rendered support is claimed.",
             "Actual font-feature shaping for every nested alias block and font-display behavior."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "unsupported"
         }
       },
       "grammar": "bdc8347bf5aee554d985c51afb61ca1747fcb5c33a48d204392b8bf35b7adbbb"
@@ -2287,11 +2327,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "c92fb9d52767a438e3d0d7141be105380c6847deaba860da1dc5ac77a734cb23"
@@ -2333,11 +2374,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "61e5538faa46312030b20ae0445541f34bf0a2fcbabec6d22e9fd8722e9c241f"
@@ -2379,11 +2421,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "9a054710db711c9af74be4ce1d1f0f65e4cf9b635585b2de9b866d54d8ebb6bb"
@@ -2425,11 +2468,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete descriptor grammar/type validation, CPAL light/dark metadata, conditional contexts, root-dependent values, and watch acceptance."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "33323137ab3f40a509b44de89db3f5f0b20d2c23a4ec396a0f06c78b3c80c45a"
@@ -2471,11 +2515,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Escaped identifiers, list argument refinements, nested function references, and complete permitted contexts."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "c16af7ef56ad43f650cc030be6e99eacce62f9f8689d6089e841cb75ec1650f0"
@@ -2517,11 +2562,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Escaped identifiers, list argument refinements, nested function references, and complete permitted contexts."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "63901b65a4ee8d6171e904cbeee319eebe1fa1f7b8957a17681394ee7b1820bd"
@@ -2559,11 +2605,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Browser loading and cascade across layer, supports, and media combinations."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "7ffb43eb2f0707bad7c6701bf95b87fa82825bf600c2f9e395a3a74562829ef1"
@@ -2601,11 +2648,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Timeline-range animation rendering and complete stop spelling grammar."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "4ad39b964931f1ec90a222a88d60cff78c827ae8cc1143bf7e3c718b0cc9ae22"
@@ -2643,11 +2691,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete anonymous/nested context, escaped name, and ordering grammar review."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "990de8dcc807b3a3c32455de4e9dab8d0e2c954ed4830133a4afe0cda9ebead1"
@@ -2685,11 +2734,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete conditional grammar and legal placement review against the pinned inventory."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "90e99bc58b75597a7e743d7c2dab2f5275d2d18c9bd48966bd3a82bd63357b56"
@@ -2771,11 +2821,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "b4b26ca90beda50527050bc521cfbdf1e8b27a5f60deec0b710c6d8772ba4008"
@@ -3545,11 +3596,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "369a1c7f3142934614c6bd4f00ac3d3a4b50423f6a134f4d3d15f6a9f9d79898"
@@ -3591,11 +3643,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "1b3469516fd0b456cb85ca4fd15340bcd2c93848e950e142355cf834e0658872"
@@ -3637,11 +3690,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete allowed-declaration/context grammar and fallback rendering combinations."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "895dc25b9b3e1b8ccda99525913066aba33020782bad50cdef8b6d8ee3eebe65"
@@ -3683,11 +3737,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete registration syntax/initial-value combinations and associated rendering evidence."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "3824fe15582d4b37949890dc7f1e920c9ddc93ea647f3d5445ea0b20498b3162"
@@ -3729,11 +3784,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete registration syntax/initial-value combinations and associated rendering evidence."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "0196d12d9379884df1b96634c1ba6236eee9080f5a03bad67055dd7040da9d96"
@@ -3775,11 +3831,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete registration syntax/initial-value combinations and associated rendering evidence."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "09451c2f14a95568b465565208d185a32491a6300a6dcdce8c050409f590981c"
@@ -3821,11 +3878,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete registration syntax/initial-value combinations and associated rendering evidence."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "04dc4830cc0cefd0bf07ef675a992674d48f46f3856a52db5f97c38437c6d4c9"
@@ -3863,11 +3921,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete root/limit nesting, specificity, and allowed-context review."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "1f8d256d219cfd88f4fd94066917ccc7f4203dbd94d41393ae368cfbc67f01e7"
@@ -3905,11 +3964,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Transition-start rendering and complete style/grouping placement."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "84cfab49cedbd5591e889206988100c2fd6e73a24473949b7122a40309db5eab"
@@ -3947,11 +4007,12 @@
       "rendering": {
         "chromium": {
           "status": "unverified",
-          "cases": [],
+          "cases": ["targets.retention"],
           "limitations": [
+            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
             "Complete condition grammar and allowed-context review."
           ],
-          "compatibility": "unreviewed"
+          "compatibility": "partial"
         }
       },
       "grammar": "dfa8c2aae2ccb2707e48096978e79cad532b7584b61f969264b1fce809c4ff28"

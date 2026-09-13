@@ -84,7 +84,14 @@ jobs:
       - env:
           NODE_OPTIONS: --max-old-space-size=4096
         name: Enforce full at-rule compiler acceptance
-        run: node scripts/at-rule-acceptance.ts --require-full --results test-results/integration.json
+        run: node scripts/at-rule-acceptance.ts --require-full --require-targets --results test-results/integration.json
+      - if: ${{ !cancelled() && hashFiles('test-results/at-rule-target-retention.json') != '' }}
+        name: Upload at-rule target review
+        uses: actions/upload-artifact@v4
+        with:
+          name: at-rule-target-retention
+          path: test-results/at-rule-target-retention.json
+          retention-days: 30
       - if: ${{ !cancelled() && hashFiles('test-results/at-rule-print-capabilities.json') != '' }}
         name: Upload print capabilities
         uses: actions/upload-artifact@v4

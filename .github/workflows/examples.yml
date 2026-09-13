@@ -1,0 +1,125 @@
+name: Examples
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  cancel-in-progress: true
+  group: examples-${{ github.event.pull_request.number || github.ref }}
+
+jobs:
+  react:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    name: React
+    outputs:
+      configured: ${{ steps.config.outputs.configured }}
+      deployment: ${{ steps.deploy.outcome }}
+      url: ${{ steps.deploy.outputs.deployment-url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Check deployment configuration
+        id: config
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [[ -n "$CLOUDFLARE_ACCOUNT_ID" && -n "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+            echo '::notice::Deployment skipped: configure CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN secrets.'
+          fi
+
+      - uses: ./.github/actions/install-dependencies
+
+      - name: Link Zyzz
+        run: pnpm dev
+
+      - name: Build React
+        run: pnpm --filter @zyzz/example-react build
+
+      - name: Deploy React
+        id: deploy
+        if: steps.config.outputs.configured == 'true'
+        uses: cloudflare/wrangler-action@v4
+        with:
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: >-
+            pages deploy examples/react/dist
+            --project-name=${{ vars.CLOUDFLARE_REACT_PROJECT || 'zyzz-examples-react' }}
+            --branch=${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}
+            --commit-hash=${{ github.event.pull_request.head.sha || github.sha }}
+            --commit-dirty=true
+    timeout-minutes: 15
+
+  report:
+    if: >-
+      always() && !cancelled() && github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    name: Deployment comment
+    needs: [react]
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          CONFIGURED: ${{ needs.react.outputs.configured }}
+          DEPLOYMENT: ${{ needs.react.outputs.deployment }}
+          RESULT: ${{ needs.react.result }}
+          URL: ${{ needs.react.outputs.url }}
+        with:
+          script: |
+            const marker = '<!-- zyzz-example-deployments -->'
+            const { owner, repo } = context.repo
+            const issue_number = context.issue.number
+            const { data: pr } = await github.rest.pulls.get({ owner, pull_number: issue_number, repo })
+
+            // A completed older run must not replace the current commit's report.
+            if (pr.head.sha !== context.payload.pull_request.head.sha) return
+
+            const status = (() => {
+              if (process.env.RESULT === 'failure') return '❌ Failed'
+              if (process.env.RESULT === 'cancelled') return '⚪ Cancelled'
+              if (process.env.CONFIGURED !== 'true') return '⚪ Missing Cloudflare secrets'
+              if (process.env.DEPLOYMENT === 'success' && process.env.URL) return '✅ Deployed'
+              return '⚪ Skipped'
+            })()
+            const url = process.env.DEPLOYMENT === 'success' && process.env.URL
+              ? `[Preview](${process.env.URL})`
+              : '—'
+            const body = [
+              marker,
+              '## Examples',
+              '',
+              '| Example | URL | Status |',
+              '| --- | --- | --- |',
+              `| React | ${url} | ${status} |`,
+              '',
+              `[Deployment logs](${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId})`,
+            ].join('\n')
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              issue_number, owner, per_page: 100, repo,
+            })
+            const comment = comments.find((entry) =>
+              entry.user?.login === 'github-actions[bot]' && entry.body?.includes(marker),
+            )
+
+            if (comment) {
+              await github.rest.issues.updateComment({ body, comment_id: comment.id, owner, repo })
+            } else {
+              await github.rest.issues.createComment({ body, issue_number, owner, repo })
+            }
+    timeout-minutes: 5
+
+permissions:
+  contents: read

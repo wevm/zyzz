@@ -18,6 +18,12 @@ type Entry =
   | null
   | undefined
 
+/**
+ * Binds compiled classes and ownership metadata to a props-merging callable.
+ * @param options - Fixed classes, conditional cases, and ordered input owners.
+ * @returns A callable that merges application props without mutating its inputs.
+ * Initialization allocates class lookup sets; calls allocate fresh props and emit no CSS.
+ */
 export function create(options: create.Options) {
   const inputs = options.inputs.map((input) => ({
     ...input,

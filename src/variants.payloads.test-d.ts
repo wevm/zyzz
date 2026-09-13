@@ -3,6 +3,21 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { variants } from 'zyzz'
 
 describe('variants', () => {
+  test('rejects static alternatives inside bound payload objects', () => {
+    const button = variants({
+      variants: {
+        size: {
+          sm: { padding: '4px' },
+          custom: (values: { padding: `${number}px` }) => ({
+            padding: values.padding,
+          }),
+        },
+      },
+    })
+    const selection = { sm: true, custom: { padding: '16px' as const } }
+    // @ts-expect-error A payload object must exclude every other declared choice.
+    button({ size: selection })
+  })
   test('rejects infinite payload fields', () => {
     variants({
       variants: {

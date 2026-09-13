@@ -15,7 +15,7 @@ The remaining work is ordered below. Historical checklists remain evidence to re
 | 1     | Fix full-gate CI resource usage                         | Successful full compiler acceptance on the current main/PR head, with fresh types and all required named integrations; no reduced assertions.                                                                                                                                                                                                         |
 | 2     | Finish target compatibility reviews                     | Review all 84 matrix entries and pass `check:at-rules:targets`. Current records are 20 native, 7 partial, and 57 unreviewed; classify unsupported features explicitly and attach passing versioned probes.                                                                                                                                            |
 | 3     | Close rendering gaps                                    | Complete relative ICC color and rendering-intent evidence, page rotation/fragmentation, and remaining per-renderer reviews. Current records are 20 verified, 7 partial, and 57 unverified. Basic ICC painting, bleed, marks, and page-margin evidence already exist. Pass `check:at-rules:rendering`; retain unsupported engine limitations honestly. |
-| 4     | Finish framework acceptance already assigned to Phase 2 | Vue SFC support and the Next.js adapter with independent Webpack/Turbopack coverage remain open. Reconcile React/HTML/Solid/Svelte fixtures against development, production, packed consumers, source maps, recovery, and SSR/hydration or HTML serialization/update requirements.                                                                    |
+| 4     | Finish framework acceptance already assigned to Phase 2 | Vue is excluded from Phase 2. The Next.js adapter with independent Webpack/Turbopack coverage remains open. Reconcile React/HTML/Solid/Svelte fixtures against development, production, packed consumers, source maps, recovery, and SSR/hydration or HTML serialization/update requirements.                                                         |
 | 5     | Reconcile remaining authoring and lifecycle acceptance  | Audit the open dynamic-binding, theme/scheme, relationship, animation, layer-order, contribution, and imported-static-record items below against named public evidence. Mark implemented subsets complete; implement missing contracts and tests before closing their broader gates.                                                                  |
 | 6     | Complete measurements and final documentation           | Finish repeatable browser timing, complex theme/query and relational workloads, and full delivery measurements. Retain the measured 2.4–2.9× at-rule compile/packed cost; no runtime rendering cost is implied. Reconcile API/compatibility documentation and every remaining Phase 2 checkbox.                                                       |
 
@@ -100,7 +100,7 @@ Bring renderer output and framework source support forward from Phase 4 into Pha
 
 Use one shared CSS compiler with thin source and renderer adapters. Keep framework dependencies outside core, preserve React output, and add no custom JSX runtime, provider, component wrapper, or runtime CSS generation. Group fixture styles in `namespace styles {}` and consume named config helpers.
 
-Initial support covers React, Vue, Solid, Svelte, and plain DOM/HTML, with Vite and Next.js as application integrations. Remix 3 and React Router are deferred and are not initial acceptance gates.
+Initial support covers React, Solid, Svelte, and plain DOM/HTML, with Vite and Next.js as application integrations. Vue is excluded from Phase 2 by the accepted scope update. Remix 3 and React Router are deferred and are not initial acceptance gates.
 
 Follow with Nuxt, SvelteKit, SolidStart, Astro, TanStack Start, and Preact integration fixtures. Angular, Qwik, and native rendering remain later work. Base renderer support does not establish application-framework support.
 
@@ -110,16 +110,17 @@ Implement in this order:
 
 1. **Renderer output:** define typed output for DOM `class`, `className`, inline style objects, and serialized style attributes. Preserve classes, CSS variables, theme scopes, owned data attributes, escaping, units, existing class/style override merging, and removal of stale values. Verify React and plain DOM consumers through the shared compiler.
 2. **Solid:** integrate the existing TSX/Vite path with normal `class` and dash-separated inline style keys. Verify signal-driven updates, dynamic variable bindings, theme/scheme changes, SSR, hydration, and supported refresh behavior.
-3. **Vue:** support both imported styles from separate TypeScript modules and authoring in Vue single-file component script blocks. Handle SFC/virtual-module identities, source maps, dependency edits, and normal template class/style bindings without passing template syntax into core.
-4. **Svelte:** support imported TypeScript style modules and authoring in Svelte component script blocks. Preserve normal template class/style bindings, reactive updates, source maps, dependency edits, SSR, hydration, and development refresh through the shared compiler.
-5. **Next.js:** bring the existing integration and both bundler acceptance gates into Phase 2. Verify the application build and server-rendering paths independently of React renderer support.
+3. **Svelte:** support imported TypeScript style modules and authoring in Svelte component script blocks. Preserve normal template class/style bindings, reactive updates, source maps, dependency edits, SSR, hydration, and development refresh through the shared compiler.
+4. **Next.js:** bring the existing integration and both bundler acceptance gates into Phase 2. Verify the application build and server-rendering paths independently of React renderer support.
 
 Next.js acceptance:
 
 - [ ] Implement `zyzz(nextConfig)` from `zyzz/next` as the single Next.js setup. Preserve existing options and compose build hooks/rules; configure transformation, CSS delivery, and dependency watching internally without requiring separate Babel/PostCSS configuration. Reuse the shared compiler and keep loader/transform selection internal.
 - [ ] Verify Next.js Webpack and Turbopack independently: Server Components, client components, streaming, hydration identities, Fast Refresh, route navigation, imported config/theme edits, production CSS loading, and failure recovery. Record supported Next.js versions and finalize async/function-valued config support before documenting it.
 
-For each integration:
+Vue has no implementation or acceptance requirement in this phase.
+
+For each in-scope integration:
 
 - [ ] Add real consumer type fixtures and browser integration coverage for static styles, dynamic bindings, existing class/style override merging, themes, and color schemes. Extend these fixtures with `cx` composition and variants when their Phase 3 APIs land; neither blocks Phase 2 integrations.
 - [ ] Verify mount/update/unmount, computed styles, development CSS updates, production CSS loading, source maps, and add/edit/remove/rename recovery. Require SSR/hydration identity for runtimes that implement hydration. For plain DOM/HTML, verify server attribute serialization and element/style identity across client updates; no hydration lifecycle is required.
@@ -127,7 +128,7 @@ For each integration:
 - [ ] Record supported framework/build-tool versions and add concise setup examples. Claim support only after the corresponding consumer gate passes.
 - [ ] Reuse the browser benchmark harness for relevant renderer/adapter changes, with matched baselines within each framework and untimed correctness checks. Include required helpers and emitted bytes; React results do not prove non-React performance.
 
-Gate: React, plain DOM/HTML, Solid, Vue SFCs, Svelte components, and Next.js render the supported Phase 2 style contracts through their normal APIs using one compiler. Each integration requires passing consumer types, browser rendering, development, production, and packed-consumer evidence before its support claim is published.
+Gate: React, plain DOM/HTML, Solid, Svelte components, and Next.js render the supported Phase 2 style contracts through their normal APIs using one compiler. Each integration requires passing consumer types, browser rendering, development, production, and packed-consumer evidence before its support claim is published.
 
 Hydrating runtimes also require SSR/hydration identity evidence. Plain DOM/HTML requires server attribute serialization and client-update identity evidence instead. `cx` composition and variants remain Phase 3 extensions to these fixtures.
 
@@ -273,7 +274,7 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Next priority: fix the full compiler gate's CI heap exhaustion, then follow the [remaining Phase 2 acceptance sequence](#phase-2-status-after-at-rule-compiler-acceptance).
+Next priority: verify the full compiler gate with the explicit 4 GiB CI heap budget, then follow the [remaining Phase 2 acceptance sequence](#phase-2-status-after-at-rule-compiler-acceptance).
 
 Merged implementation includes themes, variables, dynamic styles, conditions, typed relationships, imported animation references, source-relative assets, opt-in reset, packed contributions, and the full at-rule compiler inventory. The remaining work is acceptance and the explicit framework/authoring gaps above. Bundled variants remains Phase 3.
 

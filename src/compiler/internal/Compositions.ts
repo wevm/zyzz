@@ -364,7 +364,7 @@ export function collect(options: collect.Options) {
           'Composition requires statically known local style applications.',
           value,
         )
-      selected.push(call)
+      selected.push(call.ownership ? { ...call, start: value.start } : call)
       input(call, expression, condition, value.start)
       runtime ||= !!(
         call.ownership ||

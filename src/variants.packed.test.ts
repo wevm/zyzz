@@ -245,6 +245,40 @@ variant({base:{color:'missing'}});`,
     120000,
   )
 
+  test('traces each imported declaration to its own application', () => {
+    const publisher = Graph.compile({ modules: Library.sources() })
+    const compiled = Graph.compile({
+      contracts: publisher.contracts,
+      imports: {
+        'app.ts': { '@acme/variants': '@acme/variants/index.ts', zyzz: null },
+      },
+      modules: {
+        'app.ts': `import {cx} from 'zyzz';
+import {controls} from '@acme/variants';
+export const first=()=>cx(controls.button(),controls.override());
+export const second=()=>cx(controls.override(),controls.button({size:'lg'}));`,
+      },
+    }).modules['app.ts']!
+    const map = new Trace.TraceMap(compiled.cssMap)
+    const lines = Object.values(compiled.classes).map((className) => {
+      const start = compiled.css.indexOf(
+        'padding:',
+        compiled.css.indexOf('.' + className.split(' ')[0]),
+      )
+      const prefix = compiled.css.slice(0, start)
+      return Trace.originalPositionFor(map, {
+        line: prefix.split('\n').length,
+        column: prefix.length - prefix.lastIndexOf('\n') - 1,
+      }).line
+    })
+    expect(lines).toMatchInlineSnapshot(`
+      [
+        3,
+        4,
+      ]
+    `)
+  })
+
   test('rejects malformed packed ownership and mixed renderer composition', () => {
     const publisher = Graph.compile({ modules: Library.sources('html') })
     const contracts = { ...publisher.contracts }

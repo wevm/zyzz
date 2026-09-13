@@ -216,7 +216,7 @@ describe('variable', () => {
 
     expect(
       JSON.parse(publisher.contracts['lib/library.ts']!).version,
-    ).toMatchInlineSnapshot(`14`)
+    ).toMatchInlineSnapshot(`16`)
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
       `".z-style-1e8a67z1uaws1j-123{--z-v1ym5zhz14a14rh-88:blue;color:var(--z-v1ym5zhz14a14rh-88);.z-style-1ym5zhz14a14rh-235:hover &{--z-v1ym5zhz14a14rh-88:green;}}"`,
     )

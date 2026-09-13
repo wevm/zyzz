@@ -98,15 +98,16 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (!call || node.end !== call.end) return
 
       const folded =
-        !call.recipe &&
-        !call.slots &&
-        parent?.type === 'CallExpression' &&
-        parent.callee === node &&
-        !parent.optional &&
-        parent.arguments.length === 0
+        !!call.composition ||
+        (!call.recipe &&
+          !call.slots &&
+          parent?.type === 'CallExpression' &&
+          parent.callee === node &&
+          !parent.optional &&
+          parent.arguments.length === 0)
 
       applications.set(call.start, {
-        end: folded ? parent.end : call.end,
+        end: folded && !call.composition ? parent!.end : call.end,
         folded,
       })
 
@@ -199,11 +200,22 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   let callable = false
 
+  const composed = (node: Span) =>
+    extracted.calls.some(
+      (call) =>
+        call.composition && call.start < node.start && node.end <= call.end,
+    )
   for (const call of extracted.calls) {
+    if (composed(call)) continue
     const application = applications.get(call.start)!
     const props = `{${call.output === 'html' ? 'class' : 'className'}:${JSON.stringify(classes[call.name])}}`
 
     const replacement = (() => {
+      if (call.composition)
+        return call.composition.reduceRight(
+          (result, guard) => `(${guard}?${result}:${guard}())`,
+          `(${props})`,
+        )
       if (call.recipe) {
         const helper = call.recipe.conditions?.length
           ? conditionalRecipe
@@ -282,6 +294,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   for (const application of localApplications?.find() ?? []) {
+    if (composed(application)) continue
     const className = JSON.stringify(classes[application.name])
 
     const key =
@@ -432,7 +445,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         specifier.importKind === 'type' ||
         !(
           node.source.value === 'zyzz'
-            ? ['Config', 'css', 'Theme', 'variable', 'variants']
+            ? ['Config', 'css', 'cx', 'Theme', 'variable', 'variants']
             : [
                 'Css',
                 'cssFunction',

@@ -6,6 +6,7 @@ import type * as Ast from '@oxc-project/types'
 import * as AtRules from './internal/AtRules.js'
 import * as Binding from '../internal/Binding.js'
 import * as Condition from '../internal/Condition.js'
+import * as Compositions from './internal/Compositions.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Css from '../web/Css.js'
 import * as Dynamic from './internal/Dynamic.js'
@@ -37,6 +38,8 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Binding reads preserved by compile-time composition. */
+  readonly composition?: readonly string[] | undefined
   /** Finite recipe selection metadata, with all alternatives retained in CSS. */
   readonly recipe?: Recipe.Definition | undefined
   /** Typed payload signatures retained across transformed declarations. */
@@ -287,6 +290,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           if (
             name === 'Config' ||
             name === 'css' ||
+            name === 'cx' ||
             name === 'Theme' ||
             name === 'variable' ||
             name === 'variants'
@@ -1023,6 +1027,22 @@ export function extract(options: extract.Options): extract.ReturnType {
           start: diagnostic.location?.start ?? call.start,
         })
     }
+  }
+
+  try {
+    for (const entry of Compositions.collect({
+      calls,
+      identity: identity(options.moduleId),
+      program,
+      source: options.source,
+      styles,
+    })) {
+      calls.push(entry.call)
+      styles.push(entry.style)
+    }
+  } catch (error) {
+    if (!(error instanceof Themes.InvalidError)) throw error
+    report('unsupported_syntax', error.message, error)
   }
 
   if (themes && !diagnostics.length)

@@ -2,6 +2,7 @@
 import { MissingTransformError } from './css.js'
 import type { css } from './css.js'
 import type * as Config from './Config.js'
+import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
 import type * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
@@ -15,7 +16,7 @@ type Conditions<definition> = definition extends {
 }
   ? conditions
   : {}
-type Choice<choices> = keyof choices extends infer key
+type ChoiceName<choices> = keyof choices extends infer key
   ? key extends 'true' | 'false'
     ? key extends 'true'
       ? true
@@ -24,6 +25,36 @@ type Choice<choices> = keyof choices extends infer key
       ? key
       : never
   : never
+type DynamicKeys<choices> = {
+  [key in keyof choices]: choices[key] extends (...args: never[]) => unknown
+    ? key
+    : never
+}[keyof choices]
+type Choice<choices> =
+  | ChoiceName<Omit<choices, DynamicKeys<choices>>>
+  | {
+      [key in DynamicKeys<choices>]: choices[key] extends (
+        values: infer values,
+      ) => unknown
+        ? { readonly [name in key]: values } & {
+            readonly [name in Exclude<DynamicKeys<choices>, key>]?: never
+          }
+        : never
+    }[DynamicKeys<choices>]
+type CheckedChoice<
+  style,
+  tokens extends Theme.Tokens,
+  layers extends string,
+  mappings extends Shorthands.Map,
+> = style extends (values: infer values) => infer body
+  ? (
+      values: values,
+    ) => CheckedStyles<body, tokens, layers, mappings> &
+      Binding.Checked<body> &
+      (values extends Record<string, string | number> & Binding.Inputs<values>
+        ? unknown
+        : never)
+  : CheckedStyles<style, tokens, layers, mappings>
 type Selections<axes> = {
   readonly [axis in keyof axes]?: Choice<axes[axis]> | null | undefined
 }
@@ -57,7 +88,7 @@ type Checked<
             | `zyzz-condition-${string}`
             ? never
             : {
-                readonly [choice in keyof definition[key][axis]]: CheckedStyles<
+                readonly [choice in keyof definition[key][axis]]: CheckedChoice<
                   definition[key][axis][choice],
                   tokens,
                   layers,
@@ -82,8 +113,8 @@ type Checked<
             ? readonly {
                 readonly when: {
                   readonly [axis in keyof Axes<definition>]?:
-                    | Choice<Axes<definition>[axis]>
-                    | readonly Choice<Axes<definition>[axis]>[]
+                    | ChoiceName<Axes<definition>[axis]>
+                    | readonly ChoiceName<Axes<definition>[axis]>[]
                 }
                 readonly style: Record<string, unknown>
               }[] & {

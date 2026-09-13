@@ -135,6 +135,9 @@ export function compile(options: compile.Options): compile.ReturnType {
   let conditionalRecipe = '__zyzzConditionalRecipe'
   while (identifiers.has(conditionalRecipe)) conditionalRecipe += '_'
   let usesConditionalRecipe = false
+  let payloadRecipe = '__zyzzPayloadRecipe'
+  while (identifiers.has(payloadRecipe)) payloadRecipe += '_'
+  let usesPayloadRecipe = false
   let recipe = '__zyzzRecipe'
   while (identifiers.has(recipe)) recipe += '_'
   let usesRecipe = false
@@ -208,11 +211,16 @@ export function compile(options: compile.Options): compile.ReturnType {
         if (call.recipe.conditions?.length) usesConditionalRecipe = true
         else usesRecipe = true
 
-        const value = `${helper}.create(${JSON.stringify({ ...call.recipe, className: classes[call.name], ...(call.output === 'html' ? { html: true } : {}) })})`
+        const payload = !!call.recipe.payloads?.length
+        if (payload) usesPayloadRecipe = true
+        const selection = `${helper}.create(${JSON.stringify({ axes: call.recipe.axes, defaults: call.recipe.defaults, conditions: call.recipe.conditions, className: classes[call.name], ...(!payload && call.output === 'html' ? { html: true } : {}) })})`
+        const value = payload
+          ? `${payloadRecipe}.create({...${JSON.stringify({ ...call.recipe, html: call.output === 'html' })},select:${selection}})`
+          : selection
         const axes = Object.entries(call.recipe.axes)
           .map(
             ([axis, choices]) =>
-              `${JSON.stringify(axis)}:{${choices.map((choice) => `${JSON.stringify(choice)}:{}`).join(';')}}`,
+              `${JSON.stringify(axis)}:{${choices.map((choice) => `${JSON.stringify(choice)}:${call.recipeTypes?.[axis]?.[choice] ? `(values:${call.recipeTypes[axis]![choice]})=>{}` : '{}'}`).join(';')}}`,
           )
           .join(';')
         const conditions = call.recipe.conditions
@@ -498,6 +506,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     callable ||
     usesRecipe ||
     usesConditionalRecipe ||
+    usesPayloadRecipe ||
     usesHtml ||
     usesSelection ||
     usesAppearance ||
@@ -516,7 +525,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesConditionalRecipe ? `ConditionalRecipe as ${conditionalRecipe}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', usesRecipe ? `Recipe as ${recipe}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Variable as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesConditionalRecipe ? `ConditionalRecipe as ${conditionalRecipe}` : '', usesHtml ? `Html as ${html}` : '', usesPayloadRecipe ? `PayloadRecipe as ${payloadRecipe}` : '', callable ? `Props as ${runtime}` : '', usesRecipe ? `Recipe as ${recipe}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Variable as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

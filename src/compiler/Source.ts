@@ -15,6 +15,7 @@ import type * as Namespace from '../web/internal/Namespace.js'
 import * as Parser from 'oxc-parser'
 import * as RuleReference from '../internal/RuleReference.js'
 import type * as Recipe from '../runtime/Recipe.js'
+import type * as RecipePayloads from './internal/RecipePayloads.js'
 import * as Recipes from './internal/Recipes.js'
 import * as Scope from './internal/Scope.js'
 import type * as Shorthands from '../internal/Shorthands.js'
@@ -38,6 +39,10 @@ const define = Style.define as unknown as (
 export type Call = {
   /** Finite recipe selection metadata, with all alternatives retained in CSS. */
   readonly recipe?: Recipe.Definition | undefined
+  /** Typed payload signatures retained across transformed declarations. */
+  readonly recipeTypes?:
+    | { readonly [axis: string]: { readonly [choice: string]: string } }
+    | undefined
   /** Stable selector identity retained independently of declaration deduplication. */
   readonly identity?: string | undefined
   /** Expanded immutable source data retained for declaration mapping. */
@@ -488,9 +493,11 @@ export function extract(options: extract.Options): extract.ReturnType {
     })()
     if (diagnostics.length !== diagnosticCount) continue
 
+    let dynamicValues: RecipePayloads.Bindings | undefined = dynamic
+
     function resolveDynamic(node: Ast.Node) {
       try {
-        return dynamic?.resolve(node)
+        return dynamicValues?.resolve(node)
       } catch (error) {
         if (!(error instanceof Themes.InvalidError)) throw error
 
@@ -526,14 +533,21 @@ export function extract(options: extract.Options): extract.ReturnType {
 
     const before = diagnostics.length
     let recipe: Recipe.Definition | undefined
+    let recipeTypes: Call['recipeTypes']
     if (recipes.has(call.start)) {
       try {
-        const expanded = Recipes.expand(
-          argument,
-          themes?.styles.get(call.start)?.theme[Token.definition].queries,
-        )
+        const expanded = Recipes.expand(argument, {
+          identity: `${identity(options.moduleId)}-${call.start}`,
+          normalize: (node) => staticData.normalize(node, staticCalls, opaque),
+          queries: themes?.styles.get(call.start)?.theme[Token.definition]
+            .queries,
+          resolveType: staticData.type,
+          source: options.source,
+        })
         argument = expanded.body
         recipe = expanded.recipe
+        recipeTypes = expanded.types
+        dynamicValues = expanded.bindings
       } catch (error) {
         if (!(error instanceof Themes.InvalidError)) throw error
         report('unsupported_syntax', error.message, error)
@@ -702,9 +716,9 @@ export function extract(options: extract.Options): extract.ReturnType {
             (token && token.end === unwrapped.end ? token.reference : undefined)
 
           if (
-            dynamic &&
+            dynamicValues &&
             reference &&
-            Object.values(dynamic.slots).includes(
+            Object.values(dynamicValues.slots).includes(
               reference as Binding.Reference,
             ) &&
             path.length > depth
@@ -796,8 +810,8 @@ export function extract(options: extract.Options): extract.ReturnType {
               if (
                 typeof part !== 'string' &&
                 !(Binding.is(part)
-                  ? (dynamic !== undefined &&
-                      Object.values(dynamic.slots).includes(part)) ||
+                  ? (dynamicValues !== undefined &&
+                      Object.values(dynamicValues.slots).includes(part)) ||
                     targets.every((target) =>
                       Binding.accepts(part.type, target),
                     )
@@ -825,7 +839,7 @@ export function extract(options: extract.Options): extract.ReturnType {
               Token.accepts(reference.group, target),
             ) &&
             !targets.every((target) =>
-              dynamic?.accepts(
+              dynamicValues?.accepts(
                 reference as unknown as Binding.Reference,
                 target,
               ),
@@ -844,14 +858,14 @@ export function extract(options: extract.Options): extract.ReturnType {
             reference &&
             Binding.is(reference) &&
             !(
-              dynamic &&
-              Object.values(dynamic.slots).includes(reference) &&
+              dynamicValues &&
+              Object.values(dynamicValues.slots).includes(reference) &&
               reference.type !== 'number'
             ) &&
             !targets.every(
               (target) =>
                 Binding.accepts(reference.type, target) ||
-                dynamic?.accepts(
+                dynamicValues?.accepts(
                   reference as unknown as Binding.Reference,
                   target,
                 ),
@@ -967,7 +981,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         .contract.shorthands
 
       calls.push({
-        ...(recipe ? { recipe } : {}),
+        ...(recipe ? { recipe, recipeTypes } : {}),
         ...(selectors.identities.has(call.start)
           ? { identity: selectors.identities.get(call.start)! }
           : {}),

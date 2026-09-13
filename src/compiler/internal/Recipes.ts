@@ -4,6 +4,7 @@ import type * as Query from '../../internal/Query.js'
 import * as ConditionalRecipe from '../../runtime/ConditionalRecipe.js'
 import type * as Recipe from '../../runtime/Recipe.js'
 import * as RecipeConditions from './RecipeConditions.js'
+import * as RecipePayloads from './RecipePayloads.js'
 import * as Themes from './Themes.js'
 
 type Property = Extract<
@@ -80,11 +81,24 @@ function predicate(attribute: string, value: string): string {
 /** Expands every finite alternative while retaining authored style-node locations. */
 export function expand(
   node: Ast.ObjectExpression,
-  queries?: Query.Metadata,
+  options: expand.Options,
 ): {
+  bindings: RecipePayloads.Bindings
+  types: { readonly [axis: string]: { readonly [choice: string]: string } }
   body: Ast.ObjectExpression
   recipe: Recipe.Definition
 } {
+  const bindings = RecipePayloads.create(options)
+  const payloads: Recipe.Payload[] = []
+  const defaultsValidators = new Map<
+    Recipe.Payload,
+    NonNullable<ReturnType<typeof bindings.read>>
+  >()
+  const types: Record<string, Record<string, string>> = Object.create(null)
+  const defaultPayloads: Record<
+    string,
+    Record<string, string | number>
+  > = Object.create(null)
   const properties: Ast.ObjectExpression['properties'] = []
   const fields = new Map(entries(node))
   const axes: Record<string, readonly string[]> = Object.create(null)
@@ -105,7 +119,11 @@ export function expand(
   const conditions = fields.get('conditions')
   const named = (conditions ? entries(conditions.value) : []).map(
     ([name, property]) =>
-      RecipeConditions.read({ name, node: property.value, queries }),
+      RecipeConditions.read({
+        name,
+        node: property.value,
+        queries: options.queries,
+      }),
   )
   const regions = RecipeConditions.regions(named)
   const base = fields.get('base')
@@ -136,6 +154,7 @@ export function expand(
   }
 
   type Rule = {
+    bodies?: readonly Ast.ObjectExpression[] | undefined
     matches: readonly (readonly [string, readonly string[]])[]
     property: Property
     suffix: string
@@ -170,8 +189,42 @@ export function expand(
       )
 
     axes[axis] = choices.map(([key]) => key)
-    for (const [key, style] of choices)
-      rules.push({ matches: [[axis, [key]]], property: style, suffix: '' })
+    for (const [key, style] of choices) {
+      const models = Array.from({ length: named.length + 1 }, (_, context) =>
+        bindings.read(
+          style.value,
+          `${options.identity}-${Object.keys(axes).length}-${choices.findIndex(([name]) => name === key)}-${context}`,
+        ),
+      )
+      const first = models[0]
+      if (first) {
+        types[axis] ??= Object.create(null)
+        types[axis]![key] = options.source.slice(
+          first.type.start,
+          first.type.end,
+        )
+        const payload: Recipe.Payload = {
+          axis,
+          choice: key,
+          slots: models.map((model) =>
+            Object.fromEntries(
+              Object.entries(model!.slots).map(([field, slot]) => [
+                field,
+                slot.name,
+              ]),
+            ),
+          ),
+        }
+        payloads.push(payload)
+        defaultsValidators.set(payload, first)
+      }
+      rules.push({
+        matches: [[axis, [key]]],
+        property: style,
+        suffix: '',
+        ...(first ? { bodies: models.map((model) => model!.body) } : {}),
+      })
+    }
   }
 
   const defaultVariants = fields.get('defaultVariants')
@@ -181,7 +234,67 @@ export function expand(
     if (!Object.hasOwn(axes, axis))
       throw new Themes.InvalidError('Unknown default variant axis.', property)
 
-    defaults[axis] = choice(property.value, axes[axis]!)
+    if (property.value.type === 'ObjectExpression') {
+      const selections = entries(property.value)
+      const selected = selections[0]
+      const payload =
+        selected &&
+        payloads.find(
+          (item) => item.axis === axis && item.choice === selected[0],
+        )
+      if (selections.length !== 1 || !selected || !payload)
+        throw new Themes.InvalidError(
+          'Dynamic defaults require exactly one declared dynamic choice.',
+          property,
+        )
+      const values: Record<string, string | number> = Object.create(null)
+      for (const [field, input] of entries(selected[1].value)) {
+        const node = input.value
+        const value =
+          node.type === 'Literal'
+            ? node.value
+            : node.type === 'UnaryExpression' &&
+                node.argument.type === 'Literal' &&
+                typeof node.argument.value === 'number' &&
+                (node.operator === '-' || node.operator === '+')
+              ? node.operator === '-'
+                ? -node.argument.value
+                : node.argument.value
+              : undefined
+        if (
+          !Object.hasOwn(payload.slots[0]!, field) ||
+          (typeof value !== 'string' && typeof value !== 'number')
+        )
+          throw new Themes.InvalidError(
+            'Dynamic defaults require complete scalar payloads.',
+            input,
+          )
+        if (!defaultsValidators.get(payload)!.acceptsValue(field, value))
+          throw new Themes.InvalidError(
+            'Dynamic default does not match its declared payload type.',
+            input,
+          )
+        values[field] = value
+      }
+      if (Object.keys(values).length !== Object.keys(payload.slots[0]!).length)
+        throw new Themes.InvalidError(
+          'Dynamic defaults require complete scalar payloads.',
+          property,
+        )
+      defaults[axis] = selected[0]
+      defaultPayloads[axis] = values
+    } else {
+      defaults[axis] = choice(property.value, axes[axis]!)
+      if (
+        payloads.some(
+          (item) => item.axis === axis && item.choice === defaults[axis],
+        )
+      )
+        throw new Themes.InvalidError(
+          'Dynamic choices require a scoped payload.',
+          property,
+        )
+    }
   }
 
   const compounds = fields.get('compoundVariants')
@@ -266,7 +379,29 @@ export function expand(
       }
     }
 
-    for (const { matches, property, suffix } of rules) {
+    for (const { bodies, matches, property, suffix } of rules) {
+      if (bodies) {
+        const [axis, choices] = matches[0]!
+        const sources = [-1, ...region.active]
+        for (const [index, condition] of sources.entries()) {
+          const attribute =
+            condition === -1
+              ? `data-${axis}`
+              : ConditionalRecipe.attribute({ axis, condition })
+          const excluded = sources
+            .slice(index + 1)
+            .map(
+              (condition) =>
+                `:not([${ConditionalRecipe.attribute({ axis, condition })}])`,
+            )
+            .join('')
+          const selector = `&:where(${predicate(attribute, condition === -1 ? choices[0]! : `s${choices[0]}`)}${excluded})`
+          target.properties.push(
+            group(property.key, selector, bodies[condition + 1]!),
+          )
+        }
+        continue
+      }
       entries(property.value)
       const selector =
         '&' +
@@ -303,11 +438,27 @@ export function expand(
   properties.push(...tree.properties)
 
   return {
+    bindings,
+    types,
     body: { ...node, properties },
     recipe: {
       axes,
       defaults,
+      ...(payloads.length ? { payloads, defaultPayloads } : {}),
       ...(named.length ? { conditions: named.map(({ name }) => name) } : {}),
     },
+  }
+}
+
+/** Source inputs for finite recipe lowering. */
+export declare namespace expand {
+  /** Resolution hooks and source identity for isolated payload slots. */
+  type Options = RecipePayloads.create.Options & {
+    /** Stable module and call identity. */
+    readonly identity: string
+    /** Bound query aliases. */
+    readonly queries?: Query.Metadata | undefined
+    /** Original source retained for declaration signatures. */
+    readonly source: string
   }
 }

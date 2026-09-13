@@ -343,7 +343,10 @@ export function zyzz(): Plugin {
         const specifier = node.source.value
 
         // Zyzz authoring and runtime entrypoints are handled by the static transform.
-        if (specifier === 'zyzz' || specifier.startsWith('zyzz/')) {
+        if (
+          specifier === 'zyzz' ||
+          (specifier.startsWith('zyzz/') && specifier !== 'zyzz/themes/default')
+        ) {
           resolutions[specifier] = null
           continue
         }
@@ -455,7 +458,12 @@ export function zyzz(): Plugin {
             continue
 
           const specifier = node.source.value
-          if (specifier === 'zyzz' || specifier.startsWith('zyzz/')) continue
+          if (
+            specifier === 'zyzz' ||
+            (specifier.startsWith('zyzz/') &&
+              specifier !== 'zyzz/themes/default')
+          )
+            continue
 
           const resolved = await resolve(specifier, file)
           if (!resolved || (!resolved.external && eligible(resolved.id)))

@@ -16,6 +16,7 @@
       "zyzz/next/loader": ["./src/next/loader.ts"],
       "zyzz/node": ["./src/node/index.ts"],
       "zyzz/runtime": ["./src/runtime/index.ts"],
+      "zyzz/themes/default": ["./src/themes/default.ts"],
       "zyzz/vite": ["./src/vite/index.ts"],
       "zyzz/web": ["./src/web/index.ts"]
     },

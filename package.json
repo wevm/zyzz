@@ -2,7 +2,7 @@
   "scripts": {
     "bench:render": "zile && vp test run --config bench/Render.config.ts --no-file-parallelism",
     "bench:types": "node scripts/type-benches.ts",
-    "build": "zile",
+    "build": "zile && node scripts/build-default-theme.ts",
     "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
     "changeset:version": "changeset version",
     "check": "vp check --fix",
@@ -108,6 +108,11 @@
       "src": "./src/runtime/index.ts",
       "types": "./dist/runtime/index.d.ts",
       "default": "./dist/runtime/index.js"
+    },
+    "./themes/default": {
+      "src": "./src/themes/default.ts",
+      "types": "./dist/themes/default.d.ts",
+      "default": "./dist/themes/default.js"
     },
     "./vite": {
       "src": "./src/vite/index.ts",

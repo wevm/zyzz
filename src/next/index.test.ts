@@ -77,7 +77,7 @@ describe('zyzz', () => {
           'app/layout.tsx': `import {theme} from '@config';export default function Layout({children}:{children:React.ReactNode}){return <html className={theme.className}><body>{children}</body></html>}`,
           'app/navigation.tsx': `'use client';import Link from 'next/link';import {useEffect,useState} from 'react';export default function Navigation({href,children}:{href:string;children:React.ReactNode}){const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <Link data-link-ready={ready} href={href}>{children}</Link>}`,
           'app/other/page.tsx': `import Navigation from '../navigation';export default function Other(){return <Navigation href="/">Back</Navigation>}`,
-          'app/page.tsx': `import Navigation from './navigation';import {css} from '@config';import Client from './client';namespace styles{export const heading=css({color:'brand',padding:'md'})}export default function Page(){return <main><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
+          'app/page.tsx': `import Navigation from './navigation';import {css} from '@config';import Client from './client';import {variants,theme as defaults} from 'zyzz/themes/default';namespace styles{export const heading=css({color:'brand',padding:'md'});export const bundled=variants({variants:{size:{sm:{padding:4,fontFamily:'sans'}}},defaultVariants:{size:'sm'}})}export default function Page(){return <main><aside id="default-theme" className={defaults.className}><p {...styles.bundled()}>Default</p></aside><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
           'app/stream/page.tsx': `import {Suspense} from 'react';import {css} from '@config';export const dynamic='force-dynamic';namespace styles{export const message=css({color:'brand',padding:'md'})}async function Delayed(){await new Promise(resolve=>setTimeout(resolve,500));return <p data-stream="complete" {...styles.message()}>Complete</p>}export default function Page(){return <Suspense fallback={<p data-stream="pending" {...styles.message()}>Pending</p>}><Delayed/></Suspense>}`,
           'next.config.ts': `import {zyzz} from 'zyzz/next';import * as Path from 'node:path';export default zyzz(async()=>({experimental:{cpus:2},turbopack:{root:process.cwd(),resolveAlias:{'@config':'./app/config.ts'}},webpack(config){config.resolve.alias['@config']=Path.resolve('app/config.ts');return config}}));`,
           'tsconfig.json': JSON.stringify({
@@ -231,6 +231,17 @@ describe('zyzz', () => {
             .locator('h1')
             .evaluate((element) => getComputedStyle(element).padding),
         ).toMatchInlineSnapshot('"8px"')
+        expect(
+          await page
+            .locator('#default-theme p')
+            .evaluate((element) => ({
+              padding: getComputedStyle(element).padding,
+              font: getComputedStyle(element).fontFamily,
+            })),
+        ).toEqual({
+          padding: '16px',
+          font: 'Geist, ui-sans-serif, system-ui, sans-serif',
+        })
         expect(
           await page.evaluate(
             async () => (await document.fonts.load('16px NextEvidence')).length,

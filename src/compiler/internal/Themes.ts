@@ -16,12 +16,12 @@ import type * as Source from '../Source.js'
 
 /** Local bound-authoring initializer replaced while retaining its inferred type. */
 export type Alias = Call & {
-  /** Retains an immutable theme/configuration alias value with an explicit type. */
-  readonly retained?: boolean | undefined
   /** Ordered authoring members replaced in a shared destructuring initializer. */
   readonly bindings?: readonly ('css' | 'variants')[] | undefined
   /** Whether the initializer supplies destructured authoring bindings. */
   readonly destructured: boolean
+  /** Retains an immutable theme/configuration alias value with an explicit type. */
+  readonly retained?: boolean | undefined
 }
 
 /** Theme factory span and generated scope key. */

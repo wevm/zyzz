@@ -6,7 +6,7 @@ Compiler and React render benchmarks run on separate runners in parallel. Each j
 
 Integration tests use Vitest's numbered `--shard=i/3` partitions and merge their blob reports and V8 coverage. No module is assigned a dedicated runner. At-rule acceptance checks the merged report after the TypeScript matrix passes. Supplying `--results` verifies existing evidence without rerunning tests or types; standalone acceptance commands still run both.
 
-TypeScript compatibility checks and JavaScript compiler instantiation benches run independently. Each attest version runs two sorted fixture partitions with `pnpm bench:types --shard i/2`; add `--list` to inspect a partition. All three compiler versions and both attest versions remain required jobs. The Checks job retains type-aware linting but disables duplicate compiler diagnostics in CI; the TypeScript matrix owns those checks, and property conformance owns the complete CSS inventory check. Local `pnpm check` still includes compiler diagnostics.
+TypeScript compatibility checks and JavaScript compiler instantiation benches run independently. Each attest version runs two sorted fixture partitions with `pnpm bench:types --shard i/2`; add `--list` to inspect a partition. Both compiler versions and both TypeScript 6.0 attest partitions remain required jobs. The Checks job retains type-aware linting but disables duplicate compiler diagnostics in CI; the TypeScript matrix owns those checks, and property conformance owns the complete CSS inventory check. Local `pnpm check` still includes compiler diagnostics.
 
 ## React Render and Mount Benchmarks
 
@@ -176,7 +176,7 @@ Colocated `src/**/*.bench-d.ts` fixtures measure the TypeScript instantiations c
 
 `pnpm bench:types` runs every fixture in one process against the installed `typescript` package and fails when a body exceeds its baseline by more than 20%. `pnpm update:types` rewrites the inline baselines after an intentional contract change. Counts are deterministic for one compiler release and can differ between releases, so establish baselines under the pinned version. Check time and memory are not part of these benches; `tsc --extendedDiagnostics` reports them in the TypeScript workflow matrix.
 
-The Verify workflow runs the type check and these benches for TypeScript 5.9, 6.0, and 7.0. JavaScript releases replace the pinned `typescript` package so attest and repository scripts import the version under test. The native 7.x package ships no compiler API, which `scripts/binding-domains.ts` and `test/fixtures/Library.ts` import, so that lane installs it beside the pinned package under an alias, runs only its `tsc` binary, and reports whole-program diagnostics without per-bench counts.
+The Verify workflow runs type checks for TypeScript 6.0 and 7.0, and instantiation benches for TypeScript 6.0. JavaScript releases replace the pinned `typescript` package so attest and repository scripts import the version under test. The native 7.x package ships no compiler API, which `scripts/binding-domains.ts` and `test/fixtures/Library.ts` import, so that lane installs it beside the pinned package under an alias, runs only its `tsc` binary, and reports whole-program diagnostics without per-bench counts.
 
 ## File Host
 

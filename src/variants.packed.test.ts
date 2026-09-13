@@ -20,6 +20,8 @@ describe('variants', () => {
       let server: Vite.PreviewServer | undefined
       try {
         const library = await Library.create(root, output)
+        // Model independent dependency runtime copies, as dev optimization can produce.
+        await Fs.cp(Path.join(root,'node_modules/zyzz'),Path.join(library.installed,'node_modules/zyzz'),{recursive:true})
         await Fs.writeFile(
           Path.join(root, 'package.json'),
           '{"type":"module","private":true}',

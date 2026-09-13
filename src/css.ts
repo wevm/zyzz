@@ -5,15 +5,17 @@
 import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import type * as Style from './Style.js'
+import type { where } from './where.js'
 
 type Keys<value> = value extends unknown ? keyof value : never
 
 /**
  * Declares literal styles for source extraction. Requires a compile-time transform.
- * @param styles - Token-free literal CSS properties.
+ * @param styles - Token-free literal CSS properties. Omit for an empty definition.
  * @returns A callable style definition after source rewriting.
  * @throws {MissingTransformError} Whenever an untransformed definition executes.
  */
+export function css(): css.ReturnType
 export function css<
   const values extends Record<string, string | number>,
   const styles extends Record<string, unknown>,
@@ -32,7 +34,7 @@ export function css<
 export function css<const styles extends Record<string, unknown>>(
   styles: styles & NoInfer<Style.Accepted<styles, {}, true>>,
 ): css.ReturnType
-export function css(styles: unknown): never {
+export function css(styles?: unknown): never {
   void styles
   throw new MissingTransformError()
 }
@@ -40,12 +42,11 @@ export function css(styles: unknown): never {
 /** Contracts for the literal authoring boundary. */
 export declare namespace css {
   /** Callable compiled bindings with required scalar inputs and styling overrides. */
-  type Dynamic<values, output extends Output = 'react'> = <
-    const input extends values & Options,
-  >(
-    input: input &
-      Record<Exclude<keyof input, keyof values | keyof Options>, never>,
-  ) => Props<output>
+  type Dynamic<values, output extends Output = 'react'> = where.Reference &
+    (<const input extends values & Options>(
+      input: input &
+        Record<Exclude<keyof input, keyof values | keyof Options>, never>,
+    ) => Props<output>)
 
   /** Failure from executing source without a transform. */
   type ErrorType = MissingTransformError
@@ -72,11 +73,10 @@ export declare namespace css {
       }
 
   /** Callable definition; source rewriting supplies its implementation. */
-  type ReturnType<output extends Output = 'react'> = <
-    const options extends Options = Options,
-  >(
-    options?: options & Record<Exclude<Keys<options>, keyof Options>, never>,
-  ) => Props<output>
+  type ReturnType<output extends Output = 'react'> = where.Reference &
+    (<const options extends Options = Options>(
+      options?: options & Record<Exclude<Keys<options>, keyof Options>, never>,
+    ) => Props<output>)
 }
 
 /** Executed authoring source has not been rewritten. */

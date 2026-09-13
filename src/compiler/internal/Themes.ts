@@ -7,7 +7,6 @@ import type * as RuleReference from '../../internal/RuleReference.js'
 import type * as Ast from '@oxc-project/types'
 import type * as Walker from 'oxc-walker'
 import type * as Binding from '../../internal/Binding.js'
-import type * as Marker from '../../runtime/Marker.js'
 import * as Config from '../../Config.js'
 import * as Expression from './Expression.js'
 import * as Configurations from './Configurations.js'
@@ -39,8 +38,6 @@ export type Call = {
   readonly output?: 'html' | undefined
   /** Portable explicit variable references. */
   readonly variables?: Readonly<Record<string, Binding.Reference>> | undefined
-  /** Portable marker contract, separate from theme metadata. */
-  readonly marker?: Marker.Definition | undefined
   /** Whether the compiled configuration supplies initialization. */
   readonly script?: boolean | undefined
   /** Bound root initialization script export. */
@@ -78,7 +75,7 @@ export type Link = {
     | 'config'
     | 'css'
     | 'theme'
-    | 'marker'
+    | 'style-reference'
     | 'animation'
     | 'rule-reference'
     | 'variables'
@@ -171,7 +168,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       const link = options.links?.[specifier.local.name]
       if (
         !link ||
-        link.kind === 'marker' ||
+        link.kind === 'style-reference' ||
         link.kind === 'animation' ||
         link.kind === 'rule-reference' ||
         link.kind === 'variables'

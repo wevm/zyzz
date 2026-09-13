@@ -183,7 +183,7 @@ export namespace styles {
       export const below="--z-positiontry141558i1cjhj8q-62-65-6c-6f-77" as import('zyzz/web').positionTry.Reference;
       export const profile="--z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65" as import('zyzz/web').colorProfile.Reference;
       export namespace styles {
-        export const list = __zyzzProps.create({className:"z-141558i1cjhj8q-base0"})
+        export const list = __zyzzProps.create({className:"z-141558i1cjhj8q-base0 z-style-141558i1cjhj8q-507"})
       }"
     `)
   })

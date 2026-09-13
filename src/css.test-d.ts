@@ -3,9 +3,25 @@
  * @module
  */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { css, Theme } from 'zyzz'
+import { Config, css, Theme, where } from 'zyzz'
 
 describe('css', () => {
+  test('accepts empty root, theme, and configured definitions', () => {
+    const empty = css()
+    const theme = Theme.define({})
+    const config = Config.create({ theme: {} })
+    const html = Config.create({ output: 'html', theme: {} })
+
+    expectTypeOf(empty).toEqualTypeOf<css.ReturnType>()
+    expectTypeOf(theme.css()).toEqualTypeOf<css.ReturnType>()
+    expectTypeOf(config.css()).toEqualTypeOf<css.ReturnType>()
+    expectTypeOf(html.css()).toEqualTypeOf<css.ReturnType<'html'>>()
+    css({ [where`${empty} > &`]: { color: 'red' } })
+    empty({ className: 'external' })
+    // @ts-expect-error Empty styles still reject unrelated props.
+    empty({ id: 'card' })
+  })
+
   test('infers callback templates and rejects CSS-wide scalar domains', () => {
     const style = css((v: { gap: `${number}px` }) => ({
       marginLeft: `calc(${v.gap} + 2px)`,

@@ -610,107 +610,26 @@ Literal `:hover` remains ordinary CSS. Use `@media (hover: hover)` explicitly fo
 
 Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/removal, nested named groups, and combined queries. Native rejects relational selectors until a separately specified adapter can preserve their meaning.
 
-### Typed Markers and Ancestors
+### Style References
 
-`ancestor` and `descendant` name relationships at any depth. Reserve `parent` and `child` for immediate relationships; they are not aliases or currently accepted additional helpers. The existing helpers do not imply a nearest boundary.
-
-Accepted API for implementation in 2.4b: `ref(schema?)` defines an element identity and optional finite data-state domains. `ancestor(ref, condition?)` creates a scoped selector key referring to that identity. Markers are web authoring values from `zyzz/web`; core still consumes explicit selector data without DOM access or a global registry.
-
-```tsx
-import { css } from 'zyzz'
-import { ancestor, ref } from 'zyzz/web'
-
-const card = ref({ state: ['closed', 'open'] })
-namespace styles {
-  export const title = css({
-    color: '#666',
-    [ancestor(card, ':hover')]: { color: '#06c' },
-    [ancestor(card, { state: 'open' })]: { fontWeight: 600 },
-  })
-}
-
-const profile = (
-  <article {...styles.card({ state: 'open' })}>
-    <h2 {...styles.title()}>Profile</h2>
-  </article>
-)
-```
-
-`ref()` also works without a schema. A schema maps case-sensitive state keys to nonempty readonly arrays of string or boolean literals; const inference preserves the literal domains without `as const`. Reject unbounded arrays, duplicate/ambiguous serialized values, invalid data-name fragments, and reserved application keys. Optional ref inputs select any subset of declared states; omitted/undefined fields emit no state attribute. Unknown keys or invalid values are errors, including through variables and untyped calls. False serializes as `"false"`, not attribute omission.
-
-HTML attribute-name fragments use ASCII-lowercase state keys. Reject schemas with keys colliding after ASCII case folding, such as `state` and `State`, before emission. Application and selector lowering use the same normalization; typed input keys remain case-sensitive.
-
-Marker application returns readonly data attributes only: a presence attribute plus selected state attributes. For example, a generated identity might use `data-z-card-k3m9=""` and `data-z-card-k3m9-state="open"`. Names are illustrative; derive stable, readable identities from package/module/binding metadata, never runtime counters or caller-provided names. State attributes are private to the ref, so independent markers do not compete for a shared `data-state` property.
-
-Separate ref and styling spreads have disjoint fields: `<article {...card({ state: 'open' })} {...panel()} />` is valid. Markers neither consume nor output `className`, `style`, ARIA, event handlers, or other component props. Apply real `disabled`, `checked`, or `aria-expanded` attributes separately. Ordinary repeated spreads of the same ref replace its attributes; no automatic merge is implied, and ref props do not extend the existing `cx` input contract.
-
-An ancestor condition is a supported simple pseudo string or an options object with optional `data`, `pseudo`, and `has`. `data` infers a partial state selection from the first ref argument. `pseudo` is one supported nonfunctional pseudo-class such as `:focus-within` or `:hover`; offer completion and reject `:hovr` and pseudo-elements. `has` is a statically parsed relative-selector list such as `'a'` or `'> input:checked'`. Combined fields are AND predicates on the same marked ancestor. Omission matches ref presence.
+`where` templates interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
 
 ```ts
-namespace styles {
-  export const indicator = css({
-    opacity: 0,
-    [ancestor(card, { has: 'a' })]: { opacity: 1 },
-  })
+import { css, where } from 'zyzz'
 
-  export const activeTitle = css({
-    [ancestor(card, {
-      state: 'open',
-      has: 'a',
-      pseudo: ':focus-within',
-    })]: { color: '#06c' },
+namespace styles {
+  export const card = css()
+  export const label = css({
+    [where`${card}:hover &`]: { color: 'blue' },
+    [where`${card}[data-state="open"] > &`]: { opacity: 1 },
+    [where`${card} > &:nth-child(even)`]: { opacity: 0.5 },
   })
 }
-
-// Expected type errors in the proposed contract.
-styles.card({ state: 'expanded' })
-ancestor(card, { status: 'open' })
-ancestor(card, ':hovr')
 ```
 
-The ref schema alone determines data inference; condition arguments must not widen it to accept arbitrary keys/values. Preserve that contract through imported aliases, re-exports, and packed declaration files. These types establish declared identity/state compatibility, not that a matching ancestor exists in the rendered DOM or that a ref is attached to a particular HTML element type.
+References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. TypeScript checks interpolation identities and nested declaration values; it does not validate selector text or prove DOM structure.
 
-Use the same ref in `descendant`, `siblingBefore`, `siblingAfter`, and `anySibling`. Names describe the marked element relative to the styled element. `siblingBefore` observes an earlier marked sibling, including nonadjacent siblings; `siblingAfter` observes a later one. Immediate siblings and child-only relationships remain expressible through raw CSS until an explicit typed distance contract is needed.
-
-```tsx
-const choice = ref()
-namespace styles {
-  export const hint = css({
-    [siblingBefore(choice, ':checked')]: { color: '#06c' },
-  })
-
-  export const fieldset = css({
-    [descendant(choice, ':checked')]: { borderColor: '#06c' },
-  })
-}
-
-const example = (
-  <fieldset {...styles.fieldset()}>
-    <input {...choice()} aria-label="Select option" type="checkbox" />
-    <span {...styles.hint()}>Selected</span>
-  </fieldset>
-)
-```
-
-Let `M` be the generated ref selector plus its authored predicates. Helper lowering has this explicit specificity contract:
-
-| Function                        | Selector Shape                           |
-| ------------------------------- | ---------------------------------------- |
-| `ancestor(ref, condition)`      | `:where(M) &`                            |
-| `anySibling(ref, condition)`    | `:is(:where(M) ~ &, &:where(:has(~ M)))` |
-| `descendant(ref, condition)`    | `&:where(:has(M))`                       |
-| `siblingAfter(ref, condition)`  | `&:where(:has(~ M))`                     |
-| `siblingBefore(ref, condition)` | `:where(M) ~ &`                          |
-
-The relation predicate adds zero specificity; the current generated class retains its ordinary specificity. This is documented helper behavior, not a rewrite of raw selectors or a hidden relation-priority ladder. Preserve authored ordering, local nested pseudos, and query contexts. Reusing one ref on nested elements matches any qualifying ancestor. A distinct ref separates roles; nearest-instance boundaries require a separate `@scope` design, not an implicit promise.
-
-CSS forbids nested `:has()`. Only `ancestor` and `siblingBefore` accept the `has` option. The descendant, following-sibling, and any-sibling options omit it in types because their lowering already uses `:has()`. The parser rejects nested `:has`, pseudo-elements, `&`, and other invalid grammar in `has` arguments. Raw complex selectors receive compiler validation, not a false claim of complete TypeScript grammar checking. [Selector grammar](https://www.w3.org/TR/selectors-4/#relational)
-
-Recognize ref definitions/applications and relational helper keys through static source analysis; do not execute application code. Preserve ref identity independently of style deduplication, source traversal order, and runtime state. Exported ref callables retain only attribute construction/validation, with statically known keys; relation helpers disappear. Applications choose state attributes, while the browser evaluates relationships. Server/client output must agree, imports must preserve identity, and unused definitions must not keep CSS alive accidentally.
-
-Before implementation acceptance, prove computed selector keys retain nested property/value/token inference and reject misspelled properties both inside and beside relational blocks. TypeScript can widen computed keys; a branded string alone is not proof of this contract. Require consumer fixtures for that case, schema inference without widening, aliases, unknown variable keys, nested conditions, unsupported `has` combinations, and packed declarations. If the keyed syntax cannot pass those fixtures, revise the shape before publishing it rather than weakening property checking.
-
-Real browser integration must cover pointer/focus/input updates, DOM insertion/removal, combined predicates, both sibling directions, multiple markers on one element, repeated/nested instances, and imported markers. Compare hand-authored equivalent selectors and existing library relationships before benchmarking. Report generated data-attribute/markup bytes and optional ref application code alongside CSS, JavaScript, and browser recalculation. Native rejects these browser relationships with located diagnostics.
+Specificity follows the authored selector. Use explicit `:where(...)` to lower condition specificity. Application-owned state remains in ordinary data/ARIA attributes. No runtime selector parsing, DOM lookup, or CSS generation is involved.
 
 ## Inferred query thresholds
 

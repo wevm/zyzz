@@ -1,5 +1,30 @@
 # Implementation plan
 
+## Phase 2 Status After At-rule Compiler Acceptance
+
+Status reviewed against main `b6398e7` after merged [#107](https://github.com/wevm/zyzz/pull/107), [#110](https://github.com/wevm/zyzz/pull/110), and [#111](https://github.com/wevm/zyzz/pull/111). Phase 2 remains open. The at-rule compiler implementation is complete for the pinned inventory; release acceptance still has concrete blockers.
+
+- [x] Complete compiler obligations for 22/22 at-rules and 62/62 descriptor/nested entries: contexts, grammar, maps, output, packed, references, source, types, and watch.
+- [x] Implement UTF-8 output policy, public color profiles and property registrations, composite CSS-function signatures, and page authoring. The recorded local full-gate run passed fresh TypeScript checking and 184 required integrations.
+- [ ] Make the full compiler gate pass on current main in CI. [Main run 34688701548](https://github.com/wevm/zyzz/actions/runs/34688701548/job/103540096011) fails because the gate's fresh `pnpm check:types` subprocess exhausts the JavaScript heap (exit 134). The separate TypeScript 5.9/6.0/7.0 jobs, checks, build, property conformance, and [benchmarks](https://github.com/wevm/zyzz/actions/runs/34688701345) pass. Preserve fresh type and named-test verification while fixing the resource failure.
+
+The remaining work is ordered below. Historical checklists remain evidence to reconcile, rather than proof that every unchecked implementation is absent.
+
+| Order | Remaining work                                          | Completion evidence                                                                                                                                                                                                                                                                                                                                   |
+| ----- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Fix full-gate CI resource usage                         | Successful full compiler acceptance on the current main/PR head, with fresh types and all required named integrations; no reduced assertions.                                                                                                                                                                                                         |
+| 2     | Finish target compatibility reviews                     | Review all 84 matrix entries and pass `check:at-rules:targets`. Current records are 20 native, 7 partial, and 57 unreviewed; classify unsupported features explicitly and attach passing versioned probes.                                                                                                                                            |
+| 3     | Close rendering gaps                                    | Complete relative ICC color and rendering-intent evidence, page rotation/fragmentation, and remaining per-renderer reviews. Current records are 20 verified, 7 partial, and 57 unverified. Basic ICC painting, bleed, marks, and page-margin evidence already exist. Pass `check:at-rules:rendering`; retain unsupported engine limitations honestly. |
+| 4     | Finish framework acceptance already assigned to Phase 2 | Vue SFC support and the Next.js adapter with independent Webpack/Turbopack coverage remain open. Reconcile React/HTML/Solid/Svelte fixtures against development, production, packed consumers, source maps, recovery, and SSR/hydration or HTML serialization/update requirements.                                                                    |
+| 5     | Reconcile remaining authoring and lifecycle acceptance  | Audit the open dynamic-binding, theme/scheme, relationship, animation, layer-order, contribution, and imported-static-record items below against named public evidence. Mark implemented subsets complete; implement missing contracts and tests before closing their broader gates.                                                                  |
+| 6     | Complete measurements and final documentation           | Finish repeatable browser timing, complex theme/query and relational workloads, and full delivery measurements. Retain the measured 2.4–2.9× at-rule compile/packed cost; no runtime rendering cost is implied. Reconcile API/compatibility documentation and every remaining Phase 2 checkbox.                                                       |
+
+The current matrix counts above describe target records across 22 rules plus 62 descriptor/nested entries, not percentages of universally supported CSS. `check:at-rules:legacy-full` remains red under the original combined contract; reconcile its evidence without copying compiler completion into renderer claims.
+
+The bundled `zyzz/themes/default` entrypoint ships with bound `variants` after Phase 3, as documented in its API preview. Native output, variants/composition, and later distribution work retain their assigned phases. No scope transfer silently closes a Phase 2 gate.
+
+Phase 3 starts after Phase 2 acceptance is closed. Its first feature remains single-element variants returning one props object, followed by responsive/conditional selection, source/packed retention, and framework/benchmark acceptance.
+
 ## Runtime Render Performance — Immediate Priority
 
 [PR #74](https://github.com/wevm/zyzz/pull/74) adds production React mounts, changed-prop updates, and remounts through Vitest Browser Mode in Chromium. Matched native, Panda, StyleX, Tailwind, vanilla-extract, and Zyzz applications verify computed styles and DOM identity outside timing. Function microbenchmarks remain diagnostics.
@@ -248,9 +273,9 @@ Evidence: real filesystem integration covers output exclusion, ownership across 
 
 ## Phase 2 — Standard authoring and themes
 
-Next priority: finish the runtime benchmark work, then complete the [Framework Integration Priority](#framework-integration-priority) before resuming the remaining feature backlog.
+Next priority: fix the full compiler gate's CI heap exhaustion, then follow the [remaining Phase 2 acceptance sequence](#phase-2-status-after-at-rule-compiler-acceptance).
 
-Current stack: #65 theme variables → #66 explicit variables → #68 dynamic styles → #69 bundled themes/query metadata → #70 nested conditions → stylesheet contribution foundation. These are Phase 2 slices. Remaining acceptance work includes typed relationship markers, bundled variants (Phase 3), imported animation references, relative assets, optional reset, and packed contributions; the broad Phase 2 gates below remain open.
+Merged implementation includes themes, variables, dynamic styles, conditions, typed relationships, imported animation references, source-relative assets, opt-in reset, packed contributions, and the full at-rule compiler inventory. The remaining work is acceptance and the explicit framework/authoring gaps above. Bundled variants remains Phase 3.
 
 Status: [PR 2.1 / #9](https://github.com/wevm/zyzz/pull/9) and [PR 2.2a / #10](https://github.com/wevm/zyzz/pull/10) are merged. [PR 2.2b.1 / #12](https://github.com/wevm/zyzz/pull/12) is merged. [PR #13](https://github.com/wevm/zyzz/pull/13) adds local bound-authoring aliases. [PR #14](https://github.com/wevm/zyzz/pull/14) adds explicit source token references. [PR #16](https://github.com/wevm/zyzz/pull/16) merged relative source graphs and host dependency rebuilds; PRs #17–#19 add incremental compilation, Vite 8, standalone CSS processing, and lazy modules. [PR #23](https://github.com/wevm/zyzz/pull/23) adds versioned packed-theme metadata, host sidecars, and Vite consumption; its browser, CI, and benchmark gates passed after explicit native light-dark targets. It is merged. [PR #24](https://github.com/wevm/zyzz/pull/24) and [PR #27](https://github.com/wevm/zyzz/pull/27) merged configuration core and source contracts. Standard declaration values are the current follow-up.
 
@@ -322,7 +347,7 @@ PR 2.1 uses opaque object references for contracts within one in-memory graph. C
 - [x] Validate named themes against the default's complete paths/domains, normalize shared config identities without mutating standalone themes, and retain default fallbacks. Cover missing/extra tokens, incompatible domains, partial extensions, imported definitions, aliases, source edits, and packed contracts with integration/type fixtures.
 - [x] Verify web configuration-to-browser theme selection, stable component classes, nested scopes, forced schemes, and packed handles through the theme-selection browser fixtures. System-scheme and omitted-scheme inheritance at the callable selection boundary, native table selection, and expanded switch-timing workloads remain separate gates.
 
-- [ ] Add `zyzz/themes/default` with named `css`, `theme`, and raw `tokens` exports; add bound `variants` when recipe compilation lands in Phase 3. Bundle colors, typography, spacing, radii, and related scales using the ordinary theme contract; keep light/dark values within the theme.
+- [ ] Phase 3: publish `zyzz/themes/default` with named `css`, bound `variants`, `theme`, and raw `tokens` exports after recipe compilation lands. Bundle colors, typography, spacing, radii, and related scales using the ordinary theme contract; keep light/dark values within the theme.
 - [ ] Preserve inference and extraction for bundled `css` aliases and re-exports. Verify parity with `theme.css`, explicit token composition, and use of the exported theme with target compilers. Apply the same alias contract to `variants` in Phase 3.
 - [x] Accept token groups directly with no metadata or scheme container. Each color leaf is `string | { light: string; dark: string }`; require both fields for pairs.
 - [x] Infer `theme.css` arguments from shared `color` and property-specific `backgroundColor`, `textColor`, and `borderColor` groups, with documented fallback and override rules. Reject wrong domains, unknown tokens, partial pairs, and incompatible extensions.
@@ -390,19 +415,19 @@ Gate: two compatible themes each work in both schemes. Switching a scope changes
 
 ### Full At-Rule Support
 
-Implementation is stacked in [#95](https://github.com/wevm/zyzz/pull/95), [#96](https://github.com/wevm/zyzz/pull/96), [#97](https://github.com/wevm/zyzz/pull/97), [#99](https://github.com/wevm/zyzz/pull/99), and [#100](https://github.com/wevm/zyzz/pull/100), followed by the acceptance PR. Direct helper APIs, portable references, namespace isolation, ordered statements, and native scalar CSS functions are implemented. Acceptance adds direct/packed source-map ownership, nested asset watch updates, real-font/counter/anchor/browser controls, and declaration benchmarks.
+The implementation and acceptance stack through [#107](https://github.com/wevm/zyzz/pull/107) is merged. Direct helper APIs, portable references, namespace isolation, ordered statements, composite CSS functions, descriptor validation, source maps, and packed/watch compiler obligations cover the complete pinned inventory.
 
-The inventory accounts for 22 rules and 62 descriptors/nested blocks. Implemented entries remain conservatively partial while complete context/grammar and browser evidence is reviewed.
+The compiler matrix accounts for 22/22 rules and 62/62 descriptors/nested blocks with complete compiler obligations. Target compatibility and rendering remain separately incomplete; the original combined ledger retains those gaps.
 
-Composite CSS function `type(...)` signatures, color-profile rendering, and full paged-output behavior remain explicit acceptance gaps. Do not claim 100% at-rule support or enable the full-completion gate prematurely. Browser availability reports distinguish native experimental/legacy support from source emission.
+Composite CSS function `type(...)` signatures are implemented. Relative profile colors, rendering intents, complete paged-output behavior, and target reviews remain acceptance gaps. The full compiler gate is enabled and passed locally; its CI type-check subprocess currently exhausts the heap. Browser availability reports distinguish native experimental/legacy support from source emission.
 
 Accepted direction: [top-level stylesheet functions](../docs/api/web/at-rules.md), alongside native grouping keys in `css`/`variants`. Descriptor and statement rules do not become properties under `global`. This is Phase 2 standard-authoring follow-up after the existing framework/stylesheet/variable stack; current PR acceptance remains separate.
 
-- [ ] **2.5a — Inventory and Context Contracts:** pin the full MDN at-rule/descriptor inventory, including nested page/font rules and alternate forms. Set a 100% inventory-accounting gate immediately; keep implementation coverage separate and require 100% before claiming full support. Finalize ordered conditional/layered helper contexts, external names, query/profile references, and CSS-function signatures.
-- [ ] **2.5b — Nested Rules and Existing Helpers:** complete `@scope`, all media/supports/container forms including scroll-state queries, legal starting-style/layer contexts, all font-face descriptors, and named timeline-range keyframe stops. Preserve variant/compound inference and CSS nesting semantics.
-- [ ] **2.5c — Named Declarations:** add direct `counterStyle`, `positionTry`, `fontPaletteValues`, and `colorProfile` functions. Preserve domain-specific references through imports, aliases, re-exports, lists/shorthands, packed contracts, and rebuilds. Reuse variable registration from `Vars.define` without duplicating its API.
+- [x] **2.5a — Inventory and Context Contracts:** pin the full MDN at-rule/descriptor inventory, including nested page/font rules and alternate forms. Set a 100% inventory-accounting gate immediately; keep implementation coverage separate and require 100% before claiming full support. Finalize ordered conditional/layered helper contexts, external names, query/profile references, and CSS-function signatures.
+- [x] **2.5b — Nested Rules and Existing Helpers (compiler):** cover `@scope`, media/supports/container forms including scroll-state queries, legal starting-style/layer contexts, font-face descriptors, and named timeline-range keyframe stops in the compiler matrix. Preserve CSS nesting semantics. Renderer compatibility remains in 2.5f; variant/compound inference follows in Phase 3.
+- [x] **2.5c — Named Declarations:** add direct `counterStyle`, `positionTry`, `fontPaletteValues`, and `colorProfile` functions. Preserve domain-specific references through imports, aliases, re-exports, lists/shorthands, packed contracts, and rebuilds. Retain scalar registration through `Vars.define`; the `property` helper owns native composite/universal registration syntax.
 - [x] **2.5d — Document Declarations:** add `page`, all page-margin boxes, `fontFeatureValues` and its nested blocks, and `viewTransition`. Cover repeated calls, conditional/layered placement, eagerness, and CSS order.
-- [ ] **2.5e — Statements and CSS Functions:** add `importCss`, `namespace`, `customMedia`, and `cssFunction`; implement the output charset policy and explicit legacy `@document` support. Preserve namespace boundaries, relative URLs, import ordering/conditions, and CSS function parameter/result domains.
+- [x] **2.5e — Statements and CSS Functions:** add `importCss`, `namespace`, `customMedia`, and `cssFunction`; implement the output charset policy and explicit legacy `@document` support. Preserve namespace boundaries, relative URLs, import ordering/conditions, and CSS function parameter/result domains.
 - [ ] **2.5f — Full Acceptance:** require every rule, descriptor, nested form, and supported context to have type/extraction/emission/map evidence, packed-library and watch coverage, and applicable real-browser fixtures. Record experimental/legacy browser availability separately. Add source-owned diagnostics for unsupported native semantics and benchmark compiler/output changes. No runtime authoring validation.
 
 The existing property-conformance percentage does not measure at-rules. Extend the conformance workflow with reviewed upstream grammar fingerprints and per-rule evidence; new upstream entries and regressions must fail inventory checks. Do not mark missing implementations supported through generic string acceptance or raw passthrough.
@@ -415,7 +440,7 @@ The matrix is pinned to inventory grammar fingerprints. Unsupported targets neve
 
 ### At-rule Completion Follow-up
 
-Current follow-up: #103 encoding/profile groundwork → #104 composite functions and paged-output evidence → acceptance audit. This stack stops before Phase 3 and does not claim Phase 2.5 completion.
+The encoding/profile, composite-function, paged-output, and compiler acceptance follow-ups are merged through #107. Remaining work is CI reliability, target review, rendering evidence, and the broader Phase 2 acceptance audit.
 
 - [x] Pin UTF-8 output without BOM or generated `@charset`, including host bytes.
 - [x] Preserve public profile components and `color()` identities through packed imports.
@@ -423,7 +448,7 @@ Current follow-up: #103 encoding/profile groundwork → #104 composite functions
 - [x] Compare native PDF dimensions and drawing streams for named/pseudo-pages, counters, and all margin boxes.
 - [x] Verify basic ICC profile rendering in WeasyPrint and expose the public helper; retain relative-color and rendering-intent gaps.
 - [x] Review all 22 rules and 62 descriptor/nested entries for compiler grammar/context and packed/watch acceptance; keep renderer and target gaps separate.
-- [x] Make `pnpm check:at-rules:full` pass without removing inventory entries or clearing unverified gaps. Fresh type checking and all 184 named integration tests pass.
+- [x] Make `pnpm check:at-rules:full` pass without removing inventory entries or clearing unverified gaps. The recorded local run passed fresh type checking and all 184 named integration tests; current CI completion remains unchecked above.
 
 Completion follow-up: namespace acceptance now includes escaped/Unicode identifiers, last-declaration binding, source/packed maps, host watching, and native selector isolation. Font palette family lists survive the pinned parser and Vite minifiers; real color-font comparisons cover palette indexes, keyword fallbacks, repeated overrides, alpha, and wide-gamut colors. The full compiler gate passes for 22/22 rules and 62/62 descriptor/nested entries. Target and rendering reviews remain open.
 

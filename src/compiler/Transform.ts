@@ -9,7 +9,7 @@ import * as Expression from './internal/Expression.js'
 import MagicString from 'magic-string'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Namespaces from './internal/Namespaces.js'
-import * as Parser from 'oxc-parser'
+import * as Syntax from './internal/Syntax.js'
 import * as Source from './Source.js'
 import type * as Style from '../Style.js'
 import * as Themes from './internal/Themes.js'
@@ -35,10 +35,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   })
 
   const module = new MagicString(options.source)
-  const program = Parser.parseSync('source.tsx', options.source, {
-    preserveParens: false,
-    sourceType: 'module',
-  }).program
+  const program = Syntax.parse(options).program
 
   for (const call of extracted.contributionCalls ?? [])
     module.overwrite(
@@ -448,8 +445,6 @@ export function compile(options: compile.Options): compile.ReturnType {
     module.overwrite(alias.start, alias.end, `(${value}${assertion})`)
   }
 
-  if (compositions.length) module.prepend(compositions.join('\n') + '\n')
-
   const replacements = [
     ...extracted.calls.map((call) => ({
       end: applications.get(call.start)!.end,
@@ -607,6 +602,9 @@ export function compile(options: compile.Options): compile.ReturnType {
 
       offset = node.end
     }
+
+    if (compositions.length)
+      module.appendLeft(offset, '\n' + compositions.join('\n') + '\n')
 
     module.appendLeft(
       offset,

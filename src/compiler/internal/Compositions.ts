@@ -99,7 +99,13 @@ export function collect(options: collect.Options) {
   }
   const result: Entry[] = []
 
-  for (const node of nodes.reverse()) {
+  for (const node of nodes.sort((a, b) =>
+    a.start < b.start && a.end >= b.end
+      ? 1
+      : b.start < a.start && b.end >= a.end
+        ? -1
+        : a.start - b.start,
+  )) {
     const selected: Source.Call[] = []
     const inputs: NonNullable<Source.Call['runtimeComposition']>[number][] = []
     let runtime = false
@@ -140,10 +146,10 @@ export function collect(options: collect.Options) {
           attributes.set(attribute, owner.identity)
         }
       inputs.push({
-        start: value.start,
         end: value.end,
         name: call.name,
         owners: owned,
+        start: value.start,
         ...(condition !== undefined ? { condition } : {}),
       })
     }
@@ -163,6 +169,19 @@ export function collect(options: collect.Options) {
         ? bindings.resolve(resolved.right, nodes)
         : resolved
       runtime ||= conditional || resolved !== expression
+      if (
+        conditional &&
+        (undefinedReads.has(value.start) ||
+          (value.type === 'Literal' &&
+            (value.value === false || value.value === null)) ||
+          (value.type === 'UnaryExpression' &&
+            value.operator === 'void' &&
+            value.argument.type === 'Literal'))
+      )
+        throw new Themes.InvalidError(
+          'Conditional omissions must be evaluated outside composition.',
+          expression,
+        )
       if (undefinedReads.has(value.start)) continue
       if (
         value.type === 'Literal' &&
@@ -186,7 +205,7 @@ export function collect(options: collect.Options) {
           'Conditional composition results must remain direct arguments.',
           expression,
         )
-      if (nested?.compositionCases) {
+      if (nested?.compositionCases && nested.end === value.end) {
         if (conditional)
           throw new Themes.InvalidError(
             'Conditional nested compositions require flattening into one cx call.',
@@ -211,20 +230,27 @@ export function collect(options: collect.Options) {
         runtime = true
         continue
       }
-      if (nested?.composition || nested?.runtimeComposition) {
+      if (
+        nested?.end === value.end &&
+        (nested.composition || nested.runtimeComposition)
+      ) {
         selected.push(nested)
         guards.push(...(nested.composition ?? []))
         input(nested, expression, condition)
         runtime ||= !!nested.runtimeComposition
         continue
       }
-      const application = applied.get(value.start)
+      const found = applied.get(value.start)
+      const application = found?.end === value.end ? found : undefined
       const call = application
         ? byName.get(application.name)
         : value.callee.type === 'CallExpression'
-          ? calls.get(value.callee.start)
+          ? (() => {
+              const call = calls.get(value.callee.start)
+              return call?.end === value.callee.end ? call : undefined
+            })()
           : undefined
-      if (!call)
+      if (!call || call.composition || call.runtimeComposition)
         throw new Themes.InvalidError(
           'Composition requires statically known local style applications.',
           value,
@@ -260,6 +286,42 @@ export function collect(options: collect.Options) {
     const identities = selected.flatMap((call) =>
       call.identity ? [call.identity] : [],
     )
+    function properties(
+      call: Source.Call,
+      body = call.body ?? bodies.get(call.start),
+    ): Ast.ObjectExpression['properties'] {
+      return (
+        body?.properties.flatMap<Ast.ObjectExpression['properties'][number]>(
+          (property) => {
+            if (property.type !== 'Property') return [property]
+            const value = Expression.unwrap(property.value)
+            if (value.type === 'ObjectExpression')
+              return [
+                {
+                  ...property,
+                  value: { ...value, properties: properties(call, value) },
+                },
+              ]
+            const key =
+              property.key.type === 'Identifier'
+                ? property.key.name
+                : property.key.type === 'Literal'
+                  ? String(property.key.value)
+                  : ''
+            return (call.shorthands?.[key] ?? [key]).map((key) => ({
+              ...property,
+              key: {
+                type: 'Literal' as const,
+                raw: JSON.stringify(key),
+                value: key,
+                start: property.key.start,
+                end: property.key.end,
+              },
+            }))
+          },
+        ) ?? []
+      )
+    }
     const call: Source.Call = {
       name,
       start: node.start,
@@ -269,9 +331,7 @@ export function collect(options: collect.Options) {
         type: 'ObjectExpression',
         start: node.start,
         end: node.end,
-        properties: selected.flatMap(
-          (call) => (call.body ?? bodies.get(call.start))?.properties ?? [],
-        ),
+        properties: selected.flatMap((call) => properties(call)),
       },
       ...(selected[0]?.output ? { output: selected[0].output } : {}),
       ...(identities.length ? { identity: identities.join(' ') } : {}),
@@ -296,9 +356,7 @@ export function collect(options: collect.Options) {
           compositionCase: true,
           body: {
             ...call.body!,
-            properties: included.flatMap(
-              (call) => (call.body ?? bodies.get(call.start))?.properties ?? [],
-            ),
+            properties: included.flatMap((call) => properties(call)),
           },
           identity: included
             .flatMap((call) => (call.identity ? [call.identity] : []))
@@ -319,7 +377,15 @@ export function collect(options: collect.Options) {
     calls.set(node.start, composed)
     result.push({ call: composed, style, ...(cases.length ? { cases } : {}) })
   }
-  return result
+  return result.filter(
+    ({ call }) =>
+      !result.some(
+        ({ call: other }) =>
+          !!other.composition &&
+          other.start < call.start &&
+          other.end >= call.end,
+      ),
+  )
 }
 
 /** Static composition extraction inputs. */

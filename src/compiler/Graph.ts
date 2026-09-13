@@ -8,6 +8,7 @@ import type * as Mapping from '@jridgewell/gen-mapping'
 import * as Css from '../web/Css.js'
 import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
+import * as Syntax from './internal/Syntax.js'
 import * as Walker from 'oxc-walker'
 import type * as Theme from '../Theme.js'
 import type * as Token from '../internal/Token.js'
@@ -387,10 +388,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     // Validate identity and syntax through the public source boundary before linking.
     Source.extract({ moduleId, source: '' })
 
-    const parsed = Parser.parseSync('source.tsx', source, {
-      sourceType: 'module',
-      showSemanticErrors: true,
-    })
+    const parsed = Syntax.parse({ moduleId, source })
 
     if (parsed.errors.length) Source.extract({ moduleId, source })
     factoryPrograms.set(moduleId, parsed.program)
@@ -728,8 +726,9 @@ function build(options: compile.Options, cache?: Cache): Cache {
   const resetOwners = ids.filter(
     (id) =>
       options.modules[id]!.includes('zyzz/reset.css') &&
-      Parser.parseSync('source.tsx', options.modules[id]!, {
-        sourceType: 'module',
+      Syntax.parse({
+        moduleId: id,
+        source: options.modules[id]!,
       }).program.body.some(
         (node) =>
           node.type === 'ImportDeclaration' &&

@@ -3,12 +3,74 @@ import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import { parseSync } from 'oxc-parser'
 import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
 
 describe('cx', () => {
+  test('preserves hashbangs and client directives before runtime factories', async () => {
+    const source = `#!/usr/bin/env node
+'use client';
+import {css,cx} from 'zyzz'; const a=css((values:{padding:string})=>({padding:values.padding})); type Input=Parameters<typeof a>[0]; export const apply=()=>cx(a({padding:'4px'}));`
+    const output = Transform.compile({ moduleId: 'client.ts', source })
+    expect(output.code.startsWith('#!/usr/bin/env node')).toMatchInlineSnapshot(
+      'true',
+    )
+    const program = parseSync('client.ts', output.code).program
+    const first = program.body[0]
+    expect(
+      first?.type === 'ExpressionStatement' && first.directive,
+    ).toMatchInlineSnapshot('"use client"')
+    await Esbuild.transform(output.code, { loader: 'ts' })
+  })
+
+  test('diagnoses conditional omissions without dropping evaluation', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'effect.ts',
+        source: `import {css,cx} from 'zyzz';const a=css({color:'red'});export const apply=()=>cx(effect() && null,a());`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: effect.ts:81: Conditional omissions must be evaluated outside composition.]`,
+    )
+  })
+
+  test('retains authored sibling composition cascade order', async () => {
+    const output = Transform.compile({
+      moduleId: 'siblings.ts',
+      source: `import {css,cx} from 'zyzz'; const a=css({color:'red'});const b=css({color:'blue'});export const first=cx(a());export const second=cx(b());`,
+    })
+    const bundled = await Esbuild.build({
+      stdin: { contents: output.code, loader: 'ts', resolveDir: process.cwd() },
+      alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+      bundle: true,
+      format: 'iife',
+      globalName: 'App',
+      write: false,
+    })
+    const browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox'],
+    })
+    try {
+      const page = await browser.newPage()
+      await page.setContent(`<style>${output.css}</style><div></div>`)
+      await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+      await page.evaluate(
+        `document.querySelector('div').className=App.first.className+' '+App.second.className`,
+      )
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('merges bindings in argument order and clears repeated recipe ownership', async () => {
     const source = `import {css,cx,variants} from 'zyzz';
       namespace styles {
@@ -56,68 +118,120 @@ describe('cx', () => {
         const style=getComputedStyle(element);
         return {padding:style.padding,color:style.color,keys:Object.keys(props).sort(),slots:Object.keys(props.style??{}).length};
       }`)
-      expect(await page.evaluate("read(App.apply('16px'))")).toEqual({
-        padding: '16px 16px 16px 3px',
-        color: 'rgb(0, 0, 0)',
-        keys: ['className', 'style'],
-        slots: 1,
-      })
-      expect(await page.evaluate('read(App.optional(false))')).toEqual({
-        padding: '8px',
-        color: 'rgb(0, 0, 0)',
-        keys: ['className', 'style'],
-        slots: 1,
-      })
-      expect(await page.evaluate('read(App.optional(true))')).toEqual({
-        padding: '8px 8px 8px 3px',
-        color: 'rgb(0, 0, 0)',
-        keys: ['className', 'style'],
-        slots: 1,
-      })
-      expect(await page.evaluate('read(App.nestedOptional(false))')).toEqual({
-        padding: '7px',
-        color: 'rgb(0, 0, 0)',
-        keys: ['className', 'style'],
-        slots: 1,
-      })
-      expect(await page.evaluate('read(App.nestedOptional(true))')).toEqual({
-        padding: '7px 7px 7px 3px',
-        color: 'rgb(0, 0, 0)',
-        keys: ['className', 'style'],
-        slots: 1,
-      })
-      expect(await page.evaluate('read(App.inline())')).toEqual({
-        padding: '24px',
-        color: 'rgb(0, 0, 0)',
-        keys: ['className', 'style'],
-        slots: 3,
-      })
+      expect(await page.evaluate("read(App.apply('16px'))"))
+        .toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 0, 0)",
+          "keys": [
+            "className",
+            "style",
+          ],
+          "padding": "16px 16px 16px 3px",
+          "slots": 1,
+        }
+      `)
+      expect(await page.evaluate('read(App.optional(false))'))
+        .toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 0, 0)",
+          "keys": [
+            "className",
+            "style",
+          ],
+          "padding": "8px",
+          "slots": 1,
+        }
+      `)
+      expect(await page.evaluate('read(App.optional(true))'))
+        .toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 0, 0)",
+          "keys": [
+            "className",
+            "style",
+          ],
+          "padding": "8px 8px 8px 3px",
+          "slots": 1,
+        }
+      `)
+      expect(await page.evaluate('read(App.nestedOptional(false))'))
+        .toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 0, 0)",
+          "keys": [
+            "className",
+            "style",
+          ],
+          "padding": "7px",
+          "slots": 1,
+        }
+      `)
+      expect(await page.evaluate('read(App.nestedOptional(true))'))
+        .toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 0, 0)",
+          "keys": [
+            "className",
+            "style",
+          ],
+          "padding": "7px 7px 7px 3px",
+          "slots": 1,
+        }
+      `)
+      expect(await page.evaluate('read(App.inline())')).toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 0, 0)",
+          "keys": [
+            "className",
+            "style",
+          ],
+          "padding": "24px",
+          "slots": 3,
+        }
+      `)
       expect(
         await page.evaluate(
           "document.querySelector('button').classList.contains('external')",
         ),
-      ).toBe(true)
-      expect(await page.evaluate('read(App.repeat())')).toEqual({
-        padding: '12px',
-        color: 'rgb(0, 0, 0)',
-        keys: ['className', 'style'],
-        slots: 1,
-      })
-      expect(await page.evaluate('read(App.clear())')).toEqual({
-        padding: '0px',
-        color: 'rgb(0, 0, 0)',
-        keys: ['className'],
-        slots: 0,
-      })
-      expect(await page.evaluate('read(App.nested())')).toEqual({
-        padding: '9px 9px 9px 3px',
-        color: 'rgb(255, 0, 0)',
-        keys: ['className', 'data-tone', 'style'],
-        slots: 1,
-      })
+      ).toMatchInlineSnapshot(`true`)
+      expect(await page.evaluate('read(App.repeat())')).toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 0, 0)",
+          "keys": [
+            "className",
+            "style",
+          ],
+          "padding": "12px",
+          "slots": 1,
+        }
+      `)
+      expect(await page.evaluate('read(App.clear())')).toMatchInlineSnapshot(`
+        {
+          "color": "rgb(0, 0, 0)",
+          "keys": [
+            "className",
+          ],
+          "padding": "0px",
+          "slots": 0,
+        }
+      `)
+      expect(await page.evaluate('read(App.nested())')).toMatchInlineSnapshot(`
+        {
+          "color": "rgb(255, 0, 0)",
+          "keys": [
+            "className",
+            "data-tone",
+            "style",
+          ],
+          "padding": "9px 9px 9px 3px",
+          "slots": 1,
+        }
+      `)
       expect(
-        await page.evaluate(() => document.styleSheets[0]!.cssRules.length),
-      ).toBe(count)
+        (await page.evaluate(
+          () => document.styleSheets[0]!.cssRules.length,
+        )) === count,
+      ).toMatchInlineSnapshot('true')
     } finally {
       await browser.close()
     }
@@ -178,26 +292,49 @@ describe('cx', () => {
       await page.evaluate(
         `window.read=(props)=>{const element=document.querySelector('button');for(const name of element.getAttributeNames())element.removeAttribute(name);for(const [name,value] of Object.entries(props))element.setAttribute(name,value);const style=getComputedStyle(element);return [style.padding,style.color,element.getAttributeNames().sort()]}`,
       )
-      expect(await page.evaluate('read(App.props(true))')).toEqual([
-        '16px 16px 16px 3px',
-        'rgb(0, 0, 255)',
-        ['class', 'data-tone', 'style'],
-      ])
-      expect(await page.evaluate('read(App.props(false))')).toEqual([
-        '16px',
-        'rgb(0, 0, 255)',
-        ['class', 'data-tone', 'style'],
-      ])
-      expect(await page.evaluate('read(App.clear())')).toEqual([
-        '0px',
-        'rgb(0, 0, 0)',
-        ['class'],
-      ])
-      expect(await page.evaluate('read(App.nested())')).toEqual([
-        '12px',
-        'rgb(0, 0, 0)',
-        ['class', 'style'],
-      ])
+      expect(await page.evaluate('read(App.props(true))'))
+        .toMatchInlineSnapshot(`
+        [
+          "16px 16px 16px 3px",
+          "rgb(0, 0, 255)",
+          [
+            "class",
+            "data-tone",
+            "style",
+          ],
+        ]
+      `)
+      expect(await page.evaluate('read(App.props(false))'))
+        .toMatchInlineSnapshot(`
+        [
+          "16px",
+          "rgb(0, 0, 255)",
+          [
+            "class",
+            "data-tone",
+            "style",
+          ],
+        ]
+      `)
+      expect(await page.evaluate('read(App.clear())')).toMatchInlineSnapshot(`
+        [
+          "0px",
+          "rgb(0, 0, 0)",
+          [
+            "class",
+          ],
+        ]
+      `)
+      expect(await page.evaluate('read(App.nested())')).toMatchInlineSnapshot(`
+        [
+          "12px",
+          "rgb(0, 0, 0)",
+          [
+            "class",
+            "style",
+          ],
+        ]
+      `)
     } finally {
       await browser.close()
     }
@@ -209,13 +346,17 @@ describe('cx', () => {
         moduleId: 'limit.ts',
         source: `import {css,cx} from 'zyzz';const a=css({color:'red'});export const props=(enabled:boolean)=>cx(${Array.from({ length: 9 }, () => 'enabled && a()').join(',')});`,
       }),
-    ).toThrow('eight conditional arguments')
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: limit.ts:93: Composition supports at most eight conditional arguments.]`,
+    )
     expect(() =>
       Transform.compile({
         moduleId: 'mixed.ts',
         source: `import {css,cx,Config} from 'zyzz';const {css:html}=Config.create({output:'html'});const a=css({color:'red'});const b=html({color:'blue'});export const props=cx(a(),b());`,
       }),
-    ).toThrow('mix HTML and React')
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: mixed.ts:158: Composition cannot mix HTML and React props.]`,
+    )
   })
 
   test('reports conflicting recipe attribute owners at compilation', () => {
@@ -224,6 +365,8 @@ describe('cx', () => {
         moduleId: 'bad.ts',
         source: `import {cx,variants} from 'zyzz';const a=variants({variants:{tone:{red:{color:'red'}}}});const b=variants({variants:{tone:{blue:{color:'blue'}}}});export const props=cx(a(),b());`,
       }),
-    ).toThrow('conflicting owners')
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: bad.ts:173: Recipe attribute data-tone has conflicting owners.]`,
+    )
   })
 })

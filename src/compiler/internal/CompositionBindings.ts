@@ -10,12 +10,15 @@ export function create(options: create.Options) {
   const references = new Map<number, number>()
   const parents = new Map<Ast.Node, Ast.Node>()
   const reads = new Map<number, Ast.Node[]>()
+  const exported = new Set<number>()
+  let evaluation = false
 
   function safe(
     binding: number,
     ranges: readonly Ast.CallExpression[],
     seen = new Set<number>(),
   ): boolean {
+    if (evaluation || exported.has(binding)) return false
     if (seen.has(binding)) return true
     seen.add(binding)
     return (reads.get(binding) ?? []).every((node) => {
@@ -23,6 +26,7 @@ export function create(options: create.Options) {
       let container = parents.get(current)
       while (
         container?.type === 'TSAsExpression' ||
+        container?.type === 'TSTypeAssertion' ||
         container?.type === 'TSSatisfiesExpression' ||
         container?.type === 'TSNonNullExpression' ||
         (container?.type === 'LogicalExpression' &&
@@ -38,18 +42,12 @@ export function create(options: create.Options) {
         container.arguments.includes(current as Ast.Expression)
       )
         return true
-      let parent = parents.get(node)
+      const parent = container
       if (
         parent?.type === 'JSXSpreadAttribute' ||
         parent?.type === 'TSTypeQuery'
       )
         return true
-      while (
-        parent?.type === 'TSAsExpression' ||
-        parent?.type === 'TSSatisfiesExpression' ||
-        parent?.type === 'TSNonNullExpression'
-      )
-        parent = parents.get(parent)
       return (
         parent?.type === 'VariableDeclarator' &&
         declarations.has(parent.start) &&
@@ -61,10 +59,20 @@ export function create(options: create.Options) {
   return {
     enter(node: Ast.Node, parent: Ast.Node | null | undefined) {
       if (parent) parents.set(node, parent)
+      if (
+        node.type === 'CallExpression' &&
+        node.callee.type === 'Identifier' &&
+        node.callee.name === 'eval' &&
+        !options.declaration('eval')
+      )
+        evaluation = true
       if (node.type === 'VariableDeclaration' && node.kind === 'const')
         for (const declaration of node.declarations)
-          if (declaration.id.type === 'Identifier' && declaration.init)
+          if (declaration.id.type === 'Identifier' && declaration.init) {
             declarations.set(declaration.start, declaration)
+            if (parent?.type === 'ExportNamedDeclaration')
+              exported.add(declaration.start)
+          }
       if (
         node.type !== 'Identifier' ||
         !parent ||

@@ -19,6 +19,11 @@ export type Condition = {
 /** Resolves theme thresholds and derives a logical complement without evaluation. */
 export function read(options: read.Options): Condition {
   const { name, node } = options
+  if (name === '__proto__')
+    throw new Themes.InvalidError(
+      'Recipe condition names cannot use __proto__.',
+      node,
+    )
   if (node.type !== 'Literal' || typeof node.value !== 'string')
     throw new Themes.InvalidError(
       'Recipe conditions require static media or supports strings.',
@@ -34,7 +39,9 @@ export function read(options: read.Options): Condition {
         containers: {},
       },
     )
-    const match = /^@(media|supports)\s+([\s\S]+)$/.exec(rule)
+    const match = /^@(media|supports)(?=[\s(])\s*([\s\S]+)$/.exec(
+      rule.replace(/\/\*[\s\S]*?\*\//g, ' '),
+    )
     if (!match)
       throw new Error('Recipe conditions support only @media and @supports.')
 

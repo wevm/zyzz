@@ -106,3 +106,19 @@ styles.button({ size: 'lg' })['data-size']
 ## Errors
 
 Executing untransformed authoring throws `variants.MissingTransformError`. Compilation reports unsupported structures and invalid authored selections at their source locations. Static types reject invalid application inputs; runtime selection performs no validation.
+
+## Bound aliases
+
+Bound aliases and re-exports retain their contracts through source graphs and packed libraries. Packed recipe-authoring aliases require version 15 metadata; older consumers must upgrade to read that contract. Existing CSS-only contracts retain their earlier versions.
+
+Theme helpers can share a module-level `const` destructuring declaration, including renamed bindings:
+
+```ts
+import { Theme } from 'zyzz'
+
+const theme = Theme.define({ color: { brand: '#06c' } })
+const { css: style, variants: recipe } = theme
+export { style, recipe }
+```
+
+Both helpers keep their own token-aware signatures through aliases and re-exports. Destructuring defaults, rest properties, computed keys, and nested patterns produce source diagnostics.

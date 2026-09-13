@@ -50,7 +50,6 @@ describe('zyzz', () => {
             .locator('main')
             .evaluate((node) => getComputedStyle(node).backgroundColor),
         ).toMatchInlineSnapshot('"rgb(255, 255, 255)"')
-        await page.getByRole('button', { name: 'Always mint + dark' }).hover()
 
         expect(
           await page
@@ -198,6 +197,24 @@ describe('zyzz', () => {
             () => document.documentElement.scrollWidth <= innerWidth,
           ),
         ).toMatchInlineSnapshot('true')
+        await page.getByTestId('parent-theme').scrollIntoViewIfNeeded()
+        await page.getByRole('button', { name: 'Parent: mint' }).click()
+
+        expect(
+          await page
+            .getByRole('button', { name: 'Parent: indigo' })
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot('"rgb(67, 56, 202)"')
+        expect(
+          await page
+            .getByRole('button', { name: 'Always mint + dark' })
+            .evaluate((node) => getComputedStyle(node).color),
+        ).toMatchInlineSnapshot('"rgb(110, 231, 183)"')
+        expect(
+          await page
+            .getByTestId('nested-theme')
+            .evaluate((node) => getComputedStyle(node).backgroundColor),
+        ).toMatchInlineSnapshot('"rgb(24, 24, 24)"')
         expect(errors).toMatchInlineSnapshot('[]')
       } finally {
         await page.close()

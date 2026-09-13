@@ -43,9 +43,14 @@ namespace styles {
 
   export const nested = css({
     backgroundColor: 'surface',
+    border: '1px solid',
+    borderColor: 'line',
     color: 'text',
+    marginTop: 'sm',
     padding: 'md',
   })
+
+  export const sample = css({ color: 'accent' })
 
   export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
 
@@ -130,13 +135,25 @@ export function App() {
             <Queries />
             <Motion />
             <Stylesheets />
-            <section {...themes({ theme: 'mint', colorScheme: 'dark' })}>
-              <div {...styles.nested()}>
-                <h2>Nested theme</h2>
-                <button {...styles.button()}>Always mint + dark</button>
-                <p {...styles.muted()}>
-                  The same styles inherit an independent scope.
-                </p>
+            <section {...styles.section()}>
+              <h2>Nested theme</h2>
+              <p {...styles.muted()}>
+                Tap the parent button. The nested theme stays mint and dark.
+              </p>
+              <div {...styles.nested()} data-testid="parent-theme">
+                <button
+                  {...styles.sample()}
+                  onClick={() =>
+                    setAppearance(appearance === 'indigo' ? 'mint' : 'indigo')
+                  }
+                >
+                  Parent: {appearance}
+                </button>
+                <div {...themes({ theme: 'mint', colorScheme: 'dark' })}>
+                  <div {...styles.nested()} data-testid="nested-theme">
+                    <button {...styles.sample()}>Always mint + dark</button>
+                  </div>
+                </div>
               </div>
             </section>
             <Advanced />

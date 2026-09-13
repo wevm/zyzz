@@ -1,8 +1,9 @@
-/** Declares typed CSS variables with static references and inline assignments. @module */
+/** Declares optionally typed CSS variables with static references and inline assignments. @module */
 import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 
-/** Declares one compiler-owned custom property, optionally registered with CSS @property. */
+/** Declares a custom property. Omitting the domain accepts any string or number; typed options register CSS @property. */
+export function variable(): variable.Reference<'*'>
 export function variable<const kind extends Binding.Kind>(
   kind: kind,
 ): variable.Reference<kind>
@@ -22,7 +23,7 @@ export function variable<
           : unknown)
     },
 ): variable.Reference<kind>
-export function variable(kind: Binding.Kind, options?: unknown): never {
+export function variable(kind?: Binding.Kind, options?: unknown): never {
   void kind
   void options
   throw new MissingTransformError()
@@ -41,12 +42,12 @@ export declare namespace variable {
     /** Matching CSS syntax; inferred from the domain when omitted. */
     readonly syntax?: Syntax<kind> | undefined
   }
-  /** Opaque computed key and typed declaration reference; never a runtime CSS string. */
-  type Reference<kind extends Binding.Kind = Binding.Kind> = string &
+  /** Opaque computed key and declaration reference; the untyped domain accepts any scalar. */
+  type Reference<kind extends Binding.Domain = Binding.Domain> = string &
     Binding.Reference<kind> & {
       /** Produces one inline custom-property assignment without runtime value validation. */
       readonly set: <const value extends Binding.Value<kind>>(
-        value: value & Literal.Checked<value>,
+        value: value & (kind extends '*' ? unknown : Literal.Checked<value>),
       ) => Readonly<Record<`--${string}`, value>>
     }
 }

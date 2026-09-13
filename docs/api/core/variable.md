@@ -1,6 +1,6 @@
 # variable
 
-Declare one typed CSS variable, reference it in styles, and assign values per element.
+Declare one optionally typed CSS variable, reference it in styles, and assign values per element.
 
 ```tsx
 import { css, variable } from 'zyzz'
@@ -21,7 +21,7 @@ namespace styles {
 
 function Label() {
   return (
-    <span style={styles.label({ style: variables.accent.set('blue') })}>
+    <span {...styles.label({ variables: { [variables.accent]: 'blue' } })}>
       Hello
     </span>
   )
@@ -30,23 +30,31 @@ function Label() {
 
 ## Signature
 
-`variable(kind)` or `variable(kind, options)`
+`variable()`, `variable(kind)`, or `variable(kind, options)`
 
 ## Parameters
 
 ### kind
 
 - Type: `color | length | number | percentage | signedLength | signedPercentage`
-- Required: Yes.
+- Required: No.
 
-The scalar domain constrains compatible CSS declarations and `.set(value)` assignments. `length` and `percentage` are nonnegative; signed domains permit negative dimensions. A `number` reference can only supply properties accepting unconstrained numeric values.
+Omitting `kind` creates an unconstrained reference usable in any CSS declaration. Its `.set(value)` accepts strings or numbers; CSS value compatibility is left to the browser.
+
+```ts
+const value = variable()
+css({ color: value })
+value.set('tomato')
+```
+
+An explicit scalar domain constrains compatible CSS declarations and `.set(value)` assignments. `length` and `percentage` are nonnegative; signed domains permit negative dimensions. A `number` reference can only supply properties accepting unconstrained numeric values.
 
 ### options
 
 - Type: `variable.Options<kind>`
 - Default: Omitted; no registration is emitted.
 
-Providing options emits CSS `@property` using the same generated variable name.
+Options require an explicit `kind`. Providing options emits CSS `@property` using the same generated variable name.
 
 ```ts
 const gap = variable('length', {
@@ -82,6 +90,16 @@ Both signed and unsigned length domains emit `<length>`; percentage domains emit
 
 An opaque reference usable as a declaration value, in template expressions, and as a computed key inside `variables`. Names are compiler-owned. Ordinary namespaces or objects can group independent references.
 
+## Inline Assignments
+
+Pass `variables` to the generated style callable using the same computed keys as static declarations. Values are returned under `style` (or serialized for HTML output); no rules are generated. Explicit `style` overrides win on duplicate keys. Inputs remain unchanged.
+
+```ts
+styles.label({ variables: { [variables.accent]: 'blue' } })
+```
+
+Values may be strings, numbers, or `undefined` to omit an inline assignment. Computed keys lose individual domain information in TypeScript here too.
+
 ### set
 
 `reference.set(value)` returns a frozen inline custom-property assignment object. The method can be detached. Assignments preserve the variable's domain through TypeScript and perform no runtime value validation or CSS generation.
@@ -100,7 +118,7 @@ The `variables` property emits static custom-property declarations in authored o
 
 Declare variables in module-level constants or namespaces before use. References preserve their identities through aliases, imports, re-exports, and packed libraries. Factories and registration options are compiled without evaluating application code. Native bindings remain unsupported.
 
-This API replaces `variable()` and contract-level `.set(values)`. Recompile packed libraries using the new API; variable metadata uses contract version 14.
+This API replaces `Vars.define` and contract-level `.set(values)`. Recompile packed libraries using the new API; variable metadata uses contract version 14.
 
 ## Errors
 

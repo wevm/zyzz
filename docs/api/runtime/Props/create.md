@@ -34,7 +34,7 @@ The returned callable accepts the [application parameters](../../core/css.md#app
 
 - Type: `css.ReturnType`
 
-Callable accepting only className and style overrides, and returning forwarded inline overrides.
+Callable accepting className, style, and variables overrides. Variables merge into returned inline styles before explicit style overrides.
 
 ```ts
 const props = card({ style: { padding: '1rem' } })

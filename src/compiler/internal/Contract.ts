@@ -83,6 +83,7 @@ export function read(
             names.has(string(slot.name)) ||
             !/^--z-v[a-z0-9-]+$/.test(string(slot.name)) ||
             ![
+              '*',
               'color',
               'length',
               'number',
@@ -99,7 +100,7 @@ export function read(
             key,
             Object.freeze({
               name: slot.name as `--${string}`,
-              type: slot.type as Binding.Kind,
+              type: slot.type as Binding.Domain,
               variable: true as const,
             }),
           ]

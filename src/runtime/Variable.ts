@@ -3,7 +3,7 @@ import type * as Binding from '../internal/Binding.js'
 import type { variable } from '../variable.js'
 
 /** Creates an immutable reference with no CSS generation or value validation. */
-export function create<kind extends Binding.Kind>(
+export function create<kind extends Binding.Domain>(
   slot: Binding.Reference<kind>,
 ): variable.Reference<kind> {
   const { name } = slot

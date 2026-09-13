@@ -58,9 +58,15 @@ export function read(
       member.optional ||
       !member.typeAnnotation ||
       key === undefined ||
-      ['class', 'className', 'key', 'ref', 'style', '__proto__'].includes(
-        key,
-      ) ||
+      [
+        'class',
+        'className',
+        'key',
+        'ref',
+        'style',
+        'variables',
+        '__proto__',
+      ].includes(key) ||
       Object.hasOwn(slots, key)
     )
       throw new Themes.InvalidError(

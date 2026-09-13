@@ -155,16 +155,22 @@ export function collect(
   for (const call of factories) {
     const domain = call.arguments[0] && Expression.unwrap(call.arguments[0])
     const value = call.arguments[1] && Expression.unwrap(call.arguments[1])
-    const kind = domain?.type === 'Literal' ? domain.value : undefined
+    const kind = (() => {
+      if (call.arguments.length === 0) return '*'
+      if (domain?.type === 'Literal') return domain.value
+      return undefined
+    })()
+
     if (
-      ![
-        'color',
-        'length',
-        'number',
-        'percentage',
-        'signedLength',
-        'signedPercentage',
-      ].includes(String(kind)) ||
+      (call.arguments.length !== 0 &&
+        ![
+          'color',
+          'length',
+          'number',
+          'percentage',
+          'signedLength',
+          'signedPercentage',
+        ].includes(String(kind))) ||
       call.arguments.length > 2 ||
       (value && value.type !== 'ObjectExpression')
     )
@@ -257,7 +263,7 @@ export function collect(
 
     const slot = Object.freeze({
       name,
-      type: kind as Binding.Kind,
+      type: kind as Binding.Domain,
       variable: true as const,
     })
     const entry = Object.freeze({

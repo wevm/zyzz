@@ -6,10 +6,10 @@ import type { css } from '../css.js'
 
 /**
  * Binds compiled classes to the web styling override contract.
- * Returns fresh props and forwards unchanged inline styles by reference.
+ * Returns fresh props; without variable assignments, inline styles retain their identity.
  * Never generates rules or changes the supplied overrides.
  * @param options - Classes emitted by a compiler.
- * @returns A callable accepting only className and style.
+ * @returns A callable accepting className, style, and variables.
  */
 export function create(options: create.Options): css.ReturnType {
   const { className } = options
@@ -17,13 +17,14 @@ export function create(options: create.Options): css.ReturnType {
   return ((overrides?: css.Options) => {
     if (overrides === undefined) return { className }
 
-    const { className: external, style } = overrides
+    const { className: external, style, variables } = overrides
+    const inline = variables === undefined ? style : { ...variables, ...style }
     const merged =
       className && external ? `${className} ${external}` : external || className
 
-    return style === undefined
+    return inline === undefined
       ? { className: merged }
-      : { className: merged, style }
+      : { className: merged, style: inline }
   }) as css.ReturnType
 }
 

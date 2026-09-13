@@ -528,6 +528,7 @@ export class InvalidError extends Error {
 type LiteralAtoms = {
   readonly [property in keyof Literal.Properties]-?: Value.Atom<
     | Exclude<Literal.Properties[property], undefined>
+    | Binding.Reference<'*'>
     | {
         [kind in Binding.Kind]: property extends Binding.Properties<kind>
           ? Binding.Reference<kind>

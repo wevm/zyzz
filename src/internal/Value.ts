@@ -62,10 +62,12 @@ type Fold<value> = value extends string
 /** Refines concrete scalar spellings; already-broad property contracts need no literal refinement. */
 export type Checked<style, tokens = {}> = {
   [property in keyof style]: style[property] extends string & Binding.Reference
-    ? Checked<
-        { [key in property]: Binding.Reference<style[property]['type']> },
-        tokens
-      >[property]
+    ? style[property] extends Binding.Reference<'*'>
+      ? unknown
+      : Checked<
+          { [key in property]: Binding.Reference<style[property]['type']> },
+          tokens
+        >[property]
     : Literal.Properties extends style
       ? unknown
       : RuleReference.Check<style[property], property> &

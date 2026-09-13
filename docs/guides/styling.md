@@ -158,7 +158,7 @@ Finite local type aliases, interfaces without inheritance, and object intersecti
 
 ### CSS Variables
 
-Use `variable()` for reusable CSS variables. Static assignments belong under `variables`; `.set()` supplies typed per-instance values.
+Use `variable()` for reusable CSS variables. Use `variables` in both definitions and applications: definitions emit static CSS, while applications return inline assignments.
 
 ```tsx
 import { css, variable } from 'zyzz'
@@ -176,7 +176,7 @@ namespace styles {
 
 function Label() {
   return (
-    <span style={styles.label({ style: variables.accent.set('blue') })}>
+    <span {...styles.label({ variables: { [variables.accent]: 'blue' } })}>
       Hello
     </span>
   )

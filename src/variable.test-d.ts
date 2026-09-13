@@ -1,8 +1,52 @@
 /** Checks scalar references, assignment domains, and nested authoring through public APIs. @module */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { css, variable } from 'zyzz'
+import { Config, css, variable } from 'zyzz'
 
 describe('variable', () => {
+  test('accepts untyped references and scalar inline values', () => {
+    const value = variable()
+
+    css({
+      color: value,
+      width: value,
+      display: value,
+      boxShadow: value,
+      zIndex: value,
+    })
+    css({
+      variables: { [value]: 'inline-flex' },
+      selectors: { '&:hover': { display: value } },
+    })
+    css({ width: `calc(${value} * 2)` })
+    value.set('inline-flex')
+    value.set('1px 2px red')
+    value.set(42)
+    const style = css({ display: value })
+    style({ variables: { [value]: 'grid' } })
+    style({ variables: { [value]: undefined } })
+    const dynamic = css((input: { opacity: number }) => ({
+      opacity: input.opacity,
+    }))
+    dynamic({ opacity: 0.5, variables: { [value]: 42 } })
+    const { css: htmlCss } = Config.create({ output: 'html' })
+    htmlCss({ display: value })({ variables: { [value]: 'flex' } })
+
+    // @ts-expect-error Variable assignments must be scalar.
+    style({ variables: { [value]: true } })
+    // @ts-expect-error Literal variable names must be custom properties.
+    style({ variables: { color: 'red' } })
+    // @ts-expect-error Variable assignments are a reserved styling override.
+    css((input: { variables: number }) => ({ opacity: input.variables }))
+    expectTypeOf(value.set('blue')).toEqualTypeOf<
+      Readonly<Record<`--${string}`, 'blue'>>
+    >()
+
+    // @ts-expect-error Assignments still require a scalar.
+    value.set({ color: 'red' })
+    // @ts-expect-error Registration requires an explicit domain.
+    variable({ inherits: true, initialValue: 'red' })
+  })
+
   test('infers independent references and inline assignments', () => {
     const accent = variable('color')
     const gap = variable('length')

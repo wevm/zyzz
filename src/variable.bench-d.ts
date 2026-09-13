@@ -28,7 +28,7 @@ bench('define / shorthand kinds', () => {
     ...slots['signed'].set('-12px'),
     ...slots['size'].set('12px'),
   }
-}).types([2633, 'instantiations'])
+}).types([2653, 'instantiations'])
 
 bench('define / registered descriptors', () => {
   void {
@@ -36,7 +36,7 @@ bench('define / registered descriptors', () => {
     gap: variable('length', { inherits: true, initialValue: '4px' }),
     offset: variable('signedLength', { inherits: false, initialValue: '-1px' }),
   }
-}).types([29379, 'instantiations'])
+}).types([29391, 'instantiations'])
 
 bench('define / declaration references', () => {
   const slots = {
@@ -46,4 +46,12 @@ bench('define / declaration references', () => {
   }
 
   css({ marginLeft: slots.signed, opacity: slots.count, padding: slots.size })
-}).types([313838, 'instantiations'])
+}).types([313465, 'instantiations'])
+
+bench('define / untyped references', () => {
+  const value = variable()
+
+  css({ display: value, boxShadow: value, zIndex: value })
+  value.set('inline-flex')
+  value.set(42)
+}).types([439172, 'instantiations'])

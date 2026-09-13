@@ -8,6 +8,20 @@ import type * as Style from './Style.js'
 
 type Keys<value> = value extends unknown ? keyof value : never
 
+type VariableOptions<input> = input extends {
+  readonly variables: infer variables
+}
+  ? {
+      readonly variables: {
+        readonly [key in keyof variables]: string extends key
+          ? variables[key]
+          : key extends `--${string}`
+            ? variables[key]
+            : never
+      }
+    }
+  : unknown
+
 /**
  * Declares literal styles for source extraction. Requires a compile-time transform.
  * @param styles - Token-free literal CSS properties. Omit for an empty definition.
@@ -48,6 +62,7 @@ export declare namespace css {
   type Dynamic<values, output extends Output = 'react'> = Reference &
     (<const input extends values & Options>(
       input: input &
+        VariableOptions<input> &
         Record<Exclude<keyof input, keyof values | keyof Options>, never>,
     ) => Props<output>)
 
@@ -60,6 +75,10 @@ export declare namespace css {
     readonly className?: string | undefined
     /** Literal inline styling overrides. */
     readonly style?: Literal.Properties | undefined
+    /** Inline custom-property assignments, merged before explicit style overrides. */
+    readonly variables?:
+      | Readonly<Record<`--${string}`, string | number | undefined>>
+      | undefined
   }
 
   /** Props produced by a transformed web definition. */
@@ -80,7 +99,9 @@ export declare namespace css {
   /** Callable definition; source rewriting supplies its implementation. */
   type ReturnType<output extends Output = 'react'> = Reference &
     (<const options extends Options = Options>(
-      options?: options & Record<Exclude<Keys<options>, keyof Options>, never>,
+      options?: options &
+        VariableOptions<options> &
+        Record<Exclude<Keys<options>, keyof Options>, never>,
     ) => Props<output>)
 }
 

@@ -23,6 +23,73 @@ export namespace styles {
 }`
 
 describe('variable', () => {
+  test('preserves untyped variables through packed imports and browser assignments', async () => {
+    const publisher = Graph.compile({
+      modules: {
+        'values.ts': `import {variable} from 'zyzz'; export const value = variable()`,
+      },
+    })
+    const consumer = Graph.compile({
+      contracts: publisher.contracts,
+      imports: { 'app.ts': { './values.js': 'values.ts', zyzz: null } },
+      modules: {
+        'app.ts': `import {css} from 'zyzz'; import {value} from './values.js'; export const style=css({variables:{[value]:'inline-flex'},display:value,selectors:{'&:hover':{display:value}}}); export {value}`,
+      },
+    })
+
+    expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-style-1e8a67z1uaws1j-80{--z-v1ndkzo68ghlgm-52:inline-flex;display:var(--z-v1ndkzo68ghlgm-52);&:hover{display:var(--z-v1ndkzo68ghlgm-52);}}"`,
+    )
+
+    const source =
+      publisher.modules['values.ts']!.code +
+      '\n' +
+      consumer.modules['app.ts']!.code.replace(
+        "import {value} from './values.js';",
+        '',
+      ).replace('export {value}', '')
+    const built = await Esbuild.build({
+      stdin: { contents: source, loader: 'ts', resolveDir: process.cwd() },
+      alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+      bundle: true,
+      format: 'iife',
+      globalName: 'Fixture',
+      write: false,
+    })
+    const browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox'],
+    })
+    try {
+      const page = await browser.newPage()
+      await page.setContent('<div>variable</div>')
+      await page.addStyleTag({ content: consumer.modules['app.ts']!.css })
+      await page.addScriptTag({ content: built.outputFiles[0]!.text })
+      await page.evaluate(
+        `document.querySelector('div').className=Fixture.style().className`,
+      )
+
+      expect(
+        await page
+          .locator('div')
+          .evaluate((node) => getComputedStyle(node).display),
+      ).toMatchInlineSnapshot(`"inline-flex"`)
+
+      await page.evaluate(`{
+        for (const [key,value] of Object.entries(Fixture.style({variables:{[Fixture.value]:'grid'}}).style))
+          document.querySelector('div').style.setProperty(key,value);
+      }`)
+
+      expect(
+        await page
+          .locator('div')
+          .evaluate((node) => getComputedStyle(node).display),
+      ).toMatchInlineSnapshot(`"grid"`)
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('preserves namespaces, re-exports, registration and assignment order in packed consumers', () => {
     const publisher = Graph.compile({
       modules: {
@@ -185,8 +252,8 @@ describe('variable', () => {
       )
       await page.evaluate(`{
         const [first]=document.querySelectorAll('span');
-        const set=Fixture.variables.accent.set;
-        for(const [key,value]of Object.entries(set('blue')))first.style.setProperty(key,value);
+        const props=Fixture.styles.label({variables:{[Fixture.variables.accent]:'blue'}});
+        for(const [key,value]of Object.entries(props.style))first.style.setProperty(key,value);
       }`)
       expect(await read()).toMatchInlineSnapshot(`
         [

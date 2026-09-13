@@ -348,7 +348,7 @@ export function Progress() {
 }
 ```
 
-Static applications accept optional styling overrides. Dynamic applications combine required runtime values with `className` and `style` overrides in one input. Consumed values never become component props. The callback sees only its declared values. Event handlers, children, refs, accessibility state, and other component props stay on the component.
+Static applications accept optional styling overrides. Dynamic applications combine required runtime values with `className`, `style`, and `variables` overrides in one input. Consumed values never become component props. The callback sees only its declared values. Event handlers, children, refs, accessibility state, and other component props stay on the component.
 
 ```tsx
 type PanelValues = { readonly width: `${number}px`; readonly opacity: number }
@@ -375,9 +375,9 @@ const element = (
 )
 ```
 
-Web overrides accept only `className` and `style`; native overrides use the target's `style` shape. Variant data attributes derive from selection keys and cannot be supplied directly as overrides. Reject unknown input keys in consumer types and untyped calls. Never forward arbitrary props, merge handlers, or mutate input objects.
+Web overrides accept `className`, `style`, and `variables`; native overrides use the target's `style` shape. Variant data attributes derive from selection keys and cannot be supplied directly as overrides. Reject unknown input keys in consumer types and untyped calls. Never forward arbitrary props, merge handlers, or mutate input objects.
 
-Reserve `className`, `class`, `style`, `key`, and `ref` from runtime-value and variant names. Values may otherwise overlap component attribute names, but their declared keys are consumed; the component receives such attributes separately. Resolve the complete finite value-key set from the annotated input contract, including unused fields; do not strip only fields observed in the callback. Reject index signatures, unresolved key sets, and ambiguous contracts before emission. Library declarations and precompiled binding metadata preserve that key set.
+Reserve `className`, `class`, `style`, `variables`, `key`, and `ref` from runtime-value and variant names. Values may otherwise overlap component attribute names, but their declared keys are consumed; the component receives such attributes separately. Resolve the complete finite value-key set from the annotated input contract, including unused fields; do not strip only fields observed in the callback. Reject index signatures, unresolved key sets, and ambiguous contracts before emission. Library declarations and precompiled binding metadata preserve that key set.
 
 ### Merge Rules
 
@@ -407,13 +407,13 @@ namespace styles {
 }
 
 const example = (
-  <div {...styles.bar({ style: progress.amount.set(`${percent}%`) })} />
+  <div {...styles.bar({ variables: { [progress.amount]: `${percent}%` } })} />
 )
 ```
 
 Dynamic callbacks are the concise path for values local to one styles. Keep `variable` for explicit shared variable contracts and independent assignments. Both forms use the same compiler binding model.
 
-`variable(kind, options)` declares one typed variable reference and compiles to fixed web bindings. The initial schema supports `number`, `length`, `percentage`, and `color`, with target validation. `reference.set(value)` returns ordinary inline custom-property assignments on web; unknown keys or incompatible values are type errors. Unassigned variables follow normal CSS behavior unless the authored rule specifies a fallback.
+`variable()` declares an unconstrained variable; `variable(kind, options)` declares a typed variable reference and compiles to fixed web bindings. The initial schema supports `number`, `length`, `percentage`, and `color`, with target validation. `reference.set(value)` returns ordinary inline custom-property assignments on web; unknown keys or incompatible values are type errors. Unassigned variables follow normal CSS behavior unless the authored rule specifies a fallback.
 
 Dynamic assignment is allowed; dynamic rule generation is not. The core never reads device/browser state. Native adapters bind values to preidentified supported properties with explicit conversions; they do not parse CSS. Unsupported variable types or expressions fail compilation. This binding path is distinct from `StyleSheet.select`, which preserves static lookup identity.
 

@@ -1,2 +1,8 @@
+packages:
+  - examples/*
+
 allowBuilds:
   esbuild: true
+
+patchedDependencies:
+  zile@0.0.30: patches/zile@0.0.30.patch

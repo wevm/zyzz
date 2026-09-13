@@ -1,12 +1,18 @@
 /** Declares single-element recipes for ahead-of-time compilation. @module */
 import type { css } from './css.js'
 import type * as Config from './Config.js'
+import type * as Condition from './internal/Condition.js'
 import type * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
 import type * as Theme from './Theme.js'
 
 type Axes<definition> = definition extends { readonly variants: infer axes }
   ? axes
+  : {}
+type Conditions<definition> = definition extends {
+  readonly conditions: infer conditions
+}
+  ? conditions
   : {}
 type Choice<choices> = keyof choices extends infer key
   ? key extends 'true' | 'false'
@@ -21,6 +27,19 @@ type Keys<value> = value extends unknown ? keyof value : never
 type Selections<axes> = {
   readonly [axis in keyof axes]?: Choice<axes[axis]> | null | undefined
 }
+type Input<definition> = Selections<Axes<definition>> &
+  css.Options &
+  (keyof Conditions<definition> extends never
+    ? {}
+    : {
+        readonly conditions?:
+          | {
+              readonly [name in keyof Conditions<definition>]?:
+                | Selections<Axes<definition>>
+                | undefined
+            }
+          | undefined
+      })
 type CheckedStyles<
   style,
   tokens extends Theme.Tokens,
@@ -45,8 +64,10 @@ type Checked<
           readonly [axis in keyof definition[key]]: axis extends
             | keyof css.Options
             | 'class'
+            | 'conditions'
             | 'key'
             | 'ref'
+            | `zyzz-condition-${string}`
             ? never
             : {
                 readonly [choice in keyof definition[key][axis]]: CheckedStyles<
@@ -57,43 +78,50 @@ type Checked<
                 >
               }
         }
-      : key extends 'defaultVariants'
-        ? Selections<Axes<definition>> &
-            Record<
-              Exclude<keyof definition[key], keyof Axes<definition>>,
-              never
+      : key extends 'conditions'
+        ? {
+            readonly [name in keyof definition[key]]: Extract<
+              Condition.Keys<tokens>,
+              `@${'media' | 'supports'}${' ' | '(' | '/' | '\t' | '\n' | '\r' | '\f'}${string}`
             >
-        : key extends 'compoundVariants'
-          ? readonly {
-              readonly when: {
-                readonly [axis in keyof Axes<definition>]?:
-                  | Choice<Axes<definition>[axis]>
-                  | readonly Choice<Axes<definition>[axis]>[]
-              }
-              readonly style: Record<string, unknown>
-            }[] & {
-              readonly [index in keyof definition[key]]: definition[key][index] extends {
-                readonly style: infer style
-                readonly when: infer when
-              }
-                ? {
-                    readonly style: CheckedStyles<
-                      style,
-                      tokens,
-                      layers,
-                      mappings
-                    >
-                    readonly when: Record<
-                      Exclude<keyof when, keyof Axes<definition>>,
+          }
+        : key extends 'defaultVariants'
+          ? Selections<Axes<definition>> &
+              Record<
+                Exclude<keyof definition[key], keyof Axes<definition>>,
+                never
+              >
+          : key extends 'compoundVariants'
+            ? readonly {
+                readonly when: {
+                  readonly [axis in keyof Axes<definition>]?:
+                    | Choice<Axes<definition>[axis]>
+                    | readonly Choice<Axes<definition>[axis]>[]
+                }
+                readonly style: Record<string, unknown>
+              }[] & {
+                readonly [index in keyof definition[key]]: definition[key][index] extends {
+                  readonly style: infer style
+                  readonly when: infer when
+                }
+                  ? {
+                      readonly style: CheckedStyles<
+                        style,
+                        tokens,
+                        layers,
+                        mappings
+                      >
+                      readonly when: Record<
+                        Exclude<keyof when, keyof Axes<definition>>,
+                        never
+                      >
+                    } & Record<
+                      Exclude<keyof definition[key][index], 'style' | 'when'>,
                       never
                     >
-                  } & Record<
-                    Exclude<keyof definition[key][index], 'style' | 'when'>,
-                    never
-                  >
-                : definition[key][index]
-            }
-          : never
+                  : definition[key][index]
+              }
+            : never
 }
 
 /**
@@ -124,16 +152,10 @@ export declare namespace variants {
 
   /** Callable selection; omitted values use defaults and null suppresses them. */
   type ReturnType<definition, output extends css.Output = 'react'> = <
-    const input extends Selections<Axes<definition>> & css.Options = Selections<
-      Axes<definition>
-    > &
-      css.Options,
+    const input extends Input<definition> = Input<definition>,
   >(
     input?: input &
-      Record<
-        Exclude<Keys<input>, keyof Axes<definition> | keyof css.Options>,
-        never
-      >,
+      Record<Exclude<Keys<input>, keyof Input<definition>>, never>,
   ) => css.Props<output> & {
     readonly [axis in keyof Axes<definition> as `data-${axis & string}`]?:
       | string

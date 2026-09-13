@@ -533,7 +533,10 @@ export function extract(options: extract.Options): extract.ReturnType {
             'Recipes require static top-level objects.',
             original ?? call,
           )
-        const expanded = Recipes.expand(argument)
+        const expanded = Recipes.expand(
+          argument,
+          themes?.styles.get(call.start)?.theme[Token.definition].queries,
+        )
         argument = expanded.body
         recipe = expanded.recipe
       } catch (error) {

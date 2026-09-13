@@ -21,7 +21,7 @@ The remaining work is ordered below. Historical checklists remain evidence to re
 
 The current matrix counts above describe target records across 22 rules plus 62 descriptor/nested entries, not percentages of universally supported CSS. `check:at-rules:legacy-full` remains red under the original combined contract; reconcile its evidence without copying compiler completion into renderer claims.
 
-The bundled `zyzz/themes/default` entrypoint ships with bound `variants` after Phase 3, as documented in its API preview. Native output, variants/composition, and later distribution work retain their assigned phases. No scope transfer silently closes a Phase 2 gate.
+The Phase 3 default-theme slice publishes `zyzz/themes/default` with bound `variants` and portable packed contracts. Native output, variants/composition, and later distribution work retain their assigned phases. No scope transfer silently closes a Phase 2 gate.
 
 The implementation stack continues from #118 to #120 (CI heap budget and Vue scope), #121 (target review), the Next.js adapter, and independent pagination evidence. Compiler and target gates pass locally and in CI. Rendering and the remaining framework/acceptance work still block phase completion.
 
@@ -352,7 +352,7 @@ PR 2.1 uses opaque object references for contracts within one in-memory graph. C
 - [x] Validate named themes against the default's complete paths/domains, normalize shared config identities without mutating standalone themes, and retain default fallbacks. Cover missing/extra tokens, incompatible domains, partial extensions, imported definitions, aliases, source edits, and packed contracts with integration/type fixtures.
 - [x] Verify web configuration-to-browser theme selection, stable component classes, nested scopes, forced schemes, and packed handles through the theme-selection browser fixtures. System-scheme and omitted-scheme inheritance at the callable selection boundary, native table selection, and expanded switch-timing workloads remain separate gates.
 
-- [ ] Phase 3: publish `zyzz/themes/default` with named `css`, bound `variants`, `theme`, and raw `tokens` exports after recipe compilation lands. Bundle colors, typography, spacing, radii, and related scales using the ordinary theme contract; keep light/dark values within the theme.
+- [x] Phase 3: publish `zyzz/themes/default` with named `css`, bound `variants`, `theme`, and raw `tokens` exports after recipe compilation lands. Bundle colors, typography, spacing, radii, and related scales using the ordinary theme contract; keep light/dark values within the theme.
 - [ ] Preserve inference and extraction for bundled `css` aliases and re-exports. Verify parity with `theme.css`, explicit token composition, and use of the exported theme with target compilers. Apply the same alias contract to `variants` in Phase 3.
 - [x] Accept token groups directly with no metadata or scheme container. Each color leaf is `string | { light: string; dark: string }`; require both fields for pairs.
 - [x] Infer `theme.css` arguments from shared `color` and property-specific `backgroundColor`, `textColor`, and `borderColor` groups, with documented fallback and override rules. Reject wrong domains, unknown tokens, partial pairs, and incompatible extensions.

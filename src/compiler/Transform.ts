@@ -335,11 +335,14 @@ export function compile(options: compile.Options): compile.ReturnType {
     }
 
     const member = alias.recipe ? 'variants' : 'css'
-    const value = alias.destructured ? `{${member}:undefined}` : 'undefined'
+    const members = [...new Set(alias.bindings ?? [member])]
+    const value = alias.destructured
+      ? `{${members.map((member) => `${member}:undefined`).join(',')}}`
+      : 'undefined'
     const type =
       alias.type ?? `import('zyzz').Theme.Definition<${alias.tokenType}>`
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)
-      ? ` as unknown as ${alias.destructured ? `{readonly ${member}:${type}['${member}']}` : `${type}['${member}']`}`
+      ? ` as unknown as ${alias.destructured ? `{${members.map((member) => `readonly ${member}:${type}['${member}']`).join(';')}}` : `${type}['${member}']`}`
       : ''
 
     module.overwrite(alias.start, alias.end, `(${value}${assertion})`)

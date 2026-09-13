@@ -2453,7 +2453,7 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
         source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const { css = fallback } = theme;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:88: Destructure only css into a const binding without defaults or rest properties.]`,
+      `[Source.ExtractError: example/aliases.ts:90: Destructure only css or variants into const bindings without defaults or rest properties.]`,
     )
   })
 
@@ -2464,7 +2464,7 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
         source: `import { Theme } from 'zyzz'; const theme = Theme.define({color:{brand:'#06c'}}); const { css, ...rest } = theme;`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: example/aliases.ts:88: Destructure only css into a const binding without defaults or rest properties.]`,
+      `[Source.ExtractError: example/aliases.ts:95: Destructure only css or variants into const bindings without defaults or rest properties.]`,
     )
   })
 

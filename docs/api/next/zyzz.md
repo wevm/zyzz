@@ -1,7 +1,7 @@
 # zyzz
 
 > [!NOTE]
-> Preview integration. Next.js 16.3.5 is verified with both bundlers and explicit Chromium 153 targets; broader target acceptance remains open.
+> Preview integration. Next.js 16.3.5 is verified with both bundlers, default build targets, and Chromium 153 rendering; browser support requires native `light-dark()`; adapter source-map tracing remains open.
 
 Wrap Next.js configuration with source transformation, CSS delivery, and dependency watching. Configure Webpack and Turbopack internally through the same public setup.
 

@@ -1,7 +1,7 @@
 # Next.js Setup
 
 > [!NOTE]
-> Preview integration. Packed applications are verified with Next.js 16.3.5 on Webpack and Turbopack, targeting Chromium 153. Default browser-target acceptance remains open.
+> Preview integration. Packed applications are verified with Next.js 16.3.5 on Webpack and Turbopack, rendering in Chromium 153 with default build targets. Adapter source-map tracing remains open.
 
 Wrap the existing Next.js configuration with the `zyzz` integration. The wrapper owns source transformation, CSS delivery, and dependency watching.
 
@@ -41,7 +41,7 @@ The function from `zyzz/next` configures the build. Named exports from `zyzz.con
 
 The wrapper preserves existing options and composes Webpack hooks and Turbopack rules. Configuration objects, promises, and phase callbacks are accepted, including asynchronous callbacks. It creates `.zyzz/next` for bundler-owned CSS; exclude this directory from version control.
 
-The acceptance fixture sets `"browserslist": ["Chrome 153"]` in the application package. Next.js's default target lowering currently produces unresolved helper variables for theme `light-dark()` values. Broader browser targets remain an acceptance blocker; this fixture does not establish support for those targets.
+The wrapper excludes `light-dark()` from Next.js CSS lowering while preserving other configured feature settings. Theme variables need native color-scheme selection; the lowering otherwise introduces unresolved helper variables. Default build targets are verified in Chromium 153. Browsers without native `light-dark()` remain unsupported; excluding lowering is not a polyfill.
 
 Real packed-consumer tests cover server and client components, hydration-driven updates, Fast Refresh, route navigation, imported theme edits, source diagnostics and recovery, relative fonts, and production CSS loading. Streaming tests observe the fallback before completed server output and verify its styles. Hydration preserves the original server button node.
 

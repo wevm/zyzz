@@ -11,23 +11,27 @@ Run commands from the repository root. `pnpm examples` runs `pnpm dev` to link t
 
 ## Deployments
 
-The Examples workflow builds the library and React playground, then uploads the static output to Cloudflare Pages. Pushes to main deploy production; same-repository pull requests deploy to `pr-<number>` preview branches. Fork pull requests build without deployment credentials.
+The Examples workflow discovers every `examples/*/package.json` and runs independent build/deploy jobs. Each package owns its `build` script and produces a static site at `dist/index.html`. Folder names use lowercase letters, digits, and hyphens, start with a letter, and contain at most 31 characters.
 
-Create the `zyzz-example-react` Pages project with `main` as its production branch:
+Adding an example requires no workflow changes:
 
-```sh
-npx wrangler pages project create zyzz-example-react --production-branch main
+```json
+{
+  "scripts": {
+    "build": "vite build --configLoader runner"
+  }
+}
 ```
 
-Configure these repository secrets:
+Main deploys each example to a Cloudflare Worker named `zyzz-examples-<folder>`. Same-repository PRs deploy isolated `zyzz-examples-<folder>-pr-<number>` Workers, deleted when the PR closes. Fork PRs build only. Manual runs are restricted to main. Workers are created during deployment; no Pages project is needed.
+
+Configure these repository secrets and enable the account's workers.dev subdomain:
 
 | Secret | Value |
 | --- | --- |
-| `CLOUDFLARE_ACCOUNT_ID` | Account containing the Pages project. |
-| `CLOUDFLARE_API_TOKEN` | API token with Account / Cloudflare Pages / Edit for that account. |
+| `CLOUDFLARE_ACCOUNT_ID` | Account containing the Workers. |
+| `CLOUDFLARE_API_TOKEN` | API token with Account / Workers Scripts / Edit for that account. |
 
-The workflow updates one PR comment with an Example, URL, and Status table, including build and deploy failures. Successful rows link to the exact deployment. The same table appears in the workflow summary. Manual runs deploy the selected branch.
+One updating PR comment lists every example in an Example, URL, and Status table. Failed examples do not cancel other examples. Missing credentials appear as skipped, and the table also appears in the workflow summary.
 
-Local `pnpm examples` continues to start the dev server. Production builds run only in the dedicated Examples workflow.
-
-Deployment uses [Cloudflare's Wrangler action](https://github.com/cloudflare/wrangler-action).
+Deployments serve static assets using [Cloudflare Workers](https://developers.cloudflare.com/workers/static-assets/). Server-rendered examples must provide a static export for this workflow. Local `pnpm examples` continues to start dev servers.

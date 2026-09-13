@@ -288,14 +288,19 @@ export function collect(
           value,
         )
 
-      if (
-        (kind === 'length' || kind === 'percentage') &&
-        String(descriptor.initialValue).trimStart().startsWith('-')
-      )
-        throw new InvalidError(
-          'Unsigned variable registrations require a nonnegative initialValue.',
-          value,
-        )
+      if (kind === 'length' || kind === 'percentage') {
+        const initialValue = String(descriptor.initialValue)
+        const literal =
+          kind === 'length'
+            ? /^(?:0|\+?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?(?:px|in|cm|mm|q|pt|pc))$/
+            : /^\+?(?:\d*\.\d+|\d+)(?:[eE][+-]?\d+)?%$/
+
+        if (!literal.test(initialValue))
+          throw new InvalidError(
+            'Unsigned variable registrations require a nonnegative literal initialValue.',
+            value,
+          )
+      }
 
       registrationStarts.push(call.start)
       registrationLocations.push(call)

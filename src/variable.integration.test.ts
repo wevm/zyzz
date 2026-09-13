@@ -73,7 +73,7 @@ describe('variable', () => {
         source: `import {variable} from 'zyzz'; const gap=variable('length',{inherits:false,initialValue:'-1px'})`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.js:59: Unsigned variable registrations require a nonnegative initialValue.]`,
+      `[Source.ExtractError: invalid.js:59: Unsigned variable registrations require a nonnegative literal initialValue.]`,
     )
     expect(() =>
       Transform.compile({
@@ -81,7 +81,7 @@ describe('variable', () => {
         source: `import {variable} from 'zyzz'; const amount=variable('percentage',{inherits:false,initialValue:'-1%'})`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.js:66: Unsigned variable registrations require a nonnegative initialValue.]`,
+      `[Source.ExtractError: invalid.js:66: Unsigned variable registrations require a nonnegative literal initialValue.]`,
     )
     const result = Transform.compile({
       moduleId: 'signed.js',
@@ -93,6 +93,44 @@ describe('variable', () => {
       @property --z-v132xrt2pjcnoa-130{syntax:"<percentage>";inherits:false;initial-value:-1%;}"
     `)
   })
+
+  test.each([
+    ['length', 'calc(-1px)'],
+    ['percentage', 'calc(-1%)'],
+    ['length', 'min(1px, -1px)'],
+    ['percentage', 'min(1%, -1%)'],
+    ['length', 'calc(1px)'],
+    ['percentage', 'calc(1%)'],
+  ])('rejects computed %s registration defaults: %s', (kind, initialValue) => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.js',
+        source: `import {variable} from 'zyzz'; export const value=variable('${kind}',{inherits:false,initialValue:'${initialValue}'})`,
+      }),
+    ).toThrow(
+      'Unsigned variable registrations require a nonnegative literal initialValue.',
+    )
+  })
+
+  test.each([
+    ['length', '0'],
+    ['length', '1px'],
+    ['length', '.5cm'],
+    ['length', '+1e-2in'],
+    ['percentage', '0%'],
+    ['percentage', '.5%'],
+    ['percentage', '+1e-2%'],
+  ])(
+    'accepts nonnegative literal %s registration defaults: %s',
+    (kind, initialValue) => {
+      const result = Transform.compile({
+        moduleId: 'valid.js',
+        source: `import {variable} from 'zyzz'; export const value=variable('${kind}',{inherits:false,initialValue:'${initialValue}'})`,
+      })
+
+      expect(result.css).toContain(`initial-value:${initialValue};`)
+    },
+  )
 
   test('preserves untyped variables through packed imports and browser assignments', async () => {
     const publisher = Graph.compile({

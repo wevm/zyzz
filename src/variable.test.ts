@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'vite-plus/test'
 import { variable } from 'zyzz'
 
-describe('define', () => {
+describe('variable', () => {
   test('identifies the untransformed variable API', () => {
     expect(() => ({
       gap: variable('length'),

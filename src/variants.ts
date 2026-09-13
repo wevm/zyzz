@@ -1,5 +1,4 @@
 /** Declares single-element recipes for ahead-of-time compilation. @module */
-import { MissingTransformError } from './css.js'
 import type { css } from './css.js'
 import type * as Style from './Style.js'
 import type * as Theme from './Theme.js'
@@ -16,6 +15,7 @@ type Choice<choices> = keyof choices extends infer key
       ? key
       : never
   : never
+type Keys<value> = value extends unknown ? keyof value : never
 type Selections<axes> = {
   readonly [axis in keyof axes]?: Choice<axes[axis]> | null | undefined
 }
@@ -99,9 +99,35 @@ export declare namespace variants {
   ) => ReturnType<definition, output>
 
   /** Callable selection; omitted values use defaults and null suppresses them. */
-  type ReturnType<definition, output extends css.Output = 'react'> = (
-    input?: Selections<Axes<definition>> & css.Options,
+  type ReturnType<definition, output extends css.Output = 'react'> = <
+    const input extends Selections<Axes<definition>> & css.Options = Selections<
+      Axes<definition>
+    > &
+      css.Options,
+  >(
+    input?: input &
+      Record<
+        Exclude<Keys<input>, keyof Axes<definition> | keyof css.Options>,
+        never
+      >,
   ) => css.Props<output> & {
-    readonly [attribute: `data-${string}`]: string | undefined
+    readonly [axis in keyof Axes<definition> as `data-${axis & string}`]?:
+      | string
+      | undefined
   }
+
+  /** Missing source transformation diagnostic. */
+  type ErrorType = MissingTransformError
+}
+
+/** Executed recipe authoring has not been rewritten. */
+export class MissingTransformError extends Error {
+  /** Explains the required recipe transformation. */
+  constructor() {
+    super(
+      'variants requires a compile-time transform. Do not execute untransformed recipe authoring.',
+    )
+  }
+  /** Stable recipe diagnostic name. */
+  override name = 'variants.MissingTransformError'
 }

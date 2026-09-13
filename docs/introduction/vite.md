@@ -89,4 +89,3 @@ element.className = `${mint.className} ${styles.card().className}`
 Zyzz preserves native `light-dark()` for inherited and inline scheme changes, including application stylesheets. CSS targets default to Chrome/Edge 123, Firefox 120, and Safari 17.5 when no build target is supplied. Explicit browser targets are retained; incompatible or unverifiable targets produce an error. An ECMAScript build target requires a separate browser `build.cssTarget`.
 
 Import the library stylesheet for its precompiled components. App-authored styles receive matching scopes through the plugin. Publish JavaScript, declarations, CSS, and metadata from the same build. Restart Vite after replacing an installed package; dependency watching follows Vite's normal exclusions.
-

@@ -2,10 +2,37 @@
  * Checks consumer inference and rejected inputs through the public css API.
  * @module
  */
+import type { ComponentProps } from 'react'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, css, Theme, where } from 'zyzz'
 
 describe('css', () => {
+  test('spreads static, dynamic, and theme props onto React elements', () => {
+    const button = css({ color: 'red' })
+    const bar = css((values: { width: `${number}%` }) => ({
+      width: values.width,
+    }))
+    const { themes } = Config.create({
+      defaultTheme: 'base',
+      themes: { base: { color: { brand: '#06c' } } },
+    })
+
+    expectTypeOf(button()).toExtend<ComponentProps<'button'>>()
+    expectTypeOf(
+      button({ style: { borderRadius: '999px', opacity: 0.5 } }),
+    ).toExtend<ComponentProps<'button'>>()
+    expectTypeOf(bar({ width: '50%' })).toExtend<ComponentProps<'div'>>()
+    expectTypeOf(bar({ width: '50%', style: { opacity: 0.5 } })).toExtend<
+      ComponentProps<'div'>
+    >()
+    expectTypeOf(themes({ theme: 'base', colorScheme: 'dark' })).toExtend<
+      ComponentProps<'div'>
+    >()
+
+    // @ts-expect-error Inline overrides still reject invalid property values.
+    button({ style: { display: 'invalid-display' } })
+  })
+
   test('accepts empty root, theme, and configured definitions', () => {
     const empty = css()
     const theme = Theme.define({})
@@ -53,7 +80,7 @@ describe('css', () => {
     expectTypeOf(card).toEqualTypeOf<css.ReturnType>()
     expectTypeOf(
       card({ className: 'external', style: { opacity: 0.5 } }),
-    ).toEqualTypeOf<css.Props>()
+    ).toEqualTypeOf<css.Props<'react', { readonly opacity: 0.5 }>>()
 
     // @ts-expect-error Unknown properties cannot hide in aliased objects.
     css({ colour: '#fff' })

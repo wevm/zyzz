@@ -250,7 +250,10 @@ export declare namespace create {
           ) => css.Props<
             options extends { output: infer output extends css.Output }
               ? output
-              : 'react'
+              : 'react',
+            {
+              readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
+            }
           >) & {
             readonly [name in keyof catalog]: Handle<
               ExtractTokens<catalog[name]>,

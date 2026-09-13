@@ -245,7 +245,7 @@ describe('css', () => {
     ).toEqualTypeOf<css.ReturnType>()
     expectTypeOf(
       renamedCss({ color: 'blue.500', padding: 'md' })(),
-    ).toEqualTypeOf<css.Props>()
+    ).toEqualTypeOf<css.Props<'react', {}>>()
 
     // @ts-expect-error Member aliases reject undeclared token paths.
     memberCss({ color: 'blue.600' })
@@ -284,7 +284,7 @@ describe('css', () => {
     expectTypeOf(themedCard).toEqualTypeOf<css.ReturnType>()
     expectTypeOf(
       themedCard({ className: 'external', style: { padding: '2rem' } }),
-    ).toEqualTypeOf<css.Props>()
+    ).toEqualTypeOf<css.Props<'react', { readonly padding: '2rem' }>>()
 
     Theme.extend(shorthand, { spacing: { 4: '2rem' } }).css({ padding: 4 })
     themedCss({ color: 'foreground', padding: 'md' })

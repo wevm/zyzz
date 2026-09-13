@@ -118,6 +118,8 @@ All declared inputs are required and consumed. `className` and `style` remain st
 
 The source boundary accepts inline finite scalar object types, module-local type aliases, interfaces, and compatible object intersections. Optional fields, imported or generic types, arbitrary calls, dynamic fallback entries, and dynamic rule structure are unsupported. Fixed nested conditions can contain dynamic values. Native bindings remain separate work.
 
+Applied React props retain the supplied inline override types instead of widening to every supported CSS value. Ordinary JSX spreads need no casts. Named theme selection returns only its color-scheme style contract.
+
 Types: `css.ErrorType`, `css.Options`, `css.Props`, `css.ReturnType`, and `css.Dynamic<values>`. See [Style Components](../../guides/styling.md#style-components).
 
 ## Selectors and conditions

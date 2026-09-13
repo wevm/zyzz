@@ -36,7 +36,7 @@ type Choice<choices> =
         values: infer values,
       ) => unknown
         ? { readonly [name in key]: values } & {
-            readonly [name in Exclude<DynamicKeys<choices>, key>]?: never
+            readonly [name in Exclude<keyof choices, key>]?: never
           }
         : never
     }[DynamicKeys<choices>]

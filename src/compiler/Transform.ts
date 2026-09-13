@@ -9,7 +9,7 @@ import * as Expression from './internal/Expression.js'
 import MagicString from 'magic-string'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Namespaces from './internal/Namespaces.js'
-import * as Parser from 'oxc-parser'
+import * as Syntax from './internal/Syntax.js'
 import * as Source from './Source.js'
 import type * as Style from '../Style.js'
 import * as Themes from './internal/Themes.js'
@@ -35,10 +35,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   })
 
   const module = new MagicString(options.source)
-  const program = Parser.parseSync('source.tsx', options.source, {
-    preserveParens: false,
-    sourceType: 'module',
-  }).program
+  const program = Syntax.parse(options).program
 
   for (const call of extracted.contributionCalls ?? [])
     module.overwrite(
@@ -236,7 +233,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         let factory = `${composition}${call.start}`
         while (identifiers.has(factory)) factory += '_'
         const inputs = call.runtimeComposition.map((input) => ({
-          className: classes[input.name]!,
+          className: classes[input.name] ?? '',
           owners: input.owners,
           condition: input.condition,
         }))
@@ -353,6 +350,16 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   for (const application of localApplications?.find() ?? []) {
+    if (
+      extracted.calls.some(
+        (call) =>
+          call.output === 'html' &&
+          call.runtimeComposition?.some(
+            (input) => input.applicationStart === application.start,
+          ),
+      )
+    )
+      continue
     if (
       extracted.calls.some(
         (call) =>

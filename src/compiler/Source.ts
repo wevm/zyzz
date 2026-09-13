@@ -14,7 +14,7 @@ import * as Dynamic from './internal/Dynamic.js'
 import * as Expression from './internal/Expression.js'
 import * as Selectors from './internal/Selectors.js'
 import type * as Namespace from '../web/internal/Namespace.js'
-import * as Parser from 'oxc-parser'
+import * as Syntax from './internal/Syntax.js'
 import * as RuleReference from '../internal/RuleReference.js'
 import type * as Recipe from '../runtime/Recipe.js'
 import type * as RecipePayloads from './internal/RecipePayloads.js'
@@ -46,6 +46,8 @@ export type Call = {
   /** Fixed runtime applications over an already resolved CSS sequence. */
   readonly runtimeComposition?:
     | readonly {
+        /** Original resolved application start retained for selective HTML preparation. */
+        readonly applicationStart?: number | undefined
         /** Presence bit for a conditional argument. */
         readonly condition?: number | undefined
         /** Application argument end. */
@@ -147,11 +149,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     throw new ExtractError(diagnostics)
   }
 
-  const parsed = Parser.parseSync('source.tsx', options.source, {
-    preserveParens: false,
-    showSemanticErrors: true,
-    sourceType: 'module',
-  })
+  const parsed = Syntax.parse(options)
 
   if (parsed.errors.length) {
     for (const error of parsed.errors) {

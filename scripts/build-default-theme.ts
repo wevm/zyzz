@@ -2,7 +2,7 @@
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
-import { Graph } from '../dist/compiler/index.js'
+import { Graph } from 'zyzz/compiler'
 
 const root = Path.resolve(import.meta.dirname, '..')
 const moduleId = 'zyzz/themes/default.js'

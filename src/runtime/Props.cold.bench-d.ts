@@ -1,29 +1,22 @@
-/**
- * Measures type instantiations contributed by compiled props bindings.
- * @module
- */
+/** Measures the first inline-override check without warming the property domain. @module */
 import { bench } from '@ark/attest'
 import type * as Runtime from 'zyzz/runtime'
 
-// Type-only imports keep the fixture free of runtime module loading; attest
-// analyzes bench bodies without executing them.
 declare const Dynamic: typeof Runtime.Dynamic
 declare const Html: typeof Runtime.Html
 declare const Props: typeof Runtime.Props
 
-/** Warms override property checking; first-use costs are measured separately. */
-export function baseline() {
-  Props.create({ className: 'base' })({ style: {} })
-}
+/** Keeps first-use property checking inside each measured body. */
+export function baseline() {}
 
-bench('create / static overrides', () => {
+bench('create / first static override', () => {
   const button = Props.create({ className: 'button' })
 
   void button({ className: 'external', style: { paddingLeft: '2px' } })
     .className
-}).types([750, 'instantiations'])
+}).types([3487, 'instantiations'])
 
-bench('create / html and dynamic bindings', () => {
+bench('create / first html and dynamic bindings', () => {
   const card = Html.create({ className: 'card' })
   const bar = Dynamic.create({
     className: 'bar',
@@ -32,4 +25,4 @@ bench('create / html and dynamic bindings', () => {
 
   void card({ style: { opacity: 0.5 } }).class
   void bar({ width: '50%' }).style
-}).types([328, 'instantiations'])
+}).types([3067, 'instantiations'])

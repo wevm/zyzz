@@ -69,7 +69,9 @@ export declare namespace css {
         /** Compiled and supplied class names. */
         readonly className: string
         /** Supplied inline styling overrides when present. */
-        readonly style?: Literal.Properties | undefined
+        readonly style?:
+          | Readonly<Record<string, string | number | undefined>>
+          | undefined
       }
 
   /** Callable definition; source rewriting supplies its implementation. */

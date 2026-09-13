@@ -10,7 +10,7 @@ const pulse = keyframes({ from: { opacity: 0.4 }, to: { opacity: 1 } })
 namespace styles {
   export const button = css({
     ':hover': { color: 'accent' },
-    '&[aria-pressed="true"]': { fontWeight: '700' },
+    '&[aria-pressed="true"]': { fontWeight: 700 },
   })
 
   export const section = css({

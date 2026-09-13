@@ -5,7 +5,7 @@ import { css, theme } from './zyzz.config.js'
 namespace styles {
   export const button = css({
     ':hover': { color: 'accent' },
-    '&[aria-pressed="true"]': { fontWeight: '700' },
+    '&[aria-pressed="true"]': { fontWeight: 700 },
   })
 
   export const section = css({

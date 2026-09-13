@@ -128,7 +128,6 @@ describe('zyzz', () => {
             Fs.readFile(Path.join(app, '.next/static', file), 'utf8'),
           ),
         )
-        const tracePoints: string[] = []
         const traced = contents.some((content) => {
           const map = new Trace.TraceMap(JSON.parse(content))
           let found = false
@@ -136,16 +135,6 @@ describe('zyzz', () => {
             if (!mapping.source || mapping.originalColumn === null) return
             const source = Trace.sourceContentFor(map, mapping.source)
             const start = source?.indexOf('cx(controls.button') ?? -1
-            if (start >= 0 && tracePoints.length < 80)
-              tracePoints.push(
-                JSON.stringify({
-                  start,
-                  line: mapping.originalLine,
-                  column: mapping.originalColumn,
-                  source: mapping.source,
-                  prefix: source!.slice(0, 100),
-                }),
-              )
             if (
               start >= 0 &&
               mapping.originalLine === 1 &&
@@ -156,7 +145,6 @@ describe('zyzz', () => {
           })
           return found
         })
-        if (!traced) throw new Error(tracePoints.join('\n'))
         expect(traced).toMatchInlineSnapshot('true')
 
         const candidate = {

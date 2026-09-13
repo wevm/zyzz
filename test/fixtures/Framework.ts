@@ -276,6 +276,7 @@ export async function verify(options: verify.Options) {
       ).toMatchInlineSnapshot('0')
 
       if (!production) {
+        const errorStart = errors.length
         await Fs.writeFile(
           Path.join(root, 'styles.ts'),
           options.files['styles.ts'].replace("'#0066cc'", 'unknownColor()'),
@@ -296,6 +297,15 @@ export async function verify(options: verify.Options) {
         await page.waitForFunction(
           'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
         )
+        // Svelte's HMR client may report a missing module while its dependency is deliberately invalid.
+        const recoveryErrors = errors.splice(errorStart)
+        expect(
+          recoveryErrors.every(
+            (error) =>
+              options.name === 'svelte' &&
+              error === "Cannot read properties of undefined (reading 'default')",
+          ),
+        ).toMatchInlineSnapshot('true')
       }
 
       await page.waitForFunction(

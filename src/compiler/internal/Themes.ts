@@ -13,6 +13,7 @@ import * as Configurations from './Configurations.js'
 import * as Token from '../../internal/Token.js'
 import * as Theme from '../../Theme.js'
 import type * as Source from '../Source.js'
+import type * as PackedStyles from './PackedStyles.js'
 
 /** Local bound-authoring initializer replaced while retaining its inferred type. */
 export type Alias = Call & {
@@ -72,6 +73,8 @@ export const context = Symbol('zyzz.source.graph')
 
 /** Resolved authoring contract within a supplied source graph. */
 export type Link = {
+  /** Complete callable style and ownership data for cross-module composition. */
+  readonly style?: PackedStyles.Definition | undefined
   readonly binding: string
   readonly call: Call
   readonly definition: Theme.Definition
@@ -88,6 +91,8 @@ export type Link = {
 
 /** Shared graph data; no filesystem or runtime evaluation is involved. */
 export type Context = {
+  /** Published class lists of imported callable definitions. */
+  readonly styleClasses?: Readonly<Record<string, string>> | undefined
   /** Locally imported stylesheet factories resolved through source barrels. */
   readonly factories?: Readonly<Record<string, string>> | undefined
   readonly extracted?: Source.extract.ReturnType | undefined

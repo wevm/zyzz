@@ -7,6 +7,7 @@ import * as Config from '../../Config.js'
 import * as Configurations from './Configurations.js'
 import * as FunctionSyntax from '../../internal/FunctionSyntax.js'
 import * as Identifiers from './Identifiers.js'
+import * as PackedStyles from './PackedStyles.js'
 import * as Shorthands from '../../internal/Shorthands.js'
 import * as Stylesheets from './Stylesheets.js'
 import * as Theme from '../../Theme.js'
@@ -21,7 +22,7 @@ export function read(
 ) {
   const data = record(JSON.parse(source))
   if (
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].includes(
       data.version as number,
     )
   )
@@ -144,7 +145,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13, 14, 15].includes(data.version as number) ||
+        ![9, 10, 11, 12, 13, 14, 15, 16].includes(data.version as number) ||
         ![
           'cssFunction',
           'customMedia',
@@ -191,6 +192,8 @@ export function read(
     }
 
     if (entry.kind === 'style-reference') {
+      if (entry.style !== undefined && data.version !== 16)
+        throw new Error('Packed callable styles require contract version 16.')
       const binding = string(entry.binding)
       if (!/^z-style-[a-z0-9_-]+$/.test(binding))
         throw new Error('Invalid style reference identity.')
@@ -215,6 +218,9 @@ export function read(
         },
         definition: Theme.define({}),
         kind: 'style-reference',
+        ...(entry.style === undefined
+          ? {}
+          : { style: PackedStyles.read(entry.style, themes) }),
         ...(members ? { members } : {}),
       }
     }
@@ -409,6 +415,7 @@ export function write(
       return {
         binding: link.binding,
         kind: link.kind,
+        ...(link.style ? { style: PackedStyles.write(link.style) } : {}),
         ...(link.members
           ? {
               members: Object.fromEntries(
@@ -468,6 +475,10 @@ export function write(
       ]),
     ),
     version: (() => {
+      function callable(link: Themes.Link): boolean {
+        return !!link.style || Object.values(link.members ?? {}).some(callable)
+      }
+      if (Object.values(links).some(callable)) return 16
       if (Object.values(links).some((link) => link.call.recipe)) return 15
       if (Object.values(links).some((link) => link.kind === 'variables'))
         return 14

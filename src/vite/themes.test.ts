@@ -1,6 +1,7 @@
 /** Verifies production theme colours across Vite CSS processing modes. @module */
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
+import * as Lightning from 'lightningcss'
 import { chromium } from 'playwright'
 import * as Vite from 'vite'
 import { describe, expect, test } from 'vite-plus/test'
@@ -52,7 +53,14 @@ Object.assign(document.querySelector('main').style, scope.style)
             zyzz(),
             {
               name: 'application-css',
-              config: () => ({ css: { lightningcss: { exclude: 1 } } }),
+              config: () => ({
+                css: {
+                  lightningcss: {
+                    exclude: 1,
+                    include: Lightning.Features.LightDark,
+                  },
+                },
+              }),
             },
           ],
           root,
@@ -132,6 +140,61 @@ Object.assign(document.querySelector('main').style, scope.style)
             await Fs.rm(root, { recursive: true, force: true })
           }
         }
+      }
+    },
+    30000,
+  )
+  test.each(['chrome120', 'es2015', 'es2020', 'esnext'])(
+    'rejects unverifiable application CSS targets from a later plugin: %s',
+    async (target) => {
+      const root = await Fs.mkdtemp(Path.resolve('.fixture-application-theme-'))
+
+      try {
+        await Fs.writeFile(
+          Path.join(root, 'index.html'),
+          '<script type="module" src="/main.ts"></script>',
+        )
+        await Fs.writeFile(
+          Path.join(root, 'main.ts'),
+          "import './style.css'; import { css } from 'zyzz'; document.body.className = css({ padding: '1px' })().className",
+        )
+        await Fs.writeFile(
+          Path.join(root, 'style.css'),
+          'body { color: light-dark(black, white) }',
+        )
+        const config: Vite.InlineConfig = {
+          configFile: false,
+          css: { transformer: 'lightningcss' },
+          logLevel: 'silent',
+          plugins: [
+            zyzz(),
+            {
+              name: 'application-target',
+              config: () => ({ build: { target } }),
+            },
+          ],
+          root,
+        }
+
+        if (target === 'chrome120')
+          await expect(
+            Vite.build(config),
+          ).rejects.toThrowErrorMatchingInlineSnapshot(
+            '[Error: Zyzz theme colours require native light-dark() support. Set CSS targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+.]',
+          )
+        else {
+          const result = await Vite.build(config).then(
+            () => 'built',
+            (error: unknown) => String(error).replace(target, '<target>'),
+          )
+          expect(result).toMatchInlineSnapshot(
+            '"Error: Zyzz cannot verify light-dark() support for CSS target: <target>"',
+          )
+        }
+
+        await Vite.build({ ...config, build: { cssTarget: 'chrome123' } })
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
       }
     },
     30000,

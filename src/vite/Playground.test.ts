@@ -11,7 +11,10 @@ describe('zyzz', () => {
       args: ['--no-sandbox'],
       headless: true,
     })
+    const cacheDir = await Fs.mkdtemp(Path.resolve('.fixture-playground-vite-'))
     const config = {
+      // Concurrent fixture servers must not replace the playground's optimized chunks.
+      cacheDir,
       configFile: Path.resolve('examples/react/vite.config.ts'),
       configLoader: 'runner' as const,
       logLevel: 'silent' as const,
@@ -220,6 +223,7 @@ describe('zyzz', () => {
       }
     } finally {
       await browser.close()
+      await Fs.rm(cacheDir, { force: true, recursive: true })
     }
   }, 120000)
 })

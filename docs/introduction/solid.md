@@ -38,4 +38,4 @@ export function Progress() {
 
 `output: 'html'` supplies `class` and a CSS style string, including dynamic custom properties. Keep signal reads in the JSX expression so updates reach the element. React-style camel-case inline overrides are serialized by compiled bindings.
 
-The test fixture pins Solid 1.9.9 and vite-plugin-solid 2.11.8. Packed-library coverage and the remaining lifecycle recovery gates are tracked in the implementation plan.
+The test fixture pins Solid 1.9.9 and vite-plugin-solid 2.11.8. Packed variants exercise defaults, payload updates and removal, conditional selections, SSR/hydration identity, production builds, and recovery after an invalid dependency edit.

@@ -9,6 +9,7 @@ import { chromium } from 'playwright'
 import * as Vite from 'vite'
 import { expect } from 'vite-plus/test'
 import { zyzz } from 'zyzz/vite'
+import * as VariantLibrary from './VariantLibrary.js'
 
 /** Runs the shared consumer contract against an installed framework compiler. */
 export async function verify(options: verify.Options) {
@@ -38,6 +39,8 @@ export async function verify(options: verify.Options) {
       ],
       { cwd: root, timeout: 120000 },
     )
+
+    await VariantLibrary.create(root, options.output ?? 'html')
 
     for (const [name, content] of Object.entries(options.files))
       await Fs.writeFile(Path.join(root, name), content)
@@ -144,6 +147,7 @@ export async function verify(options: verify.Options) {
         ? preview!.resolvedUrls!.local[0]!
         : server!.resolvedUrls!.local[0]!
 
+      await page.setViewportSize({ width: 450, height: 700 })
       await page.goto(url)
 
       if (!production) {
@@ -189,6 +193,20 @@ export async function verify(options: verify.Options) {
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(0, 0, 0)"`)
 
+      expect(
+        await page
+          .locator('#variant')
+          .evaluate((element) => getComputedStyle(element).paddingLeft),
+      ).toMatchInlineSnapshot('"3px"')
+      expect(
+        await page
+          .locator('#variant')
+          .evaluate((element) => getComputedStyle(element).paddingRight),
+      ).toMatchInlineSnapshot('"4px"')
+      await page.evaluate(
+        'window.variantNode=document.querySelector("#variant")',
+      )
+
       await page.evaluate('window.original = document.querySelector("#card")')
       await page.locator('#toggle').click()
       await page.waitForFunction(
@@ -218,19 +236,77 @@ export async function verify(options: verify.Options) {
           .evaluate((element) => getComputedStyle(element).color),
       ).toMatchInlineSnapshot(`"rgb(255, 255, 255)"`)
 
+      expect(
+        await page
+          .locator('#variant')
+          .evaluate((element) => getComputedStyle(element).paddingRight),
+      ).toMatchInlineSnapshot('"20px"')
+      expect(
+        await page
+          .locator('#variant')
+          .evaluate((element) => getComputedStyle(element).borderTopWidth),
+      ).toMatchInlineSnapshot('"3px"')
+      expect(
+        await page.evaluate(
+          'window.variantNode===document.querySelector("#variant")',
+        ),
+      ).toMatchInlineSnapshot('true')
+      await page.setViewportSize({ width: 900, height: 700 })
+      expect(
+        await page
+          .locator('#variant')
+          .evaluate((element) => getComputedStyle(element).paddingRight),
+      ).toMatchInlineSnapshot('"12px"')
+      await page.setViewportSize({ width: 450, height: 700 })
+
       await page.locator('#toggle').click()
       await page.waitForFunction(
         'getComputedStyle(document.querySelector("#card")).width === "100px"',
       )
 
+      expect(
+        await page
+          .locator('#variant')
+          .evaluate((element) => getComputedStyle(element).paddingRight),
+      ).toMatchInlineSnapshot('"4px"')
+      expect(
+        await page
+          .locator('#variant')
+          .evaluate((element) => (element as HTMLElement).style.length),
+      ).toMatchInlineSnapshot('0')
+
       if (!production) {
+        const errorStart = errors.length
+        await Fs.writeFile(
+          Path.join(root, 'styles.ts'),
+          options.files['styles.ts'].replace("'#0066cc'", 'unknownColor()'),
+        )
+        await page.locator('vite-error-overlay').waitFor()
+        expect(
+          await page
+            .locator('vite-error-overlay')
+            .evaluate((element) =>
+              element.shadowRoot?.textContent?.includes('styles.ts'),
+            ),
+        ).toMatchInlineSnapshot('true')
         await Fs.writeFile(
           Path.join(root, 'styles.ts'),
           options.files['styles.ts'].replace('#0066cc', '#117755'),
         )
+        await page.locator('vite-error-overlay').waitFor({ state: 'detached' })
         await page.waitForFunction(
           'getComputedStyle(document.querySelector("#card")).backgroundColor === "rgb(17, 119, 85)"',
         )
+        // Svelte's HMR client may report a missing module while its dependency is deliberately invalid.
+        const recoveryErrors = errors.splice(errorStart)
+        expect(
+          recoveryErrors.every(
+            (error) =>
+              options.name === 'svelte' &&
+              error ===
+                "Cannot read properties of undefined (reading 'default')",
+          ),
+        ).toMatchInlineSnapshot('true')
       }
 
       await page.waitForFunction(
@@ -261,7 +337,12 @@ export async function verify(options: verify.Options) {
         ),
       )
 
-    await Fs.rm(root, { force: true, recursive: true })
+    await Fs.rm(root, {
+      force: true,
+      recursive: true,
+      maxRetries: 5,
+      retryDelay: 100,
+    })
   }
 }
 
@@ -276,6 +357,8 @@ export declare namespace verify {
     jsxImportSource?: string
     /** Temporary consumer identity. */
     name: string
+    /** Renderer output used by the packed variant publisher. */
+    output?: 'html' | 'react'
     /** Installed official Vite plugin package. */
     plugin: string
     /** Named plugin export, or default. */

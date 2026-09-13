@@ -381,3 +381,15 @@ pnpm exec vp test bench src/cx.bench.ts src/cx.bindings.bench.ts --run --no-file
 ```
 
 The benchmark also writes `bench/results/composition-bindings-metadata.json`. Generated reports retain workload source hashes, machine/tool details, complete artifact accounting, and sample statistics. Apply timings cover the complete project with conditional overrides enabled; they exclude compilation, module initialization, browser rendering, and layout.
+
+## Packed Variants and Web Updates
+
+The `variants` production runtime and React render lanes compare native CSS, Panda, StyleX, and Zyzz. Each uses the existing 10/100-style corpus, finite width/opacity selections, and an ordered padding override. All earlier lanes remain. Dynamic payloads and conditional selections retain their separate benchmarks; this lane does not claim those features are equivalent across libraries.
+
+Runtime application timings run inside Chromium with forward/reverse library order, 200ms warmup, and 100 calibrated batches. Production React measures 100/1,000 components, mount/update/remount, commit, forced layout, and two animation frames. Rendering and compilation remain separate measurements.
+
+Delivery artifacts report raw/gzip/Brotli CSS, JavaScript, serialized attributes, class strings, and real server-rendered element markup. Client transfer sums CSS and JavaScript; hydrated transfer adds markup. Attribute/class/helper diagnostics are subsets or separate helper-only bundles and are never added to transfer totals. Helper-only bundles are reported for Zyzz; other libraries use complete emitted bundle sizes.
+
+`src/variants.packed.bench.ts` measures compiler consumption of versioned contracts at 10/100 applications. Its publisher is shared with the independent npm-package acceptance fixture. Older compilers cannot compose those imported definitions; no baseline speed comparison is implied for that new operation.
+
+[Packed and web measurements](Web-variants.md) record matched compiler delivery, browser application timings, selection/binding diagnostics, and the render verification boundary.

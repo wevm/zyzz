@@ -157,7 +157,7 @@ export function collect(
               continue
             } else if (
               ancestor.type === 'ObjectExpression' &&
-              ancestor.properties.includes(initializer as Ast.Property)
+              ancestor.properties.some((property) => property === initializer)
             ) {
               initializer = ancestor
               continue

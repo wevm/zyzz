@@ -70,10 +70,10 @@ Precedence is base, then axes in declaration order, then compounds in array orde
 
 `styles.button()` applies defaults. A `null` selection suppresses an axis and its default. Boolean `false` emits `"false"`; it does not remove the attribute. Styling overrides use `className`, `style`, and `variables`, as with `css`.
 
-Each recipe owns its emitted `data-*` attributes. Multipart components use separate definitions and shared component inputs. Recipes have no slots. Ordinary JSX spreads replace props; they are not a composition API.
+Each recipe owns its emitted `data-*` attributes. Multipart components use separate definitions and shared component inputs. There is no multipart `slots` option; dynamic choices bind fixed CSS-variable slots. Ordinary JSX spreads replace props; they are not a composition API.
 
 > [!NOTE]
-> Dynamic choice payloads and explicit composition follow in the Phase 3 stack. Choices currently contain static styles.
+> Explicit props composition follows in the Phase 3 stack.
 
 ## Conditional Selections
 
@@ -152,3 +152,32 @@ export { style, recipe }
 ```
 
 Both helpers keep their own token-aware signatures through aliases and re-exports. Destructuring defaults, rest properties, computed keys, and nested patterns produce source diagnostics.
+
+## Dynamic Choices
+
+Typed callbacks declare fixed CSS-variable bindings. Select a dynamic choice with one scoped payload; a bare dynamic choice name is invalid.
+
+```ts
+namespace styles {
+  export const button = variants({
+    variants: {
+      size: {
+        sm: { padding: '4px' },
+        custom: (values: { padding: `${number}px` }) => ({
+          padding: values.padding,
+        }),
+      },
+    },
+    defaultVariants: { size: { custom: { padding: '12px' } } },
+    compoundVariants: [
+      { when: { size: 'custom' }, style: { fontWeight: 600 } },
+    ],
+  })
+}
+
+styles.button({ size: { custom: { padding: '16px' } } })
+```
+
+Payload fields must be required scalars with explicit types. Defaults contain complete static payloads. Compounds match choice names. Conditional selections accept the same scoped payload objects, with separate variable names for each condition. Only supplied selections and defaults bind values; switching choices returns fresh props without stale bindings.
+
+Compilation validates callbacks and defaults without executing callbacks. Selection only serializes attributes and binds values to fixed slots. Payload values never create CSS rules, and callback validation never runs in application renders. Equal field names in different axes, choices, recipes, and conditions have distinct slots.

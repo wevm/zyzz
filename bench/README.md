@@ -351,3 +351,12 @@ pnpm exec vp test bench --run src/variants.conditions.bench.ts --no-file-paralle
 ```
 
 Compilation includes source extraction and CSS/JavaScript rewriting. Selection uses the helpers chosen by the real compiler, with defaults and conditional overrides measured separately. These microbenchmarks do not measure framework rendering or browser style recalculation. Run without competing benchmark jobs; retain the sample counts and variance from the report.
+
+Dynamic recipe payloads have a separate diagnostic benchmark:
+
+```sh
+pnpm exec vp test bench src/variants.payloads.bench.ts --run
+pnpm bench:types --fixture variants.payloads
+```
+
+Payload values bind fixed slots; changing values does not increase stylesheet rules. Save benchmark output with `--outputJson bench/results/payload-recipes.json` and retain run metadata before publishing timing comparisons.

@@ -11,6 +11,22 @@ export type Definition = {
   readonly conditions?: readonly string[] | undefined
   /** Normalized default selections. */
   readonly defaults: Readonly<Record<string, string | null>>
+  /** Complete scalar defaults for selected dynamic choices. */
+  readonly defaultPayloads?:
+    | { readonly [axis: string]: { readonly [field: string]: string | number } }
+    | undefined
+  /** Dynamic choices and separate base/conditional input slots. */
+  readonly payloads?: readonly Payload[] | undefined
+}
+
+/** Fixed input bindings for one dynamic choice. */
+export type Payload = {
+  /** Owning selection axis. */
+  readonly axis: string
+  /** Choice name used for selectors and compound matching. */
+  readonly choice: string
+  /** Base slots followed by slots for each condition in declaration order. */
+  readonly slots: readonly { readonly [field: string]: `--${string}` }[]
 }
 
 /**

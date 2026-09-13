@@ -104,7 +104,13 @@ describe('cx', () => {
                     {
                       conditional,
                       enabled,
-                      styles: Corpus.styles(workload),
+                      // These corpus cases contain flat scalar native declarations.
+                      styles: Corpus.styles(
+                        workload,
+                      ) as unknown as readonly Record<
+                        string,
+                        string | number
+                      >[],
                       width,
                     },
                   )

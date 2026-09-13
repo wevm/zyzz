@@ -60,7 +60,7 @@ Type: `string`. Compiled and supplied classes use `className` for React or `clas
 
 #### data attributes
 
-Type: `Record<\`data-${string}\`, string>`. The delegate emits normalized choice names and scoped conditional selections, such as `'data-size': 'custom'`.
+Type: ``Record<`data-${string}`, string>``. The delegate emits normalized choice names and scoped conditional selections, such as `'data-size': 'custom'`.
 
 #### style
 

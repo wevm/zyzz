@@ -47,7 +47,7 @@ Type: `string`. Generated and supplied classes appear as `className` for React o
 
 #### data attributes
 
-Type: `Record<\`data-${string}\`, string>`. Selected axis values become strings, for example `'data-size': 'large'`. Suppressed axes have no attribute.
+Type: ``Record<`data-${string}`, string>``. Selected axis values become strings, for example `'data-size': 'large'`. Suppressed axes have no attribute.
 
 #### style
 
@@ -63,4 +63,4 @@ Initialization records the fixed axis list. Calls allocate fresh props without r
 
 ## Payload
 
-`axis: string` identifies the owning axis; `choice: string` names its dynamic choice. `slots: readonly Record<string, \`--${string}\`>[]` maps input fields to fixed private variables: base slots first, then slots for each condition in declaration order.
+`axis: string` identifies the owning axis; `choice: string` names its dynamic choice. ``slots: readonly Record<string, `--${string}`>[]`` maps input fields to fixed private variables: base slots first, then slots for each condition in declaration order.

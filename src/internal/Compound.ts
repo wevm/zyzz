@@ -27,7 +27,7 @@ type Percentage = `${number}%` | Literal.Calculation
 type Filter =
   `${'blur' | 'brightness' | 'contrast' | 'drop-shadow' | 'grayscale' | 'hue-rotate' | 'invert' | 'opacity' | 'saturate' | 'sepia'}(${string})`
 
-type Position = Chain<
+type PositionAtom =
   | Dimension
   | 'bottom'
   | 'center'
@@ -35,7 +35,9 @@ type Position = Chain<
   | 'right'
   | 'top'
   | `anchor(${string})`
->
+
+// Expand a position only once, including when it starts a larger shorthand.
+type Position = Chain<PositionAtom>
 
 type Quoted = `"${string}"` | `'${string}'`
 
@@ -103,7 +105,7 @@ export type Properties = {
     Chain<
       | Literal.Color
       | Literal.Image
-      | Position
+      | PositionAtom
       | 'none'
       | 'repeat'
       | 'repeat-x'
@@ -264,7 +266,7 @@ export type Properties = {
   readonly mask: List<
     Chain<
       | Literal.Image
-      | Position
+      | PositionAtom
       | Box
       | 'none'
       | 'repeat'
@@ -335,7 +337,7 @@ export type Properties = {
   readonly objectPosition: Position
   readonly objectViewBox: 'none' | `${'inset' | 'rect' | 'xywh'}(${string})`
   readonly offset: Chain<
-    | Position
+    | PositionAtom
     | Literal.Url
     | Shape
     | `ray(${string})`

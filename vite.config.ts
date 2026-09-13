@@ -21,7 +21,8 @@ export default defineConfig({
   lint: {
     categories: { correctness: 'error' },
     ignorePatterns: ['.fixture-*/**', 'dist/**', 'node_modules/**'],
-    options: { typeAware: true, typeCheck: true },
+    // Formatting and linting stay syntax-only; check:types checks types.
+    options: { typeAware: false, typeCheck: false },
     rules: { 'no-unused-vars': 'error' },
   },
   test: {

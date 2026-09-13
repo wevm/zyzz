@@ -18,6 +18,33 @@ describe('css', () => {
     })
   })
 
+  test('retains position prefixes inside compound shorthands', () => {
+    css({
+      background: [
+        'center top / cover no-repeat url(image.png)',
+        '50%50%/cover',
+        'calc(50% - 1px) top / cover!',
+      ],
+      mask: ['left top / contain no-repeat url(mask.svg)', 'center/cover'],
+      offset: ['left top path("M0 0L1 1")', '0 path("M0 0L1 1")'],
+    })
+
+    Style.define({
+      card: {
+        background: 'left top / cover url(image.png)',
+        mask: '50%50%/cover',
+        offset: 'center path("M0 0L1 1")',
+      },
+    })
+
+    // @ts-expect-error Unknown position prefixes remain rejected.
+    css({ background: 'middle / cover' })
+    // @ts-expect-error Unknown mask prefixes remain rejected.
+    css({ mask: 'banana' })
+    // @ts-expect-error Unknown offset prefixes remain rejected.
+    css({ offset: 'banana' })
+  })
+
   test('preserves custom-property scalars, case, fallbacks, and importance', () => {
     css({
       '--Accent': '#arbitrary-text',

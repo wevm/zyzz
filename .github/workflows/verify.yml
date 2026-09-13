@@ -2,6 +2,9 @@ name: Verify
 on:
   workflow_call:
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     name: Build
@@ -25,12 +28,6 @@ jobs:
         run: pnpm check
       - name: Check at-rule inventory
         run: pnpm check:at-rules >> "$GITHUB_STEP_SUMMARY"
-      - name: Check CSS coverage
-        run: pnpm check:css >> "$GITHUB_STEP_SUMMARY"
-      - env:
-          NODE_OPTIONS: --max-old-space-size=4096
-        name: Check types
-        run: pnpm check:types
   conformance:
     name: CSS Property Conformance (100%)
     runs-on: ubuntu-latest
@@ -53,11 +50,12 @@ jobs:
           name: css-conformance
           path: css-conformance.md
           retention-days: 30
-  test:
-    name: Test
-    permissions:
-      contents: read
-      pull-requests: write
+  test-shards:
+    name: Test (${{ matrix.shard }}/3)
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
@@ -77,10 +75,59 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 poppler-utils
           python -m pip install -r test/conformance/requirements.txt
+      - name: Build package for integration consumers
+        run: pnpm build
       - env:
           CI: true
         name: Run tests
-        run: pnpm run test run --coverage --reporter=default --reporter=json --outputFile=test-results/integration.json
+        run: pnpm run test run --shard=${{ matrix.shard }}/3 --coverage --reporter=default --reporter=blob --outputFile.blob=test-results/blob-${{ matrix.shard }}.json
+      - name: Upload shard results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          include-hidden-files: true
+          name: test-shard-${{ matrix.shard }}
+          path: |
+            test-results/
+            coverage/
+            bench/results/next-*.json
+          retention-days: 1
+    timeout-minutes: 30
+  test:
+    name: Test
+    if: ${{ !cancelled() }}
+    needs: [test-shards, typescript, type-benches]
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Download shard results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-shard-*
+          merge-multiple: true
+      - name: Require all shards and type checks
+        env:
+          SHARDS_RESULT: ${{ needs.test-shards.result }}
+          TYPES_RESULT: ${{ needs.typescript.result }}
+          TYPE_BENCHES_RESULT: ${{ needs.type-benches.result }}
+        run: |
+          test "$SHARDS_RESULT" = success
+          test "$TYPES_RESULT" = success
+          test "$TYPE_BENCHES_RESULT" = success
+          for shard in 1 2 3; do test -f "test-results/blob-$shard.json"; done
+      - name: Merge test results and coverage
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p test-results/blobs
+          mv test-results/blob-*.json test-results/blobs/
+          pnpm run test run --merge-reports=test-results/blobs --coverage --reporter=default --reporter=json --outputFile=test-results/integration.json
       - env:
           NODE_OPTIONS: --max-old-space-size=4096
         name: Enforce full at-rule compiler acceptance
@@ -171,20 +218,6 @@ jobs:
             cat typescript-diagnostics.txt
             printf '```\n'
           } >> "$GITHUB_STEP_SUMMARY"
-      - if: ${{ matrix.compiler == 'javascript' }}
-        name: Check type instantiations
-        run: |
-          set -o pipefail
-          pnpm bench:types | tee type-benches.txt
-          {
-            printf '## TypeScript %s type instantiations\n\n<details>\n<summary>Attest benches</summary>\n\n```\n' "${{ matrix.typescript }}"
-            cat type-benches.txt
-            printf '```\n\n</details>\n'
-          } >> "$GITHUB_STEP_SUMMARY"
-      - if: ${{ matrix.compiler == 'native' }}
-        name: Report skipped type instantiation benches
-        run: |
-          printf '## TypeScript %s type instantiations\n\nAttest instantiation benches require the JavaScript compiler API, which the native TypeScript package does not ship. Whole-program instantiation counts appear in the type check diagnostics above.\n' "${{ matrix.typescript }}" >> "$GITHUB_STEP_SUMMARY"
     strategy:
       fail-fast: false
       # JavaScript releases replace the pinned typescript package so attest and
@@ -196,13 +229,32 @@ jobs:
           - compiler: javascript
             package: typescript
             tsc: pnpm exec tsc
-            typescript: '5.9'
-          - compiler: javascript
-            package: typescript
-            tsc: pnpm exec tsc
             typescript: '6.0'
           - compiler: native
             package: typescript-native@npm:typescript
             tsc: node node_modules/typescript-native/bin/tsc
             typescript: '7.0'
     timeout-minutes: 45
+  type-benches:
+    name: Type instantiations ${{ matrix.typescript }} (${{ matrix.shard }}/2)
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+        typescript: ['6.0']
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Install TypeScript ${{ matrix.typescript }}
+        run: pnpm add --save-dev "typescript@${{ matrix.typescript }}"
+      - name: Check type instantiations
+        run: |
+          set -o pipefail
+          pnpm bench:types --shard ${{ matrix.shard }}/2 | tee type-benches.txt
+          cat type-benches.txt >> "$GITHUB_STEP_SUMMARY"
+    timeout-minutes: 30

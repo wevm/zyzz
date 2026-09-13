@@ -165,7 +165,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 - Use the smallest repository script that covers the changed behavior. Run focused tests while iterating.
 - Run `pnpm check:types` after TypeScript changes, and `pnpm bench:types` after changing public inference or type contracts.
 - Use `pnpm test` for Vite Plus integration tests. Add compiler and renderer workflows only as those boundaries exist.
-- `pnpm check` runs formatting, lint, and type checks with fixes. Inspect and keep only task-related changes.
+- `pnpm check` runs formatting and syntax-only lint with fixes. Run `pnpm check:types` separately for type checks. Inspect and keep only task-related changes.
 - Run `git diff --check` and inspect the final diff before reporting completion.
 
 ## Git Conventions
@@ -207,7 +207,7 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 
 ## Commands
 
-- `pnpm check` runs `vp check --fix`; use this single script for formatting, linting, and type checks.
+- `pnpm check` runs `vp check --fix`; use it for formatting and syntax-only linting. Type-aware linting and compiler diagnostics are disabled; run `pnpm check:types` separately.
 - `pnpm check:types` runs TypeScript checking; `pnpm test` runs `vp test`.
 - `pnpm exec vp test bench --run --no-file-parallelism` runs benchmarks; append `--outputJson <file>` to save results or `--compare <file>` to compare a baseline.
 - `pnpm bench:types` runs the attest type instantiation benches against the installed TypeScript; `pnpm update:types` rewrites their inline baselines.

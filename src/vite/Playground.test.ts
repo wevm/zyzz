@@ -43,15 +43,15 @@ describe('zyzz', () => {
 
       try {
         await page.goto(server.resolvedUrls!.local[0]!)
-        await page
-          .getByRole('heading', { name: 'Small calls. Real CSS.' })
-          .waitFor()
+        await page.getByRole('heading', { name: 'Zyzz examples' }).waitFor()
 
         expect(
           await page
             .locator('main')
             .evaluate((node) => getComputedStyle(node).backgroundColor),
-        ).toMatchInlineSnapshot('"rgb(247, 247, 251)"')
+        ).toMatchInlineSnapshot('"rgb(255, 255, 255)"')
+        await page.getByRole('button', { name: 'Always mint + dark' }).hover()
+
         expect(
           await page
             .getByRole('button', { name: 'Always mint + dark' })
@@ -65,8 +65,10 @@ describe('zyzz', () => {
         await page.waitForFunction(
           () =>
             getComputedStyle(document.querySelector('main')!)
-              .backgroundColor === 'rgb(20, 20, 26)',
+              .backgroundColor === 'rgb(24, 24, 24)',
         )
+
+        await page.getByRole('button', { name: 'Toggle state' }).hover()
 
         expect(
           await page
@@ -110,7 +112,7 @@ describe('zyzz', () => {
           await page
             .getByText('Item 2', { exact: true })
             .evaluate((node) => getComputedStyle(node).backgroundColor),
-        ).toMatchInlineSnapshot('"rgb(247, 247, 251)"')
+        ).toMatchInlineSnapshot('"rgb(245, 245, 245)"')
 
         expect(
           await page
@@ -147,7 +149,7 @@ describe('zyzz', () => {
           await page
             .getByText('Outside scope', { exact: true })
             .evaluate((node) => getComputedStyle(node).color),
-        ).toMatchInlineSnapshot('"rgb(32, 32, 42)"')
+        ).toMatchInlineSnapshot('"rgb(17, 17, 17)"')
 
         await page.emulateMedia({ reducedMotion: 'reduce' })
         await page.getByRole('button', { name: 'Replay animation' }).click()

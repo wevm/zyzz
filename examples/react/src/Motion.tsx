@@ -9,27 +9,16 @@ const pulse = keyframes({ from: { opacity: 0.4 }, to: { opacity: 1 } })
 
 namespace styles {
   export const button = css({
-    backgroundColor: 'surface',
-    border: '1px solid',
-    borderColor: 'line',
-    borderRadius: '0.5rem',
-    color: 'accent',
-    padding: 'sm',
-    px: 'md',
-    ':hover': { borderColor: 'accent' },
-    ':disabled': { cursor: 'not-allowed', opacity: 0.45 },
-    '&[aria-pressed="true"]': { backgroundColor: 'accent', color: 'surface' },
+    ':hover': { color: 'accent' },
+    '&[aria-pressed="true"]': { fontWeight: '700' },
   })
 
-  export const card = css({
+  export const section = css({
     '@layer components': {
-      backgroundColor: 'surface',
-      border: '1px solid',
+      borderTop: '1px solid',
       borderColor: 'line',
-      color: 'text',
-      borderRadius: 'card',
       minWidth: 0,
-      padding: 'card',
+      paddingTop: 'md',
     },
   })
 
@@ -64,7 +53,7 @@ export function Motion() {
   const [count, setCount] = useState(0)
 
   return (
-    <section {...styles.card()}>
+    <section {...styles.section()}>
       <h2>Motion & assets</h2>
       <button {...styles.button()} onClick={() => setCount(count + 1)}>
         Replay animation

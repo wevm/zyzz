@@ -24,27 +24,16 @@ viewTransition({ navigation: 'auto' })
 
 namespace styles {
   export const button = css({
-    backgroundColor: 'surface',
-    border: '1px solid',
-    borderColor: 'line',
-    borderRadius: '0.5rem',
-    color: 'accent',
-    padding: 'sm',
-    px: 'md',
-    ':hover': { borderColor: 'accent' },
-    ':disabled': { cursor: 'not-allowed', opacity: 0.45 },
-    '&[aria-pressed="true"]': { backgroundColor: 'accent', color: 'surface' },
+    ':hover': { color: 'accent' },
+    '&[aria-pressed="true"]': { fontWeight: '700' },
   })
 
-  export const card = css({
+  export const section = css({
     '@layer components': {
-      backgroundColor: 'surface',
-      border: '1px solid',
+      borderTop: '1px solid',
       borderColor: 'line',
-      color: 'text',
-      borderRadius: 'card',
       minWidth: 0,
-      padding: 'card',
+      paddingTop: 'md',
     },
   })
 
@@ -60,7 +49,7 @@ namespace styles {
 /** Opens native print preview for the authored page rule. */
 export function Stylesheets() {
   return (
-    <section {...styles.card()}>
+    <section {...styles.section()}>
       <h2>Stylesheet rules</h2>
       <ol {...styles.list()}>
         <li>Named counter style</li>

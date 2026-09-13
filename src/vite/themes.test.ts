@@ -18,10 +18,11 @@ describe('zyzz', () => {
     'preserves inline theme schemes with %s processing and %s minification',
     async (transformer, cssMinify) => {
       const root = await Fs.mkdtemp(Path.resolve('.fixture-theme-scheme-'))
-      const browser = await chromium.launch()
+      let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
       let server: Vite.PreviewServer | undefined
 
       try {
+        browser = await chromium.launch()
         await Fs.writeFile(
           Path.join(root, 'index.html'),
           '<script type="module" src="/main.ts"></script>',
@@ -40,14 +41,20 @@ Object.assign(document.querySelector('main').style, scope.style)
 `,
         )
         const config: Vite.InlineConfig = {
-          build: { cssMinify, cssTarget: ['chrome120'] },
+          build: { cssMinify, cssTarget: ['chrome123'] },
           configFile: false,
           css: {
             transformer,
-            lightningcss: { targets: { chrome: 120 << 16 } },
+            lightningcss: { targets: { chrome: 123 << 16 } },
           },
           logLevel: 'silent',
-          plugins: [zyzz()],
+          plugins: [
+            zyzz(),
+            {
+              name: 'application-css',
+              config: () => ({ css: { lightningcss: { exclude: 1 } } }),
+            },
+          ],
           root,
         }
 
@@ -93,16 +100,40 @@ Object.assign(document.querySelector('main').style, scope.style)
               ]
             `)
         }
+        if (transformer === 'postcss' && cssMinify === false) {
+          for (const overrides of [
+            { build: { cssTarget: ['chrome120'] } },
+            { css: { lightningcss: { targets: { chrome: 120 << 16 } } } },
+          ]) {
+            const result = await Vite.build(
+              Vite.mergeConfig(config, overrides),
+            ).then(
+              () => 'built',
+              (error: unknown) =>
+                String(error).includes(
+                  'Zyzz theme colours require native light-dark() support.',
+                ),
+            )
+            expect(result).toMatchInlineSnapshot('true')
+          }
+        }
       } finally {
-        await browser.close()
-        if (server)
-          await new Promise<void>((resolve, reject) =>
-            server!.httpServer.close((error) =>
-              error ? reject(error) : resolve(),
-            ),
-          )
-        await Fs.rm(root, { recursive: true, force: true })
+        try {
+          await browser?.close()
+        } finally {
+          try {
+            if (server)
+              await new Promise<void>((resolve, reject) =>
+                server!.httpServer.close((error) =>
+                  error ? reject(error) : resolve(),
+                ),
+              )
+          } finally {
+            await Fs.rm(root, { recursive: true, force: true })
+          }
+        }
       }
     },
+    30000,
   )
 })

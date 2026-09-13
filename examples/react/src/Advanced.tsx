@@ -43,15 +43,12 @@ property({
 })
 
 namespace styles {
-  export const card = css({
+  export const section = css({
     '@layer components': {
-      backgroundColor: 'surface',
-      border: '1px solid',
+      borderTop: '1px solid',
       borderColor: 'line',
-      color: 'text',
-      borderRadius: 'card',
       minWidth: 0,
-      padding: 'card',
+      paddingTop: 'md',
     },
   })
 
@@ -115,7 +112,7 @@ export function Advanced() {
   const [angle, setAngle] = useState(0)
 
   return (
-    <details {...styles.card()}>
+    <details {...styles.section()}>
       <summary>Advanced stylesheet features</summary>
       <p {...styles.muted()}>
         Rendering follows browser and installed-font support. OpenType sets and

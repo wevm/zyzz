@@ -1,114 +1,108 @@
 # variants
 
-> [!NOTE]
-> Preview API; not yet implemented.
+Defines one element's finite style choices. Import `variants` from `zyzz`; apply the returned callable through ordinary styling props.
 
-Define finite style choices for one element.
-
-```ts
+```tsx
 import { variants } from 'zyzz'
 
 namespace styles {
   export const button = variants({
-    defaultVariants: { size: 'sm' },
-    variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
+    base: { display: 'inline-flex' },
+    variants: {
+      size: { sm: { padding: '4px' }, lg: { padding: '12px' } },
+      loading: { true: { opacity: 0.5 }, false: {} },
+    },
+    defaultVariants: { size: 'sm', loading: false },
+    compoundVariants: [
+      { when: { size: ['sm', 'lg'], loading: true }, style: { color: 'red' } },
+    ],
   })
 }
-const props = styles.button({ size: 'md' })
+
+const button = <button {...styles.button({ size: 'lg', loading: true })} />
+type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
 ```
 
-## Signature
+The compiler emits every finite choice and compound. Applications select attributes under a stable class, merge styling overrides, and never generate CSS. Runtime selection relies on the typed contract; structural authoring errors produce source diagnostics during compilation.
 
-`variants(definition)`
+## Definition
 
-## Parameters
+### base
 
-### definition.base
-
-- Type: Style declarations
-- Default: No base declarations.
-
-Common declarations for every application.
+Type: static style object. Default: `{}`. Applied before choices and compounds.
 
 ```ts
-variants({ base: { display: 'inline-flex' }, variants: {} })
+variants({ base: { display: 'flex' } })
 ```
 
-### definition.compoundVariants
+### variants
 
-- Type: Ordered `{ style, when }` rules
-- Default: No compound rules.
-
-Match choice names, including arrays of alternatives, and combine matching styles in authored order.
+Type: an ordered record of axes, each containing named static style objects. Default: `{}`. Boolean choice names `true` and `false` produce boolean selection inputs.
 
 ```ts
 variants({
-  compoundVariants: [{ style: { opacity: 0.8 }, when: { size: 'md' } }],
-  variants: { size: { md: { padding: '1rem' } } },
+  variants: { size: { sm: { padding: '4px' }, lg: { padding: '12px' } } },
 })
 ```
 
-### definition.defaultVariants
+### defaultVariants
 
-- Type: Selections keyed by inferred axes
-- Default: No default selections.
+Type: optional choices for declared axes. Default: `{}`. Omitted and `undefined` inputs use defaults; `null` suppresses them.
 
-Selections for omitted axes. Null suppresses a choice and its default; false remains an explicit choice.
+```ts
+variants({ variants: { size: { sm: {} } }, defaultVariants: { size: 'sm' } })
+```
+
+### compoundVariants
+
+Type: an ordered array of `{ when, style }` objects. Default: `[]`. Arrays within `when` match any listed choice; different axes must all match.
 
 ```ts
 variants({
-  defaultVariants: { size: 'sm' },
-  variants: { size: { sm: { padding: '0.5rem' } } },
+  variants: { size: { sm: {}, lg: {} } },
+  compoundVariants: [{ when: { size: ['sm', 'lg'] }, style: { color: 'red' } }],
 })
 ```
 
-### definition.variants
+Precedence is base, then axes in declaration order, then compounds in array order, within matching contexts and importance. Attributes add no selector specificity. Axis names use lowercase data-attribute spelling and cannot reuse styling or component-reserved props.
 
-- Type: Axes and named style choices
-- Required: Yes.
+## Application
 
-Finite choices compile ahead of time. Dynamic choices use typed callbacks.
+`styles.button()` applies defaults. A `null` selection suppresses an axis and its default. Boolean `false` emits `"false"`; it does not remove the attribute. Styling overrides use `className`, `style`, and `variables`, as with `css`.
 
-```ts
-variants({ variants: { size: { md: { padding: '1rem' } } } })
-```
+Each recipe owns its emitted `data-*` attributes. Multipart components use separate definitions and shared component inputs. Recipes have no slots. Ordinary JSX spreads replace props; they are not a composition API.
+
+> [!NOTE]
+> Theme/config-bound recipes, responsive selections, dynamic choice payloads, and explicit composition follow in the Phase 3 stack. This initial slice supports root recipes with static choices.
 
 ## Returns
 
-Applying the returned callable produces one props object, including generated recipe attributes when required. `className` and `style` describe that object; the exact preview type names remain to be finalized.
-
-### Callable
-
-- Type: Callable returning styling props
-
-Returns props for one element. Infer selections with `NonNullable<Parameters<typeof button>[0]>`.
-
-```ts
-const props = styles.button({ size: 'md' })
-```
+A callable accepting optional declared selections and styling overrides. Infer its input with `NonNullable<Parameters<typeof styles.button>[0]>`.
 
 ### className
 
-- Type: `string`
-
-Generated class list, including supplied external classes. Class-string order does not establish CSS precedence.
+Type: `string`. The stable generated recipe class, with any supplied `className` appended.
 
 ```ts
-props.className
+styles.button({ className: 'external' }).className
 ```
 
 ### style
 
-- Type: Inline style bindings and overrides
-
-Copied inline overrides when supplied. Other component props remain on the element.
+Type: an optional inline style record. Includes supplied inline overrides and custom variable assignments; defaults to absent.
 
 ```ts
-props.style
+styles.button({ style: { opacity: 0.5 } }).style
+```
+
+### data attributes
+
+Type: optional `string` properties named `data-${axis}` for declared axes. Defaults and selected choices are serialized; suppressed axes are omitted.
+
+```ts
+styles.button({ size: 'lg' })['data-size']
 ```
 
 ## Errors
 
-Reject unknown axes, choices, payloads, and styling overrides. No slots map is accepted.
-
-Config and theme handles expose bound `variants`. Compound arrays match any listed choice. See [Define Variants](../../guides/variants.md#define-variants).
+Executing untransformed authoring throws `variants.MissingTransformError`. Compilation reports unsupported structures and invalid authored selections at their source locations. Static types reject invalid application inputs; runtime selection performs no validation.

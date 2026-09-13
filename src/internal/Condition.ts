@@ -80,7 +80,9 @@ export function is(key: string): boolean {
     nested(key) ||
     key.startsWith(':') ||
     ['@starting-style', '@scope', '@layer'].includes(key) ||
-    /^@(media|supports|container|scope|layer|document)(?=[\t\n\r\f (]|\/\*)/.test(key)
+    /^@(media|supports|container|scope|layer|document)(?=[\t\n\r\f (]|\/\*)/.test(
+      key,
+    )
   )
 }
 

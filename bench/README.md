@@ -1,5 +1,13 @@
 # Compilation Benchmarks
 
+## CI Scheduling
+
+Compiler and React render benchmarks run on separate runners in parallel. Each job measures its baseline and candidate sequentially on the same runner. Sample counts, warmups, workloads, and performance gates are unchanged. Both artifacts feed one updating PR comment.
+
+Integration tests run in three shards and merge their Vitest blob reports and V8 coverage. At-rule acceptance checks the merged report after the TypeScript matrix passes. Supplying `--results` verifies existing evidence without rerunning tests or types; standalone acceptance commands still run both.
+
+TypeScript compatibility checks and JavaScript compiler instantiation benches run independently. All three compiler versions and both attest versions remain required jobs. The Checks job retains type-aware linting; the TypeScript matrix owns the explicit `tsc` runs, and property conformance owns the complete CSS inventory check.
+
 ## React Render and Mount Benchmarks
 
 Run `pnpm bench:render` after installing Chromium with `pnpm exec playwright install chromium`. Run `node bench/RenderReport.ts bench/results` to report the raw samples in `bench/results/render-timings.json`. CI also measures the base source with the candidate harness on the same runner.

@@ -5,6 +5,67 @@ import * as Path from 'node:path'
 import { describe, expect, test } from 'vite-plus/test'
 
 describe('at-rule acceptance', () => {
+  test('reuses executed evidence for full acceptance without rerunning commands', () => {
+    const root = Fs.mkdtempSync(Path.resolve('.fixture-matrix-'))
+    try {
+      const fixture = Path.join(root, 'Evidence.test.ts')
+      const executions = Path.join(root, 'executions.txt')
+      Fs.writeFileSync(
+        fixture,
+        `/** Records a real evidence execution. @module */
+import * as Fs from 'node:fs'
+import { describe, expect, test } from 'vite-plus/test'
+describe('evidence', () => {
+  test('executed', () => {
+    Fs.appendFileSync(${JSON.stringify(executions)}, 'executed\\n')
+    expect(Fs.existsSync(${JSON.stringify(executions)})).toMatchInlineSnapshot('true')
+  })
+})
+`,
+      )
+      const report = Path.join(root, 'results.json')
+      const execution = ChildProcess.spawnSync(
+        Path.resolve('node_modules/.bin/vp'),
+        ['test', 'run', fixture, '--reporter=json', `--outputFile=${report}`],
+        { encoding: 'utf8', timeout: 20_000 },
+      )
+      expect(execution.status).toMatchInlineSnapshot('0')
+
+      const matrix = JSON.parse(
+        Fs.readFileSync('test/conformance/at-rule-matrix.json', 'utf8'),
+      )
+      for (const item of Object.values<{ file: string; test?: string }>(
+        matrix.cases,
+      )) {
+        if (!item.test) continue
+        item.file = Path.relative(process.cwd(), fixture)
+        item.test = 'evidence executed'
+      }
+      const file = Path.join(root, 'matrix.json')
+      Fs.writeFileSync(file, JSON.stringify(matrix))
+      const result = ChildProcess.spawnSync(
+        process.execPath,
+        [
+          'scripts/at-rule-acceptance.ts',
+          '--matrix',
+          file,
+          '--require-full',
+          '--require-targets',
+          '--results',
+          report,
+        ],
+        { encoding: 'utf8', timeout: 10_000 },
+      )
+      expect(result.status).toMatchInlineSnapshot('0')
+      expect(result.stderr).toMatchInlineSnapshot('""')
+      expect(Fs.readFileSync(executions, 'utf8').trim()).toMatchInlineSnapshot(
+        '"executed"',
+      )
+    } finally {
+      Fs.rmSync(root, { recursive: true, force: true })
+    }
+  }, 30_000)
+
   test('rejects removed obligations, non-applicable source claims, and unknown evidence', () => {
     const root = Fs.mkdtempSync(Path.resolve('.fixture-matrix-'))
     try {

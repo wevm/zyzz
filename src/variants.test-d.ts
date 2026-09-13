@@ -24,6 +24,11 @@ describe('variants', () => {
       'sm' | 'lg' | null | undefined
     >()
     expectTypeOf<Input['loading']>().toEqualTypeOf<boolean | null | undefined>()
+    const extra = { size: 'sm', disabled: true } as const
+    // @ts-expect-error Extra keys remain invalid through bindings.
+    button(extra)
+    // @ts-expect-error Only declared data attributes exist.
+    void button()['data-typo']
     button()
     button({
       size: null,

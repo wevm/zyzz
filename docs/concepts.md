@@ -129,8 +129,7 @@ Later generated conflicts win within matching conditions, subject to importance.
 
 ## Variants
 
-> [!NOTE]
-> Preview API; not yet implemented.
+Root recipes support static choices, defaults, and ordered compounds. Bound recipes, conditional selections, and dynamic payloads follow separately.
 
 A recipe styles one element and returns one props object. Axes, defaults, and compounds select precompiled alternatives. Multipart components use separate definitions with shared inputs; there is no slots option.
 

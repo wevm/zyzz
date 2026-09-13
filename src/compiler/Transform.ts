@@ -447,8 +447,6 @@ export function compile(options: compile.Options): compile.ReturnType {
     module.overwrite(alias.start, alias.end, `(${value}${assertion})`)
   }
 
-  if (compositions.length) module.prepend(compositions.join('\n') + '\n')
-
   const replacements = [
     ...extracted.calls.map((call) => ({
       end: applications.get(call.start)!.end,
@@ -606,6 +604,9 @@ export function compile(options: compile.Options): compile.ReturnType {
 
       offset = node.end
     }
+
+    if (compositions.length)
+      module.appendLeft(offset, '\n' + compositions.join('\n') + '\n')
 
     module.appendLeft(
       offset,

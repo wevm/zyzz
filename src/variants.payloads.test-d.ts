@@ -3,6 +3,19 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { variants } from 'zyzz'
 
 describe('variants', () => {
+  test('rejects infinite payload fields', () => {
+    variants({
+      variants: {
+        size: {
+          // @ts-expect-error Payload field names must be finite.
+          custom: (values: { padding: string; [field: string]: string }) => ({
+            padding: values.padding,
+          }),
+        },
+      },
+    })
+  })
+
   test('requires complete payloads and retains finite compound names', () => {
     const button = variants({
       conditions: { wide: '@media (width >= 600px)' },

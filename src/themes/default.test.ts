@@ -13,11 +13,9 @@ const exec = Util.promisify(ChildProcess.execFile)
 
 describe('variants', () => {
   beforeAll(async () => {
-    await exec('pnpm', ['build'], {
-      timeout: 120_000,
-      maxBuffer: 4 * 1024 * 1024,
-    })
-  }, 120_000)
+    // The integration command builds once before workers consume package artifacts.
+    await Fs.access(Path.resolve('dist/themes/default.js.zyzz.json'))
+  })
 
   test('renders packed defaults, responsive payloads, and token scopes without runtime authoring', async () => {
     const root = await Fs.mkdtemp(Path.resolve('.fixture-default-theme-'))
@@ -101,17 +99,18 @@ variants({base:{color:'missing'}});`,
         .filter((entry) => entry.type === 'chunk')
         .map((entry) => entry.code)
         .join('\n')
-      expect(scripts).not.toContain('Theme.define')
-      expect(scripts).not.toContain('oklch(97.1%')
+      expect(scripts.includes('Theme.define')).toMatchInlineSnapshot('false')
+      expect(scripts.includes('oklch(97.1%')).toMatchInlineSnapshot('false')
       const server = await Vite.preview({
         ...config,
         preview: { host: '127.0.0.1', port: 0 },
       })
-      const browser = await chromium.launch({
-        headless: true,
-        args: ['--no-sandbox'],
-      })
+      let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
       try {
+        browser = await chromium.launch({
+          headless: true,
+          args: ['--no-sandbox'],
+        })
         const page = await browser.newPage({
           viewport: { width: 500, height: 800 },
         })
@@ -123,13 +122,13 @@ variants({base:{color:'missing'}});`,
           await page
             .locator('button')
             .evaluate((element) => getComputedStyle(element).fontFamily),
-        ).toContain('Geist')
+        ).toMatchInlineSnapshot(`"Geist, ui-sans-serif, system-ui, sans-serif"`)
         await page.setViewportSize({ width: 900, height: 800 })
         await page.waitForFunction(
           "getComputedStyle(document.querySelector('button')).padding === '24px'",
         )
       } finally {
-        await browser.close()
+        await browser?.close()
         await new Promise<void>((resolve, reject) =>
           server.httpServer.close((error) =>
             error ? reject(error) : resolve(),
@@ -147,19 +146,23 @@ variants({base:{color:'missing'}});`,
         Object.keys(bundled.metafile!.inputs).some((name) =>
           name.includes('/themes/'),
         ),
-      ).toBe(false)
+      ).toMatchInlineSnapshot('false')
       expect(
-        await Fs.readFile(
-          Path.join(installed, 'dist/themes/default.js.zyzz.json'),
-          'utf8',
-        ),
-      ).toContain('"version":15')
+        JSON.parse(
+          await Fs.readFile(
+            Path.join(installed, 'dist/themes/default.js.zyzz.json'),
+            'utf8',
+          ),
+        ).version,
+      ).toMatchInlineSnapshot('15')
       expect(
-        await Fs.readFile(
-          Path.join(installed, 'dist/themes/LICENSE.tailwind'),
-          'utf8',
-        ),
-      ).toContain('MIT')
+        (
+          await Fs.readFile(
+            Path.join(installed, 'dist/themes/LICENSE.tailwind'),
+            'utf8',
+          )
+        ).includes('MIT'),
+      ).toMatchInlineSnapshot('true')
     } finally {
       await Fs.rm(root, { recursive: true, force: true })
     }

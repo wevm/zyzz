@@ -48,14 +48,14 @@ export type Call = {
     | readonly {
         /** Presence bit for a conditional argument. */
         readonly condition?: number | undefined
-        /** Application argument start. */
-        readonly start: number
         /** Application argument end. */
         readonly end: number
         /** Replaced generated class owner. */
         readonly name: string
         /** Attribute and private variable ownership. */
         readonly owners: readonly Composition.Owner[]
+        /** Application argument start. */
+        readonly start: number
       }[]
     | undefined
   /** Binding reads preserved by compile-time composition. */
@@ -310,6 +310,7 @@ export function extract(options: extract.Options): extract.ReturnType {
           if (
             name === 'Config' ||
             name === 'css' ||
+            name === 'cx' ||
             name === 'Theme' ||
             name === 'variable' ||
             name === 'variants'
@@ -559,6 +560,11 @@ export function extract(options: extract.Options): extract.ReturnType {
     let recipeTypes: Call['recipeTypes']
     if (recipes.has(call.start)) {
       try {
+        if (dynamic)
+          throw new Themes.InvalidError(
+            'Recipes require static top-level objects.',
+            original ?? call,
+          )
         const expanded = Recipes.expand(argument, {
           identity: `${identity(options.moduleId)}-${call.start}`,
           normalize: (node) => staticData.normalize(node, staticCalls, opaque),

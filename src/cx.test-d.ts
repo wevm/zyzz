@@ -27,6 +27,8 @@ describe('cx', () => {
       dynamic({ padding: '12px' }),
       recipe({ tone: { custom: { color: 'red' } } }),
     )
+    // @ts-expect-error Output kinds must agree.
+    cx(a(), html({ color: 'red' })())
     // @ts-expect-error Bare class strings are not applied props.
     cx('external')
     // @ts-expect-error Definitions must be applied first.

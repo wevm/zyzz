@@ -3,6 +3,7 @@ import type * as Ast from '@oxc-project/types'
 import type * as Query from '../../internal/Query.js'
 import * as ConditionalRecipe from '../../runtime/ConditionalRecipe.js'
 import type * as Recipe from '../../runtime/Recipe.js'
+import * as Expression from './Expression.js'
 import * as RecipeConditions from './RecipeConditions.js'
 import * as RecipePayloads from './RecipePayloads.js'
 import * as Themes from './Themes.js'
@@ -11,6 +12,11 @@ type Property = Extract<
   Ast.ObjectExpression['properties'][number],
   { type: 'Property' }
 >
+
+function object(node: Ast.Node): asserts node is Ast.ObjectExpression {
+  if (node.type !== 'ObjectExpression')
+    throw new Themes.InvalidError('Recipes require static object bodies.', node)
+}
 
 function entries(node: Ast.Node): readonly (readonly [string, Property])[] {
   if (node.type !== 'ObjectExpression')
@@ -128,7 +134,7 @@ export function expand(
   const regions = RecipeConditions.regions(named)
   const base = fields.get('base')
   if (base) {
-    entries(base.value)
+    object(base.value)
     if (named.length) properties.push(group(base.value, '&', base.value))
     else properties.push(...(base.value as Ast.ObjectExpression).properties)
   }
@@ -188,8 +194,29 @@ export function expand(
         property,
       )
 
+    for (const [key, property] of choices)
+      if (
+        (property.key.type === 'Literal' &&
+          typeof property.key.value === 'number') ||
+        key.includes('\0') ||
+        /[\ud800-\udfff]/u.test(key)
+      )
+        throw new Themes.InvalidError(
+          'Recipe choice names require CSS-safe strings.',
+          property,
+        )
+
     axes[axis] = choices.map(([key]) => key)
     for (const [key, style] of choices) {
+      if (
+        key === '__proto__' &&
+        (style.value.type === 'ArrowFunctionExpression' ||
+          style.value.type === 'FunctionExpression')
+      )
+        throw new Themes.InvalidError(
+          'Dynamic choice names cannot use __proto__.',
+          style,
+        )
       const models = Array.from({ length: named.length + 1 }, (_, context) =>
         bindings.read(
           style.value,
@@ -234,6 +261,12 @@ export function expand(
     if (!Object.hasOwn(axes, axis))
       throw new Themes.InvalidError('Unknown default variant axis.', property)
 
+    if (
+      property.value.type === 'Identifier' &&
+      property.value.name === 'undefined'
+    )
+      continue
+
     if (property.value.type === 'ObjectExpression') {
       const selections = entries(property.value)
       const selected = selections[0]
@@ -251,16 +284,18 @@ export function expand(
       for (const [field, input] of entries(selected[1].value)) {
         const node = input.value
         const value =
-          node.type === 'Literal'
-            ? node.value
-            : node.type === 'UnaryExpression' &&
-                node.argument.type === 'Literal' &&
-                typeof node.argument.value === 'number' &&
-                (node.operator === '-' || node.operator === '+')
-              ? node.operator === '-'
-                ? -node.argument.value
-                : node.argument.value
-              : undefined
+          node.type === 'TemplateLiteral'
+            ? Expression.template(node)
+            : node.type === 'Literal'
+              ? node.value
+              : node.type === 'UnaryExpression' &&
+                  node.argument.type === 'Literal' &&
+                  typeof node.argument.value === 'number' &&
+                  (node.operator === '-' || node.operator === '+')
+                ? node.operator === '-'
+                  ? -node.argument.value
+                  : node.argument.value
+                : undefined
         if (
           !Object.hasOwn(payload.slots[0]!, field) ||
           (typeof value !== 'string' && typeof value !== 'number')
@@ -356,7 +391,7 @@ export function expand(
       rules.push({
         matches,
         property: style,
-        suffix: ':where(*)'.repeat(index + 1),
+        suffix: `:where(*, .__zyzz-compound-${index})`,
       })
     }
   }
@@ -402,7 +437,7 @@ export function expand(
         }
         continue
       }
-      entries(property.value)
+      object(property.value)
       const selector =
         '&' +
         matches

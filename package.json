@@ -1,9 +1,9 @@
 {
   "scripts": {
-    "bench:render": "zile && vp test run --config bench/Render.config.ts --no-file-parallelism",
+    "bench:render": "pnpm build && vp test run --config bench/Render.config.ts --no-file-parallelism",
     "bench:types": "node scripts/type-benches.ts",
     "build": "zile && node scripts/build-default-theme.ts",
-    "changeset:publish": "zile publish:prepare && changeset publish && zile publish:post",
+    "changeset:publish": "zile publish:prepare && node scripts/build-default-theme.ts && changeset publish && zile publish:post",
     "changeset:version": "changeset version",
     "check": "vp check --fix",
     "check:at-rules": "node scripts/at-rule-conformance.ts && node scripts/at-rule-acceptance.ts",
@@ -14,7 +14,7 @@
     "check:css": "node scripts/css-conformance.ts",
     "check:css:full": "node scripts/css-conformance.ts --require-full",
     "check:types": "tsc",
-    "dev": "zile dev",
+    "dev": "zile dev && node scripts/build-default-theme.ts",
     "examples": "pnpm dev && pnpm --filter \"./examples/*\" --parallel dev",
     "test": "vp test",
     "update:at-rules": "node scripts/at-rule-conformance.ts --update",

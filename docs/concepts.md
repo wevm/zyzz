@@ -165,13 +165,13 @@ See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style State
 
 ## Relationships
 
-`where` templates interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css({})` supplies identity without declarations.
+`where` templates interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
 
 ```ts
 import { css, where } from 'zyzz'
 
 namespace styles {
-  export const card = css({})
+  export const card = css()
   export const label = css({
     [where`${card}:hover &`]: { color: 'blue' },
     [where`${card}[data-state="open"] > &`]: { opacity: 1 },

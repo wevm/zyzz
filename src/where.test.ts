@@ -7,7 +7,7 @@ import { Graph, Source } from 'zyzz/compiler'
 const source = `import { css, where } from 'zyzz'
 export namespace styles {
   export const card = css({ padding: '16px' })
-  export const empty = css({})
+  export const empty = css()
   export const label = css({
     color: 'black',
     [where\`\${card}:hover &\`]: { color: 'blue' },
@@ -18,12 +18,41 @@ export namespace styles {
 export const outside = css({ [where\`\${styles.card} > &\`]: { margin: 0 } })`
 
 describe('where', () => {
+  test('compiles empty theme and configured HTML definitions', () => {
+    const result = Graph.compile({
+      modules: {
+        'empty.ts': `import { Config, css, Theme, where } from 'zyzz';
+const theme = Theme.define({});
+const config = Config.create({ output: 'html', theme: {} });
+export const themed = theme.css();
+export const configured = config.css();
+export const bare = css()();
+export const child = config.css({ [where\`\${themed} > &, \${configured} + &\`]: { color: 'red' } });`,
+      },
+    })
+
+    expect(result.modules['empty.ts']!.code).toMatchInlineSnapshot(`
+      "
+      import { Html as __zyzzHtml, Props as __zyzzProps } from 'zyzz/runtime';
+
+      const theme = ({className:"z_theme-urrzb11meswl3-theme"} as import('zyzz').Theme.Definition<{}>);
+      const config = ({theme:{"className":"z_theme-urrzb11meswl3-config-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{};readonly "output":"html"}>);
+      export const themed = __zyzzProps.create({className:"z-style-urrzb11meswl3-165"});
+      export const configured = __zyzzHtml.create({className:"z-style-urrzb11meswl3-204"});
+      export const bare = ({className:""});
+      export const child = __zyzzHtml.create({className:"z-style-urrzb11meswl3-268"});"
+    `)
+    expect(result.modules['empty.ts']!.css).toMatchInlineSnapshot(
+      `".z-style-urrzb11meswl3-268{.z-style-urrzb11meswl3-165 > &, .z-style-urrzb11meswl3-204 + &{color:red;}}"`,
+    )
+  })
+
   test('compiles namespace definitions and scoped selectors', () => {
     const result = Graph.compile({ modules: { 'app.ts': source } })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z-style-1e8a67z1uaws1j-82{padding:16px;}
-      .z-style-1e8a67z1uaws1j-161{color:black;.z-style-1e8a67z1uaws1j-82:hover &{color:blue;}.z-style-1e8a67z1uaws1j-82 > &:nth-child(even){opacity:0.5;}.z-style-1e8a67z1uaws1j-130 + &{font-weight:700;}}
-      .z-style-1e8a67z1uaws1j-374{.z-style-1e8a67z1uaws1j-82 > &{margin:0;}}"
+      .z-style-1e8a67z1uaws1j-159{color:black;.z-style-1e8a67z1uaws1j-82:hover &{color:blue;}.z-style-1e8a67z1uaws1j-82 > &:nth-child(even){opacity:0.5;}.z-style-1e8a67z1uaws1j-130 + &{font-weight:700;}}
+      .z-style-1e8a67z1uaws1j-372{.z-style-1e8a67z1uaws1j-82 > &{margin:0;}}"
     `)
     expect(result.modules['app.ts']!.code).toMatchInlineSnapshot(`
       "
@@ -32,16 +61,16 @@ describe('where', () => {
       export namespace styles {
         export const card = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-82"})
         export const empty = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-130"})
-        export const label = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-161"})
+        export const label = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-159"})
       }
-      export const outside = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-374"})"
+      export const outside = __zyzzProps.create({className:"z-style-1e8a67z1uaws1j-372"})"
     `)
   })
 
   test('resolves aliases and named re-exports across source and packed modules', () => {
     const publisher = Graph.compile({
       modules: {
-        'library.ts': `import { css } from 'zyzz'; export const card = css({}); export namespace styles { export const button = css({color:'red'}) }`,
+        'library.ts': `import { css } from 'zyzz'; export const card = css(); export namespace styles { export const button = css({color:'red'}) }`,
         'barrel.ts': `import { card, styles } from './library.js'; export { card as panel, styles }`,
       },
     })
@@ -52,7 +81,7 @@ describe('where', () => {
       imports: { 'app.ts': { zyzz: null, './barrel.js': 'barrel.ts' } },
     })
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-style-1e8a67z1uaws1j-130{.z-style-ggnaaj17b3mnh-48 > &, .z-style-ggnaaj17b3mnh-105 + &{color:blue;}}"`,
+      `".z-style-1e8a67z1uaws1j-130{.z-style-ggnaaj17b3mnh-48 > &, .z-style-ggnaaj17b3mnh-103 + &{color:blue;}}"`,
     )
     expect(
       JSON.parse(publisher.contracts['barrel.ts']!).version,

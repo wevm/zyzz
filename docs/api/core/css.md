@@ -13,7 +13,7 @@ const props = styles.card({ style: { padding: '2rem' } })
 
 ## Signature
 
-`css(style)` or `css((values: { /* required scalar fields */ }) => style)`
+`css()`, `css(style)`, or `css((values: { /* required scalar fields */ }) => style)`
 
 The callback overload requires an explicit finite object type and a concise static object body. It returns `css.Dynamic<values>`. Applying that callable requires every declared input and accepts optional `className` and `style` overrides, returning `css.Props`. The compiler emits fixed private custom properties; applications assign their values without generating rules. Private properties cannot be overridden through `style`. Empty strings remain explicit empty custom-property values.
 
@@ -29,9 +29,9 @@ const props = progress({ amount: '50%', className: 'external' })
 ### style
 
 - Type: `Style.LiteralProperties`
-- Required: Yes.
+- Default: `{}`.
 
-Literal property object at the current source boundary.
+Literal property object at the current source boundary. Omit it for an empty definition, including identity-only references in `where` templates.
 
 ```ts
 css({ padding: '1rem' })

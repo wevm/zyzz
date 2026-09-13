@@ -11,10 +11,11 @@ type Keys<value> = value extends unknown ? keyof value : never
 
 /**
  * Declares literal styles for source extraction. Requires a compile-time transform.
- * @param styles - Token-free literal CSS properties.
+ * @param styles - Token-free literal CSS properties. Omit for an empty definition.
  * @returns A callable style definition after source rewriting.
  * @throws {MissingTransformError} Whenever an untransformed definition executes.
  */
+export function css(): css.ReturnType
 export function css<
   const values extends Record<string, string | number>,
   const styles extends Record<string, unknown>,
@@ -33,7 +34,7 @@ export function css<
 export function css<const styles extends Record<string, unknown>>(
   styles: styles & NoInfer<Style.Accepted<styles, {}, true>>,
 ): css.ReturnType
-export function css(styles: unknown): never {
+export function css(styles?: unknown): never {
   void styles
   throw new MissingTransformError()
 }

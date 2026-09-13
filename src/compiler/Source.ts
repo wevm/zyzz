@@ -385,6 +385,14 @@ export function extract(options: extract.Options): extract.ReturnType {
   for (const call of pending) {
     let argument = call.arguments[0]
 
+    if (call.arguments.length === 0)
+      argument = {
+        end: call.end - 1,
+        properties: [],
+        start: call.end - 1,
+        type: 'ObjectExpression',
+      }
+
     while (
       argument?.type === 'TSAsExpression' ||
       argument?.type === 'TSSatisfiesExpression'
@@ -450,7 +458,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       }
     }
 
-    if (call.arguments.length !== 1 || argument?.type !== 'ObjectExpression') {
+    if (call.arguments.length > 1 || argument?.type !== 'ObjectExpression') {
       report(
         'unsupported_syntax',
         'Expected one literal object or typed callback; spreads and referenced definitions are not supported.',

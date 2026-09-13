@@ -98,6 +98,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       if (!call || node.end !== call.end) return
 
       const folded =
+        !call.recipe &&
         !call.slots &&
         parent?.type === 'CallExpression' &&
         parent.callee === node &&
@@ -131,6 +132,9 @@ export function compile(options: compile.Options): compile.ReturnType {
   while (identifiers.has(html)) html += '_'
 
   let usesHtml = false
+  let recipe = '__zyzzRecipe'
+  while (identifiers.has(recipe)) recipe += '_'
+  let usesRecipe = false
   let appearance = '__zyzzAppearance'
 
   while (identifiers.has(appearance)) appearance += '_'
@@ -194,6 +198,20 @@ export function compile(options: compile.Options): compile.ReturnType {
     const props = `{${call.output === 'html' ? 'class' : 'className'}:${JSON.stringify(classes[call.name])}}`
 
     const replacement = (() => {
+      if (call.recipe) {
+        usesRecipe = true
+        const value = `${recipe}.create(${JSON.stringify({ ...call.recipe, className: classes[call.name], ...(call.output === 'html' ? { html: true } : {}) })})`
+        const axes = Object.entries(call.recipe.axes)
+          .map(
+            ([axis, choices]) =>
+              `${JSON.stringify(axis)}:{${choices.map((choice) => `${JSON.stringify(choice)}:{}`).join(';')}}`,
+          )
+          .join(';')
+        const type = `import('zyzz').variants.ReturnType<{variants:{${axes}}}${call.output === 'html' ? ',"html"' : ''}>`
+        return /\.[cm]?tsx?$/.test(options.moduleId)
+          ? `(${value} as ${type})`
+          : value
+      }
       if (call.slots) {
         const type = `import('zyzz').css.Dynamic<${call.valuesType}${call.output === 'html' ? ',"html"' : ''}>`
         const typed = /\.[cm]?tsx?$/.test(options.moduleId)
@@ -235,7 +253,12 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.overwrite(call.start, application.end, replacement)
 
-    if (!call.slots && !application.folded && call.output !== 'html')
+    if (
+      !call.recipe &&
+      !call.slots &&
+      !application.folded &&
+      call.output !== 'html'
+    )
       callable = true
   }
 
@@ -386,7 +409,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         specifier.importKind === 'type' ||
         !(
           node.source.value === 'zyzz'
-            ? ['Config', 'css', 'Theme', 'variable']
+            ? ['Config', 'css', 'Theme', 'variable', 'variants']
             : [
                 'Css',
                 'cssFunction',
@@ -458,6 +481,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   if (
     callable ||
+    usesRecipe ||
     usesHtml ||
     usesSelection ||
     usesAppearance ||
@@ -476,7 +500,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Variable as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', usesRecipe ? `Recipe as ${recipe}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Variable as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

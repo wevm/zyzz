@@ -14,6 +14,8 @@ import * as Selectors from './internal/Selectors.js'
 import type * as Namespace from '../web/internal/Namespace.js'
 import * as Parser from 'oxc-parser'
 import * as RuleReference from '../internal/RuleReference.js'
+import type * as Recipe from '../runtime/Recipe.js'
+import * as Recipes from './internal/Recipes.js'
 import * as Scope from './internal/Scope.js'
 import type * as Shorthands from '../internal/Shorthands.js'
 import * as Static from './internal/Static.js'
@@ -34,6 +36,8 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Finite recipe selection metadata, with all alternatives retained in CSS. */
+  readonly recipe?: Recipe.Definition | undefined
   /** Stable selector identity retained independently of declaration deduplication. */
   readonly identity?: string | undefined
   /** Expanded immutable source data retained for declaration mapping. */
@@ -83,6 +87,7 @@ export function extract(options: extract.Options): extract.ReturnType {
   const calls: Call[] = []
   const diagnostics: Diagnostic[] = []
   const pending: Ast.CallExpression[] = []
+  const recipes = new Set<number>()
   const styles: Style.NamedStyle[] = []
 
   function report(
@@ -278,7 +283,8 @@ export function extract(options: extract.Options): extract.ReturnType {
             name === 'Config' ||
             name === 'css' ||
             name === 'Theme' ||
-            name === 'variable'
+            name === 'variable' ||
+            name === 'variants'
           )
             report(
               'unsupported_syntax',
@@ -293,9 +299,11 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (
         specifier.type !== 'ImportSpecifier' ||
         specifier.importKind === 'type' ||
-        (specifier.imported.type === 'Identifier'
-          ? specifier.imported.name
-          : specifier.imported.value) !== 'css'
+        !['css', 'variants'].includes(
+          specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value,
+        )
       )
         return
 
@@ -340,9 +348,15 @@ export function extract(options: extract.Options): extract.ReturnType {
         parent.type === 'CallExpression' &&
         parent.callee === node &&
         !parent.optional
-      )
+      ) {
         pending.push(parent)
-      else
+        if (
+          (specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : specifier.imported.value) === 'variants'
+        )
+          recipes.add(parent.start)
+      } else
         report(
           'unsupported_syntax',
           'Use a direct css call; aliases, re-exports, and indirect references are not supported yet.',
@@ -508,6 +522,18 @@ export function extract(options: extract.Options): extract.ReturnType {
     }
 
     const before = diagnostics.length
+    let recipe: Recipe.Definition | undefined
+    if (recipes.has(call.start)) {
+      try {
+        const expanded = Recipes.expand(argument)
+        argument = expanded.body
+        recipe = expanded.recipe
+      } catch (error) {
+        if (!(error instanceof Themes.InvalidError)) throw error
+        report('unsupported_syntax', error.message, error)
+        continue
+      }
+    }
     const name = `style-${identity(options.moduleId)}-${call.start}`
     const locations: Style.SourceLocation[] = []
     const conditionKeys: Ast.Node[] = []
@@ -935,6 +961,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         .contract.shorthands
 
       calls.push({
+        ...(recipe ? { recipe } : {}),
         ...(selectors.identities.has(call.start)
           ? { identity: selectors.identities.get(call.start)! }
           : {}),

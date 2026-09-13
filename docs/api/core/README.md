@@ -3,7 +3,7 @@
 Typed style definitions, themes, configuration, and callable authoring.
 
 > [!NOTE]
-> `Config`, `css`, `Style`, `Theme`, and `variable` are exported. `selectors` is a style property. Config source extraction and theme variable references are supported. `cx` and `variants` remain preview APIs and are not exported.
+> `Config`, `css`, `Style`, `Theme`, `variable`, and `variants` are exported. `selectors` is a style property. Config source extraction and theme variable references are supported. `cx` remains a preview API. Root variants support static choices; bound and conditional recipes follow in the Phase 3 stack.
 
 | API                        | Description                                                            |
 | -------------------------- | ---------------------------------------------------------------------- |

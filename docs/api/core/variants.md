@@ -1,114 +1,46 @@
 # variants
 
-> [!NOTE]
-> Preview API; not yet implemented.
+Defines one element's finite style choices. Import `variants` from `zyzz`; apply the returned callable through ordinary styling props.
 
-Define finite style choices for one element.
-
-```ts
+```tsx
 import { variants } from 'zyzz'
 
 namespace styles {
   export const button = variants({
-    defaultVariants: { size: 'sm' },
-    variants: { size: { md: { padding: '1rem' }, sm: { padding: '0.5rem' } } },
+    base: { display: 'inline-flex' },
+    variants: {
+      size: { sm: { padding: '4px' }, lg: { padding: '12px' } },
+      loading: { true: { opacity: 0.5 }, false: {} },
+    },
+    defaultVariants: { size: 'sm', loading: false },
+    compoundVariants: [
+      { when: { size: ['sm', 'lg'], loading: true }, style: { color: 'red' } },
+    ],
   })
 }
-const props = styles.button({ size: 'md' })
+
+const button = <button {...styles.button({ size: 'lg', loading: true })} />
+type ButtonProps = NonNullable<Parameters<typeof styles.button>[0]>
 ```
 
-## Signature
+The compiler emits every finite choice and compound. Applications select attributes under a stable class, merge styling overrides, and never generate CSS. Runtime selection relies on the typed contract; structural authoring errors produce source diagnostics during compilation.
 
-`variants(definition)`
+## Definition
 
-## Parameters
+| Field              | Behavior                                                                                       |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| `base`             | Static styles applied before the axes.                                                         |
+| `variants`         | Ordered axes containing named style choices; `true`/`false` choices accept boolean selections. |
+| `defaultVariants`  | Choices used for omitted or `undefined` selections.                                            |
+| `compoundVariants` | Ordered `{ when, style }` entries; arrays match any listed choice, and axes combine with AND.  |
 
-### definition.base
+Precedence is base, then axes in declaration order, then compounds in array order, within matching contexts and importance. Attributes add no selector specificity. Axis names use lowercase data-attribute spelling and cannot reuse styling or component-reserved props.
 
-- Type: Style declarations
-- Default: No base declarations.
+## Application
 
-Common declarations for every application.
+`styles.button()` applies defaults. A `null` selection suppresses an axis and its default. Boolean `false` emits `"false"`; it does not remove the attribute. Styling overrides use `className`, `style`, and `variables`, as with `css`.
 
-```ts
-variants({ base: { display: 'inline-flex' }, variants: {} })
-```
+Each recipe owns its emitted `data-*` attributes. Multipart components use separate definitions and shared component inputs. Recipes have no slots. Ordinary JSX spreads replace props; they are not a composition API.
 
-### definition.compoundVariants
-
-- Type: Ordered `{ style, when }` rules
-- Default: No compound rules.
-
-Match choice names, including arrays of alternatives, and combine matching styles in authored order.
-
-```ts
-variants({
-  compoundVariants: [{ style: { opacity: 0.8 }, when: { size: 'md' } }],
-  variants: { size: { md: { padding: '1rem' } } },
-})
-```
-
-### definition.defaultVariants
-
-- Type: Selections keyed by inferred axes
-- Default: No default selections.
-
-Selections for omitted axes. Null suppresses a choice and its default; false remains an explicit choice.
-
-```ts
-variants({
-  defaultVariants: { size: 'sm' },
-  variants: { size: { sm: { padding: '0.5rem' } } },
-})
-```
-
-### definition.variants
-
-- Type: Axes and named style choices
-- Required: Yes.
-
-Finite choices compile ahead of time. Dynamic choices use typed callbacks.
-
-```ts
-variants({ variants: { size: { md: { padding: '1rem' } } } })
-```
-
-## Returns
-
-Applying the returned callable produces one props object, including generated recipe attributes when required. `className` and `style` describe that object; the exact preview type names remain to be finalized.
-
-### Callable
-
-- Type: Callable returning styling props
-
-Returns props for one element. Infer selections with `NonNullable<Parameters<typeof button>[0]>`.
-
-```ts
-const props = styles.button({ size: 'md' })
-```
-
-### className
-
-- Type: `string`
-
-Generated class list, including supplied external classes. Class-string order does not establish CSS precedence.
-
-```ts
-props.className
-```
-
-### style
-
-- Type: Inline style bindings and overrides
-
-Copied inline overrides when supplied. Other component props remain on the element.
-
-```ts
-props.style
-```
-
-## Errors
-
-Reject unknown axes, choices, payloads, and styling overrides. No slots map is accepted.
-
-Config and theme handles expose bound `variants`. Compound arrays match any listed choice. See [Define Variants](../../guides/variants.md#define-variants).
+> [!NOTE]
+> Theme/config-bound recipes, responsive selections, dynamic choice payloads, and explicit composition follow in the Phase 3 stack. This initial slice supports root recipes with static choices.

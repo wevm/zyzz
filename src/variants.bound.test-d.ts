@@ -3,6 +3,26 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, Theme } from 'zyzz'
 
 describe('variants', () => {
+  test('keeps renamed theme helpers independently typed', () => {
+    const theme = Theme.define({ color: { brand: '#06c' } })
+    const { css: style, variants: recipe } = theme
+    const base = style({ color: 'brand' })
+    const button = recipe({
+      variants: { intent: { primary: { color: 'brand' }, quiet: {} } },
+    })
+
+    expectTypeOf(base()).toHaveProperty('className')
+    expectTypeOf<
+      NonNullable<Parameters<typeof button>[0]>['intent']
+    >().toEqualTypeOf<'primary' | 'quiet' | null | undefined>()
+    // @ts-expect-error Unknown finite choice.
+    button({ intent: 'missing' })
+    // @ts-expect-error Unknown theme color.
+    style({ color: 'missing' })
+    // @ts-expect-error Unknown theme color in a recipe.
+    recipe({ base: { color: 'missing' } })
+  })
+
   test('retains tokens, mappings, layers, and HTML output', () => {
     const theme = Theme.define({
       color: { brand: '#06c' },

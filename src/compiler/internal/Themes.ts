@@ -18,7 +18,9 @@ import type * as Source from '../Source.js'
 export type Alias = Call & {
   /** Retains an immutable theme/configuration alias value with an explicit type. */
   readonly retained?: boolean | undefined
-  /** Whether the initializer supplies a destructured css binding. */
+  /** Ordered authoring members replaced in a shared destructuring initializer. */
+  readonly bindings?: readonly ('css' | 'variants')[] | undefined
+  /** Whether the initializer supplies destructured authoring bindings. */
   readonly destructured: boolean
 }
 
@@ -923,31 +925,50 @@ export function collect(program: Ast.Program, options: collect.Options) {
     })()
     if (!theme) return
 
-    let id = variable.id
+    const bindings = (() => {
+      if (destructured && variable.id.type === 'ObjectPattern') {
+        if (!variable.id.properties.length)
+          fail(
+            'Theme destructuring requires an authoring binding.',
+            variable.id,
+          )
 
-    if (destructured && id.type === 'ObjectPattern') {
-      const property = id.properties[0]
+        return variable.id.properties.map((property) => {
+          if (
+            property.type !== 'Property' ||
+            property.computed ||
+            property.key.type !== 'Identifier' ||
+            (property.key.name !== 'css' && property.key.name !== 'variants') ||
+            property.value.type !== 'Identifier'
+          )
+            fail(
+              'Destructure only css or variants into const bindings without defaults or rest properties.',
+              property,
+            )
 
-      if (
-        id.properties.length !== 1 ||
-        property?.type !== 'Property' ||
-        property.computed ||
-        property.key.type !== 'Identifier' ||
-        !['css', 'variants'].includes(property.key.name) ||
-        property.value.type !== 'Identifier'
-      )
-        fail(
-          'Destructure only css into a const binding without defaults or rest properties.',
-          id,
-        )
+          return { id: property.value, member: property.key.name } as const
+        })
+      }
 
-      id = property.value
-    }
+      if (variable.id.type !== 'Identifier')
+        fail('Theme authoring aliases require named const bindings.', variable)
+
+      const recipe =
+        expression.type === 'MemberExpression' &&
+        expression.property.type === 'Identifier'
+          ? expression.property.name === 'variants'
+          : theme.recipe
+      return [
+        {
+          id: variable.id,
+          member: recipe ? ('variants' as const) : ('css' as const),
+        },
+      ]
+    })()
 
     if (
       declaration.kind !== 'const' ||
-      (statement.type === 'ExportNamedDeclaration' && !options.linked) ||
-      id.type !== 'Identifier'
+      (statement.type === 'ExportNamedDeclaration' && !options.linked)
     )
       fail(
         'Theme css aliases require a local module-level const binding.',
@@ -957,42 +978,38 @@ export function collect(program: Ast.Program, options: collect.Options) {
     if (expression.start < theme.end)
       fail('Theme css aliases must follow their definition.', expression)
 
-    const recipe =
-      expression.type === 'MemberExpression' &&
-      expression.property.type === 'Identifier'
-        ? expression.property.name === 'variants'
-        : variable.id.type === 'ObjectPattern'
-          ? variable.id.properties.some(
-              (property) =>
-                property.type === 'Property' &&
-                property.key.type === 'Identifier' &&
-                property.key.name === 'variants',
-            )
-          : theme.recipe
-    const alias = Object.freeze({
-      recipe,
-      destructured,
-      end: expression.end,
-      name: theme.name,
-      start: expression.start,
-      tokenType: theme.tokenType,
-      type: theme.type,
-      options: theme.options,
-      output: theme.output,
-    })
+    for (const [index, { id, member }] of bindings.entries()) {
+      const alias = Object.freeze({
+        recipe: member === 'variants',
+        destructured,
+        end: expression.end,
+        name: theme.name,
+        start: expression.start,
+        tokenType: theme.tokenType,
+        type: theme.type,
+        options: theme.options,
+        output: theme.output,
+      })
 
-    aliases.push(alias)
-    aliasBindings.set(id.start, alias)
-    aliasNames.set(id.name, alias)
+      // Each local/exported name keeps its own callable identity, while the
+      // shared initializer is rewritten once with every destructured member.
+      if (index === 0)
+        aliases.push({
+          ...alias,
+          bindings: bindings.map(({ member }) => member),
+        })
+      aliasBindings.set(id.start, alias)
+      aliasNames.set(id.name, alias)
+
+      if (statement.type === 'ExportNamedDeclaration')
+        exports[id.name] = {
+          binding: `${options.namespace}-${id.name}`,
+          call: alias,
+          definition: themes[alias.name]!,
+          kind: 'css',
+        }
+    }
     aliasReferences.add(source.start)
-
-    if (statement.type === 'ExportNamedDeclaration')
-      exports[id.name] = {
-        binding: `${options.namespace}-${id.name}`,
-        call: alias,
-        definition: themes[alias.name]!,
-        kind: 'css',
-      }
   }
 
   const exportReferences = new Set<number>()

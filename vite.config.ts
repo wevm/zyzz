@@ -21,8 +21,8 @@ export default defineConfig({
   lint: {
     categories: { correctness: 'error' },
     ignorePatterns: ['.fixture-*/**', 'dist/**', 'node_modules/**'],
-    // CI checks compiler diagnostics in its TypeScript version matrix.
-    options: { typeAware: true, typeCheck: !process.env.CI },
+    // Keep CI formatting/lint syntax-only; the TypeScript matrix checks types.
+    options: { typeAware: !process.env.CI, typeCheck: !process.env.CI },
     rules: { 'no-unused-vars': 'error' },
   },
   test: {

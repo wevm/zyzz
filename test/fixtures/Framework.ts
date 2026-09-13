@@ -303,7 +303,8 @@ export async function verify(options: verify.Options) {
           recoveryErrors.every(
             (error) =>
               options.name === 'svelte' &&
-              error === "Cannot read properties of undefined (reading 'default')",
+              error ===
+                "Cannot read properties of undefined (reading 'default')",
           ),
         ).toMatchInlineSnapshot('true')
       }

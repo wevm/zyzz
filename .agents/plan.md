@@ -117,7 +117,7 @@ Implement in this order:
 
 Next.js acceptance:
 
-The `src/next` adapter and packed integration tests cover Next.js 16.3.5, Webpack and Turbopack, with default build targets and Chromium 153 rendering. Server/client components, production CSS/fonts, navigation, source/theme updates, and failure recovery are exercised. Streaming and hydration-node identity are verified. The wrapper preserves native `light-dark()` through default build targets; an adapter-specific source-map trace remains open; preview status is retained.
+The `src/next` adapter and packed integration tests cover Next.js 16.3.5, Webpack and Turbopack, with default build targets and Chromium 153 rendering. Server/client components, production CSS/fonts, navigation, source/theme updates, and failure recovery are exercised. Streaming and hydration-node identity are verified. The wrapper preserves native `light-dark()` through default build targets; client JavaScript maps now trace packed variant applications to authored call sites; preview status is retained.
 
 - [x] Implement `zyzz(nextConfig)` from `zyzz/next` as the single Next.js setup. Preserve existing options and compose build hooks/rules; configure transformation, CSS delivery, and dependency watching internally without requiring separate Babel/PostCSS configuration. Reuse the shared compiler and keep loader/transform selection internal.
 - [ ] Verify Next.js Webpack and Turbopack independently: Server Components, client components, streaming, hydration identities, Fast Refresh, route navigation, imported config/theme edits, production CSS loading, and failure recovery. Record supported Next.js versions and finalize async/function-valued config support before documenting it.
@@ -801,3 +801,9 @@ The bc6e1ca head passed all 315 integrations, including the complete engine-acce
 All 670 property entries are reviewed as supported under the documented static authoring and emission contract. The d2a78d9 head passed grid browser/type regressions, the 63,752-value corpus, build, checks, macOS, and benchmarks. Two unrelated compiler subprocess integrations exceeded the default five-second test budget; matched before/after runs took 8.43/8.38 seconds combined. Explicit ten-second subprocess deadlines within fifteen-second tests bound that work without removing assertions. Final CI must verify the complete inventory and unchanged exact 100% gate.
 
 - [x] Replace `Vars.define` with independent `variable()` declarations, `variables` static assignments, optional registration, and per-reference `.set(value)`. Preserve imported/re-exported namespace references through packed contract version 14.
+
+### Phase 3.5–3.6 Acceptance Stack
+
+[PR #145](https://github.com/wevm/zyzz/pull/145) targets main with packed contracts, declaration consumers, duplicated runtime handling, source tracing, and host recovery. [PR #146](https://github.com/wevm/zyzz/pull/146) targets #145 with packed React/Solid/Svelte and Next.js Webpack/Turbopack lifecycle fixtures, application tracing, and production variant benchmarks.
+
+[Measurements](../bench/Web-variants.md) retain all comparison lanes, artifact boundaries, uncertainty, and observed losses. The complete 72-group production React matrix passes locally and in CI. Inline Svelte authoring, application frameworks beyond Next.js, and native rendering remain outside this acceptance slice. Neither PR is merged.

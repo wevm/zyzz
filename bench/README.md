@@ -391,3 +391,5 @@ Runtime application timings run inside Chromium with forward/reverse library ord
 Delivery artifacts report raw/gzip/Brotli CSS, JavaScript, serialized attributes, class strings, and real server-rendered element markup. Client transfer sums CSS and JavaScript; hydrated transfer adds markup. Attribute/class/helper diagnostics are subsets or separate helper-only bundles and are never added to transfer totals. Helper-only bundles are reported for Zyzz; other libraries use complete emitted bundle sizes.
 
 `src/variants.packed.bench.ts` measures compiler consumption of versioned contracts at 10/100 applications. Its publisher is shared with the independent npm-package acceptance fixture. Older compilers cannot compose those imported definitions; no baseline speed comparison is implied for that new operation.
+
+[Packed and web measurements](Web-variants.md) record matched compiler delivery, browser application timings, selection/binding diagnostics, and the render verification boundary.

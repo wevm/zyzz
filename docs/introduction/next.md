@@ -1,7 +1,7 @@
 # Next.js Setup
 
 > [!NOTE]
-> Preview integration. Packed applications are verified with Next.js 16.3.5 on Webpack and Turbopack, rendering in Chromium 153 with default build targets. Adapter source-map tracing remains open.
+> Preview integration. Packed applications are verified with Next.js 16.3.5 on Webpack and Turbopack, rendering in Chromium 153 with default build targets. Client JavaScript source maps trace packed variant applications to their authored call sites.
 
 Wrap the existing Next.js configuration with the `zyzz` integration. The wrapper owns source transformation, CSS delivery, and dependency watching.
 
@@ -46,3 +46,5 @@ The wrapper excludes `light-dark()` from Next.js CSS lowering while preserving o
 Real packed-consumer tests cover server and client components, hydration-driven updates, Fast Refresh, route navigation, imported theme edits, source diagnostics and recovery, relative fonts, and production CSS loading. Streaming tests observe the fallback before completed server output and verify its styles. Hydration preserves the original server button node.
 
 See the [API reference](../api/next/zyzz.md) and [integration plan](../../.agents/plan.md#framework-integration-priority).
+
+Packed variants exercise defaults, payload updates, conditional selections, and composition in both bundlers. Client JavaScript maps trace the authored application; emitted module CSS maps retain source identities.

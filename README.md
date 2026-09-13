@@ -33,6 +33,8 @@ export function Card() {
 
 ## Getting Started
 
+Try the [React + Vite playground](examples/react) with `pnpm examples` from a repository checkout.
+
 ### Install
 
 ```sh

@@ -53,8 +53,20 @@ console.log(
 )
 
 for (const count of [10, 100])
-  for (const kind of ['cached', 'direct', 'callable', 'overrides', 'dynamic']) {
-    const libraries = kind === 'dynamic' ? ['baseline', 'zyzz'] : frameworks
+  for (const kind of [
+    'cached',
+    'direct',
+    'callable',
+    'overrides',
+    'dynamic',
+    'variants',
+  ]) {
+    const libraries =
+      kind === 'dynamic'
+        ? ['baseline', 'zyzz']
+        : kind === 'variants'
+          ? ['baseline', 'panda', 'stylex', 'zyzz']
+          : frameworks
 
     try {
       const passes = [1, 2].map((repeat) => {

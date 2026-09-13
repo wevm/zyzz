@@ -18,6 +18,7 @@ export const cases = [
   'callable',
   'overrides',
   'dynamic',
+  'variants',
 ] as const
 
 /** Existing comparison libraries plus a plain class/style control. */
@@ -50,7 +51,11 @@ export type Input = Props & {
 export function librariesFor(
   kind: (typeof cases)[number],
 ): readonly (typeof libraries)[number][] {
-  return kind === 'dynamic' ? ['baseline', 'zyzz'] : libraries
+  return kind === 'dynamic'
+    ? ['baseline', 'zyzz']
+    : kind === 'variants'
+      ? ['baseline', 'panda', 'stylex', 'zyzz']
+      : libraries
 }
 
 /** One production module and its required stylesheet. */
@@ -107,6 +112,71 @@ export async function create(options: create.Options): Promise<Bundle> {
 
   try {
     const compiled = await (async (): Promise<Compilation.Bundle> => {
+      if (kind === 'variants') {
+        const definitions = literals.map((style) => ({
+          base: style,
+          variants: {
+            size: { sm: { width: '25px' }, lg: { width: '75px' } },
+            active: { true: { opacity: 0.5 }, false: { opacity: 0.8 } },
+          },
+          defaultVariants: { size: 'sm', active: true },
+        }))
+        const selection =
+          "{size:input.width==='25px'?'sm':'lg',active:input.alpha===0.5}"
+        const finish =
+          "return {...props,className:input.className?props.className+' '+input.className:props.className,style:input.style}"
+
+        if (library === 'zyzz') {
+          const output = Transform.compile({
+            moduleId: 'benchmark/variants.ts',
+            source: `import {css,cx,variants} from 'zyzz';namespace styles{${definitions.map((definition, index) => `export const card${index}=variants(${JSON.stringify(definition)});`).join('')}export const override=css({paddingBottom:'3px'})}export function apply(index,input){let props;switch(index){${names.map((name, index) => `case ${index}:props=cx(styles.${name}(${selection}),styles.override());break;`).join('')}}${finish}}`,
+          })
+          return {
+            css: Compilation.minify(output.css),
+            javascript: await bundle(output.code),
+          }
+        }
+
+        if (library === 'panda') {
+          await Fs.writeFile(
+            Path.join(fixture.directory, 'panda.ts'),
+            `import {css,cva} from './styled-system/css';const applications=[${definitions.map((definition) => `cva(${JSON.stringify(definition)})`).join(',')}];export function apply(index,input){const props={className:css(applications[index].raw(${selection}),{paddingBottom:'3px'})};${finish}}export const classes=apply;`,
+          )
+          const output = await Compilation.panda(fixture)
+          return {
+            ...output,
+            javascript: await bundle(
+              `${output.javascript}\nexport const apply=fixture.classes;`,
+            ),
+          }
+        }
+
+        if (library === 'stylex') {
+          fixture.stylex = `import * as stylex from '@stylexjs/stylex';const styles=stylex.create(${JSON.stringify({ ...Object.fromEntries(literals.map((style, index) => [names[index], style])), sm: { width: '25px' }, lg: { width: '75px' }, active: { opacity: 0.5 }, inactive: { opacity: 0.8 }, override: { paddingBottom: '3px' } })});const applications=[${names.map((name) => `styles.${name}`).join(',')}];export function apply(index,input){const props=stylex.props(applications[index],input.width==='25px'?styles.sm:styles.lg,input.alpha===0.5?styles.active:styles.inactive,styles.override);${finish}}`
+          return Compilation.stylex(fixture)
+        }
+
+        const css =
+          literals
+            .map(
+              (style, index) =>
+                `.card${index}{${Object.entries(style)
+                  .map(
+                    ([key, value]) =>
+                      `${key.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase())}:${value}`,
+                  )
+                  .join(';')}}`,
+            )
+            .join('') +
+          '.sm{width:25px}.lg{width:75px}.active{opacity:.5}.inactive{opacity:.8}.override{padding-bottom:3px}'
+        return {
+          css: Compilation.minify(css),
+          javascript: await bundle(
+            `const names=${JSON.stringify(names)};export function apply(index,input){const props={className:names[index]+(input.width==='25px'?' sm':' lg')+(input.alpha===0.5?' active':' inactive')+' override'};${finish}}`,
+          ),
+        }
+      }
+
       if (kind === 'dynamic') {
         if (library === 'zyzz') {
           const definitions = literals.map((style) => {
@@ -307,6 +377,11 @@ export async function verify(
 
             actual.className = props.className
             actual.removeAttribute('style')
+            for (const name of actual.getAttributeNames())
+              if (name.startsWith('data-')) actual.removeAttribute(name)
+            for (const [key, value] of Object.entries(props))
+              if (key.startsWith('data-'))
+                actual.setAttribute(key, String(value))
 
             for (const [key, value] of Object.entries(props.style ?? {})) {
               if (key.startsWith('--'))
@@ -318,8 +393,11 @@ export async function verify(
             Object.assign(
               reference.style,
               literal,
-              kind === 'overrides' || kind === 'dynamic' ? input.style : {},
-              kind === 'dynamic'
+              kind === 'variants' ? { paddingBottom: '3px' } : {},
+              kind === 'overrides' || kind === 'dynamic' || kind === 'variants'
+                ? input.style
+                : {},
+              kind === 'dynamic' || kind === 'variants'
                 ? { width: input.width, opacity: input.alpha }
                 : {},
             )
@@ -330,7 +408,9 @@ export async function verify(
             for (const property of new Set([
               ...Object.keys(literal),
               'paddingLeft',
-              ...(kind === 'dynamic' ? ['width', 'opacity'] : []),
+              ...(kind === 'dynamic' || kind === 'variants'
+                ? ['width', 'opacity']
+                : []),
             ])) {
               const key = property.replace(
                 /[A-Z]/g,
@@ -345,7 +425,9 @@ export async function verify(
             }
 
             if (
-              (kind === 'overrides' || kind === 'dynamic') &&
+              (kind === 'overrides' ||
+                kind === 'dynamic' ||
+                kind === 'variants') &&
               input.className &&
               !actual.classList.contains(input.className)
             )

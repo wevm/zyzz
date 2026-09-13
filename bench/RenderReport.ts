@@ -17,10 +17,19 @@ console.log(
 const details = new Map<string, string[]>()
 let expected = 0
 for (const components of [100, 1000])
-  for (const kind of ['callable', 'overrides', 'dynamic'])
+  for (const kind of ['callable', 'overrides', 'dynamic', 'variants'])
     for (const library of kind === 'dynamic'
       ? ['baseline', 'zyzz']
-      : ['baseline', 'panda', 'stylex', 'tailwind', 'vanilla-extract', 'zyzz'])
+      : kind === 'variants'
+        ? ['baseline', 'panda', 'stylex', 'zyzz']
+        : [
+            'baseline',
+            'panda',
+            'stylex',
+            'tailwind',
+            'vanilla-extract',
+            'zyzz',
+          ])
       for (const pass of [1, 2]) {
         expected++
 
@@ -76,7 +85,7 @@ for (const components of [100, 1000])
       }
 if (data.groups.length !== expected) throw new Error('Unexpected groups')
 for (const components of [100, 1000])
-  for (const kind of ['callable', 'overrides', 'dynamic']) {
+  for (const kind of ['callable', 'overrides', 'dynamic', 'variants']) {
     const groups = data.groups.filter(
       (group) => group.components === components && group.kind === kind,
     )

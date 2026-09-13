@@ -257,7 +257,18 @@ async function compile(context: Context, source: string) {
         : undefined,
     }
   if (!output) throw new Error('Missing Next.js source compilation.')
-  if (options.mode === 'style') return { code: output.css, map: output.cssMap }
+  // Bundlers resolve map sources relative to the loader resource, not graph identities.
+  const sources = (names: readonly (string | null)[]) =>
+    names.map((name) =>
+      name?.startsWith('app/') ? Path.resolve(root, name.slice(4)) : name,
+    )
+  const map = {
+    ...output.map,
+    file: context.resourcePath,
+    sources: sources(output.map.sources),
+  }
+  const cssMap = { ...output.cssMap, sources: sources(output.cssMap.sources) }
+  if (options.mode === 'style') return { code: output.css, map: cssMap }
 
   if (options.bundler === 'turbopack') {
     const sharedFile = Path.relative(
@@ -278,11 +289,11 @@ async function compile(context: Context, source: string) {
           ]
         : []),
     ]
-    return { code: `${output.code}\n${requests.join('\n')}`, map: output.map }
+    return { code: `${output.code}\n${requests.join('\n')}`, map }
   }
   const styles = [
     { css: shared?.code.toString(), map: shared?.map?.toString() },
-    { css: output.css, map: JSON.stringify(output.cssMap) },
+    { css: output.css, map: JSON.stringify(cssMap) },
   ]
   const requests: string[] = []
   await Fs.mkdir(directory, { recursive: true })
@@ -308,5 +319,5 @@ async function compile(context: Context, source: string) {
     )
   }
 
-  return { code: `${output.code}\n${requests.join('\n')}`, map: output.map }
+  return { code: `${output.code}\n${requests.join('\n')}`, map }
 }

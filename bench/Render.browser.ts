@@ -19,19 +19,26 @@ test('production React mount, update, and remount', async () => {
   const groups: Render.Group[] = []
 
   for (const components of [100, 1000])
-    for (const kind of ['callable', 'overrides', 'dynamic'] as const)
+    for (const kind of [
+      'callable',
+      'overrides',
+      'dynamic',
+      'variants',
+    ] as const)
       for (const pass of [1, 2]) {
         const libraries =
           kind === 'dynamic'
             ? (['baseline', 'zyzz'] as const)
-            : ([
-                'baseline',
-                'panda',
-                'stylex',
-                'tailwind',
-                'vanilla-extract',
-                'zyzz',
-              ] as const)
+            : kind === 'variants'
+              ? (['baseline', 'panda', 'stylex', 'zyzz'] as const)
+              : ([
+                  'baseline',
+                  'panda',
+                  'stylex',
+                  'tailwind',
+                  'vanilla-extract',
+                  'zyzz',
+                ] as const)
 
         for (const library of pass === 1
           ? libraries
@@ -76,5 +83,5 @@ test('production React mount, update, and remount', async () => {
         }
       }
 
-  expect(groups.length).toMatchInlineSnapshot(`56`)
+  expect(groups.length).toMatchInlineSnapshot(`72`)
 })

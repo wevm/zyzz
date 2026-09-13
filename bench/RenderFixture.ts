@@ -97,7 +97,8 @@ export function create(options: create.Options) {
         reference.style,
         options.literals[(index + phase) % options.literals.length]!,
         options.kind === 'callable' ? {} : input.style,
-        options.kind === 'dynamic'
+        options.kind === 'variants' ? { paddingBottom: '3px' } : {},
+        options.kind === 'dynamic' || options.kind === 'variants'
           ? { width: input.width, opacity: input.alpha }
           : {},
       )
@@ -206,7 +207,7 @@ export declare namespace create {
     /** Alternate class and inline-style inputs. */
     inputs: readonly Runtime.Input[]
     /** Application workload. */
-    kind: 'callable' | 'dynamic' | 'overrides'
+    kind: 'callable' | 'dynamic' | 'overrides' | 'variants'
     /** Native declarations used only for untimed correctness checks. */
     literals: readonly Record<string, string | number>[]
   }

@@ -15,7 +15,7 @@ export type Options = Runtime.create.Options & {
   /** Rendered card count. */
   components: number
   /** Workload implemented by the React fixture. */
-  kind: 'callable' | 'dynamic' | 'overrides'
+  kind: 'callable' | 'dynamic' | 'overrides' | 'variants'
 }
 
 /** Raw samples from one independently ordered pass. */
@@ -58,7 +58,11 @@ export function commands() {
 
     const javascript = result.outputFiles[0]!.text
     const sizes = {
+      cssRaw: Buffer.byteLength(output.css),
+      cssBrotli: Zlib.brotliCompressSync(output.css).byteLength,
       cssGzip: Zlib.gzipSync(output.css).byteLength,
+      javascriptRaw: Buffer.byteLength(javascript),
+      javascriptBrotli: Zlib.brotliCompressSync(javascript).byteLength,
       javascriptGzip: Zlib.gzipSync(javascript).byteLength,
     }
 

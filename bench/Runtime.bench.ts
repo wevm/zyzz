@@ -2,9 +2,12 @@
  * Measures production props application after compilation and browser verification.
  * @module
  */
+import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Zlib from 'node:zlib'
+import * as React from 'react'
+import * as ReactDom from 'react-dom/server'
 import { bench, describe } from 'vite-plus/test'
 import * as Runtime from './Runtime.js'
 
@@ -61,18 +64,85 @@ for (const count of [10, 100])
                       raw: Buffer.byteLength(value),
                     })
 
+                    const helperExports =
+                      kind === 'variants'
+                        ? 'Composition, Recipe'
+                        : kind === 'dynamic'
+                          ? 'Dynamic'
+                          : kind === 'callable' || kind === 'overrides'
+                            ? 'Props'
+                            : ''
+                    const helperBundle =
+                      library === 'zyzz' && helperExports
+                        ? await Esbuild.build({
+                            alias: {
+                              'zyzz/runtime': Path.resolve(
+                                'src/runtime/index.ts',
+                              ),
+                            },
+                            bundle: true,
+                            format: 'esm',
+                            minify: true,
+                            stdin: {
+                              contents: `export {${helperExports}} from 'zyzz/runtime'`,
+                              loader: 'ts',
+                              resolveDir: process.cwd(),
+                            },
+                            write: false,
+                          })
+                        : undefined
+                    const helperArtifact = helperBundle
+                      ? measure(helperBundle.outputFiles[0]!.text)
+                      : null
                     const css = measure(output.css)
                     const javascript = measure(output.javascript)
+                    const props = Array.from({ length: count }, (_, index) =>
+                      output!.apply(index, Runtime.overrides[index % 2]!),
+                    )
+                    const attributes = measure(
+                      props
+                        .map((value) =>
+                          ReactDom.renderToStaticMarkup(
+                            React.createElement('article', value),
+                          ),
+                        )
+                        .map((html) =>
+                          html.slice('<article'.length, html.indexOf('>')),
+                        )
+                        .join(''),
+                    )
+                    const classNames = measure(
+                      props.map((value) => value.className).join(' '),
+                    )
+                    const markup = measure(
+                      props
+                        .map((value) =>
+                          ReactDom.renderToStaticMarkup(
+                            React.createElement('article', value, 'Card'),
+                          ),
+                        )
+                        .join(''),
+                    )
 
                     await Fs.writeFile(
                       Path.join(directory, `${library}.json`),
                       JSON.stringify(
                         {
+                          attributes,
+                          classNames,
                           count,
                           css,
+                          helperArtifact,
                           javascript,
                           kind,
                           library,
+                          markup,
+                          hydrated: {
+                            raw: css.raw + javascript.raw + markup.raw,
+                            gzip: css.gzip + javascript.gzip + markup.gzip,
+                            brotli:
+                              css.brotli + javascript.brotli + markup.brotli,
+                          },
                           total: {
                             brotli: css.brotli + javascript.brotli,
                             gzip: css.gzip + javascript.gzip,

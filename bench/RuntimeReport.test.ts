@@ -31,6 +31,7 @@ describe('runtime report', () => {
             'callable',
             'overrides',
             'dynamic',
+            'variants',
           ])
             for (const repeat of [1, 2]) {
               const benchmarks = []
@@ -47,6 +48,12 @@ describe('runtime report', () => {
                   kind === 'dynamic' &&
                   library !== 'baseline' &&
                   library !== 'zyzz'
+                )
+                  continue
+
+                if (
+                  kind === 'variants' &&
+                  (library === 'tailwind' || library === 'vanilla-extract')
                 )
                   continue
 

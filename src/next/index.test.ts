@@ -1,4 +1,5 @@
 /** Exercises packed Next.js applications through both production bundlers and real browser updates. @module */
+import * as Trace from '@jridgewell/trace-mapping'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Net from 'node:net'
@@ -9,6 +10,7 @@ import { chromium } from 'playwright'
 import { beforeAll, describe, expect, test, vi } from 'vite-plus/test'
 import * as Font from '../../test/fixtures/AtRuleFont.js'
 import * as Library from '../../test/fixtures/Library.js'
+import * as VariantLibrary from '../../test/fixtures/VariantLibrary.js'
 
 const exec = Util.promisify(ChildProcess.execFile)
 
@@ -61,6 +63,8 @@ describe('zyzz', () => {
           { cwd: app, timeout: 120_000, maxBuffer: 4 * 1024 * 1024 },
         )
 
+        await VariantLibrary.create(app)
+
         await Fs.mkdir(Path.join(app, 'app/other'), { recursive: true })
         await Fs.mkdir(Path.join(app, 'app/stream'), { recursive: true })
         await Fs.writeFile(
@@ -70,14 +74,15 @@ describe('zyzz', () => {
         const config = `import {Config} from 'zyzz';import {theme as library} from '@acme/theme';export const {css,theme}=Config.create({theme:library});`
         const files = {
           'app/fonts.ts': `import {fontFace} from 'zyzz/web';fontFace({fontFamily:'NextEvidence',src:'url(./probe.ttf)'});`,
-          'app/client.tsx': `'use client';import {useEffect,useState} from 'react';import {css} from '@config';namespace styles{export const button=css((values:{opacity:number})=>({color:'brand',opacity:values.opacity}))}export default function Client(){const [active,setActive]=useState(false);const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <button data-ready={ready} {...styles.button({opacity:active?0.5:1})} onClick={()=>setActive(!active)}>Toggle</button>}`,
+          'app/client.tsx': `'use client';import {useEffect,useState} from 'react';import {css} from '@config';import {variant,packedTheme} from './variants';namespace styles{export const button=css((values:{opacity:number})=>({color:'brand',opacity:values.opacity}))}export default function Client(){const [active,setActive]=useState(false);const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <><div className={packedTheme.className}><div id="packed" {...variant(active)}>Packed</div></div><button data-ready={ready} {...styles.button({opacity:active?0.5:1})} onClick={()=>setActive(!active)}>Toggle</button></>}`,
+          'app/variants.ts': `import {cx} from 'zyzz';import {controls} from '@acme/variants';import '@acme/variants/style.css';export {theme as packedTheme} from '@acme/variants';export function variant(active:boolean){return cx(controls.button({size:active?{custom:{padding:'20px'}}:undefined,active,conditions:{wide:{size:'lg'}}}),controls.override())}`,
           'app/config.ts': config,
           'app/layout.tsx': `import {theme} from '@config';export default function Layout({children}:{children:React.ReactNode}){return <html className={theme.className}><body>{children}</body></html>}`,
           'app/navigation.tsx': `'use client';import Link from 'next/link';import {useEffect,useState} from 'react';export default function Navigation({href,children}:{href:string;children:React.ReactNode}){const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <Link data-link-ready={ready} href={href}>{children}</Link>}`,
           'app/other/page.tsx': `import Navigation from '../navigation';export default function Other(){return <Navigation href="/">Back</Navigation>}`,
           'app/page.tsx': `import Navigation from './navigation';import {css} from '@config';import Client from './client';import {variants,theme as defaults} from 'zyzz/themes/default';namespace styles{export const heading=css({color:'brand',padding:'md'});export const bundled=variants({variants:{size:{sm:{padding:4,fontFamily:'sans'}}},defaultVariants:{size:'sm'}})}export default function Page(){return <main><aside id="default-theme" className={defaults.className}><p {...styles.bundled()}>Default</p></aside><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
           'app/stream/page.tsx': `import {Suspense} from 'react';import {css} from '@config';export const dynamic='force-dynamic';namespace styles{export const message=css({color:'brand',padding:'md'})}async function Delayed(){await new Promise(resolve=>setTimeout(resolve,500));return <p data-stream="complete" {...styles.message()}>Complete</p>}export default function Page(){return <Suspense fallback={<p data-stream="pending" {...styles.message()}>Pending</p>}><Delayed/></Suspense>}`,
-          'next.config.ts': `import {zyzz} from 'zyzz/next';import * as Path from 'node:path';export default zyzz(async()=>({experimental:{cpus:2},turbopack:{root:process.cwd(),resolveAlias:{'@config':'./app/config.ts'}},webpack(config){config.resolve.alias['@config']=Path.resolve('app/config.ts');return config}}));`,
+          'next.config.ts': `import {zyzz} from 'zyzz/next';import * as Path from 'node:path';export default zyzz(async()=>({productionBrowserSourceMaps:true,experimental:{cpus:2},turbopack:{root:process.cwd(),resolveAlias:{'@config':'./app/config.ts'}},webpack(config){config.resolve.alias['@config']=Path.resolve('app/config.ts');return config}}));`,
           'tsconfig.json': JSON.stringify({
             compilerOptions: {
               exactOptionalPropertyTypes: true,
@@ -108,10 +113,51 @@ describe('zyzz', () => {
             timeout: 120_000,
             maxBuffer: 4 * 1024 * 1024,
           },
-        )
+        ).catch((error) => {
+          throw new Error(error.stdout + '\n' + error.stderr)
+        })
         expect(
           build.stdout.includes('Compiled successfully'),
         ).toMatchInlineSnapshot('true')
+
+        const maps = (
+          await Fs.readdir(Path.join(app, '.next/static'), { recursive: true })
+        ).filter((file) => file.endsWith('.js.map'))
+        const contents = await Promise.all(
+          maps.map((file) =>
+            Fs.readFile(Path.join(app, '.next/static', file), 'utf8'),
+          ),
+        )
+        const tracePoints: string[] = []
+        const traced = contents.some((content) => {
+          const map = new Trace.TraceMap(JSON.parse(content))
+          let found = false
+          Trace.eachMapping(map, (mapping) => {
+            if (!mapping.source || mapping.originalColumn === null) return
+            const source = Trace.sourceContentFor(map, mapping.source)
+            const start = source?.indexOf('cx(controls.button') ?? -1
+            if (start >= 0 && tracePoints.length < 80)
+              tracePoints.push(
+                JSON.stringify({
+                  start,
+                  line: mapping.originalLine,
+                  column: mapping.originalColumn,
+                  source: mapping.source,
+                  prefix: source!.slice(0, 100),
+                }),
+              )
+            if (
+              start >= 0 &&
+              mapping.originalLine === 1 &&
+              mapping.originalColumn >= start &&
+              mapping.originalColumn <= start + 3
+            )
+              found = true
+          })
+          return found
+        })
+        if (!traced) throw new Error(tracePoints.join('\n'))
+        expect(traced).toMatchInlineSnapshot('true')
 
         const candidate = {
           milliseconds: performance.now() - started,
@@ -296,6 +342,15 @@ describe('zyzz', () => {
         `)
         await streamedPage.close()
 
+        await page.setViewportSize({ width: 450, height: 700 })
+        expect(
+          await page
+            .locator('#packed')
+            .evaluate((element) => getComputedStyle(element).paddingRight),
+        ).toMatchInlineSnapshot('"4px"')
+        await page.evaluate(
+          'window.packedNode=document.querySelector("#packed")',
+        )
         const classes = await page
           .locator('button[data-ready]')
           .getAttribute('class')
@@ -319,6 +374,23 @@ describe('zyzz', () => {
           (await page.locator('button[data-ready]').getAttribute('class')) ===
             classes,
         ).toMatchInlineSnapshot('true')
+        expect(
+          await page
+            .locator('#packed')
+            .evaluate((element) => getComputedStyle(element).paddingRight),
+        ).toMatchInlineSnapshot('"20px"')
+        expect(
+          await page.evaluate(
+            'window.packedNode===document.querySelector("#packed")',
+          ),
+        ).toMatchInlineSnapshot('true')
+        await page.setViewportSize({ width: 900, height: 700 })
+        expect(
+          await page
+            .locator('#packed')
+            .evaluate((element) => getComputedStyle(element).paddingRight),
+        ).toMatchInlineSnapshot('"12px"')
+        await page.setViewportSize({ width: 450, height: 700 })
         await page.locator('a[data-link-ready=true][href="/other"]').click()
         await page.waitForURL(`${production.url}/other`)
         await page.locator('a[data-link-ready=true][href="/"]').click()
@@ -396,13 +468,17 @@ describe('zyzz', () => {
           Path.join(app, 'app/config.ts'),
           changedConfig('#c00'),
         )
-        await page.waitForFunction(
-          () =>
-            getComputedStyle(document.querySelector('main > h1')!).color ===
-            'rgb(204, 0, 0)',
-          undefined,
-          { timeout: 30_000 },
-        )
+        await page
+          .waitForFunction(
+            () =>
+              getComputedStyle(document.querySelector('main > h1')!).color ===
+              'rgb(204, 0, 0)',
+            undefined,
+            { timeout: 30_000 },
+          )
+          .catch((error) => {
+            throw new Error(error.message + '\n' + development.log())
+          })
         expect(
           await page
             .locator('main > h1')
@@ -410,7 +486,7 @@ describe('zyzz', () => {
         ).toMatchInlineSnapshot('"rgb(204, 0, 0)"')
         await Fs.writeFile(
           Path.join(app, 'app/broken.ts'),
-          `import {global} from 'zyzz/web';global({body:{color:unknownColor()}});`,
+          `import {global} from 'zyzz/web';declare function unknownColor(): 'red';global({body:{color:unknownColor()}});`,
         )
         await vi.waitFor(
           () => {
@@ -455,7 +531,7 @@ describe('zyzz', () => {
         )
         await Fs.writeFile(
           Path.join(app, 'app/native.css'),
-          `@font-face{font-family:NextEvidence;src:url(./probe.ttf)}:root{--brand:light-dark(#06c,#9cf);--space:8px}.heading{color:var(--brand);padding:var(--space)}.button{color:var(--brand);opacity:var(--opacity)}`,
+          `@font-face{font-family:NextEvidence;src:url(./probe.ttf)}:root{--brand:light-dark(#06c,#9cf);--space:8px}.heading{color:var(--brand);padding:var(--space)}.button{color:var(--brand);opacity:var(--opacity)}.packed{color:var(--brand);padding:2px;opacity:.5}.packed[data-size=sm]{padding:4px}.packed[data-size=custom]{padding:var(--padding)}.packed[data-active=true]{opacity:1;border:3px solid}@media(min-width:600px){.packed{padding:12px}}.packed{padding-left:3px}`,
         )
         await Fs.writeFile(
           Path.join(app, 'app/page.tsx'),
@@ -463,19 +539,28 @@ describe('zyzz', () => {
         )
         await Fs.writeFile(
           Path.join(app, 'app/client.tsx'),
-          `'use client';import {useEffect,useState} from 'react';export default function Client(){const [active,setActive]=useState(false);const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <button data-ready={ready} className="button" style={{'--opacity':active?0.5:1} as React.CSSProperties} onClick={()=>setActive(!active)}>Toggle</button>}`,
+          `'use client';import {useEffect,useState} from 'react';export default function Client(){const [active,setActive]=useState(false);const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <><div id="packed" className="packed" data-size={active?'custom':'sm'} data-active={active} style={active?{'--padding':'20px'} as React.CSSProperties:undefined}>Packed</div><button data-ready={ready} className="button" style={{'--opacity':active?0.5:1} as React.CSSProperties} onClick={()=>setActive(!active)}>Toggle</button></>}`,
         )
         await Fs.writeFile(
           Path.join(app, 'app/stream/page.tsx'),
           `import {Suspense} from 'react';export const dynamic='force-dynamic';async function Delayed(){await new Promise(resolve=>setTimeout(resolve,500));return <p data-stream="complete" className="heading">Complete</p>}export default function Page(){return <Suspense fallback={<p data-stream="pending" className="heading">Pending</p>}><Delayed/></Suspense>}`,
         )
         await Fs.rm(Path.join(app, '.next'), { recursive: true, force: true })
+        await Fs.rm(Path.join(app, 'tsconfig.tsbuildinfo'), { force: true })
+        expect(
+          await Fs.access(Path.join(app, 'app/broken.ts')).then(
+            () => true,
+            () => false,
+          ),
+        ).toMatchInlineSnapshot('false')
         const nativeStarted = performance.now()
         await exec(process.execPath, [next, 'build', `--${bundler}`], {
           cwd: app,
           env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
           timeout: 120_000,
           maxBuffer: 4 * 1024 * 1024,
+        }).catch((error) => {
+          throw new Error(error.stdout + '\n' + error.stderr)
         })
         const native = {
           milliseconds: performance.now() - nativeStarted,

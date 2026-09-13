@@ -43,7 +43,37 @@ Precedence is base, then axes in declaration order, then compounds in array orde
 Each recipe owns its emitted `data-*` attributes. Multipart components use separate definitions and shared component inputs. Recipes have no slots. Ordinary JSX spreads replace props; they are not a composition API.
 
 > [!NOTE]
-> Responsive selections, dynamic choice payloads, and explicit composition follow in the Phase 3 stack. Recipes currently support static choices.
+> Dynamic choice payloads and explicit composition follow in the Phase 3 stack. Choices currently contain static styles.
+
+## Conditional Selections
+
+Declare named conditions on the recipe and select overrides separately from base choices:
+
+```ts
+const button = variants({
+  conditions: {
+    wide: '@media (width >= 600px)',
+    reduced: '@media (prefers-reduced-motion: reduce)',
+  },
+  variants: {
+    size: { sm: { padding: '4px' }, lg: { padding: '12px' } },
+    animated: { true: { transition: 'opacity 200ms' }, false: {} },
+  },
+  defaultVariants: { size: 'sm', animated: true },
+})
+
+button({ conditions: { wide: { size: 'lg' }, reduced: { animated: false } } })
+```
+
+Conditions support `@media` and `@supports`. Bound recipes also accept their theme's media aliases, such as `@media >=md`. Container and selector conditions are not supported for selection yet; ordinary declarations inside each choice retain their existing conditional capabilities.
+
+Later matching conditions win independently for each axis, in recipe declaration order. Missing or `undefined` overrides inherit the earlier effective selection. `null` disables the axis, including its default. Compounds match effective choices. Switching choices removes declarations unique to the previous choice, allowing base styles and the normal cascade to apply.
+
+CSS evaluates the conditions. Recipe calls serialize base and conditional instructions into attributes; they do not inspect the viewport, install listeners, or create CSS. These attributes carry selections, not a live reflection of the currently matching media query. SSR and client calls produce the same props for the same input.
+
+Compilation partitions condition states to preserve null and overlap semantics. Each recipe supports up to eight named conditions, producing at most 256 regions before ordinary CSS emission. Output grows with conditions and authored choices/compounds; runtime values do not grow it. The `zyzz-condition-` axis prefix is reserved for generated attributes.
+
+Media-list complements follow [Media Queries Level 4](https://www.w3.org/TR/mediaqueries-4/#mq-not): inactive comma-separated alternatives become intersected negated queries.
 
 ## Bound Recipes
 

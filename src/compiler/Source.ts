@@ -528,7 +528,10 @@ export function extract(options: extract.Options): extract.ReturnType {
     let recipe: Recipe.Definition | undefined
     if (recipes.has(call.start)) {
       try {
-        const expanded = Recipes.expand(argument)
+        const expanded = Recipes.expand(
+          argument,
+          themes?.styles.get(call.start)?.theme[Token.definition].queries,
+        )
         argument = expanded.body
         recipe = expanded.recipe
       } catch (error) {

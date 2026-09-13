@@ -2,6 +2,7 @@
  * Checks consumer inference and rejected inputs through the public css API.
  * @module
  */
+/* oxlint-disable typescript/restrict-template-expressions -- Selector references are resolved at compile time. */
 import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, css, Theme } from 'zyzz'
 

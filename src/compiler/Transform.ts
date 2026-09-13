@@ -213,7 +213,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           .join(',')
 
         const className = JSON.stringify(classes[call.name])
-        const value = `(input${typed ? `:Parameters<${type}>[0]` : ''})=>{${reads}const external=input.className;const style=input.style;return {className:external?${className}+" "+external:${className},style:{...style,${assignments}}}}`
+        const value = `(input${typed ? `:Parameters<${type}>[0]` : ''})=>{${reads}const external=input.className;const style=input.style;return {className:external?${className}+" "+external:${className},style:{...input.variables,...style,${assignments}}}}`
         const result =
           call.output === 'html' ? `${html}.bind(${value})` : `(${value})`
 

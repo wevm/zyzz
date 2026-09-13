@@ -366,13 +366,36 @@ export function extract(options: extract.Options): extract.ReturnType {
   const staticCalls = new Set(pending.map((call) => call.start))
   const opaque = new Set(variables.references.keys())
   const normalized = new Map<number, Ast.Node | Error>()
+  const selectorKeys = new Set<number>()
   for (const call of pending) {
     if (!call.arguments[0]) continue
     try {
-      normalized.set(
-        call.start,
-        staticData.normalize(call.arguments[0], staticCalls, opaque),
-      )
+      const value = staticData.normalize(call.arguments[0], staticCalls, opaque)
+      normalized.set(call.start, value)
+      const body =
+        value.type === 'ArrowFunctionExpression'
+          ? staticData.normalize(value.body, staticCalls, opaque)
+          : value
+
+      Walker.walk(body, {
+        enter(node) {
+          if (
+            node.type !== 'Property' ||
+            node.computed ||
+            node.value.type !== 'ObjectExpression' ||
+            !(
+              (node.key.type === 'Identifier' &&
+                node.key.name === 'selectors') ||
+              (node.key.type === 'Literal' && node.key.value === 'selectors')
+            )
+          )
+            return
+
+          for (const property of node.value.properties)
+            if (property.type === 'Property')
+              selectorKeys.add(property.key.start)
+        },
+      })
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
       normalized.set(call.start, error)
@@ -387,7 +410,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         identity(options.moduleId),
         pending,
         options[Themes.context]?.links,
-        staticData.used,
+        selectorKeys,
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
@@ -465,6 +488,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         argument = staticData.normalize(
           dynamic.body,
           staticCalls,
+          opaque,
         ) as Ast.Expression
       } catch (error) {
         if (!(error instanceof Themes.InvalidError)) throw error

@@ -1,4 +1,5 @@
 /** Checks nested selector declaration inference and configured tokens. @module */
+/* oxlint-disable typescript/restrict-template-expressions -- Selector references are resolved at compile time. */
 import { describe, test } from 'vite-plus/test'
 import { Config, css, Style } from 'zyzz'
 

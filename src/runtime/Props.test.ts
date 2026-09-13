@@ -27,6 +27,9 @@ describe('create', () => {
       export const dynamicProps=dynamic({opacity:0.5,variables,style});
       export const htmlProps=html({variables});
       export const originals={variables,style};
+      export const variablesOnly=dynamic({opacity:0.5,variables});
+      const htmlDynamic=htmlCss((input:{opacity:number})=>({color:accent,opacity:input.opacity}));
+      export const htmlDynamicProps=htmlDynamic({opacity:0.25,variables});
     `,
     })
     const bundle = await Esbuild.build({
@@ -51,7 +54,7 @@ describe('create', () => {
     `)
     expect(consumer.dynamicProps).toMatchInlineSnapshot(`
       {
-        "className": "z-1g4rm6r9aa2cb-base1",
+        "className": "z-1g4rm6r9aa2cb-base0 z-style-1g4rm6r9aa2cb-200",
         "style": {
           "--z-d1g4rm6r9aa2cb-200-6f-70-61-63-69-74-79": 0.5,
           "--z-v1g4rm6r9aa2cb-70": "blue",
@@ -63,6 +66,21 @@ describe('create', () => {
       {
         "class": "z-1g4rm6r9aa2cb-base0",
         "style": "--z-v1g4rm6r9aa2cb-70:red",
+      }
+    `)
+    expect(consumer.variablesOnly).toMatchInlineSnapshot(`
+      {
+        "className": "z-1g4rm6r9aa2cb-base0 z-style-1g4rm6r9aa2cb-200",
+        "style": {
+          "--z-d1g4rm6r9aa2cb-200-6f-70-61-63-69-74-79": 0.5,
+          "--z-v1g4rm6r9aa2cb-70": "red",
+        },
+      }
+    `)
+    expect(consumer.htmlDynamicProps).toMatchInlineSnapshot(`
+      {
+        "class": "z-1g4rm6r9aa2cb-base0 z-style-1g4rm6r9aa2cb-771",
+        "style": "--z-v1g4rm6r9aa2cb-70:red;--z-d1g4rm6r9aa2cb-771-6f-70-61-63-69-74-79:0.25",
       }
     `)
     expect(consumer.originals).toMatchInlineSnapshot(`

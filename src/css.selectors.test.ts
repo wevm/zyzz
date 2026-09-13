@@ -13,6 +13,28 @@ export namespace styles {
 export const outside = css({selectors:{[\`\${styles.card} > &\`]:{ margin: 0 }}})`
 
 describe('selectors', () => {
+  test('resolves standalone selector maps and spreads in static and dynamic definitions', () => {
+    const result = Graph.compile({
+      modules: {
+        'shared.ts': `
+      import {css} from 'zyzz';
+      const parent=css();
+      const selectors={'&:hover':{color:'red'},[\`\${parent} > &\`]:{color:'blue'}};
+      export const direct=css({selectors});
+      export const spread=css({selectors:{...selectors,'&:focus':{color:'green'}}});
+      export const dynamic=css((input:{opacity:number})=>({selectors,opacity:input.opacity}));
+      const unrelated={selectors:{invalid:{arbitrary:true}}};
+    `,
+      },
+    })
+
+    expect(result.modules['shared.ts']!.css).toMatchInlineSnapshot(`
+      ".z-style-1stl7if1lvmpx3-167{&:hover{color:red;}.z-style-1stl7if1lvmpx3-52 > &{color:blue;}}
+      .z-style-1stl7if1lvmpx3-211{&:hover{color:red;}.z-style-1stl7if1lvmpx3-52 > &{color:blue;}&:focus{color:green;}}
+      .z-style-1stl7if1lvmpx3-297{&:hover{color:red;}.z-style-1stl7if1lvmpx3-52 > &{color:blue;}opacity:var(--z-d1stl7if1lvmpx3-297-6f-70-61-63-69-74-79);}"
+    `)
+  })
+
   test('compiles empty theme and configured HTML definitions', () => {
     const result = Graph.compile({
       modules: {
@@ -155,7 +177,7 @@ const card=css({}); export const label=css((values:{opacity:number})=>({selector
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
 
-      const card=__zyzzProps.create({className:"z-style-1h5dayl7tfv4v-37"}); export const label=(((input:Parameters<import('zyzz').css.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"];const external=input.className;const style=input.style;return {className:external?"z-style-1h5dayl7tfv4v-65"+" "+external:"z-style-1h5dayl7tfv4v-65",style:{...style,"--z-d1h5dayl7tfv4v-65-6f-70-61-63-69-74-79":v0===''?' ':v0}}}) as import('zyzz').css.Dynamic<{opacity:number}>);"
+      const card=__zyzzProps.create({className:"z-style-1h5dayl7tfv4v-37"}); export const label=(((input:Parameters<import('zyzz').css.Dynamic<{opacity:number}>>[0])=>{const v0=input["opacity"];const external=input.className;const style=input.style;return {className:external?"z-style-1h5dayl7tfv4v-65"+" "+external:"z-style-1h5dayl7tfv4v-65",style:{...input.variables,...style,"--z-d1h5dayl7tfv4v-65-6f-70-61-63-69-74-79":v0===''?' ':v0}}}) as import('zyzz').css.Dynamic<{opacity:number}>);"
     `)
     expect(() =>
       Source.extract({

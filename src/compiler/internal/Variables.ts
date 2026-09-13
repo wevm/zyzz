@@ -131,6 +131,44 @@ export function collect(
               'variable requires a module-level constant.',
               parent,
             )
+
+          let initializer: Ast.Node = parent
+          for (let index = ancestors.length - 2; index >= 0; index--) {
+            const ancestor = ancestors[index]!
+            if (ancestor.type === 'VariableDeclarator') {
+              if (
+                ancestor.id.type === 'Identifier' &&
+                ancestor.init === initializer
+              )
+                break
+            } else if (
+              Expression.unwrap(ancestor) === Expression.unwrap(initializer)
+            ) {
+              initializer = ancestor
+              continue
+            } else if (
+              ancestor.type === 'Property' &&
+              !ancestor.computed &&
+              ancestor.kind === 'init' &&
+              !ancestor.method &&
+              ancestor.value === initializer
+            ) {
+              initializer = ancestor
+              continue
+            } else if (
+              ancestor.type === 'ObjectExpression' &&
+              ancestor.properties.includes(initializer as Ast.Property)
+            ) {
+              initializer = ancestor
+              continue
+            }
+
+            throw new InvalidError(
+              'variable requires a direct constant or object-group initializer.',
+              parent,
+            )
+          }
+
           factories.push(parent)
         }
       }
@@ -247,6 +285,15 @@ export function collect(
       )
         throw new InvalidError(
           'Registration requires matching syntax, inherits, and an independent initialValue.',
+          value,
+        )
+
+      if (
+        (kind === 'length' || kind === 'percentage') &&
+        String(descriptor.initialValue).trimStart().startsWith('-')
+      )
+        throw new InvalidError(
+          'Unsigned variable registrations require a nonnegative initialValue.',
           value,
         )
 

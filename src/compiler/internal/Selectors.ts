@@ -15,7 +15,7 @@ export function scan(
   namespace: string,
   calls: readonly Ast.CallExpression[],
   links: Readonly<Record<string, Themes.Link>> = {},
-  used: ReadonlySet<number> = new Set(),
+  selectorKeys: ReadonlySet<number> = new Set(),
 ) {
   const conditions = new Map<number, string>()
   const localConditions = new Set<string>()
@@ -134,27 +134,11 @@ export function scan(
 
   type Entry = { node: Ast.Node; parent: Ast.Node | null | undefined }
   const nodes: Entry[] = []
-  const ancestors: Ast.Node[] = []
   Walker.walk(program, {
     scopeTracker: scope,
     enter(node, parent) {
-      const container = ancestors.at(-2)
-      if (
-        node.type === 'Property' &&
-        (calls.some(
-          (call) => call.start <= node.start && node.end <= call.end,
-        ) ||
-          (parent && used.has(parent.start))) &&
-        parent?.type === 'ObjectExpression' &&
-        container?.type === 'Property' &&
-        !container.computed &&
-        ((container.key.type === 'Identifier' &&
-          container.key.name === 'selectors') ||
-          (container.key.type === 'Literal' &&
-            container.key.value === 'selectors'))
-      )
+      if (node.type === 'Property' && selectorKeys.has(node.key.start))
         nodes.push({ node, parent })
-      ancestors.push(node)
       if (node.type === 'VariableDeclarator') nodes.push({ node, parent })
 
       if (node.type === 'Identifier') {
@@ -169,9 +153,6 @@ export function scan(
 
       if (node.type === 'TSModuleDeclaration' && node.id.type === 'Identifier')
         namespaces.set(node.id.start, members(node))
-    },
-    leave() {
-      ancestors.pop()
     },
   })
 

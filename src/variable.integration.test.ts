@@ -23,6 +23,77 @@ export namespace styles {
 }`
 
 describe('variable', () => {
+  test('preserves grouped variables in dynamic definitions and packed exports', () => {
+    const publisher = Graph.compile({
+      modules: {
+        'group.ts': `import {css,variable} from 'zyzz'; export const variables={gap:variable('length')}; export const box=css((input:{opacity:number})=>({padding:variables.gap,opacity:input.opacity}));`,
+      },
+    })
+    const consumer = Graph.compile({
+      contracts: publisher.contracts,
+      imports: { 'app.ts': { './group.js': 'group.ts', zyzz: null } },
+      modules: {
+        'app.ts': `import {css} from 'zyzz'; import {variables} from './group.js';export const box=css((input:{opacity:number})=>({padding:variables.gap,opacity:input.opacity}));`,
+      },
+    })
+
+    expect(publisher.modules['group.ts']!.css).toMatchInlineSnapshot(
+      `".z-1n60vkvri6abp-base0{padding:var(--z-v1n60vkvri6abp-63);opacity:var(--z-d1n60vkvri6abp-101-6f-70-61-63-69-74-79);}"`,
+    )
+    expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z-1e8a67z1uaws1j-base0{padding:var(--z-v1n60vkvri6abp-63);opacity:var(--z-d1e8a67z1uaws1j-80-6f-70-61-63-69-74-79);}"`,
+    )
+  })
+
+  test('rejects variable factories in conditional and wrapped initializers', () => {
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'invalid.ts': `import {variable} from 'zyzz';export const accent=enabled?variable('color'):variable('color')`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:58: variable requires a direct constant or object-group initializer.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        modules: {
+          'invalid.ts': `import {variable} from 'zyzz';export const accent=wrap(variable('color'))`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:55: variable requires a direct constant or object-group initializer.]`,
+    )
+  })
+
+  test('rejects negative unsigned registration defaults and accepts signed defaults', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.js',
+        source: `import {variable} from 'zyzz'; const gap=variable('length',{inherits:false,initialValue:'-1px'})`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.js:59: Unsigned variable registrations require a nonnegative initialValue.]`,
+    )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.js',
+        source: `import {variable} from 'zyzz'; const amount=variable('percentage',{inherits:false,initialValue:'-1%'})`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.js:66: Unsigned variable registrations require a nonnegative initialValue.]`,
+    )
+    const result = Transform.compile({
+      moduleId: 'signed.js',
+      source: `import {variable} from 'zyzz'; export const gap=variable('signedLength',{inherits:false,initialValue:'-1px'});export const amount=variable('signedPercentage',{inherits:false,initialValue:'-1%'})`,
+    })
+
+    expect(result.css).toMatchInlineSnapshot(`
+      "@property --z-v132xrt2pjcnoa-48{syntax:"<length>";inherits:false;initial-value:-1px;}
+      @property --z-v132xrt2pjcnoa-130{syntax:"<percentage>";inherits:false;initial-value:-1%;}"
+    `)
+  })
+
   test('preserves untyped variables through packed imports and browser assignments', async () => {
     const publisher = Graph.compile({
       modules: {

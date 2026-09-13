@@ -1,20 +1,24 @@
 # cx
 
-> [!NOTE]
-> Preview API; not yet implemented.
-
-Compose applied generated styles while retaining their owned bindings.
+Combines applied styles in argument order and returns one props object. Later declarations in matching contexts win at equal specificity and importance. Ordinary CSS semantics determine shorthand resets, fallback support, and importance.
 
 ```ts
 import { css, cx } from 'zyzz'
 
 namespace styles {
-  export const base = css({ padding: '0.5rem' })
-
-  export const roomy = css({ padding: '1rem' })
+  export const base = css({ padding: '8px', color: 'red' })
+  export const override = css({ paddingLeft: '12px', color: 'blue' })
 }
-const props = cx(styles.base(), styles.roomy())
+
+const button = <button {...cx(styles.base(), styles.override())} />
 ```
+
+The result keeps 8px padding on three sides and 12px on the left. `cx(styles.base(), styles.override(), styles.base())` restores all four sides to 8px. Compilation preserves declaration order inside one generated group; class-string ordering does not decide conflicts.
+
+`false`, `null`, and `undefined` omit an entry. Bare class strings, unapplied definitions, and component props are invalid. HTML and React props cannot be mixed. Binding guards preserve errors when applications precede initialization, including after bundling. Generated declarations retain their original source locations.
+
+> [!NOTE]
+> This first composition slice supports proven local static applications and direct `css({...})()` applications. Dynamic payloads, recipe selections, conditional expressions, external class props, and packed composition follow in subsequent slices. Unsupported applications fail compilation rather than silently using class concatenation.
 
 ## Signature
 
@@ -24,38 +28,14 @@ const props = cx(styles.base(), styles.roomy())
 
 ### appliedStyles
 
-- Type: Applied style objects or `false | null | undefined` entries
-
-Compose applied definitions. Bare class strings and unapplied definitions are invalid.
-
-```ts
-cx(styles.base(), styles.roomy())
-```
+Type: applied style objects or `false | null | undefined`. This slice accepts static local applications without overrides; all inputs retain their authored order.
 
 ## Returns
 
-Returns one styling props object while preserving owned bindings and recipe attributes. Later generated conflicts win within matching conditions, subject to importance. Exact preview type names remain to be finalized.
-
 ### className
 
-- Type: `string`
-
-Generated class list, including supplied external classes. Class-string order does not establish CSS precedence.
-
-```ts
-props.className
-```
-
-### style
-
-- Type: Inline style bindings and overrides
-
-Copied inline overrides when supplied. Other component props remain on the element.
-
-```ts
-props.style
-```
+Type: `string`. The generated composition class for React-shaped props. HTML configurations return `class` instead. Static compositions have no inline bindings.
 
 ## Errors
 
-Reject incompatible recipe attribute ownership and unsupported inputs. Diagnostic types remain to be finalized.
+Untransformed calls throw `css.MissingTransformError`. Unsupported source applications and mixed renderer outputs produce compiler source diagnostics. Runtime payloads and recipe attribute ownership remain part of the following composition slices.

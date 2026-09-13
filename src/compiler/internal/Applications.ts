@@ -9,7 +9,7 @@ export function create(
 ): Collector | undefined {
   const definitions = new Map(
     calls
-      .filter((call) => !call.slots && !call.recipe)
+      .filter((call) => !call.slots && !call.recipe && !call.composition)
       .map((call) => [call.start, call]),
   )
 

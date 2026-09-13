@@ -256,6 +256,10 @@
       "file": "src/compiler/Transform.page.test.ts",
       "test": "compile retains every margin box and its source call through a packed library dependency"
     },
+    "page.pagination": {
+      "file": "src/compiler/Transform.pagination.test.ts",
+      "test": "compile prints every page orientation and preserves avoid-break fragmentation through packed imports"
+    },
     "page.rendering": {
       "file": "src/compiler/Transform.page.browser.test.ts",
       "test": "compile prints named pages, pseudo-pages, counters, and all sixteen margin boxes"
@@ -2820,11 +2824,10 @@
       },
       "rendering": {
         "chromium": {
-          "status": "unverified",
-          "cases": ["targets.retention"],
+          "status": "partial",
+          "cases": ["page.pagination", "page.rendering", "targets.retention"],
           "limitations": [
-            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
-            "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
+            "Chromium 153 verifies named/pseudo-pages, margin boxes, all three orientations, and a packed break-inside: avoid control. Bleed, printer marks, broader fragmentation, and complete page length rendering remain unverified."
           ],
           "compatibility": "partial"
         }
@@ -3595,13 +3598,10 @@
       },
       "rendering": {
         "chromium": {
-          "status": "unverified",
-          "cases": ["targets.retention"],
-          "limitations": [
-            "Chromium 153 retains this rule or descriptor in both native and source/packed CSSOM probes. CSSOM retention does not verify rendering.",
-            "Bleed, printer marks, rotation, fragmentation, and complete page length grammar."
-          ],
-          "compatibility": "partial"
+          "status": "verified",
+          "cases": ["page.pagination"],
+          "limitations": [],
+          "compatibility": "native"
         }
       },
       "grammar": "369a1c7f3142934614c6bd4f00ac3d3a4b50423f6a134f4d3d15f6a9f9d79898"

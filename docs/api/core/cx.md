@@ -18,7 +18,7 @@ The result keeps 8px padding on three sides and 12px on the left. `cx(styles.bas
 `false`, `null`, and `undefined` omit an entry. Bare class strings, unapplied definitions, and component props are invalid. HTML and React props cannot be mixed. Binding guards preserve errors when applications precede initialization, including after bundling. Generated declarations retain their original source locations.
 
 > [!NOTE]
-> This first composition slice supports proven local static applications and direct `css({...})()` applications. Dynamic payloads, recipe selections, conditional expressions, external class props, and packed composition follow in subsequent slices. Unsupported applications fail compilation rather than silently using class concatenation.
+> Composition supports proven local applications, including dynamic CSS values, recipe selections, and `enabled && style()` arguments. Arbitrary props variables, ternary selections, and independently packed definitions remain unsupported. Conditional nesting must be flattened when an outer conditional wraps a conditional composition. Unsupported applications produce compiler diagnostics.
 
 ## Signature
 
@@ -28,14 +28,29 @@ The result keeps 8px padding on three sides and 12px on the left. `cx(styles.bas
 
 ### appliedStyles
 
-Type: applied style objects or `false | null | undefined`. This slice accepts static local applications without overrides; all inputs retain their authored order.
+Type: applied style objects or `false | null | undefined`. Inputs retain their authored order. Applied styles accept their normal styling overrides and recipe selections.
 
 ## Returns
 
 ### className
 
-Type: `string`. The generated composition class for React-shaped props. HTML configurations return `class` instead. Static compositions have no inline bindings.
+Type: `string`. The generated composition class for React-shaped props. HTML configurations return `class` instead. Dynamic compositions retain inline bindings and styling overrides.
 
 ## Errors
 
-Untransformed calls throw `css.MissingTransformError`. Unsupported source applications and mixed renderer outputs produce compiler source diagnostics. Runtime payloads and recipe attribute ownership remain part of the following composition slices.
+Untransformed calls throw `css.MissingTransformError`. Unsupported source applications and mixed renderer outputs produce compiler source diagnostics. Conflicting recipe attribute owners also produce source diagnostics.
+
+## Runtime Inputs
+
+```ts
+const dynamic = css((values: { padding: `${number}px` }) => ({
+  padding: values.padding,
+}))
+cx(dynamic({ padding: '12px' }), enabled && styles.override())
+```
+
+The compiler emits each conditional presence combination, preserving ordered shorthand and importance behavior. Up to eight conditional arguments produce at most 256 groups. Runtime calls only select a group and merge props; they do not validate authoring, parse CSS, or generate rules.
+
+Repeated applications replace their private slots and recipe attributes together. Other live shared variables survive. Inline style keys follow argument order, including A/B/A shorthand resets. External classes supplied through styling overrides pass through with normal CSS cascade semantics. Ownership metadata stays in compiled initialization data and never enters DOM props.
+
+HTML compositions retain canonical inputs in a nonenumerable property only on generated applications used by composition. The merged result serializes once, without parsing style strings. Normal HTML applications keep their existing representation; renderer spreads and HTML serialization receive only ordinary attributes.

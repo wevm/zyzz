@@ -1,6 +1,8 @@
-/** Resolves proven static applications into ordered compiler-owned composition groups. @module */
+/** Resolves known applications into ordered compiler-owned composition groups. @module */
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
+import * as ConditionalRecipe from '../../runtime/ConditionalRecipe.js'
+import type * as Composition from '../../runtime/Composition.js'
 import type * as Style from '../../Style.js'
 import type * as Source from '../Source.js'
 import * as Applications from './Applications.js'
@@ -8,13 +10,14 @@ import * as Expression from './Expression.js'
 import * as Scope from './Scope.js'
 import * as Themes from './Themes.js'
 
-/** Collects static compositions without evaluating expressions or changing binding reads. */
+/** Collects ordered compositions without evaluating expressions or changing binding reads. */
 export function collect(options: collect.Options) {
   if (
     !options.program.body.some(
       (node) =>
         node.type === 'ImportDeclaration' &&
         node.source.value === 'zyzz' &&
+        node.importKind !== 'type' &&
         node.specifiers.some(
           (specifier) =>
             specifier.type === 'ImportSpecifier' &&
@@ -28,7 +31,9 @@ export function collect(options: collect.Options) {
 
   const bodies = new Map<number, Ast.ObjectExpression>()
   const undefinedReads = new Set<number>()
-  const applications = Applications.create(options.program, options.calls)
+  const applications = Applications.create(options.program, options.calls, {
+    dynamic: true,
+  })
   const scope = new Scope.Tracker()
   const nodes: Ast.CallExpression[] = []
   Walker.walk(options.program, {
@@ -37,7 +42,12 @@ export function collect(options: collect.Options) {
       applications?.enter(node, parent)
       if (node.type === 'CallExpression') {
         const call = options.calls.find((call) => call.start === node.start)
-        const body = call?.body ?? node.arguments[0]
+        const argument = node.arguments[0]
+        const body =
+          call?.body ??
+          (argument?.type === 'ArrowFunctionExpression'
+            ? Expression.unwrap(argument.body)
+            : argument)
         if (call && body?.type === 'ObjectExpression')
           bodies.set(call.start, body)
       }
@@ -53,7 +63,9 @@ export function collect(options: collect.Options) {
       if (
         binding?.type !== 'Import' ||
         binding.importNode.source.value !== 'zyzz' ||
-        binding.node.type !== 'ImportSpecifier'
+        binding.node.type !== 'ImportSpecifier' ||
+        binding.importNode.importKind === 'type' ||
+        binding.node.importKind === 'type'
       )
         return
       const imported = binding.node.imported
@@ -73,18 +85,78 @@ export function collect(options: collect.Options) {
   const calls = new Map(options.calls.map((call) => [call.start, call]))
   const byName = new Map(options.calls.map((call) => [call.name, call]))
   const styles = new Map(options.styles.map((style) => [style.name, style]))
-  const result: { call: Source.Call; style: Style.NamedStyle }[] = []
+  type Entry = {
+    call: Source.Call
+    style: Style.NamedStyle
+    cases?:
+      | readonly { call: Source.Call; style: Style.NamedStyle }[]
+      | undefined
+  }
+  const result: Entry[] = []
 
   for (const node of nodes.reverse()) {
     const selected: Source.Call[] = []
+    const inputs: NonNullable<Source.Call['runtimeComposition']>[number][] = []
+    let runtime = false
+    let conditions = 0
+    const attributes = new Map<string, string>()
+
+    function owners(call: Source.Call): readonly Composition.Owner[] {
+      if (call.runtimeComposition)
+        return call.runtimeComposition.flatMap((input) => input.owners)
+      return [
+        {
+          identity: call.name,
+          attributes: Object.keys(call.recipe?.axes ?? {}).flatMap((axis) => [
+            `data-${axis}`,
+            ...(call.recipe?.conditions ?? []).map((_, condition) =>
+              ConditionalRecipe.attribute({ axis, condition }),
+            ),
+          ]),
+          slots: [
+            ...Object.values(call.slots ?? {}).map((slot) => slot.name),
+            ...(call.recipe?.payloads ?? []).flatMap((payload) =>
+              payload.slots.flatMap((slots) => Object.values(slots)),
+            ),
+          ],
+        },
+      ]
+    }
+    function input(call: Source.Call, value: Ast.Node, condition?: number) {
+      const owned = owners(call)
+      for (const owner of owned)
+        for (const attribute of owner.attributes) {
+          const previous = attributes.get(attribute)
+          if (previous && previous !== owner.identity)
+            throw new Themes.InvalidError(
+              `Recipe attribute ${attribute} has conflicting owners.`,
+              value,
+            )
+          attributes.set(attribute, owner.identity)
+        }
+      inputs.push({
+        start: value.start,
+        end: value.end,
+        name: call.name,
+        owners: owned,
+        ...(condition !== undefined ? { condition } : {}),
+      })
+    }
     const guards: string[] = []
     if (node.optional)
       throw new Themes.InvalidError(
-        'Static composition does not support optional calls.',
+        'Composition does not support optional calls.',
         node,
       )
     for (const argument of node.arguments) {
-      const value = Expression.unwrap(argument)
+      const expression = Expression.unwrap(argument)
+      const conditional =
+        expression.type === 'LogicalExpression' && expression.operator === '&&'
+      const condition = conditional ? conditions++ : undefined
+      const value = conditional
+        ? Expression.unwrap(expression.right)
+        : expression
+      runtime ||= conditional
       if (undefinedReads.has(value.start)) continue
       if (
         value.type === 'Literal' &&
@@ -99,32 +171,56 @@ export function collect(options: collect.Options) {
         continue
       if (value.type !== 'CallExpression' || value.optional)
         throw new Themes.InvalidError(
-          'Composition currently requires static local style applications.',
+          'Composition requires statically known local style applications.',
           value,
         )
       const nested = calls.get(value.start)
-      if (nested?.composition) {
-        selected.push(nested)
-        guards.push(...nested.composition)
+      if (nested?.compositionCases) {
+        if (conditional)
+          throw new Themes.InvalidError(
+            'Conditional nested compositions require flattening into one cx call.',
+            expression,
+          )
+        for (const child of nested.runtimeComposition!) {
+          const call =
+            byName.get(child.name) ??
+            [...calls.values()].find((call) => call.name === child.name)
+          if (!call)
+            throw new Themes.InvalidError(
+              'Nested composition has an unresolved definition.',
+              expression,
+            )
+          selected.push(call)
+          input(
+            call,
+            { ...node, start: child.start, end: child.end },
+            child.condition === undefined ? undefined : conditions++,
+          )
+        }
+        runtime = true
         continue
       }
-      if (value.arguments.length)
-        throw new Themes.InvalidError(
-          'Static composition applications cannot have overrides or selections.',
-          value,
-        )
+      if (nested?.composition || nested?.runtimeComposition) {
+        selected.push(nested)
+        guards.push(...(nested.composition ?? []))
+        input(nested, expression, condition)
+        runtime ||= !!nested.runtimeComposition
+        continue
+      }
       const application = applied.get(value.start)
       const call = application
         ? byName.get(application.name)
         : value.callee.type === 'CallExpression'
           ? calls.get(value.callee.start)
           : undefined
-      if (!call || call.recipe || call.slots)
+      if (!call)
         throw new Themes.InvalidError(
-          'Composition currently requires static local style applications.',
+          'Composition requires statically known local style applications.',
           value,
         )
       selected.push(call)
+      input(call, expression, condition)
+      runtime ||= !!(call.recipe || call.slots || value.arguments.length)
       if (application)
         guards.push(
           options.source.slice(application.start, application.calleeEnd),
@@ -136,6 +232,11 @@ export function collect(options: collect.Options) {
         node,
       )
 
+    if (conditions > 8)
+      throw new Themes.InvalidError(
+        'Composition supports at most eight conditional arguments.',
+        node,
+      )
     const name = `composition-${options.identity}-${node.start}`
     const style: Style.NamedStyle = {
       name,
@@ -152,7 +253,7 @@ export function collect(options: collect.Options) {
       name,
       start: node.start,
       end: node.end,
-      composition: guards,
+      ...(runtime ? { runtimeComposition: inputs } : { composition: guards }),
       body: {
         type: 'ObjectExpression',
         start: node.start,
@@ -166,9 +267,48 @@ export function collect(options: collect.Options) {
     }
     calls.set(node.start, call)
     styles.set(name, style)
-    result.push({ call, style })
+    const cases: NonNullable<Entry['cases']>[number][] = []
+    const names: string[] = []
+    for (let mask = 0; mask < 2 ** conditions - 1; mask++) {
+      const included = selected.filter(
+        (_, index) =>
+          inputs[index]!.condition === undefined ||
+          mask & (1 << inputs[index]!.condition!),
+      )
+      const name = `${call.name}-${mask}`
+      names.push(name)
+      cases.push({
+        call: {
+          name,
+          start: call.start,
+          end: call.end,
+          compositionCase: true,
+          body: {
+            ...call.body!,
+            properties: included.flatMap(
+              (call) => (call.body ?? bodies.get(call.start))?.properties ?? [],
+            ),
+          },
+          identity: included
+            .flatMap((call) => (call.identity ? [call.identity] : []))
+            .join(' '),
+        },
+        style: {
+          name,
+          declarations: [],
+          rules: included.flatMap((call) => {
+            const style = styles.get(call.name)!
+            return style.rules ?? [{ style }]
+          }),
+        },
+      })
+    }
+    names.push(call.name)
+    const composed = conditions ? { ...call, compositionCases: names } : call
+    calls.set(node.start, composed)
+    result.push({ call: composed, style, ...(cases.length ? { cases } : {}) })
   }
-  return result.reverse()
+  return result
 }
 
 /** Static composition extraction inputs. */

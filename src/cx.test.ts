@@ -95,8 +95,8 @@ describe('cx', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'app.ts',
-        source: `import {css,cx} from 'zyzz';const a=css({color:'red'});export const compose=(enabled:boolean)=>cx(enabled && a());`,
+        source: `import {css,cx} from 'zyzz';const a=css({color:'red'});export const compose=(enabled:boolean)=>cx(enabled ? a() : undefined);`,
       }),
-    ).toThrow('static local style applications')
+    ).toThrow('statically known local style applications')
   })
 })

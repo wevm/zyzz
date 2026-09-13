@@ -360,3 +360,11 @@ pnpm bench:types --fixture variants.payloads
 ```
 
 Payload values bind fixed slots; changing values does not increase stylesheet rules. Save benchmark output with `--outputJson bench/results/payload-recipes.json` and retain run metadata before publishing timing comparisons.
+
+Runtime composition benchmarks execute generated modules for both output shapes:
+
+```sh
+pnpm exec vp test bench src/cx.runtime.bench.ts --run --outputJson bench/results/runtime-composition.json
+```
+
+Conditional presence emits bounded static groups; runtime calls never add rules. Retain run metadata and variance before publishing timing comparisons.

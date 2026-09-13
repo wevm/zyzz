@@ -78,7 +78,7 @@ The bundler integration resolves and transforms imports of compiled `css(...)` d
 Pass styling overrides to a definition. Compose generated declarations through `cx` when one generated style must override another.
 
 > [!NOTE]
-> `cx` composition is not yet implemented. Literal `className`/`style` overrides already exist on transformed definitions.
+> `cx` supports compiler-resolved local applications and conditional arguments. Packed definitions and arbitrary external props remain unsupported.
 
 ```tsx
 import { css, cx } from 'zyzz'

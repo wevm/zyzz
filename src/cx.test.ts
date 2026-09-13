@@ -45,7 +45,7 @@ describe('cx', () => {
         source: `import {css,cx} from 'zyzz'; const a=css({}); cx(a()());`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:49: Composition currently requires static local style applications.]`,
+      `[Source.ExtractError: invalid.ts:49: Composition requires statically known local style applications.]`,
     )
   })
   test('rejects extra inline invocation', () => {
@@ -55,7 +55,7 @@ describe('cx', () => {
         source: `import {css,cx} from 'zyzz'; cx(css({})()());`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:32: Composition currently requires static local style applications.]`,
+      `[Source.ExtractError: invalid.ts:32: Composition requires statically known local style applications.]`,
     )
   })
   test('rejects extra nested invocation', () => {
@@ -65,7 +65,7 @@ describe('cx', () => {
         source: `import {css,cx} from 'zyzz'; const a=css({}); cx(cx(a())());`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: invalid.ts:49: Composition currently requires static local style applications.]`,
+      `[Source.ExtractError: invalid.ts:49: Composition requires statically known local style applications.]`,
     )
   })
   test('rejects namespace composition', () => {
@@ -259,10 +259,10 @@ describe('cx', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'app.ts',
-        source: `import {css,cx} from 'zyzz';const a=css({color:'red'});export const compose=(enabled:boolean)=>cx(enabled && a());`,
+        source: `import {css,cx} from 'zyzz';const a=css({color:'red'});export const compose=(enabled:boolean)=>cx(enabled ? a() : undefined);`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: app.ts:98: Composition currently requires static local style applications.]`,
+      `[Source.ExtractError: app.ts:98: Composition requires statically known local style applications.]`,
     )
   })
 })

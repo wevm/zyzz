@@ -6,6 +6,7 @@ import type * as Ast from '@oxc-project/types'
 import * as AtRules from './internal/AtRules.js'
 import * as Binding from '../internal/Binding.js'
 import * as Condition from '../internal/Condition.js'
+import type * as Composition from '../runtime/Composition.js'
 import * as Compositions from './internal/Compositions.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Css from '../web/Css.js'
@@ -38,6 +39,25 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** CSS-only presence alternative for a runtime composition. */
+  readonly compositionCase?: boolean | undefined
+  /** Names of precompiled presence alternatives in bitmask order. */
+  readonly compositionCases?: readonly string[] | undefined
+  /** Fixed runtime applications over an already resolved CSS sequence. */
+  readonly runtimeComposition?:
+    | readonly {
+        /** Presence bit for a conditional argument. */
+        readonly condition?: number | undefined
+        /** Application argument end. */
+        readonly end: number
+        /** Replaced generated class owner. */
+        readonly name: string
+        /** Attribute and private variable ownership. */
+        readonly owners: readonly Composition.Owner[]
+        /** Application argument start. */
+        readonly start: number
+      }[]
+    | undefined
   /** Binding reads preserved by compile-time composition. */
   readonly composition?: readonly string[] | undefined
   /** Finite recipe selection metadata, with all alternatives retained in CSS. */
@@ -1037,8 +1057,11 @@ export function extract(options: extract.Options): extract.ReturnType {
       source: options.source,
       styles,
     })) {
-      calls.push(entry.call)
-      styles.push(entry.style)
+      calls.push(...(entry.cases ?? []).map((entry) => entry.call), entry.call)
+      styles.push(
+        ...(entry.cases ?? []).map((entry) => entry.style),
+        entry.style,
+      )
     }
   } catch (error) {
     if (!(error instanceof Themes.InvalidError)) throw error

@@ -5,6 +5,12 @@
 /** Server-safe root appearance initialization script generation. */
 export * as Appearance from './Appearance.js'
 
+/** Binding composition over statically resolved ordered groups. */
+export * as Composition from './Composition.js'
+
+/** Canonical HTML inputs retained only for compiled composition. */
+export * as CompositionHtml from './CompositionHtml.js'
+
 /** Conditional instructions isolated from unconditional recipes. */
 export * as ConditionalRecipe from './ConditionalRecipe.js'
 

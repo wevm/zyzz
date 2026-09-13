@@ -4,7 +4,7 @@ import { MissingTransformError } from './css.js'
 
 /**
  * Combines applied styles in argument order, preserving CSS importance and conditions.
- * Static local applications compile to one props object without a runtime resolver.
+ * Static applications fold to props; runtime applications select precompiled presence groups and merge bindings.
  * @param entries - Applied styling props or omitted conditional entries.
  * @returns One spreadable props object.
  * @throws {MissingTransformError} When composition has not been compiled.

@@ -1,5 +1,10 @@
 /** Verifies immutable props bindings and aliases without repeating input evaluation. @module */
 import * as Esbuild from 'esbuild'
+import * as ChildProcess from 'node:child_process'
+import * as Fs from 'node:fs/promises'
+import * as Path from 'node:path'
+import * as Url from 'node:url'
+import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Transform } from 'zyzz/compiler'
@@ -145,4 +150,62 @@ describe('cx', () => {
       }
     `)
   })
+})
+
+test('preserves TDZ reads for omitted bindings', async () => {
+  for (const sentinel of ['false', 'null', 'undefined']) {
+    const compiled = Transform.compile({
+      moduleId: 'tdz.ts',
+      source: `import {cx} from 'zyzz';const result=render();const p=${sentinel};function render(){return cx(p)};export {result};`,
+    })
+    const directory = await Fs.mkdtemp(
+      Path.join(process.cwd(), '.fixture-tdz-'),
+    )
+    try {
+      const file = Path.join(directory, 'entry.ts')
+      await Fs.writeFile(file, compiled.code)
+      const { stdout } = await Util.promisify(ChildProcess.execFile)(
+        process.execPath,
+        [
+          '--input-type=module',
+          '-e',
+          `import(${JSON.stringify(Url.pathToFileURL(file).href)}).then(()=>console.log('ok')).catch(error=>console.log(error.name))`,
+        ],
+      )
+      expect(stdout.trim()).toMatchInlineSnapshot('"ReferenceError"')
+    } finally {
+      await Fs.rm(directory, { recursive: true, force: true })
+    }
+  }
+})
+
+test('allows asserted JSX spreads and limits HTML metadata to composed applications', async () => {
+  const compiled = Transform.compile({
+    moduleId: 'spread.tsx',
+    source: `import {css,cx} from 'zyzz';const a=css({color:'red'});const p=a();const view=<div {...(p as css.Props)} />;export const composed=cx(p);`,
+  })
+  expect(compiled.code.includes('__zyzzComposition')).toMatchInlineSnapshot(
+    `true`,
+  )
+  const html = Transform.compile({
+    moduleId: 'html.ts',
+    source: `import {Config,cx} from 'zyzz';const {css}=Config.create({output:'html'});const a=css({color:'red'});const p=a();export const composed=cx(p);export const standalone=a();`,
+  })
+  const bundled = await Esbuild.build({
+    stdin: { contents: html.code, loader: 'ts', resolveDir: process.cwd() },
+    alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+    bundle: true,
+    format: 'iife',
+    globalName: 'App',
+    write: false,
+  })
+  const result = new Function(`${bundled.outputFiles![0]!.text};return App;`)()
+  expect(Reflect.ownKeys(result.standalone)).toMatchInlineSnapshot(`
+    [
+      "class",
+    ]
+  `)
+  expect(
+    Object.getOwnPropertySymbols(result.composed).length,
+  ).toMatchInlineSnapshot(`1`)
 })

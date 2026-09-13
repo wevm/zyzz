@@ -46,6 +46,8 @@ export type Call = {
   /** Fixed runtime applications over an already resolved CSS sequence. */
   readonly runtimeComposition?:
     | readonly {
+        /** Original resolved application start retained for selective HTML preparation. */
+        readonly applicationStart?: number | undefined
         /** Presence bit for a conditional argument. */
         readonly condition?: number | undefined
         /** Application argument end. */

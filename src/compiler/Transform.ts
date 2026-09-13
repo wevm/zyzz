@@ -233,7 +233,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         let factory = `${composition}${call.start}`
         while (identifiers.has(factory)) factory += '_'
         const inputs = call.runtimeComposition.map((input) => ({
-          className: classes[input.name]!,
+          className: classes[input.name] ?? '',
           owners: input.owners,
           condition: input.condition,
         }))
@@ -350,7 +350,16 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   for (const application of localApplications?.find() ?? []) {
-    if (preparedHtml.has(application.name)) continue
+    if (
+      extracted.calls.some(
+        (call) =>
+          call.output === 'html' &&
+          call.runtimeComposition?.some(
+            (input) => input.applicationStart === application.start,
+          ),
+      )
+    )
+      continue
     if (
       extracted.calls.some(
         (call) =>

@@ -133,7 +133,12 @@ export function collect(options: collect.Options) {
         },
       ]
     }
-    function input(call: Source.Call, value: Ast.Node, condition?: number) {
+    function input(
+      call: Source.Call,
+      value: Ast.Node,
+      condition?: number,
+      applicationStart = value.start,
+    ) {
       const owned = owners(call)
       for (const owner of owned)
         for (const attribute of owner.attributes) {
@@ -146,6 +151,7 @@ export function collect(options: collect.Options) {
           attributes.set(attribute, owner.identity)
         }
       inputs.push({
+        applicationStart,
         end: value.end,
         name: call.name,
         owners: owned,
@@ -182,6 +188,20 @@ export function collect(options: collect.Options) {
           'Conditional omissions must be evaluated outside composition.',
           expression,
         )
+      const omitted =
+        undefinedReads.has(value.start) ||
+        (value.type === 'Literal' &&
+          (value.value === false || value.value === null)) ||
+        (value.type === 'UnaryExpression' &&
+          value.operator === 'void' &&
+          value.argument.type === 'Literal')
+      if (omitted && resolved !== expression)
+        inputs.push({
+          end: expression.end,
+          name: '',
+          owners: [],
+          start: expression.start,
+        })
       if (undefinedReads.has(value.start)) continue
       if (
         value.type === 'Literal' &&
@@ -212,6 +232,10 @@ export function collect(options: collect.Options) {
             expression,
           )
         for (const child of nested.runtimeComposition!) {
+          if (child.name === '') {
+            inputs.push(child)
+            continue
+          }
           const call =
             byName.get(child.name) ??
             [...calls.values()].find((call) => call.name === child.name)
@@ -225,6 +249,7 @@ export function collect(options: collect.Options) {
             call,
             { ...node, start: child.start, end: child.end },
             child.condition === undefined ? undefined : conditions++,
+            child.applicationStart,
           )
         }
         runtime = true
@@ -236,7 +261,7 @@ export function collect(options: collect.Options) {
       ) {
         selected.push(nested)
         guards.push(...(nested.composition ?? []))
-        input(nested, expression, condition)
+        input(nested, expression, condition, value.start)
         runtime ||= !!nested.runtimeComposition
         continue
       }
@@ -256,7 +281,7 @@ export function collect(options: collect.Options) {
           value,
         )
       selected.push(call)
-      input(call, expression, condition)
+      input(call, expression, condition, value.start)
       runtime ||= !!(call.recipe || call.slots || value.arguments.length)
       if (application)
         guards.push(

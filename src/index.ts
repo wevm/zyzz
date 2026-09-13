@@ -12,3 +12,5 @@ export * as Style from './Style.js'
 export * as Theme from './Theme.js'
 /** Typed CSS variable declarations and inline assignments. */
 export { variable } from './variable.js'
+/** Single-element finite recipes compiled ahead of time. */
+export { variants } from './variants.js'

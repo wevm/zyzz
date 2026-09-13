@@ -14,6 +14,9 @@ export * as Html from './Html.js'
 /** Runtime props binding without parsing, compilation, or theme data. */
 export * as Props from './Props.js'
 
+/** Precompiled recipe selection and attribute serialization. */
+export * as Recipe from './Recipe.js'
+
 /** Validated selection of compiler-owned theme catalogs. */
 export * as Selection from './Selection.js'
 

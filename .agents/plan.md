@@ -461,7 +461,7 @@ Completion follow-up: namespace acceptance now includes escaped/Unicode identifi
 
 ### Proposed PR Stack
 
-Planning only: the identifiers below are sequence labels, not allocated GitHub PR numbers. Branch the first implementation PR from the final accepted Phase 2 head; stack each subsequent PR on its predecessor. Start implementation after Phase 2 acceptance closes. Vue remains excluded.
+Phase 3 implementation has started by explicit request. The identifiers below are sequence labels, not allocated GitHub PR numbers. Branch the first implementation PR from the final accepted Phase 2 head; stack each subsequent PR on its predecessor. Remaining Phase 2 renderer acceptance stays tracked independently; starting Phase 3 does not mark those gaps complete. Vue remains excluded.
 
 Every implementation PR includes its public type contracts, source-to-output integration, relevant measurements, and documentation. Later acceptance PRs broaden coverage; they do not defer basic correctness. Preserve finite runtime choices from the first recipe implementation. Never execute application code during extraction or generate CSS rules at runtime.
 

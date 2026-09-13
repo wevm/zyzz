@@ -8,7 +8,9 @@ export function create(
   calls: readonly Source.Call[],
 ): Collector | undefined {
   const definitions = new Map(
-    calls.filter((call) => !call.slots).map((call) => [call.start, call]),
+    calls
+      .filter((call) => !call.slots && !call.recipe)
+      .map((call) => [call.start, call]),
   )
 
   const candidates: {

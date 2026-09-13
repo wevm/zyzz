@@ -265,4 +265,16 @@ describe('cx', () => {
       `[Source.ExtractError: app.ts:98: Composition requires statically known local style applications.]`,
     )
   })
+  test('returns extraction spans in source order', () => {
+    const source = `import {css,cx} from 'zyzz';const a=css({color:'red'});const props=cx(a());const b=css({padding:'4px'});`
+    const extracted = Source.extract({ moduleId: 'order.ts', source })
+    expect(extracted.calls.map((call) => source.slice(call.start, call.end)))
+      .toMatchInlineSnapshot(`
+      [
+        "css({color:'red'})",
+        "cx(a())",
+        "css({padding:'4px'})",
+      ]
+    `)
+  })
 })

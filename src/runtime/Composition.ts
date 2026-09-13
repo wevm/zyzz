@@ -76,10 +76,10 @@ export declare namespace create {
     readonly className: string
     /** Ordered application class lists and private ownership. */
     readonly inputs: readonly {
-      /** Presence bit assigned to a conditional argument. */
-      readonly condition?: number | undefined
       /** Generated classes superseded by the composition class. */
       readonly className: string
+      /** Presence bit assigned to a conditional argument. */
+      readonly condition?: number | undefined
       /** Original definitions whose bindings and attributes this application owns. */
       readonly owners: readonly Owner[]
     }[]

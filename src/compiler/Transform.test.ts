@@ -2848,7 +2848,8 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     try {
       const run = Util.promisify(ChildProcess.execFile)
 
-      await run('pnpm', ['build'], { cwd: root })
+      // The integration command builds once before workers consume package artifacts.
+      await Fs.access(Path.join(root, 'dist/runtime/index.js'))
       await run('pnpm', ['pack', '--pack-destination', directory], {
         cwd: root,
       })

@@ -1200,7 +1200,11 @@ export function extract(options: extract.Options): extract.ReturnType {
           }),
         }
       : {}),
-    calls: Object.freeze(calls.map((call) => Object.freeze(call))),
+    calls: Object.freeze(
+      calls
+        .sort((a, b) => a.start - b.start)
+        .map((call) => Object.freeze(call)),
+    ),
     styles: Object.freeze({ styles: Object.freeze(styles) }),
     ...(variables.calls.length
       ? { variableCalls: Object.freeze(variables.calls) }

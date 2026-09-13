@@ -54,7 +54,7 @@ export async function verify(options: verify.Options) {
     const framework = pluginModule[options.pluginExport ?? 'default']!
 
     const config: Vite.InlineConfig = {
-      build: { cssTarget: 'esnext' },
+      build: { cssTarget: 'chrome123' },
       configFile: false,
       logLevel: 'silent',
       plugins: [zyzz(), framework(options.pluginOptions ?? {})],

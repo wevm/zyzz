@@ -218,7 +218,15 @@ export function compile(options: compile.Options): compile.ReturnType {
       (call) =>
         call.composition && call.start < node.start && node.end <= call.end,
     )
-  for (const call of extracted.calls) {
+  // Rewrite contained expressions before their enclosing composition reads them.
+  const rewrites = [...extracted.calls].sort((a, b) =>
+    a.start < b.start && a.end >= b.end
+      ? 1
+      : b.start < a.start && b.end >= a.end
+        ? -1
+        : a.start - b.start,
+  )
+  for (const call of rewrites) {
     if (call.compositionCase || composed(call)) continue
     const application = applications.get(call.start)!
     const props = `{${call.output === 'html' ? 'class' : 'className'}:${JSON.stringify(classes[call.name])}}`
@@ -234,8 +242,8 @@ export function compile(options: compile.Options): compile.ReturnType {
         while (identifiers.has(factory)) factory += '_'
         const inputs = call.runtimeComposition.map((input) => ({
           className: classes[input.name] ?? '',
-          owners: input.owners,
           condition: input.condition,
+          owners: input.owners,
         }))
         compositions.push(
           `const ${factory}=/*#__PURE__*/${helper}.create(${JSON.stringify({ className: classes[call.name], cases: call.compositionCases?.map((name) => classes[name]!), inputs })});`,

@@ -1,7 +1,6 @@
 /** Exercises the runnable React playground in the Vite dev server. @module */
-import * as ChildProcess from 'node:child_process'
+import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
-import * as Util from 'node:util'
 import { chromium } from 'playwright'
 import * as Vite from 'vite'
 import { describe, expect, test } from 'vite-plus/test'
@@ -20,9 +19,8 @@ describe('zyzz', () => {
     }
 
     try {
-      await Util.promisify(ChildProcess.execFile)('pnpm', ['dev'], {
-        timeout: 60000,
-      })
+      // The integration command builds once before workers consume package artifacts.
+      await Fs.access(Path.resolve('dist/vite/index.js'))
       const server = await Vite.createServer({
         ...config,
         server: { host: '127.0.0.1', port: 0 },

@@ -365,11 +365,13 @@ export function collect(options: collect.Options) {
     styles.set(name, style)
     const cases: NonNullable<Entry['cases']>[number][] = []
     const names: string[] = []
+    // Omitted bindings retain evaluation but own no selected style.
+    const selectedInputs = inputs.filter((input) => input.name !== '')
     for (let mask = 0; mask < 2 ** conditions - 1; mask++) {
       const included = selected.filter(
         (_, index) =>
-          inputs[index]!.condition === undefined ||
-          mask & (1 << inputs[index]!.condition!),
+          selectedInputs[index]!.condition === undefined ||
+          mask & (1 << selectedInputs[index]!.condition!),
       )
       const name = `${call.name}-${mask}`
       names.push(name)

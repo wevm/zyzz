@@ -369,25 +369,15 @@ pnpm exec vp test bench src/cx.runtime.bench.ts --run --outputJson bench/results
 
 Conditional presence emits bounded static groups; runtime calls never add rules. Retain run metadata and variance before publishing timing comparisons.
 
-## Immutable composition bindings
+## Composition Corpus
 
-Measured source: `e20e5226eb34b81fe9f1d1150573bdd5fb201737` (`src/cx.bindings.bench.ts`).
+Static and bound composition benchmarks use the same small, repeated, mostly unique, and component projects as the browser integration checks. They cover React and HTML output, static and conditional overrides, and direct and immutable bound applications.
 
-Run: 2026-09-13T13:04:33.464Z; AMD EPYC 9V74 80-Core Processor, linux x64, Node v24.19.0, esbuild 0.28.2, vite-plus 0.2.2 / Vitest 4.1.9. Each benchmark used 100 ms warmup and 250 ms measurement. Compilation is warm and in-process; application excludes module initialization. This shared-host diagnostic run is not a performance guarantee.
-
-| Workload     | JS bytes (gzip) | CSS bytes (gzip) | Compile mean ms (RME, samples) | Apply mean µs (RME, samples) |
-| ------------ | --------------- | ---------------- | ------------------------------ | ---------------------------- |
-| react direct | 522 (325)       | 146 (95)         | 0.5938 (3.91%, 422)            | 0.0467 (0.62%, 5353406)      |
-| react bound  | 1534 (733)      | 146 (96)         | 0.6831 (7.16%, 366)            | 0.9116 (1.60%, 274253)       |
-| html direct  | 1217 (681)      | 146 (95)         | 0.5529 (3.74%, 453)            | 0.0586 (2.55%, 4266568)      |
-| html bound   | 2076 (969)      | 146 (96)         | 0.5979 (4.03%, 419)            | 1.7701 (2.69%, 141236)       |
-
-Binding props retains a runtime merge: React adds 1,012 raw / 408 gzip JavaScript bytes; HTML adds 859 raw / 288 gzip bytes. CSS stays 146 bytes (gzip differs by one byte because of generated identifiers). The table records the associated per-call and compile-time costs against the matching direct composition. Initialization cost is excluded and has not been measured.
-
-Reproduce from that commit:
+[Matched review measurements](Composition-review.md) record all 32 direct/bound lanes and four static compilation cases. The report includes baseline/candidate timings, uncertainty, required helpers, CSS, JavaScript, class references, markup, and actual combined transfer in raw/gzip/Brotli bytes.
 
 ```sh
-pnpm exec vp test bench src/cx.bindings.bench.ts --run --outputJson bench/results/composition-bindings.json
+pnpm exec vp test run src/cx.corpus.test.ts --no-file-parallelism
+pnpm exec vp test bench src/cx.bench.ts src/cx.bindings.bench.ts --run --no-file-parallelism --outputJson bench/results/composition-timings.json
 ```
 
-The benchmark also writes `bench/results/composition-bindings-metadata.json`, including SHA-256 hashes of the exact workload sources, renderer, tool versions, measurement window, and emitted sizes. Both generated reports remain ignored.
+The benchmark also writes `bench/results/composition-bindings-metadata.json`. Generated reports retain workload source hashes, machine/tool details, complete artifact accounting, and sample statistics. Apply timings cover the complete project with conditional overrides enabled; they exclude compilation, module initialization, browser rendering, and layout.

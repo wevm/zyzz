@@ -3,6 +3,9 @@ import type * as Literal from './Literal.js'
 import type * as Token from './Token.js'
 import * as BindingDomains from './BindingDomains.js'
 
+/** Explicit scalar domains or an unconstrained custom property. */
+export type Domain = Kind | '*'
+
 /** Supported runtime scalar domains. */
 export type Kind =
   | 'color'
@@ -13,7 +16,7 @@ export type Kind =
   | 'signedPercentage'
 
 /** A compiler-assigned web custom property with its scalar domain. */
-export type Reference<kind extends Kind = Kind> = {
+export type Reference<kind extends Domain = Domain> = {
   /** Fixed CSS custom-property name. */
   readonly name: `--${string}`
   /** Scalar domain used by authoring types and runtime primitive checks. */
@@ -23,17 +26,19 @@ export type Reference<kind extends Kind = Kind> = {
 }
 
 /** Scalar inputs accepted by a slot. CSS semantics remain statically checked. */
-export type Value<kind extends Kind> = kind extends 'number'
-  ? number
-  : kind extends 'color'
-    ? Literal.Color
-    : kind extends 'signedPercentage'
-      ? `${number}%`
-      : kind extends 'signedLength'
-        ? Exclude<Literal.Length, `${number}%`>
-        : kind extends 'percentage'
-          ? `${number}%` & NonNegative
-          : Exclude<Literal.Length, `${number}%`> & (NonNegative | 0)
+export type Value<kind extends Domain> = kind extends '*'
+  ? string | number
+  : kind extends 'number'
+    ? number
+    : kind extends 'color'
+      ? Literal.Color
+      : kind extends 'signedPercentage'
+        ? `${number}%`
+        : kind extends 'signedLength'
+          ? Exclude<Literal.Length, `${number}%`>
+          : kind extends 'percentage'
+            ? `${number}%` & NonNegative
+            : Exclude<Literal.Length, `${number}%`> & (NonNegative | 0)
 
 type NonNegative =
   `${'0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | '+'}${string}`
@@ -122,6 +127,7 @@ export type Inputs<values> = {
     | 'key'
     | 'ref'
     | 'style'
+    | 'variables'
     | '__proto__'
     ? never
     : Extract<values[key], `${string}!${string}`> extends never
@@ -149,6 +155,7 @@ export function is(value: unknown): value is Reference {
     typeof fields.name!.value === 'string' &&
     /^--[a-zA-Z0-9_-]+$/.test(fields.name!.value) &&
     [
+      '*',
       'color',
       'length',
       'number',
@@ -161,10 +168,10 @@ export function is(value: unknown): value is Reference {
 
 /** Checks template reference domains against declaration shapes. */
 export function accepts(
-  kind: Kind,
+  kind: Domain,
   property: keyof Literal.Properties,
 ): boolean {
-  if (property.startsWith('--')) return true
+  if (kind === '*' || property.startsWith('--')) return true
 
   return (BindingDomains.properties[kind] as readonly string[]).includes(
     property,

@@ -1,11 +1,14 @@
 /** Binds live values to static rules and shared registered variables. @module */
 import { useState } from 'react'
-import { Vars } from 'zyzz'
+import { variable } from 'zyzz'
 import { css } from './zyzz.config.js'
 
-const vars = Vars.define({
-  amount: { inherits: true, initialValue: 0.5, type: 'number' },
-})
+namespace variables {
+  export const amount = variable('number', {
+    inherits: true,
+    initialValue: 0.5,
+  })
+}
 
 namespace styles {
   export const card = css({
@@ -40,8 +43,12 @@ namespace styles {
     backgroundColor: 'muted',
     borderRadius: '0.5rem',
     height: '0.75rem',
-    opacity: vars.amount,
+    opacity: variables.amount,
     width: '100%',
+  })
+
+  export const scope = css({
+    variables: { [variables.amount]: 0.5 },
   })
 
   export const track = css({
@@ -77,7 +84,9 @@ export function Dynamic() {
           data-testid="dynamic-bar"
         />
       </div>
-      <div style={vars.set({ amount: amount / 100 })}>
+      <div
+        {...styles.scope({ variables: { [variables.amount]: amount / 100 } })}
+      >
         <div {...styles.track()}>
           <div {...styles.inherited()} data-testid="variable-bar" />
         </div>

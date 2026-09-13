@@ -64,7 +64,7 @@ Source.extract({
 
 - Type: Optional readonly array of `{ start: number; end: number; slots: Readonly<Record<string, Binding.Reference>> }`
 
-Module-owned `Vars.define` calls with inclusive start and exclusive end offsets and immutable slot references. Each slot has a fixed custom-property `name`, scalar `type`, and `variable: true` ref. Hosts implementing rewriting must replace these spans with compiled contracts; `Transform.compile` does so automatically. The field is absent when no variable contracts are declared.
+Module-owned `variable()` calls with inclusive start and exclusive end offsets and immutable slot references. Each slot has a fixed custom-property `name`, scalar `type`, and `variable: true` ref. Hosts implementing rewriting must replace these spans with compiled contracts; `Transform.compile` does so automatically. The field is absent when no variable contracts are declared.
 
 ### calls
 

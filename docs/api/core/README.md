@@ -3,7 +3,7 @@
 Typed style definitions, themes, configuration, and callable authoring.
 
 > [!NOTE]
-> `Config`, `css`, `Style`, `Theme`, `Vars`, and `where` are exported. Config source extraction and theme variable references are supported. `cx` and `variants` remain preview APIs and are not exported.
+> `Config`, `css`, `Style`, `Theme`, and `variable` are exported. `selectors` is a style property. Config source extraction and theme variable references are supported. `cx` and `variants` remain preview APIs and are not exported.
 
 | API                        | Description                                                            |
 | -------------------------- | ---------------------------------------------------------------------- |
@@ -13,8 +13,8 @@ Typed style definitions, themes, configuration, and callable authoring.
 | [Style](Style/README.md)   | Ordered style data and validation.                                     |
 | [Theme](Theme/README.md)   | Immutable scalar tokens and compatible extensions.                     |
 | [variants](variants.md)    | Define finite style choices for one element.                           |
-| [Vars](Vars/README.md)     | Explicit shared variable contracts.                                    |
+| [variable](variable.md)    | Explicit shared variable contracts.                                    |
 
-| [where](where.md) | Reference style definitions in scoped selector templates. |
+| [selectors](selectors.md) | Reference style definitions in scoped selector templates. |
 
 Style declarations support ordered nonempty fallback arrays and trailing `!`/`!important`; see [Literal Values](Style/literals.md).

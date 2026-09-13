@@ -142,7 +142,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   let usesSelection = false
 
-  let variables = '__zyzzVars'
+  let variables = '__zyzzVariable'
 
   while (identifiers.has(variables)) variables += '_'
 
@@ -150,7 +150,7 @@ export function compile(options: compile.Options): compile.ReturnType {
     module.overwrite(
       call.start,
       call.end,
-      `${variables}.create(${JSON.stringify(call.slots)})`,
+      `${variables}.create(${JSON.stringify(call.slots.value)})`,
     )
 
   const first = extracted.calls[0]
@@ -213,7 +213,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           .join(',')
 
         const className = JSON.stringify(classes[call.name])
-        const value = `(input${typed ? `:Parameters<${type}>[0]` : ''})=>{${reads}const external=input.className;const style=input.style;return {className:external?${className}+" "+external:${className},style:{...style,${assignments}}}}`
+        const value = `(input${typed ? `:Parameters<${type}>[0]` : ''})=>{${reads}const external=input.className;const style=input.style;return {className:external?${className}+" "+external:${className},style:{...input.variables,...style,${assignments}}}}`
         const result =
           call.output === 'html' ? `${html}.bind(${value})` : `(${value})`
 
@@ -386,7 +386,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         specifier.importKind === 'type' ||
         !(
           node.source.value === 'zyzz'
-            ? ['Config', 'css', 'Theme', 'Vars', 'where']
+            ? ['Config', 'css', 'Theme', 'variable']
             : [
                 'Css',
                 'cssFunction',
@@ -476,7 +476,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 
     module.appendLeft(
       offset,
-      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Vars as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
+      `\nimport { ${[usesAppearance ? `Appearance as ${appearance}` : '', usesHtml ? `Html as ${html}` : '', callable ? `Props as ${runtime}` : '', usesSelection ? `Selection as ${selection}` : '', extracted.variableCalls?.length ? `Variable as ${variables}` : ''].filter(Boolean).join(', ')} } from 'zyzz/runtime';\n`,
     )
   }
 

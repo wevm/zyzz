@@ -18,4 +18,4 @@ export * as Props from './Props.js'
 export * as Selection from './Selection.js'
 
 /** Compiler-generated variable contracts with typed assignments. */
-export * as Vars from './Vars.js'
+export * as Variable from './Variable.js'

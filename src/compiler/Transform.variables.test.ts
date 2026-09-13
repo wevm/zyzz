@@ -4,9 +4,8 @@ import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source, Transform } from 'zyzz/compiler'
 
 describe('compile', () => {
-  test('removes consumed Vars imports and retains the public error constructor', () => {
-    const source =
-      'import { Vars } from "zyzz"; export const vars = Vars.define({ size: "length" });'
+  test('removes consumed variable imports and retains runtime references', () => {
+    const source = `import {variable} from 'zyzz'; export const vars = ({size:variable("length")});`
 
     expect(
       Transform.compile({ moduleId: 'vars.ts', source }).code,
@@ -14,41 +13,39 @@ describe('compile', () => {
     expect(
       Transform.compile({
         moduleId: 'error.ts',
-        source: source + 'export const ErrorType = Vars.MissingTransformError',
+        source: source + 'export const gap = vars.size',
       }).code,
-    ).toContain('Vars.MissingTransformError')
+    ).toContain('export const gap = vars.size')
     expect(() =>
       Transform.compile({
         moduleId: 'signed.ts',
-        source:
-          'import { Vars, css } from "zyzz"; const vars = Vars.define({ size: "signedLength" }); css({ lineHeight: vars.size })',
+        source: `import {variable, css} from 'zyzz'; const vars = ({size:variable("signedLength")}); css({ lineHeight: vars.size })`,
       }),
     ).toThrow('Variable domain is incompatible')
   })
-  test('retains type-only generic references to Vars', () => {
+  test('retains type-only generic references to variable', () => {
     const output = Transform.compile({
       moduleId: 'generic.ts',
-      source:
-        'import {Vars} from "zyzz"; const v=Vars.define({gap:"length"}); function identity<T>(v:T){return v}; export const typed=identity<Vars.Definition<{gap:"length"}>>(v)',
+      source: `import {variable} from 'zyzz'; const v=({gap:variable("length")}); function identity<T>(v:T){return v}; export const typed=identity<{gap: variable.Reference<'length'>}>(v)`,
     })
 
     expect(output.code).toMatchInlineSnapshot(
       `
       "
-      import { Vars as __zyzzVars } from 'zyzz/runtime';
-      import {Vars} from "zyzz"; const v=__zyzzVars.create({"gap":{"name":"--z-v1cd72gh91mozv-76--67-61-70","type":"length","variable":true}}); function identity<T>(v:T){return v}; export const typed=identity<Vars.Definition<{gap:"length"}>>(v)"
+      import { Variable as __zyzzVariable } from 'zyzz/runtime';
+      import {variable} from 'zyzz'; const v=({gap:__zyzzVariable.create({"name":"--z-v1cd72gh91mozv-45","type":"length","variable":true})}); function identity<T>(v:T){return v}; export const typed=identity<{gap: variable.Reference<'length'>}>(v)"
     `,
     )
   })
-  test('rejects namespace Vars authoring', () => {
+  test('rejects namespace variable authoring', () => {
     expect(() =>
       Transform.compile({
         moduleId: 'namespace.ts',
         source:
-          'import * as zyzz from "zyzz"; export const v=zyzz.Vars.define({gap:"length"})',
+          'import * as zyzz from "zyzz"; export const v=zyzz.variable("length")',
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: namespace.ts:45: Import Vars by name; namespace authoring calls are not supported yet.]`,
+      `[Source.ExtractError: namespace.ts:45: Import variable by name; namespace authoring calls are not supported yet.]`,
     )
   })
 

@@ -15,7 +15,7 @@ export function create(
       return value === '' ? ' ' : value
     })
     const external = input.className
-    const style = { ...input.style }
+    const style = { ...input.variables, ...input.style }
 
     for (let index = 0; index < slots.length; index++)
       style[slots[index]![1].name] = values[index]!

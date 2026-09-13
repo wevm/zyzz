@@ -1,6 +1,6 @@
 /** Selects related elements using ordinary CSS and style identities. @module */
+/* oxlint-disable typescript/restrict-template-expressions -- Selector references are resolved at compile time. */
 import { useState } from 'react'
-import { where } from 'zyzz'
 import { css } from './zyzz.config.js'
 
 namespace styles {
@@ -26,15 +26,19 @@ namespace styles {
     borderRadius: '0.5rem',
     marginTop: 'sm',
     padding: 'sm',
-    [where`${group} > &:nth-child(even)`]: { backgroundColor: 'backdrop' },
-    [where`${group}:hover &`]: { borderColor: 'accent' },
-    [where`${group}[data-active="true"] > &`]: { color: 'accent' },
+    selectors: {
+      [`${group} > &:nth-child(even)`]: { backgroundColor: 'backdrop' },
+      [`${group}:hover &`]: { borderColor: 'accent' },
+      [`${group}[data-active="true"] > &`]: { color: 'accent' },
+    },
   })
 
-  export const sibling = css({ [where`${group} + &`]: { fontWeight: 600 } })
+  export const sibling = css({
+    selectors: { [`${group} + &`]: { fontWeight: 600 } },
+  })
 
   export const parent = css({
-    [where`&:has(input:checked)`]: { color: 'accent' },
+    selectors: { '&:has(input:checked)': { color: 'accent' } },
   })
 }
 
@@ -67,7 +71,7 @@ export function Relationships() {
       <p {...styles.sibling()}>A sibling selected by the empty group style.</p>
       <p {...styles.muted()}>
         Hover the group. The even child, checked parent, active ancestor, and
-        adjacent sibling each use a small where template.
+        adjacent sibling each use a string inside selectors.
       </p>
     </section>
   )

@@ -114,7 +114,7 @@ namespace styles {
 const example = <div {...styles.bar({ width: '50%' })} />
 ```
 
-Callbacks use explicitly typed scalar inputs and compile to fixed CSS-variable slots. Local finite aliases and interfaces are supported; rule structure, arbitrary runtime expressions, generic/imported dynamic types, and native output remain outside this boundary. Callbacks bind values without generating CSS. Use `Vars` only when a shared variable contract is needed.
+Callbacks use explicitly typed scalar inputs and compile to fixed CSS-variable slots. Local finite aliases and interfaces are supported; rule structure, arbitrary runtime expressions, generic/imported dynamic types, and native output remain outside this boundary. Callbacks bind values without generating CSS. Use `variable()` for independently reusable CSS variables.
 
 ```ts
 namespace styles {
@@ -137,7 +137,7 @@ namespace styles {
 }
 ```
 
-Import `{ css, theme }` from the [config module](../concepts.md#configuration) and access `theme.vars` directly. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `Vars` defines independent shared contracts.
+Import `{ css, theme }` from the [config module](../concepts.md#configuration) and access `theme.vars` directly. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `variable()` declares independent CSS variables.
 
 #### Static Bindings
 
@@ -155,3 +155,32 @@ namespace styles {
 ```
 
 Finite local type aliases, interfaces without inheritance, and object intersections describe dynamic inputs. Imported or generic types still require a directly supported local annotation.
+
+### CSS Variables
+
+Use `variable()` for reusable CSS variables. Use `variables` in both definitions and applications: definitions emit static CSS, while applications return inline assignments.
+
+```tsx
+import { css, variable } from 'zyzz'
+
+namespace variables {
+  export const accent = variable('color')
+}
+
+namespace styles {
+  export const label = css({
+    variables: { [variables.accent]: 'tomato' },
+    color: variables.accent,
+  })
+}
+
+function Label() {
+  return (
+    <span {...styles.label({ variables: { [variables.accent]: 'blue' } })}>
+      Hello
+    </span>
+  )
+}
+```
+
+Computed assignment keys lose individual domain information in TypeScript. `.set(value)` preserves it. See [variable](../api/core/variable.md) for registration, inheritance, and imported references.

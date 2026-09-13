@@ -2,6 +2,7 @@
  * Describes declaration fallbacks and separates importance from scalar values.
  * @module
  */
+import type * as Binding from './Binding.js'
 import type * as FunctionValue from './FunctionValue.js'
 import type * as RuleReference from './RuleReference.js'
 import type * as Grid from './Grid.js'
@@ -21,27 +22,34 @@ export type Atom<value> =
  */
 export type Accepted<style, properties> = {
   [property in keyof style]: property extends keyof properties
-    ? FunctionValue.Is<style[property]> extends true
-      ? FunctionValue.Accepted<
-          style[property],
-          Exclude<properties[property], undefined>,
-          property
+    ? style[property] extends Binding.Reference
+      ? Binding.Reference<style[property]['type']> extends Exclude<
+          properties[property],
+          undefined
         >
-      : Exclude<style[property], undefined> extends Exclude<
-            properties[property],
-            undefined
+        ? style[property]
+        : never
+      : FunctionValue.Is<style[property]> extends true
+        ? FunctionValue.Accepted<
+            style[property],
+            Exclude<properties[property], undefined>,
+            property
           >
-        ? Exclude<style[property], undefined>
-        : property extends keyof Literal.Properties
-          ? style[property] extends string | readonly (number | string)[]
-            ? Fold<style[property]> extends Input<
-                | Lowercase<Extract<Literal.Properties[property], string>>
-                | Extract<Literal.Properties[property], number>
-              >
-              ? style[property]
+        : Exclude<style[property], undefined> extends Exclude<
+              properties[property],
+              undefined
+            >
+          ? Exclude<style[property], undefined>
+          : property extends keyof Literal.Properties
+            ? style[property] extends string | readonly (number | string)[]
+              ? Fold<style[property]> extends Input<
+                  | Lowercase<Extract<Literal.Properties[property], string>>
+                  | Extract<Literal.Properties[property], number>
+                >
+                ? style[property]
+                : Exclude<properties[property], undefined>
               : Exclude<properties[property], undefined>
             : Exclude<properties[property], undefined>
-          : Exclude<properties[property], undefined>
     : never
 }
 
@@ -53,37 +61,44 @@ type Fold<value> = value extends string
 
 /** Refines concrete scalar spellings; already-broad property contracts need no literal refinement. */
 export type Checked<style, tokens = {}> = {
-  [property in keyof style]: Literal.Properties extends style
-    ? unknown
-    : RuleReference.Check<style[property], property> &
-        (property extends keyof typeof Literal.rules
-          ? style[property] extends (property extends
-              | 'gridArea'
-              | 'gridColumn'
-              | 'gridColumnEnd'
-              | 'gridColumnStart'
-              | 'gridRow'
-              | 'gridRowEnd'
-              | 'gridRowStart'
-              ? Fold<style[property]> extends Grid.Checked<
-                  Fold<style[property]>,
-                  property extends 'gridArea'
-                    ? 4
-                    : property extends 'gridColumn' | 'gridRow'
-                      ? 2
-                      : 1
+  [property in keyof style]: style[property] extends string & Binding.Reference
+    ? style[property] extends Binding.Reference<'*'>
+      ? unknown
+      : Checked<
+          { [key in property]: Binding.Reference<style[property]['type']> },
+          tokens
+        >[property]
+    : Literal.Properties extends style
+      ? unknown
+      : RuleReference.Check<style[property], property> &
+          (property extends keyof typeof Literal.rules
+            ? style[property] extends (property extends
+                | 'gridArea'
+                | 'gridColumn'
+                | 'gridColumnEnd'
+                | 'gridColumnStart'
+                | 'gridRow'
+                | 'gridRowEnd'
+                | 'gridRowStart'
+                ? Fold<style[property]> extends Grid.Checked<
+                    Fold<style[property]>,
+                    property extends 'gridArea'
+                      ? 4
+                      : property extends 'gridColumn' | 'gridRow'
+                        ? 2
+                        : 1
+                  >
+                  ? unknown
+                  : never
+                : unknown) &
+                Check<
+                  style[property],
+                  Token.Names<tokens, property>,
+                  (typeof Literal.rules)[property]
                 >
-                ? unknown
-                : never
-              : unknown) &
-              Check<
-                style[property],
-                Token.Names<tokens, property>,
-                (typeof Literal.rules)[property]
-              >
-            ? unknown
-            : never
-          : unknown)
+              ? unknown
+              : never
+            : unknown)
 }
 
 type Check<input, names, rule> =

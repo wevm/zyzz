@@ -5,6 +5,7 @@
 import * as Namespaces from '../compiler/internal/Namespaces.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Mapping from '@jridgewell/gen-mapping'
+import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
@@ -739,6 +740,18 @@ export function zyzz(): Plugin {
   }
 
   return {
+    config(config) {
+      // Inline color-scheme changes cannot initialize Lightning's lowered helpers.
+      return {
+        css: {
+          lightningcss: {
+            exclude:
+              (config.css?.lightningcss?.exclude ?? 0) |
+              Lightning.Features.LightDark,
+          },
+        },
+      }
+    },
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
         const path = new URL(request.url ?? '/', 'http://localhost').pathname

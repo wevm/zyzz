@@ -27,12 +27,42 @@ The compiler emits every finite choice and compound. Applications select attribu
 
 ## Definition
 
-| Field              | Behavior                                                                                       |
-| ------------------ | ---------------------------------------------------------------------------------------------- |
-| `base`             | Static styles applied before the axes.                                                         |
-| `variants`         | Ordered axes containing named style choices; `true`/`false` choices accept boolean selections. |
-| `defaultVariants`  | Choices used for omitted or `undefined` selections.                                            |
-| `compoundVariants` | Ordered `{ when, style }` entries; arrays match any listed choice, and axes combine with AND.  |
+### base
+
+Type: static style object. Default: `{}`. Applied before choices and compounds.
+
+```ts
+variants({ base: { display: 'flex' } })
+```
+
+### variants
+
+Type: an ordered record of axes, each containing named static style objects. Default: `{}`. Boolean choice names `true` and `false` produce boolean selection inputs.
+
+```ts
+variants({
+  variants: { size: { sm: { padding: '4px' }, lg: { padding: '12px' } } },
+})
+```
+
+### defaultVariants
+
+Type: optional choices for declared axes. Default: `{}`. Omitted and `undefined` inputs use defaults; `null` suppresses them.
+
+```ts
+variants({ variants: { size: { sm: {} } }, defaultVariants: { size: 'sm' } })
+```
+
+### compoundVariants
+
+Type: an ordered array of `{ when, style }` objects. Default: `[]`. Arrays within `when` match any listed choice; different axes must all match.
+
+```ts
+variants({
+  variants: { size: { sm: {}, lg: {} } },
+  compoundVariants: [{ when: { size: ['sm', 'lg'] }, style: { color: 'red' } }],
+})
+```
 
 Precedence is base, then axes in declaration order, then compounds in array order, within matching contexts and importance. Attributes add no selector specificity. Axis names use lowercase data-attribute spelling and cannot reuse styling or component-reserved props.
 
@@ -75,17 +105,39 @@ Compilation partitions condition states to preserve null and overlap semantics. 
 
 Media-list complements follow [Media Queries Level 4](https://www.w3.org/TR/mediaqueries-4/#mq-not): inactive comma-separated alternatives become intersected negated queries.
 
-## Bound Recipes
+## Returns
 
-`theme.variants` uses the theme's property-aware tokens. `Config.create` returns a bound `variants` function alongside `css`; configured recipes also preserve property mappings, ordered layer names, and React/HTML output.
+A callable accepting optional declared selections and styling overrides. Infer its input with `NonNullable<Parameters<typeof styles.button>[0]>`.
+
+### className
+
+Type: `string`. The stable generated recipe class, with any supplied `className` appended.
 
 ```ts
-import { Config } from 'zyzz'
-
-export const { css, variants, theme } = Config.create({
-  theme: { color: { brand: '#06c' } },
-})
+styles.button({ className: 'external' }).className
 ```
+
+### style
+
+Type: an optional inline style record. Includes supplied inline overrides and custom variable assignments; defaults to absent.
+
+```ts
+styles.button({ style: { opacity: 0.5 } }).style
+```
+
+### data attributes
+
+Type: optional `string` properties named `data-${axis}` for declared axes. Defaults and selected choices are serialized; suppressed axes are omitted.
+
+```ts
+styles.button({ size: 'lg' })['data-size']
+```
+
+## Errors
+
+Executing untransformed authoring throws `variants.MissingTransformError`. Compilation reports unsupported structures and invalid authored selections at their source locations. Static types reject invalid application inputs; runtime selection performs no validation.
+
+## Bound aliases
 
 Bound aliases and re-exports retain their contracts through source graphs and packed libraries. Packed recipe-authoring aliases require version 15 metadata; older consumers must upgrade to read that contract. Existing CSS-only contracts retain their earlier versions.
 

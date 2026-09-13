@@ -10,7 +10,7 @@ const source = `import {variants,theme} from './config.js';
 export const scope=theme.className;
 export const button=variants({
   base:{padding:'2px',borderWidth:'0px',borderStyle:'solid',color:'brand',opacity:1,fontWeight:400},
-  conditions:{wide:'@media >=md',compact:'@media (height < 500px), print',grid:'@supports (display: grid)'},
+  conditions:{wide:'@media >=md',compact:'@media/**/(height < 500px), print',grid:'@supports(display: grid)'},
   variants:{size:{sm:{padding:'4px',borderWidth:'2px'},lg:{padding:'12px'}},loading:{true:{opacity:0.5},false:{}},constructor:{normal:{}}},
   defaultVariants:{size:'sm',loading:false,constructor:'normal'},
   compoundVariants:[

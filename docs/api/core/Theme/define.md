@@ -249,6 +249,15 @@ theme.tokens.spacing.md
 `Theme.InvalidError` identifies invalid groups, paths, records, or cycles. Palettes must be nonempty and keys dot-free. CSS token values are checked statically.
 
 > [!NOTE]
-> Same-module `theme.css` and `theme.className` are supported by `Transform.compile`. Graph compilation supports cross-module linking and `theme.vars` references. Bound `variants` remains a preview. See [Compile Local Theme Source](../../../guides/themes.md#compile-local-theme-source).
+> Same-module `theme.css` and `theme.className` are supported by `Transform.compile`. Graph compilation supports cross-module linking and `theme.vars` references. Bound `variants` supports the same tokens, mappings, and output as `css`. See [Compile Local Theme Source](../../../guides/themes.md#compile-local-theme-source).
 
 See [Theme](README.md) for related methods and types.
+
+### variants
+
+Type: `variants.Bound<tokens>`. Declares token-aware recipes and returns a callable selecting compiled choices. Its parameters, returned props, and compilation errors follow [variants](../variants.md).
+
+```ts
+const button = theme.variants({ base: { color: 'brand' } })
+button()
+```

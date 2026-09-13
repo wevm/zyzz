@@ -127,7 +127,7 @@ describe('compile', () => {
       Graph.compile({
         modules: {
           'app.ts': `import {variable} from 'zyzz';
-export const vars=({gap:variable('length', {inherits:false,initialValue:'}'})});`,
+export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}'})});`,
         },
       })
       throw new Error('Expected invalid registration')
@@ -137,7 +137,7 @@ export const vars=({gap:variable('length', {inherits:false,initialValue:'}'})});
           [
             {
               "code": "unsupported_syntax",
-              "end": 108,
+              "end": 114,
               "message": "Registered initial values must match the declared syntax.",
               "source": "app.ts",
               "start": 55,

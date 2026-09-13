@@ -40,12 +40,86 @@ export function collect(options: collect.Options) {
     declaration: (name) => scope.getDeclaration(name)?.node,
   })
   const nodes: Ast.CallExpression[] = []
+  const aliases = new Map<Ast.Node, Themes.Link>()
+  const externalCalls = new Map<string, Source.Call>()
+  const externalStyles = new Map<string, Style.NamedStyle>()
+  const externalApplications = new Map<
+    number,
+    { calleeEnd: number; end: number; name: string; start: number }
+  >()
+
+  function external(node: Ast.Node): Themes.Link | undefined {
+    if (node.type === 'Identifier') {
+      const binding = scope.getDeclaration(node.name)
+      const alias = binding?.node && aliases.get(binding.node)
+      if (alias) return alias
+
+      if (
+        binding?.type === 'Import' &&
+        binding.importNode.importKind !== 'type'
+      )
+        return options.links?.[node.name]
+    }
+    if (
+      node.type === 'MemberExpression' &&
+      !node.computed &&
+      !node.optional &&
+      node.property.type === 'Identifier'
+    )
+      return external(node.object)?.members?.[node.property.name]
+    return undefined
+  }
+
   Walker.walk(options.program, {
     scopeTracker: scope,
     enter(node, parent) {
       applications?.enter(node, parent)
       bindings.enter(node, parent)
+      if (
+        node.type === 'VariableDeclarator' &&
+        node.init &&
+        parent?.type === 'VariableDeclaration' &&
+        parent.kind === 'const'
+      ) {
+        const link = external(node.init)
+        if (link && node.id.type === 'Identifier') aliases.set(node.id, link)
+        if (link && node.id.type === 'ObjectPattern')
+          for (const property of node.id.properties)
+            if (
+              property.type === 'Property' &&
+              !property.computed &&
+              property.key.type === 'Identifier' &&
+              property.value.type === 'Identifier'
+            ) {
+              const member = link.members?.[property.key.name]
+              if (member) aliases.set(property.value, member)
+            }
+      }
+
       if (node.type === 'CallExpression') {
+        const link = external(node.callee)
+        if (link?.style && !node.optional) {
+          const name = link.binding
+          externalCalls.set(name, {
+            end: -1,
+            identity: name,
+            name,
+            ...(link.style.output ? { output: link.style.output } : {}),
+            ownership: {
+              attributes: link.style.attributes,
+              identity: name,
+              slots: link.style.slots,
+            },
+            start: node.start,
+          })
+          externalStyles.set(name, { ...link.style.style, name })
+          externalApplications.set(node.start, {
+            calleeEnd: node.callee.end,
+            end: node.end,
+            name,
+            start: node.start,
+          })
+        }
         const call = options.calls.find((call) => call.start === node.start)
         const argument = node.arguments[0]
         const body =
@@ -82,14 +156,23 @@ export function collect(options: collect.Options) {
     },
   })
   const applied = new Map(
-    (applications?.find() ?? []).map((application) => [
-      application.start,
-      application,
-    ]),
+    [...(applications?.find() ?? []), ...externalApplications.values()].map(
+      (application) => [application.start, application],
+    ),
   )
   const calls = new Map(options.calls.map((call) => [call.start, call]))
-  const byName = new Map(options.calls.map((call) => [call.name, call]))
-  const styles = new Map(options.styles.map((style) => [style.name, style]))
+  const byName = new Map(
+    [...options.calls, ...externalCalls.values()].map((call) => [
+      call.name,
+      call,
+    ]),
+  )
+  const styles = new Map(
+    [...options.styles, ...externalStyles.values()].map((style) => [
+      style.name,
+      style,
+    ]),
+  )
   type Entry = {
     call: Source.Call
     style: Style.NamedStyle
@@ -113,6 +196,7 @@ export function collect(options: collect.Options) {
     const attributes = new Map<string, string>()
 
     function owners(call: Source.Call): readonly Composition.Owner[] {
+      if (call.ownership) return [call.ownership]
       if (call.runtimeComposition)
         return call.runtimeComposition.flatMap((input) => input.owners)
       return [
@@ -280,9 +364,14 @@ export function collect(options: collect.Options) {
           'Composition requires statically known local style applications.',
           value,
         )
-      selected.push(call)
+      selected.push(call.ownership ? { ...call, start: value.start } : call)
       input(call, expression, condition, value.start)
-      runtime ||= !!(call.recipe || call.slots || value.arguments.length)
+      runtime ||= !!(
+        call.ownership ||
+        call.recipe ||
+        call.slots ||
+        value.arguments.length
+      )
       if (application)
         guards.push(
           options.source.slice(application.start, application.calleeEnd),
@@ -315,6 +404,41 @@ export function collect(options: collect.Options) {
       call: Source.Call,
       body = call.body ?? bodies.get(call.start),
     ): Ast.ObjectExpression['properties'] {
+      // Imported declarations map to the application; publisher maps retain authored locations.
+      if (call.ownership) {
+        function declarations(
+          style: Style.NamedStyle,
+        ): readonly Style.Declaration[] {
+          return style.rules
+            ? style.rules.flatMap((rule) => declarations(rule.style))
+            : style.declarations
+        }
+
+        return declarations(styles.get(call.name)!).map((declaration) => ({
+          type: 'Property',
+          computed: false,
+          kind: 'init',
+          method: false,
+          shorthand: false,
+          start: call.start,
+          end: call.start,
+          key: {
+            type: 'Literal',
+            value: declaration.property,
+            raw: JSON.stringify(declaration.property),
+            start: call.start,
+            end: call.start,
+          },
+          value: {
+            type: 'Literal',
+            value: '',
+            raw: '""',
+            start: call.start,
+            end: call.start,
+          },
+        }))
+      }
+
       return (
         body?.properties.flatMap<Ast.ObjectExpression['properties'][number]>(
           (property) => {
@@ -423,6 +547,8 @@ export declare namespace collect {
     readonly calls: readonly Source.Call[]
     /** Stable module identity. */
     readonly identity: string
+    /** Immutable imported style definitions supplied by the source or package graph. */
+    readonly links?: Readonly<Record<string, Themes.Link>> | undefined
     /** Parsed module with lexical binding scopes. */
     readonly program: Ast.Program
     /** Source used to preserve initialization-sensitive binding reads. */

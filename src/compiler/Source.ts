@@ -19,6 +19,7 @@ import * as RuleReference from '../internal/RuleReference.js'
 import type * as Recipe from '../runtime/Recipe.js'
 import type * as RecipePayloads from './internal/RecipePayloads.js'
 import * as Recipes from './internal/Recipes.js'
+import * as PackedStyles from './internal/PackedStyles.js'
 import * as Scope from './internal/Scope.js'
 import type * as Shorthands from '../internal/Shorthands.js'
 import * as Static from './internal/Static.js'
@@ -39,6 +40,8 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Ownership retained by a separately compiled callable. */
+  readonly ownership?: Composition.Owner | undefined
   /** CSS-only presence alternative for a runtime composition. */
   readonly compositionCase?: boolean | undefined
   /** Names of precompiled presence alternatives in bitmask order. */
@@ -1051,6 +1054,7 @@ export function extract(options: extract.Options): extract.ReturnType {
     for (const entry of Compositions.collect({
       calls,
       identity: identity(options.moduleId),
+      links: options[Themes.context]?.links,
       program,
       source: options.source,
       styles,
@@ -1179,6 +1183,25 @@ export function extract(options: extract.Options): extract.ReturnType {
 
   if (diagnostics.length) throw new ExtractError(diagnostics)
 
+  function exportedStyle(link: Themes.Link): Themes.Link {
+    const call = calls.find((call) => call.identity === link.binding)
+    const style = call && styles.find((style) => style.name === call.name)
+    return {
+      ...link,
+      ...(call && style ? { style: PackedStyles.create(call, style) } : {}),
+      ...(link.members
+        ? {
+            members: Object.fromEntries(
+              Object.entries(link.members).map(([name, member]) => [
+                name,
+                exportedStyle(member),
+              ]),
+            ),
+          }
+        : {}),
+    }
+  }
+
   return Object.freeze({
     namespaces: contributionData.filter(
       (value): value is Extract<Css.Contribution, { kind: 'namespace' }> =>
@@ -1194,7 +1217,12 @@ export function extract(options: extract.Options): extract.ReturnType {
       ? {
           themeExports: Object.freeze({
             ...themes?.exports,
-            ...selectors.exports,
+            ...Object.fromEntries(
+              Object.entries(selectors.exports).map(([name, link]) => [
+                name,
+                exportedStyle(link),
+              ]),
+            ),
             ...contributions.exports,
             ...variables.exports,
           }),

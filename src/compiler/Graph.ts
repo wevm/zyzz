@@ -850,7 +850,17 @@ function build(options: compile.Options, cache?: Cache): Cache {
         name === previousNames[index] && previous.themes[name] === themes[name],
     )
 
-  for (const moduleId of ids)
+  const styleClasses: Record<string, string> = Object.create(null)
+  function published(link: Themes.Link) {
+    if (link.style?.className !== undefined)
+      styleClasses[link.binding] = link.style.className
+    for (const member of Object.values(link.members ?? {})) published(member)
+  }
+  for (const library of Object.values(libraries))
+    for (const link of Object.values(library.links)) published(link)
+
+  // Extraction visits dependencies first; their emitted classes must precede consumers.
+  for (const moduleId of extracted.keys()) {
     modules[moduleId] =
       sameThemes &&
       extracted.get(moduleId) === previous!.extracted.get(moduleId)
@@ -866,8 +876,37 @@ function build(options: compile.Options, cache?: Cache): Cache {
               }),
               links: {},
               owners,
+              styleClasses,
             },
           })
+    for (const call of extracted.get(moduleId)!.calls)
+      if (call.identity)
+        styleClasses[call.identity] = modules[moduleId]!.classes[call.name]!
+  }
+
+  function publishedStyle(link: Themes.Link): Themes.Link {
+    return {
+      ...link,
+      ...(link.style
+        ? {
+            style: {
+              ...link.style,
+              className: styleClasses[link.binding] ?? link.style.className,
+            },
+          }
+        : {}),
+      ...(link.members
+        ? {
+            members: Object.fromEntries(
+              Object.entries(link.members).map(([name, member]) => [
+                name,
+                publishedStyle(member),
+              ]),
+            ),
+          }
+        : {}),
+    }
+  }
 
   return {
     contracts,
@@ -894,7 +933,11 @@ function build(options: compile.Options, cache?: Cache): Cache {
             .map((id) => [
               id,
               Contract.write(
-                extracted.get(id)!.themeExports ?? {},
+                Object.fromEntries(
+                  Object.entries(extracted.get(id)!.themeExports ?? {}).map(
+                    ([name, link]) => [name, publishedStyle(link)],
+                  ),
+                ),
                 sharedThemes,
                 reachable(id).map((section) => ({
                   ...section,
@@ -914,7 +957,9 @@ function build(options: compile.Options, cache?: Cache): Cache {
         ),
       ),
       dependencies: Object.freeze(dependencies),
-      modules: Object.freeze(modules),
+      modules: Object.freeze(
+        Object.fromEntries(ids.map((id) => [id, modules[id]!])),
+      ),
     }),
     sources: Object.freeze({ ...options.modules }),
     themes: sharedThemes,

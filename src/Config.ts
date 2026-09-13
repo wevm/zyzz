@@ -286,16 +286,20 @@ type Mappings<options> = options extends {
     : map
   : {}
 
-type Handle<
+/** Theme handle retaining configured shorthands and renderer output in emitted declarations. */
+export type Handle<
   tokens extends Theme.Tokens,
   mappings extends Shorthands.Map,
   output extends css.Output,
 > = Omit<Theme.Definition<tokens>, 'css' | 'variants'> & {
+  /** Style factory bound to this handle. */
   readonly css: Css<tokens, never, output, mappings>
+  /** Variant factory bound to this handle. */
   readonly variants: variants.Bound<tokens, output, never, mappings>
 }
 
-type Css<
+/** Configured style factory with a portable name for library declaration emission. */
+export type Css<
   tokens extends Theme.Tokens,
   layers extends string,
   output extends css.Output,

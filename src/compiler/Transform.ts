@@ -149,6 +149,18 @@ export function compile(options: compile.Options): compile.ReturnType {
         : [],
     ),
   )
+  function prepareExport(link: Themes.Link) {
+    if (link.style?.output === 'html') {
+      const call = extracted.calls.find(
+        (call) => call.identity === link.binding,
+      )
+      if (call) preparedHtml.add(call.name)
+    }
+    for (const member of Object.values(link.members ?? {}))
+      prepareExport(member)
+  }
+  for (const link of Object.values(extracted.themeExports ?? {}))
+    prepareExport(link)
   let composition = '__zyzzComposition'
   while (identifiers.has(composition)) composition += '_'
   let usesComposition = false
@@ -241,7 +253,10 @@ export function compile(options: compile.Options): compile.ReturnType {
         let factory = `${composition}${call.start}`
         while (identifiers.has(factory)) factory += '_'
         const inputs = call.runtimeComposition.map((input) => ({
-          className: classes[input.name] ?? '',
+          className:
+            classes[input.name] ??
+            options[Themes.context]?.styleClasses?.[input.name] ??
+            '',
           condition: input.condition,
           owners: input.owners,
         }))

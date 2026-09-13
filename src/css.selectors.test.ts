@@ -50,14 +50,14 @@ export const child = config.css({selectors:{[\`\${themed} > &, \${configured} + 
 
     expect(result.modules['empty.ts']!.code).toMatchInlineSnapshot(`
       "
-      import { Html as __zyzzHtml, Props as __zyzzProps } from 'zyzz/runtime';
+      import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps } from 'zyzz/runtime';
 
       const theme = ({className:"z_theme-urrzb11meswl3-theme"} as import('zyzz').Theme.Definition<{}>);
       const config = ({theme:{"className":"z_theme-urrzb11meswl3-config-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{};readonly "output":"html"}>);
       export const themed = __zyzzProps.create({className:"z-style-urrzb11meswl3-156"});
-      export const configured = __zyzzHtml.create({className:"z-style-urrzb11meswl3-195"});
+      export const configured = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-urrzb11meswl3-195"})) as import('zyzz').css.ReturnType<'html'>);
       export const bare = ({className:""});
-      export const child = __zyzzHtml.create({className:"z-style-urrzb11meswl3-259"});"
+      export const child = (__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-urrzb11meswl3-259"})) as import('zyzz').css.ReturnType<'html'>);"
     `)
     expect(result.modules['empty.ts']!.css).toMatchInlineSnapshot(
       `".z-style-urrzb11meswl3-259{.z-style-urrzb11meswl3-156 > &, .z-style-urrzb11meswl3-195 + &{color:red;}}"`,
@@ -102,7 +102,7 @@ export const child = config.css({selectors:{[\`\${themed} > &, \${configured} + 
     )
     expect(
       JSON.parse(publisher.contracts['barrel.ts']!).version,
-    ).toMatchInlineSnapshot('13')
+    ).toMatchInlineSnapshot(`16`)
   })
 
   test('rejects unresolved, called, forward, and unscoped references', () => {

@@ -14,6 +14,8 @@
     "paths": {
       "zyzz": ["./src/index.ts"],
       "zyzz/compiler": ["./src/compiler/index.ts"],
+      "zyzz/next": ["./src/next/index.ts"],
+      "zyzz/next/loader": ["./src/next/loader.ts"],
       "zyzz/node": ["./src/node/index.ts"],
       "zyzz/runtime": ["./src/runtime/index.ts"],
       "zyzz/vite": ["./src/vite/index.ts"],

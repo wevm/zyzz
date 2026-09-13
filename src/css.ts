@@ -46,7 +46,7 @@ export declare namespace css {
     (<const input extends values & Options>(
       input: input &
         Record<Exclude<keyof input, keyof values | keyof Options>, never>,
-    ) => Props<output, Inline<input>>)
+    ) => Props<output>)
 
   /** Failure from executing source without a transform. */
   type ErrorType = MissingTransformError
@@ -63,23 +63,22 @@ export declare namespace css {
   type Output = 'html' | 'react'
 
   /** Renderer-native props selected by configuration. */
-  type Props<
-    output extends Output = 'react',
-    inline = Literal.Properties,
-  > = output extends 'html'
+  type Props<output extends Output = 'react'> = output extends 'html'
     ? { readonly class: string; readonly style?: string | undefined }
     : {
         /** Compiled and supplied class names. */
         readonly className: string
         /** Supplied inline styling overrides when present. */
-        readonly style?: inline | undefined
+        readonly style?:
+          | Readonly<Record<string, string | number | undefined>>
+          | undefined
       }
 
   /** Callable definition; source rewriting supplies its implementation. */
   type ReturnType<output extends Output = 'react'> = where.Reference &
-    (<const options extends Options = {}>(
+    (<const options extends Options = Options>(
       options?: options & Record<Exclude<Keys<options>, keyof Options>, never>,
-    ) => Props<output, Inline<options>>)
+    ) => Props<output>)
 }
 
 /** Executed authoring source has not been rewritten. */
@@ -93,6 +92,3 @@ export class MissingTransformError extends Error {
   /** Stable namespaced diagnostic name. */
   override name = 'css.MissingTransformError'
 }
-
-/** Retains supplied inline values without widening every CSS property. */
-type Inline<options> = 'style' extends keyof options ? options['style'] : {}

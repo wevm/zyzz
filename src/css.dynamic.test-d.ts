@@ -33,9 +33,7 @@ describe('css', () => {
       display: 'block',
     }))
 
-    expectTypeOf(bar({ amount: '50%', alpha: 0.5 })).toEqualTypeOf<
-      css.Props<'react', {}>
-    >()
+    expectTypeOf(bar({ amount: '50%', alpha: 0.5 })).toEqualTypeOf<css.Props>()
 
     bar({
       amount: '50%',

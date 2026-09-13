@@ -1,7 +1,7 @@
 # Next.js Setup
 
 > [!NOTE]
-> Preview API; not yet implemented. Webpack and Turbopack support require separate integration verification.
+> Preview integration. Packed applications are verified with Next.js 16.3.5 on Webpack and Turbopack, rendering in Chromium 153 with default build targets. Adapter source-map tracing remains open.
 
 Wrap the existing Next.js configuration with the `zyzz` integration. The wrapper owns source transformation, CSS delivery, and dependency watching.
 
@@ -20,22 +20,29 @@ Define the application's named config helpers as shown in [Getting Started](gett
 import { css } from './zyzz.config.js'
 
 namespace styles {
+  export const title = css({ color: 'brand' })
   export const card = css({ padding: 'md' })
 }
 
 export default function Page() {
-  return <main {...styles.card()}>Hello</main>
+  return (
+    <main {...styles.card()}>
+      <h1 {...styles.title()}>Hello</h1>
+    </main>
+  )
 }
 ```
 
-The function from `zyzz/next` configures the build. The instance from `zyzz.config.ts` supplies typed authoring helpers and theme handles.
+The function from `zyzz/next` configures the build. Named exports from `zyzz.config.ts` supply typed authoring helpers and theme handles.
 
 - **Development:** the existing Next.js dev command rebuilds styles after source and imported config/theme edits.
 - **Production:** the existing Next.js build command emits transformed modules and matching CSS for server and client rendering.
-- **Setup:** no separate Babel or PostCSS configuration, generated component imports, or manual virtual stylesheet import is required by the proposed contract.
+- **Setup:** no separate Babel or PostCSS configuration, generated component imports, or manual virtual stylesheet import is required.
 
-The integration must preserve existing Next.js options and compose with existing build hooks and rules. Loader or transform selection is an internal implementation decision; both bundlers reuse Zyzz's compiler.
+The wrapper preserves existing options and composes Webpack hooks and Turbopack rules. Configuration objects, promises, and phase callbacks are accepted, including asynchronous callbacks. It creates `.zyzz/next` for bundler-owned CSS; exclude this directory from version control.
 
-Support requires real fixtures for Server Components, client components, Fast Refresh, theme edits, route navigation, streaming, and production CSS loading. Preview notes remain until the supported Next.js versions and bundler paths pass those gates.
+The wrapper excludes `light-dark()` from Next.js CSS lowering while preserving other configured feature settings. Theme variables need native color-scheme selection; the lowering otherwise introduces unresolved helper variables. Default build targets are verified in Chromium 153. Browsers without native `light-dark()` remain unsupported; excluding lowering is not a polyfill.
 
-See the [API reference](../api/next/zyzz.md) and [integration plan](../../.agents/plan.md#phase-4--integrations-and-distribution).
+Real packed-consumer tests cover server and client components, hydration-driven updates, Fast Refresh, route navigation, imported theme edits, source diagnostics and recovery, relative fonts, and production CSS loading. Streaming tests observe the fallback before completed server output and verify its styles. Hydration preserves the original server button node.
+
+See the [API reference](../api/next/zyzz.md) and [integration plan](../../.agents/plan.md#framework-integration-priority).

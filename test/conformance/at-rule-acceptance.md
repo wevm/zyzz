@@ -4,7 +4,7 @@ The compiler matrix reviews all 22 rules and 62 descriptor/nested entries. Every
 
 The completion pass adds descriptor validation before output-parser recovery, public color-profile and native property-registration authoring, relative page lengths and calculations, Unicode/escaped function syntax, nested calls, and static list-argument checks. No inventory entries or gate assertions are removed.
 
-Chromium 153.0.8010.0 rejects `@color-profile`, its `color()` expressions, and `CSSColorProfileRule`. The public profile helper preserves valid CSS for compatible targets. WeasyPrint 70.0 verifies basic ICC painting, bleed geometry, and printer marks. Relative ICC colors, rendering intents, complete page rotation/fragmentation, and other per-renderer reviews remain open.
+Chromium 153.0.8010.0 rejects `@color-profile`, its `color()` expressions, and `CSSColorProfileRule`. The public profile helper preserves valid CSS for compatible targets. WeasyPrint 70.0 verifies basic ICC painting, bleed geometry, and printer marks. Relative ICC colors, rendering intents, broader fragmentation, and other per-renderer reviews remain open.
 
 ## Acceptance Contract
 
@@ -14,17 +14,31 @@ The acceptance model separates compiler correctness, target compatibility, and r
 
 Each target records compatibility (`native`, `partial`, `unsupported`, or `unreviewed`) separately from rendered evidence (`verified`, `partial`, or `unverified`). An unsupported renderer never counts as rendered support. A compiler claim cannot clear a renderer gap, and renderer availability cannot clear a compiler gap.
 
-| Command                           | Contract                                                                                                                                                                                                               |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm check:at-rules`             | Validate inventory drift, all matrix obligations, grammar fingerprints, and evidence paths.                                                                                                                            |
-| `pnpm check:at-rules:full`        | Require every compiler obligation, then run public type checking and all named integration evidence. Passes with 22/22 rules, 62/62 descriptor/nested entries, fresh type checking, and 184 passing integration tests. |
-| `pnpm check:at-rules:rendering`   | Require a fully verified renderer for every entry, then execute named evidence. Currently fails.                                                                                                                       |
-| `pnpm check:at-rules:targets`     | Require every listed target to have reviewed compatibility and passing probe evidence. Currently fails.                                                                                                                |
-| `pnpm check:at-rules:legacy-full` | Preserve the original combined acceptance gate and unresolved gaps. Currently fails.                                                                                                                                   |
+| Command                           | Contract                                                                                                                                                                                                             |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm check:at-rules`             | Validate inventory drift, all matrix obligations, grammar fingerprints, and evidence paths.                                                                                                                          |
+| `pnpm check:at-rules:full`        | Require every compiler obligation, then run public type checking and all named integration evidence. Passes with 22/22 rules, 62/62 descriptor/nested entries, fresh type checking, and 186 named integration tests. |
+| `pnpm check:at-rules:rendering`   | Require a fully verified renderer for every entry, then execute named evidence. Currently fails.                                                                                                                     |
+| `pnpm check:at-rules:targets`     | Require every listed target to have reviewed compatibility and passing probe evidence. Passes with named native/source/packed retention probes; rendering remains separate.                                          |
+| `pnpm check:at-rules:legacy-full` | Preserve the original combined acceptance gate and unresolved gaps. Currently fails.                                                                                                                                 |
 
 CI runs the matrix against the actual integration JSON report. Required tests must appear by exact file and full test name with a passing result; skipped or absent cases fail verification. Type evidence remains checked by the repository TypeScript job. Full acceptance always creates a fresh integration run.
 
 The matrix now includes every family, with descriptor-specific grammar and shared source/packed/watch cases. The original combined ledger retains its renderer gaps. Phase 2 and Phase 3's prerequisite remain open until all compiler obligations and target reviews are complete.
+
+## Target Review
+
+Chromium 153.0.8010.0 native/source/packed CSSOM probes close the 57 unreviewed compatibility records. The matrix now records 21 native, 59 partial, and four unsupported entries. CSSOM retention establishes only partial compatibility. Independent PDF geometry and decoded drawing streams additionally verify all three page orientations, promoting only that descriptor to native rendered support.
+
+Chromium drops `@custom-media`, legacy `@document`, `@font-feature-values/@annotation`, and `@font-feature-values/font-display` in both independent native controls and compiled output. The versioned probe artifact is `test-results/at-rule-target-retention.json`. Existing rendering limitations remain in the matrix.
+
+The full compiler gate passed fresh TypeScript and 184 integrations with `NODE_OPTIONS=--max-old-space-size=4096`. CI applies that budget to avoid the default-heap failure. The target gate passes 185 integrations, including the new retention probe.
+
+## Pagination Evidence
+
+`Transform.pagination.test.ts` compares packed output with independently authored CSS in Chromium. All three page orientations match physical dimensions and decoded drawing streams; left and right rotations have distinct controls. Three articles produce three pages with `break-inside: avoid`, compared with two pages under `auto`.
+
+This closes page-orientation rendering and adds partial fragmentation evidence for `@page`. It does not establish complete fragmentation, printer-mark, bleed, or cross-engine behavior. The rendering gate remains red.
 
 ## Print Engine Setup
 
@@ -65,7 +79,7 @@ Namespace grammar was reviewed against [CSS Namespaces Level 3](https://www.w3.o
 - `Transform.functionSyntax.browser.test.ts`: native composite functions, defaults, conditional results, and comma-list arguments.
 - `Transform.page.browser.test.ts`: actual PDF page dimensions and drawing-stream parity with independently authored CSS.
 
-The per-entry ledgers retain existing evidence and remaining gaps. Inventory and matrix validation pass; rendering, target, and legacy completion commands remain red while their requirements remain open. Phase 3 variants stays after actual full acceptance.
+The per-entry ledgers retain existing evidence and remaining gaps. Inventory and matrix validation pass; rendering and legacy completion commands remain red while their requirements remain open. Phase 3 variants stays after actual full acceptance.
 
 ## Completion Validation
 

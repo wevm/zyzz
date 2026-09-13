@@ -3,6 +3,7 @@
 .attest/
 .fixture-*/
 .venv/
+.zyzz/
 bench/results/
 coverage/
 dist/

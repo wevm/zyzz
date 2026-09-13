@@ -84,13 +84,34 @@ jobs:
       - env:
           NODE_OPTIONS: --max-old-space-size=4096
         name: Enforce full at-rule compiler acceptance
-        run: node scripts/at-rule-acceptance.ts --require-full --results test-results/integration.json
+        run: node scripts/at-rule-acceptance.ts --require-full --require-targets --results test-results/integration.json
+      - if: ${{ !cancelled() && hashFiles('test-results/at-rule-target-retention.json') != '' }}
+        name: Upload at-rule target review
+        uses: actions/upload-artifact@v4
+        with:
+          name: at-rule-target-retention
+          path: test-results/at-rule-target-retention.json
+          retention-days: 30
       - if: ${{ !cancelled() && hashFiles('test-results/at-rule-print-capabilities.json') != '' }}
         name: Upload print capabilities
         uses: actions/upload-artifact@v4
         with:
           name: at-rule-print-capabilities
           path: test-results/at-rule-print-capabilities.json
+          retention-days: 30
+      - if: ${{ failure() && hashFiles('test-results/next-*.json') != '' }}
+        name: Upload Next.js failure evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-failure-evidence
+          path: test-results/next-*.json
+          retention-days: 30
+      - if: ${{ !cancelled() && hashFiles('bench/results/next-*.json') != '' }}
+        name: Upload Next.js build comparisons
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build-comparisons
+          path: bench/results/next-*.json
           retention-days: 30
       - if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
         name: Report coverage

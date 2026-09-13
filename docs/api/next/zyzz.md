@@ -1,7 +1,7 @@
 # zyzz
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> Preview integration. Next.js 16.3.5 is verified with both bundlers, default build targets, and Chromium 153 rendering; browser support requires native `light-dark()`; adapter source-map tracing remains open.
 
 Wrap Next.js configuration with source transformation, CSS delivery, and dependency watching. Configure Webpack and Turbopack internally through the same public setup.
 
@@ -21,10 +21,10 @@ export default zyzz({
 
 ### nextConfig
 
-- Type: Next.js configuration object (`NextConfig`)
+- Type: `NextConfig | Promise<NextConfig> | zyzz.Factory`
 - Required: Yes; pass `{}` for an otherwise empty configuration.
 
-Existing application configuration. Preserve its options and compose existing build hooks and rules. Support for asynchronous or function-valued configurations remains to be specified and verified.
+Existing application configuration. Options and build hooks/rules are preserved. A factory receives the Next.js phase and `{ defaultConfig }`, returning an object or promise. Function configurations are wrapped in an async factory.
 
 ```ts
 zyzz({ reactStrictMode: true })
@@ -34,7 +34,7 @@ zyzz({ reactStrictMode: true })
 
 ### nextConfig
 
-- Type: Next.js-compatible configuration; exact public return type remains to be finalized.
+- Type: `NextConfig`, `Promise<NextConfig>`, or `zyzz.Factory`, matching the input overload.
 
 Configuration with Zyzz integration attached. It is exported from `next.config.ts`; it does not provide the application's `css` or theme helpers.
 
@@ -44,7 +44,7 @@ export default zyzz({})
 
 ## Errors
 
-Source and target errors retain their locations. Unsupported configuration combinations must produce actionable diagnostics. Failed development compilation preserves the last complete output. Exact diagnostic types remain an implementation gate.
+Compilation and resolution failures are reported through the active bundler. Source diagnostics retain their source locations. Correcting a source error triggers recompilation. File-system errors while creating `.zyzz/next` are thrown during configuration.
 
 The wrapper requires no separate Babel or PostCSS setup. Underlying loaders or transforms remain internal choices, validated separately for Webpack and Turbopack.
 

@@ -185,9 +185,10 @@ jobs:
           BENCH_RENDER_OUTPUT: bench/results/render-base
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          # Compare source revisions with the same installed dependencies and manifest.
-          trap 'git restore --source=HEAD --worktree -- src' EXIT
+          # Keep installed dependencies and the harness fixed; entrypoints follow source.
+          trap 'git restore --source=HEAD --worktree -- package.json src' EXIT
           git restore --source="$BASE_SHA" --worktree -- src
+          node scripts/benchmark-manifest.ts
           mkdir -p "$BENCH_RENDER_OUTPUT"
           printf '%s\n' "$BASE_SHA" > "$BENCH_RENDER_OUTPUT/commit.txt"
           pnpm bench:render

@@ -1,9 +1,29 @@
 /** Demonstrates independent viewport, container, support, and scope conditions. @module */
 import { useState } from 'react'
-import { styles as shared } from './Styles.js'
 import { css } from './zyzz.config.js'
 
 namespace styles {
+  export const card = css({
+    '@layer components': {
+      backgroundColor: 'surface',
+      border: '1px solid',
+      borderColor: 'line',
+      color: 'text',
+      borderRadius: 'card',
+      minWidth: 0,
+      padding: 'card',
+    },
+  })
+
+  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+
+  export const row = css({
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 'sm',
+  })
+
   export const container = css((values: { width: `${number}%` }) => ({
     containerName: 'preview',
     containerType: 'inline-size',
@@ -35,9 +55,9 @@ export function Queries() {
   const [width, setWidth] = useState(100)
 
   return (
-    <section {...shared.card()}>
+    <section {...styles.card()}>
       <h2>Responsive conditions</h2>
-      <label {...shared.row()}>
+      <label {...styles.row()}>
         Container width
         <input
           aria-label="Container width"
@@ -57,7 +77,7 @@ export function Queries() {
           </span>
         </div>
       </div>
-      <p {...shared.muted()}>
+      <p {...styles.muted()}>
         Above 20rem, the container has two columns. A wide viewport thickens its
         border. Supports and scope rules stay in CSS.
       </p>

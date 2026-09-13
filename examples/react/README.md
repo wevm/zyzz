@@ -20,18 +20,18 @@ export function Button() {
 
 ## Feature Map
 
-| Source                           | Capabilities                                                                                                                                             |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/zyzz.config.ts`             | Named themes, light/dark pairs, extensions, tokens, aliases, property-specific scales, cascade layers                                                    |
-| `src/App.tsx`                    | Theme selection, system scheme, nested scopes, responsive layout                                                                                         |
-| `src/Styling.tsx`                | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides                                                         |
-| `src/Dynamic.tsx`                | Typed runtime inputs, shared variables, registration, inherited assignments                                                                              |
-| `src/Relationships.tsx`          | Empty `css()`, `where`, hover, data attributes, nth-child, sibling selectors, `:has()`                                                                   |
-| `src/Queries.tsx`                | Media/container aliases, resize control, supports, scope boundaries                                                                                      |
-| `src/Motion.tsx`                 | Local/imported keyframes, relative assets, starting styles, reduced motion                                                                               |
-| `src/Stylesheets.tsx`            | Counter styles, fonts, pages, margin boxes, cross-document view transition opt-in                                                                        |
-| `src/Advanced.tsx`               | CSS functions, custom media, ICC profile, palettes, OpenType sets, namespace selectors, CSS imports, explicit layers, registered angle, anchor fallbacks |
-| `src/Styles.ts` / `src/main.tsx` | Imported definitions, global CSS, ordered layers, optional reset                                                                                         |
+| Source                         | Capabilities                                                                                                                                             |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/zyzz.config.ts`           | Named themes, light/dark pairs, extensions, tokens, aliases, property-specific scales, cascade layers                                                    |
+| `src/App.tsx`                  | Theme selection, system scheme, nested scopes, responsive layout                                                                                         |
+| `src/Styling.tsx`              | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides                                                         |
+| `src/Dynamic.tsx`              | Typed runtime inputs, shared variables, registration, inherited assignments                                                                              |
+| `src/Relationships.tsx`        | Empty `css()`, `where`, hover, data attributes, nth-child, sibling selectors, `:has()`                                                                   |
+| `src/Queries.tsx`              | Media/container aliases, resize control, supports, scope boundaries                                                                                      |
+| `src/Motion.tsx`               | Local/imported keyframes, relative assets, starting styles, reduced motion                                                                               |
+| `src/Stylesheets.tsx`          | Counter styles, fonts, pages, margin boxes, cross-document view transition opt-in                                                                        |
+| `src/Advanced.tsx`             | CSS functions, custom media, ICC profile, palettes, OpenType sets, namespace selectors, CSS imports, explicit layers, registered angle, anchor fallbacks |
+| `src/App.tsx` / `src/main.tsx` | Global CSS, ordered layers, optional reset                                                                                                               |
 
 Each example keeps styles beside its component and spreads normal props onto native elements. Advanced stylesheet descriptors follow browser support; print rules are visible in print preview.
 

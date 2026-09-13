@@ -1,7 +1,6 @@
 /** Uses imported keyframes and a relative asset with reduced-motion support. @module */
 import { useState } from 'react'
 import { keyframes } from 'zyzz/web'
-import { styles as shared } from './Styles.js'
 import { css } from './zyzz.config.js'
 import grid from './grid.svg'
 import { enter } from './motion.js'
@@ -9,6 +8,33 @@ import { enter } from './motion.js'
 const pulse = keyframes({ from: { opacity: 0.4 }, to: { opacity: 1 } })
 
 namespace styles {
+  export const button = css({
+    backgroundColor: 'surface',
+    border: '1px solid',
+    borderColor: 'line',
+    borderRadius: '0.5rem',
+    color: 'accent',
+    padding: 'sm',
+    px: 'md',
+    ':hover': { borderColor: 'accent' },
+    ':disabled': { cursor: 'not-allowed', opacity: 0.45 },
+    '&[aria-pressed="true"]': { backgroundColor: 'accent', color: 'surface' },
+  })
+
+  export const card = css({
+    '@layer components': {
+      backgroundColor: 'surface',
+      border: '1px solid',
+      borderColor: 'line',
+      color: 'text',
+      borderRadius: 'card',
+      minWidth: 0,
+      padding: 'card',
+    },
+  })
+
+  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+
   export const tile = css({
     animationDuration: '600ms',
     animationName: enter,
@@ -38,9 +64,9 @@ export function Motion() {
   const [count, setCount] = useState(0)
 
   return (
-    <section {...shared.card()}>
+    <section {...styles.card()}>
       <h2>Motion & assets</h2>
-      <button {...shared.button()} onClick={() => setCount(count + 1)}>
+      <button {...styles.button()} onClick={() => setCount(count + 1)}>
         Replay animation
       </button>
       <div
@@ -50,7 +76,7 @@ export function Motion() {
         <div {...styles.dot()} data-testid="motion-dot" />
         <p>Imported keyframes. Local SVG background.</p>
       </div>
-      <p {...shared.muted()}>
+      <p {...styles.muted()}>
         Both animations respect the system reduced-motion setting.
       </p>
     </section>

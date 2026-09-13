@@ -1,7 +1,6 @@
 /** Binds live values to static rules and shared registered variables. @module */
 import { useState } from 'react'
 import { Vars } from 'zyzz'
-import { styles as shared } from './Styles.js'
 import { css } from './zyzz.config.js'
 
 const vars = Vars.define({
@@ -9,6 +8,27 @@ const vars = Vars.define({
 })
 
 namespace styles {
+  export const card = css({
+    '@layer components': {
+      backgroundColor: 'surface',
+      border: '1px solid',
+      borderColor: 'line',
+      color: 'text',
+      borderRadius: 'card',
+      minWidth: 0,
+      padding: 'card',
+    },
+  })
+
+  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+
+  export const row = css({
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 'sm',
+  })
+
   export const bar = css((values: { width: `${number}%` }) => ({
     backgroundColor: 'accent',
     borderRadius: '0.5rem',
@@ -37,9 +57,9 @@ export function Dynamic() {
   const [amount, setAmount] = useState(50)
 
   return (
-    <section {...shared.card()}>
+    <section {...styles.card()}>
       <h2>Dynamic values & variables</h2>
-      <label {...shared.row()}>
+      <label {...styles.row()}>
         Amount
         <input
           aria-label="Amount"
@@ -62,7 +82,7 @@ export function Dynamic() {
           <div {...styles.inherited()} data-testid="variable-bar" />
         </div>
       </div>
-      <p {...shared.muted()}>
+      <p {...styles.muted()}>
         The first bar takes a typed callback value. The second fades using a
         shared variable set on its parent. Both use static CSS.
       </p>

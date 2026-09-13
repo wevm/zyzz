@@ -1,10 +1,23 @@
 /** Selects related elements using ordinary CSS and style identities. @module */
 import { useState } from 'react'
 import { where } from 'zyzz'
-import { styles as shared } from './Styles.js'
 import { css } from './zyzz.config.js'
 
 namespace styles {
+  export const card = css({
+    '@layer components': {
+      backgroundColor: 'surface',
+      border: '1px solid',
+      borderColor: 'line',
+      color: 'text',
+      borderRadius: 'card',
+      minWidth: 0,
+      padding: 'card',
+    },
+  })
+
+  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+
   export const group = css()
 
   export const item = css({
@@ -30,7 +43,7 @@ export function Relationships() {
   const [active, setActive] = useState(false)
 
   return (
-    <section {...shared.card()}>
+    <section {...styles.card()}>
       <h2>Relationships</h2>
       <label {...styles.parent()}>
         <input
@@ -52,7 +65,7 @@ export function Relationships() {
         ))}
       </div>
       <p {...styles.sibling()}>A sibling selected by the empty group style.</p>
-      <p {...shared.muted()}>
+      <p {...styles.muted()}>
         Hover the group. The even child, checked parent, active ancestor, and
         adjacent sibling each use a small where template.
       </p>

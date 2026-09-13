@@ -12,7 +12,6 @@ import {
   positionTry,
   property,
 } from 'zyzz/web'
-import { styles as shared } from './Styles.js'
 import { css } from './zyzz.config.js'
 
 const double = cssFunction({
@@ -44,6 +43,27 @@ property({
 })
 
 namespace styles {
+  export const card = css({
+    '@layer components': {
+      backgroundColor: 'surface',
+      border: '1px solid',
+      borderColor: 'line',
+      color: 'text',
+      borderRadius: 'card',
+      minWidth: 0,
+      padding: 'card',
+    },
+  })
+
+  export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
+
+  export const row = css({
+    alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 'sm',
+  })
+
   export const graphic = css({ '& svg|svg': { color: '#047857' } })
 
   export const profileFallback = css({ color: '#4338ca' })
@@ -95,9 +115,9 @@ export function Advanced() {
   const [angle, setAngle] = useState(0)
 
   return (
-    <details {...shared.card()}>
+    <details {...styles.card()}>
       <summary>Advanced stylesheet features</summary>
-      <p {...shared.muted()}>
+      <p {...styles.muted()}>
         Rendering follows browser and installed-font support. OpenType sets and
         palettes require a matching font. Unsupported color profiles retain a
         plain-color fallback; unsupported CSS functions leave the inset at its
@@ -135,7 +155,7 @@ export function Advanced() {
       <div {...styles.popover()} id="anchor-preview" popover="auto">
         Below the button, with a named fallback above.
       </div>
-      <label {...shared.row()}>
+      <label {...styles.row()}>
         Registered angle{' '}
         <input
           aria-label="Registered angle"

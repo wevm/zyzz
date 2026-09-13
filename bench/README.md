@@ -6,7 +6,7 @@ Compiler and React render benchmarks run on separate runners in parallel. Each j
 
 Integration tests use Vitest's numbered `--shard=i/3` partitions and merge their blob reports and V8 coverage. No module is assigned a dedicated runner. At-rule acceptance checks the merged report after the TypeScript matrix passes. Supplying `--results` verifies existing evidence without rerunning tests or types; standalone acceptance commands still run both.
 
-TypeScript compatibility checks and JavaScript compiler instantiation benches run independently. Each attest version runs two sorted fixture partitions with `pnpm bench:types --shard i/2`; add `--list` to inspect a partition. Both compiler versions and both TypeScript 6.0 attest partitions remain required jobs. The Checks job runs formatting and syntax-only linting with type-aware rules and compiler diagnostics disabled in CI. The TypeScript matrix checks types, and property conformance owns the complete CSS inventory check. Local `pnpm check` still includes type-aware linting and compiler diagnostics.
+TypeScript compatibility checks and JavaScript compiler instantiation benches run independently. Each attest version runs two sorted fixture partitions with `pnpm bench:types --shard i/2`; add `--list` to inspect a partition. Both compiler versions and both TypeScript 6.0 attest partitions remain required jobs. `pnpm check` runs formatting and syntax-only linting locally and in CI, with type-aware rules and compiler diagnostics disabled. Use `pnpm check:types` for explicit type checking. The TypeScript matrix checks types in CI, and property conformance owns the complete CSS inventory check.
 
 ## React Render and Mount Benchmarks
 

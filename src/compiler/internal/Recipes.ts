@@ -66,6 +66,7 @@ function predicate(axis: string, value: string): string {
   const quoted =
     '"' +
     value.replace(
+      // oxlint-disable-next-line no-control-regex -- CSS strings require hexadecimal escapes for control characters.
       /[\x00-\x1f\x7f"\\]/g,
       (character) => `\\${character.codePointAt(0)!.toString(16)} `,
     ) +

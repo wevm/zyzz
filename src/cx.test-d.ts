@@ -11,6 +11,8 @@ describe('cx', () => {
     )
     const { css: html } = Config.create({ output: 'html' })
     expectTypeOf(cx(html({ color: 'red' })())).toHaveProperty('class')
+    // @ts-expect-error Output kinds must agree.
+    cx(a(), html({ color: 'red' })())
     // @ts-expect-error Bare class strings are not applied props.
     cx('external')
     // @ts-expect-error Definitions must be applied first.

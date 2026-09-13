@@ -3,9 +3,82 @@ import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Transform } from 'zyzz/compiler'
+import { Source, Transform } from 'zyzz/compiler'
 
 describe('cx', () => {
+  test('uses lexical references and expands each selected mapping', () => {
+    const source = `import { Config, css, cx } from 'zyzz';
+      const { css: bound } = Config.create({ shorthands: { px: ['paddingLeft', 'paddingRight'] } });
+      const color = css({ color: 'red' });
+      const mapped = bound({ px: '8px' });
+      function unrelated(color: string) { return color }
+      type Input = Parameters<typeof color>[0];
+      export const props = cx(color(), mapped());`
+    const output = Transform.compile({ moduleId: 'mapped.ts', source })
+    expect(
+      output.css.includes('padding-left:8px;padding-right:8px'),
+    ).toMatchInlineSnapshot('true')
+    const prefix = output.css
+      .slice(0, output.css.lastIndexOf('padding-right:8px'))
+      .split('\n')
+    const position = Trace.originalPositionFor(
+      new Trace.TraceMap(output.cssMap),
+      { line: prefix.length, column: prefix.at(-1)!.length },
+    )
+    expect(position.source).toMatchInlineSnapshot('"mapped.ts"')
+    expect(position.line).toMatchInlineSnapshot('4')
+  })
+
+  test('emits only reachable nested composition groups', () => {
+    const output = Source.extract({
+      moduleId: 'nested.ts',
+      source: `import {css,cx} from 'zyzz'; const a=css({color:'red'}); export const props=cx(cx(a()),a());`,
+    })
+    expect(
+      output.calls.filter((call) => call.composition).length,
+    ).toMatchInlineSnapshot('1')
+  })
+  test('rejects extra style invocation', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {css,cx} from 'zyzz'; const a=css({}); cx(a()());`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:49: Composition currently requires static local style applications.]`,
+    )
+  })
+  test('rejects extra inline invocation', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {css,cx} from 'zyzz'; cx(css({})()());`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:32: Composition currently requires static local style applications.]`,
+    )
+  })
+  test('rejects extra nested invocation', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {css,cx} from 'zyzz'; const a=css({}); cx(cx(a())());`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:49: Composition currently requires static local style applications.]`,
+    )
+  })
+  test('rejects namespace composition', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import * as Z from 'zyzz'; import {css} from 'zyzz'; Z.cx(css({})());`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:53: Import cx by name; namespace authoring calls are not supported yet.]`,
+    )
+  })
+
   test('compiles repeated groups, partial shorthands, fallbacks, importance, and matching conditions', async () => {
     const source = `import {css,cx} from 'zyzz';
       namespace styles {
@@ -40,19 +113,110 @@ describe('cx', () => {
         </style><div id="ab"></div><div id="aba"></div><div id="inline"></div><div id="control-ab" class="a b"></div><div id="control-aba" class="a b again"></div>`)
       await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
       await page.evaluate(`for(const name of ['ab','aba','inline']) document.getElementById(name).className=App[name].className;
-        window.read=(name)=>{const style=getComputedStyle(document.getElementById(name));return [style.padding,style.color,style.display,style.opacity]}`)
-      for (const width of [500, 800]) {
-        await page.setViewportSize({ width, height: 800 })
-        for (const name of ['ab', 'aba'])
-          expect(await page.evaluate(`read('${name}')`)).toEqual(
-            await page.evaluate(`read('control-${name}')`),
-          )
-      }
+        window.read=(name,key)=>getComputedStyle(document.getElementById(name))[key]`)
+      await page.setViewportSize({ width: 500, height: 800 })
+      expect(await page.evaluate(`read('ab','padding')`)).toMatchInlineSnapshot(
+        '"8px 8px 8px 12px"',
+      )
+      expect(
+        await page.evaluate(`read('control-ab','padding')`),
+      ).toMatchInlineSnapshot('"8px 8px 8px 12px"')
+      expect(await page.evaluate(`read('ab','color')`)).toMatchInlineSnapshot(
+        '"rgb(0, 0, 255)"',
+      )
+      expect(
+        await page.evaluate(`read('control-ab','color')`),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+      expect(await page.evaluate(`read('ab','display')`)).toMatchInlineSnapshot(
+        '"grid"',
+      )
+      expect(
+        await page.evaluate(`read('control-ab','display')`),
+      ).toMatchInlineSnapshot('"grid"')
+      expect(await page.evaluate(`read('ab','opacity')`)).toMatchInlineSnapshot(
+        '"0.5"',
+      )
+      expect(
+        await page.evaluate(`read('control-ab','opacity')`),
+      ).toMatchInlineSnapshot('"0.5"')
+      expect(
+        await page.evaluate(`read('aba','padding')`),
+      ).toMatchInlineSnapshot('"8px"')
+      expect(
+        await page.evaluate(`read('control-aba','padding')`),
+      ).toMatchInlineSnapshot('"8px"')
+      expect(await page.evaluate(`read('aba','color')`)).toMatchInlineSnapshot(
+        '"rgb(255, 0, 0)"',
+      )
+      expect(
+        await page.evaluate(`read('control-aba','color')`),
+      ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+      expect(
+        await page.evaluate(`read('aba','display')`),
+      ).toMatchInlineSnapshot('"grid"')
+      expect(
+        await page.evaluate(`read('control-aba','display')`),
+      ).toMatchInlineSnapshot('"grid"')
+      expect(
+        await page.evaluate(`read('aba','opacity')`),
+      ).toMatchInlineSnapshot('"0.5"')
+      expect(
+        await page.evaluate(`read('control-aba','opacity')`),
+      ).toMatchInlineSnapshot('"0.5"')
+      await page.setViewportSize({ width: 800, height: 800 })
+      expect(await page.evaluate(`read('ab','padding')`)).toMatchInlineSnapshot(
+        '"8px 8px 8px 12px"',
+      )
+      expect(
+        await page.evaluate(`read('control-ab','padding')`),
+      ).toMatchInlineSnapshot('"8px 8px 8px 12px"')
+      expect(await page.evaluate(`read('ab','color')`)).toMatchInlineSnapshot(
+        '"rgb(128, 0, 128)"',
+      )
+      expect(
+        await page.evaluate(`read('control-ab','color')`),
+      ).toMatchInlineSnapshot('"rgb(128, 0, 128)"')
+      expect(await page.evaluate(`read('ab','display')`)).toMatchInlineSnapshot(
+        '"grid"',
+      )
+      expect(
+        await page.evaluate(`read('control-ab','display')`),
+      ).toMatchInlineSnapshot('"grid"')
+      expect(await page.evaluate(`read('ab','opacity')`)).toMatchInlineSnapshot(
+        '"0.5"',
+      )
+      expect(
+        await page.evaluate(`read('control-ab','opacity')`),
+      ).toMatchInlineSnapshot('"0.5"')
+      expect(
+        await page.evaluate(`read('aba','padding')`),
+      ).toMatchInlineSnapshot('"8px"')
+      expect(
+        await page.evaluate(`read('control-aba','padding')`),
+      ).toMatchInlineSnapshot('"8px"')
+      expect(await page.evaluate(`read('aba','color')`)).toMatchInlineSnapshot(
+        '"rgb(0, 128, 0)"',
+      )
+      expect(
+        await page.evaluate(`read('control-aba','color')`),
+      ).toMatchInlineSnapshot('"rgb(0, 128, 0)"')
+      expect(
+        await page.evaluate(`read('aba','display')`),
+      ).toMatchInlineSnapshot('"grid"')
+      expect(
+        await page.evaluate(`read('control-aba','display')`),
+      ).toMatchInlineSnapshot('"grid"')
+      expect(
+        await page.evaluate(`read('aba','opacity')`),
+      ).toMatchInlineSnapshot('"0.5"')
+      expect(
+        await page.evaluate(`read('control-aba','opacity')`),
+      ).toMatchInlineSnapshot('"0.5"')
       expect(
         await page.evaluate(
           "getComputedStyle(document.getElementById('inline')).color",
         ),
-      ).toBe('rgb(0, 0, 255)')
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
     } finally {
       await browser.close()
     }
@@ -72,7 +236,9 @@ describe('cx', () => {
       import(
         `data:text/javascript;base64,${Buffer.from(bundled.outputFiles![0]!.text).toString('base64')}`
       ),
-    ).rejects.toThrow()
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: a is not a function]`,
+    )
 
     const mapped = Transform.compile({
       moduleId: 'mapped.ts',
@@ -84,11 +250,9 @@ describe('cx', () => {
       new Trace.TraceMap(mapped.cssMap),
       { line: prefix.length, column: prefix.at(-1)!.length },
     )
-    expect(position.source).toBe('mapped.ts')
-    expect(position.line).toBe(1)
-    expect(position.column).toBe(
-      `import {css,cx} from 'zyzz';const a=css({`.length,
-    )
+    expect(position.source).toMatchInlineSnapshot('"mapped.ts"')
+    expect(position.line).toMatchInlineSnapshot('1')
+    expect(position.column).toMatchInlineSnapshot(`41`)
   })
 
   test('rejects unresolved runtime selections before emitting misleading composition', () => {
@@ -97,6 +261,8 @@ describe('cx', () => {
         moduleId: 'app.ts',
         source: `import {css,cx} from 'zyzz';const a=css({color:'red'});export const compose=(enabled:boolean)=>cx(enabled && a());`,
       }),
-    ).toThrow('static local style applications')
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:98: Composition currently requires static local style applications.]`,
+    )
   })
 })

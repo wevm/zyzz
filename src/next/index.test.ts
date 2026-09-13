@@ -14,11 +14,9 @@ const exec = Util.promisify(ChildProcess.execFile)
 
 describe('zyzz', () => {
   beforeAll(async () => {
-    await exec('pnpm', ['build'], {
-      timeout: 120_000,
-      maxBuffer: 4 * 1024 * 1024,
-    })
-  }, 120_000)
+    // The integration command builds once before workers consume package artifacts.
+    await Fs.access(Path.resolve('dist/themes/default.js.zyzz.json'))
+  })
 
   for (const bundler of ['webpack', 'turbopack']) {
     test(`builds and updates a packed Next.js ${bundler} application`, async () => {
@@ -232,12 +230,10 @@ describe('zyzz', () => {
             .evaluate((element) => getComputedStyle(element).padding),
         ).toMatchInlineSnapshot('"8px"')
         expect(
-          await page
-            .locator('#default-theme p')
-            .evaluate((element) => ({
-              padding: getComputedStyle(element).padding,
-              font: getComputedStyle(element).fontFamily,
-            })),
+          await page.locator('#default-theme p').evaluate((element) => ({
+            padding: getComputedStyle(element).padding,
+            font: getComputedStyle(element).fontFamily,
+          })),
         ).toEqual({
           padding: '16px',
           font: 'Geist, ui-sans-serif, system-ui, sans-serif',

@@ -17,17 +17,22 @@ export function cx<
     | undefined
   )[],
 >(
-  ...entries: entries & {
-    readonly [index in keyof entries]: entries[index] extends object
-      ? Record<
-          Exclude<
-            keyof entries[index],
-            'class' | 'className' | 'style' | `data-${string}`
-          >,
-          never
-        >
-      : unknown
-  }
+  ...entries: entries &
+    (Extract<entries[number], { class: string }> extends never
+      ? unknown
+      : Extract<entries[number], { className: string }> extends never
+        ? unknown
+        : never) & {
+      readonly [index in keyof entries]: entries[index] extends object
+        ? Record<
+            Exclude<
+              keyof entries[index],
+              'class' | 'className' | 'style' | `data-${string}`
+            >,
+            never
+          >
+        : unknown
+    }
 ): Extract<entries[number], { class: string }> extends never
   ? css.Props
   : css.Props<'html'> {

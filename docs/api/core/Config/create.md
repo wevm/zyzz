@@ -1,7 +1,7 @@
 # Config.create
 
 > [!NOTE]
-> Named config exports, callable theme selection, variables, and layer compilation are implemented. The initialization `script` is supported; `variants` remains planned.
+> Named config exports, callable theme selection, variables, and layer compilation are implemented. The initialization `script` is supported; `variants` supports token-aware recipes.
 
 Bind style authoring to explicit theme and layer contracts. Export helpers directly from `zyzz.config.ts` and consume them through named imports.
 
@@ -93,7 +93,7 @@ Config.create({
 
 ## Returns
 
-Returns `Config.create.ReturnType<options>`: a frozen object with typed `css`, a bound `script` function, and either `theme` or `themes`. Omission returns token-free `css` and a color-scheme-only `script`. Separate calls own isolated contracts and leave supplied definitions unchanged.
+Returns `Config.create.ReturnType<options>`: a frozen object with typed `css` and `variants`, a bound `script` function, and either `theme` or `themes`. Omission returns token-free `css` and a color-scheme-only `script`. Separate calls own isolated contracts and leave supplied definitions unchanged.
 
 ### css
 
@@ -148,10 +148,7 @@ See [Config Script](script.md) for storage, CSP, and hydration behavior.
 
 ### variants
 
-> [!NOTE]
-> Planned for Phase 3; not currently returned.
-
-- Type: Bound variant authoring (planned)
+- Type: Bound variant authoring with inferred axes and styling props
 
 Infers the same theme and layer contract as bound css.
 
@@ -173,7 +170,7 @@ See [Config](README.md) for related methods and types.
 
 ## Named Exports
 
-Export `const { css, theme } = Config.create(...)` and import `{ css, theme }` in consuming modules. Use `css`; access `theme` for single themes or `themes` for named catalogs. Source integrations follow these named exports without requiring a default export. Immutable aliases, named re-exports, and packed declarations retain its contract. `variants` remains planned.
+Export `const { css, theme } = Config.create(...)` and import `{ css, theme }` in consuming modules. Use `css`; access `theme` for single themes or `themes` for named catalogs. Source integrations follow these named exports without requiring a default export. Immutable aliases, named re-exports, and packed declarations retain its contract. `variants` supports token-aware recipes.
 
 ## In-Memory Compilation
 

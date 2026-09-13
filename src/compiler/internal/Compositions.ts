@@ -103,7 +103,7 @@ export function collect(options: collect.Options) {
           value,
         )
       const nested = calls.get(value.start)
-      if (nested?.composition) {
+      if (nested?.composition && nested.end === value.end) {
         selected.push(nested)
         guards.push(...nested.composition)
         continue
@@ -113,13 +113,17 @@ export function collect(options: collect.Options) {
           'Static composition applications cannot have overrides or selections.',
           value,
         )
-      const application = applied.get(value.start)
+      const found = applied.get(value.start)
+      const application = found?.end === value.end ? found : undefined
       const call = application
         ? byName.get(application.name)
         : value.callee.type === 'CallExpression'
-          ? calls.get(value.callee.start)
+          ? (() => {
+              const call = calls.get(value.callee.start)
+              return call?.end === value.callee.end ? call : undefined
+            })()
           : undefined
-      if (!call || call.recipe || call.slots)
+      if (!call || call.composition || call.recipe || call.slots)
         throw new Themes.InvalidError(
           'Composition currently requires static local style applications.',
           value,
@@ -148,6 +152,42 @@ export function collect(options: collect.Options) {
     const identities = selected.flatMap((call) =>
       call.identity ? [call.identity] : [],
     )
+    function properties(
+      call: Source.Call,
+      body = call.body ?? bodies.get(call.start),
+    ): Ast.ObjectExpression['properties'] {
+      return (
+        body?.properties.flatMap<Ast.ObjectExpression['properties'][number]>(
+          (property) => {
+            if (property.type !== 'Property') return [property]
+            const value = Expression.unwrap(property.value)
+            if (value.type === 'ObjectExpression')
+              return [
+                {
+                  ...property,
+                  value: { ...value, properties: properties(call, value) },
+                },
+              ]
+            const key =
+              property.key.type === 'Identifier'
+                ? property.key.name
+                : property.key.type === 'Literal'
+                  ? String(property.key.value)
+                  : ''
+            return (call.shorthands?.[key] ?? [key]).map((key) => ({
+              ...property,
+              key: {
+                type: 'Literal' as const,
+                raw: JSON.stringify(key),
+                value: key,
+                start: property.key.start,
+                end: property.key.end,
+              },
+            }))
+          },
+        ) ?? []
+      )
+    }
     const call: Source.Call = {
       name,
       start: node.start,
@@ -157,9 +197,7 @@ export function collect(options: collect.Options) {
         type: 'ObjectExpression',
         start: node.start,
         end: node.end,
-        properties: selected.flatMap(
-          (call) => (call.body ?? bodies.get(call.start))?.properties ?? [],
-        ),
+        properties: selected.flatMap((call) => properties(call)),
       },
       ...(selected[0]?.output ? { output: selected[0].output } : {}),
       ...(identities.length ? { identity: identities.join(' ') } : {}),
@@ -168,7 +206,15 @@ export function collect(options: collect.Options) {
     styles.set(name, style)
     result.push({ call, style })
   }
-  return result.reverse()
+  return result
+    .reverse()
+    .filter(
+      ({ call }) =>
+        !result.some(
+          ({ call: other }) =>
+            other.start < call.start && other.end >= call.end,
+        ),
+    )
 }
 
 /** Static composition extraction inputs. */

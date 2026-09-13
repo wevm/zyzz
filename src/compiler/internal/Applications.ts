@@ -1,5 +1,7 @@
 /** Finds nonescaping local static callables whose applications can become props. @module */
 import type * as Ast from '@oxc-project/types'
+import * as Walker from 'oxc-walker'
+import * as Scope from './Scope.js'
 import type * as Source from '../Source.js'
 
 /** Conservatively proves direct applications without changing binding reads. */
@@ -7,11 +9,7 @@ export function create(
   program: Ast.Program,
   calls: readonly Source.Call[],
 ): Collector | undefined {
-  const definitions = new Map(
-    calls
-      .filter((call) => !call.slots && !call.recipe && !call.composition)
-      .map((call) => [call.start, call]),
-  )
+  const definitions = new Map(calls.map((call) => [call.start, call]))
 
   const candidates: {
     declaration: {
@@ -132,6 +130,49 @@ export function create(
 
   if (!candidates.length) return undefined
 
+  const lexical = new Set<Ast.Node>()
+  const scope = new Scope.Tracker({ preserveExitedScopes: true })
+  Walker.walk(program, { scopeTracker: scope })
+  scope.freeze()
+  const ancestors: Ast.Node[] = []
+  Walker.walk(program, {
+    scopeTracker: scope,
+    enter(node, parent) {
+      ancestors.push(node)
+      if (
+        node.type !== 'Identifier' ||
+        !parent ||
+        !Walker.isReferenceIdentifier(node, parent)
+      )
+        return
+      if (
+        ancestors.some((node) =>
+          [
+            'TSTypeQuery',
+            'TSTypeAnnotation',
+            'TSTypeAliasDeclaration',
+            'TSInterfaceDeclaration',
+            'TSTypeParameterInstantiation',
+            'TSTypeParameterDeclaration',
+          ].includes(node.type),
+        )
+      )
+        return
+      const binding = scope.getDeclaration(node.name, { mode: 'value' })
+      const id = binding?.node
+      if (
+        id &&
+        candidates.some(
+          (candidate) => candidate.declaration.id.start === id.start,
+        )
+      )
+        lexical.add(node)
+    },
+    leave() {
+      ancestors.pop()
+    },
+  })
+
   const parents = new Map<Ast.Node, Ast.Node>()
   const references = new Map<
     string,
@@ -152,6 +193,8 @@ export function create(
       if (node.type !== 'Identifier') return
 
       if (node.name === 'eval') evaluation = true
+
+      if (!lexical.has(node)) return
 
       const nodes = references.get(node.name)
       if (!nodes) return
@@ -192,6 +235,8 @@ export function create(
             call = members.get(member.property.name)
             callee = member
           }
+
+          if (call?.slots || call?.recipe) continue
 
           const application = parents.get(callee)
 

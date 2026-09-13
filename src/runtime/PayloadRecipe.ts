@@ -29,8 +29,10 @@ export function create(options: create.Options) {
         choice
       ]!
       const slots = catalog.get(axis)!.get(choice)![context]!
-      for (const [field, name] of Object.entries(slots))
-        bindings[name] = values[field] === '' ? ' ' : values[field]!
+      for (const [field, name] of Object.entries(slots)) {
+        const value = values[field]!
+        bindings[name] = value === '' ? ' ' : value
+      }
 
       return choice
     }
@@ -54,7 +56,9 @@ export function create(options: create.Options) {
       | Record<string, Record<string, unknown> | undefined>
       | undefined
     if (conditions) {
-      const selections: Record<string, Record<string, unknown>> = {}
+      const selections: Record<string, Record<string, unknown>> = Object.create(
+        null,
+      )
       for (const [index, name] of (options.conditions ?? []).entries()) {
         const values = Object.hasOwn(conditions, name)
           ? conditions[name]

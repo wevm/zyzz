@@ -188,16 +188,14 @@ The scopes assign inherited CSS variables, while color scheme selection is indep
 Sources: StyleX variables, vanilla-extract `createVar`/`assignVars`/`fallbackVar`/Dynamic, CSS custom-property usage in Tailwind. **Planned:** 2.3.
 
 ```tsx
-import { css, Vars } from 'zyzz'
+import { css, variable } from 'zyzz'
 
-const progress = Vars.define({ amount: 'percentage' })
+const progress = { amount: variable('percentage') }
 namespace styles {
   export const bar = css({ width: progress.amount })
 }
 
-const element = (
-  <div {...styles.bar({ style: Vars.set(progress, { amount: '42%' }) })} />
-)
+const element = <div {...styles.bar({ style: progress.amount.set('42%') })} />
 ```
 
 Explicit sets are for shared contracts; callbacks in item 07 handle local values. Static custom-property assignments also need typed declaration support. A nested variable fallback is distinct from a declaration fallback array:
@@ -214,7 +212,7 @@ The literal example references application-owned names. Generated reference fall
 
 ## 06. Registered Custom Properties
 
-Sources: [StyleX `types.*`](https://stylexjs.com/docs/api/javascript/types) and [vanilla-extract variable descriptors](https://vanilla-extract.style/documentation/api/create-var/). **Proposal required:** optional registration descriptors on `Vars.define` in 2.3. TypeScript value types alone do not register CSS properties.
+Sources: [StyleX `types.*`](https://stylexjs.com/docs/api/javascript/types) and [vanilla-extract variable descriptors](https://vanilla-extract.style/documentation/api/create-var/). Optional registration options on `variable()` emit CSS `@property`. TypeScript value types alone do not register CSS properties.
 
 Until that shape is decided, the interoperability target is an ordinary external stylesheet plus a Zyzz declaration:
 
@@ -329,22 +327,24 @@ Cover interactive/form/structural states, ARIA/data/direction, open/popover/iner
 
 ## 11. Style References
 
-`where` templates interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
+`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
 
 ```ts
-import { css, where } from 'zyzz'
+import { css } from 'zyzz'
 
 namespace styles {
   export const card = css()
   export const label = css({
-    [where`${card}:hover &`]: { color: 'blue' },
-    [where`${card}[data-state="open"] > &`]: { opacity: 1 },
-    [where`${card} > &:nth-child(even)`]: { opacity: 0.5 },
+    selectors: {
+      [`${card}:hover &`]: { color: 'blue' },
+      [`${card}[data-state="open"] > &`]: { opacity: 1 },
+      [`${card} > &:nth-child(even)`]: { opacity: 0.5 },
+    },
   })
 }
 ```
 
-References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. TypeScript checks interpolation identities and nested declaration values; it does not validate selector text or prove DOM structure.
+References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. The compiler checks interpolation identities; TypeScript checks nested declaration values; it does not validate selector text or prove DOM structure.
 
 Specificity follows the authored selector. Use explicit `:where(...)` to lower condition specificity. Application-owned state remains in ordinary data/ARIA attributes. No runtime selector parsing, DOM lookup, or CSS generation is involved.
 

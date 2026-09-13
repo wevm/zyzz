@@ -345,7 +345,7 @@ export function Bar() {
 }
 ```
 
-`Vars.define` and `vars.set` remain available for shared explicit variable contracts. Theme references use `theme.vars` for CSS expressions and `theme.tokens` for portable references. Dynamic callbacks bind values without generating rules.
+`variable()` declares independent shared variables; the `variables` property accepts assignments in both definitions and applications. Theme references use `theme.vars` for CSS expressions and `theme.tokens` for portable references. Dynamic callbacks bind values without generating rules.
 
 ### Tailwind
 

@@ -10,7 +10,5 @@ export { css } from './css.js'
 export * as Style from './Style.js'
 /** Typed theme contracts and compatible token overrides. */
 export * as Theme from './Theme.js'
-/** Explicit variable contracts and inline assignments. */
-export * as Vars from './Vars.js'
-/** Scoped selector templates referencing callable style definitions. */
-export { where } from './where.js'
+/** Typed CSS variable declarations and inline assignments. */
+export { variable } from './variable.js'

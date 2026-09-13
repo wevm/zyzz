@@ -348,7 +348,7 @@ export function Progress() {
 }
 ```
 
-Static applications accept optional styling overrides. Dynamic applications combine required runtime values with `className` and `style` overrides in one input. Consumed values never become component props. The callback sees only its declared values. Event handlers, children, refs, accessibility state, and other component props stay on the component.
+Static applications accept optional styling overrides. Dynamic applications combine required runtime values with `className`, `style`, and `variables` overrides in one input. Consumed values never become component props. The callback sees only its declared values. Event handlers, children, refs, accessibility state, and other component props stay on the component.
 
 ```tsx
 type PanelValues = { readonly width: `${number}px`; readonly opacity: number }
@@ -375,14 +375,14 @@ const element = (
 )
 ```
 
-Web overrides accept only `className` and `style`; native overrides use the target's `style` shape. Variant data attributes derive from selection keys and cannot be supplied directly as overrides. Reject unknown input keys in consumer types and untyped calls. Never forward arbitrary props, merge handlers, or mutate input objects.
+Web overrides accept `className`, `style`, and `variables`; native overrides use the target's `style` shape. Variant data attributes derive from selection keys and cannot be supplied directly as overrides. Reject unknown input keys in consumer types and untyped calls. Never forward arbitrary props, merge handlers, or mutate input objects.
 
-Reserve `className`, `class`, `style`, `key`, and `ref` from runtime-value and variant names. Values may otherwise overlap component attribute names, but their declared keys are consumed; the component receives such attributes separately. Resolve the complete finite value-key set from the annotated input contract, including unused fields; do not strip only fields observed in the callback. Reject index signatures, unresolved key sets, and ambiguous contracts before emission. Library declarations and precompiled binding metadata preserve that key set.
+Reserve `className`, `class`, `style`, `variables`, `key`, and `ref` from runtime-value and variant names. Values may otherwise overlap component attribute names, but their declared keys are consumed; the component receives such attributes separately. Resolve the complete finite value-key set from the annotated input contract, including unused fields; do not strip only fields observed in the callback. Reject index signatures, unresolved key sets, and ambiguous contracts before emission. Library declarations and precompiled binding metadata preserve that key set.
 
 ### Merge Rules
 
 - **Classes.** Keep generated classes and append a supplied external `className`. External CSS follows the cascade; its position in the class string cannot guarantee an override. Generated-style last-wins composition uses `cx` and compiler metadata.
-- **Inline Styles.** Merge generated variable assignments first and caller `style` second. Caller inline properties follow browser cascade semantics, including importance. Compiler-owned variable keys are private and cannot be assigned by caller overrides; use the declared runtime values instead. Preserve public custom properties such as explicit `Vars.set` bindings.
+- **Inline Styles.** Merge generated variable assignments first and caller `style` second. Caller inline properties follow browser cascade semantics, including importance. Compiler-owned variable keys are private and cannot be assigned by caller overrides; use the declared runtime values instead. Preserve public custom properties such as explicit variable assignments.
 - **Variant Attributes.** Derive owned data attributes exclusively from validated selections. Change the selection key to override a choice. Keep unrelated attributes and all other component props outside the styling call.
 - **Composition.** `cx(base(), dynamic(values), variants(selection))` returns styling props with the same class/style merge rules. Reject unrelated props. It preserves required variable bindings, rejects conflicting recipe attribute ownership, and never invokes or chains handlers. Repeated JSX spreads only replace fields and are not the style composition API.
 
@@ -390,7 +390,7 @@ For static definitions, `button()` can compile to constant props. A surviving im
 
 The MVP supports required string/finite-number fields, direct record reads, and supported template interpolation into scalar declarations. No optional/null input leaves, runtime selectors/queries, dynamic object shape, computed reads, spreads, branches, or arbitrary calls inside definitions. Calculations happen at the call site or in supported CSS expressions. Runtime inputs are literal CSS values, never implicit token keys or numeric spacing tokens; use `variants` for finite token choices.
 
-Source adapters resolve typed contracts and binding syntax before type erasure without executing application code. The pure core consumes ordered declarations and target-independent slots, shared with `Vars`. Untyped application calls validate required consumed fields and primitive shape; unknown keys are rejected as invalid styling inputs. Compiler diagnostics cover unsupported definitions and property domains.
+Source adapters resolve typed contracts and binding syntax before type erasure without executing application code. The pure core consumes ordered declarations and target-independent slots, shared with `variable`. Untyped application calls validate required consumed fields and primitive shape; unknown keys are rejected as invalid styling inputs. Compiler diagnostics cover unsupported definitions and property domains.
 
 React web output uses `className`/`style` props; Vue maps these at the class/style adapter boundary. Native output uses a native `style` prop, with caller overrides after generated styles and explicit unit conversion. Native does not parse CSS or emulate importance/fallbacks. `StyleSheet.select` remains static lookup. No provider, global registry, DOM mutation, or runtime stylesheet generation is introduced.
 
@@ -399,23 +399,21 @@ Integration gates cover static and dynamic calls, repeated updates, nested insta
 ## Typed runtime variables
 
 ```tsx
-import { Vars, css } from 'zyzz'
+import { variable, css } from 'zyzz'
 
-const progress = Vars.define({ amount: 'percentage' })
+const progress = { amount: variable('percentage') }
 namespace styles {
   export const bar = css({ width: progress.amount })
 }
 
 const example = (
-  <div
-    {...styles.bar({ style: Vars.set(progress, { amount: `${percent}%` }) })}
-  />
+  <div {...styles.bar({ variables: { [progress.amount]: `${percent}%` } })} />
 )
 ```
 
-Dynamic callbacks are the concise path for values local to one styles. Keep `Vars` for explicit shared variable contracts and independent assignments. Both forms use the same compiler binding model.
+Dynamic callbacks are the concise path for values local to one styles. Keep `variable` for explicit shared variable contracts and independent assignments. Both forms use the same compiler binding model.
 
-`Vars.define(schema)` declares a set of typed variable references and compiles to target bindings. The initial schema supports `number`, `length`, `percentage`, and `color`, with target validation. `Vars.set(definition, values)` returns ordinary inline custom-property assignments on web; unknown keys or incompatible values are type errors. Unassigned variables follow normal CSS behavior unless the authored rule specifies a fallback.
+`variable()` declares an unconstrained variable; `variable(kind, options)` declares a typed variable reference and compiles to fixed web bindings. The initial schema supports `number`, `length`, `percentage`, and `color`, with target validation. `reference.set(value)` returns ordinary inline custom-property assignments on web; unknown keys or incompatible values are type errors. Unassigned variables follow normal CSS behavior unless the authored rule specifies a fallback.
 
 Dynamic assignment is allowed; dynamic rule generation is not. The core never reads device/browser state. Native adapters bind values to preidentified supported properties with explicit conversions; they do not parse CSS. Unsupported variable types or expressions fail compilation. This binding path is distinct from `StyleSheet.select`, which preserves static lookup identity.
 
@@ -612,22 +610,24 @@ Browser fixtures must exercise real input/focus/pointer changes, DOM insertion/r
 
 ### Style References
 
-`where` templates interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
+`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
 
 ```ts
-import { css, where } from 'zyzz'
+import { css } from 'zyzz'
 
 namespace styles {
   export const card = css()
   export const label = css({
-    [where`${card}:hover &`]: { color: 'blue' },
-    [where`${card}[data-state="open"] > &`]: { opacity: 1 },
-    [where`${card} > &:nth-child(even)`]: { opacity: 0.5 },
+    selectors: {
+      [`${card}:hover &`]: { color: 'blue' },
+      [`${card}[data-state="open"] > &`]: { opacity: 1 },
+      [`${card} > &:nth-child(even)`]: { opacity: 0.5 },
+    },
   })
 }
 ```
 
-References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. TypeScript checks interpolation identities and nested declaration values; it does not validate selector text or prove DOM structure.
+References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. The compiler checks interpolation identities; TypeScript checks nested declaration values; it does not validate selector text or prove DOM structure.
 
 Specificity follows the authored selector. Use explicit `:where(...)` to lower condition specificity. Application-owned state remains in ordinary data/ARIA attributes. No runtime selector parsing, DOM lookup, or CSS generation is involved.
 
@@ -748,7 +748,7 @@ These authoring calls compile away into explicit stylesheet contributions. Prese
 
 Accepted direction: [top-level stylesheet functions](../docs/api/web/at-rules.md). New helpers remain unimplemented until their Phase 2.5 evidence gates pass. Descriptor/statement rules use direct `zyzz/web` imports; `global` retains selectors and grouping rules.
 
-Named helpers return domain-specific references with compiler-owned identities. Eager helpers retain stylesheet effects. Existing `fontFace`, `keyframes`, `layers`, and `Vars.define` gain complete grammar coverage; variable registration stays on `Vars.define`.
+Named helpers return domain-specific references with compiler-owned identities. Eager helpers retain stylesheet effects. Existing `fontFace`, `keyframes`, `layers`, and `variable()` gain complete grammar coverage; variable registration stays on `variable()`.
 
 The linked contract specifies every MDN at-rule, descriptor contexts, repeated calls, page/font subrules, and examples. Conditional/layered declarations, query/profile reference consumption, external names, CSS functions, encoding, and namespace boundaries remain explicit design gates. New authoring APIs add no runtime validation or registration.
 
@@ -1145,7 +1145,7 @@ Reused token constants are not live aliases. A token dependency graph requires c
 
 Reusable typography, surface, and motion objects cover initial preset use. Rich named presets, strict token-only policy, and token documentation exports are optional follow-ups. Imported/exported recipes must retain every finite runtime-selectable alternative before static pruning; an unobserved literal choice is not necessarily dead CSS. JSX style props, component factories, runtime theme injection, and an application-local generated SDK are not core requirements.
 
-Before implementing variable registration, decide how `Vars.define` expresses optional CSS `syntax`, `inherits`, and `initial-value` descriptors while preserving its existing set-of-values API. Static variable assignment, nested `var()` fallback chains, scoped/external variable names, and registration conflicts need explicit contracts. Do not add metadata to `Theme.define` or replace runtime callbacks with a second binding abstraction.
+`variable(kind, options)` accepts optional registration fields `syntax`, `inherits`, and `initialValue`, and preserves individual `.set(value)` assignment types. Static variable assignment, nested `var()` fallback chains, scoped/external variable names, and registration conflicts need explicit contracts. Do not add metadata to `Theme.define` or replace runtime callbacks with a second binding abstraction.
 
 Renderer output also needs an explicit adapter contract: `className` plus a style object is not the same as DOM `class` plus a serialized style attribute. Keep application-time style definitions callable and spreadable; serialize at the target boundary with correct escaping and retain recipe attributes. The adapter belongs outside the agnostic core.
 

@@ -1,4 +1,4 @@
-/** Resolves selector templates and portable css definition identities. @module */
+/** Resolves selector objects and portable css definition identities. @module */
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
 import * as Condition from '../../internal/Condition.js'
@@ -15,6 +15,7 @@ export function scan(
   namespace: string,
   calls: readonly Ast.CallExpression[],
   links: Readonly<Record<string, Themes.Link>> = {},
+  selectorKeys: ReadonlySet<number> = new Set(),
 ) {
   const conditions = new Map<number, string>()
   const localConditions = new Set<string>()
@@ -26,7 +27,7 @@ export function scan(
   const namespaces = new Map<number, Map<string, Ast.Expression>>()
   const importedNames = new Map<string, Themes.Link>()
   const imported = new Map<number, Themes.Link>()
-  const tags = new Set<number>()
+
   const names = new Map<string, Ast.Expression>()
   const publicNames = new Map<string, string>()
   const namespaceNames = new Map<string, Map<string, Ast.Expression>>()
@@ -69,17 +70,6 @@ export function scan(
           imported.set(specifier.start, link)
           importedNames.set(specifier.local.name, link)
         }
-
-        if (
-          specifier.type !== 'ImportSpecifier' ||
-          statement.source.value !== 'zyzz'
-        )
-          continue
-        const name =
-          specifier.imported.type === 'Identifier'
-            ? specifier.imported.name
-            : specifier.imported.value
-        if (name === 'where') tags.add(specifier.start)
       }
 
     const declaration =
@@ -125,7 +115,7 @@ export function scan(
       }
   }
 
-  if (!calls.length && !imported.size && !tags.size)
+  if (!calls.length && !imported.size)
     return { conditions, exports, identities, localConditions }
 
   const exposed = new Map<Ast.Expression, readonly (readonly string[])[]>()
@@ -147,11 +137,9 @@ export function scan(
   Walker.walk(program, {
     scopeTracker: scope,
     enter(node, parent) {
-      if (
-        node.type === 'VariableDeclarator' ||
-        node.type === 'TaggedTemplateExpression'
-      )
+      if (node.type === 'Property' && selectorKeys.has(node.key.start))
         nodes.push({ node, parent })
+      if (node.type === 'VariableDeclarator') nodes.push({ node, parent })
 
       if (node.type === 'Identifier') {
         const declaration = scope.getDeclaration(node.name)
@@ -230,7 +218,7 @@ export function scan(
     return undefined
   }
 
-  for (const { node, parent } of nodes) {
+  for (const { node } of nodes) {
     if (node.type === 'VariableDeclarator' && node.init)
       for (const [key, member] of exposed.get(node.init) ?? []) {
         const resolved = resolve(node.init)
@@ -252,46 +240,51 @@ export function scan(
         }
       }
 
-    if (node.type !== 'TaggedTemplateExpression') continue
-    const tag = Expression.unwrap(node.tag)
-    const declaration =
-      tag.type === 'Identifier' ? declarations.get(tag.start) : undefined
-    if (declaration === undefined || !tags.has(declaration)) continue
-    if (parent?.type !== 'Property' || !parent.computed || parent.key !== node)
+    if (node.type !== 'Property') continue
+    if (node.method || node.kind !== 'init' || node.shorthand)
       throw new Themes.InvalidError(
-        'where templates must be computed style keys.',
+        'Selectors require explicit string keys and style objects.',
         node,
       )
-
-    let selector = node.quasi.quasis[0]!.value.cooked ?? ''
-    for (const [index, expression] of node.quasi.expressions.entries()) {
-      const value = Expression.unwrap(expression)
-      if (value.type !== 'Identifier' && value.type !== 'MemberExpression')
-        throw new Themes.InvalidError(
-          'where interpolations require css definitions without calling them.',
-          expression,
+    const key = Expression.unwrap(node.key)
+    let selector = ''
+    if (key.type === 'Literal' && typeof key.value === 'string')
+      selector = key.value
+    else if (key.type === 'TemplateLiteral' && node.computed) {
+      selector = key.quasis[0]!.value.cooked ?? ''
+      for (const [index, expression] of key.expressions.entries()) {
+        const value = Expression.unwrap(expression)
+        if (value.type !== 'Identifier' && value.type !== 'MemberExpression')
+          throw new Themes.InvalidError(
+            'Selector interpolations require css definitions without calling them.',
+            expression,
+          )
+        const reference = resolve(value)
+        if (
+          !reference ||
+          reference.members ||
+          (reference.call.start >= 0 &&
+            reference.call.end > node.start &&
+            !importedHas(reference))
         )
-      const reference = resolve(value)
-      if (
-        !reference ||
-        reference.members ||
-        (reference.call.start >= 0 &&
-          reference.call.end > node.start &&
-          !importedHas(reference))
+          throw new Themes.InvalidError(
+            'Selector interpolations require previously declared css definitions.',
+            expression,
+          )
+        selector += `.${reference.call.name}${key.quasis[index + 1]!.value.cooked ?? ''}`
+      }
+    } else
+      throw new Themes.InvalidError(
+        'Selectors require literal strings or templates referencing css definitions.',
+        key,
       )
-        throw new Themes.InvalidError(
-          'where interpolations require previously declared css definitions.',
-          expression,
-        )
-      selector += `.${reference.call.name}${node.quasi.quasis[index + 1]!.value.cooked ?? ''}`
-    }
     try {
       if (!Condition.nested(selector) || selector.trimStart().startsWith('@'))
-        throw new Error('where selectors require an explicit & target.')
+        throw new Error('Selectors require an explicit & target.')
       selector = Condition.normalize(selector)
       let local = false
       AtRules.transform({
-        filename: 'where.css',
+        filename: 'selectors.css',
         code: new TextEncoder().encode(`.z{${selector}{color:red}}`),
         errorRecovery: false,
         visitor: {
@@ -315,7 +308,7 @@ export function scan(
           },
         },
       })
-      conditions.set(node.start, selector)
+      conditions.set(node.key.start, selector)
       if (local) localConditions.add(selector)
     } catch (error) {
       throw new Themes.InvalidError((error as Error).message, node)

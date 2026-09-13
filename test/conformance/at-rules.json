@@ -946,7 +946,7 @@
     },
     "@property": {
       "evidence": [
-        "src/Vars.test-d.ts",
+        "src/variable.registered.test-d.ts",
         "src/compiler/Graph.variables.test.ts",
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/web/global.test-d.ts"
@@ -959,7 +959,7 @@
     },
     "@property/inherits": {
       "evidence": [
-        "src/Vars.test-d.ts",
+        "src/variable.registered.test-d.ts",
         "src/compiler/Graph.variables.test.ts",
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/web/global.test-d.ts"
@@ -972,7 +972,7 @@
     },
     "@property/initial-value": {
       "evidence": [
-        "src/Vars.test-d.ts",
+        "src/variable.registered.test-d.ts",
         "src/compiler/Graph.variables.test.ts",
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/web/global.test-d.ts"
@@ -985,7 +985,7 @@
     },
     "@property/syntax": {
       "evidence": [
-        "src/Vars.test-d.ts",
+        "src/variable.registered.test-d.ts",
         "src/compiler/Graph.variables.test.ts",
         "src/compiler/Transform.atRuleAcceptance.test.ts",
         "src/web/global.test-d.ts"

@@ -19,7 +19,7 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 
 `page`, `fontFeatureValues`, and `viewTransition` emit eager document rules with ordered grouping contexts. Page-margin boxes and font-feature aliases use distinct descriptor bodies.
 
-Additional direct imports include `cssFunction`, `customMedia`, `importCss`, and `namespace`. Conditional/grouping rules remain native keys in valid style bodies. Use `property` for native registration syntax and `Vars.define` for typed scalar variable bindings.
+Additional direct imports include `cssFunction`, `customMedia`, `importCss`, and `namespace`. Conditional/grouping rules remain native keys in valid style bodies. Use `property` for native registration syntax and `variable()` for typed scalar variable bindings.
 
 ```ts
 import { css } from 'zyzz'

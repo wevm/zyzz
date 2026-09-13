@@ -261,7 +261,7 @@ const example = <button {...styles.button({ size: 'sm' })}>Continue</button>
 
 ### Dynamic Styles
 
-Mix static declarations with typed runtime values in the same callback. Call the style with those values and optional `className`/`style` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
+Mix static declarations with typed runtime values in the same callback. Call the style with those values and optional `className`/`style`/`variables` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
 
 ```tsx
 import { css } from 'zyzz'
@@ -304,7 +304,7 @@ namespace styles {
 
 ### Composition
 
-Prefer state attributes for conditional styling. Calls accept `className` and `style` overrides. Classes are retained and inline styles merge. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
+Prefer state attributes for conditional styling. Calls accept `className`, `style`, and `variables` overrides. Classes are retained and inline styles merge. Other props stay on the component. Use `cx` for explicit overrides between generated styles in matching selector and condition contexts.
 
 ```tsx
 import { css, cx } from 'zyzz'

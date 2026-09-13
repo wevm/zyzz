@@ -1212,7 +1212,7 @@ export declare namespace extract {
     /** Resolved authoring exports when extracted as part of a source graph. */
     readonly themeExports?: Readonly<Record<string, Themes.Link>> | undefined
     /** Stable scope keys and validated local theme definitions. */
-    readonly themes: Readonly<Record<string, Theme.Definition>>
+    readonly themes: { readonly [name: string]: Theme.Definition }
   }
 }
 

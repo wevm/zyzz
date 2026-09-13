@@ -1,0 +1,37 @@
+diff --git a/dist/Package.js b/dist/Package.js
+index 3aa7d0cd4795eb9c14e37fb09d62dda2c792142a..111e287da2c4086c4afde0b3e1b21f9be230b760 100644
+--- a/dist/Package.js
++++ b/dist/Package.js
+@@ -26,11 +26,11 @@ export async function build(options) {
+         const result = await transpile({ cwd, sources, sourceDir, tsgo });
+         tsConfig = result.tsConfig;
+     }
+-    await copyAssets({ assets, cwd, outDir, sourceDir });
+     if (link) {
+         await fs.rm(outDir, { recursive: true }).catch(() => { });
+         await fs.mkdir(outDir, { recursive: true });
+     }
++    await copyAssets({ assets, cwd, outDir, sourceDir });
+     const packageJson = await decoratePackageJson(pkgJson, { cwd, link, outDir, sourceDir, assets });
+     await writePackageJson(cwd, packageJson);
+     return { packageJson, tsConfig };
+diff --git a/src/Package.ts b/src/Package.ts
+index 3de89464e94ba4d091f5bcd52794ca91534bc083..1ef5de7cdea3ff66196bd17cb5b3281451745a44 100644
+--- a/src/Package.ts
++++ b/src/Package.ts
+@@ -35,13 +35,13 @@ export async function build(options: build.Options): Promise<build.ReturnType> {
+     tsConfig = result.tsConfig
+   }
+ 
+-  await copyAssets({ assets, cwd, outDir, sourceDir })
+-
+   if (link) {
+     await fs.rm(outDir, { recursive: true }).catch(() => {})
+     await fs.mkdir(outDir, { recursive: true })
+   }
+ 
++  await copyAssets({ assets, cwd, outDir, sourceDir })
++
+   const packageJson = await decoratePackageJson(pkgJson, { cwd, link, outDir, sourceDir, assets })
+ 
+   await writePackageJson(cwd, packageJson)

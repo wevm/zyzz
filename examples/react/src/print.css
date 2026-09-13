@@ -1,0 +1,8 @@
+@media print {
+  button,
+  input,
+  select,
+  summary {
+    display: none;
+  }
+}

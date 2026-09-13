@@ -43,6 +43,18 @@ export function zyzz(
 
   return {
     ...config,
+    experimental: {
+      ...config.experimental,
+      lightningCssFeatures: {
+        ...config.experimental?.lightningCssFeatures,
+        exclude: [
+          ...new Set([
+            ...(config.experimental?.lightningCssFeatures?.exclude ?? []),
+            'light-dark' as const,
+          ]),
+        ],
+      },
+    },
     turbopack: {
       ...config.turbopack,
       rules: {

@@ -63,11 +63,6 @@ describe('zyzz', () => {
           { cwd: app, timeout: 120_000, maxBuffer: 4 * 1024 * 1024 },
         )
 
-        const manifestPath = Path.join(app, 'package.json')
-        const manifest = JSON.parse(await Fs.readFile(manifestPath, 'utf8'))
-        manifest.browserslist = ['Chrome 153']
-        await Fs.writeFile(manifestPath, JSON.stringify(manifest))
-
         await Fs.mkdir(Path.join(app, 'app/other'), { recursive: true })
         await Fs.mkdir(Path.join(app, 'app/stream'), { recursive: true })
         await Fs.writeFile(
@@ -241,6 +236,23 @@ describe('zyzz', () => {
             async () => (await document.fonts.load('16px NextEvidence')).length,
           ),
         ).toMatchInlineSnapshot('1')
+        await page.evaluate(() => {
+          document.documentElement.style.colorScheme = 'dark'
+        })
+        expect(
+          await page
+            .locator('h1')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(153, 204, 255)"')
+        await page.evaluate(() => {
+          document.documentElement.style.removeProperty('color-scheme')
+        })
+        expect(
+          await page
+            .locator('h1')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(0, 102, 204)"')
+
         const stream = await fetch(`${production.url}/stream`)
         const reader = stream.body!.getReader()
         let streamed = ''
@@ -428,7 +440,7 @@ describe('zyzz', () => {
 
         await Fs.writeFile(
           Path.join(app, 'next.config.ts'),
-          `export default {experimental:{cpus:2},turbopack:{root:process.cwd()}};`,
+          `export default {experimental:{cpus:2,lightningCssFeatures:{exclude:['light-dark']}},turbopack:{root:process.cwd()}};`,
         )
         await Fs.writeFile(
           Path.join(app, 'app/layout.tsx'),

@@ -83,5 +83,5 @@ export function bind<input>(
 
 /** Creates a static HTML style callable without CSS generation. */
 export function create(options: Props.create.Options): css.ReturnType<'html'> {
-  return bind(Props.create(options))
+  return bind(Props.create(options)) as css.ReturnType<'html'>
 }

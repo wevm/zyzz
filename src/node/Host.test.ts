@@ -449,13 +449,14 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       const result = await host.build()
 
       expect(result.files).toMatchInlineSnapshot(`
-      [
-        "button.ts",
-        "button.ts.css",
-        "button.ts.css.map",
-        "button.ts.map",
-      ]
-    `)
+        [
+          "button.ts",
+          "button.ts.css",
+          "button.ts.css.map",
+          "button.ts.map",
+          "button.ts.zyzz.json",
+        ]
+      `)
 
       const expected = Transform.compile({
         moduleId: 'example/button.ts',
@@ -464,10 +465,10 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
 
       expect(await Fs.readFile(Path.join(outDir, 'button.ts'), 'utf8'))
         .toMatchInlineSnapshot(`
-      "
-      import { Props as __zyzzProps } from 'zyzz/runtime';
-       export const button = __zyzzProps.create({className:"z-12ydhop55omeb-base0"});"
-    `)
+          "
+          import { Props as __zyzzProps } from 'zyzz/runtime';
+           export const button = __zyzzProps.create({className:"z-12ydhop55omeb-base0 z-style-12ydhop55omeb-50"});"
+        `)
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
         ".z-12ydhop55omeb-base0 {
@@ -517,29 +518,32 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       )
 
       expect((await host.build()).changed).toMatchInlineSnapshot(`
-      [
-        "button.ts",
-        "button.ts.css",
-        "button.ts.css.map",
-        "button.ts.map",
-        "renamed.ts",
-        "renamed.ts.css",
-        "renamed.ts.css.map",
-        "renamed.ts.map",
-      ]
-    `)
+        [
+          "button.ts",
+          "button.ts.css",
+          "button.ts.css.map",
+          "button.ts.map",
+          "button.ts.zyzz.json",
+          "renamed.ts",
+          "renamed.ts.css",
+          "renamed.ts.css.map",
+          "renamed.ts.map",
+          "renamed.ts.zyzz.json",
+        ]
+      `)
       expect((await Fs.readdir(outDir)).sort()).toMatchInlineSnapshot(`
-      [
-        ".zyzz-lock",
-        ".zyzz.json",
-        "ignored.ts",
-        "keep.txt",
-        "renamed.ts",
-        "renamed.ts.css",
-        "renamed.ts.css.map",
-        "renamed.ts.map",
-      ]
-    `)
+        [
+          ".zyzz-lock",
+          ".zyzz.json",
+          "ignored.ts",
+          "keep.txt",
+          "renamed.ts",
+          "renamed.ts.css",
+          "renamed.ts.css.map",
+          "renamed.ts.map",
+          "renamed.ts.zyzz.json",
+        ]
+      `)
 
       await Fs.rm(Path.join(root, 'renamed.ts'))
 
@@ -663,13 +667,14 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       if (!('result' in added)) throw new Error('Expected build result.')
 
       expect(added.result.files).toMatchInlineSnapshot(`
-      [
-        "nested/button.ts",
-        "nested/button.ts.css",
-        "nested/button.ts.css.map",
-        "nested/button.ts.map",
-      ]
-    `)
+        [
+          "nested/button.ts",
+          "nested/button.ts.css",
+          "nested/button.ts.css.map",
+          "nested/button.ts.map",
+          "nested/button.ts.zyzz.json",
+        ]
+      `)
 
       await Fs.writeFile(
         Path.join(root, 'nested/button.ts'),
@@ -761,21 +766,23 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       await Fs.rename(Path.join(root, 'Plain.ts'), Path.join(root, 'plain.ts'))
 
       expect((await host.build()).files).toMatchInlineSnapshot(`
-      [
-        ".zyzz-components/button.ts",
-        ".zyzz-components/button.ts.css",
-        ".zyzz-components/button.ts.css.map",
-        ".zyzz-components/button.ts.map",
-        ".zyzz.ts",
-        ".zyzz.ts.css",
-        ".zyzz.ts.css.map",
-        ".zyzz.ts.map",
-        "plain.ts",
-        "plain.ts.css",
-        "plain.ts.css.map",
-        "plain.ts.map",
-      ]
-    `)
+        [
+          ".zyzz-components/button.ts",
+          ".zyzz-components/button.ts.css",
+          ".zyzz-components/button.ts.css.map",
+          ".zyzz-components/button.ts.map",
+          ".zyzz-components/button.ts.zyzz.json",
+          ".zyzz.ts",
+          ".zyzz.ts.css",
+          ".zyzz.ts.css.map",
+          ".zyzz.ts.map",
+          ".zyzz.ts.zyzz.json",
+          "plain.ts",
+          "plain.ts.css",
+          "plain.ts.css.map",
+          "plain.ts.map",
+        ]
+      `)
       expect(
         await Fs.readFile(Path.join(outDir, 'plain.ts'), 'utf8'),
       ).toMatchInlineSnapshot('"export const value = 1"')

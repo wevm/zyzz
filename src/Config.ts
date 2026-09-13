@@ -286,6 +286,7 @@ type Css<
   output extends css.Output,
   mappings extends Shorthands.Map,
 > = {
+  (): css.ReturnType<output>
   <
     const values extends Record<string, string | number>,
     const styles extends Record<string, unknown>,

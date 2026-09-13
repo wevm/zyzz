@@ -10,7 +10,7 @@ import * as Contributions from './internal/Contributions.js'
 import * as Css from '../web/Css.js'
 import * as Dynamic from './internal/Dynamic.js'
 import * as Expression from './internal/Expression.js'
-import * as Markers from './internal/Markers.js'
+import * as Where from './internal/Where.js'
 import type * as Namespace from '../web/internal/Namespace.js'
 import * as Parser from 'oxc-parser'
 import * as RuleReference from '../internal/RuleReference.js'
@@ -34,6 +34,8 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Stable selector identity retained independently of declaration deduplication. */
+  readonly identity?: string | undefined
   /** Expanded immutable source data retained for declaration mapping. */
   readonly body?: Ast.ObjectExpression | undefined
   /** Alias targets retained for declaration source locations. */
@@ -161,22 +163,6 @@ export function extract(options: extract.Options): extract.ReturnType {
         scopeTracker,
         options[Themes.context]?.links,
         options.moduleId,
-      )
-    } catch (error) {
-      if (!(error instanceof Themes.InvalidError)) throw error
-
-      report('unsupported_syntax', error.message, error)
-      throw new ExtractError(diagnostics)
-    }
-  })()
-
-  const markers = (() => {
-    try {
-      return Markers.scan(
-        program,
-        scopeTracker,
-        identity(options.moduleId),
-        options[Themes.context]?.links,
       )
     } catch (error) {
       if (!(error instanceof Themes.InvalidError)) throw error
@@ -377,10 +363,35 @@ export function extract(options: extract.Options): extract.ReturnType {
 
   pending.sort((a, b) => a.start - b.start)
 
+  const where = (() => {
+    try {
+      return Where.scan(
+        program,
+        scopeTracker,
+        identity(options.moduleId),
+        pending,
+        options[Themes.context]?.links,
+      )
+    } catch (error) {
+      if (!(error instanceof Themes.InvalidError)) throw error
+
+      report('unsupported_syntax', error.message, error)
+      throw new ExtractError(diagnostics)
+    }
+  })()
+
   const staticCalls = new Set(pending.map((call) => call.start))
 
   for (const call of pending) {
     let argument = call.arguments[0]
+
+    if (call.arguments.length === 0)
+      argument = {
+        end: call.end - 1,
+        properties: [],
+        start: call.end - 1,
+        type: 'ObjectExpression',
+      }
 
     while (
       argument?.type === 'TSAsExpression' ||
@@ -447,7 +458,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       }
     }
 
-    if (call.arguments.length !== 1 || argument?.type !== 'ObjectExpression') {
+    if (call.arguments.length > 1 || argument?.type !== 'ObjectExpression') {
       report(
         'unsupported_syntax',
         'Expected one literal object or typed callback; spreads and referenced definitions are not supported.',
@@ -474,9 +485,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         if (
           slot &&
           prefix.some(
-            (key) =>
-              !Condition.local(key) &&
-              ![...markers.conditions.values()].includes(key),
+            (key) => !Condition.local(key) && !where.localConditions.has(key),
           )
         ) {
           report(
@@ -497,10 +506,10 @@ export function extract(options: extract.Options): extract.ReturnType {
           property.kind !== 'init' ||
           property.method ||
           (property.computed &&
-            !markers.conditions.has(property.key.start) &&
+            !where.conditions.has(property.key.start) &&
             !contributions.queryKeys.has(property.key.start)) ||
           property.shorthand ||
-          (!markers.conditions.has(property.key.start) &&
+          (!where.conditions.has(property.key.start) &&
             property.key.type !== 'Identifier' &&
             (property.key.type !== 'Literal' ||
               typeof property.key.value !== 'string'))
@@ -514,7 +523,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         }
 
         const key =
-          markers.conditions.get(property.key.start) ??
+          where.conditions.get(property.key.start) ??
           contributions.queryKeys.get(property.key.start) ??
           (property.key.type === 'Identifier'
             ? property.key.name
@@ -833,6 +842,9 @@ export function extract(options: extract.Options): extract.ReturnType {
         .contract.shorthands
 
       calls.push({
+        ...(where.identities.has(call.start)
+          ? { identity: where.identities.get(call.start)! }
+          : {}),
         ...(argument !== (dynamic?.body ?? original) &&
         argument.type === 'ObjectExpression'
           ? { body: argument }
@@ -971,11 +983,11 @@ export function extract(options: extract.Options): extract.ReturnType {
     )
   }
 
-  for (const [start] of markers.conditions)
+  for (const [start] of where.conditions)
     if (!calls.some((call) => call.start <= start && start < call.end))
       report(
         'unsupported_syntax',
-        'Relationship helpers require a compiled style definition.',
+        'where templates require a compiled style definition.',
         { start, end: start },
       )
 
@@ -994,13 +1006,6 @@ export function extract(options: extract.Options): extract.ReturnType {
       (value): value is Extract<Css.Contribution, { kind: 'namespace' }> =>
         value.kind === 'namespace',
     ),
-    ...(markers.calls.length
-      ? {
-          markerCalls: Object.freeze(
-            markers.calls.map((call) => Object.freeze({ ...call })),
-          ),
-        }
-      : {}),
     ...(contributionData.length
       ? { contributions: contributionData, contributionStarts }
       : {}),
@@ -1011,7 +1016,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       ? {
           themeExports: Object.freeze({
             ...themes?.exports,
-            ...markers.exports,
+            ...where.exports,
             ...contributions.exports,
             ...variables.exports,
           }),
@@ -1064,8 +1069,6 @@ export declare namespace extract {
   type ReturnType = {
     /** Module-owned namespace bindings retained when contributions are shared. */
     readonly namespaces?: readonly Namespace.Definition[] | undefined
-    /** Marker factories replaced with fixed data-attribute callables. */
-    readonly markerCalls?: readonly Markers.Call[] | undefined
     /** Static stylesheet effects and their source replacements. */
     readonly contributionStarts?: readonly number[] | undefined
     readonly contributions?: readonly Css.Contribution[] | undefined

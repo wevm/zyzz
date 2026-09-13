@@ -2,19 +2,13 @@
 
 Compile web CSS and declare stylesheet contributions and element relationships.
 
-| API                               | Description                                                    |
-| --------------------------------- | -------------------------------------------------------------- |
-| [Css](Css/README.md)              | Pure web CSS emission.                                         |
-| [fontFace](fontFace.md)           | Contribute a static font-face rule.                            |
-| [global](global.md)               | Contribute eager global selectors and nested stylesheet rules. |
-| [keyframes](keyframes.md)         | Define an animation with a stable typed name reference.        |
-| [layers](layers.md)               | Contribute ordered cascade layer names.                        |
-| [ancestor](ancestor.md)           | Match a marked ancestor.                                       |
-| [anySibling](anySibling.md)       | Match a marked sibling in either direction.                    |
-| [descendant](descendant.md)       | Match a marked descendant.                                     |
-| [ref](ref.md)                     | Define a callable element identity with optional typed states. |
-| [siblingAfter](siblingAfter.md)   | Match a marked sibling following the styled element.           |
-| [siblingBefore](siblingBefore.md) | Match a marked sibling preceding the styled element.           |
+| API                       | Description                                                    |
+| ------------------------- | -------------------------------------------------------------- |
+| [Css](Css/README.md)      | Pure web CSS emission.                                         |
+| [fontFace](fontFace.md)   | Contribute a static font-face rule.                            |
+| [global](global.md)       | Contribute eager global selectors and nested stylesheet rules. |
+| [keyframes](keyframes.md) | Define an animation with a stable typed name reference.        |
+| [layers](layers.md)       | Contribute ordered cascade layer names.                        |
 
 ## At-Rule Functions
 

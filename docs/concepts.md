@@ -165,22 +165,24 @@ See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style State
 
 ## Relationships
 
-Typed markers describe element identity and finite data states. Applying a ref emits attributes; another definition can reference that identity.
+`where` templates interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
 
 ```ts
-import { ancestor, ref } from 'zyzz/web'
+import { css, where } from 'zyzz'
 
-const card = ref({ state: ['closed', 'open'] })
-const condition = ancestor(card, { state: 'open' })
+namespace styles {
+  export const card = css()
+  export const label = css({
+    [where`${card}:hover &`]: { color: 'blue' },
+    [where`${card}[data-state="open"] > &`]: { opacity: 1 },
+    [where`${card} > &:nth-child(even)`]: { opacity: 0.5 },
+  })
+}
 ```
 
-- **Depth:** ancestor/descendant helpers match at any depth; immediate parent/child helpers remain undecided.
-- **Matching:** repeated markers use any qualifying ancestor, not nearest-boundary behavior.
-- **Predicates:** combined predicates must match the same marked element.
-- **Specificity:** helpers add zero condition specificity; raw selectors retain their own.
-- **Types:** constrain ref values, not DOM structure or accessibility semantics.
+References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. TypeScript checks interpolation identities and nested declaration values; it does not validate selector text or prove DOM structure.
 
-See [Style Relationships](guides/conditions.md#style-relationships) for application and [Css](api/web/Css/README.md) for sibling directions.
+Specificity follows the authored selector. Use explicit `:where(...)` to lower condition specificity. Application-owned state remains in ordinary data/ARIA attributes. No runtime selector parsing, DOM lookup, or CSS generation is involved.
 
 ## Dynamic Values
 

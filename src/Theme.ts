@@ -17,6 +17,7 @@ export type Color =
 
 /** Theme-bound authoring signature; execution requires source rewriting. */
 export type Css<tokens extends Tokens> = {
+  (): css.ReturnType
   <
     const values extends Record<string, string | number>,
     const styles extends Record<string, unknown>,

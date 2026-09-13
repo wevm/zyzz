@@ -12,3 +12,5 @@ export * as Style from './Style.js'
 export * as Theme from './Theme.js'
 /** Explicit variable contracts and inline assignments. */
 export * as Vars from './Vars.js'
+/** Scoped selector templates referencing callable style definitions. */
+export { where } from './where.js'

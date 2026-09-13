@@ -2750,27 +2750,27 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
     }
 
     expect(outputs).toMatchInlineSnapshot(`
-    [
-      "import other from 'zyzz'; export const props = ({className:""}); export { other };",
-      ""use client";
-    import { Props as __zyzzProps } from 'zyzz/runtime';
-      export const button = __zyzzProps.create({className:""});",
-      "#!/usr/bin/env node
+      [
+        "import other from 'zyzz'; export const props = ({className:""}); export { other };",
+        ""use client";
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+        export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-64"});",
+        "#!/usr/bin/env node
 
-    import { Props as __zyzzProps } from 'zyzz/runtime';
-    import { Style } from 'zyzz'; export const button = __zyzzProps.create({className:""}); export { Style };",
-      "import { Style,  } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
-      "import { Style } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
-      "
-    import { Props as __zyzzProps } from 'zyzz/runtime';
-    import { css } from 'zyzz'; export type Signature = typeof css; export const button = __zyzzProps.create({className:""});",
-      "
-    import { Props as __zyzzProps_ } from 'zyzz/runtime';
-     const __zyzzProps = 1; export const el = <button {...({className:"z-15sihh01ggr9so-base0"})} />; export const button = __zyzzProps_.create({className:""});",
-      "import { css } from 'zyzz'; export function f(value = ({className:""})) { var css; return value; }",
-      "export const untouched = '🎉';",
-    ]
-  `)
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+      import { Style } from 'zyzz'; export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-77"}); export { Style };",
+        "import { Style,  } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
+        "import { Style } from 'zyzz'; export const a = ({className:""}); export const b = ({className:""}); export { Style };",
+        "
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+      import { css } from 'zyzz'; export type Signature = typeof css; export const button = __zyzzProps.create({className:"z-style-15sihh01ggr9so-86"});",
+        "
+      import { Props as __zyzzProps_ } from 'zyzz/runtime';
+       const __zyzzProps = 1; export const el = <button {...({className:"z-15sihh01ggr9so-base0"})} />; export const button = __zyzzProps_.create({className:"z-style-15sihh01ggr9so-130"});",
+        "import { css } from 'zyzz'; export function f(value = ({className:""})) { var css; return value; }",
+        "export const untouched = '🎉';",
+      ]
+    `)
   })
 
   test('separately transformed modules render without class collisions in Chromium', async () => {
@@ -2924,10 +2924,10 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
       ).toMatchInlineSnapshot(`false`)
 
       expect(JSON.parse(consumer.stdout)).toMatchInlineSnapshot(`
-      {
-        "className": "z-fyitz4td647s-base0 external",
-      }
-    `)
+        {
+          "className": "z-fyitz4td647s-base0 z-style-fyitz4td647s-50 external",
+        }
+      `)
 
       expect(
         /\.(?:test|test-d|bench)\.ts/.test(listing.stdout),

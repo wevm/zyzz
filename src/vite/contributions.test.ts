@@ -81,7 +81,7 @@ describe('zyzz', () => {
       )
       expect(production.styles.card()).toMatchInlineSnapshot(`
         {
-          "className": "z-1hl3v031oo9bot-base0",
+          "className": "z-1hl3v031oo9bot-base0 z-style-1hl3v031oo9bot-133",
         }
       `)
     } finally {
@@ -97,7 +97,7 @@ describe('zyzz', () => {
     try {
       const sidecar = Graph.compile({
         modules: {
-          'index.ts': `import {ref} from 'zyzz/web';export const unrelated=ref();`,
+          'index.ts': `import {css} from 'zyzz';export const unrelated=css({});`,
         },
       })
 

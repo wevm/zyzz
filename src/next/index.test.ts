@@ -24,6 +24,7 @@ describe('zyzz', () => {
     test(`builds and updates a packed Next.js ${bundler} application`, async () => {
       const root = await Fs.mkdtemp(Path.resolve('.fixture-next-'))
       const children: ChildProcess.ChildProcess[] = []
+      const logs: string[] = []
       const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
       const browser = await chromium.launch(
         executablePath ? { executablePath } : {},
@@ -79,8 +80,9 @@ describe('zyzz', () => {
           'app/client.tsx': `'use client';import {useEffect,useState} from 'react';import {css} from '@config';namespace styles{export const button=css((values:{opacity:number})=>({color:'brand',opacity:values.opacity}))}export default function Client(){const [active,setActive]=useState(false);const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <button data-ready={ready} {...styles.button({opacity:active?0.5:1})} onClick={()=>setActive(!active)}>Toggle</button>}`,
           'app/config.ts': config,
           'app/layout.tsx': `import {theme} from '@config';export default function Layout({children}:{children:React.ReactNode}){return <html className={theme.className}><body>{children}</body></html>}`,
-          'app/other/page.tsx': `import Link from 'next/link';export default function Other(){return <Link href="/">Back</Link>}`,
-          'app/page.tsx': `import Link from 'next/link';import {css} from '@config';import Client from './client';namespace styles{export const heading=css({color:'brand',padding:'md'})}export default function Page(){return <main><h1 {...styles.heading()}>Server</h1><Client/><Link href="/other">Other</Link></main>}`,
+          'app/navigation.tsx': `'use client';import Link from 'next/link';import {useEffect,useState} from 'react';export default function Navigation({href,children}:{href:string;children:React.ReactNode}){const [ready,setReady]=useState(false);useEffect(()=>setReady(true),[]);return <Link data-link-ready={ready} href={href}>{children}</Link>}`,
+          'app/other/page.tsx': `import Navigation from '../navigation';export default function Other(){return <Navigation href="/">Back</Navigation>}`,
+          'app/page.tsx': `import Navigation from './navigation';import {css} from '@config';import Client from './client';namespace styles{export const heading=css({color:'brand',padding:'md'})}export default function Page(){return <main><h1 {...styles.heading()}>Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
           'app/stream/page.tsx': `import {Suspense} from 'react';import {css} from '@config';export const dynamic='force-dynamic';namespace styles{export const message=css({color:'brand',padding:'md'})}async function Delayed(){await new Promise(resolve=>setTimeout(resolve,500));return <p data-stream="complete" {...styles.message()}>Complete</p>}export default function Page(){return <Suspense fallback={<p data-stream="pending" {...styles.message()}>Pending</p>}><Delayed/></Suspense>}`,
           'next.config.ts': `import {zyzz} from 'zyzz/next';import * as Path from 'node:path';export default zyzz(async()=>({experimental:{cpus:2},turbopack:{root:process.cwd(),resolveAlias:{'@config':'./app/config.ts'}},webpack(config){config.resolve.alias['@config']=Path.resolve('app/config.ts');return config}}));`,
           'tsconfig.json': JSON.stringify({
@@ -153,9 +155,11 @@ describe('zyzz', () => {
           let log = ''
           child.stdout!.on('data', (chunk: Buffer) => {
             log += chunk.toString()
+            logs.push(chunk.toString())
           })
           child.stderr!.on('data', (chunk: Buffer) => {
             log += chunk.toString()
+            logs.push(chunk.toString())
           })
           await vi.waitFor(
             () => {
@@ -296,8 +300,10 @@ describe('zyzz', () => {
           (await page.locator('button[data-ready]').getAttribute('class')) ===
             classes,
         ).toMatchInlineSnapshot('true')
-        await page.getByText('Other', { exact: true }).click()
-        await page.getByText('Back', { exact: true }).click()
+        await page.locator('a[data-link-ready=true][href="/other"]').click()
+        await page.waitForURL(`${production.url}/other`)
+        await page.locator('a[data-link-ready=true][href="/"]').click()
+        await page.waitForURL(`${production.url}/`)
         await page.waitForFunction(
           () => {
             const element = document.querySelector('h1')
@@ -434,7 +440,7 @@ describe('zyzz', () => {
         )
         await Fs.writeFile(
           Path.join(app, 'app/page.tsx'),
-          `import Link from 'next/link';import Client from './client';export default function Page(){return <main><h1 className="heading">Server</h1><Client/><Link href="/other">Other</Link></main>}`,
+          `import Navigation from './navigation';import Client from './client';export default function Page(){return <main><h1 className="heading">Server</h1><Client/><Navigation href="/other">Other</Navigation></main>}`,
         )
         await Fs.writeFile(
           Path.join(app, 'app/client.tsx'),
@@ -500,6 +506,22 @@ describe('zyzz', () => {
             2,
           ),
         )
+      } catch (error) {
+        await Fs.mkdir('test-results', { recursive: true })
+        const pages = await Promise.allSettled(
+          browser
+            .contexts()
+            .flatMap((context) => context.pages())
+            .map(async (page) => ({
+              html: await page.content(),
+              url: page.url(),
+            })),
+        )
+        await Fs.writeFile(
+          `test-results/next-${bundler}-failure.json`,
+          JSON.stringify({ error: String(error), logs, pages }, null, 2),
+        )
+        throw error
       } finally {
         for (const child of children) {
           if (child.exitCode === null && child.signalCode === null) {

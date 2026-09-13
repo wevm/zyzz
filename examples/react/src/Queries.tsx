@@ -3,15 +3,12 @@ import { useState } from 'react'
 import { css } from './zyzz.config.js'
 
 namespace styles {
-  export const card = css({
+  export const section = css({
     '@layer components': {
-      backgroundColor: 'surface',
-      border: '1px solid',
+      borderTop: '1px solid',
       borderColor: 'line',
-      color: 'text',
-      borderRadius: 'card',
       minWidth: 0,
-      padding: 'card',
+      paddingTop: 'md',
     },
   })
 
@@ -55,7 +52,7 @@ export function Queries() {
   const [width, setWidth] = useState(100)
 
   return (
-    <section {...styles.card()}>
+    <section {...styles.section()}>
       <h2>Responsive conditions</h2>
       <label {...styles.row()}>
         Container width

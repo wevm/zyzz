@@ -20,37 +20,37 @@ global({
         outline: '2px solid currentColor',
         outlineOffset: '4px',
       },
-    h1: { fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.05em' },
+    h1: { fontSize: '1.5rem' },
     h2: { fontSize: '1.125rem', marginBottom: '1rem' },
-    p: { lineHeight: 1.6 },
+    p: { lineHeight: 1.5 },
   },
 })
 
 namespace styles {
   export const button = css({
+    ':hover': { color: 'accent' },
+    '&[aria-pressed="true"]': { fontWeight: 700 },
+  })
+
+  export const section = css({
+    '@layer components': {
+      borderTop: '1px solid',
+      borderColor: 'line',
+      minWidth: 0,
+      paddingTop: 'md',
+    },
+  })
+
+  export const nested = css({
     backgroundColor: 'surface',
     border: '1px solid',
     borderColor: 'line',
-    borderRadius: '0.5rem',
-    color: 'accent',
-    padding: 'sm',
-    px: 'md',
-    ':hover': { borderColor: 'accent' },
-    ':disabled': { cursor: 'not-allowed', opacity: 0.45 },
-    '&[aria-pressed="true"]': { backgroundColor: 'accent', color: 'surface' },
+    color: 'text',
+    marginTop: 'sm',
+    padding: 'md',
   })
 
-  export const card = css({
-    '@layer components': {
-      backgroundColor: 'surface',
-      border: '1px solid',
-      borderColor: 'line',
-      color: 'text',
-      borderRadius: 'card',
-      minWidth: 0,
-      padding: 'card',
-    },
-  })
+  export const sample = css({ color: 'accent' })
 
   export const muted = css({ color: 'subtle', fontSize: '0.875rem' })
 
@@ -62,19 +62,18 @@ namespace styles {
   })
 
   export const page = css({
-    backgroundColor: 'backdrop',
+    backgroundColor: 'surface',
     color: 'text',
     minHeight: '100vh',
-    padding: 'lg',
+    padding: 'md',
   })
 
-  export const content = css({ marginInline: 'auto', maxWidth: '68rem' })
+  export const content = css({ marginInline: 'auto', maxWidth: '48rem' })
 
   export const grid = css({
     display: 'grid',
     gap: 'md',
     marginTop: 'section',
-    '@media wide': { gridTemplateColumns: '1fr 1fr' },
   })
 }
 
@@ -90,12 +89,8 @@ export function App() {
       <main {...styles.page()}>
         <div {...styles.content()}>
           <header>
-            <p {...styles.muted()}>ZYZZ / REACT + VITE</p>
-            <h1>Small calls. Real CSS.</h1>
-            <p>
-              One config, ordinary React props, and a few styles beside each
-              component.
-            </p>
+            <h1>Zyzz examples</h1>
+            <p>React + Vite</p>
             <div {...styles.row()}>
               <button
                 {...styles.button()}
@@ -140,13 +135,25 @@ export function App() {
             <Queries />
             <Motion />
             <Stylesheets />
-            <section {...themes({ theme: 'mint', colorScheme: 'dark' })}>
-              <div {...styles.card()}>
-                <h2>Nested theme</h2>
-                <button {...styles.button()}>Always mint + dark</button>
-                <p {...styles.muted()}>
-                  The same styles inherit an independent scope.
-                </p>
+            <section {...styles.section()}>
+              <h2>Nested theme</h2>
+              <p {...styles.muted()}>
+                Tap the parent button. The nested theme stays mint and dark.
+              </p>
+              <div {...styles.nested()} data-testid="parent-theme">
+                <button
+                  {...styles.sample()}
+                  onClick={() =>
+                    setAppearance(appearance === 'indigo' ? 'mint' : 'indigo')
+                  }
+                >
+                  Parent: {appearance}
+                </button>
+                <div {...themes({ theme: 'mint', colorScheme: 'dark' })}>
+                  <div {...styles.nested()} data-testid="nested-theme">
+                    <button {...styles.sample()}>Always mint + dark</button>
+                  </div>
+                </div>
               </div>
             </section>
             <Advanced />

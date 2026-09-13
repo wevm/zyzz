@@ -20,6 +20,10 @@ export default defineConfig({ plugins: [zyzz()] })
 
 No parameters. Root, aliases, resolution conditions, browser targets, and CSS processing come from the existing Vite configuration.
 
+## Browser Targets
+
+Theme colours require native `light-dark()` support. With no explicit build target, CSS defaults to Chrome/Edge 123, Firefox 120, and Safari 17.5. Target validation also covers application stylesheets. Explicit incompatible or unverifiable targets produce an error during configuration. An ECMAScript build target requires a separate browser `build.cssTarget`. Vendor prefixing and other Lightning CSS transforms remain enabled.
+
 ## Returns
 
 ### plugin
@@ -41,3 +45,4 @@ The adapter statically analyzes source; it does not execute theme factories at b
 Raw authoring inside virtual modules, framework SFCs, dependencies, or files outside the Vite root is not supported yet. Packed dependencies can supply adjacent compiler metadata; exclude their authoring entrypoints from Vite dependency optimization. See [Vite Setup](../../introduction/vite.md).
 
 See [zyzz/vite](README.md) for the entrypoint overview.
+

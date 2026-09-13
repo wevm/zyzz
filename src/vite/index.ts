@@ -5,6 +5,7 @@
 import * as Namespaces from '../compiler/internal/Namespaces.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
 import * as Mapping from '@jridgewell/gen-mapping'
+import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
@@ -739,6 +740,36 @@ export function zyzz(): Plugin {
   }
 
   return {
+    config: {
+      order: 'post',
+      handler(config) {
+        // Inline color-scheme changes cannot initialize Lightning's lowered helpers.
+        return {
+          build: {
+            cssTarget: config.build?.cssTarget ??
+              config.build?.target ?? [
+                'chrome123',
+                'edge123',
+                'firefox120',
+                'safari17.5',
+              ],
+          },
+          css: {
+            lightningcss: {
+              targets: config.css?.lightningcss?.targets ?? {
+                chrome: 123 << 16,
+                edge: 123 << 16,
+                firefox: 120 << 16,
+                safari: (17 << 16) | (5 << 8),
+              },
+              exclude:
+                (config.css?.lightningcss?.exclude ?? 0) |
+                Lightning.Features.LightDark,
+            },
+          },
+        }
+      },
+    },
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
         const path = new URL(request.url ?? '/', 'http://localhost').pathname
@@ -759,6 +790,45 @@ export function zyzz(): Plugin {
     },
     configResolved(config) {
       root = config.root
+      const lightning = (config.css.lightningcss ??= {})
+      lightning.include =
+        (lightning.include ?? 0) & ~Lightning.Features.LightDark
+      lightning.exclude =
+        (lightning.exclude ?? 0) | Lightning.Features.LightDark
+
+      // The exclusion also affects imported application CSS.
+      const target = config.build.cssTarget
+      const browsers = (Array.isArray(target) ? target : [target]).flatMap(
+        (value) => {
+          if (!value)
+            throw new Error('Zyzz requires an explicit browser CSS target.')
+          const match =
+            /^(chrome|edge|firefox|safari|ios|opera|ie)([0-9.]+)$/.exec(value)
+          if (!match)
+            throw new Error(
+              `Zyzz cannot verify light-dark() support for CSS target: ${value}`,
+            )
+
+          return [`${match[1] === 'ios' ? 'ios_saf' : match[1]} ${match[2]}`]
+        },
+      )
+
+      for (const targets of [
+        Lightning.browserslistToTargets(browsers),
+        lightning.targets ?? {},
+      ]) {
+        const result = Lightning.transform({
+          code: new TextEncoder().encode(
+            '.theme{color:light-dark(white,black)}',
+          ),
+          filename: 'zyzz-theme-target.css',
+          targets,
+        })
+        if (!new TextDecoder().decode(result.code).includes('light-dark('))
+          throw new Error(
+            'Zyzz theme colours require native light-dark() support. Set CSS targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+.',
+          )
+      }
     },
     enforce: 'pre',
     generateBundle: {
@@ -868,6 +938,7 @@ export function zyzz(): Plugin {
         undefined,
         id === sharedId,
       )
+
       const transport = (css: string) =>
         this.environment.config.command === 'build'
           ? AtRules.rename(

@@ -1,8 +1,8 @@
-# CSS Capability Union — Historical Audit
+# CSS Capability Union: Historical Audit
 
 Audited 2026-09-08 against main `9aa72fc` after PR #10. This consolidates the capabilities from the [StyleX API](https://stylexjs.com/docs/api), [Tailwind reference](https://tailwindcss.com/docs/hover-focus-and-other-states), [vanilla-extract API](https://vanilla-extract.style/documentation/api/style/), and [Panda CSS docs](https://panda-css.com/docs/concepts/writing-styles). Each capability appears once, with its source equivalents and Zyzz usage. It is an API union, not exhaustive CSS standards conformance.
 
-**Partial** means only the stated subset works today. **Planned** means an existing architecture contract awaits implementation. **Proposal** means an API shape is offered for review. **Deferred** means a later capability; external CSS examples demonstrate interoperability, not implemented Zyzz authoring support. Examples are independent unless they explicitly share a definition.
+**Partial** means only the stated subset works today. **Planned** means an existing architecture contract awaits implementation. **Proposal** means an API shape is offered for review. **Deferred** means a later capability. External CSS examples demonstrate interoperability, not implemented Zyzz authoring support. Examples are independent unless they explicitly share a definition.
 
 > [!NOTE]
 > This is the historical 2026-09-08 API comparison. Implementation labels and examples below describe that snapshot. Current support, PR evidence, and remaining gates are maintained in [the implementation plan](plan.md) and [Compatibility](../docs/introduction/compatibility.md).
@@ -11,7 +11,7 @@ Implementation at that audit: 298 literal properties, six scalar theme groups, p
 
 ## 01. Typed Styles and Inline Authoring
 
-Sources: StyleX `create`/`atoms`, Tailwind utilities, vanilla-extract `style`/Sprinkles, and Panda `css`/utilities. **Partial:** literal root styles; property expansion in 2.3 and bound transforms in 2.2b.
+Sources: StyleX `create`/`atoms`, Tailwind utilities, vanilla-extract `style`/Sprinkles, and Panda `css`/utilities. **Partial:** literal root styles, then property expansion in 2.3 and bound transforms in 2.2b.
 
 ```tsx
 import { css } from 'zyzz'
@@ -24,15 +24,15 @@ const article = <article {...styles.card()} />
 const label = <span {...css({ color: '#06c' })()} />
 ```
 
-Complete the property/value inventory across accessibility, backgrounds/gradients, borders/outlines, filters/masks, grid/flex, interactivity, layout/containment/positioning, logical spacing/sizing, scrolling, shadows, SVG, tables, transforms, and typography. Property spellings and token domains remain checked; broad selector support must not introduce an unrestricted object-key index signature. No separate utility-string or property-access facade is needed.
+Complete the property/value inventory across accessibility, backgrounds/gradients, borders/outlines, filters/masks, grid/flex, interactivity, layout/containment/positioning, logical spacing/sizing, scrolling, shadows, SVG, tables, transforms, and typography. Property spellings and token domains remain checked. Broad selector support must not introduce an unrestricted object-key index signature. No separate utility-string or property-access facade is needed.
 
 Interaction keywords support `css({ cursor: 'pointer', pointerEvents: 'auto', resize: 'inline', userSelect: 'text', visibility: 'visible' })`. Cursor image lists, SVG pointer targeting, and selection containment remain deferred.
 
-The table subset supports `css({ borderCollapse: 'separate', borderSpacing: '8px', captionSide: 'bottom', emptyCells: 'hide', tableLayout: 'fixed' })`. Border spacing accepts a single nonnegative length or zero; paired lengths and spacing tokens remain deferred.
+The table subset supports `css({ borderCollapse: 'separate', borderSpacing: '8px', captionSide: 'bottom', emptyCells: 'hide', tableLayout: 'fixed' })`. Border spacing accepts a single nonnegative length or zero. Paired lengths and spacing tokens remain deferred.
 
-Panda's `strictTokens` and `strictPropertyValues` expose an additional policy choice. Zyzz keeps valid CSS literals available by default; opt-in token-only enforcement belongs in a future lint/type policy, not metadata inside `Theme.define`. Syntax validation and token-only policy are separate. Panda property shorthands and JSX style props do not require matching core APIs. [Writing styles](https://panda-css.com/docs/concepts/writing-styles)
+Panda's `strictTokens` and `strictPropertyValues` expose an additional policy choice. Zyzz keeps valid CSS literals available by default. Opt-in token-only enforcement belongs in a future lint/type policy, not metadata inside `Theme.define`. Syntax validation and token-only policy are separate. Panda property shorthands and JSX style props do not require matching core APIs. [Writing styles](https://panda-css.com/docs/concepts/writing-styles)
 
-Logical dimensions, min/max dimensions, block/inline margins and padding, and inset offsets now share the scalar token/fallback/importance pipeline. Mixed physical/logical declarations preserve order across writing modes. Shorthands accept one scalar; functional sizing values remain pending.
+Logical dimensions, min/max dimensions, block/inline margins and padding, and inset offsets now share the scalar token/fallback/importance pipeline. Mixed physical/logical declarations preserve order across writing modes. Shorthands accept one scalar. Functional sizing values remain pending.
 
 ```ts
 css({ inlineSize: '20rem', paddingInline: '1rem', marginBlockEnd: '8px' })
@@ -40,11 +40,11 @@ css({ inlineSize: '20rem', paddingInline: '1rem', marginBlockEnd: '8px' })
 
 Flex basis, integer order, item/line alignment, and overflow axes now use the same type/source/emission pipeline. Multi-value shorthands remain deferred.
 
-Physical/logical border sides and corner radii, plus outline color/style/width/offset, now share scalar token/fallback/importance handling. Border-specific colors precede shared colors; outline colors use the shared group. Combined border/outline strings and elliptical radius pairs remain pending.
+Physical/logical border sides and corner radii, plus outline color/style/width/offset, now share scalar token/fallback/importance handling. Border-specific colors precede shared colors. Outline colors use the shared group. Combined border/outline strings and elliptical radius pairs remain pending.
 
 Intrinsic dimension keywords, auto minimums, unbounded maximums, and content flex basis now retain literal precedence and fallback importance. Function-valued sizing remains pending.
 
-Scroll margins/padding and scroll/overscroll behavior now support scalar declarations, fallback importance, and conflict-safe physical/logical ordering. Scroll padding accepts spacing tokens; scroll margins require literal lengths. Multi-value shorthands remain pending.
+Scroll margins/padding and scroll/overscroll behavior now support scalar declarations, fallback importance, and conflict-safe physical/logical ordering. Scroll padding accepts spacing tokens. Scroll margins require literal lengths. Multi-value shorthands remain pending.
 
 ```ts
 css({
@@ -64,7 +64,7 @@ css({
 })
 ```
 
-Text flow now includes wrapping, hyphenation, letter/word spacing, indentation, last-line alignment, transformation, and overflow through bounded scalar values. Indentation supports spacing tokens; other typography scales and composite presets remain pending.
+Text flow now includes wrapping, hyphenation, letter/word spacing, indentation, last-line alignment, transformation, and overflow through bounded scalar values. Indentation supports spacing tokens. Other typography scales and composite presets remain pending.
 
 ```ts
 css({ letterSpacing: '-.02em', overflowWrap: 'anywhere', textIndent: '1em' })
@@ -72,7 +72,7 @@ css({ letterSpacing: '-.02em', overflowWrap: 'anywhere', textIndent: '1em' })
 
 ## 02. Composition and Restricted Style Contracts
 
-Sources: StyleX `props` and style restriction types; utility composition; vanilla-extract composition; Panda `css`/`mergeCss`/`cx`. **Planned:** conflict-aware `cx` and property restrictions in Phase 3; literal callable styling overrides already exist.
+Sources: StyleX `props` and style restriction types, utility composition, vanilla-extract composition, and Panda `css`/`mergeCss`/`cx`. **Planned:** conflict-aware `cx` and property restrictions in Phase 3. Literal callable styling overrides already exist.
 
 ```tsx
 import { css, cx } from 'zyzz'
@@ -93,11 +93,11 @@ const checkout = (
 )
 ```
 
-Later generated declarations win in the same condition context, subject to CSS importance. External classes retain cascade semantics. Preserve bindings and recipe attributes, partial shorthand overrides, and packed metadata. `Parameters<typeof base>` describes application inputs. StyleX `StyleXStyles`, `StyleXStylesWithout`, and `StaticStyles` map to public style restrictions; property-restricted `ClassName<Properties>` remains a separate gate, including exclusions and static-only assignability.
+Later generated declarations win in the same condition context, subject to CSS importance. External classes retain cascade semantics. Preserve bindings and recipe attributes, partial shorthand overrides, and packed metadata. `Parameters<typeof base>` describes application inputs. StyleX `StyleXStyles`, `StyleXStylesWithout`, and `StaticStyles` map to public style restrictions. Property-restricted `ClassName<Properties>` remains a separate gate, including exclusions and static-only assignability.
 
 ## 03. Values, Expressions, Importance, and Fallbacks
 
-Sources: StyleX `firstThatWorks`/`defineConsts`, Tailwind arbitrary values/functions/importance, vanilla-extract fallback values/CSS Utils, and Panda values/token references/importance. **Partial:** ordered fallbacks, importance, and standard length units; expressions and variables remain in 2.3.
+Sources: StyleX `firstThatWorks`/`defineConsts`, Tailwind arbitrary values/functions/importance, vanilla-extract fallback values/CSS Utils, and Panda values/token references/importance. **Partial:** ordered fallbacks, importance, and standard length units. Expressions and variables remain in 2.3.
 
 ```ts
 import { css } from 'zyzz'
@@ -113,11 +113,11 @@ namespace styles {
 }
 ```
 
-Arrays emit ordered declarations; later supported values win under CSS importance. CSS lists remain strings. Static imported constants, literal math/color functions, and supported template interpolation use ordinary analysis. `theme.vars` works inside CSS expressions. Configured arbitrary function execution, including a clone of StyleX `env.*`, is outside core; import explicit constants instead. Dynamic inputs cannot inject selectors, declarations, or importance.
+Arrays emit ordered declarations. Later supported values win under CSS importance. CSS lists remain strings. Static imported constants, literal math/color functions, and supported template interpolation use ordinary analysis. `theme.vars` works inside CSS expressions. Configured arbitrary function execution, including a clone of StyleX `env.*`, is outside core. Import explicit constants instead. Dynamic inputs cannot inject selectors, declarations, or importance.
 
 ## 04. Themes, Tokens, Scopes, and Schemes
 
-Sources: StyleX `defineVars`/`createTheme`, Tailwind `@theme`/dark mode, vanilla-extract themes/contracts, and Panda tokens/semantic tokens/themes. **Partial:** in-memory scalar contracts; 2.2b source identities and 2.4a bundled themes/query metadata.
+Sources: StyleX `defineVars`/`createTheme`, Tailwind `@theme`/dark mode, vanilla-extract themes/contracts, and Panda tokens/semantic tokens/themes. **Partial:** in-memory scalar contracts, then 2.2b source identities and 2.4a bundled themes/query metadata.
 
 ```tsx
 import { Theme } from 'zyzz'
@@ -138,7 +138,7 @@ const example = (
 )
 ```
 
-`backgroundColor`, `borderColor`, and `textColor` augment shared colors only in matching properties. Portable `theme.tokens` references disambiguate token names from literals. CSS variables implement inheritance; scopes select compatible theme values independently of `color-scheme`. Independent definitions remain isolated. StyleX `Theme`/`VarGroup` contracts map to inferred theme/reference types; cross-package assignability remains an acceptance gate.
+`backgroundColor`, `borderColor`, and `textColor` augment shared colors only in matching properties. Portable `theme.tokens` references disambiguate token names from literals. CSS variables implement inheritance. Scopes select compatible theme values independently of `color-scheme`. Independent definitions remain isolated. StyleX `Theme`/`VarGroup` contracts map to inferred theme/reference types. Cross-package assignability remains an acceptance gate.
 
 ```ts
 namespace styles {
@@ -150,7 +150,7 @@ namespace styles {
 }
 ```
 
-This reuses the preceding theme; `theme.vars` and expression support remain 2.3 work.
+This reuses the preceding theme. `theme.vars` and expression support remain 2.3 work.
 
 ```tsx
 import { css } from 'zyzz/themes/default'
@@ -160,7 +160,7 @@ const button = <button {...css({ color: 'blue.700', padding: 4 })()} />
 
 Bundled themes are opt-in entrypoints. Root `css` stays token-free. Contract-only and external-name interoperability is tracked separately in item 19.
 
-**Config API accepted; implementation pending in 2.2c:** `Config.create({ theme })` accepts inline or reusable definitions. Named `{ defaultTheme, themes }` catalogs allow mixed inputs, validate one complete token contract, and return normalized scope handles with bound `css`/`variants`. Recommend `export const { css, variants, theme } = Config.create(...)` in `zyzz.config.ts` and named helper imports; neither the filename nor importing a config changes root-function inference globally.
+**Config API accepted, implementation pending in 2.2c:** `Config.create({ theme })` accepts inline or reusable definitions. Named `{ defaultTheme, themes }` catalogs allow mixed inputs, validate one complete token contract, and return normalized scope handles with bound `css`/`variants`. Recommend `export const { css, variants, theme } = Config.create(...)` in `zyzz.config.ts` and named helper imports. Neither the filename nor importing a config changes root-function inference globally.
 
 ```tsx
 export const { css, themes } = Config.create({
@@ -181,7 +181,7 @@ const selected = (
 )
 ```
 
-The scopes assign inherited CSS variables, while color scheme selection is independent. Standalone theme identities stay isolated; configuration normalization is explicit. See the [configuration contract](architecture.md#configuration-and-inferred-authoring) for defaults, compatibility, inferred layers, and native boundaries.
+The scopes assign inherited CSS variables, while color scheme selection is independent. Standalone theme identities stay isolated. Configuration normalization is explicit. See the [configuration contract](architecture.md#configuration-and-inferred-authoring) for defaults, compatibility, inferred layers, and native boundaries.
 
 ## 05. Shared Variables and Variable Fallbacks
 
@@ -198,7 +198,7 @@ namespace styles {
 const element = <div {...styles.bar({ style: progress.amount.set('42%') })} />
 ```
 
-Explicit sets are for shared contracts; callbacks in item 07 handle local values. Static custom-property assignments also need typed declaration support. A nested variable fallback is distinct from a declaration fallback array:
+Explicit sets are for shared contracts. Callbacks in item 07 handle local values. Static custom-property assignments also need typed declaration support. A nested variable fallback is distinct from a declaration fallback array:
 
 ```ts
 namespace styles {
@@ -208,7 +208,7 @@ namespace styles {
 }
 ```
 
-The literal example references application-owned names. Generated reference fallback construction and assignment under nested conditions need a documented API before implementation; do not expose private names or accidentally nest a complete `var()` reference as the first `var()` argument.
+The literal example references application-owned names. Generated reference fallback construction and assignment under nested conditions need a documented API before implementation. Do not expose private names or accidentally nest a complete `var()` reference as the first `var()` argument.
 
 ## 06. Registered Custom Properties
 
@@ -246,7 +246,7 @@ namespace styles {
 const element = <div {...styles.bar({ width: '42%' })} />
 ```
 
-Callbacks receive only typed inputs and disappear from delivered code. Applications bind values to precompiled slots; rule counts remain fixed. Styling overrides are allowed, while arbitrary component props stay on the component.
+Callbacks receive only typed inputs and disappear from delivered code. Applications bind values to precompiled slots. Rule counts remain fixed. Styling overrides are allowed, while arbitrary component props stay on the component.
 
 ## 08. Recipes, Defaults, and Compound Variants
 
@@ -278,7 +278,7 @@ Theme-bound `theme.variants` infers tokens. Include boolean choices, array compo
 
 ## 09. Dynamic Variant Choices
 
-Sources: dynamic style/recipe composition across the libraries. **Planned:** Phase 3; an additional Zyzz convenience, not a claim of identical APIs in each source.
+Sources: dynamic style/recipe composition across the libraries. **Planned:** Phase 3, an additional Zyzz convenience, not a claim of identical APIs in each source.
 
 ```tsx
 namespace styles {
@@ -299,7 +299,7 @@ const element = (
 )
 ```
 
-Selections infer their payloads. Compounds match the choice name, not its continuous values. Switching choices removes stale bindings; payloads never become data attributes.
+Selections infer their payloads. Compounds match the choice name, not its continuous values. Switching choices removes stale bindings. Payloads never become data attributes.
 
 ## 10. Pseudos, Attributes, and Child Selectors
 
@@ -323,11 +323,11 @@ namespace styles {
 }
 ```
 
-Cover interactive/form/structural states, ARIA/data/direction, open/popover/inert, negation, and all supported pseudo-elements, including selection, ref, file selector, first letter/line, and backdrop. `& > *` selects direct children; `& *` selects descendants. Retain CSS specificity and explicit pseudo-element content. Raw selectors remain available with compiler grammar validation; types cannot prove DOM structure.
+Cover interactive/form/structural states, ARIA/data/direction, open/popover/inert, negation, and all supported pseudo-elements, including selection, ref, file selector, first letter/line, and backdrop. `& > *` selects direct children, and `& *` selects descendants. Retain CSS specificity and explicit pseudo-element content. Raw selectors remain available with compiler grammar validation. Types cannot prove DOM structure.
 
 ## 11. Style References
 
-`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
+`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element. Combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
 
 ```ts
 import { css } from 'zyzz'
@@ -344,7 +344,7 @@ namespace styles {
 }
 ```
 
-References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. The compiler checks interpolation identities; TypeScript checks nested declaration values; it does not validate selector text or prove DOM structure.
+References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. The compiler checks interpolation identities. TypeScript checks nested declaration values, but it does not validate selector text or prove DOM structure.
 
 Specificity follows the authored selector. Use explicit `:where(...)` to lower condition specificity. Application-owned state remains in ordinary data/ARIA attributes. No runtime selector parsing, DOM lookup, or CSS generation is involved.
 
@@ -402,9 +402,9 @@ namespace styles {
 }
 ```
 
-Imported immutable objects and explicit composition cover reuse without a registration API. Ordinary object spreads have JavaScript replacement semantics; they do not deep-merge duplicate nested keys. Arbitrary helper execution is not part of static analysis. A duplicate utility/plugin/configuration language is outside scope.
+Imported immutable objects and explicit composition cover reuse without a registration API. Ordinary object spreads have JavaScript replacement semantics. They do not deep-merge duplicate nested keys. Arbitrary helper execution is not part of static analysis. A duplicate utility/plugin/configuration language is outside scope.
 
-Panda's [patterns](https://panda-css.com/docs/concepts/patterns), [text styles](https://panda-css.com/docs/theming/text-styles), [layer styles](https://panda-css.com/docs/theming/layer-styles), and [animation styles](https://panda-css.com/docs/theming/animation-styles) add reusable declaration groups. Zyzz can start with imported typed static objects and explicit CSS; composite typography is already planned. Named border/shadow/animation preset contracts remain design work. Layer styles are visual presets, not cascade layers.
+Panda's [patterns](https://panda-css.com/docs/concepts/patterns), [text styles](https://panda-css.com/docs/theming/text-styles), [layer styles](https://panda-css.com/docs/theming/layer-styles), and [animation styles](https://panda-css.com/docs/theming/animation-styles) add reusable declaration groups. Zyzz can start with imported typed static objects and explicit CSS. Composite typography is already planned. Named border/shadow/animation preset contracts remain design work. Layer styles are visual presets, not cascade layers.
 
 ```ts
 const surface = {
@@ -422,7 +422,7 @@ namespace styles {
 }
 ```
 
-Panda property-based conditions and responsive arrays map to nested Zyzz blocks in item 12. Zyzz arrays remain declaration fallbacks, so they must never double as breakpoint positions. Reusable condition lists must specify AND versus OR and preserve order; no underscore-condition registry is needed. [Conditional styles](https://panda-css.com/docs/concepts/conditional-styles)
+Panda property-based conditions and responsive arrays map to nested Zyzz blocks in item 12. Zyzz arrays remain declaration fallbacks, so they must never double as breakpoint positions. Reusable condition lists must specify AND versus OR and preserve order. No underscore-condition registry is needed. [Conditional styles](https://panda-css.com/docs/concepts/conditional-styles)
 
 ## 14. Keyframes, Animation, and Entry Transitions
 
@@ -451,11 +451,11 @@ namespace styles {
 }
 ```
 
-Validate offsets, ordered overlapping frames, theme references, and animation shorthand/lists; reject important frame declarations. Preserve imported references and remove unused animations. Discrete entry/exit transitions additionally require explicit `transition-behavior` and relevant properties. Test actual browser animation progress and motion preferences.
+Validate offsets, ordered overlapping frames, theme references, and animation shorthand/lists. Reject important frame declarations. Preserve imported references and remove unused animations. Discrete entry/exit transitions additionally require explicit `transition-behavior` and relevant properties. Test actual browser animation progress and motion preferences.
 
 ## 15. Font Faces and Assets
 
-Sources: vanilla-extract `fontFace`/`globalFontFace`, font authoring through ordinary CSS in the other libraries. **Planned:** 2.4c contributions; asset delivery in Phase 4.
+Sources: vanilla-extract `fontFace`/`globalFontFace`, font authoring through ordinary CSS in the other libraries. **Planned:** 2.4c contributions, then asset delivery in Phase 4.
 
 ```ts
 import { fontFace } from 'zyzz/web'
@@ -471,7 +471,7 @@ namespace styles {
 }
 ```
 
-Cover multiple sources, descriptor grammar, URL handling, and side-effect retention. Public font names need explicit ownership; a generated/private font-family reference remains a design decision rather than an assumed return type. Font loading stays with the platform/build.
+Cover multiple sources, descriptor grammar, URL handling, and side-effect retention. Public font names need explicit ownership. A generated/private font-family reference remains a design decision rather than an assumed return type. Font loading stays with the platform/build.
 
 ## 16. Globals, Layers, and Reset
 
@@ -500,11 +500,11 @@ namespace styles {
 }
 ```
 
-**API accepted:** module-level declarations may live anywhere in configured project sources, including unimported modules. The source adapter hoists global contributions and a shared layer-order prelude into initial CSS. Consumers do not manually register globals or configure layer placement on `Css.compile`; the pure compiler receives explicit extracted data without global registration.
+**API accepted:** module-level declarations may live anywhere in configured project sources, including unimported modules. The source adapter hoists global contributions and a shared layer-order prelude into initial CSS. Consumers do not manually register globals or configure layer placement on `Css.compile`. The pure compiler receives explicit extracted data without global registration.
 
-Config-bound `css` and `variants` autocomplete exact `@layer <name>` strings and reject undeclared names while preserving nested declaration/token types through imports. No returned layer-reference object or computed key is needed. Raw `global` strings receive compiler validation without ambient config inference. Unwrapped globals and scoped rules stay unlayered. Compatible order declarations merge; conflicting cycles receive diagnostics. Preserve authored rule order, stable cross-module order, nested layer hierarchy, and important reversal. Globals remain eager even beside lazy components or tree-shaken JavaScript exports. Core imports add no reset.
+Config-bound `css` and `variants` autocomplete exact `@layer <name>` strings and reject undeclared names while preserving nested declaration/token types through imports. No returned layer-reference object or computed key is needed. Raw `global` strings receive compiler validation without ambient config inference. Unwrapped globals and scoped rules stay unlayered. Compatible order declarations merge. Conflicting cycles receive diagnostics. Preserve authored rule order, stable cross-module order, nested layer hierarchy, and important reversal. Globals remain eager even beside lazy components or tree-shaken JavaScript exports. Core imports add no reset.
 
-The [collection contract](architecture.md#layer-and-global-collection) specifies source discovery, identity, watch replacement/removal, source maps, asset relocation, shared stylesheet ownership, and packed-library metadata. [Astro](https://docs.astro.build/en/guides/styling/) and [Svelte](https://svelte.dev/docs/svelte/global-styles) provide additional colocation precedents; project-wide unimported-module collection is an explicit Zyzz decision. Browser, type, source, library, and benchmark gates remain pending in 2.4c/Phase 4.
+The [collection contract](architecture.md#layer-and-global-collection) specifies source discovery, identity, watch replacement/removal, source maps, asset relocation, shared stylesheet ownership, and packed-library metadata. [Astro](https://docs.astro.build/en/guides/styling/) and [Svelte](https://svelte.dev/docs/svelte/global-styles) provide additional colocation precedents. Project-wide unimported-module collection is an explicit Zyzz decision. Browser, type, source, library, and benchmark gates remain pending in 2.4c/Phase 4.
 
 ## 17. Component Props and DOM Attributes
 
@@ -518,7 +518,7 @@ namespace styles {
 const element = <button {...styles.button()}>Continue</button>
 ```
 
-The non-React target must retain callable application while returning `class`, serialized inline styles where needed, and data attributes. Its public adapter shape is still open; no unsupported `Css.attrs` API is implied. Test escaping, attribute serialization, real template consumers, framework updates, SSR/hydration, and packed output. Do not require framework imports in core.
+The non-React target must retain callable application while returning `class`, serialized inline styles where needed, and data attributes. Its public adapter shape is still open. No unsupported `Css.attrs` API is implied. Test escaping, attribute serialization, real template consumers, framework updates, SSR/hydration, and packed output. Do not require framework imports in core.
 
 ## 18. Compilation, Libraries, and Build Integrations
 
@@ -541,7 +541,7 @@ zyzz src --out-dir dist --minify --targets 'chrome >= 123, firefox >= 128, safar
 
 Pure compilation accepts supplied text/data. CLI and optional build integrations own discovery, dependency linking, watch/HMR, assets, and stylesheet delivery. Packed libraries export generated callables and CSS without consumer authoring evaluation. Source maps, missing-transform diagnostics, editor inference, and lint integration are explicit DX gates. Final processing belongs to Lightning CSS or the consuming build, with equivalent targets and preserved semantics.
 
-Panda's [static CSS generation](https://panda-css.com/docs/guides/static) highlights an extraction gate: all finite choices available to a runtime recipe selection must ship, even if only a default appears literally in source. Prove exported/dynamically selected recipe reachability and packed-library delivery before pruning alternatives. Keep that separate from arbitrary runtime CSS generation. Optional token/recipe documentation export, analogous to [Panda Studio](https://panda-css.com/docs/theming/studio), is Phase 5 tooling; no generated application-local SDK or runtime theme injector is required.
+Panda's [static CSS generation](https://panda-css.com/docs/guides/static) highlights an extraction gate: all finite choices available to a runtime recipe selection must ship, even if only a default appears literally in source. Prove exported/dynamically selected recipe reachability and packed-library delivery before pruning alternatives. Keep that separate from arbitrary runtime CSS generation. Optional token/recipe documentation export, analogous to [Panda Studio](https://panda-css.com/docs/theming/studio), is Phase 5 tooling. No generated application-local SDK or runtime theme injector is required.
 
 ## 19. External Names and Contract-Only Themes
 
@@ -607,7 +607,7 @@ The declaration itself awaits property support. Define uniqueness, imported name
 
 ## 21. Anchor Positioning and Position Fallbacks
 
-Accepted Phase 2.5 API: `positionTry(declarations)` from `zyzz/web` returns a typed reference consumed by `positionTryFallbacks`. Implementation is pending; the CSS below illustrates the target semantics, not a requirement to author handwritten names.
+Accepted Phase 2.5 API: `positionTry(declarations)` from `zyzz/web` returns a typed reference consumed by `positionTryFallbacks`. Implementation is pending. The CSS below illustrates the target semantics, not a requirement to author handwritten names.
 
 Sources: StyleX `positionTry` and ordinary CSS positioning elsewhere. **Deferred:** declarations, restricted `@position-try` descriptors, and scoped references. External CSS target:
 
@@ -630,13 +630,13 @@ namespace styles {
 }
 ```
 
-These declarations await capability support. Validate fallback-only descriptors and names; they are not ordinary element style blocks. Anchor layout does not provide popover behavior or accessibility semantics.
+These declarations await capability support. Validate fallback-only descriptors and names. They are not ordinary element style blocks. Anchor layout does not provide popover behavior or accessibility semantics.
 
 ## 22. Advanced Conditions, Timelines, and Stylesheet Rules
 
-The [complete at-rule contract](../docs/api/web/at-rules.md) assigns all MDN rules and descriptors to [Phase 2.5](plan.md#full-at-rule-support). Dedicated top-level functions own stylesheet declarations; grouping rules remain in style bodies. External CSS examples below illustrate semantics and do not satisfy implementation or type gates.
+The [complete at-rule contract](../docs/api/web/at-rules.md) assigns all MDN rules and descriptors to [Phase 2.5](plan.md#full-at-rule-support). Dedicated top-level functions own stylesheet declarations. Grouping rules remain in style bodies. External CSS examples below illustrate semantics and do not satisfy implementation or type gates.
 
-Sources: standard CSS reachable through the libraries; extensions beyond their dedicated helpers are tracked explicitly. **Deferred:** `@scope`, container style/scroll-state queries, scroll-driven timelines, `@counter-style`, paged media, and emerging functions. External CSS target examples:
+Sources: standard CSS reachable through the libraries. Extensions beyond their dedicated helpers are tracked explicitly. **Deferred:** `@scope`, container style/scroll-state queries, scroll-driven timelines, `@counter-style`, paged media, and emerging functions. External CSS target examples:
 
 ```css
 @scope ([data-article]) to ([data-article-boundary]) {
@@ -675,11 +675,11 @@ namespace styles {
 }
 ```
 
-The timeline preview requires an external `app-reveal` animation and future property support. Query containers require their corresponding containment setup; scroll-state queries do not select the container itself. No blanket raw-at-rule passthrough is proposed. Browser DOM/CSSOM manipulation, observers, and Web Animations orchestration are application concerns.
+The timeline preview requires an external `app-reveal` animation and future property support. Query containers require their corresponding containment setup. Scroll-state queries do not select the container itself. No blanket raw-at-rule passthrough is proposed. Browser DOM/CSSOM manipulation, observers, and Web Animations orchestration are application concerns.
 
 ## 23. Native and Portable Authoring
 
-This is a Zyzz requirement in addition to the web-library union. **Planned:** Phase 3 native subset; unsupported web semantics must error.
+This is a Zyzz requirement in addition to the web-library union. **Planned:** Phase 3 native subset. Unsupported web semantics must error.
 
 ```ts
 import { Style } from 'zyzz'
@@ -701,7 +701,7 @@ Theme labels, schemes, and style names infer from inputs. Unit conversion is exp
 
 ## 24. Multipart Component Styling
 
-Panda [slot recipes](https://panda-css.com/docs/concepts/slot-recipes), `sva`, and `defineParts` coordinate styles across component elements. **Planned through existing APIs:** Zyzz uses separate `css` or `variants` definitions for each element. Each recipe application returns one props object; the `slots` pattern is excluded from `variants` and `theme.variants`.
+Panda [slot recipes](https://panda-css.com/docs/concepts/slot-recipes), `sva`, and `defineParts` coordinate styles across component elements. **Planned through existing APIs:** Zyzz uses separate `css` or `variants` definitions for each element. Each recipe application returns one props object. The `slots` pattern is excluded from `variants` and `theme.variants`.
 
 ```tsx
 namespace styles {
@@ -725,7 +725,7 @@ const element = (
 )
 ```
 
-Pass shared component inputs to separate recipes when multiple elements vary together. Use ordinary data attributes or the style references in item 11 for DOM relationships. Portals require directly applied styles because ancestor selectors do not cross DOM boundaries. Shared component inputs and separate element definitions also apply to native; DOM selectors remain web-specific.
+Pass shared component inputs to separate recipes when multiple elements vary together. Use ordinary data attributes or the style references in item 11 for DOM relationships. Portals require directly applied styles because ancestor selectors do not cross DOM boundaries. Shared component inputs and separate element definitions also apply to native. DOM selectors remain web-specific.
 
 ## 25. Semantic Token Aliases and Conditional Tokens
 
@@ -741,7 +741,7 @@ namespace styles {
 }
 ```
 
-This planned static-expression example reuses values; it is not a live alias between CSS variables. A true alias must retain domain inference, cycle/missing-reference diagnostics, imported identity, and the chosen inheritance behavior when its target is overridden. Preserve token-only `Theme.define` arguments and color leaves as `string | { light, dark }`; decide a compatible reference representation before adding one. Arbitrary conditional tokens need a separate contract from CSS scheme pairs and immutable query thresholds.
+This planned static-expression example reuses values. It is not a live alias between CSS variables. A true alias must retain domain inference, cycle/missing-reference diagnostics, imported identity, and the chosen inheritance behavior when its target is overridden. Preserve token-only `Theme.define` arguments and color leaves as `string | { light, dark }`. Decide a compatible reference representation before adding one. Arbitrary conditional tokens need a separate contract from CSS scheme pairs and immutable query thresholds.
 
 ## 26. Responsive Recipe Selections
 
@@ -770,10 +770,10 @@ An inferred per-condition selection API still needs a nonambiguous shape alongsi
 
 Use these numbered capabilities as the shared index in the plan and architecture. Maintain a versioned property/value/selector/at-rule inventory beneath them, with independent statuses for types, extraction, emission, source maps, target compatibility, native behavior, integration proof, and benchmark coverage. A capability is complete only when its actual consumer path works.
 
-Validate semantic equivalence before benchmarking the existing library set. Cover cold/warm/incremental compilation, matched repeated/unique styles, scopes/schemes, markers, animations, recipes, library boundaries, and real framework updates. Measure CSS, JavaScript, markup/data attributes, optional helpers, and complete raw/gzip/Brotli delivery without double-counting; do not hide unsupported comparisons or claim universal wins.
+Validate semantic equivalence before benchmarking the existing library set. Cover cold/warm/incremental compilation, matched repeated/unique styles, scopes/schemes, markers, animations, recipes, library boundaries, and real framework updates. Measure CSS, JavaScript, markup/data attributes, optional helpers, and complete raw/gzip/Brotli delivery without double-counting. Do not hide unsupported comparisons or claim universal wins.
 
 Every source API group above maps to an existing contract, a proposal, an external-CSS interoperability target, or an explicit non-goal. That classification does not make deferred APIs implemented or turn this union into a promise to duplicate each library's facade.
 
-Column properties support `css({ columnCount: 2, columnGap: 'normal', columnRuleStyle: 'solid', columnRuleWidth: 'thin', breakInside: 'avoid-column' })`. Shared colors map to column rule colors; widths remain literal lengths. Columns and column-rule shorthands remain deferred.
+Column properties support `css({ columnCount: 2, columnGap: 'normal', columnRuleStyle: 'solid', columnRuleWidth: 'thin', breakInside: 'avoid-column' })`. Shared colors map to column rule colors. Widths remain literal lengths. Columns and column-rule shorthands remain deferred.
 
-Layout supports `css({ display: 'flow-root', contain: 'layout', isolation: 'isolate', zIndex: 2 })`. Float/clear include logical keywords. Image fitting and 3D layout flags accept their finite standard keywords; broader value combinations remain deferred.
+Layout supports `css({ display: 'flow-root', contain: 'layout', isolation: 'isolate', zIndex: 2 })`. Float/clear include logical keywords. Image fitting and 3D layout flags accept their finite standard keywords. Broader value combinations remain deferred.

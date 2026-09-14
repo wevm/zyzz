@@ -50,6 +50,8 @@ Initial same-process measurements use 100 styles with color, padding, and displa
 
 Both new modes regress against the baseline in this diagnostic. Class maps are not complete delivered JavaScript or markup and must not be added to transfer totals without accounting for their actual use. A6 retains matched framework lanes, complete delivery, browser timings, and existing thresholds; no performance advantage is established.
 
+CI literal/theme transfer comparisons and pure-emitter benchmarks select grouped output. Runtime/render comparisons use config-bound grouped helpers from A3 onward. This benchmark choice does not change the atomic application default. Existing competitor and regression thresholds remain enforced; atomic performance acceptance remains in A6.
+
 ### Acceptance Gate
 
 - [ ] Omitted mode equals explicit `'atomic'`; `'grouped'` emits scoped declaration blocks. Unsupported mode values fail static/config structural checks without adding runtime CSS-value validation.

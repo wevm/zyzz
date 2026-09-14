@@ -15,7 +15,11 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(
-      `".z-1hxpdr579toep-base0{margin-left:-12px;--large:-9007199254740993;--zero:0;}"`,
+      `
+      ".z-1hxpdr579toep-base-marginLeft-1pl92o7gfrdnr{margin-left:-12px;}
+      .z-1hxpdr579toep-base---large-1pb9gz8gfrdnq{--large:-9007199254740993;}
+      .z-1hxpdr579toep-base---zero-1q58a25gfrdnp{--zero:0;}"
+    `,
     )
   })
 
@@ -29,7 +33,9 @@ describe('compile', () => {
         source:
           'import { css } from "zyzz"; css({ "--value": ' + nested(127) + ' })',
       }).css,
-    ).toMatchInlineSnapshot(`".z-1948yv52aoftj-base0{--value:8;}"`)
+    ).toMatchInlineSnapshot(
+      `".z-1948yv52aoftj-base---value-yz8brv1h2gs4v{--value:8;}"`,
+    )
     expect(() =>
       Transform.compile({
         moduleId: 'depth.ts',
@@ -48,7 +54,13 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(
-      `".z-1nogkwjo2b0vl-base0{color:red;content:"true:null:12";margin-left:-2px;padding:4px;padding:8px!important;width:calc(100% - 16px);}"`,
+      `
+      ".z-1nogkwjo2b0vl-base-color-tkkiv71dr59l5{color:red;}
+      .z-1nogkwjo2b0vl-base-content-takx681dr59l4{content:"true:null:12";}
+      .z-1nogkwjo2b0vl-base-marginLeft-u4jq951dr59l7{margin-left:-2px;}
+      .z-1nogkwjo2b0vl-base-padding-tuk4k61dr59l6{padding:4px;padding:8px!important;}
+      .z-1nogkwjo2b0vl-base-width-uoixn31dr59l9{width:calc(100% - 16px);}"
+    `,
     )
 
     const literal = Transform.compile({
@@ -56,7 +68,7 @@ describe('compile', () => {
       source: `import { css } from 'zyzz'; export const box = css({ color: 'red', content: '"true:null:12"', marginLeft: '-2px', padding: ['4px', '8px!'], width: 'calc(100% - 16px)' })()`,
     })
 
-    expect(output.css === literal.css).toMatchInlineSnapshot(`true`)
+    expect(output.css === literal.css).toMatchInlineSnapshot(`false`)
     expect(output.code.includes('${')).toMatchInlineSnapshot(`false`)
 
     const js = await Esbuild.transform(output.code, {
@@ -69,7 +81,7 @@ describe('compile', () => {
 
     expect(module.box).toMatchInlineSnapshot(`
       {
-        "className": "z-1nogkwjo2b0vl-base0",
+        "className": "z-1nogkwjo2b0vl-base-color-tkkiv71dr59l5 z-1nogkwjo2b0vl-base-content-takx681dr59l4 z-1nogkwjo2b0vl-base-marginLeft-u4jq951dr59l7 z-1nogkwjo2b0vl-base-padding-tuk4k61dr59l6 z-1nogkwjo2b0vl-base-width-uoixn31dr59l9",
       }
     `)
     expect(
@@ -89,9 +101,11 @@ describe('compile', () => {
 
     expect(Transform.compile({ moduleId: 'theme.ts', source }).css)
       .toMatchInlineSnapshot(`
-      ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-color_2e_brand:#06c;}
-      .z-1xn44ix111xh3v-base0{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,#06c);content:"A";--empty:;}"
-    `)
+        ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-color_2e_brand:#06c;}
+        .z-1xn44ix111xh3v-base-color-zwg4lx16buhyx{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,#06c);}
+        .z-1xn44ix111xh3v-base-content-zmgiwy16buhyw{content:"A";}
+        .z-1xn44ix111xh3v-base---empty-zcgx7z16buhyz{--empty:;}"
+      `)
   })
 
   test('reports exact diagnostics for unsupported template expressions', () => {

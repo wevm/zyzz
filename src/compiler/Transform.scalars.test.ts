@@ -34,9 +34,19 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a{font-synthesis:none;white-space:normal;overflow:hidden;word-wrap:normal;}
-      .z-b{font-synthesis-weight:auto;white-space-collapse:preserve;text-wrap-mode:nowrap;overflow-block:scroll;overflow-wrap:break-word;}
-      .z-c{font-synthesis:none;white-space:normal;overflow:hidden;word-wrap:normal;}"
+      ".z-a-atomic-fontSynthesis-0{font-synthesis:none;}
+      .z-a-atomic-whiteSpace-1{white-space:normal;}
+      .z-a-atomic-overflow-2{overflow:hidden;}
+      .z-a-atomic-wordWrap-3{word-wrap:normal;}
+      .z-b-atomic-fontSynthesisWeight-0{font-synthesis-weight:auto;}
+      .z-b-atomic-whiteSpaceCollapse-1{white-space-collapse:preserve;}
+      .z-b-atomic-textWrapMode-2{text-wrap-mode:nowrap;}
+      .z-b-atomic-overflowBlock-3{overflow-block:scroll;}
+      .z-b-atomic-overflowWrap-4{overflow-wrap:break-word;}
+      .z-c-atomic-fontSynthesis-0{font-synthesis:none;}
+      .z-c-atomic-whiteSpace-1{white-space:normal;}
+      .z-c-atomic-overflow-2{overflow:hidden;}
+      .z-c-atomic-wordWrap-3{word-wrap:normal;}"
     `)
   })
   test('SVG geometry and text scalars match native browser output', async () => {

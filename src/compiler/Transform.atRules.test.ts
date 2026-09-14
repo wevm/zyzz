@@ -30,7 +30,10 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
 }`,
     })
     expect(output.css).toMatchInlineSnapshot(
-      `".z-style-1df82zi1f2cka-132{@media (width >= 48rem){color:red;}@media (width >= 48rem){color:blue;}}"`,
+      `
+      ".z-style-1df82zi1f2cka-132-atomic-color-0{@media (width >= 48rem){color:red;}}
+      .z-style-1df82zi1f2cka-132-atomic-color-1{@media (width >= 48rem){color:blue;}}"
+    `,
     )
   })
   test('keeps scope, layer, and scroll-state nesting in authored order', () => {
@@ -41,7 +44,10 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
 }`,
     })
     expect(output.css).toMatchInlineSnapshot(
-      `".z-style-mond465apgew-73{@scope (.outer) to (.stop){@layer components{color:red;@container scroll-state(stuck: top){color:blue;}}}}"`,
+      `
+      ".z-style-mond465apgew-73-atomic-color-0{@scope (.outer) to (.stop){@layer components{color:red;}}}
+      .z-style-mond465apgew-73-atomic-color-1{@scope (.outer) to (.stop){@layer components{@container scroll-state(stuck: top){color:blue;}}}}"
+    `,
     )
   })
   test('defaults undefined contexts and accepts anonymous and CSS-whitespace groups', () => {

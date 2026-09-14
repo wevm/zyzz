@@ -22,11 +22,11 @@ describe('compile', () => {
     const output = Transform.compile({ moduleId: 'namespace.ts', source })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-mpx2ize76wo1-base0{padding:8px;}
-      .z-style-mpx2ize76wo1-177{color:red;}
-      .z-style-mpx2ize76wo1-212{color:blue;}
-      .z-mpx2ize76wo1-base1{padding:8px;width:var(--z-dmpx2ize76wo1-270-77-69-64-74-68);}
-      .z-style-mpx2ize76wo1-270{color:red;}"
+      ".z-mpx2ize76wo1-base-padding-1fc2tjv16fa6uf{padding:8px;}
+      .z-style-mpx2ize76wo1-177-atomic-color-1{color:red;}
+      .z-style-mpx2ize76wo1-212-atomic-color-0{color:blue;}
+      .z-style-mpx2ize76wo1-270-atomic-color-0{color:red;}
+      .z-mpx2ize76wo1-base-width-145w8e816hbale{width:var(--z-dmpx2ize76wo1-270-77-69-64-74-68);}"
     `)
 
     const built = await Esbuild.build({
@@ -47,17 +47,17 @@ describe('compile', () => {
 
     expect(result.card).toMatchInlineSnapshot(`
       {
-        "className": "z-mpx2ize76wo1-base0 z-style-mpx2ize76wo1-177",
+        "className": "z-mpx2ize76wo1-base-padding-1fc2tjv16fa6uf z-style-mpx2ize76wo1-177-atomic-color-1 z-style-mpx2ize76wo1-177",
       }
     `)
     expect(result.button).toMatchInlineSnapshot(`
       {
-        "className": "z-mpx2ize76wo1-base0 z-style-mpx2ize76wo1-212",
+        "className": "z-mpx2ize76wo1-base-padding-1fc2tjv16fa6uf z-style-mpx2ize76wo1-212-atomic-color-0 z-style-mpx2ize76wo1-212",
       }
     `)
     expect(result.dynamic).toMatchInlineSnapshot(`
       {
-        "className": "z-mpx2ize76wo1-base1 z-style-mpx2ize76wo1-270",
+        "className": "z-mpx2ize76wo1-base-padding-1fc2tjv16fa6uf z-style-mpx2ize76wo1-270-atomic-color-0 z-mpx2ize76wo1-base-width-145w8e816hbale z-style-mpx2ize76wo1-270",
         "style": {
           "--z-dmpx2ize76wo1-270-77-69-64-74-68": "20px",
         },
@@ -77,8 +77,8 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-style-1ezo5v71uomczz-107{color:red;}
-      .z-style-1ezo5v71uomczz-203{color:blue;}"
+      ".z-style-1ezo5v71uomczz-107-atomic-color-0{color:red;}
+      .z-style-1ezo5v71uomczz-203-atomic-color-0{color:blue;}"
     `)
   })
 

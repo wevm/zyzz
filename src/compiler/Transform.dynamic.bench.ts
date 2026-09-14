@@ -9,6 +9,7 @@ describe('dynamic callbacks', () => {
     'compile',
     () => {
       Transform.compile({
+        composition: 'independent',
         cssOutput: 'grouped',
         moduleId: 'variables.ts',
         source,

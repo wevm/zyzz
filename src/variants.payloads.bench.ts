@@ -8,7 +8,11 @@ const options = {
   source: `import {variants} from 'zyzz';export const button=variants({conditions:{wide:'@media (width >= 600px)'},variants:{size:{sm:{padding:'4px'},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}},defaultVariants:{size:{custom:{padding:'12px'}}}})`,
 }
 const extracted = Source.extract(options)
-const output = Transform.compile({ ...options, cssOutput: 'grouped' })
+const output = Transform.compile({
+  ...options,
+  composition: 'independent',
+  cssOutput: 'grouped',
+})
 const call = extracted.calls[0]!
 const definition = call.recipe!
 const select = ConditionalRecipe.create({
@@ -24,7 +28,11 @@ const button = PayloadRecipe.create({
 
 describe('variants / payloads', () => {
   bench('compile', () => {
-    Transform.compile({ ...options, cssOutput: 'grouped' })
+    Transform.compile({
+      ...options,
+      composition: 'independent',
+      cssOutput: 'grouped',
+    })
   })
   bench('bind default', () => {
     button()

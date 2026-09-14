@@ -31,6 +31,7 @@ for (const count of [10, 100, 1000]) {
       'source',
       () => {
         Transform.compile({
+          composition: 'independent',
           cssOutput: 'grouped',
           moduleId: 'theme.ts',
           source,
@@ -42,6 +43,7 @@ for (const count of [10, 100, 1000]) {
       'bundled source graph',
       () => {
         Graph.compile({
+          composition: 'independent',
           cssOutput: 'grouped',
           modules: {
             'default.ts': bundled,
@@ -66,6 +68,7 @@ describe('compile / integration corpus with query metadata', () => {
       for (const fixture of corpus)
         if (fixture.source)
           Transform.compile({
+            composition: 'independent',
             cssOutput: 'grouped',
             moduleId: fixture.name,
             source:

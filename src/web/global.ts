@@ -1,6 +1,5 @@
 /** Declares eager module-level global stylesheet effects. @module */
 import type * as Condition from '../internal/Condition.js'
-import { MissingTransformError } from '../css.js'
 import type * as Literal from '../internal/Literal.js'
 import type * as Style from '../Style.js'
 
@@ -9,7 +8,7 @@ export function global<const styles extends Record<string, unknown>>(
   styles: styles & NoInfer<global.Body<styles>>,
 ): void {
   void styles
-  throw new MissingTransformError()
+  return
 }
 
 /** Global selector and grouping contracts. */

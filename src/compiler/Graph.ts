@@ -6,6 +6,7 @@ import * as Contributions from './internal/Contributions.js'
 import * as Stylesheets from './internal/Stylesheets.js'
 import type * as Mapping from '@jridgewell/gen-mapping'
 import * as Css from '../web/Css.js'
+import * as Identity from '../internal/Identity.js'
 import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
 import * as Syntax from './internal/Syntax.js'
@@ -30,6 +31,8 @@ export declare namespace compile {
 
   /** Source modules available for relative import resolution. */
   type Options = {
+    /** Rewrite authoring calls. False emits CSS for unchanged source. */
+    readonly compiler?: boolean | undefined
     /** Serialized library contracts keyed by host-resolved module identity. Runtime modules stay external to this graph. */
     readonly contracts?: Readonly<Record<string, string>> | undefined
     /** Host-resolved static runtime imports keyed by module ID and source specifier; null marks externals. The host owns dynamic imports when supplied. Omit for closed relative-graph resolution. */
@@ -84,6 +87,8 @@ export declare namespace create {
 }
 
 type Cache = {
+  compiler: boolean
+
   contracts: string
   extracted: ReadonlyMap<string, Source.extract.ReturnType>
   libraries: Readonly<Record<string, ReturnType<typeof Contract.read>>>
@@ -94,6 +99,7 @@ type Cache = {
 }
 
 function build(options: compile.Options, cache?: Cache): Cache {
+  if (cache?.compiler !== (options.compiler !== false)) cache = undefined
   const ids = Object.keys(options.modules).sort()
 
   const contracts = JSON.stringify(
@@ -576,6 +582,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
 
     const result = Source.extract({
+      compiler: options.compiler,
       moduleId,
       source,
       [Themes.context]: { factories, links },
@@ -859,6 +866,25 @@ function build(options: compile.Options, cache?: Cache): Cache {
   for (const library of Object.values(libraries))
     for (const link of Object.values(library.links)) published(link)
 
+  if (options.compiler === false) {
+    const identities = new Map<string, string>()
+    for (const [moduleId, module] of extracted) {
+      for (const call of module.calls) {
+        if (!call.portable?.startsWith('z-style-id-')) continue
+        const signature = Identity.style(
+          module.styles.styles.find((style) => style.name === call.name)!,
+        )
+        const previous = identities.get(call.portable)
+        if (previous !== undefined && previous !== signature)
+          return fail(
+            moduleId,
+            'The same explicit style id is used for different declarations.',
+          )
+        identities.set(call.portable, signature)
+      }
+    }
+  }
+
   // Extraction visits dependencies first; their emitted classes must precede consumers.
   for (const moduleId of extracted.keys()) {
     modules[moduleId] =
@@ -866,6 +892,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       extracted.get(moduleId) === previous!.extracted.get(moduleId)
         ? previous!.result.modules[moduleId]!
         : Transform.compile({
+            compiler: options.compiler,
             moduleId,
             source: options.modules[moduleId]!,
             [Themes.context]: {
@@ -909,6 +936,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
   }
 
   return {
+    compiler: options.compiler !== false,
     contracts,
     extracted,
     libraries: Object.freeze(libraries),

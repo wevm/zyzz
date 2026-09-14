@@ -11,7 +11,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Share typed authoring across web and React Native while making target capabilities and output types explicit. Unsupported target semantics must produce errors.
 - Keep modules small and extensible through explicit data and narrow functions. Avoid global registration, mandatory providers, component wrappers, custom JSX runtimes, and general plugin frameworks.
 - Prefer CSS properties, values, selectors, at-rules, custom properties, inheritance, and cascade patterns. Preserve authored ordering; convenience syntax must expand predictably.
-- Compile styles ahead of time. Runtime adapters may select static alternatives but must not generate or compile styles.
+- Emit CSS ahead of time. Runtime authoring may derive stable class identities, select static alternatives, and bind variables, but must not emit or insert CSS rules. Source optimization is optional and enabled by default in the bundler plugin.
 - Keep root `css` and `variants` token-free. Put Geist and Tailwind design tokens in the opt-in `zyzz/themes/default` entrypoint, exporting bound `css` and `variants`, the full `theme`, and raw `tokens`. Core imports must not include bundled theme data.
 
 ## TypeScript Conventions

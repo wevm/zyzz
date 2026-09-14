@@ -6,7 +6,10 @@ import * as Fs from 'node:fs'
 const revision = process.env.BASE_SHA
 if (!revision) throw new Error('BASE_SHA is required for baseline exports.')
 
-type Manifest = { exports: Record<string, unknown> }
+type Manifest = {
+  bin?: string | Record<string, string>
+  exports: Record<string, unknown>
+}
 const baseline = JSON.parse(
   ChildProcess.execFileSync('git', ['show', `${revision}:package.json`], {
     encoding: 'utf8',
@@ -17,4 +20,6 @@ const candidate = JSON.parse(
 ) as Manifest
 
 candidate.exports = baseline.exports
+if (baseline.bin === undefined) delete candidate.bin
+else candidate.bin = baseline.bin
 Fs.writeFileSync('package.json', `${JSON.stringify(candidate, null, 2)}\n`)

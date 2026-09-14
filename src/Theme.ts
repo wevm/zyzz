@@ -3,6 +3,8 @@
  * @module
  */
 import { css, MissingTransformError } from './css.js'
+import * as Authoring from './internal/Authoring.js'
+import * as Identity from './internal/Identity.js'
 import { variants } from './variants.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
@@ -28,9 +30,11 @@ export type Css<tokens extends Tokens> = {
     ) => styles &
       NoInfer<Style.Accepted<styles, tokens> & Binding.Checked<styles>>) &
       (values extends Binding.Inputs<values> ? unknown : never),
+    options?: css.DefinitionOptions,
   ): css.Dynamic<values>
   <const styles extends Record<string, unknown>>(
     styles: styles & NoInfer<Style.Accepted<styles, tokens>>,
+    options?: css.DefinitionOptions,
   ): css.ReturnType
   <const styles extends Style.Properties<tokens>>(
     styles: styles &
@@ -42,6 +46,7 @@ export type Css<tokens extends Tokens> = {
             ? unknown
             : never)
       >,
+    options?: css.DefinitionOptions,
   ): css.ReturnType
 }
 
@@ -53,8 +58,24 @@ export type Css<tokens extends Tokens> = {
  */
 export function define<const tokens extends Tokens>(
   tokens: tokens & NoInfer<Validated<tokens>>,
+  options: css.DefinitionOptions = {},
 ): Definition<tokens> {
-  return build(tokens, Object.freeze({})) as unknown as Definition<tokens>
+  return build(
+    tokens,
+    Object.freeze(
+      options.id === undefined
+        ? {}
+        : {
+            [Token.identity]: Identity.requireId(options.id, 'Theme.define'),
+            [Token.complete]: true as const,
+          },
+    ),
+    undefined,
+    undefined,
+    options.id === undefined
+      ? undefined
+      : Identity.requireId(options.id, 'Theme.define'),
+  ) as unknown as Definition<tokens>
 }
 
 /** A theme contract with immutable, property-aware portable token references. */
@@ -239,6 +260,7 @@ function build(
   contract: Token.Contract,
   base?: Readonly<Record<string, Token.Value>>,
   baseQueries?: Query.Metadata,
+  scope?: string,
 ) {
   const values: Record<string, Token.Value> = Object.assign(
     Object.create(null),
@@ -468,15 +490,28 @@ function build(
 
   freeze(tokens)
 
-  return Object.freeze(
+  const definition = Object.freeze(
     Object.defineProperty(
       {
         get className(): string {
-          throw new MissingTransformError()
+          if (scope) return `z_theme-${scope}`
+          const id = contract[Token.identity]
+          if (!id?.startsWith('id-')) throw new MissingTransformError()
+          return `z_theme-${id}-${Identity.hash(JSON.stringify(values))}`
         },
-        css,
+        css: (styles?: unknown, options: css.DefinitionOptions = {}) => {
+          if (!contract[Token.identity])
+            Identity.requireId(undefined, 'Theme.define')
+          return Authoring.create(styles, {
+            ...options,
+            theme: definition as unknown as Definition,
+          })
+        },
         tokens,
-        variants,
+        variants: (
+          input: Record<string, unknown>,
+          options: css.DefinitionOptions = {},
+        ) => Authoring.variants(input, options),
         vars: Token.variables(tokens),
       },
       Token.definition,
@@ -497,6 +532,7 @@ function build(
       },
     ),
   )
+  return definition
 }
 
 function record(

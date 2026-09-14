@@ -4,6 +4,8 @@ import * as Walker from 'oxc-walker'
 import * as Condition from '../../internal/Condition.js'
 import * as Theme from '../../Theme.js'
 import * as AtRules from './AtRules.js'
+import * as Identity from '../../internal/Identity.js'
+import * as Identifiers from './Identifiers.js'
 import * as Expression from './Expression.js'
 import type * as Scope from './Scope.js'
 import * as Themes from './Themes.js'
@@ -157,7 +159,8 @@ export function scan(
   })
 
   function link(call: Ast.CallExpression): Themes.Link {
-    const name = `z-style-${namespace}-${call.start}`
+    const id = Identifiers.explicit(call)
+    const name = `z-style-${id === undefined ? `${namespace}-${call.start}` : Identity.requireId(id, 'css')}`
     identities.set(call.start, name)
 
     return {

@@ -1,7 +1,6 @@
 /** Declares a native custom-property registration with a CSS syntax contract. @module */
 import type * as Context from './internal/Context.js'
 import type * as FunctionSyntax from '../internal/FunctionSyntax.js'
-import { MissingTransformError } from '../css.js'
 
 /** Emits an eager registration; initial values are checked by the compiler. */
 export function property<const options extends property.Options>(
@@ -17,7 +16,7 @@ export function property<const options extends property.Options>(
 ): void {
   void options
   void context
-  throw new MissingTransformError()
+  return
 }
 
 /** Native registration descriptors. */

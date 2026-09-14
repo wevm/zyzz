@@ -1,7 +1,7 @@
 /** Declares a compiler-owned colorProfile stylesheet identity. @module */
 import type * as Context from './internal/Context.js'
 import type * as Lexical from '../internal/Lexical.js'
-import { MissingTransformError } from '../css.js'
+import * as Identity from '../internal/Identity.js'
 import type * as RuleReference from '../internal/RuleReference.js'
 
 /** Emits static descriptors and returns a domain-specific CSS name. */
@@ -19,7 +19,10 @@ export function colorProfile<
 ): colorProfile.Reference {
   void options
   void context
-  throw new MissingTransformError()
+  return Identity.contribution(
+    'colorProfile',
+    context.id,
+  ) as colorProfile.Reference
 }
 /** Descriptor and identity contracts. */
 export declare namespace colorProfile {

@@ -31,7 +31,7 @@ This stack brings 3.9's web emission work forward and owns the related CLI parit
 
 ### A1–A4 Implementation Status
 
-A1 [#150](https://github.com/wevm/zyzz/pull/150), A2 [#151](https://github.com/wevm/zyzz/pull/151), and A3 [#152](https://github.com/wevm/zyzz/pull/152) are open as dependent drafts. A4 adds version 17 contracts and preserves producer modes within mixed-mode compositions. None of these drafts closes A5 or A6.
+A1 [#150](https://github.com/wevm/zyzz/pull/150), A2 [#151](https://github.com/wevm/zyzz/pull/151), and A3 [#152](https://github.com/wevm/zyzz/pull/152) are open as dependent drafts. A4 [#153](https://github.com/wevm/zyzz/pull/153) adds version 17 contracts and preserves producer modes within mixed-mode compositions. None of these drafts closes A5 or A6.
 
 Focused evidence includes 19 emitter integrations, independent Chromium reset/condition controls in both modes, 13 config/source integrations, declaration-map tracing, and four producer/consumer mode combinations from source-free npm archives. Archive browser checks cover dynamic binding removal, defaults, compounds, explicit overrides, and both stylesheet orders.
 

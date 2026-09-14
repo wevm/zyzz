@@ -2,6 +2,7 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
+import * as ClassName from './internal/ClassName.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Binding from '../internal/Binding.js'
 import * as Cascade from '../internal/Cascade.js'
@@ -350,6 +351,7 @@ export function compile<
       },
     ])
 
+  const identities = new Map<string, string>()
   const rules = new Map<string, string>()
   const identical = new Map<string, string>()
 
@@ -375,31 +377,46 @@ export function compile<
         output === mode &&
         options.composition === 'independent'
       const key = `${output}:${body}`
-      const previous = shared || independent ? identical.get(key) : undefined
+      // Development slots belong to each style even when their initial values match.
+      const reusable = !options.development && (shared || independent)
+      const previous = reusable ? identical.get(key) : undefined
       if (previous) {
         names.push(previous)
         return
       }
 
-      // Declaration slots keep mounted elements styled across CSS-only edits.
+      // Contextual slots preserve authored ordering; development names survive value edits.
       const slot = ordinal++
       const identity = (() => {
         if (output === 'grouped' && mode === 'grouped')
           return `g-${encode(style.name)}`
-        if (shared)
-          return `z_base-${label}-${hash(`${mode}:${style.name}:${slot}`)}`
-
-        return `z-${encode(style.name)}-${mode}-${label}-${slot}`
+        return ClassName.create({
+          body,
+          context:
+            !shared || options.development
+              ? JSON.stringify([options.scope, mode, style.name])
+              : options.scope,
+          property: label,
+          slot: !shared || options.development ? slot : undefined,
+          stable: options.development,
+        })
       })()
-      if (rules.has(identity) && rules.get(identity) !== body)
+      const owner = mode === 'atomic' ? `${style.name}:${slot}` : undefined
+      if (
+        (rules.has(identity) && rules.get(identity) !== body) ||
+        (owner !== undefined &&
+          identities.has(identity) &&
+          identities.get(identity) !== owner)
+      )
         diagnostics.push({
           code: 'identity_collision',
           message: 'Distinct rules produced the same class identifier.',
           path: [style.name],
         })
 
+      if (owner !== undefined) identities.set(identity, owner)
       rules.set(identity, body)
-      if (shared || independent) identical.set(key, identity)
+      if (reusable) identical.set(key, identity)
       names.push(identity)
     }
 
@@ -448,7 +465,7 @@ export function compile<
           !nestedComposition &&
           !conditions.length &&
           groups.get(root(domain(canonical(property)))) !== false
-        emit(body, encode(property), shared)
+        emit(body, property, shared)
       }
     }
 
@@ -534,6 +551,10 @@ export declare namespace compile {
     /** CSS representation; atomic declarations are the default. */
     readonly cssOutput?: 'atomic' | 'grouped' | undefined
     readonly composition?: 'independent' | 'ordered' | undefined
+    /** Stable declaration names for CSS-only development updates. */
+    readonly development?: boolean | undefined
+    /** Optional module scope for independently delivered stylesheets. */
+    readonly scope?: string | undefined
     /** Ordered definitions; no themes or source adapter is required. */
     readonly styles: Style.Definition<name>
     /** Named scopes; only variables referenced by these styles are emitted. */
@@ -603,16 +624,4 @@ function encode(value: string): string {
     /[^a-zA-Z0-9-]/g,
     (character) => `_${character.charCodeAt(0).toString(16)}_`,
   )
-}
-
-// Two independent 32-bit streams retain deterministic identities without host APIs.
-function hash(value: string): string {
-  let first = 2166136261
-  let second = 5381
-  for (let index = 0; index < value.length; index++) {
-    const code = value.charCodeAt(index)
-    first = Math.imul(first ^ code, 16777619)
-    second = Math.imul(second, 33) ^ code
-  }
-  return (first >>> 0).toString(36) + (second >>> 0).toString(36)
 }

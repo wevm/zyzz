@@ -15,14 +15,14 @@ describe('compile', () => {
     const output = Transform.compile({ moduleId: 'custom.ts', source })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-nhoi651v8vyx9-base---Accent-jctuhg184bytk{--Accent:red;}
-      .z-nhoi651v8vyx9-base---accent-jmtg6f184bytl{--accent:blue;}
-      .z-nhoi651v8vyx9-base---data-jwt1ve184bytm{--data:"a;b:c";}
-      .z-nhoi651v8vyx9-base---count-k6snkd184bytn{--count:2;}
-      .z-style-nhoi651v8vyx9-150-atomic-all-0{all:initial;}
-      .z-style-nhoi651v8vyx9-150-atomic-color-1{color:var(--Accent);}
-      .z-style-nhoi651v8vyx9-150-atomic-backgroundColor-2{background-color:var(--accent);}
-      .z-nhoi651v8vyx9-base---choice-bp82jczffjyy{--choice:red;--choice:blue!important;}"
+      ".z---Accent-red-laDu-r{--Accent:red;}
+      .z---accent-blue-laDu-r{--accent:blue;}
+      .z---data-laDu-r{--data:"a;b:c";}
+      .z---count-2-laDu-r{--count:2;}
+      .z-all-initial-N2sItM-0{all:initial;}
+      .z-text-N2sItM-1{color:var(--Accent);}
+      .z-bg-N2sItM-2{background-color:var(--accent);}
+      .z---choice-laDu-r{--choice:red;--choice:blue!important;}"
     `)
   })
 
@@ -38,10 +38,10 @@ describe('compile', () => {
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
       `
-      ".z_base---escaped-195c56819vd7r0{--escaped:hello\\!;}
-      .z_base---escapedWord-19fbqv719vd7r1{--escapedWord:hello\\!important;}
-      .z_base---even-19pbck619vd7r2{--even:hello\\\\!important;}
-      .z_base---space-19zay9519vd7r3{--space:hello\\ !important;}"
+      ".z---escaped-tMe2BH{--escaped:hello\\!;}
+      .z---escapedWord-l-_WbH{--escapedWord:hello\\!important;}
+      .z---even-p0VvrW{--even:hello\\\\!important;}
+      .z---space-U35CMT{--space:hello\\ !important;}"
     `,
     )
   })

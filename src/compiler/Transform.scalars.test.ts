@@ -34,19 +34,19 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-atomic-fontSynthesis-0{font-synthesis:none;}
-      .z-a-atomic-whiteSpace-1{white-space:normal;}
-      .z-a-atomic-overflow-2{overflow:hidden;}
-      .z-a-atomic-wordWrap-3{word-wrap:normal;}
-      .z-b-atomic-fontSynthesisWeight-0{font-synthesis-weight:auto;}
-      .z-b-atomic-whiteSpaceCollapse-1{white-space-collapse:preserve;}
-      .z-b-atomic-textWrapMode-2{text-wrap-mode:nowrap;}
-      .z-b-atomic-overflowBlock-3{overflow-block:scroll;}
-      .z-b-atomic-overflowWrap-4{overflow-wrap:break-word;}
-      .z-c-atomic-fontSynthesis-0{font-synthesis:none;}
-      .z-c-atomic-whiteSpace-1{white-space:normal;}
-      .z-c-atomic-overflow-2{overflow:hidden;}
-      .z-c-atomic-wordWrap-3{word-wrap:normal;}"
+      ".z-font-synthesis-none-CgmKfH-0{font-synthesis:none;}
+      .z-white-space-normal-CgmKfH-1{white-space:normal;}
+      .z-overflow-hidden-CgmKfH-2{overflow:hidden;}
+      .z-word-wrap-normal-CgmKfH-3{word-wrap:normal;}
+      .z-font-synthesis-weight-auto-0kXiVX-0{font-synthesis-weight:auto;}
+      .z-white-space-collapse-preserve-0kXiVX-1{white-space-collapse:preserve;}
+      .z-text-wrap-mode-nowrap-0kXiVX-2{text-wrap-mode:nowrap;}
+      .z-overflow-block-scroll-0kXiVX-3{overflow-block:scroll;}
+      .z-overflow-wrap-break-word-0kXiVX-4{overflow-wrap:break-word;}
+      .z-font-synthesis-none-HzYJKb-0{font-synthesis:none;}
+      .z-white-space-normal-HzYJKb-1{white-space:normal;}
+      .z-overflow-hidden-HzYJKb-2{overflow:hidden;}
+      .z-word-wrap-normal-HzYJKb-3{word-wrap:normal;}"
     `)
   })
   test('SVG geometry and text scalars match native browser output', async () => {

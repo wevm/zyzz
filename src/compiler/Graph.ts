@@ -30,6 +30,8 @@ export declare namespace compile {
 
   /** Source modules available for relative import resolution. */
   type Options = {
+    /** Stable declaration names for CSS-only development updates. */
+    readonly development?: boolean | undefined
     /** Serialized library contracts keyed by host-resolved module identity. Runtime modules stay external to this graph. */
     readonly contracts?: Readonly<Record<string, string>> | undefined
     /** Host-resolved static runtime imports keyed by module ID and source specifier; null marks externals. The host owns dynamic imports when supplied. Omit for closed relative-graph resolution. */
@@ -84,6 +86,7 @@ export declare namespace create {
 }
 
 type Cache = {
+  development: boolean
   contracts: string
   extracted: ReadonlyMap<string, Source.extract.ReturnType>
   libraries: Readonly<Record<string, ReturnType<typeof Contract.read>>>
@@ -122,6 +125,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     if (
       cache &&
       cache.contracts === contracts &&
+      cache.development === !!options.development &&
       ids.length === Object.keys(cache.sources).length &&
       ids.every((id) => Object.hasOwn(cache.sources, id))
     ) {
@@ -859,6 +863,8 @@ function build(options: compile.Options, cache?: Cache): Cache {
   for (const library of Object.values(libraries))
     for (const link of Object.values(library.links)) published(link)
 
+  const atomicOwners = new Map<string, string>()
+
   // Extraction visits dependencies first; their emitted classes must precede consumers.
   for (const moduleId of extracted.keys()) {
     modules[moduleId] =
@@ -866,6 +872,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       extracted.get(moduleId) === previous!.extracted.get(moduleId)
         ? previous!.result.modules[moduleId]!
         : Transform.compile({
+            development: options.development,
             moduleId,
             source: options.modules[moduleId]!,
             [Themes.context]: {
@@ -879,6 +886,24 @@ function build(options: compile.Options, cache?: Cache): Cache {
               styleClasses,
             },
           })
+    // Module-local checks cannot detect truncated ownership hashes colliding across files.
+    for (const value of Object.values(modules[moduleId]!.classes))
+      for (const name of value.split(' ')) {
+        if (!name.startsWith('z-')) continue
+
+        const owner = atomicOwners.get(name)
+        if (owner !== undefined && owner !== moduleId)
+          throw new Css.CompileError([
+            {
+              code: 'invalid_name',
+              message: `Atomic class ${name} is also owned by module ${owner}.`,
+              path: [moduleId],
+            },
+          ])
+
+        atomicOwners.set(name, moduleId)
+      }
+
     for (const call of extracted.get(moduleId)!.calls)
       if (call.identity)
         styleClasses[call.identity] = modules[moduleId]!.classes[call.name]!
@@ -909,6 +934,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
   }
 
   return {
+    development: !!options.development,
     contracts,
     extracted,
     libraries: Object.freeze(libraries),

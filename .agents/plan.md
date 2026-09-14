@@ -872,3 +872,22 @@ All 670 property entries are reviewed as supported under the documented static a
 [PR #145](https://github.com/wevm/zyzz/pull/145) targets main with packed contracts, declaration consumers, duplicated runtime handling, source tracing, and host recovery. [PR #146](https://github.com/wevm/zyzz/pull/146) targets #145 with packed React/Solid/Svelte and Next.js Webpack/Turbopack lifecycle fixtures, application tracing, and production variant benchmarks.
 
 [Measurements](../bench/Web-variants.md) retain all comparison lanes, artifact boundaries, uncertainty, and observed losses. The complete 72-group production React matrix passes locally and in CI. Inline Svelte authoring, application frameworks beyond Next.js, and native rendering remain outside this acceptance slice. Neither PR is merged.
+
+### Readable Atomic Class Names
+
+Atomic output uses readable property/value labels, with six-character hashes for complex values, source-module ownership, and cascade-sensitive slots. Hash collisions between distinct ordered rules fail compilation, including matching declarations that cannot share an ordering position. Graph assembly rejects atomic identities shared by distinct modules, including cached modules. Development output retains separate declaration slots for every style, and display flex/grid labels retain their property prefix to avoid shorthand collisions. Stable development naming preserves CSS-only updates through Vite; graph caches distinguish the naming modes. Grouped output and benchmark mode selection remain unchanged. This work does not complete A5 or A6.
+
+Static artifact comparison against A4 (`f0d844b`), using the existing literal corpus without minification or runtime/markup delivery. Class-map bytes are reported separately and are not added to CSS transfer. No atomic timing benchmark was run; benchmark mode selection remains grouped.
+
+| Workload    | CSS raw before → after | CSS gzip before → after | Class-map raw before → after |
+| ----------- | ---------------------: | ----------------------: | ---------------------------: |
+| small       |              411 → 288 |               226 → 179 |                    787 → 418 |
+| repeated    |              411 → 288 |               226 → 179 |            263,891 → 140,891 |
+| unique      |        44,146 → 36,043 |          5,333 → 10,390 |            261,781 → 150,781 |
+| partial     |        15,611 → 12,567 |           1,818 → 2,462 |              25,361 → 15,981 |
+| palette     |         10,620 → 7,698 |           1,206 → 1,454 |              25,671 → 15,027 |
+| independent |        34,474 → 29,726 |           4,022 → 5,394 |              24,121 → 18,680 |
+| sparse      |        12,889 → 10,428 |           1,655 → 2,275 |               13,091 → 9,222 |
+| components  |        13,727 → 12,071 |           1,499 → 1,714 |              16,720 → 11,802 |
+
+Readable names reduce class-map bytes in all eight cases, but hashed ownership increases gzip CSS in mostly unique workloads. This is not an atomic delivery win. Grouped compiler results, including CSS and class maps, remain byte-identical across all eight corpus cases.

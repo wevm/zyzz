@@ -221,7 +221,7 @@ describe('browser', () => {
 
                         let iterations = 256
 
-                        // Amortize timer resolution; compilation and protocol calls are excluded.
+                        // Amortize timer resolution. Compilation and protocol calls are excluded.
                         while (batch(iterations) < 2 && iterations < 1_048_576)
                           iterations *= 2
 

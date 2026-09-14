@@ -14,7 +14,7 @@ import { Css } from 'zyzz/web'
 
 ## Types and Errors
 
-`Diagnostic`; `compile.ErrorType`, `compile.Options`, `compile.ReturnType`; `CompileError`.
+Types: `Diagnostic`, `compile.ErrorType`, `compile.Options`, `compile.ReturnType`. Errors: `CompileError`.
 
 See the [public declarations](../../../../src/web/Css.ts) for complete generic signatures and documented type properties.
 

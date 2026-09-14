@@ -17,6 +17,6 @@ import { Host } from 'zyzz/node'
 
 ## Types and Errors
 
-`Build`, `Event`, `Runtime`; `create.Options` and `watch.Options`. Build/close/watch are returned runtime methods, not standalone module functions.
+`Build`, `Event`, and `Runtime`, plus `create.Options` and `watch.Options`. Build/close/watch are returned runtime methods, not standalone module functions.
 
 See the [public declarations](../../../../src/node/Host.ts) for complete generic signatures and documented type properties.

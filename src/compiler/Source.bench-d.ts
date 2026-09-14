@@ -5,7 +5,7 @@
 import { bench } from '@ark/attest'
 import type * as Compiler from 'zyzz/compiler'
 
-// Type-only imports keep the fixture free of runtime module loading; attest
+// Type-only imports keep the fixture free of runtime module loading. Attest
 // analyzes bench bodies without executing them.
 declare const Source: typeof Compiler.Source
 

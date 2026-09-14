@@ -186,7 +186,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           imports.set(specifier.start, name)
       }
     }
-    // Local call imports are candidates; Graph follows their re-exports before emission.
+    // Local call imports are candidates. Graph follows their re-exports before emission.
 
     if (!imports.size) return false
 

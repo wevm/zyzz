@@ -25,7 +25,7 @@ await host.build()
 - Type: `false | { minify?: boolean; targets?: Readonly<LightningCss.Targets> }`
 - Default: `{ minify: false }`
 
-Process emitted stylesheets with Lightning CSS. Set `false` to preserve intermediate CSS for another processor. Options are captured when the lifecycle is created. Source maps are composed in both formatted and minified output; JavaScript output is unchanged.
+Process emitted stylesheets with Lightning CSS. Set `false` to preserve intermediate CSS for another processor. Options are captured when the lifecycle is created. Source maps are composed in both formatted and minified output. JavaScript output is unchanged.
 
 ```ts
 Host.create({
@@ -54,7 +54,7 @@ css: {
 - Type: `Readonly<LightningCss.Targets>`
 - Default: No browser targets.
 
-Explicit browser versions control compatibility transforms and prefixing. Versions use `(major << 16) | (minor << 8) | patch`. No Browserslist configuration is discovered automatically. Targets transform supported CSS syntax; they do not polyfill unsupported browser features.
+Explicit browser versions control compatibility transforms and prefixing. Versions use `(major << 16) | (minor << 8) | patch`. No Browserslist configuration is discovered automatically. Targets transform supported CSS syntax. They do not polyfill unsupported browser features.
 
 ```ts
 css: { targets: { chrome: 100 << 16, safari: (15 << 16) | (4 << 8) } }
@@ -65,7 +65,7 @@ css: { targets: { chrome: 100 << 16, safari: (15 << 16) | (4 << 8) } }
 - Type: `string`
 - Required: Yes.
 
-Output directory exclusively locked until disposal. The ownership manifest persists after close; its recorded package identity is not transferred.
+Output directory exclusively locked until disposal. The ownership manifest persists after close. Its recorded package identity is not transferred.
 
 ```ts
 Host.create({ outDir: 'dist', packageId: 'my-library', root: 'src' })
@@ -144,6 +144,6 @@ host.watch({ onResult: (event) => console.log(event) })
 
 ## Errors
 
-Filesystem, ownership, input, and Lightning CSS errors reject. CSS processing completes before publication; failed builds retain the last successful artifacts. No new Host error class is promised.
+Filesystem, ownership, input, and Lightning CSS errors reject. CSS processing completes before publication. Failed builds retain the last successful artifacts. No new Host error class is promised.
 
 See [Host](README.md) for related methods and types.

@@ -39,7 +39,7 @@ function Label() {
 - Type: `color | length | number | percentage | signedLength | signedPercentage`
 - Required: No.
 
-Omitting `kind` creates an unconstrained reference usable in any CSS declaration. Its `.set(value)` accepts strings or numbers; CSS value compatibility is left to the browser.
+Omitting `kind` creates an unconstrained reference usable in any CSS declaration. Its `.set(value)` accepts strings or numbers. CSS value compatibility is left to the browser.
 
 ```ts
 const value = variable()
@@ -47,12 +47,12 @@ css({ color: value })
 value.set('tomato')
 ```
 
-An explicit scalar domain constrains compatible CSS declarations and `.set(value)` assignments. `length` and `percentage` are nonnegative; signed domains permit negative dimensions. A `number` reference can only supply properties accepting unconstrained numeric values.
+An explicit scalar domain constrains compatible CSS declarations and `.set(value)` assignments. `length` and `percentage` are nonnegative. Signed domains permit negative dimensions. A `number` reference can only supply properties accepting unconstrained numeric values.
 
 ### options
 
 - Type: `variable.Options<kind>`
-- Default: Omitted; no registration is emitted.
+- Default: Omitted. No registration is emitted.
 
 Options require an explicit `kind`. Providing options emits CSS `@property` using the same generated variable name.
 
@@ -75,14 +75,14 @@ Controls custom-property inheritance through the DOM. Unregistered custom proper
 - Type: Scalar value compatible with `kind`
 - Required with options: Yes.
 
-Must be computationally independent. Initial lengths use absolute units or zero; values depending on `currentColor`, other variables, or font-relative units are rejected by types.
+Must be computationally independent. Initial lengths use absolute units or zero. Values depending on `currentColor`, other variables, or font-relative units are rejected by types.
 
 #### syntax
 
 - Type: CSS syntax matching `kind`
 - Default: Inferred from `kind`.
 
-Both signed and unsigned length domains emit `<length>`; percentage domains emit `<percentage>`.
+Both signed and unsigned length domains emit `<length>`, and percentage domains emit `<percentage>`.
 
 ## Returns
 
@@ -92,7 +92,7 @@ An opaque reference usable as a declaration value, in template expressions, and 
 
 ## Inline Assignments
 
-Pass `variables` to the generated style callable using the same computed keys as static declarations. Values are returned under `style` (or serialized for HTML output); no rules are generated. Explicit `style` overrides win on duplicate keys. Inputs remain unchanged.
+Pass `variables` to the generated style callable using the same computed keys as static declarations. Values are returned under `style` (or serialized for HTML output). No rules are generated. Explicit `style` overrides win on duplicate keys. Inputs remain unchanged.
 
 ```ts
 styles.label({ variables: { [variables.accent]: 'blue' } })
@@ -118,7 +118,7 @@ The `variables` property emits static custom-property declarations in authored o
 
 Declare variables in module-level constants or namespaces before use. References preserve their identities through aliases, imports, re-exports, and packed libraries. Factories and registration options are compiled without evaluating application code. Native bindings remain unsupported.
 
-This API replaces `Vars.define` and contract-level `.set(values)`. Recompile packed libraries using the new API; variable metadata uses contract version 14.
+This API replaces `Vars.define` and contract-level `.set(values)`. Recompile packed libraries using the new API. Variable metadata uses contract version 14.
 
 ## Errors
 

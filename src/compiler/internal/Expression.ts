@@ -6,7 +6,7 @@ import type * as Ast from '@oxc-project/types'
 import * as Binding from '../../internal/Binding.js'
 import * as Token from '../../internal/Token.js'
 
-/** Folds cooked template text and literal primitive substitutions; unresolved syntax returns undefined. */
+/** Folds cooked template text and literal primitive substitutions. Unresolved syntax returns undefined. */
 export function template(
   node: Ast.TemplateLiteral,
   depth = 0,

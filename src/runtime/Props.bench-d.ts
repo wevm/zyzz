@@ -5,13 +5,13 @@
 import { bench } from '@ark/attest'
 import type * as Runtime from 'zyzz/runtime'
 
-// Type-only imports keep the fixture free of runtime module loading; attest
+// Type-only imports keep the fixture free of runtime module loading. Attest
 // analyzes bench bodies without executing them.
 declare const Dynamic: typeof Runtime.Dynamic
 declare const Html: typeof Runtime.Html
 declare const Props: typeof Runtime.Props
 
-/** Warms override property checking; first-use costs are measured separately. */
+/** Warms override property checking. First-use costs are measured separately. */
 export function baseline() {
   Props.create({ className: 'base' })({ style: {} })
 }

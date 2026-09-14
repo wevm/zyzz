@@ -1,9 +1,9 @@
 # At-Rules
 
 > [!NOTE]
-> Grouping, font, named descriptor, page, and view-transition helpers are implemented. Statement helpers remain planned in the dependent PR; full conformance is tracked separately.
+> Grouping, font, named descriptor, page, and view-transition helpers are implemented. Statement helpers remain planned in the dependent PR. Full conformance is tracked separately.
 
-Stylesheet declarations use direct named imports from `zyzz/web`. Conditional and grouping rules remain native `@…` keys in valid style contexts. `global` owns global selectors and their grouping rules; descriptor and statement rules have dedicated functions.
+Stylesheet declarations use direct named imports from `zyzz/web`. Conditional and grouping rules remain native `@…` keys in valid style contexts. `global` owns global selectors and their grouping rules. Descriptor and statement rules have dedicated functions.
 
 ## Functions
 
@@ -16,7 +16,7 @@ Signatures below describe the accepted call shapes. Multi-field helpers receive 
 | `@container`           | `'@container …'` in style bodies                                         | Nested declarations or selectors                     |
 | `@counter-style`       | `counterStyle(descriptors, context?)`                                    | Typed counter-style reference                        |
 | `@custom-media`        | `customMedia(query)`                                                     | Typed query reference                                |
-| `@document`            | Explicit legacy grouping support; helper/context spelling to be designed | Conditional global rules                             |
+| `@document`            | Explicit legacy grouping support, helper/context spelling to be designed | Conditional global rules                             |
 | `@font-face`           | `fontFace(descriptors, context?)`                                        | Eager stylesheet effect                              |
 | `@font-feature-values` | `fontFeatureValues({ families, features }, context?)`                    | Font-family-associated stylesheet effect             |
 | `@font-palette-values` | `fontPaletteValues(descriptors, context?)`                               | Typed palette reference                              |
@@ -25,10 +25,10 @@ Signatures below describe the accepted call shapes. Multi-field helpers receive 
 | `@keyframes`           | `keyframes(frames, context?)`                                            | Typed animation reference                            |
 | `@layer`               | `layers(names)` and declared `'@layer …'` keys                           | Layer order and grouped rules                        |
 | `@media`               | `'@media …'` in style bodies                                             | Nested declarations or selectors                     |
-| `@namespace`           | `namespace({ prefix, uri })`; omit `prefix` for the default namespace    | Stylesheet namespace declaration                     |
-| `@page`                | `page({ descriptors, selector }, context?)`; `selector` is optional      | Eager page rule                                      |
+| `@namespace`           | `namespace({ prefix, uri })`. Omit `prefix` for the default namespace    | Stylesheet namespace declaration                     |
+| `@page`                | `page({ descriptors, selector }, context?)`. `selector` is optional      | Eager page rule                                      |
 | `@position-try`        | `positionTry(declarations, context?)`                                    | Typed fallback reference                             |
-| `@property`            | `property(definition)` or descriptors on `variable()`                    | Eager registration; `variable` references and `.set` |
+| `@property`            | `property(definition)` or descriptors on `variable()`                    | Eager registration, `variable` references and `.set` |
 | `@scope`               | `'@scope …'` in valid style/grouping bodies                              | Scoped rules                                         |
 | `@starting-style`      | `'@starting-style'` in valid style/grouping bodies                       | Starting declarations or selectors                   |
 | `@supports`            | `'@supports …'` in style bodies                                          | Nested declarations or selectors                     |
@@ -36,7 +36,7 @@ Signatures below describe the accepted call shapes. Multi-field helpers receive 
 
 The coverage inventory follows [MDN's at-rule reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules), including descriptors, nested page-margin rules, font-feature blocks, and statement/block forms. Experimental and legacy rules remain explicit inventory entries. Compiler support and browser availability are separate claims.
 
-Import options `layer`, `media`, and `supports` are optional; `url` is required. Font feature values require both `families` and `features`. Page rules require `descriptors`; `selector` is optional. Namespace declarations require `uri`; `prefix` is optional. Descriptor helpers and `keyframes` accept an optional trailing `context = {}` argument containing ordered `within` groups. Statement helpers and `layers` remain top-level.
+Import options `layer`, `media`, and `supports` are optional, and `url` is required. Font feature values require both `families` and `features`. Page rules require `descriptors`, and `selector` is optional. Namespace declarations require `uri`, and `prefix` is optional. Descriptor helpers and `keyframes` accept an optional trailing `context = {}` argument containing ordered `within` groups. Statement helpers and `layers` remain top-level.
 
 ## Declarations
 
@@ -81,7 +81,7 @@ page({ descriptors: { marginTop: '4cm' }, selector: ':first' })
 viewTransition({ navigation: 'auto' })
 ```
 
-Repeated calls preserve distinct rules and authored order. The optional page selector supports named pages and page pseudo-classes; omission targets all pages. Font feature values retain their special nested block grammar.
+Repeated calls preserve distinct rules and authored order. The optional page selector supports named pages and page pseudo-classes. Omission targets all pages. Font feature values retain their special nested block grammar.
 
 ## Named References
 
@@ -146,7 +146,7 @@ export namespace styles {
 }
 ```
 
-Scroll-state conditions require a separately configured query container; they query an eligible ancestor. Complete query grammar includes named, unnamed, combined, negated, size, style, and scroll-state forms.
+Scroll-state conditions require a separately configured query container. They query an eligible ancestor. Complete query grammar includes named, unnamed, combined, negated, size, style, and scroll-state forms.
 
 Keyframes also gain named timeline-range stops while preserving existing stops and authored order:
 
@@ -164,19 +164,19 @@ export const reveal = keyframes({
 These decisions precede implementation of the affected helper. They do not defer any rule out of the full-support goal.
 
 - **Contexts:** define one ordered mechanism for conditional/layered helper declarations, anonymous layers, nesting, repeated blocks, and legal rule placement. Keep descriptors in dedicated functions. Do not introduce an application-executing callback DSL or runtime registration.
-- **CSS functions:** specify parameters, defaults, return domains, local custom properties, permitted nested rules, and typed invocation. Calls create CSS expressions; the browser evaluates the CSS function.
+- **CSS functions:** specify parameters, defaults, return domains, local custom properties, permitted nested rules, and typed invocation. Calls create CSS expressions. The browser evaluates the CSS function.
 - **Query and profile references:** define how `customMedia` enters query keys and `colorProfile` enters `color()` without losing reference identity.
 - **External names:** define explicit names, counter fallback/extension references, font-feature aliases, named pages, and collisions across packages.
-- **Statements:** define import supports/layer/media options, anonymous import layers, relative asset ownership, and default namespace emission. Preserve namespace meaning across combined source modules; never hoist across a semantic boundary merely to produce valid syntax.
+- **Statements:** define import supports/layer/media options, anonymous import layers, relative asset ownership, and default namespace emission. Preserve namespace meaning across combined source modules. Never hoist across a semantic boundary merely to produce valid syntax.
 - **Encoding and legacy rules:** define the UTF-8 output/charset policy and explicit `@document` compatibility syntax. No ambient encoding or browser-dependent compiler behavior.
 
 ## Compilation and Evidence
 
-All helpers are static authoring operations. Calls compile away; no stylesheet generation, registration, or authoring validation is added to runtime `css`/`variants` applications. Use static types for authoring constraints and source diagnostics for extraction, ordering, identity, and unsupported target semantics.
+All helpers are static authoring operations. Calls compile away. No stylesheet generation, registration, or authoring validation is added to runtime `css`/`variants` applications. Use static types for authoring constraints and source diagnostics for extraction, ordering, identity, and unsupported target semantics.
 
 Eager effects survive JavaScript tree shaking. Named definitions follow reachability with exported and externally observable names handled explicitly. Preserve declaration and rule order, URL ownership, source maps, HMR replacement/deletion, and packed-library metadata.
 
-Full support requires independent type, extraction, emission, map, packaging, and applicable browser fixtures for every inventory entry. Track unavailable browser features explicitly; accepted strings or emitted snapshots cannot substitute for rendering evidence. Web-only operations retain explicit native-target diagnostics.
+Full support requires independent type, extraction, emission, map, packaging, and applicable browser fixtures for every inventory entry. Track unavailable browser features explicitly. Accepted strings or emitted snapshots cannot substitute for rendering evidence. Web-only operations retain explicit native-target diagnostics.
 
 ## Compilation Contexts
 
@@ -191,28 +191,28 @@ fontFace(
 
 Named helpers derive stable identities from the source module and constant binding. No name override is exposed initially. Exported identities retain their definitions across source and packed-library imports. Declaration helpers preserve authored descriptor order. Arrays preserve fallback order where the descriptor grammar permits fallbacks.
 
-Statement helpers emit at stylesheet scope. Imports precede namespaces and ordinary rules; charset is a UTF-8 output policy, never a nested contribution. Namespace declarations have stylesheet scope and require isolation from unrelated modules. Unsupported namespace combinations must fail compilation instead of changing selectors silently.
+Statement helpers emit at stylesheet scope. Imports precede namespaces and ordinary rules. Charset is a UTF-8 output policy, never a nested contribution. Namespace declarations have stylesheet scope and require isolation from unrelated modules. Unsupported namespace combinations must fail compilation instead of changing selectors silently.
 
-`namespace` prefixes accept CSS identifier spellings, including Unicode and escapes. Equivalent spellings share a binding, and the last declaration applies throughout its module. Omitting `prefix` creates a default namespace; an empty `uri` selects elements with no namespace. URI strings are identities and are never fetched as assets.
+`namespace` prefixes accept CSS identifier spellings, including Unicode and escapes. Equivalent spellings share a binding, and the last declaration applies throughout its module. Omitting `prefix` creates a default namespace. An empty `uri` selects elements with no namespace. URI strings are identities and are never fetched as assets.
 
-CSS functions use ordered parameter records with `name`, optional `syntax`, and optional `default` fields, an optional `returns` syntax, and a `body` containing `result`, local custom properties, and conditional groups. Custom media owns a query identity; profile identities belong inside CSS color expressions. These contracts remain planned until their corresponding implementation gates pass.
+CSS functions use ordered parameter records with `name`, optional `syntax`, and optional `default` fields, an optional `returns` syntax, and a `body` containing `result`, local custom properties, and conditional groups. Custom media owns a query identity. Profile identities belong inside CSS color expressions. These contracts remain planned until their corresponding implementation gates pass.
 
 ## Conformance Evidence
 
-`pnpm check:at-rules` verifies the pinned MDN inventory, supplementary modern rules, descriptor fingerprints, and referenced evidence files. `pnpm check:at-rules:full` requires all compiler obligations and executes type/integration evidence. Target compatibility and rendered evidence have separate gates; `check:at-rules:legacy-full` retains the previous combined requirement. Inventory coverage alone does not establish type, compiler, packaging, or browser support. Browser limitations remain explicit in the acceptance report.
+`pnpm check:at-rules` verifies the pinned MDN inventory, supplementary modern rules, descriptor fingerprints, and referenced evidence files. `pnpm check:at-rules:full` requires all compiler obligations and executes type/integration evidence. Target compatibility and rendered evidence have separate gates. `check:at-rules:legacy-full` retains the previous combined requirement. Inventory coverage alone does not establish type, compiler, packaging, or browser support. Browser limitations remain explicit in the acceptance report.
 
 > [!NOTE]
 > `colorProfile` is exported with descriptor validation and domain-specific references. Print-engine compatibility and rendering evidence are tracked separately.
 
 ## Output Encoding
 
-Generated stylesheet files use UTF-8 without a BOM or `@charset`. Source maps and packed sections remain Unicode text; imported CSS assets retain their authored bytes. Serve generated CSS with UTF-8 transport metadata. No nested charset helper or alternative output encoding is exposed.
+Generated stylesheet files use UTF-8 without a BOM or `@charset`. Source maps and packed sections remain Unicode text. Imported CSS assets retain their authored bytes. Serve generated CSS with UTF-8 transport metadata. No nested charset helper or alternative output encoding is exposed.
 
 `colorProfile` preserves `src`, `renderingIntent`, and comma-separated `components`, and links names inside `color(${profile} …)` across source and packed imports. WeasyPrint 70.0 verifies basic ICC painting. Relative profile colors and rendering-intent evidence remain open for rendering targets.
 
 ## Function Signatures
 
-`cssFunction` accepts single syntax components, `+`/`#` repetition, and `type(...)` alternatives. Scalar alternatives retain argument and result domains through packed libraries. List arguments use CSS text with compiler grammar validation; commas are enclosed in an argument block during source and runtime expression formatting. Repeated return types cannot flow into bounded shorthands. Comma-list results require a destination with explicit list metadata; custom properties accept unbounded output. Space-separated transform-function results are accepted by `transform`; custom properties retain arbitrary repeated domains.
+`cssFunction` accepts single syntax components, `+`/`#` repetition, and `type(...)` alternatives. Scalar alternatives retain argument and result domains through packed libraries. List arguments use CSS text with compiler grammar validation. Commas are enclosed in an argument block during source and runtime expression formatting. Repeated return types cannot flow into bounded shorthands. Comma-list results require a destination with explicit list metadata. Custom properties accept unbounded output. Space-separated transform-function results are accepted by `transform`. Custom properties retain arbitrary repeated domains.
 
 ```ts
 const size = cssFunction({
@@ -224,7 +224,7 @@ const size = cssFunction({
 })
 ```
 
-Unicode and escaped syntax identifiers, static list arguments, nested function references, defaults, and media/supports/container bodies are validated in source and packed contracts. Extended identifier signatures publish contract version 12. The new PDF fixture verifies named pages, first/left selectors, counters, and sixteen margin boxes against native CSS; WeasyPrint adds bleed geometry and printer-mark evidence. Complete fragmentation behavior remains open.
+Unicode and escaped syntax identifiers, static list arguments, nested function references, defaults, and media/supports/container bodies are validated in source and packed contracts. Extended identifier signatures publish contract version 12. The new PDF fixture verifies named pages, first/left selectors, counters, and sixteen margin boxes against native CSS. WeasyPrint adds bleed geometry and printer-mark evidence. Complete fragmentation behavior remains open.
 
 ## Native Registrations
 
@@ -242,6 +242,6 @@ property({
 property({ name: '--payload', syntax: '*', inherits: true })
 ```
 
-An optional `{ within: ['@layer defaults', '@media screen'] }` argument encloses the registration. Registration changes CSS computed-value behavior; it does not evaluate values in JavaScript. Compiler diagnostics reject invalid syntax, mismatched initial values, computational dependencies, and injected declarations.
+An optional `{ within: ['@layer defaults', '@media screen'] }` argument encloses the registration. Registration changes CSS computed-value behavior. It does not evaluate values in JavaScript. Compiler diagnostics reject invalid syntax, mismatched initial values, computational dependencies, and injected declarations.
 
 Page `bleed` accepts relative lengths and dimensional calculations. Page `size` accepts one or two lengths or calculations, as well as named paper sizes and orientation. Percentages and dimensionally incompatible calculations are rejected.

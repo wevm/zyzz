@@ -75,7 +75,7 @@ export declare namespace create {
 
 /**
  * Publishes one complete source edit by renaming a sibling temporary file.
- * Calls for the same path must be serialized; temporary files are not source modules.
+ * Calls for the same path must be serialized. Temporary files are not source modules.
  */
 export async function write(options: write.Options) {
   const temporary = `${options.path}.tmp`

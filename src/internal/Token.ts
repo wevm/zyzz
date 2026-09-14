@@ -181,7 +181,7 @@ export function variables<tree>(tree: tree): Variables<tree> {
   ) as Variables<tree>
 }
 
-/** Internal definition metadata; never enumerable consumer output. */
+/** Internal definition metadata, never enumerable consumer output. */
 export const definition = Symbol('zyzz.theme')
 
 /** Supported scalar token groups. */

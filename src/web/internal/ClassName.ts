@@ -35,7 +35,7 @@ export function create(options: create.Options): string {
   return `z-${condition ? `${condition[1]}-` : ''}${encode(label)}${suffix}`
 }
 
-/** Atomic naming inputs; context retains declaration ordering and module ownership. */
+/** Atomic naming inputs. Context retains declaration ordering and module ownership. */
 export declare namespace create {
   /** Serialized declaration and its optional stable slot identity. */
   type Options = {

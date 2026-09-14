@@ -4,7 +4,7 @@ import type * as Literal from './internal/Literal.js'
 import * as Identity from './internal/Identity.js'
 import * as Variable from './runtime/Variable.js'
 
-/** Declares a custom property. Omitting the domain accepts any string or number; typed options register CSS @property. */
+/** Declares a custom property. Omitting the domain accepts any string or number. Typed options register CSS @property. */
 export function variable(options: {
   readonly id: string
 }): variable.Reference<'*'>
@@ -56,10 +56,10 @@ export declare namespace variable {
     readonly inherits: boolean
     /** Computationally independent initial value emitted in @property. */
     readonly initialValue: Initial<kind>
-    /** Matching CSS syntax; inferred from the domain when omitted. */
+    /** Matching CSS syntax, inferred from the domain when omitted. */
     readonly syntax?: Syntax<kind> | undefined
   }
-  /** Opaque computed key and declaration reference; the untyped domain accepts any scalar. */
+  /** Opaque computed key and declaration reference. The untyped domain accepts any scalar. */
   type Reference<kind extends Binding.Domain = Binding.Domain> = string &
     Binding.Reference<kind> & {
       /** Produces one inline custom-property assignment without runtime value validation. */

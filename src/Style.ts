@@ -100,7 +100,7 @@ type Exact<
 
 const nesting = Symbol('zyzz.style.nesting')
 
-/** A typed declaration; order is significant for future cascade processing. */
+/** A typed declaration. Order is significant for future cascade processing. */
 export type Declaration = {
   /** Whether this declaration overrides normal declarations in the cascade. */
   readonly important?: boolean | undefined
@@ -158,7 +158,7 @@ export function define(
 
   const diagnostics: Diagnostic[] = []
   const output: NamedStyle[] = []
-  // One definition owns one theme; only validated references are reused within this call.
+  // One definition owns one theme. Only validated references are reused within this call.
   const references = new Map<
     keyof Literal.Properties,
     Map<string | number, Token.Reference>
@@ -473,7 +473,7 @@ export function define(
 
 /** Options for defining styles. */
 export declare namespace define {
-  /** Source locations are optional; pure in-memory callers need no source text. */
+  /** Source locations are optional. Pure in-memory callers need no source text. */
   type Options<tokens extends Theme.Tokens = never> = {
     /** Internal recursion budget, propagated only by structured authoring. */
     readonly [nesting]?: number | undefined
@@ -580,9 +580,9 @@ export type LiteralProperties = LiteralDeclarations & {
   readonly [key in Condition.Keys]?: LiteralProperties
 }
 
-/** Ordered nested blocks; an absent condition represents a declaration segment. */
+/** Ordered nested blocks. An absent condition represents a declaration segment. */
 export type Rule = {
-  /** Scoped selector or conditional at-rule; absent for a declaration segment. */
+  /** Scoped selector or conditional at-rule, absent for a declaration segment. */
   readonly condition?: string | undefined
   /** Immutable nested declarations and ordered child rules. */
   readonly style: NamedStyle

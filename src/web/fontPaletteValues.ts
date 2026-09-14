@@ -28,7 +28,7 @@ export function fontPaletteValues<
 }
 /** Descriptor and identity contracts. */
 export declare namespace fontPaletteValues {
-  /** Exact CSS descriptor input; declaration order is preserved. */
+  /** Exact CSS descriptor input. Declaration order is preserved. */
   type Options = {
     /** CSS basePalette descriptor. */
     readonly basePalette?: 'light' | 'dark' | number | undefined

@@ -6,7 +6,7 @@ import * as Props from '../runtime/Props.js'
 import * as Style from '../Style.js'
 import type * as Theme from '../Theme.js'
 
-/** Private ownership used by uncompiled composition; never spread onto DOM props. */
+/** Private ownership used by uncompiled composition. Never spread onto DOM props. */
 export const metadata = Symbol.for('zyzz.authoring')
 
 /** Identity and replaceable attribute/slot ownership for an applied definition. */

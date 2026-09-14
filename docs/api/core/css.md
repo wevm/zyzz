@@ -15,7 +15,7 @@ const props = styles.card({ style: { padding: '2rem' } })
 
 `css()`, `css(style)`, or `css((values: { /* required scalar fields */ }) => style)`
 
-The callback overload requires an explicit finite object type and a concise static object body. It returns `css.Dynamic<values>`. Applying that callable requires every declared input and accepts optional `className`, `style`, and `variables` overrides, returning `css.Props`. The compiler emits fixed private custom properties; applications assign their values without generating rules. Private properties cannot be overridden through `style`. Empty strings remain explicit empty custom-property values.
+The callback overload requires an explicit finite object type and a concise static object body. It returns `css.Dynamic<values>`. Applying that callable requires every declared input and accepts optional `className`, `style`, and `variables` overrides, returning `css.Props`. The compiler emits fixed private custom properties. Applications assign their values without generating rules. Private properties cannot be overridden through `style`. Empty strings remain explicit empty custom-property values.
 
 ```ts
 const progress = css((values: { amount: `${number}%` }) => ({
@@ -68,7 +68,7 @@ styles.card({ style: { padding: '2rem' } })
 - Type: `Readonly<Record<\`--${string}\`, string | number | undefined>>`
 - Default: `undefined`
 
-Inline custom-property assignments keyed by variable references. These merge into returned styles before explicit `style` overrides; private callback bindings remain authoritative. Input objects are not mutated. Computed keys cannot enforce individual variable domains in TypeScript.
+Inline custom-property assignments keyed by variable references. These merge into returned styles before explicit `style` overrides. Private callback bindings remain authoritative. Input objects are not mutated. Computed keys cannot enforce individual variable domains in TypeScript.
 
 ```ts
 styles.label({ variables: { [variables.accent]: 'blue' } })
@@ -80,7 +80,7 @@ The returned callable produces `css.Props` when applied. `className` and `style`
 
 ### Callable
 
-- Type: `css.ReturnType` for literal objects; `css.Dynamic<values>` for callbacks
+- Type: `css.ReturnType` for literal objects, or `css.Dynamic<values>` for callbacks
 
 Callable producing styling props. Static no-argument applications may fold to constants.
 
@@ -110,7 +110,7 @@ props.style
 
 ## Errors
 
-Untransformed calls throw an error whose `name` is `css.MissingTransformError`. This is a diagnostic name, not a constructor exported on `css`; it cannot be referenced as `css.MissingTransformError` for `instanceof`. Invalid source definitions produce source diagnostics; application inputs are checked by TypeScript without runtime validation.
+Untransformed calls throw an error whose `name` is `css.MissingTransformError`. This is a diagnostic name, not a constructor exported on `css`. It cannot be referenced as `css.MissingTransformError` for `instanceof`. Invalid source definitions produce source diagnostics. Application inputs are checked by TypeScript without runtime validation.
 
 ## Dynamic Values
 
@@ -125,7 +125,7 @@ const bar = css((values: { amount: `${number}%`; alpha: number }) => ({
 bar({ amount: '50%', alpha: 0.8 })
 ```
 
-All declared inputs are required and consumed. `className`, `style`, and `variables` remain styling overrides; unrelated keys are rejected by types, and generated private assignments take precedence over overrides. Callbacks never execute in generated application code.
+All declared inputs are required and consumed. `className`, `style`, and `variables` remain styling overrides. Unrelated keys are rejected by types, and generated private assignments take precedence over overrides. Callbacks never execute in generated application code.
 
 The source boundary accepts inline finite scalar object types, module-local type aliases, interfaces, and compatible object intersections. Optional fields, imported or generic types, arbitrary calls, dynamic fallback entries, and dynamic rule structure are unsupported. Fixed nested conditions can contain dynamic values. Native bindings remain separate work.
 
@@ -147,11 +147,11 @@ const panel = theme.css({
 })
 ```
 
-Threshold aliases support `>=tablet`, `<desktop`, and `tablet..desktop` (inclusive lower/exclusive upper). Named container aliases use `@container sidebar >=card` with declared `containerNames`. Raw named container queries remain available. Applications establish containment with standard `containerType`/`containerName` declarations. Thresholds resolve during compilation; changing a runtime scope cannot change them.
+Threshold aliases support `>=tablet`, `<desktop`, and `tablet..desktop` (inclusive lower/exclusive upper). Named container aliases use `@container sidebar >=card` with declared `containerNames`. Raw named container queries remain available. Applications establish containment with standard `containerType`/`containerName` declarations. Thresholds resolve during compilation. Changing a runtime scope cannot change them.
 
 Use explicit selectors for application-owned data/ARIA states and ancestor/sibling relationships. `selectors` objects interpolate other `css` definitions. Core `Style.define` and global declarations reject relationship keys.
 
-Dynamic private values cannot contain CSS-wide keywords (`initial`, `inherit`, `unset`, `revert`, or `revert-layer`), because those keywords would apply to the custom property itself. Numeric zero can accompany string dimension domains. Template substitutions inside quoted CSS strings are rejected; pass the complete quoted scalar as a slot value when authoring dynamic content.
+Dynamic private values cannot contain CSS-wide keywords (`initial`, `inherit`, `unset`, `revert`, or `revert-layer`), because those keywords would apply to the custom property itself. Numeric zero can accompany string dimension domains. Template substitutions inside quoted CSS strings are rejected. Pass the complete quoted scalar as a slot value when authoring dynamic content.
 
 ### selectors
 

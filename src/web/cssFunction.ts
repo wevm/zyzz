@@ -63,7 +63,7 @@ export declare namespace cssFunction {
   type Parameter = {
     /** Parameter custom-property name. */
     readonly name: `--${string}`
-    /** CSS parameter syntax; omitted accepts arbitrary CSS tokens. */
+    /** CSS parameter syntax. Omitted accepts arbitrary CSS tokens. */
     readonly syntax?: Syntax | undefined
     /** Static CSS default, evaluated by the browser. */
     readonly default?: string | number | undefined
@@ -74,7 +74,7 @@ export declare namespace cssFunction {
     readonly body: Body
     /** Ordered parameter declarations. */
     readonly parameters: readonly Parameter[]
-    /** CSS return syntax; omitted accepts arbitrary CSS tokens. */
+    /** CSS return syntax. Omitted accepts arbitrary CSS tokens. */
     readonly returns?: Syntax | undefined
   }
   /** Exact allowed declarations and nested conditions. */
@@ -89,7 +89,7 @@ export declare namespace cssFunction {
       | `@supports ${string}`
       | `@container ${string}`]: Body
   }
-  /** Callable CSS expression; JavaScript never evaluates the CSS function body. */
+  /** Callable CSS expression. JavaScript never evaluates the CSS function body. */
   type Reference<
     parameters extends readonly Parameter[] = readonly Parameter[],
     syntax extends Syntax = '*',

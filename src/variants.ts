@@ -189,7 +189,7 @@ export declare namespace variants {
     options?: css.DefinitionOptions,
   ) => ReturnType<definition, output>
 
-  /** Callable selection; omitted values use defaults and null suppresses them. */
+  /** Callable selection. Omitted values use defaults and null suppresses them. */
   type ReturnType<definition, output extends css.Output = 'react'> = <
     const input extends Input<definition> = Input<definition>,
   >(

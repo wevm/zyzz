@@ -7,7 +7,7 @@ import * as Props from './Props.js'
 export type Definition = {
   /** Ordered axis names and their finite choices. */
   readonly axes: Readonly<Record<string, readonly string[]>>
-  /** Ordered named conditions; only CSS evaluates their queries. */
+  /** Ordered named conditions. Only CSS evaluates their queries. */
   readonly conditions?: readonly string[] | undefined
   /** Normalized default selections. */
   readonly defaults: Readonly<Record<string, string | null>>
@@ -31,7 +31,7 @@ export type Payload = {
 
 /**
  * Binds an unconditional recipe class to selection attributes and styling overrides.
- * Type checking and compilation validate authoring; this path only selects data.
+ * Type checking and compilation validate authoring. This path only selects data.
  * @param options - Precompiled classes, defaults, axes, and renderer output.
  * @returns A selection callable producing fresh props without retaining inputs.
  */

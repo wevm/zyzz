@@ -8,13 +8,13 @@ import type * as Style from '../../Style.js'
 import type * as Theme from '../../Theme.js'
 import * as Token from '../../internal/Token.js'
 
-/** Portable composition inputs; selection behavior remains in the compiled callable. */
+/** Portable composition inputs. Selection behavior remains in the compiled callable. */
 export type Definition = {
   /** Exact published classes replaced by a composition. Filled by graph emission. */
   readonly className?: string | undefined
   /** Attributes owned by the callable, including conditional selections. */
   readonly attributes: readonly string[]
-  /** Native HTML output; React props are the default. */
+  /** Native HTML output. React props are the default. */
   readonly output?: 'html' | undefined
   /** Private dynamic custom properties owned by the callable. */
   readonly slots: readonly string[]

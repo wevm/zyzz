@@ -245,7 +245,7 @@ function read(directory: string) {
         measurements.set(key, {
           error: benchmark.rme,
           unit: 'ms',
-          // Tinybench means are already milliseconds; the summary only rounds them.
+          // Tinybench means are already milliseconds. The summary only rounds them.
           value: benchmark.mean,
         })
       }

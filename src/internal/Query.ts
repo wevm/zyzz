@@ -27,7 +27,7 @@ export function threshold(value: unknown): value is string {
   )
 }
 
-/** Resolves exact named width comparisons and ranges; raw conditions pass through. */
+/** Resolves exact named width comparisons and ranges. Raw conditions pass through. */
 export function resolve(key: string, metadata: Metadata): string {
   const match = /^@(media|container)[ \t\n\r\f]+([\s\S]+)$/.exec(
     key.replace(/\/\*[^]*?\*\//g, ' '),

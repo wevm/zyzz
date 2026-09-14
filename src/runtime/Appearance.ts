@@ -3,7 +3,7 @@ import type * as Config from '../Config.js'
 
 /**
  * Binds an HTML-safe script factory to compiled named theme classes.
- * The factory is server-safe; only its returned JavaScript accesses the DOM.
+ * The factory is server-safe. Only its returned JavaScript accesses the DOM.
  * @param entries - Catalog names paired with compiled scope classes.
  * @returns A pure script factory that never reads or writes browser state itself.
  */

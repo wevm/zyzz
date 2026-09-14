@@ -1,7 +1,7 @@
 # zyzz/react-native
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> Preview API, not yet implemented.
 
 Compile shared definitions into native tables and select themes and schemes.
 

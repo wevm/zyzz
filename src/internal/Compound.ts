@@ -90,7 +90,7 @@ type Variant =
       | 'historical-forms'
     >
 
-/** Property-specific compound value shapes; function arguments remain CSS text. */
+/** Property-specific compound value shapes. Function arguments remain CSS text. */
 export type Properties = {
   readonly alignTracks: List<
     Exclude<Literal.Properties['alignContent'], undefined>

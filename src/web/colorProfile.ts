@@ -26,7 +26,7 @@ export function colorProfile<
 }
 /** Descriptor and identity contracts. */
 export declare namespace colorProfile {
-  /** Exact CSS descriptor input; declaration order is preserved. */
+  /** Exact CSS descriptor input. Declaration order is preserved. */
   type Options = {
     /** Ordered, comma-separated component names for relative colors. */
     readonly components?: string | undefined

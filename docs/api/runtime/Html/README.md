@@ -19,7 +19,7 @@ const attributes = Html.from({ className: 'z-card', style: { color: 'red' } })
 
 ### props
 
-Type: applied `css.Props` with optional owned `data-*` attributes. Required. CSS values retain explicit units; custom-property names remain unchanged.
+Type: applied `css.Props` with optional owned `data-*` attributes. Required. CSS values retain explicit units. Custom-property names remain unchanged.
 
 ```ts
 Html.from({ className: 'z-card', 'data-state': 'open' })
@@ -35,7 +35,7 @@ Html.from({ className: 'z-card' }).class // 'z-card'
 
 ### style
 
-Returned type: `string | undefined`. Serialized declarations, present when input style exists. Values are unescaped attribute data; use the renderer or `serialize` for HTML escaping.
+Returned type: `string | undefined`. Serialized declarations, present when input style exists. Values are unescaped attribute data. Use the renderer or `serialize` for HTML escaping.
 
 ```ts
 Html.from({ className: 'z-card', style: { color: 'red' } }).style // 'color:red'

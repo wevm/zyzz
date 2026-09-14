@@ -1,4 +1,4 @@
-/** Opt-in Tailwind scales and Geist font stacks; no font loading or global registration. @module */
+/** Opt-in Tailwind scales and Geist font stacks, with no font loading or global registration. @module */
 import { Theme } from 'zyzz'
 
 /** Raw bundled values, independent of portable references. */
@@ -430,7 +430,7 @@ export const tokens = {
 } as const
 
 /** Bundled theme with light/dark foreground and surface colors. */
-// Generated from tokens by scripts/default-theme.ts; edit tokens and regenerate.
+// Generated from tokens by scripts/default-theme.ts. Edit tokens and regenerate.
 export const theme = Theme.define({
   breakpoints: {
     sm: '40rem',

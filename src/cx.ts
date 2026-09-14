@@ -6,7 +6,7 @@ import * as Identity from './internal/Identity.js'
 
 /**
  * Combines applied styles in argument order, preserving CSS importance and conditions.
- * Static applications fold to props; runtime applications select precompiled presence groups and merge bindings.
+ * Static applications fold to props. Runtime applications select precompiled presence groups and merge bindings.
  * @param entries - Applied styling props or omitted conditional entries.
  * @returns One spreadable props object.
  */

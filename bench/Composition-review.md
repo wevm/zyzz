@@ -148,4 +148,3 @@ The full run reported +27.32% and +37.31% compilation time for the two small HTM
 | small/html/conditional/direct | 1.290 ±4.42% (n=194) | 1.355 ±5.13% (n=185) | +5.03%         |
 
 Reproduce the confirmation with `--testNamePattern "small/html/(static/bound|conditional/direct)" --outputJson bench/results/composition-confirm.json`. These short compilation cases vary between runs. The confirmation is additional evidence, not a replacement baseline or a changed acceptance threshold.
-

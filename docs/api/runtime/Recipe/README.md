@@ -31,15 +31,15 @@ Type: `string`. Required complete generated class list, such as `'button'`.
 
 ### options.defaults
 
-Type: `Readonly<Record<string, string | null>>`. Required default selections; `{}` means no defaults. Missing and undefined input choices use these defaults; `null` suppresses an axis.
+Type: `Readonly<Record<string, string | null>>`. Required default selections. `{}` means no defaults. Missing and undefined input choices use these defaults. `null` suppresses an axis.
 
 ### options.html
 
-Type: `boolean | undefined`. Optional; omitted or `false` returns React-shaped props. `{ html: true }` returns native HTML attributes.
+Type: `boolean | undefined`. Optional. Omitted or `false` returns React-shaped props. `{ html: true }` returns native HTML attributes.
 
 ### Returned callable
 
-Signature: `(input?: Record<string, unknown> & css.Options) => css.Props | Html.Attributes`. Input defaults to `{}`. Own axis properties select compiled choices; styling overrides follow [`Props.create`](../Props/README.md).
+Signature: `(input?: Record<string, unknown> & css.Options) => css.Props | Html.Attributes`. Input defaults to `{}`. Own axis properties select compiled choices. Styling overrides follow [`Props.create`](../Props/README.md).
 
 #### className / class
 
@@ -55,7 +55,7 @@ Type: `css.Props['style'] | string | undefined`. Supplied overrides remain an ob
 
 ### Effects and errors
 
-Initialization records the fixed axis list. Calls allocate fresh props without retaining inputs, generating CSS, or executing authoring code. Compilation and TypeScript enforce valid selections; the serializer performs no runtime validation and introduces no dedicated error class.
+Initialization records the fixed axis list. Calls allocate fresh props without retaining inputs, generating CSS, or executing authoring code. Compilation and TypeScript enforce valid selections. The serializer performs no runtime validation and introduces no dedicated error class.
 
 ## Definition
 
@@ -63,4 +63,4 @@ Initialization records the fixed axis list. Calls allocate fresh props without r
 
 ## Payload
 
-`axis: string` identifies the owning axis; `choice: string` names its dynamic choice. ``slots: readonly Record<string, `--${string}`>[]`` maps input fields to fixed private variables: base slots first, then slots for each condition in declaration order.
+`axis: string` identifies the owning axis, and `choice: string` names its dynamic choice. ``slots: readonly Record<string, `--${string}`>[]`` maps input fields to fixed private variables: base slots first, then slots for each condition in declaration order.

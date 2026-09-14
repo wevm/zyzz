@@ -11,6 +11,6 @@ export type Group =
 export type Options = {
   /** Explicit identity for named declarations without source rewriting. */
   readonly id?: string | undefined
-  /** Enclosing groups; omitted means stylesheet scope. */
+  /** Enclosing groups. Omitted means stylesheet scope. */
   readonly within?: readonly Group[] | undefined
 }

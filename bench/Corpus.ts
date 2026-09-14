@@ -33,7 +33,7 @@ export const cases = [
   { count: 60, name: 'components', pattern: 'components' },
 ] as const satisfies readonly Case[]
 
-/** Creates literal data; fixed integer mixing avoids clocks and random globals. */
+/** Creates literal data. Fixed integer mixing avoids clocks and random globals. */
 export function styles(workload: Case): readonly Style.LiteralDeclarations[] {
   return Array.from({ length: workload.count }, (_, index) => {
     const value = Math.imul(index + 1, 2654435761) >>> 0

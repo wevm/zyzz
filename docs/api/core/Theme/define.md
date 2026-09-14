@@ -35,7 +35,7 @@ Theme.define({ spacing: { md: '1rem' } })
 - Type: `Theme.Tokens["backgroundColor"]`
 - Default: `undefined`
 
-Background color palette. Leaves use the supported literal grammar; nested palettes infer dotted paths. Color pairs require both schemes.
+Background color palette. Leaves use the supported literal grammar. Nested palettes infer dotted paths. Color pairs require both schemes.
 
 ```ts
 Theme.define({ backgroundColor: { brand: '#06c' } })
@@ -46,7 +46,7 @@ Theme.define({ backgroundColor: { brand: '#06c' } })
 - Type: `Theme.Tokens["borderColor"]`
 - Default: `undefined`
 
-Border color palette for whole borders and physical/logical sides, preferred over shared colors. Leaves use the supported literal grammar; nested palettes infer dotted paths. Color pairs require both schemes.
+Border color palette for whole borders and physical/logical sides, preferred over shared colors. Leaves use the supported literal grammar. Nested palettes infer dotted paths. Color pairs require both schemes.
 
 ```ts
 Theme.define({ borderColor: { subtle: '#eee' } })
@@ -57,7 +57,7 @@ Theme.define({ borderColor: { subtle: '#eee' } })
 - Type: `Theme.Tokens["borderRadius"]`
 - Default: `undefined`
 
-Border radius palette for whole borders and physical/logical corners. Leaves are nonnegative literal lengths, percentages, or zero; nested palettes infer dotted paths. Light/dark pairs are unsupported.
+Border radius palette for whole borders and physical/logical corners. Leaves are nonnegative literal lengths, percentages, or zero. Nested palettes infer dotted paths. Light/dark pairs are unsupported.
 
 ```ts
 Theme.define({ borderRadius: { rounded: '0.5rem' } })
@@ -68,7 +68,7 @@ Theme.define({ borderRadius: { rounded: '0.5rem' } })
 - Type: `Theme.Tokens["color"]`
 - Default: `undefined`
 
-Shared color palette for text, backgrounds, borders, and outlines. Leaves use the supported literal grammar; nested palettes infer dotted paths. Color pairs require both schemes.
+Shared color palette for text, backgrounds, borders, and outlines. Leaves use the supported literal grammar. Nested palettes infer dotted paths. Color pairs require both schemes.
 
 ```ts
 Theme.define({ color: { text: { dark: '#eee', light: '#111' } } })
@@ -79,7 +79,7 @@ Theme.define({ color: { text: { dark: '#eee', light: '#111' } } })
 - Type: `Theme.Tokens["spacing"]`
 - Default: `undefined`
 
-Spacing and sizing palette. Leaves are nonnegative literal lengths or zero; nested palettes infer dotted paths. Light/dark pairs are unsupported.
+Spacing and sizing palette. Leaves are nonnegative literal lengths or zero. Nested palettes infer dotted paths. Light/dark pairs are unsupported.
 
 ```ts
 Theme.define({ spacing: { md: '1rem' } })
@@ -90,7 +90,7 @@ Theme.define({ spacing: { md: '1rem' } })
 - Type: `Theme.Tokens["textColor"]`
 - Default: `undefined`
 
-Text color palette. Leaves use the supported literal grammar; nested palettes infer dotted paths. Color pairs require both schemes.
+Text color palette. Leaves use the supported literal grammar. Nested palettes infer dotted paths. Color pairs require both schemes.
 
 ```ts
 Theme.define({ textColor: { muted: '#666' } })
@@ -101,7 +101,7 @@ Theme.define({ textColor: { muted: '#666' } })
 - Type: `Theme.Tokens["breakpoints"]`
 - Default: `undefined`
 
-Named nonnegative fixed length thresholds for media width queries; metadata is not emitted as custom properties.
+Named nonnegative fixed length thresholds for media width queries. Metadata is not emitted as custom properties.
 
 ```ts
 Theme.define({ breakpoints: { tablet: '48rem' } })
@@ -112,7 +112,7 @@ Theme.define({ breakpoints: { tablet: '48rem' } })
 - Type: `Theme.Tokens["containers"]`
 - Default: `undefined`
 
-Named nonnegative fixed length thresholds for container width queries; metadata is separate from declaration tokens.
+Named nonnegative fixed length thresholds for container width queries. Metadata is separate from declaration tokens.
 
 ```ts
 Theme.define({ containers: { card: '24rem' } })
@@ -145,7 +145,7 @@ Theme.define({ fontFamily: { body: 'system-ui, sans-serif' } })
 - Type: `Theme.Tokens["fontSize"]`
 - Default: `undefined`
 
-Scalar font-size palettes; values retain their property domain and do not accept scheme pairs.
+Scalar font-size palettes. Values retain their property domain and do not accept scheme pairs.
 
 ```ts
 Theme.define({ fontSize: { body: '1rem' } })
@@ -226,7 +226,7 @@ const scope = theme.className
 
 - Type: `Theme.Css<tokens>`
 
-Bound callable authoring with inferred token names. Same-module source compilation is supported; untransformed execution throws an error named `css.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
+Bound callable authoring with inferred token names. Same-module source compilation is supported. Untransformed execution throws an error named `css.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
 
 ```ts
 namespace styles {

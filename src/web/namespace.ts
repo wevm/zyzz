@@ -11,7 +11,7 @@ export function namespace<const options extends namespace.Options>(
 export declare namespace namespace {
   /** Namespace URI and optional authored selector prefix. */
   type Options = {
-    /** CSS identifier spelling, including Unicode and escapes; omitted creates a default namespace. */
+    /** CSS identifier spelling, including Unicode and escapes. Omitted creates a default namespace. */
     readonly prefix?: string | undefined
     /** Namespace URI, never an asset to fetch or relocate. */
     readonly uri: string

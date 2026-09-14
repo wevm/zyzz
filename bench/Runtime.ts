@@ -286,7 +286,7 @@ export async function create(options: create.Options): Promise<Bundle> {
           Path.join(fixture.directory, 'panda.ts'),
           `import { css } from './styled-system/css'; ${application(literals.map((style) => `({className:css(${JSON.stringify(style)})})`))}`,
         )
-        // The compiler adapter re-exports classes; expose the application through it.
+        // The compiler adapter re-exports classes, so expose the application through it.
         await Fs.appendFile(
           Path.join(fixture.directory, 'panda.ts'),
           '\nexport const classes = apply;',
@@ -323,7 +323,7 @@ export async function create(options: create.Options): Promise<Bundle> {
       }
     })()
 
-    // Only compiled, bundled fixture code executes; authoring remains build-time.
+    // Only compiled, bundled fixture code executes. Authoring remains build-time.
     const exports = Vm.runInThisContext(
       `(() => {${compiled.javascript}; return fixture;})()`,
     ) as Pick<Bundle, 'apply'>

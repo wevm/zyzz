@@ -26,7 +26,7 @@ if (!('createProgram' in compiler)) {
 // Snapshot updates are formatted by the repository formatter, not Prettier.
 process.env.ATTEST_shouldFormat ??= 'false'
 
-// Attest reads its own flags from argv, such as --update and --filter; the
+// Attest reads its own flags from argv, such as --update and --filter. The
 // repeatable --fixture flag selects fixture paths by substring.
 const selections = process.argv.flatMap((argument, index) =>
   argument === '--fixture' && process.argv[index + 1] !== undefined

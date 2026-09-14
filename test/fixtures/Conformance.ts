@@ -21,7 +21,7 @@ export function cases(): readonly Case[] {
   const output: Case[] = []
   const grammar = lexer()
   const require = Module.createRequire(import.meta.url)
-  // CSS Tree exposes units at runtime; its declaration file omits this field.
+  // CSS Tree exposes units at runtime. Its declaration file omits this field.
   const upstream = CssTree.lexer as CssTree.Lexer & {
     units: Record<string, readonly string[]>
   }
@@ -43,7 +43,7 @@ export function cases(): readonly Case[] {
       'unset',
     ]
 
-    // Positive scalar probes distinguish dimensional domains; range semantics have separate fixtures.
+    // Positive scalar probes distinguish dimensional domains. Range semantics have separate fixtures.
     for (const value of [1, '1px', '1%', '1deg', '1s', '1dppx'])
       if (!grammar.matchProperty(name(property), String(value)).error)
         values.push(value)
@@ -429,7 +429,7 @@ export function lexer() {
     properties: Object.fromEntries(
       Object.entries(properties).map(([name, entry]) => [
         name,
-        // SVG 2 places the range after the production; normalize its grammar notation.
+        // SVG 2 places the range after the production, so normalize its grammar notation.
         name === 'path-length'
           ? 'none | <length [0,∞]>'
           : name === 'text-combine-upright'
@@ -441,7 +441,7 @@ export function lexer() {
       ...Object.fromEntries(
         Object.entries(syntaxes).map(([name, entry]) => [name, entry.syntax]),
       ),
-      // Missing from pinned MDN syntaxes; CSS Linked Parameters §2.1 defines this production.
+      // Missing from pinned MDN syntaxes. CSS Linked Parameters §2.1 defines this production.
       // https://www.w3.org/TR/2026/FPWD-css-link-params-1-20260819/#link-parameters
       ...(!syntaxes['param()']
         ? { 'param()': 'param( <dashed-ident> , <declaration-value>? )' }

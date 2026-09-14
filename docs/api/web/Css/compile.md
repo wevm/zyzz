@@ -21,7 +21,7 @@ const output = Css.compile({ styles })
 - Type: `'atomic' | 'grouped'`
 - Default: `'atomic'`
 
-Atomic output assigns classes to individual properties, retaining ordered same-property fallbacks. Grouped output retains each style's declarations in one scoped block. Both preserve selectors and stylesheet contributions; consume the returned class map with its matching CSS.
+Atomic output assigns classes to individual properties, retaining ordered same-property fallbacks. Grouped output retains each style's declarations in one scoped block. Both preserve selectors and stylesheet contributions. Consume the returned class map with its matching CSS.
 
 ```ts
 Css.compile({ cssOutput: 'grouped', styles })
@@ -32,7 +32,7 @@ Css.compile({ cssOutput: 'grouped', styles })
 - Type: `'independent' | 'ordered'`
 - Default: `'ordered'`
 
-Independent mode deduplicates complete applications whose composition is already resolved. CSS property/value validity relies on static authoring; emission preserves values without a CSS validator. Selector and at-rule grammar checks belong to the source compiler; direct in-memory emission does not parse CSS grammar.
+Independent mode deduplicates complete applications whose composition is already resolved. CSS property/value validity relies on static authoring. Emission preserves values without a CSS validator. Selector and at-rule grammar checks belong to the source compiler. Direct in-memory emission does not parse CSS grammar.
 
 Independent class lists must not be composed with each other.
 
@@ -126,7 +126,7 @@ output.css
 
 - Type: `string | undefined` for each field.
 
-Present when contributions emit nonempty CSS. `contributionCss` contains eager stylesheet rules and `scopedCss` contains ordinary theme scopes and style rules. Load `contributionCss` before `scopedCss` and before other stylesheets that establish cascade layers. Replace both artifacts together when rebuilding. `css` already combines both in that order; consumers using `css` should not also load the split fields.
+Present when contributions emit nonempty CSS. `contributionCss` contains eager stylesheet rules and `scopedCss` contains ordinary theme scopes and style rules. Load `contributionCss` before `scopedCss` and before other stylesheets that establish cascade layers. Replace both artifacts together when rebuilding. `css` already combines both in that order. Consumers using `css` should not also load the split fields.
 
 ```ts
 const shared = output.contributionCss
@@ -149,7 +149,7 @@ output.themes
 
 `Css.CompileError` aggregates invalid names, theme graphs, or identity collisions without returning partial CSS.
 
-CSS property/value validity relies on static authoring; emission preserves values without a CSS validator. Selector and at-rule grammar checks belong to the source compiler; direct in-memory emission does not parse CSS grammar.
+CSS property/value validity relies on static authoring. Emission preserves values without a CSS validator. Selector and at-rule grammar checks belong to the source compiler. Direct in-memory emission does not parse CSS grammar.
 
 Independent class lists must not be composed with each other. Distribute class maps and matching CSS together. Types live under `Css.compile.Options`, `ReturnType`, and `ErrorType`.
 

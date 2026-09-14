@@ -28,7 +28,7 @@ export const named = zyzz.css({scrollPaddingBlockStart:'offset!'})();
 export const smooth = css({scrollBehavior:'smooth'})();
 `
 
-/** Complete property vocabulary; declaration order deliberately exercises overlap. */
+/** Complete property vocabulary. Declaration order deliberately exercises overlap. */
 export const styles = {
   behavior: {
     scrollBehavior: 'smooth',

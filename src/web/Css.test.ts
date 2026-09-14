@@ -796,7 +796,7 @@ describe('compile', () => {
   test('compiler diagnostics reject duplicate style names without emitting CSS', () => {
     const valid = Style.define({ card: { padding: 0 } })
 
-    // A source adapter can supply ordered data directly; invalid literal data still fails.
+    // A source adapter can supply ordered data directly. Invalid literal data still fails.
     const styles: Style.Definition = {
       styles: [
         ...valid.styles,

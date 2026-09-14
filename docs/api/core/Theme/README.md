@@ -1,6 +1,6 @@
 # Theme
 
-Immutable scalar tokens and compatible extensions. Optional `margin` and `padding` scales override `spacing` for their corresponding physical and logical properties; margin permits signed lengths, while padding is nonnegative. See [Theme.define](define.md#tokensmargin).
+Immutable scalar tokens and compatible extensions. Optional `margin` and `padding` scales override `spacing` for their corresponding physical and logical properties. Margin permits signed lengths, while padding is nonnegative. See [Theme.define](define.md#tokensmargin).
 
 ```ts
 import { Theme } from 'zyzz'
@@ -32,10 +32,10 @@ Variable paths must appear inside compiled declarations. Standalone variable des
 
 ## Types and Errors
 
-`Color`, `Css`, `Definition`, `Overrides`, `Palette`, `Reference`, `References`, `Tokens`; `InvalidError`.
+Types: `Color`, `Css`, `Definition`, `Overrides`, `Palette`, `Reference`, `References`, `Tokens`. Errors: `InvalidError`.
 
 See the [public declarations](../../../../src/Theme.ts) for complete generic signatures and documented type properties.
 
 ## Typography and queries
 
-Scalar `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight` groups retain property-specific inference and inherited variables. `breakpoints`, `containers`, and `containerNames` are separate compile-time metadata; they never become declaration variables. See the opt-in [default theme](../../themes/default.md).
+Scalar `fontFamily`, `fontSize`, `fontWeight`, `letterSpacing`, and `lineHeight` groups retain property-specific inference and inherited variables. `breakpoints`, `containers`, and `containerNames` are separate compile-time metadata. They never become declaration variables. See the opt-in [default theme](../../themes/default.md).

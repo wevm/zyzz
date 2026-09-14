@@ -23,7 +23,7 @@ try {
 
 ## Parameters
 
-No parameters; call on a runtime from `Host.create`.
+No parameters. Call on a runtime from `Host.create`.
 
 ## Returns
 
@@ -51,7 +51,7 @@ result.files
 
 ## Errors
 
-The host links source modules together. A source edit recompiles the graph so theme changes reach every consumer; an unchanged graph reuses its compiled output. Missing or invalid dependencies preserve the last successful artifacts.
+The host links source modules together. A source edit recompiles the graph so theme changes reach every consumer. An unchanged graph reuses its compiled output. Missing or invalid dependencies preserve the last successful artifacts.
 
 Build or filesystem failures reject. Failed compilation preserves the previous successful output.
 

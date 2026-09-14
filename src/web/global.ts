@@ -3,7 +3,7 @@ import type * as Condition from '../internal/Condition.js'
 import type * as Literal from '../internal/Literal.js'
 import type * as Style from '../Style.js'
 
-/** Compiles module-level selector declarations; never registers runtime CSS. */
+/** Compiles module-level selector declarations. Never registers runtime CSS. */
 export function global<const styles extends Record<string, unknown>>(
   styles: styles & NoInfer<global.Body<styles>>,
 ): void {
@@ -13,7 +13,7 @@ export function global<const styles extends Record<string, unknown>>(
 
 /** Global selector and grouping contracts. */
 export declare namespace global {
-  /** Selectors contain exact declarations; at-rules contain further selectors. */
+  /** Selectors contain exact declarations. At-rules contain further selectors. */
   type Body<styles> = {
     [key in keyof styles]: key extends Condition.Query
       ? Body<styles[key]>

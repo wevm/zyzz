@@ -20,13 +20,13 @@ import * as Corpus from './Corpus.js'
 
 /** CSS and the browser bundle that supplies every component's class names. */
 export type Bundle = {
-  /** Minified emitted stylesheet; no source maps or reset. */
+  /** Minified emitted stylesheet, with no source maps or reset. */
   css: string
   /** Minified client bundle including required runtime helpers. */
   javascript: string
 }
 
-/** Ordered compiler adapters; no synthetic replacements or runtime injection lanes. */
+/** Ordered compiler adapters, with no synthetic replacements or runtime injection lanes. */
 export const compilers = {
   panda,
   stylex,
@@ -99,11 +99,11 @@ export async function create(
 
 /** Shared CSS processing configuration for a complete literal comparison. */
 export declare namespace create {
-  /** Optional targets; omitted values use the reproducible literal baseline. */
+  /** Optional targets. Omitted values use the reproducible literal baseline. */
   type Options = minify.Options
 }
 
-/** Prepared equivalent inputs; preparation is outside measured compilation. */
+/** Prepared equivalent inputs. Preparation is outside measured compilation. */
 export type Fixture = {
   /** Number of authored components. */
   count: number
@@ -117,7 +117,7 @@ export type Fixture = {
   readonly targets: Readonly<LightningCss.Targets>
   /** Workload metadata and the browser reference input. */
   workload: Corpus.Case
-  /** Validated literal data; definition preparation is outside compilation timing. */
+  /** Validated literal data. Definition preparation is outside compilation timing. */
   zyzz: Style.Definition
 }
 
@@ -145,7 +145,7 @@ export async function javascript(source: string): Promise<string> {
   return result.outputFiles[0]!.text
 }
 
-/** Fixed benchmark processing settings; these are not package support requirements. */
+/** Fixed benchmark processing settings. These are not package support requirements. */
 export const minification = {
   filename: 'styles.css',
   minify: true,
@@ -206,7 +206,7 @@ export async function stylex(fixture: Fixture): Promise<Bundle> {
   if (!result?.code || !metadata?.stylex?.length)
     throw new Error('StyleX did not emit a module and CSS rules.')
 
-  // The package exports a CommonJS function; its declaration uses an ESM default.
+  // The package exports a CommonJS function. Its declaration uses an ESM default.
   const plugin = StylexPlugin as unknown as StyleXTransformObj
 
   return {
@@ -217,7 +217,7 @@ export async function stylex(fixture: Fixture): Promise<Bundle> {
   }
 }
 
-/** Builds Tailwind utilities from prepared candidates; excludes content scanning. */
+/** Builds Tailwind utilities from prepared candidates, excluding content scanning. */
 export async function tailwind(fixture: Fixture): Promise<Bundle> {
   const compiler = await Tailwind.compile('@tailwind utilities;')
 

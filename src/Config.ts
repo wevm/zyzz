@@ -20,7 +20,7 @@ export function create(): create.ReturnType<{}>
 /**
  * Binds inline or reusable themes to an isolated configuration contract.
  * Named themes require an explicit default and identical token paths/domains.
- * Bound helpers reference extracted CSS; this factory emits no CSS rules.
+ * Bound helpers reference extracted CSS. This factory emits no CSS rules.
  * @throws {InvalidError} If options, themes, defaults, or layer names are invalid.
  */
 export function create<const options extends create.Options>(
@@ -262,15 +262,15 @@ export function create(options: create.Options = {}): unknown {
 export declare namespace create {
   /** Optional layer names and mutually exclusive theme modes. */
   type Options = {
-    /** CSS representation inherited by bound helpers; atomic by default. */
+    /** CSS representation inherited by bound helpers, atomic by default. */
     readonly cssOutput?: 'atomic' | 'grouped' | undefined
     /** Stable theme identity required without source rewriting. */
     readonly id?: string | undefined
-    /** Explicit ordered property aliases; none are installed by default. */
+    /** Explicit ordered property aliases. None are installed by default. */
     readonly shorthands?: Shorthands.Map | undefined
-    /** Renderer props format; React is the default. */
+    /** Renderer props format. React is the default. */
     readonly output?: css.Output | undefined
-    /** Ordered plain or dotted CSS layer names; emission follows source integration. */
+    /** Ordered plain or dotted CSS layer names. Emission follows source integration. */
     readonly layers?: readonly string[] | undefined
   } & (
     | {
@@ -294,7 +294,7 @@ export declare namespace create {
 
   /** Bound authoring and the handles corresponding to the selected theme mode. */
   type ReturnType<options extends Options = Options> = {
-    /** Inferred callable authoring; execution requires a source transform. */
+    /** Inferred callable authoring. Execution requires a source transform. */
     readonly css: Css<
       Tokens<options>,
       options extends { layers: readonly (infer name extends string)[] }
@@ -337,7 +337,7 @@ export declare namespace create {
               ? output
               : 'react'
           >
-          /** Selects a compiled named scope; catalog members retain compatibility. */ readonly themes: (<
+          /** Selects a compiled named scope. Catalog members retain compatibility. */ readonly themes: (<
             const selection extends {
               readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
               readonly theme: keyof catalog & string
@@ -604,6 +604,6 @@ type Validated<options> = Record<
 
 /** Options for a compiled root appearance initialization script. */
 export type ScriptOptions = {
-  /** localStorage key containing theme and colorScheme fields; defaults to zyzz. */
+  /** localStorage key containing theme and colorScheme fields. Defaults to zyzz. */
   readonly storageKey?: string | undefined
 }

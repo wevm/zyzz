@@ -172,7 +172,7 @@ type Scan<
         : Scan<rest, output, `${raw}${first}`, `${decoded}${first}`>
       : `${output}${Token<raw, decoded>}`
 
-/** Leaves ordinary literals untouched; decodes only CSS identifier escapes and comments. */
+/** Leaves ordinary literals untouched. Decodes only CSS identifier escapes and comments. */
 export type Normalized<text extends string> =
   text extends `${string}${'\\' | '/*'}${string}` ? Scan<text> : text
 

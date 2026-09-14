@@ -43,7 +43,7 @@ const transformed = await Esbuild.transform(mapped, {
 })
 const directory = Path.join(root, 'dist/themes')
 await Fs.mkdir(directory, { recursive: true })
-// Development linking creates a source symlink; replace it without writing through it.
+// Development linking creates a source symlink. Replace it without writing through it.
 await Fs.rm(Path.join(directory, 'default.js'), { force: true })
 await Fs.writeFile(
   Path.join(directory, 'default.js'),

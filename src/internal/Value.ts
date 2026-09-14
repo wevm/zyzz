@@ -59,7 +59,7 @@ type Fold<value> = value extends string
     ? { [key in keyof value]: Fold<value[key]> }
     : value
 
-/** Refines concrete scalar spellings; already-broad property contracts need no literal refinement. */
+/** Refines concrete scalar spellings. Already-broad property contracts need no literal refinement. */
 export type Checked<style, tokens = {}> = {
   [property in keyof style]: style[property] extends string & Binding.Reference
     ? style[property] extends Binding.Reference<'*'>

@@ -86,11 +86,11 @@ type Hex<
         : false
       : false
 
-/** Math function shapes; dimensional evaluation belongs to the browser. */
+/** Math function shapes. Dimensional evaluation belongs to the browser. */
 export type Calculation =
   `${'abs' | 'acos' | 'asin' | 'atan' | 'atan2' | 'calc' | 'clamp' | 'cos' | 'exp' | 'hypot' | 'log' | 'max' | 'min' | 'mod' | 'pow' | 'rem' | 'round' | 'sign' | 'sin' | 'sqrt' | 'tan'}(${string})`
 
-/** Named, hexadecimal, and absolute functional colors; arguments retain their authored CSS syntax. */
+/** Named, hexadecimal, and absolute functional colors. Arguments retain their authored CSS syntax. */
 export type Color =
   | (typeof namedColors)[number]
   | (typeof systemColors)[number]
@@ -103,7 +103,7 @@ export type Color =
 /** Flexible grid track dimensions. */
 export type Fraction = `${number}fr`
 
-/** Structured track values; nested argument semantics belong to the browser. */
+/** Structured track values. Nested argument semantics belong to the browser. */
 export type GridTracks =
   | Calculation
   | Length
@@ -126,7 +126,7 @@ export type Image =
 /** CSS URLs may be quoted or unquoted. */
 export type Url = `url(${string})`
 
-/** Finite CSS lengths and percentages; numeric zero needs no unit. */
+/** Finite CSS lengths and percentages. Numeric zero needs no unit. */
 export type Length = `${number}${(typeof lengthUnits)[number]}` | 0 | '0'
 
 /** Length and percentage units used by scalar type refinements. */
@@ -137,12 +137,12 @@ export type Properties = {
   readonly [key in keyof typeof rules]?: Value<(typeof rules)[key]>
 } & { readonly [property: `--${string}`]: number | string }
 
-/** Domain metadata for known properties; custom properties accept scalar values. */
+/** Domain metadata for known properties. Custom properties accept scalar values. */
 export function rule(property: keyof Properties): Rule | undefined {
   return rules[property as keyof typeof rules]
 }
 
-/** Finite seconds and milliseconds; CSS times always require units. */
+/** Finite seconds and milliseconds. CSS times always require units. */
 export type Time = `${number}${'ms' | 's'}`
 
 type Rule = {

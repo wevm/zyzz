@@ -55,7 +55,7 @@ const scope = theme.className
 
 - Type: `Theme.Css<tokens>`
 
-Bound callable authoring with inferred token names. Same-module source compilation is supported; untransformed execution throws an error named `css.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
+Bound callable authoring with inferred token names. Same-module source compilation is supported. Untransformed execution throws an error named `css.MissingTransformError`. In-memory token resolution uses `Style.define(styles, { theme })`, then `Css.compile`.
 
 ```ts
 namespace styles {

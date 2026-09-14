@@ -410,7 +410,7 @@ export async function verify(options: verify.Options) {
 /** Inputs supplied by each real framework fixture. */
 export declare namespace verify {
   type Options = {
-    /** Consumer mode; the packed producer uses the opposite representation. */
+    /** Consumer mode. The packed producer uses the opposite representation. */
     cssOutput: 'atomic' | 'grouped'
     /** Exact consumer dependency versions. */
     dependencies: Record<string, string>

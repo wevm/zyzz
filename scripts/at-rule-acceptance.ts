@@ -222,7 +222,7 @@ if (!errors.length && resultsIndex !== -1)
   verifyResults(Path.resolve(process.argv[resultsIndex + 1]!))
 
 // Supplied results are evidence from the current integration run. CI gates this
-// report on the separate TypeScript matrix; standalone checks still execute both.
+// report on the separate TypeScript matrix. Standalone checks still execute both.
 if (
   !errors.length &&
   resultsIndex === -1 &&

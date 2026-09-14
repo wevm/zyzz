@@ -18,7 +18,7 @@ import * as Walker from 'oxc-walker'
 
 /**
  * Rewrites literal web styles and local themes without evaluation or file access.
- * Direct no-argument applications become props; other definitions become callables.
+ * Direct no-argument applications become props. Other definitions become callables.
  * CSS retains ordered composition and receives module-scoped class identities.
  * @param options - Source text and a stable package-relative module identity.
  * @returns Rewritten TypeScript/JSX and CSS with separate version-three maps.
@@ -1058,7 +1058,7 @@ export function compile(options: compile.Options): compile.ReturnType {
 export declare namespace compile {
   /** Public failures from extraction and target compilation. */
   type ErrorType = Css.CompileError | Source.ExtractError
-  /** Supplied module identity and source; no file loading occurs. */
+  /** Supplied module identity and source. No file loading occurs. */
   type Options = Source.extract.Options & {
     /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
     readonly compiler?: boolean | undefined
@@ -1070,7 +1070,7 @@ export declare namespace compile {
     readonly development?: boolean | undefined
   }
 
-  /** Executable module and stylesheet artifacts; TypeScript/JSX lowering belongs to the host. */
+  /** Executable module and stylesheet artifacts. TypeScript/JSX lowering belongs to the host. */
   type ReturnType = {
     /** Module-scoped class lists keyed by extracted definition identity. */
     readonly classes: Readonly<Record<string, string>>

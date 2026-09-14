@@ -28,7 +28,7 @@ Type: `Recipe.Definition['axes']`. Required ordered finite choice catalog, inclu
 
 ### options.conditions
 
-Type: `readonly string[] | undefined`. Optional ordered condition names. Slot index zero is the base context; index one corresponds to the first condition.
+Type: `readonly string[] | undefined`. Optional ordered condition names. Slot index zero is the base context, and index one corresponds to the first condition.
 
 ### options.defaultPayloads
 
@@ -40,7 +40,7 @@ Type: `Recipe.Definition['defaults']`. Required normalized default choice names.
 
 ### options.html
 
-Type: `boolean | undefined`. Optional; defaults to React-shaped output. `true` serializes HTML attributes after payload binding.
+Type: `boolean | undefined`. Optional. Defaults to React-shaped output. `true` serializes HTML attributes after payload binding.
 
 ### options.payloads
 
@@ -52,7 +52,7 @@ Type: `ReturnType<typeof Recipe.create>`. Required compiled selection delegate r
 
 ### Returned callable
 
-Signature: `(input?: Record<string, unknown> & css.Options) => css.Props | Html.Attributes`. Input defaults to `{}`. Base selections use `{ size: { custom: { padding: '12px' } } }`; conditional selections nest under `conditions`. Styling overrides retain the ordinary application contract.
+Signature: `(input?: Record<string, unknown> & css.Options) => css.Props | Html.Attributes`. Input defaults to `{}`. Base selections use `{ size: { custom: { padding: '12px' } } }`. Conditional selections nest under `conditions`. Styling overrides retain the ordinary application contract.
 
 #### className / class
 
@@ -64,8 +64,8 @@ Type: ``Record<`data-${string}`, string>``. The delegate emits normalized choice
 
 #### style
 
-Type: `css.Props['style'] | string | undefined`. Active payload fields bind private variables alongside existing styles. Empty strings become whitespace; private assignments win collisions. HTML output serializes the final style once.
+Type: `css.Props['style'] | string | undefined`. Active payload fields bind private variables alongside existing styles. Empty strings become whitespace. Private assignments win collisions. HTML output serializes the final style once.
 
 ### Effects and errors
 
-Initialization builds axis and choice lookup maps. Calls allocate normalized selections and fresh props. The serializer generates no CSS, executes no authoring callbacks, and performs no runtime validation. Compilation and TypeScript enforce finite choices and payload shapes; no dedicated runtime error class is introduced.
+Initialization builds axis and choice lookup maps. Calls allocate normalized selections and fresh props. The serializer generates no CSS, executes no authoring callbacks, and performs no runtime validation. Compilation and TypeScript enforce finite choices and payload shapes. No dedicated runtime error class is introduced.

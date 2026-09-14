@@ -14,7 +14,7 @@ import * as VariantLibrary from './VariantLibrary.js'
 
 const exec = Util.promisify(ChildProcess.execFile)
 
-/** Verifies production and development behavior; comparison runs also measure native CSS builds. */
+/** Verifies production and development behavior. Comparison runs also measure native CSS builds. */
 export async function verify(options: verify.Options) {
   const { bundler, cssOutput } = options
 

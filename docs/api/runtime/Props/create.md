@@ -64,10 +64,10 @@ props.style
 
 Override shapes and values are checked by TypeScript. The runtime helper merges classes and forwards inline styles without validation.
 
-This is a generated-code support API. The example assumes the supplied class has a matching stylesheet; normal authoring uses `css`.
+This is a generated-code support API. The example assumes the supplied class has a matching stylesheet. Normal authoring uses `css`.
 
 See [Props](README.md) for related methods and types.
 
 Each call returns a fresh props object. When `style` is supplied, the returned
-`style` is the same object; treat it as immutable after passing it to a callable.
+`style` is the same object. Treat it as immutable after passing it to a callable.
 Dynamic styles create a new style object to add their private variables.

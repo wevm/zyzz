@@ -1,7 +1,7 @@
 # StyleSheet
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> Preview API, not yet implemented.
 
 Native table compilation and selection.
 

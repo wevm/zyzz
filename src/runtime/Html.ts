@@ -6,7 +6,7 @@ import * as Props from './Props.js'
 export type Attributes = {
   /** Compiled and external classes. */
   readonly class: string
-  /** Serialized CSS declarations; renderers own HTML escaping. */
+  /** Serialized CSS declarations. Renderers own HTML escaping. */
   readonly style?: string | undefined
 } & { readonly [name: `data-${string}`]: string | undefined }
 
@@ -14,7 +14,7 @@ export type Attributes = {
  * Converts compiled styling props without generating CSS rules or mutating inputs.
  * Values retain explicit CSS units. Custom properties retain their spelling.
  * @param props - Applied style or theme props, including owned data attributes.
- * @returns Unescaped DOM attribute values; never insert them into HTML directly.
+ * @returns Unescaped DOM attribute values. Never insert them into HTML directly.
  */
 export function from(
   props: css.Props & { readonly [name: `data-${string}`]: string | undefined },

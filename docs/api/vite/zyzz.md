@@ -38,11 +38,11 @@ defineConfig({ plugins: [zyzz()] })
 
 ## Errors
 
-Source/target errors must remain located; failed development builds preserve the previous complete output.
+Source/target errors must remain located. Failed development builds preserve the previous complete output.
 
-The adapter statically analyzes source; it does not execute theme factories at build time. Each virtual stylesheet includes its reachable source graph so compatible theme scopes are available. Shared rules can repeat before Vite’s final CSS processing.
+The adapter statically analyzes source. It does not execute theme factories at build time. Each virtual stylesheet includes its reachable source graph so compatible theme scopes are available. Shared rules can repeat before Vite’s final CSS processing.
 
-Raw authoring inside virtual modules, framework SFCs, dependencies, or files outside the Vite root is not supported yet. Packed dependencies can supply adjacent compiler metadata; exclude their authoring entrypoints from Vite dependency optimization. See [Vite Setup](../../introduction/vite.md).
+Raw authoring inside virtual modules, framework SFCs, dependencies, or files outside the Vite root is not supported yet. Packed dependencies can supply adjacent compiler metadata. Exclude their authoring entrypoints from Vite dependency optimization. See [Vite Setup](../../introduction/vite.md).
 
 See [zyzz/vite](README.md) for the entrypoint overview.
 

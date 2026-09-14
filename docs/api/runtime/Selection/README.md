@@ -26,7 +26,7 @@ Selection.create([['base', 'z-base']])
 
 ### html
 
-Type: `boolean`. Optional; defaults to `false`. Selects HTML attributes with serialized CSS when true, or React props otherwise.
+Type: `boolean`. Optional. Defaults to `false`. Selects HTML attributes with serialized CSS when true, or React props otherwise.
 
 ```ts
 const themes = Selection.create([['base', 'z-base']], true)
@@ -39,7 +39,7 @@ The callable accepts `{ theme, colorScheme? }`. Unknown theme names, option keys
 
 ### theme
 
-Type: an inferred catalog key. Required; selects one compiled scope.
+Type: an inferred catalog key. Required. Selects one compiled scope.
 
 ```ts
 themes({ theme: 'base' })
@@ -47,7 +47,7 @@ themes({ theme: 'base' })
 
 ### colorScheme
 
-Type: `'light' | 'dark' | 'light dark' | undefined`. Optional; omission adds no inline scheme declaration, preserving inheritance.
+Type: `'light' | 'dark' | 'light dark' | undefined`. Optional. Omission adds no inline scheme declaration, preserving inheritance.
 
 ```ts
 themes({ theme: 'mint', colorScheme: 'dark' })
@@ -55,7 +55,7 @@ themes({ theme: 'mint', colorScheme: 'dark' })
 
 ### className
 
-Type: `string`. Present on React output and every named catalog member; contains the compiled scope class.
+Type: `string`. Present on React output and every named catalog member, and contains the compiled scope class.
 
 ```ts
 themes({ theme: 'mint' }).className

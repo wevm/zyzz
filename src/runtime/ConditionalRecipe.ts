@@ -31,7 +31,7 @@ export function create(options: create.Options) {
   }))
 
   return (input: Record<string, unknown> & css.Options = {}) => {
-    // The base was explicitly bound to React-shaped props above; HTML
+    // The base was explicitly bound to React-shaped props above. HTML
     // serialization occurs once, after all conditional attributes are added.
     const result = base(input) as css.Props & Record<`data-${string}`, string>
     const selected = input.conditions as

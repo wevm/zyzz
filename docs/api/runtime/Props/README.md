@@ -14,6 +14,6 @@ import { Props } from 'zyzz/runtime'
 
 ## Types and Errors
 
-`create.Options`; application types come from root `css`.
+`create.Options`. Application types come from root `css`.
 
 See the [public declarations](../../../../src/runtime/Props.ts) for complete generic signatures and documented type properties.

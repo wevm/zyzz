@@ -19,7 +19,7 @@ await host.close()
 
 ## Parameters
 
-No parameters; call on an existing runtime.
+No parameters. Call on an existing runtime.
 
 ## Returns
 
@@ -29,6 +29,6 @@ The `.zyzz.json` manifest and generated artifacts remain owned by the recorded `
 
 ## Errors
 
-Filesystem cleanup errors may reject; disposal should run in a `finally` block.
+Filesystem cleanup errors may reject. Disposal should run in a `finally` block.
 
 See [Host](README.md) for related methods and types.

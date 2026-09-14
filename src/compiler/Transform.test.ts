@@ -8918,7 +8918,7 @@ describe('motionLists', () => {
             .locator('#actual')
             .evaluate((element) => getComputedStyle(element).opacity),
         ).toMatchInlineSnapshot(`"0.25"`)
-        // Seek real CSS animations to a fixed time; no wall-clock timing assumptions.
+        // Seek real CSS animations to a fixed time, with no wall-clock timing assumptions.
         expect(
           await page.evaluate(() => {
             for (const animation of document.getAnimations())
@@ -9992,7 +9992,7 @@ body{margin:0;font-family:Arial;font-size:8px}section{break-after:page}section:l
             Buffer.compare(streams(page), streams(reference)) === 0,
           ).toMatchInlineSnapshot('true')
         }
-        // Each box must affect the PDF; equality alone could hide rules ignored by both paths.
+        // Each box must affect the PDF. Equality alone could hide rules ignored by both paths.
         for (const box of Margins.boxes) {
           await page.setContent(html)
           await page.addStyleTag({

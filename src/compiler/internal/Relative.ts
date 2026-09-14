@@ -3,7 +3,7 @@
  * @module
  */
 
-/** Resolves only supplied relative source modules; build adapters supply their own edges. */
+/** Resolves only supplied relative source modules. Build adapters supply their own edges. */
 export function resolve(options: resolve.Options): string | undefined {
   if (!options.specifier.startsWith('.')) return undefined
 
@@ -75,7 +75,7 @@ export function resolve(options: resolve.Options): string | undefined {
 
 /** Closed source-map resolution contracts. */
 export declare namespace resolve {
-  /** Source identity and available files; no filesystem or package lookup occurs. */
+  /** Source identity and available files. No filesystem or package lookup occurs. */
   type Options = {
     /** Importing source identity. */
     readonly moduleId: string

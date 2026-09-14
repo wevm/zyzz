@@ -244,7 +244,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
         return
 
-      // Both passes visit identical scopes; skipping type subtrees changes scope IDs.
+      // Both passes visit identical scopes. Skipping type subtrees changes scope IDs.
       if (
         ancestors.some(
           (ancestor) =>
@@ -343,7 +343,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       )
         return
 
-      // Follow only assignment targets; computed keys and default values are reads.
+      // Follow only assignment targets. Computed keys and default values are reads.
       let target: Ast.Node = node
       let write: Ast.Node | undefined
 
@@ -1313,7 +1313,7 @@ export declare namespace extract {
   type Options = {
     /** Collect portable runtime identities when source rewriting is disabled. */
     readonly compiler?: boolean | undefined
-    /** Portable identity including package and module path; no filesystem access occurs. */
+    /** Portable identity including package and module path. No filesystem access occurs. */
     readonly moduleId: string
     /** Compiler-owned graph context. */
     readonly [Themes.context]?: Themes.Context | undefined
@@ -1357,7 +1357,7 @@ export declare namespace extract {
   }
 }
 
-/** Aggregated source diagnostics; no partial result is returned. */
+/** Aggregated source diagnostics. No partial result is returned. */
 export class ExtractError extends Error {
   /** Freezes source diagnostics in source order. */
   constructor(diagnostics: readonly Diagnostic[]) {

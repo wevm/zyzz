@@ -41,7 +41,7 @@ export declare namespace compile {
     readonly contracts?: Readonly<Record<string, string>> | undefined
     /** Stable declaration names for CSS-only development updates. */
     readonly development?: boolean | undefined
-    /** Host-resolved static runtime imports keyed by module ID and source specifier; null marks externals. The host owns dynamic imports when supplied. Omit for closed relative-graph resolution. */
+    /** Host-resolved static runtime imports keyed by module ID and source specifier. Null marks externals. The host owns dynamic imports when supplied. Omit for closed relative-graph resolution. */
     readonly imports?:
       | Readonly<Record<string, Readonly<Record<string, string | null>>>>
       | undefined
@@ -51,7 +51,7 @@ export declare namespace compile {
 
   /** Compiled modules and their direct source dependencies. */
   type ReturnType = {
-    /** Versioned compiler-only JSON per module; publish beside the compiled entrypoint as <entry>.zyzz.json. */
+    /** Versioned compiler-only JSON per module. Publish beside the compiled entrypoint as <entry>.zyzz.json. */
     readonly contracts: Readonly<Record<string, string>>
     /** Direct static runtime source and library-contract dependencies, keyed by module identity. */
     readonly dependencies: Readonly<Record<string, readonly string[]>>
@@ -85,7 +85,7 @@ export function create(): create.ReturnType {
 
 /** Incremental graph compiler contracts. */
 export declare namespace create {
-  /** Explicitly owned compilation state; dropping the compiler releases its cache. */
+  /** Explicitly owned compilation state. Dropping the compiler releases its cache. */
   type ReturnType = {
     /** Compiles a complete source snapshot, reusing unaffected work across calls. */
     readonly compile: typeof compile
@@ -993,7 +993,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
   }
 
-  // Extraction visits dependencies first; their emitted classes must precede consumers.
+  // Extraction visits dependencies first. Their emitted classes must precede consumers.
   for (const moduleId of extracted.keys()) {
     modules[moduleId] =
       sameThemes &&

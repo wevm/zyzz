@@ -26,7 +26,7 @@ export function validate(source: string): void {
   })
 }
 
-/** Named timeline percentages are unrestricted; ordinary offsets remain within 0–100%. */
+/** Named timeline percentages are unrestricted. Ordinary offsets remain within 0–100%. */
 export function accepts(selector: string): boolean {
   try {
     let valid = false

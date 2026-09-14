@@ -1,6 +1,6 @@
 # API
 
-Public reference grouped by entrypoint, export, and method. Types and errors stay with their owning module; preview callouts mark contracts awaiting implementation.
+Public reference grouped by entrypoint, export, and method. Types and errors stay with their owning module. Preview callouts mark contracts awaiting implementation.
 
 | API                                         | Description                                                                            |
 | ------------------------------------------- | -------------------------------------------------------------------------------------- |

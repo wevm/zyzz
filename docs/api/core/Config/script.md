@@ -1,6 +1,6 @@
 # Config Script
 
-Return inline JavaScript that restores saved root theme and color-scheme preferences. The factory is pure and safe to call during server rendering; only the returned script accesses the browser.
+Return inline JavaScript that restores saved root theme and color-scheme preferences. The factory is pure and safe to call during server rendering. Only the returned script accesses the browser.
 
 ```ts
 import { script } from './zyzz.config.js'
@@ -12,7 +12,7 @@ const initialization = script()
 
 `script(options = {}) => string`
 
-The bound function derives the theme catalog, compiled scope classes, and default selection from its config. Named catalogs restore allowlisted theme names; single-theme and token-free configs restore only the color scheme. Server-rendered root props remain the fallback.
+The bound function derives the theme catalog, compiled scope classes, and default selection from its config. Named catalogs restore allowlisted theme names. Single-theme and token-free configs restore only the color scheme. Server-rendered root props remain the fallback.
 
 ## Parameters
 
@@ -29,9 +29,9 @@ script({ storageKey: 'my-app-appearance' })
 
 ## Returns
 
-A JavaScript source string for an inline, synchronous `<script>` early in `<head>`. It updates `document.documentElement`; never use `async`, `defer`, or `type="module"` for this initialization.
+A JavaScript source string for an inline, synchronous `<script>` early in `<head>`. It updates `document.documentElement`. Never use `async`, `defer`, or `type="module"` for this initialization.
 
-The script replaces only classes belonging to the config's catalog, preserving unrelated classes. It assigns only the `colorScheme` inline property. Server markup supplies the default theme and scheme; there is no duplicate default configuration in this helper.
+The script replaces only classes belonging to the config's catalog, preserving unrelated classes. It assigns only the `colorScheme` inline property. Server markup supplies the default theme and scheme. There is no duplicate default configuration in this helper.
 
 Invalid fields preserve their respective defaults. Missing, malformed, non-object, or inaccessible storage leaves server markup intact. Matching uses own catalog keys, including for names such as `constructor`. It never writes storage, accesses cookies, registers listeners, or inserts CSS.
 
@@ -45,4 +45,4 @@ React root markup can use `suppressHydrationWarning` for attributes changed befo
 
 See [Restore Preferences](../../../guides/themes.md#restore-preferences) for complete markup and the localStorage record.
 
-Static configured styles do not retain the initialization helper. Exporting a full config retains it for consumers; destructuring only `css`, `theme`, or `themes` avoids its runtime bytes. Packed configurations compiled without initialization capability must be rebuilt before calling `script()`.
+Static configured styles do not retain the initialization helper. Exporting a full config retains it for consumers. Destructuring only `css`, `theme`, or `themes` avoids its runtime bytes. Packed configurations compiled without initialization capability must be rebuilt before calling `script()`.

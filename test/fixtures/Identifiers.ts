@@ -29,7 +29,7 @@ export const styles = {
   },
 } as const satisfies Record<string, Style.LiteralProperties>
 
-/** Ordinary CSS owns keyframes and queries; named declarations connect to them. */
+/** Ordinary CSS owns keyframes and queries. Named declarations connect to them. */
 export const native =
   '@keyframes Fade{from{opacity:0}to{opacity:1}}@keyframes fade{from{opacity:1}to{opacity:0}}@container Card (min-width:100px){.probe{color:rgb(0 128 0)}}'
 

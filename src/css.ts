@@ -103,7 +103,7 @@ export declare namespace css {
           | undefined
       }
 
-  /** Callable definition; source rewriting supplies its implementation. */
+  /** Callable definition. Source rewriting supplies its implementation. */
   type ReturnType<output extends Output = 'react'> = Reference &
     (<const options extends Options = Options>(
       options?: options &

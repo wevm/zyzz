@@ -1,7 +1,7 @@
 # Config.create
 
 > [!NOTE]
-> Named config exports, callable theme selection, variables, and layer compilation are implemented. The initialization `script` is supported; `variants` supports token-aware recipes.
+> Named config exports, callable theme selection, variables, and layer compilation are implemented. The initialization `script` is supported. `variants` supports token-aware recipes.
 
 Bind style authoring to explicit theme and layer contracts. Export helpers directly from `zyzz.config.ts` and consume them through named imports.
 
@@ -28,7 +28,7 @@ export const { css, theme } = Config.create({
 - Type: `'atomic' | 'grouped'`
 - Default: `'atomic'`
 
-Selects the emitted CSS representation for bound styles, variants, and theme helpers. Atomic mode shares individual declarations; grouped mode emits scoped declaration blocks. Renderer `output` remains independent.
+Selects the emitted CSS representation for bound styles, variants, and theme helpers. Atomic mode shares individual declarations. Grouped mode emits scoped declaration blocks. Renderer `output` remains independent.
 
 ```ts
 export const { css, variants } = Config.create({ cssOutput: 'grouped' })
@@ -66,7 +66,7 @@ Config.create({ layers: ['base', 'components'] })
 - Type: Inferred record of nonempty readonly standard-property tuples
 - Default: No aliases.
 
-Map custom names to one or more properties. Values infer from all targets; tokens resolve separately for each property. Expansion preserves declaration order. Targets must be supported standard properties, and alias names cannot replace existing properties or reserved keys.
+Map custom names to one or more properties. Values infer from all targets. Tokens resolve separately for each property. Expansion preserves declaration order. Targets must be supported standard properties, and alias names cannot replace existing properties or reserved keys.
 
 ```ts
 const { css } = Config.create({
@@ -78,14 +78,14 @@ namespace styles {
 }
 ```
 
-Dedicated `margin` and `padding` groups take precedence over `spacing` for their properties. Margin tokens accept signed lengths; padding tokens require nonnegative lengths. Empty or duplicate target lists, alias chains, unknown targets, and names colliding with authoring keys are rejected.
+Dedicated `margin` and `padding` groups take precedence over `spacing` for their properties. Margin tokens accept signed lengths. Padding tokens require nonnegative lengths. Empty or duplicate target lists, alias chains, unknown targets, and names colliding with authoring keys are rejected.
 
 See [Property Mappings](../../../guides/themes.md#property-mappings) for aliases and property-specific token scales.
 
 ### options.theme
 
 - Type: Inline token data or a theme definition
-- Default: No theme; token-free authoring.
+- Default: No theme, token-free authoring.
 
 Single theme contract. Mutually exclusive with `themes`.
 
@@ -98,7 +98,7 @@ Config.create({ theme: { spacing: { md: '1rem' } } })
 - Type: Named complete theme alternatives
 - Default: No named catalog.
 
-Compatible named themes; requires `defaultTheme`.
+Compatible named themes. Requires `defaultTheme`.
 
 ```ts
 Config.create({
@@ -127,7 +127,7 @@ namespace styles {
 
 - Type: Normalized callable single-theme definition
 
-Present for single-theme configuration and as the default theme of a named catalog. The default `theme` is a reference handle. Callable standalone theme application remains preview; use `themes({ theme: defaultName, colorScheme: 'light dark' })` for a named catalog. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws; emitted scope classes come from `Css.compile`.
+Present for single-theme configuration and as the default theme of a named catalog. The default `theme` is a reference handle. Callable standalone theme application remains preview. Use `themes({ theme: defaultName, colorScheme: 'light dark' })` for a named catalog. Use portable token references with the in-memory compiler. Reading `className` before source compilation throws. Emitted scope classes come from `Css.compile`.
 
 ```ts
 theme.tokens.spacing.md
@@ -186,7 +186,7 @@ See [Config](README.md) for related methods and types.
 
 ## Named Exports
 
-Export `const { css, theme } = Config.create(...)` and import `{ css, theme }` in consuming modules. Use `css`; access `theme` for single themes or `themes` for named catalogs. Source integrations follow these named exports without requiring a default export. Immutable aliases, named re-exports, and packed declarations retain its contract. `variants` supports token-aware recipes.
+Export `const { css, theme } = Config.create(...)` and import `{ css, theme }` in consuming modules. Use `css`. Access `theme` for single themes or `themes` for named catalogs. Source integrations follow these named exports without requiring a default export. Immutable aliases, named re-exports, and packed declarations retain its contract. `variants` supports token-aware recipes.
 
 ## In-Memory Compilation
 
@@ -212,6 +212,6 @@ namespace styles {
 }
 ```
 
-`styles.card()` returns `class` and an optional serialized CSS `style` string. Styling overrides retain the same `className` and typed `style` inputs. Conversion belongs to compiled bindings; application code spreads or binds the result directly.
+`styles.card()` returns `class` and an optional serialized CSS `style` string. Styling overrides retain the same `className` and typed `style` inputs. Conversion belongs to compiled bindings. Application code spreads or binds the result directly.
 
 Padding token literals are checked as nonnegative during typed authoring. Widened and JavaScript inputs follow the repository-wide contract of no runtime CSS-value validation.

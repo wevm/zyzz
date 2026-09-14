@@ -17,7 +17,7 @@ import { Style, Theme } from 'zyzz'
 import { Css } from 'zyzz/web'
 import * as Compilation from './Compilation.js'
 
-/** Matched compiler lanes; native APIs retain their required delivery artifacts. */
+/** Matched compiler lanes. Native APIs retain their required delivery artifacts. */
 export const compilers = {
   panda,
   stylex,
@@ -178,7 +178,7 @@ export const themes={alternate:{'data-panda-theme':'alternate'},base:{'data-pand
 
 /** Shared CSS processing configuration for a complete theme comparison. */
 export declare namespace create {
-  /** Optional targets; omitted values use the native light-dark baseline. */
+  /** Optional targets. Omitted values use the native light-dark baseline. */
   type Options = Compilation.minify.Options
 }
 
@@ -188,7 +188,7 @@ export type Fixture = {
   readonly count: number
   /** Real compiler input directory. */
   readonly directory: string
-  /** Tailwind utility candidates; scanning is outside timing. */
+  /** Tailwind utility candidates. Scanning is outside timing. */
   readonly tailwind: readonly string[]
   /** Native Tailwind theme declarations and scope overrides. */
   readonly tailwindCss: string
@@ -196,9 +196,9 @@ export type Fixture = {
   readonly targets: Readonly<NonNullable<Compilation.minify.Options['targets']>>
   /** Compatible Zyzz theme definitions. */
   readonly themes: Readonly<Record<'alternate' | 'base', Theme.Definition>>
-  /** Validated Zyzz style graph; preparation is outside timing. */
+  /** Validated Zyzz style graph. Preparation is outside timing. */
   readonly zyzz: Style.Definition
-  /** Unresolved token-name styles; validation and resolution occur inside timing. */
+  /** Unresolved token-name styles. Validation and resolution occur inside timing. */
   readonly zyzzTokens: Readonly<Record<string, Style.Properties<Theme.Tokens>>>
 }
 

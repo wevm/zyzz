@@ -6,7 +6,7 @@ import { bench } from '@ark/attest'
 import type * as Zyzz from 'zyzz'
 import type * as Web from 'zyzz/web'
 
-// Type-only imports keep the fixture free of runtime module loading; attest
+// Type-only imports keep the fixture free of runtime module loading. Attest
 // analyzes bench bodies without executing them.
 declare const Css: typeof Web.Css
 declare const Style: typeof Zyzz.Style

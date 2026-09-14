@@ -41,7 +41,7 @@ Graph.compile({ development: true, modules })
 - Type: `Readonly<Record<string, string>>`
 - Default: No libraries.
 
-Versioned JSON from a separately compiled graph, keyed by the host-resolved import identity. Supply an `imports` edge to that identity. Contract changes invalidate the incremental cache. Invalid versions, token values, and conflicting scope identities fail before output; package code is never evaluated.
+Versioned JSON from a separately compiled graph, keyed by the host-resolved import identity. Supply an `imports` edge to that identity. Contract changes invalidate the incremental cache. Invalid versions, token values, and conflicting scope identities fail before output. Package code is never evaluated.
 
 ```ts
 Graph.compile({
@@ -56,9 +56,9 @@ Graph.compile({
 - Type: `Readonly<Record<string, Readonly<Record<string, string | null>>>>`
 - Default: Closed relative-source resolution.
 
-Host-resolved static runtime imports, keyed by importing module ID and original specifier. Targets name supplied source modules or library contracts; `null` marks external imports. When supplied, every static runtime import/re-export must have an entry. Zyzz links theme contracts against these identities without implementing host aliases or package resolution.
+Host-resolved static runtime imports, keyed by importing module ID and original specifier. Targets name supplied source modules or library contracts, and `null` marks external imports. When supplied, every static runtime import/re-export must have an entry. Zyzz links theme contracts against these identities without implementing host aliases or package resolution.
 
-The host owns dynamic imports when `imports` is supplied. Dynamic expressions remain in JavaScript and are excluded from this graph; the host must compile and load each lazy module and its CSS. Theme bindings used during compilation still require static imports.
+The host owns dynamic imports when `imports` is supplied. Dynamic expressions remain in JavaScript and are excluded from this graph. The host must compile and load each lazy module and its CSS. Theme bindings used during compilation still require static imports.
 
 ```ts
 Graph.compile({
@@ -75,7 +75,7 @@ Graph.compile({
 - Type: `Readonly<Record<string, string>>`
 - Required: Yes.
 
-Complete source graph keyed by stable package-relative module IDs. Without `imports`, relative source imports resolve against supplied files, including `.js` to `.ts` / `.tsx` and extensionless/index paths. Ambiguous paths fail. Type-only imports do not create runtime dependencies; bare package and asset imports remain external.
+Complete source graph keyed by stable package-relative module IDs. Without `imports`, relative source imports resolve against supplied files, including `.js` to `.ts` / `.tsx` and extensionless/index paths. Ambiguous paths fail. Type-only imports do not create runtime dependencies. Bare package and asset imports remain external.
 
 ```ts
 Graph.compile({ modules: { 'app/card.ts': source } })
@@ -87,7 +87,7 @@ Graph.compile({ modules: { 'app/card.ts': source } })
 
 - Type: `Readonly<Record<string, string>>`
 
-Compiler-only JSON for modules exporting themes or bound authoring aliases, including re-exports. Each file contains versioned export bindings and complete graph theme data. Publish it beside the corresponding compiled runtime entrypoint as `<entry>.zyzz.json`; regenerate it together with JavaScript, declarations, and CSS.
+Compiler-only JSON for modules exporting themes or bound authoring aliases, including re-exports. Each file contains versioned export bindings and complete graph theme data. Publish it beside the corresponding compiled runtime entrypoint as `<entry>.zyzz.json`. Regenerate it together with JavaScript, declarations, and CSS.
 
 ```ts
 output.contracts['library/index.ts'] // Publish as index.js.zyzz.json after lowering index.ts.
@@ -118,7 +118,7 @@ Scope and variable identities retain the defining module/binding. CSS maps trace
 
 ### sharedCssMap
 
-Type: `EncodedSourceMap | undefined`. Maps the combined shared stylesheet to its source-owned and packed contributions. Present with nonempty shared CSS; source content is retained when published by its owner.
+Type: `EncodedSourceMap | undefined`. Maps the combined shared stylesheet to its source-owned and packed contributions. Present with nonempty shared CSS. Source content is retained when published by its owner.
 
 ```ts
 import * as fs from 'node:fs/promises'
@@ -147,11 +147,11 @@ for (const placeholder of Object.keys(output.sharedAssets ?? {}))
 
 ## Errors
 
-`Source.ExtractError` or `Css.CompileError`; no partial result is returned. Missing modules, ambiguous exports, namespace theme imports, and static cycles are rejected. Dynamic source imports are rejected in standalone mode. Library authoring requires matching contract metadata; runtime JavaScript alone cannot supply token definitions.
+`Source.ExtractError` or `Css.CompileError`. No partial result is returned. Missing modules, ambiguous exports, namespace theme imports, and static cycles are rejected. Dynamic source imports are rejected in standalone mode. Library authoring requires matching contract metadata. Runtime JavaScript alone cannot supply token definitions.
 
 ## Configured Libraries
 
-Named `Config.create` exports and bound aliases retain token and layer inference across source re-exports and packed declarations. Configuration metadata uses version 2; version 1 theme metadata remains readable. Publish matching JavaScript, declarations, CSS, and adjacent metadata from one build.
+Named `Config.create` exports and bound aliases retain token and layer inference across source re-exports and packed declarations. Configuration metadata uses version 2. Version 1 theme metadata remains readable. Publish matching JavaScript, declarations, CSS, and adjacent metadata from one build.
 
 ```ts
 import { css, theme } from '@acme/theme'
@@ -166,11 +166,11 @@ The graph normalizes configured themes without executing library code. Source ed
 
 ## Shared stylesheet delivery
 
-When the graph has contributions, the result includes `sharedCss`, containing graph-wide layer declarations, global rules, font faces, and live keyframes. Load this stylesheet once, before the CSS from `modules`. Module CSS remains necessary for local styles. Recompile after source creation, updates, or deletion and replace both the shared stylesheet and affected module styles; contributions that disappear from the graph must also disappear from delivery. Vite handles this lifecycle automatically.
+When the graph has contributions, the result includes `sharedCss`, containing graph-wide layer declarations, global rules, font faces, and live keyframes. Load this stylesheet once, before the CSS from `modules`. Module CSS remains necessary for local styles. Recompile after source creation, updates, or deletion and replace both the shared stylesheet and affected module styles. Contributions that disappear from the graph must also disappear from delivery. Vite handles this lifecycle automatically.
 
 Packed contracts containing query metadata or typography groups use schema version 3. Existing scalar-only theme contracts retain version 1, and scalar-only configuration contracts retain version 2. Readers accept implemented schema versions and reject unknown future versions explicitly.
 
-Composite CSS function signatures, added scalar primitives, and newly written namespace metadata use version 11. Namespace metadata supports escaped/Unicode prefixes, repeated bindings, and control-character URI transport. Legacy scalar functions retain version 10; existing version-10 namespace libraries remain readable.
+Composite CSS function signatures, added scalar primitives, and newly written namespace metadata use version 11. Namespace metadata supports escaped/Unicode prefixes, repeated bindings, and control-character URI transport. Legacy scalar functions retain version 10. Existing version-10 namespace libraries remain readable.
 
 The writer selects the lowest version required by the exported capabilities:
 
@@ -189,8 +189,8 @@ This reader accepts versions 1–8. Publish metadata together with its matching 
 
 `sharedAssetOwners` associates each relocated URL placeholder with its trusted source or packed-contract identity. Hosts validate package ownership before serving or publishing assets. Conflicting packed sections raise `Source.ExtractError` attributed to the contributing contract.
 
-Compile independent libraries with package-qualified module IDs (the file host supplies these from `packageId`). Packed variable sidecars retain their canonical defining module, so multiple package entrypoints can share one contract. The graph rejects accidental slot collisions between distinct defining modules and conflicting schemas for one ref identity. Bare contract IDs provide no package provenance and remain isolated; package-qualified IDs are required for multi-entry sharing.
+Compile independent libraries with package-qualified module IDs (the file host supplies these from `packageId`). Packed variable sidecars retain their canonical defining module, so multiple package entrypoints can share one contract. The graph rejects accidental slot collisions between distinct defining modules and conflicting schemas for one ref identity. Bare contract IDs provide no package provenance and remain isolated. Package-qualified IDs are required for multi-entry sharing.
 
-Repacked stylesheet sections retain an import chain to their declaring contract. Hosts must supply each chain edge in `imports` and its adjacent sidecar in `contracts`; Vite resolves and watches these dependencies recursively, including nested package installations. Asset validation uses the declaring package root. Source content and offsets participate in packed contribution conflict checks, and each sidecar validates its layer constraints before rendering.
+Repacked stylesheet sections retain an import chain to their declaring contract. Hosts must supply each chain edge in `imports` and its adjacent sidecar in `contracts`. Vite resolves and watches these dependencies recursively, including nested package installations. Asset validation uses the declaring package root. Source content and offsets participate in packed contribution conflict checks, and each sidecar validates its layer constraints before rendering.
 
-Importing `zyzz/reset.css` adds reset-first layer constraints to shared CSS and packed output. Conflicting configured orders fail compilation. Packed animations and variable slots must have nonconflicting identities; package-qualified source module IDs prevent independent libraries from generating the same private names.
+Importing `zyzz/reset.css` adds reset-first layer constraints to shared CSS and packed output. Conflicting configured orders fail compilation. Packed animations and variable slots must have nonconflicting identities. Package-qualified source module IDs prevent independent libraries from generating the same private names.

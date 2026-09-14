@@ -13,7 +13,7 @@ Compile web CSS and declare stylesheet contributions and element relationships.
 ## At-Rule Functions
 
 > [!NOTE]
-> The [complete at-rule API](at-rules.md) tracks implementation and acceptance separately; full conformance is not yet established.
+> The [complete at-rule API](at-rules.md) tracks implementation and acceptance separately. Full conformance is not yet established.
 
 `counterStyle`, `fontPaletteValues`, and `positionTry` emit named descriptor rules and return typed CSS identities. Each accepts optional ordered `{ within }` grouping contexts. Imports, aliases, re-exports, and packed metadata preserve the identities.
 
@@ -40,7 +40,7 @@ namespace styles {
 }
 ```
 
-These helpers emit native CSS; they do not polyfill experimental browser features. CSS functions accept scalar domains, composite `type(...)` alternatives, and `+`/`#` repetitions. Repeated arguments retain CSS-text list handling; repeated results require a compatible destination. Namespaces are local to their declaring source module, including packed output. Generated CSS is UTF-8 without a BOM or `@charset` declaration. Legacy `@document` remains an explicit grouping key; browser availability is separate from extraction.
+These helpers emit native CSS. They do not polyfill experimental browser features. CSS functions accept scalar domains, composite `type(...)` alternatives, and `+`/`#` repetitions. Repeated arguments retain CSS-text list handling. Repeated results require a compatible destination. Namespaces are local to their declaring source module, including packed output. Generated CSS is UTF-8 without a BOM or `@charset` declaration. Legacy `@document` remains an explicit grouping key. Browser availability is separate from extraction.
 
 > [!NOTE]
 > `colorProfile` is exported with descriptor validation and domain-specific references. Print-engine compatibility and rendering evidence are tracked separately.

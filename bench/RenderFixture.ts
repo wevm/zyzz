@@ -12,13 +12,13 @@ export type Sample = {
   commit: number
   /** Commit plus the following forced style/layout read. */
   commitLayout: number
-  /** Scheduling through two animation frames; not paint CPU time. */
+  /** Scheduling through two animation frames, not paint CPU time. */
   frame: number
   /** Operation performed on the component tree. */
   operation: 'mount' | 'remount' | 'update'
 }
 
-/** Creates an isolated production workload; compilation and loading are excluded. */
+/** Creates an isolated production workload. Compilation and loading are excluded. */
 export function create(options: create.Options) {
   const container = document.getElementById('app')!
   let root: ReactDom.Root | undefined

@@ -7,7 +7,7 @@ import * as Path from 'node:path'
 /**
  * Adds source transformation, CSS delivery, and project dependency watching to both bundlers.
  * Preserves existing configuration hooks and creates `.zyzz/next` beneath the working directory.
- * Throws file-system errors during setup; compilation errors are reported by the bundler.
+ * Throws file-system errors during setup. Compilation errors are reported by the bundler.
  */
 export function zyzz(config: NextConfig): NextConfig
 export function zyzz(config: zyzz.Factory): zyzz.Factory

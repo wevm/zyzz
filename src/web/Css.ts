@@ -17,7 +17,7 @@ export type Contribution = Contributions.Definition
 
 /**
  * Emits atomic or grouped CSS without reading files or generating runtime code.
- * Shares only nonconflicting declaration domains; conflicting rules retain authored
+ * Shares only nonconflicting declaration domains. Conflicting rules retain authored
  * order by default. Independent composition deduplicates complete applications.
  * Class lists are scoped to the complete compilation input. Empty styles
  * return an empty class list and no rule.
@@ -496,7 +496,7 @@ export function compile<
 
       if (previous) shared = false
 
-      // Contextual slots preserve authored ordering; development names survive value edits.
+      // Contextual slots preserve authored ordering. Development names survive value edits.
       const ordinalSlot = ordinal++
       const slot = options.development ? (slots.get(label) ?? 0) : ordinalSlot
       slots.set(label, slot + 1)
@@ -586,7 +586,7 @@ export function compile<
         const declaration = style.declarations[index++]!
         const property = declaration.property
         const values = [declaration]
-        // Keep same-property fallbacks ordered; they form one semantic value.
+        // Keep same-property fallbacks ordered, since they form one semantic value.
         while (style.declarations[index]?.property === property)
           values.push(style.declarations[index++]!)
 
@@ -704,21 +704,21 @@ export declare namespace compile {
     readonly names?: Readonly<Record<string, string>> | undefined
     /**
      * Defaults to ordered, preserving stylesheet precedence across combined class lists.
-     * Independent deduplicates complete applications; its class lists must not be
+     * Independent deduplicates complete applications. Its class lists must not be
      * combined with each other. Resolve composition before compiling in this mode.
      */
     /** Eager module-level stylesheet contributions, supplied as static data. */
     readonly contributions?: readonly Contribution[] | undefined
-    /** CSS representation; atomic declarations are the default. */
+    /** CSS representation. Atomic declarations are the default. */
     readonly cssOutput?: 'atomic' | 'grouped' | undefined
     readonly composition?: 'independent' | 'ordered' | undefined
     /** Stable declaration names for CSS-only development updates. */
     readonly development?: boolean | undefined
     /** Optional module scope for independently delivered stylesheets. */
     readonly scope?: string | undefined
-    /** Ordered definitions; no themes or source adapter is required. */
+    /** Ordered definitions. No themes or source adapter is required. */
     readonly styles: Style.Definition<name>
-    /** Named scopes; only variables referenced by these styles are emitted. */
+    /** Named scopes. Only variables referenced by these styles are emitted. */
     readonly themes?: Readonly<Record<themeName, Theme.Definition>> | undefined
   }
 

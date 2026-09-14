@@ -14,6 +14,6 @@ import { Style } from 'zyzz'
 
 ## Types and Errors
 
-`Declaration`, `Definition`, `Diagnostic`, `LiteralProperties`, `NamedStyle`, `Properties`, `SourceLocation`; `define.Options`; `InvalidError`.
+Types: `Declaration`, `Definition`, `Diagnostic`, `LiteralProperties`, `NamedStyle`, `Properties`, `SourceLocation`, `define.Options`. Errors: `InvalidError`.
 
 See the [public declarations](../../../../src/Style.ts) for complete generic signatures and documented type properties.

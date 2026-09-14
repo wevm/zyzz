@@ -14,7 +14,7 @@ import * as Theme from '../../Theme.js'
 import type * as Themes from './Themes.js'
 import * as Token from '../../internal/Token.js'
 
-/** Reads versioned JSON as validated data; never evaluates package code. */
+/** Reads versioned JSON as validated data. Never evaluates package code. */
 export function read(
   source: string,
   identities: Map<string, Token.Contract>,

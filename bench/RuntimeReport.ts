@@ -1,5 +1,5 @@
 /**
- * Reports diagnostic function timings; these do not establish render performance.
+ * Reports diagnostic function timings. These do not establish render performance.
  * @module
  */
 import * as Fs from 'node:fs'

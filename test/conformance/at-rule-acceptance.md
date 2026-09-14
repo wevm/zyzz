@@ -134,4 +134,3 @@ One paired local run on Node 24.19.0 compared the #101 snapshot with the combine
 | Packed, 100 families | 76.126 ms |      79.811 ms |  +4.8% |
 
 Reported relative margins of error ranged from 3.18% to 5.87%. Raw reports remain under ignored `bench/results/`. Existing CI thresholds remain unchanged.
-

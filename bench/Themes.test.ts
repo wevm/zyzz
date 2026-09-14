@@ -230,7 +230,7 @@ describe('create', () => {
               }
             `)
 
-            // Selection changes attributes only; the same compiled component classes remain.
+            // Selection changes attributes only. The same compiled component classes remain.
             await page.locator('#alternate').evaluate((element) => {
               const output = (
                 window as unknown as {

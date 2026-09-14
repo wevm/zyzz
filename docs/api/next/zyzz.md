@@ -1,7 +1,7 @@
 # zyzz
 
 > [!NOTE]
-> Preview integration. Next.js 16.3.5 is verified with both bundlers, default build targets, and Chromium 153 rendering; browser support requires native `light-dark()`; client JavaScript source maps trace packed variant applications to authored call sites.
+> Preview integration. Next.js 16.3.5 is verified with both bundlers, default build targets, and Chromium 153 rendering. Browser support requires native `light-dark()`. Client JavaScript source maps trace packed variant applications to authored call sites.
 
 Wrap Next.js configuration with source transformation, CSS delivery, and dependency watching. Configure Webpack and Turbopack internally through the same public setup.
 
@@ -22,7 +22,7 @@ export default zyzz({
 ### nextConfig
 
 - Type: `NextConfig | Promise<NextConfig> | zyzz.Factory`
-- Required: Yes; pass `{}` for an otherwise empty configuration.
+- Required: Yes. Pass `{}` for an otherwise empty configuration.
 
 Existing application configuration. Options and build hooks/rules are preserved. A factory receives the Next.js phase and `{ defaultConfig }`, returning an object or promise. Function configurations are wrapped in an async factory.
 
@@ -36,7 +36,7 @@ zyzz({ reactStrictMode: true })
 
 - Type: `NextConfig`, `Promise<NextConfig>`, or `zyzz.Factory`, matching the input overload.
 
-Configuration with Zyzz integration attached. It is exported from `next.config.ts`; it does not provide the application's `css` or theme helpers.
+Configuration with Zyzz integration attached. It is exported from `next.config.ts`. It does not provide the application's `css` or theme helpers.
 
 ```ts
 export default zyzz({})

@@ -32,7 +32,7 @@ type Repetition<syntax> = syntax extends `${infer first}|${infer rest}`
       ? '#'
       : never
 
-// Finite shorthand domains may have broad textual tails; only explicit list metadata proves repetition.
+// Finite shorthand domains may have broad textual tails. Only explicit list metadata proves repetition.
 type Repeated<syntax, name> = [Repetition<syntax>] extends [never]
   ? true
   : name extends `--${string}`

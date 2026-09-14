@@ -6,7 +6,7 @@ export type Map = Readonly<Record<string, readonly [Property, ...Property[]]>>
 /** Standard properties accepted as alias targets. */
 export type Property = Exclude<keyof Literal.Properties, `--${string}`>
 
-/** Copies validated configuration data; throws for invalid aliases or targets. */
+/** Copies validated configuration data. Throws for invalid aliases or targets. */
 export function read(value: unknown): Map {
   if (
     !value ||

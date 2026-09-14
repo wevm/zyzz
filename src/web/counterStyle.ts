@@ -30,7 +30,7 @@ export function counterStyle<
 }
 /** Descriptor and identity contracts. */
 export declare namespace counterStyle {
-  /** Exact CSS descriptor input; declaration order is preserved. */
+  /** Exact CSS descriptor input. Declaration order is preserved. */
   type Options = {
     /** CSS additiveSymbols descriptor. */
     readonly additiveSymbols?: string | undefined

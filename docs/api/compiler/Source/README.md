@@ -14,6 +14,6 @@ import { Source } from 'zyzz/compiler'
 
 ## Types and Errors
 
-`Call`, `Diagnostic`; `extract.ErrorType`, `extract.Options`, `extract.ReturnType`; `ExtractError`.
+Types: `Call`, `Diagnostic`, `extract.ErrorType`, `extract.Options`, `extract.ReturnType`. Errors: `ExtractError`.
 
 See the [public declarations](../../../../src/compiler/Source.ts) for complete generic signatures and documented type properties.

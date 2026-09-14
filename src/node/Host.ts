@@ -11,7 +11,7 @@ import * as Path from 'node:path'
 import * as Graph from '../compiler/Graph.js'
 import * as Transform from '../compiler/Transform.js'
 
-/** A successful publication; paths are relative to the output directory. */
+/** A successful publication. Paths are relative to the output directory. */
 export type Build = {
   /** Written or removed artifacts, excluding the ownership manifest. */
   readonly changed: readonly string[]
@@ -21,7 +21,7 @@ export type Build = {
 
 /**
  * Opens an exclusively owned output lifecycle around the literal source transform.
- * Source modules remain TypeScript/JSX; transpilation and CSS loading belong to the consumer.
+ * Source modules remain TypeScript/JSX. Transpilation and CSS loading belong to the consumer.
  * Lightning CSS processes stylesheets and composes maps before publication by default.
  * @param options - Source directory, separate output directory, and portable package identity.
  * @returns Explicit build, watch, and close operations. Close releases the output lock.
@@ -529,7 +529,7 @@ export declare namespace create {
     readonly compiler?: boolean | undefined
     /** Publish rewritten modules and metadata alongside CSS. Defaults to true. */
     readonly modules?: boolean | undefined
-    /** Lightning CSS processing; false preserves intermediate CSS. Enabled by default. */
+    /** Lightning CSS processing. False preserves intermediate CSS. Enabled by default. */
     readonly css?:
       | false
       | {
@@ -539,7 +539,7 @@ export declare namespace create {
           readonly targets?: Readonly<LightningCss.Targets> | undefined
         }
       | undefined
-    /** Output directory exclusively locked until close; may be nested under root. */
+    /** Output directory exclusively locked until close. May be nested under root. */
     readonly outDir: string
     /** Stable package identity prepended to relative source module IDs. */
     readonly packageId: string
@@ -555,7 +555,7 @@ export type Event = { readonly error: unknown } | { readonly result: Build }
 export type Runtime = {
   /** Stops watching, drains builds, and releases ownership when an await using scope exits. */
   readonly [Symbol.asyncDispose]: () => Promise<void>
-  /** Serializes a complete scan, compile, and publication; failures reject. */
+  /** Serializes a complete scan, compile, and publication. Failures reject. */
   readonly build: () => Promise<Build>
   /** Stops watching, drains builds, and releases ownership. Idempotent. */
   readonly close: () => Promise<void>
@@ -567,7 +567,7 @@ export type Runtime = {
 export declare namespace watch {
   /** Callback ownership remains with the host consumer. */
   type Options = {
-    /** Receives successful builds and failures; must not throw. */
+    /** Receives successful builds and failures. Must not throw. */
     readonly onResult: (event: Event) => void
   }
 }

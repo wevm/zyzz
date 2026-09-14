@@ -1,7 +1,7 @@
 # StyleSheet.compile
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> Preview API, not yet implemented.
 
 Compile shared definitions into static native tables.
 

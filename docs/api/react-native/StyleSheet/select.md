@@ -1,7 +1,7 @@
 # StyleSheet.select
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> Preview API, not yet implemented.
 
 Select a precompiled native theme and scheme.
 

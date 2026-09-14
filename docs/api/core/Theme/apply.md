@@ -1,7 +1,7 @@
 # Theme Application
 
 > [!NOTE]
-> Callable single-theme application is an unimplemented API proposal. Supported selection uses a named catalog through `themes({ theme, colorScheme })`; see [Themes](../../../guides/themes.md#selecting-a-theme).
+> Callable single-theme application is an unimplemented API proposal. Supported selection uses a named catalog through `themes({ theme, colorScheme })`. See [Themes](../../../guides/themes.md#selecting-a-theme).
 
 Call a theme to obtain web props without generating CSS or accessing the DOM.
 

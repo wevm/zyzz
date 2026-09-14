@@ -2,7 +2,7 @@
 import type * as Context from './internal/Context.js'
 import type * as FunctionSyntax from '../internal/FunctionSyntax.js'
 
-/** Emits an eager registration; initial values are checked by the compiler. */
+/** Emits an eager registration. Initial values are checked by the compiler. */
 export function property<const options extends property.Options>(
   options: options &
     Record<Exclude<keyof options, keyof property.Options>, never> & {
@@ -25,7 +25,7 @@ export declare namespace property {
   type Options = {
     /** Whether the registered value inherits. */
     readonly inherits: boolean
-    /** Computationally independent initial value; optional for universal syntax. */
+    /** Computationally independent initial value, optional for universal syntax. */
     readonly initialValue?: string | number | undefined
     /** Authored custom-property name. */
     readonly name: `--${string}`

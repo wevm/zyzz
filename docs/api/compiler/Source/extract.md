@@ -2,7 +2,7 @@
 
 Extract supported root literal definitions without evaluating source.
 
-Declaration values accept ordinary strings and untagged template literals. Templates fold cooked text and literal string, finite number, boolean, null, and bigint substitutions; signed numbers, TypeScript assertions, and nested templates are supported. Fallback entries use the same rules.
+Declaration values accept ordinary strings and untagged template literals. Templates fold cooked text and literal string, finite number, boolean, null, and bigint substitutions. Signed numbers, TypeScript assertions, and nested templates are supported. Fallback entries use the same rules.
 
 ```ts
 css({ padding: `${8}px`, width: `calc(100% - ${16}px)` })
@@ -64,7 +64,7 @@ Source.extract({
 
 - Type: Optional readonly array of `{ start: number; end: number; slots: Readonly<Record<string, Binding.Reference>> }`
 
-Module-owned `variable()` calls with inclusive start and exclusive end offsets and immutable slot references. Each slot has a fixed custom-property `name`, scalar `type`, and `variable: true` ref. Hosts implementing rewriting must replace these spans with compiled contracts; `Transform.compile` does so automatically. The field is absent when no variable contracts are declared.
+Module-owned `variable()` calls with inclusive start and exclusive end offsets and immutable slot references. Each slot has a fixed custom-property `name`, scalar `type`, and `variable: true` ref. Hosts implementing rewriting must replace these spans with compiled contracts. `Transform.compile` does so automatically. The field is absent when no variable contracts are declared.
 
 ### calls
 
@@ -98,17 +98,17 @@ output.styles
 
 ## Theme Source
 
-Theme factories require literal token data in module-level `const` bindings. Extensions reference preceding local themes. Literal keys, nested palettes, numeric keys, and transparent `as` / `satisfies` wrappers are supported; expressions, spreads, mutation, namespace imports, and dynamic factories produce diagnostics without executing application code.
+Theme factories require literal token data in module-level `const` bindings. Extensions reference preceding local themes. Literal keys, nested palettes, numeric keys, and transparent `as` / `satisfies` wrappers are supported. Expressions, spreads, mutation, namespace imports, and dynamic factories produce diagnostics without executing application code.
 
-Bound `css` supports local const member aliases, destructuring/renaming, and alias chains. Destructuring accepts only `css`, without defaults or rest properties. Aliases must precede their references and support direct calls only. Export compiled styles and scope strings; use [Graph.compile](../Graph/compile.md) for imported/exported theme contracts, authoring aliases, and re-exports.
+Bound `css` supports local const member aliases, destructuring/renaming, and alias chains. Destructuring accepts only `css`, without defaults or rest properties. Aliases must precede their references and support direct calls only. Export compiled styles and scope strings. Use [Graph.compile](../Graph/compile.md) for imported/exported theme contracts, authoring aliases, and re-exports.
 
-Explicit `theme.tokens` paths are supported as scalar property values or fallback entries in bound css calls, including aliases. Dot access, literal string/numeric brackets, and transparent TypeScript assertions retain token identity and defining fallbacks. Paths must exist and match the property domain; optional/dynamic access, token-object escapes, and root css token values produce diagnostics.
+Explicit `theme.tokens` paths are supported as scalar property values or fallback entries in bound css calls, including aliases. Dot access, literal string/numeric brackets, and transparent TypeScript assertions retain token identity and defining fallbacks. Paths must exist and match the property domain. Optional/dynamic access, token-object escapes, and root css token values produce diagnostics.
 
 Pass both `styles` and `themes` to `Css.compile` when using extraction without rewriting. Scope-map keys derive from module/binding identity.
 
 ## Configuration Source
 
-`Config.create` accepts literal options with preceding reusable themes or inline token data. Config-bound `css`, static `theme`/`themes.<name>` token and class reads, and immutable aliases share the theme compiler. `defaultTheme` selects shorthand fallbacks; each configuration retains an isolated identity.
+`Config.create` accepts literal options with preceding reusable themes or inline token data. Config-bound `css`, static `theme`/`themes.<name>` token and class reads, and immutable aliases share the theme compiler. `defaultTheme` selects shorthand fallbacks. Each configuration retains an isolated identity.
 
 Use the source graph for named config imports and re-exports. Dynamic access, object escapes, mutation, layer bodies, and variants produce diagnostics. Source is never evaluated.
 
@@ -128,4 +128,4 @@ Theme-token and variable reads consumed through immutable style records are retu
 
 ### markerCalls
 
-Optional immutable rewrite spans for module-owned `ref` calls. Each entry has inclusive `start`, exclusive `end`, and a `definition` containing the generated attribute `id` and finite `schema`. The field is absent when no ref factories are declared. Extraction-only hosts must replace these spans with compiled runtime handles; `Transform.compile` performs that replacement automatically.
+Optional immutable rewrite spans for module-owned `ref` calls. Each entry has inclusive `start`, exclusive `end`, and a `definition` containing the generated attribute `id` and finite `schema`. The field is absent when no ref factories are declared. Extraction-only hosts must replace these spans with compiled runtime handles. `Transform.compile` performs that replacement automatically.

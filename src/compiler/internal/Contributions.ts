@@ -1400,7 +1400,7 @@ export function extract(
           return false
 
         const text = value.trim()
-        // List contents retain their existing CSS-text contract; this diagnostic checks scalar tokens.
+        // List contents retain their existing CSS-text contract. This diagnostic checks scalar tokens.
         if (
           (syntax.includes('+') && /\s/.test(text)) ||
           (syntax.includes('#') && text.includes(','))

@@ -119,10 +119,10 @@ An earlier run ([34467564716](https://github.com/wevm/zyzz/actions/runs/34467564
 
 `pnpm bench:render` drives Vitest Browser Mode over an isolated iframe holding an esbuild production React bundle. Every framework renders the same 100 or 1,000 cards with 10 or 100 distinct styles through its official compiler adapter. Each pass warms three cycles, then measures twenty fresh-root mounts, retained-DOM updates, and remounts. The second pass reverses framework order. Computed CSS is compared with independent native declarations after each operation.
 
-| Metric          | Boundary                                                                           |
-| --------------- | ---------------------------------------------------------------------------------- |
-| Commit          | Scheduling through React rendering and DOM commit to a layout-effect checkpoint    |
-| Commit + layout | Commit plus a forced geometry read, including pending style and layout work        |
+| Metric          | Boundary                                                                            |
+| --------------- | ----------------------------------------------------------------------------------- |
+| Commit          | Scheduling through React rendering and DOM commit to a layout-effect checkpoint     |
+| Commit + layout | Commit plus a forced geometry read, including pending style and layout work         |
 | Frame           | Two animation frames after commit, including refresh wait, not exact paint CPU time |
 
 These measure warm client operations with styles already loaded, not cold navigation, hydration, GPU presentation, or isolated React CPU time. Render timings are the primary runtime report. Performance is advisory until repeated runs establish variance, while missing data and correctness failures fail CI. Callable and override cases compare all six adapters. Dynamic slots compare Zyzz and native CSS only. In PR runs the base source is measured with the candidate harness, and a base that predates grouped output marks that baseline unavailable.

@@ -25,7 +25,7 @@ for (const workload of Corpus.cases) {
           time: 1000,
           warmupIterations: 3,
           warmupTime: 300,
-          // Tinybench setup/teardown run outside timing; Vitest suite hooks are not supported.
+          // Tinybench setup/teardown run outside timing. Vitest suite hooks are not supported.
           setup: async () => {
             fixture = await Compilation.create(workload)
 

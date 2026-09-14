@@ -17,4 +17,4 @@ Typed style definitions, themes, configuration, and callable authoring.
 
 | [selectors](selectors.md) | Reference style definitions in scoped selector templates. |
 
-Style declarations support ordered nonempty fallback arrays and trailing `!`/`!important`; see [Literal Values](Style/literals.md).
+Style declarations support ordered nonempty fallback arrays and trailing `!`/`!important`. See [Literal Values](Style/literals.md).

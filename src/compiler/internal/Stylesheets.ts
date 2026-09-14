@@ -23,7 +23,7 @@ export type Section = {
   readonly namespaces?: readonly Namespace.Definition[] | undefined
   /** Portable identity of the contributing source module. */
   readonly source: string
-  /** Trusted graph owner; ignored when reading external metadata. */
+  /** Trusted graph owner, ignored when reading external metadata. */
   readonly owner?: string | undefined
   /** Import chain to the declaring contract when repacked through dependencies. */
   readonly dependency?: readonly string[] | undefined
@@ -259,7 +259,7 @@ export function render(sections: readonly Section[]) {
   }
 }
 
-/** Reads packed sections as validated data; CSS is parsed before emission. */
+/** Reads packed sections as validated data. CSS is parsed before emission. */
 export function read(value: unknown): readonly Section[] {
   if (value === undefined) return []
 

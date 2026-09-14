@@ -11,7 +11,7 @@ export const files = {
   'theme.ts': `import { Theme } from 'zyzz'; export const theme = Theme.define({ color: { brand: '#06c' } });`,
 }
 
-/** Lazy application; Vite loads and watches the styled module on demand. */
+/** Lazy application. Vite loads and watches the styled module on demand. */
 export const lazyFiles = {
   ...files,
   'index.html': `<button id="load">Load</button><main id="scope"><div id="card">Card</div></main><script type="module" src="/main.ts"></script>`,

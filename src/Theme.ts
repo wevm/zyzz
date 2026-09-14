@@ -18,7 +18,7 @@ export type Color =
   | Literal.Color
   | { readonly dark: Literal.Color; readonly light: Literal.Color }
 
-/** Theme-bound authoring signature; execution requires source rewriting. */
+/** Theme-bound authoring signature. Execution requires source rewriting. */
 export type Css<tokens extends Tokens> = {
   (): css.ReturnType
   <
@@ -52,7 +52,7 @@ export type Css<tokens extends Tokens> = {
 
 /**
  * Defines scalar tokens without metadata, defaults, or environment access.
- * Colors currently use the supported literal color grammar; spacing and radius
+ * Colors currently use the supported literal color grammar. Spacing and radius
  * values use nonnegative literal lengths or zero. Nested palettes are supported.
  * @throws {InvalidError} If groups, paths, values, or data records are invalid.
  */
@@ -84,7 +84,7 @@ export type Definition<
   boundCss extends (...args: never[]) => unknown = Css<tokens>,
   boundVariants extends (...args: never[]) => unknown = variants.Bound<tokens>,
 > = {
-  /** Compiled scope class; reading untransformed authoring throws. */
+  /** Compiled scope class. Reading untransformed authoring throws. */
   readonly className: string
   /** Token-aware callable authoring boundary, replaced by the source compiler. */
   readonly css: boundCss
@@ -94,7 +94,7 @@ export type Definition<
   readonly tokens: References<tokens>
   /** Token-aware single-element recipe authoring. */
   readonly variants: boundVariants
-  /** Web variable references; source templates retain their identity and fallback. */
+  /** Web variable references. Source templates retain their identity and fallback. */
   readonly vars: Token.Variables<References<tokens>>
 }
 
@@ -189,7 +189,7 @@ type ReferenceTree<tree, group extends Token.Group> = tree extends
   ? Reference<group>
   : { readonly [key in keyof tree]: ReferenceTree<tree[key], group> }
 
-/** Supported scalar groups; composite presets and query metadata follow separately. */
+/** Supported scalar groups. Composite presets and query metadata follow separately. */
 type Scalar<group> = group extends
   | 'spacing'
   | 'borderRadius'
@@ -225,7 +225,7 @@ export type Tokens = {
   readonly containerNames?: readonly string[] | undefined
   /** Compile-time container width thresholds. */
   readonly containers?: Readonly<Record<string, Query.Length>> | undefined
-  /** Font family token values; does not load font files. */
+  /** Font family token values. Does not load font files. */
   readonly fontFamily?:
     | Palette<NonNullable<Literal.Properties['fontFamily']>>
     | undefined
@@ -454,7 +454,7 @@ function build(
     if (base && !Object.keys(base).some((key) => key.startsWith(`${group}.`)))
       throw new InvalidError([group], 'Extensions cannot add token groups.')
 
-    // Groups are always records; scalar leaves begin below them.
+    // Groups are always records. Scalar leaves begin below them.
     const entries = record(palette, [group])
     if (!entries.length && !base)
       throw new InvalidError([group], 'Token palettes cannot be empty.')

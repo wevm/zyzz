@@ -2,7 +2,7 @@
 import type * as Context from './internal/Context.js'
 import type * as Lexical from '../internal/Lexical.js'
 
-/** Emits an eager view-transition rule; browser navigation owns transition execution. */
+/** Emits an eager view-transition rule. Browser navigation owns transition execution. */
 export function viewTransition<
   const options extends Omit<viewTransition.Options, 'navigation'> & {
     readonly navigation?: string | undefined

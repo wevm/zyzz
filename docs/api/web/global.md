@@ -5,7 +5,7 @@
 
 Contribute eager global selectors and nested grouping rules.
 
-The [accepted at-rule API](at-rules.md) places stylesheet declarations in dedicated top-level functions such as `page` and `counterStyle`. Those additions remain planned; `global` is not a descriptor or statement declaration API.
+The [accepted at-rule API](at-rules.md) places stylesheet declarations in dedicated top-level functions such as `page` and `counterStyle`. Those additions remain planned. `global` is not a descriptor or statement declaration API.
 
 ```ts
 import { global } from 'zyzz/web'
@@ -42,6 +42,6 @@ See [Fonts and Motion](../../guides/stylesheets.md#fonts-and-motion) and [Global
 
 ## Current compiler boundary
 
-Direct named imports from `zyzz/web` compile to static stylesheet data. `global`, `fontFace`, and `layers` are eager across supplied graph modules. Vite scans physical project source under its root, excluding generated directories, tests, and dependencies; the standalone host scans its configured source tree. `Graph.compile` returns one `sharedCss` artifact, and the standalone host writes `zyzz.shared.css`, loaded before module stylesheets. Vite imports one shared virtual stylesheet automatically.
+Direct named imports from `zyzz/web` compile to static stylesheet data. `global`, `fontFace`, and `layers` are eager across supplied graph modules. Vite scans physical project source under its root, excluding generated directories, tests, and dependencies. The standalone host scans its configured source tree. `Graph.compile` returns one `sharedCss` artifact, and the standalone host writes `zyzz.shared.css`, loaded before module stylesheets. Vite imports one shared virtual stylesheet automatically.
 
-Local keyframes use stable module-and-binding names; unused local definitions are omitted and exported names remain live. Imported and re-exported animations retain their identity through packed metadata. Relative URLs resolve against the contributing source; Node publishes assets and Vite handles their production URLs. Shared CSS includes source maps and packed contributions. Opt into the reset with `import 'zyzz/reset.css'`.
+Local keyframes use stable module-and-binding names. Unused local definitions are omitted and exported names remain live. Imported and re-exported animations retain their identity through packed metadata. Relative URLs resolve against the contributing source. Node publishes assets and Vite handles their production URLs. Shared CSS includes source maps and packed contributions. Opt into the reset with `import 'zyzz/reset.css'`.

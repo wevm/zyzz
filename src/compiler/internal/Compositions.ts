@@ -415,7 +415,7 @@ export function collect(options: collect.Options) {
       call: Source.Call,
       body = call.body ?? bodies.get(call.start),
     ): Ast.ObjectExpression['properties'] {
-      // Imported declarations map to the application; publisher maps retain authored locations.
+      // Imported declarations map to the application. Publisher maps retain authored locations.
       if (call.ownership) {
         function declarations(
           style: Style.NamedStyle,

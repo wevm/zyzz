@@ -100,7 +100,7 @@ export declare namespace read {
   }
 }
 
-/** One satisfiable candidate truth region; CSS discards impossible intersections. */
+/** One satisfiable candidate truth region. CSS discards impossible intersections. */
 export type Region = {
   /** Active condition indexes in authored priority order. */
   readonly active: readonly number[]

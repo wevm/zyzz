@@ -91,7 +91,7 @@ export type Link = {
   readonly members?: Readonly<Record<string, Link>> | undefined
 }
 
-/** Shared graph data; no filesystem or runtime evaluation is involved. */
+/** Shared graph data. No filesystem or runtime evaluation is involved. */
 export type Context = {
   /** Published class lists of imported callable definitions. */
   readonly styleClasses?: Readonly<Record<string, string>> | undefined

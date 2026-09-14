@@ -91,13 +91,12 @@ jobs:
           path: |
             test-results/
             coverage/
-            bench/results/next-*.json
           retention-days: 1
     timeout-minutes: 30
   test:
     name: Test
     if: ${{ !cancelled() }}
-    needs: [test-shards, typescript, type-benches]
+    needs: [test-shards, typescript]
     permissions:
       contents: read
       pull-requests: write
@@ -116,11 +115,9 @@ jobs:
         env:
           SHARDS_RESULT: ${{ needs.test-shards.result }}
           TYPES_RESULT: ${{ needs.typescript.result }}
-          TYPE_BENCHES_RESULT: ${{ needs.type-benches.result }}
         run: |
           test "$SHARDS_RESULT" = success
           test "$TYPES_RESULT" = success
-          test "$TYPE_BENCHES_RESULT" = success
           for shard in 1 2 3; do test -f "test-results/blob-$shard.json"; done
       - name: Merge test results and coverage
         if: ${{ !cancelled() }}
@@ -152,13 +149,6 @@ jobs:
         with:
           name: next-failure-evidence
           path: test-results/next-*.json
-          retention-days: 30
-      - if: ${{ !cancelled() && hashFiles('bench/results/next-*.json') != '' }}
-        name: Upload Next.js build comparisons
-        uses: actions/upload-artifact@v4
-        with:
-          name: next-build-comparisons
-          path: bench/results/next-*.json
           retention-days: 30
       - if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
         name: Report coverage
@@ -235,26 +225,3 @@ jobs:
             tsc: node node_modules/typescript-native/bin/tsc
             typescript: '7.0'
     timeout-minutes: 45
-  type-benches:
-    name: Type instantiations ${{ matrix.typescript }} (${{ matrix.shard }}/2)
-    env:
-      NODE_OPTIONS: --max-old-space-size=4096
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2]
-        typescript: ['6.0']
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-      - name: Install dependencies
-        uses: ./.github/actions/install-dependencies
-      - name: Install TypeScript ${{ matrix.typescript }}
-        run: pnpm add --save-dev "typescript@${{ matrix.typescript }}"
-      - name: Check type instantiations
-        run: |
-          set -o pipefail
-          pnpm bench:types --shard ${{ matrix.shard }}/2 | tee type-benches.txt
-          cat type-benches.txt >> "$GITHUB_STEP_SUMMARY"
-    timeout-minutes: 30

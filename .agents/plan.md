@@ -812,4 +812,4 @@ All 670 property entries are reviewed as supported under the documented static a
 
 The standalone CLI moves ahead of output optimization and native PRs. `zyzz build` compiles once; `zyzz dev` builds immediately and watches using the existing file host. Incur owns command parsing and structured output. Native PRs 3.7–3.8 remain last; full Phase 3 acceptance still requires both mobile platforms.
 
-The CLI preserves per-module CSS, maps, packed metadata, output ownership, and watch recovery. TypeScript/JSX lowering, declaration generation, application bundling, and watching installed dependencies remain outside this command boundary.
+The CLI emits only per-module CSS and CSS maps, preserving output ownership and watch recovery. The Vite compiler is optional and enabled by default; disabling it retains executable authoring calls and requires explicit IDs for identity-bearing declarations. Lower-level Host module output remains available for library publishing. TypeScript/JSX lowering, declaration generation, application bundling, and watching installed dependencies remain outside this command boundary.

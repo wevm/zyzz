@@ -66,10 +66,14 @@ describe('zyzz', () => {
         'true',
       )
       const original = await Fs.readFile(
-        Path.join(root, 'dist/button.ts'),
+        Path.join(root, 'dist/button.ts.css'),
         'utf8',
       )
-      expect(original.includes('zyzz/runtime')).toMatchInlineSnapshot('true')
+      expect(
+        result.files.some(
+          (file) => !file.endsWith('.css') && !file.endsWith('.css.map'),
+        ),
+      ).toMatchInlineSnapshot('false')
       expect(
         (
           await Fs.readFile(Path.join(root, 'dist/button.ts.css'), 'utf8')
@@ -120,7 +124,7 @@ describe('zyzz', () => {
         ),
       ).toMatchInlineSnapshot('1')
       expect(
-        (await Fs.readFile(Path.join(root, 'dist/button.ts'), 'utf8')) ===
+        (await Fs.readFile(Path.join(root, 'dist/button.ts.css'), 'utf8')) ===
           original,
       ).toMatchInlineSnapshot('true')
 
@@ -168,7 +172,7 @@ describe('zyzz', () => {
           async () => {
             if (
               !(await Fs.readdir(Path.join(root, 'dist'))).includes(
-                'renamed.ts',
+                'renamed.ts.css',
               )
             )
               throw new Error('Waiting for renamed output')
@@ -179,7 +183,9 @@ describe('zyzz', () => {
         await vi.waitFor(
           async () => {
             if (
-              (await Fs.readdir(Path.join(root, 'dist'))).includes('renamed.ts')
+              (await Fs.readdir(Path.join(root, 'dist'))).includes(
+                'renamed.ts.css',
+              )
             )
               throw new Error('Waiting for removed output')
           },

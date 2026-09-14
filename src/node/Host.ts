@@ -138,6 +138,7 @@ export async function create(options: create.Options): Promise<Runtime> {
     }
 
     const graph = compiler.compile({
+      compiler: options.compiler,
       modules: Object.fromEntries(
         Object.entries(sources).map(([name, source]) => [
           `${options.packageId}/${name}`,
@@ -271,10 +272,11 @@ export async function create(options: create.Options): Promise<Runtime> {
 
       const contract = graph.contracts[`${options.packageId}/${name}`]
 
-      if (contract) artifacts.set(`${name}.zyzz.json`, contract)
-
-      artifacts.set(name, output.code)
-      artifacts.set(`${name}.map`, JSON.stringify(output.map))
+      if (options.modules !== false) {
+        if (contract) artifacts.set(`${name}.zyzz.json`, contract)
+        artifacts.set(name, output.code)
+        artifacts.set(`${name}.map`, JSON.stringify(output.map))
+      }
 
       let stylesheet = stylesheets.get(output)
 
@@ -472,6 +474,10 @@ export async function create(options: create.Options): Promise<Runtime> {
 export declare namespace create {
   /** Explicit filesystem and module-identity boundaries. */
   type Options = {
+    /** Rewrite source calls. False requires runtime-compatible explicit identities. */
+    readonly compiler?: boolean | undefined
+    /** Publish rewritten modules and metadata alongside CSS. Defaults to true. */
+    readonly modules?: boolean | undefined
     /** Lightning CSS processing; false preserves intermediate CSS. Enabled by default. */
     readonly css?:
       | false

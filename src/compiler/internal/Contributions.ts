@@ -1,4 +1,5 @@
 /** Extracts module-level stylesheet effects without evaluating application code. @module */
+import * as Identity from '../../internal/Identity.js'
 import type * as Ast from '@oxc-project/types'
 import type * as Block from '../../web/internal/Block.js'
 import * as Condition from '../../internal/Condition.js'
@@ -212,7 +213,7 @@ export function scan(
             'page',
             'property',
             'viewTransition',
-            ...named.filter((kind) => kind !== 'customMedia'),
+            ...named,
           ].includes(type) ||
             node.arguments.length !== 2)) ||
         (!variable && parent?.type !== 'ExpressionStatement') ||
@@ -243,14 +244,48 @@ export function scan(
           node,
         )
 
-      const name =
-        variable?.id.type === 'Identifier'
-          ? `${type === 'keyframes' ? 'z-k' : `${type === 'counterStyle' ? '' : '--'}z-${type.toLowerCase()}`}${namespace}-${Array.from(
-              variable.id.name,
+      const context = node.arguments[1]
+      const idProperty =
+        context?.type === 'ObjectExpression'
+          ? context.properties.find(
+              (property) =>
+                property.type === 'Property' &&
+                !property.computed &&
+                (property.key.type === 'Identifier'
+                  ? property.key.name
+                  : property.key.type === 'Literal'
+                    ? property.key.value
+                    : undefined) === 'id',
             )
-              .map((value) => value.codePointAt(0)!.toString(16))
-              .join('-')}`
           : undefined
+      if (
+        idProperty &&
+        (idProperty.type !== 'Property' ||
+          idProperty.value.type !== 'Literal' ||
+          typeof idProperty.value.value !== 'string' ||
+          !idProperty.value.value)
+      )
+        throw new Themes.InvalidError(
+          'Stylesheet ids must be nonempty string literals.',
+          node,
+        )
+
+      const explicit =
+        idProperty?.type === 'Property' &&
+        idProperty.value.type === 'Literal' &&
+        typeof idProperty.value.value === 'string'
+          ? idProperty.value.value
+          : undefined
+      const name =
+        explicit !== undefined
+          ? Identity.contribution(type, explicit)
+          : variable?.id.type === 'Identifier'
+            ? `${type === 'keyframes' ? 'z-k' : `${type === 'counterStyle' ? '' : '--'}z-${type.toLowerCase()}`}${namespace}-${Array.from(
+                variable.id.name,
+              )
+                .map((value) => value.codePointAt(0)!.toString(16))
+                .join('-')}`
+            : undefined
 
       const call: Call = {
         kind: type,
@@ -1322,7 +1357,7 @@ export function extract(
       const contextValue = call.context ? value(call.context) : undefined
       if (contextValue !== undefined) {
         const context = record(contextValue)
-        if (Object.keys(context).some((key) => key !== 'within'))
+        if (Object.keys(context).some((key) => !['id', 'within'].includes(key)))
           throw new Error('Unknown contribution context option.')
         const within = context.within ?? []
         if (

@@ -2,6 +2,8 @@
  * Extracts literal styles and local themes through lexical source analysis.
  * @module
  */
+import * as Identity from '../internal/Identity.js'
+import * as Identifiers from './internal/Identifiers.js'
 import type * as Ast from '@oxc-project/types'
 import * as AtRules from './internal/AtRules.js'
 import * as Binding from '../internal/Binding.js'
@@ -40,6 +42,10 @@ const define = Style.define as unknown as (
 
 /** A direct definition call available for a later source rewriter. */
 export type Call = {
+  /** Class identity available without source rewriting. */
+  readonly portable?: string | undefined
+  /** Flattened definition identities for nested compositions. */
+  readonly portableInputs?: readonly string[] | undefined
   /** Ownership retained by a separately compiled callable. */
   readonly ownership?: Composition.Owner | undefined
   /** CSS-only presence alternative for a runtime composition. */
@@ -468,6 +474,11 @@ export function extract(options: extract.Options): extract.ReturnType {
   })()
 
   for (const call of pending) {
+    const explicitId = Identifiers.explicit(call)
+    const definitionId =
+      explicitId === undefined
+        ? `${identity(options.moduleId)}-${call.start}`
+        : Identity.requireId(explicitId, 'css')
     let argument = call.arguments[0]
 
     if (call.arguments.length === 0)
@@ -503,11 +514,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       if (!argument) return undefined
 
       try {
-        return Dynamic.read(
-          argument,
-          `${identity(options.moduleId)}-${call.start}`,
-          staticData.type,
-        )
+        return Dynamic.read(argument, definitionId, staticData.type)
       } catch (error) {
         if (!(error instanceof Themes.InvalidError)) throw error
 
@@ -547,7 +554,7 @@ export function extract(options: extract.Options): extract.ReturnType {
       }
     }
 
-    if (call.arguments.length > 1 || argument?.type !== 'ObjectExpression') {
+    if (call.arguments.length > 2 || argument?.type !== 'ObjectExpression') {
       report(
         'unsupported_syntax',
         'Expected one literal object or typed callback; spreads and referenced definitions are not supported.',
@@ -567,7 +574,7 @@ export function extract(options: extract.Options): extract.ReturnType {
             original ?? call,
           )
         const expanded = Recipes.expand(argument, {
-          identity: `${identity(options.moduleId)}-${call.start}`,
+          identity: definitionId,
           normalize: (node) => staticData.normalize(node, staticCalls, opaque),
           queries: themes?.styles.get(call.start)?.theme[Token.definition]
             .queries,
@@ -1032,6 +1039,21 @@ export function extract(options: extract.Options): extract.ReturnType {
               ),
             }
           : {}),
+        ...(options.compiler === false
+          ? {
+              portable: (() => {
+                if (explicitId !== undefined) return `z-style-${definitionId}`
+                if (
+                  dynamic ||
+                  recipe ||
+                  (!definition.styles[0]!.declarations.length &&
+                    !definition.styles[0]!.rules)
+                )
+                  return undefined
+                return Identity.style(definition.styles[0]!)
+              })(),
+            }
+          : {}),
         end: call.end,
         name,
         start: call.start,
@@ -1267,6 +1289,8 @@ export declare namespace extract {
 
   /** Source text supplied by an adapter. */
   type Options = {
+    /** Collect portable runtime identities when source rewriting is disabled. */
+    readonly compiler?: boolean | undefined
     /** Portable identity including package and module path; no filesystem access occurs. */
     readonly moduleId: string
     /** Compiler-owned graph context. */

@@ -52,7 +52,7 @@ Import `Button` normally. The named helpers retain inferred tokens; compilation 
 - **Next.js:** the [proposed setup](next.md) remains unimplemented.
 - **CLI:** use [`zyzz build` or `zyzz dev`](cli.md) for standalone output, downstream builds, and library distribution.
 
-Importing config alone does not compile styles. Source transformation supplies executable modules; emitting CSS alone cannot make untouched authoring calls executable.
+Importing config alone does not emit CSS. The [CLI](cli.md) emits CSS for unchanged authoring source. Vite delivers CSS automatically and enables source optimization by default; `zyzz({ compiler: false })` disables optimization. Without compilation, identity-bearing declarations require explicit IDs.
 
 ## Continue
 

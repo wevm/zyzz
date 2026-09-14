@@ -24,8 +24,7 @@ const { version } = JSON.parse(
 ) as { version: string }
 
 await Cli.create('zyzz', {
-  description:
-    'Compile style definitions to static CSS and rewritten source modules.',
+  description: 'Extract static CSS without writing source modules.',
   version,
 })
   .command('build', {
@@ -144,7 +143,9 @@ async function open(context: open.Context) {
   const packageId = context.options['package-id'] ?? (await identity())
 
   return Host.create({
+    compiler: false,
     css: { minify: context.options.minify },
+    modules: false,
     outDir: Path.resolve(context.options['out-dir']),
     packageId,
     root: Path.resolve(context.args.src ?? 'src'),

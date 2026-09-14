@@ -428,7 +428,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       }
 
       expect((await module.load()).props.className).toMatchInlineSnapshot(
-        `"z-text-87viPH-0 z-p-87viPH-1"`,
+        `"z-text-ju2ueN-0 z-p-ju2ueN-0"`,
       )
     } finally {
       await server.close()
@@ -597,7 +597,7 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       }
 
       expect(rendered.props.className).toMatchInlineSnapshot(
-        `"z-text-87viPH-0 z-p-87viPH-1"`,
+        `"z-text-ju2ueN-0 z-p-ju2ueN-0"`,
       )
 
       expect((await stylesheet()).includes('#175')).toMatchInlineSnapshot(

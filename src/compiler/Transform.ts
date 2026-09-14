@@ -66,6 +66,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   const emitted = Css.compile({
     development: options.development,
     scope: options.moduleId,
+    cssOutput: options.cssOutput,
     names: portable ? portableNames : undefined,
     styles: extracted.styles,
     contributions: extracted.contributions,
@@ -995,6 +996,8 @@ export declare namespace compile {
     readonly development?: boolean | undefined
     /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
     readonly compiler?: boolean | undefined
+    /** Default CSS representation for definitions without an explicit mode. */
+    readonly cssOutput?: Css.compile.Options['cssOutput']
   }
 
   /** Executable module and stylesheet artifacts; TypeScript/JSX lowering belongs to the host. */

@@ -4,12 +4,19 @@ import { Graph, Transform } from 'zyzz/compiler'
 
 for (const count of [10, 100]) {
   const source = `import {counterStyle,page,cssFunction,customMedia} from 'zyzz/web';\n${Array.from({ length: count }, (_, index) => `export const counter${index}=counterStyle({system:'cyclic',symbols:'"●"'});page({selector:':first',descriptors:{margin:'1cm','@top-center':{content:'"${index}"'}}});export const query${index}=customMedia('(width > ${index}px)');export const fn${index}=cssFunction({parameters:[{name:'--x',syntax:'<length>'}],returns:'<length>',body:{result:'calc(var(--x) * 2)'}});`).join('\n')}`
-  const library = Graph.compile({ modules: { 'library.ts': source } })
+  const library = Graph.compile({
+    cssOutput: 'grouped',
+    modules: { 'library.ts': source },
+  })
   describe(`at-rule declarations / ${count} families`, () => {
     bench(
       'source transform with maps',
       () => {
-        Transform.compile({ moduleId: 'library.ts', source })
+        Transform.compile({
+          cssOutput: 'grouped',
+          moduleId: 'library.ts',
+          source,
+        })
       },
       { iterations: 20, time: 1000 },
     )
@@ -17,6 +24,7 @@ for (const count of [10, 100]) {
       'packed stylesheet consumption',
       () => {
         Graph.compile({
+          cssOutput: 'grouped',
           contracts: { 'lib/library.js': library.contracts['library.ts']! },
           imports: { 'app.ts': { lib: 'lib/library.js' } },
           modules: { 'app.ts': `import 'lib'` },

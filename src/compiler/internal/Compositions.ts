@@ -568,7 +568,18 @@ export function collect(options: collect.Options) {
     names.push(call.name)
     const composed = conditions ? { ...call, compositionCases: names } : call
     calls.set(node.start, composed)
-    result.push({ call: composed, style, ...(cases.length ? { cases } : {}) })
+    result.push({
+      call: composed,
+      style: immutable(style),
+      ...(cases.length
+        ? {
+            cases: cases.map((entry) => ({
+              ...entry,
+              style: immutable(entry.style),
+            })),
+          }
+        : {}),
+    })
   }
   return result.filter(
     ({ call }) =>
@@ -598,4 +609,21 @@ export declare namespace collect {
     /** Validated ordered style bodies. */
     readonly styles: readonly Style.NamedStyle[]
   }
+}
+
+function immutable(style: Style.NamedStyle): Style.NamedStyle {
+  if (Object.isFrozen(style)) return style
+  return Object.freeze({
+    ...style,
+    declarations: Object.freeze([...style.declarations]),
+    ...(style.rules
+      ? {
+          rules: Object.freeze(
+            style.rules.map((rule) =>
+              Object.freeze({ ...rule, style: immutable(rule.style) }),
+            ),
+          ),
+        }
+      : {}),
+  })
 }

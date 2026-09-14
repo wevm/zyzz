@@ -240,50 +240,49 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       `".z_theme-13yvj2m4fsr2i-css-theme{--z-t13yvj2m4fsr2i-css-color_2e_brand:light-dark(#0066cc,#99ccff);}"`,
     )
   })
-})
 
-test('shares published identities across consumers and retains nested child modes', () => {
-  const first = Graph.compile({
-    modules: {
-      'first.ts':
-        "import {Config} from 'zyzz'; const {css}=Config.create({cssOutput:'grouped'}); export const base=css({color:'red',padding:'8px'})",
-    },
-  })
-  const packed = JSON.parse(first.contracts['first.ts']!)
-  const grouped = packed.exports.base.style.style
-  // Model a previously packed composition whose atomic parent owns a grouped child.
-  packed.exports.base.style.style = {
-    ...grouped,
-    cssOutput: 'atomic',
-    declarations: [],
-    rules: [{ style: grouped }],
-  }
-  const second = Graph.compile({
-    contracts: { 'first.js': JSON.stringify(packed) },
-    imports: { 'second.ts': { './first.js': 'first.js' } },
-    modules: { 'second.ts': "export {base} from './first.js'" },
-  })
-  const result = Graph.compile({
-    contracts: { 'second.js': second.contracts['second.ts']! },
-    imports: {
-      'a.ts': { './second.js': 'second.js', zyzz: null },
-      'b.ts': { './second.js': 'second.js', zyzz: null },
-    },
-    modules: {
-      'a.ts':
-        "import {css,cx} from 'zyzz'; import {base} from './second.js'; const local=css({opacity:0.5}); export const props=cx(base(),local())",
-      'b.ts':
-        "import {css,cx} from 'zyzz'; import {base} from './second.js'; const local=css({opacity:1}); export const props=cx(base(),local())",
-    },
-  })
-  expect(
-    Object.fromEntries(
-      Object.entries(result.modules).map(([name, output]) => [
-        name,
-        output.css,
-      ]),
-    ),
-  ).toMatchInlineSnapshot(`
+  test('shares published identities across consumers and retains nested child modes', () => {
+    const first = Graph.compile({
+      modules: {
+        'first.ts':
+          "import {Config} from 'zyzz'; const {css}=Config.create({cssOutput:'grouped'}); export const base=css({color:'red',padding:'8px'})",
+      },
+    })
+    const packed = JSON.parse(first.contracts['first.ts']!)
+    const grouped = packed.exports.base.style.style
+    // Model a previously packed composition whose atomic parent owns a grouped child.
+    packed.exports.base.style.style = {
+      ...grouped,
+      cssOutput: 'atomic',
+      declarations: [],
+      rules: [{ style: grouped }],
+    }
+    const second = Graph.compile({
+      contracts: { 'first.js': JSON.stringify(packed) },
+      imports: { 'second.ts': { './first.js': 'first.js' } },
+      modules: { 'second.ts': "export {base} from './first.js'" },
+    })
+    const result = Graph.compile({
+      contracts: { 'second.js': second.contracts['second.ts']! },
+      imports: {
+        'a.ts': { './second.js': 'second.js', zyzz: null },
+        'b.ts': { './second.js': 'second.js', zyzz: null },
+      },
+      modules: {
+        'a.ts':
+          "import {css,cx} from 'zyzz'; import {base} from './second.js'; const local=css({opacity:0.5}); export const props=cx(base(),local())",
+        'b.ts':
+          "import {css,cx} from 'zyzz'; import {base} from './second.js'; const local=css({opacity:1}); export const props=cx(base(),local())",
+      },
+    })
+    expect(
+      Object.fromEntries(
+        Object.entries(result.modules).map(([name, output]) => [
+          name,
+          output.css,
+        ]),
+      ),
+    ).toMatchInlineSnapshot(`
     {
       "a.ts": ".z_theme-1mlrxl41f5va70-css{}
     .z-opacity-mhlaoe-0{opacity:0.5;}
@@ -295,4 +294,38 @@ test('shares published identities across consumers and retains nested child mode
     .z-opacity-1-SxroK2-1{opacity:1;}",
     }
   `)
+  })
+
+  test('restores legacy grouped configuration metadata before re-export', () => {
+    const output = Graph.compile({
+      modules: {
+        'config.ts':
+          "import {Config} from 'zyzz'; export const config=Config.create({cssOutput:'grouped'}); export const css=config.css; export const card=css({color:'red',padding:'8px'})",
+      },
+    })
+    const packed = JSON.parse(output.contracts['config.ts']!)
+    packed.version = 16
+    for (const theme of Object.values(packed.themes) as Record<
+      string,
+      unknown
+    >[])
+      delete theme.cssOutput
+    const barrel = Graph.compile({
+      contracts: { 'config.js': JSON.stringify(packed) },
+      imports: { 'barrel.ts': { './config.js': 'config.js' } },
+      modules: { 'barrel.ts': "export {config,css,card} from './config.js'" },
+    })
+    const consumer = Graph.compile({
+      contracts: { 'barrel.js': barrel.contracts['barrel.ts']! },
+      imports: { 'app.ts': { './barrel.js': 'barrel.js' } },
+      modules: {
+        'app.ts':
+          "import {css} from './barrel.js'; export const card=css({color:'blue',padding:'2px'})",
+      },
+    })
+    expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-u8smm21l81sow-config{}
+      .g-style-1e8a67z1uaws1j-51{color:blue;padding:2px;}"
+    `)
+  })
 })

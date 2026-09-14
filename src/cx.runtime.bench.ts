@@ -6,7 +6,7 @@ import { Transform } from 'zyzz/compiler'
 for (const output of ['react', 'html'] as const) {
   const source = `import {Config,cx} from 'zyzz';const {css}=Config.create({output:'${output}'});namespace styles{export const value=css((values:{padding:\`\${number}px\`})=>({padding:values.padding}));export const fixed=css({paddingLeft:'3px'})}export const apply=(enabled:boolean,padding:\`\${number}px\`)=>cx(styles.value({padding}),enabled && styles.fixed());`
   const options = { moduleId: 'compose.ts', source }
-  const compiled = Transform.compile(options)
+  const compiled = Transform.compile({ ...options, cssOutput: 'grouped' })
   const bundled = await Esbuild.build({
     stdin: { contents: compiled.code, loader: 'ts', resolveDir: process.cwd() },
     alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
@@ -20,7 +20,7 @@ for (const output of ['react', 'html'] as const) {
 
   describe(`cx / ${output} runtime composition`, () => {
     bench('compile conditional groups', () => {
-      Transform.compile(options)
+      Transform.compile({ ...options, cssOutput: 'grouped' })
     })
     bench('select and bind both arguments', () => {
       module.apply(true, '16px')

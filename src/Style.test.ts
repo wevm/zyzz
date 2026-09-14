@@ -96,9 +96,9 @@ describe('define', () => {
       .z-bg-29LMGk{background-color:var(--z0,#fff);}
       .z-border-color-tIvIJ5{border-color:var(--z1,#000);}
       .z-border-radius-ZjOgyX{border-radius:var(--z2,4px);}
-      .z-text-766AnZ-3{color:var(--z3,light-dark(#111,#fff));}
+      .z-text-8plKSR-3{color:var(--z3,light-dark(#111,#fff));}
       .z-p-FZccf8{padding:var(--z4,1rem);}
-      .z-text-RpTC-t-0{color:var(--z5,#06c);}"
+      .z-text-mJMZoC-0{color:var(--z5,#06c);}"
     `)
     expect(
       output.css ===
@@ -157,8 +157,8 @@ describe('define', () => {
     )
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-text-0_yb_l-0{color:var(--z0,#000);}
-      .z-p-0_yb_l-1{padding:var(--z1,8px);}
+      ".z-text-tiiNj6-0{color:var(--z0,#000);}
+      .z-p-Bic1dz-1{padding:var(--z1,8px);}
       .z-text-white-I_VjYx-0{color:white;}
       .z-p-0-I_VjYx-1{padding:0;}
       .z-w-1rem{width:1rem;}"

@@ -1,9 +1,19 @@
 /** Exercises public recipe compilation and real browser choice transitions. @module */
+import * as Library from '../test/fixtures/VariantLibrary.js'
+import * as Watch from '../test/fixtures/Watch.js'
+import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as Lightning from 'lightningcss'
+import * as ChildProcess from 'node:child_process'
+import * as Fs from 'node:fs/promises'
+import * as Path from 'node:path'
+import * as Util from 'node:util'
 import { chromium } from 'playwright'
+import * as Vite from 'vite'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Source, Transform } from 'zyzz/compiler'
+import { Host } from 'zyzz/node'
+import { zyzz } from 'zyzz/vite'
 
 const source = `import { variants as recipe } from 'zyzz'
 export namespace styles {
@@ -347,5 +357,1155 @@ describe('variants', () => {
     ).toThrowErrorMatchingInlineSnapshot(
       `[Source.ExtractError: recipe.ts:87: Unknown recipe choice.]`,
     )
+  })
+})
+
+describe('bound', () => {
+  describe('variants', () => {
+    test('retains mixed theme bindings through renamed exports and packed consumers', async () => {
+      const modules = {
+        'theme.ts': `import {Theme} from 'zyzz';
+export const theme=Theme.define({color:{brand:'#06c'}});
+const {css:style,variants:recipe}=theme;
+const alias=recipe;
+export {style,alias};`,
+        'index.ts': `export {style as css,alias as variants,theme} from './theme.js';`,
+      }
+      const app = `import {css,variants,theme} from './index.js';
+export const scope=theme.className;
+export const base=css({color:'black',padding:'6px'});
+export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{color:'red'}}},defaultVariants:{intent:'primary'}});`
+      const publisher = Graph.compile({ modules })
+      const packed = Graph.compile({
+        modules: { 'app.ts': app },
+        contracts: publisher.contracts,
+        imports: { 'app.ts': { './index.js': 'index.ts' } },
+      })
+      const source = Graph.compile({ modules: { ...modules, 'app.ts': app } })
+
+      expect(
+        packed.modules['app.ts']!.css === source.modules['app.ts']!.css,
+      ).toMatchInlineSnapshot('true')
+      expect(
+        publisher.modules['theme.ts']!.code.includes(
+          '{css:undefined,variants:undefined}',
+        ),
+      ).toMatchInlineSnapshot('true')
+
+      const bundled = await Esbuild.build({
+        stdin: {
+          contents: packed.modules['app.ts']!.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+        bundle: true,
+        format: 'iife',
+        globalName: 'App',
+        write: false,
+      })
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${publisher.sharedCss ?? ''}\n${packed.sharedCss ?? ''}\n${packed.modules['app.ts']!.css}</style><main><button>Button</button></main>`,
+        )
+        await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+        expect(
+          await page.evaluate(`{
+        document.querySelector('main').className=App.scope;
+        const button=document.querySelector('button');
+        const states=[];
+        for(const intent of [undefined,'quiet',null,'primary']) {
+          const props=App.button({intent});
+          button.className=App.base().className+' '+props.className;
+          button.removeAttribute('data-intent');
+          if(props['data-intent']!==undefined) button.setAttribute('data-intent',props['data-intent']);
+          const computed=getComputedStyle(button);
+          states.push([computed.color,computed.paddingLeft]);
+        }
+        states;
+      }`),
+        ).toMatchInlineSnapshot(`
+        [
+          [
+            "rgb(0, 102, 204)",
+            "6px",
+          ],
+          [
+            "rgb(255, 0, 0)",
+            "6px",
+          ],
+          [
+            "rgb(0, 0, 0)",
+            "6px",
+          ],
+          [
+            "rgb(0, 102, 204)",
+            "6px",
+          ],
+        ]
+      `)
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('preserves configured aliases through source and packed contracts', async () => {
+      const config = `import {Config} from 'zyzz'; export const {variants,theme}=Config.create({output:'html',theme:{color:{brand:'#06c'}},shorthands:{px:['paddingLeft','paddingRight']}})`
+      const app = `import {variants as recipe,theme} from './config.js'; export const scope=theme.className; export const button=recipe({base:{px:'8px'},variants:{intent:{primary:{color:'brand'},quiet:{color:'black'}}},defaultVariants:{intent:'primary'}})`
+      const publisher = Graph.compile({ modules: { 'config.ts': config } })
+      const result = Graph.compile({
+        modules: { 'app.ts': app },
+        contracts: publisher.contracts,
+        imports: { 'app.ts': { './config.js': 'config.ts' } },
+      })
+      const source = Graph.compile({
+        modules: { 'config.ts': config, 'app.ts': app },
+      })
+      expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
+        `
+        ".z_theme-u8smm21l81sow-variants-theme{--z-tu8smm21l81sow-variants-color_2e_brand:#06c;}
+        .z-pl-8px-MIN2nV-0{padding-left:8px;}
+        .z-pr-8px-MIN2nV-1{padding-right:8px;}
+        .z-text-KnkPic-2{&:where([data-intent="primary"]){color:var(--z-tu8smm21l81sow-variants-color_2e_brand,#06c);}}
+        .z-text-BKrHvw-3{&:where([data-intent="quiet"]){color:black;}}"
+      `,
+      )
+      expect(
+        result.modules['app.ts']!.css === source.modules['app.ts']!.css,
+      ).toMatchInlineSnapshot('true')
+      expect(
+        JSON.parse(publisher.contracts['config.ts']!).version,
+      ).toMatchInlineSnapshot(`17`)
+      const bundled = await Esbuild.build({
+        stdin: {
+          contents: result.modules['app.ts']!.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+        bundle: true,
+        format: 'iife',
+        globalName: 'App',
+        write: false,
+      })
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${publisher.sharedCss ?? ''}\n${result.sharedCss ?? ''}\n${result.modules['app.ts']!.css}</style><main><button>Button</button></main>`,
+        )
+        await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+        await page.evaluate(`{
+        document.querySelector('main').className=App.scope;
+        const button=document.querySelector('button');
+        const props=App.button();
+        for(const [key,value] of Object.entries(props)) button.setAttribute(key,value);
+      }`)
+        expect(
+          await page.evaluate(
+            `getComputedStyle(document.querySelector('button')).color`,
+          ),
+        ).toMatchInlineSnapshot('"rgb(0, 102, 204)"')
+        expect(
+          await page.evaluate(
+            `getComputedStyle(document.querySelector('button')).paddingLeft`,
+          ),
+        ).toMatchInlineSnapshot('"8px"')
+        expect(
+          await page.evaluate(
+            `getComputedStyle(document.querySelector('button')).paddingRight`,
+          ),
+        ).toMatchInlineSnapshot('"8px"')
+        expect(
+          await page.evaluate(`App.button()['data-intent']`),
+        ).toMatchInlineSnapshot('"primary"')
+        expect(
+          await page.evaluate(`Object.hasOwn(App.button(),'className')`),
+        ).toMatchInlineSnapshot('false')
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('supports local theme recipes and destructured aliases', async () => {
+      const output = Graph.compile({
+        modules: {
+          'app.ts': `import {Theme} from 'zyzz'; const theme=Theme.define({color:{brand:'#06c'}}); const {variants}=theme; export const a=theme.variants({base:{color:'brand'}}); export const b=variants({base:{color:'brand'}});`,
+        },
+      })
+      const bundled = await Esbuild.build({
+        stdin: {
+          contents: output.modules['app.ts']!.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+        bundle: true,
+        format: 'cjs',
+        write: false,
+      })
+      const module = { exports: {} as { a: () => object; b: () => object } }
+      new Function('module', 'exports', bundled.outputFiles![0]!.text)(
+        module,
+        module.exports,
+      )
+      expect(module.exports.a()).toMatchInlineSnapshot(`
+        {
+          "className": "z-text-A-1hgE z-style-1e8a67z1uaws1j-117",
+        }
+      `)
+      expect(module.exports.b()).toMatchInlineSnapshot(`
+        {
+          "className": "z-text-A-1hgE z-style-1e8a67z1uaws1j-172",
+        }
+      `)
+    })
+  })
+})
+
+describe('conditions', () => {
+  const config = `import {Config} from 'zyzz';
+export const {variants,theme}=Config.create({output:'html',theme:{breakpoints:{md:'600px'},color:{brand:'black'}}});`
+  const source = `import {variants,theme} from './config.js';
+export const scope=theme.className;
+export const button=variants({
+  base:{padding:'2px',borderWidth:'0px',borderStyle:'solid',color:'brand',opacity:1,fontWeight:400},
+  conditions:{wide:'@media >=md',compact:'@media/**/(height < 500px), print',grid:'@supports(display: grid)'},
+  variants:{size:{sm:{padding:'4px',borderWidth:'2px'},lg:{padding:'12px'}},loading:{true:{opacity:0.5},false:{}},constructor:{normal:{}}},
+  defaultVariants:{size:'sm',loading:false,constructor:'normal'},
+  compoundVariants:[
+    {when:{size:['sm','lg'],loading:true},style:{fontWeight:600}},
+    {when:{size:'lg',loading:true},style:{color:'blue'}},
+    {when:{size:'lg',loading:true},style:{fontWeight:700}}
+  ]
+});`
+
+  describe('variants', () => {
+    test('complements negated media types and false support queries', async () => {
+      const queries = [
+        '@media NOT screen',
+        '@media ONLY screen and (width > 0px)',
+        '@media not ((width < 0px) or (height < 0px))',
+        '@supports not (display: made-up-value)',
+        '@supports (display: made-up-value)',
+      ]
+      const source = `import {variants} from 'zyzz';${queries
+        .map(
+          (query, index) =>
+            `export const r${index}=variants({base:{color:'black'},conditions:{when:${JSON.stringify(query)}},variants:{tone:{selected:{color:'red'}}}});`,
+        )
+        .join('')}`
+      const output = Graph.compile({ modules: { 'app.ts': source } }).modules[
+        'app.ts'
+      ]!
+      const bundled = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+        bundle: true,
+        format: 'iife',
+        globalName: 'App',
+        write: false,
+      })
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${output.css}</style>${queries.map((_, index) => `<button id="r${index}">Button</button>`).join('')}`,
+        )
+        await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+        await page.evaluate(`{
+        for(const el of document.querySelectorAll('button')) {
+          const props=App[el.id]({conditions:{when:{tone:'selected'}}});
+          el.className=props.className;
+          for(const [key,value] of Object.entries(props)) if(key.startsWith('data-')) el.setAttribute(key,value);
+        }
+        window.readColors=()=>[...document.querySelectorAll('button')].map(el=>getComputedStyle(el).color);
+      }`)
+        expect(await page.evaluate('readColors()')).toMatchInlineSnapshot(`
+        [
+          "rgb(0, 0, 0)",
+          "rgb(255, 0, 0)",
+          "rgb(255, 0, 0)",
+          "rgb(255, 0, 0)",
+          "rgb(0, 0, 0)",
+        ]
+      `)
+        await page.emulateMedia({ media: 'print' })
+        expect(await page.evaluate('readColors()')).toMatchInlineSnapshot(`
+        [
+          "rgb(255, 0, 0)",
+          "rgb(0, 0, 0)",
+          "rgb(255, 0, 0)",
+          "rgb(255, 0, 0)",
+          "rgb(0, 0, 0)",
+        ]
+      `)
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('selects effective choices and compounds through viewport and application changes', async () => {
+      const publisher = Graph.compile({ modules: { 'config.ts': config } })
+      const result = Graph.compile({
+        modules: { 'app.ts': source },
+        contracts: publisher.contracts,
+        imports: { 'app.ts': { './config.js': 'config.ts' } },
+      })
+      const direct = Graph.compile({
+        modules: { 'config.ts': config, 'app.ts': source },
+      })
+      const output = result.modules['app.ts']!
+      expect(
+        output.css === direct.modules['app.ts']!.css,
+      ).toMatchInlineSnapshot('true')
+      expect(
+        output.code.includes(
+          'conditions:{"wide":unknown;"compact":unknown;"grid":unknown}',
+        ),
+      ).toMatchInlineSnapshot('true')
+
+      const bundled = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+        bundle: true,
+        format: 'iife',
+        globalName: 'App',
+        write: false,
+      })
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+      try {
+        const page = await browser.newPage({
+          viewport: { width: 400, height: 800 },
+        })
+        await page.setContent(`<style>${publisher.sharedCss ?? ''}\n${result.sharedCss ?? ''}\n${output.css}</style>
+        <style>
+          #control{padding:2px;border:0 solid;color:black;opacity:1;font-weight:400}
+          @supports (display:grid){#control{opacity:.5}}
+          @media screen and (height >= 500px) and (width < 600px){#control{padding:4px;border-width:2px;font-weight:600}}
+          @media screen and (height >= 500px) and (width >= 600px){#control{padding:12px;color:blue;font-weight:700}}
+        </style><main><button id="button">Recipe</button><button id="control">Control</button></main>`)
+        await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+        await page.evaluate(`{
+        document.querySelector('main').className=App.scope;
+        window.read = id => {
+          const s=getComputedStyle(document.getElementById(id));
+          return [s.paddingTop,s.borderTopWidth,s.color,s.opacity,s.fontWeight];
+        };
+        window.apply = input => {
+          const el=document.getElementById('button');
+          for(const attr of [...el.attributes]) if(attr.name!=='id') el.removeAttribute(attr.name);
+          for(const [key,value] of Object.entries(App.button(input))) el.setAttribute(key,value);
+          return read('button');
+        };
+        apply({conditions:{wide:{size:'lg'},compact:{size:null},grid:{loading:true}}});
+        window.initialRules=document.styleSheets[0].cssRules.length;
+      }`)
+
+        expect(
+          await page.evaluate(`App.button()['data-constructor']`),
+        ).toMatchInlineSnapshot('"normal"')
+        expect(
+          await page.evaluate(
+            `App.button({conditions:{wide:{}}})['data-zyzz-condition-0-constructor']`,
+          ),
+        ).toMatchInlineSnapshot('undefined')
+
+        for (const viewport of [
+          { width: 400, height: 800 },
+          { width: 800, height: 800 },
+          { width: 800, height: 400 },
+          { width: 400, height: 400 },
+          { width: 800, height: 800 },
+        ]) {
+          await page.setViewportSize(viewport)
+          expect(
+            await page.evaluate(
+              `JSON.stringify(read('button'))===JSON.stringify(read('control'))`,
+            ),
+          ).toMatchInlineSnapshot('true')
+        }
+        expect(await page.evaluate(`read('button')`)).toMatchInlineSnapshot(`
+        [
+          "12px",
+          "0px",
+          "rgb(0, 0, 255)",
+          "0.5",
+          "700",
+        ]
+      `)
+        await page.emulateMedia({ media: 'print' })
+        expect(
+          await page.evaluate(
+            `JSON.stringify(read('button'))===JSON.stringify(read('control'))`,
+          ),
+        ).toMatchInlineSnapshot('true')
+        await page.emulateMedia({ media: 'screen' })
+        await page.setViewportSize({ width: 800, height: 400 })
+        expect(
+          await page.evaluate(
+            `apply({conditions:{wide:{size:'lg',loading:true},compact:{size:undefined,loading:false},grid:undefined}})`,
+          ),
+        ).toMatchInlineSnapshot(`
+        [
+          "12px",
+          "0px",
+          "rgb(0, 0, 0)",
+          "1",
+          "400",
+        ]
+      `)
+        expect(
+          await page.evaluate(
+            `apply({size:null,loading:null,conditions:{wide:{size:'lg'},compact:{size:undefined},grid:{loading:undefined}}})`,
+          ),
+        ).toMatchInlineSnapshot(`
+        [
+          "12px",
+          "0px",
+          "rgb(0, 0, 0)",
+          "1",
+          "400",
+        ]
+      `)
+        await page.setViewportSize({ width: 400, height: 800 })
+        expect(await page.evaluate(`read('button')`)).toMatchInlineSnapshot(`
+        [
+          "2px",
+          "0px",
+          "rgb(0, 0, 0)",
+          "1",
+          "400",
+        ]
+      `)
+        expect(
+          await page.evaluate(
+            `document.styleSheets[0].cssRules.length===initialRules`,
+          ),
+        ).toMatchInlineSnapshot('true')
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('rejects unsupported grouping rules at the authored condition', () => {
+      expect(() =>
+        Source.extract({
+          moduleId: 'app.ts',
+          source: `import {variants} from 'zyzz'; variants({conditions:{wide:'@container (width > 20px)'}})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:58: Recipe conditions support only @media and @supports.]`,
+      )
+    })
+
+    test('bounds condition expansion before generating region styles', () => {
+      const conditions = Array.from(
+        { length: 9 },
+        (_, index) => `c${index}:'@media (width >= ${index}px)'`,
+      ).join(',')
+      expect(() =>
+        Source.extract({
+          moduleId: 'app.ts',
+          source: `import {variants} from 'zyzz'; variants({conditions:{${conditions}}})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:272: Recipes support at most eight named conditions (256 CSS regions).]`,
+      )
+    })
+  })
+})
+
+describe('packed', () => {
+  describe('variants', () => {
+    test.each(['react', 'html'] as const)(
+      'packs every alternative and composes imported %s callables',
+      async (output) => {
+        const root = await Fs.mkdtemp(Path.resolve('.fixture-packed-variants-'))
+        const browser = await chromium.launch()
+        let server: Vite.PreviewServer | undefined
+        try {
+          const library = await Library.create(root, { output })
+          // Model independent dependency runtime copies, as dev optimization can produce.
+          await Fs.cp(
+            Path.join(root, 'node_modules/zyzz'),
+            Path.join(library.installed, 'node_modules/zyzz'),
+            { recursive: true },
+          )
+          await Fs.writeFile(
+            Path.join(root, 'package.json'),
+            '{"type":"module","private":true}',
+          )
+          await Fs.writeFile(
+            Path.join(root, 'index.html'),
+            `<style>
+#native{padding:2px;opacity:.5}
+#native[data-choice=sm]{padding:4px}
+#native[data-choice=lg]{padding:12px}
+#native[data-choice=custom]{padding:var(--padding)}
+#native[data-active=true]{opacity:1}
+#native[data-active=true]:is([data-choice=lg],[data-choice=custom]){border:3px solid}
+@media(min-width:600px){#native[data-wide=true]{padding:12px}#native[data-wide=true][data-active=true]{border:3px solid}}
+#native[data-override=true]{padding-left:3px}
+</style><main><button id="actual">Variant</button><button id="native">Native</button></main><script type="module" src="/app.ts"></script>`,
+          )
+          await Fs.writeFile(
+            Path.join(root, 'app.ts'),
+            `import {cx} from 'zyzz';
+import {controls as imported,theme} from '@acme/variants';
+const controls=imported;
+const {button:buttonVariant}=controls;
+import '@acme/variants/style.css';
+const element=document.querySelector('button')!;
+document.querySelector('main')!.className=theme.className;
+export function apply(size?:'sm'|'lg'|null|{custom:{padding:\`\${number}px\`}},active=false,wide=false,override=true) {
+  const props=cx(buttonVariant({size,active,conditions:{wide:{size:wide?'lg':undefined}}}),override && controls.override());
+  for(const attribute of [...element.attributes]) element.removeAttribute(attribute.name);
+  element.id='actual';
+  for(const [name,value] of Object.entries(props)) {
+    if(name==='style' && typeof value==='object') for(const [property,scalar] of Object.entries(value)) element.style.setProperty(property.replace(/[A-Z]/g,letter=>'-'+letter.toLowerCase()),String(scalar));
+    else element.setAttribute(name==='className'?'class':name,String(value));
+  }
+  const native=document.querySelector('#native')! as HTMLElement;
+  native.dataset.choice=size===undefined?'sm':size===null?'':typeof size==='object'?'custom':size;
+  native.dataset.active=String(active);native.dataset.wide=String(wide);native.dataset.override=String(override);
+  if(size && typeof size==='object') native.style.setProperty('--padding',size.custom.padding);else native.style.removeProperty('--padding');
+  return props;
+}
+export function reset(){return cx(buttonVariant({size:{custom:{padding:'9px'}},active:true}),buttonVariant({size:null,active:null}))}
+Object.assign(window,{apply,reset}); apply();`,
+          )
+          const types = Path.join(root, 'types.ts')
+          await Fs.writeFile(
+            types,
+            `import {controls,variant} from '@acme/variants';
+controls.button({size:{custom:{padding:'9px'}},conditions:{wide:{size:'lg'}}});
+variant({base:{color:'brand'}});
+// @ts-expect-error Dynamic choices require complete scoped payloads.
+controls.button({size:'custom'});
+// @ts-expect-error Unknown finite choice.
+controls.button({size:'missing'});
+// @ts-expect-error Unknown bound token.
+variant({base:{color:'missing'}});`,
+          )
+          const checked = await Util.promisify(ChildProcess.execFile)(
+            process.execPath,
+            [
+              Path.resolve('node_modules/typescript/bin/tsc'),
+              '--module',
+              'nodenext',
+              '--target',
+              'esnext',
+              '--strict',
+              '--skipLibCheck',
+              '--noEmit',
+              types,
+            ],
+          ).catch((error) => {
+            throw new Error(error.stdout || error.message)
+          })
+          expect(checked.stdout).toMatchInlineSnapshot('""')
+          await Fs.rm(types)
+          const config: Vite.InlineConfig = {
+            configFile: false,
+            logLevel: 'silent',
+            plugins: [zyzz()],
+            root,
+          }
+          await Vite.build(config)
+          server = await Vite.preview({
+            ...config,
+            preview: { host: '127.0.0.1', port: 0 },
+          })
+          const page = await browser.newPage({
+            viewport: { width: 450, height: 700 },
+          })
+          await page.goto(server.resolvedUrls!.local[0]!)
+          await page.waitForFunction("typeof window.apply === 'function'")
+          expect(
+            await page.evaluate(`{
+        const results=[];const element=document.querySelector('button');
+        for(const [size,active,wide,override] of [[undefined,false,false,true],['lg',true,false,true],[{custom:{padding:'20px'}},true,false,true],[null,false,false,false],['sm',false,false,false]]) {
+          window.apply(size,active,wide,override);const style=getComputedStyle(element);
+          const control=getComputedStyle(document.querySelector('#native'));
+          if(['paddingLeft','paddingRight','opacity','borderTopWidth'].some(key=>style[key]!==control[key])) throw new Error('Packed composition differs from native CSS: '+JSON.stringify({size,left:style.paddingLeft,right:style.paddingRight}));
+          results.push([style.paddingLeft,style.paddingRight,style.opacity,style.borderTopWidth,element.hasAttribute('style')]);
+        } results;
+      }`),
+          ).toMatchInlineSnapshot(`
+          [
+            [
+              "3px",
+              "4px",
+              "0.5",
+              "2px",
+              false,
+            ],
+            [
+              "3px",
+              "12px",
+              "1",
+              "3px",
+              false,
+            ],
+            [
+              "3px",
+              "20px",
+              "1",
+              "3px",
+              true,
+            ],
+            [
+              "2px",
+              "2px",
+              "0.5",
+              "2px",
+              false,
+            ],
+            [
+              "4px",
+              "4px",
+              "0.5",
+              "2px",
+              false,
+            ],
+          ]
+        `)
+          await page.evaluate("window.apply('sm',true,true,true)")
+          await page.setViewportSize({ width: 900, height: 700 })
+          expect(
+            await page
+              .locator('#actual')
+              .evaluate((element) => getComputedStyle(element).paddingRight),
+          ).toMatchInlineSnapshot('"12px"')
+          await page.locator('main').evaluate((element) => {
+            ;(element as HTMLElement).style.colorScheme = 'dark'
+          })
+          expect(
+            await page
+              .locator('#actual')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot('"rgb(153, 204, 255)"')
+          expect(
+            await page.evaluate("window.reset()['data-size']"),
+          ).toMatchInlineSnapshot('undefined')
+          expect(
+            await page.evaluate("window.reset()['data-active']"),
+          ).toMatchInlineSnapshot('undefined')
+          expect(
+            await page.evaluate('window.reset().style'),
+          ).toMatchInlineSnapshot('undefined')
+          const javascript = await Fs.readFile(
+            Path.join(library.installed, 'styles.js'),
+            'utf8',
+          )
+          const javascriptMap = new Trace.TraceMap(
+            JSON.parse(
+              await Fs.readFile(
+                Path.join(library.installed, 'styles.js.map'),
+                'utf8',
+              ),
+            ),
+          )
+          const prefix = javascript.slice(0, javascript.indexOf('button ='))
+          const authored = Trace.originalPositionFor(javascriptMap, {
+            line: prefix.split('\n').length,
+            column: prefix.length - prefix.lastIndexOf('\n') - 1,
+          })
+          expect(authored.source?.endsWith('styles.ts')).toMatchInlineSnapshot(
+            'true',
+          )
+          expect(authored.line).toMatchInlineSnapshot('3')
+          const map = new Trace.TraceMap(
+            library.compiled.modules['@acme/variants/styles.ts']!.cssMap!,
+          )
+          const css = library.compiled.modules['@acme/variants/styles.ts']!.css
+          const before = css.slice(0, css.indexOf('padding'))
+          const original = Trace.originalPositionFor(map, {
+            line: before.split('\n').length,
+            column: before.length - (before.lastIndexOf('\n') + 1),
+          })
+          expect(original.source).toMatchInlineSnapshot(
+            '"@acme/variants/styles.ts"',
+          )
+          expect(original.line !== null).toMatchInlineSnapshot('true')
+          expect(
+            JSON.parse(
+              await Fs.readFile(
+                Path.join(library.installed, 'styles.js.zyzz.json'),
+                'utf8',
+              ),
+            ).version,
+          ).toMatchInlineSnapshot(`17`)
+        } finally {
+          await browser.close()
+          if (server)
+            await new Promise<void>((resolve, reject) =>
+              server!.httpServer.close((error) =>
+                error ? reject(error) : resolve(),
+              ),
+            )
+          await Fs.rm(root, { recursive: true, force: true })
+        }
+      },
+      120000,
+    )
+
+    test('traces each imported declaration to its own application', () => {
+      const publisher = Graph.compile({ modules: Library.sources() })
+      const compiled = Graph.compile({
+        contracts: publisher.contracts,
+        imports: {
+          'app.ts': { '@acme/variants': '@acme/variants/index.ts', zyzz: null },
+        },
+        modules: {
+          'app.ts': `import {cx} from 'zyzz';
+import {controls} from '@acme/variants';
+export const first=()=>cx(controls.button(),controls.override());
+export const second=()=>cx(controls.override(),controls.button({size:'lg'}));`,
+        },
+      }).modules['app.ts']!
+      const map = new Trace.TraceMap(compiled.cssMap)
+      const lines = Object.values(compiled.classes).map((className) => {
+        const start = compiled.css.indexOf(
+          'padding:',
+          compiled.css.indexOf('.' + className.split(' ')[0]),
+        )
+        const prefix = compiled.css.slice(0, start)
+        return Trace.originalPositionFor(map, {
+          line: prefix.split('\n').length,
+          column: prefix.length - prefix.lastIndexOf('\n') - 1,
+        }).line
+      })
+      expect(lines).toMatchInlineSnapshot(`
+      [
+        3,
+        4,
+      ]
+    `)
+    })
+
+    test('rejects malformed packed ownership and mixed renderer composition', () => {
+      const publisher = Graph.compile({
+        modules: Library.sources({ output: 'html' }),
+      })
+      const contracts = { ...publisher.contracts }
+      const data = JSON.parse(contracts['@acme/variants/index.ts']!)
+      data.exports.controls.members.button.style.slots = ['onclick']
+      contracts['@acme/variants/index.ts'] = JSON.stringify(data)
+      expect(() =>
+        Graph.compile({
+          modules: { 'app.ts': "import {controls} from '@acme/variants'" },
+          contracts,
+          imports: {
+            'app.ts': { '@acme/variants': '@acme/variants/index.ts' },
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: @acme/variants/index.ts:0: Invalid library contract: Invalid packed style ownership.]`,
+      )
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.ts':
+              "import {cx,css} from 'zyzz'; import {controls} from '@acme/variants'; const local=css({color:'red'}); export const props=cx(controls.button(),local());",
+          },
+          contracts: publisher.contracts,
+          imports: {
+            'app.ts': {
+              '@acme/variants': '@acme/variants/index.ts',
+              zyzz: null,
+            },
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:121: Composition cannot mix HTML and React props.]`,
+      )
+    })
+  })
+})
+
+describe('payloads', () => {
+  describe('variants', () => {
+    test('reads payload getters once and accepts static template defaults', async () => {
+      const source =
+        "import { variants } from 'zyzz'; export const button = variants({ variants: { size: { custom: (values: { padding: `${number}px` }) => ({ padding: values.padding }) } }, defaultVariants: { size: { custom: { padding: `${12}px` } } } });"
+      const output = Graph.compile({ modules: { 'getter.ts': source } })
+        .modules['getter.ts']!
+      const bundled = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+        bundle: true,
+        format: 'cjs',
+        write: false,
+      })
+      const module = {
+        exports: {} as { button: (input?: object) => { style: object } },
+      }
+      new Function('module', 'exports', bundled.outputFiles![0]!.text)(
+        module,
+        module.exports,
+      )
+      let reads = 0
+      const props = module.exports.button({
+        size: {
+          custom: {
+            get padding() {
+              reads++
+              return '18px'
+            },
+          },
+        },
+      })
+      expect(reads).toMatchInlineSnapshot('1')
+      expect(Object.values(props.style)).toMatchInlineSnapshot(`
+      [
+        "18px",
+      ]
+    `)
+      expect(Object.values(module.exports.button().style))
+        .toMatchInlineSnapshot(`
+      [
+        "12px",
+      ]
+    `)
+    })
+
+    test('rejects magic condition and dynamic choice names', () => {
+      expect(() =>
+        Source.extract({
+          moduleId: 'reserved.ts',
+          source:
+            "import {variants} from 'zyzz'; variants({conditions:{__proto__:'@media screen'}})",
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: reserved.ts:53: Static object prototypes are unsupported.]`,
+      )
+      expect(() =>
+        Source.extract({
+          moduleId: 'reserved.ts',
+          source:
+            "import {variants} from 'zyzz'; variants({variants:{size:{__proto__:(values:{padding:string})=>({padding:values.padding})}}})",
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: reserved.ts:57: Static object prototypes are unsupported.]`,
+      )
+    })
+
+    test('rejects malformed callback authoring and incomplete defaults', () => {
+      for (const body of [
+        'variants:{size:{custom:(values)=>({padding:values.padding})}}',
+        'variants:{size:{custom:(values:{padding?:string})=>({padding:values.padding})}}',
+        "variants:{size:{custom:(values:{padding:string})=>({padding:values.padding})}},defaultVariants:{size:'custom'}",
+        'variants:{size:{custom:(values:{padding:string})=>({padding:values.padding})}},defaultVariants:{size:{custom:{}}}',
+        "variants:{size:{custom:(values:{padding:string})=>({padding:values.padding})}},defaultVariants:{size:{custom:{padding:'4px',extra:1}}}",
+        'variants:{size:{custom:(values:{padding:string})=>({padding:values.missing})}}',
+        'variants:{size:{custom:(values:{count:number})=>({zIndex:values.count})}}',
+      ])
+        expect(() =>
+          Source.extract({
+            moduleId: 'bad.ts',
+            source: `import {variants} from 'zyzz';variants({${body}})`,
+          }),
+        ).toThrow()
+    })
+
+    test('retains bound shorthands and same-named payload fields through packed contracts', async () => {
+      const config = `import {Config} from 'zyzz';export const {variants}=Config.create({output:'html',theme:{color:{brand:'black'}},shorthands:{px:['paddingLeft','paddingRight']}});`
+      const source = `import {variants as recipe} from './config.js';export const button=recipe({base:{borderColor:'brand'},variants:{size:{custom:(values:{value:\`\${number}px\`})=>({px:values.value,paddingLeft:'3px'})},tone:{custom:(values:{value:'red'|'blue'})=>({color:values.value})},constructor:{normal:{}}},defaultVariants:{size:{custom:{value:'12px'}},tone:{custom:{value:'red'}}}});`
+      const publisher = Graph.compile({ modules: { 'config.ts': config } })
+      const packed = Graph.compile({
+        modules: { 'app.ts': source },
+        contracts: publisher.contracts,
+        imports: { 'app.ts': { './config.js': 'config.ts' } },
+      }).modules['app.ts']!
+      const direct = Graph.compile({
+        modules: { 'config.ts': config, 'app.ts': source },
+      }).modules['app.ts']!
+      expect(packed.css).toBe(direct.css)
+      const bundled = await Esbuild.build({
+        stdin: {
+          contents: packed.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+        bundle: true,
+        format: 'iife',
+        globalName: 'App',
+        write: false,
+      })
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${packed.css}</style><button>Button</button>`,
+        )
+        await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+        expect(
+          await page.evaluate(`{
+        const props=App.button({size:{custom:{value:'18px'}},tone:{custom:{value:'blue'}}});
+        const element=document.querySelector('button');
+        for(const [name,value] of Object.entries(props)) element.setAttribute(name,value);
+        const style=getComputedStyle(element);
+        [style.paddingLeft,style.paddingRight,style.color,element.hasAttribute('data-constructor'),typeof props.style];
+      }`),
+        ).toEqual(['3px', '18px', 'rgb(0, 0, 255)', false, 'string'])
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('binds independent base and conditional payloads and removes stale styles', async () => {
+      const source = `import {variants} from 'zyzz';
+      export const button=variants({
+        base:{padding:'2px'},
+        conditions:{wide:'@media (width >= 600px)'},
+        variants:{size:{sm:{padding:'4px'},custom:(values:{padding:\`\${number}px\`})=>({padding:values.padding})}},
+        defaultVariants:{size:{custom:{padding:'12px'}}},
+        compoundVariants:[{when:{size:'custom'},style:{color:'red'}}]
+      });`
+      const output = Graph.compile({ modules: { 'app.ts': source } }).modules[
+        'app.ts'
+      ]!
+      const bundled = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
+        bundle: true,
+        format: 'iife',
+        globalName: 'App',
+        write: false,
+      })
+      const browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox'],
+      })
+      try {
+        const page = await browser.newPage({
+          viewport: { width: 500, height: 800 },
+        })
+        await page.setContent(
+          `<style>${output.css}</style><button>Button</button>`,
+        )
+        await page.addScriptTag({ content: bundled.outputFiles![0]!.text })
+        await page.evaluate(`window.apply=(input)=>{
+        const element=document.querySelector('button');
+        for(const name of element.getAttributeNames()) element.removeAttribute(name);
+        const props=App.button(input);
+        element.className=props.className;
+        for(const [key,value] of Object.entries(props)) {
+          if(key.startsWith('data-')) element.setAttribute(key,value);
+          if(key==='style') for(const [name,bound] of Object.entries(value)) element.style.setProperty(name,String(bound));
+        }
+        const style=getComputedStyle(element);
+        return {padding:style.padding,color:style.color,slots:Object.keys(props.style??{}).length};
+      }`)
+        expect(await page.evaluate('apply()')).toEqual({
+          padding: '12px',
+          color: 'rgb(255, 0, 0)',
+          slots: 1,
+        })
+        expect(
+          await page.evaluate(
+            "apply({size:{custom:{padding:'16px'}},conditions:{wide:{size:{custom:{padding:'24px'}}}}})",
+          ),
+        ).toEqual({ padding: '16px', color: 'rgb(255, 0, 0)', slots: 2 })
+        await page.setViewportSize({ width: 800, height: 800 })
+        expect(
+          await page.evaluate(
+            "getComputedStyle(document.querySelector('button')).padding",
+          ),
+        ).toBe('24px')
+        expect(await page.evaluate("apply({size:'sm'})")).toEqual({
+          padding: '4px',
+          color: 'rgb(0, 0, 0)',
+          slots: 0,
+        })
+        expect(await page.evaluate('apply({size:null})')).toEqual({
+          padding: '2px',
+          color: 'rgb(0, 0, 0)',
+          slots: 0,
+        })
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('watch', () => {
+  describe('variants', () => {
+    test('preserves imported ownership across edits, failed builds, renames, and removal', async () => {
+      const root = await Fs.mkdtemp(Path.resolve('.fixture-variants-watch-'))
+      const outDir = Path.join(root, 'output')
+      const source = `import {variants,css} from 'zyzz';
+export const button=variants({base:{padding:'2px'},variants:{size:{sm:{padding:'4px'},lg:{padding:'12px'}}},defaultVariants:{size:'sm'}});
+export const override=css({paddingLeft:'3px'});`
+      const app = (
+        file: string,
+      ) => `import {cx} from 'zyzz';import {button,override} from './${file}.js';
+export function apply(){return cx(button({size:'lg'}),override())}`
+      const browser = await chromium.launch()
+      const host = await Host.create({
+        outDir,
+        packageId: 'watch-variants',
+        root,
+      })
+      const notifications = Watch.create({
+        path: 'styles.ts.css',
+        timeoutMs: 10000,
+      })
+
+      try {
+        await Fs.writeFile(Path.join(root, 'styles.ts'), source)
+        await Fs.writeFile(Path.join(root, 'app.ts'), app('styles'))
+        await host.build()
+        const initial = JSON.parse(
+          await Fs.readFile(Path.join(outDir, 'styles.ts.zyzz.json'), 'utf8'),
+        )
+        const page = await browser.newPage()
+
+        async function render(file = 'styles') {
+          const bundled = await Esbuild.build({
+            entryPoints: [Path.join(outDir, 'app.ts')],
+            bundle: true,
+            write: false,
+            format: 'iife',
+            globalName: 'App',
+            alias: { 'zyzz/runtime': Path.resolve('dist/runtime/index.js') },
+          })
+          const css =
+            (await Fs.readFile(Path.join(outDir, `${file}.ts.css`), 'utf8')) +
+            (await Fs.readFile(Path.join(outDir, 'app.ts.css'), 'utf8'))
+          await page.setContent(
+            `<style>${css}</style><button id="actual"></button><button id="native" style="padding:12px;padding-left:3px"></button>`,
+          )
+          await page.addScriptTag({ content: bundled.outputFiles[0]!.text })
+          await page.evaluate(
+            `{const props=App.apply(); const element=document.querySelector('#actual'); for(const [name,value] of Object.entries(props))element.setAttribute(name==='className'?'class':name,value);}`,
+          )
+          return page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).paddingLeft)
+        }
+
+        expect(await render()).toMatchInlineSnapshot('"3px"')
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).paddingRight),
+        ).toMatchInlineSnapshot('"12px"')
+        expect(
+          await page
+            .locator('#native')
+            .evaluate((element) => getComputedStyle(element).paddingRight),
+        ).toMatchInlineSnapshot('"12px"')
+        let recovering = false
+        host.watch({
+          onResult(event) {
+            // Atomic filesystem edits may enqueue another notification for the failed source.
+            if (recovering && 'error' in event) return
+            notifications.onResult(event)
+          },
+        })
+        await notifications.next(() =>
+          Watch.write({
+            path: Path.join(root, 'styles.ts'),
+            source: source.replace("'3px'", "'7px'"),
+          }),
+        )
+        expect(await render()).toMatchInlineSnapshot('"7px"')
+        const changed = JSON.parse(
+          await Fs.readFile(Path.join(outDir, 'styles.ts.zyzz.json'), 'utf8'),
+        )
+        expect(
+          changed.exports.button.binding === initial.exports.button.binding,
+        ).toMatchInlineSnapshot('true')
+        const published = await Fs.readFile(Path.join(outDir, 'app.ts'), 'utf8')
+
+        await expect(
+          notifications.next(() =>
+            Watch.write({
+              path: Path.join(root, 'styles.ts'),
+              source: source.replace("'12px'", 'unknown'),
+            }),
+          ),
+        ).rejects.toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: watch-variants/styles.ts:133: Expected a literal string or number; expressions are not evaluated.]`,
+        )
+        expect(
+          (await Fs.readFile(Path.join(outDir, 'app.ts'), 'utf8')) ===
+            published,
+        ).toMatchInlineSnapshot('true')
+        recovering = true
+        await notifications.next(() =>
+          Watch.write({ path: Path.join(root, 'styles.ts'), source }),
+        )
+        expect(await render()).toMatchInlineSnapshot('"3px"')
+        await host.close()
+
+        await Fs.rename(
+          Path.join(root, 'styles.ts'),
+          Path.join(root, 'renamed.ts'),
+        )
+        await Fs.writeFile(Path.join(root, 'app.ts'), app('renamed'))
+        const reopened = await Host.create({
+          outDir,
+          packageId: 'watch-variants',
+          root,
+        })
+        try {
+          await reopened.build()
+          expect(await render('renamed')).toMatchInlineSnapshot('"3px"')
+          expect(
+            (await Fs.readdir(outDir)).some((file) =>
+              file.startsWith('styles.ts'),
+            ),
+          ).toMatchInlineSnapshot('false')
+          await Fs.rm(Path.join(root, 'app.ts'))
+          await Fs.rm(Path.join(root, 'renamed.ts'))
+          expect((await reopened.build()).files).toMatchInlineSnapshot('[]')
+        } finally {
+          await reopened.close()
+        }
+      } finally {
+        await host.close()
+        await browser.close()
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    }, 60000)
   })
 })

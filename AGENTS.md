@@ -1,7 +1,7 @@
 # Adapted from wevm/monoshot
 
 Source: https://github.com/wevm/monoshot/blob/main/AGENTS.md
-Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. General coding conventions are retained; project principles, UI, layout, and commands are adapted for Zyzz.
+Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. General coding conventions are retained. Project principles, UI, layout, and commands are adapted for Zyzz.
 
 # Agent Guidelines
 
@@ -10,7 +10,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Keep core functions pure and environment-independent. Node built-ins, filesystem, DOM, device APIs, parsers, frameworks, and build tools belong in adapters.
 - Share typed authoring across web and React Native while making target capabilities and output types explicit. Unsupported target semantics must produce errors.
 - Keep modules small and extensible through explicit data and narrow functions. Avoid global registration, mandatory providers, component wrappers, custom JSX runtimes, and general plugin frameworks.
-- Prefer CSS properties, values, selectors, at-rules, custom properties, inheritance, and cascade patterns. Preserve authored ordering; convenience syntax must expand predictably.
+- Prefer CSS properties, values, selectors, at-rules, custom properties, inheritance, and cascade patterns. Preserve authored ordering. Convenience syntax must expand predictably.
 - Emit CSS ahead of time. Runtime authoring may derive stable class identities, select static alternatives, and bind variables, but must not emit or insert CSS rules. Source optimization is optional and enabled by default in the bundler plugin.
 - Keep root `css` and `variants` token-free. Put Geist and Tailwind design tokens in the opt-in `zyzz/themes/default` entrypoint, exporting bound `css` and `variants`, the full `theme`, and raw `tokens`. Core imports must not include bundled theme data.
 
@@ -20,7 +20,7 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Use `readonly T[]` for array types. Preserve mutable arrays only when mutation is part of the contract.
 - Use `type` for project-owned shapes. Use `interface` only when declaration merging or an external ambient contract requires it.
 - Include `.js` extensions on relative imports and exports so source remains valid under NodeNext ESM.
-- Author every source file and script in TypeScript; `.js` files are banned. Node runs TypeScript natively (`node script.ts`), so scripts need no build step.
+- Author every source file and script in TypeScript. `.js` files are banned. Node runs TypeScript natively (`node script.ts`), so scripts need no build step.
 - Import module-shaped internal files as namespaces (`import * as Store from './Store.js'`) and access members through the module name. Named imports are fine for types, leaf helpers, command handlers, and third-party APIs that are not module namespaces.
 - Import Node built-ins as namespaces unless the neighboring code or API is clearer with a named import.
 - Re-export public module files as namespaces (`export * as Store from './Store.js'`). Avoid flattening sibling-module symbols into a barrel.
@@ -49,15 +49,15 @@ Source blob: `2ea42a70839750bce15260db0b9350329f8d72b3`. Retrieved 2026-09-07. G
 - Avoid new `any`. Use a precise boundary type, validation, narrowing, or the smallest justified assertion.
 - Separate distinct contexts and logical steps with one blank line in every maintained module, including source, adapters, scripts, benchmarks, and test fixtures. Group setup, guard clauses, derivation, mutation or emission, and final returns so each step is easy to scan.
 - Keep a lookup with its immediate guard, related local declarations, and consecutive assertions together. Separate independent branches, loops, local helper functions, and the work following a completed control-flow block. Avoid both dense uninterrupted logic and a blank line after every statement.
-- Separate test setup, execution, and assertions; keep each assertion group beside the operation it verifies. Preserve spacing inside generated source strings, snapshots, and other whitespace-sensitive fixtures.
-- Audit logical spacing when adding or editing a module; formatting tools do not infer context boundaries. Review the surrounding function as well as the changed lines, and keep spacing-only edits free of behavior changes.
+- Separate test setup, execution, and assertions. Keep each assertion group beside the operation it verifies. Preserve spacing inside generated source strings, snapshots, and other whitespace-sensitive fixtures.
+- Audit logical spacing when adding or editing a module, since formatting tools do not infer context boundaries. Review the surrounding function as well as the changed lines, and keep spacing-only edits free of behavior changes.
 - Do not use section-divider comments. Use exports, TSDoc, and whitespace to express module structure.
 - Comment invariants and non-obvious reasons, not line-by-line mechanics. Keep comments independent of plans, task IDs, and prior versions.
 
 ## Alphabetical Ordering
 
 - Alphabetize imports, named import/export specifiers, public exports, type/interface properties, object properties, enum/union members, unordered lists, configuration maps, scripts, and dependencies. Use case-insensitive lexical order consistently.
-- Keep attached documentation with the declaration or property it describes. Keep function overloads and their namespace together. Order local declarations alphabetically within dependency-compatible groups; do not introduce use-before-initialization or reorder execution.
+- Keep attached documentation with the declaration or property it describes. Keep function overloads and their namespace together. Order local declarations alphabetically within dependency-compatible groups. Do not introduce use-before-initialization or reorder execution.
 - Preserve order with observable semantics: authored CSS declarations, fallbacks, cascade layers, variant/compound precedence, tuples, package file inclusions followed by exclusions, workflow steps, and regression fixtures testing those orders. Mark intentional exceptions in nearby documentation or comments. The compiler must never sort consumer styles.
 - Keep `name` and `on` first in GitHub workflows; alphabetize the remaining top-level keys. Preserve the scaffold package.json group order around `[!start-pkg]`; alphabetize entries within each group. Do not alphabetize prose sections or sequential implementation phases mechanically.
 
@@ -127,9 +127,12 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 - Describe behavior in technical terms rather than by the experience it produces. Prefer `answers before acquisition finishes` over `keeps the editor feeling fast`.
 - State an invariant or a reason the code cannot show on its own. Leave out justification the code already makes plain.
 - Vary sentence construction. One shape repeated across a file, such as an assertion followed by a colon and its reason, reads as a writing style rather than as information.
+- Do not use semicolons or em dashes in prose. Split the sentence, or use a comma, colon, or parenthesis. Semicolons remain valid inside code and CSS.
 - Keep PR titles and bodies short and concrete. Explain the problem and resulting behavior in a few sentences, include one small example, and add one validation line. Use a usage snippet, before/after behavior, or relevant command. Link detailed reports.
 
 ## Testing Conventions
+
+- Keep one runtime test file per module (`Module.test.ts`) and one type-test file (`Module.test-d.ts`). Express contexts with named `describe` blocks inside those files; do not create `Module.context.test.ts` or `Module.context.test-d.ts`. Scope context-specific fixtures and lifecycle hooks to their `describe` block.
 
 - Encapsulate every `.test-d.ts` assertion and expected compiler error in a named `test` inside a `describe` for the public function. Keep scenario-specific fixtures inside their tests; module scope is reserved for imports and shared type declarations.
 - Group tests in a `describe` named after the public function under test, such as `describe('create')`. Keep scenario names inside that group and use separate groups for different entry functions. These groups exercise complete integration flows, not isolated function implementations.
@@ -149,6 +152,8 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 - CSS mapping changes must update `test/conformance/coverage.json` and pass `pnpm check:css` plus the Transform CSS conformance scenarios. Review upstream grammar changes before refreshing fingerprints with `pnpm update:css`. Keep partial/deferred coverage explicit; preserve independent value checks, public type probes, and browser evidence.
 
 ## Benchmark Conventions
+
+- Run benchmark measurements, benchmark fixture checks, and type-instantiation benchmarks only in the Benchmarks workflow. Keep ordinary test discovery outside `bench/`; framework correctness tests must not perform comparison builds or write benchmark results.
 
 - Use the installed Vite Plus/Vitest benchmark runner: import `bench` and `describe` from `vite-plus/test` in colocated `*.bench.ts` files, and run `pnpm exec vp test bench --run --no-file-parallelism`. Keep benchmark APIs aligned with the lockfile.
 - Measure public type instantiation costs with `@ark/attest`: import `bench` from `@ark/attest` in colocated `*.bench-d.ts` fixtures, declare the public values from type-only entrypoint imports, and snapshot each body inline with `.types([count, 'instantiations'])`. Keep one exported module-scope `baseline` function that warms shared contracts without repeating a bench expression. `pnpm bench:types` runs every fixture against the installed TypeScript and fails past the 20% threshold; `pnpm update:types` rewrites the inline baselines after an intentional contract change. CI type-checks and runs these fixtures across the TypeScript matrix. The native 7.x compiler ships no compiler API, so its lane installs it beside the pinned JavaScript package, runs only its `tsc` binary, and reports whole-program diagnostics without attest benches.

@@ -42,5 +42,6 @@ export default defineConfig({
       reportOnFailure: true,
     },
     globals: true,
+    include: ['scripts/**/*.test.ts', 'src/**/*.test.ts', 'test/**/*.test.ts'],
   },
 })

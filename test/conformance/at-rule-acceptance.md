@@ -48,7 +48,7 @@ Install [WeasyPrint 70.0](https://doc.courtbouillon.org/weasyprint/stable/api_re
 sudo apt-get install libpango-1.0-0 libpangoft2-1.0-0 poppler-utils
 python -m venv .venv
 .venv/bin/python -m pip install -r test/conformance/requirements.txt
-WEASYPRINT_EXECUTABLE="$PWD/.venv/bin/weasyprint" pnpm test run src/compiler/Transform.print.test.ts
+WEASYPRINT_EXECUTABLE="$PWD/.venv/bin/weasyprint" pnpm test run src/compiler/Transform.test.ts
 ```
 
 The TypeScript adapter checks the exact renderer version, creates temporary PDFs, and rasterizes with `pdftoppm`. Python packages are pinned; system Pango/Poppler versions follow the runner image. Comparisons use compiled and independently authored CSS on the same engine, with geometry and non-rendering controls.
@@ -134,3 +134,4 @@ One paired local run on Node 24.19.0 compared the #101 snapshot with the combine
 | Packed, 100 families | 76.126 ms |      79.811 ms |  +4.8% |
 
 Reported relative margins of error ranged from 3.18% to 5.87%. Raw reports remain under ignored `bench/results/`. Existing CI thresholds remain unchanged.
+

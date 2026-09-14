@@ -9,6 +9,32 @@ concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 jobs:
+  checks:
+    if: github.event.action != 'closed'
+    name: Benchmark checks and Next.js comparisons
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps --only-shell chromium
+      - name: Build package
+        run: pnpm build
+      - name: Check benchmark fixtures and compare Next.js builds
+        run: pnpm bench:check
+      - name: Upload benchmark checks and Next.js comparisons
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: benchmarks-checks
+          path: |
+            bench/results/
+            test-results/
+          retention-days: 30
+    timeout-minutes: 30
   compiler:
     if: github.event.action != 'closed'
     name: Compiler benchmarks
@@ -74,7 +100,7 @@ jobs:
             [($group.fullName | split(" / ") | last), ((.mean * 1000 | round) / 1000), ((.rme * 100 | round) / 100), .sampleCount] |
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/timings-measured.json >> bench/results/report.md
-          printf '\n## Module Transforms\n\nOrdered source compilation, rewriting, and maps. Final minification and browser bundling are outside timing; sizes include the bundled callable runtime. Local themes include literal token extraction, resolution, and two scalar scopes.\n' >> bench/results/report.md
+          printf '\n## Module Transforms\n\nOrdered source compilation, rewriting, and maps. Final minification and browser bundling are outside timing. Sizes include the bundled callable runtime. Local themes include literal token extraction, resolution, and two scalar scopes.\n' >> bench/results/report.md
           for kind in literal theme alias tokens; do
             case "$kind" in
               literal) title='Literal Styles'; group='module transform' ;;
@@ -97,13 +123,13 @@ jobs:
             [.name, (.mean * 1000000 | round), ((.rme * 100 | round) / 100), .sampleCount] |
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/timings-measured.json >> bench/results/report.md
-          printf '\n## File Host — 100 Styles\n\nCold process includes startup; watch edits include the source write through artifact publication.\n\n| Operation | Time (ms) | Error (±%%) | Samples |\n| --- | ---: | ---: | ---: |\n' >> bench/results/report.md
+          printf '\n## File Host: 100 Styles\n\nCold process includes startup. Watch edits include the source write through artifact publication.\n\n| Operation | Time (ms) | Error (±%%) | Samples |\n| --- | ---: | ---: | ---: |\n' >> bench/results/report.md
           jq -r '
             .files[].groups[] | select(.fullName | contains("file host / ")) | .benchmarks[] |
             [.name, ((.mean * 1000 | round) / 1000), ((.rme * 100 | round) / 100), .sampleCount] |
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/timings-measured.json >> bench/results/report.md
-          printf '\n## Theme Compilation\n\nIn-memory emission with two scopes and light/dark pairs; no source rewriting or client bundling. Sizes are emitted CSS before final minification.\n\n| Styles | Time (ms) | CSS raw | CSS gzip | CSS Brotli |\n| --- | ---: | ---: | ---: | ---: |\n' >> bench/results/report.md
+          printf '\n## Theme Compilation\n\nIn-memory emission with two scopes and light/dark pairs, without source rewriting or client bundling. Sizes are emitted CSS before final minification.\n\n| Styles | Time (ms) | CSS raw | CSS gzip | CSS Brotli |\n| --- | ---: | ---: | ---: | ---: |\n' >> bench/results/report.md
           jq -r --slurpfile timings bench/results/timings-measured.json '
             . as $size |
             $timings[0].files[].groups[] | select(.fullName | endswith("theme compilation / " + ($size.count | tostring) + " styles")) |
@@ -111,7 +137,7 @@ jobs:
             [$size.count, ((.mean * 1000 | round) / 1000), $size.raw, $size.gzip, $size.brotli] |
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/themes/*.json >> bench/results/report.md
-          printf '\nBuild timings use warm host processes and fresh compiler state. Compiler workflows have different scopes; see bench/README.md in the repository for measurement boundaries.\n' >> bench/results/report.md
+          printf '\nBuild timings use warm host processes and fresh compiler state. Compiler workflows have different scopes. See bench/README.md in the repository for measurement boundaries.\n' >> bench/results/report.md
       - name: Check framework performance
         id: frameworks
         continue-on-error: true
@@ -179,14 +205,18 @@ jobs:
   benchmarks:
     name: Benchmarks
     if: ${{ !cancelled() && github.event.action != 'closed' }}
-    needs: [compiler, renders]
+    needs: [checks, compiler, renders, type-benches]
     runs-on: ubuntu-latest
     steps:
-      - name: Require compiler and render benchmarks
+      - name: Require benchmark checks and measurements
         env:
+          CHECKS_RESULT: ${{ needs.checks.result }}
           COMPILER_RESULT: ${{ needs.compiler.result }}
           RENDER_RESULT: ${{ needs.renders.result }}
+          TYPE_BENCHES_RESULT: ${{ needs.type-benches.result }}
         run: |
+          test "$CHECKS_RESULT" = success
+          test "$TYPE_BENCHES_RESULT" = success
           test "$COMPILER_RESULT" = success
           test "$RENDER_RESULT" = success
   renders:
@@ -301,5 +331,29 @@ jobs:
           header: benchmarks
           path: reports/comment.md
     timeout-minutes: 5
+  type-benches:
+    if: github.event.action != 'closed'
+    name: Type instantiations ${{ matrix.typescript }} (${{ matrix.shard }}/2)
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+        typescript: ['6.0']
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Install TypeScript ${{ matrix.typescript }}
+        run: pnpm add --save-dev "typescript@${{ matrix.typescript }}"
+      - name: Check type instantiations
+        run: |
+          set -o pipefail
+          pnpm bench:types --shard ${{ matrix.shard }}/2 | tee type-benches.txt
+          cat type-benches.txt >> "$GITHUB_STEP_SUMMARY"
+    timeout-minutes: 30
 permissions:
   contents: read

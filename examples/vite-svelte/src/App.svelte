@@ -1,19 +1,18 @@
 <!-- Presents small, independent examples under the root theme carried by <html>. -->
 <script lang="ts">
-  import { appearance, type Selection } from './appearance.js'
   import { styles } from './App.styles.js'
   import Dynamic from './Dynamic.svelte'
   import Motion from './Motion.svelte'
   import Queries from './Queries.svelte'
   import Relationships from './Relationships.svelte'
   import Styling from './Styling.svelte'
-  import { themes } from './zyzz.config.js'
+  import { appearance, themes } from './zyzz.config.js'
 
-  let selection = $state(appearance.current())
+  let selection = $state(appearance.get())
 
-  function select(next: Partial<Selection>) {
-    selection = { ...selection, ...next }
-    appearance.select(selection)
+  function select(next: Parameters<typeof appearance.set>[0]) {
+    appearance.set(next)
+    selection = appearance.get()
   }
 </script>
 
@@ -42,7 +41,7 @@
           Color scheme
           <select
             aria-label="Color scheme"
-            value={selection.colorScheme}
+            value={selection.colorScheme ?? 'light dark'}
             onchange={(event) => {
               const value = event.currentTarget.value
               if (value === 'light' || value === 'dark' || value === 'light dark')

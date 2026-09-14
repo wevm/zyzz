@@ -56,7 +56,7 @@ defineConfig({
 })
 ```
 
-`script: false` skips injection for documents that inline the script themselves. Applications without `index.html`, such as server-rendered frameworks, keep inlining `script()` in their document.
+A `storageKey` passed here overrides the configuration's own `storageKey`. `script: false` skips injection for documents that inline the script themselves. Applications without `index.html`, such as server-rendered frameworks, keep inlining `script()` in their document.
 
 ## Options
 

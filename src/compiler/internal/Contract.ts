@@ -336,10 +336,14 @@ export function read(
     const fullConfigType = options
       ? `import('zyzz').Config.create.ReturnType<${Configurations.type(options)}>`
       : ''
-    const configType =
-      entry.script === true
-        ? fullConfigType
-        : `{readonly [key in keyof ${fullConfigType} as key extends 'script' ? never : key]:${fullConfigType}[key]}`
+    // Helpers a legacy library did not compile are hidden from its consumers' types.
+    const hidden = [
+      ...(entry.appearance === true ? [] : ["'appearance'"]),
+      ...(entry.script === true ? [] : ["'script'"]),
+    ]
+    const configType = hidden.length
+      ? `{readonly [key in keyof ${fullConfigType} as key extends ${hidden.join(' | ')} ? never : key]:${fullConfigType}[key]}`
+      : fullConfigType
     const outputType = catalogOnly
       ? `({readonly [key in keyof ${configType} as key extends 'themes' ? never : key]:${configType}[key]} & {readonly themes:{readonly [key in keyof ${configType}['themes']]:${configType}['themes'][key]}})`
       : configType
@@ -353,6 +357,8 @@ export function read(
         ...(entry.output === 'html' ? { output: 'html' as const } : {}),
         ...(catalogOnly ? { catalogOnly: true } : {}),
         ...(entry.script === true ? { script: true } : {}),
+        ...(entry.appearance === true ? { appearance: true } : {}),
+        ...(entry.root === true ? { root: true } : {}),
         end: -1,
         name: theme,
         start: -1,
@@ -368,7 +374,7 @@ export function read(
         ...(options
           ? {
               options,
-              type: `${outputType}${entry.initialization === true ? "['script']" : entry.selection === true ? "['themes']" : ''}`,
+              type: `${outputType}${entry.initialization === true ? "['script']" : entry.root === true ? "['appearance']" : entry.selection === true ? "['themes']" : ''}`,
             }
           : {}),
         ...(members
@@ -499,12 +505,16 @@ export function write(
       (link.kind === 'config' || link.call.initialization)
         ? { script: true }
         : {}),
+      ...(link.call.appearance && (link.kind === 'config' || link.call.root)
+        ? { appearance: true }
+        : {}),
       binding: link.binding,
       kind: link.kind,
       theme: link.call.name,
       ...(link.call.catalogOnly ? { catalogOnly: true } : {}),
       ...(link.call.selection ? { selection: true } : {}),
       ...(link.call.initialization ? { initialization: true } : {}),
+      ...(link.call.root ? { root: true } : {}),
       ...(link.call.options ? { options: link.call.options } : {}),
       ...(link.members
         ? {

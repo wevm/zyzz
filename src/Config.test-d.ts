@@ -151,6 +151,38 @@ describe('create', () => {
 })
 
 describe('create', () => {
+  test('binds root appearance controls to the catalog', () => {
+    const named = Config.create({
+      defaultTheme: 'base',
+      storageKey: 'app',
+      themes: {
+        base: { color: { brand: '#06c' } },
+        mint: { color: { brand: '#175' } },
+      },
+    })
+
+    expectTypeOf(named.appearance.get()).toEqualTypeOf<{
+      readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
+      readonly theme: 'base' | 'mint'
+    }>()
+    named.appearance.set({ colorScheme: 'dark' })
+    named.appearance.set({ theme: 'mint' })
+    // @ts-expect-error Unknown catalog names are rejected.
+    named.appearance.set({ theme: 'ocean' })
+
+    const single = Config.create({ theme: { color: { brand: '#06c' } } })
+
+    expectTypeOf(single.appearance.get()).toEqualTypeOf<{
+      readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
+    }>()
+    // @ts-expect-error Single themes select only a scheme.
+    single.appearance.set({ theme: 'base' })
+    // @ts-expect-error Storage keys are strings.
+    Config.create({ storageKey: 42 })
+  })
+})
+
+describe('create', () => {
   test('rejects invalid union branches and empty callbacks', () => {
     const { css } = Config.create()
     const styles = {} as { color: '#fff' } | { ':hover': { colour: '#fff' } }

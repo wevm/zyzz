@@ -39,11 +39,21 @@ export function create(options: create.Options = {}): unknown {
         'layers',
         'output',
         'shorthands',
+        'storageKey',
         'theme',
         'themes',
       ].includes(key)
     )
       throw new InvalidError(`Unknown configuration option: ${key}`)
+
+  if (
+    input.storageKey !== undefined &&
+    (typeof input.storageKey !== 'string' || !input.storageKey)
+  )
+    throw new InvalidError('storageKey must be a nonempty string.')
+
+  // Validated above; the record type erases the literal narrowing.
+  const storageKey = input.storageKey as string | undefined
 
   if (
     input.output !== undefined &&
@@ -179,6 +189,7 @@ export function create(options: create.Options = {}): unknown {
     )
       throw new InvalidError('defaultTheme must name a theme in the catalog.')
 
+    const defaultTheme = input.defaultTheme
     const definitions = Object.fromEntries(
       Object.entries(catalog).map(([name, value]) => {
         if (!name) throw new InvalidError('Theme names must be nonempty.')
@@ -226,16 +237,31 @@ export function create(options: create.Options = {}): unknown {
 
     Object.defineProperties(select, Object.getOwnPropertyDescriptors(bound))
 
+    const entries = () =>
+      Object.entries(bound).map(([name, value]): readonly [string, string] => [
+        name,
+        (value as unknown as Theme.Definition).className,
+      ])
+
+    // Class names require an identity, so the compiler's collection pass must
+    // not read them; root controls resolve their entries on first use.
+    const appearance = ((): Appearance.Root<string> => {
+      let root: Appearance.Root<string> | undefined
+      const resolve = () =>
+        (root ??= Appearance.root(entries(), { defaultTheme, storageKey }))
+
+      return {
+        get: () => resolve().get(),
+        set: (selection) => resolve().set(selection),
+      }
+    })()
+
     return Object.freeze({
+      appearance,
       css: boundCss(bound[input.defaultTheme] as unknown as Theme.Definition),
       variants: boundVariants,
       script: (options?: ScriptOptions) =>
-        Appearance.create(
-          Object.entries(bound).map(([name, value]) => [
-            name,
-            (value as unknown as Theme.Definition).className,
-          ]),
-        )(options),
+        Appearance.create(entries(), { storageKey })(options),
       theme: bound[input.defaultTheme],
       themes: Object.freeze(select),
     })
@@ -247,17 +273,19 @@ export function create(options: create.Options = {}): unknown {
   if (input.theme !== undefined) {
     const theme = handle(definition(input.theme), 'theme')
     return Object.freeze({
+      appearance: Appearance.root([], { storageKey }),
       css: boundCss(theme as unknown as Theme.Definition),
       variants: boundVariants,
-      script: Appearance.create([]),
+      script: Appearance.create([], { storageKey }),
       theme,
     })
   }
 
   const theme = shorthands ? Token.bind(Theme.define({}), contract) : undefined
   return Object.freeze({
+    appearance: Appearance.root([], { storageKey }),
     css: boundCss(theme),
-    script: Appearance.create([]),
+    script: Appearance.create([], { storageKey }),
     variants: boundVariants,
   })
 }
@@ -276,6 +304,8 @@ export declare namespace create {
     readonly output?: css.Output | undefined
     /** Ordered plain or dotted CSS layer names; emission follows source integration. */
     readonly layers?: readonly string[] | undefined
+    /** localStorage key shared by `script()` and `appearance`; zyzz by default. */
+    readonly storageKey?: string | undefined
   } & (
     | {
         /** Single inline or reusable theme. */ readonly theme: Input
@@ -319,6 +349,10 @@ export declare namespace create {
         ? name
         : never,
       Mappings<options>
+    >
+    /** Reads and persists the root theme and scheme selection on the document element. */
+    readonly appearance: Appearance.Root<
+      options extends { themes: infer catalog } ? keyof catalog & string : never
     >
     /** Generates synchronous HTML-safe root preference restoration. */
     readonly script: (options?: ScriptOptions) => string

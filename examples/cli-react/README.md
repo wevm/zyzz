@@ -31,15 +31,14 @@ Authored source stays unaware of compiled artifacts. Relative imports inside com
 
 Vite runs with its default configuration. Its default CSS target lowers `light-dark()` into Lightning CSS helpers; the compiled scheme classes that `themes()` applies carry `color-scheme` in the stylesheet, so those helpers initialize and theme switching keeps working.
 
-The root theme lives on `<html>`. `vite.config.ts` inlines the compiled config's `script()` at the start of `index.html`'s head, so a saved selection applies before any module runs. `src/appearance.ts` creates `Appearance` from `zyzz/web`; the entry calls `restore()` for the defaults, and controls read `current()` and persist with `select()`.
+The root theme lives on `<html>`. `vite.config.ts` inlines the compiled config's `script()` at the start of `index.html`'s head, so a saved selection applies before any module runs. Controls read `appearance.get()` from the config and persist changes with `appearance.set()`; the default scheme comes from a global `html { color-scheme: light dark }` rule.
 
 ## Feature Map
 
 | Source                  | Capabilities                                                                                     |
 | ----------------------- | ------------------------------------------------------------------------------------------------ |
 | `src/zyzz.config.ts`    | Named themes, light/dark pairs, extensions, tokens, aliases, property-specific scales, layers    |
-| `src/appearance.ts`     | `Appearance` from `zyzz/web`: root theme and scheme on `<html>`, saved preferences               |
-| `src/App.tsx`           | Theme controls, nested scopes, global CSS in a named layer                                       |
+| `src/App.tsx`           | Root theme and scheme on `<html>` via `appearance`, nested scopes, global CSS in a named layer   |
 | `src/Styling.tsx`       | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides |
 | `src/Dynamic.tsx`       | Typed runtime inputs, `variable()`, registration, static and inline `variables`                  |
 | `src/Relationships.tsx` | Empty `css()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`       |

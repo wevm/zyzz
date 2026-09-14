@@ -519,8 +519,23 @@ export function compile(options: compile.Options): compile.ReturnType {
         return `{className:${JSON.stringify(emitted.themes[call.name])}}`
 
       const script = extracted.themeScripts?.includes(call.name)
+      const root = extracted.themeAppearances?.includes(call.name)
 
-      if (script) usesAppearance = true
+      if (script || root) usesAppearance = true
+
+      // Helpers are emitted only when referenced; both share the configured storage key.
+      const storage = call.options?.storageKey
+      const helpers = (entries: string, defaultTheme?: string) => {
+        const scriptOptions = storage
+          ? `,${JSON.stringify({ storageKey: storage })}`
+          : ''
+        const rootOptions =
+          storage || defaultTheme
+            ? `,${JSON.stringify({ ...(defaultTheme ? { defaultTheme } : {}), ...(storage ? { storageKey: storage } : {}) })}`
+            : ''
+
+        return `${root ? `appearance:${appearance}.root(${entries}${rootOptions}),` : ''}${script ? `script:${appearance}.create(${entries}${scriptOptions}),` : ''}`
+      }
 
       if (call.options?.themes) {
         const catalog = Object.fromEntries(
@@ -533,18 +548,22 @@ export function compile(options: compile.Options): compile.ReturnType {
         )
 
         const entries = JSON.stringify(Object.entries(catalog))
+        const defaultTheme =
+          typeof call.options.defaultTheme === 'string'
+            ? call.options.defaultTheme
+            : undefined
         if (unusedSelections.has(call.start))
-          return `{${script ? `script:${appearance}.create(${entries}),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
+          return `{${helpers(entries, defaultTheme)}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
 
         usesSelection = true
 
-        return `{${script ? `script:${appearance}.create(${entries}),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:/*#__PURE__*/${selection}.create(${entries},${call.options.output === 'html'})}`
+        return `{${helpers(entries, defaultTheme)}theme:${JSON.stringify(scope(call.members['["theme"]']!))},themes:/*#__PURE__*/${selection}.create(${entries},${call.options.output === 'html'})}`
       }
 
       if (Object.hasOwn(call.members, '["theme"]'))
-        return `{${script ? `script:${appearance}.create([]),` : ''}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
+        return `{${helpers('[]')}theme:${JSON.stringify(scope(call.members['["theme"]']!))}}`
 
-      return script ? `{script:${appearance}.create([])}` : '{}'
+      return script || root ? `{${helpers('[]').slice(0, -1)}}` : '{}'
     })()
 
     const assertion = /\.[cm]?tsx?$/.test(options.moduleId)

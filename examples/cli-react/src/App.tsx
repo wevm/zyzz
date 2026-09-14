@@ -1,16 +1,17 @@
 /** Presents small, independent examples under a selectable theme scope. @module */
 import { useState } from 'react'
 import { global } from 'zyzz/web'
-import { appearance, type Selection } from './appearance.js'
 import { Dynamic } from './Dynamic.js'
 import { Motion } from './Motion.js'
 import { Relationships } from './Relationships.js'
 import { Styling } from './Styling.js'
-import { css, themes } from './zyzz.config.js'
+import { appearance, css, themes } from './zyzz.config.js'
 
 global({
   '@layer base': {
     body: { fontFamily: 'system-ui, sans-serif', margin: 0 },
+    // The default scheme follows the system; a selected scheme class on <html> overrides it.
+    html: { colorScheme: 'light dark' },
     button: { cursor: 'pointer' },
     'button, input, select': { font: 'inherit' },
     'button:focus-visible, input:focus-visible, select:focus-visible': {
@@ -76,13 +77,11 @@ namespace styles {
 
 /** The root selection lives on <html>; nested scopes inherit without a provider or listener. */
 export function App() {
-  const [selection, setSelection] = useState(appearance.current)
+  const [selection, setSelection] = useState(appearance.get)
 
-  function select(next: Partial<Selection>) {
-    const value = { ...selection, ...next }
-
-    appearance.select(value)
-    setSelection(value)
+  function select(next: Parameters<typeof appearance.set>[0]) {
+    appearance.set(next)
+    setSelection(appearance.get())
   }
 
   return (
@@ -115,7 +114,7 @@ export function App() {
               Color scheme{' '}
               <select
                 aria-label="Color scheme"
-                value={selection.colorScheme}
+                value={selection.colorScheme ?? 'light dark'}
                 onChange={(event) => {
                   const value = event.target.value
                   if (

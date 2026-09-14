@@ -19,9 +19,9 @@ The bound function derives the theme catalog, compiled scope classes, and defaul
 ### options.storageKey
 
 - Type: `string`
-- Default: `'zyzz'`
+- Default: the configuration's `storageKey`, otherwise `'zyzz'`
 
-localStorage key containing a JSON object. Supported fields are `theme` (a catalog key) and `colorScheme` (`'light'`, `'dark'`, or `'light dark'`). Either field may be omitted.
+localStorage key containing a JSON object. [`appearance.set()`](create.md#appearance) writes the same record. Supported fields are `theme` (a catalog key) and `colorScheme` (`'light'`, `'dark'`, or `'light dark'`). Either field may be omitted.
 
 ```ts
 script({ storageKey: 'my-app-appearance' })

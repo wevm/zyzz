@@ -233,7 +233,7 @@ The theme returns its generated `className`, including a compiled scheme class, 
 
 Color pairs compile to `light-dark()`; the custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme calls can scope a subtree independently.
 
-For saved preferences, `script()` generates an optional [initialization script](docs/guides/themes.md#restore-preferences) for `<head>`. It restores the theme and scheme from localStorage before first paint. System preference needs no script or provider.
+For saved preferences, `script()` generates an optional [initialization script](docs/guides/themes.md#restore-preferences) for `<head>`. It restores the theme and scheme from localStorage before first paint, and `appearance.set({ theme: 'mint', colorScheme: 'dark' })` applies and saves a change from the client. System preference needs no script or provider.
 
 ### Variants
 

@@ -173,23 +173,16 @@ localStorage.setItem(
 
 The script reads this record once and updates only known theme and scheme classes plus `document.documentElement.style.colorScheme`. Unrelated classes and styles remain intact.
 
-The [Vite plugin](../introduction/vite.md) inlines the script into `index.html` automatically. Client code manages the same record through [`Appearance`](../api/web/Appearance/README.md) from `zyzz/web`:
+The [Vite plugin](../introduction/vite.md) inlines the script into `index.html` automatically. Client code manages the same record through the config's [`appearance`](../api/core/Config/create.md#appearance) controls:
 
 ```ts
-import { Appearance } from 'zyzz/web'
-import { themes } from './zyzz.config.js'
+import { appearance } from './zyzz.config.js'
 
-export const appearance = Appearance.create({
-  defaults: { colorScheme: 'light dark', theme: 'base' },
-  themes,
-})
-
-appearance.restore()
-const initial = appearance.current()
-appearance.select({ ...initial, colorScheme: 'dark' })
+const initial = appearance.get() // { theme: 'base', colorScheme: 'dark' } after restoration
+appearance.set({ colorScheme: 'light dark' })
 ```
 
-`restore()` applies the saved record over the defaults for documents without server markup, `current()` reads the applied root state, and `select()` applies and saves a change. Unknown preferences, malformed data, or unavailable storage preserve the corresponding server-rendered defaults.
+`get()` reads the applied root state and `set()` applies fields over it and saves the result. A `storageKey` on `Config.create` changes the record both helpers use. Unknown preferences, malformed data, or unavailable storage preserve the corresponding server-rendered defaults.
 
 React's `suppressHydrationWarning` is limited to the root attributes changed before hydration. Preference controls should initialize from the applied root state before changing it; the script does not synchronize component state or persist later changes. See [Config Script](../api/core/Config/script.md) for the full contract.
 

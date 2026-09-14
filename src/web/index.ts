@@ -3,7 +3,6 @@
  * @module
  */
 
-export * as Appearance from './Appearance.js'
 export { colorProfile } from './colorProfile.js'
 export { counterStyle } from './counterStyle.js'
 export * as Css from './Css.js'

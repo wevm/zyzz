@@ -28,7 +28,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
   const assets = new Map<string, string>()
-  const catalogs = new Map<string, readonly (readonly [string, string])[]>()
+  const catalogs = new Map<string, Catalog>()
   const initializers = new WeakMap<Environment, Entry>()
   const sourceEntrypoints = new Set<string>()
   let root: string
@@ -578,9 +578,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     })
 
     for (const [id, contract] of Object.entries(result.contracts)) {
-      const entries = catalog(contract)
+      const configuration = catalog(contract)
 
-      if (entries) catalogs.set(id, entries)
+      if (configuration) catalogs.set(id, configuration)
       else catalogs.delete(id)
     }
 
@@ -1133,12 +1133,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         if (options.script === false) return
 
         // Build catalogs were collected while bundling; development compiles on request.
-        const entries = context.server
+        const configurations = context.server
           ? await initializations(context.server)
           : [...catalogs.values()]
         const scripts = new Set(
-          entries.map((entries) =>
-            Appearance.create(entries)(
+          configurations.map(({ entries, storageKey }) =>
+            Appearance.create(entries, { storageKey })(
               typeof options.script === 'object' ? options.script : {},
             ),
           ),
@@ -1155,27 +1155,28 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   }
 }
 
-/** Reads a compiled configuration's theme catalog from its contract; undefined without a configuration export. */
-function catalog(
-  contract: string,
-): readonly (readonly [string, string])[] | undefined {
+/** Reads a compiled configuration's theme catalog and storage key from its contract; undefined without a configuration export. */
+function catalog(contract: string): Catalog | undefined {
   const parsed = JSON.parse(contract) as {
     exports?: Record<
       string,
       {
         kind?: string
         members?: Record<string, { theme?: string }>
+        options?: { storageKey?: string }
         selection?: boolean
       }
     >
   }
   const entries = new Map<string, string>()
   let configured = false
+  let storageKey: string | undefined
 
   for (const binding of Object.values(parsed.exports ?? {})) {
     if (binding.kind !== 'config') continue
 
     configured = true
+    storageKey ??= binding.options?.storageKey
 
     for (const [path, member] of Object.entries(binding.members ?? {})) {
       const names = JSON.parse(path) as readonly string[]
@@ -1191,7 +1192,13 @@ function catalog(
     }
   }
 
-  return configured ? [...entries] : undefined
+  return configured ? { entries: [...entries], storageKey } : undefined
+}
+
+/** Initialization inputs read from one compiled configuration module. */
+type Catalog = {
+  entries: readonly (readonly [string, string])[]
+  storageKey: string | undefined
 }
 
 type Entry = {

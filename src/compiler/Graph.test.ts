@@ -157,7 +157,7 @@ export const scope = mint.className;`,
       `
       "
       import { Appearance as __zyzzAppearance, Selection as __zyzzSelection } from 'zyzz/runtime';
-       export const zyzz = ({script:__zyzzAppearance.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]),theme:{"className":"z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"},themes:/*#__PURE__*/__zyzzSelection.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]],false)}); export const props = ({className:"z-text-WStLob"}); export const scope = "z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark";"
+       export const zyzz = ({appearance:__zyzzAppearance.root([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]],{"defaultTheme":"brand.dark"}),script:__zyzzAppearance.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]]),theme:{"className":"z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"},themes:/*#__PURE__*/__zyzzSelection.create([["brand.dark","z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark"]],false)}); export const props = ({className:"z-text-WStLob"}); export const scope = "z_theme-1fzmg4ts3ctu1-zyzz-brand_2e_dark";"
     `,
     )
 
@@ -210,7 +210,7 @@ export const scope = mint.className;`,
       `
       "
       import { Appearance as __zyzzAppearance, Selection as __zyzzSelection } from 'zyzz/runtime';
-       import { base } from './base.js'; export const zyzz = ({script:__zyzzAppearance.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]]),theme:{"className":"z_theme-69adjg15dlzyu-zyzz-base"},themes:/*#__PURE__*/__zyzzSelection.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]],false)} as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>);"
+       import { base } from './base.js'; export const zyzz = ({appearance:__zyzzAppearance.root([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]],{"defaultTheme":"base"}),script:__zyzzAppearance.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]]),theme:{"className":"z_theme-69adjg15dlzyu-zyzz-base"},themes:/*#__PURE__*/__zyzzSelection.create([["mint","z_theme-69adjg15dlzyu-zyzz-mint"],["base","z_theme-69adjg15dlzyu-zyzz-base"]],false)} as import('zyzz').Config.create.ReturnType<{readonly "defaultTheme":"base";readonly "themes":{readonly "mint":{readonly "color":{readonly "brand":{readonly "dark":"#afa";readonly "light":"#175"}};readonly "spacing":{readonly "md":"12px"}};readonly "base":{readonly "color":{readonly "brand":{readonly "dark":"#9cf";readonly "light":"#06c"}};readonly "spacing":{readonly "md":"8px"}}};readonly "layers":readonly ["reset","components"]}>);"
     `,
     )
     expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
@@ -276,7 +276,7 @@ export const scope = mint.className;`,
       `
       "
       import { Appearance as __zyzzAppearance } from 'zyzz/runtime';
-       export const empty = ({script:__zyzzAppearance.create([])} as import('zyzz').Config.create.ReturnType<{}>); const base = ({className:"z_theme-1g1qfxjzbnv3-base"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const zyzz = ({script:__zyzzAppearance.create([]),theme:{"className":"z_theme-1g1qfxjzbnv3-zyzz-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"#06c"}}}>); const theme = (zyzz.theme as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const mint = ({className:"z_theme-1g1qfxjzbnv3-mint"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const props = ({className:"z-text-hsmTVp"}); export const plain = ({className:"z-p-8px-KVn49Z"});"
+       export const empty = ({appearance:__zyzzAppearance.root([]),script:__zyzzAppearance.create([])} as import('zyzz').Config.create.ReturnType<{}>); const base = ({className:"z_theme-1g1qfxjzbnv3-base"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const zyzz = ({appearance:__zyzzAppearance.root([]),script:__zyzzAppearance.create([]),theme:{"className":"z_theme-1g1qfxjzbnv3-zyzz-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"#06c"}}}>); const theme = (zyzz.theme as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const mint = ({className:"z_theme-1g1qfxjzbnv3-mint"} as import('zyzz').Theme.Definition<{readonly "color":{readonly "brand":"#06c"}}>); export const props = ({className:"z-text-hsmTVp"}); export const plain = ({className:"z-p-8px-KVn49Z"});"
     `,
     )
     expect(output.modules['pkg/config.ts']!.css).toMatchInlineSnapshot(`
@@ -288,6 +288,29 @@ export const scope = mint.className;`,
       .z-text-hsmTVp{color:var(--z-t1g1qfxjzbnv3-zyzz-color_2e_brand,#06c);}
       .z-p-8px-KVn49Z{padding:8px;}"
     `)
+  })
+
+  test('destructured appearance controls compile with the configured storage key', () => {
+    const output = Graph.compile({
+      modules: {
+        'pkg/config.ts': `import { Config } from 'zyzz'; export const { appearance, css } = Config.create({ defaultTheme: 'base', storageKey: 'app', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } }); export const initial = appearance.get(); export const controls = appearance;`,
+        'pkg/single.ts': `import { Config } from 'zyzz'; export const zyzz = Config.create({ theme: { color: { ink: '#123456' } } }); export const select = () => zyzz.appearance.set({ colorScheme: 'dark' });`,
+      },
+    })
+    const code = output.modules['pkg/config.ts']!.code
+
+    expect(
+      code.includes('appearance:__zyzzAppearance.root('),
+    ).toMatchInlineSnapshot('true')
+    expect(
+      code.includes('{"defaultTheme":"base","storageKey":"app"}'),
+    ).toMatchInlineSnapshot('true')
+    expect(code.includes('script:')).toMatchInlineSnapshot('false')
+    expect(
+      output.modules['pkg/single.ts']!.code.includes(
+        'appearance:__zyzzAppearance.root([])',
+      ),
+    ).toMatchInlineSnapshot('true')
   })
 
   test('destructured selectors pass to runtime helpers as values', () => {

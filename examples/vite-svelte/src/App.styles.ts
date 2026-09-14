@@ -5,6 +5,8 @@ import { css } from './zyzz.config.js'
 global({
   '@layer base': {
     body: { fontFamily: 'system-ui, sans-serif', margin: 0 },
+    // The default scheme follows the system; a selected scheme class on <html> overrides it.
+    html: { colorScheme: 'light dark' },
     button: { cursor: 'pointer' },
     'button, input, select': { font: 'inherit' },
     'button:focus-visible, input:focus-visible, select:focus-visible': {

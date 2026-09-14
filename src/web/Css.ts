@@ -348,6 +348,23 @@ export function compile<
       },
     ])
 
+  function validate(style: Style.NamedStyle) {
+    if (
+      style.cssOutput !== undefined &&
+      style.cssOutput !== 'atomic' &&
+      style.cssOutput !== 'grouped'
+    )
+      throw new CompileError([
+        {
+          code: 'invalid_output',
+          message: 'cssOutput must be atomic or grouped.',
+          path: [style.name, 'cssOutput'],
+        },
+      ])
+    for (const rule of style.rules ?? []) validate(rule.style)
+  }
+  for (const style of options.styles.styles) validate(style)
+
   const rules = new Map<string, string>()
   const identical = new Map<string, string>()
   const applications = new Map<string, string>()
@@ -450,13 +467,23 @@ export function compile<
         return
       }
       if (style.rules) {
-        for (const rule of style.rules)
+        for (const rule of style.rules) {
+          if (rule.condition?.trim() === '@layer') {
+            // Repeating an anonymous layer would change cascade precedence.
+            const body = [...conditions, rule.condition].reduceRight(
+              (body, condition) => `${condition}{${body}}`,
+              nested(rule.style),
+            )
+            emit(body, 'layer', false)
+            continue
+          }
           atoms(
             rule.style,
             rule.condition === undefined
               ? conditions
               : [...conditions, rule.condition],
           )
+        }
         return
       }
 

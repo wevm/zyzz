@@ -392,6 +392,7 @@ export function collect(options: collect.Options) {
       )
     const name = `composition-${options.identity}-${node.start}`
     const style: Style.NamedStyle = {
+      cssOutput: 'atomic',
       name,
       declarations: [],
       rules: selected.flatMap((call) => {
@@ -401,7 +402,7 @@ export function collect(options: collect.Options) {
             ...rule,
             style: {
               ...rule.style,
-              cssOutput: style.cssOutput ?? rule.style.cssOutput,
+              cssOutput: rule.style.cssOutput ?? style.cssOutput,
             },
           })) ?? [{ style }]
         )
@@ -546,6 +547,7 @@ export function collect(options: collect.Options) {
             .join(' '),
         },
         style: {
+          cssOutput: 'atomic',
           name,
           declarations: [],
           rules: included.flatMap((call) => {
@@ -555,7 +557,7 @@ export function collect(options: collect.Options) {
                 ...rule,
                 style: {
                   ...rule.style,
-                  cssOutput: style.cssOutput ?? rule.style.cssOutput,
+                  cssOutput: rule.style.cssOutput ?? style.cssOutput,
                 },
               })) ?? [{ style }]
             )

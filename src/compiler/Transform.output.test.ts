@@ -129,21 +129,21 @@ export const props=card();`,
       if (cssOutput === 'atomic')
         expect(extracted.styles.styles.map((style) => style.cssOutput))
           .toMatchInlineSnapshot(`
-        [
-          "atomic",
-          "atomic",
-          undefined,
-        ]
-      `)
+            [
+              "atomic",
+              "atomic",
+              "atomic",
+            ]
+          `)
       else
         expect(extracted.styles.styles.map((style) => style.cssOutput))
           .toMatchInlineSnapshot(`
-        [
-          "grouped",
-          "grouped",
-          undefined,
-        ]
-      `)
+            [
+              "grouped",
+              "grouped",
+              "atomic",
+            ]
+          `)
       const output = Transform.compile({ moduleId: 'config.ts', source })
       const emitted = Css.compile({
         cssOutput: cssOutput === 'atomic' ? 'grouped' : 'atomic',
@@ -162,7 +162,9 @@ export const props=card();`,
           ".z-style-u8smm21l81sow-87-atomic-color-0{color:red;}
           .z-style-u8smm21l81sow-87-atomic-padding-1{padding:8px;}
           .z-style-u8smm21l81sow-128-atomic-paddingLeft-0{padding-left:2px;}
-          .g-composition-u8smm21l81sow-172{color:red;padding:8px;padding-left:2px;}"
+          .z-composition-u8smm21l81sow-172-atomic-color-0{color:red;}
+          .z-composition-u8smm21l81sow-172-atomic-padding-1{padding:8px;}
+          .z-composition-u8smm21l81sow-172-atomic-paddingLeft-2{padding-left:2px;}"
         `)
       } else {
         expect(output.css).toMatchInlineSnapshot(`
@@ -195,4 +197,21 @@ export const props=card();`,
       `true`,
     )
   })
+})
+
+test('rejects invalid style output metadata through the public emitter', () => {
+  const extracted = Source.extract({
+    moduleId: 'invalid.ts',
+    source: "import {css} from 'zyzz'; css({color:'red'})",
+  })
+  const styles = {
+    ...extracted.styles,
+    styles: extracted.styles.styles.map((style) => ({
+      ...style,
+      cssOutput: 'invalid' as 'atomic',
+    })),
+  }
+  expect(() => Css.compile({ styles })).toThrowErrorMatchingInlineSnapshot(
+    `[Css.CompileError: ["style-1snulh75pd83z-26","cssOutput"]: cssOutput must be atomic or grouped.]`,
+  )
 })

@@ -349,8 +349,8 @@ export function compile<
     for (const item of style.declarations) {
       const property = item.property
       const key = conflict(property)
-      if (groups.get(key) === false) continue
       const declaration = declarationBody(item)
+      if (groups.get(key) === false) continue
       const entry = domains.get(key) ?? {
         body: '',
         properties: new Set<string>(),

@@ -55,6 +55,7 @@ describe('render report', () => {
                       }) as const,
                   ),
                 ).flat(),
+                styleRules: 0,
               })
 
       const path = Path.join(directory, 'render-timings.json')

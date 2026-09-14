@@ -2,9 +2,13 @@
  * Normalizes explicit configuration into isolated typed authoring contracts.
  * @module
  */
+import * as Appearance from './runtime/Appearance.js'
+import * as Authoring from './internal/Authoring.js'
+import * as Html from './runtime/Html.js'
+import * as Identity from './internal/Identity.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
-import { css, MissingTransformError } from './css.js'
+import type { css } from './css.js'
 import { variants } from './variants.js'
 import * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
@@ -29,6 +33,7 @@ export function create(options: create.Options = {}): unknown {
     if (
       ![
         'cssOutput',
+        'id',
         'defaultTheme',
         'layers',
         'output',
@@ -91,12 +96,6 @@ export function create(options: create.Options = {}): unknown {
     }
   }
 
-  const script = () => {
-    throw new Error(
-      'Appearance initialization requires the Zyzz source transform.',
-    )
-  }
-
   const shorthands = (() => {
     if (input.shorthands === undefined) return undefined
 
@@ -108,9 +107,65 @@ export function create(options: create.Options = {}): unknown {
   })()
 
   const contract = Object.freeze({
-    cssOutput: options.cssOutput ?? 'atomic',
+    cssOutput:
+      (input.cssOutput as 'atomic' | 'grouped' | undefined) ?? 'atomic',
     ...(shorthands ? { shorthands } : {}),
+    ...(typeof input.id === 'string'
+      ? {
+          [Token.identity]: Identity.requireId(input.id, 'Config.create'),
+          [Token.complete]: true,
+        }
+      : {}),
   })
+  function boundCss(theme?: Theme.Definition) {
+    return (styles?: unknown, options: css.DefinitionOptions = {}) => {
+      if (
+        theme &&
+        Object.keys(theme[Token.definition].values).length &&
+        !contract[Token.identity]
+      )
+        Identity.requireId(undefined, 'Config.create')
+      return Authoring.create(styles, {
+        ...options,
+        theme,
+        output: input.output as css.Output | undefined,
+      })
+    }
+  }
+  function boundVariants(
+    definition: Record<string, unknown>,
+    options: css.DefinitionOptions = {},
+  ) {
+    return Authoring.variants(definition, {
+      ...options,
+      output: input.output as css.Output | undefined,
+    })
+  }
+  function handle(theme: Theme.Definition, name: string) {
+    const original = Token.bind(theme, contract)
+    const className = () =>
+      `z_theme-${Identity.requireId(typeof input.id === 'string' ? input.id : undefined, 'Config.create')}-${name.replace(/[^a-zA-Z0-9-]/g, (character) => `_${character.charCodeAt(0).toString(16)}_`)}`
+    const select = (options: { colorScheme?: string } = {}) => {
+      const result = {
+        className: className(),
+        ...(options.colorScheme
+          ? { style: { colorScheme: options.colorScheme } }
+          : {}),
+      }
+      return input.output === 'html' ? Html.from(result) : result
+    }
+    const descriptors = Object.getOwnPropertyDescriptors(original)
+    delete (descriptors as Record<string, unknown>).className
+    delete (descriptors as Record<string, unknown>).css
+    delete (descriptors as Record<string, unknown>).variants
+    Object.defineProperties(select, descriptors)
+    Object.defineProperty(select, 'className', {
+      get: className,
+      configurable: true,
+    })
+    Object.assign(select, { css: boundCss(original), variants: boundVariants })
+    return select
+  }
 
   if (input.themes !== undefined) {
     const catalog = record(input.themes)
@@ -156,20 +211,27 @@ export function create(options: create.Options = {}): unknown {
     const bound = Object.fromEntries(
       Object.entries(definitions).map(([name, value]) => [
         name,
-        Token.bind(value, contract),
+        handle(value, name),
       ]),
     )
 
-    const select = () => {
-      throw new MissingTransformError()
-    }
+    const select = (options: { theme: string; colorScheme?: string }) =>
+      (bound[options.theme] as (options: { colorScheme?: string }) => unknown)(
+        options,
+      )
 
     Object.defineProperties(select, Object.getOwnPropertyDescriptors(bound))
 
     return Object.freeze({
-      css,
-      variants,
-      script,
+      css: boundCss(bound[input.defaultTheme] as unknown as Theme.Definition),
+      variants: boundVariants,
+      script: (options?: ScriptOptions) =>
+        Appearance.create(
+          Object.entries(bound).map(([name, value]) => [
+            name,
+            (value as unknown as Theme.Definition).className,
+          ]),
+        )(options),
       theme: bound[input.defaultTheme],
       themes: Object.freeze(select),
     })
@@ -178,15 +240,22 @@ export function create(options: create.Options = {}): unknown {
   if (input.defaultTheme !== undefined)
     throw new InvalidError('defaultTheme requires a named themes catalog.')
 
-  if (input.theme !== undefined)
+  if (input.theme !== undefined) {
+    const theme = handle(definition(input.theme), 'theme')
     return Object.freeze({
-      css,
-      variants,
-      script,
-      theme: Token.bind(definition(input.theme), contract),
+      css: boundCss(theme as unknown as Theme.Definition),
+      variants: boundVariants,
+      script: Appearance.create([]),
+      theme,
     })
+  }
 
-  return Object.freeze({ css, script, variants })
+  const theme = shorthands ? Token.bind(Theme.define({}), contract) : undefined
+  return Object.freeze({
+    css: boundCss(theme),
+    script: Appearance.create([]),
+    variants: boundVariants,
+  })
 }
 
 /** Configuration inputs and inferred results. */
@@ -195,6 +264,8 @@ export declare namespace create {
   type Options = {
     /** CSS representation inherited by bound helpers; atomic by default. */
     readonly cssOutput?: 'atomic' | 'grouped' | undefined
+    /** Stable theme identity required without source rewriting. */
+    readonly id?: string | undefined
     /** Explicit ordered property aliases; none are installed by default. */
     readonly shorthands?: Shorthands.Map | undefined
     /** Renderer props format; React is the default. */
@@ -335,9 +406,11 @@ export type Css<
       (Parameters<callback> extends [Record<string, string | number>]
         ? unknown
         : never),
+    options?: css.DefinitionOptions,
   ): css.Dynamic<values, output>
   <const styles extends Record<string, unknown>>(
     styles: styles & NoInfer<Body<styles, tokens, layers, mappings>>,
+    options?: css.DefinitionOptions,
   ): css.ReturnType<output>
 }
 

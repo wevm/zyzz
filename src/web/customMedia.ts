@@ -1,10 +1,13 @@
 /** Declares a compiler-owned custom media query. @module */
 import type * as Condition from '../internal/Condition.js'
-import { MissingTransformError } from '../css.js'
+import * as Identity from '../internal/Identity.js'
 /** Emits a query definition and returns its opaque grouping key. */
-export function customMedia(query: string | boolean): customMedia.Reference {
+export function customMedia(
+  query: string | boolean,
+  options: { readonly id?: string | undefined } = {},
+): customMedia.Reference {
   void query
-  throw new MissingTransformError()
+  return `@media (${Identity.contribution('customMedia', options.id)})` as unknown as customMedia.Reference
 }
 /** Custom query key consumed directly as a computed grouping key. */
 export declare namespace customMedia {

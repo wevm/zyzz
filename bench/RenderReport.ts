@@ -145,6 +145,15 @@ console.log(
   '\nPerformance comparisons are advisory while repeatability is established. Missing measurements and browser correctness failures fail CI. Dynamic slots compare only Zyzz and native CSS; no dynamic ranking of other frameworks is implied. Function microbenchmarks are separate diagnostics.\n',
 )
 
+const unavailable = await Fs.readFile(
+  Path.join(directory, 'render-base', 'unavailable.txt'),
+  'utf8',
+).catch((error: NodeJS.ErrnoException) => {
+  if (error.code !== 'ENOENT') throw error
+  return ''
+})
+if (unavailable) console.log(`${unavailable.trim()}\n`)
+
 const basePath = Path.join(directory, 'render-base', 'render-timings.json')
 if (
   await Fs.access(basePath).then(

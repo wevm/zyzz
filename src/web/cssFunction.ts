@@ -3,7 +3,7 @@ import type * as Context from './internal/Context.js'
 import type * as FunctionSyntax from '../internal/FunctionSyntax.js'
 import type * as FunctionValue from '../internal/FunctionValue.js'
 import type * as Literal from '../internal/Literal.js'
-import { MissingTransformError } from '../css.js'
+import * as Identity from '../internal/Identity.js'
 import type * as Numeric from '../internal/Numeric.js'
 /** Emits a CSS function and returns a callable that formats its fixed CSS expression. */
 export function cssFunction<const options extends cssFunction.Options>(
@@ -35,7 +35,25 @@ export function cssFunction<const options extends cssFunction.Options>(
 > {
   void options
   void context
-  throw new MissingTransformError()
+  const name = Identity.contribution('cssFunction', context.id)
+  return ((...args: readonly (string | number)[]) =>
+    name +
+    '(' +
+    args
+      .map((value) =>
+        typeof value === 'string' &&
+        value.includes(',') &&
+        !value.trimStart().startsWith('{')
+          ? '{' + value + '}'
+          : value,
+      )
+      .join(',') +
+    ')') as cssFunction.Reference<
+    options['parameters'],
+    options extends { returns: infer syntax extends cssFunction.Syntax }
+      ? syntax
+      : '*'
+  >
 }
 /** CSS function parameter and result contracts. */
 export declare namespace cssFunction {

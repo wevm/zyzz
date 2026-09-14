@@ -2,6 +2,7 @@
  * Rewrites extracted style calls into executable modules with CSS and source maps.
  * @module
  */
+import * as Token from '../internal/Token.js'
 import * as Applications from './internal/Applications.js'
 import type * as Ast from '@oxc-project/types'
 import * as Css from '../web/Css.js'
@@ -28,13 +29,53 @@ export function compile(options: compile.Options): compile.ReturnType {
   const extracted =
     options[Themes.context]?.extracted ?? Source.extract(options)
 
+  const portable = options.compiler === false
+  const portableNames: Record<string, string> = {}
+  if (portable) {
+    for (const call of extracted.calls) {
+      if (!call.portable)
+        throw new Error(
+          'CSS-only output requires an explicit id for dynamic styles, variants, and compositions.',
+        )
+      portableNames[call.name] = call.portable
+    }
+    for (const theme of Object.values(extracted.themes))
+      if (!theme[Token.definition].contract[Token.identity]?.startsWith('id-'))
+        throw new Error(
+          'CSS-only themes require an explicit id on Config.create or Theme.define.',
+        )
+    for (const call of extracted.contributionCalls ?? [])
+      if (
+        call.name &&
+        !/^(?:--)?z-(?:k|counterstyle|positiontry|colorprofile|fontpalettevalues|custommedia|cssfunction)id-/.test(
+          call.name,
+        )
+      )
+        throw new Error(
+          'CSS-only named stylesheet declarations require an explicit id.',
+        )
+    for (const call of extracted.variableCalls ?? [])
+      if (
+        Object.values(call.slots).some(
+          (slot) => !slot.name.startsWith('--z-vid-'),
+        )
+      )
+        throw new Error('CSS-only output requires an explicit variable id.')
+  }
+
   const emitted = Css.compile({
     development: options.development,
     scope: options.moduleId,
+    names: portable ? portableNames : undefined,
     styles: extracted.styles,
     contributions: extracted.contributions,
     themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
   })
+
+  if (portable && /z-style-(?!id-)[a-zA-Z0-9-]+/.test(emitted.css))
+    throw new Error(
+      'CSS-only selector references require an explicit style id.',
+    )
 
   const module = new MagicString(options.source)
   const program = Syntax.parse(options).program
@@ -204,7 +245,18 @@ export function compile(options: compile.Options): compile.ReturnType {
         [
           ...new Set([
             ...value.split(' ').filter(Boolean),
-            ...(identities.has(name) ? [identities.get(name)!] : []),
+            ...(identities.has(name) &&
+            (!portable || portableNames[name]?.startsWith('z-compose-'))
+              ? [
+                  portable
+                    ? identities
+                        .get(name)!
+                        .split(' ')
+                        .filter((name) => name.startsWith('z-style-id-'))
+                        .join(' ')
+                    : identities.get(name)!,
+                ]
+              : []),
           ]),
         ].join(' '),
       ]),
@@ -726,6 +778,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       contributionLine++
     }
   }
+  const declarationOwners = new Map<string, Set<number>>()
   const scoped = emitted.scopedCss ?? emitted.css
 
   const css = [
@@ -864,6 +917,8 @@ export function compile(options: compile.Options): compile.ReturnType {
         }
 
         const starts = declarationStarts(body)
+        const used = declarationOwners.get(call.name) ?? new Set<number>()
+        declarationOwners.set(call.name, used)
         let cursor = 1
 
         for (
@@ -871,6 +926,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           propertyIndex < ordered.length;
           propertyIndex++
         ) {
+          if (used.has(propertyIndex)) continue
           const declaration = ordered[propertyIndex]!
           const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:`
           const start =
@@ -880,6 +936,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           if (start < 0) continue
 
           const location = authored[propertyIndex]!
+          used.add(propertyIndex)
 
           Mapping.addMapping(cssMap, {
             generated: { column: selector.length + start, line },
@@ -897,11 +954,13 @@ export function compile(options: compile.Options): compile.ReturnType {
     .filter(Boolean)
     .join('\n')
 
-  const map = module.generateMap({
-    hires: true,
-    includeContent: true,
-    source: options.moduleId,
-  })
+  const map = (portable ? new MagicString(options.source) : module).generateMap(
+    {
+      hires: true,
+      includeContent: true,
+      source: options.moduleId,
+    },
+  )
 
   const namespaced = Namespaces.rewrite(
     css,
@@ -911,7 +970,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   )
   return Object.freeze({
     classes,
-    code: module.toString(),
+    code: portable ? options.source : module.toString(),
     css: namespaced.css,
     cssMap: namespaced.map ?? Mapping.toEncodedMap(cssMap),
     map: {
@@ -934,6 +993,8 @@ export declare namespace compile {
   type Options = Source.extract.Options & {
     /** Stable declaration names for CSS-only development updates. */
     readonly development?: boolean | undefined
+    /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
+    readonly compiler?: boolean | undefined
   }
 
   /** Executable module and stylesheet artifacts; TypeScript/JSX lowering belongs to the host. */

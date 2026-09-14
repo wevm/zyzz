@@ -2,6 +2,8 @@
  * Extracts local theme data and validates its lexical source references.
  * @module
  */
+import * as Identity from '../../internal/Identity.js'
+import * as Identifiers from './Identifiers.js'
 import type { cssFunction } from '../../web/cssFunction.js'
 import type * as RuleReference from '../../internal/RuleReference.js'
 import type * as Ast from '@oxc-project/types'
@@ -506,7 +508,14 @@ export function collect(program: Ast.Program, options: collect.Options) {
       if (!binding)
         fail('Configuration destructuring requires a binding.', variable)
 
-      const name = `${options.namespace}-${binding}`
+      let name = `${options.namespace}-${binding}`
+      if (
+        !configNamespaces.has(expression.callee.object.name) &&
+        member.property.name === 'define'
+      ) {
+        const id = Identifiers.explicit(expression)
+        if (id !== undefined) name = Identity.requireId(id, 'Theme.define')
+      }
 
       if (configNamespaces.has(expression.callee.object.name)) {
         try {
@@ -651,7 +660,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
       try {
         if (member.property.name === 'define') {
-          if (expression.arguments.length !== 1)
+          if (
+            expression.arguments.length < 1 ||
+            expression.arguments.length > 2
+          )
             fail('Theme.define requires one literal token object.', expression)
 
           const input = data(expression.arguments[0]!)
@@ -679,6 +691,12 @@ export function collect(program: Ast.Program, options: collect.Options) {
             themes[parent.name]!,
             data(expression.arguments[1]!) as Theme.Overrides<Theme.Tokens>,
           )
+          if (
+            definition[Token.definition].contract[Token.identity]?.startsWith(
+              'id-',
+            )
+          )
+            name = definition.className.slice('z_theme-'.length)
           tokenType = parent.tokenType
           output = parent.output
         }

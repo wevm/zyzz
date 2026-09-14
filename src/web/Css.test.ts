@@ -657,7 +657,7 @@ describe('compile', () => {
           "-1": "z-text-lzo_yY-0 z-block z-p-3px-lzo_yY-1",
           "1": "z-text-14x8bH-0 z-block z-p-8px-14x8bH-2",
           "_31_": "z-text-VwIMi--0 z-block z-p-4px-VwIMi--1",
-          "again": "z-text-fk8sel-0 z-block z-p-8px-fk8sel-1",
+          "again": "z-text-14x8bH-0 z-block z-p-8px-14x8bH-2",
           "base_0": "z-text-E61DqP-0 z-block z-p-5px-E61DqP-1",
           "empty": "",
         },
@@ -668,8 +668,6 @@ describe('compile', () => {
       .z-p-3px-lzo_yY-1{padding:3px;}
       .z-text-VwIMi--0{color:#333;}
       .z-p-4px-VwIMi--1{padding:4px;}
-      .z-text-fk8sel-0{color:#000;}
-      .z-p-8px-fk8sel-1{padding:8px;}
       .z-text-E61DqP-0{color:#555;}
       .z-p-5px-E61DqP-1{padding:5px;}",
         "themes": {},

@@ -701,37 +701,89 @@ export const scope = mint.className;`,
     }
   })
 
-  for (const extension of [
-    'cjs',
-    'cjsx',
-    'cts',
-    'ctsx',
-    'js',
-    'jsx',
-    'mjs',
-    'mjsx',
-    'mts',
-    'mtsx',
-    'ts',
-    'tsx',
-  ]) {
-    for (const suffix of ['', '/index']) {
-      test(`extensionless imports link themes from ${suffix || 'direct'}.${extension}`, () => {
+  test('extensionless imports link themes from every supported source extension', () => {
+    const stylesheets: Record<string, string> = {}
+    for (const extension of [
+      'cjs',
+      'cjsx',
+      'cts',
+      'ctsx',
+      'js',
+      'jsx',
+      'mjs',
+      'mjsx',
+      'mts',
+      'mtsx',
+      'ts',
+      'tsx',
+    ]) {
+      for (const suffix of ['', '/index']) {
+        const id = `pkg/theme${suffix}.${extension}`
         const output = Graph.compile({
           modules: {
             'pkg/card.ts': `import { theme } from './theme'; export const props = theme.css({color:'brand'})();`,
-            [`pkg/theme${suffix}.${extension}`]: modules['pkg/theme.ts'],
+            [id]: modules['pkg/theme.ts'],
           },
         })
-
-        expect(output.modules['pkg/card.ts']!.code).toContain(
-          'export const props = ({className:',
+        expect(output.modules['pkg/card.ts']!.code).toMatchInlineSnapshot(
+          `"import { theme } from './theme'; export const props = ({className:"z-text-55Wtu-"});"`,
         )
-        expect(output.modules['pkg/card.ts']!.css).toContain('color:var(')
-        expect(output.modules['pkg/card.ts']!.css).toContain(',#06c);')
-      })
+        stylesheets[id] = output.modules['pkg/card.ts']!.css
+      }
     }
-  }
+    expect(stylesheets).toMatchInlineSnapshot(`
+      {
+        "pkg/theme.cjs": ".z_theme-vj54t717rzpm5-theme{--z-tvj54t717rzpm5-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-tvj54t717rzpm5-theme-color_2e_brand,#06c);}",
+        "pkg/theme.cjsx": ".z_theme-1jqrhi11m9qdsp-theme{--z-t1jqrhi11m9qdsp-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t1jqrhi11m9qdsp-theme-color_2e_brand,#06c);}",
+        "pkg/theme.cts": ".z_theme-r3hspl14ztdxn-theme{--z-tr3hspl14ztdxn-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-tr3hspl14ztdxn-theme-color_2e_brand,#06c);}",
+        "pkg/theme.ctsx": ".z_theme-17sd7oz1an7eof-theme{--z-t17sd7oz1an7eof-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t17sd7oz1an7eof-theme-color_2e_brand,#06c);}",
+        "pkg/theme.js": ".z_theme-1vtv2ec1wfpxtq-theme{--z-t1vtv2ec1wfpxtq-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t1vtv2ec1wfpxtq-theme-color_2e_brand,#06c);}",
+        "pkg/theme.jsx": ".z_theme-vomr9w1ly6hby-theme{--z-tvomr9w1ly6hby-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-tvomr9w1ly6hby-theme-color_2e_brand,#06c);}",
+        "pkg/theme.mjs": ".z_theme-ax2jo515o9mmb-theme{--z-tax2jo515o9mmb-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-tax2jo515o9mmb-theme-color_2e_brand,#06c);}",
+        "pkg/theme.mjsx": ".z_theme-qjbatz1ydbtfb-theme{--z-tqjbatz1ydbtfb-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-tqjbatz1ydbtfb-theme-color_2e_brand,#06c);}",
+        "pkg/theme.mts": ".z_theme-axno9rsn6z85-theme{--z-taxno9rsn6z85-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-taxno9rsn6z85-theme-color_2e_brand,#06c);}",
+        "pkg/theme.mtsx": ".z_theme-1uyg4h1nwei8h-theme{--z-t1uyg4h1nwei8h-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t1uyg4h1nwei8h-theme-color_2e_brand,#06c);}",
+        "pkg/theme.ts": ".z_theme-1p8at5ioin1tk-theme{--z-t1p8at5ioin1tk-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t1p8at5ioin1tk-theme-color_2e_brand,#06c);}",
+        "pkg/theme.tsx": ".z_theme-1mppelm2v81s-theme{--z-t1mppelm2v81s-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t1mppelm2v81s-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.cjs": ".z_theme-9rdhtkayoccw-theme{--z-t9rdhtkayoccw-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t9rdhtkayoccw-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.cjsx": ".z_theme-qqufwg16uwqvc-theme{--z-tqqufwg16uwqvc-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-tqqufwg16uwqvc-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.cts": ".z_theme-7hri2qdg3eau-theme{--z-t7hri2qdg3eau-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t7hri2qdg3eau-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.ctsx": ".z_theme-1gnhf7yeof43a-theme{--z-t1gnhf7yeof43a-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t1gnhf7yeof43a-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.js": ".z_theme-k60ez51fti4gf-theme{--z-tk60ez51fti4gf-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-tk60ez51fti4gf-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.jsx": ".z_theme-5msdfven29b7-theme{--z-t5msdfven29b7-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t5msdfven29b7-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.mjs": ".z_theme-4cm3ea1msr4fq-theme{--z-t4cm3ea1msr4fq-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t4cm3ea1msr4fq-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.mjsx": ".z_theme-xh8u7yzqpmau-theme{--z-txh8u7yzqpmau-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-txh8u7yzqpmau-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.mts": ".z_theme-6j6cqw1uhie2o-theme{--z-t6j6cqw1uhie2o-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t6j6cqw1uhie2o-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.mtsx": ".z_theme-zlq34g1ju1zx4-theme{--z-tzlq34g1ju1zx4-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-tzlq34g1ju1zx4-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.ts": ".z_theme-frljoj7wf8g9-theme{--z-tfrljoj7wf8g9-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-tfrljoj7wf8g9-theme-color_2e_brand,#06c);}",
+        "pkg/theme/index.tsx": ".z_theme-46atq9rsv205-theme{--z-t46atq9rsv205-theme-color_2e_brand:#06c;}
+      .z-text-55Wtu-{color:var(--z-t46atq9rsv205-theme-color_2e_brand,#06c);}",
+      }
+    `)
+  })
 
   test.each(['pkg/theme.mts', 'pkg/theme/index.mjs'])(
     'extensionless imports reject ambiguity with %s',

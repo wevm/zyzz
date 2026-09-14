@@ -79,7 +79,7 @@ describe('compile', () => {
       const page = await browser.newPage()
 
       await page.setContent(
-        `<style>.z-a{border-image-source:linear-gradient(red,blue)}${output.css}${cascade.css}</style><div id="parent"><div id="actual" class="${module.box.className}"></div><div id="control" style="${BorderShorthand.control}"></div></div><div id="cascade" class="z-a z-b z-c"></div>`,
+        `<style>.z-a{border-image-source:linear-gradient(red,blue)}${output.css}${cascade.css}</style><div id="parent"><div id="actual" class="${module.box.className}"></div><div id="control" style="${BorderShorthand.control}"></div></div><div id="cascade" class="${cascade.classes.a} ${cascade.classes.b} ${cascade.classes.c} z-a"></div>`,
       )
 
       for (const writingMode of ['horizontal-tb', 'vertical-rl', 'vertical-lr'])
@@ -128,24 +128,22 @@ describe('compile', () => {
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).borderImageSource),
-      ).toMatchInlineSnapshot(
-        `"linear-gradient(rgb(255, 0, 0), rgb(0, 0, 255))"`,
-      )
+      ).toMatchInlineSnapshot(`"none"`)
       expect(
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).borderTopColor),
-      ).toMatchInlineSnapshot(`"rgb(0, 0, 0)"`)
+      ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
       expect(
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).outlineWidth),
-      ).toMatchInlineSnapshot(`"3px"`)
+      ).toMatchInlineSnapshot(`"1px"`)
       expect(
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).columnRuleStyle),
-      ).toMatchInlineSnapshot(`"none"`)
+      ).toMatchInlineSnapshot(`"dashed"`)
     } finally {
       await browser.close()
     }

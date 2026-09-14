@@ -95,3 +95,30 @@ export function read(value: string): string | undefined {
     return undefined
   }
 }
+
+/** Reads an explicit authoring identity shared with uncompiled execution. */
+export function explicit(
+  call: import('@oxc-project/types').CallExpression,
+): string | undefined {
+  const argument = call.arguments[1]
+  if (!argument) return undefined
+  if (argument.type !== 'ObjectExpression' || argument.properties.length !== 1)
+    throw new Error('Definition options require one literal id.')
+  const property = argument.properties[0]!
+  if (
+    property.type !== 'Property' ||
+    property.computed ||
+    property.kind !== 'init' ||
+    property.method ||
+    (property.key.type === 'Identifier'
+      ? property.key.name
+      : property.key.type === 'Literal'
+        ? property.key.value
+        : undefined) !== 'id' ||
+    property.value.type !== 'Literal' ||
+    typeof property.value.value !== 'string' ||
+    !property.value.value
+  )
+    throw new Error('Definition options require one nonempty literal id.')
+  return property.value.value
+}

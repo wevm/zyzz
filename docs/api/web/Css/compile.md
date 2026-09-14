@@ -47,12 +47,20 @@ Css.compile({ composition: 'independent', styles })
 
 Emit compact, value-independent atomic names for CSS-only development updates. Normal output uses readable literal values. Grouped names are unchanged. Vite selects this option automatically during development.
 
+```ts
+Css.compile({ development: true, styles })
+```
+
 ### options.scope
 
 - Type: `string`
 - Default: `undefined`
 
 Include stylesheet ownership in atomic identities. Source compilation supplies the module identity so separately delivered stylesheets retain independent cascade positions.
+
+```ts
+Css.compile({ scope: 'app/card.ts', styles })
+```
 
 ### options.styles
 
@@ -146,3 +154,5 @@ CSS property/value validity relies on static authoring; emission preserves value
 Independent class lists must not be composed with each other. Distribute class maps and matching CSS together. Types live under `Css.compile.Options`, `ReturnType`, and `ErrorType`.
 
 See [Css](README.md) for related methods and types.
+
+With explicit `composition: 'independent'`, complete applications are never combined. The emitter may factor a shared block from independent grouped styles while retaining each conflicting declaration domain intact. The default composition keeps a style’s declarations together.

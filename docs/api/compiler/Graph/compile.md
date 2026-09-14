@@ -32,6 +32,10 @@ For repeated edits, [Graph.create](create.md) retains an isolated incremental ca
 
 Use stable atomic declaration names for CSS-only development updates. Production output uses readable literal values with module ownership hashes. Vite selects development naming automatically.
 
+```ts
+Graph.compile({ development: true, modules })
+```
+
 ### options.contracts
 
 - Type: `Readonly<Record<string, string>>`

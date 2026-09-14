@@ -17,23 +17,25 @@ describe('variable', () => {
     variable('color', { initialValue: 'red' })
     // @ts-expect-error Unknown registration options are rejected.
     variable('length', { inherits: true, initialValue: '4px', initial: '8px' })
-    variable('length', {
+    const mismatched = {
       inherits: true,
       initialValue: '4px',
-      // @ts-expect-error Syntax must match the variable domain.
       syntax: '<color>',
-    })
+    } as const
+    // @ts-expect-error Syntax must match the variable domain.
+    variable('length', mismatched)
     // @ts-expect-error Initial values must be computationally independent.
     variable('length', { inherits: false, initialValue: '1em' })
     // @ts-expect-error Unsigned defaults remain nonnegative.
     variable('length', { inherits: false, initialValue: '-1px' })
     // @ts-expect-error currentColor is not independent.
     variable('color', { inherits: false, initialValue: 'currentcolor' })
-    variable('color', {
+    const dependent = {
       inherits: false,
-      // @ts-expect-error Nested currentColor is not independent.
       initialValue: 'color-mix(in srgb, currentColor, red)',
-    })
+    } as const
+    // @ts-expect-error Nested currentColor is not independent.
+    variable('color', dependent)
     // @ts-expect-error Assignments retain their declared domain.
     gap.set('red')
   })

@@ -140,7 +140,7 @@ describe('create', () => {
     })
 
     expect(() => themes({ theme: 'base' })).toThrowErrorMatchingInlineSnapshot(
-      `[css.MissingTransformError: css requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.]`,
+      `[Error: Config.create requires an explicit id without the compiler plugin.]`,
     )
 
     const graph = Graph.compile({

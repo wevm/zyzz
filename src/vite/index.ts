@@ -21,7 +21,7 @@ import * as Source from '../compiler/Source.js'
  * Vite owns resolution, transpilation, CSS processing, watching, and HMR.
  * @returns A Vite 8 plugin with isolated state for each environment.
  */
-export function zyzz(): Plugin {
+export function zyzz(options: zyzz.Options = {}): Plugin {
   const states = new WeakMap<Environment, Map<string, Entry>>()
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
@@ -566,6 +566,7 @@ export function zyzz(): Plugin {
     for (const id of Object.keys(contracts)) await dependencies(id)
 
     const result = entry.compiler.compile({
+      compiler: options.compiler,
       contracts,
       development: entry.environment.mode !== 'build',
       imports,
@@ -1112,4 +1113,13 @@ const sharedId = `${prefix}shared.css`
 
 function cssId(file: string) {
   return `${prefix}${encodeURIComponent(file)}.css`
+}
+
+/** Vite integration configuration. */
+export declare namespace zyzz {
+  /** Source optimization remains enabled by default. */
+  type Options = {
+    /** False retains authored calls and requires explicit identities where needed. */
+    readonly compiler?: boolean | undefined
+  }
 }

@@ -235,6 +235,11 @@ jobs:
           node scripts/benchmark-manifest.ts
           mkdir -p "$BENCH_RENDER_OUTPUT"
           printf '%s\n' "$BASE_SHA" > "$BENCH_RENDER_OUTPUT/commit.txt"
+          if grep -q "cssOutput:'grouped'" bench/Runtime.ts && ! grep -q 'cssOutput' src/Config.ts; then
+            printf '%s\n' 'No comparable render baseline: the base revision does not support grouped configuration output.' > "$BENCH_RENDER_OUTPUT/unavailable.txt"
+            cat "$BENCH_RENDER_OUTPUT/unavailable.txt" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           pnpm bench:render
       - name: Measure production React renders in Chromium
         id: render

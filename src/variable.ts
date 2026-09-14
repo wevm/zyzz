@@ -1,8 +1,17 @@
 /** Declares optionally typed CSS variables with static references and inline assignments. @module */
 import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
+import * as Identity from './internal/Identity.js'
+import * as Variable from './runtime/Variable.js'
 
 /** Declares a custom property. Omitting the domain accepts any string or number; typed options register CSS @property. */
+export function variable(options: {
+  readonly id: string
+}): variable.Reference<'*'>
+export function variable<kind extends Binding.Kind>(
+  kind: kind,
+  options: { readonly id: string },
+): variable.Reference<kind>
 export function variable(): variable.Reference<'*'>
 export function variable<const kind extends Binding.Kind>(
   kind: kind,
@@ -23,10 +32,16 @@ export function variable<
           : unknown)
     },
 ): variable.Reference<kind>
-export function variable(kind?: Binding.Kind, options?: unknown): never {
-  void kind
-  void options
-  throw new MissingTransformError()
+export function variable(
+  kind?: Binding.Kind | { readonly id: string },
+  options?: { readonly id?: string | undefined },
+): unknown {
+  const id = typeof kind === 'object' ? kind.id : options?.id
+  return Variable.create({
+    name: `--z-v${Identity.requireId(id, 'variable')}`,
+    type: typeof kind === 'string' ? kind : '*',
+    variable: true,
+  })
 }
 
 /** Types shared by variable declarations and assignments. */
@@ -35,6 +50,8 @@ export declare namespace variable {
   type Kind = Binding.Kind
   /** Optional registration uses the variable's scalar domain as its CSS syntax. */
   type Options<kind extends Binding.Kind = Binding.Kind> = {
+    /** Stable identity required without source transformation. */
+    readonly id?: string | undefined
     /** Whether the custom property inherits through the DOM. */
     readonly inherits: boolean
     /** Computationally independent initial value emitted in @property. */

@@ -34,7 +34,7 @@ Selects the emitted CSS representation for bound styles, variants, and theme hel
 export const { css, variants } = Config.create({ cssOutput: 'grouped' })
 ```
 
-The CLI and optional compiler plugin retain this setting through source and packed contracts. Both modes preserve cascade and composition semantics. See [CSS Output](../../../guides/css-output.md) for examples and acceptance boundaries.
+Source compilation retains this setting. Packed contract and CLI propagation remain separate acceptance gates. See [CSS Output](../../../guides/css-output.md) for examples and acceptance boundaries.
 
 ### options.defaultTheme
 

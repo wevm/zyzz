@@ -6,6 +6,7 @@ import * as Contributions from './internal/Contributions.js'
 import * as Stylesheets from './internal/Stylesheets.js'
 import type * as Mapping from '@jridgewell/gen-mapping'
 import * as Css from '../web/Css.js'
+import * as Identity from '../internal/Identity.js'
 import type * as Ast from '@oxc-project/types'
 import * as Parser from 'oxc-parser'
 import * as Syntax from './internal/Syntax.js'
@@ -30,10 +31,12 @@ export declare namespace compile {
 
   /** Source modules available for relative import resolution. */
   type Options = {
-    /** Stable declaration names for CSS-only development updates. */
-    readonly development?: boolean | undefined
+    /** Rewrite authoring calls. False emits CSS for unchanged source. */
+    readonly compiler?: boolean | undefined
     /** Serialized library contracts keyed by host-resolved module identity. Runtime modules stay external to this graph. */
     readonly contracts?: Readonly<Record<string, string>> | undefined
+    /** Stable declaration names for CSS-only development updates. */
+    readonly development?: boolean | undefined
     /** Host-resolved static runtime imports keyed by module ID and source specifier; null marks externals. The host owns dynamic imports when supplied. Omit for closed relative-graph resolution. */
     readonly imports?:
       | Readonly<Record<string, Readonly<Record<string, string | null>>>>
@@ -86,8 +89,9 @@ export declare namespace create {
 }
 
 type Cache = {
-  development: boolean
+  compiler: boolean
   contracts: string
+  development: boolean
   extracted: ReadonlyMap<string, Source.extract.ReturnType>
   libraries: Readonly<Record<string, ReturnType<typeof Contract.read>>>
   resolutions: Readonly<Record<string, string>>
@@ -97,6 +101,7 @@ type Cache = {
 }
 
 function build(options: compile.Options, cache?: Cache): Cache {
+  if (cache?.compiler !== (options.compiler !== false)) cache = undefined
   const ids = Object.keys(options.modules).sort()
 
   const contracts = JSON.stringify(
@@ -580,6 +585,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     }
 
     const result = Source.extract({
+      compiler: options.compiler,
       moduleId,
       source,
       [Themes.context]: { factories, links },
@@ -864,6 +870,24 @@ function build(options: compile.Options, cache?: Cache): Cache {
     for (const link of Object.values(library.links)) published(link)
 
   const atomicOwners = new Map<string, string>()
+  if (options.compiler === false) {
+    const identities = new Map<string, string>()
+    for (const [moduleId, module] of extracted) {
+      for (const call of module.calls) {
+        if (!call.portable?.startsWith('z-style-id-')) continue
+        const signature = Identity.style(
+          module.styles.styles.find((style) => style.name === call.name)!,
+        )
+        const previous = identities.get(call.portable)
+        if (previous !== undefined && previous !== signature)
+          return fail(
+            moduleId,
+            'The same explicit style id is used for different declarations.',
+          )
+        identities.set(call.portable, signature)
+      }
+    }
+  }
 
   // Extraction visits dependencies first; their emitted classes must precede consumers.
   for (const moduleId of extracted.keys()) {
@@ -872,6 +896,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
       extracted.get(moduleId) === previous!.extracted.get(moduleId)
         ? previous!.result.modules[moduleId]!
         : Transform.compile({
+            compiler: options.compiler,
             development: options.development,
             moduleId,
             source: options.modules[moduleId]!,
@@ -889,7 +914,11 @@ function build(options: compile.Options, cache?: Cache): Cache {
     // Module-local checks cannot detect truncated ownership hashes colliding across files.
     for (const value of Object.values(modules[moduleId]!.classes))
       for (const name of value.split(' ')) {
-        if (!name.startsWith('z-')) continue
+        if (
+          !name.startsWith('z-') ||
+          !modules[moduleId]!.css.includes(`.${name}{`)
+        )
+          continue
 
         const owner = atomicOwners.get(name)
         if (owner !== undefined && owner !== moduleId)
@@ -934,8 +963,9 @@ function build(options: compile.Options, cache?: Cache): Cache {
   }
 
   return {
-    development: !!options.development,
+    compiler: options.compiler !== false,
     contracts,
+    development: !!options.development,
     extracted,
     libraries: Object.freeze(libraries),
     resolutions: Object.freeze(resolutions),

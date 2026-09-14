@@ -44,6 +44,31 @@ describe('compile', () => {
     }
   })
 
+  test('retains specificity inside one anonymous layer', async () => {
+    const output = Css.compile({
+      styles: Style.define({
+        card: { '@layer': { '&.special': { color: 'blue' }, color: 'red' } },
+      }),
+    })
+    expect(output.css).toMatchInlineSnapshot(
+      `".z-card-atomic-layer-0{@layer{&.special{color:blue;}color:red;}}"`,
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.card} special"></div>`,
+      )
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+    } finally {
+      await browser.close()
+    }
+  })
+
   test('defaults to atomic declarations and shares repeated properties', () => {
     const styles = Style.define({
       card: { color: 'red', padding: '8px' },

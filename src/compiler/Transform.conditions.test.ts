@@ -213,18 +213,20 @@ describe('compile', () => {
     `,
     )
 
-    const column = output.css.indexOf('padding:')
+    const prefix = output.css.slice(0, output.css.indexOf('padding:'))
+    const lines = prefix.split('\n')
+    const column = lines.at(-1)!.length
 
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
-        line: 1,
+        line: lines.length,
         column,
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 31,
+        "column": 67,
         "line": 1,
-        "name": "color",
+        "name": "padding",
         "source": "mapped.ts",
       }
     `)

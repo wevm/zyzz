@@ -439,13 +439,23 @@ export function compile<
       conditions: readonly string[] = [],
     ) {
       if (style.rules) {
-        for (const rule of style.rules)
+        for (const rule of style.rules) {
+          if (rule.condition?.trim() === '@layer') {
+            // Repeating an anonymous layer would change cascade precedence.
+            const body = [...conditions, rule.condition].reduceRight(
+              (body, condition) => `${condition}{${body}}`,
+              nested(rule.style),
+            )
+            emit(body, 'layer', false)
+            continue
+          }
           atoms(
             rule.style,
             rule.condition === undefined
               ? conditions
               : [...conditions, rule.condition],
           )
+        }
         return
       }
 

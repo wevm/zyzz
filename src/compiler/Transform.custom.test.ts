@@ -19,9 +19,9 @@ describe('compile', () => {
       .z-nhoi651v8vyx9-base---accent-jmtg6f184bytl{--accent:blue;}
       .z-nhoi651v8vyx9-base---data-jwt1ve184bytm{--data:"a;b:c";}
       .z-nhoi651v8vyx9-base---count-k6snkd184bytn{--count:2;}
-      .z-nhoi651v8vyx9-base-all-cj6vm9zffjyx{all:initial;}
-      .z-nhoi651v8vyx9-base-color-c979xazffjyw{color:var(--Accent);}
-      .z-nhoi651v8vyx9-base-backgroundColor-bz7o8bzffjyz{background-color:var(--accent);}
+      .z-style-nhoi651v8vyx9-150-atomic-all-0{all:initial;}
+      .z-style-nhoi651v8vyx9-150-atomic-color-1{color:var(--Accent);}
+      .z-style-nhoi651v8vyx9-150-atomic-backgroundColor-2{background-color:var(--accent);}
       .z-nhoi651v8vyx9-base---choice-bp82jczffjyy{--choice:red;--choice:blue!important;}"
     `)
   })

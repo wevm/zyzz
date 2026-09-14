@@ -120,7 +120,7 @@ describe('create', () => {
     `)
     expect(result.source).toMatchInlineSnapshot(`
       {
-        "class": "z-1wfnqsmu0q6os-base-paddingLeft-9anbqp1jggp0z z-1wfnqsmu0q6os-base-paddingRight-90nq1q1jggp0y z-style-1wfnqsmu0q6os-232",
+        "class": "z-style-1wfnqsmu0q6os-232-atomic-paddingLeft-0 z-style-1wfnqsmu0q6os-232-atomic-paddingRight-1 z-style-1wfnqsmu0q6os-232",
       }
     `)
     expect(result.dynamic).toMatchInlineSnapshot(`
@@ -245,8 +245,8 @@ describe('create', () => {
       ".z_theme-1xn44ix111xh3v-theme-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:4px;}
       .z_theme-1xn44ix111xh3v-extended{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:8px;}
       .z_theme-1e8a67z1uaws1j-next{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:12px;}
-      .z-1e8a67z1uaws1j-base-paddingLeft-1hhf5vs1tii3l2{padding-left:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);}
-      .z-1e8a67z1uaws1j-base-paddingRight-1hrerkr1tii3l3{padding-right:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);}"
+      .z-style-1e8a67z1uaws1j-137-atomic-paddingLeft-0{padding-left:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);}
+      .z-style-1e8a67z1uaws1j-137-atomic-paddingRight-1{padding-right:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);}"
     `)
   })
   test('accepts quoted aliases and independently validates numeric targets', () => {
@@ -263,8 +263,8 @@ describe('create', () => {
     expect(graph.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1e8a67z1uaws1j-css-theme{--z-t1e8a67z1uaws1j-css-spacing_2e_sm:4px;}
       .z_theme-1e8a67z1uaws1j-extended{--z-t1e8a67z1uaws1j-css-spacing_2e_sm:8px;}
-      .z-1e8a67z1uaws1j-base-paddingLeft-110054j1tiz2q1{padding-left:var(--z-t1e8a67z1uaws1j-css-spacing_2e_sm,8px);}
-      .z-1e8a67z1uaws1j-base-paddingRight-10q0jfk1tiz2q0{padding-right:var(--z-t1e8a67z1uaws1j-css-spacing_2e_sm,8px);}
+      .z-style-1e8a67z1uaws1j-280-atomic-paddingLeft-0{padding-left:var(--z-t1e8a67z1uaws1j-css-spacing_2e_sm,8px);}
+      .z-style-1e8a67z1uaws1j-280-atomic-paddingRight-1{padding-right:var(--z-t1e8a67z1uaws1j-css-spacing_2e_sm,8px);}
       .z-1e8a67z1uaws1j-base-scale-woexv41tjtmsq{scale:var(--z-d1e8a67z1uaws1j-339-6e);}
       .z-1e8a67z1uaws1j-base-order-wyejk31tjtmsr{order:var(--z-d1e8a67z1uaws1j-339-6e);}"
     `)

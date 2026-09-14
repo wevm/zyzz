@@ -216,8 +216,8 @@ type Definition = ReturnType<typeof define>;
           "themeReferences": [],
           "themes": {},
         },
-        "rules": ".z_base-padding-3kjv7gsytctm{padding:8px;}
-      .z_base-paddingLeft-3ujgwfsytctn{padding-left:0;}
+        "rules": ".z-style-16i62vd1bo8k8l-116-atomic-padding-0{padding:8px;}
+      .z-style-16i62vd1bo8k8l-116-atomic-paddingLeft-1{padding-left:0;}
       .z_base-color-6xavfhsxeofd{color:#fff;}
       .z_base-opacity-6nb9qisxeofc{opacity:0.5;}",
       }

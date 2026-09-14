@@ -59,6 +59,10 @@
   "license": "UNLICENSED",
   "description": "Type-safe style props compiled to static CSS.",
   "type": "module",
+  "bin": {
+    "zyzz": "./dist/cli/index.js",
+    "zyzz.src": "./src/cli/index.ts"
+  },
   "main": "./dist/index.js",
   "files": [
     "dist",
@@ -130,6 +134,7 @@
     "@jridgewell/trace-mapping": "^0.3.31",
     "@oxc-project/types": "0.148.0",
     "css-tree": "3.2.1",
+    "incur": "^0.5.1",
     "lightningcss": "^1.33.0",
     "magic-string": "^1.2.3",
     "oxc-parser": "0.148.0",

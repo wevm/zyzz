@@ -369,6 +369,24 @@ export function compile<
       continue
     }
 
+    const explicit = options.names?.[style.name]
+    if (explicit !== undefined) {
+      const original = options.styles.styles.find(
+        (entry) => entry.name === style.name,
+      )!
+      const body = nested(original)
+      const previous = rules.get(explicit)
+      if (previous !== undefined && previous !== body)
+        diagnostics.push({
+          code: 'identity_collision',
+          message: 'An explicit id is used for different styles.',
+          path: [style.name],
+        })
+      rules.set(explicit, body)
+      classes[style.name] = explicit
+      continue
+    }
+
     const application =
       options.composition === 'independent'
         ? `${mode}:${nested(style)}`
@@ -558,6 +576,8 @@ export declare namespace compile {
     name extends string = string,
     themeName extends string = string,
   > = {
+    /** Fixed class identities used by CSS-only consumers. */
+    readonly names?: Readonly<Record<string, string>> | undefined
     /**
      * Defaults to ordered, preserving stylesheet precedence across combined class lists.
      * Independent deduplicates complete applications; its class lists must not be

@@ -1,4 +1,5 @@
 /** Resolves known applications into ordered compiler-owned composition groups. @module */
+import * as Identity from '../../internal/Identity.js'
 import type * as Ast from '@oxc-project/types'
 import * as Walker from 'oxc-walker'
 import * as ConditionalRecipe from '../../runtime/ConditionalRecipe.js'
@@ -103,6 +104,7 @@ export function collect(options: collect.Options) {
           externalCalls.set(name, {
             end: -1,
             identity: name,
+            portable: link.style.className,
             name,
             ...(link.style.output ? { output: link.style.output } : {}),
             ownership: {
@@ -479,7 +481,21 @@ export function collect(options: collect.Options) {
         ) ?? []
       )
     }
+    const portable = (calls: readonly Source.Call[]) =>
+      calls.every((call) => call.portable)
+        ? Identity.composition(
+            calls.flatMap((call) => call.portableInputs ?? [call.portable!]),
+          )
+        : undefined
     const call: Source.Call = {
+      ...(portable(selected)
+        ? {
+            portable: portable(selected),
+            portableInputs: selected.flatMap(
+              (call) => call.portableInputs ?? [call.portable!],
+            ),
+          }
+        : {}),
       name,
       start: node.start,
       end: node.end,
@@ -509,6 +525,14 @@ export function collect(options: collect.Options) {
       names.push(name)
       cases.push({
         call: {
+          ...(portable(included)
+            ? {
+                portable: portable(included),
+                portableInputs: included.flatMap(
+                  (call) => call.portableInputs ?? [call.portable!],
+                ),
+              }
+            : {}),
           name,
           start: call.start,
           end: call.end,

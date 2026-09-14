@@ -1,7 +1,6 @@
 /** Declares named OpenType feature sets for a font family list. @module */
 import type * as Context from './internal/Context.js'
 import type * as Lexical from '../internal/Lexical.js'
-import { MissingTransformError } from '../css.js'
 
 /** Emits eager font feature aliases in authored block and declaration order. */
 export function fontFeatureValues<
@@ -28,7 +27,7 @@ export function fontFeatureValues<
 ): void {
   void options
   void context
-  throw new MissingTransformError()
+  return
 }
 /** Family, display, and nested feature alias contracts. */
 export declare namespace fontFeatureValues {

@@ -1,7 +1,7 @@
 /** Declares statically named animation frames. @module */
 import type * as Context from './internal/Context.js'
 import type * as Lexical from '../internal/Lexical.js'
-import { MissingTransformError } from '../css.js'
+import * as Identity from '../internal/Identity.js'
 import type * as Style from '../Style.js'
 import type * as Value from '../internal/Value.js'
 
@@ -20,7 +20,7 @@ export function keyframes<const frames extends Record<string, unknown>>(
 ): string {
   void context
   void frames
-  throw new MissingTransformError()
+  return Identity.contribution('keyframes', context.id)
 }
 
 type Space = ' ' | '\t' | '\n' | '\r' | '\f'

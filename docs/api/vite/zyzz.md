@@ -45,3 +45,7 @@ The adapter statically analyzes source; it does not execute theme factories at b
 Raw authoring inside virtual modules, framework SFCs, dependencies, or files outside the Vite root is not supported yet. Packed dependencies can supply adjacent compiler metadata; exclude their authoring entrypoints from Vite dependency optimization. See [Vite Setup](../../introduction/vite.md).
 
 See [zyzz/vite](README.md) for the entrypoint overview.
+
+## Options
+
+`zyzz({ compiler?: boolean })` enables source optimization by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Variables, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.

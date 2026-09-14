@@ -7,7 +7,7 @@ describe('variable', () => {
     expect(() => ({
       gap: variable('length'),
     })).toThrowErrorMatchingInlineSnapshot(
-      `[variable.MissingTransformError: variable requires a compile-time transform; do not execute untransformed authoring source.]`,
+      `[Error: variable requires an explicit id without the compiler plugin.]`,
     )
   })
 })

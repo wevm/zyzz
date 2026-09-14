@@ -657,7 +657,7 @@ describe('compile', () => {
           "-1": "z--1-atomic-color-0 z_base-display-1bzbmfg190jjg8 z--1-atomic-padding-1",
           "1": "z-1-atomic-color-0 z_base-display-1bzbmfg190jjg8 z-1-atomic-padding-2",
           "_31_": "z-_5f_31_5f_-atomic-color-0 z_base-display-1bzbmfg190jjg8 z-_5f_31_5f_-atomic-padding-1",
-          "again": "z-again-atomic-color-0 z_base-display-1bzbmfg190jjg8 z-again-atomic-padding-1",
+          "again": "z-1-atomic-color-0 z_base-display-1bzbmfg190jjg8 z-1-atomic-padding-2",
           "base_0": "z-base_5f_0-atomic-color-0 z_base-display-1bzbmfg190jjg8 z-base_5f_0-atomic-padding-1",
           "empty": "",
         },
@@ -668,8 +668,6 @@ describe('compile', () => {
       .z--1-atomic-padding-1{padding:3px;}
       .z-_5f_31_5f_-atomic-color-0{color:#333;}
       .z-_5f_31_5f_-atomic-padding-1{padding:4px;}
-      .z-again-atomic-color-0{color:#000;}
-      .z-again-atomic-padding-1{padding:8px;}
       .z-base_5f_0-atomic-color-0{color:#555;}
       .z-base_5f_0-atomic-padding-1{padding:5px;}",
         "themes": {},

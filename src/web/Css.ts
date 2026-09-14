@@ -352,6 +352,9 @@ export function compile<
 
   const rules = new Map<string, string>()
   const identical = new Map<string, string>()
+  const explicitBodies = new Map<string, string>()
+  const selectors = new Map<string, string>()
+  const explicitModes = new Set<string>()
 
   for (const style of options.styles.styles) {
     const mode = style.cssOutput ?? defaultMode
@@ -364,7 +367,24 @@ export function compile<
       continue
     }
 
-    const names: string[] = []
+    const explicit = options.names?.[style.name]
+    if (explicit !== undefined) {
+      const body = nested(style)
+      const previous = explicitBodies.get(explicit)
+      if (previous !== undefined && previous !== body)
+        diagnostics.push({
+          code: 'identity_collision',
+          message: 'An explicit id is used for different styles.',
+          path: [style.name],
+        })
+      explicitBodies.set(explicit, body)
+      classes[style.name] = explicit
+      const key = `${explicit}:${mode}`
+      if (explicitModes.has(key)) continue
+      explicitModes.add(key)
+    }
+
+    const names: string[] = explicit === undefined ? [] : [explicit]
     let ordinal = 0
 
     function emit(body: string, label: string, shared: boolean, output = mode) {
@@ -375,7 +395,10 @@ export function compile<
         output === mode &&
         options.composition === 'independent'
       const key = `${output}:${body}`
-      const previous = shared || independent ? identical.get(key) : undefined
+      const previous =
+        explicit === undefined && (shared || independent)
+          ? identical.get(key)
+          : undefined
       if (previous) {
         names.push(previous)
         return
@@ -384,6 +407,7 @@ export function compile<
       // Declaration slots keep mounted elements styled across CSS-only edits.
       const slot = ordinal++
       const identity = (() => {
+        if (explicit !== undefined) return `${explicit}-${mode}-${slot}`
         if (output === 'grouped' && mode === 'grouped')
           return `g-${encode(style.name)}`
         if (shared)
@@ -399,8 +423,11 @@ export function compile<
         })
 
       rules.set(identity, body)
-      if (shared || independent) identical.set(key, identity)
-      names.push(identity)
+      if (explicit !== undefined) selectors.set(identity, explicit)
+      else {
+        if (shared || independent) identical.set(key, identity)
+        names.push(identity)
+      }
     }
 
     function atoms(
@@ -501,7 +528,9 @@ export function compile<
 
   const scopedCss = [
     scopes.css,
-    ...[...rules].map(([name, body]) => `.${name}{${body}}`),
+    ...[...rules].map(
+      ([name, body]) => `.${selectors.get(name) ?? name}{${body}}`,
+    ),
   ]
     .filter(Boolean)
     .join('\n')
@@ -524,6 +553,8 @@ export declare namespace compile {
     name extends string = string,
     themeName extends string = string,
   > = {
+    /** Fixed class identities used by CSS-only consumers. */
+    readonly names?: Readonly<Record<string, string>> | undefined
     /**
      * Defaults to ordered, preserving stylesheet precedence across combined class lists.
      * Independent deduplicates complete applications; its class lists must not be

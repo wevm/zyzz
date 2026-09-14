@@ -5,6 +5,21 @@ import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('retains fixed runtime identities in both representations', () => {
+    const styles = Style.define({ card: { color: 'red', padding: '8px' } })
+    const names = { card: 'card' }
+    const atomic = Css.compile({ cssOutput: 'atomic', names, styles })
+    const grouped = Css.compile({ cssOutput: 'grouped', names, styles })
+
+    expect(atomic.classes.card).toMatchInlineSnapshot('"card"')
+    expect(grouped.classes.card).toMatchInlineSnapshot('"card"')
+    expect(atomic.css).toMatchInlineSnapshot(`
+      ".card{color:red;}
+      .card{padding:8px;}"
+    `)
+    expect(grouped.css).toMatchInlineSnapshot('".card{color:red;padding:8px;}"')
+  })
+
   test('keeps mounted classes valid across declaration value edits', async () => {
     const browser = await chromium.launch({ headless: true })
 

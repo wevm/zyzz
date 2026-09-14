@@ -2,6 +2,7 @@
  * Declares the token-free authoring boundary consumed by source transforms.
  * @module
  */
+import * as Authoring from './internal/Authoring.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Literal from './internal/Literal.js'
 import type * as Style from './Style.js'
@@ -26,7 +27,7 @@ type VariableOptions<input> = input extends {
  * Declares literal styles for source extraction. Requires a compile-time transform.
  * @param styles - Token-free literal CSS properties. Omit for an empty definition.
  * @returns A callable style definition after source rewriting.
- * @throws {MissingTransformError} Whenever an untransformed definition executes.
+ * @throws {Error} When a definition needs an explicit identity and none is supplied.
  */
 export function css(): css.ReturnType
 export function css<
@@ -43,13 +44,17 @@ export function css<
     (Parameters<callback> extends [Record<string, string | number>]
       ? unknown
       : never),
+  options?: css.DefinitionOptions,
 ): css.Dynamic<values>
 export function css<const styles extends Record<string, unknown>>(
   styles: styles & NoInfer<Style.Accepted<styles, {}, true>>,
+  options?: css.DefinitionOptions,
 ): css.ReturnType
-export function css(styles?: unknown): never {
-  void styles
-  throw new MissingTransformError()
+export function css(
+  styles?: unknown,
+  options: css.DefinitionOptions = {},
+): css.ReturnType {
+  return Authoring.create(styles, options)
 }
 
 /** Compile-time brand identifying callable style definitions. */
@@ -58,6 +63,8 @@ type Reference = { readonly [identity]: true }
 
 /** Contracts for the literal authoring boundary. */
 export declare namespace css {
+  /** Stable identity for selectors and definitions that cannot be content-addressed. */
+  type DefinitionOptions = { readonly id?: string | undefined }
   /** Callable compiled bindings with required scalar inputs and styling overrides. */
   type Dynamic<values, output extends Output = 'react'> = Reference &
     (<const input extends values & Options>(
@@ -67,7 +74,7 @@ export declare namespace css {
     ) => Props<output>)
 
   /** Failure from executing source without a transform. */
-  type ErrorType = MissingTransformError
+  type ErrorType = Error
 
   /** Styling overrides consumed by a transformed definition. */
   type Options = {

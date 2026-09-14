@@ -4,6 +4,7 @@ import * as Walker from 'oxc-walker'
 import type * as Binding from '../../internal/Binding.js'
 import * as Theme from '../../Theme.js'
 import type * as Css from '../../web/Css.js'
+import * as Identity from '../../internal/Identity.js'
 import * as Expression from './Expression.js'
 import type * as Scope from './Scope.js'
 import type * as Themes from './Themes.js'
@@ -192,15 +193,19 @@ export function collect(
   const registrationLocations: Ast.Node[] = []
   for (const call of factories) {
     const domain = call.arguments[0] && Expression.unwrap(call.arguments[0])
-    const value = call.arguments[1] && Expression.unwrap(call.arguments[1])
+    const value =
+      domain?.type === 'ObjectExpression'
+        ? domain
+        : call.arguments[1] && Expression.unwrap(call.arguments[1])
     const kind = (() => {
-      if (call.arguments.length === 0) return '*'
+      if (call.arguments.length === 0 || domain?.type === 'ObjectExpression')
+        return '*'
       if (domain?.type === 'Literal') return domain.value
       return undefined
     })()
 
     if (
-      (call.arguments.length !== 0 &&
+      (kind !== '*' &&
         ![
           'color',
           'length',
@@ -258,7 +263,7 @@ export function collect(
               ? (input.operator === '-' ? -1 : 1) * input.argument.value
               : undefined
         if (
-          !['syntax', 'inherits', 'initialValue'].includes(key) ||
+          !['id', 'syntax', 'inherits', 'initialValue'].includes(key) ||
           Object.hasOwn(descriptor, key) ||
           !['string', 'number', 'boolean'].includes(typeof literal)
         )
@@ -270,8 +275,9 @@ export function collect(
         descriptor[key] = literal as string | number | boolean
       }
 
-    const name = `--z-v${namespace}-${call.start}` as const
-    if (value?.type === 'ObjectExpression') {
+    const name =
+      `--z-v${descriptor.id === undefined ? `${namespace}-${call.start}` : Identity.requireId(typeof descriptor.id === 'string' ? descriptor.id : undefined, 'variable')}` as const
+    if (value && Object.keys(descriptor).some((key) => key !== 'id')) {
       const syntax =
         kind === 'signedLength'
           ? '<length>'

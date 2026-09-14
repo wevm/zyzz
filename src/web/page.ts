@@ -2,7 +2,6 @@
 import type * as Context from './internal/Context.js'
 import type * as Lexical from '../internal/Lexical.js'
 import type * as Literal from '../internal/Literal.js'
-import { MissingTransformError } from '../css.js'
 import type * as Style from '../Style.js'
 
 /** Emits an eager page rule, optionally selecting named pages or page pseudo-classes. */
@@ -15,7 +14,7 @@ export function page<const descriptors extends Record<string, unknown>>(
 ): void {
   void options
   void context
-  throw new MissingTransformError()
+  return
 }
 /** Page and margin-box authoring contracts. */
 export declare namespace page {

@@ -1,12 +1,11 @@
 /** Declares ordered external stylesheet imports. @module */
-import { MissingTransformError } from '../css.js'
 /** Emits a stylesheet import before namespaces and ordinary rules. */
 export function importCss<const options extends importCss.Options>(
   options: options &
     Record<Exclude<keyof options, keyof importCss.Options>, never>,
 ): void {
   void options
-  throw new MissingTransformError()
+  return
 }
 /** Import conditions and layer placement. */
 export declare namespace importCss {

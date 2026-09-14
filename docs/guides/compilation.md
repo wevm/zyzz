@@ -54,7 +54,7 @@ Consumers load the stylesheet once. They do not need Zyzz compilation for alread
 npx zyzz build
 ```
 
-The defaults compile `src` into `dist`, with CSS at `dist/styles.css`. Treat `dist` as compiler output, not an application import convention. Downstream tooling consumes the rewritten tree and lowers TypeScript/JSX. Original relative imports remain authored normally; the build selects its input root.
+The defaults compile `src` into `dist`, with adjacent module CSS and `zyzz.shared.css` for shared contributions. Treat `dist` as compiler output, not an application import convention. Downstream tooling consumes the rewritten tree and lowers TypeScript/JSX. Original relative imports remain authored normally; the build selects its input root.
 
 Libraries expose compiled modules through package exports and document stylesheet loading. Keep generated output separate from owned source files. A CSS-only scan cannot replace source rewriting for Zyzz's callable definitions.
 

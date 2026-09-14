@@ -17,7 +17,7 @@ for (const workload of Fixture.cases) {
     bench(
       'compile',
       () => {
-        Transform.compile(options)
+        Transform.compile({ ...options, cssOutput: 'grouped' })
       },
       { time: 250, warmupTime: 100 },
     )

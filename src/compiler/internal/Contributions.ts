@@ -1359,6 +1359,11 @@ export function extract(
         const context = record(contextValue)
         if (Object.keys(context).some((key) => !['id', 'within'].includes(key)))
           throw new Error('Unknown contribution context option.')
+        if (call.kind === 'customMedia' && 'within' in context)
+          throw new Error(
+            'Custom media definitions do not accept a within context.',
+          )
+
         const within = context.within ?? []
         if (
           !Array.isArray(within) ||

@@ -20,12 +20,15 @@ Zyzz compiles JavaScript and TypeScript modules, so each component keeps its def
 
 Spread expressions re-run when their `$state` inputs change, so `styles.bar({ width: `${amount}%` })` updates its bound variable in place.
 
+The root theme lives on `<html>`. `src/appearance.ts` applies the default selection, inserts the config's `script()` so a selection saved in localStorage wins before anything renders, and persists changes. A server-rendered document inlines the same script in `<head>` instead.
+
 ## Feature Map
 
 | Source                                    | Capabilities                                                                                     |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `src/zyzz.config.ts`                      | Named themes, light/dark pairs, extensions, tokens, aliases, property-specific scales, layers    |
-| `src/App.svelte` / `src/App.styles.ts`    | Theme selection, system scheme, nested scopes, global CSS in a named layer                       |
+| `src/appearance.ts`                       | Root theme and scheme on `<html>`, saved preferences, `script()` initialization                  |
+| `src/App.svelte` / `src/App.styles.ts`    | Theme controls, nested scopes, global CSS in a named layer                                       |
 | `src/Styling.svelte` / `.styles.ts`       | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides |
 | `src/Dynamic.svelte` / `.styles.ts`       | Typed runtime inputs, `variable()`, registration, static and inline `variables`                  |
 | `src/Relationships.svelte` / `.styles.ts` | Empty `css()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`       |

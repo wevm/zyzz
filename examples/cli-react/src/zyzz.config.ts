@@ -23,7 +23,7 @@ const mint = Theme.extend(base, {
 })
 
 /** Named helpers retain the shared token contract across every example. */
-export const { css, theme, themes } = Config.create({
+export const { css, script, theme, themes } = Config.create({
   defaultTheme: 'indigo',
   layers: ['reset', 'base', 'components'],
   shorthands: { px: ['paddingLeft', 'paddingRight'] },

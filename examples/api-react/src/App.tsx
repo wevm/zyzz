@@ -1,6 +1,7 @@
 /** Presents small, independent examples under a selectable theme scope. @module */
 import { useState } from 'react'
 import { global } from 'zyzz/web'
+import * as Appearance from './appearance.js'
 import { Dynamic } from './Dynamic.js'
 import { Motion } from './Motion.js'
 import { Relationships } from './Relationships.js'
@@ -73,92 +74,96 @@ namespace styles {
   })
 }
 
-/** Theme changes inherit naturally without a provider or preference listener. */
+/** The root selection lives on <html>; nested scopes inherit without a provider or listener. */
 export function App() {
-  const [appearance, setAppearance] = useState<'indigo' | 'mint'>('indigo')
-  const [scheme, setScheme] = useState<'light' | 'dark' | 'light dark'>(
-    'light dark',
-  )
+  const [appearance, setAppearance] = useState(Appearance.current)
+
+  function select(next: Partial<Appearance.Appearance>) {
+    const value = { ...appearance, ...next }
+
+    Appearance.select(value)
+    setAppearance(value)
+  }
 
   return (
-    <div {...themes({ theme: appearance, colorScheme: scheme })}>
-      <main {...styles.page()}>
-        <div {...styles.content()}>
-          <header>
-            <h1>Zyzz examples</h1>
-            <p>React + compiler API</p>
+    <main {...styles.page()}>
+      <div {...styles.content()}>
+        <header>
+          <h1>Zyzz examples</h1>
+          <p>React + compiler API</p>
+          <p {...styles.muted()}>
+            <code>scripts/build.ts</code> compiled this source tree into{' '}
+            <code>.zyzz</code> with <code>Host</code> from{' '}
+            <code>zyzz/node</code>, then bundled it through Vite's JavaScript
+            API.
+          </p>
+          <div {...styles.row()}>
+            <button
+              {...styles.button()}
+              aria-pressed={appearance.theme === 'indigo'}
+              onClick={() => select({ theme: 'indigo' })}
+            >
+              Indigo
+            </button>
+            <button
+              {...styles.button()}
+              aria-pressed={appearance.theme === 'mint'}
+              onClick={() => select({ theme: 'mint' })}
+            >
+              Mint
+            </button>
+            <label>
+              Color scheme{' '}
+              <select
+                aria-label="Color scheme"
+                value={appearance.colorScheme}
+                onChange={(event) => {
+                  const value = event.target.value
+                  if (
+                    value === 'light' ||
+                    value === 'dark' ||
+                    value === 'light dark'
+                  )
+                    select({ colorScheme: value })
+                }}
+              >
+                <option value="light dark">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </label>
+          </div>
+        </header>
+        <div {...styles.grid()}>
+          <Styling />
+          <Dynamic />
+          <Relationships />
+          <Motion />
+          <section {...styles.section()}>
+            <h2>Nested theme</h2>
             <p {...styles.muted()}>
-              <code>scripts/build.ts</code> compiled this source tree into{' '}
-              <code>.zyzz</code> with <code>Host</code> from{' '}
-              <code>zyzz/node</code>, then bundled it through Vite's JavaScript
-              API.
+              Tap the parent button. The nested theme stays mint and dark.
             </p>
-            <div {...styles.row()}>
+            <div {...styles.nested()} data-testid="parent-theme">
               <button
-                {...styles.button()}
-                aria-pressed={appearance === 'indigo'}
-                onClick={() => setAppearance('indigo')}
+                {...styles.sample()}
+                onClick={() =>
+                  select({
+                    theme: appearance.theme === 'indigo' ? 'mint' : 'indigo',
+                  })
+                }
               >
-                Indigo
+                Parent: {appearance.theme}
               </button>
-              <button
-                {...styles.button()}
-                aria-pressed={appearance === 'mint'}
-                onClick={() => setAppearance('mint')}
-              >
-                Mint
-              </button>
-              <label>
-                Color scheme{' '}
-                <select
-                  aria-label="Color scheme"
-                  value={scheme}
-                  onChange={(event) => {
-                    const value = event.target.value
-                    if (
-                      value === 'light' ||
-                      value === 'dark' ||
-                      value === 'light dark'
-                    )
-                      setScheme(value)
-                  }}
-                >
-                  <option value="light dark">System</option>
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                </select>
-              </label>
-            </div>
-          </header>
-          <div {...styles.grid()}>
-            <Styling />
-            <Dynamic />
-            <Relationships />
-            <Motion />
-            <section {...styles.section()}>
-              <h2>Nested theme</h2>
-              <p {...styles.muted()}>
-                Tap the parent button. The nested theme stays mint and dark.
-              </p>
-              <div {...styles.nested()} data-testid="parent-theme">
-                <button
-                  {...styles.sample()}
-                  onClick={() =>
-                    setAppearance(appearance === 'indigo' ? 'mint' : 'indigo')
-                  }
-                >
-                  Parent: {appearance}
-                </button>
-                <div {...themes({ theme: 'mint', colorScheme: 'dark' })}>
-                  <div {...styles.nested()} data-testid="nested-theme">
-                    <button {...styles.sample()}>Always mint + dark</button>
-                  </div>
+              <div {...themes({ theme: 'mint', colorScheme: 'dark' })}>
+                <div {...styles.nested()} data-testid="nested-theme">
+                  <button {...styles.sample()}>Always mint + dark</button>
                 </div>
               </div>
-            </section>
-          </div>
+            </div>
+          </section>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   )
 }

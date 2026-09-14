@@ -22,12 +22,15 @@ export function Button() {
 
 Spreads read signals inside the JSX, so `styles.bar({ width: `${amount()}%` })` updates its bound variable without re-rendering the element. Each module opens with `/** @jsxImportSource solid-js */` because the repository's shared tsconfig targets React's JSX runtime.
 
+The root theme lives on `<html>`. `src/appearance.ts` applies the default selection, inserts the config's `script()` so a selection saved in localStorage wins before anything renders, and persists changes. A server-rendered document inlines the same script in `<head>` instead.
+
 ## Feature Map
 
 | Source                          | Capabilities                                                                                     |
 | ------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `src/zyzz.config.ts`            | Named themes, light/dark pairs, extensions, tokens, aliases, property-specific scales, layers    |
-| `src/App.tsx`                   | Theme selection, system scheme, nested scopes, global CSS in a named layer                       |
+| `src/appearance.ts`             | Root theme and scheme on `<html>`, saved preferences, `script()` initialization                  |
+| `src/App.tsx`                   | Theme controls, nested scopes, global CSS in a named layer                                       |
 | `src/Styling.tsx`               | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides |
 | `src/Dynamic.tsx`               | Typed runtime inputs, `variable()`, registration, static and inline `variables`                  |
 | `src/Relationships.tsx`         | Empty `css()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`       |

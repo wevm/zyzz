@@ -16,6 +16,17 @@ const output = Css.compile({ styles })
 
 ## Parameters
 
+### options.cssOutput
+
+- Type: `'atomic' | 'grouped'`
+- Default: `'atomic'`
+
+Atomic output assigns classes to individual properties, retaining ordered same-property fallbacks. Grouped output retains each style's declarations in one scoped block. Both preserve selectors and stylesheet contributions; consume the returned class map with its matching CSS.
+
+```ts
+Css.compile({ cssOutput: 'grouped', styles })
+```
+
 ### options.composition
 
 - Type: `'independent' | 'ordered'`

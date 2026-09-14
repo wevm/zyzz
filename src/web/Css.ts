@@ -15,7 +15,7 @@ import * as Themes from './internal/Themes.js'
 export type Contribution = Contributions.Definition
 
 /**
- * Emits factored literal and theme-reference CSS without reading files or generating runtime code.
+ * Emits atomic or grouped CSS without reading files or generating runtime code.
  * Shares only nonconflicting declaration domains; conflicting rules retain authored
  * order by default. Independent composition deduplicates complete applications.
  * Class lists are scoped to the complete compilation input. Empty styles
@@ -32,12 +32,6 @@ export function compile<
 ): compile.ReturnType<name, themeName> {
   let theme: ReturnType<typeof Themes.create> | undefined
 
-  type Cached = {
-    declaration: string
-    domain: string
-  }
-
-  const cache = new Map<string, Map<number | string, Cached>>()
   const references = new Map<object, boolean>()
 
   function isReference(value: unknown): value is Token.Reference {
@@ -266,12 +260,6 @@ export function compile<
       if (Object.hasOwn(Cascade.shorthands, canonical(property)))
         join(canonical(property), domain(canonical(property)))
 
-  type Prepared = {
-    declarations: readonly Cached[]
-    ordered: string
-    shared: string
-  }
-
   const serialized = new Map<object, string>()
 
   function serialize(input: Style.Declaration['value']): number | string {
@@ -321,116 +309,40 @@ export function compile<
       .join('')
   }
 
-  const unique = new Map<string, Prepared>()
-  const resolved = new Map<Style.NamedStyle, Prepared>()
-
-  const prepared = options.styles.styles.map((style, index) => {
-    if (style.rules)
-      return {
-        name: style.name,
-        content: { declarations: [], ordered: nested(style), shared: '' },
-      }
-
-    const canonicalStyle = canonicalStyles[index]!
-    const cached = resolved.get(canonicalStyle)
-    if (cached) return { content: cached, name: style.name }
-
-    let body = ''
-    const declarations: Cached[] = []
-
-    for (const { important, property, value: input } of style.declarations) {
-      let value: number | string
-
-      try {
-        value = serialize(input)
-      } catch (error) {
-        diagnostics.push({
-          code: 'invalid_declaration',
-          message: (error as Error).message,
-          path: [style.name, property],
-        })
-        continue
-      }
-
-      const key = `${important ? 1 : 0}:${property}`
-      let values = cache.get(key)
-
-      if (!values) {
-        values = new Map()
-        cache.set(key, values)
-      }
-
-      let entry = values.get(value)
-
-      if (!entry) {
-        entry = {
-          declaration: `${Literal.name(property)}:${value}${important ? '!important' : ''};`,
-          domain: root(domain(canonical(property))),
-        }
-        values.set(value, entry)
-      }
-
-      const { declaration } = entry
-
-      body += declaration
-      declarations.push(entry)
-    }
-
-    const previous = unique.get(body)
-
-    if (previous) {
-      resolved.set(canonicalStyle, previous)
-
-      return { content: previous, name: style.name }
-    }
-
-    const content = { declarations, ordered: '', shared: '' }
-
-    resolved.set(canonicalStyle, content)
-    unique.set(body, content)
-
+  // Sharing is safe only when every use of a conflict domain has the same
+  // declaration sequence. Conditions conservatively retain contextual identities.
+  for (const style of analyzed) {
     const domains = new Map<string, string>()
 
-    for (const { declaration, domain } of declarations)
-      domains.set(domain, (domains.get(domain) ?? '') + declaration)
+    for (const { important, property, value } of style.declarations) {
+      const key = root(domain(canonical(property)))
+      const declaration = `${Literal.name(property)}:${serialize(value)}${important ? '!important' : ''};`
+      domains.set(key, (domains.get(key) ?? '') + declaration)
+    }
 
-    for (const [domain, signature] of domains) {
-      const previous = groups.get(domain)
-      if (previous === false) continue
-
+    for (const [key, value] of domains) {
+      const previous = groups.get(key)
       groups.set(
-        domain,
-        previous === undefined || previous === signature ? signature : false,
+        key,
+        previous === undefined || previous === value ? value : false,
       )
     }
+  }
 
-    return { content, name: style.name }
-  })
+  const mode = options.cssOutput ?? 'atomic'
+  if (mode !== 'atomic' && mode !== 'grouped')
+    throw new CompileError([
+      {
+        code: 'invalid_output',
+        message: 'cssOutput must be atomic or grouped.',
+        path: ['cssOutput'],
+      },
+    ])
 
-  // Equivalent bodies share factoring work, including repeated tokens.
-  for (const content of unique.values())
-    for (const { declaration, domain } of content.declarations) {
-      if (nestedComposition || groups.get(domain) === false)
-        content.ordered += declaration
-      else content.shared += declaration
-    }
-
-  // Sort identities only, never authored declarations or cascade order. Separate
-  // prefixes keep generated base identities disjoint from encoded authored names.
-  const bases = new Map(
-    [...new Set([...unique.values()].map((style) => style.shared))]
-      .filter(Boolean)
-      .sort()
-      .map((body, index) => [
-        body,
-        `${options.composition === 'independent' ? 'base_' : 'z_base'}${index}`,
-      ]),
-  )
-
-  const identical = new Map<string, string>()
   const rules = new Map<string, string>()
+  const identical = new Map<string, string>()
 
-  for (const style of prepared) {
+  for (const style of options.styles.styles) {
     if (!style.name || Object.hasOwn(classes, style.name)) {
       diagnostics.push({
         code: 'invalid_name',
@@ -440,45 +352,24 @@ export function compile<
       continue
     }
 
-    const { ordered, shared } = style.content
     const names: string[] = []
+    let ordinal = 0
 
-    // Shared domains have identical ordered declarations everywhere they occur.
-    // Ordered composition retains a distinct rule per authored style for conflicts.
-    for (const [body, sharedRule] of [
-      [shared, true],
-      [ordered, false],
-    ] as const) {
-      if (!body) continue
+    function emit(body: string, label: string, shared: boolean) {
+      if (!body) return
 
-      const identity = (() => {
-        if (sharedRule) {
-          return bases.get(body)!
-        }
-
-        if (options.composition === 'independent') {
-          return identifier(style.name)
-        }
-
-        return `z-${encode(style.name)}`
-      })()
-
-      // Independent styles are already complete applications. Reusing a rule
-      // cannot affect another application, but would change raw A/B/A composition.
-      if (!sharedRule && options.composition === 'independent') {
-        const canonical = identical.get(body)
-
-        if (canonical) {
-          names.push(canonical)
-          continue
-        }
-
-        identical.set(body, identity)
+      const independent = options.composition === 'independent'
+      const key = `${mode}:${body}`
+      const previous = shared || independent ? identical.get(key) : undefined
+      if (previous) {
+        names.push(previous)
+        return
       }
 
-      const previous = rules.get(identity)
-
-      if (previous !== undefined && previous !== body)
+      const identity = shared
+        ? `z_base-${label}-${hash(key)}`
+        : `z-${encode(style.name)}-${label}-${ordinal++}-${hash(key)}`
+      if (rules.has(identity) && rules.get(identity) !== body)
         diagnostics.push({
           code: 'identity_collision',
           message: 'Distinct rules produced the same class identifier.',
@@ -486,10 +377,63 @@ export function compile<
         })
 
       rules.set(identity, body)
+      if (shared || independent) identical.set(key, identity)
       names.push(identity)
     }
 
-    classes[style.name] = names.join(' ')
+    function atoms(
+      style: Style.NamedStyle,
+      conditions: readonly string[] = [],
+    ) {
+      if (style.rules) {
+        for (const rule of style.rules)
+          atoms(
+            rule.style,
+            rule.condition === undefined
+              ? conditions
+              : [...conditions, rule.condition],
+          )
+        return
+      }
+
+      for (let index = 0; index < style.declarations.length; ) {
+        const declaration = style.declarations[index++]!
+        const property = declaration.property
+        const values = [declaration]
+        // Keep same-property fallbacks ordered; they form one semantic value.
+        while (style.declarations[index]?.property === property)
+          values.push(style.declarations[index++]!)
+
+        const value = values
+          .map(
+            ({ important, value }) =>
+              `${Literal.name(property)}:${serialize(value)}${important ? '!important' : ''};`,
+          )
+          .join('')
+        const body = conditions.reduceRight(
+          (body, condition) => `${condition}{${body}}`,
+          value,
+        )
+        const shared =
+          !nestedComposition &&
+          !conditions.length &&
+          groups.get(root(domain(canonical(property)))) !== false
+        emit(body, encode(property), shared)
+      }
+    }
+
+    try {
+      if (mode === 'grouped') emit(nested(style), 'style', false)
+      else atoms(style)
+    } catch (error) {
+      diagnostics.push({
+        code: 'invalid_declaration',
+        message: (error as Error).message,
+        path: [style.name],
+      })
+    }
+
+    classes[style.name] = [...new Set(names)].join(' ')
   }
 
   if (diagnostics.length) throw new CompileError(diagnostics)
@@ -557,6 +501,8 @@ export declare namespace compile {
      */
     /** Eager module-level stylesheet contributions, supplied as static data. */
     readonly contributions?: readonly Contribution[] | undefined
+    /** CSS representation; atomic declarations are the default. */
+    readonly cssOutput?: 'atomic' | 'grouped' | undefined
     readonly composition?: 'independent' | 'ordered' | undefined
     /** Ordered definitions; no themes or source adapter is required. */
     readonly styles: Style.Definition<name>
@@ -613,6 +559,7 @@ export type Diagnostic = {
     | 'identity_collision'
     | 'invalid_declaration'
     | 'invalid_name'
+    | 'invalid_output'
     | 'invalid_theme'
   /** Explanation of the unsupported input. */
   readonly message: string
@@ -628,9 +575,14 @@ function encode(value: string): string {
   )
 }
 
-function identifier(value: string): string {
-  return encode(value).replace(
-    /^[0-9]|^-(?=[0-9]|$)/g,
-    (character) => `_${character.charCodeAt(0).toString(16)}_`,
-  )
+// Two independent 32-bit streams retain deterministic identities without host APIs.
+function hash(value: string): string {
+  let first = 2166136261
+  let second = 5381
+  for (let index = 0; index < value.length; index++) {
+    const code = value.charCodeAt(index)
+    first = Math.imul(first ^ code, 16777619)
+    second = Math.imul(second, 33) ^ code
+  }
+  return (first >>> 0).toString(36) + (second >>> 0).toString(36)
 }

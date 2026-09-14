@@ -272,7 +272,7 @@ export async function verify(options: verify.Options) {
       })),
     ).toEqual({
       padding: '16px',
-      font: 'Geist, ui-sans-serif, system-ui, sans-serif',
+      font: 'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
     })
     expect(
       await page.evaluate(

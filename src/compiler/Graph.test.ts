@@ -1781,7 +1781,7 @@ describe('stylesheets', () => {
         const page = await browser.newPage()
 
         await page.setContent(
-          `<style>${result.sharedCss}\n${reset}</style><button>Button</button><img>`,
+          `<style>${result.sharedCss}\n${reset}</style><button>Button</button><img><h1>Heading</h1><ul><li>Item</li></ul>`,
         )
 
         expect(
@@ -1793,6 +1793,27 @@ describe('stylesheets', () => {
           await page
             .locator('img')
             .evaluate((node) => getComputedStyle(node).maxWidth),
+        ).toMatchInlineSnapshot('"none"')
+
+        expect(
+          await page
+            .locator('h1')
+            .evaluate((node) => [
+              getComputedStyle(node).fontSize,
+              getComputedStyle(node).fontWeight,
+              getComputedStyle(node).marginTop,
+            ]),
+        ).toMatchInlineSnapshot(`
+          [
+            "16px",
+            "400",
+            "0px",
+          ]
+        `)
+        expect(
+          await page
+            .locator('ul')
+            .evaluate((node) => getComputedStyle(node).listStyleType),
         ).toMatchInlineSnapshot('"none"')
       } finally {
         await browser.close()

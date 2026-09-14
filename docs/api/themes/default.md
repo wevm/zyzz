@@ -14,9 +14,26 @@ namespace styles {
 }
 ```
 
-The opt-in bundle supplies Tailwind's palette, breakpoint, radius, and font-size scales, a quarter-rem spacing scale, scalar typography, and Geist/Geist Mono font stacks with system fallbacks. It does not download or register fonts. `foreground` and `surface` provide light/dark semantic colors.
+The bundle covers every scale the theme contract supports. Colors ship as light/dark pairs and font stacks lead with the bundled faces over system fallbacks. It does not download or register fonts.
 
-Palette and scale data come from the pinned Tailwind dependency; its MIT notice is retained in `src/themes/LICENSE.tailwind`. Raw `tokens` are independent of `theme.tokens` portable references and `theme.vars` web references.
+| Group           | Keys                                                                                                                                                                       |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `color`         | `amber`, `blue`, `gray`, `grayAlpha`, `green`, `pink`, `purple`, `red`, `teal` in steps `100` to `1000`, `background.100`/`200`, `black`, `white`, `foreground`, `surface` |
+| `fontFamily`    | `sans`, `mono`, `serif`                                                                                                                                                    |
+| `fontSize`      | `xs` to `9xl`                                                                                                                                                              |
+| `fontWeight`    | `thin` to `black`                                                                                                                                                          |
+| `letterSpacing` | `tighter` to `widest`                                                                                                                                                      |
+| `lineHeight`    | `tight`, `snug`, `normal`, `relaxed`, `loose`                                                                                                                              |
+| `spacing`       | `px`, `0` to `96` whole steps of `0.25rem`                                                                                                                                 |
+| `borderRadius`  | `xs` to `4xl`                                                                                                                                                              |
+| `breakpoints`   | `sm` to `2xl`                                                                                                                                                              |
+| `containers`    | `3xs` to `7xl`                                                                                                                                                             |
+
+Color steps switch with the ordinary color-scheme contract. Steps whose values match in both schemes are single colors. `foreground` aliases `gray.1000` and `surface` aliases `background.100`. `grayAlpha` steps are translucent eight-digit hex values for overlays and borders.
+
+Fractional spacing steps (`0.5`, `1.5`, `2.5`, `3.5`) are omitted because token paths reserve the dot separator. Shadows, blur, easing, animation, perspective, and paired font-size line heights are outside the theme contract and are not bundled. `sans` and `mono` lead with the bundled faces before system stacks, and `serif` is a system stack.
+
+Third-party scale data retains its MIT notice under `src/themes/`. Raw `tokens` are independent of `theme.tokens` portable references and `theme.vars` web references.
 
 Themes can also define `breakpoints`, `containers`, and `containerNames`. These are compile-time query metadata, excluded from declaration references and emitted CSS variables. Thresholds use fixed nonnegative CSS lengths, with relative units preserved. Extensions may change existing thresholds; runtime theme scope changes do not change compiled thresholds. Nested condition authoring resolves aliases from these groups, including comparison and range forms.
 

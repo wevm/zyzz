@@ -20,6 +20,22 @@ export const { css, theme } = Config.create({
 
 ## Parameters
 
+### options.cssOutput
+
+> [!NOTE]
+> Planned as the next implementation; the current config does not accept this option.
+
+- Type: `'atomic' | 'grouped'`
+- Default: `'atomic'`
+
+Selects the emitted CSS representation for bound styles, variants, and theme helpers. Atomic mode shares individual declarations; grouped mode emits scoped declaration blocks. Renderer `output` remains independent.
+
+```ts
+export const { css, variants } = Config.create({ cssOutput: 'grouped' })
+```
+
+The CLI and optional compiler plugin retain this setting through source and packed contracts. Both modes preserve cascade and composition semantics. See [CSS Output](../../../guides/css-output.md) for examples and acceptance boundaries.
+
 ### options.defaultTheme
 
 - Type: Catalog key (inferred)

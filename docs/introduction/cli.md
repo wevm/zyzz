@@ -1,6 +1,6 @@
 # CLI Setup
 
-Compile source modules and stylesheets:
+Compile source modules and stylesheets. Configurable CSS representation is the next planned extension; see [CSS Output](../guides/css-output.md).
 
 ```sh
 npx zyzz build

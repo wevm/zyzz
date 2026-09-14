@@ -1,5 +1,8 @@
 # Literal Values
 
+> [!NOTE]
+> The output and identity details below describe the current emitter. [Configurable CSS output](../../../guides/css-output.md) is planned next, with atomic as the default and grouped output selectable on config.
+
 The current pinned inventory covers all 670 property mappings with zero partial or deferred entries under the static authoring and emission contract. CSS value validation is static-only. `Style.define` retains ordered definitions; `Css.compile` emits them. Coverage does not promise every browser implements every property. The maintained counts and evidence live in [the conformance inventory](../../../../test/conformance/README.md).
 
 The feature notes below record historical implementation checkpoints, including validators and partial counts that were superseded by the complete static contract. They describe the scope of those fixtures, not the current completion status.

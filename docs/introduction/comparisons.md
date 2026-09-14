@@ -431,6 +431,9 @@ Build integrations evaluate `.css.ts` modules and extract web CSS. Libraries can
 
 ### Zyzz
 
+> [!NOTE]
+> Next planned: `Config.create({ cssOutput: 'atomic' | 'grouped' })`, defaulting to atomic. Both modes retain the same authoring API and cascade contract. See [CSS Output](../guides/css-output.md); the current emitter behavior follows below.
+
 Static applications can fold into props constants; surviving callables perform props merging. Ordered rules allow deduplication where declaration identity and cascade order remain intact. Classes use readable names with collision suffixes.
 
 Dynamic selection, variable binding, and composition may retain small helpers or metadata; their cost belongs in the delivered bundle measurement.

@@ -5,12 +5,10 @@
 </p>
 
 <p align="center">
-  <a href="#overview">Overview</a> · <a href="#getting-started">Getting Started</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="#comparison">Comparison</a> · <a href="docs/guides/README.md">Guides</a> · <a href="docs/concepts.md">Concepts</a> · <a href="docs/api/README.md">API Reference</a>
+  <a href="#overview">Overview</a> · <a href="#getting-started">Getting Started</a> · <a href="#philosophy">Philosophy</a> · <a href="#features">Features</a> · <a href="#benchmarks">Benchmarks</a> · <a href="#comparison">Comparison</a> · <a href="docs/guides/README.md">Guides</a> · <a href="docs/concepts.md">Concepts</a> · <a href="docs/api/README.md">API Reference</a>
 </p>
 
 ## Overview
-
-Zyzz combines typed CSS, design tokens, themes, and variants with ahead-of-time compilation. Group component styles in `namespace styles {}`, call them, and spread the resulting props onto elements.
 
 ```tsx
 import { css } from 'zyzz'
@@ -148,7 +146,7 @@ Token names infer by property, and compatible theme scopes change inherited valu
 
 #### Default Theme
 
-The planned `zyzz/themes/default` entrypoint will provide inferred colors, typography, spacing, and radius tokens through bound `css` and `variants`, plus `theme` and raw `tokens`. It remains unpublished until Phase 3 adds variants. These examples preview that API.
+The `zyzz/themes/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `css` and `variants`, plus `theme` and raw `tokens`.
 
 ```ts
 import { css } from 'zyzz/themes/default'
@@ -326,9 +324,9 @@ const example = (
 
 ### Static CSS
 
-Styles compile ahead of time into CSS. The optional compiler also optimizes authoring calls into props and small runtime helpers. It is enabled by default in Vite; `zyzz({ compiler: false })` retains authoring calls while delivering CSS. Neither mode generates CSS at runtime.
-
 Use the [Vite plugin](docs/introduction/vite.md) for source transformation and CSS delivery, or the [compiler APIs](docs/guides/compilation.md) for standalone builds and library distribution.
+
+## Benchmarks
 
 See [Benchmarks](docs/introduction/benchmarks.md) for measured compilation, runtime, and output-size comparisons.
 

@@ -100,7 +100,7 @@ jobs:
             [($group.fullName | split(" / ") | last), ((.mean * 1000 | round) / 1000), ((.rme * 100 | round) / 100), .sampleCount] |
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/timings-measured.json >> bench/results/report.md
-          printf '\n## Module Transforms\n\nOrdered source compilation, rewriting, and maps. Final minification and browser bundling are outside timing; sizes include the bundled callable runtime. Local themes include literal token extraction, resolution, and two scalar scopes.\n' >> bench/results/report.md
+          printf '\n## Module Transforms\n\nOrdered source compilation, rewriting, and maps. Final minification and browser bundling are outside timing. Sizes include the bundled callable runtime. Local themes include literal token extraction, resolution, and two scalar scopes.\n' >> bench/results/report.md
           for kind in literal theme alias tokens; do
             case "$kind" in
               literal) title='Literal Styles'; group='module transform' ;;
@@ -123,13 +123,13 @@ jobs:
             [.name, (.mean * 1000000 | round), ((.rme * 100 | round) / 100), .sampleCount] |
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/timings-measured.json >> bench/results/report.md
-          printf '\n## File Host — 100 Styles\n\nCold process includes startup; watch edits include the source write through artifact publication.\n\n| Operation | Time (ms) | Error (±%%) | Samples |\n| --- | ---: | ---: | ---: |\n' >> bench/results/report.md
+          printf '\n## File Host: 100 Styles\n\nCold process includes startup. Watch edits include the source write through artifact publication.\n\n| Operation | Time (ms) | Error (±%%) | Samples |\n| --- | ---: | ---: | ---: |\n' >> bench/results/report.md
           jq -r '
             .files[].groups[] | select(.fullName | contains("file host / ")) | .benchmarks[] |
             [.name, ((.mean * 1000 | round) / 1000), ((.rme * 100 | round) / 100), .sampleCount] |
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/timings-measured.json >> bench/results/report.md
-          printf '\n## Theme Compilation\n\nIn-memory emission with two scopes and light/dark pairs; no source rewriting or client bundling. Sizes are emitted CSS before final minification.\n\n| Styles | Time (ms) | CSS raw | CSS gzip | CSS Brotli |\n| --- | ---: | ---: | ---: | ---: |\n' >> bench/results/report.md
+          printf '\n## Theme Compilation\n\nIn-memory emission with two scopes and light/dark pairs, without source rewriting or client bundling. Sizes are emitted CSS before final minification.\n\n| Styles | Time (ms) | CSS raw | CSS gzip | CSS Brotli |\n| --- | ---: | ---: | ---: | ---: |\n' >> bench/results/report.md
           jq -r --slurpfile timings bench/results/timings-measured.json '
             . as $size |
             $timings[0].files[].groups[] | select(.fullName | endswith("theme compilation / " + ($size.count | tostring) + " styles")) |
@@ -137,7 +137,7 @@ jobs:
             [$size.count, ((.mean * 1000 | round) / 1000), $size.raw, $size.gzip, $size.brotli] |
             "| " + (map(tostring) | join(" | ")) + " |"
           ' bench/results/themes/*.json >> bench/results/report.md
-          printf '\nBuild timings use warm host processes and fresh compiler state. Compiler workflows have different scopes; see bench/README.md in the repository for measurement boundaries.\n' >> bench/results/report.md
+          printf '\nBuild timings use warm host processes and fresh compiler state. Compiler workflows have different scopes. See bench/README.md in the repository for measurement boundaries.\n' >> bench/results/report.md
       - name: Check framework performance
         id: frameworks
         continue-on-error: true

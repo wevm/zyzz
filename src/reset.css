@@ -1,7 +1,7 @@
 /*
-  Adapted from Tailwind CSS preflight (MIT, see themes/LICENSE.tailwind).
-  Theme-function lookups are replaced by their fallback font stacks because the
-  reset ships as a standalone stylesheet without a theme contract.
+  Opt-in base reset. Font stacks are inlined because the reset ships as a
+  standalone stylesheet without a theme contract. The third-party MIT notice
+  covering this file is retained under themes/.
 */
 @layer reset {
   /* Border-box sizing, no default margins or padding, and a zero-width solid border ready for a width. */

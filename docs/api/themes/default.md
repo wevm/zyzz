@@ -14,26 +14,26 @@ namespace styles {
 }
 ```
 
-The bundle mirrors Tailwind's default theme for every scale the theme contract supports and takes its colors and font stacks from the Geist design system. It does not download or register fonts.
+The bundle covers every scale the theme contract supports. Colors ship as light/dark pairs and font stacks lead with the bundled faces over system fallbacks. It does not download or register fonts.
 
-| Group           | Keys                                                                                                                                                                       | Source                               |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `color`         | `amber`, `blue`, `gray`, `grayAlpha`, `green`, `pink`, `purple`, `red`, `teal` in steps `100` to `1000`, `background.100`/`200`, `black`, `white`, `foreground`, `surface` | Geist                                |
-| `fontFamily`    | `sans`, `mono`, `serif`                                                                                                                                                    | Geist stacks over Tailwind fallbacks |
-| `fontSize`      | `xs` to `9xl`                                                                                                                                                              | Tailwind                             |
-| `fontWeight`    | `thin` to `black`                                                                                                                                                          | Tailwind                             |
-| `letterSpacing` | `tighter` to `widest`                                                                                                                                                      | Tailwind                             |
-| `lineHeight`    | `tight`, `snug`, `normal`, `relaxed`, `loose`                                                                                                                              | Tailwind                             |
-| `spacing`       | `px`, `0` to `96` whole steps of `0.25rem`                                                                                                                                 | Tailwind                             |
-| `borderRadius`  | `xs` to `4xl`                                                                                                                                                              | Tailwind                             |
-| `breakpoints`   | `sm` to `2xl`                                                                                                                                                              | Tailwind                             |
-| `containers`    | `3xs` to `7xl`                                                                                                                                                             | Tailwind                             |
+| Group           | Keys                                                                                                                                                                       |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `color`         | `amber`, `blue`, `gray`, `grayAlpha`, `green`, `pink`, `purple`, `red`, `teal` in steps `100` to `1000`, `background.100`/`200`, `black`, `white`, `foreground`, `surface` |
+| `fontFamily`    | `sans`, `mono`, `serif`                                                                                                                                                    |
+| `fontSize`      | `xs` to `9xl`                                                                                                                                                              |
+| `fontWeight`    | `thin` to `black`                                                                                                                                                          |
+| `letterSpacing` | `tighter` to `widest`                                                                                                                                                      |
+| `lineHeight`    | `tight`, `snug`, `normal`, `relaxed`, `loose`                                                                                                                              |
+| `spacing`       | `px`, `0` to `96` whole steps of `0.25rem`                                                                                                                                 |
+| `borderRadius`  | `xs` to `4xl`                                                                                                                                                              |
+| `breakpoints`   | `sm` to `2xl`                                                                                                                                                              |
+| `containers`    | `3xs` to `7xl`                                                                                                                                                             |
 
-Geist color steps are light/dark pairs and switch with the ordinary color-scheme contract. Steps whose Geist values match in both schemes are single colors. `foreground` aliases `gray.1000` and `surface` aliases `background.100`. `grayAlpha` steps are translucent eight-digit hex values for overlays and borders.
+Color steps switch with the ordinary color-scheme contract. Steps whose values match in both schemes are single colors. `foreground` aliases `gray.1000` and `surface` aliases `background.100`. `grayAlpha` steps are translucent eight-digit hex values for overlays and borders.
 
-Tailwind's fractional spacing steps (`0.5`, `1.5`, `2.5`, `3.5`) are omitted because token paths reserve the dot separator. Tailwind groups outside the theme contract (shadows, blur, easing, animation, perspective, and paired font-size line heights) are not bundled. `sans` and `mono` lead with Geist and Geist Mono before Tailwind's system stacks. `serif` is Tailwind's stack because Geist provides no serif face.
+Fractional spacing steps (`0.5`, `1.5`, `2.5`, `3.5`) are omitted because token paths reserve the dot separator. Shadows, blur, easing, animation, perspective, and paired font-size line heights are outside the theme contract and are not bundled. `sans` and `mono` lead with the bundled faces before system stacks, and `serif` is a system stack.
 
-Scale data comes from the pinned Tailwind dependency, and its MIT notice is retained in `src/themes/LICENSE.tailwind`. Color values follow the published Geist design system. Raw `tokens` are independent of `theme.tokens` portable references and `theme.vars` web references.
+Third-party scale data retains its MIT notice under `src/themes/`. Raw `tokens` are independent of `theme.tokens` portable references and `theme.vars` web references.
 
 Themes can also define `breakpoints`, `containers`, and `containerNames`. These are compile-time query metadata, excluded from declaration references and emitted CSS variables. Thresholds use fixed nonnegative CSS lengths, with relative units preserved. Extensions may change existing thresholds; runtime theme scope changes do not change compiled thresholds. Nested condition authoring resolves aliases from these groups, including comparison and range forms.
 

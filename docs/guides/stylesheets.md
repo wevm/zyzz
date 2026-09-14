@@ -116,7 +116,7 @@ Font URLs retain source ownership. Reachable keyframes emit stable references. F
 import 'zyzz/reset.css'
 ```
 
-The reset is Tailwind's preflight wrapped in the `reset` layer: border-box sizing, zeroed margins and padding, unstyled headings, links, and lists, inherited form-control typography, and block-level replaced elements. Its document and code font stacks are Tailwind's system fallbacks, so the [default theme](../api/themes/default.md) `fontFamily` tokens still choose Geist explicitly. Core imports do not install it. Ordinary unlayered declarations take precedence regardless of whether the reset loads before or after them.
+The reset lives in the `reset` layer: border-box sizing, zeroed margins and padding, unstyled headings, links, and lists, inherited form-control typography, and block-level replaced elements. Its document and code font stacks are system fallbacks, so the [default theme](../api/themes/default.md) `fontFamily` tokens still select the bundled faces explicitly. Core imports do not install it. Ordinary unlayered declarations take precedence regardless of whether the reset loads before or after them.
 
 ### Packed Libraries
 

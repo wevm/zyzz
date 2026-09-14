@@ -1,5 +1,5 @@
 /**
- * Opt-in bundled theme with Tailwind's default scales, Geist colors, and Geist font stacks.
+ * Opt-in bundled theme with conventional design scales, light/dark color scales, and system font stacks.
  * @module
  */
 import { Theme } from 'zyzz'
@@ -8,12 +8,12 @@ import { Theme } from 'zyzz'
  * Raw bundled values, independent of portable references.
  *
  * Breakpoints, containers, spacing, radii, font sizes, weights, tracking, and
- * leading mirror Tailwind's default theme. Fractional spacing steps are omitted
- * because token paths reserve the dot separator. Colors follow the Geist design
- * system: ten-step light/dark scales plus `background`, `grayAlpha`, `black`,
- * and `white`. `foreground` aliases `gray.1000` and `surface` aliases
- * `background.100`. Font stacks lead with Geist and Geist Mono and fall back to
- * Tailwind's system stacks. No fonts are loaded.
+ * leading use the conventional named and quarter-rem scales. Fractional spacing
+ * steps are omitted because token paths reserve the dot separator. Colors are
+ * ten-step light/dark scales plus `background`, `grayAlpha`, `black`, and
+ * `white`. `foreground` aliases `gray.1000` and `surface` aliases
+ * `background.100`. Font stacks lead with the named faces and fall back to
+ * system fonts. No fonts are loaded.
  */
 export const tokens = {
   borderRadius: {
@@ -247,7 +247,7 @@ export const tokens = {
   },
 } as const
 
-/** Bundled theme with light/dark Geist scales. */
+/** Bundled theme with light/dark color scales. */
 // Generated from tokens by scripts/default-theme.ts; edit tokens and regenerate.
 export const theme = Theme.define({
   borderRadius: {

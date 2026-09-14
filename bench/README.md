@@ -29,7 +29,7 @@ TypeScript compatibility checks and JavaScript compiler instantiation benches ru
 
 ## React Render and Mount Benchmarks
 
-Run `pnpm bench:render` after installing Chromium with `pnpm exec playwright install chromium`. Run `node bench/RenderReport.ts bench/results` to report the raw samples in `bench/results/render-timings.json`. CI also measures the base source with the candidate harness on the same runner.
+Run `pnpm bench:render` after installing Chromium with `pnpm exec playwright install chromium`. Run `node bench/RenderReport.ts bench/results` to report the raw samples in `bench/results/render-timings.json`. CI also measures the base source with the candidate harness on the same runner. If that source predates grouped configuration support, the report explicitly marks the grouped render baseline unavailable; the complete candidate and competitor measurements still run and retain every correctness and completeness check.
 
 Vitest Browser Mode controls an isolated iframe containing an esbuild production React bundle. Framework applications use the official compiler adapters. React development mode, compilation, loading, test assertions, and protocol calls are outside timing. All frameworks render the same 100 or 1,000 cards with 10 or 100 distinct styles.
 

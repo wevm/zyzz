@@ -372,8 +372,8 @@ export function compile<
     }
   }
 
-  const mode = options.cssOutput ?? 'atomic'
-  if (mode !== 'atomic' && mode !== 'grouped')
+  const defaultMode = options.cssOutput ?? 'atomic'
+  if (defaultMode !== 'atomic' && defaultMode !== 'grouped')
     throw new CompileError([
       {
         code: 'invalid_output',
@@ -381,6 +381,23 @@ export function compile<
         path: ['cssOutput'],
       },
     ])
+
+  function validate(style: Style.NamedStyle) {
+    if (
+      style.cssOutput !== undefined &&
+      style.cssOutput !== 'atomic' &&
+      style.cssOutput !== 'grouped'
+    )
+      throw new CompileError([
+        {
+          code: 'invalid_output',
+          message: 'cssOutput must be atomic or grouped.',
+          path: [style.name, 'cssOutput'],
+        },
+      ])
+    for (const rule of style.rules ?? []) validate(rule.style)
+  }
+  for (const style of options.styles.styles) validate(style)
 
   const rules = new Map<string, string>()
   const identical = new Map<string, string>()
@@ -393,6 +410,7 @@ export function compile<
     }
 
   for (const [styleIndex, style] of options.styles.styles.entries()) {
+    const mode = style.cssOutput ?? defaultMode
     if (!style.name || Object.hasOwn(classes, style.name)) {
       diagnostics.push({
         code: 'invalid_name',
@@ -432,12 +450,14 @@ export function compile<
     const names: string[] = []
     let ordinal = 0
 
-    function emit(body: string, label: string, shared: boolean) {
+    function emit(body: string, label: string, shared: boolean, output = mode) {
       if (!body) return
 
       const independent =
-        mode === 'grouped' && options.composition === 'independent'
-      const key = `${mode}:${body}`
+        mode === 'grouped' &&
+        output === mode &&
+        options.composition === 'independent'
+      const key = `${output}:${body}`
       const previous = shared || independent ? identical.get(key) : undefined
       if (previous && !names.includes(previous)) {
         names.push(previous)
@@ -449,9 +469,9 @@ export function compile<
       // Declaration slots keep mounted elements styled across CSS-only edits.
       const slot = ordinal++
       const identity = (() => {
-        if (mode === 'grouped' && options.composition === 'independent')
+        if (output === 'grouped' && mode === 'grouped' && options.composition === 'independent')
           return `g_${rules.size.toString(36)}`
-        if (mode === 'grouped')
+        if (output === 'grouped' && mode === 'grouped')
           return `g-${encode(style.name)}${slot ? `_s${slot}` : ''}`
         if (shared)
           return `z_base-${label}-${hash(`${mode}:${style.name}:${slot}`)}`
@@ -474,6 +494,14 @@ export function compile<
       style: Style.NamedStyle,
       conditions: readonly string[] = [],
     ) {
+      if (style.cssOutput === 'grouped') {
+        const body = conditions.reduceRight(
+          (body, condition) => `${condition}{${body}}`,
+          nested(style),
+        )
+        emit(body, 'style', false, 'grouped')
+        return
+      }
       if (style.rules) {
         for (const rule of style.rules) {
           if (rule.condition?.trim() === '@layer') {

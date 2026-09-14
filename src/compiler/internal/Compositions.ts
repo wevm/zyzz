@@ -392,11 +392,20 @@ export function collect(options: collect.Options) {
       )
     const name = `composition-${options.identity}-${node.start}`
     const style: Style.NamedStyle = {
+      cssOutput: 'atomic',
       name,
       declarations: [],
       rules: selected.flatMap((call) => {
         const style = styles.get(call.name)!
-        return style.rules ?? [{ style }]
+        return (
+          style.rules?.map((rule) => ({
+            ...rule,
+            style: {
+              ...rule.style,
+              cssOutput: rule.style.cssOutput ?? style.cssOutput,
+            },
+          })) ?? [{ style }]
+        )
       }),
     }
     const identities = selected.flatMap((call) =>
@@ -538,11 +547,20 @@ export function collect(options: collect.Options) {
             .join(' '),
         },
         style: {
+          cssOutput: 'atomic',
           name,
           declarations: [],
           rules: included.flatMap((call) => {
             const style = styles.get(call.name)!
-            return style.rules ?? [{ style }]
+            return (
+              style.rules?.map((rule) => ({
+                ...rule,
+                style: {
+                  ...rule.style,
+                  cssOutput: rule.style.cssOutput ?? style.cssOutput,
+                },
+              })) ?? [{ style }]
+            )
           }),
         },
       })
@@ -550,7 +568,18 @@ export function collect(options: collect.Options) {
     names.push(call.name)
     const composed = conditions ? { ...call, compositionCases: names } : call
     calls.set(node.start, composed)
-    result.push({ call: composed, style, ...(cases.length ? { cases } : {}) })
+    result.push({
+      call: composed,
+      style: immutable(style),
+      ...(cases.length
+        ? {
+            cases: cases.map((entry) => ({
+              ...entry,
+              style: immutable(entry.style),
+            })),
+          }
+        : {}),
+    })
   }
   return result.filter(
     ({ call }) =>
@@ -580,4 +609,21 @@ export declare namespace collect {
     /** Validated ordered style bodies. */
     readonly styles: readonly Style.NamedStyle[]
   }
+}
+
+function immutable(style: Style.NamedStyle): Style.NamedStyle {
+  if (Object.isFrozen(style)) return style
+  return Object.freeze({
+    ...style,
+    declarations: Object.freeze([...style.declarations]),
+    ...(style.rules
+      ? {
+          rules: Object.freeze(
+            style.rules.map((rule) =>
+              Object.freeze({ ...rule, style: immutable(rule.style) }),
+            ),
+          ),
+        }
+      : {}),
+  })
 }

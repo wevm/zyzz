@@ -106,6 +106,8 @@ export const complete = Symbol('zyzz.contract.complete')
 
 /** Opaque data shared by a definition and its compatible extensions. */
 export type Contract = {
+  /** Web emission mode retained by configuration-bound theme handles. */
+  readonly cssOutput?: 'atomic' | 'grouped' | undefined
   /** Configuration-local property aliases, inherited by bound handles. */
   readonly shorthands?: Shorthands.Map | undefined
   readonly [complete]?: boolean | undefined

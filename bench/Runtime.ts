@@ -131,7 +131,7 @@ export async function create(options: create.Options): Promise<Bundle> {
             composition: 'independent',
             cssOutput: 'grouped',
             moduleId: 'benchmark/variants.ts',
-            source: `import {css,cx,variants} from 'zyzz';namespace styles{${definitions.map((definition, index) => `export const card${index}=variants(${JSON.stringify(definition)});`).join('')}export const override=css({paddingBottom:'3px'})}export function apply(index,input){let props;switch(index){${names.map((name, index) => `case ${index}:props=cx(styles.${name}(${selection}),styles.override());break;`).join('')}}${finish}}`,
+            source: `import {Config,cx} from 'zyzz';const {css,variants}=Config.create({cssOutput:'grouped'});namespace styles{${definitions.map((definition, index) => `export const card${index}=variants(${JSON.stringify(definition)});`).join('')}export const override=css({paddingBottom:'3px'})}export function apply(index,input){let props;switch(index){${names.map((name, index) => `case ${index}:props=cx(styles.${name}(${selection}),styles.override());break;`).join('')}}${finish}}`,
           })
           return {
             css: Compilation.minify(output.css),
@@ -190,7 +190,7 @@ export async function create(options: create.Options): Promise<Bundle> {
             composition: 'independent',
             cssOutput: 'grouped',
             moduleId: 'benchmark/runtime.ts',
-            source: `import {css} from 'zyzz';const applications=[${definitions.join(',')}];export function apply(index,input){return applications[index](input)}`,
+            source: `import {Config} from 'zyzz';const {css}=Config.create({cssOutput:'grouped'});const applications=[${definitions.join(',')}];export function apply(index,input){return applications[index](input)}`,
           })
 
           return {
@@ -231,12 +231,12 @@ export async function create(options: create.Options): Promise<Bundle> {
 
         const source = (() => {
           if (kind === 'direct')
-            return `import {css} from 'zyzz'; namespace styles {${definitions.join('')}} ${application(names.map((name) => `styles.${name}()`))}`
+            return `import {Config} from 'zyzz';const {css}=Config.create({cssOutput:'grouped'}); namespace styles {${definitions.join('')}} ${application(names.map((name) => `styles.${name}()`))}`
 
           if (kind === 'cached')
-            return `import { css } from 'zyzz'; ${application(literals.map((style) => `css(${JSON.stringify(style)})()`))}`
+            return `import {Config} from 'zyzz';const {css}=Config.create({cssOutput:'grouped'}); ${application(literals.map((style) => `css(${JSON.stringify(style)})()`))}`
 
-          return `import { css } from 'zyzz';
+          return `import {Config} from 'zyzz';const {css}=Config.create({cssOutput:'grouped'});
             namespace styles { ${definitions.join('')} }
             const applications = [${names.map((name) => `styles.${name}`).join(',')}];
             export function apply(index, overrides) {

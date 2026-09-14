@@ -32,6 +32,7 @@ export function create(options: create.Options = {}): unknown {
   for (const key of Object.keys(input))
     if (
       ![
+        'cssOutput',
         'id',
         'defaultTheme',
         'layers',
@@ -49,6 +50,13 @@ export function create(options: create.Options = {}): unknown {
     input.output !== 'react'
   )
     throw new InvalidError('output must be html or react.')
+
+  if (
+    input.cssOutput !== undefined &&
+    input.cssOutput !== 'atomic' &&
+    input.cssOutput !== 'grouped'
+  )
+    throw new InvalidError('cssOutput must be atomic or grouped.')
 
   if (input.theme !== undefined && input.themes !== undefined)
     throw new InvalidError('Use either theme or themes, not both.')
@@ -99,6 +107,8 @@ export function create(options: create.Options = {}): unknown {
   })()
 
   const contract = Object.freeze({
+    cssOutput:
+      (input.cssOutput as 'atomic' | 'grouped' | undefined) ?? 'atomic',
     ...(shorthands ? { shorthands } : {}),
     ...(typeof input.id === 'string'
       ? {
@@ -252,6 +262,8 @@ export function create(options: create.Options = {}): unknown {
 export declare namespace create {
   /** Optional layer names and mutually exclusive theme modes. */
   type Options = {
+    /** CSS representation inherited by bound helpers; atomic by default. */
+    readonly cssOutput?: 'atomic' | 'grouped' | undefined
     /** Stable theme identity required without source rewriting. */
     readonly id?: string | undefined
     /** Explicit ordered property aliases; none are installed by default. */

@@ -1,7 +1,7 @@
 # CSS Output
 
 > [!NOTE]
-> `Css.compile({ cssOutput })` supports both modes. Config propagation, packed contracts, and adapter acceptance follow in the implementation stack.
+> Configurable output is supported by the shared compiler and source config. Packed composition and the CSS-only CLI retain separate acceptance gates.
 
 Choose the CSS representation on the authoring config:
 
@@ -13,7 +13,7 @@ export const { css, variants } = Config.create({
 })
 ```
 
-| Mode                 | Planned output                                                                                      |
+| Mode                 | Output                                                                                              |
 | -------------------- | --------------------------------------------------------------------------------------------------- |
 | `'atomic'` (default) | Reusable classes for individual declarations, shared wherever cascade semantics allow.              |
 | `'grouped'`          | Scoped blocks containing a style's declarations, with separate blocks for selectors and conditions. |

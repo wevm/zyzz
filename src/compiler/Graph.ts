@@ -33,6 +33,8 @@ export declare namespace compile {
   type Options = {
     /** Rewrite authoring calls. False emits CSS for unchanged source. */
     readonly compiler?: boolean | undefined
+    /** Whether compiled applications can be combined with one another. */
+    readonly composition?: Css.compile.Options['composition']
     /** Default CSS representation for definitions without an explicit mode. */
     readonly cssOutput?: Css.compile.Options['cssOutput']
     /** Serialized library contracts keyed by host-resolved module identity. Runtime modules stay external to this graph. */
@@ -90,6 +92,7 @@ export declare namespace create {
 
 type Cache = {
   compiler: boolean
+  composition: Css.compile.Options['composition']
   cssOutput: Css.compile.Options['cssOutput']
 
   contracts: string
@@ -104,6 +107,7 @@ type Cache = {
 function build(options: compile.Options, cache?: Cache): Cache {
   if (cache?.compiler !== (options.compiler !== false)) cache = undefined
   if (cache?.cssOutput !== options.cssOutput) cache = undefined
+  if (cache?.composition !== options.composition) cache = undefined
   const ids = Object.keys(options.modules).sort()
 
   const contracts = JSON.stringify(
@@ -587,7 +591,6 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
     const result = Source.extract({
       compiler: options.compiler,
-      cssOutput: options.cssOutput,
       moduleId,
       source,
       [Themes.context]: { factories, links },
@@ -898,6 +901,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         ? previous!.result.modules[moduleId]!
         : Transform.compile({
             compiler: options.compiler,
+            composition: options.composition,
             cssOutput: options.cssOutput,
             moduleId,
             source: options.modules[moduleId]!,
@@ -943,6 +947,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
   return {
     compiler: options.compiler !== false,
+    composition: options.composition,
     cssOutput: options.cssOutput,
     contracts,
     extracted,

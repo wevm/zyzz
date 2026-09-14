@@ -9,6 +9,7 @@ describe('theme variable templates', () => {
     'compile',
     () => {
       Transform.compile({
+        composition: 'independent',
         cssOutput: 'grouped',
         moduleId: 'variables.ts',
         source,

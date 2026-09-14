@@ -127,7 +127,9 @@ export async function create(options: create.Options): Promise<Bundle> {
           "return {...props,className:input.className?props.className+' '+input.className:props.className,style:input.style}"
 
         if (library === 'zyzz') {
-          const output = Transform.compile({ cssOutput: 'grouped',
+          const output = Transform.compile({
+            composition: 'independent',
+            cssOutput: 'grouped',
             moduleId: 'benchmark/variants.ts',
             source: `import {Config,cx} from 'zyzz';const {css,variants}=Config.create({cssOutput:'grouped'});namespace styles{${definitions.map((definition, index) => `export const card${index}=variants(${JSON.stringify(definition)});`).join('')}export const override=css({paddingBottom:'3px'})}export function apply(index,input){let props;switch(index){${names.map((name, index) => `case ${index}:props=cx(styles.${name}(${selection}),styles.override());break;`).join('')}}${finish}}`,
           })
@@ -184,7 +186,9 @@ export async function create(options: create.Options): Promise<Bundle> {
 
             return `css((values:{width:\`\${number}px\`;alpha:number})=>({${JSON.stringify(fixed).slice(1, -1)},width:values.width,opacity:values.alpha}))`
           })
-          const output = Transform.compile({ cssOutput: 'grouped',
+          const output = Transform.compile({
+            composition: 'independent',
+            cssOutput: 'grouped',
             moduleId: 'benchmark/runtime.ts',
             source: `import {Config} from 'zyzz';const {css}=Config.create({cssOutput:'grouped'});const applications=[${definitions.join(',')}];export function apply(index,input){return applications[index](input)}`,
           })
@@ -240,7 +244,9 @@ export async function create(options: create.Options): Promise<Bundle> {
             }`
         })()
 
-        const output = Transform.compile({ cssOutput: 'grouped',
+        const output = Transform.compile({
+          composition: 'independent',
+          cssOutput: 'grouped',
           moduleId: 'benchmark/runtime.ts',
           source,
         })

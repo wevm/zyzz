@@ -18,6 +18,7 @@ for (const workload of Corpus.cases) {
       'shared corpus',
       () => {
         Transform.compile({
+          composition: 'independent',
           cssOutput: 'grouped',
           moduleId: 'conditions.ts',
           source,

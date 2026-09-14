@@ -8,6 +8,7 @@ describe('explicit variable contracts', () => {
     'compile',
     () => {
       Transform.compile({
+        composition: 'independent',
         cssOutput: 'grouped',
         moduleId: 'variables.ts',
         source,

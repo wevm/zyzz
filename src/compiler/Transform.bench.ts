@@ -99,6 +99,7 @@ for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
         'extract + emit + rewrite + maps',
         () => {
           Transform.compile({
+            composition: 'independent',
             cssOutput: 'grouped',
             moduleId: 'example/cards.ts',
             source,
@@ -108,6 +109,7 @@ for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
           iterations: 30,
           setup: async () => {
             const output = Transform.compile({
+              composition: 'independent',
               cssOutput: 'grouped',
               moduleId: 'example/cards.ts',
               source,
@@ -194,6 +196,7 @@ for (const count of [10, 100]) {
       'extract + emit + rewrite + maps',
       () => {
         Transform.compile({
+          composition: 'independent',
           cssOutput: 'grouped',
           moduleId: 'example/fallbacks.ts',
           source,
@@ -465,6 +468,7 @@ for (const [kind, workload] of Object.entries(workloads))
         'extract + emit + rewrite + maps',
         () => {
           Transform.compile({
+            composition: 'independent',
             cssOutput: 'grouped',
             moduleId: `example/${kind}.ts`,
             source,
@@ -474,6 +478,7 @@ for (const [kind, workload] of Object.entries(workloads))
           iterations: 30,
           setup: async () => {
             const output = Transform.compile({
+              composition: 'independent',
               cssOutput: 'grouped',
               moduleId: `example/${kind}.ts`,
               source,
@@ -546,6 +551,7 @@ for (const count of [10, 100]) {
       'extract + emit + rewrite + maps',
       () => {
         Transform.compile({
+          composition: 'independent',
           cssOutput: 'grouped',
           moduleId: 'example/lengths.ts',
           source,

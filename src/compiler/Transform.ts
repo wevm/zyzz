@@ -69,6 +69,7 @@ export function compile(options: compile.Options): compile.ReturnType {
   const emitted = Css.compile({
     development: options.development,
     scope: options.moduleId,
+    composition: options.composition,
     cssOutput: options.cssOutput,
     names: portable ? portableNames : undefined,
     styles: extracted.styles,
@@ -248,11 +249,42 @@ export function compile(options: compile.Options): compile.ReturnType {
       `${variables}.create(${JSON.stringify(call.slots.value)})`,
     )
 
+  const first = extracted.calls[0]
+  const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
   const identities = new Map(
     extracted.calls
       .filter((call) => call.identity)
       .map((call) => [call.name, call.identity!]),
   )
+
+  const ownersByClass = new Map<string, string | false>()
+  for (const [style, value] of Object.entries(emitted.classes))
+    for (const name of value.split(' ').filter(Boolean))
+      ownersByClass.set(name, ownersByClass.has(name) ? false : style)
+
+  const names = new Map<string, string>()
+
+  for (const classes of Object.values(emitted.classes))
+    for (const name of classes.split(' ').filter(Boolean))
+      names.set(
+        name,
+        (() => {
+          const owner = ownersByClass.get(name)
+          const identity = owner && identities.get(owner)
+          if (
+            options.cssOutput === 'grouped' &&
+            options.composition === 'independent' &&
+            name.startsWith('g_') &&
+            identity &&
+            !identity.includes(' ')
+          )
+            return identity
+          if (name.startsWith('g_')) return `g_${scope}_${name.slice(2)}`
+          return name.startsWith('z_base')
+            ? `z-${scope}-${name.slice(2)}`
+            : name
+        })(),
+      )
 
   const classes = Object.freeze(
     Object.fromEntries(
@@ -260,7 +292,10 @@ export function compile(options: compile.Options): compile.ReturnType {
         name,
         [
           ...new Set([
-            ...value.split(' ').filter(Boolean),
+            ...value
+              .split(' ')
+              .filter(Boolean)
+              .map((part) => names.get(part)!),
             ...(identities.has(name) &&
             (!portable || portableNames[name]?.startsWith('z-compose-'))
               ? [
@@ -846,7 +881,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           return rule
         }
 
-        const selector = `.${name}`
+        const selector = `.${names.get(name)!}`
         const call = owners.get(name)!
 
         Mapping.addMapping(cssMap, {
@@ -1011,6 +1046,8 @@ export declare namespace compile {
     readonly development?: boolean | undefined
     /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
     readonly compiler?: boolean | undefined
+    /** Whether compiled applications can be combined with one another. */
+    readonly composition?: Css.compile.Options['composition']
     /** Default CSS representation for definitions without an explicit mode. */
     readonly cssOutput?: Css.compile.Options['cssOutput']
   }

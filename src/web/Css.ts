@@ -256,10 +256,14 @@ export function compile<
         join(child, target, visited)
   }
 
-  for (const style of analyzed)
-    for (const { property } of style.declarations)
-      if (Object.hasOwn(Cascade.shorthands, canonical(property)))
-        join(canonical(property), domain(canonical(property)))
+  const properties = new Set(
+    analyzed.flatMap((style) =>
+      style.declarations.map(({ property }) => canonical(property)),
+    ),
+  )
+  for (const property of properties)
+    if (Object.hasOwn(Cascade.shorthands, property))
+      join(property, domain(property))
 
   const serialized = new Map<object, string>()
 
@@ -290,6 +294,20 @@ export function compile<
     return input as number | string
   }
 
+  const declarations = new Map<Style.Declaration, string>()
+  const propertyNames = new Map<string, string>()
+
+  function declarationBody(declaration: Style.Declaration): string {
+    const previous = declarations.get(declaration)
+    if (previous !== undefined) return previous
+    const { important, property, value } = declaration
+    const name = propertyNames.get(property) ?? Literal.name(property)
+    propertyNames.set(property, name)
+    const body = `${name}:${serialize(value)}${important ? '!important' : ''};`
+    declarations.set(declaration, body)
+    return body
+  }
+
   const bodies = new Map<Style.NamedStyle, string>()
 
   function nested(style: Style.NamedStyle): string {
@@ -312,12 +330,7 @@ export function compile<
         })
         .join('')
 
-    return style.declarations
-      .map(
-        ({ property, value, important }) =>
-          `${Literal.name(property)}:${serialize(value)}${important ? '!important' : ''};`,
-      )
-      .join('')
+    return style.declarations.map(declarationBody).join('')
   }
 
   const domainsByProperty = new Map<string, string>()
@@ -334,9 +347,11 @@ export function compile<
   for (const style of analyzed) {
     const domains = new Map<string, { body: string; properties: Set<string> }>()
 
-    for (const { important, property, value } of style.declarations) {
+    for (const item of style.declarations) {
+      const property = item.property
       const key = conflict(property)
-      const declaration = `${Literal.name(property)}:${serialize(value)}${important ? '!important' : ''};`
+      if (groups.get(key) === false) continue
+      const declaration = declarationBody(item)
       const entry = domains.get(key) ?? {
         body: '',
         properties: new Set<string>(),
@@ -399,7 +414,7 @@ export function compile<
       occurrences.set(key, (occurrences.get(key) ?? 0) + 1)
     }
 
-  for (const style of options.styles.styles) {
+  for (const [styleIndex, style] of options.styles.styles.entries()) {
     const mode = style.cssOutput ?? defaultMode
     if (!style.name || Object.hasOwn(classes, style.name)) {
       diagnostics.push({
@@ -431,7 +446,7 @@ export function compile<
       explicit === undefined &&
       options.composition === 'independent' &&
       !options.development
-        ? `${mode}:${nested(style)}`
+        ? `${mode}:${nested(canonicalStyles[styleIndex]!)}`
         : undefined
     if (application !== undefined && applications.has(application)) {
       classes[style.name] = applications.get(application)!
@@ -472,6 +487,12 @@ export function compile<
       slots.set(label, slot + 1)
       const identity = (() => {
         if (explicit !== undefined) return `${explicit}-${mode}-${slot}`
+        if (
+          output === 'grouped' &&
+          mode === 'grouped' &&
+          options.composition === 'independent'
+        )
+          return `g_${rules.size.toString(36)}`
         if (output === 'grouped' && mode === 'grouped')
           return `g-${encode(style.name)}${slot ? `_s${slot}` : ''}`
         return ClassName.create({
@@ -585,8 +606,8 @@ export function compile<
           else local.push(declaration)
         }
         if (shared.length && local.length) {
-          emit(nested({ ...style, declarations: shared }), 'shared', false)
-          emit(nested({ ...style, declarations: local }), 'style', false)
+          emit(shared.map(declarationBody).join(''), 'shared', false)
+          emit(local.map(declarationBody).join(''), 'style', false)
         } else emit(nested(style), 'style', false)
       } else atoms(style)
     } catch (error) {

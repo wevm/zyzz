@@ -5,6 +5,7 @@ import { Graph, Transform } from 'zyzz/compiler'
 for (const count of [10, 100]) {
   const source = `import {counterStyle,page,cssFunction,customMedia} from 'zyzz/web';\n${Array.from({ length: count }, (_, index) => `export const counter${index}=counterStyle({system:'cyclic',symbols:'"●"'});page({selector:':first',descriptors:{margin:'1cm','@top-center':{content:'"${index}"'}}});export const query${index}=customMedia('(width > ${index}px)');export const fn${index}=cssFunction({parameters:[{name:'--x',syntax:'<length>'}],returns:'<length>',body:{result:'calc(var(--x) * 2)'}});`).join('\n')}`
   const library = Graph.compile({
+    composition: 'independent',
     cssOutput: 'grouped',
     modules: { 'library.ts': source },
   })
@@ -13,6 +14,7 @@ for (const count of [10, 100]) {
       'source transform with maps',
       () => {
         Transform.compile({
+          composition: 'independent',
           cssOutput: 'grouped',
           moduleId: 'library.ts',
           source,
@@ -24,6 +26,7 @@ for (const count of [10, 100]) {
       'packed stylesheet consumption',
       () => {
         Graph.compile({
+          composition: 'independent',
           cssOutput: 'grouped',
           contracts: { 'lib/library.js': library.contracts['library.ts']! },
           imports: { 'app.ts': { lib: 'lib/library.js' } },

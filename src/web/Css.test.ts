@@ -2,14 +2,15 @@
  * Exercises the public Css workflow through real collaborating modules.
  * @module
  */
-import { chromium } from 'playwright'
-import { describe, expect, test } from 'vite-plus/test'
-import { Style } from 'zyzz'
-import { Css } from 'zyzz/web'
 import * as Borders from '../../test/fixtures/Borders.js'
 import * as Lengths from '../../test/fixtures/Lengths.js'
 import * as Logical from '../../test/fixtures/Logical.js'
 import * as Scrolling from '../../test/fixtures/Scrolling.js'
+import { chromium } from 'playwright'
+import { describe, expect, test } from 'vite-plus/test'
+import { Style } from 'zyzz'
+import { Graph, Transform } from 'zyzz/compiler'
+import { Css } from 'zyzz/web'
 
 describe('compile', () => {
   test('scroll snap sharing retains A/B/A keyword and priority order', () => {
@@ -984,5 +985,631 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
+  })
+})
+
+describe('cascade', () => {
+  describe('compile', () => {
+    test('retains sharing, resets, logical overlap, and active or inactive conditions', async () => {
+      const first = Style.define({ card: { color: 'red', display: 'block' } })
+        .styles[0]!
+      const middle = Style.define({ card: { color: 'blue', opacity: 1 } })
+        .styles[0]!
+      const cases = [
+        {
+          control:
+            '.card{color:red;display:block;color:blue;opacity:1;color:red;display:block}',
+          styles: {
+            styles: [
+              {
+                name: 'card',
+                declarations: [
+                  ...first.declarations,
+                  ...middle.declarations,
+                  ...first.declarations,
+                ],
+              },
+            ],
+          },
+        },
+        {
+          control: '.card{padding:8px;all:initial;padding-left:2px;color:red}',
+          styles: Style.define({
+            card: {
+              padding: '8px',
+              all: 'initial',
+              paddingLeft: '2px',
+              color: 'red',
+            },
+          }),
+        },
+        {
+          control:
+            '.card{padding:8px;padding-inline-start:3px;padding-left:5px}',
+          styles: Style.define({
+            card: {
+              padding: '8px',
+              paddingInlineStart: '3px',
+              paddingLeft: '5px',
+            },
+          }),
+        },
+        {
+          control:
+            '.card{color:red;@media(min-width:100px){color:blue;padding:8px}@supports(display:grid){padding-left:2px}@supports(display:zyzz-unsupported){color:orange}}',
+          styles: Style.define({
+            card: {
+              color: 'red',
+              '@media (min-width: 100px)': { color: 'blue', padding: '8px' },
+              '@supports (display: grid)': { paddingLeft: '2px' },
+              '@supports (display: zyzz-unsupported)': { color: 'orange' },
+            },
+          }),
+        },
+        {
+          control: '.a{color:red}.b{color:blue}.c{color:red}',
+          styles: Style.define({
+            a: { color: 'red' },
+            b: { color: 'blue' },
+            c: { color: 'red' },
+          }),
+        },
+        {
+          control: '.a{color:red;padding:1px}.b{color:red;margin:2px}',
+          styles: Style.define({
+            a: { color: 'red', padding: '1px' },
+            b: { color: 'red', margin: '2px' },
+          }),
+        },
+      ]
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        for (const cssOutput of ['atomic', 'grouped'] as const)
+          for (const composition of ['ordered', 'independent'] as const)
+            for (const fixture of cases) {
+              const output = Css.compile({
+                composition,
+                cssOutput,
+                styles: fixture.styles,
+              })
+              for (const width of [80, 200]) {
+                await page.setViewportSize({ height: 500, width })
+                await page.setContent(
+                  `<style>${fixture.control}\n${output.css}</style>`,
+                )
+                for (const direction of ['ltr', 'rtl']) {
+                  const differences = await page.evaluate(
+                    ({ classes, composition, direction }) => {
+                      document.body.style.direction = direction
+                      const names = Object.keys(classes)
+                      const groups = names.map((name) => [name])
+                      if (composition === 'ordered' && names.length > 1)
+                        groups.push(names)
+                      return groups.flatMap((names) => {
+                        const values = [
+                          names.join(' '),
+                          names
+                            .map((name) => classes[name])
+                            .reverse()
+                            .join(' '),
+                        ].map((className) => {
+                          const element = document.createElement('div')
+                          element.className = className
+                          document.body.append(element)
+                          const style = getComputedStyle(element)
+                          const result = [
+                            style.color,
+                            style.paddingLeft,
+                            style.paddingRight,
+                            style.marginLeft,
+                            style.display,
+                          ]
+                          element.remove()
+                          return result
+                        })
+                        return JSON.stringify(values[0]) ===
+                          JSON.stringify(values[1])
+                          ? []
+                          : [{ names, values }]
+                      })
+                    },
+                    { classes: output.classes, composition, direction },
+                  )
+                  expect(differences).toMatchInlineSnapshot(`[]`)
+                }
+              }
+            }
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('retains selector specificity against a later matching competitor', async () => {
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        for (const cssOutput of ['atomic', 'grouped'] as const) {
+          const output = Css.compile({
+            cssOutput,
+            styles: Style.define({ card: { '&:hover': { color: 'purple' } } }),
+          })
+          await page.setContent(
+            `<style>.native:hover{color:purple}${output.css}.competitor:hover{color:orange}</style><div class="native competitor">native</div><div class="${output.classes.card} competitor">compiled</div>`,
+          )
+          for (const index of [0, 1]) {
+            const element = page.locator('div').nth(index)
+            await element.hover()
+            expect(
+              await element.evaluate(
+                (element) => getComputedStyle(element).color,
+              ),
+            ).toMatchInlineSnapshot('"rgb(255, 165, 0)"')
+          }
+        }
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('names', () => {
+  describe('compile', () => {
+    test('names common declarations and keeps repeated values shared', () => {
+      const output = Css.compile({
+        styles: Style.define({
+          card: { display: 'flex', padding: '8px', color: 'red' },
+          label: { color: 'red' },
+        }),
+      })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      ".z-display-flex{display:flex;}
+      .z-p-8px{padding:8px;}
+      .z-text-red{color:red;}"
+    `)
+      expect(output.classes).toMatchInlineSnapshot(`
+      {
+        "card": "z-display-flex z-p-8px z-text-red",
+        "label": "z-text-red",
+      }
+    `)
+    })
+
+    test('names conditions, fallback sequences, and complex values distinctly', () => {
+      const output = Css.compile({
+        styles: Style.define({
+          card: {
+            width: 'calc(100% - 8px)',
+            display: ['block', 'grid!'],
+            '&:hover': { color: 'blue' },
+            '&:focus': { color: 'blue' },
+          },
+        }),
+      })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      ".z-w-766AnZ-0{width:calc(100% - 8px);}
+      .z-display-766AnZ-1{display:block;display:grid!important;}
+      .z-hover-text-blue-766AnZ-2{&:hover{color:blue;}}
+      .z-focus-text-blue-766AnZ-3{&:focus{color:blue;}}"
+    `)
+      expect(output.classes.card).toMatchInlineSnapshot(
+        `"z-w-766AnZ-0 z-display-766AnZ-1 z-hover-text-blue-766AnZ-2 z-focus-text-blue-766AnZ-3"`,
+      )
+    })
+
+    test('retains separate identities for repeated overrides', () => {
+      const output = Css.compile({
+        styles: Style.define({
+          first: { padding: '8px' },
+          middle: { paddingLeft: '2px' },
+          last: { padding: '8px' },
+        }),
+      })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      ".z-p-8px-iap1nQ-0{padding:8px;}
+      .z-pl-2px-OEzlf4-0{padding-left:2px;}
+      .z-p-8px-ulqx3t-0{padding:8px;}"
+    `)
+      expect(output.classes).toMatchInlineSnapshot(`
+      {
+        "first": "z-p-8px-iap1nQ-0",
+        "last": "z-p-8px-ulqx3t-0",
+        "middle": "z-pl-2px-OEzlf4-0",
+      }
+    `)
+    })
+
+    test('scopes separately delivered source modules and theme references', () => {
+      const source = `import {Config} from 'zyzz';const {css}=Config.create({theme:{color:{brand:'red'}}});export const card=css({display:'flex',color:'brand'});`
+      const first = Transform.compile({ moduleId: 'first.ts', source })
+      const second = Transform.compile({ moduleId: 'second.ts', source })
+
+      expect(first.css).toMatchInlineSnapshot(`
+      ".z_theme-1mlrxl41f5va70-css-theme{--z-t1mlrxl41f5va70-css-color_2e_brand:red;}
+      .z-display-flex-QPs-Od{display:flex;}
+      .z-text-QPs-Od{color:var(--z-t1mlrxl41f5va70-css-color_2e_brand,red);}"
+    `)
+      expect(second.css).toMatchInlineSnapshot(`
+      ".z_theme-1d6eq581s6owy-css-theme{--z-t1d6eq581s6owy-css-color_2e_brand:red;}
+      .z-display-flex-IjSBTf{display:flex;}
+      .z-text-IjSBTf{color:var(--z-t1d6eq581s6owy-css-color_2e_brand,red);}"
+    `)
+      expect(first.code).toMatchInlineSnapshot(`
+      "
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+      const {css}=({theme:{"className":"z_theme-1mlrxl41f5va70-css-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text-QPs-Od z-style-1mlrxl41f5va70-103"});"
+    `)
+    })
+
+    test('distinguishes display values from flex and grid shorthands in the browser', async () => {
+      const flex = Transform.compile({
+        moduleId: 'flex.ts',
+        source: `import { css } from 'zyzz';
+export const flex = css({ display: 'flex', flex: '1 1 auto' })();`,
+      })
+      const grid = Transform.compile({
+        moduleId: 'grid.ts',
+        source: `import { css } from 'zyzz';
+export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
+      })
+
+      expect(flex.css).toMatchInlineSnapshot(`
+      ".z-display-flex-sQK2Wn{display:flex;}
+      .z-flex-sQK2Wn{flex:1 1 auto;}"
+    `)
+      expect(grid.css).toMatchInlineSnapshot(`
+      ".z-display-grid-0Q-Ceb{display:grid;}
+      .z-grid-0Q-Ceb{grid:auto / 1fr;}"
+    `)
+
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        const classes = [
+          ...Object.values(flex.classes),
+          ...Object.values(grid.classes),
+        ]
+        await page.setContent(
+          `<style>${flex.css}${grid.css}</style><div class="${classes[0]}"></div><div class="${classes[1]}"></div>`,
+        )
+
+        expect(
+          await page
+            .locator('div')
+            .nth(0)
+            .evaluate((element) => getComputedStyle(element).display),
+        ).toMatchInlineSnapshot('"flex"')
+        expect(
+          await page
+            .locator('div')
+            .nth(0)
+            .evaluate((element) => getComputedStyle(element).flex),
+        ).toMatchInlineSnapshot('"1 1 auto"')
+        expect(
+          await page
+            .locator('div')
+            .nth(1)
+            .evaluate((element) => getComputedStyle(element).display),
+        ).toMatchInlineSnapshot('"grid"')
+        expect(
+          await page
+            .locator('div')
+            .nth(1)
+            .evaluate((element) => getComputedStyle(element).gridAutoFlow),
+        ).toMatchInlineSnapshot('"row"')
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('rejects colliding contextual hashes even when declarations match', () => {
+      // These distinct owners have the same six-character hash.
+      const styles = Style.define({
+        collisionpybsvm1mvm: { color: 'red' },
+        middle: { color: 'blue' },
+        collision1gqwj5h1wwv: { color: 'red' },
+      })
+
+      expect(() => Css.compile({ styles })).toThrowErrorMatchingInlineSnapshot(
+        `[Css.CompileError: ["collision1gqwj5h1wwv"]: Distinct rules produced the same class identifier.]`,
+      )
+      expect(() =>
+        Css.compile({ development: true, styles }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Css.CompileError: ["collision1gqwj5h1wwv"]: Distinct rules produced the same class identifier.]`,
+      )
+    })
+
+    test('rejects ownership collisions across fresh and cached modules', () => {
+      const first = 'app/mn11i9-ftt50l.ts'
+      const second = 'app/150xkc2-se2k3x.ts'
+      const source = `import { css } from 'zyzz'; export const card = css({ color: '#000' });`
+      const compiler = Graph.create()
+      compiler.compile({ modules: { [first]: source, [second]: 'export {}' } })
+
+      for (const compile of [Graph.compile, compiler.compile])
+        for (const color of ['#fff', '#000'])
+          expect(() =>
+            compile({
+              modules: {
+                [first]: source,
+                [second]: source.replace('#000', color),
+              },
+            }),
+          ).toThrowErrorMatchingInlineSnapshot(
+            `[Css.CompileError: ["app/mn11i9-ftt50l.ts"]: Atomic class z-text-QDY4MN is also owned by module app/150xkc2-se2k3x.ts.]`,
+          )
+    })
+
+    test('invalidates graph output when development naming changes', () => {
+      const compiler = Graph.create()
+      const modules = {
+        'card.ts': `import {css} from 'zyzz';export const card=css({color:'red',padding:'8px'});`,
+      }
+      const production = compiler.compile({ modules })
+      const development = compiler.compile({ development: true, modules })
+      const edited = compiler.compile({
+        development: true,
+        modules: { 'card.ts': modules['card.ts'].replace('red', 'tan') },
+      })
+
+      expect(production.modules['card.ts']!.css).toMatchInlineSnapshot(`
+      ".z-text-red-WdHWIJ{color:red;}
+      .z-p-8px-WdHWIJ{padding:8px;}"
+    `)
+      expect(development.modules['card.ts']!.css).toMatchInlineSnapshot(`
+      ".z-text-td32HT-0{color:red;}
+      .z-p-td32HT-0{padding:8px;}"
+    `)
+      expect(edited.modules['card.ts']!.css).toMatchInlineSnapshot(`
+      ".z-text-td32HT-0{color:tan;}
+      .z-p-td32HT-0{padding:8px;}"
+    `)
+      expect(edited.modules['card.ts']!.classes).toMatchInlineSnapshot(`
+      {
+        "style-1slxe42dbli7u-43": "z-text-td32HT-0 z-p-td32HT-0 z-style-1slxe42dbli7u-43",
+      }
+    `)
+      expect(compiler.compile({ modules }).modules['card.ts']!.css)
+        .toMatchInlineSnapshot(`
+        ".z-text-red-WdHWIJ{color:red;}
+        .z-p-8px-WdHWIJ{padding:8px;}"
+      `)
+    })
+  })
+})
+
+describe('output', () => {
+  describe('compile', () => {
+    test('retains fixed runtime identities in both representations', () => {
+      const styles = Style.define({ card: { color: 'red', padding: '8px' } })
+      const names = { card: 'card' }
+      const atomic = Css.compile({ cssOutput: 'atomic', names, styles })
+      const grouped = Css.compile({ cssOutput: 'grouped', names, styles })
+
+      expect(atomic.classes.card).toMatchInlineSnapshot('"card"')
+      expect(grouped.classes.card).toMatchInlineSnapshot('"card"')
+      expect(atomic.css).toMatchInlineSnapshot(`
+      ".card{color:red;}
+      .card{padding:8px;}"
+    `)
+      expect(grouped.css).toMatchInlineSnapshot(
+        '".card{color:red;padding:8px;}"',
+      )
+    })
+
+    test('keeps mounted classes valid across development value edits', async () => {
+      const browser = await chromium.launch({ headless: true })
+
+      try {
+        const page = await browser.newPage()
+
+        for (const [cssOutput, composition] of [
+          ['atomic', 'ordered'],
+          ['atomic', 'independent'],
+          ['grouped', 'ordered'],
+          ['grouped', 'independent'],
+        ] as const) {
+          const before = Css.compile({
+            composition,
+            cssOutput,
+            development: true,
+            styles: Style.define({
+              card: { color: 'red', padding: '8px' },
+              label: { color: 'red', padding: '8px' },
+            }),
+          })
+          const after = Css.compile({
+            composition,
+            cssOutput,
+            development: true,
+            styles: Style.define({
+              card: { color: 'blue', padding: '12px' },
+              label: { color: 'red', padding: '8px' },
+            }),
+          })
+
+          await page.setContent(
+            `<style>${before.css}</style><div class="${before.classes.card}">Card</div><div class="${before.classes.label}">Label</div>`,
+          )
+          await page.locator('style').evaluate((element, css) => {
+            element.textContent = css
+          }, after.css)
+
+          expect(
+            await page
+              .locator('div')
+              .first()
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+          expect(
+            await page
+              .locator('div')
+              .first()
+              .evaluate((element) => getComputedStyle(element).paddingLeft),
+          ).toMatchInlineSnapshot('"12px"')
+          expect(
+            await page
+              .locator('div')
+              .nth(1)
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+          expect(
+            await page
+              .locator('div')
+              .nth(1)
+              .evaluate((element) => getComputedStyle(element).paddingLeft),
+          ).toMatchInlineSnapshot('"8px"')
+        }
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('retains specificity inside one anonymous layer', async () => {
+      const output = Css.compile({
+        styles: Style.define({
+          card: { '@layer': { '&.special': { color: 'blue' }, color: 'red' } },
+        }),
+      })
+      expect(output.css).toMatchInlineSnapshot(
+        `".z-layer-766AnZ-0{@layer{&.special{color:blue;}color:red;}}"`,
+      )
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${output.css}</style><div class="${output.classes.card} special"></div>`,
+        )
+        expect(
+          await page
+            .locator('div')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('defaults to atomic declarations and shares repeated properties', () => {
+      const styles = Style.define({
+        card: { color: 'red', padding: '8px' },
+        label: { color: 'red' },
+      })
+
+      const output = Css.compile({ styles })
+      const atomic = Css.compile({ cssOutput: 'atomic', styles })
+      const grouped = Css.compile({ cssOutput: 'grouped', styles })
+
+      expect(output).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "card": "z-text-red z-p-8px",
+          "label": "z-text-red",
+        },
+        "css": ".z-text-red{color:red;}
+      .z-p-8px{padding:8px;}",
+        "themes": {},
+      }
+    `)
+      expect(atomic).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "card": "z-text-red z-p-8px",
+          "label": "z-text-red",
+        },
+        "css": ".z-text-red{color:red;}
+      .z-p-8px{padding:8px;}",
+        "themes": {},
+      }
+    `)
+      expect(grouped).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "card": "g-card",
+          "label": "g-label",
+        },
+        "css": ".g-card{color:red;padding:8px;}
+      .g-label{color:red;}",
+        "themes": {},
+      }
+    `)
+      expect(Css.compile({ styles })).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "card": "z-text-red z-p-8px",
+          "label": "z-text-red",
+        },
+        "css": ".z-text-red{color:red;}
+      .z-p-8px{padding:8px;}",
+        "themes": {},
+      }
+    `)
+    })
+
+    test('retains fallback sequences, importance, and stylesheet contributions', () => {
+      const styles = Style.define({
+        card: { display: ['block', 'grid!'], color: 'red' },
+      })
+      const contributions: readonly Css.Contribution[] = [
+        {
+          kind: 'rule',
+          selector: 'body',
+          style: Style.define({ body: { margin: 0 } }).styles[0]!,
+        },
+      ]
+
+      for (const cssOutput of ['atomic', 'grouped'] as const) {
+        const output = Css.compile({ contributions, cssOutput, styles })
+
+        if (cssOutput === 'atomic')
+          expect(output.css).toMatchInlineSnapshot(`
+          "body{margin:0;}
+          .z-display-TvfMMo{display:block;display:grid!important;}
+          .z-text-red{color:red;}"
+        `)
+        else
+          expect(output.css).toMatchInlineSnapshot(`
+        "body{margin:0;}
+        .g-card{display:block;display:grid!important;color:red;}"
+      `)
+        expect(output.contributionCss).toMatchInlineSnapshot(
+          `"body{margin:0;}"`,
+        )
+      }
+    })
+    test('keeps factored slots distinct from suffix-like authored names', () => {
+      const styles = Style.define({
+        card: { color: 'red', padding: '1px' },
+        'card-1': { margin: '2px' },
+        card_s1: { display: 'block' },
+        x: { color: 'red' },
+      })
+      expect(
+        Css.compile({
+          composition: 'independent',
+          cssOutput: 'grouped',
+          styles,
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "card": "g_0 g_1",
+          "card-1": "g_2",
+          "card_s1": "g_3",
+          "x": "g_0",
+        },
+        "css": ".g_0{color:red;}
+      .g_1{padding:1px;}
+      .g_2{margin:2px;}
+      .g_3{display:block;}",
+        "themes": {},
+      }
+    `)
+    })
   })
 })

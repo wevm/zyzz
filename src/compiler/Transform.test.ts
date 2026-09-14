@@ -2,31 +2,82 @@
  * Exercises the public Transform workflow through real collaborating modules.
  * @module
  */
+import * as Font from '../../test/fixtures/AtRuleFont.js'
+import * as Targets from '../../test/fixtures/AtRuleTargets.js'
+import * as Backgrounds from '../../test/fixtures/Backgrounds.js'
+import * as BorderLists from '../../test/fixtures/BorderLists.js'
+import * as Borders from '../../test/fixtures/Borders.js'
+import * as BorderShorthand from '../../test/fixtures/BorderShorthand.js'
+import * as BoxLists from '../../test/fixtures/BoxLists.js'
+import * as fontPaletteFont from '../../test/fixtures/ColorFont.js'
+import * as namedRulesFont from '../../test/fixtures/ColorFont.js'
+import * as Profile from '../../test/fixtures/ColorProfile.js'
+import * as Colors from '../../test/fixtures/Colors.js'
+import * as Columns from '../../test/fixtures/Columns.js'
+import * as Conformance from '../../test/fixtures/Conformance.js'
+import * as ContainerSizing from '../../test/fixtures/ContainerSizing.js'
+import * as Controls from '../../test/fixtures/Controls.js'
+import * as Corners from '../../test/fixtures/Corners.js'
+import * as Declarations from '../../test/fixtures/Declarations.js'
+import * as Flex from '../../test/fixtures/Flex.js'
+import * as FontFeatures from '../../test/fixtures/FontFeatures.js'
+import * as Fonts from '../../test/fixtures/Fonts.js'
+import * as FunctionalColors from '../../test/fixtures/FunctionalColors.js'
+import * as Functions from '../../test/fixtures/Functions.js'
+import * as Geometry from '../../test/fixtures/Geometry.js'
+import * as Grid from '../../test/fixtures/Grid.js'
+import * as GridLines from '../../test/fixtures/GridLines.js'
+import * as GridLists from '../../test/fixtures/GridLists.js'
+import * as GroupingRules from '../../test/fixtures/GroupingRules.js'
+import * as Identifiers from '../../test/fixtures/Identifiers.js'
+import * as Interaction from '../../test/fixtures/Interaction.js'
+import * as KeywordGroups from '../../test/fixtures/KeywordGroups.js'
+import * as Layout from '../../test/fixtures/Layout.js'
+import * as Lengths from '../../test/fixtures/Lengths.js'
+import * as Logical from '../../test/fixtures/Logical.js'
+import * as Masks from '../../test/fixtures/Masks.js'
+import * as MathExpressions from '../../test/fixtures/MathExpressions.js'
+import * as Motion from '../../test/fixtures/Motion.js'
+import * as MotionLists from '../../test/fixtures/MotionLists.js'
+import * as NamedDescriptors from '../../test/fixtures/NamedDescriptors.js'
+import * as Margins from '../../test/fixtures/PageMargins.js'
+import * as Pages from '../../test/fixtures/Pages.js'
+import * as Percentage from '../../test/fixtures/Percentage.js'
+import * as Prefixed from '../../test/fixtures/Prefixed.js'
+import * as Ranges from '../../test/fixtures/Ranges.js'
+import * as Reading from '../../test/fixtures/Reading.js'
+import * as Registrations from '../../test/fixtures/Registrations.js'
+import * as Scalars from '../../test/fixtures/Scalars.js'
+import * as Scrolling from '../../test/fixtures/Scrolling.js'
+import * as Sizing from '../../test/fixtures/Sizing.js'
+import * as Snapping from '../../test/fixtures/Snapping.js'
+import * as Statements from '../../test/fixtures/Statements.js'
+import * as Substitution from '../../test/fixtures/Substitution.js'
+import * as Svg from '../../test/fixtures/Svg.js'
+import * as Tables from '../../test/fixtures/Tables.js'
+import * as Templates from '../../test/fixtures/Templates.js'
+import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
+import * as TextFlow from '../../test/fixtures/TextFlow.js'
+import * as TextTimeline from '../../test/fixtures/TextTimeline.js'
+import * as Tuples from '../../test/fixtures/Tuples.js'
+import * as WeasyPrint from '../../test/fixtures/WeasyPrint.js'
+import * as Literal from '../internal/Literal.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as CssTree from 'css-tree'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
+import * as Http from 'node:http'
 import * as Module from 'node:module'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
+import * as Pdf from 'pdf-lib'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import * as Literal from '../internal/Literal.js'
-import { Transform } from 'zyzz/compiler'
-import * as Borders from '../../test/fixtures/Borders.js'
-import * as Conformance from '../../test/fixtures/Conformance.js'
-import * as Declarations from '../../test/fixtures/Declarations.js'
-import * as Flex from '../../test/fixtures/Flex.js'
-import * as Interaction from '../../test/fixtures/Interaction.js'
-import * as Lengths from '../../test/fixtures/Lengths.js'
-import * as Logical from '../../test/fixtures/Logical.js'
-import * as Scrolling from '../../test/fixtures/Scrolling.js'
-import * as Sizing from '../../test/fixtures/Sizing.js'
-import * as Snapping from '../../test/fixtures/Snapping.js'
-import * as Tables from '../../test/fixtures/Tables.js'
-import * as TextDecoration from '../../test/fixtures/TextDecoration.js'
-import * as TextFlow from '../../test/fixtures/TextFlow.js'
+import { Config, Style, Theme } from 'zyzz'
+import { Graph, Source, Transform } from 'zyzz/compiler'
+import { Dynamic, Props } from 'zyzz/runtime'
+import { Css } from 'zyzz/web'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 
@@ -3054,4 +3105,10553 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
       await Fs.rm(directory, { force: true, recursive: true })
     }
   }, 30000)
+})
+
+describe('atRuleAcceptance', () => {
+  const source = `import {counterStyle,fontFace,page,viewTransition,customMedia,cssFunction,namespace,importCss,global} from 'zyzz/web';
+export const dots=counterStyle({system:'cyclic',symbols:'"●"'});
+fontFace({fontFamily:'Evidence',src:'url(/evidence.ttf)'});
+page({descriptors:{size:'A4','@top-center':{content:'"Page"'}}});
+viewTransition({navigation:'auto'});
+export const compact=customMedia('(width < 40rem)');
+export const twice=cssFunction({parameters:[{name:'--x',syntax:'<length>'}],returns:'<length>',body:{result:'calc(var(--x) * 2)'}});
+namespace({prefix:'s',uri:'urn:svg'});
+importCss({url:'https://example.com/base.css'});
+global({'s|item':{color:'red'}});`
+
+  describe('compile', () => {
+    test('counts contribution CSS separately from theme output', () => {
+      const output = Transform.compile({
+        moduleId: 'theme.ts',
+        source: `import {Config} from 'zyzz';import {counterStyle,fontFace} from 'zyzz/web';
+const config=Config.create({theme:{color:{brand:'red'}}});
+export const dots=counterStyle({symbols:'"x"'});
+fontFace({fontFamily:'Evidence',src:'url(/font.ttf)'});
+export namespace styles {
+  export const text = config.css({color:'brand'})
+}`,
+      })
+      const trace = new Trace.TraceMap(output.cssMap)
+      const line =
+        output.css
+          .split('\n')
+          .findIndex((line) => line.startsWith('@font-face')) + 1
+      expect(Trace.originalPositionFor(trace, { line, column: 0 }))
+        .toMatchInlineSnapshot(`
+      {
+        "column": 0,
+        "line": 4,
+        "name": null,
+        "source": "theme.ts",
+      }
+    `)
+    })
+    test('maps hoisted declarations back to their source calls in direct and packed output', () => {
+      const direct = Transform.compile({ moduleId: 'rules.ts', source })
+      const library = Graph.compile({ modules: { 'rules.ts': source } })
+      const packed = Graph.compile({
+        contracts: { 'lib/rules.js': library.contracts['rules.ts']! },
+        imports: { 'app.ts': { lib: 'lib/rules.js' } },
+        modules: { 'app.ts': `import 'lib'` },
+      })
+      const origins = (css: string, map: typeof direct.cssMap) => {
+        const trace = new Trace.TraceMap(map)
+        return css.split('\n').flatMap((line, index) =>
+          /^@(?:import|namespace|counter-style|font-face|page|view-transition|custom-media|function)\b/.test(
+            line,
+          )
+            ? [
+                {
+                  rule: line.split(/[ {]/)[0],
+                  ...Trace.originalPositionFor(trace, {
+                    line: index + 1,
+                    column: 0,
+                  }),
+                },
+              ]
+            : [],
+        )
+      }
+      expect(origins(direct.css, direct.cssMap)).toMatchInlineSnapshot(`
+      [
+        {
+          "column": 0,
+          "line": 9,
+          "name": null,
+          "rule": "@import",
+          "source": "rules.ts",
+        },
+        {
+          "column": 0,
+          "line": 8,
+          "name": null,
+          "rule": "@namespace",
+          "source": "rules.ts",
+        },
+        {
+          "column": 18,
+          "line": 2,
+          "name": null,
+          "rule": "@counter-style",
+          "source": "rules.ts",
+        },
+        {
+          "column": 0,
+          "line": 3,
+          "name": null,
+          "rule": "@font-face",
+          "source": "rules.ts",
+        },
+        {
+          "column": 0,
+          "line": 4,
+          "name": null,
+          "rule": "@page",
+          "source": "rules.ts",
+        },
+        {
+          "column": 0,
+          "line": 5,
+          "name": null,
+          "rule": "@view-transition",
+          "source": "rules.ts",
+        },
+        {
+          "column": 21,
+          "line": 6,
+          "name": null,
+          "rule": "@custom-media",
+          "source": "rules.ts",
+        },
+        {
+          "column": 19,
+          "line": 7,
+          "name": null,
+          "rule": "@function",
+          "source": "rules.ts",
+        },
+      ]
+    `)
+      expect(origins(packed.sharedCss!, packed.sharedCssMap!))
+        .toMatchInlineSnapshot(`
+      [
+        {
+          "column": 0,
+          "line": 9,
+          "name": null,
+          "rule": "@import",
+          "source": "lib/rules.ts",
+        },
+        {
+          "column": 0,
+          "line": 8,
+          "name": null,
+          "rule": "@namespace",
+          "source": "lib/rules.ts",
+        },
+        {
+          "column": 18,
+          "line": 2,
+          "name": null,
+          "rule": "@counter-style",
+          "source": "lib/rules.ts",
+        },
+        {
+          "column": 0,
+          "line": 3,
+          "name": null,
+          "rule": "@font-face",
+          "source": "lib/rules.ts",
+        },
+        {
+          "column": 0,
+          "line": 4,
+          "name": null,
+          "rule": "@page",
+          "source": "lib/rules.ts",
+        },
+        {
+          "column": 0,
+          "line": 5,
+          "name": null,
+          "rule": "@view-transition",
+          "source": "lib/rules.ts",
+        },
+        {
+          "column": 21,
+          "line": 6,
+          "name": null,
+          "rule": "@custom-media",
+          "source": "lib/rules.ts",
+        },
+        {
+          "column": 19,
+          "line": 7,
+          "name": null,
+          "rule": "@function",
+          "source": "lib/rules.ts",
+        },
+      ]
+    `)
+    })
+    test('keeps Unicode content and explicit legacy document conditions without an encoding declaration', () => {
+      const output = Transform.compile({
+        moduleId: 'legacy.ts',
+        source: `import {global} from 'zyzz/web';global({'@document url-prefix("https://example.com/")':{body:{'&::before':{content:'"héllo ●"'}}}});`,
+      })
+      expect({
+        css: output.css,
+        utf8: new TextDecoder('utf-8', { fatal: true }).decode(
+          new TextEncoder().encode(output.css),
+        ),
+        charset: output.css.includes('@charset'),
+        bom: output.css.charCodeAt(0) === 0xfeff,
+      }).toMatchInlineSnapshot(`
+      {
+        "bom": false,
+        "charset": false,
+        "css": "@document url-prefix("https://example.com/"){body{&::before{content:"héllo ●";}}}",
+        "utf8": "@document url-prefix("https://example.com/"){body{&::before{content:"héllo ●";}}}",
+      }
+    `)
+    })
+  })
+})
+
+describe('atRuleBrowser', () => {
+  describe('compile', () => {
+    test('Chromium loads a real font and applies counters, keyframes, namespace boundaries, and position fallbacks', async () => {
+      const output = Graph.compile({
+        modules: {
+          'rules.ts': `import {css} from 'zyzz';import {fontFace,counterStyle,keyframes,positionTry,global,page} from 'zyzz/web';
+fontFace({fontFamily:'Evidence',src:${JSON.stringify(`url("${Font.url}")`)},fontDisplay:'block'});
+export const dots=counterStyle({system:'cyclic',symbols:'"●"',suffix:'" "'});
+export const fade=keyframes({from:{opacity:0},to:{opacity:1}});
+export const above=positionTry({positionArea:'top'});
+global({'html':{height:'100%',overflow:'hidden'},'body':{margin:0,height:'100%',overflow:'hidden'},'#font':{fontFamily:'Evidence',fontSize:'100px',display:'inline-block'},'#animation':{animationName:fade,animationDuration:'1s',animationDelay:'-0.5s',animationPlayState:'paused',animationTimingFunction:'linear'},'#anchor':{anchorName:'--target',position:'absolute',top:'180px',left:'100px',width:'20px',height:'10px'},'#tooltip':{position:'absolute',positionAnchor:'--target',positionArea:'bottom',positionTryFallbacks:above,width:'50px',height:'30px'},'.counter':{listStyleType:dots,listStylePosition:'inside',width:'100px',height:'24px',fontFamily:'Arial',fontSize:'16px'}});
+page({descriptors:{size:'A4','@top-center':{content:'"Page"'}}});`,
+          'svg.ts': `import {namespace,global} from 'zyzz/web';namespace({uri:'http://www.w3.org/2000/svg'});global({'.icon':{fill:'red'}});`,
+        },
+      })
+      const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      const browser = await chromium.launch(
+        executablePath ? { executablePath } : {},
+      )
+      try {
+        const page = await browser.newPage({
+          viewport: { width: 300, height: 200 },
+        })
+        await page.setContent(
+          '<span id="font">A</span><div id="animation">fade</div><div id="anchor"></div><div id="tooltip"></div><svg><rect id="svg" class="icon"/></svg><rect id="html" class="icon"></rect><li id="compiled" class="counter">item</li><li id="native" class="counter">item</li>',
+        )
+        await page.addStyleTag({ content: output.sharedCss! })
+        await page.addStyleTag({
+          content:
+            '@counter-style reference {system:cyclic;symbols:"●";suffix:" "} #native {list-style-type:reference} ',
+        })
+        await page.evaluate(() => document.fonts.ready)
+        expect(
+          await page.evaluate(() => document.fonts.check('100px Evidence')),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          await page
+            .locator('#font')
+            .evaluate((element) => element.getBoundingClientRect().width),
+        ).toMatchInlineSnapshot('60')
+        expect(
+          await page
+            .locator('#animation')
+            .evaluate((element) => getComputedStyle(element).opacity),
+        ).toMatchInlineSnapshot('"0.5"')
+        expect(
+          await page
+            .locator('#svg')
+            .evaluate((element) => getComputedStyle(element).fill),
+        ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+        expect(
+          await page
+            .locator('#html')
+            .evaluate((element) => getComputedStyle(element).fill),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 0)"')
+        expect(
+          await page.locator('#tooltip').evaluate((element) => {
+            const box = element.getBoundingClientRect()
+            return {
+              bottom: box.bottom,
+              height: box.height,
+              left: box.left,
+              width: box.width,
+            }
+          }),
+        ).toMatchInlineSnapshot(`
+        {
+          "bottom": 180,
+          "height": 30,
+          "left": 85,
+          "width": 50,
+        }
+      `)
+        expect(
+          Buffer.compare(
+            await page.locator('#compiled').screenshot(),
+            await page.locator('#native').screenshot(),
+          ) === 0,
+        ).toMatchInlineSnapshot('true')
+      } finally {
+        await browser.close()
+      }
+    })
+    test('Chromium reports experimental and legacy rule availability separately from emitted CSS', async () => {
+      const cases = {
+        colorProfile: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(/profile.icc)'});`,
+        customMedia: `import {customMedia} from 'zyzz/web';export const query=customMedia('(width > 1px)');`,
+        cssFunction: `import {cssFunction,global} from 'zyzz/web';export const twice=cssFunction({parameters:[{name:'--x',syntax:'<length>'}],returns:'<length>',body:{result:'calc(var(--x) * 2)'}});global({'#target':{width:twice('2px')}});`,
+        document: `import {global} from 'zyzz/web';global({'@document url-prefix("https://example.com/")':{body:{color:'red'}}});`,
+        fontFeatureValues: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Evidence',fontDisplay:'swap',features:{'@styleset':{editorial:[1,2]}}});`,
+        viewTransition: `import {viewTransition} from 'zyzz/web';viewTransition({navigation:'auto',types:'slide'});`,
+      }
+      const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      const browser = await chromium.launch(
+        executablePath ? { executablePath } : {},
+      )
+      try {
+        const page = await browser.newPage()
+        const capabilities: Record<
+          string,
+          {
+            accepted: boolean
+            cssom: readonly string[]
+            rendering?: 'unavailable' | 'unverified' | 'verified'
+          }
+        > = {}
+        for (const [name, source] of Object.entries(cases)) {
+          const output = Transform.compile({ moduleId: `${name}.ts`, source })
+          const rules = await page.evaluate((css) => {
+            const sheet = new CSSStyleSheet()
+            sheet.replaceSync(css)
+            return [...sheet.cssRules].map((rule) => rule.cssText)
+          }, output.css)
+          capabilities[name] = {
+            accepted: rules.some((rule) => rule.startsWith('@')),
+            cssom: rules,
+          }
+          if (name === 'colorProfile')
+            capabilities[name].rendering = capabilities[name].accepted
+              ? 'unverified'
+              : 'unavailable'
+          await Fs.mkdir('test-results', { recursive: true })
+          await Fs.writeFile(
+            'test-results/at-rule-browser-capabilities.json',
+            JSON.stringify(
+              { browser: browser.version(), capabilities },
+              null,
+              2,
+            ),
+          )
+          if (name === 'cssFunction' && capabilities[name].accepted) {
+            await page.setContent('<div id="target"></div>')
+            await page.addStyleTag({ content: output.css })
+            expect(
+              await page
+                .locator('#target')
+                .evaluate((element) => getComputedStyle(element).width),
+            ).toMatchInlineSnapshot('"4px"')
+          }
+        }
+        expect(Object.keys(capabilities)).toMatchInlineSnapshot(`
+        [
+          "colorProfile",
+          "customMedia",
+          "cssFunction",
+          "document",
+          "fontFeatureValues",
+          "viewTransition",
+        ]
+      `)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('atRules', () => {
+  describe('compile', () => {
+    test('preserves grouped font descriptors and timeline range stops', () => {
+      const output = Transform.compile({
+        moduleId: 'rules.ts',
+        source: `import { fontFace, keyframes } from 'zyzz/web';
+fontFace({fontFamily:'Body',src:'local("Arial")',fontFeatureSettings:'"kern"',fontVariationSettings:'"wght" 400'}, {within:['@layer fonts','@media screen']});
+export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{opacity:1}}, {within:['@supports (display: grid)']});`,
+      })
+      expect(output.css).toMatchInlineSnapshot(`
+      "@layer fonts{@media screen{@font-face{font-family:Body;src:local("Arial");font-feature-settings:"kern";font-variation-settings:"wght" 400;}}}
+      @supports (display: grid){@keyframes z-ko6ez0r19fmsab-66-61-64-65{entry 0%, cover 10%{opacity:0;}exit 100%{opacity:1;}}}"
+    `)
+      expect(output.code).toMatchInlineSnapshot(`
+      "
+      void 0;
+      export const fade = "z-ko6ez0r19fmsab-66-61-64-65";"
+    `)
+    })
+    test('resolves configured queries across CSS whitespace and comment boundaries', () => {
+      const output = Transform.compile({
+        moduleId: 'queries.ts',
+        source: `import {Theme} from 'zyzz';const theme=Theme.define({breakpoints:{tablet:'48rem'}});export namespace styles {
+  export const card = theme.css({'@media\\ttablet':{color:'red'},'@media/**/tablet':{color:'blue'}})
+}`,
+      })
+      expect(output.css).toMatchInlineSnapshot(
+        `
+      ".z-text-aWkCf4-0{@media (width >= 48rem){color:red;}}
+      .z-text-aWkCf4-1{@media (width >= 48rem){color:blue;}}"
+    `,
+      )
+    })
+    test('keeps scope, layer, and scroll-state nesting in authored order', () => {
+      const output = Transform.compile({
+        moduleId: 'scope.ts',
+        source: `import {css} from 'zyzz'; export namespace styles {
+  export const box = css({'@scope (.outer) to (.stop)':{'@layer components':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}})
+}`,
+      })
+      expect(output.css).toMatchInlineSnapshot(
+        `
+      ".z-text-6s-RDo-0{@scope (.outer) to (.stop){@layer components{color:red;}}}
+      .z-text-6s-RDo-1{@scope (.outer) to (.stop){@layer components{@container scroll-state(stuck: top){color:blue;}}}}"
+    `,
+      )
+    })
+    test('defaults undefined contexts and accepts anonymous and CSS-whitespace groups', () => {
+      const output = Transform.compile({
+        moduleId: 'contexts.ts',
+        source: `import {fontFace,keyframes,global} from 'zyzz/web';fontFace({fontFamily:'Body',src:'url(/body)'},undefined);export const fade=keyframes({from:{opacity:0},to:{opacity:1}},void 1);fontFace({fontFamily:'Layered',src:'url(/body)'},{within:['@layer']});global({'@media\\nscreen':{body:{color:'red'}},'@supports(display:grid)':{body:{display:'grid'}},'@media/**/print':{body:{color:'blue'}}});`,
+      })
+      expect(output.css).toMatchInlineSnapshot(`
+      "@font-face{font-family:Body;src:url(/body);}
+      @keyframes z-k4rx34s72jf3i-66-61-64-65{from{opacity:0;}to{opacity:1;}}
+      @layer{@font-face{font-family:Layered;src:url(/body);}}
+      @media
+      screen{body{color:red;}}
+      @supports(display:grid){body{display:grid;}}
+      @media/**/print{body{color:blue;}}"
+    `)
+    })
+    test('Chromium applies local scope and layer rules as a scroll-state query changes', async () => {
+      const output = Transform.compile({
+        moduleId: 'nested.ts',
+        source: `import {css} from 'zyzz';export namespace styles {
+  export const item = css({'@scope (&) to (.stop)':{'@layer components':{'& .item':{color:'red','@container scroll-state(stuck: top)':{color:'blue'}}}}})
+}`,
+      })
+      const name = Object.values(output.classes)[0]!
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<div class="outer ${name}" style="height:80px;overflow:auto"><div style="container-type:scroll-state;position:sticky;top:0"><span id="inside" class="item">inside</span><div class="stop"><span id="outside" class="item">outside</span></div></div><div style="height:300px"></div></div>`,
+        )
+        await page.addStyleTag({ content: output.css })
+        expect(
+          await page
+            .locator('#inside')
+            .evaluate((el) => getComputedStyle(el).color),
+        ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+        await page.locator('.outer').evaluate((el) => {
+          el.scrollTop = 40
+        })
+        await page.waitForFunction(
+          () =>
+            getComputedStyle(document.querySelector('#inside')!).color ===
+            'rgb(0, 0, 255)',
+        )
+        expect(
+          await page
+            .locator('#inside')
+            .evaluate((el) => getComputedStyle(el).color),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+        expect(
+          await page
+            .locator('#outside')
+            .evaluate((el) => getComputedStyle(el).color),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 0)"')
+      } finally {
+        await browser.close()
+      }
+    })
+    test('keeps layer order top-level without empty conditional wrappers', () => {
+      expect(
+        Css.compile({
+          styles: { styles: [] },
+          contributions: [
+            { kind: 'layers', names: ['base'], within: ['@media screen'] },
+          ],
+        }).css,
+      ).toMatchInlineSnapshot('"@layer base;"')
+    })
+    test('Chromium applies scope boundaries', async () => {
+      const output = Transform.compile({
+        moduleId: 'scope.ts',
+        source: `import {global} from 'zyzz/web'; global({'@scope (.outer) to (.stop)':{p:{color:'red'}}})`,
+      })
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          '<div class="outer"><p id="inside">Inside</p><div class="stop"><p id="outside">Outside</p></div></div>',
+        )
+        await page.addStyleTag({ content: output.css })
+        expect(
+          await page
+            .locator('#inside')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+        expect(
+          await page
+            .locator('#outside')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 0)"')
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('atomicReview', () => {
+  describe('compile', () => {
+    test('switches grouped compiler defaults without reusing atomic graph output', () => {
+      const compiler = Graph.create()
+      const modules = {
+        'styles.ts':
+          "import {css} from 'zyzz';export const a=css({color:'red',padding:'2px'});export const b=css({color:'red',padding:'4px'})",
+      }
+      const atomic = compiler.compile({ modules })
+      const grouped = compiler.compile({
+        composition: 'independent',
+        cssOutput: 'grouped',
+        modules,
+      })
+      expect(grouped.modules['styles.ts']!.css).toMatchInlineSnapshot(`
+      ".g_1u33cwi148qjze_0{color:red;}
+      .z-style-1u33cwi148qjze-40{padding:2px;}
+      .z-style-1u33cwi148qjze-88{padding:4px;}"
+    `)
+      expect(Object.values(grouped.modules['styles.ts']!.classes))
+        .toMatchInlineSnapshot(`
+      [
+        "g_1u33cwi148qjze_0 z-style-1u33cwi148qjze-40",
+        "g_1u33cwi148qjze_0 z-style-1u33cwi148qjze-88",
+      ]
+    `)
+      expect(grouped.modules['styles.ts']!.css).not.toBe(
+        atomic.modules['styles.ts']!.css,
+      )
+      expect(compiler.compile({ modules })).toEqual(atomic)
+    })
+
+    test('maps repeated declaration occurrences to their authored keys', () => {
+      const source = `import {css} from 'zyzz'; export const card=css({padding:'8px',paddingLeft:'2px',selectors:{'&:hover':{paddingLeft:'4px'},'&:focus':{paddingLeft:'6px'}}})`
+      const output = Transform.compile({ moduleId: 'atomic.ts', source })
+      const map = new Trace.TraceMap(output.cssMap)
+      const locations = [...output.css.matchAll(/padding-left:/g)].map(
+        (match) => {
+          const prefix = output.css.slice(0, match.index).split('\n')
+          return Trace.originalPositionFor(map, {
+            column: prefix.at(-1)!.length,
+            line: prefix.length,
+          }).column
+        },
+      )
+
+      expect(locations).toMatchInlineSnapshot(`
+      [
+        63,
+        103,
+        133,
+      ]
+    `)
+    })
+
+    test('deduplicates whole independent applications without reversing conflicts', async () => {
+      const a = { padding: '10px', paddingLeft: '1px' } as const
+      const output = Css.compile({
+        composition: 'independent',
+        styles: Style.define({
+          a,
+          b: { paddingLeft: '1px', padding: '10px' },
+          again: a,
+        }),
+      })
+
+      expect(output.classes).toMatchInlineSnapshot(`
+      {
+        "a": "z-p-10px-CgmKfH-0 z-pl-1px-CgmKfH-1",
+        "again": "z-p-10px-CgmKfH-0 z-pl-1px-CgmKfH-1",
+        "b": "z-pl-1px-0kXiVX-0 z-p-10px-0kXiVX-1",
+      }
+    `)
+      expect(output.css).toMatchInlineSnapshot(`
+      ".z-p-10px-CgmKfH-0{padding:10px;}
+      .z-pl-1px-CgmKfH-1{padding-left:1px;}
+      .z-pl-1px-0kXiVX-0{padding-left:1px;}
+      .z-p-10px-0kXiVX-1{padding:10px;}"
+    `)
+
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${output.css}</style>${Object.entries(output.classes)
+            .map(([id, name]) => `<div id="${id}" class="${name}"></div>`)
+            .join('')}`,
+        )
+        expect(
+          await page
+            .locator('div')
+            .evaluateAll((elements) =>
+              elements.map((element) => getComputedStyle(element).paddingLeft),
+            ),
+        ).toMatchInlineSnapshot(`
+        [
+          "1px",
+          "10px",
+          "1px",
+        ]
+      `)
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('development class names survive offsets and declaration insertion', () => {
+      const source = (value: string, added = '') =>
+        `import {css} from 'zyzz'; const first=css({color:'${value}'}); const second=css({${added}color:'blue',padding:'8px'})`
+      const before = Transform.compile({
+        development: true,
+        moduleId: 'dev.ts',
+        source: source('red'),
+      })
+      const after = Transform.compile({
+        development: true,
+        moduleId: 'dev.ts',
+        source: source('rebeccapurple', "display:'block',"),
+      })
+      const previous = Object.values(before.classes)[1]!.split(' ')
+      const current = Object.values(after.classes)[1]!.split(' ')
+      expect(
+        previous.every((name) => current.includes(name)),
+      ).toMatchInlineSnapshot('true')
+    })
+  })
+})
+
+describe('backgrounds', () => {
+  describe('compile', () => {
+    test('backgrounds preserve fallback positions and color keyword precedence', () => {
+      const output = Transform.compile({
+        moduleId: 'backgrounds.ts',
+        source: Backgrounds.source,
+      })
+
+      expect(output.css.match(/background-position-[xy]:[^;}]+/g))
+        .toMatchInlineSnapshot(`
+      [
+        "background-position-x:left",
+        "background-position-x:25%!important",
+        "background-position-y:-4px",
+      ]
+    `)
+      expect(output.css.match(/(?:accent|caret)-color:auto/g))
+        .toMatchInlineSnapshot(`
+      [
+        "accent-color:auto",
+        "caret-color:auto",
+      ]
+    `)
+      expect(output.css.includes('color_2e_auto,#06c)')).toMatchInlineSnapshot(
+        `true`,
+      )
+    })
+
+    test('backgrounds and color controls match computed browser declarations', async () => {
+      const output = Transform.compile({
+        moduleId: 'backgrounds.ts',
+        source: Backgrounds.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>input{width:100px;height:40px}${output.css}</style>${Object.entries(
+            Backgrounds.controls,
+          )
+            .map(
+              ([name, css]) =>
+                `<input id="${name}" class="${module[name].className}" value="Color"><input id="${name}-control" style="${css}" value="Color">`,
+            )
+            .join('')}`,
+        )
+
+        expect(
+          await page.evaluate(
+            (names) =>
+              names.filter((name) => {
+                const a = getComputedStyle(document.getElementById(name)!)
+                const b = getComputedStyle(
+                  document.getElementById(`${name}-control`)!,
+                )
+
+                return [
+                  'accent-color',
+                  'background-attachment',
+                  'background-blend-mode',
+                  'background-clip',
+                  'background-origin',
+                  'background-position-x',
+                  'background-position-y',
+                  'background-repeat',
+                  'background-size',
+                  'caret-color',
+                  'color-scheme',
+                  'forced-color-adjust',
+                  'mix-blend-mode',
+                  'print-color-adjust',
+                ].some(
+                  (property) =>
+                    a.getPropertyValue(property) !==
+                    b.getPropertyValue(property),
+                )
+              }),
+            Object.keys(Backgrounds.controls),
+          ),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page
+            .locator('#control')
+            .evaluate((element) => getComputedStyle(element).caretColor),
+        ).toMatchInlineSnapshot(`"rgb(0, 102, 204)"`)
+        expect(
+          await page
+            .locator('#background')
+            .evaluate(
+              (element) => getComputedStyle(element).backgroundPositionX,
+            ),
+        ).toMatchInlineSnapshot(`"25%"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('bindings', () => {
+  const source = [
+    `import {css, variable} from 'zyzz';`,
+    `const vars = ({amount:variable("percentage"),count:variable("number"),gap:variable("length")});`,
+    'export const bar = css({width:vars.amount, marginLeft:`calc(${vars.gap} + 2px)`})();',
+    `export const assignments = ({...vars["amount"].set("50%"),...vars["count"].set(2),...vars["gap"].set("8px")});`,
+    `export const update = () => ({...vars["amount"].set("75%")});`,
+    'export const assign = (values: any) => vars.amount.set(values.amount);',
+  ].join('\n')
+
+  describe('compile', () => {
+    test('identifies explicit variables in template diagnostics', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad-template.ts',
+          source: `import {css, variable} from 'zyzz'; const vars=({size:variable("length")}); css({color:\`calc(\${vars.size})\`})`,
+        }),
+      ).toThrow('Variable domain is incompatible with this property.')
+    })
+    test('keeps contracts distinct with shadowed globals and assertion types', async () => {
+      const output = Transform.compile({
+        moduleId: 'hygiene.ts',
+        source: `
+      import {variable} from 'zyzz';
+      const Object = {}; const __zyzzVariable = 0;
+      const ab = ({c:variable('length')});
+      const a = ({bc:variable('length')});
+      export const first = ab as { c: variable.Reference<'length'> };
+      export const second = a satisfies { bc: variable.Reference<'length'> };
+    `,
+      })
+
+      const built = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          resolveDir: Path.resolve(import.meta.dirname, '../..'),
+          loader: 'ts',
+        },
+        bundle: true,
+        write: false,
+        platform: 'node',
+        conditions: ['src'],
+        format: 'esm',
+      })
+
+      const result = await import(
+        `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
+      )
+
+      expect(
+        result.first.c.name === result.second.bc.name,
+      ).toMatchInlineSnapshot(`false`)
+      expect(
+        Object.isFrozen(result.first) && Object.isFrozen(result.first.c),
+      ).toMatchInlineSnapshot(`false`)
+    })
+
+    test('preserves asserted reads and compatible border length templates', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'border.ts',
+          source: `import {css, variable} from 'zyzz'; const border=({size:variable("length")}); css({borderWidth:\`calc(\${border.size})\`,width:(border.size satisfies unknown)})`,
+        }).css,
+      ).toMatchInlineSnapshot(
+        `
+      ".z-border-width-LOhLyJ{border-width:calc(var(--z-v1h19mkqtvuh7e-56));}
+      .z-w-LOhLyJ{width:var(--z-v1h19mkqtvuh7e-56);}"
+    `,
+      )
+    })
+    test('rejects incompatible direct binding domains', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {css, variable} from 'zyzz'; const vars=({color:variable("color")}); css({width:vars.color})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: bad.ts:87: Variable domain is incompatible with this property.]`,
+      )
+    })
+
+    test('emits fixed slots and executes typed assignments without generating rules', async () => {
+      const output = Transform.compile({ moduleId: 'slots.ts', source })
+
+      expect(output.css).toMatchInlineSnapshot(
+        `
+      ".z-w-BUchRv{width:var(--z-v161esph179x895-58);}
+      .z-ml-BUchRv{margin-left:calc(var(--z-v161esph179x895-110) + 2px);}"
+    `,
+      )
+
+      const built = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          resolveDir: Path.resolve(import.meta.dirname, '../..'),
+          loader: 'ts',
+        },
+        bundle: true,
+        write: false,
+        platform: 'node',
+        conditions: ['src'],
+        format: 'esm',
+      })
+
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
+      )
+
+      expect(module.assignments).toMatchInlineSnapshot(`
+      {
+        "--z-v161esph179x895-110": "8px",
+        "--z-v161esph179x895-58": "50%",
+        "--z-v161esph179x895-87": 2,
+      }
+    `)
+      expect(module.update()).toMatchInlineSnapshot(`
+      {
+        "--z-v161esph179x895-58": "75%",
+      }
+    `)
+      expect(Object.values(module.assign({ amount: '60%' }))).toEqual(['60%'])
+      expect(output.code.includes('variable(')).toMatchInlineSnapshot(`false`)
+    })
+
+    test('updates native widths through fixed variable slots', async () => {
+      const output = Transform.compile({ moduleId: 'slots.ts', source })
+
+      const built = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          resolveDir: Path.resolve(import.meta.dirname, '../..'),
+          loader: 'ts',
+        },
+        bundle: true,
+        write: false,
+        platform: 'node',
+        conditions: ['src'],
+        format: 'esm',
+      })
+
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div style="width:200px"><div id="bar" class="${module.bar.className}"></div></div>`,
+        )
+        await page.locator('#bar').evaluate((element, values) => {
+          for (const [key, value] of Object.entries(values))
+            (element as HTMLElement).style.setProperty(key, String(value))
+        }, module.assignments)
+
+        expect(
+          await page
+            .locator('#bar')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"100px"`)
+
+        await page.locator('#bar').evaluate((element, values) => {
+          for (const [key, value] of Object.entries(values))
+            (element as HTMLElement).style.setProperty(key, String(value))
+        }, module.update())
+
+        expect(
+          await page
+            .locator('#bar')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"150px"`)
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('keeps matching schemas in different definitions isolated', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'isolated.ts',
+          source: `import {variable, css} from 'zyzz'; const a = ({x:variable("number")}); const b = ({x:variable("number")}); css({opacity:a.x})(); css({opacity:b.x})()`,
+        }).css,
+      ).toMatchInlineSnapshot(`
+      ".z-opacity-Q5wOSh-0{opacity:var(--z-vb2d2s91jn7xin-50);}
+      .z-opacity-MhFHMx-0{opacity:var(--z-vb2d2s91jn7xin-86);}"
+    `)
+    })
+
+    test('rejects unknown schema domains without evaluating calls', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {variable} from 'zyzz'; const a = ({x:variable(arbitrary())});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:45: variable requires a scalar domain and optional literal registration options.]`,
+      )
+    })
+  })
+})
+
+describe('borderLists', () => {
+  describe('compile', () => {
+    test('border shorthand lists agree with independent grammar and preserve importance', () => {
+      const lexer = Conformance.lexer()
+
+      for (const [property, value] of [
+        ['border-color', 'red rgb(0 128 0) blue gold'],
+        ['border-style', 'solid dashed dotted double'],
+        ['border-width', 'thin medium thick 2px'],
+        ['border-radius', '10px 20px 30px 40px / 20px 30px 40px 50px'],
+        ['border-top-left-radius', '10px 20%'],
+      ])
+        expect(
+          lexer.matchProperty(property!, value!).error,
+        ).toMatchInlineSnapshot(`null`)
+
+      const output = Transform.compile({
+        moduleId: 'border-lists.ts',
+        source: BorderLists.source,
+      })
+
+      expect(output.css.match(/border-radius:[^;}]+/g)).toMatchInlineSnapshot(`
+      [
+        "border-radius:1px/2px",
+        "border-radius:10px 20px 30px 40px / 20px 30px 40px 50px!important",
+      ]
+    `)
+    })
+    test('border lists match browser longhands in both writing modes', async () => {
+      const output = Transform.compile({
+        moduleId: 'border-lists.ts',
+        source: BorderLists.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}.box{width:300px;height:300px}</style><div id="actual" class="box ${module.box.className}"></div><div id="control" class="box" style="${BorderLists.control}"></div>`,
+        )
+
+        for (const mode of ['horizontal-tb', 'vertical-rl']) {
+          await page.evaluate((mode) => {
+            for (const id of ['actual', 'control'])
+              document.getElementById(id)!.style.writingMode = mode
+          }, mode)
+
+          expect(
+            await page.evaluate(() => {
+              const actual = getComputedStyle(
+                document.getElementById('actual')!,
+              )
+              const control = getComputedStyle(
+                document.getElementById('control')!,
+              )
+
+              const keys = [
+                ...['top', 'right', 'bottom', 'left'].flatMap((side) =>
+                  ['color', 'style', 'width'].map(
+                    (kind) => `border-${side}-${kind}`,
+                  ),
+                ),
+                ...['top-left', 'top-right', 'bottom-left', 'bottom-right'].map(
+                  (corner) => `border-${corner}-radius`,
+                ),
+                'outline-width',
+              ]
+
+              return keys.filter(
+                (key) =>
+                  actual.getPropertyValue(key) !==
+                  control.getPropertyValue(key),
+              )
+            }),
+          ).toMatchInlineSnapshot(`[]`)
+        }
+
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate(
+              (element) => getComputedStyle(element).borderTopLeftRadius,
+            ),
+        ).toMatchInlineSnapshot(`"10px 20px"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('borderShorthand', () => {
+  describe('compile', () => {
+    test('line shorthands retain A/B/A longhand conflicts', () => {
+      const a = {
+        border: '2px solid red',
+        outline: '1px dotted black',
+        columnRule: '3px dashed blue',
+      } as const
+
+      const output = Css.compile({
+        styles: Style.define({
+          a,
+          b: {
+            borderTopColor: 'green',
+            outlineWidth: '5px',
+            columnRuleStyle: 'solid',
+          },
+          c: a,
+        }),
+      })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      ".z-border-CgmKfH-0{border:2px solid red;}
+      .z-outline-CgmKfH-1{outline:1px dotted black;}
+      .z-column-rule-CgmKfH-2{column-rule:3px dashed blue;}
+      .z-border-top-color-green-0kXiVX-0{border-top-color:green;}
+      .z-outline-width-5px-0kXiVX-1{outline-width:5px;}
+      .z-column-rule-style-solid-0kXiVX-2{column-rule-style:solid;}
+      .z-border-HzYJKb-0{border:2px solid red;}
+      .z-outline-HzYJKb-1{outline:1px dotted black;}
+      .z-column-rule-HzYJKb-2{column-rule:3px dashed blue;}"
+    `)
+    })
+    test('combined borders match native declarations across writing modes', async () => {
+      const output = Transform.compile({
+        moduleId: 'border-shorthand.ts',
+        source: BorderShorthand.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+
+      const a = {
+        border: '2px solid red',
+        outline: '1px dotted black',
+        columnRule: '3px dashed blue',
+      } as const
+
+      const cascade = Css.compile({
+        styles: Style.define({
+          a,
+          b: {
+            borderTopColor: 'green',
+            outlineWidth: '5px',
+            columnRuleStyle: 'solid',
+          },
+          c: a,
+        }),
+      })
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>.z-a{border-image-source:linear-gradient(red,blue)}${output.css}${cascade.css}</style><div id="parent"><div id="actual" class="${module.box.className}"></div><div id="control" style="${BorderShorthand.control}"></div></div><div id="cascade" class="${cascade.classes.a} ${cascade.classes.b} ${cascade.classes.c} z-a"></div>`,
+        )
+
+        for (const writingMode of [
+          'horizontal-tb',
+          'vertical-rl',
+          'vertical-lr',
+        ])
+          for (const direction of ['ltr', 'rtl']) {
+            await page.locator('#parent').evaluate(
+              (element, values) => {
+                element.style.writingMode = values.writingMode
+                element.style.direction = values.direction
+              },
+              { writingMode, direction },
+            )
+
+            expect(
+              await page.evaluate(() => {
+                const a = getComputedStyle(document.getElementById('actual')!)
+                const b = getComputedStyle(document.getElementById('control')!)
+
+                return [
+                  'border-top-width',
+                  'border-top-style',
+                  'border-top-color',
+                  'border-right-width',
+                  'border-right-style',
+                  'border-right-color',
+                  'border-bottom-width',
+                  'border-bottom-style',
+                  'border-bottom-color',
+                  'border-left-width',
+                  'border-left-style',
+                  'border-left-color',
+                  'outline-width',
+                  'outline-style',
+                  'outline-color',
+                  'column-rule-width',
+                  'column-rule-style',
+                  'column-rule-color',
+                ].filter(
+                  (property) =>
+                    a.getPropertyValue(property) !==
+                    b.getPropertyValue(property),
+                )
+              }),
+            ).toMatchInlineSnapshot(`[]`)
+          }
+
+        expect(
+          await page
+            .locator('#cascade')
+            .evaluate((element) => getComputedStyle(element).borderImageSource),
+        ).toMatchInlineSnapshot(`"none"`)
+        expect(
+          await page
+            .locator('#cascade')
+            .evaluate((element) => getComputedStyle(element).borderTopColor),
+        ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+        expect(
+          await page
+            .locator('#cascade')
+            .evaluate((element) => getComputedStyle(element).outlineWidth),
+        ).toMatchInlineSnapshot(`"1px"`)
+        expect(
+          await page
+            .locator('#cascade')
+            .evaluate((element) => getComputedStyle(element).columnRuleStyle),
+        ).toMatchInlineSnapshot(`"dashed"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('boxLists', () => {
+  describe('compile', () => {
+    test('box lists preserve fallback ordering and importance', () => {
+      const output = Transform.compile({
+        moduleId: 'box-lists.ts',
+        source: BoxLists.source,
+      })
+
+      expect(output.css.match(/padding:[^;}]+/g)).toMatchInlineSnapshot(`
+      [
+        "padding:1px 2px",
+        "padding:4px 8px 12px 16px!important",
+      ]
+    `)
+      expect(
+        output.css.includes('margin-inline:20px 30px'),
+      ).toMatchInlineSnapshot(`true`)
+    })
+
+    test('box list expansion and logical overrides match browser longhands', async () => {
+      const output = Transform.compile({
+        moduleId: 'box-lists.ts',
+        source: BoxLists.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}.box{width:100px;height:100px;position:relative}</style><div id="actual" class="box ${module.box.className}"></div><div id="control" class="box" style="${BoxLists.control}"></div>`,
+        )
+
+        for (const mode of ['horizontal-tb', 'vertical-rl']) {
+          await page.evaluate((mode) => {
+            for (const id of ['actual', 'control'])
+              document.getElementById(id)!.style.writingMode = mode
+          }, mode)
+
+          expect(
+            await page.evaluate(() => {
+              const actual = getComputedStyle(
+                document.getElementById('actual')!,
+              )
+              const control = getComputedStyle(
+                document.getElementById('control')!,
+              )
+
+              const keys = [
+                'top',
+                'right',
+                'bottom',
+                'left',
+                ...['top', 'right', 'bottom', 'left'].flatMap((side) => [
+                  `margin-${side}`,
+                  `padding-${side}`,
+                  `border-${side}-width`,
+                  `scroll-margin-${side}`,
+                  `scroll-padding-${side}`,
+                ]),
+              ]
+
+              return keys.filter(
+                (key) =>
+                  actual.getPropertyValue(key) !==
+                  control.getPropertyValue(key),
+              )
+            }),
+          ).toMatchInlineSnapshot(`[]`)
+        }
+
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).paddingLeft),
+        ).toMatchInlineSnapshot(`"16px"`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).marginTop),
+        ).toMatchInlineSnapshot(`"20px"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('case', () => {
+  describe('compile', () => {
+    test('case-insensitive literals retain precedence over same-spelled tokens', () => {
+      const theme = Theme.define({ color: { Brand: 'blue', ReD: 'blue' } })
+      const styles = Style.define(
+        { card: { color: 'ReD', display: 'FlEx', padding: '2PX' } },
+        { theme },
+      )
+
+      expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
+        `
+      ".z-text-ReD{color:ReD;}
+      .z-display-FlEx{display:FlEx;}
+      .z-p-2PX{padding:2PX;}"
+    `,
+      )
+    })
+
+    test('whitespace and importance preserve authored literal data', () => {
+      const styles = Style.define({
+        card: { color: ' ReD\t! ImPoRtAnT  ', display: 'BlOcK\tFlow' },
+      })
+
+      expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
+        `
+      ".z-text-qE5SPZ{color: ReD!important;}
+      .z-display-eWlMBL{display:BlOcK	Flow;}"
+    `,
+      )
+    })
+
+    test('escaped literals and commented importance retain native token semantics', async () => {
+      const theme = Theme.define({ color: { '\\72 ed': 'blue' } })
+
+      const styles = Style.define(
+        {
+          card: {
+            color: '\\72 ed/**/!impor\\74 ant/**/',
+            display: 'bl\\6f ck/**/flow',
+            padding: '1\\70 x',
+          },
+        },
+        { theme },
+      )
+
+      const output = Css.compile({ styles })
+
+      expect(output.css).toMatchInlineSnapshot(
+        `
+      ".z-text-YkAuMI{color:\\72 ed/**/!important;}
+      .z-display-gFmu41{display:bl\\6f ck/**/flow;}
+      .z-p-m_OXFT{padding:1\\70 x;}"
+    `,
+      )
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div id="actual" class="${output.classes.card}"></div><div id="control" style="color:red!important;display:block flow;padding:1px"></div>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const actual = getComputedStyle(document.getElementById('actual')!)
+            const control = getComputedStyle(
+              document.getElementById('control')!,
+            )
+
+            return ['color', 'display', 'padding'].filter(
+              (property) =>
+                actual.getPropertyValue(property) !==
+                control.getPropertyValue(property),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('mixed keyword, function, unit, numeric, and importance spellings match native CSS', async () => {
+      const styles = Style.define({
+        card: {
+          color: ' #AbC\t! ImPoRtAnT  ',
+          display: 'BlOcK\tFlow',
+          gridColumnEnd: 'span +01',
+          height: '+.5PX',
+          margin: '-0px',
+          order: '+01!',
+          padding: ['2PX', '0e3!'],
+          transform: 'RoTaTe(45DEG)',
+          width: '1e2px',
+        },
+      })
+
+      const output = Css.compile({ styles })
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div id="actual" class="${output.classes.card}"></div><div id="control" style="color:#abc!important;display:block flow;grid-column-end:span 1;height:.5px;margin:0;order:1!important;padding:0!important;transform:rotate(45deg);width:100px"></div>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const actual = getComputedStyle(document.getElementById('actual')!)
+            const control = getComputedStyle(
+              document.getElementById('control')!,
+            )
+
+            return [
+              'color',
+              'display',
+              'grid-column-end',
+              'height',
+              'margin',
+              'order',
+              'padding',
+              'transform',
+              'width',
+            ].filter(
+              (property) =>
+                actual.getPropertyValue(property) !==
+                control.getPropertyValue(property),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('colors', () => {
+  describe('compile', () => {
+    test('named colors preserve token disambiguation, fallbacks, and maps', () => {
+      const output = Transform.compile({
+        moduleId: 'colors.ts',
+        source: Colors.source,
+      })
+
+      expect(output.css.includes('color:red;')).toMatchInlineSnapshot(`true`)
+      expect(output.css.includes('color_2e_red,blue)')).toMatchInlineSnapshot(
+        `true`,
+      )
+      expect(
+        output.css.includes('color:navy;color:rebeccapurple!important'),
+      ).toMatchInlineSnapshot(`true`)
+
+      const lines = output.css.split('\n')
+      const line = lines.findIndex((line) =>
+        line.includes('color:rebeccapurple!important'),
+      )
+
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          line: line + 1,
+          column: lines[line]!.indexOf('color:rebeccapurple!important'),
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 41,
+        "line": 5,
+        "name": "color",
+        "source": "colors.ts",
+      }
+    `)
+    })
+
+    test('named colors and token scheme changes match native browser colors', async () => {
+      const output = Transform.compile({
+        moduleId: 'colors.ts',
+        source: Colors.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage({ colorScheme: 'light' })
+
+        await page.setContent(
+          `<style>:root{color-scheme:light dark}${output.css}#theme-control{color:coral}@media(prefers-color-scheme:dark){#theme-control{color:gold}}</style><div id="literal" class="${module.literal.className}">Literal</div><div id="theme" class="${module.theme.className}">Theme</div><div id="theme-control">Control</div><div id="fallback" class="${module.fallback.className}">Fallback</div><div id="system" class="${module.system.className}">System</div><div id="system-control" style="color:CanvasText;background-color:Canvas;color-scheme:light dark;forced-color-adjust:none">Control</div>`,
+        )
+
+        expect(
+          await page
+            .locator('#literal')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+        expect(
+          await page
+            .locator('#literal')
+            .evaluate((element) => getComputedStyle(element).backgroundColor),
+        ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
+        expect(
+          await page
+            .locator('#fallback')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot(`"rgb(102, 51, 153)"`)
+        expect(
+          await page
+            .locator('#theme')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot(`"rgb(255, 127, 80)"`)
+
+        const lightSystem = await page
+          .locator('#system')
+          .evaluate((element) => getComputedStyle(element).color)
+
+        await page.emulateMedia({ colorScheme: 'dark' })
+
+        expect(
+          await page
+            .locator('#theme')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot(`"rgb(255, 215, 0)"`)
+        expect(
+          await page.evaluate(
+            () =>
+              getComputedStyle(document.getElementById('theme')!).color ===
+              getComputedStyle(document.getElementById('theme-control')!).color,
+          ),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          await page
+            .locator('#system')
+            .evaluate(
+              (element, light) => getComputedStyle(element).color !== light,
+              lightSystem,
+            ),
+        ).toMatchInlineSnapshot(`true`)
+
+        await page.emulateMedia({ forcedColors: 'active' })
+
+        expect(
+          await page.evaluate(() => {
+            const a = getComputedStyle(document.getElementById('system')!)
+            const b = getComputedStyle(
+              document.getElementById('system-control')!,
+            )
+
+            return ['color', 'background-color'].filter(
+              (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('columns', () => {
+  describe('compile', () => {
+    test('columns preserve tokens, count keywords, priority, and maps', () => {
+      const output = Transform.compile({
+        moduleId: 'columns.ts',
+        source: Columns.source,
+      })
+      const declarations: string[] = []
+
+      CssTree.walk(CssTree.parse(output.css), (node) => {
+        if (node.type === 'Declaration' && !node.property.startsWith('--'))
+          declarations.push(
+            `${node.property}:${CssTree.generate(node.value)}${node.important ? '!' : ''}`,
+          )
+      })
+
+      expect(declarations).toMatchInlineSnapshot(`
+      [
+        "column-count:2",
+        "column-width:auto",
+        "column-gap:12px",
+        "column-fill:auto",
+        "column-rule-color:var(--z-tpmo59r5ml4jf-zyzz-color_2e_rule,#06c)",
+        "column-rule-style:solid",
+        "column-rule-width:thin",
+        "orphans:2",
+        "widows:3",
+        "break-before:auto",
+        "break-before:column!",
+        "break-after:auto",
+        "break-inside:avoid-column",
+        "column-span:none",
+        "column-span:all",
+        "break-before:auto",
+        "column-count:auto",
+        "column-width:80px",
+        "column-gap:normal",
+        "column-fill:balance",
+      ]
+    `)
+
+      const lines = output.css.split('\n')
+      const line = lines.findIndex((line) =>
+        line.includes('break-before:column!important'),
+      )
+
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          column: lines[line]!.indexOf('break-before:column!important'),
+          line: line + 1,
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 49,
+        "line": 4,
+        "name": "breakBefore",
+        "source": "columns.ts",
+      }
+    `)
+    })
+
+    test('columns match browser rules and forced fragmentation', async () => {
+      const output = Transform.compile({
+        moduleId: 'columns.ts',
+        source: Columns.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>section{width:240px;height:100px}p{height:20px;margin:0}${output.css}</style><section id="actual" class="${module.columns.className}"><p>First</p><p class="${module.fragment.className}">Second</p></section><section id="control" style="${Columns.controls.columns}"><p>First</p><p style="${Columns.controls.fragment}">Second</p></section>`,
+        )
+
+        expect(
+          await page.locator('#actual').evaluate((element) => {
+            const children = element.querySelectorAll('p')
+
+            return (
+              children[1]!.getBoundingClientRect().left -
+              children[0]!.getBoundingClientRect().left
+            )
+          }),
+        ).toMatchInlineSnapshot(`126`)
+
+        for (const direction of ['ltr', 'rtl']) {
+          await page.locator('body').evaluate((element, direction) => {
+            element.style.direction = direction
+          }, direction)
+
+          expect(
+            await page.evaluate(() => {
+              const a = document.getElementById('actual')!
+              const b = document.getElementById('control')!
+
+              const properties = [
+                'column-count',
+                'column-width',
+                'column-gap',
+                'column-fill',
+                'column-rule-color',
+                'column-rule-style',
+                'column-rule-width',
+                'column-span',
+                'break-before',
+                'break-after',
+                'break-inside',
+                'orphans',
+                'widows',
+              ]
+
+              return ['', 'p', 'p:nth-child(2)'].filter((selector) => {
+                const x = selector ? a.querySelector(selector)! : a
+                const y = selector ? b.querySelector(selector)! : b
+                const xx = getComputedStyle(x),
+                  yy = getComputedStyle(y)
+
+                return (
+                  properties.some(
+                    (property) =>
+                      xx.getPropertyValue(property) !==
+                      yy.getPropertyValue(property),
+                  ) ||
+                  x.getBoundingClientRect().left -
+                    a.getBoundingClientRect().left !==
+                    y.getBoundingClientRect().left -
+                      b.getBoundingClientRect().left
+                )
+              })
+            }),
+          ).toMatchInlineSnapshot(`[]`)
+        }
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('conditions', () => {
+  const source =
+    'import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"},containerNames:["sidebar"],spacing:{small:"4px",large:"16px"}}); export const box=theme.css({padding:"small", ":hover":{padding:"large"}, "@media tablet..desktop":{width:"100px","&[data-active]":{height:"20px"}}, "@container sidebar >=card":{display:"grid"},"@supports (display:grid)":{gap:"small"},"@starting-style":{opacity:0}})()'
+  describe('compile', () => {
+    test('preserves media case and ignores selector comments for dynamic locality', () => {
+      const source =
+        'import {css} from "zyzz"; css((v:{alpha:number})=>({"&/* state, & */:hover":{opacity:v.alpha},"@media SCREEN":{color:"red"}}))'
+      const output = Transform.compile({ moduleId: 'comments.ts', source })
+
+      expect(output.css).toContain('@media SCREEN')
+      expect(output.css).toContain('opacity:var(')
+    })
+    test('reports invalid condition grammar at each authored key', () => {
+      const source =
+        'import {css} from "zyzz"; css({"@supports display: grid":{color:"red"},"@supports color: red":{color:"blue"}})'
+
+      try {
+        Transform.compile({ moduleId: 'locations.ts', source })
+        throw new Error('Expected source diagnostics')
+      } catch (error) {
+        if (!(error instanceof Source.ExtractError)) throw error
+
+        expect(error.diagnostics.map((diagnostic) => diagnostic.start)).toEqual(
+          [
+            source.indexOf('"@supports display'),
+            source.indexOf('"@supports color'),
+          ],
+        )
+      }
+    })
+    test('scopes pseudo selectors containing ampersands in data', () => {
+      const output = Transform.compile({
+        moduleId: 'data.ts',
+        source: `import { css } from 'zyzz'; css({ ':hover[data-token="a&b"]': { color: 'red' } })`,
+      })
+
+      expect(output.css).toContain('&:hover[data-token="a&b"]')
+      expect(() =>
+        Transform.compile({
+          moduleId: 'backdrop.ts',
+          source: `import { css } from 'zyzz'; css((v: { alpha: number }) => ({ '::backdrop': { opacity: v.alpha } }))`,
+        }),
+      ).toThrow()
+    })
+    test('maps condition keys and supports local dynamic selector lists', () => {
+      const source = `import {css} from 'zyzz'; css((v:{alpha:number})=>({'&:hover, &:focus':{opacity:v.alpha},'@media screen':{color:'red'}}))`
+      const output = Transform.compile({ moduleId: 'keys.ts', source })
+      const map = new Trace.TraceMap(output.cssMap)
+
+      for (const key of ['&:hover, &:focus', '@media screen']) {
+        const lines = output.css.slice(0, output.css.indexOf(key)).split('\n')
+        const location = Trace.originalPositionFor(map, {
+          line: lines.length,
+          column: lines.at(-1)!.length,
+        })
+
+        expect(location.column).toBe(source.indexOf(`'${key}'`))
+      }
+    })
+    test('freezes nested diagnostic paths and locations', () => {
+      try {
+        Reflect.apply(Style.define, undefined, [
+          { box: { ':hover': { color: [] } } },
+          {
+            locations: [
+              {
+                path: ['box', ':hover', 'color'],
+                source: 'input.ts',
+                start: 1,
+                end: 2,
+              },
+            ],
+          },
+        ])
+        throw new Error('Expected validation failure')
+      } catch (error) {
+        expect(error).toBeInstanceOf(Style.InvalidError)
+
+        if (!(error instanceof Style.InvalidError)) throw error
+
+        const diagnostic = error.diagnostics[0]!
+
+        expect(
+          [
+            diagnostic,
+            diagnostic.path,
+            diagnostic.location,
+            diagnostic.location?.path,
+          ].every(Object.isFrozen),
+        ).toBe(true)
+        expect(diagnostic.location?.path).toEqual(['box', ':hover', 'color'])
+      }
+    })
+
+    test('preserves explicit pseudo relationships and qualified media types', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'selectors.ts',
+          source:
+            'import {css} from "zyzz"; css({":where(.dark) &":{color:"red"},"@media only screen":{display:"grid"},"@media not print":{display:"block"}})',
+        }).css,
+      ).toMatchInlineSnapshot(
+        `
+      ".z-text-T1sQhj-0{:where(.dark) &{color:red;}}
+      .z-display-T1sQhj-1{@media only screen{display:grid;}}
+      .z-display-T1sQhj-2{@media not print{display:block;}}"
+    `,
+      )
+    })
+    test('maps declarations after matching text in feature conditions', () => {
+      const source =
+        'import {css} from "zyzz"; css({"@supports (display:grid)":{display:"grid"}})'
+      const output = Transform.compile({ moduleId: 'supports.ts', source })
+      const column = output.css.lastIndexOf('display:')
+
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          line: 1,
+          column,
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 59,
+        "line": 1,
+        "name": "display",
+        "source": "supports.ts",
+      }
+    `)
+    })
+    test('rejects private dynamic values on relationship subjects', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'sibling.ts',
+          source:
+            'import {css} from "zyzz"; css((v:{alpha:number})=>({"& + .peer":{opacity:v.alpha}}))',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: sibling.ts:73: Dynamic values require conditions that select the styled element.
+      sibling.ts:73: Expected a literal string or number; expressions are not evaluated.]
+    `)
+    })
+    test('preserves functional pseudo lists and multiline conditions', () => {
+      const output = Transform.compile({
+        moduleId: 'lines.ts',
+        source:
+          'import {css} from "zyzz"; css({":is(:hover,:focus)":{color:"red"},"@media (width > 1px)\\n and (hover: hover)":{padding:"2px"}})',
+      })
+
+      expect(output.css).toMatchInlineSnapshot(
+        `
+      ".z-text-cgeA-1-0{&:is(:hover,:focus){color:red;}}
+      .z-p-cgeA-1-1{@media (width > 1px)  and (hover: hover){padding:2px;}}"
+    `,
+      )
+    })
+    test('rejects malformed conditions in the direct compiler pipeline', () => {
+      expect(() =>
+        Css.compile({
+          styles: Style.define({ body: { '&[': { color: 'red' } } }),
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Style.InvalidError: ["body","&["]: Unbalanced condition delimiters.]`,
+      )
+    })
+    test('Chromium retains flat A/B/A overrides around conditional declarations', async () => {
+      const output = Css.compile({
+        styles: Style.define({
+          a: { marginLeft: '2px' },
+          b: { marginLeft: '4px', ':hover': { color: 'red' } },
+          c: { marginLeft: '2px' },
+        }),
+      })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      ".z-ml-2px-CgmKfH-0{margin-left:2px;}
+      .z-ml-4px-0kXiVX-0{margin-left:4px;}
+      .z-hover-text-red-0kXiVX-1{&:hover{color:red;}}
+      .z-ml-2px-HzYJKb-0{margin-left:2px;}"
+    `)
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div id="box" class="${output.classes.a} ${output.classes.b} ${output.classes.c}">Box</div>`,
+        )
+
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).marginLeft),
+        ).toMatchInlineSnapshot(`"2px"`)
+      } finally {
+        await browser.close()
+      }
+    })
+    test('maps nested declarations and passes through raw media lists', () => {
+      const source =
+        'import {css} from "zyzz"; css({color:"red","@media screen, print":{padding:"2px"}})'
+      const output = Transform.compile({ moduleId: 'mapped.ts', source })
+
+      expect(output.css).toMatchInlineSnapshot(
+        `
+      ".z-text-red-Crrvwo-0{color:red;}
+      .z-p-Crrvwo-1{@media screen, print{padding:2px;}}"
+    `,
+      )
+
+      const prefix = output.css.slice(0, output.css.indexOf('padding:'))
+      const lines = prefix.split('\n')
+      const column = lines.at(-1)!.length
+
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          line: lines.length,
+          column,
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 67,
+        "line": 1,
+        "name": "padding",
+        "source": "mapped.ts",
+      }
+    `)
+    })
+    test('requires nesting in every selector list member', () => {
+      for (const selector of ['&:hover, :focus', ':hover, &:focus'])
+        expect(() =>
+          Transform.compile({
+            moduleId: 'list.ts',
+            source: `import {css} from 'zyzz'; css({${JSON.stringify(selector)}:{color:'red'}})`,
+          }),
+        ).toThrow('Selector lists require explicit & selectors.')
+
+      expect(
+        Transform.compile({
+          moduleId: 'list.ts',
+          source: `import {css} from 'zyzz'; css({'&:is(:hover, :focus), &:active':{color:'red'}})`,
+        }).css,
+      ).toContain('&:is(')
+    })
+    test('requires explicit nesting in pseudo selector lists', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'list.ts',
+          source:
+            'import {css} from "zyzz"; css({":hover, :focus":{color:"red"}})',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: list.ts:31: Selector lists require explicit & selectors.]`,
+      )
+    })
+    test('preserves authored nesting and resolves distinct threshold domains', () => {
+      expect(Transform.compile({ moduleId: 'conditions.ts', source }).css)
+        .toMatchInlineSnapshot(`
+        ".z_theme-w47itm14d5v1i-theme{--z-tw47itm14d5v1i-theme-spacing_2e_small:4px;--z-tw47itm14d5v1i-theme-spacing_2e_large:16px;}
+        .z-p-aqP23N-0{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}
+        .z-hover-p-aqP23N-1{&:hover{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_large,16px);}}
+        .z-w-aqP23N-2{@media (48rem <= width < 64rem){width:100px;}}
+        .z-h-aqP23N-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
+        .z-display-aqP23N-4{@container sidebar (width >= 24rem){display:grid;}}
+        .z-gap-aqP23N-5{@supports (display:grid){gap:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}}
+        .z-opacity-aqP23N-6{@starting-style{opacity:0;}}"
+      `)
+    })
+    test('retains dynamic and theme variables inside nested contexts', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'dynamic.ts',
+          source:
+            'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{gap:"4px"}}); export const box=theme.css((values:{alpha:number})=>({":hover":{opacity:values.alpha,marginLeft:`calc(${theme.vars.spacing.gap} + 2px)`}}))',
+        }).css,
+      ).toMatchInlineSnapshot(`
+      ".z_theme-1h5dayl7tfv4v-theme{--z-t1h5dayl7tfv4v-theme-spacing_2e_gap:4px;}
+      .z-hover-opacity-ETOAsi-0{&:hover{opacity:var(--z-d1h5dayl7tfv4v-94-61-6c-70-68-61);}}
+      .z-hover-ml-ETOAsi-1{&:hover{margin-left:calc(var(--z-t1h5dayl7tfv4v-theme-spacing_2e_gap,4px) + 2px);}}"
+    `)
+    })
+    test('resolves imported thresholds through the packed contract', () => {
+      const library = Graph.compile({
+        modules: {
+          'theme.ts':
+            'import {Theme} from "zyzz"; export const theme=Theme.define({breakpoints:{tablet:"48rem"}})',
+        },
+      })
+
+      const output = Graph.compile({
+        contracts: { 'library.js': library.contracts['theme.ts']! },
+        imports: { 'app.ts': { library: 'library.js' } },
+        modules: {
+          'app.ts':
+            'import {theme} from "library"; export const box=theme.css({"@media tablet":{width:"100px"}})()',
+        },
+      })
+
+      expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1xn44ix111xh3v-theme{}
+      .z-w-0vXu7p-0{@media (width >= 48rem){width:100px;}}"
+    `)
+    })
+    test.each([
+      ['@media missing', 'Unknown query threshold.'],
+      ['@media desktop..tablet', 'Query range must increase.'],
+      ['@container missing >=card', 'Unknown container name.'],
+    ])('rejects invalid alias %s', (key, message) => {
+      try {
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {Theme} from "zyzz"; const theme=Theme.define({breakpoints:{tablet:"48rem",desktop:"64rem"},containers:{card:"24rem"}}); theme.css({${JSON.stringify(key)}:{width:"1px"}})`,
+        })
+        throw new Error('Expected rejection')
+      } catch (error) {
+        expect(
+          (error as Error).message.endsWith(message!),
+        ).toMatchInlineSnapshot(`true`)
+      }
+    })
+    test('rejects malformed selector syntax before emission', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: 'import {css} from "zyzz"; css({"&[":{color:"red"}})',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:31: Unbalanced condition delimiters.]`,
+      )
+    })
+    test('Chromium resolves named container thresholds', async () => {
+      const output = Transform.compile({
+        moduleId: 'container.ts',
+        source:
+          'import {Theme} from "zyzz"; const theme=Theme.define({containers:{card:"24rem"},containerNames:["sidebar"]}); export const box=theme.css({width:"40px","@container sidebar >=card":{width:"100px"}})()',
+      })
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><section id="container" style="container-type:inline-size;container-name:sidebar;width:500px"><div id="box" class="${Object.values(output.classes)[0]}"></div></section>`,
+        )
+
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"100px"`)
+
+        await page
+          .locator('#container')
+          .evaluate(
+            (element) => ((element as HTMLElement).style.width = '300px'),
+          )
+
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"40px"`)
+      } finally {
+        await browser.close()
+      }
+    })
+    test('Chromium evaluates pointer and viewport conditions with ordered declarations', async () => {
+      const output = Transform.compile({
+        moduleId: 'browser.ts',
+        source:
+          'import {css} from "zyzz"; export const box=css({width:"40px",height:"20px",":hover":{width:"80px"},"@media (width >= 800px)":{height:"40px"},"&[data-active]":{opacity:0.5}})()',
+      })
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage({
+          viewport: { width: 600, height: 500 },
+        })
+
+        await page.setContent(
+          `<style>${output.css}</style><div id="box" class="${Object.values(output.classes)[0]}"></div>`,
+        )
+
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"40px"`)
+
+        await page.locator('#box').hover()
+
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"80px"`)
+
+        await page.setViewportSize({ width: 900, height: 500 })
+
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).height),
+        ).toMatchInlineSnapshot(`"40px"`)
+
+        await page
+          .locator('#box')
+          .evaluate((element) => element.setAttribute('data-active', ''))
+
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).opacity),
+        ).toMatchInlineSnapshot(`"0.5"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('conformance', () => {
+  describe('compile', () => {
+    test('CSS conformance enforces full coverage and exact threshold misses', async () => {
+      const root = Path.resolve(import.meta.dirname, '../..')
+
+      const inventory = JSON.parse(
+        await Fs.readFile(
+          Path.join(root, 'test/conformance/coverage.json'),
+          'utf8',
+        ),
+      ) as {
+        families: {
+          properties: Record<string, { grammar: string; status: string }>
+        }
+      }
+
+      const current = ChildProcess.spawnSync(
+        process.execPath,
+        ['scripts/css-conformance.ts', '--require-full'],
+        { cwd: root, encoding: 'utf8', timeout: 10_000 },
+      )
+
+      expect(current.status).toMatchInlineSnapshot(`0`)
+      expect(current.stderr).toMatchInlineSnapshot(`""`)
+      expect(
+        current.stdout.includes(
+          'Partial properties receive no completion credit.',
+        ),
+      ).toMatchInlineSnapshot(`true`)
+
+      const directory = await Fs.mkdtemp(
+        Path.join(root, '.fixture-conformance-threshold-'),
+      )
+
+      try {
+        // These inventories test threshold arithmetic, not implementation conformance.
+        for (const entry of Object.values(inventory.families.properties))
+          entry.status = 'supported'
+
+        const file = Path.join(directory, 'coverage.json')
+
+        await Fs.writeFile(file, JSON.stringify(inventory))
+
+        const complete = ChildProcess.spawnSync(
+          process.execPath,
+          ['scripts/css-conformance.ts', '--inventory', file, '--require-full'],
+          { cwd: root, encoding: 'utf8', timeout: 10_000 },
+        )
+
+        expect(complete.status).toMatchInlineSnapshot(`0`)
+        expect(
+          complete.stdout.includes('670/670 (100.00%)'),
+        ).toMatchInlineSnapshot(`true`)
+
+        inventory.families.properties.color!.status = 'partial'
+        await Fs.writeFile(file, JSON.stringify(inventory))
+
+        const partial = ChildProcess.spawnSync(
+          process.execPath,
+          ['scripts/css-conformance.ts', '--inventory', file, '--require-full'],
+          { cwd: root, encoding: 'utf8', timeout: 10_000 },
+        )
+
+        expect(partial.status).toMatchInlineSnapshot(`1`)
+        expect(partial.stderr).toMatchInlineSnapshot(
+          `"CSS property conformance is below 100%: 669/670 fully supported; 1 incomplete.\n"`,
+        )
+        expect(
+          partial.stdout.includes('| color | partial |'),
+        ).toMatchInlineSnapshot(`true`)
+
+        inventory.families.properties.color!.status = 'supported'
+        inventory.families.properties.color!.grammar = 'unreviewed'
+        await Fs.writeFile(file, JSON.stringify(inventory))
+
+        const stale = ChildProcess.spawnSync(
+          process.execPath,
+          ['scripts/css-conformance.ts', '--inventory', file, '--require-full'],
+          { cwd: root, encoding: 'utf8', timeout: 10_000 },
+        )
+
+        expect(stale.status).toMatchInlineSnapshot(`1`)
+        expect(
+          stale.stderr.includes('Changed properties: color'),
+        ).toMatchInlineSnapshot(`true`)
+      } finally {
+        await Fs.rm(directory, { force: true, recursive: true })
+      }
+    })
+  })
+})
+
+describe('containerSizing', () => {
+  describe('compile', () => {
+    test('container sizing preserves fallbacks and field policies', () => {
+      const output = Transform.compile({
+        moduleId: 'sizing.ts',
+        source: ContainerSizing.source,
+      })
+
+      expect(output.css.match(/container-type:[^;}]+/g)).toMatchInlineSnapshot(`
+      [
+        "container-type:normal",
+        "container-type:inline-size!important",
+      ]
+    `)
+      expect(output.css.includes('field-sizing:content')).toMatchInlineSnapshot(
+        `true`,
+      )
+      expect(
+        output.css.includes('interpolate-size:allow-keywords'),
+      ).toMatchInlineSnapshot(`true`)
+    })
+
+    test('container queries and field growth match native browser controls', async () => {
+      const output = Transform.compile({
+        moduleId: 'sizing.ts',
+        source: ContainerSizing.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}input{font:16px monospace}.child{height:10px;width:10px}@container(min-width:150px){.child{width:100px}}</style><div id="container" class="${module.container.className}"><div class="child"></div></div><div id="control" style="container-type:inline-size;width:200px"><div class="child"></div></div><input id="field" class="${module.field.className}" value="a"><input id="field-control" style="field-sizing:content;interpolate-size:allow-keywords" value="a"><input id="fixed" style="field-sizing:fixed" value="a">`,
+        )
+
+        expect(
+          await page
+            .locator('#container .child')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"100px"`)
+
+        await page.evaluate(() => {
+          for (const id of ['container', 'control'])
+            document.getElementById(id)!.style.width = '100px'
+        })
+
+        expect(
+          await page
+            .locator('#container .child')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"10px"`)
+        expect(
+          await page.evaluate(
+            () =>
+              document
+                .querySelector('#container .child')!
+                .getBoundingClientRect().width ===
+              document.querySelector('#control .child')!.getBoundingClientRect()
+                .width,
+          ),
+        ).toMatchInlineSnapshot(`true`)
+
+        const initial = await page
+          .locator('#field')
+          .evaluate((element) => element.getBoundingClientRect().width)
+        const fixed = await page
+          .locator('#fixed')
+          .evaluate((element) => element.getBoundingClientRect().width)
+
+        for (const id of ['field', 'field-control', 'fixed'])
+          await page.locator(`#${id}`).fill('a much longer input value')
+
+        expect(
+          await page
+            .locator('#field')
+            .evaluate(
+              (element, width) => element.getBoundingClientRect().width > width,
+              initial,
+            ),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          await page
+            .locator('#fixed')
+            .evaluate(
+              (element, width) =>
+                element.getBoundingClientRect().width === width,
+              fixed,
+            ),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          await page.evaluate(
+            () =>
+              document.getElementById('field')!.getBoundingClientRect()
+                .width ===
+              document.getElementById('field-control')!.getBoundingClientRect()
+                .width,
+          ),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          await page
+            .locator('#field')
+            .evaluate((element) =>
+              getComputedStyle(element).getPropertyValue('interpolate-size'),
+            ),
+        ).toMatchInlineSnapshot(`"allow-keywords"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('contributions', () => {
+  describe('stylesheet contributions', () => {
+    test('preserves layer discovery order and omits optional font descriptors', () => {
+      const output = Transform.compile({
+        moduleId: 'effects.ts',
+        source: `import {layers,fontFace,global} from 'zyzz/web'; layers(['reset','base']); layers(['components']); fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined}); global({'body::before':{content:'"url(relative)"'}})`,
+      })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      "@layer reset,base,components;
+      @font-face{font-family:App;src:url(/app.woff2);}
+      body::before{content:"url(relative)";}"
+    `)
+    })
+    test('rejects conditional classes and shadowed undefined descriptors', () => {
+      for (const source of [
+        `class Never { static { global({body:{color:'red'}}) } }`,
+        `const unused = false ? class { static { global({body:{color:'red'}}) } } : null`,
+        `const undefined = 'bold'; fontFace({fontFamily:'App',src:'url(/app.woff2)',fontWeight:undefined})`,
+      ])
+        expect(() =>
+          Transform.compile({
+            moduleId: 'bad.ts',
+            source: `import {global,fontFace} from 'zyzz/web'; ${source}`,
+          }),
+        ).toThrow()
+    })
+    test('locates a malformed later contribution at its own span', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'located.ts',
+          source: `import {global} from 'zyzz/web'; global({body:{color:'red'}}); global({body:{color:unknown}})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: located.ts:63: Stylesheet contributions require literal data.]`,
+      )
+    })
+
+    test('Chromium applies global layers and static keyframes', async () => {
+      const output = Transform.compile({
+        moduleId: 'browser.ts',
+        source:
+          'import {global,keyframes,layers} from "zyzz/web"; layers(["reset","base"]); const fade=keyframes({from:{opacity:0},to:{opacity:1}}); global({"@layer reset":{body:{margin:"20px"}},"@layer base":{body:{margin:0}},body:{animationName:fade,animationDuration:"1s",animationTimingFunction:"linear",animationDelay:"-0.5s",animationPlayState:"paused"}})',
+      })
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent('<body>Animation</body>')
+        await page.addStyleTag({ content: output.css })
+
+        expect(
+          await page.evaluate(() => getComputedStyle(document.body).margin),
+        ).toMatchInlineSnapshot(`"0px"`)
+        expect(
+          await page.evaluate(() => getComputedStyle(document.body).opacity),
+        ).toMatchInlineSnapshot(`"0.5"`)
+      } finally {
+        await browser.close()
+      }
+    })
+    test('extracts global rules, fonts, layers and live animation names', () => {
+      const result = Transform.compile({
+        moduleId: 'app/styles.ts',
+        source:
+          'import {css} from "zyzz"; import {global,fontFace,keyframes,layers} from "zyzz/web"; layers(["reset","base"]); global({"@layer reset":{"body":{margin:0}},"body":{color:"red"}}); fontFace({fontFamily:"App",src:"url(/font.woff2)",fontDisplay:"swap"}); const unused=keyframes({from:{opacity:0},to:{opacity:1}}); const fade=keyframes({from:{opacity:0},to:{opacity:1}}); export const box=css({animationName:fade})()',
+      })
+
+      expect(result.css).toMatchInlineSnapshot(`
+      "@layer reset,base;
+      @layer reset{body{margin:0;}}
+      body{color:red;}
+      @font-face{font-family:App;src:url(/font.woff2);font-display:swap;}
+      @keyframes z-k11238c6bg65w8-66-61-64-65{from{opacity:0;}to{opacity:1;}}
+      .z-animation-name-xoZ2ZE{animation-name:z-k11238c6bg65w8-66-61-64-65;}"
+    `)
+      expect(result.code).toMatchInlineSnapshot(
+        `"  void 0; void 0; void 0; const unused="z-k11238c6bg65w8-75-6e-75-73-65-64"; const fade="z-k11238c6bg65w8-66-61-64-65"; export const box=({className:"z-animation-name-xoZ2ZE"})"`,
+      )
+    })
+    test('keeps theme references live in global rules', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'app.ts',
+          source:
+            'import {Theme} from "zyzz"; import {global} from "zyzz/web"; const theme=Theme.define({color:{ink:"red"}}); global({body:{color:theme.tokens.color.ink}})',
+        }).css,
+      ).toMatchInlineSnapshot(`
+      "body{color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,red);}
+      .z_theme-1e8a67z1uaws1j-theme{--z-t1e8a67z1uaws1j-theme-color_2e_ink:red;}"
+    `)
+    })
+    test('rejects invalid contributions', () => {
+      const failures = [
+        'if(true) global({body:{color:"red"}})',
+        'global({"[":{color:"red"}})',
+        'layers(["one","two"]); layers(["two","one"])',
+        'export const frames=keyframes({"101%":{opacity:0}})',
+      ].map((source) => {
+        try {
+          Transform.compile({
+            moduleId: 'bad.ts',
+            source:
+              'import {global,layers,keyframes} from "zyzz/web";' + source,
+          })
+
+          return 'accepted'
+        } catch (error) {
+          return (error as Error).message
+        }
+      })
+
+      expect(failures).toMatchInlineSnapshot(`
+      [
+        "bad.ts:58: Stylesheet contributions require direct module-level calls and constant named stylesheet bindings.",
+        "bad.ts:49: Unexpected end of input",
+        "bad.ts:49: ["contributions"]: Conflicting layer order constraints.",
+        "bad.ts:69: Keyframe stops require from, to, 0–100% offsets, or named timeline percentages.",
+      ]
+    `)
+    })
+    test('collects unimported effects once and replaces the snapshot on deletion', () => {
+      const compiler = Graph.create()
+
+      const modules = {
+        'app.ts':
+          'import {css} from "zyzz"; export const box=css({color:"blue"})()',
+        'global.ts':
+          'import {global,layers} from "zyzz/web"; layers(["reset","app"]); global({body:{margin:0}})',
+      }
+
+      const first = compiler.compile({ modules })
+
+      expect({
+        shared: first.sharedCss,
+        modules: Object.values(first.modules).map((value) => value.css),
+      }).toMatchInlineSnapshot(`
+      {
+        "modules": [
+          ".z-text-blue-Jgxd-Q{color:blue;}",
+          "",
+        ],
+        "shared": "@layer reset,app;
+      body{margin:0;}",
+      }
+    `)
+      expect(
+        compiler.compile({ modules: { 'app.ts': modules['app.ts'] } })
+          .sharedCss,
+      ).toMatchInlineSnapshot(`undefined`)
+    })
+  })
+})
+
+describe('controls', () => {
+  describe('compile', () => {
+    test('input controls preserve numeric tab fallbacks, touch combinations, and maps', () => {
+      const output = Transform.compile({
+        moduleId: 'controls.ts',
+        source: Controls.source,
+      })
+
+      expect(output.css.match(/tab-size:[^;}]+/g)).toMatchInlineSnapshot(`
+      [
+        "tab-size:4",
+        "tab-size:8!important",
+      ]
+    `)
+      expect(
+        output.css.includes('touch-action:pinch-zoom pan-left pan-up'),
+      ).toMatchInlineSnapshot(`true`)
+
+      const lines = output.css.split('\n')
+      const line = lines.findIndex((line) =>
+        line.includes('tab-size:8!important'),
+      )
+
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          line: line + 1,
+          column: lines[line]!.indexOf('tab-size:8!important'),
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 163,
+        "line": 3,
+        "name": "tabSize",
+        "source": "controls.ts",
+      }
+    `)
+    })
+
+    test('list markers match native pixels and input controls match independent CSS', async () => {
+      const output = Transform.compile({
+        moduleId: 'controls.ts',
+        source: Controls.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>ol{margin:0;padding:10px;width:180px;font:16px monospace;background:white}pre{display:inline-block;font:16px monospace}${output.css}</style><ol id="list" class="${module.list.className}"><li>First</li><li>Second</li></ol><ol id="list-control" style="${Controls.controls.list}"><li>First</li><li>Second</li></ol><ol id="unmarked" style="list-style-type:none"><li>First</li><li>Second</li></ol><pre id="input" class="${module.input.className}">a\tb</pre><pre id="input-control" style="${Controls.controls.input}">a\tb</pre>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const properties = {
+              input: [
+                'appearance',
+                'overflow-anchor',
+                'overscroll-behavior-block',
+                'overscroll-behavior-inline',
+                'scrollbar-width',
+                'tab-size',
+                'text-size-adjust',
+                'touch-action',
+              ],
+              list: [
+                'line-break',
+                'list-style-position',
+                'list-style-type',
+                'text-spacing-trim',
+                'unicode-bidi',
+              ],
+            }
+
+            return Object.entries(properties).flatMap(([name, keys]) => {
+              const a = getComputedStyle(document.getElementById(name)!)
+              const b = getComputedStyle(
+                document.getElementById(`${name}-control`)!,
+              )
+
+              return keys.filter(
+                (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+              )
+            })
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+
+        const actual = await page.locator('#list').screenshot()
+        const control = await page.locator('#list-control').screenshot()
+        const unmarked = await page.locator('#unmarked').screenshot()
+
+        expect(actual.equals(control)).toMatchInlineSnapshot(`true`)
+        expect(actual.equals(unmarked)).toMatchInlineSnapshot(`false`)
+        expect(
+          await page.evaluate(
+            () =>
+              document.getElementById('input')!.getBoundingClientRect()
+                .width ===
+              document.getElementById('input-control')!.getBoundingClientRect()
+                .width,
+          ),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          await page
+            .locator('#input')
+            .evaluate((element) => getComputedStyle(element).tabSize),
+        ).toMatchInlineSnapshot(`"8"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('corners', () => {
+  describe('compile', () => {
+    test('corner and layout values match independent grammar', () => {
+      const lexer = Conformance.lexer()
+
+      for (const declarations of Object.values(Corners.styles)) {
+        for (const [property, value] of Object.entries(declarations)) {
+          const output = Transform.compile({
+            moduleId: 'corners.ts',
+            source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
+          })
+          const name = Conformance.name(property)
+
+          expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
+            `true`,
+          )
+          expect(
+            lexer.matchProperty(name, String(value)).error,
+          ).toMatchInlineSnapshot(`null`)
+        }
+      }
+    })
+    test('bevel clipping matches a native polygon and all preserves authored overrides', async () => {
+      const output = Transform.compile({
+        moduleId: 'corners.ts',
+        source: Corners.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div id="bevel" class="${module.bevel.className}" style="position:absolute;left:0;top:0"></div><div id="control" style="position:absolute;left:150px;top:0;width:100px;height:100px;background:blue;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)"></div><div id="reset" class="${module.first.className} ${module.reset.className} ${module.last.className}"></div><div id="grid" class="${module.grid.className}"></div>`,
+        )
+
+        expect(
+          await page.evaluate(() => CSS.supports('corner-shape', 'bevel')),
+        ).toMatchInlineSnapshot(`true`)
+
+        for (const point of [
+          { x: 20, y: 20, inside: false },
+          { x: 30, y: 30, inside: true },
+          { x: 50, y: 50, inside: true },
+        ]) {
+          expect(
+            await page.evaluate(
+              ({ x, y, inside }) =>
+                (document.elementFromPoint(x, y)?.id === 'bevel') === inside,
+              point,
+            ),
+          ).toMatchInlineSnapshot(`true`)
+          expect(
+            await page.evaluate(
+              ({ x, y, inside }) =>
+                (document.elementFromPoint(x + 150, y)?.id === 'control') ===
+                inside,
+              point,
+            ),
+          ).toMatchInlineSnapshot(`true`)
+        }
+
+        expect(
+          await page
+            .locator('#reset')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+        expect(
+          await page
+            .locator('#reset')
+            .evaluate((element) => getComputedStyle(element).fontWeight),
+        ).toMatchInlineSnapshot(`"700"`)
+        expect(
+          await page
+            .locator('#grid')
+            .evaluate((element) => getComputedStyle(element).rowGap),
+        ).toMatchInlineSnapshot(`"10px"`)
+        expect(
+          await page
+            .locator('#grid')
+            .evaluate((element) => getComputedStyle(element).columnGap),
+        ).toMatchInlineSnapshot(`"12px"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('custom', () => {
+  const source = `import { css } from 'zyzz';
+export const parent = css({'--Accent':'red', '--accent':'blue', '--data':'"a;b:c"', '--count':2})();
+export const child = css({all:'initial', color:'var(--Accent)', backgroundColor:'var(--accent)', '--choice':['red','blue!']})();`
+
+  describe('compile', () => {
+    test('preserves case-sensitive names and custom declaration data', () => {
+      const output = Transform.compile({ moduleId: 'custom.ts', source })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      ".z---Accent-red-laDu-r{--Accent:red;}
+      .z---accent-blue-laDu-r{--accent:blue;}
+      .z---data-laDu-r{--data:"a;b:c";}
+      .z---count-2-laDu-r{--count:2;}
+      .z-all-initial-N2sItM-0{all:initial;}
+      .z-text-N2sItM-1{color:var(--Accent);}
+      .z-bg-N2sItM-2{background-color:var(--accent);}
+      .z---choice-laDu-r{--choice:red;--choice:blue!important;}"
+    `)
+    })
+
+    test('escaped punctuation retains custom-property data and importance', () => {
+      const styles = Style.define({
+        punctuation: {
+          '--escaped': 'hello\\!',
+          '--escapedWord': 'hello\\!important',
+          '--even': 'hello\\\\!',
+          '--space': 'hello\\ !',
+        },
+      })
+
+      expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
+        `
+      ".z---escaped-tMe2BH{--escaped:hello\\!;}
+      .z---escapedWord-l-_WbH{--escapedWord:hello\\!important;}
+      .z---even-p0VvrW{--even:hello\\\\!important;}
+      .z---space-U35CMT{--space:hello\\ !important;}"
+    `,
+      )
+    })
+
+    test('all preserves inherited custom properties and direction', async () => {
+      const output = Transform.compile({ moduleId: 'custom.ts', source })
+      const javascript = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(javascript.code).toString('base64')}`
+      )
+      const classes = ['parent', 'child'].map(
+        (name) => module[name].className as string,
+      )
+
+      expect(classes.length).toMatchInlineSnapshot(`2`)
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div class="${classes[0]}" dir="rtl"><div id="child" class="${classes[1]}"></div></div>`,
+        )
+
+        const result = await page.locator('#child').evaluate((element) => {
+          const style = getComputedStyle(element)
+
+          return {
+            accent: style.getPropertyValue('--Accent'),
+            background: style.backgroundColor,
+            choice: style.getPropertyValue('--choice'),
+            color: style.color,
+            direction: style.direction,
+          }
+        })
+
+        expect(result).toMatchInlineSnapshot(`
+        {
+          "accent": "red",
+          "background": "rgb(0, 0, 255)",
+          "choice": "blue",
+          "color": "rgb(255, 0, 0)",
+          "direction": "rtl",
+        }
+      `)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('descriptorAcceptance', () => {
+  describe('compile', () => {
+    for (const family of Object.keys(
+      NamedDescriptors.definitions,
+    ) as (keyof typeof NamedDescriptors.definitions)[]) {
+      test(`retains every ${family} descriptor across packed publication with maps`, () => {
+        const source = NamedDescriptors.source(family)
+        const direct = Transform.compile({ moduleId: 'names.ts', source })
+        const library = Graph.compile({ modules: { 'names.ts': source } })
+        const packed = Graph.compile({
+          contracts: { 'lib/names.js': library.contracts['names.ts']! },
+          imports: { 'app.ts': { lib: 'lib/names.js' } },
+          modules: {
+            'app.ts':
+              family === 'font' ? `import 'lib';` : `export {name} from 'lib';`,
+          },
+        })
+        for (const key of NamedDescriptors.keys[family]) {
+          expect(direct.css.includes(`${key}:`)).toMatchInlineSnapshot('true')
+          expect(packed.sharedCss?.includes(`${key}:`)).toMatchInlineSnapshot(
+            'true',
+          )
+        }
+        expect(direct.css.includes('@layer names')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(
+          packed.sharedCss?.includes('@media print'),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          packed.sharedCss?.includes('body{color:red;}'),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+            line: 1,
+            column: 0,
+          }).source,
+        ).toMatchInlineSnapshot('"lib/names.ts"')
+        expect(
+          Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+            line: 1,
+            column: 0,
+          }).line,
+        ).toMatchInlineSnapshot('2')
+      })
+    }
+    test('rejects invalid font counter and palette descriptor grammar before output', () => {
+      const failures = [
+        `export const x=counterStyle({system:'numeric',symbols:'"0"'});`,
+        `export const x=counterStyle({system:'additive',additiveSymbols:'1 "I",10 "X"'});`,
+        `export const x=counterStyle({symbols:'"x"',range:'5 1'});`,
+        `export const x=counterStyle({symbols:'"x"',pad:'nope'});`,
+        `fontFace({fontFamily:'Body',src:'url(/a)',fontWeight:'garbage'});`,
+        `fontFace({fontFamily:'Body',src:'url(/a)',sizeAdjust:'-10%'});`,
+        `export const x=fontPaletteValues({fontFamily:'Body',overrideColors:'0 currentColor'});`,
+        `export const x=fontPaletteValues({fontFamily:'Body',overrideColors:'0 color-mix(in srgb,red,currentColor)'});`,
+        `export const x=fontPaletteValues({fontFamily:'Body',overrideColors:'-1 red'});`,
+      ].map((source) => {
+        try {
+          Transform.compile({
+            moduleId: 'invalid.ts',
+            source: `import {counterStyle,fontFace,fontPaletteValues} from 'zyzz/web';${source}`,
+          })
+          return 'accepted'
+        } catch (error) {
+          if (!(error instanceof Source.ExtractError)) throw error
+          return error.diagnostics.map((diagnostic) => diagnostic.message)
+        }
+      })
+      expect(failures).toMatchInlineSnapshot(`
+      [
+        [
+          "Numeric and alphabetic counters require at least two symbols.",
+        ],
+        [
+          "Additive symbol weights must strictly descend.",
+        ],
+        [
+          "Counter ranges must have increasing bounds.",
+        ],
+        [
+          "Invalid @counter-style pad: Mismatch
+        syntax: <integer [0,∞]> && <symbol>
+         value: nope
+        --------^",
+        ],
+        [
+          "Invalid @font-face font-weight: Mismatch
+        syntax: <font-weight-absolute>{1,2}
+         value: garbage
+        --------^",
+        ],
+        [
+          "@font-face size-adjust cannot be negative.",
+        ],
+        [
+          "Palette overrides require absolute colors.",
+        ],
+        [
+          "Palette overrides require absolute colors.",
+        ],
+        [
+          "Invalid @font-palette-values override-colors: Mismatch
+        syntax: [ <integer [0,∞]> <color> ]#
+         value: -1 red
+        --------^",
+        ],
+      ]
+    `)
+    })
+  })
+})
+
+describe('documentRules', () => {
+  describe('compile', () => {
+    test('accepts selector lists, CSS identifiers, optional blocks, and authored descriptor order', () => {
+      const output = Transform.compile({
+        moduleId: 'document.ts',
+        source: `import {page,fontFeatureValues,viewTransition} from 'zyzz/web';
+page({selector:':first, :left',descriptors:{size:'landscape JIS-B4'}},undefined);
+fontFeatureValues({families:'Body',features:{'@swash':undefined,'@styleset':{'--ornament':1,'café':[1,3],'𝒜lternate':2}},fontDisplay:' SWAP '},void 0);
+viewTransition({navigation:' AUTO '});`,
+      })
+      expect(output.css).toMatchInlineSnapshot(`
+      "@page :first, :left{size:landscape JIS-B4;}
+      @font-feature-values Body{@styleset{--ornament:1;café:1 3;𝒜lternate:2;}font-display: SWAP ;}
+      @view-transition{navigation: AUTO ;}"
+    `)
+    })
+    test('rejects malformed feature values in packed contracts', () => {
+      const library = Graph.compile({
+        modules: {
+          'library.ts': `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Body',features:{'@swash':{flow:1}}});`,
+        },
+      })
+      const contract = JSON.parse(library.contracts['library.ts']!)
+      contract.stylesheets[0].css =
+        '@font-feature-values Body{@swash{flow:foo;}}'
+      expect(() =>
+        Graph.compile({
+          contracts: { 'lib.js': JSON.stringify(contract) },
+          imports: { 'app.ts': { lib: 'lib.js' } },
+          modules: { 'app.ts': `import 'lib'` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: lib.js:0: Invalid library contract: Invalid value]`,
+      )
+    })
+    test('preserves CSS escapes in family arrays', () => {
+      const output = Transform.compile({
+        moduleId: 'family.ts',
+        source: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:['A\\tB'],features:{'@swash':{flow:1}}});`,
+      })
+      expect(output.css).toMatchInlineSnapshot(
+        `"@font-feature-values "A\\9 B"{@swash{flow:1;}}"`,
+      )
+    })
+    test('rejects feature indexes outside safe decimal integers', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'index.ts',
+          source: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Body',features:{'@swash':{flow:1e21}}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: index.ts:43: Expected feature aliases with nonnegative integer indices.]`,
+      )
+    })
+    test('rejects reserved aliases, malformed families, and table-only page properties', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Body',fontDisplay:'blocK',features:{}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: bad.ts:43: Invalid font display descriptor.]`,
+      )
+      for (const name of [
+        'initial',
+        'inherit',
+        'unset',
+        'revert',
+        'revert-layer',
+        'default',
+      ])
+        expect(() =>
+          Transform.compile({
+            moduleId: 'bad.ts',
+            source: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Body',features:{'@styleset':{'${name}':1}}});`,
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: bad.ts:43: Expected feature aliases with nonnegative integer indices.]`,
+        )
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'123',features:{}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: bad.ts:43: Unexpected token Number { has_sign: false, value: 123.0, int_value: Some(123) }]`,
+      )
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {page} from 'zyzz/web';page({descriptors:{borderCollapse:'collapse'}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: bad.ts:30: Unsupported page or page-margin declaration.]`,
+      )
+    })
+    test('keeps declarations after feature blocks mapped to their source', () => {
+      const output = Transform.compile({
+        moduleId: 'maps.ts',
+        source: `import {css} from 'zyzz';import {fontFeatureValues} from 'zyzz/web';
+fontFeatureValues({families:'Body',features:{'@styleset':{'\\\\65 ditorial':[1,3]}}});
+export namespace styles {
+  export const text = css({color:'red'})
+}`,
+      })
+      const line =
+        output.css.split('\n').findIndex((line) => line.includes('color:red')) +
+        1
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          line,
+          column: 0,
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 22,
+        "line": 4,
+        "name": "style-1mqnwyd110b1y9-202",
+        "source": "maps.ts",
+      }
+    `)
+    })
+    test('preserves page descriptors and every margin box in authored order', () => {
+      const margins = [
+        'top-left-corner',
+        'top-left',
+        'top-center',
+        'top-right',
+        'top-right-corner',
+        'bottom-left-corner',
+        'bottom-left',
+        'bottom-center',
+        'bottom-right',
+        'bottom-right-corner',
+        'left-top',
+        'left-middle',
+        'left-bottom',
+        'right-top',
+        'right-middle',
+        'right-bottom',
+      ]
+      const output = Transform.compile({
+        moduleId: 'print.ts',
+        source: `import {page} from 'zyzz/web';page({selector:':first',descriptors:{size:'A4 landscape',margin:'2cm',${margins.map((name, index) => JSON.stringify('@' + name) + ':{content:' + JSON.stringify('"' + index + '"') + '}').join(',')},pageOrientation:'upright',marks:'crop cross',bleed:'3mm'}},{within:['@media print']});`,
+      })
+      expect(output.css).toMatchInlineSnapshot(
+        `"@media print{@page :first{size:A4 landscape;margin:2cm;@top-left-corner{content:"0";}@top-left{content:"1";}@top-center{content:"2";}@top-right{content:"3";}@top-right-corner{content:"4";}@bottom-left-corner{content:"5";}@bottom-left{content:"6";}@bottom-center{content:"7";}@bottom-right{content:"8";}@bottom-right-corner{content:"9";}@left-top{content:"10";}@left-middle{content:"11";}@left-bottom{content:"12";}@right-top{content:"13";}@right-middle{content:"14";}@right-bottom{content:"15";}page-orientation:upright;marks:crop cross;bleed:3mm;}}"`,
+      )
+      expect(output.code).toMatchInlineSnapshot(`"void 0;"`)
+    })
+    test('retains feature blocks and view-transition descriptors in packed libraries', () => {
+      const library = Graph.compile({
+        modules: {
+          'document.ts': `import {fontFeatureValues,viewTransition} from 'zyzz/web';fontFeatureValues({families:['Body','Alternate'],fontDisplay:'swap',features:{'@annotation':{circled:1},'@character-variant':{alternate:[2,3]},'@ornaments':{fleuron:4},'@styleset':{editorial:[1,2]},'@stylistic':{round:3},'@swash':{flow:1}}});viewTransition({navigation:'auto',types:'slide forwards'},{within:['@layer transitions']});viewTransition({navigation:'none'},{within:['@media (prefers-reduced-motion: reduce)']});`,
+        },
+      })
+      const output = Graph.compile({
+        contracts: { 'lib/document.js': library.contracts['document.ts']! },
+        imports: { 'app.ts': { lib: 'lib/document.js' } },
+        modules: { 'app.ts': `import 'lib'` },
+      })
+      expect(output.sharedCss).toMatchInlineSnapshot(`
+      "@font-feature-values "Body","Alternate"{font-display:swap;@annotation{circled:1;}@character-variant{alternate:2 3;}@ornaments{fleuron:4;}@styleset{editorial:1 2;}@stylistic{round:3;}@swash{flow:1;}}
+      @layer transitions{@view-transition{navigation:auto;types:slide forwards;}}
+      @media (prefers-reduced-motion: reduce){@view-transition{navigation:none;}}"
+    `)
+    })
+    test('rejects descriptors in the wrong page context', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {page} from 'zyzz/web';page({descriptors:{'@top-center':{size:'A4'}}})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: bad.ts:30: Unsupported page or page-margin declaration.]`,
+      )
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Body',features:{'@swash':{flow:[1,2]}}})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: bad.ts:43: Expected feature aliases with nonnegative integer indices.]`,
+      )
+    })
+  })
+})
+
+describe('dynamic', () => {
+  const source = [
+    'import { css } from "zyzz";',
+    'export const bar = css((values: { amount: `${number}%`; gap: `${number}px`; alpha: number }) => ({ display:"block", width:values.amount, marginLeft:`calc(${values.gap} + 2px)`,opacity:values.alpha }));',
+    'export const first = bar({amount:"25%",gap:"4px",alpha:0.5});',
+  ].join('\n')
+
+  describe('compile', () => {
+    test('unwraps all transparent callback assertions and rejects token concatenation', () => {
+      for (const callback of [
+        '(((v:{alpha:number})=>({opacity:v.alpha}))!)',
+        '(((v:{alpha:number})=>({opacity:v.alpha}))! as unknown)',
+      ])
+        expect(
+          Transform.compile({
+            moduleId: 'asserted.ts',
+            source: 'import {css} from "zyzz"; css(' + callback + ')',
+          }).css,
+        ).toContain('opacity:var(')
+
+      for (const body of [
+        '{color:`#${v.hex}`}',
+        '{fontFamily:`prefix${v.hex}`}',
+        '{fontFamily:`${v.hex}suffix`}',
+      ])
+        expect(() =>
+          Transform.compile({
+            moduleId: 'joined.ts',
+            source:
+              'import {css} from "zyzz"; css((v:{hex:"fff"|"000"})=>(' +
+              body +
+              '))',
+          }),
+        ).toThrow()
+    })
+    test('supports zero dimensions and rejects private-property keywords and quoted substitutions', async () => {
+      const output = Transform.compile({
+        moduleId: 'zero.ts',
+        source:
+          'import {css} from "zyzz"; export const style=css((v:{width:0|`${number}px`})=>({width:v.width}))',
+      })
+
+      const built = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          resolveDir: Path.resolve(import.meta.dirname, '../..'),
+          loader: 'ts',
+        },
+        bundle: true,
+        write: false,
+        platform: 'node',
+        conditions: ['src'],
+        format: 'esm',
+      })
+
+      const result = await import(
+        `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
+      )
+
+      expect(Object.values(result.style({ width: 0 }).style)).toEqual([0])
+      expect(Object.values(result.style({ width: '10px' }).style)).toEqual([
+        '10px',
+      ])
+
+      for (const source of [
+        'css((v:{color:"initial"|"red"})=>({color:v.color}))',
+        'css((v:{text:string})=>({content:`"${v.text}"`}))',
+      ])
+        expect(() =>
+          Transform.compile({
+            moduleId: 'bad.ts',
+            source: 'import {css} from "zyzz"; ' + source,
+          }),
+        ).toThrow()
+    })
+
+    test('supports asserted callbacks, quoted fields, negative literals, and empty values', async () => {
+      const output = Transform.compile({
+        moduleId: 'scalars.ts',
+        source: `import {css} from 'zyzz'; export const style = css(((v: {'item-size': string; order: -1 | 1}) => ({marginLeft: v['item-size'], order: v.order})) satisfies unknown)`,
+      })
+
+      expect(output.css).toContain('order:var(')
+
+      const built = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          resolveDir: Path.resolve(import.meta.dirname, '../..'),
+          loader: 'ts',
+        },
+        bundle: true,
+        write: false,
+        platform: 'node',
+        conditions: ['src'],
+        format: 'esm',
+      })
+
+      const result = await import(
+        `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
+      )
+
+      expect(Object.values(result.style({ 'item-size': '', order: -1 }).style))
+        .toMatchInlineSnapshot(`
+      [
+        " ",
+        -1,
+      ]
+    `)
+    })
+    test('rejects a sign joined to a private numeric token', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'sign.ts',
+          source:
+            'import {css} from "zyzz"; css((v:{alpha:number})=>({opacity:`+${v.alpha}`}))',
+        }),
+      ).toThrow()
+    })
+
+    test('rejects constrained and reserved callback domains', () => {
+      const errors = [
+        'css((v:{level:number})=>({zIndex:v.level}))',
+        'css((v:{ref:number})=>({opacity:v.ref}))',
+        'css((v:{key:number})=>({opacity:v.key}))',
+        'css((v:{class:number})=>({opacity:v.class}))',
+        'css((v:{width:`${number}%!`})=>({width:v.width}))',
+      ].map((source) => {
+        try {
+          Transform.compile({
+            moduleId: 'invalid.ts',
+            source: 'import {css} from "zyzz"; ' + source,
+          })
+
+          return 'accepted'
+        } catch (error) {
+          return String(error)
+        }
+      })
+
+      expect(errors).toMatchInlineSnapshot(`
+      [
+        "Source.ExtractError: invalid.ts:59: Variable domain is incompatible with this property.",
+        "Source.ExtractError: invalid.ts:34: Dynamic values require unique required scalar fields without styling override keys.",
+        "Source.ExtractError: invalid.ts:34: Dynamic values require unique required scalar fields without styling override keys.",
+        "Source.ExtractError: invalid.ts:34: Dynamic values require unique required scalar fields without styling override keys.",
+        "Source.ExtractError: invalid.ts:34: Dynamic values require explicit string or number scalar types.",
+      ]
+    `)
+    })
+    test('unwraps non-null callback bodies before binding theme variables', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'body.ts',
+          source:
+            'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.css((v:{alpha:number})=>({color:t.vars.color.ink,opacity:v.alpha})!)',
+        }).css,
+      ).toMatchInlineSnapshot(`
+      ".z_theme-10qvms41gznlvu-t{--z-t10qvms41gznlvu-t-color_2e_ink:red;}
+      .z-text-x6-L58{color:var(--z-t10qvms41gznlvu-t-color_2e_ink,red);}
+      .z-opacity-x6-L58{opacity:var(--z-d10qvms41gznlvu-71-61-6c-70-68-61);}"
+    `)
+    })
+    test('rejects imported names in callback template annotations', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'annotation.ts',
+          source:
+            'import {css,Theme} from "zyzz"; css((v:{width:`${Theme.Length}px`})=>({width:v.width}))',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: annotation.ts:40: Dynamic values require explicit string or number scalar types.]`,
+      )
+    })
+    test('static callable bundles omit the dynamic helper', async () => {
+      const output = Transform.compile({
+        moduleId: 'static.ts',
+        source:
+          'import {css} from "zyzz"; export const card=css({display:"block"})',
+      })
+
+      const built = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          resolveDir: Path.resolve(import.meta.dirname, '../..'),
+          loader: 'ts',
+        },
+        bundle: true,
+        write: false,
+        metafile: true,
+        conditions: ['src'],
+      })
+
+      expect(
+        Object.keys(built.metafile!.inputs)
+          .filter((path) => path.endsWith('/runtime/Dynamic.ts'))
+          .flatMap((path) =>
+            Object.values(built.metafile!.outputs).map(
+              (output) => output.inputs[path]?.bytesInOutput ?? 0,
+            ),
+          ),
+      ).toMatchInlineSnapshot(`
+      [
+        0,
+      ]
+    `)
+    })
+    test('rejects number slots adjacent to dimension suffixes', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'units.ts',
+          source:
+            'import {css} from "zyzz"; css((v:{size:number})=>({width:`${v.size}px`}))',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: units.ts:57: Expected a literal string or number; expressions are not evaluated.]`,
+      )
+    })
+    test('retains static fallbacks in asserted theme callbacks', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'fallback.ts',
+          source:
+            'import {Theme} from "zyzz"; const t=Theme.define({color:{ink:"red"}}); t.css(((v:{alpha:number})=>({opacity:v.alpha,color:["blue",t.vars.color.ink]})) satisfies Callback)',
+        }).css,
+      ).toMatchInlineSnapshot(`
+      ".z_theme-181sefq1osze6y-t{--z-t181sefq1osze6y-t-color_2e_ink:red;}
+      .z-opacity-DI895w{opacity:var(--z-d181sefq1osze6y-71-61-6c-70-68-61);}
+      .z-text-DI895w{color:blue;color:var(--z-t181sefq1osze6y-t-color_2e_ink,red);}"
+    `)
+    })
+    test('compiles callbacks to fixed rules and preserves callable values', async () => {
+      const output = Transform.compile({ moduleId: 'dynamic.ts', source })
+
+      expect(output.css).toMatchInlineSnapshot(
+        `
+      ".z-block-LUShLn{display:block;}
+      .z-w-LUShLn{width:var(--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74);}
+      .z-ml-LUShLn{margin-left:calc(var(--z-d1h5dayl7tfv4v-47-67-61-70) + 2px);}
+      .z-opacity-LUShLn{opacity:var(--z-d1h5dayl7tfv4v-47-61-6c-70-68-61);}"
+    `,
+      )
+      expect(output.code.includes('values.amount')).toMatchInlineSnapshot(
+        `false`,
+      )
+      expect(output.code.includes('css.Dynamic')).toMatchInlineSnapshot(`true`)
+
+      const built = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          resolveDir: Path.resolve(import.meta.dirname, '../..'),
+          loader: 'ts',
+        },
+        bundle: true,
+        write: false,
+        platform: 'node',
+        conditions: ['src'],
+        format: 'esm',
+      })
+
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
+      )
+
+      expect(module.first).toMatchInlineSnapshot(`
+      {
+        "className": "z-block-LUShLn z-w-LUShLn z-ml-LUShLn z-opacity-LUShLn z-style-1h5dayl7tfv4v-47",
+        "style": {
+          "--z-d1h5dayl7tfv4v-47-61-6c-70-68-61": 0.5,
+          "--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74": "25%",
+          "--z-d1h5dayl7tfv4v-47-67-61-70": "4px",
+        },
+      }
+    `)
+      expect(
+        module.bar({
+          amount: '75%',
+          gap: '8px',
+          alpha: 1,
+          className: 'external',
+          style: { color: 'red' },
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "className": "z-block-LUShLn z-w-LUShLn z-ml-LUShLn z-opacity-LUShLn z-style-1h5dayl7tfv4v-47 external",
+        "style": {
+          "--z-d1h5dayl7tfv4v-47-61-6c-70-68-61": 1,
+          "--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74": "75%",
+          "--z-d1h5dayl7tfv4v-47-67-61-70": "8px",
+          "color": "red",
+        },
+      }
+    `)
+
+      const key = Object.keys(module.first.style)[0]!
+
+      expect(
+        module.bar({
+          amount: '50%',
+          gap: '8px',
+          alpha: 1,
+          style: { [key]: 'bad' },
+        }).style[key],
+      ).toBe('50%')
+    })
+
+    test('Chromium updates values with stable classes and rule counts', async () => {
+      const output = Transform.compile({ moduleId: 'dynamic.ts', source })
+
+      const built = await Esbuild.build({
+        stdin: {
+          contents: output.code,
+          resolveDir: Path.resolve(import.meta.dirname, '../..'),
+          loader: 'ts',
+        },
+        bundle: true,
+        write: false,
+        platform: 'browser',
+        conditions: ['src'],
+        format: 'iife',
+        globalName: 'fixture',
+      })
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div style="width:200px"><div id="bar"></div></div>`,
+        )
+        await page.addScriptTag({
+          content:
+            built.outputFiles[0]!.text +
+            `;globalThis.update = (amount) => { const props = fixture.bar({amount,gap:'0px',alpha:1}); const element = document.getElementById('bar'); element.className = props.className; for(const [key,value] of Object.entries(props.style)) element.style.setProperty(key,String(value)); }; globalThis.update('25%');`,
+        })
+
+        expect(
+          await page
+            .locator('#bar')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"50px"`)
+
+        const original = await page.locator('#bar').getAttribute('class')
+
+        await page.addScriptTag({
+          content: `for(let i=0;i<20;i++) globalThis.update('75%')`,
+        })
+
+        expect(
+          await page
+            .locator('#bar')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"150px"`)
+        expect(
+          (await page.locator('#bar').getAttribute('class')) === original,
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          await page.evaluate(() => document.styleSheets[0]!.cssRules.length),
+        ).toMatchInlineSnapshot(`4`)
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('mixes bound theme references with static and dynamic declarations', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'theme-dynamic.ts',
+          source:
+            'import { Theme } from "zyzz"; const theme = Theme.define({color:{brand:"red"}}); export const bar = theme.css((values: {alpha:number})=>({color:theme.vars.color.brand,opacity:values.alpha}));',
+        }).css,
+      ).toMatchInlineSnapshot(`
+      ".z_theme-1aby40l12ykqib-theme{--z-t1aby40l12ykqib-theme-color_2e_brand:red;}
+      .z-text-FLKHRr{color:var(--z-t1aby40l12ykqib-theme-color_2e_brand,red);}
+      .z-opacity-FLKHRr{opacity:var(--z-d1aby40l12ykqib-100-61-6c-70-68-61);}"
+    `)
+    })
+
+    test('encodes identifier characters in private CSS names', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'dollar.ts',
+          source:
+            'import { css } from "zyzz"; css((values:{$alpha:number})=>({opacity:values.$alpha}))',
+        }).css,
+      ).toMatchInlineSnapshot(
+        `".z-opacity-gJY9Ax{opacity:var(--z-dijyhsi11fth46-28-24-61-6c-70-68-61);}"`,
+      )
+    })
+
+    test('rejects interpolated dynamic fallback entries', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'fallback.ts',
+          source:
+            'import { css } from "zyzz"; css((values:{width:number})=>({width:["1px",`${values.width}px`]}))',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: fallback.ts:72: Expected a literal string or number; expressions are not evaluated.
+      fallback.ts:75: Dynamic fallback entries are not supported.
+      fallback.ts:75: Dynamic fallback entries are not supported.]
+    `)
+    })
+
+    test('rejects dynamic rule structure and optional values', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source:
+            'import { css } from "zyzz"; css((values:{width?:string})=>({width:values.width}))',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:41: Dynamic values require unique required scalar fields without styling override keys.]`,
+      )
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source:
+            'import { css } from "zyzz"; css((values:{width:string})=>({...values}))',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:59: Static spreads require an immutable object literal.]`,
+      )
+    })
+  })
+})
+
+describe('finalAcceptance', () => {
+  describe('compile', () => {
+    test('rejects invalid page property and function grammar from packed stylesheets', () => {
+      const library = Graph.compile({ modules: { 'lib.ts': Pages.source() } })
+      for (const css of [
+        '@page{bleed:10%}',
+        '@page{size:calc(1deg)}',
+        '@property --x{syntax:"<length>";inherits:false;initial-value:1em}',
+        '@property --x{syntax:"<length>";inherits:false}',
+        '@property --x{syntax:"<length>";inherits:no;initial-value:1px}',
+        '@function --x(--a <length>+: 1px red){result:1}',
+        '@function --x(--a,--a){result:1}',
+        '@function --x(){@page{result:1}}',
+        '@function --x() returns invalid syntax{result:1}',
+      ]) {
+        const contract = JSON.parse(library.contracts['lib.ts']!)
+        contract.stylesheets[0].css = css
+        expect(
+          () =>
+            Graph.compile({
+              contracts: { 'lib.js': JSON.stringify(contract) },
+              imports: { 'app.ts': { lib: 'lib.js' } },
+              modules: { 'app.ts': `import 'lib';` },
+            }),
+          css,
+        ).toThrow()
+      }
+    })
+    test('rejects forbidden enclosing and element contexts for final descriptor families', () => {
+      for (const call of [
+        "page({descriptors:{size:'A4'}}",
+        "property({name:'--x',syntax:'*',inherits:false}",
+        'cssFunction({parameters:[],body:{result:1}}',
+      ])
+        for (const within of [
+          'body',
+          '@page',
+          '@starting-style',
+          '@keyframes x',
+        ])
+          expect(() =>
+            Transform.compile({
+              moduleId: 'invalid.ts',
+              source: `import {page,property,cssFunction} from 'zyzz/web';${call},{within:[${JSON.stringify(within)}]});`,
+            }),
+          ).toThrow(Source.ExtractError)
+    })
+
+    for (const [family, source, rule] of [
+      ['page', Pages.source(), '@page'],
+      ['property', Registrations.source(), '@property'],
+    ] as const) {
+      test(`retains ${family} grammar and contexts in packed output with source maps`, () => {
+        const direct = Transform.compile({ moduleId: 'library.ts', source })
+        const library = Graph.compile({ modules: { 'library.ts': source } })
+        const packed = Graph.compile({
+          contracts: { 'lib/index.js': library.contracts['library.ts']! },
+          imports: { 'app.ts': { lib: 'lib/index.js' } },
+          modules: { 'app.ts': `import 'lib';` },
+        })
+        expect(direct.css.includes(rule)).toMatchInlineSnapshot('true')
+        expect(packed.sharedCss?.includes(rule)).toMatchInlineSnapshot('true')
+        expect(
+          direct.css.replaceAll(/\s+/g, '') ===
+            packed.sharedCss?.replaceAll(/\s+/g, ''),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+            line: 1,
+            column: 0,
+          }).source,
+        ).toMatchInlineSnapshot('"lib/library.ts"')
+        expect(
+          Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+            line: 1,
+            column: 0,
+          }).line,
+        ).toMatchInlineSnapshot('2')
+      })
+    }
+    test('rejects invalid page lengths descriptors and selectors', () => {
+      for (const options of [
+        { descriptors: { bleed: '10%' } },
+        { descriptors: { bleed: 'calc(1deg)' } },
+        { descriptors: { size: '-1px' } },
+        { descriptors: { size: '1px 2px 3px' } },
+        { descriptors: { marks: 'crop crop' } },
+        { descriptors: { pageOrientation: 'landscape' } },
+        { descriptors: { bleed: '1px;color:red' } },
+        { selector: ':hover', descriptors: { size: 'A4' } },
+      ])
+        expect(() =>
+          Transform.compile({
+            moduleId: 'invalid.ts',
+            source: `import {page} from 'zyzz/web';page(${JSON.stringify(options)});`,
+          }),
+        ).toThrow(Source.ExtractError)
+    })
+    test('rejects invalid registrations and computational dependencies', () => {
+      for (const options of [
+        { syntax: '<length>', initialValue: '1em' },
+        { syntax: '<length>', initialValue: 'calc(1px + 2em)' },
+        { syntax: '<length>', initialValue: 'calc(1deg)' },
+        { syntax: '<length>', initialValue: 'red' },
+        { syntax: '<color>', initialValue: 'currentColor' },
+        { syntax: '<length>', initialValue: 'var(--other)' },
+        { syntax: '<length>' },
+        { syntax: '<length> || <number>', initialValue: '1px' },
+        { syntax: '<transform-list>+', initialValue: 'rotate(1deg)' },
+        { syntax: '<string>', initialValue: '"no"' },
+        { syntax: '<length>', initialValue: '1px;inherits:true' },
+        { syntax: '<length>', initialValue: '1px', inherits: 'false' },
+      ])
+        expect(
+          () =>
+            Transform.compile({
+              moduleId: 'invalid.ts',
+              source: `import {property} from 'zyzz/web';property(${JSON.stringify({ name: '--invalid', inherits: false, ...options })});`,
+            }),
+          JSON.stringify(options),
+        ).toThrow(Source.ExtractError)
+    })
+  })
+})
+
+describe('fontFeatures', () => {
+  describe('compile', () => {
+    test('retains every feature alias block and display keyword with packed maps', () => {
+      for (const display of [
+        'auto',
+        'block',
+        'fallback',
+        'optional',
+        'swap',
+        ' SWAP ',
+        '\\73 wap',
+      ]) {
+        const source = FontFeatures.source(1, display)
+        const direct = Transform.compile({ moduleId: 'fonts.ts', source })
+        const library = Graph.compile({ modules: { 'fonts.ts': source } })
+        const packed = Graph.compile({
+          contracts: { 'lib/fonts.js': library.contracts['fonts.ts']! },
+          imports: { 'app.ts': { lib: 'lib/fonts.js' } },
+          modules: { 'app.ts': `import 'lib';` },
+        })
+        for (const [index, block] of FontFeatures.blocks.entries()) {
+          expect(
+            direct.css.includes(`${block}{alias${index}:`),
+          ).toMatchInlineSnapshot('true')
+          expect(
+            packed.sharedCss?.includes(`${block}{alias${index}:`),
+          ).toMatchInlineSnapshot('true')
+        }
+        expect(
+          packed.sharedCss?.includes('font-display:'),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+            line: 1,
+            column: 0,
+          }),
+        ).toMatchInlineSnapshot(`
+        {
+          "column": 0,
+          "line": 2,
+          "name": null,
+          "source": "lib/fonts.ts",
+        }
+      `)
+      }
+    })
+    test('rejects invalid alias indices across every nested feature block', () => {
+      for (const block of FontFeatures.blocks) {
+        for (const value of [
+          -1,
+          1.5,
+          [],
+          [1, 2, 3, 4].filter(() => block !== '@styleset'),
+        ]) {
+          expect(() =>
+            Transform.compile({
+              moduleId: 'invalid.ts',
+              source: `import {fontFeatureValues} from 'zyzz/web';fontFeatureValues({families:'Body',features:{${JSON.stringify(block)}:{alias:${JSON.stringify(value)}}}});`,
+            }),
+          ).toThrowErrorMatchingInlineSnapshot(
+            `[Source.ExtractError: invalid.ts:43: Expected feature aliases with nonnegative integer indices.]`,
+          )
+        }
+      }
+    })
+  })
+})
+
+describe('fontPalette', () => {
+  describe('compile', () => {
+    test('preserves font-family lists and descriptor maps across packed aliases', () => {
+      const library = Graph.compile({
+        modules: {
+          'palette.ts': `import {fontPaletteValues} from 'zyzz/web';\nexport const palette=fontPaletteValues({fontFamily:'Evidence, "Second Family"',basePalette:1,overrideColors:'0 red, 0 blue'});`,
+        },
+      })
+      const output = Graph.compile({
+        contracts: { 'lib/palette.js': library.contracts['palette.ts']! },
+        imports: { 'app.ts': { lib: 'lib/palette.js', 'zyzz/web': null } },
+        modules: {
+          'app.ts': `import {palette as blue} from 'lib';import {global} from 'zyzz/web';global({body:{fontPalette:blue}});`,
+        },
+      })
+      expect(output.sharedCss).toMatchInlineSnapshot(`
+      "@font-palette-values --z-fontpalettevaluespe2tjfjj233v-70-61-6c-65-74-74-65{font-family:Evidence, "Second Family";base-palette:1;override-colors:0 red, 0 blue;}
+      body{font-palette:--z-fontpalettevaluespe2tjfjj233v-70-61-6c-65-74-74-65;}"
+    `)
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.sharedCssMap!), {
+          line: 1,
+          column: 0,
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 21,
+        "line": 2,
+        "name": null,
+        "source": "lib/palette.ts",
+      }
+    `)
+    })
+
+    test('rejects conflicting packed palette definitions after parser shielding', () => {
+      const library = Graph.compile({
+        modules: {
+          'palette.ts': `import {fontPaletteValues} from 'zyzz/web';export const palette=fontPaletteValues({fontFamily:'A, B',basePalette:1});`,
+        },
+      })
+      const contract = library.contracts['palette.ts']!
+      expect(() =>
+        Graph.compile({
+          contracts: {
+            'first.js': contract,
+            'second.js': contract.replaceAll(
+              'base-palette:1',
+              'base-palette:0',
+            ),
+          },
+          imports: { 'app.ts': { first: 'first.js', second: 'second.js' } },
+          modules: { 'app.ts': `import 'first';import 'second';` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: second.js:0: Conflicting packed stylesheet contributions.]`,
+      )
+    })
+
+    test('matches native palette keywords, index fallbacks, and color overrides in Chromium', async () => {
+      const cases = [
+        { options: {}, native: '' },
+        { options: { basePalette: 1 }, native: 'base-palette:1' },
+        { options: { basePalette: 'light' }, native: 'base-palette:light' },
+        { options: { basePalette: 'dark' }, native: 'base-palette:dark' },
+        { options: { basePalette: 99 }, native: 'base-palette:99' },
+        {
+          options: { basePalette: 1, overrideColors: '0 red' },
+          native: 'base-palette:1;override-colors:0 red',
+        },
+        {
+          options: { overrideColors: '0 red, 0 blue, 99 green' },
+          native: 'override-colors:0 red,0 blue,99 green',
+        },
+        {
+          options: { overrideColors: '0 rgb(0 128 0 / .5)' },
+          native: 'override-colors:0 rgb(0 128 0 / .5)',
+        },
+        {
+          options: { overrideColors: '0 color(display-p3 0 1 0)' },
+          native: 'override-colors:0 color(display-p3 0 1 0)',
+        },
+        {
+          options: {
+            fontFamily: 'PaletteEvidence, "Palette Alias"',
+            basePalette: 1,
+          },
+          native: 'font-family:PaletteEvidence, "Palette Alias";base-palette:1',
+        },
+      ]
+      const library = Graph.compile({
+        modules: {
+          'palettes.ts': `import {fontFace,fontPaletteValues,global} from 'zyzz/web';fontFace({fontFamily:'PaletteEvidence',src:${JSON.stringify(`url("${fontPaletteFont.url}")`)}});fontFace({fontFamily:'Palette Alias',src:${JSON.stringify(`url("${fontPaletteFont.url}")`)}});global({'#compiled9,#native9':{fontFamily:'"Palette Alias"'}});${cases.map((entry, index) => `export const p${index}=fontPaletteValues(${JSON.stringify({ fontFamily: 'PaletteEvidence', ...entry.options })});global({'#compiled${index}':{fontPalette:p${index}}});`).join('\n')}`,
+        },
+      })
+      const output = Graph.compile({
+        contracts: { 'lib.js': library.contracts['palettes.ts']! },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+      const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      const browser = await chromium.launch(
+        executablePath ? { executablePath } : {},
+      )
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          cases
+            .map(
+              (_, index) =>
+                `<div id="compiled${index}" class="font">A</div><div id="native${index}" class="font">A</div>`,
+            )
+            .join(''),
+        )
+        await page.addStyleTag({ content: output.sharedCss! })
+        await page.addStyleTag({
+          content:
+            '.font{font:40px PaletteEvidence;width:60px;height:40px;background:white}' +
+            cases
+              .map(
+                (entry, index) =>
+                  `@font-palette-values --native${index}{font-family:PaletteEvidence;${entry.native}}#native${index}{font-palette:--native${index}}`,
+              )
+              .join(''),
+        })
+        await page.evaluate(() => document.fonts.ready)
+        expect(
+          await page.evaluate(() =>
+            document.fonts.check('40px PaletteEvidence'),
+          ),
+        ).toMatchInlineSnapshot('true')
+        const images = []
+        for (let index = 0; index < cases.length; index++) {
+          const compiled = await page.locator(`#compiled${index}`).screenshot()
+          const native = await page.locator(`#native${index}`).screenshot()
+          expect(Buffer.compare(compiled, native)).toMatchInlineSnapshot('0')
+          images.push(compiled)
+        }
+        expect(
+          Buffer.compare(images[0]!, images[1]!) === 0,
+        ).toMatchInlineSnapshot('false')
+        for (const index of [2, 3, 4, 5])
+          expect(
+            Buffer.compare(images[0]!, images[index]!),
+          ).toMatchInlineSnapshot('0')
+        expect(Buffer.compare(images[1]!, images[6]!)).toMatchInlineSnapshot(
+          '0',
+        )
+        expect(Buffer.compare(images[1]!, images[9]!)).toMatchInlineSnapshot(
+          '0',
+        )
+        for (const index of [7, 8])
+          expect(
+            Buffer.compare(images[0]!, images[index]!) === 0,
+          ).toMatchInlineSnapshot('false')
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('fonts', () => {
+  describe('compile', () => {
+    test('font controls preserve numeric variants, emphasis tokens, and maps', () => {
+      const output = Transform.compile({
+        moduleId: 'fonts.ts',
+        source: Fonts.source,
+      })
+
+      expect(output.css.match(/font-variant-numeric:[^;}]+/g))
+        .toMatchInlineSnapshot(`
+      [
+        "font-variant-numeric:normal",
+        "font-variant-numeric:tabular-nums!important",
+      ]
+    `)
+      expect(
+        output.css.includes('color_2e_accent,#06c)'),
+      ).toMatchInlineSnapshot(`true`)
+
+      const lines = output.css.split('\n')
+      const line = lines.findIndex((line) =>
+        line.includes('font-variant-numeric:tabular-nums!important'),
+      )
+
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          line: line + 1,
+          column: lines[line]!.indexOf(
+            'font-variant-numeric:tabular-nums!important',
+          ),
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 315,
+        "line": 3,
+        "name": "fontVariantNumeric",
+        "source": "fonts.ts",
+      }
+    `)
+    })
+
+    test('font controls match independent CSS and native ruby placement', async () => {
+      const output = Transform.compile({
+        moduleId: 'fonts.ts',
+        source: Fonts.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>body{font:20px monospace}ruby{margin:20px}span{display:inline-block}${output.css}</style><p id="font" class="${module.font.className}">Font 123</p><p id="font-control" style="${Fonts.controls.font}">Font 123</p><ruby id="ruby" class="${module.ruby.className}"><span>base</span><rt>annotation</rt></ruby><ruby id="ruby-control" style="${Fonts.controls.ruby}"><span>base</span><rt>annotation</rt></ruby><span id="vertical" class="${module.vertical.className}">AB</span><span id="vertical-control" style="${Fonts.controls.vertical}">AB</span>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const properties = {
+              font: [
+                'font-kerning',
+                'font-optical-sizing',
+                'font-stretch',
+                'font-synthesis-small-caps',
+                'font-synthesis-style',
+                'font-synthesis-weight',
+                'font-variant-caps',
+                'font-variant-east-asian',
+                'font-variant-ligatures',
+                'font-variant-numeric',
+                'font-variant-position',
+                'text-emphasis-color',
+                'text-emphasis-style',
+                'text-emphasis-position',
+                'text-justify',
+              ],
+              ruby: ['ruby-align', 'ruby-position'],
+              vertical: [
+                'writing-mode',
+                'text-orientation',
+                'text-combine-upright',
+              ],
+            }
+
+            return Object.entries(properties).flatMap(([name, keys]) => {
+              const a = getComputedStyle(document.getElementById(name)!)
+              const b = getComputedStyle(
+                document.getElementById(`${name}-control`)!,
+              )
+
+              return keys.filter(
+                (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+              )
+            })
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page.locator('#ruby').evaluate((element) => {
+            const base = element.querySelector('span')!.getBoundingClientRect()
+            const annotation = element
+              .querySelector('rt')!
+              .getBoundingClientRect()
+
+            return (
+              annotation.top + annotation.height / 2 >
+              base.top + base.height / 2
+            )
+          }),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          await page.locator('#vertical').evaluate((element) => {
+            const bounds = element.getBoundingClientRect()
+
+            return bounds.height > bounds.width
+          }),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          await page
+            .locator('#font')
+            .evaluate((element) => getComputedStyle(element).textEmphasisColor),
+        ).toMatchInlineSnapshot(`"rgb(0, 102, 204)"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('functionAcceptance', () => {
+  describe('compile', () => {
+    test('retains escaped syntax nested references and conditional results through packed publication', () => {
+      const source = Functions.source()
+      const direct = Transform.compile({ moduleId: 'functions.ts', source })
+      const library = Graph.compile({ modules: { 'functions.ts': source } })
+      expect(
+        JSON.parse(library.contracts['functions.ts']!).version,
+      ).toMatchInlineSnapshot('12')
+      const packed = Graph.compile({
+        contracts: { 'lib/index.js': library.contracts['functions.ts']! },
+        imports: { 'app.ts': { lib: 'lib/index.js', 'zyzz/web': null } },
+        modules: {
+          'app.ts': `import {inner,outer,list,words} from 'lib';import {global} from 'zyzz/web';global({body:{width:outer(inner()),'--list':list('3px 5px'),'--word':words('日本語')}});`,
+        },
+      })
+      expect(direct.css.includes('--日本語')).toMatchInlineSnapshot('true')
+      expect(
+        direct.css.includes('@container (width > 1px)'),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        packed.sharedCss?.includes('@supports (width: 1px)'),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        (packed.sharedCss + packed.modules['app.ts']!.css).includes(
+          '(3px 5px)',
+        ),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        (packed.sharedCss + packed.modules['app.ts']!.css).includes(
+          '(--z-cssfunction',
+        ),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+          line: 1,
+          column: 0,
+        }).source,
+      ).toMatchInlineSnapshot('"lib/functions.ts"')
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+          line: 1,
+          column: 0,
+        }).line,
+      ).toMatchInlineSnapshot('2')
+    })
+    test('rejects invalid list items arity escaped names and declaration injection', () => {
+      const definition = `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({parameters:[{name:'--x',syntax:'<integer>+'}],body:{result:'var(--x)'}});`
+      for (const call of [
+        "fn('1 2px')",
+        "fn('1 2.5')",
+        'fn()',
+        'fn(1,2)',
+        "fn('1;result:2')",
+      ]) {
+        expect(
+          () =>
+            Transform.compile({
+              moduleId: 'invalid.ts',
+              source: definition + call,
+            }),
+          call,
+        ).toThrow(Source.ExtractError)
+        const library = Graph.compile({ modules: { 'fn.ts': definition } })
+        expect(
+          () =>
+            Graph.compile({
+              contracts: { 'lib.js': library.contracts['fn.ts']! },
+              imports: { 'app.ts': { lib: 'lib.js' } },
+              modules: { 'app.ts': `import {fn} from 'lib';${call}` },
+            }),
+          call,
+        ).toThrow()
+      }
+      for (const options of [
+        {
+          parameters: [{ name: '--x', syntax: 'type(\\69 nherit | auto)' }],
+          body: { result: 'auto' },
+        },
+        {
+          parameters: [{ name: '--x' }, { name: '--\\78' }],
+          body: { result: '1' },
+        },
+        {
+          parameters: [
+            { name: '--x', syntax: '<length>+', default: '1px red' },
+          ],
+          body: { result: '1' },
+        },
+        { parameters: [], body: { result: '1;--injected:2' } },
+        { parameters: [], body: { '@page': { result: '1' } } },
+      ])
+        expect(() =>
+          Transform.compile({
+            moduleId: 'invalid.ts',
+            source: `import {cssFunction} from 'zyzz/web';export const fn=cssFunction(${JSON.stringify(options)});`,
+          }),
+        ).toThrow(Source.ExtractError)
+    })
+  })
+})
+
+describe('functionSyntax.browser', () => {
+  describe('compile', () => {
+    test('evaluates composite types, default values, and media-dependent results', async () => {
+      const output = Transform.compile({
+        moduleId: 'functions.ts',
+        source: `import {cssFunction,global} from 'zyzz/web';
+const size=cssFunction({parameters:[{name:'--size',syntax:'type(<length> | <percentage>)',default:'25%'}],returns:'type(<length> | <percentage>)',body:{result:'calc(var(--size) * 2)','@media (width < 300px)':{result:'var(--size)'}}});
+const colors=cssFunction({parameters:[{name:'--colors',syntax:'<color>#'}],returns:'<color>#',body:{result:'var(--colors)'}});
+global({main:{width:'200px'},'#gradient':{backgroundImage:\`linear-gradient(to right, \${colors('red, blue')})\`},'#default':{width:size()},'#fixed':{width:size('20px')}});`,
+      })
+      const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      const browser = await chromium.launch(
+        executablePath ? { executablePath } : {},
+      )
+      try {
+        const page = await browser.newPage({
+          viewport: { width: 400, height: 300 },
+        })
+        await page.setContent(
+          '<main><div id="default"></div><div id="fixed"></div><div id="gradient"></div></main>',
+        )
+        await page.addStyleTag({ content: output.css })
+
+        expect(
+          await page
+            .locator('#default')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot('"100px"')
+        expect(
+          await page
+            .locator('#fixed')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot('"40px"')
+        expect(
+          await page
+            .locator('#gradient')
+            .evaluate((element) => getComputedStyle(element).backgroundImage),
+        ).toMatchInlineSnapshot(
+          '"linear-gradient(to right, rgb(255, 0, 0), rgb(0, 0, 255))"',
+        )
+        await page.setViewportSize({ width: 200, height: 300 })
+        expect(
+          await page
+            .locator('#default')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot('"50px"')
+        expect(
+          await page
+            .locator('#fixed')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot('"20px"')
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('functionSyntax', () => {
+  describe('compile', () => {
+    test('formats comma-list arguments identically in emitted JavaScript', async () => {
+      const output = Transform.compile({
+        moduleId: 'list.ts',
+        source: `import {cssFunction} from 'zyzz/web';export const colors=cssFunction({parameters:[{name:'--colors',syntax:'<color>#'}],returns:'<color>#',body:{result:'var(--colors)'}});`,
+      })
+      const code = (
+        await Esbuild.transform(output.code, { loader: 'ts', format: 'esm' })
+      ).code
+      const compiled = await import(
+        'data:text/javascript,' + encodeURIComponent(code)
+      )
+
+      expect(compiled.colors('red, blue')).toMatchInlineSnapshot(
+        `"--z-cssfunction13vvukoaiceek-63-6f-6c-6f-72-73({red, blue})"`,
+      )
+      expect(compiled.colors('{red, blue}')).toMatchInlineSnapshot(
+        `"--z-cssfunction13vvukoaiceek-63-6f-6c-6f-72-73({red, blue})"`,
+      )
+    })
+    test('preserves union, repetition, keyword, and universal signatures', () => {
+      const output = Transform.compile({
+        moduleId: 'functions.ts',
+        source: `import {cssFunction} from 'zyzz/web';
+export const scale=cssFunction({parameters:[{name:'--x',syntax:'type(<number> | <percentage>)',default:'50%'}],returns:'type(<number> | <percentage>)',body:{result:'var(--x)'}});
+export const space=cssFunction({parameters:[{name:'--x',syntax:'<length>+'}],returns:'<length>+',body:{result:'var(--x)'}});
+export const auto=cssFunction({parameters:[{name:'--x',syntax:'type(auto | <length>)'}],returns:'type(auto | <length>)',body:{result:'var(--x)'}});
+export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns:'type(*)',body:{result:'var(--x)'}});`,
+      })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      "@function --z-cssfunction270wt1ix0x4z-73-63-61-6c-65(--x type(<number> | <percentage>): 50%) returns type(<number> | <percentage>){result:var(--x);}
+      @function --z-cssfunction270wt1ix0x4z-73-70-61-63-65(--x <length>+) returns <length>+{result:var(--x);}
+      @function --z-cssfunction270wt1ix0x4z-61-75-74-6f(--x type(auto | <length>)) returns type(auto | <length>){result:var(--x);}
+      @function --z-cssfunction270wt1ix0x4z-61-6e-79(--x type(*)) returns type(*){result:var(--x);}"
+    `)
+    })
+
+    test('retains composite signatures and default invocation across packed re-exports', () => {
+      const library = Graph.compile({
+        modules: {
+          'functions.ts': `import {cssFunction} from 'zyzz/web';export const size=cssFunction({parameters:[{name:'--size',syntax:'type(<length> | <percentage>)',default:'25%'}],returns:'type(<length> | <percentage>)',body:{result:'var(--size)'}});`,
+        },
+      })
+      expect(
+        JSON.parse(library.contracts['functions.ts']!).version,
+      ).toMatchInlineSnapshot('11')
+      const output = Graph.compile({
+        contracts: { 'lib/functions.js': library.contracts['functions.ts']! },
+        imports: { 'app.ts': { lib: 'lib/functions.js', zyzz: null } },
+        modules: {
+          'app.ts': `import {size as scale} from 'lib';import {css} from 'zyzz';export const styles={default:css({width:scale()}),fixed:css({width:scale('20px')})};`,
+        },
+      })
+
+      expect(output.sharedCss).toMatchInlineSnapshot(
+        `"@function --z-cssfunction270wt1ix0x4z-73-69-7a-65(--size type(<length> | <percentage>): 25%) returns type(<length> | <percentage>){result:var(--size);}"`,
+      )
+      expect(output.modules['app.ts']?.css).toMatchInlineSnapshot(`
+      ".z-w-3z-IGp-0{width:--z-cssfunction270wt1ix0x4z-73-69-7a-65();}
+      .z-w-L291n9-0{width:--z-cssfunction270wt1ix0x4z-73-69-7a-65(20px);}"
+    `)
+    })
+
+    test.each(['1px', '1%', '1.5', '1e2', '-1turn', ' 1px '])(
+      'rejects non-integer token %s in source and packed calls',
+      (value) => {
+        const source = `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({parameters:[{name:'--n',syntax:'type(<integer> | auto)'}],returns:'<integer>',body:{result:'var(--n)'}});`
+        const library = Graph.compile({ modules: { 'fn.ts': source } })
+
+        expect(() =>
+          Transform.compile({
+            moduleId: 'invalid.ts',
+            source: source + `fn(${JSON.stringify(value)});`,
+          }),
+        ).toThrowError(/CSS integer parameters require integer tokens/)
+        expect(() =>
+          Graph.compile({
+            contracts: { 'lib.js': library.contracts['fn.ts']! },
+            imports: { 'app.ts': { lib: 'lib.js' } },
+            modules: {
+              'app.ts': `import {fn} from 'lib';fn(${JSON.stringify(value)});`,
+            },
+          }),
+        ).toThrowError(/CSS integer parameters require integer tokens/)
+      },
+    )
+
+    test.each([
+      '<custom-ident>',
+      '<image>',
+      '<resolution>',
+      '<string>',
+      '<transform-function>',
+      '<transform-list>',
+      '<url>',
+    ])(
+      'versions added scalar syntax %s separately from the legacy contract',
+      (syntax) => {
+        for (const returns of [syntax, '<color>']) {
+          const library = Graph.compile({
+            modules: {
+              'fn.ts': `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({parameters:[{name:'--x',syntax:${JSON.stringify(syntax)}}],returns:${JSON.stringify(returns)},body:{result:'var(--x)'}});`,
+            },
+          })
+          expect(
+            JSON.parse(library.contracts['fn.ts']!).version,
+          ).toMatchInlineSnapshot('11')
+
+          const packed = Graph.compile({
+            contracts: { 'lib.js': library.contracts['fn.ts']! },
+            imports: { 'app.ts': { lib: 'lib.js' } },
+            modules: { 'app.ts': `import {fn} from 'lib';export {fn};` },
+          })
+          expect(
+            JSON.parse(packed.contracts['app.ts']!).version,
+          ).toMatchInlineSnapshot('11')
+        }
+      },
+    )
+
+    test.each(['+', '#'])(
+      'accepts one-item numbers in repeated %s alternatives through packed calls',
+      (repeat) => {
+        const library = Graph.compile({
+          modules: {
+            'fn.ts': `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({parameters:[{name:'--x',syntax:'type(<integer> | <number>${repeat})'}],body:{result:'var(--x)'}});`,
+          },
+        })
+        const packed = Graph.compile({
+          contracts: { 'lib.js': library.contracts['fn.ts']! },
+          imports: { 'app.ts': { lib: 'lib.js' } },
+          modules: {
+            'app.ts': `import {fn} from 'lib';export const value=fn(1.5);`,
+          },
+        })
+        expect(
+          packed.modules['app.ts']!.code.includes('(1.5)'),
+        ).toMatchInlineSnapshot('true')
+
+        const output = Transform.compile({
+          moduleId: 'lists.ts',
+          source: `import {cssFunction} from 'zyzz/web';const fn=cssFunction({parameters:[{name:'--x',syntax:'<integer>${repeat}'}],body:{result:'var(--x)'}});fn('${repeat === '+' ? '1 2' : '1, 2'}');`,
+        })
+        expect(output.css.includes('@function')).toMatchInlineSnapshot('true')
+      },
+    )
+
+    test('retains scalar contract compatibility and valid alternative arguments', () => {
+      const source = `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({parameters:[{name:'--n',syntax:'<integer>'}],returns:'<integer>',body:{result:'var(--n)'}});fn(2);`
+      const library = Graph.compile({ modules: { 'fn.ts': source } })
+      expect(
+        JSON.parse(library.contracts['fn.ts']!).version,
+      ).toMatchInlineSnapshot('10')
+
+      const output = Transform.compile({
+        moduleId: 'valid.ts',
+        source: `import {cssFunction} from 'zyzz/web';const fn=cssFunction({parameters:[{name:'--n',syntax:'type(<integer> | <percentage> | auto)'}],body:{result:'var(--n)'}});fn('25%');fn('auto');fn(2);`,
+      })
+      expect(output.code.includes('25%')).toMatchInlineSnapshot('true')
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {cssFunction} from 'zyzz/web';const fn=cssFunction({parameters:[{name:'--n',syntax:'type(<integer> | <percentage>)'}],body:{result:'var(--n)'}});fn('1px');`,
+        }),
+      ).toThrowError(/CSS integer parameters require integer tokens/)
+    })
+
+    test.each([
+      'type(<length> && <color>)',
+      'type(<length> |)',
+      '<length> | <percentage>',
+      'type(<unknown>)',
+      '<transform-list>+',
+    ])('rejects invalid signature %s at its source', (syntax) => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({parameters:[],returns:${JSON.stringify(syntax)},body:{result:0}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:53: Expected CSS function parameters, body, and optional return syntax.]`,
+      )
+    })
+  })
+})
+
+describe('functionalColors', () => {
+  describe('compile', () => {
+    test('functional colors agree with independent CSS grammar', () => {
+      const lexer = Conformance.lexer()
+
+      for (const color of FunctionalColors.valid) {
+        const output = Transform.compile({
+          moduleId: 'color.ts',
+          source: `import { css } from 'zyzz'; css({color:${JSON.stringify(color)}})`,
+        })
+
+        expect(output.css.includes(`color:${color}`)).toMatchInlineSnapshot(
+          `true`,
+        )
+        expect(lexer.matchProperty('color', color).error).toMatchInlineSnapshot(
+          `null`,
+        )
+      }
+
+      const output = Transform.compile({
+        moduleId: 'color.ts',
+        source: FunctionalColors.source,
+      })
+
+      expect(output.css.match(/background-color:[^;}]+/g))
+        .toMatchInlineSnapshot(`
+      [
+        "background-color:rgb(255, 0, 0)",
+        "background-color:hsl(120deg 50% 50% / .5)!important",
+      ]
+    `)
+    })
+    test('functional colors match native theme inheritance and SVG output', async () => {
+      const output = Transform.compile({
+        moduleId: 'color.ts',
+        source: FunctionalColors.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div class="${module.scope}"><div id="actual" class="${module.box.className}"><span id="child">child</span></div><svg><rect id="shape" class="${module.svg.className}" /></svg></div><div id="control" style="${FunctionalColors.control}"><span id="control-child">child</span></div><svg><rect id="shape-control" style="fill:lab(50% 20 -30);stroke:oklab(.5 .1 -.1)" /></svg>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            return [
+              [
+                'actual',
+                'control',
+                [
+                  'color',
+                  'background-color',
+                  'border-top-color',
+                  'outline-color',
+                ],
+              ],
+              ['child', 'control-child', ['color']],
+              ['shape', 'shape-control', ['fill', 'stroke']],
+            ].flatMap(([actual, control, keys]) => {
+              const a = getComputedStyle(
+                document.getElementById(actual as string)!,
+              )
+              const b = getComputedStyle(
+                document.getElementById(control as string)!,
+              )
+
+              return (keys as string[]).filter(
+                (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+              )
+            })
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).backgroundColor),
+        ).toMatchInlineSnapshot(`"rgba(64, 191, 64, 0.5)"`)
+
+        for (const color of FunctionalColors.valid) {
+          expect(
+            await page.evaluate((color) => CSS.supports('color', color), color),
+          ).toMatchInlineSnapshot(`true`)
+        }
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('geometry', () => {
+  describe('compile', () => {
+    test('all canonical transform functions match independent grammar', () => {
+      const lexer = Conformance.lexer()
+
+      for (const transform of Geometry.functions) {
+        const output = Transform.compile({
+          moduleId: 'geometry.ts',
+          source: `import { css } from 'zyzz'; css({transform:${JSON.stringify(transform)}});`,
+        })
+
+        expect(
+          output.css.includes(`transform:${transform}`),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          lexer.matchProperty('transform', transform).error,
+        ).toMatchInlineSnapshot(`null`)
+      }
+    })
+    test('ratios and ordered transforms match native rendered bounds', async () => {
+      const output = Transform.compile({
+        moduleId: 'geometry.ts',
+        source: Geometry.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}.positioned{position:absolute;left:100px;top:100px;transform-origin:0 0}</style><div id="aspect" class="${module.aspect.className}"></div><div id="individual" class="positioned ${module.individual.className}"></div><div id="list" class="positioned ${module.list.className}"></div><div id="control" class="positioned" style="${Geometry.controls.list}"></div><div id="spatial" class="${module.spatial.className}"></div><div id="spatial-control" style="${Geometry.controls.spatial}"></div>`,
+        )
+
+        expect(
+          await page
+            .locator('#aspect')
+            .evaluate((element) => element.getBoundingClientRect().height),
+        ).toMatchInlineSnapshot(`90`)
+        expect(
+          await page
+            .locator('#individual')
+            .evaluate((element) => element.getBoundingClientRect().toJSON()),
+        ).toMatchInlineSnapshot(`
+        {
+          "bottom": 220,
+          "height": 80,
+          "left": 70,
+          "right": 130,
+          "top": 140,
+          "width": 60,
+          "x": 70,
+          "y": 140,
+        }
+      `)
+        expect(
+          await page.evaluate(() => {
+            const control = JSON.stringify(
+              document
+                .getElementById('control')!
+                .getBoundingClientRect()
+                .toJSON(),
+            )
+
+            return ['individual', 'list'].filter(
+              (id) =>
+                JSON.stringify(
+                  document.getElementById(id)!.getBoundingClientRect().toJSON(),
+                ) !== control,
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page.evaluate(
+            () =>
+              getComputedStyle(document.getElementById('spatial')!)
+                .transform ===
+              getComputedStyle(document.getElementById('spatial-control')!)
+                .transform,
+          ),
+        ).toMatchInlineSnapshot(`true`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('grid-lines', () => {
+  describe('compile', () => {
+    test('grid placement preserves named lines and shorthand order', () => {
+      const lexer = Conformance.lexer()
+
+      for (const [property, value] of Object.entries(GridLines.styles)) {
+        const name = Conformance.name(property)
+        const output = Transform.compile({
+          moduleId: 'grid.ts',
+          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
+        })
+
+        expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
+          `true`,
+        )
+        expect(lexer.matchProperty(name, value).error).toMatchInlineSnapshot(
+          `null`,
+        )
+      }
+
+      const output = Transform.compile({
+        moduleId: 'grid.ts',
+        source: GridLines.source,
+      })
+
+      expect(
+        output.css.match(/grid-column:1 \/ 3;/g)?.length,
+      ).toMatchInlineSnapshot(`2`)
+    })
+    test('grid placement matches native named and numbered layout', async () => {
+      const output = Transform.compile({
+        moduleId: 'grid.ts',
+        source: GridLines.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>.grid{display:grid;grid-template-columns:[start] 40px 40px [end] 40px;grid-template-rows:30px 30px;width:120px}${output.css}</style><div class="grid"><div id="actual" class="${module.placement.className}"></div></div><div class="grid"><div id="control" style="grid-area:1 / 2 / 3 / 4"></div></div><div class="grid"><div id="named" class="${module.named.className}"></div></div><div class="grid"><div id="named-control" style="grid-column:start / end;grid-row:1 / span 2"></div></div><div class="grid"><div id="override" class="${module.first.className} ${module.second.className} ${module.third.className}"></div></div>`,
+        )
+
+        for (const id of ['actual', 'control', 'named', 'named-control']) {
+          expect(
+            await page
+              .locator(`#${id}`)
+              .evaluate((element) => [
+                element.getBoundingClientRect().width,
+                element.getBoundingClientRect().height,
+              ]),
+          ).toMatchInlineSnapshot(`
+          [
+            80,
+            60,
+          ]
+        `)
+        }
+
+        expect(
+          await page
+            .locator('#override')
+            .evaluate((element) => getComputedStyle(element).gridColumnStart),
+        ).toMatchInlineSnapshot(`"1"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('grid', () => {
+  describe('compile', () => {
+    test('grid tracks preserve flexible units, line fallback importance, and maps', () => {
+      const output = Transform.compile({
+        moduleId: 'grid.ts',
+        source: Grid.source,
+      })
+
+      expect(output.css.match(/grid-column-start:[^;}]+/g))
+        .toMatchInlineSnapshot(`
+      [
+        "grid-column-start:1",
+        "grid-column-start:2!important",
+      ]
+    `)
+      expect(
+        output.css.includes('grid-auto-columns:1fr'),
+      ).toMatchInlineSnapshot(`true`)
+
+      const lines = output.css.split('\n')
+      const line = lines.findIndex((line) =>
+        line.includes('grid-column-start:2!important'),
+      )
+
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          line: line + 1,
+          column: lines[line]!.indexOf('grid-column-start:2!important'),
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 42,
+        "line": 3,
+        "name": "gridColumnStart",
+        "source": "grid.ts",
+      }
+    `)
+    })
+
+    test('grid tracks and spans match independent browser geometry', async () => {
+      const output = Transform.compile({
+        moduleId: 'grid.ts',
+        source: Grid.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><section id="actual" class="${module.grid.className}"><div class="${module.cell.className}">Span</div></section><section id="control" style="${Grid.controls.grid}"><div style="${Grid.controls.cell}">Span</div></section>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const a = getComputedStyle(document.getElementById('actual')!)
+            const b = getComputedStyle(document.getElementById('control')!)
+
+            return [
+              'grid-auto-columns',
+              'grid-auto-rows',
+              'grid-auto-flow',
+              'grid-template-columns',
+              'grid-template-rows',
+            ].filter(
+              (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page
+            .locator('#actual > div')
+            .evaluate((element) => element.getBoundingClientRect().width),
+        ).toMatchInlineSnapshot(`200`)
+        expect(
+          await page
+            .locator('#actual > div')
+            .evaluate((element) => element.getBoundingClientRect().height),
+        ).toMatchInlineSnapshot(`40`)
+        expect(
+          await page
+            .locator('#actual > div')
+            .evaluate(
+              (element) =>
+                element.getBoundingClientRect().left -
+                element.parentElement!.getBoundingClientRect().left,
+            ),
+        ).toMatchInlineSnapshot(`100`)
+        expect(
+          await page.evaluate(() => {
+            const a = document
+              .querySelector('#actual > div')!
+              .getBoundingClientRect()
+            const b = document
+              .querySelector('#control > div')!
+              .getBoundingClientRect()
+
+            return a.width === b.width && a.height === b.height
+          }),
+        ).toMatchInlineSnapshot(`true`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('gridLists', () => {
+  describe('compile', () => {
+    test('structured grid values agree with the independent track grammar', () => {
+      const lexer = Conformance.lexer()
+
+      for (const value of GridLists.valid) {
+        const output = Transform.compile({
+          moduleId: 'grid-list.ts',
+          source: `import { css } from 'zyzz'; css({gridTemplateColumns:${JSON.stringify(value)}});`,
+        })
+
+        expect(
+          output.css.includes(`grid-template-columns:${value}`),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          lexer.matchProperty('grid-template-columns', value).error,
+        ).toMatchInlineSnapshot(`null`)
+      }
+
+      const output = Transform.compile({
+        moduleId: 'grid-list.ts',
+        source: GridLists.source,
+      })
+
+      expect(
+        output.css.includes(
+          'grid-template-columns:1fr 2fr;grid-template-columns:repeat(auto-fit, minmax(80px, 1fr))!important',
+        ),
+      ).toMatchInlineSnapshot(`true`)
+    })
+
+    test('repeat and auto-fit tracks match responsive native browser geometry', async () => {
+      const output = Transform.compile({
+        moduleId: 'grid-list.ts',
+        source: GridLists.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+        const cells = '<i></i>'.repeat(6)
+
+        await page.setContent(
+          `<style>${output.css}i{height:10px}</style><div id="fixed" class="${module.fixed.className}">${cells}</div><div id="fixed-control" style="display:grid;width:300px;grid-template-columns:[start] repeat(3,minmax(0,1fr)) [end];grid-auto-rows:20px 30px">${cells}</div><div id="fluid" class="${module.fluid.className}">${cells}</div><div id="fluid-control" style="display:grid;width:300px;grid-template-columns:repeat(auto-fit,minmax(80px,1fr))">${cells}</div>`,
+        )
+
+        expect(
+          await page
+            .locator('#fixed')
+            .evaluate(
+              (element) => getComputedStyle(element).gridTemplateColumns,
+            ),
+        ).toMatchInlineSnapshot(`"[start] 100px 100px 100px [end]"`)
+        expect(
+          await page
+            .locator('#fixed')
+            .evaluate((element) => getComputedStyle(element).gridTemplateRows),
+        ).toMatchInlineSnapshot(`"20px 30px"`)
+
+        for (const width of ['300px', '150px']) {
+          await page.evaluate((width) => {
+            for (const id of ['fluid', 'fluid-control'])
+              document.getElementById(id)!.style.width = width
+          }, width)
+
+          expect(
+            await page.evaluate(() =>
+              ['fixed', 'fluid'].flatMap((id) => {
+                const a = getComputedStyle(document.getElementById(id)!)
+                const b = getComputedStyle(
+                  document.getElementById(`${id}-control`)!,
+                )
+
+                return ['grid-template-columns', 'grid-template-rows'].filter(
+                  (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+                )
+              }),
+            ),
+          ).toMatchInlineSnapshot(`[]`)
+        }
+
+        expect(
+          await page
+            .locator('#fluid')
+            .evaluate(
+              (element) => getComputedStyle(element).gridTemplateColumns,
+            ),
+        ).toMatchInlineSnapshot(`"150px"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('groupingAcceptance', () => {
+  describe('compile', () => {
+    test('rejects malformed grouping productions at their source boundary', () => {
+      const failures = [
+        '@media ???',
+        '@supports display:grid',
+        '@container card',
+        '@scope .root',
+        '@layer a,b',
+        '@starting-style invalid',
+      ]
+        .flatMap((header) => [
+          `import {global} from 'zyzz/web';global({${JSON.stringify(header)}:{body:{color:'red'}}});`,
+          `import {css} from 'zyzz';export const text=css({${JSON.stringify(header)}:{color:'red'}});`,
+        ])
+        .map((source) => {
+          try {
+            Transform.compile({
+              moduleId: 'invalid.ts',
+              source,
+            })
+            return 'accepted'
+          } catch (error) {
+            if (!(error instanceof Source.ExtractError)) throw error
+            return error.diagnostics.map((diagnostic) => diagnostic.message)
+          }
+        })
+      expect(failures).toMatchInlineSnapshot(`
+      [
+        [
+          "Unexpected token Delim('?')",
+        ],
+        [
+          "Unknown query threshold.",
+        ],
+        [
+          "Unexpected token Ident("display")",
+        ],
+        [
+          "Invalid selector or condition: Unexpected token Ident("display")",
+        ],
+        [
+          "Container rules require a query after the optional name.",
+        ],
+        [
+          "Unknown query threshold.",
+        ],
+        [
+          "Unexpected token Delim('.')",
+        ],
+        [
+          "Invalid selector or condition: Unexpected token Delim('.')",
+        ],
+        [
+          "Invalid @ rule body",
+        ],
+        [
+          "Invalid selector or condition: Invalid @ rule body",
+        ],
+        [
+          "Expected a selector or supported grouping rule.",
+        ],
+        [
+          "Expected a literal string or number; expressions are not evaluated.",
+        ],
+      ]
+    `)
+    })
+
+    for (const [family, headers] of Object.entries(GroupingRules.rules)) {
+      test(`preserves ${family} grammar in global and nested packed output with maps`, () => {
+        for (const header of headers) {
+          const source = GroupingRules.source(header)
+          const direct = Transform.compile({ moduleId: 'groups.ts', source })
+          const library = Graph.compile({ modules: { 'groups.ts': source } })
+          const packed = Graph.compile({
+            contracts: { 'lib/groups.js': library.contracts['groups.ts']! },
+            imports: { 'app.ts': { lib: 'lib/groups.js' } },
+            modules: { 'app.ts': `export {styles} from 'lib';` },
+          })
+          expect(direct.css.includes(header)).toMatchInlineSnapshot('true')
+          expect(direct.css.includes('body{color:red;}')).toMatchInlineSnapshot(
+            'true',
+          )
+          expect(
+            packed.sharedCss?.includes('body{color:red;}'),
+          ).toMatchInlineSnapshot('true')
+          expect(
+            Trace.originalPositionFor(
+              new Trace.TraceMap(packed.sharedCssMap!),
+              {
+                line: 1,
+                column: 0,
+              },
+            ),
+          ).toMatchInlineSnapshot(`
+          {
+            "column": 0,
+            "line": 2,
+            "name": null,
+            "source": "lib/groups.ts",
+          }
+        `)
+        }
+      })
+    }
+  })
+})
+
+describe('identifiers', () => {
+  describe('compile', () => {
+    test('native names resolve case-sensitive keyframes and named container queries', async () => {
+      const output = Transform.compile({
+        moduleId: 'identifiers.ts',
+        source: Identifiers.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${Identifiers.native}${output.css}</style><div id="container" class="${module.container.className}"><span id="probe" class="probe">probe</span></div><div id="motion" class="${module.motion.className}"></div><div id="control" style="animation-name:Fade;animation-duration:1s;animation-delay:-250ms;animation-play-state:paused;animation-timing-function:linear;animation-fill-mode:both"></div><div id="names" class="${module.names.className}"></div>`,
+        )
+
+        expect(
+          await page
+            .locator('#motion')
+            .evaluate((element) => getComputedStyle(element).opacity),
+        ).toMatchInlineSnapshot(`"0.25"`)
+        expect(
+          await page
+            .locator('#control')
+            .evaluate((element) => getComputedStyle(element).opacity),
+        ).toMatchInlineSnapshot(`"0.25"`)
+        expect(
+          await page
+            .locator('#probe')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot(`"rgb(0, 128, 0)"`)
+        expect(
+          await page
+            .locator('#container')
+            .evaluate((element) => getComputedStyle(element).containerName),
+        ).toMatchInlineSnapshot(`"Card Secondary"`)
+        expect(
+          await page
+            .locator('#names')
+            .evaluate(
+              (element) => getComputedStyle(element).viewTransitionName,
+            ),
+        ).toMatchInlineSnapshot(`"Hero"`)
+        expect(
+          await page
+            .locator('#names')
+            .evaluate(
+              (element) => getComputedStyle(element).transitionProperty,
+            ),
+        ).toMatchInlineSnapshot(`"opacity, transform"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('images', () => {
+  describe('compile', () => {
+    test('preserves quoted image fallbacks and marker shorthand order', () => {
+      const styles = Style.define({
+        image: {
+          backgroundImage: ['url("image.png")', 'linear-gradient(red, blue)!'],
+        },
+        first: { marker: 'url(#first)' },
+        second: { markerStart: 'url(#second)' },
+        third: { marker: 'url(#first)', opacity: 0.5 },
+      })
+
+      expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
+      ".z-background-image-Y8kGIH{background-image:url("image.png");background-image:linear-gradient(red, blue)!important;}
+      .z-marker-iap1nQ-0{marker:url(#first);}
+      .z-marker-start-6JGf0r-0{marker-start:url(#second);}
+      .z-marker-ptwuGd-0{marker:url(#first);}
+      .z-opacity-O99JRy{opacity:0.5;}"
+    `)
+
+      const lexer = Conformance.lexer()
+
+      for (const value of [
+        'url("image.png")',
+        'linear-gradient(red, blue)',
+        'url(#paint), none',
+      ])
+        expect(
+          lexer.matchProperty('background-image', value).error,
+        ).toMatchInlineSnapshot(`null`)
+    })
+
+    test('leaves CSS value validity to static authoring and the browser', () => {
+      const styles = Reflect.apply(Style.define, undefined, [
+        { card: { color: '#12', order: 0.5 } },
+      ]) as Style.Definition
+
+      expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
+        `
+      ".z-text-ii5ean{color:#12;}
+      .z-order-vF1uZq{order:0.5;}"
+    `,
+      )
+
+      const output = Transform.compile({
+        moduleId: 'unchecked.ts',
+        source: `import { css } from 'zyzz'; export const card = css({ color: '#12', order: 0.5 })();`,
+      })
+
+      expect(output.css.includes('color:#12;order:0.5;')).toMatchInlineSnapshot(
+        `false`,
+      )
+    })
+
+    test('image fallbacks and SVG markers match native browser declarations', async () => {
+      const output = Transform.compile({
+        moduleId: 'images.ts',
+        source: `import { css } from 'zyzz'; export const image = css({ backgroundImage: ['url("missing.png")', 'linear-gradient(red, blue)!'], maskImage: 'linear-gradient(black, transparent)' })(); export const marker = css({marker:'url(#arrow)', markerStart:'none'})();`,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div id="actual" class="${module.image.className}"></div><div id="control" style="background-image:linear-gradient(red, blue)!important;mask-image:linear-gradient(black, transparent)"></div><svg><defs><marker id="arrow" markerWidth="10" markerHeight="10"><path d="M0,0 L10,5 L0,10 Z"/></marker></defs><path id="actual-marker" class="${module.marker.className}" d="M10,10 L50,10"/><path id="control-marker" style="marker:url(#arrow);marker-start:none" d="M10,30 L50,30"/></svg>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const actual = getComputedStyle(document.getElementById('actual')!)
+            const control = getComputedStyle(
+              document.getElementById('control')!,
+            )
+            const marker = getComputedStyle(
+              document.getElementById('actual-marker')!,
+            )
+            const native = getComputedStyle(
+              document.getElementById('control-marker')!,
+            )
+
+            return (
+              actual.backgroundImage === control.backgroundImage &&
+              actual.maskImage === control.maskImage &&
+              marker.markerStart === native.markerStart &&
+              marker.markerEnd === native.markerEnd
+            )
+          }),
+        ).toMatchInlineSnapshot(`true`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('keyframeAcceptance', () => {
+  describe('compile', () => {
+    test('retains escaped stops exponent offsets and unrestricted timeline percentages through packed references', () => {
+      for (const stop of [
+        'FROM',
+        '\\66 rom',
+        '+0%,1e2%',
+        'contain -20%',
+        'cover 150%',
+        'entry 20%',
+        'entry-crossing 50%',
+        'exit 100%',
+        'exit-crossing 120%',
+      ]) {
+        const library = Graph.compile({
+          modules: {
+            'frames.ts': `import {keyframes} from 'zyzz/web';\nexport const fade=keyframes({${JSON.stringify(stop)}:{opacity:0},to:{opacity:1}},{within:['@layer motion','@media screen']});`,
+          },
+        })
+        const packed = Graph.compile({
+          contracts: { 'lib/frames.js': library.contracts['frames.ts']! },
+          imports: { 'app.ts': { lib: 'lib/frames.js', 'zyzz/web': null } },
+          modules: {
+            'app.ts': `import {fade} from 'lib';import {global} from 'zyzz/web';global({body:{animationName:fade}});`,
+          },
+        })
+        expect(packed.sharedCss?.includes('@keyframes')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(
+          packed.sharedCss?.includes('animation-name:z-'),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+            line: 1,
+            column: 0,
+          }),
+        ).toMatchInlineSnapshot(`
+        {
+          "column": 18,
+          "line": 2,
+          "name": null,
+          "source": "lib/frames.ts",
+        }
+      `)
+      }
+    })
+    test('rejects malformed and out-of-range ordinary frame selectors', () => {
+      for (const stop of [
+        '-1%',
+        '101%',
+        '0x10%',
+        'entry',
+        'unknown 50%',
+        'from,',
+        'from}body{color:red;',
+      ]) {
+        expect(() =>
+          Transform.compile({
+            moduleId: 'invalid.ts',
+            source: `import {keyframes} from 'zyzz/web';export const fade=keyframes({${JSON.stringify(stop)}:{opacity:0}});`,
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: invalid.ts:53: Keyframe stops require from, to, 0–100% offsets, or named timeline percentages.]`,
+        )
+      }
+    })
+  })
+})
+
+describe('keywordGroups', () => {
+  describe('compile', () => {
+    test('keyword groups agree with independent grammar in authored orders', () => {
+      const lexer = Conformance.lexer()
+
+      for (const [property, value] of [
+        ['contain', 'layout style paint'],
+        ['fontSynthesis', 'style weight small-caps'],
+        ['fontVariantEastAsian', 'jis78 full-width ruby'],
+        ['fontVariantLigatures', 'no-common-ligatures contextual'],
+        ['fontVariantNumeric', 'oldstyle-nums tabular-nums slashed-zero'],
+      ] as const) {
+        for (const words of [value, value.split(' ').reverse().join(' ')]) {
+          const output = Transform.compile({
+            moduleId: 'groups.ts',
+            source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(words)}})`,
+          })
+
+          expect(
+            output.css.includes(`${Conformance.name(property)}:${words}`),
+          ).toMatchInlineSnapshot(`true`)
+          expect(
+            lexer.matchProperty(Conformance.name(property), words).error,
+          ).toMatchInlineSnapshot(`null`)
+        }
+      }
+    })
+    test('keyword groups match native browser declarations and priority', async () => {
+      const output = Transform.compile({
+        moduleId: 'groups.ts',
+        source: KeywordGroups.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div id="actual" class="${module.text.className}" style="font-variant-numeric:lining-nums">123</div><div id="control" style="${KeywordGroups.control}">123</div>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const a = getComputedStyle(document.getElementById('actual')!)
+            const b = getComputedStyle(document.getElementById('control')!)
+
+            return [
+              'contain',
+              'font-synthesis',
+              'font-variant-east-asian',
+              'font-variant-ligatures',
+              'font-variant-numeric',
+            ].filter(
+              (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate(
+              (element) => getComputedStyle(element).fontVariantNumeric,
+            ),
+        ).toMatchInlineSnapshot(`"oldstyle-nums tabular-nums slashed-zero"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('layout', () => {
+  describe('compile', () => {
+    test('layout preserves stacking importance', () => {
+      const output = Transform.compile({
+        moduleId: 'layout.ts',
+        source: Layout.source,
+      })
+
+      expect(output.css.match(/z-index:[^;}]+/g)).toMatchInlineSnapshot(`
+      [
+        "z-index:auto",
+        "z-index:2!important",
+        "z-index:1",
+      ]
+    `)
+    })
+
+    test('layout matches browser float clearance, containment, and stacking', async () => {
+      const output = Transform.compile({
+        moduleId: 'layout.ts',
+        source: Layout.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        const attributes = (
+          name: keyof typeof Layout.controls,
+          control: boolean,
+        ) =>
+          control
+            ? `id="${name}-control" style="${Layout.controls[name]}"`
+            : `id="${name}" class="${module[name].className}"`
+
+        const markup = (control: boolean) =>
+          `<main><div ${attributes('floatBox', control)}>Float</div><div ${attributes('cleared', control)}>Clear</div><section ${attributes('context', control)}><div ${attributes('front', control)}>Front</div><div ${attributes('back', control)}>Back</div></section><img ${attributes('image', control)} width="20" height="20" alt=""></main>`
+
+        await page.setContent(
+          `<style>${output.css}</style>${markup(false)}${markup(true)}`,
+        )
+
+        expect(
+          await page.evaluate(
+            (names) =>
+              names.filter((name) => {
+                const a = getComputedStyle(document.getElementById(name)!)
+                const b = getComputedStyle(
+                  document.getElementById(`${name}-control`)!,
+                )
+
+                return [
+                  'backface-visibility',
+                  'box-decoration-break',
+                  'clear',
+                  'contain',
+                  'content-visibility',
+                  'display',
+                  'float',
+                  'isolation',
+                  'object-fit',
+                  'transform-style',
+                  'z-index',
+                ].some(
+                  (property) =>
+                    a.getPropertyValue(property) !==
+                    b.getPropertyValue(property),
+                )
+              }),
+            Object.keys(Layout.controls),
+          ),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page
+            .locator('#cleared')
+            .evaluate(
+              (element) =>
+                element.getBoundingClientRect().top >=
+                document.getElementById('floatBox')!.getBoundingClientRect()
+                  .bottom,
+            ),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          await page.locator('#context').evaluate((element) => {
+            const box = element.getBoundingClientRect()
+
+            return document.elementFromPoint(box.x + 10, box.y + 10)?.id
+          }),
+        ).toMatchInlineSnapshot(`"front"`)
+        expect(
+          await page.locator('#context-control').evaluate((element) => {
+            const box = element.getBoundingClientRect()
+
+            return document.elementFromPoint(box.x + 10, box.y + 10)?.id
+          }),
+        ).toMatchInlineSnapshot(`"front-control"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('masks', () => {
+  describe('compile', () => {
+    test('masks preserve fallback sizes, background axis precedence, and maps', () => {
+      const output = Transform.compile({
+        moduleId: 'masks.ts',
+        source: Masks.source,
+      })
+
+      expect(output.css.match(/background-position(?:-x)?:[^;}]+/g))
+        .toMatchInlineSnapshot(`
+      [
+        "background-position-x:10px",
+        "background-position:right",
+        "background-position-x:20px",
+      ]
+    `)
+      expect(output.css.match(/mask-size:[^;}]+/g)).toMatchInlineSnapshot(`
+      [
+        "mask-size:auto",
+        "mask-size:50%!important",
+      ]
+    `)
+
+      const lines = output.css.split('\n')
+      const line = lines.findIndex((line) =>
+        line.includes('mask-size:50%!important'),
+      )
+
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          line: line + 1,
+          column: lines[line]!.indexOf('mask-size:50%!important'),
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 249,
+        "line": 2,
+        "name": "maskSize",
+        "source": "masks.ts",
+      }
+    `)
+    })
+
+    test('masks match independent browser pixels and background precedence', async () => {
+      const output = Transform.compile({
+        moduleId: 'masks.ts',
+        source: Masks.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>.box{width:80px;height:80px;padding:8px;border:8px solid #06c;background:#06c;mask-image:linear-gradient(black,black)}${output.css}</style><div id="actual" class="box ${module.mask.className}"></div><div id="control" class="box" style="${Masks.control}"></div><div id="unmasked" class="box" style="mask-image:none"></div>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const a = getComputedStyle(document.getElementById('actual')!)
+            const b = getComputedStyle(document.getElementById('control')!)
+
+            return [
+              'background-position',
+              'image-rendering',
+              'mask-clip',
+              'mask-composite',
+              'mask-mode',
+              'mask-origin',
+              'mask-position',
+              'mask-repeat',
+              'mask-size',
+              'mask-type',
+              'object-position',
+              'perspective',
+              'perspective-origin',
+              'shape-margin',
+              'transform-box',
+              'transform-origin',
+            ].filter(
+              (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate(
+              (element) => getComputedStyle(element).backgroundPosition,
+            ),
+        ).toMatchInlineSnapshot(`"100% 50%"`)
+
+        const actual = await page.locator('#actual').screenshot()
+        const control = await page.locator('#control').screenshot()
+        const unmasked = await page.locator('#unmasked').screenshot()
+
+        expect(actual.equals(control)).toMatchInlineSnapshot(`true`)
+        expect(actual.equals(unmasked)).toMatchInlineSnapshot(`false`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('mathExpressions', () => {
+  describe('compile', () => {
+    test('dimensional expressions agree with independent CSS grammar', () => {
+      const lexer = Conformance.lexer()
+
+      for (const [property, value] of [
+        ['width', 'clamp(20px, calc(50% - 10px), 200px)'],
+        ['padding', 'calc(2px * 3) min(20px, 5%)'],
+        ['borderRadius', 'calc(20px / 2) / max(10px, 5%)'],
+        ['opacity', 'calc(1 / 2)'],
+        ['order', 'calc(1.5)'],
+        ['transitionDuration', 'calc(1s + 250ms), min(2s, 500ms)'],
+        [
+          'gridTemplateColumns',
+          'minmax(calc(10px + 2px), 1fr) clamp(20px, 10%, 50px)',
+        ],
+      ] as const) {
+        const output = Transform.compile({
+          moduleId: 'math.ts',
+          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}})`,
+        })
+
+        expect(
+          output.css.includes(`${Conformance.name(property)}:${value}`),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          lexer.matchProperty(Conformance.name(property), value).error,
+        ).toMatchInlineSnapshot(`null`)
+      }
+    })
+    test('nested math matches browser layout, integer rounding, and duration values', async () => {
+      const output = Transform.compile({
+        moduleId: 'math.ts',
+        source: MathExpressions.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage({
+          viewport: { width: 800, height: 600 },
+        })
+
+        await page.setContent(
+          `<style>${output.css}.parent{width:400px}.grid{width:300px}</style><div class="parent"><div id="actual" class="${module.box.className}"></div><div id="control" style="${MathExpressions.control}"></div></div><div id="grid" class="grid ${module.grid.className}"></div><div id="grid-control" class="grid" style="display:grid;grid-template-columns:minmax(calc(10px + 2px),1fr) clamp(20px,10%,50px)"></div>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const a = getComputedStyle(document.getElementById('actual')!)
+            const b = getComputedStyle(document.getElementById('control')!)
+
+            return [
+              'width',
+              'height',
+              'padding-top',
+              'padding-right',
+              'border-top-left-radius',
+              'opacity',
+              'order',
+              'transition-duration',
+            ].filter(
+              (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"190px"`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).order),
+        ).toMatchInlineSnapshot(`"2"`)
+        expect(
+          await page.evaluate(
+            () =>
+              getComputedStyle(document.getElementById('grid')!)
+                .gridTemplateColumns ===
+              getComputedStyle(document.getElementById('grid-control')!)
+                .gridTemplateColumns,
+          ),
+        ).toMatchInlineSnapshot(`true`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('motion', () => {
+  describe('compile', () => {
+    test('motion controls preserve units, importance, and source maps', () => {
+      const output = Transform.compile({
+        moduleId: 'motion.ts',
+        source: Motion.source,
+      })
+
+      expect(output.css.match(/animation-duration:[^;}]+/g))
+        .toMatchInlineSnapshot(`
+      [
+        "animation-duration:1s",
+        "animation-duration:2s!important",
+      ]
+    `)
+
+      const lines = output.css.split('\n')
+      const line = lines.findIndex((line) =>
+        line.includes('animation-duration:2s!important'),
+      )
+
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          line: line + 1,
+          column: lines[line]!.indexOf('animation-duration:2s!important'),
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 73,
+        "line": 2,
+        "name": "animationDuration",
+        "source": "motion.ts",
+      }
+    `)
+    })
+
+    test('motion controls drive native paused animation timing', async () => {
+      const output = Transform.compile({
+        moduleId: 'motion.ts',
+        source: Motion.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>@keyframes fade{from{opacity:0}to{opacity:1}}#actual,#control{animation-name:fade}${output.css}</style><div id="actual" class="${module.motion.className}">Motion</div><div id="control" style="${Motion.controls.motion}">Control</div><div id="transition" class="${module.transition.className}">Transition</div><div id="transition-control" style="${Motion.controls.transition}">Control</div>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const a = getComputedStyle(document.getElementById('actual')!)
+            const b = getComputedStyle(document.getElementById('control')!)
+
+            return [
+              'animation-delay',
+              'animation-duration',
+              'animation-direction',
+              'animation-fill-mode',
+              'animation-iteration-count',
+              'animation-play-state',
+              'animation-timing-function',
+              'opacity',
+            ].filter(
+              (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).opacity),
+        ).toMatchInlineSnapshot(`"0.25"`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate(
+              (element) =>
+                element.getAnimations()[0]!.effect!.getTiming().duration,
+            ),
+        ).toMatchInlineSnapshot(`2000`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate(
+              (element) =>
+                element.getAnimations()[0]!.effect!.getTiming().delay,
+            ),
+        ).toMatchInlineSnapshot(`-500`)
+        expect(
+          await page.evaluate(() => {
+            const a = getComputedStyle(document.getElementById('transition')!)
+            const b = getComputedStyle(
+              document.getElementById('transition-control')!,
+            )
+
+            return [
+              'transition-delay',
+              'transition-duration',
+              'transition-timing-function',
+              'transition-behavior',
+            ].filter(
+              (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('motionLists', () => {
+  describe('compile', () => {
+    test('motion functions agree with independent CSS grammar', () => {
+      const lexer = Conformance.lexer()
+
+      for (const value of MotionLists.easing) {
+        const output = Transform.compile({
+          moduleId: 'motion-lists.ts',
+          source: `import { css } from 'zyzz'; css({animationTimingFunction:${JSON.stringify(value)}});`,
+        })
+
+        expect(
+          output.css.includes(`animation-timing-function:${value}`),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          lexer.matchProperty('animation-timing-function', value).error,
+        ).toMatchInlineSnapshot(`null`)
+      }
+
+      const output = Transform.compile({
+        moduleId: 'motion-lists.ts',
+        source: MotionLists.source,
+      })
+
+      expect(output.css.match(/transition-duration:[^;}]+/g))
+        .toMatchInlineSnapshot(`
+      [
+        "transition-duration:1s, 2s",
+        "transition-duration:250ms, 500ms!important",
+      ]
+    `)
+    })
+
+    test('motion lists match native computed styles and paused curve output', async () => {
+      const output = Transform.compile({
+        moduleId: 'motion-lists.ts',
+        source: MotionLists.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}@keyframes fade{from{opacity:0}to{opacity:1}}@keyframes move{from{left:0px}to{left:100px}}.animated{animation-name:fade,move;position:relative}</style><div id="actual" class="animated ${module.motion.className}"></div><div id="control" class="animated" style="${MotionLists.control}"></div>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const actual = getComputedStyle(document.getElementById('actual')!)
+            const control = getComputedStyle(
+              document.getElementById('control')!,
+            )
+
+            return [
+              'animation-delay',
+              'animation-direction',
+              'animation-duration',
+              'animation-fill-mode',
+              'animation-iteration-count',
+              'animation-play-state',
+              'animation-timing-function',
+              'transition-behavior',
+              'transition-delay',
+              'transition-duration',
+              'transition-timing-function',
+              'opacity',
+              'left',
+            ].filter(
+              (key) =>
+                actual.getPropertyValue(key) !== control.getPropertyValue(key),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).opacity),
+        ).toMatchInlineSnapshot(`"0.25"`)
+        // Seek real CSS animations to a fixed time; no wall-clock timing assumptions.
+        expect(
+          await page.evaluate(() => {
+            for (const animation of document.getAnimations())
+              animation.currentTime = 500
+
+            const actual = getComputedStyle(document.getElementById('actual')!)
+            const control = getComputedStyle(
+              document.getElementById('control')!,
+            )
+
+            return {
+              left: actual.left,
+              matches:
+                actual.left === control.left &&
+                actual.opacity === control.opacity,
+              opacity: actual.opacity,
+            }
+          }),
+        ).toMatchInlineSnapshot(`
+        {
+          "left": "75px",
+          "matches": true,
+          "opacity": "0.75",
+        }
+      `)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('namedRules.browser', () => {
+  describe('compile', () => {
+    test('Chromium renders named descriptors and exact anchor fallback placement', async () => {
+      const output = Transform.compile({
+        moduleId: 'render.ts',
+        source: `import {fontFace,fontPaletteValues,counterStyle,positionTry,global} from 'zyzz/web';
+fontFace({fontFamily:'PaletteEvidence',src:${JSON.stringify(`url("${namedRulesFont.url}")`)}});
+const blue=fontPaletteValues({fontFamily:'PaletteEvidence',basePalette:1});
+const dots=counterStyle({system:'cyclic',symbols:'"●"',suffix:'" "'});
+const above=positionTry({positionArea:'top'});
+global({'#compiled':{fontPalette:blue},'#counter':{listStyleType:dots},'#tooltip':{position:'absolute',positionAnchor:'--target',positionArea:'bottom',positionTryFallbacks:above,width:'50px',height:'30px'}});`,
+      })
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage({
+          viewport: { width: 300, height: 200 },
+        })
+        await page.setContent(
+          '<div id="compiled" class="font">A</div><div id="native" class="font">A</div><div id="red" class="font">A</div><li id="counter">item</li><li id="control">item</li><div id="anchor"></div><div id="tooltip"></div>',
+        )
+        await page.addStyleTag({ content: output.css })
+        await page.addStyleTag({
+          content:
+            '@font-palette-values --native {font-family:PaletteEvidence;base-palette:1} @counter-style reference {system:cyclic;symbols:"●";suffix:" "} .font{font:40px PaletteEvidence;width:60px;height:40px} #native{font-palette:--native} #red{font-palette:normal} li{list-style-position:inside;width:100px;height:24px;font:16px Arial} #control{list-style-type:reference} #anchor{anchor-name:--target;position:absolute;top:180px;left:100px;width:20px;height:10px}',
+        })
+        await page.evaluate(() => document.fonts.ready)
+        expect(
+          await page.evaluate(() =>
+            document.fonts.check('40px PaletteEvidence'),
+          ),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          Buffer.compare(
+            await page.locator('#compiled').screenshot(),
+            await page.locator('#native').screenshot(),
+          ),
+        ).toMatchInlineSnapshot('0')
+        expect(
+          Buffer.compare(
+            await page.locator('#compiled').screenshot(),
+            await page.locator('#red').screenshot(),
+          ) === 0,
+        ).toMatchInlineSnapshot('false')
+        expect(
+          Buffer.compare(
+            await page.locator('#counter').screenshot(),
+            await page.locator('#control').screenshot(),
+          ),
+        ).toMatchInlineSnapshot('0')
+        expect(
+          await page.locator('#tooltip').evaluate((element) => {
+            const box = element.getBoundingClientRect()
+            return {
+              bottom: box.bottom,
+              height: box.height,
+              left: box.left,
+              width: box.width,
+            }
+          }),
+        ).toMatchInlineSnapshot(`
+        {
+          "bottom": 180,
+          "height": 30,
+          "left": 85,
+          "width": 50,
+        }
+      `)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('namedRules', () => {
+  describe('compile', () => {
+    test('rejects property templates with palette identities', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source:
+            "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=css({listStyleType:`${palette}`});",
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: invalid.ts:173: Expected a literal string or number; expressions are not evaluated.
+      invalid.ts:176: Named stylesheet reference is incompatible with this property.
+      invalid.ts:176: Named stylesheet reference is incompatible with this property.]
+    `)
+    })
+    test('rejects descriptor templates with palette identities', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source:
+            "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=counterStyle({symbols:'\"x\"',fallback:`${palette}`});",
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:154: Named stylesheet reference is incompatible with this descriptor.]`,
+      )
+    })
+    test('rejects negative base palette indexes', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source:
+            "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=fontPaletteValues({fontFamily:\"Body\",basePalette:-1});",
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:154: Expected supported scalar descriptors and required fields.]`,
+      )
+    })
+    test('rejects fractional base palette indexes', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source:
+            "import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';const palette=fontPaletteValues({fontFamily:'Body'});export const result=fontPaletteValues({fontFamily:\"Body\",basePalette:1.5});",
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:154: Expected supported scalar descriptors and required fields.]`,
+      )
+    })
+    test.each([
+      `export * from 'zyzz/web';export {counterStyle} from './local.js';`,
+      `export * from 'zyzz/web';export function counterStyle(){return 'local'}`,
+    ])(
+      'preserves explicit exports before factory star exports: %s',
+      (barrel) => {
+        const output = Graph.compile({
+          modules: {
+            'barrel.ts': barrel,
+            'local.ts': `export function counterStyle(){return 'local'}`,
+            'main.ts': `import {counterStyle} from './barrel.js';export const result=counterStyle();`,
+          },
+        })
+        expect(output.sharedCss).toMatchInlineSnapshot(`undefined`)
+      },
+    )
+    test('maps contributions after an empty layer list', () => {
+      const output = Transform.compile({
+        moduleId: 'layers.ts',
+        source: `import {layers,fontFace} from 'zyzz/web';layers([]);fontFace({fontFamily:'Body',src:'url(/font.ttf)'});`,
+      })
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          line: 1,
+          column: 0,
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 52,
+        "line": 1,
+        "name": null,
+        "source": "layers.ts",
+      }
+    `)
+    })
+    test('rejects bare profile references as element colors', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'profile.js',
+          source: `import {css} from 'zyzz';import {colorProfile} from 'zyzz/web';const profile=colorProfile({src:'url(/profile.icc)'});export namespace styles {
+  export const text = css({color:profile})
+}`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: profile.js:176: Named stylesheet reference is incompatible with this property.]`,
+      )
+    })
+    test('emits valid JavaScript, prunes dead names, and resolves wrapped references', async () => {
+      const output = Transform.compile({
+        moduleId: 'names.js',
+        source: `import {counterStyle,fontPaletteValues,positionTry,colorProfile} from 'zyzz/web';const unused=counterStyle({symbols:'"x"'});const unusedPalette=fontPaletteValues({fontFamily:'Body'});const unusedPosition=positionTry({top:'1px'});const unusedProfile=colorProfile({src:'url(/profile.icc)'});const base=counterStyle({symbols:'"x"'});export const alias=counterStyle({system:'extends decimal',fallback:(base)});`,
+      })
+      expect(
+        (await Esbuild.transform(output.code, { loader: 'js' })).warnings,
+      ).toMatchInlineSnapshot('[]')
+      expect(output.css).toMatchInlineSnapshot(`
+      "@counter-style z-counterstyle16ar4zc1t3v3rg-62-61-73-65{symbols:"x";}
+      @counter-style z-counterstyle16ar4zc1t3v3rg-61-6c-69-61-73{system:extends decimal;fallback:z-counterstyle16ar4zc1t3v3rg-62-61-73-65;}"
+    `)
+      const map = new Trace.TraceMap(output.cssMap)
+      expect(Trace.originalPositionFor(map, { line: 2, column: 0 }))
+        .toMatchInlineSnapshot(`
+      {
+        "column": 349,
+        "line": 1,
+        "name": null,
+        "source": "names.js",
+      }
+    `)
+    })
+    test('rejects untyped cross-domain references and malformed descriptors', () => {
+      const cases = [
+        `export const x=counterStyle({});`,
+        `export const x=counterStyle({system:'fixedfoo',symbols:'"x"'});`,
+        `export const x=counterStyle({symbols:'"x"',fallback:1});`,
+        `const p=fontPaletteValues({fontFamily:'Body'});export const x=css({listStyleType:p});`,
+        `const p=fontPaletteValues({fontFamily:'Body'});export const x=counterStyle({symbols:'"x"',fallback:(p)});`,
+      ]
+      expect(
+        cases.map((source) => {
+          try {
+            Transform.compile({
+              moduleId: 'bad.js',
+              source:
+                `import {css} from 'zyzz';import {counterStyle,fontPaletteValues} from 'zyzz/web';` +
+                source,
+            })
+            return 'accepted'
+          } catch (error) {
+            return error
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: bad.js:96: The counter system requires symbols or additiveSymbols.],
+        [Source.ExtractError: bad.js:96: Expected a supported counter system, with an integer after fixed.],
+        [Source.ExtractError: bad.js:96: Expected supported scalar descriptors and required fields.],
+        [Source.ExtractError: bad.js:162: Named stylesheet reference is incompatible with this property.],
+        [Source.ExtractError: bad.js:143: Named stylesheet reference is incompatible with this descriptor.],
+      ]
+    `)
+    })
+    test('emits each named descriptor family and direct references', () => {
+      const output = Transform.compile({
+        moduleId: 'names.ts',
+        source: `import {css} from 'zyzz'; import {colorProfile,counterStyle,fontPaletteValues,positionTry} from 'zyzz/web';
+export const dots=counterStyle({system:'cyclic',symbols:'"●"',suffix:'" "'});
+export const palette=fontPaletteValues({fontFamily:'Body',basePalette:0,overrideColors:'0 red'});
+export const below=positionTry({positionArea:'bottom',marginTop:'4px'});
+export const profile=colorProfile({src:'url(/profile.icc)',renderingIntent:'relative-colorimetric'});
+export namespace styles {
+  export const list = css({listStyleType:dots,fontPalette:palette,positionTryFallbacks:below})
+}`,
+      })
+      expect(output.css).toMatchInlineSnapshot(`
+      "@counter-style z-counterstyle141558i1cjhj8q-64-6f-74-73{system:cyclic;symbols:"●";suffix:" ";}
+      @font-palette-values --z-fontpalettevalues141558i1cjhj8q-70-61-6c-65-74-74-65{font-family:Body;base-palette:0;override-colors:0 red;}
+      @position-try --z-positiontry141558i1cjhj8q-62-65-6c-6f-77{position-area:bottom;margin-top:4px;}
+      @color-profile --z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65{src:url(/profile.icc);rendering-intent:relative-colorimetric;}
+      .z-list-style-type-A4rGMH{list-style-type:z-counterstyle141558i1cjhj8q-64-6f-74-73;}
+      .z-font-palette-A4rGMH{font-palette:--z-fontpalettevalues141558i1cjhj8q-70-61-6c-65-74-74-65;}
+      .z-position-try-fallbacks-A4rGMH{position-try-fallbacks:--z-positiontry141558i1cjhj8q-62-65-6c-6f-77;}"
+    `)
+      expect(
+        output.code
+          .split('\n')
+          .map((line) => line.trimEnd())
+          .join('\n'),
+      ).toMatchInlineSnapshot(`
+      "
+      import { Props as __zyzzProps } from 'zyzz/runtime';
+
+      export const dots="z-counterstyle141558i1cjhj8q-64-6f-74-73" as import('zyzz/web').counterStyle.Reference;
+      export const palette="--z-fontpalettevalues141558i1cjhj8q-70-61-6c-65-74-74-65" as import('zyzz/web').fontPaletteValues.Reference;
+      export const below="--z-positiontry141558i1cjhj8q-62-65-6c-6f-77" as import('zyzz/web').positionTry.Reference;
+      export const profile="--z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65" as import('zyzz/web').colorProfile.Reference;
+      export namespace styles {
+        export const list = __zyzzProps.create({className:"z-list-style-type-A4rGMH z-font-palette-A4rGMH z-position-try-fallbacks-A4rGMH z-style-141558i1cjhj8q-507"})
+      }"
+    `)
+    })
+    test('preserves aliases and re-exports through packed metadata and rebuilds', () => {
+      const compiler = Graph.create()
+      const library = Graph.compile({
+        modules: {
+          'names.ts': `import {counterStyle} from 'zyzz/web';const dots=counterStyle({system:'cyclic',symbols:'"●"'});const alias=dots;export {alias};`,
+        },
+      })
+      const input = {
+        contracts: { 'lib/names.js': library.contracts['names.ts']! },
+        imports: { 'app.ts': { lib: 'lib/names.js', zyzz: null } },
+        modules: {
+          'app.ts': `import {css} from 'zyzz';import {alias} from 'lib';export namespace styles {
+  export const list = css({listStyleType:alias})
+}`,
+        },
+      }
+      const output = compiler.compile(input)
+      expect(output.sharedCss).toMatchInlineSnapshot(
+        `"@counter-style z-counterstyle141558i1cjhj8q-64-6f-74-73{system:cyclic;symbols:"●";}"`,
+      )
+      expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(
+        `".z-list-style-type-Jgxd-Q{list-style-type:z-counterstyle141558i1cjhj8q-64-6f-74-73;}"`,
+      )
+      expect(
+        JSON.parse(library.contracts['names.ts']!).version,
+      ).toMatchInlineSnapshot('9')
+      const edited = Graph.compile({
+        modules: {
+          'names.ts': `import {counterStyle} from 'zyzz/web';export const alias=counterStyle({system:'cyclic',symbols:'"■"'});`,
+        },
+      })
+      expect(
+        compiler.compile({
+          ...input,
+          contracts: { 'lib/names.js': edited.contracts['names.ts']! },
+        }).sharedCss,
+      ).toMatchInlineSnapshot(
+        `"@counter-style z-counterstyle141558i1cjhj8q-61-6c-69-61-73{system:cyclic;symbols:"■";}"`,
+      )
+    })
+    test('rejects unsupported descriptor keys and position declarations at the source call', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {positionTry} from 'zyzz/web';export const fallback=positionTry({color:'red'})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: bad.ts:59: Unsupported position-try declaration.]`,
+      )
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {fontPaletteValues} from 'zyzz/web';export const palette=fontPaletteValues({src:'url(/font)'})`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: bad.ts:64: Expected supported scalar descriptors and required fields.]`,
+      )
+    })
+  })
+})
+
+describe('namespace', () => {
+  const source = `import {namespace,global} from 'zyzz/web';
+namespace({prefix:'svg',uri:'urn:obsolete'});
+global({'svg|rect':{fill:'red'},'图|circle':{fill:'blue'},'[svg|mark]':{stroke:'green'}});
+namespace({prefix:${JSON.stringify('\\73 vg')},uri:'http://www.w3.org/2000/svg'});
+namespace({prefix:'图',uri:'http://www.w3.org/2000/svg'});`
+
+  describe('compile', () => {
+    test('versions namespace metadata while reading legacy ASCII contracts', () => {
+      for (const prefixes of [
+        ['图'],
+        ['\\73 vg'],
+        ['svg', 'svg'],
+        [undefined, undefined],
+        ['svg'],
+      ]) {
+        const library = Graph.compile({
+          modules: {
+            'names.ts': `import {namespace} from 'zyzz/web';${prefixes.map((prefix, index) => `namespace(${JSON.stringify({ prefix, uri: 'urn:' + index })});`).join('')}`,
+          },
+        })
+        expect(
+          JSON.parse(library.contracts['names.ts']!).version === 11,
+        ).toMatchInlineSnapshot('true')
+
+        const contract = JSON.parse(library.contracts['names.ts']!)
+        if (prefixes.length === 1 && prefixes[0] === 'svg')
+          contract.version = 10
+        const packed = Graph.compile({
+          contracts: { 'lib.js': JSON.stringify(contract) },
+          imports: { 'app.ts': { lib: 'lib.js' } },
+          modules: { 'app.ts': `import 'lib';` },
+        })
+        expect(
+          JSON.parse(packed.contracts['app.ts']!).version === 11,
+        ).toMatchInlineSnapshot('true')
+      }
+    })
+
+    test('preserves namespace URI control characters through packed output and native matching', async () => {
+      const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      const browser = await chromium.launch(
+        executablePath ? { executablePath } : {},
+      )
+      try {
+        const page = await browser.newPage()
+        for (const uri of [
+          'urn:line\nbreak',
+          'urn:tab\treturn\r',
+          'urn:quote"slash\\',
+          'urn:control\u0001',
+        ]) {
+          const library = Graph.compile({
+            modules: {
+              'uri.ts': `import {namespace,global} from 'zyzz/web';namespace({prefix:'s',uri:${JSON.stringify(uri)}});global({'s|item':{color:'red'}});`,
+            },
+          })
+          expect(
+            JSON.parse(library.contracts['uri.ts']!).version,
+          ).toMatchInlineSnapshot('11')
+          const output = Graph.compile({
+            contracts: { 'lib.js': library.contracts['uri.ts']! },
+            imports: { 'app.ts': { lib: 'lib.js' } },
+            modules: { 'app.ts': `import 'lib';` },
+          })
+          await page.setContent('<body></body>')
+          await page.evaluate((uri) => {
+            const element = document.createElementNS(uri, 'item')
+            element.id = 'target'
+            document.body.append(element)
+          }, uri)
+          await page.addStyleTag({ content: output.sharedCss! })
+          expect(
+            await page
+              .locator('#target')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+        }
+      } finally {
+        await browser.close()
+      }
+    })
+    test('resolves equivalent escaped prefixes using the last module binding and retains packed maps', () => {
+      const library = Graph.compile({ modules: { 'shapes.ts': source } })
+      const output = Graph.compile({
+        contracts: { 'lib/shapes.js': library.contracts['shapes.ts']! },
+        imports: { 'app.ts': { shapes: 'lib/shapes.js' } },
+        modules: { 'app.ts': `import 'shapes';` },
+      })
+
+      expect(output.sharedCss).toMatchInlineSnapshot(`
+      "@namespace z-n1tmgscii6bosa-17 "urn:obsolete";
+      @namespace z-n1tmgscii6bosa-4z "http://www.w3.org/2000/svg";
+      @namespace z-n1tmgscii6bosa-6r "http://www.w3.org/2000/svg";
+      z-n1tmgscii6bosa-4z|rect {
+        fill: red;
+      }
+      z-n1tmgscii6bosa-6r|circle {
+        fill: #00f;
+      }
+      [z-n1tmgscii6bosa-4z|mark] {
+        stroke: green;
+      }"
+    `)
+      expect(
+        JSON.parse(library.contracts['shapes.ts']!).stylesheets[0].namespaces,
+      ).toMatchInlineSnapshot(`
+      [
+        {
+          "kind": "namespace",
+          "name": "z-n1tmgscii6bosa-17",
+          "prefix": "svg",
+          "uri": "urn:obsolete",
+        },
+        {
+          "kind": "namespace",
+          "name": "z-n1tmgscii6bosa-4z",
+          "prefix": "\\73 vg",
+          "uri": "http://www.w3.org/2000/svg",
+        },
+        {
+          "kind": "namespace",
+          "name": "z-n1tmgscii6bosa-6r",
+          "prefix": "图",
+          "uri": "http://www.w3.org/2000/svg",
+        },
+      ]
+    `)
+      const line =
+        output
+          .sharedCss!.split('\n')
+          .findIndex((line) => line.includes('fill: red')) + 1
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.sharedCssMap!), {
+          line,
+          column: 2,
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 0,
+        "line": 3,
+        "name": null,
+        "source": "lib/shapes.ts",
+      }
+    `)
+    })
+
+    test.each(['图', '--', '\\31 a', '\\|', '\\1f600 '])(
+      'links the CSS identifier %s in source and packed selectors',
+      (prefix) => {
+        const library = Graph.compile({
+          modules: {
+            'rules.ts': `import {namespace,global} from 'zyzz/web';namespace({prefix:${JSON.stringify(prefix)},uri:''});global({${JSON.stringify(`${prefix}|item`)}:{color:'red'}});`,
+          },
+        })
+        const output = Graph.compile({
+          contracts: { 'lib.js': library.contracts['rules.ts']! },
+          imports: { 'app.ts': { lib: 'lib.js' } },
+          modules: { 'app.ts': `import 'lib';` },
+        })
+        expect(output.sharedCss?.includes('|item')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(output.sharedCss?.includes('color: red')).toMatchInlineSnapshot(
+          'true',
+        )
+      },
+    )
+
+    test.each([
+      '',
+      '1abc',
+      'a\\',
+      'a b',
+      'a\\\nb',
+      'svg "urn:injected"; @namespace bad',
+    ])('rejects malformed source and packed prefixes: %s', (prefix) => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {namespace} from 'zyzz/web';namespace({prefix:${JSON.stringify(prefix)},uri:'urn:a'});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: bad.ts:35: Expected a namespace URI and optional identifier prefix.]`,
+      )
+      const library = Graph.compile({
+        modules: {
+          'rules.ts': `import {namespace,global} from 'zyzz/web';namespace({prefix:'valid',uri:'urn:a'});global({'valid|item':{color:'red'}});`,
+        },
+      })
+      const contract = JSON.parse(library.contracts['rules.ts']!)
+      for (const section of contract.stylesheets)
+        section.namespaces[0].prefix = prefix
+      expect(() =>
+        Graph.compile({
+          contracts: { 'lib.js': JSON.stringify(contract) },
+          imports: { 'app.ts': { lib: 'lib.js' } },
+          modules: { 'app.ts': `import 'lib';` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: lib.js:0: Invalid library contract: Invalid packed namespace.]`,
+      )
+    })
+
+    test('keeps empty and default namespaces distinct in Chromium', async () => {
+      const output = Graph.compile({
+        modules: {
+          'shapes.ts': source,
+          'default.ts': `import {namespace,global} from 'zyzz/web';namespace({uri:'urn:obsolete'});global({'.box':{color:'purple'},':is(.box)':{backgroundColor:'yellow'}});namespace({uri:'http://www.w3.org/1999/xhtml'});`,
+          'empty.ts': `import {namespace,global} from 'zyzz/web';namespace({prefix:'empty',uri:''});global({'empty|item':{color:'orange'},'*|item':{backgroundColor:'pink'}});`,
+        },
+      })
+      const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      const browser = await chromium.launch(
+        executablePath ? { executablePath } : {},
+      )
+      try {
+        const page = await browser.newPage()
+        const values: string[][][] = []
+        for (const css of [
+          output.sharedCss!,
+          `@namespace svg "urn:obsolete";@namespace svg "http://www.w3.org/2000/svg";@namespace 图 "http://www.w3.org/2000/svg";svg|rect{fill:red}图|circle{fill:blue}[svg|mark]{stroke:green}`,
+          `@namespace "urn:obsolete";@namespace "http://www.w3.org/1999/xhtml";.box{color:purple}:is(.box){background-color:yellow}`,
+          `@namespace empty "";empty|item{color:orange}*|item{background-color:pink}`,
+        ]) {
+          if (values.length === 0 || css.startsWith('@namespace svg')) {
+            await page.setContent(
+              '<div id="html" class="box"></div><svg><rect id="rect" class="box"/><circle id="circle"/></svg><item id="html-item"></item>',
+            )
+            await page.evaluate(() => {
+              document
+                .querySelector('#rect')!
+                .setAttributeNS('http://www.w3.org/2000/svg', 'mark', 'yes')
+              const empty = document.createElementNS(null, 'item')
+              empty.id = 'empty'
+              document.body.append(empty)
+            })
+          }
+          await page.addStyleTag({ content: css })
+          if (css === output.sharedCss || css.startsWith('@namespace empty'))
+            values.push(
+              await page.evaluate(() =>
+                ['html', 'rect', 'circle', 'empty', 'html-item'].map((id) => {
+                  const value = getComputedStyle(document.getElementById(id)!)
+                  return [
+                    value.color,
+                    value.backgroundColor,
+                    value.fill,
+                    value.stroke,
+                  ]
+                }),
+              ),
+            )
+        }
+        expect(values[0]).toMatchInlineSnapshot(`
+        [
+          [
+            "rgb(128, 0, 128)",
+            "rgb(255, 255, 0)",
+            "rgb(0, 0, 0)",
+            "none",
+          ],
+          [
+            "rgb(0, 0, 0)",
+            "rgba(0, 0, 0, 0)",
+            "rgb(255, 0, 0)",
+            "rgb(0, 128, 0)",
+          ],
+          [
+            "rgb(0, 0, 0)",
+            "rgba(0, 0, 0, 0)",
+            "rgb(0, 0, 255)",
+            "none",
+          ],
+          [
+            "rgb(255, 165, 0)",
+            "rgb(255, 192, 203)",
+            "rgb(0, 0, 0)",
+            "none",
+          ],
+          [
+            "rgb(0, 0, 0)",
+            "rgb(255, 192, 203)",
+            "rgb(0, 0, 0)",
+            "none",
+          ],
+        ]
+      `)
+        expect(values[1]).toMatchInlineSnapshot(`
+        [
+          [
+            "rgb(128, 0, 128)",
+            "rgb(255, 255, 0)",
+            "rgb(0, 0, 0)",
+            "none",
+          ],
+          [
+            "rgb(0, 0, 0)",
+            "rgba(0, 0, 0, 0)",
+            "rgb(255, 0, 0)",
+            "rgb(0, 128, 0)",
+          ],
+          [
+            "rgb(0, 0, 0)",
+            "rgba(0, 0, 0, 0)",
+            "rgb(0, 0, 255)",
+            "none",
+          ],
+          [
+            "rgb(255, 165, 0)",
+            "rgb(255, 192, 203)",
+            "rgb(0, 0, 0)",
+            "none",
+          ],
+          [
+            "rgb(0, 0, 0)",
+            "rgb(255, 192, 203)",
+            "rgb(0, 0, 0)",
+            "none",
+          ],
+        ]
+      `)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('namespaces', () => {
+  const source = `import { css } from 'zyzz';
+export namespace styles {
+  const spacing = { padding: '8px' } as const;
+  const base = { ...spacing, color: 'red' } as const;
+  export const card = css(base);
+  export const button = css({ ...base, color: 'blue' });
+  export const dynamic = css((values: { width: '10px' | '20px' }) => ({ ...base, width: values.width }));
+  export const alias = card;
+}
+export const card = styles.alias();
+export const button = styles.button();
+export const dynamic = styles.dynamic({ width: '20px' });`
+
+  describe('compile', () => {
+    test('reuses private declarations and exported callables within a namespace', async () => {
+      const output = Transform.compile({ moduleId: 'namespace.ts', source })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      ".z-p-8px-ku9s2V{padding:8px;}
+      .z-text-red-s93gMW-1{color:red;}
+      .z-text-blue-sOX2qW-0{color:blue;}
+      .z-text-red-QQ5N_W-0{color:red;}
+      .z-w-ku9s2V{width:var(--z-dmpx2ize76wo1-270-77-69-64-74-68);}"
+    `)
+
+      const built = await Esbuild.build({
+        bundle: true,
+        conditions: ['src'],
+        format: 'esm',
+        platform: 'node',
+        stdin: {
+          contents: output.code,
+          loader: 'ts',
+          resolveDir: Path.resolve('.'),
+        },
+        write: false,
+      })
+      const result = await import(
+        `data:text/javascript;base64,${Buffer.from(built.outputFiles[0]!.text).toString('base64')}`
+      )
+
+      expect(result.card).toMatchInlineSnapshot(`
+      {
+        "className": "z-p-8px-ku9s2V z-text-red-s93gMW-1 z-style-mpx2ize76wo1-177",
+      }
+    `)
+      expect(result.button).toMatchInlineSnapshot(`
+      {
+        "className": "z-p-8px-ku9s2V z-text-blue-sOX2qW-0 z-style-mpx2ize76wo1-212",
+      }
+    `)
+      expect(result.dynamic).toMatchInlineSnapshot(`
+      {
+        "className": "z-p-8px-ku9s2V z-text-red-QQ5N_W-0 z-w-ku9s2V z-style-mpx2ize76wo1-270",
+        "style": {
+          "--z-dmpx2ize76wo1-270-77-69-64-74-68": "20px",
+        },
+      }
+    `)
+      expect(result.styles.alias === result.styles.card).toMatchInlineSnapshot(
+        'true',
+      )
+    })
+
+    test('keeps identically named declarations in separate namespace scopes', () => {
+      const output = Transform.compile({
+        moduleId: 'scopes.ts',
+        source: `import {css} from 'zyzz';
+      namespace first { const base = {color:'red'} as const; export const card = css(base); }
+      namespace second { const base = {color:'blue'} as const; export const card = css(base); }`,
+      })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      ".z-text-red-Lr2CaY-0{color:red;}
+      .z-text-blue-QEGgLI-0{color:blue;}"
+    `)
+    })
+
+    test('rejects mutation of reused namespace declarations', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'mutation.ts',
+          source: `import {css} from 'zyzz'; namespace styles { const base = {color:'red'}; base.color='blue'; export const card = css(base); }`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: mutation.ts:73: Static data cannot be mutated or escape through unsupported expressions.]`,
+      )
+    })
+  })
+})
+
+describe('output', () => {
+  describe('compile', () => {
+    test('inherits output through config aliases, re-exports, and theme handles', () => {
+      for (const cssOutput of ['atomic', 'grouped'] as const) {
+        const output = Graph.compile({
+          modules: {
+            'pkg/config.ts': `import { Config } from 'zyzz'
+import { Css } from 'zyzz/web';export const { css, variants, theme } = Config.create({cssOutput:'${cssOutput}',output:'html',theme:{color:{brand:'red'}}});`,
+            'pkg/index.ts': `export { css as styled, variants, theme } from './config.js';`,
+            'app.ts': `import { styled, variants, theme } from './pkg/index.js';
+export const card=styled({color:'brand',padding:'8px'});
+export const other=theme.css({color:'brand',padding:'8px'});
+export const button=variants({base:{color:'brand',padding:'8px'},variants:{size:{large:{padding:'12px'}}}});
+export const props=card();`,
+          },
+        })
+        const app = output.modules['app.ts']!
+
+        if (cssOutput === 'atomic') {
+          expect(app.code).toMatchInlineSnapshot(`
+          "
+          import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
+          import { styled, variants, theme } from './pkg/index.js';
+          export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-NXxdb9-0 z-p-8px-NXxdb9-1 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').css.ReturnType<'html'>);
+          export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-36L1vp-0 z-p-8px-36L1vp-1 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').css.ReturnType<'html'>);
+          export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-text-ho7psp-0 z-p-8px-ho7psp-1 z-p-ho7psp-2 z-style-1e8a67z1uaws1j-196"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+          export const props=card();"
+        `)
+          expect(app.css).toMatchInlineSnapshot(`
+          ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:red;}
+          .z-text-NXxdb9-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+          .z-p-8px-NXxdb9-1{padding:8px;}
+          .z-text-36L1vp-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+          .z-p-8px-36L1vp-1{padding:8px;}
+          .z-text-ho7psp-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+          .z-p-8px-ho7psp-1{padding:8px;}
+          .z-p-ho7psp-2{&:where([data-size="large"]){padding:12px;}}"
+        `)
+        } else {
+          expect(app.code).toMatchInlineSnapshot(`
+          "
+          import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
+          import { styled, variants, theme } from './pkg/index.js';
+          export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"g-style-1e8a67z1uaws1j-76 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').css.ReturnType<'html'>);
+          export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"g-style-1e8a67z1uaws1j-134 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').css.ReturnType<'html'>);
+          export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"g-style-1e8a67z1uaws1j-196 z-style-1e8a67z1uaws1j-196"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+          export const props=card();"
+        `)
+          expect(app.css).toMatchInlineSnapshot(`
+          ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:red;}
+          .g-style-1e8a67z1uaws1j-76{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;}
+          .g-style-1e8a67z1uaws1j-134{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;}
+          .g-style-1e8a67z1uaws1j-196{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);padding:8px;&:where([data-size="large"]){padding:12px;}}"
+        `)
+        }
+      }
+    })
+
+    test('mode changes invalidate class output and preserve declaration tracing', () => {
+      const source = (mode: string) =>
+        `import {Config} from 'zyzz';const {css}=Config.create({cssOutput:'${mode}'});export const card=css({color:'red',padding:'8px'});`
+      const atomic = Transform.compile({
+        moduleId: 'app.ts',
+        source: source('atomic'),
+      })
+      const grouped = Transform.compile({
+        moduleId: 'app.ts',
+        source: source('grouped'),
+      })
+
+      expect(atomic.classes).toMatchInlineSnapshot(`
+      {
+        "style-1e8a67z1uaws1j-94": "z-text-red-Jgxd-Q z-p-8px-Jgxd-Q z-style-1e8a67z1uaws1j-94",
+      }
+    `)
+      expect(grouped.classes).toMatchInlineSnapshot(`
+      {
+        "style-1e8a67z1uaws1j-95": "g-style-1e8a67z1uaws1j-95 z-style-1e8a67z1uaws1j-95",
+      }
+    `)
+      for (const [mode, output] of [
+        ['atomic', atomic],
+        ['grouped', grouped],
+      ] as const) {
+        const lines = output.css.split('\n')
+        const line = lines.findIndex((line) => line.includes('padding:8px'))
+        const mapped = Trace.originalPositionFor(
+          new Trace.TraceMap(output.cssMap),
+          {
+            column: lines[line]!.indexOf('padding:8px'),
+            line: line + 1,
+          },
+        )
+        expect(mapped.source).toMatchInlineSnapshot(`"app.ts"`)
+        if (mode === 'atomic')
+          expect(mapped.column).toMatchInlineSnapshot(`111`)
+        else expect(mapped.column).toMatchInlineSnapshot(`112`)
+      }
+    })
+
+    test('rejects unsupported output options through config and extraction', () => {
+      expect(() =>
+        Config.create({ cssOutput: 'automatic' } as never),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Config.InvalidError: cssOutput must be atomic or grouped.]`,
+      )
+      expect(() =>
+        Transform.compile({
+          moduleId: 'app.ts',
+          source:
+            "import {Config} from 'zyzz';const {css}=Config.create({cssOutput:'automatic'});const card=css({color:'red'});",
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:40: cssOutput must be atomic or grouped.]`,
+      )
+    })
+    test('preserves immutable configured output across extraction and composition', () => {
+      for (const cssOutput of ['atomic', 'grouped'] as const) {
+        const source = `import {Config,cx} from 'zyzz';const {css}=Config.create({cssOutput:'${cssOutput}'});const a=css({color:'red',padding:'8px'});const b=css({paddingLeft:'2px'});export const props=cx(a(),b());`
+        const extracted = Source.extract({ moduleId: 'config.ts', source })
+        function frozen(
+          style: (typeof extracted.styles.styles)[number],
+        ): boolean {
+          return (
+            Object.isFrozen(style) &&
+            Object.isFrozen(style.declarations) &&
+            (!style.rules ||
+              (Object.isFrozen(style.rules) &&
+                style.rules.every(
+                  (rule) => Object.isFrozen(rule) && frozen(rule.style),
+                )))
+          )
+        }
+        expect(extracted.styles.styles.every(frozen)).toMatchInlineSnapshot(
+          `true`,
+        )
+        if (cssOutput === 'atomic')
+          expect(extracted.styles.styles.map((style) => style.cssOutput))
+            .toMatchInlineSnapshot(`
+            [
+              "atomic",
+              "atomic",
+              "atomic",
+            ]
+          `)
+        else
+          expect(extracted.styles.styles.map((style) => style.cssOutput))
+            .toMatchInlineSnapshot(`
+            [
+              "grouped",
+              "grouped",
+              "atomic",
+            ]
+          `)
+        const output = Transform.compile({ moduleId: 'config.ts', source })
+        const emitted = Css.compile({
+          cssOutput: cssOutput === 'atomic' ? 'grouped' : 'atomic',
+          styles: extracted.styles,
+        })
+        if (cssOutput === 'atomic') {
+          expect(output.css).toMatchInlineSnapshot(`
+          ".z-text-red-pHVTxb-0{color:red;}
+          .z-p-8px-pHVTxb-1{padding:8px;}
+          .z-pl-2px-Q94x48-0{padding-left:2px;}
+          .z-text-red-vb56La-0{color:red;}
+          .z-p-8px-vb56La-1{padding:8px;}
+          .z-pl-2px-vb56La-2{padding-left:2px;}"
+        `)
+          expect(emitted.css).toMatchInlineSnapshot(`
+          ".z-text-red-Xy5JQE-0{color:red;}
+          .z-p-8px-Xy5JQE-1{padding:8px;}
+          .z-pl-2px-B2WTsH-0{padding-left:2px;}
+          .z-text-red-kbyxdF-0{color:red;}
+          .z-p-8px-kbyxdF-1{padding:8px;}
+          .z-pl-2px-kbyxdF-2{padding-left:2px;}"
+        `)
+        } else {
+          expect(output.css).toMatchInlineSnapshot(`
+          ".g-style-u8smm21l81sow-88{color:red;padding:8px;}
+          .g-style-u8smm21l81sow-129{padding-left:2px;}
+          .z-style-3O7IWW-0{color:red;padding:8px;}
+          .z-style-3O7IWW-1{padding-left:2px;}"
+        `)
+          expect(emitted.css).toMatchInlineSnapshot(`
+          ".g-style-u8smm21l81sow-88{color:red;padding:8px;}
+          .g-style-u8smm21l81sow-129{padding-left:2px;}
+          .z-style-EZLe7p-0{color:red;padding:8px;}
+          .z-style-EZLe7p-1{padding-left:2px;}"
+        `)
+        }
+      }
+    })
+
+    test('uses the validated descriptor snapshot for configuration', () => {
+      const options = new Proxy(
+        { cssOutput: 'grouped' as const },
+        {
+          get(target, key, receiver) {
+            if (key === 'cssOutput') throw new Error('Unexpected property read')
+            return Reflect.get(target, key, receiver)
+          },
+        },
+      )
+      expect(Object.isFrozen(Config.create(options))).toMatchInlineSnapshot(
+        `true`,
+      )
+    })
+
+    test('rejects invalid style output metadata through the public emitter', () => {
+      const extracted = Source.extract({
+        moduleId: 'invalid.ts',
+        source: "import {css} from 'zyzz'; css({color:'red'})",
+      })
+      const styles = {
+        ...extracted.styles,
+        styles: extracted.styles.styles.map((style) => ({
+          ...style,
+          cssOutput: 'invalid' as 'atomic',
+        })),
+      }
+      expect(() => Css.compile({ styles })).toThrowErrorMatchingInlineSnapshot(
+        `[Css.CompileError: ["style-1snulh75pd83z-26","cssOutput"]: cssOutput must be atomic or grouped.]`,
+      )
+    })
+  })
+})
+
+describe('page.browser', () => {
+  describe('compile', () => {
+    test('prints named pages, pseudo-pages, counters, and all sixteen margin boxes', async () => {
+      const output = Transform.compile({
+        moduleId: 'print.ts',
+        source: `import {global,page} from 'zyzz/web';
+page({descriptors:{size:'200px 300px',margin:'30px','@top-left-corner':{content:'"TLC"'},'@top-left':{content:'"TL"'},'@top-center':{content:'"TC"'},'@top-right':{content:'"TR"'},'@top-right-corner':{content:'"TRC"'},'@bottom-left-corner':{content:'"BLC"'},'@bottom-left':{content:'"BL"'},'@bottom-center':{content:'counter(page) " / " counter(pages)'},'@bottom-right':{content:'"BR"'},'@bottom-right-corner':{content:'"BRC"'},'@left-top':{content:'"LT"'},'@left-middle':{content:'"LM"'},'@left-bottom':{content:'"LB"'},'@right-top':{content:'"RT"'},'@right-middle':{content:'"RM"'},'@right-bottom':{content:'"RB"'}}});
+page({selector:':first',descriptors:{marginTop:'40px','@top-center':{content:'"First"'}}});
+page({selector:':left',descriptors:{marginLeft:'40px'}});
+page({selector:'wide',descriptors:{size:'400px 200px'}});
+global({body:{margin:0,fontFamily:'Arial',fontSize:'8px'},section:{breakAfter:'page'},'section:last-child':{breakAfter:'auto'},'.wide':{page:'wide'}});`,
+      })
+      const reference = `@page {size:200px 300px;margin:30px;@top-left-corner{content:"TLC"}@top-left{content:"TL"}@top-center{content:"TC"}@top-right{content:"TR"}@top-right-corner{content:"TRC"}@bottom-left-corner{content:"BLC"}@bottom-left{content:"BL"}@bottom-center{content:counter(page) " / " counter(pages)}@bottom-right{content:"BR"}@bottom-right-corner{content:"BRC"}@left-top{content:"LT"}@left-middle{content:"LM"}@left-bottom{content:"LB"}@right-top{content:"RT"}@right-middle{content:"RM"}@right-bottom{content:"RB"}}
+@page :first {margin-top:40px;@top-center{content:"First"}}
+@page :left {margin-left:40px}
+@page wide {size:400px 200px}
+body{margin:0;font-family:Arial;font-size:8px}section{break-after:page}section:last-child{break-after:auto}.wide{page:wide}`
+      const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      const browser = await chromium.launch(
+        executablePath ? { executablePath } : {},
+      )
+      try {
+        const page = await browser.newPage()
+        const html =
+          '<section>One</section><section class="wide">Two</section><section>Three</section>'
+        await page.setContent(html)
+        await page.addStyleTag({ content: output.css })
+        const compiled = await Pdf.PDFDocument.load(
+          await page.pdf({ preferCSSPageSize: true, printBackground: true }),
+        )
+        await page.setContent(html)
+        await page.addStyleTag({ content: reference })
+        const native = await Pdf.PDFDocument.load(
+          await page.pdf({ preferCSSPageSize: true, printBackground: true }),
+        )
+
+        expect(
+          compiled.getPages().map((page) => {
+            const { width, height } = page.getSize()
+            return { height: Math.round(height), width: Math.round(width) }
+          }),
+        ).toMatchInlineSnapshot(`
+          [
+            {
+              "height": 225,
+              "width": 150,
+            },
+            {
+              "height": 150,
+              "width": 300,
+            },
+            {
+              "height": 225,
+              "width": 150,
+            },
+          ]
+        `)
+        expect(native.getPageCount()).toMatchInlineSnapshot('3')
+        for (const [index, page] of compiled.getPages().entries()) {
+          const reference = native.getPage(index)
+
+          expect(
+            Buffer.compare(streams(page), streams(reference)) === 0,
+          ).toMatchInlineSnapshot('true')
+        }
+        // Each box must affect the PDF; equality alone could hide rules ignored by both paths.
+        for (const box of Margins.boxes) {
+          await page.setContent(html)
+          await page.addStyleTag({
+            content: reference.replace(
+              new RegExp(`${box}\\{[^}]*\\}`, 'g'),
+              '',
+            ),
+          })
+          const omitted = await Pdf.PDFDocument.load(
+            await page.pdf({ preferCSSPageSize: true, printBackground: true }),
+          )
+          expect(
+            Buffer.compare(
+              streams(native.getPage(1)),
+              streams(omitted.getPage(1)),
+            ) === 0,
+          ).toMatchInlineSnapshot('false')
+        }
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+
+  function streams(page: Pdf.PDFPage) {
+    const contents = page.node.Contents()
+    const entries =
+      contents instanceof Pdf.PDFArray ? contents.asArray() : [contents]
+    return Buffer.concat(
+      entries.map((entry) => {
+        const stream = page.doc.context.lookup(entry)
+        if (!(stream instanceof Pdf.PDFRawStream))
+          throw new Error('Expected a PDF page content stream.')
+        return Buffer.from(Pdf.decodePDFRawStream(stream).decode())
+      }),
+    )
+  }
+})
+
+describe('page', () => {
+  describe('compile', () => {
+    test('retains every margin box and its source call through a packed library dependency', () => {
+      const source = Margins.source('before')
+      const direct = Transform.compile({ moduleId: 'pages.ts', source })
+      const library = Graph.compile({
+        imports: {
+          'index.ts': { './pages.js': 'pages.ts' },
+          'pages.ts': { 'zyzz/web': null },
+        },
+        modules: {
+          'index.ts': `import './pages.js';`,
+          'pages.ts': source,
+        },
+      })
+      const packed = Graph.compile({
+        contracts: {
+          'lib/index.js': library.contracts['index.ts']!,
+          'lib/pages.js': library.contracts['pages.ts']!,
+        },
+        imports: {
+          'app.ts': { lib: 'lib/index.js' },
+          'lib/index.js': { './pages.js': 'lib/pages.js' },
+        },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+
+      for (const [css, map, owner] of [
+        [direct.css, direct.cssMap, 'pages.ts'],
+        [packed.sharedCss!, packed.sharedCssMap!, 'lib/pages.ts'],
+      ] as const) {
+        const trace = new Trace.TraceMap(map)
+        for (const [index, box] of Margins.boxes.entries()) {
+          const offset = css.indexOf(`${box}{`)
+          expect(offset >= 0).toMatchInlineSnapshot('true')
+          expect(
+            css
+              .slice(offset)
+              .startsWith(`${box}{content:"before-${index}";color:red;}`),
+          ).toMatchInlineSnapshot('true')
+
+          const prefix = css.slice(0, offset).split('\n')
+          const origin = Trace.originalPositionFor(trace, {
+            column: prefix.at(-1)!.length,
+            line: prefix.length,
+          })
+          expect(origin.source === owner).toMatchInlineSnapshot('true')
+          expect(origin.line === index + 2).toMatchInlineSnapshot('true')
+          expect(origin.column).toMatchInlineSnapshot('0')
+        }
+      }
+    })
+  })
+})
+
+describe('pagination', () => {
+  describe('compile', () => {
+    test('prints every page orientation and preserves avoid-break fragmentation through packed imports', async () => {
+      const browser = await chromium.launch(
+        process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+          ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
+          : {},
+      )
+      try {
+        const page = await browser.newPage()
+        const geometry: Record<string, { height: number; width: number }> = {}
+        const rotations: Record<string, Buffer> = {}
+        for (const orientation of ['upright', 'rotate-left', 'rotate-right']) {
+          const library = Graph.compile({
+            modules: {
+              'print.ts': `import {page} from 'zyzz/web';page({descriptors:{size:'200px 300px',margin:0,pageOrientation:${JSON.stringify(orientation)}}});`,
+            },
+          })
+          const packed = Graph.compile({
+            contracts: { 'print.js': library.contracts['print.ts']! },
+            imports: { 'app.ts': { print: 'print.js' } },
+            modules: { 'app.ts': `import 'print';` },
+          })
+          const documents = []
+          for (const css of [
+            packed.sharedCss!,
+            `@page{size:200px 300px;margin:0;page-orientation:${orientation}}`,
+          ]) {
+            await page.setContent(
+              '<div style="width:40px;height:20px;background:red">A</div>',
+            )
+            await page.addStyleTag({ content: css })
+            documents.push(
+              await Pdf.PDFDocument.load(
+                await page.pdf({
+                  preferCSSPageSize: true,
+                  printBackground: true,
+                }),
+              ),
+            )
+          }
+          const compiled = documents[0]!.getPage(0)
+          const reference = documents[1]!.getPage(0)
+          expect(
+            Buffer.compare(stream(compiled), stream(reference)),
+          ).toMatchInlineSnapshot('0')
+          expect(
+            JSON.stringify(compiled.getSize()) ===
+              JSON.stringify(reference.getSize()),
+          ).toMatchInlineSnapshot('true')
+          const { height, width } = compiled.getSize()
+          rotations[orientation] = stream(compiled)
+          geometry[orientation] = {
+            height: Math.round(height),
+            width: Math.round(width),
+          }
+        }
+        expect(geometry).toMatchInlineSnapshot(`
+        {
+          "rotate-left": {
+            "height": 150,
+            "width": 225,
+          },
+          "rotate-right": {
+            "height": 150,
+            "width": 225,
+          },
+          "upright": {
+            "height": 225,
+            "width": 150,
+          },
+        }
+      `)
+        expect(
+          Buffer.compare(
+            rotations['rotate-left']!,
+            rotations['rotate-right']!,
+          ) === 0,
+        ).toMatchInlineSnapshot('false')
+
+        const library = Graph.compile({
+          modules: {
+            'print.ts': `import {global,page} from 'zyzz/web';page({descriptors:{size:'200px 200px',margin:0}});global({body:{margin:0},article:{breakInside:'avoid',height:'120px',backgroundColor:'red'},'article:nth-child(2)':{backgroundColor:'blue'}});`,
+          },
+        })
+        const packed = Graph.compile({
+          contracts: { 'print.js': library.contracts['print.ts']! },
+          imports: { 'app.ts': { print: 'print.js' } },
+          modules: { 'app.ts': `import 'print';` },
+        })
+        const reference =
+          '@page{size:200px 200px;margin:0}body{margin:0}article{break-inside:avoid;height:120px;background:red}article:nth-child(2){background:blue}'
+        const documents = []
+        for (const css of [
+          packed.sharedCss!,
+          reference,
+          reference.replace('break-inside:avoid', 'break-inside:auto'),
+        ]) {
+          await page.setContent(
+            '<article></article><article></article><article></article>',
+          )
+          await page.addStyleTag({ content: css })
+          documents.push(
+            await Pdf.PDFDocument.load(
+              await page.pdf({
+                preferCSSPageSize: true,
+                printBackground: true,
+              }),
+            ),
+          )
+        }
+        expect(documents.map((document) => document.getPageCount()))
+          .toMatchInlineSnapshot(`
+        [
+          3,
+          3,
+          2,
+        ]
+      `)
+        for (let index = 0; index < 3; index++)
+          expect(
+            Buffer.compare(
+              stream(documents[0]!.getPage(index)),
+              stream(documents[1]!.getPage(index)),
+            ),
+          ).toMatchInlineSnapshot('0')
+      } finally {
+        await browser.close()
+      }
+    }, 30_000)
+  })
+
+  function stream(page: Pdf.PDFPage): Buffer {
+    const contents = page.node.Contents()
+    const entries =
+      contents instanceof Pdf.PDFArray ? contents.asArray() : [contents]
+    return Buffer.concat(
+      entries.map((entry) => {
+        const value = page.doc.context.lookup(entry)
+        if (!(value instanceof Pdf.PDFRawStream))
+          throw new Error('Expected a PDF content stream.')
+        return Buffer.from(Pdf.decodePDFRawStream(value).decode())
+      }),
+    )
+  }
+})
+
+describe('percentage', () => {
+  describe('compile', () => {
+    test('percentages preserve units and match independent grammar', () => {
+      const lexer = Conformance.lexer()
+
+      for (const declarations of Object.values(Percentage.styles)) {
+        for (const [property, value] of Object.entries(declarations)) {
+          const name = property.replace(
+            /[A-Z]/g,
+            (letter) => `-${letter.toLowerCase()}`,
+          )
+          const output = Transform.compile({
+            moduleId: 'percentage.ts',
+            source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
+          })
+
+          expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
+            `true`,
+          )
+          expect(
+            lexer.matchProperty(name, String(value)).error,
+          ).toMatchInlineSnapshot(`null`)
+        }
+      }
+    })
+    test('alpha values clamp in the browser and preserve important fallbacks', async () => {
+      const output = Transform.compile({
+        moduleId: 'percentage.ts',
+        source: Percentage.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><svg><rect id="high" class="${module.high.className}"/><rect id="low" class="${module.low.className}"/></svg><div id="text" class="${module.text.className}"></div><div id="text-control" style="font-stretch:120%;font-width:125%;zoom:125%"></div>`,
+        )
+
+        expect(
+          await page
+            .locator('#high')
+            .evaluate((element) => getComputedStyle(element).opacity),
+        ).toMatchInlineSnapshot(`"1"`)
+        expect(
+          await page
+            .locator('#high')
+            .evaluate((element) => getComputedStyle(element).fillOpacity),
+        ).toMatchInlineSnapshot(`"1"`)
+        expect(
+          await page
+            .locator('#high')
+            .evaluate((element) => getComputedStyle(element).strokeOpacity),
+        ).toMatchInlineSnapshot(`"1"`)
+        expect(
+          await page
+            .locator('#low')
+            .evaluate((element) => getComputedStyle(element).opacity),
+        ).toMatchInlineSnapshot(`"0"`)
+        expect(
+          await page
+            .locator('#low')
+            .evaluate((element) => getComputedStyle(element).floodOpacity),
+        ).toMatchInlineSnapshot(`"0"`)
+        expect(
+          await page
+            .locator('#low')
+            .evaluate((element) => getComputedStyle(element).stopOpacity),
+        ).toMatchInlineSnapshot(`"1"`)
+        expect(
+          await page
+            .locator('#text')
+            .evaluate((element) => getComputedStyle(element).fontStretch),
+        ).toMatchInlineSnapshot(`"120%"`)
+        expect(
+          await page
+            .locator('#text-control')
+            .evaluate((element) => getComputedStyle(element).fontStretch),
+        ).toMatchInlineSnapshot(`"120%"`)
+        expect(
+          await page.evaluate(() => CSS.supports('font-width', '125%')),
+        ).toMatchInlineSnapshot(`false`)
+        expect(
+          await page
+            .locator('#text')
+            .evaluate((element) => getComputedStyle(element).zoom),
+        ).toMatchInlineSnapshot(`"1.25"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('performance', () => {
+  async function execute(source: string) {
+    const output = Transform.compile({ moduleId: 'performance.ts', source })
+
+    const runtime = await Esbuild.build({
+      entryPoints: [Path.resolve('src/runtime/index.ts')],
+      bundle: true,
+      format: 'esm',
+      write: false,
+    })
+
+    const url = `data:text/javascript;base64,${Buffer.from(runtime.outputFiles[0]!.text).toString('base64')}`
+    const lowered = await Esbuild.transform(
+      output.code.replace("'zyzz/runtime'", JSON.stringify(url)),
+      { loader: 'ts', format: 'esm', target: 'esnext' },
+    )
+    const consumer = await import(
+      `data:text/javascript;base64,${Buffer.from(lowered.code).toString('base64')}`
+    )
+
+    return { consumer, output }
+  }
+
+  describe('compile', () => {
+    test('folds local namespace applications and retains escaping namespaces', async () => {
+      const { consumer, output } = await execute(`import {css} from 'zyzz';
+      export function apply(){return styles.card()}
+      export let failed=false;
+      try {apply()} catch(error){failed=error instanceof Error}
+      namespace styles {export const card=css({color:'red'});}`)
+
+      expect(
+        output.code.includes('(styles.card?{className:'),
+      ).toMatchInlineSnapshot('true')
+      expect(consumer.failed).toMatchInlineSnapshot('true')
+      expect(consumer.apply() === consumer.apply()).toMatchInlineSnapshot(
+        'false',
+      )
+
+      for (const body of [
+        `export namespace styles {export const card=css({color:'red'});} export function apply(){return styles.card()}`,
+        `namespace styles {export const card=css({color:'red'});} export {styles}; export function apply(){return styles.card()}`,
+        `namespace styles {export const card=css({color:'red'});} styles.card=()=>({className:'replaced'}); export function apply(){return styles.card()}`,
+        `namespace styles {export const card=css({color:'red'});} export function apply(styles){return styles.card()}`,
+      ]) {
+        const { output } = await execute(`import {css} from 'zyzz';${body}`)
+
+        expect(output.code.includes('?{className:')).toMatchInlineSnapshot(
+          'false',
+        )
+      }
+    })
+
+    test('folds local calls into fresh props while preserving initialization errors', async () => {
+      const { consumer, output } = await execute(`import {css} from 'zyzz';
+      export function early(){return card()}
+      export let failed=false;
+      try { early() } catch(error) { failed=error instanceof ReferenceError }
+      const card=css({color:'red'});
+      const styles={button:css({color:'blue'})};
+      export function apply(){return [card(),styles.button()]}`)
+
+      const first = consumer.apply()
+      const second = consumer.apply()
+
+      expect([
+        consumer.failed,
+        first[0] !== second[0],
+        first[1] !== second[1],
+        output.code.includes('(styles.button?{className:'),
+      ]).toMatchInlineSnapshot(`
+      [
+        true,
+        true,
+        true,
+        true,
+      ]
+    `)
+    })
+
+    test('bundled calls still fail when invoked before initialization', async () => {
+      const output = Transform.compile({
+        moduleId: 'early.ts',
+        source: `import {css} from 'zyzz';
+      export function early(){return card()}
+      export let failed=false;
+      try {early()} catch(error){failed=error instanceof Error}
+      const card=css({color:'red'});`,
+      })
+
+      const bundle = await Esbuild.build({
+        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+        bundle: true,
+        format: 'esm',
+        minify: true,
+        stdin: {
+          contents: output.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        write: false,
+      })
+
+      const consumer = await import(
+        `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0]!.text).toString('base64')}`
+      )
+
+      expect(consumer.failed).toMatchInlineSnapshot(`true`)
+    })
+
+    test('does not mistake immediately applied props for a callable definition', async () => {
+      for (const source of [
+        `const props=css({color:'red'})();export function apply(){return props()}`,
+        `const styles={card:css({color:'red'})()};export function apply(){return styles.card()}`,
+      ]) {
+        const { consumer } = await execute(`import {css} from 'zyzz';${source}`)
+        let failed = false
+
+        try {
+          consumer.apply()
+        } catch (error) {
+          failed = error instanceof TypeError
+        }
+
+        expect(failed).toMatchInlineSnapshot(`true`)
+      }
+    })
+
+    test('retains escaping objects, shadowed bindings, overrides, and optional calls', async () => {
+      for (const body of [
+        `const styles={button:css({color:'red'})}; export {styles}; export function apply(){return styles.button()}`,
+        `const card=css({color:'red'}); export function apply(card){return card()}`,
+        `const card=css({color:'red'}); export function apply(){return card({className:'extra'})}`,
+        `const card=css({color:'red'}); export function apply(){return card?.()}`,
+      ]) {
+        const { output } = await execute(`import {css} from 'zyzz'; ${body}`)
+
+        expect(output.code.includes('?{className:')).toMatchInlineSnapshot(
+          `false`,
+        )
+      }
+
+      const { consumer } = await execute(`import {css} from 'zyzz';
+      const styles={button:css({color:'red'})};
+      styles.button=()=>({className:'replaced'});
+      export function apply(){return styles.button()}`)
+
+      expect(consumer.apply()).toMatchInlineSnapshot(`
+      {
+        "className": "replaced",
+      }
+    `)
+    })
+
+    test('specialized slots preserve getter order, empty values, precedence, and fresh styles', async () => {
+      const source = `import {css} from 'zyzz'; export const apply=css((values:{width:string;alpha:number})=>({width:values.width,opacity:values.alpha}))`
+      const { consumer, output } = await execute(source)
+      const slots = Source.extract({ moduleId: 'performance.ts', source })
+        .calls[0]!.slots!
+      const generic = Dynamic.create({
+        className: Object.values(output.classes)[0]!,
+        slots,
+      })
+      const privateName = slots.width!.name
+
+      for (const apply of [consumer.apply, generic]) {
+        const reads: string[] = []
+        const style = { color: 'red', [privateName]: 'wrong' }
+
+        const input = {
+          get width() {
+            reads.push('width')
+
+            return ''
+          },
+          get alpha() {
+            reads.push('alpha')
+
+            return 0
+          },
+          get className() {
+            reads.push('className')
+
+            return 'external'
+          },
+          get style() {
+            reads.push('style')
+
+            return style
+          },
+        }
+
+        const props = apply(input)
+
+        expect(reads).toMatchInlineSnapshot(`
+        [
+          "width",
+          "alpha",
+          "className",
+          "style",
+        ]
+      `)
+        expect([
+          props.style[privateName],
+          props.style !== style,
+          style[privateName],
+          props !== apply(input),
+        ]).toMatchInlineSnapshot(`
+        [
+          " ",
+          true,
+          "wrong",
+          true,
+        ]
+      `)
+      }
+
+      expect(output.code.includes('Dynamic as')).toMatchInlineSnapshot(`false`)
+    })
+  })
+
+  describe('create', () => {
+    test('returns fresh props and forwards unchanged styles with single getter reads', () => {
+      for (const className of ['', 'generated']) {
+        const apply = Props.create({ className })
+        const style = { color: 'red' } as const
+        const reads: string[] = []
+
+        const result = apply({
+          get className() {
+            reads.push('className')
+
+            return 'external'
+          },
+          get style() {
+            reads.push('style')
+
+            return style
+          },
+        })
+
+        expect([
+          apply() !== apply(),
+          apply(undefined).className === className,
+          result.style === style,
+          result.className === (className ? 'generated external' : 'external'),
+        ]).toMatchInlineSnapshot(`
+        [
+          true,
+          true,
+          true,
+          true,
+        ]
+      `)
+        expect(reads).toMatchInlineSnapshot(`
+        [
+          "className",
+          "style",
+        ]
+      `)
+      }
+    })
+  })
+})
+
+describe('prefixed', () => {
+  describe('compile', () => {
+    test('prefixed declarations retain exact names and match independent grammar', () => {
+      const lexer = Conformance.lexer()
+      const output = Transform.compile({
+        moduleId: 'prefixed.ts',
+        source: Prefixed.source,
+      })
+
+      expect(
+        output.css.includes('-ms-scrollbar-3dlight-color:red;'),
+      ).toMatchInlineSnapshot(`true`)
+      expect(
+        output.css.includes('-webkit-mask-composite:source-over, xor;'),
+      ).toMatchInlineSnapshot(`true`)
+      expect(
+        output.css.includes('-webkit-border-before:2px solid red;'),
+      ).toMatchInlineSnapshot(`true`)
+
+      for (const declarations of Object.values(Prefixed.styles)) {
+        for (const [property, value] of Object.entries(declarations)) {
+          expect(
+            lexer.matchProperty(Conformance.name(property), String(value))
+              .error,
+          ).toMatchInlineSnapshot(`null`)
+        }
+      }
+    })
+    test('prefixed aliases match native borders and preserve repeated overrides', async () => {
+      const output = Transform.compile({
+        moduleId: 'prefixed.ts',
+        source:
+          Prefixed.source +
+          `
+export const first = css({WebkitUserSelect:'none'})();
+export const second = css({userSelect:'text'})();
+export const third = css({WebkitUserSelect:'none',opacity:.5})();`,
+      })
+
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div id="borders" class="${module.borders.className}"></div><div id="control" style="${Prefixed.control}"></div><div id="text" class="${module.text.className}"></div><div id="repeat" class="${module.first.className} ${module.second.className} ${module.third.className}"></div>`,
+        )
+
+        expect(
+          await page.evaluate(() =>
+            CSS.supports('-webkit-border-before', '2px solid red'),
+          ),
+        ).toMatchInlineSnapshot(`true`)
+
+        for (const writingMode of [
+          'horizontal-tb',
+          'vertical-rl',
+          'vertical-lr',
+        ]) {
+          for (const direction of ['ltr', 'rtl']) {
+            await page.locator('#borders, #control').evaluateAll(
+              (elements, options) => {
+                for (const element of elements) {
+                  const style = (element as HTMLElement).style
+
+                  style.writingMode = options.writingMode
+                  style.direction = options.direction
+                }
+              },
+              { direction, writingMode },
+            )
+
+            for (const property of [
+              'border-top',
+              'border-right',
+              'border-bottom',
+              'border-left',
+            ]) {
+              const actual = await page
+                .locator('#borders')
+                .evaluate(
+                  (element, property) =>
+                    getComputedStyle(element).getPropertyValue(property),
+                  property,
+                )
+
+              const control = await page
+                .locator('#control')
+                .evaluate(
+                  (element, property) =>
+                    getComputedStyle(element).getPropertyValue(property),
+                  property,
+                )
+
+              expect(actual === control).toMatchInlineSnapshot(`true`)
+            }
+          }
+        }
+
+        expect(
+          await page
+            .locator('#text')
+            .evaluate((element) =>
+              getComputedStyle(element).getPropertyValue(
+                '-webkit-text-fill-color',
+              ),
+            ),
+        ).toMatchInlineSnapshot(`"rgb(10, 20, 30)"`)
+        expect(
+          await page
+            .locator('#text')
+            .evaluate((element) =>
+              getComputedStyle(element).getPropertyValue(
+                '-webkit-text-stroke-width',
+              ),
+            ),
+        ).toMatchInlineSnapshot(`"2px"`)
+        expect(
+          await page
+            .locator('#text')
+            .evaluate((element) => getComputedStyle(element).userSelect),
+        ).toMatchInlineSnapshot(`"text"`)
+        expect(
+          await page
+            .locator('#repeat')
+            .evaluate((element) => getComputedStyle(element).userSelect),
+        ).toMatchInlineSnapshot(`"none"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('print', () => {
+  describe('compile', () => {
+    test('prints packed bleed and marks with independent geometry and raster controls', async () => {
+      const library = Graph.compile({
+        modules: {
+          'print.ts': `import {page} from 'zyzz/web';page({descriptors:{size:'100mm 100mm',margin:'10mm',bleed:'3mm',marks:'crop cross'}});`,
+        },
+      })
+      const packed = Graph.compile({
+        contracts: { 'lib.js': library.contracts['print.ts']! },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+      const compiled = await WeasyPrint.render(
+        `<style>${packed.sharedCss}</style>`,
+      )
+      const reference = await WeasyPrint.render(
+        '<style>@page{size:100mm 100mm;margin:10mm;bleed:3mm;marks:crop cross}</style>',
+      )
+      const control = await WeasyPrint.render(
+        '<style>@page{size:100mm 100mm;margin:10mm;bleed:3mm;marks:none}</style>',
+      )
+
+      expect(
+        Buffer.compare(compiled.pixels, reference.pixels),
+      ).toMatchInlineSnapshot('0')
+      expect(
+        compiled.pixels.some((channel) => channel < 250),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        control.pixels.every((channel) => channel === 255),
+      ).toMatchInlineSnapshot('true')
+
+      const document = await Pdf.PDFDocument.load(compiled.pdf)
+      const page = document.getPage(0)
+      for (const name of ['BleedBox', 'MediaBox']) {
+        const box = page.node.lookup(Pdf.PDFName.of(name), Pdf.PDFArray)
+        expect(
+          box
+            .asArray()
+            .map(
+              (value) =>
+                Math.round((value as Pdf.PDFNumber).asNumber() * 1000) / 1000,
+            ),
+        ).toMatchInlineSnapshot(`
+        [
+          -8.504,
+          -8.504,
+          291.969,
+          291.969,
+        ]
+      `)
+      }
+      expect(page.getTrimBox()).toMatchInlineSnapshot(`
+      {
+        "height": 283.464567,
+        "width": 283.464567,
+        "x": 0,
+        "y": 0,
+      }
+    `)
+    }, 30_000)
+
+    test('paints packed ICC references and reports unsupported relative-profile rendering', async () => {
+      const library = Graph.compile({
+        modules: {
+          'colors.ts': `import {colorProfile,global} from 'zyzz/web';export const profile=colorProfile({src:${JSON.stringify(`url("${Profile.url}")`)},components:'r,g,b'});global({'#sample':{backgroundColor:\`color(\${profile} 1 0 0)\`}});`,
+        },
+      })
+      const packed = Graph.compile({
+        contracts: { 'lib.js': library.contracts['colors.ts']! },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+      const html = (css: string) =>
+        `<style>@page{size:40px 40px;margin:0}body{margin:0}#sample{width:40px;height:40px}${css}</style><div id="sample"></div>`
+      const compiled = await WeasyPrint.render(html(packed.sharedCss!))
+      const reference = await WeasyPrint.render(
+        html(
+          `@color-profile --reference{src:url("${Profile.url}");components:r,g,b}#sample{background:color(--reference 1 0 0)}`,
+        ),
+      )
+      const relative = await WeasyPrint.render(
+        html(
+          `@color-profile --reference{src:url("${Profile.url}");components:r,g,b}#sample{background:color(from color(--reference 1 0 0) --reference r g b)}`,
+        ),
+      )
+
+      expect(
+        Buffer.compare(compiled.pixels, reference.pixels),
+      ).toMatchInlineSnapshot('0')
+      const center =
+        (Math.floor(compiled.height / 2) * compiled.width +
+          Math.floor(compiled.width / 2)) *
+        3
+      expect([...compiled.pixels.subarray(center, center + 3)])
+        .toMatchInlineSnapshot(`
+      [
+        255,
+        0,
+        0,
+      ]
+    `)
+      expect(
+        relative.pixels.every((channel) => channel === 255),
+      ).toMatchInlineSnapshot('true')
+
+      const document = await Pdf.PDFDocument.load(compiled.pdf)
+      const resources = document.getPage(0).node.Resources()!
+      const spaces = resources.lookup(Pdf.PDFName.of('ColorSpace'), Pdf.PDFDict)
+      const custom = spaces
+        .entries()
+        .find(([name]) => name.asString().startsWith('/--z-'))!
+      const space = document.context.lookup(custom[1], Pdf.PDFArray)
+      expect(space.get(0).toString()).toMatchInlineSnapshot('"/ICCBased"')
+      const profile = document.context.lookup(space.get(1))
+      if (!(profile instanceof Pdf.PDFRawStream))
+        throw new Error('Expected an embedded ICC profile stream.')
+
+      expect(
+        profile.dict.lookup(Pdf.PDFName.of('N'), Pdf.PDFNumber).asNumber(),
+      ).toMatchInlineSnapshot('3')
+      expect(
+        Buffer.compare(
+          Buffer.from(Pdf.decodePDFRawStream(profile).decode()),
+          Buffer.from(Profile.url.split(',')[1]!, 'base64'),
+        ),
+      ).toMatchInlineSnapshot('0')
+
+      await Fs.mkdir('test-results', { recursive: true })
+      await Fs.writeFile(
+        'test-results/at-rule-print-capabilities.json',
+        JSON.stringify(
+          {
+            engine: compiled.version,
+            features: {
+              iccPainting: 'verified',
+              relativeProfileColors: 'unsupported',
+              renderingIntent: 'unverified',
+            },
+          },
+          null,
+          2,
+        ),
+      )
+    }, 30_000)
+  })
+})
+
+describe('profile', () => {
+  const source = `import {colorProfile, global} from 'zyzz/web';
+export const profile = colorProfile({src:'url(./print.icc)',components:'c, m, y, k',renderingIntent:'relative-colorimetric'});
+global({body:{color:\`color(\${profile} 0 1 1 0)\`}});`
+
+  describe('compile', () => {
+    test('requires a URL source', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'local(profile)'});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:59: Color-profile src requires one URL.]`,
+      )
+    })
+
+    test('rejects an unknown rendering intent', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(/p.icc)',renderingIntent:'auto'});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:59: Invalid color-profile rendering intent.]`,
+      )
+    })
+
+    test('rejects malformed profile descriptors from packed libraries', () => {
+      const library = Graph.compile({
+        modules: {
+          'profile.ts': `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(/p.icc)'});`,
+        },
+      })
+      const contract = JSON.parse(library.contracts['profile.ts']!)
+      contract.stylesheets[0].css =
+        '@color-profile --profile{src:url(/p.icc);components:r,none,b;}'
+      expect(() =>
+        Graph.compile({
+          contracts: { 'lib.js': JSON.stringify(contract) },
+          imports: { 'app.ts': { lib: 'lib.js' } },
+          modules: { 'app.ts': `import 'lib';` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: lib.js:0: Invalid library contract: Color-profile components require comma-separated identifiers other than none.]`,
+      )
+    })
+
+    test('validates all profile descriptor grammars before source and packed publication', () => {
+      for (const components of [
+        'r,g,b',
+        '图, \\72 ed, pi',
+        'inherit, default, --custom',
+        'r,r,b',
+      ]) {
+        for (const renderingIntent of [
+          'absolute-colorimetric',
+          'relative-colorimetric',
+          'perceptual',
+          'saturation',
+        ]) {
+          const library = Graph.compile({
+            modules: {
+              'profile.ts': `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(/print.icc)',components:${JSON.stringify(components)},renderingIntent:${JSON.stringify(renderingIntent)}},{within:['@layer colors','@media print']});`,
+            },
+          })
+          const packed = Graph.compile({
+            contracts: { 'lib.js': library.contracts['profile.ts']! },
+            imports: { 'app.ts': { lib: 'lib.js' } },
+            modules: { 'app.ts': `export {profile} from 'lib';` },
+          })
+          expect(
+            packed.sharedCss?.includes('rendering-intent:'),
+          ).toMatchInlineSnapshot('true')
+          expect(
+            packed.sharedCss?.includes('components:'),
+          ).toMatchInlineSnapshot('true')
+        }
+      }
+    })
+    test('rejects invalid component lists instead of emitting an unusable profile', () => {
+      for (const components of [
+        '',
+        'r g b',
+        'none',
+        'r,NoNe,b',
+        'r,\\6e one,b',
+        'r,,b',
+        'r,b,',
+        '1r,g,b',
+        '"r",g,b',
+      ]) {
+        expect(() =>
+          Transform.compile({
+            moduleId: 'invalid.ts',
+            source: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(/print.icc)',components:${JSON.stringify(components)}});`,
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: invalid.ts:59: Color-profile components require comma-separated identifiers other than none.]`,
+        )
+      }
+    })
+
+    test('preserves profile components and color expressions across packed aliases', () => {
+      const library = Graph.compile({ modules: { 'profiles.ts': source } })
+      const output = Graph.compile({
+        contracts: { 'lib/profiles.js': library.contracts['profiles.ts']! },
+        imports: { 'app.ts': { lib: 'lib/profiles.js', zyzz: null } },
+        modules: {
+          'app.ts': `import {profile as print} from 'lib';import {css} from 'zyzz';export const styles={text:css({color:\`color(\${print} 0 0 0 1)\`})};`,
+        },
+      })
+
+      expect(output.sharedCss).toMatchInlineSnapshot(`
+      "@color-profile --z-colorprofile6yg15mcvz3uu-70-72-6f-66-69-6c-65 {
+        src:url("zyzz-asset:lib%2Fprint.icc");components:c, m, y, k;rendering-intent:relative-colorimetric;
+      }
+      body{color:color(--z-colorprofile6yg15mcvz3uu-70-72-6f-66-69-6c-65 0 1 1 0);}"
+    `)
+      expect(output.sharedAssets).toMatchInlineSnapshot(`
+      {
+        "zyzz-asset:lib%2Fprint.icc": "lib/print.icc",
+      }
+    `)
+      expect(output.modules['app.ts']?.css).toMatchInlineSnapshot(
+        `".z-text-Jgxd-Q{color:color(--z-colorprofile6yg15mcvz3uu-70-72-6f-66-69-6c-65 0 0 0 1);}"`,
+      )
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.sharedCssMap!), {
+          line: 1,
+          column: 0,
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 23,
+        "line": 2,
+        "name": null,
+        "source": "lib/profiles.ts",
+      }
+    `)
+    })
+
+    test('preserves relative colors and nested profile interpolation', () => {
+      const output = Transform.compile({
+        moduleId: 'relative.ts',
+        source: `import {colorProfile,global} from 'zyzz/web';const profile=colorProfile({src:'url(/print.icc)',components:'c,m,y,k'});global({body:{color:\`color(from rgb(1 2 3) \${profile} c m y k)\`,backgroundColor:\`color(\${\`\${profile}\`} 0 0 0 1)\`}});`,
+      })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      "@color-profile --z-colorprofile1f6rnh81dpdeum-70-72-6f-66-69-6c-65{src:url(/print.icc);components:c,m,y,k;}
+      body{color:color(from rgb(1 2 3) --z-colorprofile1f6rnh81dpdeum-70-72-6f-66-69-6c-65 c m y k);background-color:color(--z-colorprofile1f6rnh81dpdeum-70-72-6f-66-69-6c-65 0 0 0 1);}"
+    `)
+    })
+
+    test('retains referenced origins before relative profile names in packed output', () => {
+      const library = Graph.compile({
+        modules: {
+          'relative.ts': `import {Theme} from 'zyzz';import {colorProfile,global} from 'zyzz/web';const theme=Theme.define({color:{base:'red'}});const profile=colorProfile({src:'url(/print.icc)',components:'c,m,y,k'});global({body:{color:\`color(from \${theme.vars.color.base} \${profile} c m y k)\`}});`,
+        },
+      })
+      const packed = Graph.compile({
+        contracts: { 'lib.js': library.contracts['relative.ts']! },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+
+      expect(packed.sharedCss).toMatchInlineSnapshot(`
+      "@color-profile --z-colorprofile1f6rnh81dpdeum-70-72-6f-66-69-6c-65{src:url(/print.icc);components:c,m,y,k;}
+      body{color:color(from var(--z-t1f6rnh81dpdeum-theme-color_2e_base,red) --z-colorprofile1f6rnh81dpdeum-70-72-6f-66-69-6c-65 c m y k);}"
+    `)
+    })
+
+    test('rejects a profile interpolated outside color()', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source: `import {colorProfile,global} from 'zyzz/web';const profile=colorProfile({src:'url(/print.icc)'});global({body:{color:\`\${profile}\`}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: invalid.ts:97: Named stylesheet reference is incompatible with this descriptor.]`,
+      )
+    })
+
+    test('retains Unicode, import ordering, and source maps without a BOM or charset contribution', () => {
+      const output = Graph.compile({
+        modules: {
+          'unicode.ts': `import {global,importCss} from 'zyzz/web';\nglobal({'body::before':{content:'"héllo ● 日本語"'}});\nimportCss({url:'https://example.com/base.css'});`,
+        },
+      })
+      const packed = Graph.compile({
+        contracts: { 'lib/unicode.js': output.contracts['unicode.ts']! },
+        imports: { 'app.ts': { lib: 'lib/unicode.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+
+      expect(packed.sharedCss).toBe(output.sharedCss)
+      const css = packed.sharedCss!
+
+      expect(css).toMatchInlineSnapshot(`
+      "@import url("https://example.com/base.css");
+      body::before{content:"héllo ● 日本語";}"
+    `)
+      expect(
+        new TextDecoder('utf-8', { fatal: true }).decode(
+          new TextEncoder().encode(css),
+        ),
+      ).toMatchInlineSnapshot(`
+      "@import url("https://example.com/base.css");
+      body::before{content:"héllo ● 日本語";}"
+    `)
+      expect(css.startsWith('@import')).toMatchInlineSnapshot('true')
+      expect(css.includes('@charset')).toMatchInlineSnapshot('false')
+      expect(css.charCodeAt(0) === 0xfeff).toMatchInlineSnapshot('false')
+    })
+  })
+})
+
+describe('properties', () => {
+  const require = Module.createRequire(import.meta.url)
+  const properties: Record<
+    string,
+    { initial: string | readonly string[] }
+  > = require('mdn-data/css/properties.json')
+
+  describe('compile', () => {
+    test('every property preserves native declaration and computed-style behavior', async () => {
+      const samples = new Map<string, Conformance.Case[]>()
+
+      for (const entry of Conformance.cases()) {
+        const group = samples.get(entry.property) ?? []
+
+        group.push(entry)
+        samples.set(entry.property, group)
+      }
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        const selected = await page.evaluate(
+          (groups) =>
+            groups.map(([property, entries]) => ({
+              property,
+              entries: entries.filter(({ name, value }) =>
+                CSS.supports(name, String(value)),
+              ),
+            })),
+          [...samples].map(
+            ([property, entries]) =>
+              [
+                property,
+                entries.map((entry) => ({
+                  ...entry,
+                  name: Conformance.name(entry.property),
+                })),
+              ] as const,
+          ),
+        )
+
+        const unsupported = selected
+          .filter(({ entries }) => !entries.length)
+          .map(({ property }) => Conformance.name(property))
+          .sort()
+
+        await Fs.mkdir('test-results', { recursive: true })
+        await Fs.writeFile(
+          'test-results/css-browser-capabilities.json',
+          JSON.stringify(
+            {
+              browser: browser.version(),
+              tested: Object.fromEntries(
+                selected.map(({ property, entries }) => [
+                  Conformance.name(property),
+                  entries.length,
+                ]),
+              ),
+              unsupported,
+            },
+            null,
+            2,
+          ),
+        )
+
+        const cases = selected.flatMap(({ entries }) => entries)
+        const covered = new Set(cases.map(({ name }) => name))
+
+        expect(
+          [
+            'background',
+            'box-shadow',
+            'clip-path',
+            'color',
+            'font',
+            'grid',
+            'mask',
+            'offset',
+            'transition',
+          ].filter((name) => !covered.has(name)),
+        ).toMatchInlineSnapshot(`[]`)
+
+        const failures: string[] = []
+
+        for (let start = 0; start < cases.length; start += 100) {
+          const batch = cases.slice(start, start + 100)
+          const source = `import { css } from 'zyzz';\n${batch.map(({ property, value }, index) => `export const p${index} = css({${JSON.stringify(property)}: ${JSON.stringify(value)}})();`).join('\n')}`
+          const output = Transform.compile({
+            moduleId: 'properties.ts',
+            source,
+          })
+          const javascript = await Esbuild.transform(output.code, {
+            format: 'esm',
+            loader: 'ts',
+          })
+          const module = await import(
+            `data:text/javascript;base64,${Buffer.from(javascript.code).toString('base64')}`
+          )
+          const classes = batch.map(
+            (_, index) => module[`p${index}`].className as string,
+          )
+
+          expect(classes.length === batch.length).toMatchInlineSnapshot(`true`)
+
+          failures.push(
+            ...(await page.evaluate(
+              ({ batch, classes, css }) => {
+                const sheet = document.createElement('style')
+
+                sheet.textContent = css
+                document.head.append(sheet)
+
+                const failures: string[] = []
+
+                for (const [index, { name, value }] of batch.entries()) {
+                  const actual = document.createElement('div')
+                  const control = document.createElement('div')
+
+                  actual.className = classes[index]!
+                  control.style.setProperty(name, String(value))
+                  document.body.append(actual, control)
+
+                  const compiled =
+                    getComputedStyle(actual).getPropertyValue(name)
+                  const native =
+                    getComputedStyle(control).getPropertyValue(name)
+
+                  if (compiled !== native)
+                    failures.push(`${name}: ${value}: ${compiled} != ${native}`)
+
+                  actual.remove()
+                  control.remove()
+                }
+
+                sheet.remove()
+
+                return failures
+              },
+              { batch, classes, css: output.css },
+            )),
+          )
+        }
+
+        expect(failures).toMatchInlineSnapshot(`[]`)
+      } finally {
+        await browser.close()
+      }
+    }, 120_000)
+
+    test('all browser-supported shorthand relationships retain repeated overrides', async () => {
+      const cases = Conformance.cases()
+      const byName = new Map<string, (string | number)[]>()
+
+      for (const { property, value } of cases) {
+        const name = Conformance.name(property)
+        const group = byName.get(name) ?? []
+
+        group.push(value)
+        byName.set(name, group)
+      }
+
+      // Reset-only relationships are specified independently of shorthand value grammar.
+      const resets: Record<string, readonly string[]> = {
+        animation: [
+          'animation-range-start',
+          'animation-range-end',
+          'animation-timeline',
+        ],
+        border: ['border-image-source'],
+        font: [
+          'font-kerning',
+          'font-feature-settings',
+          'font-size-adjust',
+          'font-variation-settings',
+        ],
+        mask: ['mask-border-source'],
+        'text-decoration': ['text-decoration-thickness'],
+        'view-timeline': ['view-timeline-inset'],
+      }
+
+      function children(
+        name: string,
+        seen = new Set<string>(),
+      ): readonly string[] {
+        if (seen.has(name)) return []
+
+        seen.add(name)
+
+        const initial = properties[name]?.initial
+        const direct = [
+          ...(Array.isArray(initial) ? initial : []),
+          ...(resets[name] ?? []),
+        ]
+
+        return [
+          ...new Set(
+            direct.flatMap((child) => [child, ...children(child, seen)]),
+          ),
+        ]
+      }
+
+      const pairs = Object.keys(properties).flatMap((shorthand) =>
+        children(shorthand).map((longhand) => ({
+          shorthand,
+          longhand,
+          values: byName.get(longhand) ?? [],
+        })),
+      )
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        const probes = await page.evaluate((pairs) => {
+          const element = document.createElement('div')
+
+          document.body.append(element)
+
+          const output: {
+            shorthand: string
+            longhand: string
+            value: string
+          }[] = []
+
+          for (const { shorthand, longhand, values } of pairs) {
+            if (!CSS.supports(shorthand, 'initial')) continue
+
+            for (const candidate of values) {
+              const value = String(candidate)
+              if (
+                [
+                  'inherit',
+                  'initial',
+                  'revert',
+                  'revert-layer',
+                  'unset',
+                ].includes(value) ||
+                !CSS.supports(longhand, value)
+              )
+                continue
+
+              element.style.cssText = ''
+              element.style.setProperty(longhand, value)
+
+              const before =
+                getComputedStyle(element).getPropertyValue(longhand)
+
+              element.style.setProperty(shorthand, 'initial')
+
+              if (
+                getComputedStyle(element).getPropertyValue(longhand) !== before
+              ) {
+                output.push({ shorthand, longhand, value })
+                break
+              }
+            }
+          }
+
+          element.remove()
+
+          return output
+        }, pairs)
+
+        expect(probes.length > 100).toMatchInlineSnapshot(`true`)
+
+        const failures: string[] = []
+
+        for (const { shorthand, longhand, value } of probes) {
+          const camel = (name: string) =>
+            name.replace(/-([a-z])/g, (_, letter: string) =>
+              letter.toUpperCase(),
+            )
+          const output = Transform.compile({
+            moduleId: 'cascade.ts',
+            source: `import { css } from 'zyzz'; export const a = css({${camel(longhand)}: ${JSON.stringify(value)}})(); export const b = css({${camel(shorthand)}: 'initial'})(); export const c = css({${camel(longhand)}: ${JSON.stringify(value)}})();`,
+          })
+          const javascript = await Esbuild.transform(output.code, {
+            format: 'esm',
+            loader: 'ts',
+          })
+          const module = await import(
+            `data:text/javascript;base64,${Buffer.from(javascript.code).toString('base64')}`
+          )
+          const classes = ['a', 'b', 'c'].map(
+            (name) => module[name].className as string,
+          )
+
+          expect(classes.length).toMatchInlineSnapshot(`3`)
+
+          const result = await page.evaluate(
+            ({ classes, css, longhand, shorthand, value }) => {
+              const sheet = document.createElement('style')
+
+              sheet.textContent = css
+              document.head.append(sheet)
+
+              const actual = document.createElement('div')
+              const control = document.createElement('div')
+
+              actual.className = classes.join(' ')
+              control.style.setProperty(shorthand, 'initial')
+              control.style.setProperty(longhand, value)
+              document.body.append(actual, control)
+
+              const equal =
+                getComputedStyle(actual).getPropertyValue(longhand) ===
+                getComputedStyle(control).getPropertyValue(longhand)
+
+              actual.remove()
+              control.remove()
+              sheet.remove()
+
+              return equal
+            },
+            { classes, css: output.css, longhand, shorthand, value },
+          )
+
+          if (!result) failures.push(`${shorthand} resets ${longhand}`)
+        }
+
+        expect(failures).toMatchInlineSnapshot(`[]`)
+      } finally {
+        await browser.close()
+      }
+    }, 120_000)
+  })
+})
+
+describe('ranges', () => {
+  describe('compile', () => {
+    test('timeline ranges preserve names, offsets, and list boundaries', () => {
+      const lexer = Conformance.lexer()
+
+      for (const [property, value] of Object.entries(Ranges.styles)) {
+        const name = Conformance.name(property)
+        const output = Transform.compile({
+          moduleId: 'ranges.ts',
+          source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
+        })
+
+        expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
+          `true`,
+        )
+        expect(lexer.matchProperty(name, value).error).toMatchInlineSnapshot(
+          `null`,
+        )
+      }
+    })
+    test('timeline ranges match native view-animation progress', async () => {
+      const output = Transform.compile({
+        moduleId: 'ranges.ts',
+        source: Ranges.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>@keyframes fade{from{opacity:0}to{opacity:1}}.scroller{width:100px;height:100px;overflow:auto}.spacer{height:100px}.subject{height:100px;background:blue;animation:fade 1s linear both;animation-timeline:view()}${output.css}</style><div class="scroller"><div class="spacer"></div><div id="actual" class="subject ${module.range.className}"></div><div class="spacer"></div></div><div class="scroller"><div class="spacer"></div><div id="control" class="subject" style="animation-range-start:entry 20%;animation-range-end:exit 80%"></div><div class="spacer"></div></div>`,
+        )
+        await page.evaluate(async () => {
+          for (const element of document.querySelectorAll('.scroller'))
+            element.scrollTop = 80
+
+          await new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          )
+        })
+
+        const actual = await page
+          .locator('#actual')
+          .evaluate((element) => Number(getComputedStyle(element).opacity))
+        const control = await page
+          .locator('#control')
+          .evaluate((element) => Number(getComputedStyle(element).opacity))
+
+        expect(actual === control).toMatchInlineSnapshot(`true`)
+        expect(actual > 0 && actual < 1).toMatchInlineSnapshot(`true`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) =>
+              getComputedStyle(element).getPropertyValue(
+                'animation-range-start',
+              ),
+            ),
+        ).toMatchInlineSnapshot(`"entry 20%"`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) =>
+              getComputedStyle(element).getPropertyValue('animation-range-end'),
+            ),
+        ).toMatchInlineSnapshot(`"exit 80%"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('reading', () => {
+  describe('compile', () => {
+    test('reading order preserves numeric and keyword fallbacks', () => {
+      const output = Transform.compile({
+        moduleId: 'reading.ts',
+        source: Reading.source,
+      })
+
+      expect(output.css.match(/reading-order:[^;}]+/g)).toMatchInlineSnapshot(`
+      [
+        "reading-order:0",
+        "reading-order:-1!important",
+      ]
+    `)
+      expect(
+        output.css.includes(
+          'reading-flow:normal;reading-flow:flex-visual!important',
+        ),
+      ).toMatchInlineSnapshot(`true`)
+    })
+
+    test('reading flow and ordinal groups control browser keyboard navigation', async () => {
+      const output = Transform.compile({
+        moduleId: 'reading.ts',
+        source: Reading.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><button id="start">Start</button><div class="${module.visual.className}"><button id="v1">One</button><button id="v2">Two</button><button id="v3">Three</button></div><div style="display:flex;flex-direction:row-reverse;reading-flow:flex-visual"><button id="c1">One</button><button id="c2">Two</button><button id="c3">Three</button></div><div class="${module.ordered.className}"><button id="o1">One</button><button id="o2">Two</button><button id="o3" class="${module.first.className}">Three</button></div><div style="display:flex;reading-flow:source-order"><button id="r1">One</button><button id="r2">Two</button><button id="r3" style="reading-order:-1">Three</button></div><div style="display:flex;flex-direction:row-reverse;reading-flow:normal"><button id="n1">One</button><button id="n2">Two</button><button id="n3">Three</button></div>`,
+        )
+        await page.locator('#start').focus()
+
+        const sequence: string[] = []
+
+        for (let index = 0; index < 15; index++) {
+          await page.keyboard.press('Tab')
+          sequence.push(await page.evaluate(() => document.activeElement!.id))
+        }
+
+        expect(sequence).toMatchInlineSnapshot(`
+        [
+          "v3",
+          "v2",
+          "v1",
+          "c3",
+          "c2",
+          "c1",
+          "o3",
+          "o1",
+          "o2",
+          "r3",
+          "r1",
+          "r2",
+          "n1",
+          "n2",
+          "n3",
+        ]
+      `)
+        expect(
+          await page
+            .locator('#o3')
+            .evaluate((element) =>
+              getComputedStyle(element).getPropertyValue('reading-order'),
+            ),
+        ).toMatchInlineSnapshot(`"-1"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('scalars', () => {
+  describe('compile', () => {
+    test('related scalar declarations retain A/B/A cascade order', () => {
+      const a = {
+        fontSynthesis: 'none',
+        whiteSpace: 'normal',
+        overflow: 'hidden',
+        wordWrap: 'normal',
+      } as const
+
+      const output = Css.compile({
+        styles: Style.define({
+          a,
+          b: {
+            fontSynthesisWeight: 'auto',
+            whiteSpaceCollapse: 'preserve',
+            textWrapMode: 'nowrap',
+            overflowBlock: 'scroll',
+            overflowWrap: 'break-word',
+          },
+          c: a,
+        }),
+      })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      ".z-font-synthesis-none-CgmKfH-0{font-synthesis:none;}
+      .z-white-space-normal-CgmKfH-1{white-space:normal;}
+      .z-overflow-hidden-CgmKfH-2{overflow:hidden;}
+      .z-word-wrap-normal-CgmKfH-3{word-wrap:normal;}
+      .z-font-synthesis-weight-auto-0kXiVX-0{font-synthesis-weight:auto;}
+      .z-white-space-collapse-preserve-0kXiVX-1{white-space-collapse:preserve;}
+      .z-text-wrap-mode-nowrap-0kXiVX-2{text-wrap-mode:nowrap;}
+      .z-overflow-block-scroll-0kXiVX-3{overflow-block:scroll;}
+      .z-overflow-wrap-break-word-0kXiVX-4{overflow-wrap:break-word;}
+      .z-font-synthesis-none-HzYJKb-0{font-synthesis:none;}
+      .z-white-space-normal-HzYJKb-1{white-space:normal;}
+      .z-overflow-hidden-HzYJKb-2{overflow:hidden;}
+      .z-word-wrap-normal-HzYJKb-3{word-wrap:normal;}"
+    `)
+    })
+    test('SVG geometry and text scalars match native browser output', async () => {
+      const output = Transform.compile({
+        moduleId: 'scalars.ts',
+        source: Scalars.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><svg width="200" height="100"><circle id="circle" class="${module.circle.className}"/><circle id="circle-control" style="${Scalars.controls.circle}"/><rect id="rectangle" width="50" height="30" class="${module.rectangle.className}"/><rect id="rectangle-control" width="50" height="30" style="${Scalars.controls.rectangle}"/></svg><div id="text" class="${module.text.className}">a  b</div><div id="text-control" style="${Scalars.controls.text}">a  b</div>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const differences: string[] = []
+
+            for (const [id, properties] of [
+              ['circle', ['cx', 'cy', 'r']],
+              ['rectangle', ['x', 'y', 'rx', 'ry']],
+              [
+                'text',
+                [
+                  'baseline-shift',
+                  'text-anchor',
+                  'font-variant-emoji',
+                  'white-space-collapse',
+                  'text-wrap-mode',
+                  'word-wrap',
+                  'scrollbar-gutter',
+                ],
+              ],
+            ] as const) {
+              const a = getComputedStyle(document.getElementById(id)!)
+              const b = getComputedStyle(
+                document.getElementById(`${id}-control`)!,
+              )
+
+              for (const property of properties)
+                if (
+                  a.getPropertyValue(property) !== b.getPropertyValue(property)
+                )
+                  differences.push(property)
+            }
+
+            return differences
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page.locator('#circle').evaluate((element) => {
+            const box = (element as SVGGraphicsElement).getBBox()
+
+            return [box.x, box.y, box.width, box.height]
+          }),
+        ).toMatchInlineSnapshot(`
+        [
+          20,
+          10,
+          40,
+          40,
+        ]
+      `)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('statementAcceptance', () => {
+  describe('compile', () => {
+    test('retains import layer supports and media combinations with packed ordering and maps', () => {
+      const library = Graph.compile({
+        modules: { 'statements.ts': Statements.imports() },
+      })
+      const packed = Graph.compile({
+        contracts: { 'lib/statements.js': library.contracts['statements.ts']! },
+        imports: { 'app.ts': { lib: 'lib/statements.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+      expect(packed.sharedCss?.match(/@import/g)?.length).toMatchInlineSnapshot(
+        '24',
+      )
+      expect(packed.sharedCss?.startsWith('@import')).toMatchInlineSnapshot(
+        'true',
+      )
+      expect(packed.sharedCss?.includes('supports(')).toMatchInlineSnapshot(
+        'true',
+      )
+      expect(packed.sharedCss?.includes('layer(')).toMatchInlineSnapshot('true')
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+          line: 1,
+          column: 0,
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 0,
+        "line": 2,
+        "name": null,
+        "source": "lib/statements.ts",
+      }
+    `)
+    })
+    test('retains custom-media query productions and imported computed references', () => {
+      for (const query of Statements.queries) {
+        const library = Graph.compile({
+          modules: {
+            'statements.ts': `import {customMedia} from 'zyzz/web';\nexport const query=customMedia(${JSON.stringify(query)});`,
+          },
+        })
+        const packed = Graph.compile({
+          contracts: {
+            'lib/statements.js': library.contracts['statements.ts']!,
+          },
+          imports: { 'app.ts': { lib: 'lib/statements.js', 'zyzz/web': null } },
+          modules: {
+            'app.ts': `import {query} from 'lib';import {global} from 'zyzz/web';global({[query]:{body:{color:'red'}}});`,
+          },
+        })
+        expect(
+          packed.sharedCss?.includes('@custom-media --'),
+        ).toMatchInlineSnapshot('true')
+        expect(packed.sharedCss?.includes('@media (--')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(
+          Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+            line: 1,
+            column: 0,
+          }),
+        ).toMatchInlineSnapshot(`
+        {
+          "column": 19,
+          "line": 2,
+          "name": null,
+          "source": "lib/statements.ts",
+        }
+      `)
+      }
+    })
+    test('retains legacy document matching functions across packed publication with maps', () => {
+      for (const matching of Statements.documents) {
+        const library = Graph.compile({
+          modules: {
+            'statements.ts': `import {global} from 'zyzz/web';\nglobal({'@document ${matching}':{body:{color:'red'}}});`,
+          },
+        })
+        const packed = Graph.compile({
+          contracts: {
+            'lib/statements.js': library.contracts['statements.ts']!,
+          },
+          imports: { 'app.ts': { lib: 'lib/statements.js' } },
+          modules: { 'app.ts': `import 'lib';` },
+        })
+        expect(packed.sharedCss?.includes('@document')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(
+          packed.sharedCss?.includes('body{color:red;}'),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+            line: 1,
+            column: 0,
+          }),
+        ).toMatchInlineSnapshot(`
+        {
+          "column": 0,
+          "line": 2,
+          "name": null,
+          "source": "lib/statements.ts",
+        }
+      `)
+      }
+    })
+    test('rejects malformed queries and legacy matching functions before publication', () => {
+      const failures = [
+        `export const query=customMedia('???');`,
+        `export const query=customMedia('(color); @import "bad.css"');`,
+        `global({'@document garbage()':{body:{color:'red'}}});`,
+        `global({'@document domain(123)':{body:{color:'red'}}});`,
+        `importCss({url:'/a.css',supports:'???'});`,
+      ].map((source) => {
+        try {
+          Graph.compile({
+            modules: {
+              'invalid.ts': `import {customMedia,global,importCss} from 'zyzz/web';${source}`,
+            },
+          })
+          return 'accepted'
+        } catch (error) {
+          if (!(error instanceof Source.ExtractError)) throw error
+          return error.diagnostics.map((diagnostic) => diagnostic.message)
+        }
+      })
+      expect(failures).toMatchInlineSnapshot(`
+      [
+        [
+          "Invalid custom-media query: Mismatch
+        syntax: <media-query-list>
+         value: ???
+        --------^",
+        ],
+        [
+          "Invalid custom-media query: Mismatch
+        syntax: <media-query-list>
+         value: (color); @import "bad.css"
+        ---------------^",
+        ],
+        [
+          "Invalid document matching functions: Mismatch
+        syntax: [ <url> | url-prefix( <string> ) | domain( <string> ) | media-document( <string> ) | regexp( <string> ) ]#
+         value: garbage()
+        --------^",
+        ],
+        [
+          "Invalid document matching functions: Mismatch
+        syntax: [ <url> | url-prefix( <string> ) | domain( <string> ) | media-document( <string> ) | regexp( <string> ) ]#
+         value: domain(123)
+        ---------------^",
+        ],
+        [
+          "Unexpected token Delim('?')",
+        ],
+      ]
+    `)
+    })
+  })
+})
+
+describe('statements', () => {
+  describe('compile', () => {
+    test('rejects fractional CSS integer parameters', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'integer.ts',
+          source: `import {css} from 'zyzz';import {cssFunction} from 'zyzz/web';const fn=cssFunction({parameters:[{name:'--n',syntax:'<integer>'}],body:{result:1}});export const style=css({zIndex:fn(1.5)});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: integer.ts:178: CSS integer parameters require integer tokens.]`,
+      )
+    })
+    test('rejects custom media as a declaration value', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'query.ts',
+          source: `import {css} from 'zyzz';import {customMedia} from 'zyzz/web';const query=customMedia('(width>1px)');export const style=css({color:query});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: query.ts:131: Named stylesheet reference is incompatible with this property.]`,
+      )
+    })
+    test('rejects a context on a custom media statement', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'query.ts',
+          source: `import {customMedia} from 'zyzz/web';export const query=customMedia('(width>1px)',{within:['@layer queries']});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: query.ts:56: Custom media definitions do not accept a within context.]`,
+      )
+    })
+    test('rejects conflicting packed customMedia identities', () => {
+      const helper = 'customMedia'
+      const expression = `customMedia('(width>1px)')`
+      const library = Graph.compile({
+        modules: {
+          'library.ts': `import {${helper}} from 'zyzz/web';export const rule=${expression};`,
+        },
+      })
+      const first = JSON.parse(library.contracts['library.ts']!)
+      const second = JSON.parse(library.contracts['library.ts']!)
+      second.stylesheets[0].key = 'other'
+      second.stylesheets[0].css = second.stylesheets[0].css
+        .replace('1px', '2px')
+        .replace('result:1', 'result:2')
+      expect(() =>
+        Graph.compile({
+          contracts: {
+            'first.js': JSON.stringify(first),
+            'second.js': JSON.stringify(second),
+          },
+          imports: { 'app.ts': { first: 'first.js', second: 'second.js' } },
+          modules: { 'app.ts': `import 'first';import 'second'` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: second.js:0: Conflicting stylesheet identity: --z-custommediaggnaaj17b3mnh-72-75-6c-65; compile libraries with package-qualified module IDs.]`,
+      )
+    })
+    test('rejects conflicting packed cssFunction identities', () => {
+      const helper = 'cssFunction'
+      const expression = `cssFunction({parameters:[],body:{result:1}})`
+      const library = Graph.compile({
+        modules: {
+          'library.ts': `import {${helper}} from 'zyzz/web';export const rule=${expression};`,
+        },
+      })
+      const first = JSON.parse(library.contracts['library.ts']!)
+      const second = JSON.parse(library.contracts['library.ts']!)
+      second.stylesheets[0].key = 'other'
+      second.stylesheets[0].css = second.stylesheets[0].css
+        .replace('1px', '2px')
+        .replace('result:1', 'result:2')
+      expect(() =>
+        Graph.compile({
+          contracts: {
+            'first.js': JSON.stringify(first),
+            'second.js': JSON.stringify(second),
+          },
+          imports: { 'app.ts': { first: 'first.js', second: 'second.js' } },
+          modules: { 'app.ts': `import 'first';import 'second'` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: second.js:0: Conflicting stylesheet identity: --z-cssfunctionggnaaj17b3mnh-72-75-6c-65; compile libraries with package-qualified module IDs.]`,
+      )
+    })
+    test('prunes unused named statements and emits JavaScript function formatters', async () => {
+      const output = Transform.compile({
+        moduleId: 'functions.js',
+        source: `import {css} from 'zyzz';import {cssFunction,customMedia} from 'zyzz/web';const unused=customMedia(false);const dead=cssFunction({parameters:[],body:{result:1}});const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],returns:'<number>',body:{result:'calc(var(--x)*2)'}});export namespace styles {
+  export const box = css({opacity:twice(+1)})
+}`,
+      })
+      expect(
+        (await Esbuild.transform(output.code, { loader: 'ts' })).warnings,
+      ).toMatchInlineSnapshot('[]')
+      expect(output.css).toMatchInlineSnapshot(`
+      "@function --z-cssfunction172pj15vy9qt-74-77-69-63-65(--x <number>) returns <number>{result:calc(var(--x)*2);}
+      .z-opacity-01WGtR{opacity:--z-cssfunction172pj15vy9qt-74-77-69-63-65(1);}"
+    `)
+    })
+    test('rejects unsupported CSS function arguments without emitting a bare identity', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {css} from 'zyzz';import {cssFunction} from 'zyzz/web';const amount=2;const twice=cssFunction({parameters:[{name:'--x',syntax:'<number>'}],body:{result:2}});export namespace styles {
+  export const box = css({opacity:twice(amount)})
+}`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: bad.ts:224: Expected a literal string or number; expressions are not evaluated.]`,
+      )
+    })
+    test('hoists conditioned imports before namespace and ordinary rules', () => {
+      const output = Graph.compile({
+        modules: {
+          'statements.ts': `import {global,importCss,namespace} from 'zyzz/web';global({'s|circle':{fill:'red'}});namespace({prefix:'s',uri:'http://www.w3.org/2000/svg'});importCss({url:'./base.css',layer:'base',supports:'display: grid',media:'screen'});`,
+        },
+      })
+      expect(output.sharedCss).toMatchInlineSnapshot(`
+      "@import "zyzz-asset:base.css" layer(base) supports(display: grid) screen;
+      @namespace z-n17dmz821ctten8-2e "http://www.w3.org/2000/svg";
+      z-n17dmz821ctten8-2e|circle {
+        fill: red;
+      }"
+    `)
+      expect(Object.values(output.sharedAssets ?? {})).toMatchInlineSnapshot(`
+      [
+        "base.css",
+      ]
+    `)
+    })
+    test('preserves anonymous import layers while relocating assets', () => {
+      const output = Graph.compile({
+        modules: {
+          'app.ts': `import {importCss} from 'zyzz/web';importCss({url:'./a.css',layer:true});importCss({url:'./b.css'});`,
+        },
+      })
+      expect(output.sharedCss).toMatchInlineSnapshot(`
+      "@import "zyzz-asset:a.css" layer;
+      @import "zyzz-asset:b.css";"
+    `)
+    })
+    test('retains computed custom-media keys across packed imports', () => {
+      const library = Graph.compile({
+        modules: {
+          'query.ts': `import {customMedia} from 'zyzz/web';export const compact=customMedia('(width < 40rem)');`,
+        },
+      })
+      const output = Graph.compile({
+        contracts: { 'lib/query.js': library.contracts['query.ts']! },
+        imports: { 'app.ts': { lib: 'lib/query.js', zyzz: null } },
+        modules: {
+          'app.ts': `import {css} from 'zyzz';import {compact} from 'lib';export namespace styles {
+  export const box = css({[compact]:{color:'red'}})
+}`,
+        },
+      })
+      expect(output.sharedCss).toMatchInlineSnapshot(
+        `"@custom-media --z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74 (width < 40rem);"`,
+      )
+      expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(
+        `".z-text-x_JqSF-0{@media (--z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74){color:red;}}"`,
+      )
+    })
+    test('emits native functions and callable fixed expressions', async () => {
+      const output = Transform.compile({
+        moduleId: 'function.ts',
+        source: `import {cssFunction} from 'zyzz/web';export const twice=cssFunction({parameters:[{name:'--amount',syntax:'<length>',default:'1px'}],returns:'<length>',body:{result:'calc(var(--amount) * 2)','@media (width > 40rem)':{result:'calc(var(--amount) * 3)'}}});`,
+      })
+      expect(output.css).toMatchInlineSnapshot(
+        `"@function --z-cssfunction1sp21u81389mcs-74-77-69-63-65(--amount <length>: 1px) returns <length>{result:calc(var(--amount) * 2);@media (width > 40rem){result:calc(var(--amount) * 3);}}"`,
+      )
+      const code = (
+        await Esbuild.transform(output.code, { loader: 'ts', format: 'esm' })
+      ).code
+      const compiled = await import(
+        'data:text/javascript,' + encodeURIComponent(code)
+      )
+      expect(compiled.twice('2px')).toMatchInlineSnapshot(
+        `"--z-cssfunction1sp21u81389mcs-74-77-69-63-65(2px)"`,
+      )
+    })
+    test('isolates reused and default namespace prefixes across modules and packed output', () => {
+      const library = Graph.compile({
+        modules: {
+          'svg.ts': `import {namespace,global} from 'zyzz/web';namespace({uri:'http://www.w3.org/2000/svg'});global({'.icon':{fill:'red'}});`,
+        },
+      })
+      const output = Graph.compile({
+        contracts: { 'lib/svg.js': library.contracts['svg.ts']! },
+        imports: { 'app.ts': { lib: 'lib/svg.js', 'zyzz/web': null } },
+        modules: {
+          'app.ts': `import 'lib';import {namespace,global} from 'zyzz/web';namespace({prefix:'s',uri:'urn:application'});global({'s|item':{color:'blue'},'.icon':{color:'green'}});`,
+        },
+      })
+      expect(output.sharedCss).toMatchInlineSnapshot(`
+      "@namespace z-n1eqhovc1o4c8ak-16 "http://www.w3.org/2000/svg";
+      @namespace z-n1e8a67z1uaws1j-1j "urn:application";
+      z-n1eqhovc1o4c8ak-16|*.icon {
+        fill: red;
+      }
+      z-n1e8a67z1uaws1j-1j|item {
+        color: #00f;
+      }
+      .icon {
+        color: green;
+      }"
+    `)
+    })
+    test('uses imported native function calls as declaration values', () => {
+      const library = Graph.compile({
+        modules: {
+          'function.ts': `import {cssFunction} from 'zyzz/web';export const twice=cssFunction({parameters:[{name:'--amount',syntax:'<length>'}],returns:'<length>',body:{result:'calc(var(--amount) * 2)'}});`,
+        },
+      })
+      const output = Graph.compile({
+        contracts: { 'lib/function.js': library.contracts['function.ts']! },
+        imports: { 'app.ts': { lib: 'lib/function.js', zyzz: null } },
+        modules: {
+          'app.ts': `import {css} from 'zyzz';import {twice} from 'lib';export namespace styles {
+  export const box = css({width:twice('2px')})
+}`,
+        },
+      })
+      expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(
+        `".z-w-Jgxd-Q{width:--z-cssfunction1sp21u81389mcs-74-77-69-63-65(2px);}"`,
+      )
+    })
+    test('rejects malformed function parameter data', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'bad.ts',
+          source: `import {cssFunction} from 'zyzz/web';export const fn=cssFunction({parameters:[{name:'--x'},{name:'--x'}],body:{result:1}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: bad.ts:53: Expected unique CSS parameters with supported syntaxes and scalar defaults.]`,
+      )
+    })
+  })
+})
+
+describe('substitution', () => {
+  describe('compile', () => {
+    test('variable expressions compile for every mapped property and parse independently', () => {
+      for (const property of Conformance.properties()) {
+        const output = Transform.compile({
+          moduleId: 'variable.ts',
+          source: `import { css } from 'zyzz'; css({${JSON.stringify(property)}:'var(--probe)'});`,
+        })
+
+        expect(
+          output.css.includes(`${Conformance.name(property)}:var(--probe)`),
+        ).toMatchInlineSnapshot(`true`)
+
+        const functions: string[] = []
+
+        CssTree.walk(
+          CssTree.parse(output.css, { parseCustomProperty: true }),
+          (node) => {
+            if (node.type === 'Function') functions.push(node.name)
+          },
+        )
+
+        expect(functions).toMatchInlineSnapshot(`
+        [
+          "var",
+        ]
+      `)
+      }
+
+      for (const value of [
+        'var(--name,)',
+        'var(--name, var(--fallback, 1px))',
+        'calc(1px + var(--gap))',
+        'rgb(var(--channels) / .5)',
+      ]) {
+        const output = Transform.compile({
+          moduleId: 'variable.ts',
+          source: `import { css } from 'zyzz'; css({width:${JSON.stringify(value)}});`,
+        })
+
+        // Property grammar is intentionally deferred until the browser substitutes references.
+        expect(output.css.includes(value)).toMatchInlineSnapshot(`true`)
+      }
+    })
+    test('variables preserve inheritance, cycles, empty fallback, and computed-time invalidity', async () => {
+      const output = Transform.compile({
+        moduleId: 'variables.ts',
+        source: Substitution.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div id="parent" style="width:400px;--width:200px;--gap:20px;--fallback:blue;--pad:6px 8px"><div id="actual" class="${module.box.className}" style="color:red"></div><div id="control" style="${Substitution.control}"></div><div id="empty" class="${module.empty.className}"></div></div>`,
+        )
+
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"180px"`)
+        expect(
+          await page
+            .locator('#empty')
+            .evaluate((element) => getComputedStyle(element).paddingTop),
+        ).toMatchInlineSnapshot(`"0px"`)
+
+        for (const phase of ['initial', 'override', 'cycle', 'invalid']) {
+          await page.evaluate((phase) => {
+            const style = document.getElementById('parent')!.style
+
+            if (phase === 'override') {
+              style.setProperty('--ink', 'green')
+              style.setProperty('--width', '300px')
+            }
+
+            if (phase === 'cycle') {
+              style.setProperty('--ink', 'var(--loop)')
+              style.setProperty('--loop', 'var(--ink)')
+            }
+
+            if (phase === 'invalid') style.setProperty('--width', 'nonsense')
+          }, phase)
+
+          expect(
+            await page.evaluate(() => {
+              const a = getComputedStyle(document.getElementById('actual')!)
+              const b = getComputedStyle(document.getElementById('control')!)
+
+              return [
+                'color',
+                'width',
+                'padding-top',
+                'padding-right',
+                'opacity',
+                'display',
+              ].filter(
+                (key) => a.getPropertyValue(key) !== b.getPropertyValue(key),
+              )
+            }),
+          ).toMatchInlineSnapshot(`[]`)
+        }
+
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot(`"rgb(0, 0, 255)"`)
+
+        const properties = Conformance.properties().map(Conformance.name)
+
+        expect(
+          await page.evaluate(
+            (properties) =>
+              properties.filter(
+                (property) =>
+                  CSS.supports(property, 'initial') !==
+                  CSS.supports(property, 'var(--probe)'),
+              ),
+            properties,
+          ),
+        ).toMatchInlineSnapshot(`[]`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('svg', () => {
+  describe('compile', () => {
+    test('SVG paint preserves tokens, fallbacks, importance, and source maps', () => {
+      const output = Transform.compile({
+        moduleId: 'svg.ts',
+        source: Svg.source,
+      })
+
+      expect(output.css.match(/fill-rule:[^;}]+/g)).toMatchInlineSnapshot(`
+      [
+        "fill-rule:nonzero",
+        "fill-rule:evenodd!important",
+      ]
+    `)
+      expect(output.css.includes('color_2e_ink,#06c)')).toMatchInlineSnapshot(
+        `true`,
+      )
+
+      const lines = output.css.split('\n')
+      const line = lines.findIndex((line) =>
+        line.includes('fill-rule:evenodd!important'),
+      )
+
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
+          line: line + 1,
+          column: lines[line]!.indexOf('fill-rule:evenodd!important'),
+        }),
+      ).toMatchInlineSnapshot(`
+      {
+        "column": 78,
+        "line": 3,
+        "name": "fillRule",
+        "source": "svg.ts",
+      }
+    `)
+    })
+
+    test('SVG paint matches browser declarations and evenodd geometry', async () => {
+      const output = Transform.compile({
+        moduleId: 'svg.ts',
+        source: Svg.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+        const path = 'M0 0H100V100H0Z M25 25H75V75H25Z'
+
+        await page.setContent(
+          `<style>${output.css}</style><svg width="300" height="120"><path id="actual" d="${path}" class="${module.paint.className}"/><path id="control" d="${path}" style="${Svg.controls.paint}" transform="translate(120 0)"/><filter><feFlood id="flood" class="${module.filter.className}"/><feFlood id="flood-control" style="${Svg.controls.filter}"/></filter></svg>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const actual = getComputedStyle(document.getElementById('actual')!)
+            const control = getComputedStyle(
+              document.getElementById('control')!,
+            )
+
+            return [
+              'fill',
+              'fill-opacity',
+              'fill-rule',
+              'stroke',
+              'stroke-width',
+              'stroke-opacity',
+              'stroke-linecap',
+              'stroke-linejoin',
+              'stroke-miterlimit',
+              'stroke-dashoffset',
+              'clip-rule',
+              'paint-order',
+              'shape-rendering',
+              'text-rendering',
+              'vector-effect',
+            ].filter(
+              (property) =>
+                actual.getPropertyValue(property) !==
+                control.getPropertyValue(property),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) =>
+              (element as SVGGeometryElement).isPointInFill(
+                new DOMPoint(50, 50),
+              ),
+            ),
+        ).toMatchInlineSnapshot(`false`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) =>
+              (element as SVGGeometryElement).isPointInFill(
+                new DOMPoint(10, 10),
+              ),
+            ),
+        ).toMatchInlineSnapshot(`true`)
+        expect(
+          await page
+            .locator('#actual')
+            .evaluate((element) => getComputedStyle(element).fill),
+        ).toMatchInlineSnapshot(`"rgb(0, 102, 204)"`)
+        expect(
+          await page.evaluate(() => {
+            const actual = getComputedStyle(document.getElementById('flood')!)
+            const control = getComputedStyle(
+              document.getElementById('flood-control')!,
+            )
+
+            return [
+              'flood-color',
+              'flood-opacity',
+              'lighting-color',
+              'color-interpolation-filters',
+            ].filter(
+              (property) =>
+                actual.getPropertyValue(property) !==
+                control.getPropertyValue(property),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('targets', () => {
+  describe('compile', () => {
+    test('reviews Chromium rule and descriptor retention against independent native controls', async () => {
+      const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      const browser = await chromium.launch(
+        executablePath ? { executablePath } : {},
+      )
+      try {
+        const page = await browser.newPage()
+        const report: Record<string, readonly string[]> = {}
+
+        for (const [name, fixture] of Object.entries(Targets.rules)) {
+          const library = Graph.compile({
+            modules: { 'rules.ts': fixture.source },
+          })
+          const packed = Graph.compile({
+            contracts: { 'rules.js': library.contracts['rules.ts']! },
+            imports: { 'app.ts': { rules: 'rules.js' } },
+            modules: { 'app.ts': `import 'rules';` },
+          })
+          const outputs = [
+            fixture.css,
+            library.sharedCss ?? '',
+            packed.sharedCss ?? '',
+          ]
+          const retained: string[][] = []
+
+          for (const css of outputs) {
+            retained.push(
+              await page.evaluate(
+                ({ css, name }) => {
+                  const element = document.createElement('style')
+                  element.textContent = css
+                  document.head.append(element)
+
+                  try {
+                    const visit = (rules: CSSRuleList): string[] => {
+                      for (const rule of rules) {
+                        if (
+                          rule.cssText.startsWith(`${name} `) ||
+                          rule.cssText.startsWith(`${name}{`) ||
+                          rule.cssText.startsWith(`${name} {`)
+                        ) {
+                          const descriptors = [
+                            ...rule.cssText.matchAll(
+                              /(?<=[;{}])\s*(@?[a-z][a-z-]*)\s*[:{]/g,
+                            ),
+                          ]
+                            .map((match) => match[1]!)
+                            .filter(
+                              (value) =>
+                                value !== 'body' && !value.startsWith('alias'),
+                            )
+
+                          return [...new Set([name, ...descriptors])].sort()
+                        }
+
+                        if ('cssRules' in rule) {
+                          const nested = visit(
+                            (rule as CSSGroupingRule).cssRules,
+                          )
+                          if (nested.length) return nested
+                        }
+                      }
+
+                      return []
+                    }
+
+                    return visit(element.sheet!.cssRules)
+                  } finally {
+                    element.remove()
+                  }
+                },
+                { css, name },
+              ),
+            )
+          }
+
+          expect(
+            JSON.stringify(retained[1]) === JSON.stringify(retained[0]),
+          ).toMatchInlineSnapshot('true')
+          expect(
+            JSON.stringify(retained[2]) === JSON.stringify(retained[0]),
+          ).toMatchInlineSnapshot('true')
+          report[name] = retained[0]!
+        }
+
+        expect(report).toMatchInlineSnapshot(`
+        {
+          "@container": [
+            "@container",
+            "color",
+          ],
+          "@counter-style": [
+            "@counter-style",
+            "additive-symbols",
+            "fallback",
+            "negative",
+            "pad",
+            "prefix",
+            "range",
+            "speak-as",
+            "suffix",
+            "symbols",
+            "system",
+          ],
+          "@custom-media": [],
+          "@document": [],
+          "@font-face": [
+            "@font-face",
+            "ascent-override",
+            "descent-override",
+            "font-display",
+            "font-family",
+            "font-feature-settings",
+            "font-stretch",
+            "font-style",
+            "font-variation-settings",
+            "font-weight",
+            "line-gap-override",
+            "size-adjust",
+            "src",
+            "unicode-range",
+          ],
+          "@font-feature-values": [
+            "@character-variant",
+            "@font-feature-values",
+            "@ornaments",
+            "@styleset",
+            "@stylistic",
+            "@swash",
+          ],
+          "@font-palette-values": [
+            "@font-palette-values",
+            "base-palette",
+            "font-family",
+            "override-colors",
+          ],
+          "@function": [
+            "@function",
+            "result",
+          ],
+          "@import": [
+            "@import",
+          ],
+          "@keyframes": [
+            "@keyframes",
+            "opacity",
+          ],
+          "@layer": [
+            "@layer",
+            "color",
+          ],
+          "@media": [
+            "@media",
+            "color",
+          ],
+          "@page": [
+            "@page",
+            "page-orientation",
+            "size",
+          ],
+          "@position-try": [
+            "@position-try",
+            "margin",
+            "position-area",
+          ],
+          "@property": [
+            "@property",
+            "inherits",
+            "initial-value",
+            "syntax",
+          ],
+          "@scope": [
+            "@scope",
+            "color",
+          ],
+          "@starting-style": [
+            "@starting-style",
+            "opacity",
+          ],
+          "@supports": [
+            "@supports",
+            "color",
+          ],
+        }
+      `)
+
+        await Fs.mkdir('test-results', { recursive: true })
+        await Fs.writeFile(
+          'test-results/at-rule-target-retention.json',
+          JSON.stringify(
+            {
+              browser: browser.version(),
+              evidence:
+                'CSSOM retention only; this report does not establish complete rendering.',
+              rules: report,
+            },
+            null,
+            2,
+          ),
+        )
+      } finally {
+        await browser.close()
+      }
+    }, 30_000)
+  })
+})
+
+describe('templates', () => {
+  describe('compile', () => {
+    test('folds negative bigint substitutions without losing precision', () => {
+      const output = Transform.compile({
+        moduleId: 'bigint.ts',
+        source:
+          'import { css } from "zyzz"; css({ marginLeft: `${-12n}px`, "--large": `${-9007199254740993n}`, "--zero": `${-0n}` })',
+      })
+
+      expect(output.css).toMatchInlineSnapshot(
+        `
+      ".z-ml--12px-MCf6Uo{margin-left:-12px;}
+      .z---large--9007199254740993-MCf6Uo{--large:-9007199254740993;}
+      .z---zero-0-MCf6Uo{--zero:0;}"
+    `,
+      )
+    })
+
+    test('bounds nested template extraction', () => {
+      const nested = (count: number) =>
+        '`'.concat('${`'.repeat(count), '8', '`}'.repeat(count), '`')
+
+      expect(
+        Transform.compile({
+          moduleId: 'depth.ts',
+          source:
+            'import { css } from "zyzz"; css({ "--value": ' +
+            nested(127) +
+            ' })',
+        }).css,
+      ).toMatchInlineSnapshot(`".z---value-8-EFKWwl{--value:8;}"`)
+      expect(() =>
+        Transform.compile({
+          moduleId: 'depth.ts',
+          source:
+            'import { css } from "zyzz"; css({ "--value": ' +
+            nested(128) +
+            ' })',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: depth.ts:45: Expected a literal string or number; expressions are not evaluated.]`,
+      )
+    })
+
+    test('folds primitive templates with the same CSS as ordinary strings', async () => {
+      const output = Transform.compile({
+        moduleId: 'templates.ts',
+        source: Templates.source,
+      })
+
+      expect(output.css).toMatchInlineSnapshot(
+        `
+      ".z-text-red-RNqNQM{color:red;}
+      .z-content-RNqNQM{content:"true:null:12";}
+      .z-ml--2px-RNqNQM{margin-left:-2px;}
+      .z-p-RNqNQM{padding:4px;padding:8px!important;}
+      .z-w-RNqNQM{width:calc(100% - 16px);}"
+    `,
+      )
+
+      const literal = Transform.compile({
+        moduleId: 'templates.ts',
+        source: `import { css } from 'zyzz'; export const box = css({ color: 'red', content: '"true:null:12"', marginLeft: '-2px', padding: ['4px', '8px!'], width: 'calc(100% - 16px)' })()`,
+      })
+
+      expect(output.css === literal.css).toMatchInlineSnapshot(`true`)
+      expect(output.code.includes('${')).toMatchInlineSnapshot(`false`)
+
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+
+      expect(module.box).toMatchInlineSnapshot(`
+      {
+        "className": "z-text-red-RNqNQM z-content-RNqNQM z-ml--2px-RNqNQM z-p-RNqNQM z-w-RNqNQM",
+      }
+    `)
+      expect(
+        Trace.originalPositionFor(new Trace.TraceMap(output.map), {
+          line: 2,
+          column: 0,
+        }).source,
+      ).toMatchInlineSnapshot(`"templates.ts"`)
+    })
+
+    test('preserves cooked escapes, empty text, and bound token resolution', () => {
+      const source = [
+        "import { Theme } from 'zyzz'",
+        "const theme = Theme.define({ color: { brand: '#06c' } })",
+        'export const box = theme.css({ color: `br${"and"}`, content: `"\\u0041"`, "--empty": `` })()',
+      ].join('\n')
+
+      expect(Transform.compile({ moduleId: 'theme.ts', source }).css)
+        .toMatchInlineSnapshot(`
+        ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-color_2e_brand:#06c;}
+        .z-text-_LWqWu{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,#06c);}
+        .z-content-_LWqWu{content:"A";}
+        .z---empty-_LWqWu{--empty:;}"
+      `)
+    })
+
+    test('reports exact diagnostics for unsupported template expressions', () => {
+      const diagnostics = [
+        'unknown',
+        '(()=>{throw Error("executed")})()',
+        '({toString(){throw Error("executed")}})',
+        '[]',
+        '/x/',
+        '1e999',
+        '+12n',
+        'String.raw`x`',
+        '1 + 2',
+      ].map((expression) => {
+        const source =
+          'import { css } from "zyzz"; css({ width: `${' +
+          expression +
+          '}px` })'
+
+        try {
+          Transform.compile({ moduleId: 'invalid.ts', source })
+          throw new Error('Expected extraction failure')
+        } catch (error) {
+          if (!(error instanceof Source.ExtractError)) throw error
+
+          return error.diagnostics
+        }
+      })
+
+      expect(diagnostics).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 55,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 81,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 81,
+            "message": "Static data requires literal property keys without methods.",
+            "source": "invalid.ts",
+            "start": 46,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 50,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 51,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 53,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 52,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 61,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 53,
+            "message": "Expected a literal string or number; expressions are not evaluated.",
+            "source": "invalid.ts",
+            "start": 41,
+          },
+        ],
+      ]
+    `)
+    })
+
+    test('matches native CSS for template fallbacks, math, and importance', async () => {
+      const output = Transform.compile({
+        moduleId: 'templates.ts',
+        source: Templates.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div style="width:400px"><div id="actual" class="${module.box.className}" style="padding:1px"></div><div id="control" style="color:red;content:'true:null:12';margin-left:-2px;padding:8px!important;width:calc(100% - 16px)"></div></div>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const actual = getComputedStyle(document.getElementById('actual')!)
+            const control = getComputedStyle(
+              document.getElementById('control')!,
+            )
+
+            return [
+              'color',
+              'content',
+              'margin-left',
+              'padding',
+              'width',
+            ].filter(
+              (property) =>
+                actual.getPropertyValue(property) !==
+                control.getPropertyValue(property),
+            )
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('textTimeline', () => {
+  describe('compile', () => {
+    test('text and flex shorthands preserve A/B/A overrides and page aliases', () => {
+      const a = {
+        flexFlow: 'row nowrap',
+        textWrap: 'wrap balance',
+        pageBreakBefore: 'avoid',
+      } as const
+
+      const output = Css.compile({
+        styles: Style.define({
+          a,
+          b: {
+            flexDirection: 'column',
+            textWrapStyle: 'pretty',
+            breakBefore: 'page',
+          },
+          c: a,
+        }),
+      })
+
+      expect(output.css).toMatchInlineSnapshot(`
+      ".z-flex-flow-CgmKfH-0{flex-flow:row nowrap;}
+      .z-text-wrap-CgmKfH-1{text-wrap:wrap balance;}
+      .z-page-break-before-avoid-CgmKfH-2{page-break-before:avoid;}
+      .z-flex-direction-column-0kXiVX-0{flex-direction:column;}
+      .z-text-wrap-style-pretty-0kXiVX-1{text-wrap-style:pretty;}
+      .z-break-before-page-0kXiVX-2{break-before:page;}
+      .z-flex-flow-HzYJKb-0{flex-flow:row nowrap;}
+      .z-text-wrap-HzYJKb-1{text-wrap:wrap balance;}
+      .z-page-break-before-avoid-HzYJKb-2{page-break-before:avoid;}"
+    `)
+    })
+    test('text and flex values match native browser controls', async () => {
+      const output = Transform.compile({
+        moduleId: 'text-timeline.ts',
+        source: TextTimeline.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        const a = {
+          flexFlow: 'row nowrap',
+          textWrap: 'wrap balance',
+          pageBreakBefore: 'avoid',
+        } as const
+
+        const cascade = Css.compile({
+          styles: Style.define({
+            a,
+            b: {
+              flexDirection: 'column',
+              textWrapStyle: 'pretty',
+              breakBefore: 'page',
+            },
+            c: a,
+          }),
+        })
+
+        await page.setContent(
+          `<style>${output.css}${cascade.css}</style><div id="cascade" class="${cascade.classes.a} ${cascade.classes.b} ${cascade.classes.c} z-a"></div><div id="flow" class="${module.flow.className}"><span>one</span><span>two</span></div><div id="flow-control" style="${TextTimeline.controls.flow}"><span>one</span><span>two</span></div><span id="text" class="${module.text.className}">text</span><span id="text-control" style="${TextTimeline.controls.text}">text</span>`,
+        )
+
+        expect(
+          await page.evaluate(() => {
+            const differences: string[] = []
+
+            for (const [id, properties] of [
+              [
+                'flow',
+                [
+                  'flex-direction',
+                  'flex-wrap',
+                  'text-wrap-mode',
+                  'text-wrap-style',
+                ],
+              ],
+              [
+                'text',
+                [
+                  'text-underline-position',
+                  'vertical-align',
+                  'border-image-repeat',
+                  'view-timeline-axis',
+                  'interest-delay-start',
+                ],
+              ],
+            ] as const) {
+              const a = getComputedStyle(document.getElementById(id)!)
+              const b = getComputedStyle(
+                document.getElementById(`${id}-control`)!,
+              )
+
+              for (const property of properties)
+                if (
+                  a.getPropertyValue(property) !== b.getPropertyValue(property)
+                )
+                  differences.push(property)
+            }
+
+            return differences
+          }),
+        ).toMatchInlineSnapshot(`[]`)
+        expect(
+          await page
+            .locator('#cascade')
+            .evaluate((element) => getComputedStyle(element).flexDirection),
+        ).toMatchInlineSnapshot(`"row"`)
+        expect(
+          await page
+            .locator('#cascade')
+            .evaluate((element) => getComputedStyle(element).textWrapStyle),
+        ).toMatchInlineSnapshot(`"balance"`)
+        expect(
+          await page
+            .locator('#cascade')
+            .evaluate((element) => getComputedStyle(element).breakBefore),
+        ).toMatchInlineSnapshot(`"avoid"`)
+        expect(
+          await page
+            .locator('#flow')
+            .evaluate((element) => getComputedStyle(element).flexDirection),
+        ).toMatchInlineSnapshot(`"row"`)
+        expect(
+          await page
+            .locator('#flow')
+            .evaluate((element) => getComputedStyle(element).flexWrap),
+        ).toMatchInlineSnapshot(`"wrap"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('tuples', () => {
+  describe('compile', () => {
+    test('scalar tuples preserve units, markers, and shorthand overrides', () => {
+      const lexer = Conformance.lexer()
+
+      for (const declarations of Object.values(Tuples.styles)) {
+        for (const [property, value] of Object.entries(declarations)) {
+          const name = Conformance.name(property)
+          const output = Transform.compile({
+            moduleId: 'tuples.ts',
+            source: `import { css } from 'zyzz'; css({${property}:${JSON.stringify(value)}});`,
+          })
+
+          expect(output.css.includes(`${name}:${value}`)).toMatchInlineSnapshot(
+            `true`,
+          )
+          expect(
+            lexer.matchProperty(name, String(value)).error,
+          ).toMatchInlineSnapshot(`null`)
+        }
+      }
+
+      const output = Transform.compile({
+        moduleId: 'tuples.ts',
+        source: Tuples.source,
+      })
+
+      expect(
+        output.css.match(/contain-intrinsic-size:80px 40px;/g)?.length,
+      ).toMatchInlineSnapshot(`2`)
+      expect(
+        output.css.match(/interest-delay:100ms 200ms;/g)?.length,
+      ).toMatchInlineSnapshot(`2`)
+    })
+    test('border-image tuples match native painting and scrollbar colors', async () => {
+      const output = Transform.compile({
+        moduleId: 'tuples.ts',
+        source: Tuples.source,
+      })
+      const js = await Esbuild.transform(output.code, {
+        format: 'esm',
+        loader: 'ts',
+      })
+      const module = await import(
+        `data:text/javascript;base64,${Buffer.from(js.code).toString('base64')}`
+      )
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>.frame{display:inline-block;vertical-align:top;width:160px;height:160px;background:white}.box{width:60px;height:60px;margin:30px;border:10px solid transparent;border-image-source:linear-gradient(90deg,red,blue)}${output.css}</style><div id="actual" class="frame"><div class="box ${module.border.className}"></div></div><div id="control" class="frame"><div class="box" style="${Tuples.control}"></div></div><div id="intrinsic" class="${module.intrinsic.className}"></div><div id="intrinsic-control" style="contain:size;contain-intrinsic-size:auto 80px auto 40px;display:inline-block"></div><div id="text" class="${module.text.className}"></div>`,
+        )
+
+        const size = await page
+          .locator('#intrinsic')
+          .evaluate((element) => [
+            element.getBoundingClientRect().width,
+            element.getBoundingClientRect().height,
+          ])
+
+        expect(size).toMatchInlineSnapshot(`
+        [
+          80,
+          40,
+        ]
+      `)
+        expect(
+          await page
+            .locator('#intrinsic-control')
+            .evaluate((element) => [
+              element.getBoundingClientRect().width,
+              element.getBoundingClientRect().height,
+            ]),
+        ).toMatchInlineSnapshot(`
+        [
+          80,
+          40,
+        ]
+      `)
+
+        const computed = await page
+          .locator('#actual .box')
+          .evaluate((element) => {
+            const style = getComputedStyle(element)
+
+            return [
+              style.borderImageSource,
+              style.borderImageSlice,
+              style.borderImageWidth,
+              style.borderImageOutset,
+              style.borderImageRepeat,
+            ]
+          })
+
+        const native = await page
+          .locator('#control .box')
+          .evaluate((element) => {
+            const style = getComputedStyle(element)
+
+            return [
+              style.borderImageSource,
+              style.borderImageSlice,
+              style.borderImageWidth,
+              style.borderImageOutset,
+              style.borderImageRepeat,
+            ]
+          })
+
+        expect(
+          JSON.stringify(computed) === JSON.stringify(native),
+        ).toMatchInlineSnapshot(`true`)
+
+        // Paint both controls at the same device coordinates to avoid gradient dithering differences.
+        await page.addStyleTag({
+          content:
+            '#actual,#control{position:absolute;left:0;top:0}#control{visibility:hidden}',
+        })
+
+        const actual = await page.locator('#actual').screenshot()
+
+        await page.addStyleTag({
+          content: '#actual{visibility:hidden}#control{visibility:visible}',
+        })
+
+        const control = await page.locator('#control').screenshot()
+
+        expect(actual.equals(control)).toMatchInlineSnapshot(`true`)
+        expect(
+          await page
+            .locator('#actual .box')
+            .evaluate((element) => getComputedStyle(element).borderImageSlice),
+        ).toMatchInlineSnapshot(`"25% fill"`)
+        expect(
+          await page
+            .locator('#actual .box')
+            .evaluate((element) => getComputedStyle(element).borderImageOutset),
+        ).toMatchInlineSnapshot(`"2px 4px 6px 8px"`)
+        expect(
+          await page
+            .locator('#text')
+            .evaluate((element) => getComputedStyle(element).scrollbarColor),
+        ).toMatchInlineSnapshot(`"rgb(255, 0, 0) rgb(0, 0, 255)"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('variables', () => {
+  describe('compile', () => {
+    test('removes consumed variable imports and retains runtime references', () => {
+      const source = `import {variable} from 'zyzz'; export const vars = ({size:variable("length")});`
+
+      expect(
+        Transform.compile({ moduleId: 'vars.ts', source }).code,
+      ).not.toContain('from "zyzz"')
+      expect(
+        Transform.compile({
+          moduleId: 'error.ts',
+          source: source + 'export const gap = vars.size',
+        }).code,
+      ).toContain('export const gap = vars.size')
+      expect(() =>
+        Transform.compile({
+          moduleId: 'signed.ts',
+          source: `import {variable, css} from 'zyzz'; const vars = ({size:variable("signedLength")}); css({ lineHeight: vars.size })`,
+        }),
+      ).toThrow('Variable domain is incompatible')
+    })
+    test('retains type-only generic references to variable', () => {
+      const output = Transform.compile({
+        moduleId: 'generic.ts',
+        source: `import {variable} from 'zyzz'; const v=({gap:variable("length")}); function identity<T>(v:T){return v}; export const typed=identity<{gap: variable.Reference<'length'>}>(v)`,
+      })
+
+      expect(output.code).toMatchInlineSnapshot(
+        `
+      "
+      import { Variable as __zyzzVariable } from 'zyzz/runtime';
+      import {variable} from 'zyzz'; const v=({gap:__zyzzVariable.create({"name":"--z-v1cd72gh91mozv-45","type":"length","variable":true})}); function identity<T>(v:T){return v}; export const typed=identity<{gap: variable.Reference<'length'>}>(v)"
+    `,
+      )
+    })
+    test('rejects namespace variable authoring', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'namespace.ts',
+          source:
+            'import * as zyzz from "zyzz"; export const v=zyzz.variable("length")',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: namespace.ts:45: Import variable by name; namespace authoring calls are not supported yet.]`,
+      )
+    })
+
+    test('rejects theme variables in root css', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'root.ts',
+          source:
+            'import {Theme,css} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); css({width:theme.vars.spacing.md})',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(`
+      [Source.ExtractError: root.ts:91: Token references must be direct property values in bound theme css calls.
+      root.ts:91: Expected a literal string or number; expressions are not evaluated.]
+    `)
+    })
+    test('strips importance across nested template segments', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'nested.ts',
+          source:
+            'import {Theme} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.css({width:`${`calc(${theme.vars.spacing.md})!`}`})',
+        }).css,
+      ).toMatchInlineSnapshot(`
+      ".z_theme-ingwo11j6aspr-theme{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
+      .z-w-gPA8oq{width:calc(var(--z-tingwo11j6aspr-theme-spacing_2e_md,8px))!important;}"
+    `)
+    })
+    test('preserves assertions around nested variable templates and fallbacks', () => {
+      expect(
+        Transform.compile({
+          moduleId: 'assertions.ts',
+          source:
+            'import { Theme, css } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.css({width:["1px", (`calc(${(`${theme.vars.spacing.md}` satisfies string)})` as string)]})',
+        }).css,
+      ).toMatchInlineSnapshot(`
+      ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
+      .z-w-OmxwpZ{width:1px;width:calc(var(--z-t1jvt0134f5zz3-theme-spacing_2e_md,8px));}"
+    `)
+    })
+    test('rejects spacing variables in integer properties', () => {
+      expect(() =>
+        Transform.compile({
+          moduleId: 'domains.ts',
+          source:
+            'import { Theme, css } from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); theme.css({maxLines:theme.vars.spacing.md})',
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: domains.ts:103: Theme variable domain is incompatible with this property.]`,
+      )
+    })
+
+    test('retains live references in bound declarations and important templates', () => {
+      const source = [
+        'import { Theme, css } from "zyzz";',
+        'const theme = Theme.define({spacing:{md:"8px"},color:{brand:"red",unused:"blue"}});',
+        'export const box = theme.css({width:`calc(100% - ${theme.vars.spacing.md})!`, color:theme.vars.color.brand})()',
+      ].join('\n')
+
+      expect(Transform.compile({ moduleId: 'vars.ts', source }).css)
+        .toMatchInlineSnapshot(`
+        ".z_theme-4t4nbe1og4cic-theme{--z-t4t4nbe1og4cic-theme-spacing_2e_md:8px;--z-t4t4nbe1og4cic-theme-color_2e_brand:red;}
+        .z-w-4lks2y{width:calc(100% - var(--z-t4t4nbe1og4cic-theme-spacing_2e_md,8px))!important;}
+        .z-text-4lks2y{color:var(--z-t4t4nbe1og4cic-theme-color_2e_brand,red);}"
+      `)
+    })
+
+    test('links imported variables and compatible scopes without copying declaration values', () => {
+      const result = Graph.compile({
+        modules: {
+          'theme.ts':
+            'import { Theme } from "zyzz"; export const theme = Theme.define({ spacing: { md: "8px" }, color: { brand: { light: "red", dark: "blue" } } }); export const alt = Theme.extend(theme, { spacing: { md: "16px" } });',
+          'app.ts':
+            'import { css } from "zyzz"; import { theme as palette, alt } from "./theme.js"; export const box = palette.css({ width: `calc(100% - ${palette.vars.spacing.md})`, color: palette.vars.color.brand })(); export const scope = alt.className;',
+        },
+      })
+
+      expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_md:8px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
+      .z_theme-1xn44ix111xh3v-alt{--z-t1xn44ix111xh3v-theme-spacing_2e_md:16px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
+      .z-w-Jgxd-Q{width:calc(100% - var(--z-t1xn44ix111xh3v-theme-spacing_2e_md,8px));}
+      .z-text-Jgxd-Q{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,light-dark(red,blue));}"
+    `)
+      expect(result.modules['theme.ts']!.css).toMatchInlineSnapshot(`""`)
+    })
+
+    test('compiles named configuration variables from packed contracts', () => {
+      const library = Graph.compile({
+        modules: {
+          'config.ts':
+            'import { Config } from "zyzz"; export const zyzz = Config.create({ theme: { spacing: { md: "8px" } } });',
+        },
+      })
+
+      const output = Graph.compile({
+        contracts: { 'library/index.js': library.contracts['config.ts']! },
+        imports: {
+          'app.ts': { '@acme/theme': 'library/index.js', zyzz: null },
+        },
+        modules: {
+          'app.ts':
+            'import { css } from "zyzz"; import { zyzz } from "@acme/theme"; export const box = zyzz.css({width:`calc(100% - ${zyzz.theme.vars.spacing.md})`})()',
+        },
+      })
+
+      expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-u8smm21l81sow-zyzz-theme{--z-tu8smm21l81sow-zyzz-spacing_2e_md:8px;}
+      .z-w-Jgxd-Q{width:calc(100% - var(--z-tu8smm21l81sow-zyzz-spacing_2e_md,8px));}"
+    `)
+      expect(
+        output.modules['app.ts']!.code.includes('.vars'),
+      ).toMatchInlineSnapshot(`false`)
+    })
+
+    test.each([
+      [
+        'escaped reads',
+        'export const value = String(theme.vars.spacing.md)',
+        'Token references must be direct',
+      ],
+      [
+        'wrong domains',
+        'theme.css({ color: `${theme.vars.spacing.md}` })',
+        'incompatible',
+      ],
+      [
+        'unknown paths',
+        'theme.css({ width: `${theme.vars.spacing.missing}` })',
+        'Unknown theme token path',
+      ],
+    ])('rejects %s', (_name, source, message) => {
+      try {
+        Transform.compile({
+          moduleId: 'invalid.ts',
+          source:
+            'import { Theme, css } from "zyzz"; const theme = Theme.define({spacing:{md:"8px"}});' +
+            source,
+        })
+        throw new Error('Expected source failure')
+      } catch (error) {
+        if (!(error instanceof Source.ExtractError)) throw error
+
+        expect(error.message.includes(message!)).toMatchInlineSnapshot(`true`)
+      }
+    })
+
+    test('inherits variable overrides in native CSS', async () => {
+      const output = Transform.compile({
+        moduleId: 'browser.ts',
+        source: [
+          'import { Theme, css } from "zyzz";',
+          'const theme = Theme.define({spacing:{md:"8px"}});',
+          'const alt = Theme.extend(theme,{spacing:{md:"16px"}});',
+          'theme.css({width:`calc(100% - ${theme.vars.spacing.md})`})()',
+          'export const scope = alt.className;',
+        ].join('\n'),
+      })
+
+      const className = output.css.match(/\.([^{}]+)\{width:/)![1]!
+      const scope = output.css.match(/\.([^{}]+)\{[^{}]*:16px;/)![1]!
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${output.css}</style><div style="width:100px"><div id="box" class="${className}"></div></div>`,
+        )
+
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"92px"`)
+
+        await page
+          .locator('#box')
+          .evaluate(
+            (element, scope) => element.parentElement!.classList.add(scope),
+            scope,
+          )
+
+        expect(
+          await page
+            .locator('#box')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"84px"`)
+      } finally {
+        await browser.close()
+      }
+    })
+  })
+})
+
+describe('viewTransition.browser', () => {
+  describe('compile', () => {
+    test('captures navigation, activates declared types, and obeys conditional opt-out', async () => {
+      const library = Graph.compile({
+        modules: {
+          'transitions.ts': `import {viewTransition} from 'zyzz/web';
+viewTransition({navigation:'auto',types:'slide forward'});
+viewTransition({navigation:'none'},{within:['@media (width < 500px)']});`,
+        },
+      })
+      const packed = Graph.compile({
+        contracts: { 'lib.js': library.contracts['transitions.ts']! },
+        imports: { 'app.ts': { lib: 'lib.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+      const server = Http.createServer((request, response) => {
+        const native = request.url?.startsWith('/native')
+        const css = native
+          ? '@view-transition{navigation:auto;types:slide forward}@media(width < 500px){@view-transition{navigation:none}}'
+          : packed.sharedCss!
+        response.setHeader('Content-Type', 'text/html')
+        response.end(`<!doctype html><style>${css}
+::view-transition-group(root){animation-duration:1s}
+</style><script>
+addEventListener('pagereveal', event => {
+  const transition = event.viewTransition;
+  if (!transition) {
+    document.documentElement.dataset.capture = 'none';
+    return;
+  }
+  transition.ready.then(() => {
+    document.documentElement.dataset.capture = JSON.stringify({
+      active: document.documentElement.matches(':active-view-transition'),
+      forward: document.documentElement.matches(':active-view-transition-type(forward)'),
+      image: getComputedStyle(document.documentElement, '::view-transition-new(root)').animationName !== 'none',
+      types: [...transition.types].sort(),
+    });
+  }, error => { document.documentElement.dataset.capture = error.name; });
+});
+</script><a href="${native ? '/native' : '/compiled'}/next">Next</a><p>${request.url?.endsWith('/next') ? 'New page' : 'Old page'}</p>`)
+      })
+      const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      const browser = await chromium.launch(
+        executablePath ? { executablePath } : {},
+      )
+      try {
+        await new Promise<void>((resolve) =>
+          server.listen(0, '127.0.0.1', resolve),
+        )
+        const address = server.address()
+        if (!address || typeof address === 'string')
+          throw new Error('Expected a TCP listener.')
+
+        for (const width of [800, 400]) {
+          for (const route of ['compiled', 'native']) {
+            const page = await browser.newPage({
+              viewport: { height: 600, width },
+            })
+            try {
+              await page.goto(`http://127.0.0.1:${address.port}/${route}`)
+              await page.locator('a').click()
+              await page.waitForURL(`**/${route}/next`)
+              await page.waitForFunction(
+                () => document.documentElement.dataset.capture !== undefined,
+              )
+              const capture = await page.evaluate(
+                () => document.documentElement.dataset.capture,
+              )
+
+              if (width === 800)
+                expect(JSON.parse(capture!)).toMatchInlineSnapshot(`
+                {
+                  "active": true,
+                  "forward": true,
+                  "image": true,
+                  "types": [
+                    "forward",
+                    "slide",
+                  ],
+                }
+              `)
+              else expect(capture).toMatchInlineSnapshot('"none"')
+            } finally {
+              await page.close()
+            }
+          }
+        }
+      } finally {
+        await browser.close()
+        await new Promise<void>((resolve, reject) =>
+          server.close((error) => (error ? reject(error) : resolve())),
+        )
+      }
+    })
+  })
+})
+
+describe('viewTransition', () => {
+  describe('compile', () => {
+    test('rejects invalid packed transition descriptors before parser recovery', () => {
+      const library = Graph.compile({
+        modules: {
+          'transition.ts': `import {viewTransition} from 'zyzz/web';viewTransition({navigation:'auto',types:'slide'});`,
+        },
+      })
+      {
+        const contract = JSON.parse(library.contracts['transition.ts']!)
+        contract.stylesheets[0].css = '@view-transition{types:slide,forwards}'
+        expect(() =>
+          Graph.compile({
+            contracts: { 'lib.js': JSON.stringify(contract) },
+            imports: { 'app.ts': { lib: 'lib.js' } },
+            modules: { 'app.ts': `import 'lib';` },
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: lib.js:0: Invalid library contract: Invalid view-transition descriptor.]`,
+        )
+      }
+      {
+        const contract = JSON.parse(library.contracts['transition.ts']!)
+        contract.stylesheets[0].css = '@view-transition{types:none slide}'
+        expect(() =>
+          Graph.compile({
+            contracts: { 'lib.js': JSON.stringify(contract) },
+            imports: { 'app.ts': { lib: 'lib.js' } },
+            modules: { 'app.ts': `import 'lib';` },
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: lib.js:0: Invalid library contract: Invalid view-transition types.]`,
+        )
+      }
+      {
+        const contract = JSON.parse(library.contracts['transition.ts']!)
+        contract.stylesheets[0].css = '@view-transition{navigation:always}'
+        expect(() =>
+          Graph.compile({
+            contracts: { 'lib.js': JSON.stringify(contract) },
+            imports: { 'app.ts': { lib: 'lib.js' } },
+            modules: { 'app.ts': `import 'lib';` },
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: lib.js:0: Invalid library contract: Invalid view-transition navigation.]`,
+        )
+      }
+      {
+        const contract = JSON.parse(library.contracts['transition.ts']!)
+        contract.stylesheets[0].css = '@view-transition{unknown:auto}'
+        expect(() =>
+          Graph.compile({
+            contracts: { 'lib.js': JSON.stringify(contract) },
+            imports: { 'app.ts': { lib: 'lib.js' } },
+            modules: { 'app.ts': `import 'lib';` },
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: lib.js:0: Invalid library contract: Unknown view-transition descriptor.]`,
+        )
+      }
+      {
+        const contract = JSON.parse(library.contracts['transition.ts']!)
+        contract.stylesheets[0].css =
+          '@view-transition invalid{navigation:auto}'
+        expect(() =>
+          Graph.compile({
+            contracts: { 'lib.js': JSON.stringify(contract) },
+            imports: { 'app.ts': { lib: 'lib.js' } },
+            modules: { 'app.ts': `import 'lib';` },
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: lib.js:0: Invalid library contract: View-transition rules require a descriptor block and no prelude.]`,
+        )
+      }
+    })
+    test('validates transition identifiers and preserves conditional packed descriptors', () => {
+      for (const types of [
+        'none',
+        'NONE',
+        'slide forwards',
+        '\\73 lide 图',
+        'slide/**/forwards',
+        'slide slide',
+      ]) {
+        const source = `import {viewTransition} from 'zyzz/web';\nviewTransition({navigation:${JSON.stringify('\\61 uto')},types:${JSON.stringify(types)}},{within:['@layer transitions','@media (width > 1px)','@supports (color: red)','@container (width > 1px)']});`
+        const direct = Transform.compile({ moduleId: 'transition.ts', source })
+        const library = Graph.compile({ modules: { 'transition.ts': source } })
+        const packed = Graph.compile({
+          contracts: {
+            'lib/transition.js': library.contracts['transition.ts']!,
+          },
+          imports: { 'app.ts': { lib: 'lib/transition.js' } },
+          modules: { 'app.ts': `import 'lib';` },
+        })
+        expect(direct.css.includes('types:')).toMatchInlineSnapshot('true')
+        expect(packed.sharedCss?.includes('types:')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(
+          Trace.originalPositionFor(new Trace.TraceMap(packed.sharedCssMap!), {
+            line: 1,
+            column: 0,
+          }),
+        ).toMatchInlineSnapshot(`
+        {
+          "column": 0,
+          "line": 2,
+          "name": null,
+          "source": "lib/transition.ts",
+        }
+      `)
+      }
+    })
+
+    test('rejects malformed transition types and forbidden enclosing contexts', () => {
+      for (const types of [
+        '',
+        'none slide',
+        'slide NONE',
+        'inherit',
+        'initial',
+        'unset',
+        'revert',
+        'revert-layer',
+        'default',
+        'slide,forwards',
+        '"slide"',
+        '1slide',
+        'slide;navigation:none',
+        '\\6e one slide',
+      ]) {
+        expect(() =>
+          Transform.compile({
+            moduleId: 'invalid.ts',
+            source: `import {viewTransition} from 'zyzz/web';viewTransition({types:${JSON.stringify(types)}});`,
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: invalid.ts:40: Expected none or a list of view-transition custom identifiers.]`,
+        )
+      }
+      for (const within of [
+        'body',
+        '@page',
+        '@font-face',
+        '@starting-style',
+        '@keyframes fade',
+      ]) {
+        expect(() =>
+          Transform.compile({
+            moduleId: 'invalid.ts',
+            source: `import {viewTransition} from 'zyzz/web';viewTransition({navigation:'auto'},{within:[${JSON.stringify(within)}]});`,
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: invalid.ts:40: Expected enclosing conditional or layer headers.]`,
+        )
+      }
+    })
+  })
 })

@@ -2,17 +2,21 @@
  * Exercises linked source modules through compilation and actual module execution.
  * @module
  */
+import * as ConfigFixture from '../../test/fixtures/ConfigGraph.js'
+import * as Fixture from '../../test/fixtures/ThemeGraph.js'
+import * as Library from '../../test/fixtures/VariantLibrary.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
+import * as Http from 'node:http'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
+import * as Vm from 'node:vm'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Graph } from 'zyzz/compiler'
-import * as ConfigFixture from '../../test/fixtures/ConfigGraph.js'
-import * as Fixture from '../../test/fixtures/ThemeGraph.js'
+import { Graph, Transform } from 'zyzz/compiler'
+import { Host } from 'zyzz/node'
 
 const root = Path.resolve(import.meta.dirname, '../..')
 const modules = Fixture.modules
@@ -1217,5 +1221,1796 @@ describe('create', () => {
     expect(
       compiler.compile({ imports, modules }) === after,
     ).toMatchInlineSnapshot(`true`)
+  })
+})
+
+describe('output', () => {
+  describe('compile', () => {
+    test('retains producer modes and dynamic composition across all mode pairs', async () => {
+      const browser = await chromium.launch()
+      try {
+        for (const producer of ['atomic', 'grouped'] as const) {
+          const root = await Fs.mkdtemp(Path.resolve('.fixture-css-output-'))
+          try {
+            const library = await Library.create(root, {
+              cssOutput: producer,
+              output: 'react',
+            })
+            const contract = await Fs.readFile(
+              Path.join(library.installed, 'index.js.zyzz.json'),
+              'utf8',
+            )
+            const libraryCss = await Fs.readFile(
+              Path.join(library.installed, 'style.css'),
+              'utf8',
+            )
+            expect(JSON.parse(contract).version).toMatchInlineSnapshot(`17`)
+            if (producer === 'atomic')
+              expect(
+                JSON.parse(contract).exports.controls.members.button.style.style
+                  .cssOutput,
+              ).toMatchInlineSnapshot(`"atomic"`)
+            else
+              expect(
+                JSON.parse(contract).exports.controls.members.button.style.style
+                  .cssOutput,
+              ).toMatchInlineSnapshot(`"grouped"`)
+            expect(await Fs.readdir(library.installed)).not.toContain(
+              'styles.ts',
+            )
+
+            for (const consumer of ['atomic', 'grouped'] as const) {
+              const source = `import {Config,cx} from 'zyzz';import {controls,style} from '@acme/variants';
+const {css}=Config.create({cssOutput:'${consumer}'});
+const override=css({paddingLeft:'5px'});
+export const authored=style({color:'red',padding:'6px'});
+export function sample(active:boolean){return cx(controls.button({size:active?{custom:{padding:'20px'}}:undefined,active,conditions:{wide:{size:'lg'}}}),override())}`
+              const input = {
+                contracts: { 'library/index.js': contract },
+                imports: {
+                  'app.ts': {
+                    '@acme/variants': 'library/index.js',
+                    zyzz: null,
+                  },
+                },
+                modules: { 'app.ts': source },
+              }
+              const result = Graph.compile(input)
+              const app = result.modules['app.ts']!
+              if (producer === 'grouped')
+                expect(
+                  app.css.includes('{color:red;padding:6px;}'),
+                ).toMatchInlineSnapshot(`true`)
+              else
+                expect(
+                  app.css.includes('{color:red;padding:6px;}'),
+                ).toMatchInlineSnapshot(`false`)
+              const built = await Esbuild.build({
+                bundle: true,
+                format: 'iife',
+                globalName: 'fixture',
+                platform: 'browser',
+                stdin: { contents: app.code, loader: 'ts', resolveDir: root },
+                write: false,
+              })
+              const page = await browser.newPage({
+                viewport: { width: 450, height: 400 },
+              })
+              try {
+                // Both independent stylesheet orders must preserve explicit cx precedence.
+                for (const css of [
+                  libraryCss + '\n' + app.css,
+                  app.css + '\n' + libraryCss,
+                ]) {
+                  await page.setContent(
+                    `<style>${result.sharedCss ?? ''}\n${css}</style><div id="card"></div>`,
+                  )
+                  await page.addScriptTag({
+                    content: built.outputFiles[0]!.text,
+                  })
+                  for (const active of [false, true, false]) {
+                    const value = await page.evaluate((active) => {
+                      const sample = (
+                        window as unknown as {
+                          fixture: {
+                            sample(active: boolean): Record<string, unknown>
+                          }
+                        }
+                      ).fixture.sample
+                      const props = sample(active)
+                      const element = document.querySelector(
+                        '#card',
+                      ) as HTMLElement
+                      for (const name of element.getAttributeNames())
+                        if (name !== 'id') element.removeAttribute(name)
+                      element.className = props.className as string
+                      for (const [key, value] of Object.entries(props)) {
+                        if (key.startsWith('data-'))
+                          element.setAttribute(key, String(value))
+                        if (key === 'style')
+                          for (const [name, scalar] of Object.entries(
+                            value as Record<string, string>,
+                          ))
+                            element.style.setProperty(name, scalar)
+                      }
+                      const style = getComputedStyle(element)
+                      return {
+                        border: style.borderTopWidth,
+                        keys: Object.keys(props).filter(
+                          (key) =>
+                            !['className', 'style'].includes(key) &&
+                            !key.startsWith('data-'),
+                        ),
+                        opacity: style.opacity,
+                        paddingLeft: style.paddingLeft,
+                        paddingRight: style.paddingRight,
+                      }
+                    }, active)
+                    if (active)
+                      expect(value).toMatchInlineSnapshot(`
+                    {
+                      "border": "3px",
+                      "keys": [],
+                      "opacity": "1",
+                      "paddingLeft": "5px",
+                      "paddingRight": "20px",
+                    }
+                  `)
+                    else
+                      expect(value).toMatchInlineSnapshot(`
+                    {
+                      "border": "0px",
+                      "keys": [],
+                      "opacity": "0.5",
+                      "paddingLeft": "5px",
+                      "paddingRight": "4px",
+                    }
+                  `)
+                  }
+                  await page.setViewportSize({ width: 900, height: 400 })
+                  expect(
+                    await page
+                      .locator('#card')
+                      .evaluate(
+                        (element) => getComputedStyle(element).paddingRight,
+                      ),
+                  ).toMatchInlineSnapshot(`"12px"`)
+                  await page.setViewportSize({ width: 450, height: 400 })
+                }
+              } finally {
+                await page.close()
+              }
+            }
+          } finally {
+            await Fs.rm(root, { force: true, recursive: true })
+          }
+        }
+      } finally {
+        await browser.close()
+      }
+    }, 180000)
+
+    test('rejects invalid or conflicting packed output identities', () => {
+      const compiled = Graph.compile({
+        modules: Library.sources({ cssOutput: 'grouped', output: 'react' }),
+      })
+      const metadata = compiled.contracts['@acme/variants/index.ts']!
+      const data = JSON.parse(metadata)
+      const theme = Object.values(data.themes)[0] as { cssOutput: string }
+      theme.cssOutput = 'automatic'
+      expect(() =>
+        Graph.compile({
+          contracts: { 'library/index.js': JSON.stringify(data) },
+          modules: {},
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: library/index.js:0: Invalid library contract: Invalid packed CSS output mode.]`,
+      )
+
+      const old = JSON.parse(metadata)
+      old.version = 16
+      const legacy = Graph.compile({
+        contracts: { 'library/index.js': JSON.stringify(old) },
+        imports: { 'app.ts': { './library/index.js': 'library/index.js' } },
+        modules: {
+          'app.ts': `import {controls} from './library/index.js';export const props=controls.button();`,
+        },
+      })
+      expect(legacy.modules['app.ts']!.css).toMatchInlineSnapshot(
+        `".z_theme-13yvj2m4fsr2i-css-theme{--z-t13yvj2m4fsr2i-css-color_2e_brand:light-dark(#0066cc,#99ccff);}"`,
+      )
+
+      const conflicting = metadata.replaceAll(
+        '"cssOutput":"grouped"',
+        '"cssOutput":"atomic"',
+      )
+      expect(() =>
+        Graph.compile({
+          contracts: { 'first.js': metadata, 'second.js': conflicting },
+          modules: {},
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: second.js:0: Invalid library contract: Conflicting packed CSS output modes for one theme identity.]`,
+      )
+    })
+    test('upgrades missing legacy output modes through a source barrel', () => {
+      const compiled = Graph.compile({
+        modules: Library.sources({ cssOutput: 'atomic' }),
+      })
+      const data = JSON.parse(
+        compiled.contracts['@acme/variants/index.ts']!,
+        (key, value) => (key === 'cssOutput' ? undefined : value),
+      )
+      data.version = 16
+      const contract = JSON.stringify(data)
+      const barrel = Graph.compile({
+        contracts: {
+          'legacy.js': contract,
+          'current.js': compiled.contracts['@acme/variants/index.ts']!,
+        },
+        imports: { 'barrel.ts': { './legacy.js': 'legacy.js' } },
+        modules: { 'barrel.ts': `export {controls} from './legacy.js';` },
+      })
+      const consumer = Graph.compile({
+        contracts: { 'barrel.js': barrel.contracts['barrel.ts']! },
+        imports: { 'app.ts': { './barrel.js': 'barrel.js' } },
+        modules: {
+          'app.ts': `import {controls} from './barrel.js';export const props=controls.button();`,
+        },
+      })
+      expect(consumer.modules['app.ts']!.code).toMatchInlineSnapshot(
+        `"import {controls} from './barrel.js';export const props=controls.button();"`,
+      )
+      expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
+        `".z_theme-13yvj2m4fsr2i-css-theme{--z-t13yvj2m4fsr2i-css-color_2e_brand:light-dark(#0066cc,#99ccff);}"`,
+      )
+    })
+
+    test('shares published identities across consumers and retains nested child modes', () => {
+      const first = Graph.compile({
+        modules: {
+          'first.ts':
+            "import {Config} from 'zyzz'; const {css}=Config.create({cssOutput:'grouped'}); export const base=css({color:'red',padding:'8px'})",
+        },
+      })
+      const packed = JSON.parse(first.contracts['first.ts']!)
+      const grouped = packed.exports.base.style.style
+      // Model a previously packed composition whose atomic parent owns a grouped child.
+      packed.exports.base.style.style = {
+        ...grouped,
+        cssOutput: 'atomic',
+        declarations: [],
+        rules: [{ style: grouped }],
+      }
+      const second = Graph.compile({
+        contracts: { 'first.js': JSON.stringify(packed) },
+        imports: { 'second.ts': { './first.js': 'first.js' } },
+        modules: { 'second.ts': "export {base} from './first.js'" },
+      })
+      const result = Graph.compile({
+        contracts: { 'second.js': second.contracts['second.ts']! },
+        imports: {
+          'a.ts': { './second.js': 'second.js', zyzz: null },
+          'b.ts': { './second.js': 'second.js', zyzz: null },
+        },
+        modules: {
+          'a.ts':
+            "import {css,cx} from 'zyzz'; import {base} from './second.js'; const local=css({opacity:0.5}); export const props=cx(base(),local())",
+          'b.ts':
+            "import {css,cx} from 'zyzz'; import {base} from './second.js'; const local=css({opacity:1}); export const props=cx(base(),local())",
+        },
+      })
+      expect(
+        Object.fromEntries(
+          Object.entries(result.modules).map(([name, output]) => [
+            name,
+            output.css,
+          ]),
+        ),
+      ).toMatchInlineSnapshot(`
+    {
+      "a.ts": ".z_theme-1mlrxl41f5va70-css{}
+    .z-opacity-mhlaoe-0{opacity:0.5;}
+    .z-style-H1-Qft-0{color:red;padding:8px;}
+    .z-opacity-H1-Qft-1{opacity:0.5;}",
+      "b.ts": ".z_theme-1mlrxl41f5va70-css{}
+    .z-opacity-1-uwnrRp-0{opacity:1;}
+    .z-style-SxroK2-0{color:red;padding:8px;}
+    .z-opacity-1-SxroK2-1{opacity:1;}",
+    }
+  `)
+    })
+
+    test('restores legacy grouped configuration metadata before re-export', () => {
+      const output = Graph.compile({
+        modules: {
+          'config.ts':
+            "import {Config} from 'zyzz'; export const config=Config.create({cssOutput:'grouped'}); export const css=config.css; export const card=css({color:'red',padding:'8px'})",
+        },
+      })
+      const packed = JSON.parse(output.contracts['config.ts']!)
+      packed.version = 16
+      for (const theme of Object.values(packed.themes) as Record<
+        string,
+        unknown
+      >[])
+        delete theme.cssOutput
+      const barrel = Graph.compile({
+        contracts: { 'config.js': JSON.stringify(packed) },
+        imports: { 'barrel.ts': { './config.js': 'config.js' } },
+        modules: { 'barrel.ts': "export {config,css,card} from './config.js'" },
+      })
+      const consumer = Graph.compile({
+        contracts: { 'barrel.js': barrel.contracts['barrel.ts']! },
+        imports: { 'app.ts': { './barrel.js': 'barrel.js' } },
+        modules: {
+          'app.ts':
+            "import {css} from './barrel.js'; export const card=css({color:'blue',padding:'2px'})",
+        },
+      })
+      expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-u8smm21l81sow-config{}
+      .g-style-1e8a67z1uaws1j-51{color:blue;padding:2px;}"
+    `)
+    })
+  })
+})
+
+describe('stylesheets', () => {
+  describe('compile', () => {
+    test('isolates packed reset layers while retaining graph-wide ordering', () => {
+      const library = Graph.compile({
+        modules: {
+          'a.ts': `import 'zyzz/reset.css';import {layers} from 'zyzz/web';layers(['a']);`,
+          'b.ts': `import 'zyzz/reset.css';import {layers} from 'zyzz/web';layers(['b']);`,
+        },
+      })
+
+      expect(library.sharedCss).toMatchInlineSnapshot(`"@layer reset,a,b;"`)
+
+      const app = Graph.compile({
+        contracts: { 'lib/a.js': library.contracts['a.ts']! },
+        imports: { 'app.ts': { lib: 'lib/a.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+
+      expect(app.sharedCss).toMatchInlineSnapshot(`"@layer reset,a;"`)
+
+      const consumer = Graph.compile({
+        contracts: { 'lib/a.js': library.contracts['a.ts']! },
+        imports: {
+          'app.ts': { lib: 'lib/a.js' },
+          'extra.ts': { 'zyzz/web': null },
+        },
+        modules: {
+          'app.ts': `import 'lib';`,
+          'extra.ts': `import {layers} from 'zyzz/web';layers(['extra']);`,
+        },
+      })
+
+      expect(consumer.sharedCss).toMatchInlineSnapshot(
+        `"@layer reset,a,extra;"`,
+      )
+    })
+
+    test('excludes unreachable library layers from reset ordering', () => {
+      const library = Graph.compile({
+        modules: {
+          'unused.ts': `import {layers} from 'zyzz/web';layers(['unused']);`,
+        },
+      })
+
+      const app = Graph.compile({
+        contracts: { 'unused.js': library.contracts['unused.ts']! },
+        modules: {
+          'app.ts': `import 'zyzz/reset.css';export const loaded=true;`,
+        },
+      })
+
+      expect(app.sharedCss).toMatchInlineSnapshot(`"@layer reset;"`)
+    })
+
+    test('invalidates repacked ownership when only contract resolutions change', () => {
+      const dependency = Graph.compile({
+        modules: {
+          'index.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./pixel.svg)'}});`,
+        },
+      })
+
+      const wrapper = Graph.compile({
+        contracts: { 'dep/index.js': dependency.contracts['index.ts']! },
+        imports: { 'wrapper/index.ts': { dep: 'dep/index.js' } },
+        modules: {
+          'wrapper/index.ts': `import 'dep';export const loaded=true;`,
+        },
+      })
+
+      const contracts = {
+        'wrapper/index.js': wrapper.contracts['wrapper/index.ts']!,
+        'a/index.js': dependency.contracts['index.ts']!,
+        'b/index.js': dependency.contracts['index.ts']!,
+      }
+
+      const modules = { 'app.ts': `import 'wrapper';` }
+      const compiler = Graph.create()
+
+      const first = compiler.compile({
+        contracts,
+        modules,
+        imports: {
+          'app.ts': { wrapper: 'wrapper/index.js' },
+          'wrapper/index.js': { dep: 'a/index.js' },
+        },
+      })
+
+      expect(Object.values(first.sharedAssets ?? {})).toMatchInlineSnapshot(`
+      [
+        "a/pixel.svg",
+      ]
+    `)
+
+      const second = compiler.compile({
+        contracts,
+        modules,
+        imports: {
+          'app.ts': { wrapper: 'wrapper/index.js' },
+          'wrapper/index.js': { dep: 'b/index.js' },
+        },
+      })
+
+      expect(Object.values(second.sharedAssets ?? {})).toMatchInlineSnapshot(`
+      [
+        "b/pixel.svg",
+      ]
+    `)
+      expect(Object.values(second.sharedAssetOwners ?? {}))
+        .toMatchInlineSnapshot(`
+      [
+        "b/index.js",
+      ]
+    `)
+    })
+    test('retains reset ordering in every independent packed entry', () => {
+      const library = Graph.compile({
+        modules: {
+          'a.ts': `import 'zyzz/reset.css';import {Config} from 'zyzz';const config=Config.create({layers:['components']});import {global} from 'zyzz/web';global({'@layer components':{body:{color:'red'}}});`,
+          'b.ts': `import 'zyzz/reset.css';import {Config} from 'zyzz';const config=Config.create({layers:['components']});import {global} from 'zyzz/web';global({'@layer components':{body:{color:'blue'}}});`,
+        },
+      })
+
+      const app = Graph.compile({
+        contracts: { 'lib/b.js': library.contracts['b.ts']! },
+        imports: { 'app.ts': { lib: 'lib/b.js' } },
+        modules: { 'app.ts': `import 'lib';` },
+      })
+
+      expect(app.sharedCss).toMatchInlineSnapshot(`
+      "@layer reset,components;
+      @layer components{body{color:blue;}}"
+    `)
+    })
+    test('rejects malformed optional packed source-map fields', () => {
+      const library = Graph.compile({
+        modules: {
+          'index.ts': `import {global} from 'zyzz/web';global({body:{color:'red'}});`,
+        },
+      })
+
+      for (const invalid of [
+        { content: 1 },
+        { content: null },
+        { start: -1 },
+        { start: 0.5 },
+        { start: '0' },
+      ]) {
+        const contract = JSON.parse(library.contracts['index.ts']!)
+
+        Object.assign(contract.stylesheets[0], invalid)
+
+        expect(() =>
+          Graph.compile({
+            contracts: { 'lib/index.js': JSON.stringify(contract) },
+            modules: { 'app.ts': 'export {}' },
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Source.ExtractError: lib/index.js:0: Invalid library contract: Invalid packed stylesheet section.]`,
+        )
+      }
+    })
+
+    test('rejects conflicting packed animations and orders optional reset first', () => {
+      const first = Graph.compile({
+        modules: {
+          'index.ts': `import {keyframes} from 'zyzz/web';export const fade=keyframes({from:{opacity:0},to:{opacity:1}});`,
+        },
+      })
+
+      const second = Graph.compile({
+        modules: {
+          'index.ts': `import {keyframes} from 'zyzz/web';export const fade=keyframes({from:{opacity:1},to:{opacity:0}});`,
+        },
+      })
+
+      expect(() =>
+        Graph.compile({
+          contracts: {
+            'a/index.js': first.contracts['index.ts']!,
+            'b/index.js': second.contracts['index.ts']!,
+          },
+          imports: { 'app.ts': { a: 'a/index.js', b: 'b/index.js' } },
+          modules: { 'app.ts': `import 'a';import 'b';` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: b/index.js:0: Conflicting animation identity: z-k1wfnqsmu0q6os-66-61-64-65; compile libraries with package-qualified module IDs.]`,
+      )
+
+      const source = `import 'zyzz/reset.css';import {Config} from 'zyzz';const config=Config.create({layers:['base','components']});import {global} from 'zyzz/web';global({'@layer components':{button:{fontSize:'24px'},img:{maxWidth:'none'}}});`
+
+      expect(Graph.compile({ modules: { 'app.ts': source } }).sharedCss)
+        .toMatchInlineSnapshot(`
+      "@layer reset,base,components;
+      @layer components{button{font-size:24px;}img{max-width:none;}}"
+    `)
+    })
+    test('keeps optional reset below component layers in Chromium', async () => {
+      const source = `import 'zyzz/reset.css';import {Config} from 'zyzz';const config=Config.create({layers:['base','components']});import {global} from 'zyzz/web';global({'@layer components':{button:{fontSize:'24px'},img:{maxWidth:'none'}}});`
+      const result = Graph.compile({ modules: { 'app.ts': source } })
+      const reset = await Fs.readFile(Path.resolve('src/reset.css'), 'utf8')
+      const browser = await chromium.launch({ headless: true })
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${result.sharedCss}\n${reset}</style><button>Button</button><img>`,
+        )
+
+        expect(
+          await page
+            .locator('button')
+            .evaluate((node) => getComputedStyle(node).fontSize),
+        ).toMatchInlineSnapshot('"24px"')
+        expect(
+          await page
+            .locator('img')
+            .evaluate((node) => getComputedStyle(node).maxWidth),
+        ).toMatchInlineSnapshot('"none"')
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('links default-exported keyframes from packed libraries', () => {
+      const library = Graph.compile({
+        modules: {
+          'effects.ts': `import {keyframes} from 'zyzz/web';const fade=keyframes({from:{opacity:0},to:{opacity:1}});export default (fade satisfies string);`,
+        },
+      })
+
+      const app = Graph.compile({
+        contracts: { 'lib/index.js': library.contracts['effects.ts']! },
+        imports: { 'app.ts': { lib: 'lib/index.js', zyzz: null } },
+        modules: {
+          'app.ts': `import fade from 'lib';import {css} from 'zyzz';export namespace styles {
+  export const card = css({animationName:fade})
+}`,
+        },
+      })
+
+      expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
+        `".z-animation-name-Jgxd-Q{animation-name:z-k185tc9w526bf2-66-61-64-65;}"`,
+      )
+      expect(app.sharedCss).toMatchInlineSnapshot(
+        `"@keyframes z-k185tc9w526bf2-66-61-64-65{from{opacity:0;}to{opacity:1;}}"`,
+      )
+    })
+
+    test('preserves suffix URLs and rejects relative assets without a graph host', () => {
+      const source = `import {global} from 'zyzz/web';global({body:{backgroundImage:'url("?v=1")'},html:{backgroundImage:'url("")'}});`
+      const result = Graph.compile({ modules: { 'app.ts': source } })
+
+      expect(result.sharedAssets).toMatchInlineSnapshot(`{}`)
+      expect(result.sharedCss).toMatchInlineSnapshot(`
+      "body{background-image:url("?v=1");}
+      html{background-image:url("");}"
+    `)
+      expect(Transform.compile({ moduleId: 'app.ts', source }).css)
+        .toMatchInlineSnapshot(`
+      "body{background-image:url("?v=1");}
+      html{background-image:url("");}"
+    `)
+      expect(() =>
+        Transform.compile({
+          moduleId: 'app.ts',
+          source: `import {global} from 'zyzz/web';global({body:{backgroundImage:'url("./image.svg")'}});`,
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:32: Relative contribution assets require Graph.compile and a relocation host.]`,
+      )
+    })
+
+    test('rejects conflicting source maps and attributes layer failures to packed owners', () => {
+      const library = Graph.compile({
+        modules: {
+          'effects.ts': `import {global,layers} from 'zyzz/web';layers(['a','b']);global({body:{color:'red'}});`,
+        },
+      })
+
+      const first = JSON.parse(library.contracts['effects.ts']!)
+      const second = JSON.parse(library.contracts['effects.ts']!)
+
+      second.stylesheets[0].content += '\n'
+
+      expect(() =>
+        Graph.compile({
+          contracts: {
+            'pkg/first.js': JSON.stringify(first),
+            'pkg/second.js': JSON.stringify(second),
+          },
+          imports: { 'app.ts': { a: 'pkg/first.js', b: 'pkg/second.js' } },
+          modules: { 'app.ts': `import 'a';import 'b';` },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: pkg/second.js:0: Conflicting packed stylesheet contributions.]`,
+      )
+
+      const errors = [['bad name'], ['a', 'a'], ['b', 'a']].map((layers) => {
+        const contract = JSON.parse(library.contracts['effects.ts']!)
+
+        contract.stylesheets.push({
+          source: 'effects.ts',
+          key: 'extra',
+          css: '',
+          layers: [layers],
+        })
+
+        try {
+          Graph.compile({
+            contracts: { 'pkg/index.js': JSON.stringify(contract) },
+            modules: { 'app.ts': `export {}` },
+          })
+
+          return 'accepted'
+        } catch (error) {
+          return error
+        }
+      })
+
+      expect(errors).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: pkg/index.js:0: Invalid library contract: Invalid layer name.],
+        [Source.ExtractError: pkg/index.js:0: Invalid library contract: Duplicate layer name.],
+        [Source.ExtractError: pkg/index.js:0: Invalid library contract: Conflicting layer order constraints.],
+      ]
+    `)
+    })
+    test('packs source content once and links TypeScript animation aliases', () => {
+      const source = `import {global,keyframes} from 'zyzz/web';global({body:{color:'red'}});const fade=keyframes({from:{opacity:0},to:{opacity:1}});export const enter=fade satisfies string;`
+      const library = Graph.compile({ modules: { 'index.ts': source } })
+      const sections = JSON.parse(library.contracts['index.ts']!).stylesheets
+
+      expect(
+        sections.filter(
+          (section: { content?: string }) => section.content !== undefined,
+        ).length,
+      ).toMatchInlineSnapshot('1')
+
+      const app = Graph.compile({
+        contracts: { 'lib.js': library.contracts['index.ts']! },
+        imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
+        modules: {
+          'app.ts': `import {enter} from 'lib';import {css} from 'zyzz';export namespace styles {
+  export const card = css({animationName:enter})
+}`,
+        },
+      })
+
+      expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
+        `".z-animation-name-Jgxd-Q{animation-name:z-k1wfnqsmu0q6os-66-61-64-65;}"`,
+      )
+      expect(new Trace.TraceMap(app.sharedCssMap!).sourcesContent)
+        .toMatchInlineSnapshot(`
+      [
+        "import {global,keyframes} from 'zyzz/web';global({body:{color:'red'}});const fade=keyframes({from:{opacity:0},to:{opacity:1}});export const enter=fade satisfies string;",
+      ]
+    `)
+    })
+
+    const source = `import {fontFace,global,keyframes,layers} from 'zyzz/web';layers(['reset','components']);fontFace({fontFamily:'App',src:'url(./assets/app.woff2)'});global({body:{backgroundImage:'url(./assets/pixel.png)'}});export const fade=keyframes({from:{opacity:0},to:{opacity:1}});`
+
+    test('links relocated animation aliases and preserves packed side effects once', () => {
+      const library = Graph.compile({
+        modules: {
+          'pkg/effects.ts': source + 'export const enter=fade;',
+          'pkg/index.ts': `export {enter as fade} from './effects.js';`,
+        },
+      })
+
+      const output = Graph.compile({
+        contracts: {
+          'app/node_modules/lib/index.js': library.contracts['pkg/index.ts']!,
+        },
+        imports: {
+          'app/main.ts': { lib: 'app/node_modules/lib/index.js', zyzz: null },
+        },
+        modules: {
+          'app/main.ts': `import {fade as enter} from 'lib';import {css} from 'zyzz';const alias=enter;export namespace styles {
+  export const card = css({animationName:alias})
+}`,
+        },
+      })
+
+      expect(
+        output.modules['app/main.ts']!.css.includes('animation-name:z-k'),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        output.sharedCss?.match(/@keyframes/g)?.length,
+      ).toMatchInlineSnapshot('1')
+      expect(output.sharedAssets).toMatchInlineSnapshot(`
+      {
+        "zyzz-asset:app%2Fnode_modules%2Flib%2Fassets%2Fapp.woff2": "app/node_modules/lib/assets/app.woff2",
+        "zyzz-asset:app%2Fnode_modules%2Flib%2Fassets%2Fpixel.png": "app/node_modules/lib/assets/pixel.png",
+      }
+    `)
+      expect(
+        output.sharedCss?.includes('@layer reset,components;'),
+      ).toMatchInlineSnapshot('true')
+
+      const map = new Trace.TraceMap(output.sharedCssMap!)
+
+      expect(
+        Trace.originalPositionFor(map, { line: 2, column: 0 }).source,
+      ).toMatchInlineSnapshot('"app/node_modules/lib/effects.ts"')
+      expect(
+        map.sourcesContent?.some(
+          (content) => content === source + 'export const enter=fade;',
+        ),
+      ).toMatchInlineSnapshot('true')
+    })
+    test('preserves path-like URL suffixes and rejects nested output collisions', async () => {
+      const graph = Graph.compile({
+        modules: {
+          'pkg/a.ts': `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./asset.svg?fallback=/../other.svg)'}});`,
+        },
+      })
+
+      expect(Object.values(graph.sharedAssets ?? {})).toMatchInlineSnapshot(`
+      [
+        "pkg/asset.svg?fallback=/../other.svg",
+      ]
+    `)
+
+      const root = await Fs.mkdtemp(Path.resolve('.fixture-asset-collision-'))
+
+      try {
+        await Fs.mkdir(Path.join(root, 'effects.ts.css'))
+        await Fs.writeFile(Path.join(root, 'effects.ts.css/pixel.png'), 'pixel')
+        await Fs.writeFile(
+          Path.join(root, 'effects.ts'),
+          `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./effects.ts.css/pixel.png)'}})`,
+        )
+
+        const host = await Host.create({
+          root,
+          outDir: Path.join(root, 'out'),
+          packageId: 'pkg',
+        })
+
+        await expect(host.build()).rejects.toThrow(
+          'Asset path conflicts with generated output.',
+        )
+        await Fs.mkdir(Path.join(root, 'assets'))
+        await Fs.writeFile(Path.join(root, 'assets/icon:dark.svg'), 'icon')
+        await Fs.writeFile(
+          Path.join(root, 'effects.ts'),
+          `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(./assets/icon:dark.svg)'}})`,
+        )
+        await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
+          `[Error: Asset path escapes the package root.]`,
+        )
+        await host.close()
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+    test('maps separate contribution calls to their own authored positions', () => {
+      const source = `import {global} from 'zyzz/web';
+global({body:{color:'red'}});
+
+global({html:{color:'blue'}});`
+      const library = Graph.compile({ modules: { 'effects.ts': source } })
+
+      const output = Graph.compile({
+        modules: { 'app.ts': `import 'lib'` },
+        imports: { 'app.ts': { lib: 'lib/index.js' } },
+        contracts: { 'lib/index.js': library.contracts['effects.ts']! },
+      })
+
+      const map = new Trace.TraceMap(output.sharedCssMap!)
+      const line =
+        output
+          .sharedCss!.split('\n')
+          .findIndex((line) => line.includes('html')) + 1
+
+      expect(
+        Trace.originalPositionFor(map, { line, column: 0 }).line,
+      ).toMatchInlineSnapshot('4')
+    })
+    test('does not capture nested shadows of imported animations', () => {
+      const output = Graph.compile({
+        modules: {
+          'effects.ts': source,
+          'app.ts': `import {fade} from './effects.js';function other(fade:unknown){let alias=fade;return alias}export {fade}`,
+        },
+      })
+
+      expect(output.sharedCss?.includes('@keyframes')).toMatchInlineSnapshot(
+        'true',
+      )
+    })
+    test('attributes malformed packed CSS and rejects conflicting layer metadata', () => {
+      const library = Graph.compile({ modules: { 'effects.ts': source } })
+      const contract = JSON.parse(library.contracts['effects.ts']!)
+
+      contract.stylesheets[1].css = '@import ;'
+
+      expect(() =>
+        Graph.compile({
+          modules: { 'app.ts': `import 'lib'` },
+          imports: { 'app.ts': { lib: 'lib/index.js' } },
+          contracts: { 'lib/index.js': JSON.stringify(contract) },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: lib/index.js:0: Invalid library contract: Unexpected end of input]`,
+      )
+
+      const first = JSON.parse(library.contracts['effects.ts']!)
+      const second = JSON.parse(library.contracts['effects.ts']!)
+
+      second.stylesheets[0].layers = [['different']]
+
+      expect(() =>
+        Graph.compile({
+          modules: { 'app.ts': `import 'a';import 'b'` },
+          imports: { 'app.ts': { a: 'lib/a.js', b: 'lib/b.js' } },
+          contracts: {
+            'lib/a.js': JSON.stringify(first),
+            'lib/b.js': JSON.stringify(second),
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        '[Source.ExtractError: lib/b.js:0: Conflicting packed stylesheet contributions.]',
+      )
+    })
+    test('normalizes encoded asset traversal and rejects generated or control-file collisions', async () => {
+      const root = await Fs.mkdtemp(Path.resolve('.fixture-assets-paths-'))
+
+      try {
+        await Fs.mkdir(Path.join(root, 'sub'))
+        await Fs.writeFile(
+          Path.join(root, 'asset.png'),
+          new Uint8Array([1, 2, 3]),
+        )
+        await Fs.writeFile(
+          Path.join(root, 'sub/effects.ts'),
+          `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(%2e%2e/asset.png)'}})`,
+        )
+
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'out'),
+          packageId: 'pkg',
+        })
+
+        await host.build()
+
+        expect((await host.build()).changed).toMatchInlineSnapshot('[]')
+
+        for (const name of [
+          'zyzz.shared.css',
+          '.ZYZZ.JSON',
+          'sub/effects.ts.css',
+        ]) {
+          await Fs.writeFile(Path.join(root, name), 'asset')
+          await Fs.writeFile(
+            Path.join(root, 'sub/effects.ts'),
+            `import {global} from 'zyzz/web';global({body:{backgroundImage:'url(../${name})'}})`,
+          )
+          await expect(host.build()).rejects.toThrow(/conflicts/)
+        }
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+    test('retains animations exported through a specifier list', () => {
+      const output = Graph.compile({
+        modules: {
+          'effects.ts': `import {keyframes} from 'zyzz/web';const fade=keyframes({from:{opacity:0},to:{opacity:1}});export {fade}`,
+        },
+      })
+
+      expect(output.sharedCss?.includes('@keyframes')).toMatchInlineSnapshot(
+        'true',
+      )
+    })
+    test('does not retain animation names exported only as types', () => {
+      const output = Graph.compile({
+        modules: {
+          'effects.ts': `import {keyframes} from 'zyzz/web';const fade=keyframes({from:{opacity:0},to:{opacity:1}});type fade=typeof fade;export type {fade}`,
+        },
+      })
+
+      expect(output.sharedCss).toMatchInlineSnapshot('undefined')
+    })
+    test('serves relocated assets and layers with the optional reset in Chromium', async () => {
+      const root = await Fs.mkdtemp(Path.resolve('.fixture-assets-browser-'))
+
+      const server = Http.createServer(async (request, response) => {
+        try {
+          if (request.url === '/') {
+            response.setHeader('Content-Type', 'text/html')
+            response.end(
+              '<link rel="stylesheet" href="/reset.css"><link rel="stylesheet" href="/zyzz.shared.css"><body>Styled page</body>',
+            )
+
+            return
+          }
+
+          const file = Path.join(root, 'out', request.url!.slice(1))
+
+          response.setHeader(
+            'Content-Type',
+            file.endsWith('.svg') ? 'image/svg+xml' : 'text/css',
+          )
+          response.end(await Fs.readFile(file))
+        } catch {
+          response.statusCode = 404
+          response.end()
+        }
+      })
+
+      let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+
+      try {
+        await Fs.mkdir(Path.join(root, 'assets'))
+        await Fs.writeFile(
+          Path.join(root, 'assets/pixel.svg'),
+          '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/></svg>',
+        )
+        await Fs.writeFile(
+          Path.join(root, 'effects.ts'),
+          `import {global} from 'zyzz/web';global({body:{margin:'13px',backgroundImage:'url(./assets/pixel.svg)'}});`,
+        )
+
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'out'),
+          packageId: 'pkg',
+        })
+
+        await host.build()
+        await Fs.copyFile(
+          Path.resolve('src/reset.css'),
+          Path.join(root, 'out/reset.css'),
+        )
+        await new Promise<void>((resolve) =>
+          server.listen(0, '127.0.0.1', resolve),
+        )
+        browser = await chromium.launch()
+
+        const page = await browser.newPage()
+        const loaded: string[] = []
+
+        page.on('response', (response) => {
+          if (response.url().endsWith('pixel.svg') && response.status() === 200)
+            loaded.push('asset')
+        })
+        await page.goto(
+          `http://127.0.0.1:${(server.address() as { port: number }).port}/`,
+        )
+
+        expect(
+          await page
+            .locator('body')
+            .evaluate((el) => getComputedStyle(el).marginTop),
+        ).toMatchInlineSnapshot('"13px"')
+        expect(loaded).toMatchInlineSnapshot(`
+          [
+            "asset",
+          ]
+        `)
+
+        await page.evaluate(
+          `document.head.append(document.querySelector('link[href="/reset.css"]'))`,
+        )
+
+        expect(
+          await page
+            .locator('body')
+            .evaluate((el) => getComputedStyle(el).marginTop),
+        ).toMatchInlineSnapshot('"13px"')
+      } finally {
+        await browser?.close()
+
+        if (server.listening)
+          await new Promise<void>((resolve) => server.close(() => resolve()))
+
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+    test('publishes binary relative assets with source maps and updates them atomically', async () => {
+      const root = await Fs.mkdtemp(Path.resolve('.fixture-assets-'))
+
+      try {
+        await Fs.mkdir(Path.join(root, 'assets'))
+        await Fs.writeFile(Path.join(root, 'effects.ts'), source)
+        await Fs.writeFile(
+          Path.join(root, 'assets/app.woff2'),
+          new Uint8Array([0, 255, 1, 128]),
+        )
+        await Fs.writeFile(
+          Path.join(root, 'assets/pixel.png'),
+          new Uint8Array([137, 80, 78, 71, 0, 255]),
+        )
+
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'out'),
+          packageId: 'pkg',
+        })
+
+        await host.build()
+
+        expect([
+          ...(await Fs.readFile(Path.join(root, 'out/assets/app.woff2'))),
+        ]).toMatchInlineSnapshot(`
+        [
+          0,
+          255,
+          1,
+          128,
+        ]
+      `)
+        expect(
+          (
+            await Fs.readFile(Path.join(root, 'out/zyzz.shared.css'), 'utf8')
+          ).includes('zyzz-asset:'),
+        ).toMatchInlineSnapshot('false')
+        expect(
+          JSON.parse(
+            await Fs.readFile(
+              Path.join(root, 'out/zyzz.shared.css.map'),
+              'utf8',
+            ),
+          ).sourcesContent.includes(source),
+        ).toMatchInlineSnapshot('true')
+        expect((await host.build()).changed).toMatchInlineSnapshot('[]')
+
+        await Fs.writeFile(
+          Path.join(root, 'assets/app.woff2'),
+          new Uint8Array([5, 255, 2]),
+        )
+
+        expect((await host.build()).changed).toMatchInlineSnapshot(`
+        [
+          "assets/app.woff2",
+        ]
+      `)
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+  })
+})
+
+describe('variables', () => {
+  describe('compile', () => {
+    test('resolves computed literal static keys with authored override order', () => {
+      const result = Graph.compile({
+        modules: {
+          'app.ts': `import {css} from 'zyzz';const first={width:'5px',['width']:'10px'};const second={['width']:'20px',width:'30px'};const third={['width']:'40px'};export namespace styles {
+  export const a = css({width:first.width})
+
+  export const b = css({width:second.width})
+
+  export const c = css({width:third.width})
+}`,
+        },
+      })
+
+      expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-w-10px-6UhzUp-0{width:10px;}
+      .z-w-30px-kokWF9-0{width:30px;}
+      .z-w-40px-XDXskV-0{width:40px;}"
+    `)
+    })
+
+    test('rejects indexed folding across array spreads', () => {
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.ts': `import {css} from 'zyzz';const prefix=['5px','6px'];const sizes=['10px',...prefix,'20px'];export namespace styles {
+  export const card = css({width:sizes[2]})
+}`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:149: Static array indexes cannot cross spread elements.]`,
+      )
+    })
+
+    test('rejects source/packed slot collisions and unresolved computed overrides', () => {
+      const library = Graph.compile({
+        modules: {
+          'vars.ts': `import {variable} from 'zyzz';export const vars=({gap:variable('length')});`,
+        },
+      })
+
+      expect(() =>
+        Graph.compile({
+          contracts: { 'lib/vars.js': library.contracts['vars.ts']! },
+          modules: {
+            'vars.ts': `import {variable} from 'zyzz';export const vars=({gap:variable('length')});`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: vars.ts:54: Conflicting variable identity: --z-v4t4nbe1og4cic-54; compile libraries with package-qualified module IDs.]`,
+      )
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.ts': `import {css} from 'zyzz';const base={width:'10px',[key]:'20px'};export namespace styles {
+  export const card = css({width:base.width})
+}`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:123: Static member reads cannot cross unresolved computed keys.]`,
+      )
+    })
+
+    test('normalizes wrapped compound static values and rejects loop mutation', () => {
+      const source =
+        "import {css} from 'zyzz';const size=10;export namespace styles {\n  export const card = css({width:(`${size}px` as const)})\n}"
+
+      expect(
+        Graph.compile({ modules: { 'app.ts': source } }).modules['app.ts']!.css,
+      ).toMatchInlineSnapshot(`".z-w-10px-Jgxd-Q{width:10px;}"`)
+
+      const errors = [
+        "for(base.width of ['20px']){}",
+        'for(base.width in {changed:true}){}',
+      ].map((loop) => {
+        try {
+          Graph.compile({
+            modules: {
+              'app.ts': `import {css} from 'zyzz';const base={width:'10px'};${loop}export namespace styles {export const card=css(base);}`,
+            },
+          })
+
+          return 'accepted'
+        } catch (error) {
+          return (error as import('zyzz/compiler').Source.ExtractError)
+            .diagnostics
+        }
+      })
+
+      expect(errors).toMatchInlineSnapshot(`
+      [
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 80,
+            "message": "Static data cannot be mutated or escape through unsupported expressions.",
+            "source": "app.ts",
+            "start": 51,
+          },
+        ],
+        [
+          {
+            "code": "unsupported_syntax",
+            "end": 86,
+            "message": "Static data cannot be mutated or escape through unsupported expressions.",
+            "source": "app.ts",
+            "start": 51,
+          },
+        ],
+      ]
+    `)
+    })
+
+    test('attributes invalid registration CSS to its descriptor', () => {
+      try {
+        Graph.compile({
+          modules: {
+            'app.ts': `import {variable} from 'zyzz';
+export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}'})});`,
+          },
+        })
+        throw new Error('Expected invalid registration')
+      } catch (error) {
+        expect(
+          (error as import('zyzz/compiler').Source.ExtractError).diagnostics,
+        ).toMatchInlineSnapshot(`
+          [
+            {
+              "code": "unsupported_syntax",
+              "end": 114,
+              "message": "Registered initial values must match the declared syntax.",
+              "source": "app.ts",
+              "start": 55,
+            },
+          ]
+        `)
+      }
+    })
+    test('compiles overlapping dynamic fields and default exported static records', () => {
+      const result = Graph.compile({
+        modules: {
+          'app.ts': `import {css} from 'zyzz';const base={color:'red'};export default base;type Values={width:string;zIndex:number}&{width:'10px';zIndex:1|2};export namespace styles {
+  export const card = css(base)
+
+  export const dynamic = css((v:Values)=>({width:v.width,zIndex:v.zIndex}))
+}`,
+        },
+      })
+
+      expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z-text-red-Jgxd-Q{color:red;}
+      .z-w-Jgxd-Q{width:var(--z-d1e8a67z1uaws1j-221-77-69-64-74-68);}
+      .z-z-index-Jgxd-Q{z-index:var(--z-d1e8a67z1uaws1j-221-7a-49-6e-64-65-78);}"
+    `)
+    })
+
+    test('shares defining variable identities across package entrypoint sidecars', () => {
+      const library = Graph.compile({
+        modules: {
+          'vars.ts': `import {variable} from 'zyzz';export const vars=({gap:variable('length')});`,
+          'index.ts': `export {vars} from './vars.js';`,
+        },
+      })
+
+      const app = Graph.compile({
+        contracts: {
+          'pkg/vars.js': library.contracts['vars.ts']!,
+          'pkg/index.js': library.contracts['index.ts']!,
+        },
+        imports: {
+          'app.ts': { a: 'pkg/vars.js', b: 'pkg/index.js', zyzz: null },
+        },
+        modules: {
+          'app.ts': `import {vars as a} from 'a';import {vars as b} from 'b';import {css} from 'zyzz';export namespace styles {
+  export const card = css({width:a.gap,padding:b.gap})
+}`,
+        },
+      })
+
+      expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
+        `
+      ".z-w-Jgxd-Q{width:var(--z-v4t4nbe1og4cic-54);}
+      .z-p-Jgxd-Q{padding:var(--z-v4t4nbe1og4cic-54);}"
+    `,
+      )
+    })
+    test('allows scalar copies and asserted static token bindings', () => {
+      const result = Graph.compile({
+        modules: {
+          'app.ts': `import {Config} from 'zyzz';const {theme,css}=Config.create({theme:{color:{ink:'#123'}}});const dimensions={width:'10px',nested:{width:'20px'}};const width=dimensions.width;consume(width);consume(dimensions.width);const color=(theme.tokens.color.ink as string);export namespace styles {
+  export const card = css({width:dimensions.width,color})
+}`,
+        },
+      })
+
+      expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1e8a67z1uaws1j-theme-theme{--z-t1e8a67z1uaws1j-theme-color_2e_ink:#123;}
+      .z-w-10px-Jgxd-Q{width:10px;}
+      .z-text-Jgxd-Q{color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,#123);}"
+    `)
+    })
+    test('links default variable exports through packed contracts', () => {
+      const library = Graph.compile({
+        modules: {
+          'vars.ts': `import {variable} from 'zyzz';const vars=({gap:variable('length')});export default vars;`,
+        },
+      })
+
+      const app = Graph.compile({
+        contracts: { 'lib.js': library.contracts['vars.ts']! },
+        imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
+        modules: {
+          'app.ts': `import vars from 'lib';import {css} from 'zyzz';export namespace styles {
+  export const card = css({width:vars.gap})
+}`,
+        },
+      })
+
+      expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
+        `".z-w-Jgxd-Q{width:var(--z-v4t4nbe1og4cic-47);}"`,
+      )
+    })
+    test('rejects static records returned to runtime code', () => {
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.ts': `import {css} from 'zyzz';const base={width:'10px'};function get(){return base};get().width='20px';css(base);`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:51: Static data cannot be mutated or escape through unsupported expressions.]`,
+      )
+    })
+
+    const librarySource = `import {variable} from 'zyzz';export const vars=({amount:variable('percentage', {inherits:false,initialValue:'25%'}),gap:variable('length', {inherits:true,initialValue:'4px'})});`
+
+    function compile() {
+      const library = Graph.compile({
+        modules: {
+          'vars.ts': librarySource,
+          'index.ts': `export {vars as layout} from './vars.js';`,
+        },
+      })
+
+      const app = Graph.compile({
+        contracts: { 'lib/index.js': library.contracts['index.ts']! },
+        imports: { 'app.ts': { lib: 'lib/index.js', zyzz: null } },
+        modules: {
+          'app.ts': `import {css} from 'zyzz';import {layout} from 'lib';export {layout};const base={height:'20px',padding:layout.gap} as const;type Width='10px'|'30px';interface Values {width:Width}export namespace styles {
+  export const registered = css({...base,width:layout.amount})
+
+  export const dynamic = css((values:Values)=>({...base,width:values.width}))
+}`,
+        },
+      })
+
+      return { library, app }
+    }
+
+    async function bundle() {
+      const { library, app } = compile()
+      const root = await Fs.mkdtemp(Path.resolve('.fixture-variable-package-'))
+
+      try {
+        const packageRoot = Path.join(root, 'node_modules/lib')
+
+        await Fs.mkdir(packageRoot, { recursive: true })
+        await Fs.writeFile(
+          Path.join(packageRoot, 'package.json'),
+          JSON.stringify({
+            name: 'lib',
+            type: 'module',
+            exports: './index.js',
+          }),
+        )
+
+        for (const [id, module] of Object.entries(library.modules)) {
+          const filename = id.replace(/\.ts$/, '.js')
+
+          await Fs.writeFile(
+            Path.join(packageRoot, filename),
+            (await Esbuild.transform(module.code, { loader: 'ts' })).code,
+          )
+
+          if (library.contracts[id])
+            await Fs.writeFile(
+              Path.join(packageRoot, filename + '.zyzz.json'),
+              library.contracts[id]!,
+            )
+        }
+
+        await Fs.writeFile(
+          Path.join(root, 'app.ts'),
+          app.modules['app.ts']!.code,
+        )
+
+        const bundle = await Esbuild.build({
+          entryPoints: [Path.join(root, 'app.ts')],
+          bundle: true,
+          write: false,
+          format: 'iife',
+          globalName: 'Fixture',
+          alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+        })
+
+        return {
+          css: (app.sharedCss ?? '') + app.modules['app.ts']!.css,
+          code: bundle.outputFiles[0]!.text,
+        }
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    }
+
+    test('rejects variable identity collisions across independent libraries', () => {
+      const a = Graph.compile({ modules: { 'vars.ts': librarySource } })
+      const b = Graph.compile({
+        modules: { 'vars.ts': librarySource.replace('25%', '50%') },
+      })
+
+      expect(() =>
+        Graph.compile({
+          contracts: {
+            'a.js': a.contracts['vars.ts']!,
+            'b.js': b.contracts['vars.ts']!,
+          },
+          modules: { 'app.ts': 'export {}' },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: b.js:0: Invalid library contract: Conflicting packed variable identity: --z-v4t4nbe1og4cic-57; compile libraries with package-qualified module IDs.]`,
+      )
+    })
+    test('renders statically expanded theme records in a browser', async () => {
+      const result = Graph.compile({
+        modules: {
+          'app.ts': `import {Theme} from 'zyzz';const theme=Theme.define({color:{primary:'#123'}});const base={color:theme.tokens.color.primary,backgroundColor:theme.vars.color.primary};export const style=theme.css(base);export const scope=theme.className;`,
+        },
+      })
+
+      const bundle = await Esbuild.build({
+        stdin: {
+          contents: result.modules['app.ts']!.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        bundle: true,
+        write: false,
+        format: 'iife',
+        globalName: 'Fixture',
+        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+      })
+
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${result.modules['app.ts']!.css}</style><main><div id="card"></div></main>`,
+        )
+        await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+        await page.evaluate(
+          `document.querySelector('main').className=Fixture.scope;document.getElementById('card').className=Fixture.style().className`,
+        )
+
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((el) => [
+              getComputedStyle(el).color,
+              getComputedStyle(el).backgroundColor,
+            ]),
+        ).toMatchInlineSnapshot(`
+      [
+        "rgb(17, 34, 51)",
+        "rgb(17, 34, 51)",
+      ]
+    `)
+      } finally {
+        await browser.close()
+      }
+    })
+    test('expands immutable theme references and rejects hidden mutations and duplicate packed slots', async () => {
+      const result = Graph.compile({
+        modules: {
+          'app.ts': `import {Theme} from 'zyzz';const theme=Theme.define({color:{primary:'#123'}});const base={color:theme.tokens.color.primary,backgroundColor:theme.vars.color.primary};export const style=theme.css(base);`,
+        },
+      })
+
+      expect(
+        result.modules['app.ts']!.css.includes('#123'),
+      ).toMatchInlineSnapshot('true')
+
+      const bundle = await Esbuild.build({
+        stdin: {
+          contents: result.modules['app.ts']!.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        bundle: true,
+        write: false,
+        format: 'iife',
+        globalName: 'Fixture',
+        alias: { 'zyzz/runtime': Path.resolve('src/runtime/index.ts') },
+      })
+
+      expect(
+        Vm.runInNewContext(
+          `${bundle.outputFiles![0]!.text};typeof Fixture.style().className`,
+        ),
+      ).toMatchInlineSnapshot('"string"')
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.ts': `import {css} from 'zyzz';const base={width:'10px'};const [alias]=[base];alias.width='20px';export const style=css(base);`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:57: Static data cannot be mutated or escape to runtime calls.]`,
+      )
+
+      const library = Graph.compile({ modules: { 'vars.ts': librarySource } })
+      const data = JSON.parse(library.contracts['vars.ts']!)
+
+      data.exports.vars.members.gap.variables.value.name =
+        data.exports.vars.members.amount.variables.value.name
+
+      expect(() =>
+        Graph.compile({
+          contracts: { 'lib.js': JSON.stringify(data) },
+          imports: { 'app.ts': { lib: 'lib.js', zyzz: null } },
+          modules: {
+            'app.ts': `import {css} from 'zyzz';import {vars} from 'lib';export const style=css({width:vars.gap});`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: lib.js:0: Invalid library contract: Conflicting packed variable identity: --z-v4t4nbe1og4cic-57; compile libraries with package-qualified module IDs.]`,
+      )
+    })
+    test('merges finite interface declarations and rejects unsafe static records', () => {
+      const graph = Graph.compile({
+        modules: {
+          'app.ts': `import {css} from 'zyzz';interface Values {width:'10px'|'20px'} interface Values {opacity:0|1} export const style=css((values:Values)=>({width:values.width,opacity:values.opacity}));`,
+        },
+      })
+
+      expect(
+        graph.modules['app.ts']!.css.includes('opacity:var('),
+      ).toMatchInlineSnapshot('true')
+
+      const errors = [
+        `const base={width:'10px'};let alias=base;alias.width='20px';css(base)`,
+        `const base={__proto__:'red'};css({color:base.__proto__})`,
+        `const vars=({__proto__:variable('length')});css({width:vars.__proto__})`,
+        `const base={width:'10px'};const alias=flag?base:{};alias.width='20px';css(base)`,
+        `const base={width:'10px'};const holder={safe:base,unsafe:flag?base:{}};holder.unsafe.width='20px';css(base)`,
+      ].map((source) => {
+        try {
+          Graph.compile({
+            modules: {
+              'app.ts': `import {css,variable} from 'zyzz';${source}`,
+            },
+          })
+
+          return 'accepted'
+        } catch (error) {
+          return error
+        }
+      })
+
+      expect(errors).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: app.ts:64: Static data cannot be mutated or escape to runtime calls.],
+        [Source.ExtractError: app.ts:46: Static object prototypes are unsupported.],
+        "accepted",
+        [Source.ExtractError: app.ts:72: Static data cannot be mutated or escape through unsupported expressions.],
+        [Source.ExtractError: app.ts:91: Static data cannot be mutated or escape through unsupported expressions.],
+      ]
+    `)
+    })
+
+    test('links registered variable references and assignments through packed aliases', async () => {
+      expect(
+        JSON.parse(compile().library.contracts['vars.ts']!).version,
+      ).toMatchInlineSnapshot(`14`)
+
+      const { code, css } = await bundle()
+
+      const value = Vm.runInNewContext(`${code};Fixture;`) as {
+        layout: {
+          amount: import('zyzz').variable.Reference<'percentage'>
+          gap: import('zyzz').variable.Reference<'length'>
+        }
+        styles: {
+          dynamic: (values: { width: string }) => {
+            style: Record<string, string>
+          }
+        }
+      }
+
+      expect(
+        Object.values({
+          ...value.layout['amount'].set('50%'),
+          ...value.layout['gap'].set('8px'),
+        }),
+      ).toMatchInlineSnapshot(`
+      [
+        "50%",
+        "8px",
+      ]
+    `)
+      expect(Object.values(value.styles.dynamic({ width: '30px' }).style))
+        .toMatchInlineSnapshot(`
+      [
+        "30px",
+      ]
+    `)
+      expect(css).toMatchInlineSnapshot(`
+      "@property --z-v4t4nbe1og4cic-57{syntax:"<percentage>";inherits:false;initial-value:25%;}
+      @property --z-v4t4nbe1og4cic-121{syntax:"<length>";inherits:true;initial-value:4px;}.z-h-20px-Jgxd-Q{height:20px;}
+      .z-p-Jgxd-Q{padding:var(--z-v4t4nbe1og4cic-121);}
+      .z-w-b_pXLF-2{width:var(--z-v4t4nbe1og4cic-57);}
+      .z-w-K1MDlV-0{width:var(--z-d1e8a67z1uaws1j-293-77-69-64-74-68);}"
+    `)
+    })
+    test('expands immutable members and shorthand while retaining dynamic intersections', () => {
+      const graph = Graph.compile({
+        modules: {
+          'static.ts': `import {css, variable} from 'zyzz';const dimensions={width:'12px',padding:'4px'} as const;const width=dimensions.width;const base={width,padding:dimensions.padding};type Width='10px'|'30px';type Values={width:Width}&{opacity:0|1};export const count=({n:variable('number', {inherits:false,initialValue:-1})});export namespace styles {
+  export const card = css({...base,padding:'8px'})
+
+  export const dynamic = css((values:Values)=>({width:values.width,opacity:values.opacity}))
+}`,
+        },
+      })
+
+      expect(graph.modules['static.ts']!.css).toMatchInlineSnapshot(`
+      ".z-w-12px-s0xMob-0{width:12px;}
+      .z-p-8px-BMtYBI{padding:8px;}
+      .z-w-dRTZzb-0{width:var(--z-d15wl7di1emu9we-411-77-69-64-74-68);}
+      .z-opacity-BMtYBI{opacity:var(--z-d15wl7di1emu9we-411-6f-70-61-63-69-74-79);}"
+    `)
+      expect(graph.sharedCss).toMatchInlineSnapshot(
+        `"@property --z-v15wl7di1emu9we-253{syntax:"<number>";inherits:false;initial-value:-1;}"`,
+      )
+      expect(
+        graph.modules['static.ts']!.code.includes('values:Values'),
+      ).toMatchInlineSnapshot('false')
+    })
+    test('keeps module type aliases when unrelated nested declarations shadow their names', () => {
+      const output = Graph.compile({
+        modules: {
+          'app.ts': `import {css, variable} from 'zyzz';type Values={width:'10px'};function unrelated(){type Values={width:unknown}}export const vars=({gap:variable('length', {inherits:true,initialValue:'4px',syntax:undefined})});export const style=css((values:Values)=>({width:values.width}));`,
+        },
+      })
+
+      expect(
+        output.modules['app.ts']!.css.includes('width:var('),
+      ).toMatchInlineSnapshot('true')
+      expect(output.sharedCss?.includes('@property')).toMatchInlineSnapshot(
+        'true',
+      )
+    })
+    test('rejects mutation through nested record aliases', () => {
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.ts': `import {css} from 'zyzz';const base={width:'10px'};const holder={nested:{base}};holder.nested.base.width='20px';export const style=css(base);`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.ts:80: Static data cannot be mutated or escape through unsupported expressions.]`,
+      )
+    })
+    test('does not resolve a shadowed type alias using the outer declaration', () => {
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'shadow.ts': `import {css} from 'zyzz';type Values={width:'10px'};function render(){type Values={width:unknown};return css((values:Values)=>({width:values.width}))}`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: shadow.ts:83: Dynamic values require explicit string or number scalar types.]`,
+      )
+    })
+    test('rejects mutated and escaping static records through aliases', () => {
+      const mutations = [
+        `base.width='30px';`,
+        `const alias=base;alias.width='30px';`,
+        `consume(base);`,
+      ]
+
+      expect(
+        mutations.map((mutation) => {
+          try {
+            Graph.compile({
+              modules: {
+                'app.ts': `import {css} from 'zyzz';const base={width:'10px'};${mutation}export const card=css(base);`,
+              },
+            })
+
+            return 'accepted'
+          } catch (error) {
+            return error
+          }
+        }),
+      ).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: app.ts:51: Static data cannot be mutated or escape through unsupported expressions.],
+        [Source.ExtractError: app.ts:68: Static data cannot be mutated or escape through unsupported expressions.],
+        [Source.ExtractError: app.ts:51: Static data cannot be mutated or escape through unsupported expressions.],
+      ]
+    `)
+    })
+    test('rejects loop writes and noncanonical array member keys', () => {
+      const errors = [
+        `for(base.width of ['20px']){}`,
+        `for(base.width in {x:1}){}`,
+      ].map((write) => {
+        try {
+          Graph.compile({
+            modules: {
+              'app.js': `import {css} from 'zyzz';const base={width:'10px'};${write}export const card=css(base)`,
+            },
+          })
+
+          return 'accepted'
+        } catch (error) {
+          return error
+        }
+      })
+
+      expect(errors).toMatchInlineSnapshot(`
+      [
+        [Source.ExtractError: app.js:51: Static data cannot be mutated or escape through unsupported expressions.],
+        [Source.ExtractError: app.js:51: Static data cannot be mutated or escape through unsupported expressions.],
+      ]
+    `)
+      expect(() =>
+        Graph.compile({
+          modules: {
+            'app.js': `import {css} from 'zyzz';const sizes=['10px','20px'];export const card=css({width:sizes['01']})`,
+          },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: app.js:82: Expected a literal string or number; expressions are not evaluated.]`,
+      )
+    })
+    test('does not publish values through type-only variable exports', () => {
+      const output = Graph.compile({
+        modules: {
+          'vars.ts': `import {variable} from 'zyzz';const vars=({gap:variable('length')});type vars=typeof vars;export type {vars};export {type vars as other}`,
+        },
+      })
+
+      expect(output.contracts['vars.ts']).toMatchInlineSnapshot('undefined')
+    })
+    test('applies registered defaults, inheritance, and assignment in Chromium', async () => {
+      const { code, css } = await bundle()
+      const browser = await chromium.launch()
+
+      try {
+        const page = await browser.newPage()
+
+        await page.setContent(
+          `<style>${css}</style><main style="width:400px"><div id="card"></div></main>`,
+        )
+        await page.addScriptTag({ content: code })
+        await page.evaluate(
+          `document.getElementById('card').className=Fixture.styles.registered().className`,
+        )
+
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((el) => getComputedStyle(el).width),
+        ).toMatchInlineSnapshot('"100px"')
+
+        await page.evaluate(
+          `for(const [key,value]of Object.entries(({...Fixture.layout["amount"].set('50%'),...Fixture.layout["gap"].set('8px')})))document.querySelector('main').style.setProperty(key,value)`,
+        )
+
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((el) => getComputedStyle(el).width),
+        ).toMatchInlineSnapshot('"100px"')
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((el) => getComputedStyle(el).paddingLeft),
+        ).toMatchInlineSnapshot('"8px"')
+
+        await page.evaluate(
+          `for(const [key,value]of Object.entries(({...Fixture.layout["amount"].set('75%')})))document.getElementById('card').style.setProperty(key,value)`,
+        )
+
+        expect(
+          await page
+            .locator('#card')
+            .evaluate((el) => getComputedStyle(el).width),
+        ).toMatchInlineSnapshot('"300px"')
+      } finally {
+        await browser.close()
+      }
+    })
   })
 })

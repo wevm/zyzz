@@ -9,6 +9,32 @@ concurrency:
   cancel-in-progress: true
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 jobs:
+  checks:
+    if: github.event.action != 'closed'
+    name: Benchmark checks and Next.js comparisons
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps --only-shell chromium
+      - name: Build package
+        run: pnpm build
+      - name: Check benchmark fixtures and compare Next.js builds
+        run: pnpm bench:check
+      - name: Upload benchmark checks and Next.js comparisons
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: benchmarks-checks
+          path: |
+            bench/results/
+            test-results/
+          retention-days: 30
+    timeout-minutes: 30
   compiler:
     if: github.event.action != 'closed'
     name: Compiler benchmarks
@@ -179,14 +205,18 @@ jobs:
   benchmarks:
     name: Benchmarks
     if: ${{ !cancelled() && github.event.action != 'closed' }}
-    needs: [compiler, renders]
+    needs: [checks, compiler, renders, type-benches]
     runs-on: ubuntu-latest
     steps:
-      - name: Require compiler and render benchmarks
+      - name: Require benchmark checks and measurements
         env:
+          CHECKS_RESULT: ${{ needs.checks.result }}
           COMPILER_RESULT: ${{ needs.compiler.result }}
           RENDER_RESULT: ${{ needs.renders.result }}
+          TYPE_BENCHES_RESULT: ${{ needs.type-benches.result }}
         run: |
+          test "$CHECKS_RESULT" = success
+          test "$TYPE_BENCHES_RESULT" = success
           test "$COMPILER_RESULT" = success
           test "$RENDER_RESULT" = success
   renders:
@@ -301,5 +331,29 @@ jobs:
           header: benchmarks
           path: reports/comment.md
     timeout-minutes: 5
+  type-benches:
+    if: github.event.action != 'closed'
+    name: Type instantiations ${{ matrix.typescript }} (${{ matrix.shard }}/2)
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+        typescript: ['6.0']
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
+      - name: Install TypeScript ${{ matrix.typescript }}
+        run: pnpm add --save-dev "typescript@${{ matrix.typescript }}"
+      - name: Check type instantiations
+        run: |
+          set -o pipefail
+          pnpm bench:types --shard ${{ matrix.shard }}/2 | tee type-benches.txt
+          cat type-benches.txt >> "$GITHUB_STEP_SUMMARY"
+    timeout-minutes: 30
 permissions:
   contents: read

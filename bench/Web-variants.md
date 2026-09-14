@@ -109,7 +109,7 @@ The complete render results below preserve all libraries, operations, and both p
 
 ```sh
 pnpm exec vp test bench src/cx.bench.ts src/cx.bindings.bench.ts src/variants.packed.bench.ts --run --no-file-parallelism --testNamePattern "cx / static|variants / packed" --outputJson bench/results/packed-timings.json
-BENCH_RUNTIME=1 pnpm exec vp test run bench/Runtime.browser.test.ts --no-file-parallelism
+BENCH_RUNTIME=1 pnpm exec vp test run --config bench/Check.config.ts bench/Runtime.browser.test.ts --no-file-parallelism
 pnpm exec vp test bench src/variants.bench.ts src/variants.conditions.bench.ts src/variants.payloads.bench.ts --run --no-file-parallelism --outputJson bench/results/variant-micro.json
 pnpm bench:render
 ```

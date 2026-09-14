@@ -1,5 +1,7 @@
 # Compilation Benchmarks
 
+The Benchmarks action owns benchmark fixture checks, compiler and render measurements, Next.js build comparisons, and type-instantiation benchmarks. Verify runs application correctness tests and TypeScript checks. Run `pnpm build && pnpm bench:check` for benchmark checks and grouped Next.js comparisons. Reports are saved under `bench/results/`.
+
 Zyzz literal and theme transfer comparisons explicitly use `cssOutput: 'grouped'`. Pure CSS emission benchmarks use the same mode. Runtime and React render fixtures bind their helpers through `Config.create({ cssOutput: 'grouped' })` once config support is present in the stack. Atomic output remains the application default and retains its browser correctness coverage. Existing size thresholds and competitor comparisons remain enforced.
 
 ## Grouped emitter review measurements
@@ -17,7 +19,7 @@ The `5697302` emitter change factors safe shared declaration blocks for independ
 | sparse      |    100 |          431 |     6,316 |      1,426 |        1,103 |
 | components  |     60 |          550 |     2,580 |        650 |          527 |
 
-All eight workloads pass the existing raw/gzip/Brotli comparisons against Panda, StyleX, Tailwind, and vanilla-extract. Reproduce with `pnpm exec vp test run bench/Compilation.test.ts --no-file-parallelism`; the harness writes each framework's sizes and matching emitted artifacts under `bench/results/<workload>/`. These are deterministic transfer measurements, not runtime or compilation speed claims. The local timing sample overlapped other validation work and is not a controlled performance comparison; CI supplies sequential base/candidate timing evidence.
+All eight workloads pass the existing raw/gzip/Brotli comparisons against Panda, StyleX, Tailwind, and vanilla-extract. Reproduce with `pnpm exec vp test run --config bench/Check.config.ts bench/Compilation.test.ts --no-file-parallelism`; the harness writes each framework's sizes and matching emitted artifacts under `bench/results/<workload>/`. These are deterministic transfer measurements, not runtime or compilation speed claims. The local timing sample overlapped other validation work and is not a controlled performance comparison; CI supplies sequential base/candidate timing evidence.
 
 ## CI Scheduling
 
@@ -43,7 +45,7 @@ Each pass warms three cycles, then measures twenty fresh-root mounts, retained-D
 
 These measure warm-code client operations with styles already loaded. They do not measure cold navigation, hydration, GPU presentation, or isolated React CPU time. There is no forced synchronous React flush. Dynamic private slots currently compare only Zyzz and native CSS. Callable and override cases compare all six adapters; variant-recipe APIs need separate equivalent fixtures.
 
-Render timings are the primary runtime report. Performance is advisory until repeated runs establish variance; missing data and correctness failures fail CI. Existing function timings cannot establish a render-performance ranking. Run the old browser diagnostics with `BENCH_RUNTIME=1 pnpm exec vp test run bench/Runtime.browser.test.ts`, or Node diagnostics with `BENCH_MICRO=1 pnpm exec vp test bench --run`.
+Render timings are the primary runtime report. Performance is advisory until repeated runs establish variance; missing data and correctness failures fail CI. Existing function timings cannot establish a render-performance ranking. Run the old browser diagnostics with `BENCH_RUNTIME=1 pnpm exec vp test run --config bench/Check.config.ts bench/Runtime.browser.test.ts`, or Node diagnostics with `BENCH_MICRO=1 pnpm exec vp test bench --run`.
 
 ## Runtime Comparisons
 
@@ -62,9 +64,9 @@ Client timings execute inside Chromium in two passes with reversed framework ord
 ```sh
 pnpm exec playwright install chromium
 pnpm exec vp test bench bench/Runtime.bench.ts --run --no-file-parallelism --outputJson bench/results/timings.json
-BENCH_RUNTIME=1 pnpm exec vp test run bench/Runtime.browser.test.ts --no-file-parallelism
+BENCH_RUNTIME=1 pnpm exec vp test run --config bench/Check.config.ts bench/Runtime.browser.test.ts --no-file-parallelism
 node bench/RuntimeReport.ts bench/results
-pnpm test bench/Runtime.test.ts --run --no-file-parallelism
+pnpm bench:check bench/Runtime.test.ts
 ```
 
 The diagnostic report includes every framework and observed loss. A competitor faster beyond reported uncertainty in both passes is reported without failing CI. Overlapping intervals are inconclusive, not evidence of a Zyzz win. The native control is informational; existing compiler/transfer gates remain unchanged.

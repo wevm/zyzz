@@ -1,5 +1,33 @@
 # Implementation plan
 
+## Next Work: Configurable CSS Output
+
+Accepted direction: add `Config.create({ cssOutput: 'atomic' | 'grouped' })`, defaulting to `'atomic'`. Implement this next, bringing the web emission work from 3.9 forward before native work and the remaining distribution backlog. This supersedes automatic selection of the smaller representation.
+
+The option is planned, not implemented. It is independent of renderer `output: 'react' | 'html'`. Bound `css`, `variants`, and theme helpers inherit the setting; token-free root helpers use the atomic default. No per-style mode or automatic hybrid selection is planned.
+
+Preserve the accepted CLI direction: emit CSS only, with an optional compiler plugin and explicit IDs for identity-bearing declarations when that plugin is disabled. Whether the plugin is enabled by default remains provisional. CSS output mode must work through either path.
+
+### Implementation Order
+
+1. **Configuration and identity:** add the inferred option, default, invalid-option diagnostics, and immutable propagation through aliases, theme handles, extraction, and versioned packed contracts. Include mode in cache/output identity; independently compiled libraries retain their defining mode.
+2. **Emission:** implement atomic declarations and explicit grouped blocks through the shared emitter. Define deterministic naming, safe deduplication, reachability, and source tracing for both. Preserve stylesheet contributions and semantic declaration sequences.
+3. **Composition and delivery:** retain `cx` precedence, variants, selectors, dynamic slots, and packed bindings across both modes and mixed-mode libraries. Align CLI extraction, runtime naming without the plugin, and compiler output.
+4. **Acceptance and measurement:** verify browser equivalence, source/packed consumers, watch changes, framework delivery, and matched output/render benchmarks before promoting the option from planned documentation.
+
+### Acceptance Gate
+
+- [ ] Omitted mode equals explicit `'atomic'`; `'grouped'` emits scoped declaration blocks. Unsupported mode values fail static/config structural checks without adding runtime CSS-value validation.
+- [ ] Atomic rules own one property/value declaration, with ordered same-property fallbacks kept together when required for equivalent behavior. Deduplication includes selector, condition stack, layer, importance, theme/variable identity, and ordering context.
+- [ ] Preserve shorthand resets, longhand partial overrides, logical/physical overlap, `all`, repeated A/B/A declarations, importance, fallbacks, and overlapping conditions. Preserve order with contextual atoms or proven normalization; do not silently switch atomic styles to grouped output.
+- [ ] Keep global rules, keyframes, registrations, font descriptors, and theme scopes in their required CSS structures. Atomic mode concerns class-based style declarations, not splitting arbitrary stylesheet grammar.
+- [ ] Preserve identity-only `css()` and interpolated selector references independently of shared declaration classes. Dynamic applications select classes and assign fixed variables without generating CSS rules.
+- [ ] Test static/dynamic `cx`, defaults/compounds/conditional variants, bindings, and mixed-mode packed libraries. Class-string order alone must not determine override behavior.
+- [ ] Verify CLI/plugin parity, explicit-ID behavior without the plugin, SSR/hydration, source maps, add/edit/remove recovery, and switching configuration mode without stale CSS or metadata.
+- [ ] Report raw/gzip/Brotli CSS, JS/class/attribute bytes and combined delivery, rule counts, compile/watch time, and browser render costs on repeated, unique, conditional, and override-heavy workloads. Keep all comparison lanes and existing gates; measure both explicit modes without choosing one automatically.
+
+See [CSS Output](../docs/guides/css-output.md) for the proposed usage and output boundary.
+
 ## Phase 2 Status After At-rule Compiler Acceptance
 
 Status reviewed against main `b6398e7` after merged [#107](https://github.com/wevm/zyzz/pull/107), [#110](https://github.com/wevm/zyzz/pull/110), and [#111](https://github.com/wevm/zyzz/pull/111). Phase 2 remains open. The at-rule compiler implementation is complete for the pinned inventory; release acceptance still has concrete blockers.
@@ -217,7 +245,7 @@ Evidence: [PR #1](https://github.com/wevm/zyzz/pull/1); `pnpm check`, `pnpm chec
 ### PR 1.2 — Literal CSS Compilation
 
 - [x] Add the named `Css` namespace at `zyzz/web` and implement pure `Css.compile({ styles })` for the literal subset. Return the architecture's `{ css, classes, themes }` shape with an empty theme map and structured `Css.CompileError` diagnostics.
-- [x] Serialize valid CSS values and property names, retaining authored declaration order. Factor nonconflicting declaration domains and retain ordered conflicting rules; general atomic optimization remains in Phase 3.
+- [x] Serialize valid CSS values and property names, retaining authored declaration order. Factor nonconflicting declaration domains and retain ordered conflicting rules; configurable atomic/grouped emission is the next work item.
 - [x] Generate readable deterministic class names with collision handling. Keep identity independent of machine paths, traversal order, clocks, and global mutable state; repeated isolated calls must agree.
 - [x] Add the real Zyzz compiler to the shared Tailwind, StyleX, and vanilla-extract compilation corpus in `bench/Compilation.ts`. Measure minified emitted CSS and required browser JavaScript separately in raw, gzip, and Brotli bytes; retain the same literal workloads and verify equivalent computed styles before reporting deltas. Do not compare `Style.define` validation with compilation.
 - [x] Add integration fixtures from public definitions through the real compiler and browser for deterministic output, escaping, unit handling, collisions, and order-sensitive shorthand/longhand declarations. Verify computed styles and establish compilation-time and emitted-byte baselines on the same corpus.
@@ -485,7 +513,7 @@ The runtime 3.4 slice composes known dynamic style/variant applications and boun
 | 3.6   | `test: accept variants across web frameworks`     | Extend React, Solid, Svelte, HTML, and Next.js Webpack/Turbopack consumers with variants and composition. Compare real production selection/update workloads with native CSS/React, Panda, StyleX, and the existing comparison suite where equivalent. | Development/production, packed consumption, SSR/hydration or HTML serialization, navigation, recovery, and source tracing pass. Report CSS/JS/attribute bytes and isolated selection/binding/composition costs; preserve benchmark thresholds. |
 | 3.7   | `feat: compile native style tables`               | Pure `StyleSheet.compile` and lookup-only `StyleSheet.select`; explicit theme/scheme tables, unit/font policy, capability diagnostics, and shared static variant selection.                                                                            | Shared public definitions agree with web semantics within supported capabilities. Types and runtime diagnostics reject unsupported selectors, queries, units, and values. No implicit browser emulation or unbounded Cartesian products.       |
 | 3.8   | `feat: bind native variant selections`            | Thin native adapters for active dynamic slots and explicit host inputs, using the same defaults, null, compounds, and precedence contracts.                                                                                                            | Real iOS and Android fixtures verify choice/payload updates, stale-binding removal, theme/scheme changes, composition, and documented conversions. Measure lookup/binding costs and fixed table sizes.                                         |
-| 3.9   | `perf: deduplicate compiled variant output`       | Extend safe atomic/grouped sharing and reachability pruning to variants and composition. Preserve readable names, ordered conflicts, resolved query identities, complete live theme tokens, and finite alternatives.                                   | Independent cascade controls and packed consumers remain equivalent. Matched repeated/unique, conditional, and override-heavy workloads demonstrate delivery changes in raw/gzip/Brotli with all comparison lanes retained.                    |
+| 3.9   | `perf: deduplicate compiled variant output`       | Follow the next-work configurable CSS output gate above; extend safe deduplication and reachability pruning within each selected mode. Preserve readable names, ordered conflicts, resolved query identities, complete live theme tokens, and finite alternatives.                                   | Independent cascade controls and packed consumers remain equivalent. Matched repeated/unique, conditional, and override-heavy workloads demonstrate delivery changes in raw/gzip/Brotli with all comparison lanes retained.                    |
 | 3.10  | `test: enforce phase 3 acceptance`                | Reconcile every Phase 3 item below against named public evidence; finalize target/API documentation and reproducible framework/native/size/type measurements.                                                                                          | All required CI gates pass on the final head; web and both mobile platforms render shared definitions correctly. No unchecked requirement is silently deferred or closed by compiler-only evidence.                                            |
 
 The first six PRs form the variants/composition web milestone. They do not complete Phase 3: native output, both mobile renderers, output acceptance, and the final reconciliation remain required. If a slice needs splitting, preserve its dependencies and acceptance criteria rather than widening an earlier completion claim.
@@ -510,7 +538,7 @@ Status: in progress; root and bound static variants implemented, remaining accep
 - [ ] Implement shared native variant selection with the same inferred props and precedence; avoid unbounded variant/theme Cartesian products.
 - [ ] Extend the pure `Css.compile` introduced in PR 1.2 for composition and variants, preserving the theme and conditional semantics established in Phase 2. Retain the named `Css` export from `zyzz/web`; theme maps name outputs without adding definition metadata.
 - [ ] Emit deduplicated atoms with readable property/token/condition names and deterministic collision suffixes, retaining names in production.
-- [ ] Preserve ordered groups for conflicting declarations and conditions; verify cascade equivalence before deduplication. Include resolved query thresholds in identity and retain authored condition order.
+- [ ] Preserve conflicts and authored condition order within the selected CSS output mode. Atomic emission uses contextual atoms or proven normalization; grouped emission retains ordered blocks. Include resolved query thresholds in identity and verify cascade equivalence before deduplication.
 - [ ] Prune unreachable rules and unused variables while retaining complete live token sets in theme scopes.
 - [ ] Export `StyleSheet` as a named namespace from `zyzz/react-native`. Implement `StyleSheet.compile` as a pure emitter returning complete static tables for every requested theme/scheme pair, with errors owned by the same namespace.
 - [ ] Implement `StyleSheet.select` as a lookup only. System scheme, interaction, viewport, and accessibility inputs belong to application or host adapters.
@@ -527,7 +555,7 @@ Gate: shared definitions render on web and both mobile platforms. Theme/scheme s
 Status: planned. Renderer output and Solid, Svelte, and Next.js source/consumer verification now belong to the Phase 2 [Framework Integration Priority](#framework-integration-priority). The remaining distribution and native gates stay here.
 
 - [ ] Verify plain document, component, template, and native consumers through their normal class/style APIs.
-- [ ] Build the CLI with `build [src]` and `watch [src]` commands (defaults: `src`, `dist`, `<out-dir>/styles.css`) and optional `--out-dir`, `--css`, and `--minify` flags; rewrite modules alongside CSS and declarations, requiring no styling plugin in consumers.
+- [ ] Revise the standalone CLI to emit CSS only with the configured CSS output mode. Keep the compiler plugin optional; require explicit IDs for identity-bearing declarations when disabled. Reconcile commands, defaults, flags, and existing host behavior with #148 before acceptance.
 - [ ] Verify zero-argument `build`/`watch` defaults, initial watch compilation, explicit path overrides, missing-source errors, and CSS defaults following `--out-dir`.
 - [ ] Verify CLI/build/in-memory parity, dependency watching, output exclusion, diagnostics, failure preservation, and owned-output cleanup. Include imported style constants and threshold edits in dependency recovery fixtures.
 - [ ] Keep build integrations optional and thin; implement only those needed by concrete fixtures.
@@ -548,7 +576,7 @@ Status: planned.
 - [ ] Measure compilation, incremental updates, type-check cost, raw/compressed CSS, callable/props-merging overhead, class-string bytes, total transfer, browser style recalculation, and native adapter cost independently.
 - [ ] Measure theme multiplication and generated-table size; deduplicate without changing observable theme or cascade semantics.
 - [ ] Require combined emitted CSS and client JavaScript to beat StyleX in matched raw/gzip/Brotli workloads as each capability lands. Expand the existing literal size gate to themes, variants, selectors, and library consumers; preserve CSS behavior and readable names.
-- [ ] Compare atomic and grouped output on repeated and unique styles; optimize the smaller safe representation. Measure the agreed variant API; defer additional variant abstractions and slot systems until concrete usage justifies them.
+- [ ] Measure the configured atomic and grouped modes on repeated and unique styles; retain the explicit selection and atomic default. Measure the agreed variant API; defer additional variant abstractions and slot systems until concrete usage justifies them.
 - [ ] Verify package metadata and the standard changeset/release workflow.
 
 Benchmarks begin in PR 1.1 and grow with each real pipeline; this phase consolidates the evidence. Follow `AGENTS.md`: save machine-readable baselines, record measurement conditions and variability, validate equivalent behavior, and report CSS, JavaScript, markup/class bytes, compression, and runtime helpers without double-counting. Use real browser/native measurements for rendering and selection workloads.

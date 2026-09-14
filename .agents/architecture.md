@@ -976,7 +976,11 @@ Acceptance covers Server Components, client components, streaming, hydration ide
 
 ## Small CSS and readable classes
 
-The compiler emits well-structured standard CSS with sensible rule grouping and safe deduplication. Preserve authored cascade semantics and keep compatible rules together only where safety is established. Delegate general CSS optimization and minification to the build adapter or consuming build. Correctness is a release gate, not a tradeoff for fewer bytes.
+Planned next: `Config.create({ cssOutput: 'atomic' | 'grouped' })` selects web emission, defaulting to atomic. Bound styles, variants, and theme helpers inherit it; root helpers use atomic. Renderer `output` remains independent. See [CSS Output](../docs/guides/css-output.md) for the shared contract and examples.
+
+Atomic output uses individual declaration classes, retaining ordered same-property fallback sequences where necessary. Grouped output uses scoped declaration blocks. Both preserve authored cascade semantics. No automatic size-based strategy or per-style override is planned; current emitter behavior below remains historical implementation evidence until this gate passes.
+
+Propagate mode through source aliases, cache identities, and versioned packed contracts. Libraries retain their defining mode; mixed-mode composition must preserve bindings and precedence. CLI extraction and the optional compiler plugin share identities. CSS-only CLI operation without the plugin requires explicit IDs for identity-bearing declarations.
 
 Readable names contain a property or documented abbreviation, a token/value label, and any condition label. Illustrative names are `p-md-k3m9`, `bg-surface-a7c2`, and `hover-bg-brand-b4d8`. A short deterministic suffix distinguishes theme contracts, values, conditions, and ordering contexts; names never consist solely of a hash.
 
@@ -986,15 +990,15 @@ Use the same names in development and production. Minification compresses CSS sy
 
 Deduplication identity includes the full declaration value or variable fallback, theme contract, selector, at-rule stack, cascade layer, and any ordering constraints. Never merge identical-looking token labels from incompatible themes or change precedence through global sorting.
 
-Conflicting shorthand/longhand declarations, overlapping logical/physical properties, and interacting conditional blocks require ordered groups unless a proven normalization preserves semantics. Combining independently compiled class strings follows stylesheet cascade order; class-string order is not an override API.
+Conflicting shorthand/longhand declarations, overlapping logical/physical properties, and interacting conditional blocks require preserved ordering. Atomic mode uses contextual atoms or proven normalization; grouped mode may retain ordered blocks. Combining independently compiled class strings follows stylesheet cascade order; class-string order is not an override API.
 
 Emit only reachable rules and used token variables. Explicit theme scopes retain complete values for every live contract key. Independently compiled libraries remain correct without whole-application deduplication; cross-library deduplication is an optional consumer optimization.
 
-Measure raw and compressed CSS, generated class-string bytes, total transferred bytes, rule count, compilation time, incremental updates, and representative browser style recalculation. Compare atomic and grouped output on repeated and mostly unique styles. Keep the smaller safe strategy without introducing a runtime or changing readable names.
+Measure raw and compressed CSS, generated class-string bytes, total transferred bytes, rule count, compilation time, incremental updates, and representative browser style recalculation. Measure both configured modes on repeated and mostly unique styles. Preserve the selected mode and atomic default regardless of measured size; do not change readable names or generate rules at runtime.
 
 ### Compiler and Minifier Responsibilities
 
-Core owns typed style semantics, theme and variant lowering, composition, class references, CSS-variable bindings, and deterministic standard CSS output. Source analysis identifies reachable definitions; generated JavaScript and required runtime helpers remain the compiler's responsibility. Keep existing safe grouping and deduplication, but do not implement a general CSS minifier or graph-search optimizer for the MVP.
+Core owns typed style semantics, theme and variant lowering, composition, class references, CSS-variable bindings, and deterministic standard CSS output. Source analysis identifies reachable definitions; generated JavaScript and required runtime helpers remain the compiler's responsibility. Keep safe deduplication within the configured emission mode, but do not implement a general CSS minifier or graph-search optimizer for the MVP.
 
 The CLI/build adapter uses Lightning CSS for final CSS minification and browser-target processing, or delegates final processing to the consuming build. Core imports do not include the minifier, browser-target databases, compression libraries, filesystem APIs, or environment detection. Standalone compilation remains usable without minification. Native emission remains separate from web post-processing.
 
@@ -1030,11 +1034,11 @@ Web correctness leads the MVP; native is included, not deferred beyond it. Demon
 
 Require actionable source diagnostics with valid alternatives, CSS-to-source tracing, refresh behavior, missing-transform errors, deterministic server output, and library stylesheet delivery. CLI and build adapters share options and useful defaults without a mandatory config file. Failed rebuilds preserve the previous complete output.
 
-Compare grouped and atomic emission on repeated and unique styles. Measure compressed CSS, JavaScript, class strings, rule counts, cold/incremental builds, browser recalculation, native table growth, and optional runtime costs separately. Do not claim globally zero runtime when composition, variable assignment, or dynamic variants are used; all CSS rules remain compiled ahead of time.
+Verify and measure configured grouped and atomic emission on repeated and unique styles, including mixed-mode packed composition. Measure compressed CSS, JavaScript, class strings, rule counts, cold/incremental builds, browser recalculation, native table growth, and optional runtime costs separately. Do not claim globally zero runtime when composition, variable assignment, or dynamic variants are used; all CSS rules remain compiled ahead of time.
 
 ## Literal Compiler Boundary
 
-`Css.compile({ styles })` from `zyzz/web` implements the literal subset documented in `docs/api/core/Style/literals.md`. It returns frozen `{ classes, css, themes }` artifacts, with an empty theme map. Nonconflicting declaration domains are shared; conflicting rules preserve authored cascade order. Class maps contain space-separated identifiers scoped to the complete compilation input. Identical inputs produce identical artifacts; adding definitions can change factoring. Themes, source extraction, and general atomic optimization belong to subsequent boundaries. Literal factoring is implemented early to meet the bundle-size budget.
+`Css.compile({ styles })` from `zyzz/web` implements the literal subset documented in `docs/api/core/Style/literals.md`. It returns frozen `{ classes, css, themes }` artifacts, with an empty theme map. Nonconflicting declaration domains are shared; conflicting rules preserve authored cascade order. Class maps contain space-separated identifiers scoped to the complete compilation input. Identical inputs produce identical artifacts; adding definitions can change factoring. This historical literal boundary does not implement the planned configurable CSS output contract. Literal factoring is implemented early to meet the bundle-size budget.
 
 ## Static Source Extraction Boundary
 

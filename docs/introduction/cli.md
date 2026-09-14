@@ -1,5 +1,8 @@
 # CLI Setup
 
+> [!NOTE]
+> The accepted next design emits CSS only and honors config `cssOutput` (atomic by default, grouped optional). The compiler plugin becomes optional; disabling it requires explicit IDs for identity-bearing declarations. This redesign is not implemented by the workflow below. See [CSS Output](../guides/css-output.md).
+
 Precompile source modules and CSS with one command:
 
 ```sh

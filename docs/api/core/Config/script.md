@@ -31,7 +31,7 @@ script({ storageKey: 'my-app-appearance' })
 
 A JavaScript source string for an inline, synchronous `<script>` early in `<head>`. It updates `document.documentElement`; never use `async`, `defer`, or `type="module"` for this initialization.
 
-The script replaces only classes belonging to the config's catalog, preserving unrelated classes. It assigns only the `colorScheme` inline property. Server markup supplies the default theme and scheme; there is no duplicate default configuration in this helper.
+The script replaces only classes belonging to the config's catalog and the compiled scheme classes, preserving unrelated classes. It assigns only the `colorScheme` inline property. Server markup supplies the default theme and scheme; there is no duplicate default configuration in this helper.
 
 Invalid fields preserve their respective defaults. Missing, malformed, non-object, or inaccessible storage leaves server markup intact. Matching uses own catalog keys, including for names such as `constructor`. It never writes storage, accesses cookies, registers listeners, or inserts CSS.
 

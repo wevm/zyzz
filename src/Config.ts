@@ -10,6 +10,7 @@ import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
 import type { css } from './css.js'
 import { variants } from './variants.js'
+import * as Scheme from './internal/Scheme.js'
 import * as Shorthands from './internal/Shorthands.js'
 import type * as Style from './Style.js'
 import * as Theme from './Theme.js'
@@ -146,11 +147,14 @@ export function create(options: create.Options = {}): unknown {
     const className = () =>
       `z_theme-${Identity.requireId(typeof input.id === 'string' ? input.id : undefined, 'Config.create')}-${name.replace(/[^a-zA-Z0-9-]/g, (character) => `_${character.charCodeAt(0).toString(16)}_`)}`
     const select = (options: { colorScheme?: string } = {}) => {
+      const scheme = options.colorScheme
+      const selection =
+        scheme !== undefined && Object.hasOwn(Scheme.classes, scheme)
+          ? ` ${Scheme.classes[scheme as Scheme.Name]}`
+          : ''
       const result = {
-        className: className(),
-        ...(options.colorScheme
-          ? { style: { colorScheme: options.colorScheme } }
-          : {}),
+        className: `${className()}${selection}`,
+        ...(scheme ? { style: { colorScheme: scheme } } : {}),
       }
       return input.output === 'html' ? Html.from(result) : result
     }

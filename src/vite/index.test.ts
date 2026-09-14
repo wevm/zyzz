@@ -517,9 +517,15 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
 
       expect(String(sheet.source)).toMatchInlineSnapshot(`
         ".z_theme-8emm311c7xzi9-theme{--z-t8emm311c7xzi9-theme-color_2e_brand:#06c;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
         .z-text-VVV-uM{color:var(--z-t8emm311c7xzi9-theme-color_2e_brand,#06c);}
         .z-p-8px-rxmkdJ{padding:8px;}.z_theme-8emm311c7xzi9-theme{--z-t8emm311c7xzi9-theme-color_2e_brand:#06c;}
         .z_theme-wo97ow1iqyoeo-mint{--z-t8emm311c7xzi9-theme-color_2e_brand:#175;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
         .z-text-VVV-uM{color:var(--z-t8emm311c7xzi9-theme-color_2e_brand,#06c);}
         .z-p-8px-rxmkdJ{padding:8px;}"
       `)

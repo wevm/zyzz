@@ -42,12 +42,7 @@ async function publish(event: Host.Event) {
 }
 
 async function serve() {
-  // Without the Zyzz Vite plugin, the CSS target must keep light-dark() intact for inherited scheme changes.
-  const server = await Vite.createServer({
-    build: { cssTarget: ['chrome123', 'firefox120', 'safari17.5'] },
-    configFile: false,
-    root,
-  })
+  const server = await Vite.createServer({ configFile: false, root })
 
   await server.listen()
   server.printUrls()

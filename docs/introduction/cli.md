@@ -64,6 +64,8 @@ export default { plugins: [zyzz({ compiler: false })] }
 
 This mode follows the same explicit-ID requirements as `zyzz build --css-only`. The plugin and CLI are alternative CSS delivery paths; running both for the same application is unnecessary.
 
+Bundlers consuming CLI output need no browser target configuration. Their default targets may lower `light-dark()` into Lightning CSS helpers; the compiled scheme classes applied by `themes()` carry `color-scheme` in the stylesheet, which initializes those helpers.
+
 ## Watching
 
 Compilation errors preserve the last successful stylesheets and recover after valid edits. Ctrl-C and SIGTERM stop watching and release the output lock. Cleanup removes only unchanged owned artifacts and preserves unrelated files.

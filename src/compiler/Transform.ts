@@ -10,6 +10,7 @@ import * as Expression from './internal/Expression.js'
 import MagicString from 'magic-string'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Namespaces from './internal/Namespaces.js'
+import * as Scheme from '../internal/Scheme.js'
 import * as Syntax from './internal/Syntax.js'
 import * as Source from './Source.js'
 import type * as Style from '../Style.js'
@@ -887,6 +888,13 @@ export function compile(options: compile.Options): compile.ReturnType {
 
         if (Object.values(emitted.themes).includes(name)) {
           // Packed theme declarations have no authored source in this graph.
+          Mapping.addMapping(cssMap, { generated: { column: 0, line } })
+
+          return rule
+        }
+
+        if (Object.values(Scheme.classes).includes(name)) {
+          // Scheme selection rules accompany the scopes and have no authored source.
           Mapping.addMapping(cssMap, { generated: { column: 0, line } })
 
           return rule

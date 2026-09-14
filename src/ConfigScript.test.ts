@@ -328,9 +328,10 @@ describe('create', () => {
         )
         await page.goto(`http://127.0.0.1:${address.port}/app`)
 
+        // A restored scheme adds its stylesheet class; server defaults carry none.
         expect(
           (await page.locator('html').getAttribute('class')) ===
-            `external ${theme}`,
+            `external ${theme}${scheme === 'dark' ? ' z_scheme-dark' : ''}`,
         ).toMatchInlineSnapshot('true')
         expect(
           (await page.evaluate(

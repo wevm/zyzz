@@ -229,7 +229,7 @@ export function Document() {
 }
 ```
 
-The theme returns its generated `className` and `styles.colorScheme`. Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` for system preference. Named themes use `themes({ theme: 'mint', colorScheme: 'dark' })`.
+The theme returns its generated `className`, including a compiled scheme class, and `style.colorScheme`. Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` for system preference. Named themes use `themes({ theme: 'mint', colorScheme: 'dark' })`.
 
 Color pairs compile to `light-dark()`; the custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme calls can scope a subtree independently.
 

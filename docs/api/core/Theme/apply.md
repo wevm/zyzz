@@ -49,7 +49,7 @@ theme().className
 
 - Type: `{ colorScheme: 'light' | 'dark' | 'light dark' }`, when supplied.
 
-Inline color-scheme selection. No `style` key is emitted when the option is omitted.
+Inline color-scheme selection; `className` also gains the compiled scheme class. No `style` key is emitted when the option is omitted.
 
 ```ts
 theme({ colorScheme: 'dark' }).style

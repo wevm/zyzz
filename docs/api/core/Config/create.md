@@ -147,7 +147,7 @@ const { themes } = Config.create({
 const props = themes({ theme: 'base', colorScheme: 'light dark' })
 ```
 
-`options.theme` is required and inferred from the configured catalog keys. Runtime selection uses the same call, such as `themes({ theme: appearance })`. Omitted `colorScheme` preserves inherited CSS behavior. The returned props contain the selected scope class and an inline scheme only when supplied.
+`options.theme` is required and inferred from the configured catalog keys. Runtime selection uses the same call, such as `themes({ theme: appearance })`. Omitted `colorScheme` preserves inherited CSS behavior. The returned props contain the selected scope class and, only when a scheme is supplied, its compiled scheme class and an inline scheme.
 
 ### script
 

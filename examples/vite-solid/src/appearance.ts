@@ -7,18 +7,16 @@ export type Appearance = {
   theme: 'indigo' | 'mint'
 }
 
-const catalog = {
-  indigo: themes.indigo.className,
-  mint: themes.mint.className,
-}
 const defaults: Appearance = { colorScheme: 'light dark', theme: 'indigo' }
 
-/** Applies a selection to <html> without saving it. */
+/** Applies a selection to <html> without saving it; the props carry the scope and scheme classes. */
 export function apply(appearance: Appearance) {
   const root = document.documentElement
+  const previous = themes(current())
+  const next = themes(appearance)
 
-  root.classList.remove(...Object.values(catalog))
-  root.classList.add(catalog[appearance.theme])
+  root.classList.remove(...previous.class.split(' '))
+  root.classList.add(...next.class.split(' '))
   root.style.colorScheme = appearance.colorScheme
 }
 
@@ -30,7 +28,7 @@ export function current(): Appearance {
   return {
     colorScheme:
       scheme === 'light' || scheme === 'dark' ? scheme : 'light dark',
-    theme: root.classList.contains(catalog.mint) ? 'mint' : 'indigo',
+    theme: root.classList.contains(themes.mint.className) ? 'mint' : 'indigo',
   }
 }
 

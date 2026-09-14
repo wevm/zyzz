@@ -1264,15 +1264,21 @@ describe('names', () => {
       const second = Transform.compile({ moduleId: 'second.ts', source })
 
       expect(first.css).toMatchInlineSnapshot(`
-      ".z_theme-1mlrxl41f5va70-css-theme{--z-t1mlrxl41f5va70-css-color_2e_brand:red;}
-      .z-display-flex-QPs-Od{display:flex;}
-      .z-text-tMJTE1{color:var(--z-t1mlrxl41f5va70-css-color_2e_brand,red);}"
-    `)
+        ".z_theme-1mlrxl41f5va70-css-theme{--z-t1mlrxl41f5va70-css-color_2e_brand:red;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-display-flex-QPs-Od{display:flex;}
+        .z-text-tMJTE1{color:var(--z-t1mlrxl41f5va70-css-color_2e_brand,red);}"
+      `)
       expect(second.css).toMatchInlineSnapshot(`
-      ".z_theme-1d6eq581s6owy-css-theme{--z-t1d6eq581s6owy-css-color_2e_brand:red;}
-      .z-display-flex-IjSBTf{display:flex;}
-      .z-text-KGSrFk{color:var(--z-t1d6eq581s6owy-css-color_2e_brand,red);}"
-    `)
+        ".z_theme-1d6eq581s6owy-css-theme{--z-t1d6eq581s6owy-css-color_2e_brand:red;}
+        .z_scheme-dark{color-scheme:dark;}
+        .z_scheme-light{color-scheme:light;}
+        .z_scheme-light-dark{color-scheme:light dark;}
+        .z-display-flex-IjSBTf{display:flex;}
+        .z-text-KGSrFk{color:var(--z-t1d6eq581s6owy-css-color_2e_brand,red);}"
+      `)
       expect(first.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';

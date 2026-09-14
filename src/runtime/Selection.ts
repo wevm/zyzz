@@ -1,6 +1,9 @@
 /** Selects compiler-owned theme classes without evaluating authoring code. @module */
+import * as Scheme from '../internal/Scheme.js'
+
 /**
  * Creates a validated selector with the compatible named theme catalog.
+ * A selected scheme adds its stylesheet class beside the scope class and an inline `color-scheme`.
  * @param entries Compatible theme names paired with compiler-owned scope classes.
  * @param html Whether selection returns HTML class/serialized-style props. Defaults to false (React className/object-style props).
  * @returns A callable selector with catalog members exposing their scope class names.
@@ -32,13 +35,15 @@ export function create(
     )
       throw new TypeError('Invalid theme selection.')
 
+    const scheme = input.colorScheme as Scheme.Name | undefined
+
     return {
-      [html ? 'class' : 'className']: catalog[input.theme],
-      ...(input.colorScheme
+      [html ? 'class' : 'className']: scheme
+        ? `${catalog[input.theme]} ${Scheme.classes[scheme]}`
+        : catalog[input.theme],
+      ...(scheme
         ? {
-            style: html
-              ? `color-scheme:${input.colorScheme}`
-              : { colorScheme: input.colorScheme },
+            style: html ? `color-scheme:${scheme}` : { colorScheme: scheme },
           }
         : {}),
     }

@@ -90,7 +90,7 @@ Use [Compile Themes](guides/themes.md#compile-themes) for the current pipeline.
 
 ### Theme Scopes
 
-Named `themes({ theme, colorScheme? })` selections return generated scope classes and optional inline color-scheme props. Apply them to `<html>` for the whole document or an ancestor for a subtree. Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
+Named `themes({ theme, colorScheme? })` selections return generated scope classes and, with a scheme, a compiled scheme class plus inline color-scheme props. Apply them to `<html>` for the whole document or an ancestor for a subtree. Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
 
 Use the selector from a [named-theme config](guides/themes.md#selecting-a-theme):
 

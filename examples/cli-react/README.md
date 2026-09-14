@@ -29,7 +29,7 @@ For `src/App.tsx`, the CLI emits `.zyzz/App.tsx` with rewritten style calls, `.z
 
 Authored source stays unaware of compiled artifacts. Relative imports inside compiled modules resolve within `.zyzz`, so this example keeps assets out of `src`; the Vite plugin examples show relative asset imports.
 
-`vite.config.ts` sets `build.cssTarget` to Chrome 123, Firefox 120, and Safari 17.5. The Zyzz Vite plugin applies these targets itself; without it, Vite's default target lowers `light-dark()` and inherited scheme changes stop working.
+Vite runs with its default configuration. Its default CSS target lowers `light-dark()` into Lightning CSS helpers; the compiled scheme classes that `themes()` applies carry `color-scheme` in the stylesheet, so those helpers initialize and theme switching keeps working.
 
 The root theme lives on `<html>`. `src/appearance.ts` applies the default selection, inserts the config's `script()` so a selection saved in localStorage wins before anything renders, and persists changes. A server-rendered document inlines the same script in `<head>` instead.
 

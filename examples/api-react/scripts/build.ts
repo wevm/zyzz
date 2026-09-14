@@ -23,12 +23,7 @@ try {
   await host.close()
 }
 
-// Without the Zyzz Vite plugin, the CSS target must keep light-dark() intact for inherited scheme changes.
-await Vite.build({
-  build: { cssTarget: ['chrome123', 'firefox120', 'safari17.5'] },
-  configFile: false,
-  root,
-})
+await Vite.build({ configFile: false, root })
 
 /** Imports the shared stylesheet before module stylesheets, skipping modules without local styles. */
 async function stylesheet(files: readonly string[]) {

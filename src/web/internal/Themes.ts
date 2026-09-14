@@ -2,6 +2,7 @@
  * Collects live theme references and emits graph-local variables and scope rules.
  * @module
  */
+import * as Scheme from '../../internal/Scheme.js'
 import * as Token from '../../internal/Token.js'
 import type * as Theme from '../../Theme.js'
 
@@ -99,6 +100,9 @@ export function create() {
 
       rules.push(`.${className}{${body}}`)
     }
+
+    // Scheme selection travels with the scopes so lowered light-dark() resolves wherever they load.
+    if (rules.length) rules.push(Scheme.css)
 
     return { classes: Object.freeze(classes), css: rules.join('\n') }
   }

@@ -1,0 +1,20 @@
+{
+  "name": "@zyzz/example-cli-react",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "zyzz build --out-dir .zyzz && vite build",
+    "dev": "node scripts/dev.ts"
+  },
+  "dependencies": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zyzz": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "typescript": "5.9.3",
+    "vite": "^8.2.2"
+  }
+}

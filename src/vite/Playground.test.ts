@@ -15,10 +15,10 @@ describe('zyzz', () => {
     const config = {
       // Concurrent fixture servers must not replace the playground's optimized chunks.
       cacheDir,
-      configFile: Path.resolve('examples/react/vite.config.ts'),
+      configFile: Path.resolve('examples/vite-react/vite.config.ts'),
       configLoader: 'runner' as const,
       logLevel: 'silent' as const,
-      root: Path.resolve('examples/react'),
+      root: Path.resolve('examples/vite-react'),
     }
 
     try {

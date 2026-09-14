@@ -1,13 +1,23 @@
 # Examples
 
-Small framework playgrounds using the public Zyzz API. Start with [React + Vite](react).
+Small framework playgrounds using the public Zyzz API. Start with [React + Vite](vite-react).
+
+| Example                    | Framework | Compilation                                            |
+| -------------------------- | --------- | ------------------------------------------------------ |
+| [vite-react](vite-react)   | React     | `zyzz()` Vite plugin                                   |
+| [vite-solid](vite-solid)   | Solid     | `zyzz()` Vite plugin                                   |
+| [vite-svelte](vite-svelte) | Svelte    | `zyzz()` Vite plugin                                   |
+| [cli-react](cli-react)     | React     | `zyzz build` / `zyzz dev` CLI; Vite bundles the output |
+| [api-react](api-react)     | React     | `Host` from `zyzz/node`; Vite's JavaScript API bundles |
 
 ```sh
 pnpm install
 pnpm examples
 ```
 
-Run commands from the repository root. `pnpm examples` runs `pnpm dev` to link the local library to source, then starts the Vite dev server. No build is required. Playground changes reload automatically.
+Run commands from the repository root. `pnpm examples` builds the library, relinks the `zyzz` binary into each example, then starts every dev server in parallel. Playground changes reload automatically; library changes need another `pnpm build`.
+
+Start one example with `pnpm --dir examples/<name> dev` after `pnpm build`. The Vite examples also run against source-linked output from `pnpm dev`; the CLI and API examples load the compiled `dist` package from Node and require `pnpm build`.
 
 ## Deployments
 

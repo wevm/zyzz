@@ -1,5 +1,5 @@
 {
-  "name": "@zyzz/example-react",
+  "name": "@zyzz/example-vite-svelte",
   "private": true,
   "type": "module",
   "scripts": {
@@ -7,13 +7,11 @@
     "dev": "vite --configLoader runner"
   },
   "dependencies": {
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "svelte": "5.57.0",
     "zyzz": "workspace:*"
   },
   "devDependencies": {
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "typescript": "5.9.3",
     "vite": "^8.2.2"
   }

@@ -60,6 +60,9 @@ jobs:
       - uses: ./.github/actions/install-dependencies
       - name: Build library
         run: pnpm build
+      - name: Link workspace binaries
+        # pnpm links a workspace bin only when its file exists, so the CLI needs relinking after the library build.
+        run: pnpm --filter "./examples/*" rebuild
       - name: Build example
         env:
           EXAMPLE: ${{ matrix.example }}

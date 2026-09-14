@@ -4,9 +4,9 @@
 pnpm examples
 ```
 
-Run from the repository root after `pnpm install`. The command links Zyzz to source with `pnpm dev`, then starts the workspace package’s dev server. Vite’s config runner loads the source-linked TypeScript plugin.
+Run from the repository root after `pnpm install`. The command builds Zyzz, then starts every example's dev server. Vite’s config runner also loads the source-linked TypeScript plugin after `pnpm dev`.
 
-Vite handles JSX and Zyzz handles styles with `plugins: [zyzz()]`. After linking, `pnpm dev` also works from this directory.
+Vite handles JSX and Zyzz handles styles with `plugins: [zyzz()]`. After building or linking, `pnpm dev` also works from this directory.
 
 ```tsx
 import { css } from './zyzz.config.js'
@@ -37,6 +37,6 @@ export function Button() {
 
 Each example keeps styles beside its component and spreads normal props onto native elements. Advanced stylesheet descriptors follow browser support; print rules are visible in print preview.
 
-`variants`, `cx`, default-theme imports, and native output remain separate implementation work. This client-rendered example does not demonstrate SSR hydration or the optional saved-preference initialization script. Compiler/CLI and packed-library workflows remain in the [compilation guide](../../docs/guides/compilation.md).
+`variants`, `cx`, default-theme imports, and native output remain separate implementation work. This client-rendered example does not demonstrate SSR hydration or the optional saved-preference initialization script. The [cli-react](../cli-react) and [api-react](../api-react) examples cover CLI and compiler-API workflows; packed-library workflows remain in the [compilation guide](../../docs/guides/compilation.md).
 
 `src/srgb.icc` is the Little CMS built-in sRGB profile used by the repository conformance fixture. Its embedded copyright permits free use. Font palette/feature examples are authored descriptors with system-font fallbacks; no color font is bundled.

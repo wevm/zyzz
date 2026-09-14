@@ -1,0 +1,50 @@
+# React + Compiler API
+
+```sh
+pnpm build
+pnpm --dir examples/api-react dev
+```
+
+Run from the repository root after `pnpm install`. Node loads `zyzz/node` from the built package; `pnpm examples` runs the same steps for every example.
+
+Neither the CLI nor a Vite plugin is involved. `scripts/build.ts` drives compilation through `Host` from `zyzz/node`, then bundles the compiled tree with Vite's JavaScript API:
+
+```ts
+import * as Vite from 'vite'
+import { Host } from 'zyzz/node'
+
+const host = await Host.create({ outDir, packageId: 'api-react', root })
+try {
+  const result = await host.build()
+  await Fs.writeFile(Path.join(outDir, 'styles.css'), stylesheet(result.files))
+} finally {
+  await host.close()
+}
+
+await Vite.build({ configFile: false, root })
+```
+
+`scripts/dev.ts` uses `host.watch` instead. Each successful build regenerates the stylesheet index, and the Vite dev server starts after the first one.
+
+## Stylesheet Index
+
+`Host.build` resolves with the complete artifact list. The scripts derive `.zyzz/styles.css` from it, importing `zyzz.shared.css` before every non-empty module stylesheet, so `index.html` links one file and new source modules need no HTML edits. This is the reason to prefer the API over the CLI here; the [cli-react](../cli-react) example links each stylesheet by hand.
+
+Authored source stays unaware of compiled artifacts. Relative imports inside compiled modules resolve within `.zyzz`, so this example keeps assets out of `src`.
+
+Both scripts pass `build.cssTarget` for Chrome 123, Firefox 120, and Safari 17.5. The Zyzz Vite plugin applies these targets itself; without it, Vite's default target lowers `light-dark()` and inherited scheme changes stop working.
+
+## Feature Map
+
+| Source                  | Capabilities                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `scripts/build.ts`      | `Host.create`, `host.build`, artifact list, Vite `build`                                         |
+| `scripts/dev.ts`        | `host.watch`, error events preserving the last output, Vite `createServer`                       |
+| `src/zyzz.config.ts`    | Named themes, light/dark pairs, extensions, tokens, aliases, property-specific scales, layers    |
+| `src/App.tsx`           | Theme selection, system scheme, nested scopes, global CSS in a named layer                       |
+| `src/Styling.tsx`       | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides |
+| `src/Dynamic.tsx`       | Typed runtime inputs, `variable()`, registration, static and inline `variables`                  |
+| `src/Relationships.tsx` | Empty `css()`, `selectors`, hover, data attributes, nth-child, sibling selectors, `:has()`       |
+| `src/Motion.tsx`        | Local/imported keyframes, starting styles, reduced motion                                        |
+
+See [Host.create](../../docs/api/node/Host/create.md) for `css` processing options and the [compilation guide](../../docs/guides/compilation.md) for library publishing.

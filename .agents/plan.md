@@ -19,7 +19,7 @@ Stack these PRs in order. The first targets #149's branch while that documentati
 | A3  | `feat: configure css output on authoring helpers`            | Add `Config.create({ cssOutput })`, inference, structural diagnostics, and propagation through bound styles, variants, theme handles, source extraction, aliases, and re-exports. Align root defaults, cache identities, and generated props/classes with the selected mode.           | Consumer types reject invalid modes; source-to-CSS integrations prove atomic defaults, grouped opt-in, renderer independence, dynamic slots, finite variants, source tracing, and mode-switch invalidation. No accepted option is silently ignored.                                                                  |
 | A4  | `feat: preserve css output across packed composition`        | Version packed contracts to retain defining modes and matching identities. Preserve static/dynamic `cx`, defaults, compounds, conditional choices, payload bindings, and mixed-mode library composition. Define compatibility diagnostics for older contracts where needed.            | Independent packed consumers exercise all four producer/consumer mode combinations, declaration inference, duplicate runtimes, stylesheet loading order, partial overrides, and removal of stale bindings. No runtime CSS generation or metadata leakage.                                                            |
 | A5  | `feat: align css output across cli and compiler paths`       | Integrate both modes with the default compiler and CSS-only opt-out. Share extraction/runtime naming, explicit-ID requirements without the plugin, asset/maps delivery, and owned-output recovery. Reconcile #148 and any already-landed CLI redesign rather than duplicate that work. | Real standalone and plugin consumers produce matching classes and behavior in both modes. Exercise explicit IDs, missing-ID diagnostics, defaults, build/watch, configuration changes, add/edit/remove/rename, failure preservation, and cleanup. Keep source compilation enabled by default, with explicit opt-out. |
-| A6  | `test: accept configurable css output across web frameworks` | Complete React, Solid, Svelte, HTML, and Next.js Webpack/Turbopack acceptance; run matched production rendering and full-delivery benchmarks for both modes. Reconcile the gate below and promote only verified docs.                                                                  | Development/production, packed consumers, SSR/hydration or HTML serialization, source maps, navigation, and refresh/recovery pass. Report raw/gzip/Brotli CSS/JS/class/attribute bytes, total delivery, rule counts, compile/watch and render costs with every comparison lane and existing gate retained.           |
+| A6  | `test: accept configurable css output across web frameworks` | Complete React, Solid, Svelte, HTML, and Next.js Webpack/Turbopack acceptance; run matched production rendering and full-delivery benchmarks using grouped output. Reconcile the gate below and promote only verified docs.                                                            | Development/production, packed consumers, SSR/hydration or HTML serialization, source maps, navigation, and refresh/recovery pass. Report raw/gzip/Brotli CSS/JS/class/attribute bytes, total delivery, rule counts, compile/watch and render costs with every comparison lane and existing gate retained.           |
 
 A1 → A2 → A3 → A4 → A5 → A6 is the review order. Keep dependent PRs draft while their required behavior or checks remain incomplete. Every PR includes focused integration evidence and a small usage/output example; A6 consolidates evidence rather than postponing correctness tests.
 
@@ -50,17 +50,31 @@ Initial same-process measurements use 100 styles with color, padding, and displa
 | Unique   | Atomic          | 1.911   | 10,048 / 3,072 / 2,386        | 10,315               |
 | Unique   | Grouped         | 1.659   | 7,772 / 1,839 / 1,402         | 4,184                |
 
-Both new modes regress against the baseline in this diagnostic. Class maps are not complete delivered JavaScript or markup and must not be added to transfer totals without accounting for their actual use. A6 retains matched framework lanes, complete delivery, browser timings, and existing thresholds; no performance advantage is established.
+Both new modes regress against the baseline in this diagnostic. Class maps are not complete delivered JavaScript or markup and must not be added to transfer totals without accounting for their actual use. A6 retains matched grouped framework lanes, complete delivery, browser timings, and existing thresholds; no performance advantage is established.
 
-CI literal/theme transfer comparisons and pure-emitter benchmarks select grouped output. Runtime/render comparisons use config-bound grouped helpers from A3 onward. This benchmark choice does not change the atomic application default. Existing competitor and regression thresholds remain enforced; atomic performance acceptance remains in A6.
+CI literal/theme transfer comparisons and pure-emitter benchmarks select grouped output. Runtime/render comparisons use config-bound grouped helpers from A3 onward. This benchmark choice does not change the atomic application default. Existing competitor and regression thresholds remain enforced; atomic correctness remains required; performance comparisons use grouped output.
 
 ### A5 Implementation
+
+A5 is [#156](https://github.com/wevm/zyzz/pull/156), stacked on #153.
 
 A5 reconciles merged #148 and #154 above A4. The CLI compiles source and CSS by default; `--css-only` emits only CSS and CSS maps. Vite enables compilation by default and supports `compiler: false`.
 
 Fixed runtime identities use the selected emitter. Atomic CSS repeats the fixed selector for individual declarations; grouped CSS retains ordered blocks. Empty token-free configs need no identity. Named themes, dynamic styles, variants, variables, and referenced declarations retain explicit-ID requirements without compilation.
 
 The integration matrix covers atomic/grouped × compiled/original source, published CLI builds, browser rendering, watch configuration switches, failure preservation, rename/removal, owned-file cleanup, and both termination signals. Framework acceptance and grouped benchmark evidence belong to A6.
+
+### A6 Implementation
+
+A6 is [#157](https://github.com/wevm/zyzz/pull/157), stacked on #156. CI and review follow-up are a separate next pass; both PRs remain drafts.
+
+A6 covers both output modes through React, Solid, Svelte, HTML, and Next.js Webpack/Turbopack. Framework fixtures consume an archive built with the opposite mode; the independent A4 corpus retains all four producer/consumer combinations and both stylesheet loading orders.
+
+The lifecycle matrix verifies development and production CSS, SSR/hydration or HTML serialization, dynamic updates/removal, CSS edits, diagnostics/recovery, and source maps. Next.js also verifies route navigation, streaming, fonts, config edits, and packed client call-site maps.
+
+Local evidence: eight React/Solid/Svelte/HTML lifecycle cases, four Next.js mode/bundler cases, and three framework source-map cases pass. Full and focused TypeScript checks and three affected type-benchmark fixtures pass. The CLI watch matrix still has intermittent failures; its acceptance remains open.
+
+Performance comparisons select grouped output. Literal/theme transfer, runtime/markup delivery, and production React timing lanes retain every competitor and existing threshold. Atomic behavior is still verified throughout correctness tests. One unique-style raw-byte comparison remains a known pre-A5 loss; no threshold is relaxed.
 
 ### Acceptance Gate
 
@@ -71,7 +85,7 @@ The integration matrix covers atomic/grouped × compiled/original source, publis
 - [ ] Preserve identity-only `css()` and interpolated selector references independently of shared declaration classes. Dynamic applications select classes and assign fixed variables without generating CSS rules.
 - [ ] Test static/dynamic `cx`, defaults/compounds/conditional variants, bindings, and mixed-mode packed libraries. Class-string order alone must not determine override behavior.
 - [ ] Verify CLI/plugin parity, explicit-ID behavior without the plugin, SSR/hydration, source maps, add/edit/remove recovery, and switching configuration mode without stale CSS or metadata.
-- [ ] Report raw/gzip/Brotli CSS, JS/class/attribute bytes and combined delivery, rule counts, compile/watch time, and browser render costs on repeated, unique, conditional, and override-heavy workloads. Keep all comparison lanes and existing gates; measure both explicit modes without choosing one automatically.
+- [ ] Report raw/gzip/Brotli CSS, JS/class/attribute bytes and combined delivery, rule counts, compile/watch time, and browser render costs on repeated, unique, conditional, and override-heavy workloads. Keep all comparison lanes and existing gates; use grouped output for performance comparisons and both modes for correctness.
 
 See [CSS Output](../docs/guides/css-output.md) for the proposed usage and output boundary.
 

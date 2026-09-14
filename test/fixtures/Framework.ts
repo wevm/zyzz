@@ -1,4 +1,5 @@
 /** Verifies real framework consumers through types, Vite, SSR, and Chromium. @module */
+import * as Trace from '@jridgewell/trace-mapping'
 import * as ChildProcess from 'node:child_process'
 import * as Fs from 'node:fs/promises'
 import * as Module from 'node:module'
@@ -40,9 +41,19 @@ export async function verify(options: verify.Options) {
       { cwd: root, timeout: 120000 },
     )
 
-    await VariantLibrary.create(root, { output: options.output ?? 'html' })
+    await VariantLibrary.create(root, {
+      output: options.output ?? 'html',
+      cssOutput: options.cssOutput === 'atomic' ? 'grouped' : 'atomic',
+    })
 
-    for (const [name, content] of Object.entries(options.files))
+    const files = {
+      ...options.files,
+      'styles.ts': options.files['styles.ts'].replace(
+        'Config.create({',
+        `Config.create({ cssOutput: '${options.cssOutput}',`,
+      ),
+    }
+    for (const [name, content] of Object.entries(files))
       await Fs.writeFile(Path.join(root, name), content)
 
     const require = Module.createRequire(Path.join(root, 'package.json'))
@@ -193,7 +204,10 @@ export async function verify(options: verify.Options) {
 
       await page.waitForFunction(
         'getComputedStyle(document.querySelector("#card")).width === "100px"',
-      )
+      ).catch(async (error) => {
+        const detail = await page.locator('#card').evaluate(element => ({ html: element.outerHTML, width: getComputedStyle(element).width, rules: [...document.styleSheets].flatMap(sheet => [...sheet.cssRules].map(rule => rule.cssText)).filter(rule => [...element.classList].some(name => rule.includes(name))) }))
+        throw new Error(`${String(error)}\n${JSON.stringify({ production, errors, detail })}`)
+      })
 
       expect(
         await page
@@ -280,7 +294,10 @@ export async function verify(options: verify.Options) {
       await page.locator('#toggle').click()
       await page.waitForFunction(
         'getComputedStyle(document.querySelector("#card")).width === "100px"',
-      )
+      ).catch(async (error) => {
+        const detail = await page.locator('#card').evaluate(element => ({ html: element.outerHTML, width: getComputedStyle(element).width, rules: [...document.styleSheets].flatMap(sheet => [...sheet.cssRules].map(rule => rule.cssText)).filter(rule => [...element.classList].some(name => rule.includes(name))) }))
+        throw new Error(`${String(error)}\n${JSON.stringify({ production, errors, detail })}`)
+      })
 
       expect(
         await page
@@ -294,10 +311,38 @@ export async function verify(options: verify.Options) {
       ).toMatchInlineSnapshot('0')
 
       if (!production) {
+        const prefix = files['styles.ts']
+          .slice(0, files['styles.ts'].indexOf('backgroundColor'))
+          .split('\n')
+        let traced = false
+        for (const module of server!.environments.client.moduleGraph.idToModuleMap.values()) {
+          if (!module.id?.startsWith('\0zyzz:')) continue
+          const loaded = await server!.environments.client.pluginContainer.load(
+            module.id,
+          )
+          if (!loaded || typeof loaded === 'string' || !loaded.map) continue
+          const map = new Trace.TraceMap(
+            typeof loaded.map === 'string'
+              ? loaded.map
+              : JSON.stringify(loaded.map),
+          )
+          Trace.eachMapping(map, (mapping) => {
+            if (
+              mapping.source?.replaceAll('\\', '/').endsWith('/styles.ts') &&
+              mapping.originalLine === prefix.length &&
+              mapping.originalColumn === prefix.at(-1)!.length
+            )
+              traced = true
+          })
+        }
+        expect(traced).toMatchInlineSnapshot('true')
+      }
+
+      if (!production) {
         const errorStart = errors.length
         await Fs.writeFile(
           Path.join(root, 'styles.ts'),
-          options.files['styles.ts'].replace("'#0066cc'", 'unknownColor()'),
+          files['styles.ts'].replace("'#0066cc'", 'unknownColor()'),
         )
         const overlay = await page.waitForFunction(() =>
           document
@@ -307,7 +352,7 @@ export async function verify(options: verify.Options) {
         expect(await overlay.jsonValue()).toMatchInlineSnapshot('true')
         await Fs.writeFile(
           Path.join(root, 'styles.ts'),
-          options.files['styles.ts'].replace('#0066cc', '#117755'),
+          files['styles.ts'].replace('#0066cc', '#117755'),
         )
         await page.locator('vite-error-overlay').waitFor({ state: 'detached' })
         await page.waitForFunction(
@@ -365,6 +410,8 @@ export async function verify(options: verify.Options) {
 /** Inputs supplied by each real framework fixture. */
 export declare namespace verify {
   type Options = {
+    /** Consumer mode; the packed producer uses the opposite representation. */
+    cssOutput: 'atomic' | 'grouped'
     /** Exact consumer dependency versions. */
     dependencies: Record<string, string>
     /** Application modules and type-contract probes. */

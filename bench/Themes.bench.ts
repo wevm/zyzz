@@ -50,7 +50,7 @@ for (const count of [10, 100]) {
                 JSON.stringify({
                   count,
                   css,
-                  cssOutput: library === 'zyzz' ? 'grouped' : undefined,
+                  cssOutput: library.startsWith('zyzz') ? 'grouped' : undefined,
                   javascript,
                   library,
                   targets: fixture.targets,

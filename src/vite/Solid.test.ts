@@ -4,14 +4,19 @@ import * as Framework from '../../test/fixtures/Framework.js'
 import * as Fixture from '../../test/fixtures/Solid.js'
 
 describe('zyzz', () => {
-  test('Solid types, SSR, hydration, signals, themes, CSS edits, and production', async () => {
-    await Framework.verify({
-      dependencies: { 'solid-js': '1.9.9', 'vite-plugin-solid': '2.11.8' },
-      files: Fixture.files,
-      jsxImportSource: 'solid-js',
-      name: 'solid',
-      plugin: 'vite-plugin-solid',
-      pluginOptions: { ssr: true },
-    })
-  }, 240000)
+  test.each(['atomic', 'grouped'] as const)(
+    'Solid %s SSR, hydration, updates, and production',
+    async (cssOutput) => {
+      await Framework.verify({
+        cssOutput,
+        dependencies: { 'solid-js': '1.9.9', 'vite-plugin-solid': '2.11.8' },
+        files: Fixture.files,
+        jsxImportSource: 'solid-js',
+        name: 'solid',
+        plugin: 'vite-plugin-solid',
+        pluginOptions: { ssr: true },
+      })
+    },
+    240000,
+  )
 })

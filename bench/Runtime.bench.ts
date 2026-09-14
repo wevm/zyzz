@@ -132,6 +132,7 @@ for (const count of [10, 100])
                           classNames,
                           count,
                           css,
+                          cssOutput: library === 'zyzz' ? 'grouped' : undefined,
                           helperArtifact,
                           javascript,
                           kind,

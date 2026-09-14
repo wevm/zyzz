@@ -1,7 +1,7 @@
 # CSS Output
 
 > [!NOTE]
-> Configurable output is supported by the shared compiler, source config, and version 17 packed contracts. CLI and Vite support both compiler settings. Complete framework/benchmark acceptance remains in progress.
+> Configurable output is supported by the shared compiler, source config, and version 17 packed contracts. CLI and Vite support both compiler settings. Framework lifecycle tests cover both modes; performance comparisons use grouped output.
 
 Choose the CSS representation on the authoring config:
 
@@ -66,7 +66,7 @@ These names illustrate the representation, not a class-name API. Applications co
 
 ## Semantics
 
-Atomic identity includes the property/value, importance, selector, conditions, cascade layer, theme/variable references, and ordering context. Identical declarations share only when doing so preserves precedence. Ordered same-property fallback sequences may remain together.
+Atomic deduplication accounts for property/value, importance, selector, conditions, cascade layer, theme/variable references, and ordering context. Identical declarations share only when doing so preserves precedence. Ordered same-property fallback sequences may remain together.
 
 Shorthand resets, logical/physical overlap, and repeated overrides require contextual atoms or proven normalization. Atomic output must not silently fall back to grouped style blocks. Identity-only styles and interpolated selector references retain stable identities even when declaration classes are shared.
 
@@ -78,10 +78,10 @@ The CLI and Vite enable source compilation by default. `zyzz build --css-only`, 
 
 Without compilation, dynamic styles, variants, variables, named themes, and selector identities require explicit IDs. Static token-free styles derive their identities from authored data. Atomic rules can share a fixed runtime selector while retaining separate declarations. No CSS rules are emitted or inserted at runtime.
 
-Version 17 packed libraries retain their defining mode and matching class/CSS metadata. Consumer configuration does not reinterpret published classes. Archive fixtures verify all producer/consumer mode pairs, dynamic composition, and both stylesheet orders. Complete framework lifecycle and watch acceptance remain open.
+Version 17 packed libraries retain their defining mode and matching class/CSS metadata. Consumer configuration does not reinterpret published classes. Archive fixtures verify all producer/consumer mode pairs, dynamic composition, and both stylesheet orders. React, Solid, Svelte, HTML, and both Next.js bundlers verify matching rendering and updates.
 
 Minification and browser-target processing remain separate. Final processing may shorten or merge equivalent syntax while preserving class identity and behavior; it does not change the selected authoring mode.
 
-Measure both modes across repeated and mostly unique styles, including CSS, JavaScript, class strings, combined transfer, compilation, and rendering. Atomic output is the default, not a claim that every workload is smaller or faster.
+Performance comparisons use grouped output across repeated and mostly unique styles, including CSS, JavaScript, class strings, combined transfer, compilation, and rendering. Atomic remains the application default and has correctness coverage; no atomic performance advantage is claimed.
 
 See [Config.create](../api/core/Config/create.md#optionscssoutput) for the option.

@@ -49,7 +49,7 @@ Import `Button` normally. The named helpers retain inferred tokens; compilation 
 ## Choose Compilation
 
 - **Bundler:** follow [Vite Setup](vite.md). The plugin transforms source imports and delivers CSS automatically.
-- **Next.js:** the [proposed setup](next.md) remains unimplemented.
+- **Next.js:** wrap the existing configuration with [`zyzz`](next.md); both Webpack and Turbopack are verified.
 - **CLI:** use [`zyzz build` or `zyzz dev`](cli.md) for standalone output, downstream builds, and library distribution.
 
 Importing config alone does not emit CSS. The [CLI](cli.md) compiles source modules and CSS by default; `--css-only` emits CSS for unchanged authoring source. Vite delivers CSS automatically and enables source optimization by default; `zyzz({ compiler: false })` disables optimization. Without compilation, identity-bearing declarations require explicit IDs.

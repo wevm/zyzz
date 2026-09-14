@@ -994,7 +994,7 @@ Conflicting shorthand/longhand declarations, overlapping logical/physical proper
 
 Emit only reachable rules and used token variables. Explicit theme scopes retain complete values for every live contract key. Independently compiled libraries remain correct without whole-application deduplication; cross-library deduplication is an optional consumer optimization.
 
-Measure raw and compressed CSS, generated class-string bytes, total transferred bytes, rule count, compilation time, incremental updates, and representative browser style recalculation. Measure both configured modes on repeated and mostly unique styles. Preserve the selected mode and atomic default regardless of measured size; do not change readable names or generate rules at runtime.
+Measure raw and compressed CSS, generated class-string bytes, total transferred bytes, rule count, compilation time, incremental updates, and representative browser style recalculation. Use grouped output for performance comparisons on repeated and mostly unique styles; verify both modes for correctness. Preserve the selected mode and atomic default regardless of measured size; do not change readable names or generate rules at runtime.
 
 ### Compiler and Minifier Responsibilities
 

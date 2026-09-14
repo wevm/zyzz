@@ -2,6 +2,8 @@
  * Builds production React fixtures and persists Browser Mode measurements.
  * @module
  */
+import * as ChildProcess from 'node:child_process'
+import * as Os from 'node:os'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
@@ -24,6 +26,8 @@ export type Group = Options & {
   pass: number
   /** Per-operation timings after warmup. */
   samples: readonly RenderFixture.Sample[]
+  /** CSS style rules, including nested conditional rules, counted outside timing. */
+  styleRules: number
 }
 
 /** Creates server commands scoped to a single Vitest configuration. */
@@ -58,6 +62,7 @@ export function commands() {
 
     const javascript = result.outputFiles[0]!.text
     const sizes = {
+      cssOutput: options.library === 'zyzz' ? 'grouped' : undefined,
       cssRaw: Buffer.byteLength(output.css),
       cssBrotli: Zlib.brotliCompressSync(output.css).byteLength,
       cssGzip: Zlib.gzipSync(output.css).byteLength,
@@ -87,7 +92,26 @@ export function commands() {
     await Fs.mkdir(directory, { recursive: true })
     await Fs.writeFile(
       Path.join(directory, 'render-timings.json'),
-      JSON.stringify({ groups, userAgent, version: 1 }, null, 2),
+      JSON.stringify(
+        {
+          groups,
+          userAgent,
+          version: 1,
+          zyzzCssOutput: 'grouped',
+          node: process.version,
+          platform: `${Os.platform()} ${Os.arch()}`,
+          cpu: Os.cpus()[0]?.model,
+          revision: ChildProcess.execFileSync('git', ['rev-parse', 'HEAD'], {
+            encoding: 'utf8',
+          }).trim(),
+          warmupCycles: 3,
+          sampleCycles: 20,
+          scope:
+            'Production React mounts, changed-prop updates, and remounts. Compilation, loading, and correctness checks are outside timing; forward and reversed library passes share one runner.',
+        },
+        null,
+        2,
+      ),
     )
   }
 

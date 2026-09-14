@@ -74,7 +74,22 @@ test('production React mount, update, and remount', async () => {
             for (let sample = 0; sample < 20; sample++)
               samples.push(...(await fixture.cycle()))
 
-            groups.push({ ...options, pass, samples })
+            function count(rules: CSSRuleList): number {
+              return [...rules].reduce(
+                (total, rule) =>
+                  total +
+                  (rule.type === CSSRule.STYLE_RULE ? 1 : 0) +
+                  ('cssRules' in rule
+                    ? count((rule as CSSGroupingRule).cssRules)
+                    : 0),
+                0,
+              )
+            }
+            const styleRules = [...iframe.contentDocument!.styleSheets].reduce(
+              (total, sheet) => total + count(sheet.cssRules),
+              0,
+            )
+            groups.push({ ...options, pass, samples, styleRules })
             fixture.dispose()
             await commands.saveRender(groups, navigator.userAgent)
           } finally {

@@ -41,85 +41,102 @@ export function updateDom(element) {
 `
 
 describe('create', () => {
-  test('compiled bindings survive SSR, hydration, updates, and attribute serialization', async () => {
-    const result = Transform.compile({ moduleId: 'fixture/card.ts', source })
+  test.each(['atomic', 'grouped'] as const)(
+    '%s bindings survive SSR, hydration, updates, and HTML serialization',
+    async (cssOutput) => {
+      const result = Transform.compile({
+        moduleId: 'fixture/card.ts',
+        source: source
+          .replace(
+            "import { css, Config } from 'zyzz';",
+            `import { Config } from 'zyzz'; const { css } = Config.create({ cssOutput: '${cssOutput}' });`,
+          )
+          .replace(
+            "Config.create({ output: 'html'",
+            `Config.create({ cssOutput: '${cssOutput}', output: 'html'`,
+          ),
+      })
 
-    const bundle = await Esbuild.build({
-      alias: {
-        'zyzz/runtime': Path.resolve('src/runtime/index.ts'),
-        'zyzz/web': Path.resolve('src/web/index.ts'),
-      },
-      bundle: true,
-      define: { 'process.env.NODE_ENV': '"production"' },
-      format: 'iife',
-      globalName: 'Fixture',
-      metafile: true,
-      stdin: { contents: result.code, loader: 'ts', resolveDir: process.cwd() },
-      write: false,
-    })
+      const bundle = await Esbuild.build({
+        alias: {
+          'zyzz/runtime': Path.resolve('src/runtime/index.ts'),
+          'zyzz/web': Path.resolve('src/web/index.ts'),
+        },
+        bundle: true,
+        define: { 'process.env.NODE_ENV': '"production"' },
+        format: 'iife',
+        globalName: 'Fixture',
+        metafile: true,
+        stdin: {
+          contents: result.code,
+          loader: 'ts',
+          resolveDir: process.cwd(),
+        },
+        write: false,
+      })
 
-    expect(
-      Object.values(bundle.metafile!.outputs).some((output) =>
-        Object.entries(output.inputs).some(
-          ([name, input]) =>
-            input.bytesInOutput > 0 &&
-            /oxc-parser|compiler\/|web\/Css/.test(name),
+      expect(
+        Object.values(bundle.metafile!.outputs).some((output) =>
+          Object.entries(output.inputs).some(
+            ([name, input]) =>
+              input.bytesInOutput > 0 &&
+              /oxc-parser|compiler\/|web\/Css/.test(name),
+          ),
         ),
-      ),
-    ).toMatchInlineSnapshot(`false`)
+      ).toMatchInlineSnapshot(`false`)
 
-    const browser = await chromium.launch({ headless: true })
+      const browser = await chromium.launch({ headless: true })
 
-    try {
-      const page = await browser.newPage()
-      const errors: string[] = []
+      try {
+        const page = await browser.newPage()
+        const errors: string[] = []
 
-      page.on('pageerror', (error) => errors.push(error.message))
-      await page.setContent(
-        '<style>' +
-          result.css +
-          '</style><main style="width:400px" id="react"></main><main style="width:400px" id="dom"></main>',
-      )
-      await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
+        page.on('pageerror', (error) => errors.push(error.message))
+        await page.setContent(
+          '<style>' +
+            result.css +
+            '</style><main style="width:400px" id="react"></main><main style="width:400px" id="dom"></main>',
+        )
+        await page.addScriptTag({ content: bundle.outputFiles[0]!.text })
 
-      const props = await page.evaluate<css.Props>('Fixture.props("25%")')
-      const markup = Server.renderToString(
-        React.createElement('div', { id: 'card', ...props }),
-      )
+        const props = await page.evaluate<css.Props>('Fixture.props("25%")')
+        const markup = Server.renderToString(
+          React.createElement('div', { id: 'card', ...props }),
+        )
 
-      await page.evaluate((html) => {
-        document.querySelector('#react')!.innerHTML = html
-      }, markup)
-      await page.evaluate(
-        `window.original = document.querySelector('#card'); Fixture.hydrate(); document.querySelector('#dom').innerHTML = '<div id="plain" ' + Fixture.html() + '></div>'; window.plain = document.querySelector('#plain');`,
-      )
-      await page.waitForFunction(
-        'document.querySelector("#card").style.opacity === "0.5"',
-      )
+        await page.evaluate((html) => {
+          document.querySelector('#react')!.innerHTML = html
+        }, markup)
+        await page.evaluate(
+          `window.original = document.querySelector('#card'); Fixture.hydrate(); document.querySelector('#dom').innerHTML = '<div id="plain" ' + Fixture.html() + '></div>'; window.plain = document.querySelector('#plain');`,
+        )
+        await page.waitForFunction(
+          'document.querySelector("#card").style.opacity === "0.5"',
+        )
 
-      expect(
-        await page.locator('#plain').getAttribute('data-note'),
-      ).toMatchInlineSnapshot(`""<&>"`)
-      expect(
-        await page
-          .locator('#plain')
-          .evaluate((element) => getComputedStyle(element).width),
-      ).toMatchInlineSnapshot(`"100px"`)
-      expect(
-        await page
-          .locator('#plain')
-          .evaluate((element) => getComputedStyle(element).colorScheme),
-      ).toMatchInlineSnapshot(`"dark"`)
-      expect(
-        await page
-          .locator('#plain')
-          .evaluate((element) => getComputedStyle(element).marginTop),
-      ).toMatchInlineSnapshot(`"12px"`)
-      expect(
-        await page
-          .locator('#plain')
-          .evaluate((element) => element.getAttributeNames().sort()),
-      ).toMatchInlineSnapshot(`
+        expect(
+          await page.locator('#plain').getAttribute('data-note'),
+        ).toMatchInlineSnapshot(`""<&>"`)
+        expect(
+          await page
+            .locator('#plain')
+            .evaluate((element) => getComputedStyle(element).width),
+        ).toMatchInlineSnapshot(`"100px"`)
+        expect(
+          await page
+            .locator('#plain')
+            .evaluate((element) => getComputedStyle(element).colorScheme),
+        ).toMatchInlineSnapshot(`"dark"`)
+        expect(
+          await page
+            .locator('#plain')
+            .evaluate((element) => getComputedStyle(element).marginTop),
+        ).toMatchInlineSnapshot(`"12px"`)
+        expect(
+          await page
+            .locator('#plain')
+            .evaluate((element) => element.getAttributeNames().sort()),
+        ).toMatchInlineSnapshot(`
         [
           "class",
           "data-note",
@@ -128,51 +145,53 @@ describe('create', () => {
         ]
       `)
 
-      // Wait for React's actual hydration commit before issuing an update.
-      await page.waitForFunction(
-        `document.documentElement.dataset.hydrated === 'true'`,
-      )
-      await page.evaluate('Fixture.update(); Fixture.updateDom(window.plain)')
+        // Wait for React's actual hydration commit before issuing an update.
+        await page.waitForFunction(
+          `document.documentElement.dataset.hydrated === 'true'`,
+        )
+        await page.evaluate('Fixture.update(); Fixture.updateDom(window.plain)')
 
-      for (const id of ['card', 'plain']) {
+        for (const id of ['card', 'plain']) {
+          expect(
+            await page
+              .locator('#' + id)
+              .evaluate((element) => getComputedStyle(element).width),
+          ).toMatchInlineSnapshot(`"300px"`)
+          expect(
+            await page
+              .locator('#' + id)
+              .evaluate((element) => getComputedStyle(element).marginTop),
+          ).toMatchInlineSnapshot(`"0px"`)
+          expect(
+            await page
+              .locator('#' + id)
+              .evaluate((element) => getComputedStyle(element).opacity),
+          ).toMatchInlineSnapshot(`"1"`)
+          expect(
+            await page
+              .locator('#' + id)
+              .evaluate((element) =>
+                (element as HTMLElement).style.getPropertyValue('--note'),
+              ),
+          ).toMatchInlineSnapshot(`""`)
+        }
+
         expect(
-          await page
-            .locator('#' + id)
-            .evaluate((element) => getComputedStyle(element).width),
-        ).toMatchInlineSnapshot(`"300px"`)
-        expect(
-          await page
-            .locator('#' + id)
-            .evaluate((element) => getComputedStyle(element).marginTop),
-        ).toMatchInlineSnapshot(`"0px"`)
-        expect(
-          await page
-            .locator('#' + id)
-            .evaluate((element) => getComputedStyle(element).opacity),
-        ).toMatchInlineSnapshot(`"1"`)
-        expect(
-          await page
-            .locator('#' + id)
-            .evaluate((element) =>
-              (element as HTMLElement).style.getPropertyValue('--note'),
-            ),
-        ).toMatchInlineSnapshot(`""`)
+          await page.evaluate(
+            'window.original === document.querySelector("#card") && window.plain === document.querySelector("#plain")',
+          ),
+        ).toMatchInlineSnapshot(`true`)
+
+        await page.evaluate('Fixture.unmount()')
+
+        expect(await page.locator('#react').innerHTML()).toMatchInlineSnapshot(
+          `""`,
+        )
+        expect(errors).toMatchInlineSnapshot(`[]`)
+      } finally {
+        await browser.close()
       }
-
-      expect(
-        await page.evaluate(
-          'window.original === document.querySelector("#card") && window.plain === document.querySelector("#plain")',
-        ),
-      ).toMatchInlineSnapshot(`true`)
-
-      await page.evaluate('Fixture.unmount()')
-
-      expect(await page.locator('#react').innerHTML()).toMatchInlineSnapshot(
-        `""`,
-      )
-      expect(errors).toMatchInlineSnapshot(`[]`)
-    } finally {
-      await browser.close()
-    }
-  }, 30000)
+    },
+    30000,
+  )
 })

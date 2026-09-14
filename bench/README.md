@@ -395,3 +395,13 @@ Delivery artifacts report raw/gzip/Brotli CSS, JavaScript, serialized attributes
 `src/variants.packed.bench.ts` measures compiler consumption of versioned contracts at 10/100 applications. Its publisher is shared with the independent npm-package acceptance fixture. Older compilers cannot compose those imported definitions; no baseline speed comparison is implied for that new operation.
 
 [Packed and web measurements](Web-variants.md) record matched compiler delivery, browser application timings, selection/binding diagnostics, and the render verification boundary.
+
+## CSS Output Acceptance
+
+Comparisons select grouped output. Configurable-output correctness suites retain atomic and grouped coverage across compiled and CSS-only CLI paths, Vite frameworks, HTML serialization, and both Next.js bundlers.
+
+`vp test bench bench/Compilation.bench.ts bench/Themes.bench.ts bench/Runtime.bench.ts --run --no-file-parallelism --outputJson bench/results/grouped-timings.json` records all comparison lanes and complete transfer artifacts. Runtime reports separate class/attribute/markup diagnostics from delivery totals to avoid double counting.
+
+`pnpm bench:render` runs the production React matrix with forward/reversed library passes, three warmup cycles and twenty measured cycles. Reports identify grouped Zyzz output, commit, runtime, hardware, sample boundaries, and CSS style-rule counts. Frame checkpoints do not measure paint CPU time.
+
+Next.js correctness runs both modes. Its native-CSS delivery comparison runs only for grouped output and records `next-webpack-grouped.json` and `next-turbopack-grouped.json`. Separate build timing samples are informational; correctness and transfer thresholds are unchanged.

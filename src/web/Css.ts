@@ -320,6 +320,17 @@ export function compile<
       domains.set(key, (domains.get(key) ?? '') + declaration)
     }
 
+    // Sharing individual properties cannot retain a multi-property conflict
+    // sequence (for example padding, padding-left, padding again).
+    for (const key of domains.keys()) {
+      const properties = new Set(
+        style.declarations
+          .filter(({ property }) => root(domain(canonical(property))) === key)
+          .map(({ property }) => property),
+      )
+      if (properties.size > 1) groups.set(key, false)
+    }
+
     for (const [key, value] of domains) {
       const previous = groups.get(key)
       groups.set(
@@ -358,7 +369,8 @@ export function compile<
     function emit(body: string, label: string, shared: boolean) {
       if (!body) return
 
-      const independent = options.composition === 'independent'
+      const independent =
+        mode === 'grouped' && options.composition === 'independent'
       const key = `${mode}:${body}`
       const previous = shared || independent ? identical.get(key) : undefined
       if (previous) {

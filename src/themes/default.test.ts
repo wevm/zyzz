@@ -107,7 +107,7 @@ variants({base:{color:'missing'}});`,
           .map((entry) => entry.code)
           .join('\n')
         expect(scripts.includes('Theme.define')).toMatchInlineSnapshot('false')
-        expect(scripts.includes('oklch(97.1%')).toMatchInlineSnapshot('false')
+        expect(scripts.includes('#0070f7')).toMatchInlineSnapshot('false')
         const server = await Vite.preview({
           ...config,
           preview: { host: '127.0.0.1', port: 0 },
@@ -130,8 +130,13 @@ variants({base:{color:'missing'}});`,
               .locator('button')
               .evaluate((element) => getComputedStyle(element).fontFamily),
           ).toMatchInlineSnapshot(
-            `"Geist, ui-sans-serif, system-ui, sans-serif"`,
+            `"Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji""`,
           )
+          expect(
+            await page
+              .locator('button')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot(`"rgb(0, 112, 247)"`)
           await page.setViewportSize({ width: 900, height: 800 })
           await page.waitForFunction(
             "getComputedStyle(document.querySelector('button')).padding === '24px'",

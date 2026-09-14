@@ -23,7 +23,7 @@ Bundled themes use independent `zyzz/themes/<name>` entrypoints. The MVP provide
 | `theme`    | The full theme for variants, scopes, extension, and target compilers |
 | `tokens`   | Raw token definitions for explicit composition with `Theme.define`   |
 
-The default theme bundles colors, typography, spacing, radii, and related design scales. Light and dark are color schemes within the theme. Additional themes follow the same entrypoint contract; consuming one theme must not include another theme's data or CSS.
+The default theme bundles colors, typography, spacing, radii, and related design scales. Its scales mirror Tailwind's default theme where the token contract permits, while its color scales and font stacks follow the Geist design system. Light and dark are color schemes within the theme. Additional themes follow the same entrypoint contract; consuming one theme must not include another theme's data or CSS.
 
 The exported `css` and `variants` alias `theme.css` and `theme.variants`, with identical inference, token identities, and output. `tokens` contains authored definitions; `theme.tokens` contains portable token references. Source adapters recognize these bindings through package exports and re-exports without executing theme modules.
 
@@ -849,7 +849,7 @@ Published libraries carry ordinary CSS plus contribution/layer metadata for comp
 
 Prior art: [vanilla-extract layer references](https://vanilla-extract.style/documentation/api/layer/) and [globalStyle](https://vanilla-extract.style/documentation/global-api/global-style/) inform typed contributions; [Astro](https://docs.astro.build/en/guides/styling/) and [Svelte](https://svelte.dev/docs/svelte/global-styles) demonstrate colocated global authoring. [Panda globals](https://panda-css.com/docs/concepts/writing-styles) and [Tailwind layers](https://tailwindcss.com/docs/adding-custom-styles) inform object declarations and standard CSS grouping. Project-wide unimported-module collection is Zyzz's explicit policy. Ordering follows the [CSS cascade specification](https://www.w3.org/TR/css-cascade-5/#layer-ordering).
 
-The reset is opt-in via `import 'zyzz/reset.css'` and declares a reset layer. Merely importing the core changes no global styles. Test coexistence with ordinary stylesheets, global rules, and independently packaged libraries in multiple load orders. Layer ordering does not turn arbitrary class concatenation into last-wins composition.
+The reset is opt-in via `import 'zyzz/reset.css'` and declares a reset layer containing Tailwind's preflight with its font fallbacks inlined. Merely importing the core changes no global styles. Test coexistence with ordinary stylesheets, global rules, and independently packaged libraries in multiple load orders. Layer ordering does not turn arbitrary class concatenation into last-wins composition.
 
 ## Theme scopes and extension
 

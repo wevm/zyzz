@@ -14,9 +14,26 @@ namespace styles {
 }
 ```
 
-The opt-in bundle supplies Tailwind's palette, breakpoint, radius, and font-size scales, a quarter-rem spacing scale, scalar typography, and Geist/Geist Mono font stacks with system fallbacks. It does not download or register fonts. `foreground` and `surface` provide light/dark semantic colors.
+The bundle mirrors Tailwind's default theme for every scale the theme contract supports and takes its colors and font stacks from the Geist design system. It does not download or register fonts.
 
-Palette and scale data come from the pinned Tailwind dependency; its MIT notice is retained in `src/themes/LICENSE.tailwind`. Raw `tokens` are independent of `theme.tokens` portable references and `theme.vars` web references.
+| Group           | Keys                                                                                                                                                                       | Source                               |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `color`         | `amber`, `blue`, `gray`, `grayAlpha`, `green`, `pink`, `purple`, `red`, `teal` in steps `100` to `1000`, `background.100`/`200`, `black`, `white`, `foreground`, `surface` | Geist                                |
+| `fontFamily`    | `sans`, `mono`, `serif`                                                                                                                                                    | Geist stacks over Tailwind fallbacks |
+| `fontSize`      | `xs` to `9xl`                                                                                                                                                              | Tailwind                             |
+| `fontWeight`    | `thin` to `black`                                                                                                                                                          | Tailwind                             |
+| `letterSpacing` | `tighter` to `widest`                                                                                                                                                      | Tailwind                             |
+| `lineHeight`    | `tight`, `snug`, `normal`, `relaxed`, `loose`                                                                                                                              | Tailwind                             |
+| `spacing`       | `px`, `0` to `96` whole steps of `0.25rem`                                                                                                                                 | Tailwind                             |
+| `borderRadius`  | `xs` to `4xl`                                                                                                                                                              | Tailwind                             |
+| `breakpoints`   | `sm` to `2xl`                                                                                                                                                              | Tailwind                             |
+| `containers`    | `3xs` to `7xl`                                                                                                                                                             | Tailwind                             |
+
+Geist color steps are light/dark pairs and switch with the ordinary color-scheme contract. Steps whose Geist values match in both schemes are single colors. `foreground` aliases `gray.1000` and `surface` aliases `background.100`. `grayAlpha` steps are translucent eight-digit hex values for overlays and borders.
+
+Tailwind's fractional spacing steps (`0.5`, `1.5`, `2.5`, `3.5`) are omitted because token paths reserve the dot separator. Tailwind groups outside the theme contract (shadows, blur, easing, animation, perspective, and paired font-size line heights) are not bundled. `sans` and `mono` lead with Geist and Geist Mono before Tailwind's system stacks. `serif` is Tailwind's stack because Geist provides no serif face.
+
+Scale data comes from the pinned Tailwind dependency, and its MIT notice is retained in `src/themes/LICENSE.tailwind`. Color values follow the published Geist design system. Raw `tokens` are independent of `theme.tokens` portable references and `theme.vars` web references.
 
 Themes can also define `breakpoints`, `containers`, and `containerNames`. These are compile-time query metadata, excluded from declaration references and emitted CSS variables. Thresholds use fixed nonnegative CSS lengths, with relative units preserved. Extensions may change existing thresholds; runtime theme scope changes do not change compiled thresholds. Nested condition authoring resolves aliases from these groups, including comparison and range forms.
 

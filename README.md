@@ -146,7 +146,7 @@ Token names infer by property, and compatible theme scopes change inherited valu
 
 #### Default Theme
 
-The `zyzz/themes/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `css` and `variants`, plus `theme` and raw `tokens`.
+The `zyzz/themes/default` entrypoint provides inferred colors, typography, spacing, and radius tokens through bound `css` and `variants`, plus `theme` and raw `tokens`. Scales mirror Tailwind's default theme, and colors and font stacks follow the Geist design system.
 
 ```ts
 import { css } from 'zyzz/themes/default'

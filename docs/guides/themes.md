@@ -33,7 +33,7 @@ namespace styles {
 const example = <button {...styles.button()}>Save</button>
 ```
 
-Token names are inferred from the config. Nested palettes use dotted paths; CSS literals win over colliding token names. See [Theme.define](../api/core/Theme/define.md) for supported groups and values.
+Token names are inferred from the config. Nested palettes use dotted paths. CSS literals win over colliding token names. See [Theme.define](../api/core/Theme/define.md) for supported groups and values.
 
 ### Property Mappings
 
@@ -63,7 +63,7 @@ namespace styles {
 
 `px`, `paddingX`, and `paddingHorizontal` each set left/right padding. Use logical targets such as `paddingInlineStart` and `paddingInlineEnd` for writing-direction-aware aliases. Aliases are optional and local to the config.
 
-`margin` and `padding` tokens augment `spacing`, taking precedence for matching keys. Either works without `spacing`. Likewise, `textColor` augments `color` for text only. A margin-only token cannot be used for padding; `textColor` does not supply background tokens.
+`margin` and `padding` tokens augment `spacing`, taking precedence for matching keys. Either works without `spacing`. Likewise, `textColor` augments `color` for text only. A margin-only token cannot be used for padding, and `textColor` does not supply background tokens.
 
 The example uses `padding.sm` for `px`, `margin.gutter` for margin, and `textColor.primary` for color. Later declarations override earlier aliases at equal importance. See [Config.create](../api/core/Config/create.md#optionsshorthands).
 
@@ -107,7 +107,7 @@ function App({ appearance }: { appearance: 'base' | 'mint' }) {
 }
 ```
 
-Changing the scope updates inherited token values while component styles stay the same. Single-theme configs expose `theme`; named catalogs expose `themes`. Independently defined themes do not share a contract merely because their token names match.
+Changing the scope updates inherited token values while component styles stay the same. Single-theme configs expose `theme`, and named catalogs expose `themes`. Independently defined themes do not share a contract merely because their token names match.
 
 <a id="dark-mode"></a>
 
@@ -132,7 +132,7 @@ Use `light dark` for system preference, or `light` / `dark` to force a scheme. T
 
 ### Restore Preferences
 
-Use an optional initialization script when preferences persist in localStorage. Render the default theme and scheme on `<html>`; place the inline script early in `<head>`, before stylesheets and visible content. It requires no cookies, provider, or preference listener.
+Use an optional initialization script when preferences persist in localStorage. Render the default theme and scheme on `<html>`, and place the inline script early in `<head>`, before stylesheets and visible content. It requires no cookies, provider, or preference listener.
 
 The following uses the named catalog from [Selecting a Theme](#selecting-a-theme):
 
@@ -160,7 +160,7 @@ export function Document({ nonce }: { nonce?: string }) {
 }
 ```
 
-The script derives the theme catalog and compiled classes from the config. An optional argument sets `storageKey`; its default is `'zyzz'`.
+The script derives the theme catalog and compiled classes from the config. An optional argument sets `storageKey`. Its default is `'zyzz'`.
 
 The application saves preferences under `zyzz`:
 
@@ -173,7 +173,7 @@ localStorage.setItem(
 
 The script reads this record once and updates only known theme classes and `document.documentElement.style.colorScheme`. Unrelated classes and styles remain intact. Unknown preferences, malformed data, or unavailable storage preserve the corresponding server-rendered defaults.
 
-React's `suppressHydrationWarning` is limited to the root attributes changed before hydration. Preference controls should initialize from the applied root state before changing it; the script does not synchronize component state or persist later changes. See [Config Script](../api/core/Config/script.md) for the full contract.
+React's `suppressHydrationWarning` is limited to the root attributes changed before hydration. Preference controls should initialize from the applied root state before changing it. The script does not synchronize component state or persist later changes. See [Config Script](../api/core/Config/script.md) for the full contract.
 
 ### Shared Configuration
 
@@ -219,7 +219,7 @@ Compile this module with [Transform.compile](../api/compiler/Transform/compile.m
 
 Use explicit `theme.tokens` paths to select tokens whose names collide with CSS literals. Dot access and literal string/numeric brackets are supported.
 
-Local `const` aliases such as `const css = theme.css`, destructuring/renaming, and alias chains are supported. Local themes and aliases must precede their uses. Use [Graph.compile](../api/compiler/Graph/compile.md) or the file host to link relative theme imports and re-exports; packed libraries supply [compiler metadata](../introduction/vite.md#theme-libraries). `theme.vars` supports direct scalar references and template interpolation, including imported and packed contracts. Standalone variable destructuring remains unsupported. See [source restrictions](../api/compiler/Source/extract.md#theme-source) for details.
+Local `const` aliases such as `const css = theme.css`, destructuring/renaming, and alias chains are supported. Local themes and aliases must precede their uses. Use [Graph.compile](../api/compiler/Graph/compile.md) or the file host to link relative theme imports and re-exports. Packed libraries supply [compiler metadata](../introduction/vite.md#theme-libraries). `theme.vars` supports direct scalar references and template interpolation, including imported and packed contracts. Standalone variable destructuring remains unsupported. See [source restrictions](../api/compiler/Source/extract.md#theme-source) for details.
 
 ### Compile Themes
 
@@ -234,4 +234,4 @@ const styles = Style.define({ card: { color: 'brand' } }, { theme })
 const output = Css.compile({ styles, themes: { base: theme } })
 ```
 
-Load `output.css` and apply `output.classes.card`; `output.themes.base` is the compiler's scope class. Token fallbacks work outside a scope, and unused tokens emit no declarations. See [Css.compile](../api/web/Css/compile.md) for compiler options and output.
+Load `output.css` and apply `output.classes.card`. `output.themes.base` is the compiler's scope class. Token fallbacks work outside a scope, and unused tokens emit no declarations. See [Css.compile](../api/web/Css/compile.md) for compiler options and output.

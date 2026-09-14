@@ -44,7 +44,7 @@ const example = (
 )
 ```
 
-Media thresholds measure the viewport; container thresholds measure the eligible ancestor. Aliases compile to literals, so switching theme scopes does not change them. Raw CSS queries and `@supports` remain supported design paths.
+Media thresholds measure the viewport. Container thresholds measure the eligible ancestor. Aliases compile to literals, so switching theme scopes does not change them. Raw CSS queries and `@supports` remain supported design paths.
 
 ### Style States
 
@@ -72,7 +72,7 @@ Do not concatenate classes to establish override priority. See [Style Relationsh
 
 ### Style Relationships
 
-`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
+`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element. Combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
 
 ```ts
 import { css } from 'zyzz'
@@ -89,7 +89,7 @@ namespace styles {
 }
 ```
 
-References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. The compiler checks interpolation identities; TypeScript checks nested declaration values; it does not validate selector text or prove DOM structure.
+References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. The compiler checks interpolation identities. TypeScript checks nested declaration values, but it does not validate selector text or prove DOM structure.
 
 Specificity follows the authored selector. Use explicit `:where(...)` to lower condition specificity. Application-owned state remains in ordinary data/ARIA attributes. No runtime selector parsing, DOM lookup, or CSS generation is involved.
 

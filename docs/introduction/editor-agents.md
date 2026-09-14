@@ -16,6 +16,6 @@ namespace styles {
 - **Agents:** start from [the documentation index](../llms.txt), then load the relevant method and guide.
 - **Diagnostics:** preserve source locations and resolve errors before consuming new artifacts.
 - **Examples:** copy the owning config and integration setup along with the style definition.
-- **Types:** use editor completions and public declarations; unsupported names should fail rather than widen to arbitrary strings.
+- **Types:** use editor completions and public declarations. Unsupported names should fail rather than widen to arbitrary strings.
 
 No dedicated editor extension or agent server is required by this documentation workflow.

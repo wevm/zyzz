@@ -6,7 +6,7 @@ Define finite choices, defaults, and compound matches for one element. Begin wit
 
 ### Define Variants
 
-Add typed choices to a component. This example imports `{ variants }` from the [theme config](themes.md#use-themes); import from `zyzz` for token-free recipes.
+Add typed choices to a component. This example imports `{ variants }` from the [theme config](themes.md#use-themes). Import from `zyzz` for token-free recipes.
 
 ```tsx
 import { variants } from './zyzz.config.js'
@@ -29,6 +29,6 @@ type ButtonOptions = NonNullable<Parameters<typeof styles.button>[0]>
 const example = <button {...styles.button({ size: 'md' })}>Save</button>
 ```
 
-Each variant definition returns props for one element. Defaults apply to omitted selections; null suppresses a choice and its default. Compounds combine matching choice names. Finite choices compile ahead of time.
+Each variant definition returns props for one element. Defaults apply to omitted selections, and null suppresses a choice and its default. Compounds combine matching choice names. Finite choices compile ahead of time.
 
 Compile libraries before publishing and include the generated `.zyzz.json` contracts and stylesheets. Packed definitions preserve all finite choices, conditional selections, payload slots, defaults, and compounds. Destructured configured factories emit portable TypeScript declarations, so downstream callers keep choice and payload inference without library sources.

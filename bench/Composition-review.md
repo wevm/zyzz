@@ -6,7 +6,7 @@ The corpus contains 3-style small, 1,000-style repeated, 1,000-style mostly uniq
 
 `src/cx.test.ts` verifies every emitted style against native browser controls at 450px and 900px, with conditional overrides disabled and enabled. The measured `apply project` invokes all component applications with conditional overrides enabled and retains the returned array. Compilation, bundling, and module initialization are excluded from that timing.
 
-Runs: 2026-09-13T14:00:34.099Z (baseline metadata) and 2026-09-13T14:06:46.551Z (candidate metadata). Host: AMD EPYC 9V74 80-Core Processor, x64 linux; Node v24.19.0, esbuild 0.28.2, vite-plus 0.2.2 / Vitest 4.1.9. Warmup: 100ms; measurement: 250ms, with the runner's minimum sample count retained.
+Runs: 2026-09-13T14:00:34.099Z (baseline metadata) and 2026-09-13T14:06:46.551Z (candidate metadata). Host: AMD EPYC 9V74 80-Core Processor, x64 linux, Node v24.19.0, esbuild 0.28.2, vite-plus 0.2.2 / Vitest 4.1.9. Warmup: 100ms. Measurement: 250ms, with the runner's minimum sample count retained.
 
 These are warm in-process diagnostics on a shared host. Relative margins of error and sample counts accompany all timings. They do not measure cold starts, rendering, layout, hydration, or network latency, and a single run does not establish a performance guarantee.
 
@@ -14,10 +14,10 @@ These are warm in-process diagnostics on a shared host. Relative margins of erro
 
 | Lane                                | Compile ms: main → candidate                     | Apply project µs: main → candidate                  |
 | ----------------------------------- | ------------------------------------------------ | --------------------------------------------------- |
-| static / small (3 styles)           | 1.603 ±5.10% (n=156) → 1.755 ±3.97% (n=143)      | —                                                   |
-| static / repeated (1000 styles)     | 634.278 ±2.69% (n=10) → 680.341 ±4.26% (n=10)    | —                                                   |
-| static / unique (1000 styles)       | 706.524 ±5.17% (n=10) → 644.141 ±2.29% (n=10)    | —                                                   |
-| static / components (60 styles)     | 18.055 ±8.86% (n=14) → 15.683 ±7.56% (n=16)      | —                                                   |
+| static / small (3 styles)           | 1.603 ±5.10% (n=156) → 1.755 ±3.97% (n=143)      | n/a                                                 |
+| static / repeated (1000 styles)     | 634.278 ±2.69% (n=10) → 680.341 ±4.26% (n=10)    | n/a                                                 |
+| static / unique (1000 styles)       | 706.524 ±5.17% (n=10) → 644.141 ±2.29% (n=10)    | n/a                                                 |
+| static / components (60 styles)     | 18.055 ±8.86% (n=14) → 15.683 ±7.56% (n=16)      | n/a                                                 |
 | small/react/static/direct           | 1.339 ±4.14% (n=187) → 1.310 ±5.54% (n=193)      | 0.065 ±1.35% (n=3854289) → 0.078 ±2.45% (n=3212530) |
 | small/react/static/bound            | 1.366 ±5.58% (n=185) → 1.542 ±4.47% (n=163)      | 2.410 ±4.29% (n=103729) → 2.351 ±2.50% (n=106348)   |
 | small/react/conditional/direct      | 1.476 ±5.29% (n=170) → 1.473 ±6.65% (n=172)      | 2.388 ±2.61% (n=104699) → 2.674 ±4.18% (n=93502)    |
@@ -92,7 +92,7 @@ Each cell reports raw/gzip/Brotli bytes. Client transfer sums the actual emitted
 
 ## Candidate artifact accounting
 
-Each cell reports raw/gzip/Brotli bytes. Class references are diagnostic string bytes; markup is the actual minimal element HTML. Helper artifacts separately bundle the runtime namespaces imported by generated code. Helpers are already included in client JavaScript; the standalone helper diagnostic is not an additional transfer asset.
+Each cell reports raw/gzip/Brotli bytes. Class references are diagnostic string bytes. Markup is the actual minimal element HTML. Helper artifacts separately bundle the runtime namespaces imported by generated code. Helpers are already included in client JavaScript, so the standalone helper diagnostic is not an additional transfer asset.
 
 | Lane                                | CSS                   | JavaScript            | Class references   | Markup             | Standalone helpers |
 | ----------------------------------- | --------------------- | --------------------- | ------------------ | ------------------ | ------------------ |
@@ -147,5 +147,5 @@ The full run reported +27.32% and +37.31% compilation time for the two small HTM
 | small/html/static/bound       | 1.427 ±6.37% (n=178) | 1.426 ±6.49% (n=176) | -0.06%         |
 | small/html/conditional/direct | 1.290 ±4.42% (n=194) | 1.355 ±5.13% (n=185) | +5.03%         |
 
-Reproduce the confirmation with `--testNamePattern "small/html/(static/bound|conditional/direct)" --outputJson bench/results/composition-confirm.json`. These short compilation cases vary between runs; the confirmation is additional evidence, not a replacement baseline or a changed acceptance threshold.
+Reproduce the confirmation with `--testNamePattern "small/html/(static/bound|conditional/direct)" --outputJson bench/results/composition-confirm.json`. These short compilation cases vary between runs. The confirmation is additional evidence, not a replacement baseline or a changed acceptance threshold.
 

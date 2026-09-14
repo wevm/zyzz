@@ -35,8 +35,8 @@ export function Button() {
 | `src/Advanced.tsx`             | CSS functions, custom media, ICC profile, palettes, OpenType sets, namespace selectors, CSS imports, explicit layers, registered angle, anchor fallbacks |
 | `src/App.tsx` / `src/main.tsx` | Global CSS, ordered layers, optional reset                                                                                                               |
 
-Each example keeps styles beside its component and spreads normal props onto native elements. Advanced stylesheet descriptors follow browser support; print rules are visible in print preview.
+Each example keeps styles beside its component and spreads normal props onto native elements. Advanced stylesheet descriptors follow browser support. Print rules are visible in print preview.
 
 `variants`, `cx`, default-theme imports, and native output remain separate implementation work. This client-rendered example does not demonstrate SSR hydration or the optional saved-preference initialization script. Compiler/CLI and packed-library workflows remain in the [compilation guide](../../docs/guides/compilation.md).
 
-`src/srgb.icc` is the Little CMS built-in sRGB profile used by the repository conformance fixture. Its embedded copyright permits free use. Font palette/feature examples are authored descriptors with system-font fallbacks; no color font is bundled.
+`src/srgb.icc` is the Little CMS built-in sRGB profile used by the repository conformance fixture. Its embedded copyright permits free use. Font palette/feature examples are authored descriptors with system-font fallbacks. No color font is bundled.

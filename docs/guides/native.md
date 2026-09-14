@@ -7,7 +7,7 @@ Compile shared definitions and select native theme tables. Begin with [Getting S
 ### Native Styles
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> Preview API, not yet implemented.
 
 Compile shared definitions into native tables, then select a theme and color scheme before rendering.
 
@@ -24,4 +24,4 @@ const selected = StyleSheet.select(output.styles, {
 })
 ```
 
-Use `selected.text` as the native text style. Compilation belongs outside render; selection is a table lookup. Device preference handling belongs to the application adapter. Web layers, globals, and DOM relationships are rejected.
+Use `selected.text` as the native text style. Compilation belongs outside render. Selection is a table lookup. Device preference handling belongs to the application adapter. Web layers, globals, and DOM relationships are rejected.

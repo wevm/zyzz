@@ -5,7 +5,7 @@ How styles, tokens, and compilation behave. Use [Guides](guides/README.md) for c
 ## Principles
 
 - **Agnostic:** pure contracts do not depend on a framework, host, or bundler.
-- **Compiled:** rules exist before rendering; runtime work selects or binds values.
+- **Compiled:** rules exist before rendering, and runtime work selects or binds values.
 - **Minimal:** core imports include no theme, reset, registry, or provider.
 - **Modular:** explicit inputs and narrow adapters separate responsibilities.
 - **Standard:** CSS properties, custom properties, selectors, and cascade retain their meaning.
@@ -24,7 +24,7 @@ The [compilation model](#compilation-and-platforms) explains which boundaries ar
 
 ## Typed Styles
 
-Definitions describe static rules. Calling a definition returns styling props; it never creates CSS rules. Authoring calls require compilation.
+Definitions describe static rules. Calling a definition returns styling props. It never creates CSS rules. Authoring calls require compilation.
 
 ```tsx
 import { css } from 'zyzz'
@@ -37,7 +37,7 @@ const example = <div {...styles.card()}>Card</div>
 
 ## Configuration
 
-`Config.create` binds authoring functions to explicit tokens and layers. Export `const { css, theme } = Config.create(...)` from `zyzz.config.ts` and import `{ css, theme }`. Integrations follow this binding to the originating config; no default export is required. The compiler reads static data without executing application code.
+`Config.create` binds authoring functions to explicit tokens and layers. Export `const { css, theme } = Config.create(...)` from `zyzz.config.ts` and import `{ css, theme }`. Integrations follow this binding to the originating config, and no default export is required. The compiler reads static data without executing application code.
 
 ```ts
 import { Config } from 'zyzz'
@@ -48,7 +48,7 @@ export const { css, theme } = Config.create({
 })
 ```
 
-- **Layers:** infer keys such as `@layer components`; unknown names fail.
+- **Layers:** infer keys such as `@layer components`. Unknown names fail.
 - **No theme:** authoring stays token-free.
 - **One theme:** accepts inline tokens or a reusable `Theme.define` value.
 - **Several themes:** use `themes` with a required `defaultTheme`.
@@ -63,7 +63,7 @@ namespace styles {
 }
 ```
 
-Named helper exports preserve the config's inferred contract. Access CSS references through `theme.vars`. These are CSS variable references, not runtime setters; compatible scopes change their inherited values.
+Named helper exports preserve the config's inferred contract. Access CSS references through `theme.vars`. These are CSS variable references, not runtime setters. Compatible scopes change their inherited values.
 
 ## Themes & Tokens
 
@@ -90,7 +90,7 @@ Use [Compile Themes](guides/themes.md#compile-themes) for the current pipeline.
 
 ### Theme Scopes
 
-Named `themes({ theme, colorScheme? })` selections return generated scope classes and optional inline color-scheme props. Apply them to `<html>` for the whole document or an ancestor for a subtree. Theme classes select inherited CSS variables. Components keep the same classes across compatible themes; nested scopes change a subtree. Defaults provide fallbacks outside a scope.
+Named `themes({ theme, colorScheme? })` selections return generated scope classes and optional inline color-scheme props. Apply them to `<html>` for the whole document or an ancestor for a subtree. Theme classes select inherited CSS variables. Components keep the same classes across compatible themes, and nested scopes change a subtree. Defaults provide fallbacks outside a scope.
 
 Use the selector from a [named-theme config](guides/themes.md#selecting-a-theme):
 
@@ -103,16 +103,16 @@ const example = (
 ```
 
 - **Color pairs:** `{ dark, light }` compiles to `light-dark()`.
-- **Color scheme:** `light` or `dark` selects explicitly; `light dark` follows browser preference.
+- **Color scheme:** `light` or `dark` selects explicitly, and `light dark` follows browser preference.
 - **Extensions:** `Theme.extend` changes existing values while preserving the contract.
 - **Theme selection:** changes tokens independently of color scheme.
 
 ## Composition and Overrides
 
 > [!NOTE]
-> Preview API; not yet implemented.
+> Preview API, not yet implemented.
 
-Use `cx` to compose generated styles with override rules. Multiple JSX spreads replace fields. External classes follow the CSS cascade; their class-string order does not establish precedence.
+Use `cx` to compose generated styles with override rules. Multiple JSX spreads replace fields. External classes follow the CSS cascade. Their class-string order does not establish precedence.
 
 ```tsx
 import { css, cx } from 'zyzz'
@@ -131,7 +131,7 @@ Later generated conflicts win within matching conditions, subject to importance.
 
 Root recipes support static choices, defaults, and ordered compounds. Bound recipes, conditional selections, and dynamic payloads follow separately.
 
-A recipe styles one element and returns one props object. Axes, defaults, and compounds select precompiled alternatives. Multipart components use separate definitions with shared inputs; there is no slots option.
+A recipe styles one element and returns one props object. Axes, defaults, and compounds select precompiled alternatives. Multipart components use separate definitions with shared inputs. There is no slots option.
 
 ```tsx
 import { variants } from 'zyzz'
@@ -158,13 +158,13 @@ namespace styles {
 }
 ```
 
-Query aliases resolve from theme metadata to literal conditions. Theme scope changes do not change query thresholds. Container queries select the nearest eligible container; raw queries still require compiler validation.
+Query aliases resolve from theme metadata to literal conditions. Theme scope changes do not change query thresholds. Container queries select the nearest eligible container. Raw queries still require compiler validation.
 
 See [Responsive Styles](guides/conditions.md#responsive-styles) and [Style States](guides/conditions.md#style-states).
 
 ## Relationships
 
-`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element; combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
+`selectors` objects interpolate `css()` definitions without calling them. `&` selects the styled element. Combinators, pseudo-classes, attributes, and `:has()` retain ordinary CSS semantics. Apply the referenced definition through its normal style props. An empty `css()` supplies identity without declarations.
 
 ```ts
 import { css } from 'zyzz'
@@ -181,7 +181,7 @@ namespace styles {
 }
 ```
 
-References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. The compiler checks interpolation identities; TypeScript checks nested declaration values; it does not validate selector text or prove DOM structure.
+References retain their identity through local aliases, namespace members, named imports/re-exports, and packed libraries. Selector grammar is checked during compilation. The compiler checks interpolation identities. TypeScript checks nested declaration values, but it does not validate selector text or prove DOM structure.
 
 Specificity follows the authored selector. Use explicit `:where(...)` to lower condition specificity. Application-owned state remains in ordinary data/ARIA attributes. No runtime selector parsing, DOM lookup, or CSS generation is involved.
 
@@ -196,7 +196,7 @@ Token names infer by property. A text-color token cannot become a spacing token.
 | ------------------------- | --------------------------------------------------- |
 | `theme.tokens.spacing.md` | Portable typed token reference                      |
 | `theme.vars.spacing.md`   | CSS variable reference for web expressions          |
-| Query threshold           | Compiled literal; unaffected by theme scope changes |
+| Query threshold           | Compiled literal, unaffected by theme scope changes |
 
 Callbacks bind per-instance values to precompiled custom properties. Their rule structure stays static.
 
@@ -222,11 +222,11 @@ import { global } from 'zyzz/web'
 global({ '@layer base': { body: { margin: 0 } } })
 ```
 
-- **Collection:** scans configured sources, including unimported modules; excludes tests and generated output; reachable packed contributions are discovered through package sidecars.
+- **Collection:** scans configured sources, including unimported modules, and excludes tests and generated output. Reachable packed contributions are discovered through package sidecars.
 - **Delivery:** globals are eager, including declarations beside lazy components. The initial stylesheet includes the shared layer prelude.
 - **Helpers:** import `fontFace`, `global`, and `keyframes` directly. Keyframes have separate reachability rules.
-- **Ordering:** constraints merge deterministically; cycles produce located errors. Preserve authored order, unlayered rules, and important reversal.
-- **Watching:** edits and deletions replace or remove contributions; relative assets retain source ownership.
+- **Ordering:** constraints merge deterministically, and cycles produce located errors. Preserve authored order, unlayered rules, and important reversal.
+- **Watching:** edits and deletions replace or remove contributions. Relative assets retain source ownership.
 
 See [stylesheet usage](guides/stylesheets.md#global-styles) for fonts and motion. Standalone globals do not widen a config's inferred layer names.
 

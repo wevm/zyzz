@@ -28,7 +28,7 @@ page({
 viewTransition({ navigation: 'auto' })
 ```
 
-Named helpers return typed references, following `keyframes`. For example, `above` becomes a `positionTryFallbacks` value. Repeated calls preserve distinct stylesheet rules; helper calls compile away.
+Named helpers return typed references, following `keyframes`. For example, `above` becomes a `positionTryFallbacks` value. Repeated calls preserve distinct stylesheet rules. Helper calls compile away.
 
 Use `global` for global selectors and nested grouping. Keep `@media`, `@supports`, `@container`, `@scope`, `@starting-style`, and declared `@layer` keys in valid style bodies. Expanded grammar remains part of the proposal.
 
@@ -46,7 +46,7 @@ global({
 })
 ```
 
-- **Collection:** scans configured project sources; excludes tests, generated output, and dependencies by default.
+- **Collection:** scans configured project sources, and excludes tests, generated output, and dependencies by default.
 - **Delivery:** globals are eager effects, even beside lazy components.
 - **Layers:** raw names receive compiler validation, without ambient TypeScript config inference.
 - **Watching:** updates and deletions replace or remove their contributions.
@@ -82,7 +82,7 @@ import { global } from 'zyzz/web'
 global({ '@layer base': { body: { margin: 0 } } })
 ```
 
-The initial bundle contains the shared layer prelude. Conflicting order constraints fail; unlayered rules and important declarations retain standard CSS precedence. See [Global Styles](stylesheets.md#global-styles) for collection behavior.
+The initial bundle contains the shared layer prelude. Conflicting order constraints fail. Unlayered rules and important declarations retain standard CSS precedence. See [Global Styles](stylesheets.md#global-styles) for collection behavior.
 
 ### Fonts and Motion
 
@@ -108,7 +108,7 @@ namespace styles {
 }
 ```
 
-Font URLs retain source ownership. Reachable keyframes emit stable references. Frame bodies contain declarations only; no importance or nested selectors/queries. Native font loading and animations require platform-specific behavior.
+Font URLs retain source ownership. Reachable keyframes emit stable references. Frame bodies contain declarations only, with no importance or nested selectors/queries. Native font loading and animations require platform-specific behavior.
 
 ### Optional Reset
 
@@ -120,6 +120,6 @@ The reset is a separate stylesheet in the `reset` layer. Core imports do not ins
 
 ### Packed Libraries
 
-Publish generated `.zyzz.json` sidecars alongside their compiled entrypoints. They retain global contributions, fonts, keyframes, and layer constraints through imports and re-exports. Shared source maps retain the original authoring content. Identical source contributions emit once; conflicting copies fail compilation.
+Publish generated `.zyzz.json` sidecars alongside their compiled entrypoints. They retain global contributions, fonts, keyframes, and layer constraints through imports and re-exports. Shared source maps retain the original authoring content. Identical source contributions emit once. Conflicting copies fail compilation.
 
 Relative URLs resolve from their owning module. The standalone host copies referenced assets into the output tree and tracks their ownership and updates. Vite resolves the same assets through its CSS pipeline and watches their source files. Keep the emitted asset tree with packed modules and metadata.

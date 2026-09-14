@@ -88,7 +88,7 @@ await using host = await Host.create({
 await host.build()
 ```
 
-The CLI compiles source modules and CSS to `dist` by default. Add `--css-only` to emit CSS and CSS maps for original source; declarations that need independent identities then require explicit IDs. See [CLI](docs/introduction/cli.md).
+The CLI compiles source modules and CSS to `dist` by default. Add `--css-only` to emit CSS and CSS maps for original source. Declarations that need independent identities then require explicit IDs. See [CLI](docs/introduction/cli.md).
 
 For watching, keep the scope alive until shutdown:
 
@@ -124,7 +124,7 @@ Watching performs an initial build, then reports rebuilds and errors. `await usi
 
 ### Typed Styles
 
-Standard CSS properties and values carry TypeScript inference into each definition. Styles can live beside components or in shared modules; applying them returns ordinary styling props without a provider or component wrapper.
+Standard CSS properties and values carry TypeScript inference into each definition. Styles can live beside components or in shared modules. Applying them returns ordinary styling props without a provider or component wrapper.
 
 ```tsx
 import { css } from 'zyzz'
@@ -231,7 +231,7 @@ export function Document() {
 
 The theme returns its generated `className` and `styles.colorScheme`. Use `'light'` or `'dark'` for an explicit scheme, or `'light dark'` for system preference. Named themes use `themes({ theme: 'mint', colorScheme: 'dark' })`.
 
-Color pairs compile to `light-dark()`; the custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme calls can scope a subtree independently.
+Color pairs compile to `light-dark()`. The custom theme's `text` token resolves to `#111` in light mode and `#eee` in dark mode. Nested theme calls can scope a subtree independently.
 
 For saved preferences, `script()` generates an optional [initialization script](docs/guides/themes.md#restore-preferences) for `<head>`. It restores the theme and scheme from localStorage before first paint. System preference needs no script or provider.
 
@@ -261,7 +261,7 @@ const example = <button {...styles.button({ size: 'sm' })}>Continue</button>
 
 ### Dynamic Styles
 
-Mix static declarations with typed runtime values in the same callback. Call the style with those values and optional `className`/`style`/`variables` overrides; consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
+Mix static declarations with typed runtime values in the same callback. Call the style with those values and optional `className`/`style`/`variables` overrides. Consumed values become CSS variable assignments. Other component props stay on the component. CSS rules stay static.
 
 ```tsx
 import { css } from 'zyzz'
@@ -287,7 +287,7 @@ export function Bar() {
 
 ### Value Syntax
 
-Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions; `theme.tokens` provides portable token references.
+Use trailing `!` for importance and arrays for ordered fallbacks. `theme.vars` provides typed CSS variable references for ordinary CSS expressions. `theme.tokens` provides portable token references.
 
 ```ts
 import { css, theme } from './zyzz.config.js'

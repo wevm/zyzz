@@ -1,10 +1,10 @@
 # Packed Variants and Web Measurements
 
-Measured on 2026-09-13, Linux x64, AMD EPYC 9V74, Node 24.19.0, esbuild 0.28.2. Baseline: main `63994aa14606f50ae3d9244ee8e80777a73338b4`; candidate compiler: `adab39b872e8a49db7461c63f35862181ead4c63`. Web harness: `39d520a4f52f5b1d62e4b3c8db761339bc775edd`. Baseline and candidate ran sequentially on the same host.
+Measured on 2026-09-13, Linux x64, AMD EPYC 9V74, Node 24.19.0, esbuild 0.28.2. Baseline: main `63994aa14606f50ae3d9244ee8e80777a73338b4`. Candidate compiler: `adab39b872e8a49db7461c63f35862181ead4c63`. Web harness: `39d520a4f52f5b1d62e4b3c8db761339bc775edd`. Baseline and candidate ran sequentially on the same host.
 
 ## Compiler
 
-Warm in-process compilation, 100ms warmup, 250ms timing window and at least ten samples. Means are milliseconds; uncertainty is relative margin of error. These intervals do not establish a consistent timing change.
+Warm in-process compilation, 100ms warmup, 250ms timing window and at least ten samples. Means are milliseconds, and uncertainty is relative margin of error. These intervals do not establish a consistent timing change.
 
 | Corpus                                           |  Baseline ms ±% (n) | Candidate ms ±% (n) |
 | ------------------------------------------------ | ------------------: | ------------------: |
@@ -19,9 +19,9 @@ Packed compilation is a new operation with no supported baseline. It consumes re
 
 ## Matched Composition Delivery
 
-Each size cell is raw / gzip / Brotli bytes. All 32 existing lanes retain identical CSS, class references, and markup. Twenty lanes retain identical JavaScript. Twelve HTML lanes add seven raw JavaScript bytes for the versioned cross-runtime symbol; compression changes vary by corpus.
+Each size cell is raw / gzip / Brotli bytes. All 32 existing lanes retain identical CSS, class references, and markup. Twenty lanes retain identical JavaScript. Twelve HTML lanes add seven raw JavaScript bytes for the versioned cross-runtime symbol. Compression changes vary by corpus.
 
-Client transfer sums independently compressed CSS and JavaScript. Hydrated transfer adds independently compressed markup. Class references already appear in JavaScript/markup; helper-only bundles are diagnostic and are not added to either transfer total.
+Client transfer sums independently compressed CSS and JavaScript. Hydrated transfer adds independently compressed markup. Class references already appear in JavaScript/markup. Helper-only bundles are diagnostic and are not added to either transfer total.
 
 | Lane                                |                    CSS |             Classes |              Markup |                               JS before → after |                           Hydrated before → after | Helper bundle after |
 | ----------------------------------- | ---------------------: | ------------------: | ------------------: | ----------------------------------------------: | ------------------------------------------------: | ------------------: |
@@ -68,18 +68,18 @@ Zyzz is faster than Panda and slower than StyleX and native classes in both vari
 
 | Styles/library |                 CSS |                  JS |          Attributes |            Classes |              Markup |                Client |              Hydrated |    Helper bundle |
 | -------------- | ------------------: | ------------------: | ------------------: | -----------------: | ------------------: | --------------------: | --------------------: | ---------------: |
-| 10/baseline    |    1225 / 290 / 207 |     772 / 449 / 392 |     775 / 143 / 101 |      304 / 95 / 69 |    1005 / 165 / 121 |      1997 / 739 / 599 |      3002 / 904 / 720 |                — |
-| 10/panda       |    1762 / 648 / 551 | 18628 / 6518 / 5788 |    1605 / 277 / 209 |   1134 / 227 / 172 |    1835 / 294 / 223 |   20390 / 7166 / 6339 |   22225 / 7460 / 6562 |                — |
-| 10/stylex      |    1443 / 495 / 396 |  3982 / 1598 / 1454 |    1428 / 343 / 280 |    957 / 284 / 234 |    1658 / 363 / 297 |    5425 / 2093 / 1850 |    7083 / 2456 / 2147 |                — |
+| 10/baseline    |    1225 / 290 / 207 |     772 / 449 / 392 |     775 / 143 / 101 |      304 / 95 / 69 |    1005 / 165 / 121 |      1997 / 739 / 599 |      3002 / 904 / 720 |              n/a |
+| 10/panda       |    1762 / 648 / 551 | 18628 / 6518 / 5788 |    1605 / 277 / 209 |   1134 / 227 / 172 |    1835 / 294 / 223 |   20390 / 7166 / 6339 |   22225 / 7460 / 6562 |              n/a |
+| 10/stylex      |    1443 / 495 / 396 |  3982 / 1598 / 1454 |    1428 / 343 / 280 |    957 / 284 / 234 |    1658 / 363 / 297 |    5425 / 2093 / 1850 |    7083 / 2456 / 2147 |              n/a |
 | 10/zyzz        |    8589 / 780 / 547 |  7772 / 1656 / 1414 |    1190 / 189 / 130 |     374 / 107 / 81 |    1420 / 211 / 142 |   16361 / 2436 / 1961 |   17781 / 2647 / 2103 | 1693 / 856 / 756 |
-| 100/baseline   |  11553 / 1260 / 863 |    1582 / 647 / 489 |    7840 / 382 / 244 |   3139 / 307 / 184 |   10140 / 416 / 258 |   13135 / 1907 / 1352 |   23275 / 2323 / 1610 |                — |
-| 100/panda      |  7252 / 1822 / 1165 | 45628 / 7604 / 6315 |  16140 / 1030 / 822 |  11439 / 953 / 739 |  18440 / 1053 / 845 |   52880 / 9426 / 7480 |  71320 / 10479 / 8325 |                — |
-| 100/stylex     |  8201 / 2191 / 1771 | 18953 / 3480 / 2701 | 14329 / 1625 / 1236 | 9628 / 1526 / 1157 | 16629 / 1651 / 1268 |   27154 / 5671 / 4472 |   43783 / 7322 / 5740 |                — |
+| 100/baseline   |  11553 / 1260 / 863 |    1582 / 647 / 489 |    7840 / 382 / 244 |   3139 / 307 / 184 |   10140 / 416 / 258 |   13135 / 1907 / 1352 |   23275 / 2323 / 1610 |              n/a |
+| 100/panda      |  7252 / 1822 / 1165 | 45628 / 7604 / 6315 |  16140 / 1030 / 822 |  11439 / 953 / 739 |  18440 / 1053 / 845 |   52880 / 9426 / 7480 |  71320 / 10479 / 8325 |              n/a |
+| 100/stylex     |  8201 / 2191 / 1771 | 18953 / 3480 / 2701 | 14329 / 1625 / 1236 | 9628 / 1526 / 1157 | 16629 / 1651 / 1268 |   27154 / 5671 / 4472 |   43783 / 7322 / 5740 |              n/a |
 | 100/zyzz       | 86821 / 6170 / 3440 | 58309 / 4645 / 2733 |   12000 / 509 / 312 |   3849 / 372 / 234 |   14300 / 533 / 344 | 145130 / 10815 / 6173 | 159430 / 11348 / 6517 | 1693 / 856 / 756 |
 
 ### Selection and Binding Diagnostics
 
-Node in-process measurements use the real extracted/compiled variant definitions and runtime functions; default Vitest warmup and 500ms timing windows. These are not browser or React timings. Means are milliseconds; small values represent sub-microsecond function calls.
+Node in-process measurements use the real extracted/compiled variant definitions and runtime functions, with default Vitest warmup and 500ms timing windows. These are not browser or React timings. Means are milliseconds, and small values represent sub-microsecond function calls.
 
 | Operation                                              |   Mean ms | Error ±% | Samples |
 | ------------------------------------------------------ | --------: | -------: | ------: |
@@ -101,7 +101,7 @@ Node in-process measurements use the real extracted/compiled variant definitions
 
 The production harness retains native CSS/React, Panda, StyleX, Tailwind, vanilla-extract, and Zyzz where equivalent, adding finite variants for native/Panda/StyleX/Zyzz. It validates 72 groups across 100/1,000 components, two library orders, and 20 samples each for mount/update/remount. Commit, forced layout, and two animation frames remain separate.
 
-The full local run passed in Chromium 153.0.8010.0 using the existing browser binary after the CDN download failed. All 72 groups contain 60 valid samples. React 19.2.4, three warmup cycles and twenty measured cycles per pass; compiler and other tests did not run concurrently.
+The full local run passed in Chromium 153.0.8010.0 using the existing browser binary after the CDN download failed. All 72 groups contain 60 valid samples. React 19.2.4, three warmup cycles and twenty measured cycles per pass. Compiler and other tests did not run concurrently.
 
 The complete render results below preserve all libraries, operations, and both passes. Small leads are not significance claims. The [PR #146 benchmark workflow](https://github.com/wevm/zyzz/actions/runs/34768022293) also passed its independent production React render job.
 
@@ -114,20 +114,20 @@ pnpm exec vp test bench src/variants.bench.ts src/variants.conditions.bench.ts s
 pnpm bench:render
 ```
 
-Run the compiler command on main without the new packed benchmark to reproduce the baseline. Preserve complete artifacts under ignored `bench/results/`; no timing or size thresholds changed.
+Run the compiler command on main without the new packed benchmark to reproduce the baseline. Preserve complete artifacts under ignored `bench/results/`. No timing or size thresholds changed.
 
 ## Complete Browser Run
 
 ## Runtime Framework Comparisons
 
-Summaries rank the average of the two pass means, including the native control; ratios compare the runner-up. Observed leads are not significance claims.
+Summaries rank the average of the two pass means, including the native control. Ratios compare the runner-up. Observed leads are not significance claims.
 
-Chromium production props application only; no compilation, DOM or React rendering in timings. Both passes execute inside Chromium on this runner with reversed framework order. Cached props are distinct from surviving calls.
+Chromium production props application only, with no compilation, DOM or React rendering in timings. Both passes execute inside Chromium on this runner with reversed framework order. Cached props are distinct from surviving calls.
 
 🟢 Zyzz faster beyond reported uncertainty in both passes · 🔴 competitor faster in both passes · 🟡 inconclusive or overlapping uncertainty. Plain class/style is an informational control. No claim of a universal speed advantage follows from a tie.
 
 <details>
-<summary>10 Styles — cached: 🟡 Tie: StyleX, Tailwind, Zyzz — 3.7 ns</summary>
+<summary>10 Styles, cached: 🟡 Tie: StyleX, Tailwind, Zyzz at 3.7 ns</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -141,7 +141,7 @@ Chromium production props application only; no compilation, DOM or React renderi
 </details>
 
 <details>
-<summary>10 Styles — direct: 🔴 vanilla-extract — 10.5 ns · 1.09× as fast as Tailwind</summary>
+<summary>10 Styles, direct: 🔴 vanilla-extract at 10.5 ns · 1.09× as fast as Tailwind</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -155,7 +155,7 @@ Chromium production props application only; no compilation, DOM or React renderi
 </details>
 
 <details>
-<summary>10 Styles — callable: 🔴 Tailwind — 8.1 ns · 1.01× as fast as Plain class/style</summary>
+<summary>10 Styles, callable: 🔴 Tailwind at 8.1 ns · 1.01× as fast as Plain class/style</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -169,7 +169,7 @@ Chromium production props application only; no compilation, DOM or React renderi
 </details>
 
 <details>
-<summary>10 Styles — overrides: 🔴 Tailwind — 13.5 ns · 1.07× as fast as Plain class/style</summary>
+<summary>10 Styles, overrides: 🔴 Tailwind at 13.5 ns · 1.07× as fast as Plain class/style</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -183,7 +183,7 @@ Chromium production props application only; no compilation, DOM or React renderi
 </details>
 
 <details>
-<summary>10 Styles — dynamic: 🔴 Plain class/style — 28.2 ns · 1.80× as fast as Zyzz</summary>
+<summary>10 Styles, dynamic: 🔴 Plain class/style at 28.2 ns · 1.80× as fast as Zyzz</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -193,7 +193,7 @@ Chromium production props application only; no compilation, DOM or React renderi
 </details>
 
 <details>
-<summary>10 Styles — variants: 🔴 Plain class/style — 36.1 ns · 6.47× as fast as StyleX</summary>
+<summary>10 Styles, variants: 🔴 Plain class/style at 36.1 ns · 6.47× as fast as StyleX</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -205,7 +205,7 @@ Chromium production props application only; no compilation, DOM or React renderi
 </details>
 
 <details>
-<summary>100 Styles — cached: 🔴 StyleX — 3.6 ns · 1.03× as fast as Plain class/style</summary>
+<summary>100 Styles, cached: 🔴 StyleX at 3.6 ns · 1.03× as fast as Plain class/style</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -219,7 +219,7 @@ Chromium production props application only; no compilation, DOM or React renderi
 </details>
 
 <details>
-<summary>100 Styles — direct: 🔴 StyleX — 19.1 ns · 1.04× as fast as Tailwind</summary>
+<summary>100 Styles, direct: 🔴 StyleX at 19.1 ns · 1.04× as fast as Tailwind</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -233,7 +233,7 @@ Chromium production props application only; no compilation, DOM or React renderi
 </details>
 
 <details>
-<summary>100 Styles — callable: 🟢 Zyzz — 9.1 ns · 1.01× as fast as Tailwind</summary>
+<summary>100 Styles, callable: 🟢 Zyzz at 9.1 ns · 1.01× as fast as Tailwind</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -247,7 +247,7 @@ Chromium production props application only; no compilation, DOM or React renderi
 </details>
 
 <details>
-<summary>100 Styles — overrides: 🔴 Tailwind — 13.9 ns · 1.11× as fast as vanilla-extract</summary>
+<summary>100 Styles, overrides: 🔴 Tailwind at 13.9 ns · 1.11× as fast as vanilla-extract</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -261,7 +261,7 @@ Chromium production props application only; no compilation, DOM or React renderi
 </details>
 
 <details>
-<summary>100 Styles — dynamic: 🔴 Plain class/style — 31.5 ns · 7.59× as fast as Zyzz</summary>
+<summary>100 Styles, dynamic: 🔴 Plain class/style at 31.5 ns · 7.59× as fast as Zyzz</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -271,7 +271,7 @@ Chromium production props application only; no compilation, DOM or React renderi
 </details>
 
 <details>
-<summary>100 Styles — variants: 🔴 Plain class/style — 35.4 ns · 6.36× as fast as StyleX</summary>
+<summary>100 Styles, variants: 🔴 Plain class/style at 35.4 ns · 6.36× as fast as StyleX</summary>
 
 | Framework         | Pass 1 (ns ±%) | Pass 2 (ns ±%) |   Samples | CSS gzip | JS gzip | Total gzip |
 | ----------------- | -------------: | -------------: | --------: | -------: | ------: | ---------: |
@@ -286,10 +286,10 @@ Chromium production props application only; no compilation, DOM or React renderi
 
 ## Production React Render Performance
 
-Summaries show the lowest average of the two pass medians for commit + layout, including the native control. Ratios compare the runner-up; small leads may be noise.
+Summaries show the lowest average of the two pass medians for commit + layout, including the native control. Ratios compare the runner-up, and small leads may be noise.
 
 <details>
-<summary>100 cards — callable · mount: 🔴 vanilla-extract — 1.75 ms · 1.03× as fast as tailwind · update: 🟡 Tie: stylex, vanilla-extract — 1.95 ms · remount: 🟡 Tie: Plain class/style, tailwind, vanilla-extract — 1.60 ms</summary>
+<summary>100 cards, callable · mount: 🔴 vanilla-extract at 1.75 ms · 1.03× as fast as tailwind · update: 🟡 Tie: stylex, vanilla-extract at 1.95 ms · remount: 🟡 Tie: Plain class/style, tailwind, vanilla-extract at 1.60 ms</summary>
 
 | Cards | Workload | Framework       | Operation | Pass | Commit median ms | Commit + layout median ms | p95 ms | Frame median ms |
 | ----: | -------- | --------------- | --------- | ---: | ---------------: | ------------------------: | -----: | --------------: |
@@ -333,7 +333,7 @@ Summaries show the lowest average of the two pass medians for commit + layout, i
 </details>
 
 <details>
-<summary>100 cards — overrides · mount: 🔴 tailwind — 1.90 ms · 1.03× as fast as vanilla-extract · update: 🟡 Tie: tailwind, Zyzz — 2.35 ms · remount: 🔴 vanilla-extract — 1.65 ms · 1.06× as fast as tailwind</summary>
+<summary>100 cards, overrides · mount: 🔴 tailwind at 1.90 ms · 1.03× as fast as vanilla-extract · update: 🟡 Tie: tailwind, Zyzz at 2.35 ms · remount: 🔴 vanilla-extract at 1.65 ms · 1.06× as fast as tailwind</summary>
 
 | Cards | Workload  | Framework       | Operation | Pass | Commit median ms | Commit + layout median ms | p95 ms | Frame median ms |
 | ----: | --------- | --------------- | --------- | ---: | ---------------: | ------------------------: | -----: | --------------: |
@@ -377,7 +377,7 @@ Summaries show the lowest average of the two pass medians for commit + layout, i
 </details>
 
 <details>
-<summary>100 cards — dynamic · mount: 🔴 Plain class/style — 2.35 ms · 1.11× as fast as Zyzz · update: 🔴 Plain class/style — 2.55 ms · 1.06× as fast as Zyzz · remount: 🔴 Plain class/style — 2.10 ms · 1.07× as fast as Zyzz</summary>
+<summary>100 cards, dynamic · mount: 🔴 Plain class/style at 2.35 ms · 1.11× as fast as Zyzz · update: 🔴 Plain class/style at 2.55 ms · 1.06× as fast as Zyzz · remount: 🔴 Plain class/style at 2.10 ms · 1.07× as fast as Zyzz</summary>
 
 | Cards | Workload | Framework | Operation | Pass | Commit median ms | Commit + layout median ms | p95 ms | Frame median ms |
 | ----: | -------- | --------- | --------- | ---: | ---------------: | ------------------------: | -----: | --------------: |
@@ -397,7 +397,7 @@ Summaries show the lowest average of the two pass medians for commit + layout, i
 </details>
 
 <details>
-<summary>100 cards — variants · mount: 🟡 Tie: Plain class/style, stylex — 2.45 ms · update: 🔴 Plain class/style — 2.55 ms · 1.04× as fast as stylex · remount: 🔴 Plain class/style — 2.00 ms · 1.13× as fast as stylex</summary>
+<summary>100 cards, variants · mount: 🟡 Tie: Plain class/style, stylex at 2.45 ms · update: 🔴 Plain class/style at 2.55 ms · 1.04× as fast as stylex · remount: 🔴 Plain class/style at 2.00 ms · 1.13× as fast as stylex</summary>
 
 | Cards | Workload | Framework | Operation | Pass | Commit median ms | Commit + layout median ms | p95 ms | Frame median ms |
 | ----: | -------- | --------- | --------- | ---: | ---------------: | ------------------------: | -----: | --------------: |
@@ -429,7 +429,7 @@ Summaries show the lowest average of the two pass medians for commit + layout, i
 </details>
 
 <details>
-<summary>1000 cards — callable · mount: 🟢 Zyzz — 15.45 ms · 1.02× as fast as vanilla-extract · update: 🟢 Zyzz — 15.00 ms · 1.01× as fast as Plain class/style · remount: 🟢 Zyzz — 15.75 ms · 1.04× as fast as Plain class/style</summary>
+<summary>1000 cards, callable · mount: 🟢 Zyzz at 15.45 ms · 1.02× as fast as vanilla-extract · update: 🟢 Zyzz at 15.00 ms · 1.01× as fast as Plain class/style · remount: 🟢 Zyzz at 15.75 ms · 1.04× as fast as Plain class/style</summary>
 
 | Cards | Workload | Framework       | Operation | Pass | Commit median ms | Commit + layout median ms | p95 ms | Frame median ms |
 | ----: | -------- | --------------- | --------- | ---: | ---------------: | ------------------------: | -----: | --------------: |
@@ -473,7 +473,7 @@ Summaries show the lowest average of the two pass medians for commit + layout, i
 </details>
 
 <details>
-<summary>1000 cards — overrides · mount: 🔴 vanilla-extract — 15.70 ms · 1.02× as fast as Plain class/style · update: 🔴 vanilla-extract — 19.55 ms · 1.00× as fast as Zyzz · remount: 🔴 vanilla-extract — 17.05 ms · 1.01× as fast as tailwind</summary>
+<summary>1000 cards, overrides · mount: 🔴 vanilla-extract at 15.70 ms · 1.02× as fast as Plain class/style · update: 🔴 vanilla-extract at 19.55 ms · 1.00× as fast as Zyzz · remount: 🔴 vanilla-extract at 17.05 ms · 1.01× as fast as tailwind</summary>
 
 | Cards | Workload  | Framework       | Operation | Pass | Commit median ms | Commit + layout median ms | p95 ms | Frame median ms |
 | ----: | --------- | --------------- | --------- | ---: | ---------------: | ------------------------: | -----: | --------------: |
@@ -517,7 +517,7 @@ Summaries show the lowest average of the two pass medians for commit + layout, i
 </details>
 
 <details>
-<summary>1000 cards — dynamic · mount: 🟢 Zyzz — 19.15 ms · 1.02× as fast as Plain class/style · update: 🟢 Zyzz — 22.35 ms · 1.04× as fast as Plain class/style · remount: 🟢 Zyzz — 20.30 ms · 1.03× as fast as Plain class/style</summary>
+<summary>1000 cards, dynamic · mount: 🟢 Zyzz at 19.15 ms · 1.02× as fast as Plain class/style · update: 🟢 Zyzz at 22.35 ms · 1.04× as fast as Plain class/style · remount: 🟢 Zyzz at 20.30 ms · 1.03× as fast as Plain class/style</summary>
 
 | Cards | Workload | Framework | Operation | Pass | Commit median ms | Commit + layout median ms | p95 ms | Frame median ms |
 | ----: | -------- | --------- | --------- | ---: | ---------------: | ------------------------: | -----: | --------------: |
@@ -537,7 +537,7 @@ Summaries show the lowest average of the two pass medians for commit + layout, i
 </details>
 
 <details>
-<summary>1000 cards — variants · mount: 🔴 Plain class/style — 17.75 ms · 1.08× as fast as Zyzz · update: 🔴 Plain class/style — 19.80 ms · 1.09× as fast as Zyzz · remount: 🔴 Plain class/style — 19.00 ms · 1.11× as fast as Zyzz</summary>
+<summary>1000 cards, variants · mount: 🔴 Plain class/style at 17.75 ms · 1.08× as fast as Zyzz · update: 🔴 Plain class/style at 19.80 ms · 1.09× as fast as Zyzz · remount: 🔴 Plain class/style at 19.00 ms · 1.11× as fast as Zyzz</summary>
 
 | Cards | Workload | Framework | Operation | Pass | Commit median ms | Commit + layout median ms | p95 ms | Frame median ms |
 | ----: | -------- | --------- | --------- | ---: | ---------------: | ------------------------: | -----: | --------------: |
@@ -571,12 +571,12 @@ Summaries show the lowest average of the two pass medians for commit + layout, i
 <details>
 <summary>Measurement methodology</summary>
 
-Fresh-root mount, retained-DOM update, and remount after untimed removal. Production React 19.2.4; styles and JavaScript are loaded before timing. Three warmup cycles, twenty measured cycles per pass, reversed framework order on pass two.
+Fresh-root mount, retained-DOM update, and remount after untimed removal. Production React 19.2.4, with styles and JavaScript loaded before timing. Three warmup cycles, twenty measured cycles per pass, reversed framework order on pass two.
 
-Commit includes scheduling, React rendering, and DOM commit through a layout effect. Commit + layout adds a forced geometry read. Frame is a two-animation-frame checkpoint, including refresh wait; it is not paint CPU duration. These are warm-code client operations, not navigation or hydration.
+Commit includes scheduling, React rendering, and DOM commit through a layout effect. Commit + layout adds a forced geometry read. Frame is a two-animation-frame checkpoint, including refresh wait. It is not paint CPU duration. These are warm-code client operations, not navigation or hydration.
 
-Browser: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.0 Safari/537.36
+Browser: `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.0 Safari/537.36`
 
 </details>
 
-Performance comparisons are advisory while repeatability is established. Missing measurements and browser correctness failures fail CI. Dynamic slots compare only Zyzz and native CSS; no dynamic ranking of other frameworks is implied. Function microbenchmarks are separate diagnostics.
+Performance comparisons are advisory while repeatability is established. Missing measurements and browser correctness failures fail CI. Dynamic slots compare only Zyzz and native CSS. No dynamic ranking of other frameworks is implied. Function microbenchmarks are separate diagnostics.

@@ -7,7 +7,7 @@ npx zyzz build
 npx zyzz dev
 ```
 
-Both commands read `src` and write transformed source modules, CSS, source maps, and packed metadata to `dist`. The compiler supplies automatic identities. Downstream tooling lowers the emitted TypeScript/JSX and bundles the application. `build` runs once; `dev` builds immediately and watches the source tree.
+Both commands read `src` and write transformed source modules, CSS, source maps, and packed metadata to `dist`. The compiler supplies automatic identities. Downstream tooling lowers the emitted TypeScript/JSX and bundles the application. `build` runs once. `dev` builds immediately and watches the source tree.
 
 ## CSS Only
 
@@ -44,7 +44,7 @@ const progress = css(
 )
 ```
 
-IDs belong to the application or package namespace. Reusing an ID deliberately shares an identity; conflicting style definitions are rejected during extraction. Runtime helpers bind classes, selection attributes, and inline variables. They do not insert stylesheets or generate CSS rules.
+IDs belong to the application or package namespace. Reusing an ID deliberately shares an identity. Conflicting style definitions are rejected during extraction. Runtime helpers bind classes, selection attributes, and inline variables. They do not insert stylesheets or generate CSS rules.
 
 ## Vite
 
@@ -62,7 +62,7 @@ Disable source optimization while retaining CSS delivery:
 export default { plugins: [zyzz({ compiler: false })] }
 ```
 
-This mode follows the same explicit-ID requirements as `zyzz build --css-only`. The plugin and CLI are alternative CSS delivery paths; running both for the same application is unnecessary.
+This mode follows the same explicit-ID requirements as `zyzz build --css-only`. The plugin and CLI are alternative CSS delivery paths, so running both for the same application is unnecessary.
 
 ## Watching
 
@@ -72,4 +72,4 @@ See the [CLI reference](../api/cli.md) for flags and structured output. The lowe
 
 ## Runtime Cost
 
-Source optimization removes authoring normalization from application bundles. In a minimal exported static-style fixture, minified JavaScript measured 285 bytes gzip with compilation and 18,271 bytes gzip without it. This is a fixture measurement, not a fixed per-style cost; normalization is shared across definitions. Compilation stays enabled by default in Vite.
+Source optimization removes authoring normalization from application bundles. In a minimal exported static-style fixture, minified JavaScript measured 285 bytes gzip with compilation and 18,271 bytes gzip without it. This is a fixture measurement, not a fixed per-style cost, since normalization is shared across definitions. Compilation stays enabled by default in Vite.

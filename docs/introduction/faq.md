@@ -18,7 +18,7 @@ Callbacks describe typed value bindings to precompiled rules. They do not genera
 
 ## Can Libraries Precompile?
 
-Yes: distribute matching transformed code and CSS. The current compiler APIs support their documented literal boundary; public CLI packaging remains a preview.
+Yes: distribute matching transformed code and CSS. The current compiler APIs support their documented literal boundary. Public CLI packaging remains a preview.
 
 ## Does Native Support Everything?
 

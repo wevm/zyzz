@@ -21,13 +21,13 @@ const output = Css.compile({ styles })
 3. Check computed padding and relevant states.
 4. Verify source errors through public diagnostics.
 
-Use integration tests without mocks or stubs. Snapshot results individually with inline snapshots; match only genuinely nondeterministic fields. A stylesheet snapshot alone does not prove cascade or rendering correctness.
+Use integration tests without mocks or stubs. Snapshot results individually with inline snapshots, and match only genuinely nondeterministic fields. A stylesheet snapshot alone does not prove cascade or rendering correctness.
 
 ### Troubleshooting
 
 #### Missing Transform
 
-An error named `css.MissingTransformError` means authoring source reached execution. The name identifies the diagnostic; the constructor is not a property of the exported `css` function. Confirm the build transforms that module; importing config or extracting CSS alone cannot fix it.
+An error named `css.MissingTransformError` means authoring source reached execution. The name identifies the diagnostic. The constructor is not a property of the exported `css` function. Confirm the build transforms that module, since importing config or extracting CSS alone cannot fix it.
 
 #### Missing CSS
 
@@ -43,7 +43,7 @@ Check layer, importance, condition, and rule order. Class-string order does not 
 
 #### Watch Failures
 
-Inspect the located error and keep the last successful output. Do not delete unrelated output files; the host tracks ownership.
+Inspect the located error and keep the last successful output. Do not delete unrelated output files. The host tracks ownership.
 
 See [Compatibility](../introduction/compatibility.md) before assuming a preview API is executable.
 

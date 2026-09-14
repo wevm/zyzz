@@ -7,7 +7,7 @@ pnpm install
 pnpm examples
 ```
 
-Run from the repository root. `pnpm examples` links the local library to source with `pnpm dev`, then starts each example's Vite dev server. No build is required; changes reload automatically.
+Run from the repository root. `pnpm examples` links the local library to source with `pnpm dev`, then starts each example's Vite dev server. No build is required, and changes reload automatically.
 
 ## Deployments
 
@@ -30,7 +30,7 @@ Server-rendered examples must provide a static export.
 | Fork PR            | Build only                                                         |
 | Manual run         | Allowed from `main` only                                           |
 
-Workers serve [static assets](https://developers.cloudflare.com/workers/static-assets/) and are created during deployment; no Pages project is needed. Configure these repository secrets and enable the account's workers.dev subdomain:
+Workers serve [static assets](https://developers.cloudflare.com/workers/static-assets/) and are created during deployment, so no Pages project is needed. Configure these repository secrets and enable the account's workers.dev subdomain:
 
 | Secret                  | Value                                                        |
 | ----------------------- | ------------------------------------------------------------ |

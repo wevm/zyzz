@@ -25,7 +25,7 @@ const example = (
 )
 ```
 
-Pass `className` and `style` overrides to the styling function. Keep events, children, and accessibility props on the component. External classes follow the CSS cascade; class-string order does not establish precedence.
+Pass `className` and `style` overrides to the styling function. Keep events, children, and accessibility props on the component. External classes follow the CSS cascade. Class-string order does not establish precedence.
 
 #### Add Hover and Responsive Styles
 
@@ -78,7 +78,7 @@ The bundler integration resolves and transforms imports of compiled `css(...)` d
 Pass styling overrides to a definition. Compose generated declarations through `cx` when one generated style must override another.
 
 > [!NOTE]
-> `cx` currently requires compiler-resolved local applications or immutable local props bindings. Ternaries, packed definitions, and arbitrary external props remain unsupported. Conditional arguments use `enabled && styles.example()`; at most eight conditional arguments are supported.
+> `cx` currently requires compiler-resolved local applications or immutable local props bindings. Ternaries, packed definitions, and arbitrary external props remain unsupported. Conditional arguments use `enabled && styles.example()`, and at most eight conditional arguments are supported.
 
 ```tsx
 import { css, cx } from 'zyzz'
@@ -91,7 +91,7 @@ namespace styles {
 const example = <button {...cx(styles.base(), styles.roomy())}>Continue</button>
 ```
 
-Later conflicts win within matching conditions, subject to importance. `cx` preserves owned variables and recipe attributes; incompatible recipe ownership fails. External classes retain normal cascade behavior.
+Later conflicts win within matching conditions, subject to importance. `cx` preserves owned variables and recipe attributes. Incompatible recipe ownership fails. External classes retain normal cascade behavior.
 
 ```tsx
 const custom = (
@@ -114,7 +114,7 @@ namespace styles {
 const example = <div {...styles.bar({ width: '50%' })} />
 ```
 
-Callbacks use explicitly typed scalar inputs and compile to fixed CSS-variable slots. Local finite aliases and interfaces are supported; rule structure, arbitrary runtime expressions, generic/imported dynamic types, and native output remain outside this boundary. Callbacks bind values without generating CSS. Use `variable()` for independently reusable CSS variables.
+Callbacks use explicitly typed scalar inputs and compile to fixed CSS-variable slots. Local finite aliases and interfaces are supported. Rule structure, arbitrary runtime expressions, generic/imported dynamic types, and native output remain outside this boundary. Callbacks bind values without generating CSS. Use `variable()` for independently reusable CSS variables.
 
 ```ts
 namespace styles {
@@ -125,7 +125,7 @@ namespace styles {
 }
 ```
 
-Arrays preserve fallback order; a trailing `!` marks importance.
+Arrays preserve fallback order, and a trailing `!` marks importance.
 
 #### Theme Expressions
 
@@ -137,7 +137,7 @@ namespace styles {
 }
 ```
 
-Import `{ css, theme }` from the [config module](../concepts.md#configuration) and access `theme.vars` directly. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs; `variable()` declares independent CSS variables.
+Import `{ css, theme }` from the [config module](../concepts.md#configuration) and access `theme.vars` directly. These typed CSS references follow compatible theme scopes. Callbacks remain the API for per-instance inputs. `variable()` declares independent CSS variables.
 
 #### Static Bindings
 

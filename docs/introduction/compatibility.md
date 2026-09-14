@@ -1,6 +1,6 @@
 # Compatibility
 
-This documentation describes the implemented web compiler and marks remaining API boundaries with scoped preview notes. The [historical capability inventory](../../.agents/parity.md) records the earlier API comparison; the [Phase 2 plan](../../.agents/plan.md) records acceptance evidence and deferred gates.
+This documentation describes the implemented web compiler and marks remaining API boundaries with scoped preview notes. The [historical capability inventory](../../.agents/parity.md) records the earlier API comparison. The [Phase 2 plan](../../.agents/plan.md) records acceptance evidence and deferred gates.
 
 | Boundary                                 | Implemented scope                                                                                              |
 | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -8,7 +8,7 @@ This documentation describes the implemented web compiler and marks remaining AP
 | `Theme` and `Config.create`              | Compatible themes, named selection, initialization scripts, property aliases, and dedicated spacing groups     |
 | Source and packed linking                | Configuration helpers, theme handles, ref relationships, variable contracts, and animation aliases             |
 | Stylesheets and adapters                 | Eager contributions, shared source maps, package-owned relative assets, optional reset, and rebuilds           |
-| Web frameworks                           | React, Solid, Svelte, and plain HTML integration fixtures; SSR/hydration and serialized-attribute checks in CI |
+| Web frameworks                           | React, Solid, Svelte, and plain HTML integration fixtures, SSR/hydration and serialized-attribute checks in CI |
 
 > [!NOTE]
 > Arbitrary imported object records used as `css(record)`, the remaining variants and bundled-theme gates, Vue SFC integration, the CLI entrypoint, the Next.js adapter, and native compilation/rendering are still deferred. Inferred authoring types alone do not establish transform or rendering support. See the plan for each remaining acceptance gate.

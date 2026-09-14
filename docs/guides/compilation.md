@@ -20,7 +20,7 @@ const styles = Style.define({
 const output = Css.compile({ styles })
 ```
 
-Load `output.css` as a stylesheet and apply `output.classes.card` to the element. The compiler has no filesystem or browser side effects. [Literal styles](../api/core/Style/literals.md) documents supported values; [themes](themes.md#compile-themes) adds token references and compatible scopes.
+Load `output.css` as a stylesheet and apply `output.classes.card` to the element. The compiler has no filesystem or browser side effects. [Literal styles](../api/core/Style/literals.md) documents supported values. [Themes](themes.md#compile-themes) adds token references and compatible scopes.
 
 #### Transform Source
 
@@ -38,7 +38,7 @@ export namespace styles {
 
 Bundle the returned `code` and load its matching `css`. Keep their source maps together. Apply the exported `styles.button()` props to an element. A stable package-relative module ID prevents unrelated modules sharing identities. Source extraction alone does not rewrite executable calls.
 
-For filesystem builds, `await Host.create({ outDir, packageId, root })` from `zyzz/node` resolves to build/watch/close operations. It writes module and CSS sidecars; loading CSS and lowering TypeScript/JSX remain application build responsibilities.
+For filesystem builds, `await Host.create({ outDir, packageId, root })` from `zyzz/node` resolves to build/watch/close operations. It writes module and CSS sidecars. Loading CSS and lowering TypeScript/JSX remain application build responsibilities.
 
 #### Publish Matching Artifacts
 
@@ -54,7 +54,7 @@ Consumers load the stylesheet once. They do not need Zyzz compilation for alread
 npx zyzz build
 ```
 
-The defaults compile `src` into `dist`, with adjacent module CSS and `zyzz.shared.css` for shared contributions. Treat `dist` as compiler output, not an application import convention. Downstream tooling consumes the rewritten tree and lowers TypeScript/JSX. Original relative imports remain authored normally; the build selects its input root.
+The defaults compile `src` into `dist`, with adjacent module CSS and `zyzz.shared.css` for shared contributions. Treat `dist` as compiler output, not an application import convention. Downstream tooling consumes the rewritten tree and lowers TypeScript/JSX. Original relative imports remain authored normally. The build selects its input root.
 
 Libraries expose compiled modules through package exports and document stylesheet loading. Keep generated output separate from owned source files. A CSS-only scan cannot replace source rewriting for Zyzz's callable definitions.
 

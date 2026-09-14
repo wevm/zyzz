@@ -3026,9 +3026,9 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
       expect(JSON.parse(platforms.stdout)).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z_base-padding-137cmb68vul4y",
+            "button": "z_base-padding-1vmn9pg2nmc1q",
           },
-          "css": ".z_base-padding-137cmb68vul4y{padding:0;}",
+          "css": ".z_base-padding-1vmn9pg2nmc1q{padding:0;}",
           "themes": {},
         }
       `)

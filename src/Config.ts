@@ -249,180 +249,288 @@ export declare namespace create {
     readonly script: (options?: ScriptOptions) => string
   } & (options extends { theme: infer input }
     ? {
-        /** Isolated single-theme contract. */ reado…20062 tokens truncated…(
-            'Configuration requires unique literal keys.',
-          )
-
-        entries[key] = data(property.value)
+        /** Isolated single-theme contract. */ readonly theme: Handle<
+          ExtractTokens<input>,
+          Mappings<options>,
+          options extends { output: infer output extends css.Output }
+            ? output
+            : 'react'
+        >
       }
-
-      return entries
-    }
-
-    return options.data(node)
-  }
-
-  if (options.expression.arguments.length > 1)
-    throw new Config.InvalidError(
-      'Config.create accepts one literal options object.',
-    )
-
-  const input = (
-    options.expression.arguments.length
-      ? data(options.expression.arguments[0]!)
-      : {}
-  ) as Config.create.Options
-
-  const config = Config.create(input)
-
-  const catalog = (() => {
-    if ('themes' in config) {
-      return config.themes
-    }
-
-    if ('theme' in config) {
-      return { theme: config.theme }
-    }
-
-    return {}
-  })()
-
-  const contract = Object.freeze({
-    [Token.identity]: options.name,
-    cssOutput: input.cssOutput ?? 'atomic',
-    ...(input.shorthands
-      ? { shorthands: Shorthands.read(input.shorthands) }
-      : {}),
-  })
-
-  const members: Record<string, Themes.Link> = Object.create(null)
-
-  for (const [key, original] of Object.entries(catalog)) {
-    const name = `${options.name}-${key}`
-    const definition = Token.bind(original, contract)
-    const tokenType = type({
-      ...values(original.tokens),
-      ...original[Token.definition].queries,
-    })
-
-    const call = {
-      ...(input.output === 'html' ? { output: 'html' as const } : {}),
-      end: options.expression.end,
-      name,
-      start: options.expression.start,
-      tokenType,
-      ...(input.output === 'html' || input.shorthands
-        ? {
-            type: `import('zyzz').Config.create.ReturnType<{theme:${tokenType};${input.output === 'html' ? "output:'html';" : ''}shorthands:${type(input.shorthands ?? {})}}>['theme']`,
+    : options extends { themes: infer catalog }
+      ? {
+          /** Shared default token and variable contract. */ readonly theme: Handle<
+            Tokens<options>,
+            Mappings<options>,
+            options extends { output: infer output extends css.Output }
+              ? output
+              : 'react'
+          >
+          /** Selects a compiled named scope; catalog members retain compatibility. */ readonly themes: (<
+            const selection extends {
+              readonly colorScheme?: 'dark' | 'light' | 'light dark' | undefined
+              readonly theme: keyof catalog & string
+            },
+          >(
+            options: selection &
+              Record<Exclude<keyof selection, 'theme' | 'colorScheme'>, never>,
+          ) => css.Props<
+            options extends { output: infer output extends css.Output }
+              ? output
+              : 'react'
+          >) & {
+            readonly [name in keyof catalog]: Handle<
+              ExtractTokens<catalog[name]>,
+              Mappings<options>,
+              options extends { output: infer output extends css.Output }
+                ? output
+                : 'react'
+            >
           }
-        : {}),
+        }
+      : {})
+}
+
+type Mappings<options> = options extends {
+  shorthands: infer map extends Shorthands.Map
+}
+  ? string extends keyof map
+    ? {}
+    : map
+  : {}
+
+/** Theme handle retaining configured shorthands and renderer output in emitted declarations. */
+export type Handle<
+  tokens extends Theme.Tokens,
+  mappings extends Shorthands.Map,
+  output extends css.Output,
+> = Omit<Theme.Definition<tokens>, 'css' | 'variants'> & {
+  /** Style factory bound to this handle. */
+  readonly css: Css<tokens, never, output, mappings>
+  /** Variant factory bound to this handle. */
+  readonly variants: variants.Bound<tokens, output, never, mappings>
+}
+
+/** Configured style factory with a portable name for library declaration emission. */
+export type Css<
+  tokens extends Theme.Tokens,
+  layers extends string,
+  output extends css.Output,
+  mappings extends Shorthands.Map,
+> = {
+  (): css.ReturnType<output>
+  <
+    const values extends Record<string, string | number>,
+    const styles extends Record<string, unknown>,
+    const callback extends (...args: never[]) => unknown,
+  >(
+    styles: callback &
+      ((
+        values: values,
+      ) => styles &
+        NoInfer<
+          Body<styles, tokens, layers, mappings> & Binding.Checked<styles>
+        >) &
+      (values extends Binding.Inputs<values> ? unknown : never) &
+      (Parameters<callback> extends [Record<string, string | number>]
+        ? unknown
+        : never),
+  ): css.Dynamic<values, output>
+  <const styles extends Record<string, unknown>>(
+    styles: styles & NoInfer<Body<styles, tokens, layers, mappings>>,
+  ): css.ReturnType<output>
+}
+
+type Keys<styles> = styles extends unknown ? keyof styles : never
+
+/** Checked declaration body shared by configured styles and recipe choices. */
+export type Body<
+  styles,
+  tokens extends Theme.Tokens,
+  layers extends string,
+  mappings extends Shorthands.Map,
+> = Record<
+  Exclude<
+    Keys<styles>,
+    | keyof mappings
+    | 'selectors'
+    | 'variables'
+    | keyof Style.DeclarationProperties
+    | Exclude<Condition.Keys<tokens, Keys<styles>>, `@layer${string}`>
+    | '@layer'
+    | `@layer ${layers}`
+  >,
+  never
+> &
+  (styles extends unknown
+    ? {
+        [key in keyof styles]: key extends 'selectors'
+          ? styles[key] extends Record<string, unknown>
+            ? {
+                [selector in keyof styles[key]]: styles[key][selector] extends Record<
+                  string,
+                  unknown
+                >
+                  ? Body<styles[key][selector], tokens, layers, mappings>
+                  : never
+              }
+            : never
+          : key extends
+                | Exclude<Condition.Keys<tokens, key>, `@layer${string}`>
+                | '@layer'
+                | `@layer ${layers}`
+            ? styles[key] extends Record<string, unknown>
+              ? Body<styles[key], tokens, layers, mappings>
+              : never
+            : key extends keyof mappings
+              ? {
+                  [target in mappings[key][number]]: styles[key] extends Style.Accepted<
+                    Record<target, styles[key]>,
+                    tokens
+                  >[target] &
+                    Binding.Checked<Record<target, styles[key]>>[target]
+                    ? never
+                    : target
+                }[mappings[key][number]] extends never
+                ? styles[key]
+                : never
+              : Style.Accepted<Pick<styles, key>, tokens>[key]
+      }
+    : never)
+
+function definition(value: unknown): Theme.Definition {
+  try {
+    if (
+      value &&
+      typeof value === 'object' &&
+      Object.getOwnPropertyDescriptor(value, Token.definition)?.value
+    )
+      return value as Theme.Definition
+
+    return Theme.define(record(value) as Theme.Tokens)
+  } catch (error) {
+    if (error instanceof InvalidError) throw error
+
+    throw new InvalidError((error as Error).message)
+  }
+}
+
+type ExtractTokens<input> =
+  input extends Theme.Definition<infer tokens>
+    ? tokens
+    : input extends Theme.Tokens
+      ? input
+      : never
+
+type Input = Theme.Definition | Theme.Tokens
+
+/** Invalid options or incompatible named themes. */
+export class InvalidError extends Error {
+  /** Creates a configuration diagnostic without generating styles. */
+  constructor(message: string) {
+    super(message)
+  }
+  /** Stable namespaced error identifier. */
+  override name = 'Config.InvalidError'
+}
+
+function record(value: unknown): Record<string, unknown> {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    ![null, Object.prototype].includes(Object.getPrototypeOf(value))
+  )
+    throw new InvalidError('Expected a plain configuration record.')
+
+  const result: Record<string, unknown> = Object.create(null)
+
+  for (const [key, descriptor] of Object.entries(
+    Object.getOwnPropertyDescriptors(value),
+  )) {
+    if (!('value' in descriptor))
+      throw new InvalidError('Configuration records cannot contain accessors.')
+
+    result[key] = descriptor.value
+  }
+
+  return result
+}
+
+type Tokens<options> = options extends { theme: infer input }
+  ? ExtractTokens<input>
+  : options extends { themes: infer catalog; defaultTheme: infer key }
+    ? key extends keyof catalog
+      ? ExtractTokens<catalog[key]>
+      : never
+    : {}
+
+type ValidInput<input> = input extends Theme.Definition
+  ? input
+  : input extends Theme.Tokens
+    ? Parameters<typeof Theme.define<input>>[0]
+    : never
+
+type Match<input, base> = base extends
+  | string
+  | number
+  | { light: string; dark: string }
+  ? input
+  : {
+      [key in keyof input | keyof base]: key extends keyof input
+        ? key extends keyof base
+          ? key extends 'containerNames'
+            ? input[key] extends readonly string[]
+              ? base[key] extends readonly string[]
+                ?
+                    | Exclude<input[key][number], base[key][number]>
+                    | Exclude<
+                        base[key][number],
+                        input[key][number]
+                      > extends never
+                  ? input[key]
+                  : never
+                : never
+              : never
+            : Match<input[key], base[key]>
+          : never
+        : never
     }
 
-    members[JSON.stringify('themes' in config ? ['themes', key] : ['theme'])] =
-      {
-        binding: name,
-        call,
-        definition,
-        kind: 'theme',
-      }
-  }
-
-  const selected =
-    members[
-      JSON.stringify(
-        'themes' in config ? ['themes', input.defaultTheme] : ['theme'],
-      )
-    ]
-
-  if ('themes' in config && selected)
-    members[JSON.stringify(['theme'])] = selected
-
-  const definition =
-    selected?.definition ?? Token.bind(Theme.define({}), contract)
-
-  const normalized = {
-    ...(() => {
-      if ('themes' in config) {
-        return {
-          defaultTheme: input.defaultTheme,
-          themes: Object.fromEntries(
-            Object.entries(catalog).map(([name, theme]) => [
-              name,
-              { ...values(theme.tokens), ...theme[Token.definition].queries },
-            ]),
-          ),
+type Validated<options> = Record<
+  Exclude<keyof options, keyof create.Options>,
+  never
+> &
+  (options extends { shorthands: infer mappings extends Shorthands.Map }
+    ? { shorthands: Shorthands.Validated<mappings> }
+    : {}) &
+  (options extends { theme: infer input }
+    ? { theme: ValidInput<input> }
+    : options extends { themes: infer catalog; defaultTheme: infer key }
+      ? {
+          defaultTheme: keyof catalog
+          themes: {
+            [name in keyof catalog]: ValidInput<catalog[name]> &
+              (key extends keyof catalog
+                ? catalog[name] extends Theme.Definition
+                  ? Theme.Definition<
+                      ExtractTokens<catalog[name]> &
+                        Match<
+                          ExtractTokens<catalog[name]>,
+                          ExtractTokens<catalog[key]>
+                        >
+                    >
+                  : Match<
+                      ExtractTokens<catalog[name]>,
+                      ExtractTokens<catalog[key]>
+                    >
+                : never)
+          }
         }
-      }
+      : {})
 
-      if ('theme' in config) {
-        return {
-          theme: {
-            ...values(config.theme.tokens),
-            ...config.theme[Token.definition].queries,
-          },
-        }
-      }
-
-      return {}
-    })(),
-    ...(input.cssOutput ? { cssOutput: input.cssOutput } : {}),
-    ...(input.shorthands ? { shorthands: input.shorthands } : {}),
-    ...(input.output ? { output: input.output } : {}),
-    ...(input.layers ? { layers: input.layers } : {}),
-  }
-
-  return {
-    binding: options.name,
-    call: {
-      script: true,
-      end: options.expression.end,
-      members: Object.fromEntries(
-        Object.entries(members).map(([key, link]) => [key, link.call.name]),
-      ),
-      name: selected?.call.name ?? options.name,
-      options: normalized,
-      start: options.expression.start,
-      tokenType: selected?.call.tokenType ?? '{}',
-      type: `import('zyzz').Config.create.ReturnType<${type(normalized)}>`,
-    },
-    definition,
-    kind: 'config',
-    members,
-  }
-}
-
-/** Inputs supplied by the lexical theme collector. */
-export declare namespace collect {
-  /** Literal reader, source span, identity, and preceding immutable bindings. */
-  type Options = {
-    /** Existing literal theme reader for scalar input. */
-    readonly data: (node: Ast.Node) => unknown
-    /** Direct module-level configuration factory span. */
-    readonly expression: Ast.CallExpression
-    /** Stable module/binding identity. */
-    readonly name: string
-    /** Looks up preceding immutable theme definitions. */
-    readonly resolve: (node: Ast.Node) => Themes.Link | undefined
-  }
-}
-
-/** Encodes validated literal options as a declaration type, never executable text. */
-export function type(value: unknown): string {
-  if (Array.isArray(value)) return `readonly [${value.map(type).join(',')}]`
-  if (!value || typeof value !== 'object') return JSON.stringify(value)
-
-  return `{${Object.entries(value)
-    .map(([key, value]) => `readonly ${JSON.stringify(key)}:${type(value)}`)
-    .join(';')}}`
-}
-
-function values(tree: Theme.References<Theme.Tokens>): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(tree).map(([key, value]) => [
-      key,
-      Token.is(value)
-        ? value.value
-        : values(value as Theme.References<Theme.Tokens>),
-    ]),
-  )
+/** Options for a compiled root appearance initialization script. */
+export type ScriptOptions = {
+  /** localStorage key containing theme and colorScheme fields; defaults to zyzz. */
+  readonly storageKey?: string | undefined
 }

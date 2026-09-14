@@ -98,6 +98,7 @@ export function collect(options: collect.Options): Themes.Link {
 
   const contract = Object.freeze({
     [Token.identity]: options.name,
+    cssOutput: input.cssOutput ?? 'atomic',
     ...(input.shorthands
       ? { shorthands: Shorthands.read(input.shorthands) }
       : {}),
@@ -173,6 +174,7 @@ export function collect(options: collect.Options): Themes.Link {
 
       return {}
     })(),
+    ...(input.cssOutput ? { cssOutput: input.cssOutput } : {}),
     ...(input.shorthands ? { shorthands: input.shorthands } : {}),
     ...(input.output ? { output: input.output } : {}),
     ...(input.layers ? { layers: input.layers } : {}),

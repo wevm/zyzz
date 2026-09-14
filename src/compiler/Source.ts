@@ -1005,7 +1005,13 @@ export function extract(options: extract.Options): extract.ReturnType {
 
       if (diagnostics.length !== before) continue
 
-      styles.push(...definition.styles)
+      const cssOutput = themes?.styles.get(call.start)?.theme[Token.definition]
+        .contract.cssOutput
+      styles.push(
+        ...definition.styles.map((style) =>
+          cssOutput === 'grouped' ? { ...style, cssOutput } : style,
+        ),
+      )
 
       const shorthands = themes?.styles.get(call.start)?.theme[Token.definition]
         .contract.shorthands

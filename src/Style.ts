@@ -546,6 +546,8 @@ export type LiteralDeclarations = {
 
 /** A named group of ordered declarations. */
 export type NamedStyle<name extends string = string> = {
+  /** Compiler-owned web mode inherited from the defining configuration. */
+  readonly cssOutput?: 'atomic' | 'grouped' | undefined
   /** Ordered nested blocks, when this style contains conditions. */
   readonly rules?: readonly Rule[] | undefined
   /** Declarations in own enumerable property order. */

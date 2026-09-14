@@ -312,26 +312,24 @@ export function compile<
   // Sharing is safe only when every use of a conflict domain has the same
   // declaration sequence. Conditions conservatively retain contextual identities.
   for (const style of analyzed) {
-    const domains = new Map<string, string>()
+    const domains = new Map<string, { body: string; properties: Set<string> }>()
 
     for (const { important, property, value } of style.declarations) {
       const key = root(domain(canonical(property)))
       const declaration = `${Literal.name(property)}:${serialize(value)}${important ? '!important' : ''};`
-      domains.set(key, (domains.get(key) ?? '') + declaration)
+      const entry = domains.get(key) ?? {
+        body: '',
+        properties: new Set<string>(),
+      }
+      entry.body += declaration
+      entry.properties.add(property)
+      domains.set(key, entry)
     }
 
-    // Sharing individual properties cannot retain a multi-property conflict
-    // sequence (for example padding, padding-left, padding again).
-    for (const key of domains.keys()) {
-      const properties = new Set(
-        style.declarations
-          .filter(({ property }) => root(domain(canonical(property))) === key)
-          .map(({ property }) => property),
-      )
-      if (properties.size > 1) groups.set(key, false)
-    }
+    for (const [key, entry] of domains) {
+      const value = entry.body
+      if (entry.properties.size > 1) groups.set(key, false)
 
-    for (const [key, value] of domains) {
       const previous = groups.get(key)
       groups.set(
         key,
@@ -352,6 +350,13 @@ export function compile<
 
   const rules = new Map<string, string>()
   const identical = new Map<string, string>()
+  const applications = new Map<string, string>()
+  const occurrences = new Map<string, number>()
+  for (const style of options.styles.styles)
+    for (const declaration of style.declarations) {
+      const key = root(domain(canonical(declaration.property)))
+      occurrences.set(key, (occurrences.get(key) ?? 0) + 1)
+    }
 
   for (const style of options.styles.styles) {
     const mode = style.cssOutput ?? defaultMode
@@ -364,25 +369,39 @@ export function compile<
       continue
     }
 
+    const application =
+      options.composition === 'independent'
+        ? `${mode}:${nested(style)}`
+        : undefined
+    if (application !== undefined && applications.has(application)) {
+      classes[style.name] = applications.get(application)!
+      continue
+    }
+
     const names: string[] = []
     let ordinal = 0
 
-    function emit(body: string, label: string, shared: boolean) {
+    function emit(body: string, label: string, shared: boolean, output = mode) {
       if (!body) return
 
       const independent =
-        mode === 'grouped' && options.composition === 'independent'
-      const key = `${mode}:${body}`
+        mode === 'grouped' &&
+        output === mode &&
+        options.composition === 'independent'
+      const key = `${output}:${body}`
       const previous = shared || independent ? identical.get(key) : undefined
-      if (previous) {
+      if (previous && !names.includes(previous)) {
         names.push(previous)
         return
       }
 
+      if (previous) shared = false
+
       // Declaration slots keep mounted elements styled across CSS-only edits.
       const slot = ordinal++
       const identity = (() => {
-        if (mode === 'grouped') return `g-${encode(style.name)}`
+        if (output === 'grouped' && mode === 'grouped')
+          return `g-${encode(style.name)}${slot ? `-${slot}` : ''}`
         if (shared)
           return `z_base-${label}-${hash(`${mode}:${style.name}:${slot}`)}`
 
@@ -404,6 +423,14 @@ export function compile<
       style: Style.NamedStyle,
       conditions: readonly string[] = [],
     ) {
+      if (style.cssOutput === 'grouped') {
+        const body = conditions.reduceRight(
+          (body, condition) => `${condition}{${body}}`,
+          nested(style),
+        )
+        emit(body, 'style', false, 'grouped')
+        return
+      }
       if (style.rules) {
         for (const rule of style.rules)
           atoms(
@@ -442,8 +469,24 @@ export function compile<
     }
 
     try {
-      if (mode === 'grouped') emit(nested(style), 'style', false)
-      else atoms(style)
+      if (mode === 'grouped') {
+        const shared: Style.Declaration[] = []
+        const local: Style.Declaration[] = []
+        for (const declaration of style.declarations) {
+          const key = root(domain(canonical(declaration.property)))
+          const reusable =
+            !style.rules &&
+            options.composition === 'independent' &&
+            groups.get(key) !== false &&
+            (occurrences.get(key) ?? 0) > 1
+          if (reusable) shared.push(declaration)
+          else local.push(declaration)
+        }
+        if (shared.length && local.length) {
+          emit(nested({ ...style, declarations: shared }), 'shared', false)
+          emit(nested({ ...style, declarations: local }), 'style', false)
+        } else emit(nested(style), 'style', false)
+      } else atoms(style)
     } catch (error) {
       diagnostics.push({
         code: 'invalid_declaration',
@@ -453,6 +496,8 @@ export function compile<
     }
 
     classes[style.name] = [...new Set(names)].join(' ')
+    if (application !== undefined)
+      applications.set(application, classes[style.name])
   }
 
   if (diagnostics.length) throw new CompileError(diagnostics)

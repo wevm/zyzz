@@ -108,7 +108,8 @@ export function create(options: create.Options = {}): unknown {
   })()
 
   const contract = Object.freeze({
-    cssOutput: options.cssOutput ?? 'atomic',
+    cssOutput:
+      (input.cssOutput as 'atomic' | 'grouped' | undefined) ?? 'atomic',
     ...(shorthands ? { shorthands } : {}),
   })
 

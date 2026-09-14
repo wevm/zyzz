@@ -1009,7 +1009,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         .contract.cssOutput
       styles.push(
         ...definition.styles.map((style) =>
-          cssOutput === 'grouped' ? { ...style, cssOutput } : style,
+          cssOutput ? Object.freeze({ ...style, cssOutput }) : style,
         ),
       )
 

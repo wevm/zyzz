@@ -394,7 +394,15 @@ export function collect(options: collect.Options) {
       declarations: [],
       rules: selected.flatMap((call) => {
         const style = styles.get(call.name)!
-        return style.rules ?? [{ style }]
+        return (
+          style.rules?.map((rule) => ({
+            ...rule,
+            style: {
+              ...rule.style,
+              cssOutput: style.cssOutput ?? rule.style.cssOutput,
+            },
+          })) ?? [{ style }]
+        )
       }),
     }
     const identities = selected.flatMap((call) =>
@@ -518,7 +526,15 @@ export function collect(options: collect.Options) {
           declarations: [],
           rules: included.flatMap((call) => {
             const style = styles.get(call.name)!
-            return style.rules ?? [{ style }]
+            return (
+              style.rules?.map((rule) => ({
+                ...rule,
+                style: {
+                  ...rule.style,
+                  cssOutput: style.cssOutput ?? rule.style.cssOutput,
+                },
+              })) ?? [{ style }]
+            )
           }),
         },
       })

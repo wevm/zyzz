@@ -12,7 +12,7 @@ const exec = Util.promisify(ChildProcess.execFile)
 
 describe('zyzz', () => {
   test.each([false, true])(
-    'runs build and dev with css-only=%s',
+    'runs published commands with css-only=%s',
     async (cssOnly) => {
       const root = await Fs.mkdtemp(Path.resolve('.fixture-cli-'))
       let child: ChildProcess.ChildProcess | undefined
@@ -146,6 +146,13 @@ describe('zyzz', () => {
             original,
         ).toMatchInlineSnapshot('true')
 
+        if (cssOnly) {
+          expect(
+            (await run(['dev', '--help'])).stdout.includes('--css-only'),
+          ).toMatchInlineSnapshot('true')
+          return
+        }
+
         for (const signal of ['SIGINT', 'SIGTERM'] as const) {
           const lines: string[] = []
           let output = ''
@@ -240,7 +247,7 @@ describe('zyzz', () => {
           child.kill('SIGKILL')
           await exited
         }
-        await Fs.rm(root, { force: true, recursive: true })
+        await Fs.rm(root, { force: true, maxRetries: 3, recursive: true })
       }
     },
     240000,

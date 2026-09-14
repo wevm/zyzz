@@ -13,6 +13,9 @@ describe('compile', () => {
       const output = Css.compile({ cssOutput, styles })
       expectTypeOf(output.classes.card).toEqualTypeOf<string>()
     }
+    Css.compile({ development: true, scope: 'app.ts', styles })
+    // @ts-expect-error Development naming is a boolean switch.
+    Css.compile({ development: 'stable', styles })
     // @ts-expect-error Output mode is a closed union.
     Css.compile({ cssOutput: 'automatic', styles })
   })

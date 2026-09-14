@@ -20,24 +20,39 @@ describe('compile', () => {
     expect(grouped.css).toMatchInlineSnapshot('".card{color:red;padding:8px;}"')
   })
 
-  test('keeps mounted classes valid across declaration value edits', async () => {
+  test('keeps mounted classes valid across development value edits', async () => {
     const browser = await chromium.launch({ headless: true })
 
     try {
       const page = await browser.newPage()
 
-      for (const cssOutput of ['atomic', 'grouped'] as const) {
+      for (const [cssOutput, composition] of [
+        ['atomic', 'ordered'],
+        ['atomic', 'independent'],
+        ['grouped', 'ordered'],
+        ['grouped', 'independent'],
+      ] as const) {
         const before = Css.compile({
+          composition,
           cssOutput,
-          styles: Style.define({ card: { color: 'red', padding: '8px' } }),
+          development: true,
+          styles: Style.define({
+            card: { color: 'red', padding: '8px' },
+            label: { color: 'red', padding: '8px' },
+          }),
         })
         const after = Css.compile({
+          composition,
           cssOutput,
-          styles: Style.define({ card: { color: 'blue', padding: '12px' } }),
+          development: true,
+          styles: Style.define({
+            card: { color: 'blue', padding: '12px' },
+            label: { color: 'red', padding: '8px' },
+          }),
         })
 
         await page.setContent(
-          `<style>${before.css}</style><div class="${before.classes.card}">Card</div>`,
+          `<style>${before.css}</style><div class="${before.classes.card}">Card</div><div class="${before.classes.label}">Label</div>`,
         )
         await page.locator('style').evaluate((element, css) => {
           element.textContent = css
@@ -46,14 +61,53 @@ describe('compile', () => {
         expect(
           await page
             .locator('div')
+            .first()
             .evaluate((element) => getComputedStyle(element).color),
         ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
         expect(
           await page
             .locator('div')
+            .first()
             .evaluate((element) => getComputedStyle(element).paddingLeft),
         ).toMatchInlineSnapshot('"12px"')
+        expect(
+          await page
+            .locator('div')
+            .nth(1)
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+        expect(
+          await page
+            .locator('div')
+            .nth(1)
+            .evaluate((element) => getComputedStyle(element).paddingLeft),
+        ).toMatchInlineSnapshot('"8px"')
       }
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('retains specificity inside one anonymous layer', async () => {
+    const output = Css.compile({
+      styles: Style.define({
+        card: { '@layer': { '&.special': { color: 'blue' }, color: 'red' } },
+      }),
+    })
+    expect(output.css).toMatchInlineSnapshot(
+      `".z-layer-766AnZ-0{@layer{&.special{color:blue;}color:red;}}"`,
+    )
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.card} special"></div>`,
+      )
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) => getComputedStyle(element).color),
+      ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
     } finally {
       await browser.close()
     }
@@ -69,14 +123,50 @@ describe('compile', () => {
     const atomic = Css.compile({ cssOutput: 'atomic', styles })
     const grouped = Css.compile({ cssOutput: 'grouped', styles })
 
-    expect(output).toEqual(atomic)
-    expect(output.classes.card.split(' ')).toHaveLength(2)
-    expect(output.classes.card.split(' ')).toContain(output.classes.label)
-    expect(output.css.match(/color:red;/g)).toHaveLength(1)
-    expect(grouped.classes.card.split(' ')).toHaveLength(1)
-    expect(grouped.css).toContain('{color:red;padding:8px;}')
-    expect(grouped.css.match(/color:red;/g)).toHaveLength(2)
-    expect(Css.compile({ styles })).toEqual(output)
+    expect(output).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "card": "z-text-red z-p-8px",
+          "label": "z-text-red",
+        },
+        "css": ".z-text-red{color:red;}
+      .z-p-8px{padding:8px;}",
+        "themes": {},
+      }
+    `)
+    expect(atomic).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "card": "z-text-red z-p-8px",
+          "label": "z-text-red",
+        },
+        "css": ".z-text-red{color:red;}
+      .z-p-8px{padding:8px;}",
+        "themes": {},
+      }
+    `)
+    expect(grouped).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "card": "g-card",
+          "label": "g-label",
+        },
+        "css": ".g-card{color:red;padding:8px;}
+      .g-label{color:red;}",
+        "themes": {},
+      }
+    `)
+    expect(Css.compile({ styles })).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "card": "z-text-red z-p-8px",
+          "label": "z-text-red",
+        },
+        "css": ".z-text-red{color:red;}
+      .z-p-8px{padding:8px;}",
+        "themes": {},
+      }
+    `)
   })
 
   test('retains fallback sequences, importance, and stylesheet contributions', () => {
@@ -94,9 +184,18 @@ describe('compile', () => {
     for (const cssOutput of ['atomic', 'grouped'] as const) {
       const output = Css.compile({ contributions, cssOutput, styles })
 
-      expect(output.css).toContain('display:block;display:grid!important;')
-      expect(output.contributionCss).toContain('body{margin:0;}')
-      expect(output.css).toContain('color:red;')
+      if (cssOutput === 'atomic')
+        expect(output.css).toMatchInlineSnapshot(`
+          "body{margin:0;}
+          .z-display-TvfMMo{display:block;display:grid!important;}
+          .z-text-red{color:red;}"
+        `)
+      else
+        expect(output.css).toMatchInlineSnapshot(`
+        "body{margin:0;}
+        .g-card{display:block;display:grid!important;color:red;}"
+      `)
+      expect(output.contributionCss).toMatchInlineSnapshot(`"body{margin:0;}"`)
     }
   })
 })

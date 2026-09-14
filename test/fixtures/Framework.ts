@@ -40,7 +40,7 @@ export async function verify(options: verify.Options) {
       { cwd: root, timeout: 120000 },
     )
 
-    await VariantLibrary.create(root, options.output ?? 'html')
+    await VariantLibrary.create(root, { output: options.output ?? 'html' })
 
     for (const [name, content] of Object.entries(options.files))
       await Fs.writeFile(Path.join(root, name), content)

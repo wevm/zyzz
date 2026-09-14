@@ -2,6 +2,7 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
+import * as ClassName from './internal/ClassName.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Binding from '../internal/Binding.js'
 import * as Cascade from '../internal/Cascade.js'
@@ -312,26 +313,24 @@ export function compile<
   // Sharing is safe only when every use of a conflict domain has the same
   // declaration sequence. Conditions conservatively retain contextual identities.
   for (const style of analyzed) {
-    const domains = new Map<string, string>()
+    const domains = new Map<string, { body: string; properties: Set<string> }>()
 
     for (const { important, property, value } of style.declarations) {
       const key = root(domain(canonical(property)))
       const declaration = `${Literal.name(property)}:${serialize(value)}${important ? '!important' : ''};`
-      domains.set(key, (domains.get(key) ?? '') + declaration)
+      const entry = domains.get(key) ?? {
+        body: '',
+        properties: new Set<string>(),
+      }
+      entry.body += declaration
+      entry.properties.add(property)
+      domains.set(key, entry)
     }
 
-    // Sharing individual properties cannot retain a multi-property conflict
-    // sequence (for example padding, padding-left, padding again).
-    for (const key of domains.keys()) {
-      const properties = new Set(
-        style.declarations
-          .filter(({ property }) => root(domain(canonical(property))) === key)
-          .map(({ property }) => property),
-      )
-      if (properties.size > 1) groups.set(key, false)
-    }
+    for (const [key, entry] of domains) {
+      const value = entry.body
+      if (entry.properties.size > 1) groups.set(key, false)
 
-    for (const [key, value] of domains) {
       const previous = groups.get(key)
       groups.set(
         key,
@@ -350,11 +349,36 @@ export function compile<
       },
     ])
 
+  function validate(style: Style.NamedStyle) {
+    if (
+      style.cssOutput !== undefined &&
+      style.cssOutput !== 'atomic' &&
+      style.cssOutput !== 'grouped'
+    )
+      throw new CompileError([
+        {
+          code: 'invalid_output',
+          message: 'cssOutput must be atomic or grouped.',
+          path: [style.name, 'cssOutput'],
+        },
+      ])
+    for (const rule of style.rules ?? []) validate(rule.style)
+  }
+  for (const style of options.styles.styles) validate(style)
+
+  const identities = new Map<string, string>()
   const rules = new Map<string, string>()
   const identical = new Map<string, string>()
   const explicitBodies = new Map<string, string>()
   const selectors = new Map<string, string>()
   const explicitModes = new Set<string>()
+  const applications = new Map<string, string>()
+  const occurrences = new Map<string, number>()
+  for (const style of options.styles.styles)
+    for (const declaration of style.declarations) {
+      const key = root(domain(canonical(declaration.property)))
+      occurrences.set(key, (occurrences.get(key) ?? 0) + 1)
+    }
 
   for (const style of options.styles.styles) {
     const mode = style.cssOutput ?? defaultMode
@@ -384,8 +408,23 @@ export function compile<
       explicitModes.add(key)
     }
 
+    const application =
+      explicit === undefined &&
+      options.composition === 'independent' &&
+      !options.development
+        ? `${mode}:${nested(style)}`
+        : undefined
+    if (application !== undefined && applications.has(application)) {
+      classes[style.name] = applications.get(application)!
+      continue
+    }
+
     const names: string[] = explicit === undefined ? [] : [explicit]
     let ordinal = 0
+    const slots = new Map<string, number>()
+    const developmentName = options.scope
+      ? `definition-${options.styles.styles.indexOf(style)}`
+      : style.name
 
     function emit(body: string, label: string, shared: boolean, output = mode) {
       if (!body) return
@@ -395,37 +434,60 @@ export function compile<
         output === mode &&
         options.composition === 'independent'
       const key = `${output}:${body}`
-      const previous =
-        explicit === undefined && (shared || independent)
-          ? identical.get(key)
-          : undefined
-      if (previous) {
+      // Development slots belong to each style even when their initial values match.
+      const reusable =
+        explicit === undefined &&
+        !options.development &&
+        (shared || independent)
+      const previous = reusable ? identical.get(key) : undefined
+      if (previous && !names.includes(previous)) {
         names.push(previous)
         return
       }
 
-      // Declaration slots keep mounted elements styled across CSS-only edits.
-      const slot = ordinal++
+      if (previous) shared = false
+
+      // Contextual slots preserve authored ordering; development names survive value edits.
+      const ordinalSlot = ordinal++
+      const slot = options.development ? (slots.get(label) ?? 0) : ordinalSlot
+      slots.set(label, slot + 1)
       const identity = (() => {
         if (explicit !== undefined) return `${explicit}-${mode}-${slot}`
         if (output === 'grouped' && mode === 'grouped')
-          return `g-${encode(style.name)}`
-        if (shared)
-          return `z_base-${label}-${hash(`${mode}:${style.name}:${slot}`)}`
-
-        return `z-${encode(style.name)}-${mode}-${label}-${slot}`
+          return `g-${encode(style.name)}${slot ? `-${slot}` : ''}`
+        return ClassName.create({
+          body,
+          context:
+            !shared || options.development
+              ? JSON.stringify([
+                  options.scope,
+                  mode,
+                  options.development ? developmentName : style.name,
+                ])
+              : options.scope,
+          property: label,
+          slot: !shared || options.development ? slot : undefined,
+          stable: options.development,
+        })
       })()
-      if (rules.has(identity) && rules.get(identity) !== body)
+      const owner = mode === 'atomic' ? `${style.name}:${slot}` : undefined
+      if (
+        (rules.has(identity) && rules.get(identity) !== body) ||
+        (owner !== undefined &&
+          identities.has(identity) &&
+          identities.get(identity) !== owner)
+      )
         diagnostics.push({
           code: 'identity_collision',
           message: 'Distinct rules produced the same class identifier.',
           path: [style.name],
         })
 
+      if (owner !== undefined) identities.set(identity, owner)
       rules.set(identity, body)
       if (explicit !== undefined) selectors.set(identity, explicit)
       else {
-        if (shared || independent) identical.set(key, identity)
+        if (reusable) identical.set(key, identity)
         names.push(identity)
       }
     }
@@ -443,13 +505,23 @@ export function compile<
         return
       }
       if (style.rules) {
-        for (const rule of style.rules)
+        for (const rule of style.rules) {
+          if (rule.condition?.trim() === '@layer') {
+            // Repeating an anonymous layer would change cascade precedence.
+            const body = [...conditions, rule.condition].reduceRight(
+              (body, condition) => `${condition}{${body}}`,
+              nested(rule.style),
+            )
+            emit(body, 'layer', false)
+            continue
+          }
           atoms(
             rule.style,
             rule.condition === undefined
               ? conditions
               : [...conditions, rule.condition],
           )
+        }
         return
       }
 
@@ -475,13 +547,29 @@ export function compile<
           !nestedComposition &&
           !conditions.length &&
           groups.get(root(domain(canonical(property)))) !== false
-        emit(body, encode(property), shared)
+        emit(body, property, shared)
       }
     }
 
     try {
-      if (mode === 'grouped') emit(nested(style), 'style', false)
-      else atoms(style)
+      if (mode === 'grouped') {
+        const shared: Style.Declaration[] = []
+        const local: Style.Declaration[] = []
+        for (const declaration of style.declarations) {
+          const key = root(domain(canonical(declaration.property)))
+          const reusable =
+            !style.rules &&
+            options.composition === 'independent' &&
+            groups.get(key) !== false &&
+            (occurrences.get(key) ?? 0) > 1
+          if (reusable) shared.push(declaration)
+          else local.push(declaration)
+        }
+        if (shared.length && local.length) {
+          emit(nested({ ...style, declarations: shared }), 'shared', false)
+          emit(nested({ ...style, declarations: local }), 'style', false)
+        } else emit(nested(style), 'style', false)
+      } else atoms(style)
     } catch (error) {
       diagnostics.push({
         code: 'invalid_declaration',
@@ -491,6 +579,8 @@ export function compile<
     }
 
     classes[style.name] = [...new Set(names)].join(' ')
+    if (application !== undefined)
+      applications.set(application, classes[style.name])
   }
 
   if (diagnostics.length) throw new CompileError(diagnostics)
@@ -565,6 +655,10 @@ export declare namespace compile {
     /** CSS representation; atomic declarations are the default. */
     readonly cssOutput?: 'atomic' | 'grouped' | undefined
     readonly composition?: 'independent' | 'ordered' | undefined
+    /** Stable declaration names for CSS-only development updates. */
+    readonly development?: boolean | undefined
+    /** Optional module scope for independently delivered stylesheets. */
+    readonly scope?: string | undefined
     /** Ordered definitions; no themes or source adapter is required. */
     readonly styles: Style.Definition<name>
     /** Named scopes; only variables referenced by these styles are emitted. */
@@ -634,16 +728,4 @@ function encode(value: string): string {
     /[^a-zA-Z0-9-]/g,
     (character) => `_${character.charCodeAt(0).toString(16)}_`,
   )
-}
-
-// Two independent 32-bit streams retain deterministic identities without host APIs.
-function hash(value: string): string {
-  let first = 2166136261
-  let second = 5381
-  for (let index = 0; index < value.length; index++) {
-    const code = value.charCodeAt(index)
-    first = Math.imul(first ^ code, 16777619)
-    second = Math.imul(second, 33) ^ code
-  }
-  return (first >>> 0).toString(36) + (second >>> 0).toString(36)
 }

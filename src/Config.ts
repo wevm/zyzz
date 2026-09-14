@@ -4,7 +4,7 @@
  */
 import * as Appearance from './runtime/Appearance.js'
 import * as Authoring from './internal/Authoring.js'
-import * as Html from './runtime/Html.js'
+import * as Html from './runtime/CompositionHtml.js'
 import * as Identity from './internal/Identity.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
@@ -107,7 +107,8 @@ export function create(options: create.Options = {}): unknown {
   })()
 
   const contract = Object.freeze({
-    cssOutput: options.cssOutput ?? 'atomic',
+    cssOutput:
+      (input.cssOutput as 'atomic' | 'grouped' | undefined) ?? 'atomic',
     ...(shorthands ? { shorthands } : {}),
     ...(typeof input.id === 'string'
       ? {

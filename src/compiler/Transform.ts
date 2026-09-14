@@ -67,16 +67,30 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   const emitted = Css.compile({
+    development: options.development,
+    scope: options.moduleId,
     names: portable ? portableNames : undefined,
     styles: extracted.styles,
     contributions: extracted.contributions,
     themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
   })
 
-  if (portable && /z-style-(?!id-)[a-zA-Z0-9-]+/.test(emitted.css))
-    throw new Error(
-      'CSS-only selector references require an explicit style id.',
-    )
+  if (portable) {
+    function selectors(style: Style.NamedStyle) {
+      for (const rule of style.rules ?? []) {
+        if (
+          rule.condition &&
+          !rule.condition.startsWith('@') &&
+          /\.z-style-(?!id-)/.test(rule.condition)
+        )
+          throw new Error(
+            'CSS-only selector references require an explicit style id.',
+          )
+        selectors(rule.style)
+      }
+    }
+    for (const style of extracted.styles.styles) selectors(style)
+  }
 
   const module = new MagicString(options.source)
   const program = Syntax.parse(options).program
@@ -233,17 +247,6 @@ export function compile(options: compile.Options): compile.ReturnType {
       `${variables}.create(${JSON.stringify(call.slots.value)})`,
     )
 
-  const first = extracted.calls[0]
-  const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
-  const names = new Map<string, string>()
-
-  for (const classes of Object.values(emitted.classes))
-    for (const name of classes.split(' ').filter(Boolean))
-      names.set(
-        name,
-        name.startsWith('z_base') ? `z-${scope}-${name.slice(2)}` : name,
-      )
-
   const identities = new Map(
     extracted.calls
       .filter((call) => call.identity)
@@ -256,10 +259,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         name,
         [
           ...new Set([
-            ...value
-              .split(' ')
-              .filter(Boolean)
-              .map((part) => names.get(part)!),
+            ...value.split(' ').filter(Boolean),
             ...(identities.has(name) &&
             (!portable || portableNames[name]?.startsWith('z-compose-'))
               ? [
@@ -793,6 +793,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       contributionLine++
     }
   }
+  const declarationOwners = new Map<string, Set<number>>()
   const scoped = emitted.scopedCss ?? emitted.css
 
   const css = [
@@ -844,7 +845,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           return rule
         }
 
-        const selector = `.${names.get(name)!}`
+        const selector = `.${name}`
         const call = owners.get(name)!
 
         Mapping.addMapping(cssMap, {
@@ -931,6 +932,8 @@ export function compile(options: compile.Options): compile.ReturnType {
         }
 
         const starts = declarationStarts(body)
+        const used = declarationOwners.get(call.name) ?? new Set<number>()
+        declarationOwners.set(call.name, used)
         let cursor = 1
 
         for (
@@ -938,6 +941,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           propertyIndex < ordered.length;
           propertyIndex++
         ) {
+          if (used.has(propertyIndex)) continue
           const declaration = ordered[propertyIndex]!
           const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:`
           const start =
@@ -947,6 +951,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           if (start < 0) continue
 
           const location = authored[propertyIndex]!
+          used.add(propertyIndex)
 
           Mapping.addMapping(cssMap, {
             generated: { column: selector.length + start, line },
@@ -1001,6 +1006,8 @@ export declare namespace compile {
   type ErrorType = Css.CompileError | Source.ExtractError
   /** Supplied module identity and source; no file loading occurs. */
   type Options = Source.extract.Options & {
+    /** Stable declaration names for CSS-only development updates. */
+    readonly development?: boolean | undefined
     /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
     readonly compiler?: boolean | undefined
   }

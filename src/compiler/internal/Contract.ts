@@ -36,8 +36,8 @@ export function read(
     const identity = string(entry.identity)
     if (
       entry.cssOutput !== undefined &&
-      ((data.version as number) < 17 ||
-        (entry.cssOutput !== 'atomic' && entry.cssOutput !== 'grouped'))
+      entry.cssOutput !== 'atomic' &&
+      entry.cssOutput !== 'grouped'
     )
       throw new Error('Invalid packed CSS output mode.')
     const cssOutput = entry.cssOutput as 'atomic' | 'grouped' | undefined
@@ -56,7 +56,10 @@ export function read(
         'Conflicting packed shorthand mappings for one theme identity.',
       )
 
-    if (contract && contract.cssOutput !== cssOutput)
+    if (
+      contract &&
+      (contract.cssOutput ?? 'atomic') !== (cssOutput ?? 'atomic')
+    )
       throw new Error(
         'Conflicting packed CSS output modes for one theme identity.',
       )
@@ -280,10 +283,6 @@ export function read(
       entry.options === undefined ? undefined : record(entry.options)
 
     if (options) {
-      if (options.cssOutput !== undefined && (data.version as number) < 17)
-        throw new Error(
-          'Packed CSS output options require contract version 17.',
-        )
       Config.create(options as Config.create.Options)
       if (
         (data.version as number) >= 17 &&

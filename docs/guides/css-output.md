@@ -1,7 +1,7 @@
 # CSS Output
 
 > [!NOTE]
-> Configurable CSS output is the next planned implementation. The current compiler does not accept `cssOutput`; existing output still uses shared declarations and ordered rules.
+> Configurable output is supported by the shared compiler and source config. Packed composition and the CSS-only CLI retain separate acceptance gates.
 
 Choose the CSS representation on the authoring config:
 
@@ -13,10 +13,10 @@ export const { css, variants } = Config.create({
 })
 ```
 
-| Mode | Planned output |
-| --- | --- |
-| `'atomic'` (default) | Reusable classes for individual declarations, shared wherever cascade semantics allow. |
-| `'grouped'` | Scoped blocks containing a style's declarations, with separate blocks for selectors and conditions. |
+| Mode                 | Output                                                                                              |
+| -------------------- | --------------------------------------------------------------------------------------------------- |
+| `'atomic'` (default) | Reusable classes for individual declarations, shared wherever cascade semantics allow.              |
+| `'grouped'`          | Scoped blocks containing a style's declarations, with separate blocks for selectors and conditions. |
 
 The setting applies to config-bound styles, variants, and theme helpers. Root helpers use the atomic default. Renderer `output: 'react' | 'html'` remains separate. There is no per-style override or automatic size-based mode selection.
 
@@ -42,15 +42,24 @@ function Card() {
 Illustrative atomic output shares the color declaration:
 
 ```css
-.color-red-a1 { color: red; }
-.padding-8px-b2 { padding: 8px; }
+.color-red-a1 {
+  color: red;
+}
+.padding-8px-b2 {
+  padding: 8px;
+}
 ```
 
 The card receives both classes; the label receives the color class. Grouped output keeps the card's declarations together:
 
 ```css
-.card-c3 { color: red; padding: 8px; }
-.label-d4 { color: red; }
+.card-c3 {
+  color: red;
+  padding: 8px;
+}
+.label-d4 {
+  color: red;
+}
 ```
 
 These names illustrate the representation, not a class-name API. Applications consume returned props. Native CSS cascade and explicit `cx` composition must preserve equivalent rendered behavior in both modes; class-string order is not CSS precedence.

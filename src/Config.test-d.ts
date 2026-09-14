@@ -6,6 +6,19 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, Theme } from 'zyzz'
 
 describe('create', () => {
+  test('infers style helpers with either CSS output mode', () => {
+    const { css, variants } = Config.create({ cssOutput: 'grouped' })
+    expectTypeOf(css({ color: 'red' })().className).toEqualTypeOf<string>()
+    expectTypeOf(
+      variants({ variants: { size: { large: { padding: '8px' } } } })({
+        size: 'large',
+      }).className,
+    ).toEqualTypeOf<string>()
+    Config.create({ cssOutput: 'atomic', output: 'html' })
+    // @ts-expect-error Unsupported CSS representation.
+    Config.create({ cssOutput: 'automatic' })
+  })
+
   test('checks configured callback domains', () => {
     const { css } = Config.create()
 

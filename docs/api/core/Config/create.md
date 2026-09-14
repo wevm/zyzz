@@ -23,7 +23,7 @@ export const { css, theme } = Config.create({
 ### options.cssOutput
 
 > [!NOTE]
-> Planned as the next implementation; the current config does not accept this option.
+> Supported by source compilation. Packed mode retention and CLI redesign retain their separate acceptance gates.
 
 - Type: `'atomic' | 'grouped'`
 - Default: `'atomic'`

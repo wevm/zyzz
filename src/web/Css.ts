@@ -340,8 +340,8 @@ export function compile<
     }
   }
 
-  const mode = options.cssOutput ?? 'atomic'
-  if (mode !== 'atomic' && mode !== 'grouped')
+  const defaultMode = options.cssOutput ?? 'atomic'
+  if (defaultMode !== 'atomic' && defaultMode !== 'grouped')
     throw new CompileError([
       {
         code: 'invalid_output',
@@ -354,6 +354,7 @@ export function compile<
   const identical = new Map<string, string>()
 
   for (const style of options.styles.styles) {
+    const mode = style.cssOutput ?? defaultMode
     if (!style.name || Object.hasOwn(classes, style.name)) {
       diagnostics.push({
         code: 'invalid_name',

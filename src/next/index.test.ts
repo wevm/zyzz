@@ -65,8 +65,8 @@ describe('zyzz', () => {
           )
 
           await VariantLibrary.create(app, {
-            output: 'react',
             cssOutput: cssOutput === 'atomic' ? 'grouped' : 'atomic',
+            output: 'react',
           })
 
           await Fs.mkdir(Path.join(app, 'app/other'), { recursive: true })

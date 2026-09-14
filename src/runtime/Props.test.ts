@@ -45,7 +45,7 @@ describe('create', () => {
 
     expect(consumer.staticProps).toMatchInlineSnapshot(`
       {
-        "className": "z-text-K_dZ4U external",
+        "className": "z-text-lE4vES external",
         "style": {
           "--z-v1g4rm6r9aa2cb-70": "blue",
           "padding": "2px",
@@ -54,7 +54,7 @@ describe('create', () => {
     `)
     expect(consumer.dynamicProps).toMatchInlineSnapshot(`
       {
-        "className": "z-text-K_dZ4U z-opacity-AXhbV3-0",
+        "className": "z-text-lE4vES z-opacity-i77MCv-0",
         "style": {
           "--z-d1g4rm6r9aa2cb-200-6f-70-61-63-69-74-79": 0.5,
           "--z-v1g4rm6r9aa2cb-70": "blue",
@@ -64,13 +64,13 @@ describe('create', () => {
     `)
     expect(consumer.htmlProps).toMatchInlineSnapshot(`
       {
-        "class": "z-text-K_dZ4U",
+        "class": "z-text-lE4vES",
         "style": "--z-v1g4rm6r9aa2cb-70:red",
       }
     `)
     expect(consumer.variablesOnly).toMatchInlineSnapshot(`
       {
-        "className": "z-text-K_dZ4U z-opacity-AXhbV3-0",
+        "className": "z-text-lE4vES z-opacity-i77MCv-0",
         "style": {
           "--z-d1g4rm6r9aa2cb-200-6f-70-61-63-69-74-79": 0.5,
           "--z-v1g4rm6r9aa2cb-70": "red",
@@ -79,7 +79,7 @@ describe('create', () => {
     `)
     expect(consumer.htmlDynamicProps).toMatchInlineSnapshot(`
       {
-        "class": "z-text-K_dZ4U z-opacity-Bt0SRP-0",
+        "class": "z-text-lE4vES z-opacity-I-qyZj-0",
         "style": "--z-v1g4rm6r9aa2cb-70:red;--z-d1g4rm6r9aa2cb-771-6f-70-61-63-69-74-79:0.25",
       }
     `)
@@ -121,13 +121,13 @@ export const text = '🎉';`
 
     expect(consumer.button()).toMatchInlineSnapshot(`
       {
-        "className": "z-text-5DQAkJ-0 z-p-8px-z6lkOr z-style-12ydhop55omeb-50",
+        "className": "z-text-r3ZyBm-0 z-p-8px-z6lkOr z-style-12ydhop55omeb-50",
       }
     `)
 
     expect(consumer.inline).toMatchInlineSnapshot(`
       {
-        "className": "z-text-O0OzbM-0",
+        "className": "z-text-jiUfea-0",
       }
     `)
 
@@ -140,7 +140,7 @@ export const text = '🎉';`
     expect(consumer.button({ className: 'external', style }))
       .toMatchInlineSnapshot(`
         {
-          "className": "z-text-5DQAkJ-0 z-p-8px-z6lkOr z-style-12ydhop55omeb-50 external",
+          "className": "z-text-r3ZyBm-0 z-p-8px-z6lkOr z-style-12ydhop55omeb-50 external",
           "style": {
             "color": "#000",
             "paddingLeft": "2px",

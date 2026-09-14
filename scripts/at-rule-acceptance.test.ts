@@ -6,7 +6,7 @@ import { describe, expect, test } from 'vite-plus/test'
 
 describe('at-rule acceptance', () => {
   test('reuses executed evidence for full acceptance without rerunning commands', () => {
-    const root = Fs.mkdtempSync(Path.resolve('.fixture-matrix-'))
+    const root = Fs.mkdtempSync(Path.resolve('test/.fixture-matrix-'))
     try {
       const fixture = Path.join(root, 'Evidence.test.ts')
       const executions = Path.join(root, 'executions.txt')
@@ -67,7 +67,7 @@ describe('evidence', () => {
   }, 30_000)
 
   test('rejects removed obligations, non-applicable source claims, and unknown evidence', () => {
-    const root = Fs.mkdtempSync(Path.resolve('.fixture-matrix-'))
+    const root = Fs.mkdtempSync(Path.resolve('test/.fixture-matrix-'))
     try {
       const original = Fs.readFileSync(
         'test/conformance/at-rule-matrix.json',
@@ -106,7 +106,7 @@ describe('evidence', () => {
   })
 
   test('invalidates grammar reviews and separates unsupported targets from rendering', () => {
-    const root = Fs.mkdtempSync(Path.resolve('.fixture-matrix-'))
+    const root = Fs.mkdtempSync(Path.resolve('test/.fixture-matrix-'))
     try {
       const matrix = JSON.parse(
         Fs.readFileSync('test/conformance/at-rule-matrix.json', 'utf8'),
@@ -147,7 +147,7 @@ describe('evidence', () => {
   })
 
   test('keeps incomplete compiler checks red independently of renderer support', () => {
-    const root = Fs.mkdtempSync(Path.resolve('.fixture-matrix-'))
+    const root = Fs.mkdtempSync(Path.resolve('test/.fixture-matrix-'))
     try {
       const matrix = JSON.parse(
         Fs.readFileSync('test/conformance/at-rule-matrix.json', 'utf8'),
@@ -179,7 +179,7 @@ describe('evidence', () => {
   })
 
   test('does not count a skipped integration case as passing evidence', () => {
-    const root = Fs.mkdtempSync(Path.resolve('.fixture-matrix-'))
+    const root = Fs.mkdtempSync(Path.resolve('test/.fixture-matrix-'))
     try {
       const fixture = Path.join(root, 'Evidence.test.ts')
       Fs.writeFileSync(

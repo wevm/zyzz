@@ -40,7 +40,10 @@ export function create() {
     return `var(${name},${literal(value)})`
   }
 
-  function emit(themes: Readonly<Record<string, Theme.Definition>>) {
+  function emit(
+    themes: Readonly<Record<string, Theme.Definition>>,
+    schemes = false,
+  ) {
     const classes: Record<string, string> = Object.create(null)
     const rules: string[] = []
 
@@ -101,8 +104,9 @@ export function create() {
       rules.push(`.${className}{${body}}`)
     }
 
-    // Scheme selection travels with the scopes so lowered light-dark() resolves wherever they load.
-    if (rules.length) rules.push(Scheme.css)
+    // Scheme rules travel with the module that can apply them, so lowered
+    // light-dark() resolves wherever selection helpers load.
+    if (schemes) rules.push(Scheme.css)
 
     return { classes: Object.freeze(classes), css: rules.join('\n') }
   }

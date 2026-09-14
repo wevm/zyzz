@@ -517,15 +517,9 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
 
       expect(String(sheet.source)).toMatchInlineSnapshot(`
         ".z_theme-8emm311c7xzi9-theme{--z-t8emm311c7xzi9-theme-color_2e_brand:#06c;}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
         .z-text-VVV-uM{color:var(--z-t8emm311c7xzi9-theme-color_2e_brand,#06c);}
         .z-p-8px-rxmkdJ{padding:8px;}.z_theme-8emm311c7xzi9-theme{--z-t8emm311c7xzi9-theme-color_2e_brand:#06c;}
         .z_theme-wo97ow1iqyoeo-mint{--z-t8emm311c7xzi9-theme-color_2e_brand:#175;}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
         .z-text-VVV-uM{color:var(--z-t8emm311c7xzi9-theme-color_2e_brand,#06c);}
         .z-p-8px-rxmkdJ{padding:8px;}"
       `)
@@ -756,6 +750,23 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
         restore < development.indexOf('/@vite/client'),
       ).toMatchInlineSnapshot('true')
 
+      // A source error stays with its module; the document still initializes
+      // from the catalogs collected before the edit.
+      await Fs.writeFile(
+        Path.join(root, 'config.ts'),
+        files['config.ts'].replace("'#123456'", 'unknownColor()'),
+      )
+
+      const broken = await server.transformIndexHtml(
+        '/index.html',
+        files['index.html'],
+      )
+
+      expect(
+        broken.indexOf('localStorage.getItem("zyzz")') > -1,
+      ).toMatchInlineSnapshot('true')
+
+      await Fs.writeFile(Path.join(root, 'config.ts'), files['config.ts'])
       await server.close()
       server = undefined
 

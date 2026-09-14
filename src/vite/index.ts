@@ -800,7 +800,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       initializers.set(environment, entry)
     }
 
-    await compile(entry, host, undefined, true)
+    // A source error surfaces through that module's own transform and overlay.
+    // The document keeps loading with the catalogs collected before the edit.
+    await compile(entry, host, undefined, true).catch(() => undefined)
 
     return [...catalogs.values()]
   }

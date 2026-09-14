@@ -53,9 +53,6 @@ describe('create', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#06c;--z1:8px;}
       .t_1{--z0:light-dark(#175,#afa);--z1:12px;}
-      .z_scheme-dark{color-scheme:dark;}
-      .z_scheme-light{color-scheme:light;}
-      .z_scheme-light-dark{color-scheme:light dark;}
       .z-text-gsB0EO{color:var(--z0,#06c);}
       .z-p-Fm87Na{padding:var(--z1,8px);}"
     `)
@@ -168,9 +165,6 @@ describe('create', () => {
       }).css,
     ).toMatchInlineSnapshot(`
       ".t_0{--z0:12px;}
-      .z_scheme-dark{color-scheme:dark;}
-      .z_scheme-light{color-scheme:light;}
-      .z_scheme-light-dark{color-scheme:light dark;}
       .z-p-VAexTA{padding:var(--z0,12px);}"
     `)
 

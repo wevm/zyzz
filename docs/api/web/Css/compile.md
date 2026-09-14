@@ -51,6 +51,17 @@ Emit compact, value-independent atomic names for CSS-only development updates. N
 Css.compile({ development: true, styles })
 ```
 
+### options.schemes
+
+- Type: `boolean`
+- Default: `false`
+
+Emit the `color-scheme` selection classes applied by `themes()`, `appearance`, and `script()`. Source compilation sets this for modules that reference those helpers, so bundlers lowering `light-dark()` initialize their helpers from the same stylesheet.
+
+```ts
+Css.compile({ schemes: true, styles, themes: { base: theme } })
+```
+
 ### options.scope
 
 - Type: `string`

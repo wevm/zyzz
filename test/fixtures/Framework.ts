@@ -340,8 +340,22 @@ export async function verify(options: verify.Options) {
 
       if (!production) {
         const errorStart = errors.length
+        const stylesPath = Path.join(root, 'styles.ts')
+        // The watcher drops a second change to one path within 50 ms of the
+        // first, so the fix waits for that window after the observed change.
+        const changed = new Promise<number>((resolve) => {
+          const listener = (file: string) => {
+            if (Path.resolve(file) !== stylesPath) return
+
+            server!.watcher.off('change', listener)
+            resolve(Date.now())
+          }
+
+          server!.watcher.on('change', listener)
+        })
+
         await Fs.writeFile(
-          Path.join(root, 'styles.ts'),
+          stylesPath,
           files['styles.ts'].replace("'#0066cc'", 'unknownColor()'),
         )
         const overlay = await page.waitForFunction(() =>
@@ -350,8 +364,14 @@ export async function verify(options: verify.Options) {
             ?.shadowRoot?.textContent?.includes('styles.ts'),
         )
         expect(await overlay.jsonValue()).toMatchInlineSnapshot('true')
+
+        const changedAt = await changed
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.max(0, changedAt + 60 - Date.now())),
+        )
         await Fs.writeFile(
-          Path.join(root, 'styles.ts'),
+          stylesPath,
           files['styles.ts'].replace('#0066cc', '#117755'),
         )
         await page.locator('vite-error-overlay').waitFor({ state: 'detached' })

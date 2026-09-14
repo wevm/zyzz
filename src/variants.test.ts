@@ -469,9 +469,6 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
       expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
         `
         ".z_theme-u8smm21l81sow-variants-theme{--z-tu8smm21l81sow-variants-color_2e_brand:#06c;}
-        .z_scheme-dark{color-scheme:dark;}
-        .z_scheme-light{color-scheme:light;}
-        .z_scheme-light-dark{color-scheme:light dark;}
         .z-pl-8px-MIN2nV-0{padding-left:8px;}
         .z-pr-8px-MIN2nV-1{padding-right:8px;}
         .z-text-KnkPic-2{&:where([data-intent="primary"]){color:var(--z-tu8smm21l81sow-variants-color_2e_brand,#06c);}}

@@ -308,18 +308,6 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #06c;
         }
 
-        .z_scheme-dark {
-          color-scheme: dark;
-        }
-
-        .z_scheme-light {
-          color-scheme: light;
-        }
-
-        .z_scheme-light-dark {
-          color-scheme: light dark;
-        }
-
         .z-text-kp0eqE {
           color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #06c);
         }
@@ -345,18 +333,6 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #175;
         }
 
-        .z_scheme-dark {
-          color-scheme: dark;
-        }
-
-        .z_scheme-light {
-          color-scheme: light;
-        }
-
-        .z_scheme-light-dark {
-          color-scheme: light dark;
-        }
-
         .z-text-OqGLWz {
           color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #175);
         }
@@ -375,18 +351,6 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
             --z-t1dre7461ulsxz8-theme-color_2e_brand: #175;
           }
 
-          .z_scheme-dark {
-            color-scheme: dark;
-          }
-
-          .z_scheme-light {
-            color-scheme: light;
-          }
-
-          .z_scheme-light-dark {
-            color-scheme: light dark;
-          }
-
           .z-text-OqGLWz {
             color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #175);
           }
@@ -399,18 +363,6 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         .toMatchInlineSnapshot(`
           ".z_theme-1dre7461ulsxz8-theme {
             --z-t1dre7461ulsxz8-theme-color_2e_brand: #06c;
-          }
-
-          .z_scheme-dark {
-            color-scheme: dark;
-          }
-
-          .z_scheme-light {
-            color-scheme: light;
-          }
-
-          .z_scheme-light-dark {
-            color-scheme: light dark;
           }
 
           .z-text-kp0eqE {
@@ -444,18 +396,6 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #000;
         }
 
-        .z_scheme-dark {
-          color-scheme: dark;
-        }
-
-        .z_scheme-light {
-          color-scheme: light;
-        }
-
-        .z_scheme-light-dark {
-          color-scheme: light dark;
-        }
-
         .z-text-rocWbC {
           color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #000);
         }
@@ -483,18 +423,6 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       expect(after).toMatchInlineSnapshot(`
         ".z_theme-1dre7461ulsxz8-theme {
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #fff;
-        }
-
-        .z_scheme-dark {
-          color-scheme: dark;
-        }
-
-        .z_scheme-light {
-          color-scheme: light;
-        }
-
-        .z_scheme-light-dark {
-          color-scheme: light dark;
         }
 
         .z-text-wwHZc8 {

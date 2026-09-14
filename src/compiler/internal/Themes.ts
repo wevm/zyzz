@@ -115,6 +115,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
   const aliasBindings = new Map<number, Alias>()
   const aliasReferences = new Set<number>()
   const appearances = new Set<string>()
+  const selections = new Set<string>()
   const calls: Call[] = []
   const scripts = new Set<string>()
   const definitions = new Map<number, Call>()
@@ -297,6 +298,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
       if (key === 'appearance') appearances.add(config.call.name)
 
       if (key === 'themes' && !config.call.options?.themes) return undefined
+      if (key === 'themes') selections.add(config.call.name)
 
       if (key === 'script' && !config.call.script)
         fail(
@@ -613,6 +615,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
               if (key === 'script') scripts.add(link.call.name)
               if (key === 'appearance') appearances.add(link.call.name)
+              if (key === 'themes') selections.add(link.call.name)
 
               const members = Object.fromEntries(
                 Object.entries(link.members ?? {}).flatMap(
@@ -851,6 +854,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
 
           if (key === 'script') scripts.add(link.call.name)
           if (key === 'appearance') appearances.add(link.call.name)
+          if (key === 'themes') selections.add(link.call.name)
 
           const members = Object.fromEntries(
             Object.entries(link.members ?? {}).flatMap(([pathKey, member]) => {
@@ -1193,6 +1197,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
             node,
           )
 
+        if (config.call.selection) selections.add(config.call.name)
+
         return true
       }
 
@@ -1282,6 +1288,8 @@ export function collect(program: Ast.Program, options: collect.Options) {
             scripts.add(config.call.name)
           }
 
+          if (path[0] === 'themes') selections.add(config.call.name)
+
           return true
         }
 
@@ -1319,8 +1327,11 @@ export function collect(program: Ast.Program, options: collect.Options) {
       }
 
       // A compiled selector is an ordinary runtime function, so passing or storing it is safe.
-      if (config.call.selection && !config.call.catalogOnly && !path.length)
+      if (config.call.selection && !config.call.catalogOnly && !path.length) {
+        selections.add(config.call.name)
+
         return true
+      }
 
       fail(
         'Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.',
@@ -1669,6 +1680,7 @@ export function collect(program: Ast.Program, options: collect.Options) {
     reference,
     references,
     scripts,
+    selections,
     staticTokens,
     styles,
     themes: Object.freeze(themes),

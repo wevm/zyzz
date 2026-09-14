@@ -93,9 +93,6 @@ describe('define', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:2rem;--z5:#06c;}
       .t_1{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:1rem;--z5:#06c;}
-      .z_scheme-dark{color-scheme:dark;}
-      .z_scheme-light{color-scheme:light;}
-      .z_scheme-light-dark{color-scheme:light dark;}
       .z-bg-29LMGk{background-color:var(--z0,#fff);}
       .z-border-color-tIvIJ5{border-color:var(--z1,#000);}
       .z-border-radius-ZjOgyX{border-radius:var(--z2,4px);}

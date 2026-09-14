@@ -75,17 +75,6 @@ export function compile(options: compile.Options): compile.ReturnType {
         throw new Error('CSS-only output requires an explicit variable id.')
   }
 
-  const emitted = Css.compile({
-    development: options.development,
-    scope: options.moduleId,
-    composition: options.composition,
-    cssOutput: options.cssOutput,
-    names: portable ? portableNames : undefined,
-    styles: extracted.styles,
-    contributions: extracted.contributions,
-    themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
-  })
-
   if (portable) {
     function selectors(style: Style.NamedStyle) {
       for (const rule of style.rules ?? []) {
@@ -188,6 +177,27 @@ export function compile(options: compile.Options): compile.ReturnType {
       else if (argument?.type === 'ObjectExpression')
         definitions.set(call.start, argument)
     },
+  })
+
+  // Scheme rules accompany modules whose runtime helpers can apply a scheme class.
+  const schemes =
+    options.schemes ??
+    Boolean(
+      extracted.themeAppearances?.length ||
+      extracted.themeScripts?.length ||
+      extracted.themeSelections?.length,
+    )
+
+  const emitted = Css.compile({
+    development: options.development,
+    scope: options.moduleId,
+    composition: options.composition,
+    cssOutput: options.cssOutput,
+    names: portable ? portableNames : undefined,
+    schemes,
+    styles: extracted.styles,
+    contributions: extracted.contributions,
+    themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
   })
 
   let runtime = '__zyzzProps'
@@ -1095,6 +1105,11 @@ export declare namespace compile {
     readonly cssOutput?: Css.compile.Options['cssOutput']
     /** Stable declaration names for CSS-only development updates. */
     readonly development?: boolean | undefined
+    /**
+     * Emit the `color-scheme` selection classes beside the theme scopes.
+     * Defaults to this module's own selector, root, and script references.
+     */
+    readonly schemes?: boolean | undefined
   }
 
   /** Executable module and stylesheet artifacts; TypeScript/JSX lowering belongs to the host. */

@@ -1,5 +1,5 @@
 /** Declares a compiler-owned fontPaletteValues stylesheet identity. @module */
-import { MissingTransformError } from '../css.js'
+import * as Identity from '../internal/Identity.js'
 import type * as RuleReference from '../internal/RuleReference.js'
 import type * as Context from './internal/Context.js'
 
@@ -21,7 +21,10 @@ export function fontPaletteValues<
 ): fontPaletteValues.Reference {
   void options
   void context
-  throw new MissingTransformError()
+  return Identity.contribution(
+    'fontPaletteValues',
+    context.id,
+  ) as fontPaletteValues.Reference
 }
 /** Descriptor and identity contracts. */
 export declare namespace fontPaletteValues {

@@ -9,6 +9,8 @@ export type Group =
   | `@supports ${string}`
 /** Ordered enclosing groups, from outermost to innermost. */
 export type Options = {
+  /** Explicit identity for named declarations without source rewriting. */
+  readonly id?: string | undefined
   /** Enclosing groups; omitted means stylesheet scope. */
   readonly within?: readonly Group[] | undefined
 }

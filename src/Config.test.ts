@@ -164,13 +164,13 @@ describe('create', () => {
     expect(() =>
       zyzz.css({ padding: 'md' }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[css.MissingTransformError: css requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.]`,
+      `[Error: Config.create requires an explicit id without the compiler plugin.]`,
     )
-    expect(() =>
-      Config.create().css({ padding: '8px' }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[css.MissingTransformError: css requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.]`,
-    )
+    expect(Config.create().css({ padding: '8px' })()).toMatchInlineSnapshot(`
+      {
+        "className": "z-content-3f8gqjlziaxl",
+      }
+    `)
   })
 
   test('rejects unknown default before CSS emission', () => {

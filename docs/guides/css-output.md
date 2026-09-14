@@ -20,6 +20,8 @@ export const { css, variants } = Config.create({
 
 The setting applies to config-bound styles, variants, and theme helpers. Root helpers use the atomic default. Renderer `output: 'react' | 'html'` remains separate. There is no per-style override or automatic size-based mode selection.
 
+`cssOutput` and `composition` are orthogonal. Output chooses atomic declarations or grouped blocks; `composition: 'ordered'` preserves application order, while `'independent'` permits reuse of complete applications that are never combined. Existing composition options retain their meaning; neither selects nor overrides the output mode.
+
 ## Example
 
 Authoring and application stay the same in either mode:
@@ -65,7 +67,7 @@ Global rules, keyframes, property registrations, font descriptors, and theme sco
 
 ## Delivery
 
-The planned CSS-only CLI and optional compiler plugin use the same mode and naming contract. Disabling the plugin requires explicit IDs for identity-bearing declarations. The plugin's default remains provisional; its presence does not select the CSS representation.
+The CLI compiles source by default. `--css-only` disables rewriting and requires explicit IDs for identity-bearing declarations. Propagating configurable CSS output through both paths is planned; compilation does not select the CSS representation.
 
 Packed libraries retain their defining mode and matching class/CSS metadata. Consumer configuration does not reinterpret published classes. Mixed-mode composition, independent loading, source maps, and watch-mode changes must pass acceptance before release.
 

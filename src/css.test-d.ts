@@ -7,6 +7,21 @@ import { describe, expectTypeOf, test } from 'vite-plus/test'
 import { Config, css, Theme } from 'zyzz'
 
 describe('css', () => {
+  test('retains inference with explicit definition identities', () => {
+    const card = css({ color: 'red' }, { id: 'card' })
+    const bar = css(
+      (values: { width: `${number}px` }) => ({ width: values.width }),
+      { id: 'bar' },
+    )
+
+    expectTypeOf(card).toEqualTypeOf<css.ReturnType>()
+    bar({ width: '8px' })
+    // @ts-expect-error IDs do not widen callback input types.
+    bar({ width: 'red' })
+    // @ts-expect-error Definition identities are strings.
+    css({ color: 'red' }, { id: 1 })
+  })
+
   test('accepts empty root, theme, and configured definitions', () => {
     const empty = css()
     const theme = Theme.define({})

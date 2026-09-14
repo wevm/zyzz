@@ -1,5 +1,5 @@
 /** Declares a named anchor-positioning fallback. @module */
-import { MissingTransformError } from '../css.js'
+import * as Identity from '../internal/Identity.js'
 import type * as Style from '../Style.js'
 import type * as RuleReference from '../internal/RuleReference.js'
 import type * as Value from '../internal/Value.js'
@@ -16,7 +16,10 @@ export function positionTry<const declarations extends Record<string, unknown>>(
 ): positionTry.Reference {
   void declarations
   void context
-  throw new MissingTransformError()
+  return Identity.contribution(
+    'positionTry',
+    context.id,
+  ) as positionTry.Reference
 }
 /** Anchor fallback declaration and reference contracts. */
 export declare namespace positionTry {

@@ -85,3 +85,5 @@ Minification and browser-target processing remain separate. Final processing may
 Measure both modes across repeated and mostly unique styles, including CSS, JavaScript, class strings, combined transfer, compilation, and rendering. Atomic output is the default, not a claim that every workload is smaller or faster.
 
 See [Config.create](../api/core/Config/create.md#optionscssoutput) for the option.
+
+With explicit `composition: 'independent'`, complete applications are never combined. The emitter may factor a shared block from independent grouped styles while retaining each conflicting declaration domain intact. The default composition keeps a style’s declarations together.

@@ -1,7 +1,6 @@
 /** Declares stylesheet view-transition navigation and type descriptors. @module */
 import type * as Context from './internal/Context.js'
 import type * as Lexical from '../internal/Lexical.js'
-import { MissingTransformError } from '../css.js'
 
 /** Emits an eager view-transition rule; browser navigation owns transition execution. */
 export function viewTransition<
@@ -21,7 +20,7 @@ export function viewTransition<
 ): void {
   void options
   void context
-  throw new MissingTransformError()
+  return
 }
 /** Standard navigation and transition type descriptors. */
 export declare namespace viewTransition {

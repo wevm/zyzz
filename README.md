@@ -69,10 +69,10 @@ Build or watch source files:
 
 ```sh
 npx zyzz build
-npx zyzz watch
+npx zyzz dev
 ```
 
-Compiles `src` to `dist` and outputs CSS to `dist/styles.css` by default. See [CLI Setup](docs/introduction/cli.md).
+Compiles `src` to `dist`, emitting adjacent module CSS and `zyzz.shared.css` for shared contributions. See [CLI Setup](docs/introduction/cli.md).
 
 ### Use Compiler API
 
@@ -90,7 +90,7 @@ await using host = await Host.create({
 await host.build()
 ```
 
-The host writes rewritten modules, CSS sidecars, and source maps to `dist`. Downstream tooling handles TypeScript/JSX lowering and stylesheet loading.
+The CLI writes CSS stylesheets and CSS source maps to `dist`. Original source stays executable; declarations that need independent identities require explicit IDs. See [CLI](docs/introduction/cli.md).
 
 For watching, keep the scope alive until shutdown:
 
@@ -326,7 +326,7 @@ const example = (
 
 ### Static CSS
 
-Styles compile ahead of time into CSS and executable modules with source maps. Direct applications become props; exported definitions remain callable. Generated functions never create CSS rules, and unused theme tokens emit no declarations.
+Styles compile ahead of time into CSS. The optional compiler also optimizes authoring calls into props and small runtime helpers. It is enabled by default in Vite; `zyzz({ compiler: false })` retains authoring calls while delivering CSS. Neither mode generates CSS at runtime.
 
 Use the [Vite plugin](docs/introduction/vite.md) for source transformation and CSS delivery, or the [compiler APIs](docs/guides/compilation.md) for standalone builds and library distribution.
 

@@ -1,4 +1,5 @@
 /** Declares single-element recipes for ahead-of-time compilation. @module */
+import * as Authoring from './internal/Authoring.js'
 import type { css } from './css.js'
 import type * as Config from './Config.js'
 import type * as Binding from './internal/Binding.js'
@@ -162,13 +163,16 @@ type Checked<
  * Declares base styles, variant axes, defaults, and ordered compounds.
  * @param definition - Static recipe for one element.
  * @returns A callable selecting precompiled styles and returning one props object.
- * @throws {MissingTransformError} When authoring executes without compilation.
+ * @throws {Error} When uncompiled authoring omits an explicit identity.
  */
 export function variants<const definition extends Record<string, unknown>>(
   definition: definition & NoInfer<Checked<definition, {}, never, {}>>,
+  options: css.DefinitionOptions = {},
 ): variants.ReturnType<definition> {
-  void definition
-  throw new MissingTransformError()
+  return Authoring.variants(
+    definition,
+    options,
+  ) as variants.ReturnType<definition>
 }
 
 /** Inferred recipe authoring and selection contracts. */
@@ -182,6 +186,7 @@ export declare namespace variants {
   > = <const definition extends Record<string, unknown>>(
     definition: definition &
       NoInfer<Checked<definition, tokens, layers, mappings>>,
+    options?: css.DefinitionOptions,
   ) => ReturnType<definition, output>
 
   /** Callable selection; omitted values use defaults and null suppresses them. */
@@ -197,7 +202,7 @@ export declare namespace variants {
   }
 
   /** Missing source transformation diagnostic. */
-  type ErrorType = MissingTransformError
+  type ErrorType = Error
 }
 
 /** Executed recipe authoring has not been rewritten. */

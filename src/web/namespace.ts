@@ -1,12 +1,11 @@
 /** Declares a module-owned CSS namespace. @module */
-import { MissingTransformError } from '../css.js'
 /** Emits an isolated namespace binding for the module's selectors. The last declaration for each decoded prefix applies throughout the module. */
 export function namespace<const options extends namespace.Options>(
   options: options &
     Record<Exclude<keyof options, keyof namespace.Options>, never>,
 ): void {
   void options
-  throw new MissingTransformError()
+  return
 }
 /** CSS namespace authoring options. */
 export declare namespace namespace {

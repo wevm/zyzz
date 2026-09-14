@@ -155,22 +155,22 @@ Web correctness leads the MVP, with a working native subset included before the 
 
 The proposed signatures, examples, type rules, and emitted theme CSS are specified in [API and architecture](architecture.md). They are implementation targets, not claims about the existing package.
 
-| API                                                   | Contract                                                                                                           |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `Config.create(options)`                              | Binds optional inline/reusable themes and ordered layers to inferred `css`/`variants`; encourages `zyzz.config.ts` |
-| `css(style)` from `zyzz`                              | Token-free web authoring with standard CSS values; emits spreadable props and static CSS                           |
-| `zyzz/themes/default`                                 | Exports bound `css` and `variants`, full `theme`, and raw `tokens` for opt-in bundled styling                      |
-| `Style.define(styles)`                                | Defines named, target-independent styles with typed token references                                               |
-| `Theme.define(tokens)`                                | Defines token groups; each color is a string or complete light/dark pair                                           |
-| `Theme.extend(theme, overrides)`                      | Creates a compatible theme with typed overrides and the same token contract                                        |
-| `Css.compile(options)`                                | Emits CSS, named classes, and theme scope classes from in-memory definitions                                       |
-| `StyleSheet.compile(options)`                         | Emits static style tables for each supplied theme and color scheme                                                 |
-| `StyleSheet.select(styles, options)`                  | Selects an existing theme/scheme table without compiling or merging                                                |
-| `theme.css(style)`                                    | Infers property-specific tokens and compiles directly to props containing readable classes                         |
-| `css((values: Values) => style)`                      | Compiles static rules and returns a typed callable web class/style binding                                         |
-| `variants(definition)` / `theme.variants(definition)` | Defines token-free or theme-bound recipes with inferred selection props                                            |
-| `theme({ colorScheme })` / `theme.className`          | Callable web scope props with optional scheme; raw compiled class remains accessible                               |
-| `zyzz build` / `zyzz watch`                           | Standalone module rewriting and stylesheet emission; defaults: `src`, `dist`, `dist/styles.css`                    |
+| API                                                   | Contract                                                                                                                         |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `Config.create(options)`                              | Binds optional inline/reusable themes and ordered layers to inferred `css`/`variants`; encourages `zyzz.config.ts`               |
+| `css(style)` from `zyzz`                              | Token-free web authoring with standard CSS values; emits spreadable props and static CSS                                         |
+| `zyzz/themes/default`                                 | Exports bound `css` and `variants`, full `theme`, and raw `tokens` for opt-in bundled styling                                    |
+| `Style.define(styles)`                                | Defines named, target-independent styles with typed token references                                                             |
+| `Theme.define(tokens)`                                | Defines token groups; each color is a string or complete light/dark pair                                                         |
+| `Theme.extend(theme, overrides)`                      | Creates a compatible theme with typed overrides and the same token contract                                                      |
+| `Css.compile(options)`                                | Emits CSS, named classes, and theme scope classes from in-memory definitions                                                     |
+| `StyleSheet.compile(options)`                         | Emits static style tables for each supplied theme and color scheme                                                               |
+| `StyleSheet.select(styles, options)`                  | Selects an existing theme/scheme table without compiling or merging                                                              |
+| `theme.css(style)`                                    | Infers property-specific tokens and compiles directly to props containing readable classes                                       |
+| `css((values: Values) => style)`                      | Compiles static rules and returns a typed callable web class/style binding                                                       |
+| `variants(definition)` / `theme.variants(definition)` | Defines token-free or theme-bound recipes with inferred selection props                                                          |
+| `theme({ colorScheme })` / `theme.className`          | Callable web scope props with optional scheme; raw compiled class remains accessible                                             |
+| `zyzz build` / `zyzz dev`                             | Standalone module rewriting and stylesheet emission; defaults: `src` to `dist`, adjacent module CSS and shared `zyzz.shared.css` |
 
 The accepted [configuration contract](architecture.md#configuration-and-inferred-authoring) retains `Theme.define` and supports mutually exclusive `theme`/`themes`, an inferred named default, normalized scope handles, and direct `@layer <name>` keys. Theme scope classes select inherited CSS variables; `colorScheme` selects light/dark independently.
 
@@ -806,4 +806,10 @@ All 670 property entries are reviewed as supported under the documented static a
 
 [PR #145](https://github.com/wevm/zyzz/pull/145) targets main with packed contracts, declaration consumers, duplicated runtime handling, source tracing, and host recovery. [PR #146](https://github.com/wevm/zyzz/pull/146) targets #145 with packed React/Solid/Svelte and Next.js Webpack/Turbopack lifecycle fixtures, application tracing, and production variant benchmarks.
 
-[Measurements](../bench/Web-variants.md) retain all comparison lanes, artifact boundaries, uncertainty, and observed losses. The complete 72-group production React matrix passes locally and in CI. Inline Svelte authoring, application frameworks beyond Next.js, and native rendering remain outside this acceptance slice. Neither PR is merged.
+[Measurements](../bench/Web-variants.md) retain all comparison lanes, artifact boundaries, uncertainty, and observed losses. The complete 72-group production React matrix passes locally and in CI. Inline Svelte authoring, application frameworks beyond Next.js, and native rendering remain outside this acceptance slice. Both PRs are merged.
+
+### Standalone CLI Priority
+
+The standalone CLI moves ahead of output optimization and native PRs. `zyzz build` compiles once; `zyzz dev` builds immediately and watches using the existing file host. Incur owns command parsing and structured output. Native PRs 3.7–3.8 remain last; full Phase 3 acceptance still requires both mobile platforms.
+
+The CLI emits only per-module CSS and CSS maps, preserving output ownership and watch recovery. The Vite compiler is optional and enabled by default; disabling it retains executable authoring calls and requires explicit IDs for identity-bearing declarations. Lower-level Host module output remains available for library publishing. TypeScript/JSX lowering, declaration generation, application bundling, and watching installed dependencies remain outside this command boundary.

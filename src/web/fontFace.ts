@@ -1,6 +1,5 @@
 /** Declares module-level font-face descriptors without loading fonts. @module */
 import type * as Context from './internal/Context.js'
-import { MissingTransformError } from '../css.js'
 
 /** Compiles literal font-face descriptors into the initial stylesheet. */
 export function fontFace<const options extends fontFace.Options>(
@@ -10,7 +9,7 @@ export function fontFace<const options extends fontFace.Options>(
 ): void {
   void context
   void options
-  throw new MissingTransformError()
+  return
 }
 
 /** Supported font-face descriptor contracts. */

@@ -62,8 +62,8 @@ export const any=cssFunction({parameters:[{name:'--x',syntax:'type(*)'}],returns
       `"@function --z-cssfunction270wt1ix0x4z-73-69-7a-65(--size type(<length> | <percentage>): 25%) returns type(<length> | <percentage>){result:var(--size);}"`,
     )
     expect(output.modules['app.ts']?.css).toMatchInlineSnapshot(`
-      ".z-style-1e8a67z1uaws1j-88{width:--z-cssfunction270wt1ix0x4z-73-69-7a-65();}
-      .z-style-1e8a67z1uaws1j-115{width:--z-cssfunction270wt1ix0x4z-73-69-7a-65(20px);}"
+      ".z-style-1e8a67z1uaws1j-88-atomic-width-0{width:--z-cssfunction270wt1ix0x4z-73-69-7a-65();}
+      .z-style-1e8a67z1uaws1j-115-atomic-width-0{width:--z-cssfunction270wt1ix0x4z-73-69-7a-65(20px);}"
     `)
   })
 

@@ -847,11 +847,26 @@ export function compile(options: compile.Options): compile.ReturnType {
         const ordered = declarations(style)
         const authored = locations(call.body ?? definitions.get(call.start)!)
         const conditionStarts = declarationStarts(body, true)
+        const conditions: string[] = []
 
-        for (const [index, start] of conditionStarts.entries()) {
+        function collectConditions(style: Style.NamedStyle) {
+          for (const rule of style.rules ?? []) {
+            if (rule.condition !== undefined) conditions.push(rule.condition)
+
+            collectConditions(rule.style)
+          }
+        }
+
+        collectConditions(style)
+        let conditionCursor = 0
+
+        for (const start of conditionStarts) {
+          const condition = body.slice(start, body.indexOf('{', start))
+          const index = conditions.indexOf(condition, conditionCursor)
           const node = conditionNodes[index]
           if (!node) continue
 
+          conditionCursor = index + 1
           Mapping.addMapping(cssMap, {
             generated: { column: selector.length + start, line },
             name: options.source.slice(node.key.start, node.key.end),

@@ -167,7 +167,9 @@ export namespace styles {
       @font-palette-values --z-fontpalettevalues141558i1cjhj8q-70-61-6c-65-74-74-65{font-family:Body;base-palette:0;override-colors:0 red;}
       @position-try --z-positiontry141558i1cjhj8q-62-65-6c-6f-77{position-area:bottom;margin-top:4px;}
       @color-profile --z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65{src:url(/profile.icc);rendering-intent:relative-colorimetric;}
-      .z-141558i1cjhj8q-base0{list-style-type:z-counterstyle141558i1cjhj8q-64-6f-74-73;font-palette:--z-fontpalettevalues141558i1cjhj8q-70-61-6c-65-74-74-65;position-try-fallbacks:--z-positiontry141558i1cjhj8q-62-65-6c-6f-77;}"
+      .z-141558i1cjhj8q-base-listStyleType-b4j0bjcie18b{list-style-type:z-counterstyle141558i1cjhj8q-64-6f-74-73;}
+      .z-141558i1cjhj8q-base-fontPalette-aujemkcie18a{font-palette:--z-fontpalettevalues141558i1cjhj8q-70-61-6c-65-74-74-65;}
+      .z-141558i1cjhj8q-base-positionTryFallbacks-boi7phcie189{position-try-fallbacks:--z-positiontry141558i1cjhj8q-62-65-6c-6f-77;}"
     `)
     expect(
       output.code
@@ -183,7 +185,7 @@ export namespace styles {
       export const below="--z-positiontry141558i1cjhj8q-62-65-6c-6f-77" as import('zyzz/web').positionTry.Reference;
       export const profile="--z-colorprofile141558i1cjhj8q-70-72-6f-66-69-6c-65" as import('zyzz/web').colorProfile.Reference;
       export namespace styles {
-        export const list = __zyzzProps.create({className:"z-141558i1cjhj8q-base0 z-style-141558i1cjhj8q-507"})
+        export const list = __zyzzProps.create({className:"z-141558i1cjhj8q-base-listStyleType-b4j0bjcie18b z-141558i1cjhj8q-base-fontPalette-aujemkcie18a z-141558i1cjhj8q-base-positionTryFallbacks-boi7phcie189 z-style-141558i1cjhj8q-507"})
       }"
     `)
   })
@@ -208,7 +210,7 @@ export namespace styles {
       `"@counter-style z-counterstyle141558i1cjhj8q-64-6f-74-73{system:cyclic;symbols:"●";}"`,
     )
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-1e8a67z1uaws1j-base0{list-style-type:z-counterstyle141558i1cjhj8q-64-6f-74-73;}"`,
+      `".z-1e8a67z1uaws1j-base-listStyleType-tqvf6x1lxzwdv{list-style-type:z-counterstyle141558i1cjhj8q-64-6f-74-73;}"`,
     )
     expect(
       JSON.parse(library.contracts['names.ts']!).version,

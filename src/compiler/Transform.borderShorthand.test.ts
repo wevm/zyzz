@@ -31,9 +31,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a{border:2px solid red;outline:1px dotted black;column-rule:3px dashed blue;}
-      .z-b{border-top-color:green;outline-width:5px;column-rule-style:solid;}
-      .z-c{border:2px solid red;outline:1px dotted black;column-rule:3px dashed blue;}"
+      ".z-a-atomic-border-0{border:2px solid red;}
+      .z-a-atomic-outline-1{outline:1px dotted black;}
+      .z-a-atomic-columnRule-2{column-rule:3px dashed blue;}
+      .z-b-atomic-borderTopColor-0{border-top-color:green;}
+      .z-b-atomic-outlineWidth-1{outline-width:5px;}
+      .z-b-atomic-columnRuleStyle-2{column-rule-style:solid;}
+      .z-c-atomic-border-0{border:2px solid red;}
+      .z-c-atomic-outline-1{outline:1px dotted black;}
+      .z-c-atomic-columnRule-2{column-rule:3px dashed blue;}"
     `)
   })
   test('combined borders match native declarations across writing modes', async () => {
@@ -122,22 +128,24 @@ describe('compile', () => {
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).borderImageSource),
-      ).toMatchInlineSnapshot(`"none"`)
+      ).toMatchInlineSnapshot(
+        `"linear-gradient(rgb(255, 0, 0), rgb(0, 0, 255))"`,
+      )
       expect(
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).borderTopColor),
-      ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
+      ).toMatchInlineSnapshot(`"rgb(0, 0, 0)"`)
       expect(
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).outlineWidth),
-      ).toMatchInlineSnapshot(`"1px"`)
+      ).toMatchInlineSnapshot(`"3px"`)
       expect(
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).columnRuleStyle),
-      ).toMatchInlineSnapshot(`"dashed"`)
+      ).toMatchInlineSnapshot(`"none"`)
     } finally {
       await browser.close()
     }

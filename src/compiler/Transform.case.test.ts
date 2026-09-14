@@ -13,7 +13,11 @@ describe('compile', () => {
     )
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
-      `".z_base0{color:ReD;display:FlEx;padding:2PX;}"`,
+      `
+      ".z_base-color-11hsk3q1tuqfr0{color:ReD;}
+      .z_base-display-11rs5sp1tuqfr1{display:FlEx;}
+      .z_base-padding-10xtcps1tuqfr2{padding:2PX;}"
+    `,
     )
   })
 
@@ -23,7 +27,10 @@ describe('compile', () => {
     })
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
-      `".z_base0{color: ReD!important;display:BlOcK	Flow;}"`,
+      `
+      ".z_base-color-11hsk3q1tuqfr0{color: ReD!important;}
+      .z_base-display-11rs5sp1tuqfr1{display:BlOcK	Flow;}"
+    `,
     )
   })
 
@@ -44,7 +51,11 @@ describe('compile', () => {
     const output = Css.compile({ styles })
 
     expect(output.css).toMatchInlineSnapshot(
-      `".z_base0{color:\\72 ed/**/!important;display:bl\\6f ck/**/flow;padding:1\\70 x;}"`,
+      `
+      ".z_base-color-11hsk3q1tuqfr0{color:\\72 ed/**/!important;}
+      .z_base-display-11rs5sp1tuqfr1{display:bl\\6f ck/**/flow;}
+      .z_base-padding-10xtcps1tuqfr2{padding:1\\70 x;}"
+    `,
     )
 
     const browser = await chromium.launch()

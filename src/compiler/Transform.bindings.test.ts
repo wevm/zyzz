@@ -68,7 +68,10 @@ describe('compile', () => {
         source: `import {css, variable} from 'zyzz'; const border=({size:variable("length")}); css({borderWidth:\`calc(\${border.size})\`,width:(border.size satisfies unknown)})`,
       }).css,
     ).toMatchInlineSnapshot(
-      `".z-1h19mkqtvuh7e-base0{border-width:calc(var(--z-v1h19mkqtvuh7e-56));width:var(--z-v1h19mkqtvuh7e-56);}"`,
+      `
+      ".z-1h19mkqtvuh7e-base-borderWidth-1uhacl314ba3y3{border-width:calc(var(--z-v1h19mkqtvuh7e-56));}
+      .z-1h19mkqtvuh7e-base-width-1u7aqw414ba3y2{width:var(--z-v1h19mkqtvuh7e-56);}"
+    `,
     )
   })
   test('rejects incompatible direct binding domains', () => {
@@ -86,7 +89,10 @@ describe('compile', () => {
     const output = Transform.compile({ moduleId: 'slots.ts', source })
 
     expect(output.css).toMatchInlineSnapshot(
-      `".z-161esph179x895-base0{width:var(--z-v161esph179x895-58);margin-left:calc(var(--z-v161esph179x895-110) + 2px);}"`,
+      `
+      ".z-161esph179x895-base-width-n4ti5n1lcpo1t{width:var(--z-v161esph179x895-58);}
+      .z-161esph179x895-base-marginLeft-mutwgo1lcpo1s{margin-left:calc(var(--z-v161esph179x895-110) + 2px);}"
+    `,
     )
 
     const built = await Esbuild.build({
@@ -182,8 +188,8 @@ describe('compile', () => {
         source: `import {variable, css} from 'zyzz'; const a = ({x:variable("number")}); const b = ({x:variable("number")}); css({opacity:a.x})(); css({opacity:b.x})()`,
       }).css,
     ).toMatchInlineSnapshot(`
-      ".z-style-b2d2s91jn7xin-108{opacity:var(--z-vb2d2s91jn7xin-50);}
-      .z-style-b2d2s91jn7xin-130{opacity:var(--z-vb2d2s91jn7xin-86);}"
+      ".z-style-b2d2s91jn7xin-108-atomic-opacity-0{opacity:var(--z-vb2d2s91jn7xin-50);}
+      .z-style-b2d2s91jn7xin-130-atomic-opacity-0{opacity:var(--z-vb2d2s91jn7xin-86);}"
     `)
   })
 

@@ -38,10 +38,16 @@ describe('variable', () => {
     })
 
     expect(publisher.modules['group.ts']!.css).toMatchInlineSnapshot(
-      `".z-1n60vkvri6abp-base0{padding:var(--z-v1n60vkvri6abp-63);opacity:var(--z-d1n60vkvri6abp-101-6f-70-61-63-69-74-79);}"`,
+      `
+      ".z-1n60vkvri6abp-base-padding-8enicz1fmf1xf{padding:var(--z-v1n60vkvri6abp-63);}
+      .z-1n60vkvri6abp-base-opacity-84nwo01fmf1xe{opacity:var(--z-d1n60vkvri6abp-101-6f-70-61-63-69-74-79);}"
+    `,
     )
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-1e8a67z1uaws1j-base0{padding:var(--z-v1n60vkvri6abp-63);opacity:var(--z-d1e8a67z1uaws1j-80-6f-70-61-63-69-74-79);}"`,
+      `
+      ".z-1e8a67z1uaws1j-base-padding-1h8cv171lxyxi3{padding:var(--z-v1n60vkvri6abp-63);}
+      .z-1e8a67z1uaws1j-base-opacity-1gyd9c81lxyxi2{opacity:var(--z-d1e8a67z1uaws1j-80-6f-70-61-63-69-74-79);}"
+    `,
     )
   })
 
@@ -147,7 +153,11 @@ describe('variable', () => {
     })
 
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-style-1e8a67z1uaws1j-80{--z-v1ndkzo68ghlgm-52:inline-flex;display:var(--z-v1ndkzo68ghlgm-52);&:hover{display:var(--z-v1ndkzo68ghlgm-52);}}"`,
+      `
+      ".z-style-1e8a67z1uaws1j-80-atomic---z-v1ndkzo68ghlgm-52-0{--z-v1ndkzo68ghlgm-52:inline-flex;}
+      .z-style-1e8a67z1uaws1j-80-atomic-display-1{display:var(--z-v1ndkzo68ghlgm-52);}
+      .z-style-1e8a67z1uaws1j-80-atomic-display-2{&:hover{display:var(--z-v1ndkzo68ghlgm-52);}}"
+    `,
     )
 
     const source =
@@ -216,14 +226,18 @@ describe('variable', () => {
 
     expect(
       JSON.parse(publisher.contracts['lib/library.ts']!).version,
-    ).toMatchInlineSnapshot(`16`)
+    ).toMatchInlineSnapshot(`17`)
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-style-1e8a67z1uaws1j-123{--z-v1ym5zhz14a14rh-88:blue;color:var(--z-v1ym5zhz14a14rh-88);.z-style-1ym5zhz14a14rh-235:hover &{--z-v1ym5zhz14a14rh-88:green;}}"`,
+      `
+      ".z-style-1e8a67z1uaws1j-123-atomic---z-v1ym5zhz14a14rh-88-0{--z-v1ym5zhz14a14rh-88:blue;}
+      .z-style-1e8a67z1uaws1j-123-atomic-color-1{color:var(--z-v1ym5zhz14a14rh-88);}
+      .z-style-1e8a67z1uaws1j-123-atomic---z-v1ym5zhz14a14rh-88-2{.z-style-1ym5zhz14a14rh-235:hover &{--z-v1ym5zhz14a14rh-88:green;}}"
+    `,
     )
     expect(consumer.modules['app.ts']!.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
-       import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z-style-1e8a67z1uaws1j-123"}); export const inline=accent.set('red')"
+       import {variables, styles} from './barrel.js'; const accent=variables.accent; export const label=__zyzzProps.create({className:"z-style-1e8a67z1uaws1j-123-atomic---z-v1ym5zhz14a14rh-88-0 z-style-1e8a67z1uaws1j-123-atomic-color-1 z-style-1e8a67z1uaws1j-123-atomic---z-v1ym5zhz14a14rh-88-2 z-style-1e8a67z1uaws1j-123"}); export const inline=accent.set('red')"
     `)
   })
 

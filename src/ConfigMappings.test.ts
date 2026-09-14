@@ -76,7 +76,7 @@ describe('create', () => {
 
     expect(
       JSON.parse(result.contracts['config.ts']!).version,
-    ).toMatchInlineSnapshot('5')
+    ).toMatchInlineSnapshot(`17`)
   })
   test('preserves mapped HTML theme handles through source and packed aliases', async () => {
     const library = Graph.compile({
@@ -115,17 +115,17 @@ describe('create', () => {
     expect(typeof result.dynamic.style).toMatchInlineSnapshot('"string"')
     expect(result.direct).toMatchInlineSnapshot(`
       {
-        "class": "z-style-1e8a67z1uaws1j-371",
+        "class": "z-style-1e8a67z1uaws1j-371-atomic-paddingLeft-0 z-style-1e8a67z1uaws1j-371-atomic-paddingRight-1",
       }
     `)
     expect(result.source).toMatchInlineSnapshot(`
       {
-        "class": "z-1wfnqsmu0q6os-base0 z-style-1wfnqsmu0q6os-232",
+        "class": "z-style-1wfnqsmu0q6os-232-atomic-paddingLeft-0 z-style-1wfnqsmu0q6os-232-atomic-paddingRight-1 z-style-1wfnqsmu0q6os-232",
       }
     `)
     expect(result.dynamic).toMatchInlineSnapshot(`
       {
-        "class": "z-style-1e8a67z1uaws1j-279",
+        "class": "z-style-1e8a67z1uaws1j-279-atomic-paddingLeft-0 z-style-1e8a67z1uaws1j-279-atomic-paddingRight-1",
         "style": "--z-d1e8a67z1uaws1j-279-77-69-64-74-68:8px",
       }
     `)
@@ -200,7 +200,7 @@ describe('create', () => {
     const original = library.contracts['config.ts']!
     const changed = JSON.parse(original)
 
-    expect(changed.version).toMatchInlineSnapshot('5')
+    expect(changed.version).toMatchInlineSnapshot(`17`)
 
     for (const value of Object.values(changed.themes) as {
       shorthands: Record<string, string[]>
@@ -245,7 +245,8 @@ describe('create', () => {
       ".z_theme-1xn44ix111xh3v-theme-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:4px;}
       .z_theme-1xn44ix111xh3v-extended{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:8px;}
       .z_theme-1e8a67z1uaws1j-next{--z-t1xn44ix111xh3v-theme-spacing_2e_sm:12px;}
-      .z-1e8a67z1uaws1j-base0{padding-left:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);padding-right:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);}"
+      .z-style-1e8a67z1uaws1j-137-atomic-paddingLeft-0{padding-left:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);}
+      .z-style-1e8a67z1uaws1j-137-atomic-paddingRight-1{padding-right:var(--z-t1xn44ix111xh3v-theme-spacing_2e_sm,12px);}"
     `)
   })
   test('accepts quoted aliases and independently validates numeric targets', () => {
@@ -262,19 +263,28 @@ describe('create', () => {
     expect(graph.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1e8a67z1uaws1j-css-theme{--z-t1e8a67z1uaws1j-css-spacing_2e_sm:4px;}
       .z_theme-1e8a67z1uaws1j-extended{--z-t1e8a67z1uaws1j-css-spacing_2e_sm:8px;}
-      .z-1e8a67z1uaws1j-base0{padding-left:var(--z-t1e8a67z1uaws1j-css-spacing_2e_sm,8px);padding-right:var(--z-t1e8a67z1uaws1j-css-spacing_2e_sm,8px);}
-      .z-1e8a67z1uaws1j-base1{scale:var(--z-d1e8a67z1uaws1j-339-6e);order:var(--z-d1e8a67z1uaws1j-339-6e);}"
+      .z-style-1e8a67z1uaws1j-280-atomic-paddingLeft-0{padding-left:var(--z-t1e8a67z1uaws1j-css-spacing_2e_sm,8px);}
+      .z-style-1e8a67z1uaws1j-280-atomic-paddingRight-1{padding-right:var(--z-t1e8a67z1uaws1j-css-spacing_2e_sm,8px);}
+      .z-1e8a67z1uaws1j-base-scale-woexv41tjtmsq{scale:var(--z-d1e8a67z1uaws1j-339-6e);}
+      .z-1e8a67z1uaws1j-base-order-wyejk31tjtmsr{order:var(--z-d1e8a67z1uaws1j-339-6e);}"
     `)
   })
   test('preserves ordered targets and spacing precedence across packed imports', () => {
     const { app } = compile()
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z_theme-u8smm21l81sow-css-theme{--z-tu8smm21l81sow-css-padding_2e_sm:12px;--z-tu8smm21l81sow-css-margin_2e_sm:-8px;--z-tu8smm21l81sow-css-spacing_2e_sm:4px;}
-      .z-style-1e8a67z1uaws1j-82{padding-left:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);padding-right:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);padding-left:2px;&:hover{padding-left:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px)!important;padding-right:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px)!important;}}
-      .z-style-1e8a67z1uaws1j-165{margin-left:var(--z-tu8smm21l81sow-css-margin_2e_sm,-8px);padding-left:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);}
-      .z-style-1e8a67z1uaws1j-208{padding-left:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);padding-right:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);}
-      .z-style-1e8a67z1uaws1j-255{padding-left:var(--z-d1e8a67z1uaws1j-255-77-69-64-74-68);padding-right:var(--z-d1e8a67z1uaws1j-255-77-69-64-74-68);}"
+      ".z_theme-u8smm21l81sow-css-theme{--z-tu8smm21l81sow-css-margin_2e_sm:-8px;--z-tu8smm21l81sow-css-padding_2e_sm:12px;--z-tu8smm21l81sow-css-spacing_2e_sm:4px;}
+      .z-style-1e8a67z1uaws1j-82-atomic-paddingLeft-0{padding-left:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);}
+      .z-style-1e8a67z1uaws1j-82-atomic-paddingRight-1{padding-right:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);}
+      .z-style-1e8a67z1uaws1j-82-atomic-paddingLeft-2{padding-left:2px;}
+      .z-style-1e8a67z1uaws1j-82-atomic-paddingLeft-3{&:hover{padding-left:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px)!important;}}
+      .z-style-1e8a67z1uaws1j-82-atomic-paddingRight-4{&:hover{padding-right:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px)!important;}}
+      .z-style-1e8a67z1uaws1j-165-atomic-marginLeft-0{margin-left:var(--z-tu8smm21l81sow-css-margin_2e_sm,-8px);}
+      .z-style-1e8a67z1uaws1j-165-atomic-paddingLeft-1{padding-left:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);}
+      .z-style-1e8a67z1uaws1j-208-atomic-paddingLeft-0{padding-left:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);}
+      .z-style-1e8a67z1uaws1j-208-atomic-paddingRight-1{padding-right:var(--z-tu8smm21l81sow-css-padding_2e_sm,12px);}
+      .z-style-1e8a67z1uaws1j-255-atomic-paddingLeft-0{padding-left:var(--z-d1e8a67z1uaws1j-255-77-69-64-74-68);}
+      .z-style-1e8a67z1uaws1j-255-atomic-paddingRight-1{padding-right:var(--z-d1e8a67z1uaws1j-255-77-69-64-74-68);}"
     `)
     expect(app.modules['app.ts']!.code.includes('px:')).toMatchInlineSnapshot(
       'false',

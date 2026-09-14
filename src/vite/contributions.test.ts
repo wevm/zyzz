@@ -81,7 +81,7 @@ describe('zyzz', () => {
       )
       expect(production.styles.card()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-Mi3EIV z-style-1hl3v031oo9bot-133",
+          "className": "z-text-xd11RZ z-style-1hl3v031oo9bot-133",
         }
       `)
     } finally {

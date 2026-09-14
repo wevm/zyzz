@@ -15,14 +15,14 @@ describe('compile', () => {
     const output = Transform.compile({ moduleId: 'custom.ts', source })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z---Accent-red-laDu-r{--Accent:red;}
-      .z---accent-blue-laDu-r{--accent:blue;}
-      .z---data-laDu-r{--data:"a;b:c";}
-      .z---count-2-laDu-r{--count:2;}
+      ".z-_5f_2d_5f__5f_2d_5f_Accent-red-laDu-r{--Accent:red;}
+      .z-_5f_2d_5f__5f_2d_5f_accent-blue-laDu-r{--accent:blue;}
+      .z-_5f_2d_5f__5f_2d_5f_data-KaMmas{--data:"a;b:c";}
+      .z-_5f_2d_5f__5f_2d_5f_count-2-laDu-r{--count:2;}
       .z-all-initial-N2sItM-0{all:initial;}
-      .z-text-N2sItM-1{color:var(--Accent);}
-      .z-bg-N2sItM-2{background-color:var(--accent);}
-      .z---choice-laDu-r{--choice:red;--choice:blue!important;}"
+      .z-text-UlwebV-1{color:var(--Accent);}
+      .z-bg-x-R_B0-2{background-color:var(--accent);}
+      .z-_5f_2d_5f__5f_2d_5f_choice-8VmRzn{--choice:red;--choice:blue!important;}"
     `)
   })
 
@@ -38,10 +38,10 @@ describe('compile', () => {
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
       `
-      ".z---escaped-tMe2BH{--escaped:hello\\!;}
-      .z---escapedWord-l-_WbH{--escapedWord:hello\\!important;}
-      .z---even-p0VvrW{--even:hello\\\\!important;}
-      .z---space-U35CMT{--space:hello\\ !important;}"
+      ".z-_5f_2d_5f__5f_2d_5f_escaped-tMe2BH{--escaped:hello\\!;}
+      .z-_5f_2d_5f__5f_2d_5f_escapedWord-l-_WbH{--escapedWord:hello\\!important;}
+      .z-_5f_2d_5f__5f_2d_5f_even-p0VvrW{--even:hello\\\\!important;}
+      .z-_5f_2d_5f__5f_2d_5f_space-U35CMT{--space:hello\\ !important;}"
     `,
     )
   })

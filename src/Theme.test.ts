@@ -66,18 +66,18 @@ describe('define', () => {
 
     expect(output.classes).toMatchInlineSnapshot(`
       {
-        "other": "z-text-CmlPQS-0",
-        "t_0": "z-text-VAQ_NF-0",
-        "z_theme-base": "z-text-Ws_Rz--0",
+        "other": "z-text-JqClw3-0",
+        "t_0": "z-text-4iVqd5-0",
+        "z_theme-base": "z-text-SnBR4v-0",
       }
     `)
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#000;--z1:#fff;}
       .t_1{--z0:#f00;--z1:#06c;}
       .t_2{--z0:#000;--z1:#fff;}
-      .z-text-CmlPQS-0{color:var(--z0,#000);}
-      .z-text-VAQ_NF-0{color:#175;}
-      .z-text-Ws_Rz--0{color:var(--z1,#fff);}"
+      .z-text-JqClw3-0{color:var(--z0,#000);}
+      .z-text-4iVqd5-0{color:#175;}
+      .z-text-SnBR4v-0{color:var(--z1,#fff);}"
     `)
     expect(output.themes).toMatchInlineSnapshot(`
       {
@@ -144,14 +144,14 @@ describe('define', () => {
       ".t_0{--z0:light-dark(#fff,#111);--z1:#06c;--z2:8px;}
       .t_1{--z3:#06c;}
       .z-bg-lyZQGr{background-color:var(--z0,light-dark(#fff,#111));}
-      .z-text-n_CKQt-1{color:var(--z1,#06c);}
+      .z-text-hGV2TL-1{color:var(--z1,#06c);}
       .z-p-B1LbZi{padding:var(--z2,8px);}
-      .z-text-yr4wpM-0{color:var(--z3,#06c);}"
+      .z-text-AbT2X3-0{color:var(--z3,#06c);}"
     `)
     expect(result.classes).toMatchInlineSnapshot(`
       {
-        "button": "z-bg-lyZQGr z-text-n_CKQt-1 z-p-B1LbZi",
-        "independent": "z-text-yr4wpM-0",
+        "button": "z-bg-lyZQGr z-text-hGV2TL-1 z-p-B1LbZi",
+        "independent": "z-text-AbT2X3-0",
       }
     `)
     expect(result.themes).toMatchInlineSnapshot(`
@@ -162,18 +162,18 @@ describe('define', () => {
     `)
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
       ".z-bg-lyZQGr{background-color:var(--z0,light-dark(#fff,#111));}
-      .z-text-n_CKQt-1{color:var(--z1,#06c);}
+      .z-text-hGV2TL-1{color:var(--z1,#06c);}
       .z-p-B1LbZi{padding:var(--z2,8px);}
-      .z-text-yr4wpM-0{color:var(--z3,#06c);}"
+      .z-text-AbT2X3-0{color:var(--z3,#06c);}"
     `)
     expect(Css.compile({ styles, themes: { independent, renamed: theme } }).css)
       .toMatchInlineSnapshot(`
         ".t_0{--z3:#06c;}
         .t_1{--z0:light-dark(#fff,#111);--z1:#06c;--z2:8px;}
         .z-bg-lyZQGr{background-color:var(--z0,light-dark(#fff,#111));}
-        .z-text-n_CKQt-1{color:var(--z1,#06c);}
+        .z-text-hGV2TL-1{color:var(--z1,#06c);}
         .z-p-B1LbZi{padding:var(--z2,8px);}
-        .z-text-yr4wpM-0{color:var(--z3,#06c);}"
+        .z-text-AbT2X3-0{color:var(--z3,#06c);}"
       `)
     expect(Object.isFrozen(theme.tokens.spacing.md)).toMatchInlineSnapshot(
       'true',

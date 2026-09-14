@@ -275,25 +275,18 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
           "import {css,cx} from 'zyzz'; import {base} from './second.js'; const local=css({opacity:1}); export const props=cx(base(),local())",
       },
     })
-    expect(
-      Object.fromEntries(
-        Object.entries(result.modules).map(([name, output]) => [
-          name,
-          output.css,
-        ]),
-      ),
-    ).toMatchInlineSnapshot(`
-    {
-      "a.ts": ".z_theme-1mlrxl41f5va70-css{}
-    .z-opacity-mhlaoe-0{opacity:0.5;}
-    .z-style-H1-Qft-0{color:red;padding:8px;}
-    .z-opacity-H1-Qft-1{opacity:0.5;}",
-      "b.ts": ".z_theme-1mlrxl41f5va70-css{}
-    .z-opacity-1-uwnrRp-0{opacity:1;}
-    .z-style-SxroK2-0{color:red;padding:8px;}
-    .z-opacity-1-SxroK2-1{opacity:1;}",
-    }
-  `)
+    expect(result.modules['a.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1mlrxl41f5va70-css{}
+      .z-opacity-dMx3Di-0{opacity:0.5;}
+      .z-style-KC5vhx-0{color:red;padding:8px;}
+      .z-opacity-SP6hSE-1{opacity:0.5;}"
+    `)
+    expect(result.modules['b.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-1mlrxl41f5va70-css{}
+      .z-opacity-1-uwnrRp-0{opacity:1;}
+      .z-style-Aj6ebY-0{color:red;padding:8px;}
+      .z-opacity-1-SxroK2-1{opacity:1;}"
+    `)
   })
 
   test('restores legacy grouped configuration metadata before re-export', () => {
@@ -327,5 +320,28 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
       ".z_theme-u8smm21l81sow-config{}
       .g-style-1e8a67z1uaws1j-51{color:blue;padding:2px;}"
     `)
+  })
+
+  test('retains the graph default on packed root callables', () => {
+    const result = Graph.compile({
+      cssOutput: 'grouped',
+      modules: {
+        'lib.ts': `import {css} from 'zyzz';export const card=css({color:'red',padding:'8px'})`,
+      },
+    })
+    const contract = JSON.parse(result.contracts['lib.ts']!)
+    expect(contract.exports.card.style.style.cssOutput).toMatchInlineSnapshot(
+      '"grouped"',
+    )
+    const consumer = Graph.compile({
+      contracts: { 'lib.js': result.contracts['lib.ts']! },
+      imports: { 'app.ts': { './lib.js': 'lib.js', zyzz: null } },
+      modules: {
+        'app.ts': `import {cx} from 'zyzz';import {card} from './lib.js';export const props=cx(card())`,
+      },
+    })
+    expect(
+      consumer.modules['app.ts']!.css.includes('color:red;padding:8px;'),
+    ).toMatchInlineSnapshot('true')
   })
 })

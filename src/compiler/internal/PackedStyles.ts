@@ -38,7 +38,7 @@ export function create(call: Source.Call, style: Style.NamedStyle): Definition {
         payload.slots.flatMap((slots) => Object.values(slots)),
       ),
     ],
-    style: { ...style, cssOutput: style.cssOutput ?? 'atomic' },
+    style,
   }
 }
 

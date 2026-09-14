@@ -8,6 +8,21 @@ import { Config, Style, Theme } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 describe('create', () => {
+  test('uses the validated descriptor snapshot for configuration', () => {
+    const options = new Proxy(
+      { cssOutput: 'grouped' as const },
+      {
+        get(target, key, receiver) {
+          if (key === 'cssOutput') throw new Error('Unexpected property read')
+          return Reflect.get(target, key, receiver)
+        },
+      },
+    )
+    expect(Object.isFrozen(Config.create(options))).toMatchInlineSnapshot(
+      `true`,
+    )
+  })
+
   test('mixed named inputs share isolated scopes and retain the default fallback', () => {
     const base = Theme.define({
       color: { brand: '#06c' },

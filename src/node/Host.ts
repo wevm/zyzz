@@ -449,7 +449,15 @@ export async function create(options: create.Options): Promise<Runtime> {
         while (dirty && !closed) {
           dirty = false
 
-          const event: Event = await directories(root)
+          const seen = new Set<string>()
+          const event: Event = await directories(root, seen)
+            .then(() => {
+              for (const [directory, { watcher }] of watchers)
+                if (!seen.has(directory)) {
+                  watcher.close()
+                  watchers.delete(directory)
+                }
+            })
             .then(() => build())
             .then(
               (result) => ({ result }),
@@ -463,7 +471,10 @@ export async function create(options: create.Options): Promise<Runtime> {
       }
     }
 
-    async function directories(directory: string): Promise<void> {
+    async function directories(
+      directory: string,
+      seen: Set<string>,
+    ): Promise<void> {
       if (closed || inside(outDir, directory)) return
       // Watch directories rather than file inodes, which atomic editor saves replace.
       const status = await Fs.stat(directory).catch(
@@ -472,6 +483,8 @@ export async function create(options: create.Options): Promise<Runtime> {
           return undefined
         },
       )
+      if (closed) return
+      if (status) seen.add(directory)
       if (!status || watchers.get(directory)?.inode !== status.ino) {
         watchers.get(directory)?.watcher.close()
         watchers.delete(directory)
@@ -498,7 +511,7 @@ export async function create(options: create.Options): Promise<Runtime> {
           entry.isDirectory() &&
           !['.git', 'node_modules'].includes(entry.name)
         )
-          await directories(Path.join(directory, entry.name))
+          await directories(Path.join(directory, entry.name), seen)
     }
 
     dirty = true

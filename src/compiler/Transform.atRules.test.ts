@@ -31,8 +31,8 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
     })
     expect(output.css).toMatchInlineSnapshot(
       `
-      ".z-text-aWkCf4-0{@media (width >= 48rem){color:red;}}
-      .z-text-aWkCf4-1{@media (width >= 48rem){color:blue;}}"
+      ".z-text-O-xAbs-0{@media (width >= 48rem){color:red;}}
+      .z-text-LxE8J2-1{@media (width >= 48rem){color:blue;}}"
     `,
     )
   })
@@ -45,8 +45,8 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
     })
     expect(output.css).toMatchInlineSnapshot(
       `
-      ".z-text-6s-RDo-0{@scope (.outer) to (.stop){@layer components{color:red;}}}
-      .z-text-6s-RDo-1{@scope (.outer) to (.stop){@layer components{@container scroll-state(stuck: top){color:blue;}}}}"
+      ".z-text-Dgnas_-0{@scope (.outer) to (.stop){@layer components{color:red;}}}
+      .z-text-CG6n4I-1{@scope (.outer) to (.stop){@layer components{@container scroll-state(stuck: top){color:blue;}}}}"
     `,
     )
   })

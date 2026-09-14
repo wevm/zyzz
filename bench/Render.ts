@@ -77,7 +77,7 @@ export function commands() {
       JSON.stringify(sizes),
     )
 
-    const html = `<!doctype html><html><head><style>body{margin:0}main{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}article{box-sizing:border-box}h2,p{margin:0;font:12px sans-serif}${output.css}</style></head><body><div id="app"></div><script>${javascript.replace(/<\/script/gi, '<\\/script')}</script></body></html>`
+    const html = `<!doctype html><html><head><style>body{margin:0}main{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}article{box-sizing:border-box}h2,p{margin:0;font:12px sans-serif}</style><style data-benchmark-output>${output.css}</style></head><body><div id="app"></div><script>${javascript.replace(/<\/script/gi, '<\\/script')}</script></body></html>`
 
     cache.set(key, html)
 

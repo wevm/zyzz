@@ -1005,7 +1005,7 @@ The optional adapter connects the shared compiler to Vite's module graph. It rew
 - **Other bundlers:** use CLI output until a concrete adapter and public setup are defined.
 - **Parity:** plugin and CLI paths must agree on identities, conditions, theme scopes, and emitted behavior for equivalent input graphs.
 
-Application examples import authored components and the named config helpers normally. A bundler adapter hides rewriting and delivery. Standalone CLI output belongs to a downstream build or package distribution; consumers do not hand-maintain imports to generated component copies. CSS-only output cannot replace rewriting for the current callable API.
+Application examples import authored components and the named config helpers normally. A bundler adapter hides rewriting and delivery. Standalone CLI output belongs to a downstream build or package distribution; consumers do not hand-maintain imports to generated component copies. CSS-only output retains the original callable API, with explicit IDs for identity-bearing declarations and runtime helpers for application props.
 
 ### Next.js Setup
 

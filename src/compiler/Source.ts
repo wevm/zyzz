@@ -455,6 +455,15 @@ export function extract(options: extract.Options): extract.ReturnType {
     }
   }
 
+  for (const call of pending) {
+    try {
+      Identifiers.explicit(call)
+    } catch (error) {
+      report('unsupported_syntax', (error as Error).message, call)
+    }
+  }
+  if (diagnostics.length) throw new ExtractError(diagnostics)
+
   const selectors = (() => {
     try {
       return Selectors.scan(

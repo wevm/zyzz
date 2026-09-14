@@ -3,7 +3,7 @@ import * as Trace from '@jridgewell/trace-mapping'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph, Transform } from 'zyzz/compiler'
 
-describe('compile', () => {
+describe('Transform.compile', () => {
   test.each(['atomic', 'grouped'] as const)(
     'maps %s declarations with either compiler setting',
     (cssOutput) => {
@@ -39,7 +39,9 @@ export const card = css({
       }
     },
   )
+})
 
+describe('Graph.create', () => {
   test.each([false, true])(
     'invalidates imported output config with compiler=%s',
     (compiler) => {

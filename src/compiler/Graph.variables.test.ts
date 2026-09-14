@@ -159,8 +159,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
 
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z-text-red-Jgxd-Q{color:red;}
-      .z-w-Jgxd-Q{width:var(--z-d1e8a67z1uaws1j-221-77-69-64-74-68);}
-      .z-z-index-Jgxd-Q{z-index:var(--z-d1e8a67z1uaws1j-221-7a-49-6e-64-65-78);}"
+      .z-w-QMMGP7{width:var(--z-d1e8a67z1uaws1j-221-77-69-64-74-68);}
+      .z-z-index-3XQcmb{z-index:var(--z-d1e8a67z1uaws1j-221-7a-49-6e-64-65-78);}"
     `)
   })
 
@@ -189,8 +189,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
       `
-      ".z-w-Jgxd-Q{width:var(--z-v4t4nbe1og4cic-54);}
-      .z-p-Jgxd-Q{padding:var(--z-v4t4nbe1og4cic-54);}"
+      ".z-w-_Z4cQB{width:var(--z-v4t4nbe1og4cic-54);}
+      .z-p-46CIxU{padding:var(--z-v4t4nbe1og4cic-54);}"
     `,
     )
   })
@@ -206,7 +206,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1e8a67z1uaws1j-theme-theme{--z-t1e8a67z1uaws1j-theme-color_2e_ink:#123;}
       .z-w-10px-Jgxd-Q{width:10px;}
-      .z-text-Jgxd-Q{color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,#123);}"
+      .z-text-5nOHLL{color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,#123);}"
     `)
   })
   test('links default variable exports through packed contracts', () => {
@@ -227,7 +227,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     })
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-w-Jgxd-Q{width:var(--z-v4t4nbe1og4cic-47);}"`,
+      `".z-w-QiD0VB{width:var(--z-v4t4nbe1og4cic-47);}"`,
     )
   })
   test('rejects static records returned to runtime code', () => {
@@ -519,9 +519,9 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     expect(css).toMatchInlineSnapshot(`
       "@property --z-v4t4nbe1og4cic-57{syntax:"<percentage>";inherits:false;initial-value:25%;}
       @property --z-v4t4nbe1og4cic-121{syntax:"<length>";inherits:true;initial-value:4px;}.z-h-20px-Jgxd-Q{height:20px;}
-      .z-p-Jgxd-Q{padding:var(--z-v4t4nbe1og4cic-121);}
-      .z-w-b_pXLF-2{width:var(--z-v4t4nbe1og4cic-57);}
-      .z-w-K1MDlV-0{width:var(--z-d1e8a67z1uaws1j-293-77-69-64-74-68);}"
+      .z-p-0YuuzC{padding:var(--z-v4t4nbe1og4cic-121);}
+      .z-w-EkDXM7-2{width:var(--z-v4t4nbe1og4cic-57);}
+      .z-w-TnAcuP-0{width:var(--z-d1e8a67z1uaws1j-293-77-69-64-74-68);}"
     `)
   })
   test('expands immutable members and shorthand while retaining dynamic intersections', () => {
@@ -538,8 +538,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     expect(graph.modules['static.ts']!.css).toMatchInlineSnapshot(`
       ".z-w-12px-s0xMob-0{width:12px;}
       .z-p-8px-BMtYBI{padding:8px;}
-      .z-w-dRTZzb-0{width:var(--z-d15wl7di1emu9we-411-77-69-64-74-68);}
-      .z-opacity-BMtYBI{opacity:var(--z-d15wl7di1emu9we-411-6f-70-61-63-69-74-79);}"
+      .z-w-QxgYGF-0{width:var(--z-d15wl7di1emu9we-411-77-69-64-74-68);}
+      .z-opacity-FWGSwK{opacity:var(--z-d15wl7di1emu9we-411-6f-70-61-63-69-74-79);}"
     `)
     expect(graph.sharedCss).toMatchInlineSnapshot(
       `"@property --z-v15wl7di1emu9we-253{syntax:"<number>";inherits:false;initial-value:-1;}"`,

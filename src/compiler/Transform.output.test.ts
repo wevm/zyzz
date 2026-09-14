@@ -27,20 +27,20 @@ export const props=card();`,
           "
           import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
           import { styled, variants, theme } from './pkg/index.js';
-          export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-NXxdb9-0 z-p-8px-NXxdb9-1 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').css.ReturnType<'html'>);
-          export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-36L1vp-0 z-p-8px-36L1vp-1 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').css.ReturnType<'html'>);
-          export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-text-ho7psp-0 z-p-8px-ho7psp-1 z-p-ho7psp-2 z-style-1e8a67z1uaws1j-196"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+          export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-MXAq5s-0 z-p-8px-NXxdb9-1 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').css.ReturnType<'html'>);
+          export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-cVuwEC-0 z-p-8px-36L1vp-1 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').css.ReturnType<'html'>);
+          export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-text-Ih48UB-0 z-p-8px-ho7psp-1 z-p-Hd4J6B-2 z-style-1e8a67z1uaws1j-196"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
           export const props=card();"
         `)
         expect(app.css).toMatchInlineSnapshot(`
           ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:red;}
-          .z-text-NXxdb9-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+          .z-text-MXAq5s-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
           .z-p-8px-NXxdb9-1{padding:8px;}
-          .z-text-36L1vp-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+          .z-text-cVuwEC-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
           .z-p-8px-36L1vp-1{padding:8px;}
-          .z-text-ho7psp-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+          .z-text-Ih48UB-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
           .z-p-8px-ho7psp-1{padding:8px;}
-          .z-p-ho7psp-2{&:where([data-size="large"]){padding:12px;}}"
+          .z-p-Hd4J6B-2{&:where([data-size="large"]){padding:12px;}}"
         `)
       } else {
         expect(app.code).toMatchInlineSnapshot(`
@@ -183,32 +183,17 @@ export const props=card();`,
         expect(output.css).toMatchInlineSnapshot(`
           ".g-style-u8smm21l81sow-88{color:red;padding:8px;}
           .g-style-u8smm21l81sow-129{padding-left:2px;}
-          .z-style-3O7IWW-0{color:red;padding:8px;}
-          .z-style-3O7IWW-1{padding-left:2px;}"
+          .z-style-CtjGb7-0{color:red;padding:8px;}
+          .z-style-Cq_Lgr-1{padding-left:2px;}"
         `)
         expect(emitted.css).toMatchInlineSnapshot(`
           ".g-style-u8smm21l81sow-88{color:red;padding:8px;}
           .g-style-u8smm21l81sow-129{padding-left:2px;}
-          .z-style-EZLe7p-0{color:red;padding:8px;}
-          .z-style-EZLe7p-1{padding-left:2px;}"
+          .z-style-SN9A7E-0{color:red;padding:8px;}
+          .z-style-rmoRsZ-1{padding-left:2px;}"
         `)
       }
     }
-  })
-
-  test('uses the validated descriptor snapshot for configuration', () => {
-    const options = new Proxy(
-      { cssOutput: 'grouped' as const },
-      {
-        get(target, key, receiver) {
-          if (key === 'cssOutput') throw new Error('Unexpected property read')
-          return Reflect.get(target, key, receiver)
-        },
-      },
-    )
-    expect(Object.isFrozen(Config.create(options))).toMatchInlineSnapshot(
-      `true`,
-    )
   })
 
   test('rejects invalid style output metadata through the public emitter', () => {
@@ -226,5 +211,24 @@ export const props=card();`,
     expect(() => Css.compile({ styles })).toThrowErrorMatchingInlineSnapshot(
       `[Css.CompileError: ["style-1snulh75pd83z-26","cssOutput"]: cssOutput must be atomic or grouped.]`,
     )
+  })
+
+  test('preserves descendant output modes when deduplicating independent compositions', () => {
+    const extracted = Source.extract({
+      moduleId: 'modes.ts',
+      source: `import {Config,css,cx} from 'zyzz';const atomic=Config.create({cssOutput:'atomic'});const grouped=Config.create({cssOutput:'grouped'});const a=atomic.css({color:'red',padding:'8px'});const b=grouped.css({color:'red',padding:'8px'});const empty=css();export const x=cx(a(),empty());export const y=cx(b(),empty())`,
+    })
+    const output = Css.compile({
+      composition: 'independent',
+      styles: extracted.styles,
+    })
+    const calls = extracted.calls.filter((call) => call.composition)
+    expect(calls.map((call) => output.classes[call.name]!.split(' ').length))
+      .toMatchInlineSnapshot(`
+      [
+        2,
+        1,
+      ]
+    `)
   })
 })

@@ -61,7 +61,10 @@ export async function verify(options: verify.Options) {
       { cwd: app, timeout: 120_000, maxBuffer: 4 * 1024 * 1024 },
     )
 
-    await VariantLibrary.create(app, { cssOutput, output: 'react' })
+    await VariantLibrary.create(app, {
+      cssOutput: cssOutput === 'atomic' ? 'grouped' : 'atomic',
+      output: 'react',
+    })
 
     await Fs.mkdir(Path.join(app, 'app/other'), { recursive: true })
     await Fs.mkdir(Path.join(app, 'app/stream'), { recursive: true })

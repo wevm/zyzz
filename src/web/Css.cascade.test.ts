@@ -8,12 +8,12 @@ describe('compile', () => {
   test('retains sharing, resets, logical overlap, and active or inactive conditions', async () => {
     const first = Style.define({ card: { color: 'red', display: 'block' } })
       .styles[0]!
-    const middle = Style.define({ card: { color: 'blue', opacity: 1 } })
+    const middle = Style.define({ card: { color: 'blue', opacity: 0.4 } })
       .styles[0]!
     const cases = [
       {
         control:
-          '.card{color:red;display:block;color:blue;opacity:1;color:red;display:block}',
+          '.card{color:red;display:block;color:blue;opacity:0.4;color:red;display:block}',
         styles: {
           styles: [
             {
@@ -75,6 +75,25 @@ describe('compile', () => {
           b: { color: 'red', margin: '2px' },
         }),
       },
+      {
+        control: '.card{@layer base{color:red}@layer override{color:blue}}',
+        styles: Style.define({
+          card: {
+            '@layer base': { color: 'red' },
+            '@layer override': { color: 'blue' },
+          },
+        }),
+      },
+      {
+        control:
+          '.card{color:red!important;color:blue;display:grid;display:block}',
+        styles: Style.define({
+          card: {
+            color: ['red!', 'blue'],
+            display: ['grid', 'block'],
+          },
+        } as never),
+      },
     ]
     const browser = await chromium.launch()
     try {
@@ -92,52 +111,66 @@ describe('compile', () => {
               await page.setContent(
                 `<style>${fixture.control}\n${output.css}</style>`,
               )
-              for (const direction of ['ltr', 'rtl']) {
-                const differences = await page.evaluate(
-                  ({ classes, composition, direction }) => {
-                    document.body.style.direction = direction
-                    const names = Object.keys(classes)
-                    const groups = names.map((name) => [name])
-                    if (composition === 'ordered' && names.length > 1)
-                      groups.push(names)
-                    return groups.flatMap((names) => {
-                      const values = [
-                        names.join(' '),
-                        names
-                          .map((name) => classes[name])
-                          .reverse()
-                          .join(' '),
-                      ].map((className) => {
-                        const element = document.createElement('div')
-                        element.className = className
-                        document.body.append(element)
-                        const style = getComputedStyle(element)
-                        const result = [
-                          style.color,
-                          style.paddingLeft,
-                          style.paddingRight,
-                          style.marginLeft,
-                          style.display,
-                        ]
-                        element.remove()
-                        return result
+              for (const direction of ['ltr', 'rtl'])
+                for (const writingMode of [
+                  'horizontal-tb',
+                  'vertical-rl',
+                  'vertical-lr',
+                ]) {
+                  const differences = await page.evaluate(
+                    ({ classes, composition, direction, writingMode }) => {
+                      document.body.style.direction = direction
+                      document.body.style.writingMode = writingMode
+                      const names = Object.keys(classes)
+                      const groups = names.map((name) => [name])
+                      if (composition === 'ordered' && names.length > 1)
+                        groups.push(names)
+                      return groups.flatMap((names) => {
+                        const values = [
+                          names.join(' '),
+                          names
+                            .flatMap((name) => classes[name]!.split(' '))
+                            .reverse()
+                            .join(' '),
+                        ].map((className) => {
+                          const element = document.createElement('div')
+                          element.className = className
+                          document.body.append(element)
+                          const style = getComputedStyle(element)
+                          const result = [
+                            style.color,
+                            style.paddingLeft,
+                            style.paddingRight,
+                            style.paddingTop,
+                            style.paddingBottom,
+                            style.opacity,
+                            style.marginLeft,
+                            style.display,
+                          ]
+                          element.remove()
+                          return result
+                        })
+                        return JSON.stringify(values[0]) ===
+                          JSON.stringify(values[1])
+                          ? []
+                          : [{ names, values }]
                       })
-                      return JSON.stringify(values[0]) ===
-                        JSON.stringify(values[1])
-                        ? []
-                        : [{ names, values }]
-                    })
-                  },
-                  { classes: output.classes, composition, direction },
-                )
-                expect(differences).toMatchInlineSnapshot(`[]`)
-              }
+                    },
+                    {
+                      classes: output.classes,
+                      composition,
+                      direction,
+                      writingMode,
+                    },
+                  )
+                  expect(differences).toMatchInlineSnapshot(`[]`)
+                }
             }
           }
     } finally {
       await browser.close()
     }
-  })
+  }, 30000)
 
   test('retains selector specificity against a later matching competitor', async () => {
     const browser = await chromium.launch()
@@ -148,17 +181,19 @@ describe('compile', () => {
           cssOutput,
           styles: Style.define({ card: { '&:hover': { color: 'purple' } } }),
         })
-        await page.setContent(
-          `<style>.native:hover{color:purple}${output.css}.competitor:hover{color:orange}</style><div class="native competitor">native</div><div class="${output.classes.card} competitor">compiled</div>`,
-        )
-        for (const index of [0, 1]) {
-          const element = page.locator('div').nth(index)
-          await element.hover()
-          expect(
-            await element.evaluate(
-              (element) => getComputedStyle(element).color,
-            ),
-          ).toMatchInlineSnapshot('"rgb(255, 165, 0)"')
+        for (const competing of [false, true]) {
+          await page.setContent(
+            `<style>.native:hover{color:purple}${output.css}${competing ? '.competitor:hover{color:orange}' : ''}</style><div class="native competitor">native</div><div class="${output.classes.card} competitor">compiled</div>`,
+          )
+          for (const index of [0, 1]) {
+            const element = page.locator('div').nth(index)
+            await element.hover()
+            expect(
+              (await element.evaluate(
+                (element) => getComputedStyle(element).color,
+              )) === (competing ? 'rgb(255, 165, 0)' : 'rgb(128, 0, 128)'),
+            ).toMatchInlineSnapshot('true')
+          }
         }
       }
     } finally {

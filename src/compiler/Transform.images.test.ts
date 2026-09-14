@@ -20,9 +20,9 @@ describe('compile', () => {
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
       ".z-background-image-Y8kGIH{background-image:url("image.png");background-image:linear-gradient(red, blue)!important;}
-      .z-marker-iap1nQ-0{marker:url(#first);}
-      .z-marker-start-6JGf0r-0{marker-start:url(#second);}
-      .z-marker-ptwuGd-0{marker:url(#first);}
+      .z-marker-63xoes-0{marker:url(#first);}
+      .z-marker-start-Uq_wAA-0{marker-start:url(#second);}
+      .z-marker-cwWLn6-0{marker:url(#first);}
       .z-opacity-O99JRy{opacity:0.5;}"
     `)
 

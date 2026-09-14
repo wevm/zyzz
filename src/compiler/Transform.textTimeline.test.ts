@@ -31,14 +31,14 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-flex-flow-CgmKfH-0{flex-flow:row nowrap;}
-      .z-text-wrap-CgmKfH-1{text-wrap:wrap balance;}
+      ".z-flex-flow-Fck1Fb-0{flex-flow:row nowrap;}
+      .z-text-wrap-CKAe-r-1{text-wrap:wrap balance;}
       .z-page-break-before-avoid-CgmKfH-2{page-break-before:avoid;}
       .z-flex-direction-column-0kXiVX-0{flex-direction:column;}
       .z-text-wrap-style-pretty-0kXiVX-1{text-wrap-style:pretty;}
       .z-break-before-page-0kXiVX-2{break-before:page;}
-      .z-flex-flow-HzYJKb-0{flex-flow:row nowrap;}
-      .z-text-wrap-HzYJKb-1{text-wrap:wrap balance;}
+      .z-flex-flow-97eGWC-0{flex-flow:row nowrap;}
+      .z-text-wrap-4q2I_M-1{text-wrap:wrap balance;}
       .z-page-break-before-avoid-HzYJKb-2{page-break-before:avoid;}"
     `)
   })

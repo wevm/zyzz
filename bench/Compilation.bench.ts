@@ -60,6 +60,7 @@ for (const workload of Corpus.cases) {
                     application: 'independent',
                     components: workload.count,
                     css,
+                    cssOutput: library === 'zyzz' ? 'grouped' : undefined,
                     declarations: fixture.zyzz.styles.reduce(
                       (total, style) => total + style.declarations.length,
                       0,

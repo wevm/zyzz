@@ -98,12 +98,17 @@ for (const kind of ['literal', 'theme', 'alias', 'tokens'] as const)
       bench(
         'extract + emit + rewrite + maps',
         () => {
-          Transform.compile({ moduleId: 'example/cards.ts', source })
+          Transform.compile({
+            cssOutput: 'grouped',
+            moduleId: 'example/cards.ts',
+            source,
+          })
         },
         {
           iterations: 30,
           setup: async () => {
             const output = Transform.compile({
+              cssOutput: 'grouped',
               moduleId: 'example/cards.ts',
               source,
             })
@@ -188,7 +193,11 @@ for (const count of [10, 100]) {
     bench(
       'extract + emit + rewrite + maps',
       () => {
-        Transform.compile({ moduleId: 'example/fallbacks.ts', source })
+        Transform.compile({
+          cssOutput: 'grouped',
+          moduleId: 'example/fallbacks.ts',
+          source,
+        })
       },
       { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
     )
@@ -455,12 +464,17 @@ for (const [kind, workload] of Object.entries(workloads))
       bench(
         'extract + emit + rewrite + maps',
         () => {
-          Transform.compile({ moduleId: `example/${kind}.ts`, source })
+          Transform.compile({
+            cssOutput: 'grouped',
+            moduleId: `example/${kind}.ts`,
+            source,
+          })
         },
         {
           iterations: 30,
           setup: async () => {
             const output = Transform.compile({
+              cssOutput: 'grouped',
               moduleId: `example/${kind}.ts`,
               source,
             })
@@ -531,7 +545,11 @@ for (const count of [10, 100]) {
     bench(
       'extract + emit + rewrite + maps',
       () => {
-        Transform.compile({ moduleId: 'example/lengths.ts', source })
+        Transform.compile({
+          cssOutput: 'grouped',
+          moduleId: 'example/lengths.ts',
+          source,
+        })
       },
       { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
     )

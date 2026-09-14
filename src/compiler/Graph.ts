@@ -33,6 +33,8 @@ export declare namespace compile {
   type Options = {
     /** Rewrite authoring calls. False emits CSS for unchanged source. */
     readonly compiler?: boolean | undefined
+    /** Default CSS representation for definitions without an explicit mode. */
+    readonly cssOutput?: Css.compile.Options['cssOutput']
     /** Serialized library contracts keyed by host-resolved module identity. Runtime modules stay external to this graph. */
     readonly contracts?: Readonly<Record<string, string>> | undefined
     /** Host-resolved static runtime imports keyed by module ID and source specifier; null marks externals. The host owns dynamic imports when supplied. Omit for closed relative-graph resolution. */
@@ -88,6 +90,7 @@ export declare namespace create {
 
 type Cache = {
   compiler: boolean
+  cssOutput: Css.compile.Options['cssOutput']
 
   contracts: string
   extracted: ReadonlyMap<string, Source.extract.ReturnType>
@@ -100,6 +103,7 @@ type Cache = {
 
 function build(options: compile.Options, cache?: Cache): Cache {
   if (cache?.compiler !== (options.compiler !== false)) cache = undefined
+  if (cache?.cssOutput !== options.cssOutput) cache = undefined
   const ids = Object.keys(options.modules).sort()
 
   const contracts = JSON.stringify(
@@ -583,6 +587,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
     const result = Source.extract({
       compiler: options.compiler,
+      cssOutput: options.cssOutput,
       moduleId,
       source,
       [Themes.context]: { factories, links },
@@ -893,6 +898,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
         ? previous!.result.modules[moduleId]!
         : Transform.compile({
             compiler: options.compiler,
+            cssOutput: options.cssOutput,
             moduleId,
             source: options.modules[moduleId]!,
             [Themes.context]: {
@@ -937,6 +943,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
 
   return {
     compiler: options.compiler !== false,
+    cssOutput: options.cssOutput,
     contracts,
     extracted,
     libraries: Object.freeze(libraries),

@@ -195,15 +195,15 @@ describe('compile', () => {
     ).toMatchInlineSnapshot(`
       {
         "classes": {
-          "card": "g-card g-card_s1",
-          "card-1": "g-card-1",
-          "card_s1": "g-card_5f_s1",
-          "x": "g-card",
+          "card": "g_0 g_1",
+          "card-1": "g_2",
+          "card_s1": "g_3",
+          "x": "g_0",
         },
-        "css": ".g-card{color:red;}
-      .g-card_s1{padding:1px;}
-      .g-card-1{margin:2px;}
-      .g-card_5f_s1{display:block;}",
+        "css": ".g_0{color:red;}
+      .g_1{padding:1px;}
+      .g_2{margin:2px;}
+      .g_3{display:block;}",
         "themes": {},
       }
     `)

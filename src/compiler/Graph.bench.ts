@@ -22,7 +22,11 @@ for (const count of [10, 100]) {
     bench(
       'link + extract + emit + rewrite + maps',
       () => {
-        Graph.compile({ cssOutput: 'grouped', modules })
+        Graph.compile({
+          composition: 'independent',
+          cssOutput: 'grouped',
+          modules,
+        })
       },
       {
         iterations: 30,
@@ -30,7 +34,11 @@ for (const count of [10, 100]) {
         warmupIterations: 10,
         warmupTime: 500,
         setup: async () => {
-          const output = Graph.compile({ cssOutput: 'grouped', modules })
+          const output = Graph.compile({
+            composition: 'independent',
+            cssOutput: 'grouped',
+            modules,
+          })
           const directory = await Fs.mkdtemp(
             Path.resolve('.fixture-graph-bench-'),
           )
@@ -122,21 +130,36 @@ for (const count of [10, 100]) {
             const modules = snapshots[++iteration % 2]!
 
             if (mode === 'full')
-              Graph.compile({ cssOutput: 'grouped', modules })
-            else compiler.compile({ cssOutput: 'grouped', modules })
+              Graph.compile({
+                composition: 'independent',
+                cssOutput: 'grouped',
+                modules,
+              })
+            else
+              compiler.compile({
+                composition: 'independent',
+                cssOutput: 'grouped',
+                modules,
+              })
           },
           {
             iterations: 30,
             setup: () => {
               compiler = Graph.create()
-              compiler.compile({ cssOutput: 'grouped', modules: original })
+              compiler.compile({
+                composition: 'independent',
+                cssOutput: 'grouped',
+                modules: original,
+              })
 
               // Both lanes must deliver the same complete artifacts after an edit.
               const expected = Graph.compile({
+                composition: 'independent',
                 cssOutput: 'grouped',
                 modules: changed,
               })
               const actual = compiler.compile({
+                composition: 'independent',
                 cssOutput: 'grouped',
                 modules: changed,
               })
@@ -145,7 +168,11 @@ for (const count of [10, 100]) {
                   'Incremental graph artifacts differ from full compilation.',
                 )
 
-              compiler.compile({ cssOutput: 'grouped', modules: original })
+              compiler.compile({
+                composition: 'independent',
+                cssOutput: 'grouped',
+                modules: original,
+              })
               iteration = 0
             },
             time: 1000,
@@ -160,6 +187,7 @@ for (const count of [10, 100]) {
 
 for (const count of [10, 100]) {
   const library = Graph.compile({
+    composition: 'independent',
     cssOutput: 'grouped',
     modules: Fixture.modules,
   })
@@ -173,6 +201,7 @@ for (const count of [10, 100]) {
       'read contracts + extract + emit + rewrite + maps',
       () => {
         Graph.compile({
+          composition: 'independent',
           cssOutput: 'grouped',
           contracts,
           imports: { 'app/card.ts': { '@acme/theme': 'library/index.js' } },
@@ -194,7 +223,11 @@ for (const count of [10, 100]) {
     bench(
       'normalize + link + extract + emit + rewrite + maps',
       () => {
-        Graph.compile({ cssOutput: 'grouped', modules })
+        Graph.compile({
+          composition: 'independent',
+          cssOutput: 'grouped',
+          modules,
+        })
       },
       { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
     )

@@ -31,15 +31,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-atomic-border-0{border:2px solid red;}
-      .z-a-atomic-outline-1{outline:1px dotted black;}
-      .z-a-atomic-columnRule-2{column-rule:3px dashed blue;}
-      .z-b-atomic-borderTopColor-0{border-top-color:green;}
-      .z-b-atomic-outlineWidth-1{outline-width:5px;}
-      .z-b-atomic-columnRuleStyle-2{column-rule-style:solid;}
-      .z-c-atomic-border-0{border:2px solid red;}
-      .z-c-atomic-outline-1{outline:1px dotted black;}
-      .z-c-atomic-columnRule-2{column-rule:3px dashed blue;}"
+      ".z-border-16ghuta1f8mh44-0{border:2px solid red;}
+      .z-outline-16ghuta1f8mh44-1{outline:1px dotted black;}
+      .z-column-rule-16ghuta1f8mh44-2{column-rule:3px dashed blue;}
+      .z-border-top-color-green-d2bc71f8mgbr-0{border-top-color:green;}
+      .z-outline-width-5px-d2bc71f8mgbr-1{outline-width:5px;}
+      .z-column-rule-style-solid-d2bc71f8mgbr-2{column-rule-style:solid;}
+      .z-border-1cci3eg1f8mfja-0{border:2px solid red;}
+      .z-outline-1cci3eg1f8mfja-1{outline:1px dotted black;}
+      .z-column-rule-1cci3eg1f8mfja-2{column-rule:3px dashed blue;}"
     `)
   })
   test('combined borders match native declarations across writing modes', async () => {

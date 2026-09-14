@@ -19,11 +19,11 @@ describe('compile', () => {
     })
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z_base-backgroundImage-1e8l6y91fl3k33{background-image:url("image.png");background-image:linear-gradient(red, blue)!important;}
-      .z-first-atomic-marker-0{marker:url(#first);}
-      .z-second-atomic-markerStart-0{marker-start:url(#second);}
-      .z-third-atomic-marker-0{marker:url(#first);}
-      .z_base-opacity-9cd7zmr8hgru{opacity:0.5;}"
+      ".z-background-image-1uqhlte1ehenji{background-image:url("image.png");background-image:linear-gradient(red, blue)!important;}
+      .z-marker-k5oaqnkf68sf-0{marker:url(#first);}
+      .z-marker-start-7g8g011fwopat-0{marker-start:url(#second);}
+      .z-marker-s9akdk1oqrjza-0{marker:url(#first);}
+      .z-opacity-1jngh5ibobng6{opacity:0.5;}"
     `)
 
     const lexer = Conformance.lexer()
@@ -45,8 +45,8 @@ describe('compile', () => {
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
       `
-      ".z_base-color-11hsk3q1tuqfr0{color:#12;}
-      .z_base-order-11rs5sp1tuqfr1{order:0.5;}"
+      ".z-text-kah549xphy6x{color:#12;}
+      .z-order-z47mr91b5cjgh{order:0.5;}"
     `,
     )
 

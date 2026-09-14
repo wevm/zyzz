@@ -29,6 +29,8 @@ export function compile(options: compile.Options): compile.ReturnType {
     options[Themes.context]?.extracted ?? Source.extract(options)
 
   const emitted = Css.compile({
+    development: options.development,
+    scope: options.moduleId,
     styles: extracted.styles,
     contributions: extracted.contributions,
     themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
@@ -189,17 +191,6 @@ export function compile(options: compile.Options): compile.ReturnType {
       `${variables}.create(${JSON.stringify(call.slots.value)})`,
     )
 
-  const first = extracted.calls[0]
-  const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
-  const names = new Map<string, string>()
-
-  for (const classes of Object.values(emitted.classes))
-    for (const name of classes.split(' ').filter(Boolean))
-      names.set(
-        name,
-        name.startsWith('z_base') ? `z-${scope}-${name.slice(2)}` : name,
-      )
-
   const identities = new Map(
     extracted.calls
       .filter((call) => call.identity)
@@ -212,10 +203,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         name,
         [
           ...new Set([
-            ...value
-              .split(' ')
-              .filter(Boolean)
-              .map((part) => names.get(part)!),
+            ...value.split(' ').filter(Boolean),
             ...(identities.has(name) ? [identities.get(name)!] : []),
           ]),
         ].join(' '),
@@ -789,7 +777,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           return rule
         }
 
-        const selector = `.${names.get(name)!}`
+        const selector = `.${name}`
         const call = owners.get(name)!
 
         Mapping.addMapping(cssMap, {
@@ -943,7 +931,10 @@ export declare namespace compile {
   /** Public failures from extraction and target compilation. */
   type ErrorType = Css.CompileError | Source.ExtractError
   /** Supplied module identity and source; no file loading occurs. */
-  type Options = Source.extract.Options
+  type Options = Source.extract.Options & {
+    /** Stable declaration names for CSS-only development updates. */
+    readonly development?: boolean | undefined
+  }
 
   /** Executable module and stylesheet artifacts; TypeScript/JSX lowering belongs to the host. */
   type ReturnType = {

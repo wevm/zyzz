@@ -565,7 +565,12 @@ export function zyzz(): Plugin {
 
     for (const id of Object.keys(contracts)) await dependencies(id)
 
-    const result = entry.compiler.compile({ contracts, imports, modules })
+    const result = entry.compiler.compile({
+      contracts,
+      development: entry.environment.mode !== 'build',
+      imports,
+      modules,
+    })
     const map = new Mapping.GenMapping()
     const styles: string[] = []
     let line = 0

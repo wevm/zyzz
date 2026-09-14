@@ -2,6 +2,7 @@
  * Emits deterministic CSS, class mappings, and live theme scopes from ordered styles.
  * @module
  */
+import * as ClassName from './internal/ClassName.js'
 import * as Contributions from './internal/Contributions.js'
 import * as Binding from '../internal/Binding.js'
 import * as Cascade from '../internal/Cascade.js'
@@ -381,15 +382,21 @@ export function compile<
         return
       }
 
-      // Declaration slots keep mounted elements styled across CSS-only edits.
+      // Contextual slots preserve authored ordering; development names survive value edits.
       const slot = ordinal++
       const identity = (() => {
         if (output === 'grouped' && mode === 'grouped')
           return `g-${encode(style.name)}`
-        if (shared)
-          return `z_base-${label}-${hash(`${mode}:${style.name}:${slot}`)}`
-
-        return `z-${encode(style.name)}-${mode}-${label}-${slot}`
+        return ClassName.create({
+          body,
+          context:
+            !shared || options.development
+              ? JSON.stringify([options.scope, mode, style.name])
+              : options.scope,
+          property: label,
+          slot: !shared || options.development ? slot : undefined,
+          stable: options.development,
+        })
       })()
       if (rules.has(identity) && rules.get(identity) !== body)
         diagnostics.push({
@@ -448,7 +455,7 @@ export function compile<
           !nestedComposition &&
           !conditions.length &&
           groups.get(root(domain(canonical(property)))) !== false
-        emit(body, encode(property), shared)
+        emit(body, property, shared)
       }
     }
 
@@ -534,6 +541,10 @@ export declare namespace compile {
     /** CSS representation; atomic declarations are the default. */
     readonly cssOutput?: 'atomic' | 'grouped' | undefined
     readonly composition?: 'independent' | 'ordered' | undefined
+    /** Stable declaration names for CSS-only development updates. */
+    readonly development?: boolean | undefined
+    /** Optional module scope for independently delivered stylesheets. */
+    readonly scope?: string | undefined
     /** Ordered definitions; no themes or source adapter is required. */
     readonly styles: Style.Definition<name>
     /** Named scopes; only variables referenced by these styles are emitted. */
@@ -603,16 +614,4 @@ function encode(value: string): string {
     /[^a-zA-Z0-9-]/g,
     (character) => `_${character.charCodeAt(0).toString(16)}_`,
   )
-}
-
-// Two independent 32-bit streams retain deterministic identities without host APIs.
-function hash(value: string): string {
-  let first = 2166136261
-  let second = 5381
-  for (let index = 0; index < value.length; index++) {
-    const code = value.charCodeAt(index)
-    first = Math.imul(first ^ code, 16777619)
-    second = Math.imul(second, 33) ^ code
-  }
-  return (first >>> 0).toString(36) + (second >>> 0).toString(36)
 }

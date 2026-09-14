@@ -78,10 +78,10 @@ describe('stylesheet contributions', () => {
       body{color:red;}
       @font-face{font-family:App;src:url(/font.woff2);font-display:swap;}
       @keyframes z-k11238c6bg65w8-66-61-64-65{from{opacity:0;}to{opacity:1;}}
-      .z-11238c6bg65w8-base-animationName-kpa89u17g7roi{animation-name:z-k11238c6bg65w8-66-61-64-65;}"
+      .z-animation-name-11238c613w7c06{animation-name:z-k11238c6bg65w8-66-61-64-65;}"
     `)
     expect(result.code).toMatchInlineSnapshot(
-      `"  void 0; void 0; void 0; const unused="z-k11238c6bg65w8-75-6e-75-73-65-64"; const fade="z-k11238c6bg65w8-66-61-64-65"; export const box=({className:"z-11238c6bg65w8-base-animationName-kpa89u17g7roi"})"`,
+      `"  void 0; void 0; void 0; const unused="z-k11238c6bg65w8-75-6e-75-73-65-64"; const fade="z-k11238c6bg65w8-66-61-64-65"; export const box=({className:"z-animation-name-11238c613w7c06"})"`,
     )
   })
   test('keeps theme references live in global rules', () => {
@@ -142,7 +142,7 @@ describe('stylesheet contributions', () => {
     }).toMatchInlineSnapshot(`
       {
         "modules": [
-          ".z-1e8a67z1uaws1j-base-color-qf0bie1ly887o{color:blue;}",
+          ".z-text-blue-1e8a67zly006l{color:blue;}",
           "",
         ],
         "shared": "@layer reset,app;

@@ -34,19 +34,19 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-atomic-fontSynthesis-0{font-synthesis:none;}
-      .z-a-atomic-whiteSpace-1{white-space:normal;}
-      .z-a-atomic-overflow-2{overflow:hidden;}
-      .z-a-atomic-wordWrap-3{word-wrap:normal;}
-      .z-b-atomic-fontSynthesisWeight-0{font-synthesis-weight:auto;}
-      .z-b-atomic-whiteSpaceCollapse-1{white-space-collapse:preserve;}
-      .z-b-atomic-textWrapMode-2{text-wrap-mode:nowrap;}
-      .z-b-atomic-overflowBlock-3{overflow-block:scroll;}
-      .z-b-atomic-overflowWrap-4{overflow-wrap:break-word;}
-      .z-c-atomic-fontSynthesis-0{font-synthesis:none;}
-      .z-c-atomic-whiteSpace-1{white-space:normal;}
-      .z-c-atomic-overflow-2{overflow:hidden;}
-      .z-c-atomic-wordWrap-3{word-wrap:normal;}"
+      ".z-font-synthesis-none-16ghuta1f8mh44-0{font-synthesis:none;}
+      .z-white-space-normal-16ghuta1f8mh44-1{white-space:normal;}
+      .z-overflow-hidden-16ghuta1f8mh44-2{overflow:hidden;}
+      .z-word-wrap-normal-16ghuta1f8mh44-3{word-wrap:normal;}
+      .z-font-synthesis-weight-auto-d2bc71f8mgbr-0{font-synthesis-weight:auto;}
+      .z-white-space-collapse-preserve-d2bc71f8mgbr-1{white-space-collapse:preserve;}
+      .z-text-wrap-mode-nowrap-d2bc71f8mgbr-2{text-wrap-mode:nowrap;}
+      .z-overflow-block-scroll-d2bc71f8mgbr-3{overflow-block:scroll;}
+      .z-overflow-wrap-break-word-d2bc71f8mgbr-4{overflow-wrap:break-word;}
+      .z-font-synthesis-none-1cci3eg1f8mfja-0{font-synthesis:none;}
+      .z-white-space-normal-1cci3eg1f8mfja-1{white-space:normal;}
+      .z-overflow-hidden-1cci3eg1f8mfja-2{overflow:hidden;}
+      .z-word-wrap-normal-1cci3eg1f8mfja-3{word-wrap:normal;}"
     `)
   })
   test('SVG geometry and text scalars match native browser output', async () => {

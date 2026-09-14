@@ -80,7 +80,7 @@ describe('create', () => {
 
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z-12ydhop55omeb-base-padding-1ita2ykh30ye {
+          ".z-p-8px-12ydhop1fi62gt {
             padding: 8px;
           }
           "
@@ -195,7 +195,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       const css = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(css).toMatchInlineSnapshot(
-        `".z-4lx6a318y1wl5-base-display-kpbdgwr3vwbc{display:-webkit-flex;display:flex}.z-4lx6a318y1wl5-base-color-kzaz5vr3vwbd{color:red}"`,
+        `".z-flex-4lx6a313n9x4v{display:-webkit-flex;display:flex}.z-text-4lx6a313n9x4v{color:red}"`,
       )
 
       const map = new Trace.TraceMap(
@@ -213,8 +213,8 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       `)
       expect(map.sourcesContent).toMatchInlineSnapshot(`
         [
-          ".z-4lx6a318y1wl5-base-display-kpbdgwr3vwbc{display:flex;}
-        .z-4lx6a318y1wl5-base-color-kzaz5vr3vwbd{color:#ff0000;}",
+          ".z-flex-4lx6a313n9x4v{display:flex;}
+        .z-text-4lx6a313n9x4v{color:#ff0000;}",
           "import { css } from 'zyzz';
         export const card = css({ display: 'flex', color: '#ff0000' });",
         ]
@@ -229,7 +229,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `".z-4lx6a318y1wl5-base-display-kpbdgwr3vwbc{display:-webkit-flex;display:flex}.z-4lx6a318y1wl5-base-color-kzaz5vr3vwbd{color:red}"`,
+        `".z-flex-4lx6a313n9x4v{display:-webkit-flex;display:flex}.z-text-4lx6a313n9x4v{color:red}"`,
       )
 
       await Fs.writeFile(path, input.replace('#ff0000', '#0000ff'))
@@ -238,7 +238,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `".z-4lx6a318y1wl5-base-display-kpbdgwr3vwbc{display:-webkit-flex;display:flex}.z-4lx6a318y1wl5-base-color-kzaz5vr3vwbd{color:#00f}"`,
+        `".z-flex-4lx6a313n9x4v{display:-webkit-flex;display:flex}.z-text-4lx6a313n9x4v{color:#00f}"`,
       )
     } finally {
       await host.close()
@@ -263,9 +263,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
 
       expect(
         await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'),
-      ).toMatchInlineSnapshot(
-        `".z-12ydhop55omeb-base-padding-1ita2ykh30ye{padding:8px;}"`,
-      )
+      ).toMatchInlineSnapshot(`".z-p-8px-12ydhop1fi62gt{padding:8px;}"`)
     } finally {
       await host.close()
       await Fs.rm(root, { force: true, recursive: true })
@@ -301,7 +299,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #06c;
         }
 
-        .z-4lx6a318y1wl5-base-color-94zxvkr3ybhy {
+        .z-text-4lx6a313n9x4v {
           color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #06c);
         }
         "
@@ -326,7 +324,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #175;
         }
 
-        .z-4lx6a318y1wl5-base-color-94zxvkr3ybhy {
+        .z-text-4lx6a313n9x4v {
           color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #175);
         }
         "
@@ -344,7 +342,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
             --z-t1dre7461ulsxz8-theme-color_2e_brand: #175;
           }
 
-          .z-4lx6a318y1wl5-base-color-94zxvkr3ybhy {
+          .z-text-4lx6a313n9x4v {
             color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #175);
           }
           "
@@ -358,7 +356,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
             --z-t1dre7461ulsxz8-theme-color_2e_brand: #06c;
           }
 
-          .z-4lx6a318y1wl5-base-color-94zxvkr3ybhy {
+          .z-text-4lx6a313n9x4v {
             color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #06c);
           }
           "
@@ -389,7 +387,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #000;
         }
 
-        .z-1dre7461ulsxz8-base-color-zpjmwnsgnry7 {
+        .z-text-1dre746ydrh2y {
           color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #000);
         }
         "
@@ -418,7 +416,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #fff;
         }
 
-        .z-1dre7461ulsxz8-base-color-zpjmwnsgnry7 {
+        .z-text-1dre746ydrh2y {
           color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #fff);
         }
         "
@@ -470,11 +468,11 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         .toMatchInlineSnapshot(`
           "
           import { Props as __zyzzProps } from 'zyzz/runtime';
-           export const button = __zyzzProps.create({className:"z-12ydhop55omeb-base-padding-1ita2ykh30ye z-style-12ydhop55omeb-50"});"
+           export const button = __zyzzProps.create({className:"z-p-8px-12ydhop1fi62gt z-style-12ydhop55omeb-50"});"
         `)
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z-12ydhop55omeb-base-padding-1ita2ykh30ye {
+          ".z-p-8px-12ydhop1fi62gt {
             padding: 8px;
           }
           "
@@ -500,7 +498,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
 
       expect(await Fs.readFile(Path.join(outDir, 'button.ts.css'), 'utf8'))
         .toMatchInlineSnapshot(`
-          ".z-12ydhop55omeb-base-padding-1ita2ykh30ye {
+          ".z-p-8px-12ydhop1fi62gt {
             padding: 8px;
           }
           "
@@ -723,7 +721,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'nested/button.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(`
-        ".z-1p8gvvx1u7xlwt-base-padding-4ldv0mbr1ro8 {
+        ".z-p-2px-1p8gvvx1nv9utb {
           padding: 2px;
         }
         "
@@ -795,7 +793,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           'utf8',
         ),
       ).toMatchInlineSnapshot(`
-        ".z-1wk3aow1vo00g4-base-padding-1dusbr811nxbie {
+        ".z-p-8px-1wk3aow1g8gbta {
           padding: 8px;
         }
         "

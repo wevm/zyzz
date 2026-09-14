@@ -31,15 +31,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-atomic-flexFlow-0{flex-flow:row nowrap;}
-      .z-a-atomic-textWrap-1{text-wrap:wrap balance;}
-      .z-a-atomic-pageBreakBefore-2{page-break-before:avoid;}
-      .z-b-atomic-flexDirection-0{flex-direction:column;}
-      .z-b-atomic-textWrapStyle-1{text-wrap-style:pretty;}
-      .z-b-atomic-breakBefore-2{break-before:page;}
-      .z-c-atomic-flexFlow-0{flex-flow:row nowrap;}
-      .z-c-atomic-textWrap-1{text-wrap:wrap balance;}
-      .z-c-atomic-pageBreakBefore-2{page-break-before:avoid;}"
+      ".z-flex-flow-16ghuta1f8mh44-0{flex-flow:row nowrap;}
+      .z-text-wrap-16ghuta1f8mh44-1{text-wrap:wrap balance;}
+      .z-page-break-before-avoid-16ghuta1f8mh44-2{page-break-before:avoid;}
+      .z-flex-direction-column-d2bc71f8mgbr-0{flex-direction:column;}
+      .z-text-wrap-style-pretty-d2bc71f8mgbr-1{text-wrap-style:pretty;}
+      .z-break-before-page-d2bc71f8mgbr-2{break-before:page;}
+      .z-flex-flow-1cci3eg1f8mfja-0{flex-flow:row nowrap;}
+      .z-text-wrap-1cci3eg1f8mfja-1{text-wrap:wrap balance;}
+      .z-page-break-before-avoid-1cci3eg1f8mfja-2{page-break-before:avoid;}"
     `)
   })
   test('text and flex values match native browser controls', async () => {

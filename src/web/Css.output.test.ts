@@ -5,7 +5,7 @@ import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
-  test('keeps mounted classes valid across declaration value edits', async () => {
+  test('keeps mounted classes valid across development value edits', async () => {
     const browser = await chromium.launch({ headless: true })
 
     try {
@@ -14,10 +14,12 @@ describe('compile', () => {
       for (const cssOutput of ['atomic', 'grouped'] as const) {
         const before = Css.compile({
           cssOutput,
+          development: true,
           styles: Style.define({ card: { color: 'red', padding: '8px' } }),
         })
         const after = Css.compile({
           cssOutput,
+          development: true,
           styles: Style.define({ card: { color: 'blue', padding: '12px' } }),
         })
 

@@ -22,9 +22,9 @@ describe('compile', () => {
     })
 
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-style-1e8a67z1uaws1j-189-atomic-width-0{width:10px;}
-      .z-style-1e8a67z1uaws1j-234-atomic-width-0{width:30px;}
-      .z-style-1e8a67z1uaws1j-280-atomic-width-0{width:40px;}"
+      ".z-w-10px-7mv00x183kfkt-0{width:10px;}
+      .z-w-30px-mma94417zxu48-0{width:30px;}
+      .z-w-40px-1u69k5v18033dj-0{width:40px;}"
     `)
   })
 
@@ -78,9 +78,7 @@ describe('compile', () => {
 
     expect(
       Graph.compile({ modules: { 'app.ts': source } }).modules['app.ts']!.css,
-    ).toMatchInlineSnapshot(
-      `".z-1e8a67z1uaws1j-base-width-8g310m1lxz38c{width:10px;}"`,
-    )
+    ).toMatchInlineSnapshot(`".z-w-10px-1e8a67zly006l{width:10px;}"`)
 
     const errors = [
       "for(base.width of ['20px']){}",
@@ -160,9 +158,9 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     })
 
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
-      ".z-1e8a67z1uaws1j-base-color-x9g7tp1ti88i7{color:red;}
-      .z-1e8a67z1uaws1j-base-width-bh0gz61tj3pky{width:var(--z-d1e8a67z1uaws1j-221-77-69-64-74-68);}
-      .z-1e8a67z1uaws1j-base-zIndex-br02o51tj3pkz{z-index:var(--z-d1e8a67z1uaws1j-221-7a-49-6e-64-65-78);}"
+      ".z-text-red-1e8a67zly006l{color:red;}
+      .z-w-1e8a67zly006l{width:var(--z-d1e8a67z1uaws1j-221-77-69-64-74-68);}
+      .z-z-index-1e8a67zly006l{z-index:var(--z-d1e8a67z1uaws1j-221-7a-49-6e-64-65-78);}"
     `)
   })
 
@@ -191,8 +189,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
       `
-      ".z-1e8a67z1uaws1j-base-width-gfeqc71tifnm1{width:var(--z-v4t4nbe1og4cic-54);}
-      .z-1e8a67z1uaws1j-base-padding-g5f4n81tifnm0{padding:var(--z-v4t4nbe1og4cic-54);}"
+      ".z-w-1e8a67zly006l{width:var(--z-v4t4nbe1og4cic-54);}
+      .z-p-1e8a67zly006l{padding:var(--z-v4t4nbe1og4cic-54);}"
     `,
     )
   })
@@ -207,8 +205,8 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
 
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1e8a67z1uaws1j-theme-theme{--z-t1e8a67z1uaws1j-theme-color_2e_ink:#123;}
-      .z-1e8a67z1uaws1j-base-width-dgs2a31tjsya1{width:10px;}
-      .z-1e8a67z1uaws1j-base-color-d6sgl41tjsya0{color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,#123);}"
+      .z-w-10px-1e8a67zly006l{width:10px;}
+      .z-text-1e8a67zly006l{color:var(--z-t1e8a67z1uaws1j-theme-color_2e_ink,#123);}"
     `)
   })
   test('links default variable exports through packed contracts', () => {
@@ -229,7 +227,7 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     })
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-1e8a67z1uaws1j-base-width-cuytw81lxzsjg{width:var(--z-v4t4nbe1og4cic-47);}"`,
+      `".z-w-1e8a67zly006l{width:var(--z-v4t4nbe1og4cic-47);}"`,
     )
   })
   test('rejects static records returned to runtime code', () => {
@@ -520,10 +518,10 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     `)
     expect(css).toMatchInlineSnapshot(`
       "@property --z-v4t4nbe1og4cic-57{syntax:"<percentage>";inherits:false;initial-value:25%;}
-      @property --z-v4t4nbe1og4cic-121{syntax:"<length>";inherits:true;initial-value:4px;}.z-1e8a67z1uaws1j-base-height-68o8pi1tj4ggw{height:20px;}
-      .z-1e8a67z1uaws1j-base-padding-6inueh1tj4ggx{padding:var(--z-v4t4nbe1og4cic-121);}
-      .z-style-1e8a67z1uaws1j-232-atomic-width-2{width:var(--z-v4t4nbe1og4cic-57);}
-      .z-style-1e8a67z1uaws1j-293-atomic-width-0{width:var(--z-d1e8a67z1uaws1j-293-77-69-64-74-68);}"
+      @property --z-v4t4nbe1og4cic-121{syntax:"<length>";inherits:true;initial-value:4px;}.z-h-20px-1e8a67zly006l{height:20px;}
+      .z-p-1e8a67zly006l{padding:var(--z-v4t4nbe1og4cic-121);}
+      .z-w-dago1q17zxp6m-2{width:var(--z-v4t4nbe1og4cic-57);}
+      .z-w-1f30u3b1802fp1-0{width:var(--z-d1e8a67z1uaws1j-293-77-69-64-74-68);}"
     `)
   })
   test('expands immutable members and shorthand while retaining dynamic intersections', () => {
@@ -538,10 +536,10 @@ export const vars=({gap:variable('signedLength', {inherits:false,initialValue:'}
     })
 
     expect(graph.modules['static.ts']!.css).toMatchInlineSnapshot(`
-      ".z-style-15wl7di1emu9we-356-atomic-width-0{width:12px;}
-      .z-15wl7di1emu9we-base-padding-rftsn81v8nxl8{padding:8px;}
-      .z-style-15wl7di1emu9we-411-atomic-width-0{width:var(--z-d15wl7di1emu9we-411-77-69-64-74-68);}
-      .z-15wl7di1emu9we-base-opacity-o6gppk1v9d8g8{opacity:var(--z-d15wl7di1emu9we-411-6f-70-61-63-69-74-79);}"
+      ".z-w-12px-v32dls1fuw59m-0{width:12px;}
+      .z-p-8px-15wl7di1k1mqes{padding:8px;}
+      .z-w-fd1oy41fsrvce-0{width:var(--z-d15wl7di1emu9we-411-77-69-64-74-68);}
+      .z-opacity-15wl7di1k1mqes{opacity:var(--z-d15wl7di1emu9we-411-6f-70-61-63-69-74-79);}"
     `)
     expect(graph.sharedCss).toMatchInlineSnapshot(
       `"@property --z-v15wl7di1emu9we-253{syntax:"<number>";inherits:false;initial-value:-1;}"`,

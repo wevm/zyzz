@@ -22,11 +22,11 @@ describe('compile', () => {
     const output = Transform.compile({ moduleId: 'namespace.ts', source })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-mpx2ize76wo1-base-padding-1fc2tjv16fa6uf{padding:8px;}
-      .z-style-mpx2ize76wo1-177-atomic-color-1{color:red;}
-      .z-style-mpx2ize76wo1-212-atomic-color-0{color:blue;}
-      .z-style-mpx2ize76wo1-270-atomic-color-0{color:red;}
-      .z-mpx2ize76wo1-base-width-145w8e816hbale{width:var(--z-dmpx2ize76wo1-270-77-69-64-74-68);}"
+      ".z-p-8px-mpx2iz169g6dr{padding:8px;}
+      .z-text-red-v8dxvn19kyjtn-1{color:red;}
+      .z-text-blue-vyizjf19lpftn-0{color:blue;}
+      .z-text-red-1mm696j19lkv1b-0{color:red;}
+      .z-w-mpx2iz169g6dr{width:var(--z-dmpx2ize76wo1-270-77-69-64-74-68);}"
     `)
 
     const built = await Esbuild.build({
@@ -47,17 +47,17 @@ describe('compile', () => {
 
     expect(result.card).toMatchInlineSnapshot(`
       {
-        "className": "z-mpx2ize76wo1-base-padding-1fc2tjv16fa6uf z-style-mpx2ize76wo1-177-atomic-color-1 z-style-mpx2ize76wo1-177",
+        "className": "z-p-8px-mpx2iz169g6dr z-text-red-v8dxvn19kyjtn-1 z-style-mpx2ize76wo1-177",
       }
     `)
     expect(result.button).toMatchInlineSnapshot(`
       {
-        "className": "z-mpx2ize76wo1-base-padding-1fc2tjv16fa6uf z-style-mpx2ize76wo1-212-atomic-color-0 z-style-mpx2ize76wo1-212",
+        "className": "z-p-8px-mpx2iz169g6dr z-text-blue-vyizjf19lpftn-0 z-style-mpx2ize76wo1-212",
       }
     `)
     expect(result.dynamic).toMatchInlineSnapshot(`
       {
-        "className": "z-mpx2ize76wo1-base-padding-1fc2tjv16fa6uf z-style-mpx2ize76wo1-270-atomic-color-0 z-mpx2ize76wo1-base-width-145w8e816hbale z-style-mpx2ize76wo1-270",
+        "className": "z-p-8px-mpx2iz169g6dr z-text-red-1mm696j19lkv1b-0 z-w-mpx2iz169g6dr z-style-mpx2ize76wo1-270",
         "style": {
           "--z-dmpx2ize76wo1-270-77-69-64-74-68": "20px",
         },
@@ -77,8 +77,8 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-style-1ezo5v71uomczz-107-atomic-color-0{color:red;}
-      .z-style-1ezo5v71uomczz-203-atomic-color-0{color:blue;}"
+      ".z-text-red-1gmre3v1iwtmpr-0{color:red;}
+      .z-text-blue-1mf1dby1iw2uuw-0{color:blue;}"
     `)
   })
 

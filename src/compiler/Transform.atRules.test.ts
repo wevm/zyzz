@@ -31,8 +31,8 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
     })
     expect(output.css).toMatchInlineSnapshot(
       `
-      ".z-style-1df82zi1f2cka-132-atomic-color-0{@media (width >= 48rem){color:red;}}
-      .z-style-1df82zi1f2cka-132-atomic-color-1{@media (width >= 48rem){color:blue;}}"
+      ".z-text-c3yipokje7ui-0{@media (width >= 48rem){color:red;}}
+      .z-text-c3yipokje7ui-1{@media (width >= 48rem){color:blue;}}"
     `,
     )
   })
@@ -45,8 +45,8 @@ export const fade = keyframes({'entry 0%, cover 10%':{opacity:0},'exit 100%':{op
     })
     expect(output.css).toMatchInlineSnapshot(
       `
-      ".z-style-mond465apgew-73-atomic-color-0{@scope (.outer) to (.stop){@layer components{color:red;}}}
-      .z-style-mond465apgew-73-atomic-color-1{@scope (.outer) to (.stop){@layer components{@container scroll-state(stuck: top){color:blue;}}}}"
+      ".z-text-75tyn110r7cj9-0{@scope (.outer) to (.stop){@layer components{color:red;}}}
+      .z-text-75tyn110r7cj9-1{@scope (.outer) to (.stop){@layer components{@container scroll-state(stuck: top){color:blue;}}}}"
     `,
     )
   })

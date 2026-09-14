@@ -141,12 +141,12 @@ describe('cx', () => {
     )
     expect(module.exports.apply(false)).toMatchInlineSnapshot(`
       {
-        "className": "z-composition-q3v7jm4ag6tq-238-0-atomic-padding-0",
+        "className": "z-p-4px-je5oim1mupcdq-0",
       }
     `)
     expect(module.exports.apply(true)).toMatchInlineSnapshot(`
       {
-        "className": "z-composition-q3v7jm4ag6tq-238-atomic-padding-0 z-composition-q3v7jm4ag6tq-238-atomic-color-1",
+        "className": "z-p-4px-nat6sfnxd00j-0 z-text-red-nat6sfnxd00j-1",
       }
     `)
   })

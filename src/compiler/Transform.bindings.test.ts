@@ -69,8 +69,8 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(
       `
-      ".z-1h19mkqtvuh7e-base-borderWidth-1uhacl314ba3y3{border-width:calc(var(--z-v1h19mkqtvuh7e-56));}
-      .z-1h19mkqtvuh7e-base-width-1u7aqw414ba3y2{width:var(--z-v1h19mkqtvuh7e-56);}"
+      ".z-border-width-1h19mkq1luymxs{border-width:calc(var(--z-v1h19mkqtvuh7e-56));}
+      .z-w-1h19mkq1luymxs{width:var(--z-v1h19mkqtvuh7e-56);}"
     `,
     )
   })
@@ -90,8 +90,8 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(
       `
-      ".z-161esph179x895-base-width-n4ti5n1lcpo1t{width:var(--z-v161esph179x895-58);}
-      .z-161esph179x895-base-marginLeft-mutwgo1lcpo1s{margin-left:calc(var(--z-v161esph179x895-110) + 2px);}"
+      ".z-w-161esph1y6jj5n{width:var(--z-v161esph179x895-58);}
+      .z-ml-161esph1y6jj5n{margin-left:calc(var(--z-v161esph179x895-110) + 2px);}"
     `,
     )
 
@@ -188,8 +188,8 @@ describe('compile', () => {
         source: `import {variable, css} from 'zyzz'; const a = ({x:variable("number")}); const b = ({x:variable("number")}); css({opacity:a.x})(); css({opacity:b.x})()`,
       }).css,
     ).toMatchInlineSnapshot(`
-      ".z-style-b2d2s91jn7xin-108-atomic-opacity-0{opacity:var(--z-vb2d2s91jn7xin-50);}
-      .z-style-b2d2s91jn7xin-130-atomic-opacity-0{opacity:var(--z-vb2d2s91jn7xin-86);}"
+      ".z-opacity-1lt3fmh7f9e85-0{opacity:var(--z-vb2d2s91jn7xin-50);}
+      .z-opacity-1hkuqwy7f6y0e-0{opacity:var(--z-vb2d2s91jn7xin-86);}"
     `)
   })
 

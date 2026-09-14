@@ -93,12 +93,12 @@ describe('define', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:2rem;--z5:#06c;}
       .t_1{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:1rem;--z5:#06c;}
-      .z_base-backgroundColor-11hsk3q1tuqfr0{background-color:var(--z0,#fff);}
-      .z_base-borderColor-11rs5sp1tuqfr1{border-color:var(--z1,#000);}
-      .z_base-borderRadius-10xtcps1tuqfr2{border-radius:var(--z2,4px);}
-      .z-card-atomic-color-3{color:var(--z3,light-dark(#111,#fff));}
-      .z_base-padding-12lqyvm1tuqfqw{padding:var(--z4,1rem);}
-      .z-link-atomic-color-0{color:var(--z5,#06c);}"
+      .z-bg-2dzsmhjfmdi5{background-color:var(--z0,#fff);}
+      .z-border-color-wygwxgmi3jvs{border-color:var(--z1,#000);}
+      .z-border-radius-1w1lle31fymgv5{border-radius:var(--z2,4px);}
+      .z-text-7vhs9r1q1acs1-3{color:var(--z3,light-dark(#111,#fff));}
+      .z-p-1akcn5o11mc1js{padding:var(--z4,1rem);}
+      .z-text-1n9rbb11n44hj9-0{color:var(--z5,#06c);}"
     `)
     expect(
       output.css ===
@@ -157,11 +157,11 @@ describe('define', () => {
     )
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-explicit-atomic-color-0{color:var(--z0,#000);}
-      .z-explicit-atomic-padding-1{padding:var(--z1,8px);}
-      .z-literal-atomic-color-0{color:white;}
-      .z-literal-atomic-padding-1{padding:0;}
-      .z_base-width-2ka7gt1vc3yyp{width:1rem;}"
+      ".z-text-131fjtobd20j-0{color:var(--z0,#000);}
+      .z-p-131fjtobd20j-1{padding:var(--z1,8px);}
+      .z-text-white-1dxa38y5dh3da-0{color:white;}
+      .z-p-0-1dxa38y5dh3da-1{padding:0;}
+      .z-w-1rem{width:1rem;}"
     `)
   })
 
@@ -735,10 +735,10 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
     expect(JSON.parse(server)).toMatchInlineSnapshot(`
       {
         "classes": {
-          "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+          "button": "z-text-rgm8mw1axx28s z-p-0",
         },
-        "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
-      .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+        "css": ".z-text-rgm8mw1axx28s{color:#f00;}
+      .z-p-0{padding:0;}",
         "themes": {},
       }
     `)
@@ -757,10 +757,10 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(JSON.parse(result)).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+            "button": "z-text-rgm8mw1axx28s z-p-0",
           },
-          "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
-        .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+          "css": ".z-text-rgm8mw1axx28s{color:#f00;}
+        .z-p-0{padding:0;}",
           "themes": {},
         }
       `)
@@ -780,10 +780,10 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
         expect(JSON.parse(context.getString(result))).toMatchInlineSnapshot(`
           {
             "classes": {
-              "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+              "button": "z-text-rgm8mw1axx28s z-p-0",
             },
-            "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
-          .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+            "css": ".z-text-rgm8mw1axx28s{color:#f00;}
+          .z-p-0{padding:0;}",
             "themes": {},
           }
         `)
@@ -807,10 +807,10 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(await page.evaluate('fixture.result')).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+            "button": "z-text-rgm8mw1axx28s z-p-0",
           },
-          "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
-        .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+          "css": ".z-text-rgm8mw1axx28s{color:#f00;}
+        .z-p-0{padding:0;}",
           "themes": {},
         }
       `)
@@ -838,10 +838,10 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(result).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+            "button": "z-text-rgm8mw1axx28s z-p-0",
           },
-          "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
-        .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+          "css": ".z-text-rgm8mw1axx28s{color:#f00;}
+        .z-p-0{padding:0;}",
           "themes": {},
         }
       `)

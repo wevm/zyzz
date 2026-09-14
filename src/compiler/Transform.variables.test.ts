@@ -70,7 +70,7 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(`
       ".z_theme-ingwo11j6aspr-theme{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
-      .z-ingwo11j6aspr-base-width-5264wwj6j4mi{width:calc(var(--z-tingwo11j6aspr-theme-spacing_2e_md,8px))!important;}"
+      .z-w-ingwo118zow4h{width:calc(var(--z-tingwo11j6aspr-theme-spacing_2e_md,8px))!important;}"
     `)
   })
   test('preserves assertions around nested variable templates and fallbacks', () => {
@@ -82,7 +82,7 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(`
       ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
-      .z-1jvt0134f5zz3-base-width-1yhpajl1lzmsnf{width:1px;width:calc(var(--z-t1jvt0134f5zz3-theme-spacing_2e_md,8px));}"
+      .z-w-1jvt0131mi1nkl{width:1px;width:calc(var(--z-t1jvt0134f5zz3-theme-spacing_2e_md,8px));}"
     `)
   })
   test('rejects spacing variables in integer properties', () => {
@@ -107,8 +107,8 @@ describe('compile', () => {
     expect(Transform.compile({ moduleId: 'vars.ts', source }).css)
       .toMatchInlineSnapshot(`
         ".z_theme-4t4nbe1og4cic-theme{--z-t4t4nbe1og4cic-theme-spacing_2e_md:8px;--z-t4t4nbe1og4cic-theme-color_2e_brand:red;}
-        .z-4t4nbe1og4cic-base-width-6jizek19sfzgc{width:calc(100% - var(--z-t4t4nbe1og4cic-theme-spacing_2e_md,8px))!important;}
-        .z-4t4nbe1og4cic-base-color-6til3j19sfzgd{color:var(--z-t4t4nbe1og4cic-theme-color_2e_brand,red);}"
+        .z-w-4t4nbeanae6y{width:calc(100% - var(--z-t4t4nbe1og4cic-theme-spacing_2e_md,8px))!important;}
+        .z-text-4t4nbeanae6y{color:var(--z-t4t4nbe1og4cic-theme-color_2e_brand,red);}"
       `)
   })
 
@@ -125,8 +125,8 @@ describe('compile', () => {
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_md:8px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
       .z_theme-1xn44ix111xh3v-alt{--z-t1xn44ix111xh3v-theme-spacing_2e_md:16px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
-      .z-1e8a67z1uaws1j-base-width-tqvf6x1lxzwdv{width:calc(100% - var(--z-t1xn44ix111xh3v-theme-spacing_2e_md,8px));}
-      .z-1e8a67z1uaws1j-base-color-tgvthy1lxzwdu{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,light-dark(red,blue));}"
+      .z-w-1e8a67zly006l{width:calc(100% - var(--z-t1xn44ix111xh3v-theme-spacing_2e_md,8px));}
+      .z-text-1e8a67zly006l{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,light-dark(red,blue));}"
     `)
     expect(result.modules['theme.ts']!.css).toMatchInlineSnapshot(`""`)
   })
@@ -150,7 +150,7 @@ describe('compile', () => {
 
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-u8smm21l81sow-zyzz-theme{--z-tu8smm21l81sow-zyzz-spacing_2e_md:8px;}
-      .z-1e8a67z1uaws1j-base-width-10cg9qi1lxyzvc{width:calc(100% - var(--z-tu8smm21l81sow-zyzz-spacing_2e_md,8px));}"
+      .z-w-1e8a67zly006l{width:calc(100% - var(--z-tu8smm21l81sow-zyzz-spacing_2e_md,8px));}"
     `)
     expect(
       output.modules['app.ts']!.code.includes('.vars'),

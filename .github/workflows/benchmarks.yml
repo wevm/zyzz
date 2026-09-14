@@ -1,7 +1,7 @@
 name: Benchmarks
 on:
   pull_request:
-    types: [opened, ready_for_review, reopened, synchronize]
+    types: [closed, opened, ready_for_review, reopened, synchronize]
   push:
     branches: [main]
   workflow_dispatch:
@@ -10,6 +10,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 jobs:
   compiler:
+    if: github.event.action != 'closed'
     name: Compiler benchmarks
     env:
       BENCH_SIZE_THRESHOLD: '105'
@@ -177,7 +178,7 @@ jobs:
     timeout-minutes: 50
   benchmarks:
     name: Benchmarks
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && github.event.action != 'closed' }}
     needs: [compiler, renders]
     runs-on: ubuntu-latest
     steps:
@@ -189,6 +190,7 @@ jobs:
           test "$COMPILER_RESULT" = success
           test "$RENDER_RESULT" = success
   renders:
+    if: github.event.action != 'closed'
     name: React renders
     permissions:
       contents: read
@@ -261,7 +263,7 @@ jobs:
     timeout-minutes: 30
   report:
     name: Benchmark Report
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && github.event.action != 'closed' }}
     needs: [compiler, renders]
     permissions:
       actions: read

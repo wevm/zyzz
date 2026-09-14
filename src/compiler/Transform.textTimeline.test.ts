@@ -78,7 +78,7 @@ describe('compile', () => {
       })
 
       await page.setContent(
-        `<style>${output.css}${cascade.css}</style><div id="cascade" class="z-a z-b z-c"></div><div id="flow" class="${module.flow.className}"><span>one</span><span>two</span></div><div id="flow-control" style="${TextTimeline.controls.flow}"><span>one</span><span>two</span></div><span id="text" class="${module.text.className}">text</span><span id="text-control" style="${TextTimeline.controls.text}">text</span>`,
+        `<style>${output.css}${cascade.css}</style><div id="cascade" class="${cascade.classes.a} ${cascade.classes.b} ${cascade.classes.c} z-a"></div><div id="flow" class="${module.flow.className}"><span>one</span><span>two</span></div><div id="flow-control" style="${TextTimeline.controls.flow}"><span>one</span><span>two</span></div><span id="text" class="${module.text.className}">text</span><span id="text-control" style="${TextTimeline.controls.text}">text</span>`,
       )
 
       expect(
@@ -128,12 +128,12 @@ describe('compile', () => {
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).textWrapStyle),
-      ).toMatchInlineSnapshot(`"auto"`)
+      ).toMatchInlineSnapshot(`"balance"`)
       expect(
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).breakBefore),
-      ).toMatchInlineSnapshot(`"auto"`)
+      ).toMatchInlineSnapshot(`"avoid"`)
       expect(
         await page
           .locator('#flow')

@@ -87,7 +87,7 @@ describe('compile', () => {
               },
               { classes: output.classes, composition, direction },
             )
-            expect(differences).toEqual([])
+            expect(differences).toMatchInlineSnapshot(`[]`)
           }
           await page.setContent(
             `<style>${controls}\n${output.css}</style><div class="condition">native</div><div class="${output.classes.condition}">compiled</div>`,
@@ -98,12 +98,13 @@ describe('compile', () => {
           const color = await native.evaluate(
             (element) => getComputedStyle(element).color,
           )
+          expect(color).toMatchInlineSnapshot(`"rgb(128, 0, 128)"`)
           await compiled.hover()
           expect(
             await compiled.evaluate(
               (element) => getComputedStyle(element).color,
             ),
-          ).toBe(color)
+          ).toMatchInlineSnapshot(`"rgb(128, 0, 128)"`)
         }
       }
     } finally {

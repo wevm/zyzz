@@ -738,6 +738,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       contributionLine++
     }
   }
+  const declarationOwners = new Map<string, Set<number>>()
   const scoped = emitted.scopedCss ?? emitted.css
 
   const css = [
@@ -876,6 +877,8 @@ export function compile(options: compile.Options): compile.ReturnType {
         }
 
         const starts = declarationStarts(body)
+        const used = declarationOwners.get(call.name) ?? new Set<number>()
+        declarationOwners.set(call.name, used)
         let cursor = 1
 
         for (
@@ -883,6 +886,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           propertyIndex < ordered.length;
           propertyIndex++
         ) {
+          if (used.has(propertyIndex)) continue
           const declaration = ordered[propertyIndex]!
           const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:`
           const start =
@@ -892,6 +896,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           if (start < 0) continue
 
           const location = authored[propertyIndex]!
+          used.add(propertyIndex)
 
           Mapping.addMapping(cssMap, {
             generated: { column: selector.length + start, line },

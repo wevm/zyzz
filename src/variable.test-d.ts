@@ -121,12 +121,13 @@ describe('registered', () => {
 
       // @ts-expect-error Options require both registration fields.
       variable('color', { initialValue: 'red' })
-      variable('length', {
+      const unknown = {
         inherits: true,
         initialValue: '4px',
-        // @ts-expect-error Unknown registration options are rejected.
         initial: '8px',
-      })
+      } as const
+      // @ts-expect-error Unknown registration options are rejected.
+      variable('length', unknown)
       const mismatched = {
         inherits: true,
         initialValue: '4px',

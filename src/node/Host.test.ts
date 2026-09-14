@@ -204,7 +204,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       const css = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(css).toMatchInlineSnapshot(
-        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-49Nz2U{color:red}"`,
+        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-69Lil3{color:red}"`,
       )
 
       const map = new Trace.TraceMap(
@@ -223,7 +223,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       expect(map.sourcesContent).toMatchInlineSnapshot(`
         [
           ".z-display-flex-49Nz2U{display:flex;}
-        .z-text-49Nz2U{color:#ff0000;}",
+        .z-text-69Lil3{color:#ff0000;}",
           "import { css } from 'zyzz';
         export const card = css({ display: 'flex', color: '#ff0000' });",
         ]
@@ -238,7 +238,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-49Nz2U{color:red}"`,
+        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-69Lil3{color:red}"`,
       )
 
       await Fs.writeFile(path, input.replace('#ff0000', '#0000ff'))
@@ -247,7 +247,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-49Nz2U{color:#00f}"`,
+        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-E26PRe{color:#00f}"`,
       )
     } finally {
       await host.close()
@@ -308,7 +308,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #06c;
         }
 
-        .z-text-49Nz2U {
+        .z-text-kp0eqE {
           color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #06c);
         }
         "
@@ -333,7 +333,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #175;
         }
 
-        .z-text-49Nz2U {
+        .z-text-OqGLWz {
           color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #175);
         }
         "
@@ -351,7 +351,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
             --z-t1dre7461ulsxz8-theme-color_2e_brand: #175;
           }
 
-          .z-text-49Nz2U {
+          .z-text-OqGLWz {
             color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #175);
           }
           "
@@ -365,7 +365,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
             --z-t1dre7461ulsxz8-theme-color_2e_brand: #06c;
           }
 
-          .z-text-49Nz2U {
+          .z-text-kp0eqE {
             color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #06c);
           }
           "
@@ -396,7 +396,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #000;
         }
 
-        .z-text-IRtWxD {
+        .z-text-rocWbC {
           color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #000);
         }
         "
@@ -425,7 +425,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
           --z-t1dre7461ulsxz8-theme-color_2e_brand: #fff;
         }
 
-        .z-text-IRtWxD {
+        .z-text-wwHZc8 {
           color: var(--z-t1dre7461ulsxz8-theme-color_2e_brand, #fff);
         }
         "

@@ -1,5 +1,7 @@
 # Compilation Benchmarks
 
+Zyzz literal and theme transfer comparisons explicitly use `cssOutput: 'grouped'`. Pure CSS emission benchmarks use the same mode. Runtime and React render fixtures bind their helpers through `Config.create({ cssOutput: 'grouped' })` once config support is present in the stack. Atomic output remains the application default and retains its browser correctness coverage. Existing size thresholds and competitor comparisons remain enforced.
+
 ## CI Scheduling
 
 Compiler and React render benchmarks run on separate runners in parallel. Each job measures its baseline and candidate sequentially on the same runner. Sample counts, warmups, workloads, and performance gates are unchanged. Both artifacts feed one updating PR comment.

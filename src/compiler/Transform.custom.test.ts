@@ -15,8 +15,14 @@ describe('compile', () => {
     const output = Transform.compile({ moduleId: 'custom.ts', source })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-nhoi651v8vyx9-base0{--Accent:red;--accent:blue;--data:"a;b:c";--count:2;}
-      .z-nhoi651v8vyx9-base1{all:initial;color:var(--Accent);background-color:var(--accent);--choice:red;--choice:blue!important;}"
+      ".z-nhoi651v8vyx9-base---Accent-jctuhg184bytk{--Accent:red;}
+      .z-nhoi651v8vyx9-base---accent-jmtg6f184bytl{--accent:blue;}
+      .z-nhoi651v8vyx9-base---data-jwt1ve184bytm{--data:"a;b:c";}
+      .z-nhoi651v8vyx9-base---count-k6snkd184bytn{--count:2;}
+      .z-nhoi651v8vyx9-base-all-cj6vm9zffjyx{all:initial;}
+      .z-nhoi651v8vyx9-base-color-c979xazffjyw{color:var(--Accent);}
+      .z-nhoi651v8vyx9-base-backgroundColor-bz7o8bzffjyz{background-color:var(--accent);}
+      .z-nhoi651v8vyx9-base---choice-bp82jczffjyy{--choice:red;--choice:blue!important;}"
     `)
   })
 
@@ -31,7 +37,12 @@ describe('compile', () => {
     })
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
-      `".z_base0{--escaped:hello\\!;--escapedWord:hello\\!important;--even:hello\\\\!important;--space:hello\\ !important;}"`,
+      `
+      ".z_base---escaped-195c56819vd7r0{--escaped:hello\\!;}
+      .z_base---escapedWord-19fbqv719vd7r1{--escapedWord:hello\\!important;}
+      .z_base---even-19pbck619vd7r2{--even:hello\\\\!important;}
+      .z_base---space-19zay9519vd7r3{--space:hello\\ !important;}"
+    `,
     )
   })
 

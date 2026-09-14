@@ -46,7 +46,7 @@ describe('css', () => {
     })
 
     expect(Css.compile({ styles: result.styles }).css).toMatchInlineSnapshot(
-      `".z_base0{padding:0;}"`,
+      `".z_base-padding-h5hvdx1klq8ab{padding:0;}"`,
     )
     expect(() => css({ padding: 0 })).toThrowErrorMatchingInlineSnapshot(
       `[css.MissingTransformError: css requires a compile-time transform. Source extraction alone does not rewrite calls; do not execute untransformed authoring source.]`,

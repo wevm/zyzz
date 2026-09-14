@@ -31,9 +31,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a{flex-flow:row nowrap;text-wrap:wrap balance;page-break-before:avoid;}
-      .z-b{flex-direction:column;text-wrap-style:pretty;break-before:page;}
-      .z-c{flex-flow:row nowrap;text-wrap:wrap balance;page-break-before:avoid;}"
+      ".z-a-atomic-flexFlow-0{flex-flow:row nowrap;}
+      .z-a-atomic-textWrap-1{text-wrap:wrap balance;}
+      .z-a-atomic-pageBreakBefore-2{page-break-before:avoid;}
+      .z-b-atomic-flexDirection-0{flex-direction:column;}
+      .z-b-atomic-textWrapStyle-1{text-wrap-style:pretty;}
+      .z-b-atomic-breakBefore-2{break-before:page;}
+      .z-c-atomic-flexFlow-0{flex-flow:row nowrap;}
+      .z-c-atomic-textWrap-1{text-wrap:wrap balance;}
+      .z-c-atomic-pageBreakBefore-2{page-break-before:avoid;}"
     `)
   })
   test('text and flex values match native browser controls', async () => {
@@ -122,12 +128,12 @@ describe('compile', () => {
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).textWrapStyle),
-      ).toMatchInlineSnapshot(`"balance"`)
+      ).toMatchInlineSnapshot(`"auto"`)
       expect(
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).breakBefore),
-      ).toMatchInlineSnapshot(`"avoid"`)
+      ).toMatchInlineSnapshot(`"auto"`)
       expect(
         await page
           .locator('#flow')

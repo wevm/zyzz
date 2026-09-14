@@ -45,7 +45,7 @@ describe('create', () => {
 
     expect(consumer.staticProps).toMatchInlineSnapshot(`
       {
-        "className": "z-1g4rm6r9aa2cb-base0 external",
+        "className": "z-1g4rm6r9aa2cb-base-color-19kn67x1rbi4y9 external",
         "style": {
           "--z-v1g4rm6r9aa2cb-70": "blue",
           "padding": "2px",
@@ -54,7 +54,7 @@ describe('create', () => {
     `)
     expect(consumer.dynamicProps).toMatchInlineSnapshot(`
       {
-        "className": "z-1g4rm6r9aa2cb-base0 z-style-1g4rm6r9aa2cb-200",
+        "className": "z-1g4rm6r9aa2cb-base-color-19kn67x1rbi4y9 z-style-1g4rm6r9aa2cb-200-atomic-opacity-0",
         "style": {
           "--z-d1g4rm6r9aa2cb-200-6f-70-61-63-69-74-79": 0.5,
           "--z-v1g4rm6r9aa2cb-70": "blue",
@@ -64,13 +64,13 @@ describe('create', () => {
     `)
     expect(consumer.htmlProps).toMatchInlineSnapshot(`
       {
-        "class": "z-1g4rm6r9aa2cb-base0",
+        "class": "z-1g4rm6r9aa2cb-base-color-19kn67x1rbi4y9",
         "style": "--z-v1g4rm6r9aa2cb-70:red",
       }
     `)
     expect(consumer.variablesOnly).toMatchInlineSnapshot(`
       {
-        "className": "z-1g4rm6r9aa2cb-base0 z-style-1g4rm6r9aa2cb-200",
+        "className": "z-1g4rm6r9aa2cb-base-color-19kn67x1rbi4y9 z-style-1g4rm6r9aa2cb-200-atomic-opacity-0",
         "style": {
           "--z-d1g4rm6r9aa2cb-200-6f-70-61-63-69-74-79": 0.5,
           "--z-v1g4rm6r9aa2cb-70": "red",
@@ -79,7 +79,7 @@ describe('create', () => {
     `)
     expect(consumer.htmlDynamicProps).toMatchInlineSnapshot(`
       {
-        "class": "z-1g4rm6r9aa2cb-base0 z-style-1g4rm6r9aa2cb-771",
+        "class": "z-1g4rm6r9aa2cb-base-color-19kn67x1rbi4y9 z-style-1g4rm6r9aa2cb-771-atomic-opacity-0",
         "style": "--z-v1g4rm6r9aa2cb-70:red;--z-d1g4rm6r9aa2cb-771-6f-70-61-63-69-74-79:0.25",
       }
     `)
@@ -120,16 +120,16 @@ export const text = '🎉';`
     const style = { color: '#000', paddingLeft: '2px' } as const
 
     expect(consumer.button()).toMatchInlineSnapshot(`
-    {
-      "className": "z-12ydhop55omeb-base0 z-style-12ydhop55omeb-50",
-    }
-  `)
+      {
+        "className": "z-style-12ydhop55omeb-50-atomic-color-0 z-12ydhop55omeb-base-padding-1ssvrxkh30yf z-style-12ydhop55omeb-50",
+      }
+    `)
 
     expect(consumer.inline).toMatchInlineSnapshot(`
-    {
-      "className": "z-style-12ydhop55omeb-112",
-    }
-  `)
+      {
+        "className": "z-style-12ydhop55omeb-112-atomic-color-0",
+      }
+    `)
 
     expect(
       !Object.keys(bundle.metafile!.inputs).some((name) =>
@@ -139,14 +139,14 @@ export const text = '🎉';`
 
     expect(consumer.button({ className: 'external', style }))
       .toMatchInlineSnapshot(`
-    {
-      "className": "z-12ydhop55omeb-base0 z-style-12ydhop55omeb-50 external",
-      "style": {
-        "color": "#000",
-        "paddingLeft": "2px",
-      },
-    }
-  `)
+        {
+          "className": "z-style-12ydhop55omeb-50-atomic-color-0 z-12ydhop55omeb-base-padding-1ssvrxkh30yf z-style-12ydhop55omeb-50 external",
+          "style": {
+            "color": "#000",
+            "paddingLeft": "2px",
+          },
+        }
+      `)
 
     expect(
       JSON.stringify(consumer.button({ className: 'external', style })) ===

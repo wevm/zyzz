@@ -34,16 +34,16 @@ function afterType(style = css({ color: '#f00' })) { var css; }
       calls: result.calls.map((call) => source.slice(call.start, call.end)),
       css: output.css,
     }).toMatchInlineSnapshot(`
-    {
-      "calls": [
-        "css({ color: '#f00' })",
-        "css({ color: '#f00' })",
-        "css({ color: '#f00' })",
-        "css({ color: '#f00' })",
-      ],
-      "css": ".z_base0{color:#f00;}",
-    }
-  `)
+      {
+        "calls": [
+          "css({ color: '#f00' })",
+          "css({ color: '#f00' })",
+          "css({ color: '#f00' })",
+          "css({ color: '#f00' })",
+        ],
+        "css": ".z_base-color-1l83h6e5uk22g{color:#f00;}",
+      }
+    `)
   })
 
   test('imported assignments and indirect references fail before CSS emission', () => {
@@ -216,8 +216,10 @@ type Definition = ReturnType<typeof define>;
           "themeReferences": [],
           "themes": {},
         },
-        "rules": ".z_base1{padding:8px;padding-left:0;}
-      .z_base0{color:#fff;opacity:0.5;}",
+        "rules": ".z_base-padding-3kjv7gsytctm{padding:8px;}
+      .z_base-paddingLeft-3ujgwfsytctn{padding-left:0;}
+      .z_base-color-6xavfhsxeofd{color:#fff;}
+      .z_base-opacity-6nb9qisxeofc{opacity:0.5;}",
       }
     `)
   })

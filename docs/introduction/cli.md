@@ -4,19 +4,19 @@ Precompile source modules and CSS with one command:
 
 ```sh
 npx zyzz build
-npx zyzz watch
+npx zyzz dev
 ```
 
-Both commands read `src`, write rewritten modules to `dist`, and emit `dist/styles.css`, relative to the working directory. `build` runs once; `watch` builds immediately and rebuilds after source or dependency changes.
+Both commands read `src` and write to `dist`, relative to the working directory. `build` runs once; `dev` builds immediately and watches the source tree. Changes rebuild dependent modules; failed compilations preserve the previous output until a valid edit recovers.
 
-Override paths only when needed:
+Override paths when needed:
 
 ```sh
-npx zyzz build app --out-dir build --css build/app.css
+npx zyzz build app --out-dir build --minify
 ```
 
-Point the application build at the rewritten output and load its stylesheet. Downstream tooling handles TypeScript/JSX lowering. Libraries publish matching modules, CSS, and declarations. See [Build & Delivery](../guides/compilation.md#standalone-output).
+Each rewritten module has an adjacent CSS file, source maps, and packed metadata. Shared stylesheet contributions use `zyzz.shared.css`; load shared CSS before module CSS. Point downstream tooling at the rewritten tree for TypeScript/JSX lowering and declaration generation. See [Build & Delivery](../guides/compilation.md#standalone-output).
 
-Watch errors preserve the previous complete output. Cleanup only removes owned artifacts; output is excluded from source discovery.
+Ctrl-C stops watching and releases the output directory. Cleanup only removes owned artifacts; output is excluded from source discovery.
 
-See the [CLI reference](../api/cli.md) for optional flags. Authoring uses normal source imports; no config is required for token-free styles.
+See the [CLI reference](../api/cli.md) for flags and structured output. Authoring uses normal source imports; no configuration file is required.

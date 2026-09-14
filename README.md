@@ -69,10 +69,10 @@ Build or watch source files:
 
 ```sh
 npx zyzz build
-npx zyzz watch
+npx zyzz dev
 ```
 
-Compiles `src` to `dist` and outputs CSS to `dist/styles.css` by default. See [CLI Setup](docs/introduction/cli.md).
+Compiles `src` to `dist`, emitting adjacent module CSS and `zyzz.shared.css` for shared contributions. See [CLI Setup](docs/introduction/cli.md).
 
 ### Use Compiler API
 

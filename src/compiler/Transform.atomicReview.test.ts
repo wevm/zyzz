@@ -3,10 +3,40 @@ import * as Trace from '@jridgewell/trace-mapping'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Style } from 'zyzz'
-import { Transform } from 'zyzz/compiler'
+import { Graph, Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('switches grouped compiler defaults without reusing atomic graph output', () => {
+    const compiler = Graph.create()
+    const modules = {
+      'styles.ts':
+        "import {css} from 'zyzz';export const a=css({color:'red',padding:'2px'});export const b=css({color:'red',padding:'4px'})",
+    }
+    const atomic = compiler.compile({ modules })
+    const grouped = compiler.compile({
+      composition: 'independent',
+      cssOutput: 'grouped',
+      modules,
+    })
+    expect(grouped.modules['styles.ts']!.css).toMatchInlineSnapshot(`
+      ".g_1u33cwi148qjze_0{color:red;}
+      .z-style-1u33cwi148qjze-40{padding:2px;}
+      .z-style-1u33cwi148qjze-88{padding:4px;}"
+    `)
+    expect(Object.values(grouped.modules['styles.ts']!.classes))
+      .toMatchInlineSnapshot(`
+      [
+        "g_1u33cwi148qjze_0 z-style-1u33cwi148qjze-40",
+        "g_1u33cwi148qjze_0 z-style-1u33cwi148qjze-88",
+      ]
+    `)
+    expect(grouped.modules['styles.ts']!.css).not.toBe(
+      atomic.modules['styles.ts']!.css,
+    )
+    expect(compiler.compile({ modules })).toEqual(atomic)
+  })
+
   test('maps repeated declaration occurrences to their authored keys', () => {
     const source = `import {css} from 'zyzz'; export const card=css({padding:'8px',paddingLeft:'2px',selectors:{'&:hover':{paddingLeft:'4px'},'&:focus':{paddingLeft:'6px'}}})`
     const output = Transform.compile({ moduleId: 'atomic.ts', source })

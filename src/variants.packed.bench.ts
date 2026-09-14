@@ -5,6 +5,7 @@ import * as Library from '../test/fixtures/VariantLibrary.js'
 
 for (const count of [10, 100]) {
   const publisher = Graph.compile({
+    composition: 'independent',
     cssOutput: 'grouped',
     modules: Library.sources(),
   })
@@ -22,7 +23,11 @@ for (const count of [10, 100]) {
     bench(
       'compile',
       () => {
-        Graph.compile({ ...options, cssOutput: 'grouped' })
+        Graph.compile({
+          ...options,
+          composition: 'independent',
+          cssOutput: 'grouped',
+        })
       },
       { time: 250, warmupTime: 100 },
     )

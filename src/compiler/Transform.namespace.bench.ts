@@ -11,6 +11,7 @@ for (const count of [10, 100]) {
   )
   const source = `import {namespace,global} from 'zyzz/web';namespace({prefix:'s',uri:'urn:shapes'});global(${JSON.stringify(rules)});`
   const library = Graph.compile({
+    composition: 'independent',
     cssOutput: 'grouped',
     modules: { 'shapes.ts': source },
   })
@@ -19,6 +20,7 @@ for (const count of [10, 100]) {
       'source transform with maps',
       () => {
         Transform.compile({
+          composition: 'independent',
           cssOutput: 'grouped',
           moduleId: 'shapes.ts',
           source,
@@ -30,6 +32,7 @@ for (const count of [10, 100]) {
       'packed stylesheet consumption',
       () => {
         Graph.compile({
+          composition: 'independent',
           cssOutput: 'grouped',
           contracts: { 'lib.js': library.contracts['shapes.ts']! },
           imports: { 'app.ts': { lib: 'lib.js' } },

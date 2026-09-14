@@ -131,6 +131,8 @@ Applies to documentation, comments, TSDoc, commit messages, and pull requests.
 
 ## Testing Conventions
 
+- Keep one runtime test file per module (`Module.test.ts`) and one type-test file (`Module.test-d.ts`). Express contexts with named `describe` blocks inside those files; do not create `Module.context.test.ts` or `Module.context.test-d.ts`. Scope context-specific fixtures and lifecycle hooks to their `describe` block.
+
 - Encapsulate every `.test-d.ts` assertion and expected compiler error in a named `test` inside a `describe` for the public function. Keep scenario-specific fixtures inside their tests; module scope is reserved for imports and shared type declarations.
 - Group tests in a `describe` named after the public function under test, such as `describe('create')`. Keep scenario names inside that group and use separate groups for different entry functions. These groups exercise complete integration flows, not isolated function implementations.
 - Runtime coverage is integration-only. Do not write unit tests, private-helper tests, or per-function suites disguised as integration tests.

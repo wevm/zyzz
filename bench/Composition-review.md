@@ -4,7 +4,7 @@ Candidate: `c2d8df86c640e1e0b33103f38ffb5989f6c96bb4`. Baseline: `5a77528ac748c0
 
 The corpus contains 3-style small, 1,000-style repeated, 1,000-style mostly unique, and 60-style component projects from `bench/Corpus.ts`. Every project composes partial shorthand and color overrides with matching media conditions. React/HTML, static/conditional, and direct/bound lanes are retained.
 
-`src/cx.corpus.test.ts` verifies every emitted style against native browser controls at 450px and 900px, with conditional overrides disabled and enabled. The measured `apply project` invokes all component applications with conditional overrides enabled and retains the returned array. Compilation, bundling, and module initialization are excluded from that timing.
+`src/cx.test.ts` verifies every emitted style against native browser controls at 450px and 900px, with conditional overrides disabled and enabled. The measured `apply project` invokes all component applications with conditional overrides enabled and retains the returned array. Compilation, bundling, and module initialization are excluded from that timing.
 
 Runs: 2026-09-13T14:00:34.099Z (baseline metadata) and 2026-09-13T14:06:46.551Z (candidate metadata). Host: AMD EPYC 9V74 80-Core Processor, x64 linux; Node v24.19.0, esbuild 0.28.2, vite-plus 0.2.2 / Vitest 4.1.9. Warmup: 100ms; measurement: 250ms, with the runner's minimum sample count retained.
 
@@ -132,7 +132,7 @@ Each cell reports raw/gzip/Brotli bytes. Class references are diagnostic string 
 ## Reproduce
 
 ```sh
-pnpm exec vp test run src/cx.corpus.test.ts --no-file-parallelism
+pnpm exec vp test run src/cx.test.ts --no-file-parallelism
 pnpm exec vp test bench src/cx.bench.ts src/cx.bindings.bench.ts --run --no-file-parallelism --outputJson bench/results/composition-timings.json
 ```
 
@@ -148,3 +148,4 @@ The full run reported +27.32% and +37.31% compilation time for the two small HTM
 | small/html/conditional/direct | 1.290 ±4.42% (n=194) | 1.355 ±5.13% (n=185) | +5.03%         |
 
 Reproduce the confirmation with `--testNamePattern "small/html/(static/bound|conditional/direct)" --outputJson bench/results/composition-confirm.json`. These short compilation cases vary between runs; the confirmation is additional evidence, not a replacement baseline or a changed acceptance threshold.
+

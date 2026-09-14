@@ -2,6 +2,16 @@
  * Exercises the public Host workflow through real collaborating modules.
  * @module
  */
+import * as ColorProfile from '../../test/fixtures/ColorProfile.js'
+import * as FontFeatures from '../../test/fixtures/FontFeatures.js'
+import * as Functions from '../../test/fixtures/Functions.js'
+import * as GroupingRules from '../../test/fixtures/GroupingRules.js'
+import * as NamedDescriptors from '../../test/fixtures/NamedDescriptors.js'
+import * as Margins from '../../test/fixtures/PageMargins.js'
+import * as Pages from '../../test/fixtures/Pages.js'
+import * as Registrations from '../../test/fixtures/Registrations.js'
+import * as Statements from '../../test/fixtures/Statements.js'
+import * as Watch from '../../test/fixtures/Watch.js'
 import * as Trace from '@jridgewell/trace-mapping'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
@@ -10,7 +20,6 @@ import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Source, Transform } from 'zyzz/compiler'
 import { Host } from 'zyzz/node'
-import * as Watch from '../../test/fixtures/Watch.js'
 
 const project = Path.resolve(import.meta.dirname, '../..')
 const source = `import { css } from 'zyzz'; export const button = css({ padding: '8px' });`
@@ -927,5 +936,805 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
     } finally {
       await Fs.rm(root, { recursive: true, force: true })
     }
+  })
+})
+
+describe('contributions', () => {
+  describe('create', () => {
+    test('publishes unimported globals and removes the shared artifact on deletion', async () => {
+      const root = await Fs.mkdtemp(Path.resolve('.fixture-contributions-'))
+
+      try {
+        await Fs.writeFile(Path.join(root, 'app.ts'), 'export const value=1')
+        await Fs.writeFile(
+          Path.join(root, 'global.ts'),
+          'import {global} from "zyzz/web"; global({body:{margin:0}})',
+        )
+
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'output'),
+          packageId: 'app',
+          css: false,
+        })
+
+        await host.build()
+
+        expect(
+          await Fs.readFile(Path.join(root, 'output/zyzz.shared.css'), 'utf8'),
+        ).toMatchInlineSnapshot(`"body{margin:0;}"`)
+
+        await Fs.unlink(Path.join(root, 'global.ts'))
+        await host.build()
+
+        expect(
+          (await Fs.readdir(Path.join(root, 'output'))).includes(
+            'zyzz.shared.css',
+          ),
+        ).toMatchInlineSnapshot(`false`)
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+  })
+})
+
+describe('descriptorAcceptance', () => {
+  const updates = {
+    counter: [
+      ["system:'additive'", "system:'symbolic'"],
+      ['10 "X", 1 "I", 0 "O"', '20 "Y", 2 "J", 0 "Z"'],
+      ["fallback:'decimal'", "fallback:'lower-roman'"],
+      ['negative:\'"(" ")"\'', 'negative:\'"-"\''],
+      ['2 "0"', '3 "x"'],
+      ['prefix:\'"["\'', 'prefix:\'"("\''],
+      ["range:'0 99'", "range:'1 100'"],
+      ["speakAs:'numbers'", "speakAs:'words'"],
+      ['suffix:\'"]"\'', 'suffix:\'")"\''],
+      ['symbols:\'"I"\'', 'symbols:\'"J"\''],
+    ],
+    font: [
+      ['Body', 'Changed'],
+      ["fontDisplay:'swap'", "fontDisplay:'optional'"],
+      ['"kern" 1', '"liga" 0'],
+      ['"wght" 450', '"wght" 500'],
+      ['75% 125%', '80% 120%'],
+      ['oblique 0deg 20deg', 'italic'],
+      ['100 900', '200 800'],
+      ['U+0-7F,U+4??', 'U+20-FF'],
+      ['90%', '85%'],
+      ['20%', '25%'],
+      ['5%', '6%'],
+      ['110%', '120%'],
+      ['/body.woff2', '/changed.woff2'],
+    ],
+    palette: [
+      ['Body', 'Changed'],
+      ["basePalette:'dark'", "basePalette:'light'"],
+      ['0 red, 1 color(display-p3 0 1 0), 1 #00f', '0 blue, 1 green'],
+    ],
+    position: [
+      ["'bottom'", "'top'"],
+      ['--target', '--changed'],
+      ['100px', '120px'],
+      ['20px', '30px'],
+      ['4px', '8px'],
+      ['1px', '2px'],
+      ['auto', '0px'],
+      ['center', 'end'],
+    ],
+  } as const
+
+  describe('create', () => {
+    for (const family of Object.keys(
+      NamedDescriptors.definitions,
+    ) as (keyof typeof NamedDescriptors.definitions)[]) {
+      test(`replaces ${family} descriptors and retains source-owned names during watch`, async () => {
+        const root = await Fs.mkdtemp(
+          Path.resolve(import.meta.dirname, '../../.fixture-descriptor-'),
+        )
+        try {
+          const path = Path.join(root, 'names.ts')
+          const source = NamedDescriptors.source(family)
+          const updatedSource = updates[family].reduce(
+            (source, [before, after]) => source.replaceAll(before, after),
+            source,
+          )
+          await Fs.writeFile(path, source)
+          await using host = await Host.create({
+            root,
+            outDir: Path.join(root, 'output'),
+            packageId: 'descriptors',
+          })
+          await host.build()
+          const initial = await Fs.readFile(
+            Path.join(root, 'output/zyzz.shared.css'),
+            'utf8',
+          )
+
+          const notifications = Watch.create({ path: 'zyzz.shared.css' })
+          host.watch({ onResult: notifications.onResult })
+          await notifications.next(() =>
+            Watch.write({ path, source: updatedSource }),
+          )
+          const updated = await Fs.readFile(
+            Path.join(root, 'output/zyzz.shared.css'),
+            'utf8',
+          )
+          const freshRoot = await Fs.mkdtemp(
+            Path.resolve(
+              import.meta.dirname,
+              '../../.fixture-descriptor-fresh-',
+            ),
+          )
+          try {
+            await Fs.writeFile(Path.join(freshRoot, 'names.ts'), updatedSource)
+            await using fresh = await Host.create({
+              root: freshRoot,
+              outDir: Path.join(freshRoot, 'output'),
+              packageId: 'descriptors',
+            })
+            await fresh.build()
+            expect(
+              updated ===
+                (await Fs.readFile(
+                  Path.join(freshRoot, 'output/zyzz.shared.css'),
+                  'utf8',
+                )),
+            ).toMatchInlineSnapshot('true')
+          } finally {
+            await Fs.rm(freshRoot, { recursive: true, force: true })
+          }
+          expect(updated === initial).toMatchInlineSnapshot('false')
+          expect(updated.includes('@media print')).toMatchInlineSnapshot('true')
+          expect(updated.includes('body')).toMatchInlineSnapshot('true')
+        } finally {
+          await Fs.rm(root, { recursive: true, force: true })
+        }
+      })
+    }
+  })
+})
+
+describe('documentRules', () => {
+  describe('create', () => {
+    test('publishes feature display descriptors alongside relocated assets', async () => {
+      const root = await Fs.mkdtemp(
+        Path.resolve(import.meta.dirname, '../../.fixture-document-'),
+      )
+      try {
+        await Fs.writeFile(
+          Path.join(root, 'document.ts'),
+          `import {fontFeatureValues,global} from 'zyzz/web';fontFeatureValues({families:'Body',fontDisplay:'swap',features:{'@styleset':{editorial:[1,2]}}});global({body:{backgroundImage:'url(./pixel.svg)'}})`,
+        )
+        await Fs.writeFile(
+          Path.join(root, 'pixel.svg'),
+          '<svg xmlns="http://www.w3.org/2000/svg"/>',
+        )
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'output'),
+          packageId: 'document',
+        })
+        await host.build()
+        expect(
+          await Fs.readFile(Path.join(root, 'output/zyzz.shared.css'), 'utf8'),
+        ).toMatchInlineSnapshot(`
+        "@font-feature-values Body {
+          font-display:swap;@styleset{editorial:1 2;}
+        }
+
+        body {
+          background-image: url("pixel.svg");
+        }
+        "
+      `)
+        expect(
+          await Fs.readFile(Path.join(root, 'output/pixel.svg'), 'utf8'),
+        ).toMatchInlineSnapshot('"<svg xmlns="http://www.w3.org/2000/svg"/>"')
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+  })
+})
+
+describe('finalAcceptance', () => {
+  const sources = {
+    function: Functions.source,
+    page: Pages.source,
+    property: Registrations.source,
+  }
+  describe('create', () => {
+    for (const [family, source] of Object.entries(sources)) {
+      test(`replaces ${family} definitions during source watch`, async () => {
+        const root = await Fs.mkdtemp(
+          Path.resolve(import.meta.dirname, '../../.fixture-statements-'),
+        )
+        try {
+          const path = Path.join(root, 'statements.ts')
+          await Fs.writeFile(path, source(false))
+          await using host = await Host.create({
+            root,
+            outDir: Path.join(root, 'output'),
+            packageId: 'statements',
+          })
+          await host.build()
+          const initial = await Fs.readFile(
+            Path.join(root, 'output/zyzz.shared.css'),
+            'utf8',
+          )
+          const notifications = Watch.create({ path: 'zyzz.shared.css' })
+          host.watch({ onResult: notifications.onResult })
+          await notifications.next(() =>
+            Watch.write({ path, source: source(true) }),
+          )
+          const updated = await Fs.readFile(
+            Path.join(root, 'output/zyzz.shared.css'),
+            'utf8',
+          )
+          expect(updated === initial).toMatchInlineSnapshot('false')
+          expect(updated.includes('before')).toMatchInlineSnapshot('false')
+          expect(
+            updated.includes(
+              family === 'function' ? '<length>: 2px' : 'width > 1px',
+            ),
+          ).toMatchInlineSnapshot('false')
+          expect(
+            updated.includes(family === 'page' ? 'Before' : 'inherits: false'),
+          ).toMatchInlineSnapshot('false')
+        } finally {
+          await Fs.rm(root, { recursive: true, force: true })
+        }
+      })
+    }
+  })
+})
+
+describe('fontFeatures', () => {
+  describe('create', () => {
+    test('replaces every feature alias block and font display policy during watch', async () => {
+      const root = await Fs.mkdtemp(
+        Path.resolve(import.meta.dirname, '../../.fixture-features-'),
+      )
+      try {
+        const path = Path.join(root, 'fonts.ts')
+        await Fs.writeFile(path, FontFeatures.source(1))
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'output'),
+          packageId: 'features',
+        })
+        await host.build()
+        const initial = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        for (const [index, block] of FontFeatures.blocks.entries())
+          expect(
+            initial.includes(`${block}{alias${index}:1`),
+          ).toMatchInlineSnapshot('true')
+        expect(initial.includes('font-display:swap')).toMatchInlineSnapshot(
+          'true',
+        )
+
+        const notifications = Watch.create({ path: 'zyzz.shared.css' })
+        host.watch({ onResult: notifications.onResult })
+        await notifications.next(() =>
+          Watch.write({ path, source: FontFeatures.source(4, 'optional') }),
+        )
+        const updated = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        for (const [index, block] of FontFeatures.blocks.entries()) {
+          expect(
+            updated.includes(`${block}{alias${index}:4`),
+          ).toMatchInlineSnapshot('true')
+          expect(
+            updated.includes(`${block}{alias${index}:1`),
+          ).toMatchInlineSnapshot('false')
+        }
+        expect(updated.includes('font-display:optional')).toMatchInlineSnapshot(
+          'true',
+        )
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+  })
+})
+
+describe('groupingAcceptance', () => {
+  describe('create', () => {
+    for (const [family, headers] of Object.entries(GroupingRules.rules)) {
+      test(`replaces ${family} groups through source watch`, async () => {
+        const root = await Fs.mkdtemp(
+          Path.resolve(import.meta.dirname, '../../.fixture-group-'),
+        )
+        try {
+          const path = Path.join(root, 'groups.ts')
+          const source = (color: string) =>
+            `import {global} from 'zyzz/web';${headers.map((header) => `global({${JSON.stringify(header)}:{body:{color:${JSON.stringify(color)}}}});`).join('\n')}`
+          await Fs.writeFile(path, source('red'))
+          await using host = await Host.create({
+            root,
+            outDir: Path.join(root, 'output'),
+            packageId: 'groups',
+          })
+          await host.build()
+          const initial = await Fs.readFile(
+            Path.join(root, 'output/zyzz.shared.css'),
+            'utf8',
+          )
+          expect(initial.includes('color: red;')).toMatchInlineSnapshot('true')
+          expect(initial.includes('color: #00f;')).toMatchInlineSnapshot(
+            'false',
+          )
+
+          const notifications = Watch.create({ path: 'zyzz.shared.css' })
+          host.watch({ onResult: notifications.onResult })
+          await notifications.next(() =>
+            Watch.write({ path, source: source('blue') }),
+          )
+          const updated = await Fs.readFile(
+            Path.join(root, 'output/zyzz.shared.css'),
+            'utf8',
+          )
+          expect(updated.includes('color: #00f;')).toMatchInlineSnapshot('true')
+          expect(updated.includes('color: red;')).toMatchInlineSnapshot('false')
+        } finally {
+          await Fs.rm(root, { recursive: true, force: true })
+        }
+      })
+    }
+  })
+})
+
+describe('keyframeAcceptance', () => {
+  describe('create', () => {
+    test('replaces named timeline keyframes while retaining animation references during watch', async () => {
+      const root = await Fs.mkdtemp(
+        Path.resolve(import.meta.dirname, '../../.fixture-frames-'),
+      )
+      try {
+        const path = Path.join(root, 'frames.ts')
+        const source = (stop: string) =>
+          `import {keyframes,global} from 'zyzz/web';const fade=keyframes({${JSON.stringify(stop)}:{opacity:0},to:{opacity:1}});global({body:{animationName:fade}});`
+        await Fs.writeFile(path, source('entry -20%'))
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'output'),
+          packageId: 'frames',
+        })
+        await host.build()
+        const initial = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        expect(initial.includes('entry -20%')).toMatchInlineSnapshot('true')
+        const notifications = Watch.create({ path: 'zyzz.shared.css' })
+        host.watch({ onResult: notifications.onResult })
+        await notifications.next(() =>
+          Watch.write({ path, source: source('exit 120%') }),
+        )
+        const updated = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        expect(updated.includes('entry -20%')).toMatchInlineSnapshot('false')
+        expect(updated.includes('exit 120%')).toMatchInlineSnapshot('true')
+        expect(updated.includes('animation-name: z-')).toMatchInlineSnapshot(
+          'true',
+        )
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+  })
+})
+
+describe('namespace', () => {
+  describe('create', () => {
+    test('rebuilds Unicode namespace bindings and preserves unrelated module scopes', async () => {
+      const root = await Fs.mkdtemp(
+        Path.resolve(import.meta.dirname, '../../.fixture-namespace-'),
+      )
+      const source = (uri: string) =>
+        `import {namespace as ns,global} from 'zyzz/web';ns({prefix:'图',uri:${JSON.stringify(uri)}});global({'图|item':{color:'red'}});`
+      try {
+        await Fs.writeFile(Path.join(root, 'shapes.ts'), source('urn:first'))
+        await Fs.writeFile(
+          Path.join(root, 'other.ts'),
+          `import {namespace,global} from 'zyzz/web';namespace({prefix:'图',uri:'urn:other'});global({'图|item':{color:'blue'}});`,
+        )
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'output'),
+          packageId: 'namespaces',
+        })
+        await host.build()
+        const initial = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        expect(initial.includes('"urn:first"')).toMatchInlineSnapshot('true')
+        expect(initial.includes('"urn:other"')).toMatchInlineSnapshot('true')
+
+        const notifications = Watch.create({ path: 'zyzz.shared.css' })
+        host.watch({ onResult: notifications.onResult })
+        await notifications.next(() =>
+          Watch.write({
+            path: Path.join(root, 'shapes.ts'),
+            source: source('urn:second'),
+          }),
+        )
+        const updated = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        expect(updated.includes('"urn:first"')).toMatchInlineSnapshot('false')
+        expect(updated.includes('"urn:second"')).toMatchInlineSnapshot('true')
+        expect(updated.includes('"urn:other"')).toMatchInlineSnapshot('true')
+        expect(updated.includes('color: red')).toMatchInlineSnapshot('true')
+        expect(updated.includes('color: #00f')).toMatchInlineSnapshot('true')
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+  })
+})
+
+describe('page', () => {
+  describe('create', () => {
+    test('replaces all page-margin contents without retaining stale declarations', async () => {
+      const root = await Fs.mkdtemp(
+        Path.resolve(import.meta.dirname, '../../.fixture-page-'),
+      )
+      try {
+        const path = Path.join(root, 'pages.ts')
+        await Fs.writeFile(path, Margins.source('before'))
+        await using host = await Host.create({
+          outDir: Path.join(root, 'output'),
+          packageId: 'pages',
+          root,
+        })
+        await host.build()
+        const initial = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        for (const [index, box] of Margins.boxes.entries()) {
+          expect(initial.includes(box)).toMatchInlineSnapshot('true')
+          expect(initial.includes(`"before-${index}"`)).toMatchInlineSnapshot(
+            'true',
+          )
+        }
+
+        const notifications = Watch.create({ path: 'zyzz.shared.css' })
+        host.watch({ onResult: notifications.onResult })
+        await notifications.next(() =>
+          Watch.write({ path, source: Margins.source('after') }),
+        )
+        const updated = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        expect(updated.includes('before-')).toMatchInlineSnapshot('false')
+        for (const [index, box] of Margins.boxes.entries()) {
+          expect(updated.includes(box)).toMatchInlineSnapshot('true')
+          expect(updated.includes(`"after-${index}"`)).toMatchInlineSnapshot(
+            'true',
+          )
+        }
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+  })
+})
+
+describe('profile', () => {
+  describe('create', () => {
+    test('replaces profile components intent and source assets through watch', async () => {
+      const root = await Fs.mkdtemp(
+        Path.resolve(import.meta.dirname, '../../.fixture-profile-'),
+      )
+      try {
+        const path = Path.join(root, 'profile.ts')
+        await Fs.writeFile(
+          Path.join(root, 'before.icc'),
+          Buffer.from(ColorProfile.url.split(',')[1]!, 'base64'),
+        )
+        await Fs.writeFile(
+          Path.join(root, 'after.icc'),
+          Buffer.from(ColorProfile.url.split(',')[1]!, 'base64'),
+        )
+        await Fs.writeFile(
+          path,
+          `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(./before.icc)',components:'r,g,b',renderingIntent:'perceptual'},{within:['@media print']});`,
+        )
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'output'),
+          packageId: 'profiles',
+        })
+        await host.build()
+        const initial = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        expect(initial.includes('before.icc')).toMatchInlineSnapshot('true')
+        expect(initial.includes('components:r,g,b')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(
+          initial.includes('rendering-intent:perceptual'),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          (await Fs.readFile(Path.join(root, 'output/before.icc'))).equals(
+            Buffer.from(ColorProfile.url.split(',')[1]!, 'base64'),
+          ),
+        ).toMatchInlineSnapshot('true')
+
+        const notifications = Watch.create({ path: 'zyzz.shared.css' })
+        host.watch({ onResult: notifications.onResult })
+        await notifications.next(() =>
+          Watch.write({
+            path,
+            source: `import {colorProfile} from 'zyzz/web';export const profile=colorProfile({src:'url(./after.icc)',components:'red,green,blue',renderingIntent:'saturation'},{within:['@media print']});`,
+          }),
+        )
+        const updated = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        expect(updated.includes('after.icc')).toMatchInlineSnapshot('true')
+        expect(
+          updated.includes('components:red,green,blue'),
+        ).toMatchInlineSnapshot('true')
+        expect(
+          updated.includes('rendering-intent:saturation'),
+        ).toMatchInlineSnapshot('true')
+        expect(updated.includes('before.icc')).toMatchInlineSnapshot('false')
+        expect(
+          (await Fs.readFile(Path.join(root, 'output/after.icc'))).equals(
+            Buffer.from(ColorProfile.url.split(',')[1]!, 'base64'),
+          ),
+        ).toMatchInlineSnapshot('true')
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+  })
+})
+
+describe('statementAcceptance', () => {
+  const sources = {
+    customMedia: (after: boolean) =>
+      `import {customMedia,global} from 'zyzz/web';const query=customMedia('(width > ${after ? 2 : 1}px)');global({[query]:{body:{color:'red'}}});`,
+    document: (after: boolean) =>
+      `import {global} from 'zyzz/web';global({'@document domain("${after ? 'after' : 'before'}.example")':{body:{color:'red'}}});`,
+    import: (after: boolean) =>
+      Statements.imports(
+        `https://example.com/${after ? 'after' : 'before'}.css`,
+      ),
+  }
+  describe('create', () => {
+    for (const [family, source] of Object.entries(sources)) {
+      test(`replaces ${family} definitions during source watch`, async () => {
+        const root = await Fs.mkdtemp(
+          Path.resolve(import.meta.dirname, '../../.fixture-statements-'),
+        )
+        try {
+          const path = Path.join(root, 'statements.ts')
+          await Fs.writeFile(path, source(false))
+          await using host = await Host.create({
+            root,
+            outDir: Path.join(root, 'output'),
+            packageId: 'statements',
+          })
+          await host.build()
+          const initial = await Fs.readFile(
+            Path.join(root, 'output/zyzz.shared.css'),
+            'utf8',
+          )
+          const notifications = Watch.create({ path: 'zyzz.shared.css' })
+          host.watch({ onResult: notifications.onResult })
+          await notifications.next(() =>
+            Watch.write({ path, source: source(true) }),
+          )
+          const updated = await Fs.readFile(
+            Path.join(root, 'output/zyzz.shared.css'),
+            'utf8',
+          )
+          expect(updated === initial).toMatchInlineSnapshot('false')
+          expect(updated.includes('before')).toMatchInlineSnapshot('false')
+          expect(updated.includes('width > 1px')).toMatchInlineSnapshot('false')
+          expect(updated.includes('body')).toMatchInlineSnapshot('true')
+        } finally {
+          await Fs.rm(root, { recursive: true, force: true })
+        }
+      })
+    }
+  })
+})
+
+describe('statements', () => {
+  describe('create', () => {
+    test('publishes UTF-8 stylesheet bytes without a BOM or encoding declaration', async () => {
+      const root = await Fs.mkdtemp(
+        Path.resolve(import.meta.dirname, '../../.fixture-encoding-'),
+      )
+      try {
+        await Fs.writeFile(
+          Path.join(root, 'app.ts'),
+          `import {global} from 'zyzz/web';global({'body::before':{content:'"héllo ● 日本語"'}});`,
+        )
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'output'),
+          packageId: 'encoding',
+        })
+        await host.build()
+        const bytes = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+        )
+
+        expect(new TextDecoder('utf-8', { fatal: true }).decode(bytes))
+          .toMatchInlineSnapshot(`
+        "body:before {
+          content: "héllo ● 日本語";
+        }
+        "
+      `)
+        expect(
+          bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])),
+        ).toMatchInlineSnapshot('false')
+
+        const notifications = Watch.create({ path: 'zyzz.shared.css' })
+        host.watch({ onResult: notifications.onResult })
+        await notifications.next(() =>
+          Watch.write({
+            path: Path.join(root, 'app.ts'),
+            source: `import {global} from 'zyzz/web';global({'body::before':{content:'"été ◇ 한국어"'}});`,
+          }),
+        )
+        const updated = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+        )
+
+        expect(new TextDecoder('utf-8', { fatal: true }).decode(updated))
+          .toMatchInlineSnapshot(`
+        "body:before {
+          content: "été ◇ 한국어";
+        }
+        "
+      `)
+        expect(
+          updated.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])),
+        ).toMatchInlineSnapshot('false')
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+    test('copies nested stylesheet imports and their relative assets', async () => {
+      const root = await Fs.mkdtemp(
+        Path.resolve(import.meta.dirname, '../../.fixture-imports-'),
+      )
+      try {
+        await Fs.mkdir(Path.join(root, 'styles'))
+        await Fs.writeFile(
+          Path.join(root, 'app.ts'),
+          `import {importCss} from 'zyzz/web';importCss({url:'./styles/base.css',layer:'base'});`,
+        )
+        await Fs.writeFile(
+          Path.join(root, 'styles/base.css'),
+          '@import "nested.css";body{background-image:url(../pixel.svg)}',
+        )
+        await Fs.writeFile(
+          Path.join(root, 'styles/nested.css'),
+          'body{color:red}',
+        )
+        await Fs.writeFile(Path.join(root, 'pixel.svg'), '<svg/>')
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'output'),
+          packageId: 'imports',
+        })
+        await host.build()
+        expect(
+          await Fs.readFile(Path.join(root, 'output/zyzz.shared.css'), 'utf8'),
+        ).toMatchInlineSnapshot(`
+        "@import "styles/base.css" layer(base);
+        "
+      `)
+        expect(
+          await Fs.readFile(Path.join(root, 'output/styles/base.css'), 'utf8'),
+        ).toMatchInlineSnapshot(
+          '"@import "nested.css";body{background-image:url(../pixel.svg)}"',
+        )
+        expect(
+          await Fs.readFile(
+            Path.join(root, 'output/styles/nested.css'),
+            'utf8',
+          ),
+        ).toMatchInlineSnapshot('"body{color:red}"')
+        expect(
+          await Fs.readFile(Path.join(root, 'output/pixel.svg'), 'utf8'),
+        ).toMatchInlineSnapshot('"<svg/>"')
+        const notifications = Watch.create({ path: 'styles/nested.css' })
+        host.watch({ onResult: notifications.onResult })
+        await notifications.next(() =>
+          Watch.write({
+            path: Path.join(root, 'styles/nested.css'),
+            source: 'body{color:blue}',
+          }),
+        )
+        expect(
+          await Fs.readFile(
+            Path.join(root, 'output/styles/nested.css'),
+            'utf8',
+          ),
+        ).toMatchInlineSnapshot('"body{color:blue}"')
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
+  })
+})
+
+describe('viewTransition', () => {
+  describe('create', () => {
+    test('replaces navigation and types through source watch updates', async () => {
+      const root = await Fs.mkdtemp(
+        Path.resolve(import.meta.dirname, '../../.fixture-transition-'),
+      )
+      try {
+        const path = Path.join(root, 'transition.ts')
+        await Fs.writeFile(
+          path,
+          `import {viewTransition} from 'zyzz/web';viewTransition({navigation:'auto',types:'slide forwards'},{within:['@layer transitions']});`,
+        )
+        await using host = await Host.create({
+          root,
+          outDir: Path.join(root, 'output'),
+          packageId: 'transitions',
+        })
+        await host.build()
+        const initial = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        expect(initial.includes('navigation: auto')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(initial.includes('types: slide forwards')).toMatchInlineSnapshot(
+          'true',
+        )
+
+        const notifications = Watch.create({ path: 'zyzz.shared.css' })
+        host.watch({ onResult: notifications.onResult })
+        await notifications.next(() =>
+          Watch.write({
+            path,
+            source: `import {viewTransition} from 'zyzz/web';viewTransition({navigation:'none',types:'backwards'},{within:['@layer transitions']});`,
+          }),
+        )
+        const updated = await Fs.readFile(
+          Path.join(root, 'output/zyzz.shared.css'),
+          'utf8',
+        )
+        expect(updated.includes('navigation: none')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(updated.includes('types: backwards')).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(updated.includes('forwards')).toMatchInlineSnapshot('false')
+      } finally {
+        await Fs.rm(root, { recursive: true, force: true })
+      }
+    })
   })
 })

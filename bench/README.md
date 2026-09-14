@@ -32,7 +32,7 @@ Each pass warms three cycles, then measures twenty fresh-root mounts, retained-D
 
 These measure warm-code client operations with styles already loaded. They do not measure cold navigation, hydration, GPU presentation, or isolated React CPU time. There is no forced synchronous React flush. Dynamic private slots currently compare only Zyzz and native CSS. Callable and override cases compare all six adapters; variant-recipe APIs need separate equivalent fixtures.
 
-Render timings are the primary runtime report. Performance is advisory until repeated runs establish variance; missing data and correctness failures fail CI. Existing function timings cannot establish a render-performance ranking. Run the old browser diagnostics with `BENCH_RUNTIME=1 pnpm exec vp test run --config bench/Check.config.ts bench/Runtime.browser.test.ts`, or Node diagnostics with `BENCH_MICRO=1 pnpm exec vp test bench --run`.
+Render timings are the primary runtime report. Performance is advisory until repeated runs establish variance; missing data and correctness failures fail CI. Existing function timings cannot establish a render-performance ranking. Run the old browser diagnostics with `BENCH_RUNTIME=1 pnpm exec vp test run --config bench/Check.config.ts bench/Runtime.test.ts`, or Node diagnostics with `BENCH_MICRO=1 pnpm exec vp test bench --run`.
 
 ## Runtime Comparisons
 
@@ -51,7 +51,7 @@ Client timings execute inside Chromium in two passes with reversed framework ord
 ```sh
 pnpm exec playwright install chromium
 pnpm exec vp test bench bench/Runtime.bench.ts --run --no-file-parallelism --outputJson bench/results/timings.json
-BENCH_RUNTIME=1 pnpm exec vp test run --config bench/Check.config.ts bench/Runtime.browser.test.ts --no-file-parallelism
+BENCH_RUNTIME=1 pnpm exec vp test run --config bench/Check.config.ts bench/Runtime.test.ts --no-file-parallelism
 node bench/RuntimeReport.ts bench/results
 pnpm bench:check bench/Runtime.test.ts
 ```
@@ -384,7 +384,7 @@ Static and bound composition benchmarks use the same small, repeated, mostly uni
 [Matched review measurements](Composition-review.md) record all 32 direct/bound lanes and four static compilation cases. The report includes baseline/candidate timings, uncertainty, required helpers, CSS, JavaScript, class references, markup, and actual combined transfer in raw/gzip/Brotli bytes.
 
 ```sh
-pnpm exec vp test run src/cx.corpus.test.ts --no-file-parallelism
+pnpm exec vp test run src/cx.test.ts --no-file-parallelism
 pnpm exec vp test bench src/cx.bench.ts src/cx.bindings.bench.ts --run --no-file-parallelism --outputJson bench/results/composition-timings.json
 ```
 

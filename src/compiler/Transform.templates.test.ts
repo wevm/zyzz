@@ -17,8 +17,8 @@ describe('compile', () => {
     expect(output.css).toMatchInlineSnapshot(
       `
       ".z-ml--12px-MCf6Uo{margin-left:-12px;}
-      .z---large--9007199254740993-MCf6Uo{--large:-9007199254740993;}
-      .z---zero-0-MCf6Uo{--zero:0;}"
+      .z-_5f_2d_5f__5f_2d_5f_large--9007199254740993-MCf6Uo{--large:-9007199254740993;}
+      .z-_5f_2d_5f__5f_2d_5f_zero-0-MCf6Uo{--zero:0;}"
     `,
     )
   })
@@ -33,7 +33,9 @@ describe('compile', () => {
         source:
           'import { css } from "zyzz"; css({ "--value": ' + nested(127) + ' })',
       }).css,
-    ).toMatchInlineSnapshot(`".z---value-8-EFKWwl{--value:8;}"`)
+    ).toMatchInlineSnapshot(
+      `".z-_5f_2d_5f__5f_2d_5f_value-8-EFKWwl{--value:8;}"`,
+    )
     expect(() =>
       Transform.compile({
         moduleId: 'depth.ts',
@@ -54,10 +56,10 @@ describe('compile', () => {
     expect(output.css).toMatchInlineSnapshot(
       `
       ".z-text-red-RNqNQM{color:red;}
-      .z-content-RNqNQM{content:"true:null:12";}
+      .z-content-ylsEUp{content:"true:null:12";}
       .z-ml--2px-RNqNQM{margin-left:-2px;}
-      .z-p-RNqNQM{padding:4px;padding:8px!important;}
-      .z-w-RNqNQM{width:calc(100% - 16px);}"
+      .z-p-25ojKz{padding:4px;padding:8px!important;}
+      .z-w-DhvAM5{width:calc(100% - 16px);}"
     `,
     )
 
@@ -79,7 +81,7 @@ describe('compile', () => {
 
     expect(module.box).toMatchInlineSnapshot(`
       {
-        "className": "z-text-red-RNqNQM z-content-RNqNQM z-ml--2px-RNqNQM z-p-RNqNQM z-w-RNqNQM",
+        "className": "z-text-red-RNqNQM z-content-ylsEUp z-ml--2px-RNqNQM z-p-25ojKz z-w-DhvAM5",
       }
     `)
     expect(
@@ -100,9 +102,9 @@ describe('compile', () => {
     expect(Transform.compile({ moduleId: 'theme.ts', source }).css)
       .toMatchInlineSnapshot(`
         ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-color_2e_brand:#06c;}
-        .z-text-_LWqWu{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,#06c);}
-        .z-content-_LWqWu{content:"A";}
-        .z---empty-_LWqWu{--empty:;}"
+        .z-text-R_O0f9{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,#06c);}
+        .z-content--HL64e{content:"A";}
+        .z-_5f_2d_5f__5f_2d_5f_empty-exQN8o{--empty:;}"
       `)
   })
 

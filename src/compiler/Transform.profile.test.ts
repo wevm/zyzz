@@ -127,7 +127,7 @@ describe('compile', () => {
       }
     `)
     expect(output.modules['app.ts']?.css).toMatchInlineSnapshot(
-      `".z-text-Jgxd-Q{color:color(--z-colorprofile6yg15mcvz3uu-70-72-6f-66-69-6c-65 0 0 0 1);}"`,
+      `".z-text-5wM_8L{color:color(--z-colorprofile6yg15mcvz3uu-70-72-6f-66-69-6c-65 0 0 0 1);}"`,
     )
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.sharedCssMap!), {

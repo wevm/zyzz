@@ -162,8 +162,8 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(`
       ".z_theme-10qvms41gznlvu-t{--z-t10qvms41gznlvu-t-color_2e_ink:red;}
-      .z-text-x6-L58{color:var(--z-t10qvms41gznlvu-t-color_2e_ink,red);}
-      .z-opacity-x6-L58{opacity:var(--z-d10qvms41gznlvu-71-61-6c-70-68-61);}"
+      .z-text-e9xVEU{color:var(--z-t10qvms41gznlvu-t-color_2e_ink,red);}
+      .z-opacity-JKq6d6{opacity:var(--z-d10qvms41gznlvu-71-61-6c-70-68-61);}"
     `)
   })
   test('rejects imported names in callback template annotations', () => {
@@ -230,8 +230,8 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(`
       ".z_theme-181sefq1osze6y-t{--z-t181sefq1osze6y-t-color_2e_ink:red;}
-      .z-opacity-DI895w{opacity:var(--z-d181sefq1osze6y-71-61-6c-70-68-61);}
-      .z-text-DI895w{color:blue;color:var(--z-t181sefq1osze6y-t-color_2e_ink,red);}"
+      .z-opacity-MyXHzR{opacity:var(--z-d181sefq1osze6y-71-61-6c-70-68-61);}
+      .z-text-U-e9Zc{color:blue;color:var(--z-t181sefq1osze6y-t-color_2e_ink,red);}"
     `)
   })
   test('compiles callbacks to fixed rules and preserves callable values', async () => {
@@ -240,9 +240,9 @@ describe('compile', () => {
     expect(output.css).toMatchInlineSnapshot(
       `
       ".z-block-LUShLn{display:block;}
-      .z-w-LUShLn{width:var(--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74);}
-      .z-ml-LUShLn{margin-left:calc(var(--z-d1h5dayl7tfv4v-47-67-61-70) + 2px);}
-      .z-opacity-LUShLn{opacity:var(--z-d1h5dayl7tfv4v-47-61-6c-70-68-61);}"
+      .z-w-2mxRRU{width:var(--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74);}
+      .z-ml-8cc16X{margin-left:calc(var(--z-d1h5dayl7tfv4v-47-67-61-70) + 2px);}
+      .z-opacity-2nqM-F{opacity:var(--z-d1h5dayl7tfv4v-47-61-6c-70-68-61);}"
     `,
     )
     expect(output.code.includes('values.amount')).toMatchInlineSnapshot(`false`)
@@ -267,7 +267,7 @@ describe('compile', () => {
 
     expect(module.first).toMatchInlineSnapshot(`
       {
-        "className": "z-block-LUShLn z-w-LUShLn z-ml-LUShLn z-opacity-LUShLn z-style-1h5dayl7tfv4v-47",
+        "className": "z-block-LUShLn z-w-2mxRRU z-ml-8cc16X z-opacity-2nqM-F z-style-1h5dayl7tfv4v-47",
         "style": {
           "--z-d1h5dayl7tfv4v-47-61-6c-70-68-61": 0.5,
           "--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74": "25%",
@@ -285,7 +285,7 @@ describe('compile', () => {
       }),
     ).toMatchInlineSnapshot(`
       {
-        "className": "z-block-LUShLn z-w-LUShLn z-ml-LUShLn z-opacity-LUShLn z-style-1h5dayl7tfv4v-47 external",
+        "className": "z-block-LUShLn z-w-2mxRRU z-ml-8cc16X z-opacity-2nqM-F z-style-1h5dayl7tfv4v-47 external",
         "style": {
           "--z-d1h5dayl7tfv4v-47-61-6c-70-68-61": 1,
           "--z-d1h5dayl7tfv4v-47-61-6d-6f-75-6e-74": "75%",
@@ -375,8 +375,8 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(`
       ".z_theme-1aby40l12ykqib-theme{--z-t1aby40l12ykqib-theme-color_2e_brand:red;}
-      .z-text-FLKHRr{color:var(--z-t1aby40l12ykqib-theme-color_2e_brand,red);}
-      .z-opacity-FLKHRr{opacity:var(--z-d1aby40l12ykqib-100-61-6c-70-68-61);}"
+      .z-text-fYvcCR{color:var(--z-t1aby40l12ykqib-theme-color_2e_brand,red);}
+      .z-opacity-7kbnqQ{opacity:var(--z-d1aby40l12ykqib-100-61-6c-70-68-61);}"
     `)
   })
 
@@ -388,7 +388,7 @@ describe('compile', () => {
           'import { css } from "zyzz"; css((values:{$alpha:number})=>({opacity:values.$alpha}))',
       }).css,
     ).toMatchInlineSnapshot(
-      `".z-opacity-gJY9Ax{opacity:var(--z-dijyhsi11fth46-28-24-61-6c-70-68-61);}"`,
+      `".z-opacity-V4KWMC{opacity:var(--z-dijyhsi11fth46-28-24-61-6c-70-68-61);}"`,
     )
   })
 

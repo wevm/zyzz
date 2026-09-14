@@ -100,7 +100,7 @@ describe('compile', () => {
     ).toMatchInlineSnapshot('[]')
     expect(output.css).toMatchInlineSnapshot(`
       "@function --z-cssfunction172pj15vy9qt-74-77-69-63-65(--x <number>) returns <number>{result:calc(var(--x)*2);}
-      .z-opacity-01WGtR{opacity:--z-cssfunction172pj15vy9qt-74-77-69-63-65(1);}"
+      .z-opacity-HtNYNi{opacity:--z-cssfunction172pj15vy9qt-74-77-69-63-65(1);}"
     `)
   })
   test('rejects unsupported CSS function arguments without emitting a bare identity', () => {
@@ -164,7 +164,7 @@ describe('compile', () => {
       `"@custom-media --z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74 (width < 40rem);"`,
     )
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-text-x_JqSF-0{@media (--z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74){color:red;}}"`,
+      `".z-text-9iSyS_-0{@media (--z-custommedia658bb2ype01s-63-6f-6d-70-61-63-74){color:red;}}"`,
     )
   })
   test('emits native functions and callable fixed expressions', async () => {
@@ -228,7 +228,7 @@ describe('compile', () => {
       },
     })
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-w-Jgxd-Q{width:--z-cssfunction1sp21u81389mcs-74-77-69-63-65(2px);}"`,
+      `".z-w-sFEABE{width:--z-cssfunction1sp21u81389mcs-74-77-69-63-65(2px);}"`,
     )
   })
   test('rejects malformed function parameter data', () => {

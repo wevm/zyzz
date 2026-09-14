@@ -20,11 +20,11 @@ export function create(options: create.Options): string {
   const label =
     options.property === 'display' && displays.has(literal)
       ? literal
-      : `${property}${simple ? `-${literal}` : ''}`
+      : `${property.startsWith('--') ? encode(property).replaceAll('-', '_2d_') : property}${simple ? `-${literal}` : ''}`
 
   const suffix = (() => {
     if (options.context !== undefined)
-      return `-${hash(options.context)}${options.slot === undefined ? '' : `-${options.slot}`}`
+      return `-${hash(options.stable || simple ? options.context : JSON.stringify([options.context, options.body]))}${options.slot === undefined ? '' : `-${options.slot}`}`
     if (!simple) return `-${hash(options.body)}`
     return ''
   })()

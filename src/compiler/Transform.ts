@@ -39,9 +39,17 @@ export function compile(options: compile.Options): compile.ReturnType {
         )
       portableNames[call.name] = call.portable
     }
-    for (const theme of Object.values(extracted.themes))
+    for (const [name, theme] of Object.entries(extracted.themes))
       if (
-        Object.keys(theme[Token.definition].values).length &&
+        (Object.keys(theme[Token.definition].values).length ||
+          extracted.themeCalls.some(
+            (call) =>
+              (call.name === name ||
+                Object.values(call.members ?? {}).includes(name)) &&
+              (!call.options ||
+                Object.hasOwn(call.options, 'themes') ||
+                Object.hasOwn(call.options, 'theme')),
+          )) &&
         !theme[Token.definition].contract[Token.identity]?.startsWith('id-')
       )
         throw new Error(
@@ -257,6 +265,9 @@ export function compile(options: compile.Options): compile.ReturnType {
       .map((call) => [call.name, call.identity!]),
   )
 
+  const modes = new Map(
+    extracted.styles.styles.map((style) => [style.name, style.cssOutput]),
+  )
   const ownersByClass = new Map<string, string | false>()
   for (const [style, value] of Object.entries(emitted.classes))
     for (const name of value.split(' ').filter(Boolean))
@@ -272,7 +283,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           const owner = ownersByClass.get(name)
           const identity = owner && identities.get(owner)
           if (
-            options.cssOutput === 'grouped' &&
+            (modes.get(owner || '') ?? options.cssOutput) === 'grouped' &&
             options.composition === 'independent' &&
             name.startsWith('g_') &&
             identity &&
@@ -911,7 +922,13 @@ export function compile(options: compile.Options): compile.ReturnType {
             const value = Expression.unwrap(property.value)
 
             if (value.type === 'ObjectExpression') {
-              conditionNodes.push(property)
+              const key =
+                property.key.type === 'Identifier'
+                  ? property.key.name
+                  : property.key.type === 'Literal'
+                    ? property.key.value
+                    : undefined
+              if (key !== 'selectors') conditionNodes.push(property)
 
               return locations(value)
             }
@@ -938,7 +955,8 @@ export function compile(options: compile.Options): compile.ReturnType {
 
         const ordered = declarations(style)
         const authored = locations(call.body ?? definitions.get(call.start)!)
-        const conditionStarts = declarationStarts(body, true)
+        const openers = new Map<number, number>()
+        const conditionStarts = declarationStarts(body, true, openers)
         const conditions: string[] = []
 
         function collectConditions(style: Style.NamedStyle) {
@@ -953,7 +971,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         let conditionCursor = 0
 
         for (const start of conditionStarts) {
-          const condition = body.slice(start, body.indexOf('{', start))
+          const condition = body.slice(start, openers.get(start))
           const index = conditions.indexOf(condition, conditionCursor)
           const node = conditionNodes[index]
           if (!node) continue
@@ -1042,14 +1060,14 @@ export declare namespace compile {
   type ErrorType = Css.CompileError | Source.ExtractError
   /** Supplied module identity and source; no file loading occurs. */
   type Options = Source.extract.Options & {
-    /** Stable declaration names for CSS-only development updates. */
-    readonly development?: boolean | undefined
     /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
     readonly compiler?: boolean | undefined
     /** Whether compiled applications can be combined with one another. */
     readonly composition?: Css.compile.Options['composition']
     /** Default CSS representation for definitions without an explicit mode. */
     readonly cssOutput?: Css.compile.Options['cssOutput']
+    /** Stable declaration names for CSS-only development updates. */
+    readonly development?: boolean | undefined
   }
 
   /** Executable module and stylesheet artifacts; TypeScript/JSX lowering belongs to the host. */
@@ -1073,6 +1091,7 @@ export declare namespace compile {
 function declarationStarts(
   body: string,
   conditions = false,
+  openers?: Map<number, number>,
 ): readonly number[] {
   const starts: number[] = []
   let start = 0
@@ -1127,7 +1146,10 @@ function declarationStarts(
     if (char === '{') {
       if (custom) blocks++
       else {
-        if (conditions && index > start) starts.push(start)
+        if (conditions && index > start) {
+          starts.push(start)
+          openers?.set(start, index)
+        }
 
         start = index + 1
       }

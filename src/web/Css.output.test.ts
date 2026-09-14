@@ -95,7 +95,7 @@ describe('compile', () => {
       }),
     })
     expect(output.css).toMatchInlineSnapshot(
-      `".z-layer-766AnZ-0{@layer{&.special{color:blue;}color:red;}}"`,
+      `".z-layer-eJVSH1-0{@layer{&.special{color:blue;}color:red;}}"`,
     )
     const browser = await chromium.launch()
     try {

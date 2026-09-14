@@ -78,10 +78,10 @@ describe('stylesheet contributions', () => {
       body{color:red;}
       @font-face{font-family:App;src:url(/font.woff2);font-display:swap;}
       @keyframes z-k11238c6bg65w8-66-61-64-65{from{opacity:0;}to{opacity:1;}}
-      .z-animation-name-xoZ2ZE{animation-name:z-k11238c6bg65w8-66-61-64-65;}"
+      .z-animation-name-hqBYrC{animation-name:z-k11238c6bg65w8-66-61-64-65;}"
     `)
     expect(result.code).toMatchInlineSnapshot(
-      `"  void 0; void 0; void 0; const unused="z-k11238c6bg65w8-75-6e-75-73-65-64"; const fade="z-k11238c6bg65w8-66-61-64-65"; export const box=({className:"z-animation-name-xoZ2ZE"})"`,
+      `"  void 0; void 0; void 0; const unused="z-k11238c6bg65w8-75-6e-75-73-65-64"; const fade="z-k11238c6bg65w8-66-61-64-65"; export const box=({className:"z-animation-name-hqBYrC"})"`,
     )
   })
   test('keeps theme references live in global rules', () => {

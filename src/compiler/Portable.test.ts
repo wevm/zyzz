@@ -286,70 +286,145 @@ describe('compile', () => {
   )
 })
 
-test('reports located invalid ids and allows identity text in declaration values', () => {
-  expect(() =>
-    Transform.compile({
-      moduleId: 'invalid.ts',
-      source: "import {css} from 'zyzz'; css({color:'red'},{id:''})",
-    }),
-  ).toThrowErrorMatchingInlineSnapshot(
-    `[Source.ExtractError: invalid.ts:26: Definition options require one nonempty literal id.]`,
-  )
-  expect(
-    Transform.compile({
-      compiler: false,
-      moduleId: 'content.ts',
-      source: `import {css} from 'zyzz'; css({content:'"z-style-banner"'})`,
-    }).css,
-  ).toMatchInlineSnapshot(
-    `".z-content-1iip0sa1qla8lk{content:"z-style-banner";}"`,
-  )
+describe('Transform.compile', () => {
+  test('reports located invalid ids and allows identity text in declaration values', () => {
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: "import {css} from 'zyzz'; css({color:'red'},{id:''})",
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:26: Definition options require one nonempty literal id.]`,
+    )
+    expect(
+      Transform.compile({
+        compiler: false,
+        moduleId: 'content.ts',
+        source: `import {css} from 'zyzz'; css({content:'"z-style-banner"'})`,
+      }).css,
+    ).toMatchInlineSnapshot(
+      `".z-content-1iip0sa1qla8lk{content:"z-style-banner";}"`,
+    )
+  })
+  test('rejects missing ids on selectable empty scopes and locates invalid selector ids', () => {
+    for (const source of [
+      `import {Config} from 'zyzz';const {themes}=Config.create({themes:{light:{},dark:{}},defaultTheme:'light'});themes({theme:'dark'})`,
+      `import {Theme} from 'zyzz';const theme=Theme.define({});export const scope=theme.className`,
+    ])
+      expect(() =>
+        Transform.compile({ compiler: false, moduleId: 'empty.ts', source }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Error: CSS-only themes require an explicit id on Config.create or Theme.define.]`,
+      )
+    expect(() =>
+      Transform.compile({
+        moduleId: 'invalid.ts',
+        source: `import {css} from 'zyzz';const bad=css({color:'red'},{id:''});export const other=css({selectors:{[\`\${bad} &\`]:{color:'blue'}}})`,
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: invalid.ts:35: Definition options require one nonempty literal id.]`,
+    )
+  })
 })
 
-test('composes html theme selections without source rewriting', () => {
-  const config = Config.create({
-    id: 'html',
-    output: 'html',
-    themes: {
-      light: { color: { primary: 'red' } },
-      dark: { color: { primary: 'blue' } },
-    },
-    defaultTheme: 'light',
-  })
-  expect(
-    cx(config.themes({ theme: 'dark' }), config.css({ color: 'primary' })()),
-  ).toMatchInlineSnapshot(`
+describe('cx', () => {
+  test('composes html theme selections without source rewriting', () => {
+    const config = Config.create({
+      id: 'html',
+      output: 'html',
+      themes: {
+        light: { color: { primary: 'red' } },
+        dark: { color: { primary: 'blue' } },
+      },
+      defaultTheme: 'light',
+    })
+    expect(
+      cx(config.themes({ theme: 'dark' }), config.css({ color: 'primary' })()),
+    ).toMatchInlineSnapshot(`
     {
       "class": "z-compose-1wfpeq21v73xyw z_theme-id-68-74-6d-6c-dark",
     }
   `)
+  })
 })
 
-test('rejects conflicting explicit themes and named contributions across modules', () => {
-  expect(() =>
-    Graph.compile({
+describe('Graph.compile', () => {
+  test('rejects conflicting explicit themes and named contributions across modules', () => {
+    expect(() =>
+      Graph.compile({
+        compiler: false,
+        modules: {
+          'a.ts':
+            "import {Theme} from 'zyzz'; const t=Theme.define({color:{primary:'red'}},{id:'same'}); export const card=t.css({color:'primary'})",
+          'b.ts':
+            "import {Theme} from 'zyzz'; const t=Theme.define({color:{primary:'blue'}},{id:'same'}); export const card=t.css({color:'primary'})",
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: b.ts:0: The same explicit identity is used for different definitions.]`,
+    )
+    expect(() =>
+      Graph.compile({
+        compiler: false,
+        modules: {
+          'a.ts':
+            "import {keyframes} from 'zyzz/web'; export const fade=keyframes({from:{opacity:0},to:{opacity:1}},{id:'same'})",
+          'b.ts':
+            "import {keyframes} from 'zyzz/web'; export const fade=keyframes({from:{opacity:1},to:{opacity:0}},{id:'same'})",
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: b.ts:0: Conflicting animation identity: z-kid-73-61-6d-65; compile libraries with package-qualified module IDs.]`,
+    )
+  })
+
+  test('accepts identical portable declarations across separate modules', () => {
+    const output = Graph.compile({
       compiler: false,
       modules: {
-        'a.ts':
-          "import {Theme} from 'zyzz'; const t=Theme.define({color:{primary:'red'}},{id:'same'}); export const card=t.css({color:'primary'})",
-        'b.ts':
-          "import {Theme} from 'zyzz'; const t=Theme.define({color:{primary:'blue'}},{id:'same'}); export const card=t.css({color:'primary'})",
+        'a.ts': `import {css} from 'zyzz';export const card=css({color:'red',padding:'8px'})`,
+        'b.ts': `import {css} from 'zyzz';export const card=css({color:'red',padding:'8px'})`,
       },
-    }),
-  ).toThrowErrorMatchingInlineSnapshot(
-    `[Source.ExtractError: b.ts:0: The same explicit identity is used for different definitions.]`,
-  )
-  expect(() =>
-    Graph.compile({
+    })
+    expect(
+      output.modules['a.ts']!.css === output.modules['b.ts']!.css,
+    ).toMatchInlineSnapshot('true')
+  })
+
+  test('checks explicit identities against packed library definitions', () => {
+    const library = Graph.compile({
       compiler: false,
       modules: {
-        'a.ts':
-          "import {keyframes} from 'zyzz/web'; export const fade=keyframes({from:{opacity:0},to:{opacity:1}},{id:'same'})",
-        'b.ts':
-          "import {keyframes} from 'zyzz/web'; export const fade=keyframes({from:{opacity:1},to:{opacity:0}},{id:'same'})",
+        'lib.ts': `import {css} from 'zyzz';export const card=css({color:'red'},{id:'same'})`,
       },
-    }),
-  ).toThrowErrorMatchingInlineSnapshot(
-    `[Source.ExtractError: b.ts:0: Conflicting animation identity: z-kid-73-61-6d-65; compile libraries with package-qualified module IDs.]`,
-  )
+    })
+    expect(() =>
+      Graph.compile({
+        compiler: false,
+        contracts: { 'lib.js': library.contracts['lib.ts']! },
+        modules: {
+          'app.ts': `import {css} from 'zyzz';export const card=css({color:'blue'},{id:'same'})`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:0: The same explicit style id is used for different declarations.]`,
+    )
+    const theme = Graph.compile({
+      compiler: false,
+      modules: {
+        'theme.ts': `import {Theme} from 'zyzz';export const theme=Theme.define({color:{primary:'red'}},{id:'same'})`,
+      },
+    })
+    expect(() =>
+      Graph.compile({
+        compiler: false,
+        contracts: { 'theme.js': theme.contracts['theme.ts']! },
+        modules: {
+          'app.ts': `import {Theme} from 'zyzz';export const theme=Theme.define({color:{primary:'blue'}},{id:'same'})`,
+        },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: app.ts:0: The same explicit identity is used for different definitions.]`,
+    )
+  })
 })

@@ -4,20 +4,7 @@ Zyzz literal and theme transfer comparisons explicitly use `cssOutput: 'grouped'
 
 ## Grouped emitter review measurements
 
-The `5697302` emitter change factors safe shared declaration blocks for independent applications and preserves complete conflicting domains. On the 1,000-style, 8,000-declaration unique workload, combined minified CSS and JavaScript fell from 128,154 to 45,258 raw bytes, 8,297 to 7,332 gzip bytes, and 3,673 to 2,912 Brotli bytes. Both runs used grouped output and identical fixtures, target settings, dependencies, and compression on this Linux x64 runner with Node 24.19.0.
-
-| Workload    | Styles | Declarations | Raw bytes | Gzip bytes | Brotli bytes |
-| ----------- | -----: | -----------: | --------: | ---------: | -----------: |
-| small       |      3 |           24 |       629 |        432 |          352 |
-| repeated    |   1000 |         8000 |    10,599 |        478 |          354 |
-| unique      |   1000 |         8000 |    45,258 |      7,332 |        2,912 |
-| partial     |    100 |          800 |     8,927 |      1,726 |        1,192 |
-| palette     |    100 |          800 |     3,114 |        630 |          499 |
-| independent |    100 |          800 |    12,570 |      2,810 |        2,036 |
-| sparse      |    100 |          431 |     6,316 |      1,426 |        1,103 |
-| components  |     60 |          550 |     2,580 |        650 |          527 |
-
-All eight workloads pass the existing raw/gzip/Brotli comparisons against Panda, StyleX, Tailwind, and vanilla-extract. Reproduce with `pnpm exec vp test run bench/Compilation.test.ts --no-file-parallelism`; the harness writes each framework's sizes and matching emitted artifacts under `bench/results/<workload>/`. These are deterministic transfer measurements, not runtime or compilation speed claims. The local timing sample overlapped other validation work and is not a controlled performance comparison; CI supplies sequential base/candidate timing evidence.
+The historical emitter table referenced an unavailable commit and omitted its baseline revision, so it has been removed. Reproduce transfer measurements with `pnpm test run bench/Compilation.test.ts`; retain the exact baseline and candidate revisions with the resulting artifacts.
 
 ## CI Scheduling
 

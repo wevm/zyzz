@@ -56,10 +56,9 @@ describe('compile', () => {
         source:
           'import {Theme,css} from "zyzz"; const theme=Theme.define({spacing:{md:"8px"}}); css({width:theme.vars.spacing.md})',
       }),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      [Source.ExtractError: root.ts:91: Token references must be direct property values in bound theme css calls.
-      root.ts:91: Expected a literal string or number; expressions are not evaluated.]
-    `)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: root.ts:91: Token references must be direct property values in bound theme css calls.]`,
+    )
   })
   test('strips importance across nested template segments', () => {
     expect(
@@ -70,7 +69,7 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(`
       ".z_theme-ingwo11j6aspr-theme{--z-tingwo11j6aspr-theme-spacing_2e_md:8px;}
-      .z-w-gPA8oq{width:calc(var(--z-tingwo11j6aspr-theme-spacing_2e_md,8px))!important;}"
+      .z-w-Gqobl2{width:calc(var(--z-tingwo11j6aspr-theme-spacing_2e_md,8px))!important;}"
     `)
   })
   test('preserves assertions around nested variable templates and fallbacks', () => {
@@ -82,7 +81,7 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(`
       ".z_theme-1jvt0134f5zz3-theme{--z-t1jvt0134f5zz3-theme-spacing_2e_md:8px;}
-      .z-w-OmxwpZ{width:1px;width:calc(var(--z-t1jvt0134f5zz3-theme-spacing_2e_md,8px));}"
+      .z-w-POrgHe{width:1px;width:calc(var(--z-t1jvt0134f5zz3-theme-spacing_2e_md,8px));}"
     `)
   })
   test('rejects spacing variables in integer properties', () => {
@@ -107,8 +106,8 @@ describe('compile', () => {
     expect(Transform.compile({ moduleId: 'vars.ts', source }).css)
       .toMatchInlineSnapshot(`
         ".z_theme-4t4nbe1og4cic-theme{--z-t4t4nbe1og4cic-theme-spacing_2e_md:8px;--z-t4t4nbe1og4cic-theme-color_2e_brand:red;}
-        .z-w-4lks2y{width:calc(100% - var(--z-t4t4nbe1og4cic-theme-spacing_2e_md,8px))!important;}
-        .z-text-4lks2y{color:var(--z-t4t4nbe1og4cic-theme-color_2e_brand,red);}"
+        .z-w-SNgKwn{width:calc(100% - var(--z-t4t4nbe1og4cic-theme-spacing_2e_md,8px))!important;}
+        .z-text-GPJwaq{color:var(--z-t4t4nbe1og4cic-theme-color_2e_brand,red);}"
       `)
   })
 
@@ -125,8 +124,8 @@ describe('compile', () => {
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-spacing_2e_md:8px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
       .z_theme-1xn44ix111xh3v-alt{--z-t1xn44ix111xh3v-theme-spacing_2e_md:16px;--z-t1xn44ix111xh3v-theme-color_2e_brand:light-dark(red,blue);}
-      .z-w-Jgxd-Q{width:calc(100% - var(--z-t1xn44ix111xh3v-theme-spacing_2e_md,8px));}
-      .z-text-Jgxd-Q{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,light-dark(red,blue));}"
+      .z-w-B6XPp2{width:calc(100% - var(--z-t1xn44ix111xh3v-theme-spacing_2e_md,8px));}
+      .z-text-t4xT3g{color:var(--z-t1xn44ix111xh3v-theme-color_2e_brand,light-dark(red,blue));}"
     `)
     expect(result.modules['theme.ts']!.css).toMatchInlineSnapshot(`""`)
   })
@@ -150,7 +149,7 @@ describe('compile', () => {
 
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-u8smm21l81sow-zyzz-theme{--z-tu8smm21l81sow-zyzz-spacing_2e_md:8px;}
-      .z-w-Jgxd-Q{width:calc(100% - var(--z-tu8smm21l81sow-zyzz-spacing_2e_md,8px));}"
+      .z-w-PhcXnr{width:calc(100% - var(--z-tu8smm21l81sow-zyzz-spacing_2e_md,8px));}"
     `)
     expect(
       output.modules['app.ts']!.code.includes('.vars'),

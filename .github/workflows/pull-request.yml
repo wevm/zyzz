@@ -1,7 +1,7 @@
 name: Pull Request
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [closed, opened, ready_for_review, reopened, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -9,6 +9,7 @@ concurrency:
 
 jobs:
   verify:
+    if: github.event.action != 'closed'
     name: Verify
     permissions:
       contents: read

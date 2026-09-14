@@ -166,9 +166,11 @@ describe('create', () => {
     ).toThrowErrorMatchingInlineSnapshot(
       `[Error: Config.create requires an explicit id without the compiler plugin.]`,
     )
-    expect(Config.create().css({ padding: '8px' })().className).toMatch(
-      /^z-content-/,
-    )
+    expect(Config.create().css({ padding: '8px' })()).toMatchInlineSnapshot(`
+      {
+        "className": "z-content-3f8gqjlziaxl",
+      }
+    `)
   })
 
   test('rejects unknown default before CSS emission', () => {

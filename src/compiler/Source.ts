@@ -474,7 +474,14 @@ export function extract(options: extract.Options): extract.ReturnType {
   })()
 
   for (const call of pending) {
-    const explicitId = Identifiers.explicit(call)
+    const explicitId = (() => {
+      try {
+        return Identifiers.explicit(call)
+      } catch (error) {
+        report('unsupported_syntax', (error as Error).message, call)
+        return undefined
+      }
+    })()
     const definitionId =
       explicitId === undefined
         ? `${identity(options.moduleId)}-${call.start}`
@@ -1016,7 +1023,7 @@ export function extract(options: extract.Options): extract.ReturnType {
         .contract.cssOutput
       styles.push(
         ...definition.styles.map((style) =>
-          cssOutput === 'grouped' ? { ...style, cssOutput } : style,
+          cssOutput ? Object.freeze({ ...style, cssOutput }) : style,
         ),
       )
 

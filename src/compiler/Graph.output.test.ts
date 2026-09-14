@@ -14,7 +14,10 @@ describe('compile', () => {
       for (const producer of ['atomic', 'grouped'] as const) {
         const root = await Fs.mkdtemp(Path.resolve('.fixture-css-output-'))
         try {
-          const library = await Library.create(root, 'react', producer)
+          const library = await Library.create(root, {
+            cssOutput: producer,
+            output: 'react',
+          })
           const contract = await Fs.readFile(
             Path.join(library.installed, 'index.js.zyzz.json'),
             'utf8',
@@ -23,11 +26,17 @@ describe('compile', () => {
             Path.join(library.installed, 'style.css'),
             'utf8',
           )
-          expect(JSON.parse(contract).version).toBe(17)
-          expect(
-            JSON.parse(contract).exports.controls.members.button.style.style
-              .cssOutput,
-          ).toBe(producer)
+          expect(JSON.parse(contract).version).toMatchInlineSnapshot(`17`)
+          if (producer === 'atomic')
+            expect(
+              JSON.parse(contract).exports.controls.members.button.style.style
+                .cssOutput,
+            ).toMatchInlineSnapshot(`"atomic"`)
+          else
+            expect(
+              JSON.parse(contract).exports.controls.members.button.style.style
+                .cssOutput,
+            ).toMatchInlineSnapshot(`"grouped"`)
           expect(await Fs.readdir(library.installed)).not.toContain('styles.ts')
 
           for (const consumer of ['atomic', 'grouped'] as const) {
@@ -45,9 +54,14 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
             }
             const result = Graph.compile(input)
             const app = result.modules['app.ts']!
-            expect(app.css.includes('{color:red;padding:6px;}')).toBe(
-              producer === 'grouped',
-            )
+            if (producer === 'grouped')
+              expect(
+                app.css.includes('{color:red;padding:6px;}'),
+              ).toMatchInlineSnapshot(`true`)
+            else
+              expect(
+                app.css.includes('{color:red;padding:6px;}'),
+              ).toMatchInlineSnapshot(`false`)
             const built = await Esbuild.build({
               bundle: true,
               format: 'iife',
@@ -96,24 +110,37 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
                     }
                     const style = getComputedStyle(element)
                     return {
-                      paddingLeft: style.paddingLeft,
-                      paddingRight: style.paddingRight,
-                      opacity: style.opacity,
                       border: style.borderTopWidth,
                       keys: Object.keys(props).filter(
                         (key) =>
                           !['className', 'style'].includes(key) &&
                           !key.startsWith('data-'),
                       ),
+                      opacity: style.opacity,
+                      paddingLeft: style.paddingLeft,
+                      paddingRight: style.paddingRight,
                     }
                   }, active)
-                  expect(value).toEqual({
-                    paddingLeft: '5px',
-                    paddingRight: active ? '20px' : '4px',
-                    opacity: active ? '1' : '0.5',
-                    border: active ? '3px' : '0px',
-                    keys: [],
-                  })
+                  if (active)
+                    expect(value).toMatchInlineSnapshot(`
+                    {
+                      "border": "3px",
+                      "keys": [],
+                      "opacity": "1",
+                      "paddingLeft": "5px",
+                      "paddingRight": "20px",
+                    }
+                  `)
+                  else
+                    expect(value).toMatchInlineSnapshot(`
+                    {
+                      "border": "0px",
+                      "keys": [],
+                      "opacity": "0.5",
+                      "paddingLeft": "5px",
+                      "paddingRight": "4px",
+                    }
+                  `)
                 }
                 await page.setViewportSize({ width: 900, height: 400 })
                 expect(
@@ -122,7 +149,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
                     .evaluate(
                       (element) => getComputedStyle(element).paddingRight,
                     ),
-                ).toBe('12px')
+                ).toMatchInlineSnapshot(`"12px"`)
                 await page.setViewportSize({ width: 450, height: 400 })
               }
             } finally {
@@ -140,7 +167,7 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
 
   test('rejects invalid or conflicting packed output identities', () => {
     const compiled = Graph.compile({
-      modules: Library.sources('react', 'grouped'),
+      modules: Library.sources({ cssOutput: 'grouped', output: 'react' }),
     })
     const metadata = compiled.contracts['@acme/variants/index.ts']!
     const data = JSON.parse(metadata)
@@ -151,16 +178,22 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         contracts: { 'library/index.js': JSON.stringify(data) },
         modules: {},
       }),
-    ).toThrow('Invalid packed CSS output')
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: library/index.js:0: Invalid library contract: Invalid packed CSS output mode.]`,
+    )
 
     const old = JSON.parse(metadata)
     old.version = 16
-    expect(() =>
-      Graph.compile({
-        contracts: { 'library/index.js': JSON.stringify(old) },
-        modules: {},
-      }),
-    ).toThrow('Invalid packed CSS output')
+    const legacy = Graph.compile({
+      contracts: { 'library/index.js': JSON.stringify(old) },
+      imports: { 'app.ts': { './library/index.js': 'library/index.js' } },
+      modules: {
+        'app.ts': `import {controls} from './library/index.js';export const props=controls.button();`,
+      },
+    })
+    expect(legacy.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z_theme-13yvj2m4fsr2i-css-theme{--z-t13yvj2m4fsr2i-css-color_2e_brand:light-dark(#0066cc,#99ccff);}"`,
+    )
 
     const conflicting = metadata.replaceAll(
       '"cssOutput":"grouped"',
@@ -171,6 +204,128 @@ export function sample(active:boolean){return cx(controls.button({size:active?{c
         contracts: { 'first.js': metadata, 'second.js': conflicting },
         modules: {},
       }),
-    ).toThrow('Conflicting packed CSS output')
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Source.ExtractError: second.js:0: Invalid library contract: Conflicting packed CSS output modes for one theme identity.]`,
+    )
+  })
+  test('upgrades missing legacy output modes through a source barrel', () => {
+    const compiled = Graph.compile({
+      modules: Library.sources({ cssOutput: 'atomic' }),
+    })
+    const data = JSON.parse(
+      compiled.contracts['@acme/variants/index.ts']!,
+      (key, value) => (key === 'cssOutput' ? undefined : value),
+    )
+    data.version = 16
+    const contract = JSON.stringify(data)
+    const barrel = Graph.compile({
+      contracts: {
+        'legacy.js': contract,
+        'current.js': compiled.contracts['@acme/variants/index.ts']!,
+      },
+      imports: { 'barrel.ts': { './legacy.js': 'legacy.js' } },
+      modules: { 'barrel.ts': `export {controls} from './legacy.js';` },
+    })
+    const consumer = Graph.compile({
+      contracts: { 'barrel.js': barrel.contracts['barrel.ts']! },
+      imports: { 'app.ts': { './barrel.js': 'barrel.js' } },
+      modules: {
+        'app.ts': `import {controls} from './barrel.js';export const props=controls.button();`,
+      },
+    })
+    expect(consumer.modules['app.ts']!.code).toMatchInlineSnapshot(
+      `"import {controls} from './barrel.js';export const props=controls.button();"`,
+    )
+    expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(
+      `".z_theme-13yvj2m4fsr2i-css-theme{--z-t13yvj2m4fsr2i-css-color_2e_brand:light-dark(#0066cc,#99ccff);}"`,
+    )
+  })
+
+  test('shares published identities across consumers and retains nested child modes', () => {
+    const first = Graph.compile({
+      modules: {
+        'first.ts':
+          "import {Config} from 'zyzz'; const {css}=Config.create({cssOutput:'grouped'}); export const base=css({color:'red',padding:'8px'})",
+      },
+    })
+    const packed = JSON.parse(first.contracts['first.ts']!)
+    const grouped = packed.exports.base.style.style
+    // Model a previously packed composition whose atomic parent owns a grouped child.
+    packed.exports.base.style.style = {
+      ...grouped,
+      cssOutput: 'atomic',
+      declarations: [],
+      rules: [{ style: grouped }],
+    }
+    const second = Graph.compile({
+      contracts: { 'first.js': JSON.stringify(packed) },
+      imports: { 'second.ts': { './first.js': 'first.js' } },
+      modules: { 'second.ts': "export {base} from './first.js'" },
+    })
+    const result = Graph.compile({
+      contracts: { 'second.js': second.contracts['second.ts']! },
+      imports: {
+        'a.ts': { './second.js': 'second.js', zyzz: null },
+        'b.ts': { './second.js': 'second.js', zyzz: null },
+      },
+      modules: {
+        'a.ts':
+          "import {css,cx} from 'zyzz'; import {base} from './second.js'; const local=css({opacity:0.5}); export const props=cx(base(),local())",
+        'b.ts':
+          "import {css,cx} from 'zyzz'; import {base} from './second.js'; const local=css({opacity:1}); export const props=cx(base(),local())",
+      },
+    })
+    expect(
+      Object.fromEntries(
+        Object.entries(result.modules).map(([name, output]) => [
+          name,
+          output.css,
+        ]),
+      ),
+    ).toMatchInlineSnapshot(`
+    {
+      "a.ts": ".z_theme-1mlrxl41f5va70-css{}
+    .z-opacity-mhlaoe-0{opacity:0.5;}
+    .z-style-H1-Qft-0{color:red;padding:8px;}
+    .z-opacity-H1-Qft-1{opacity:0.5;}",
+      "b.ts": ".z_theme-1mlrxl41f5va70-css{}
+    .z-opacity-1-uwnrRp-0{opacity:1;}
+    .z-style-SxroK2-0{color:red;padding:8px;}
+    .z-opacity-1-SxroK2-1{opacity:1;}",
+    }
+  `)
+  })
+
+  test('restores legacy grouped configuration metadata before re-export', () => {
+    const output = Graph.compile({
+      modules: {
+        'config.ts':
+          "import {Config} from 'zyzz'; export const config=Config.create({cssOutput:'grouped'}); export const css=config.css; export const card=css({color:'red',padding:'8px'})",
+      },
+    })
+    const packed = JSON.parse(output.contracts['config.ts']!)
+    packed.version = 16
+    for (const theme of Object.values(packed.themes) as Record<
+      string,
+      unknown
+    >[])
+      delete theme.cssOutput
+    const barrel = Graph.compile({
+      contracts: { 'config.js': JSON.stringify(packed) },
+      imports: { 'barrel.ts': { './config.js': 'config.js' } },
+      modules: { 'barrel.ts': "export {config,css,card} from './config.js'" },
+    })
+    const consumer = Graph.compile({
+      contracts: { 'barrel.js': barrel.contracts['barrel.ts']! },
+      imports: { 'app.ts': { './barrel.js': 'barrel.js' } },
+      modules: {
+        'app.ts':
+          "import {css} from './barrel.js'; export const card=css({color:'blue',padding:'2px'})",
+      },
+    })
+    expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
+      ".z_theme-u8smm21l81sow-config{}
+      .g-style-1e8a67z1uaws1j-51{color:blue;padding:2px;}"
+    `)
   })
 })

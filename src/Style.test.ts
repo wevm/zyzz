@@ -93,12 +93,12 @@ describe('define', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:2rem;--z5:#06c;}
       .t_1{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:1rem;--z5:#06c;}
-      .z_base-backgroundColor-11hsk3q1tuqfr0{background-color:var(--z0,#fff);}
-      .z_base-borderColor-11rs5sp1tuqfr1{border-color:var(--z1,#000);}
-      .z_base-borderRadius-10xtcps1tuqfr2{border-radius:var(--z2,4px);}
-      .z-card-atomic-color-3{color:var(--z3,light-dark(#111,#fff));}
-      .z_base-padding-12lqyvm1tuqfqw{padding:var(--z4,1rem);}
-      .z-link-atomic-color-0{color:var(--z5,#06c);}"
+      .z-bg-29LMGk{background-color:var(--z0,#fff);}
+      .z-border-color-tIvIJ5{border-color:var(--z1,#000);}
+      .z-border-radius-ZjOgyX{border-radius:var(--z2,4px);}
+      .z-text-766AnZ-3{color:var(--z3,light-dark(#111,#fff));}
+      .z-p-FZccf8{padding:var(--z4,1rem);}
+      .z-text-RpTC-t-0{color:var(--z5,#06c);}"
     `)
     expect(
       output.css ===
@@ -157,11 +157,11 @@ describe('define', () => {
     )
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-explicit-atomic-color-0{color:var(--z0,#000);}
-      .z-explicit-atomic-padding-1{padding:var(--z1,8px);}
-      .z-literal-atomic-color-0{color:white;}
-      .z-literal-atomic-padding-1{padding:0;}
-      .z_base-width-2ka7gt1vc3yyp{width:1rem;}"
+      ".z-text-0_yb_l-0{color:var(--z0,#000);}
+      .z-p-0_yb_l-1{padding:var(--z1,8px);}
+      .z-text-white-I_VjYx-0{color:white;}
+      .z-p-0-I_VjYx-1{padding:0;}
+      .z-w-1rem{width:1rem;}"
     `)
   })
 
@@ -735,10 +735,10 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
     expect(JSON.parse(server)).toMatchInlineSnapshot(`
       {
         "classes": {
-          "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+          "button": "z-text-oLANea z-p-0",
         },
-        "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
-      .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+        "css": ".z-text-oLANea{color:#f00;}
+      .z-p-0{padding:0;}",
         "themes": {},
       }
     `)
@@ -757,10 +757,10 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(JSON.parse(result)).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+            "button": "z-text-oLANea z-p-0",
           },
-          "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
-        .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+          "css": ".z-text-oLANea{color:#f00;}
+        .z-p-0{padding:0;}",
           "themes": {},
         }
       `)
@@ -780,10 +780,10 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
         expect(JSON.parse(context.getString(result))).toMatchInlineSnapshot(`
           {
             "classes": {
-              "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+              "button": "z-text-oLANea z-p-0",
             },
-            "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
-          .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+            "css": ".z-text-oLANea{color:#f00;}
+          .z-p-0{padding:0;}",
             "themes": {},
           }
         `)
@@ -807,10 +807,10 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(await page.evaluate('fixture.result')).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+            "button": "z-text-oLANea z-p-0",
           },
-          "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
-        .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+          "css": ".z-text-oLANea{color:#f00;}
+        .z-p-0{padding:0;}",
           "themes": {},
         }
       `)
@@ -838,10 +838,10 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(result).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+            "button": "z-text-oLANea z-p-0",
           },
-          "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
-        .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+          "css": ".z-text-oLANea{color:#f00;}
+        .z-p-0{padding:0;}",
           "themes": {},
         }
       `)

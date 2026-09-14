@@ -18,7 +18,11 @@ for (const [name, prefix] of [
     source: `import {variants} from 'zyzz';export const button=variants({${prefix}${body}})`,
   }
   const extracted = Source.extract(options)
-  const output = Transform.compile(options)
+  const output = Transform.compile({
+    ...options,
+    composition: 'independent',
+    cssOutput: 'grouped',
+  })
   const call = extracted.calls[0]!
   const button = (() => {
     const options = { ...call.recipe!, className: output.classes[call.name]! }
@@ -29,7 +33,11 @@ for (const [name, prefix] of [
 
   describe(`variants / ${name}`, () => {
     bench('compile', () => {
-      Transform.compile(options)
+      Transform.compile({
+        ...options,
+        composition: 'independent',
+        cssOutput: 'grouped',
+      })
     })
     bench('select defaults', () => {
       button()

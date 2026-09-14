@@ -41,11 +41,10 @@ export async function verify(options: verify.Options) {
       { cwd: root, timeout: 120000 },
     )
 
-    await VariantLibrary.create(
-      root,
-      options.output ?? 'html',
-      options.cssOutput === 'atomic' ? 'grouped' : 'atomic',
-    )
+    await VariantLibrary.create(root, {
+      output: options.output ?? 'html',
+      cssOutput: options.cssOutput === 'atomic' ? 'grouped' : 'atomic',
+    })
 
     const files = {
       ...options.files,
@@ -148,6 +147,24 @@ export async function verify(options: verify.Options) {
       if (production) {
         await server!.close()
         server = undefined
+        const directory = Path.join(root, 'server-dist')
+        await Vite.build({
+          ...config,
+          build: {
+            ...config.build,
+            outDir: directory,
+            ssr: Path.join(root, 'server.tsx'),
+          },
+          ssr: { noExternal: ['@acme/variants'] },
+        })
+        const productionServer = (await import(
+          Url.pathToFileURL(Path.join(directory, 'server.js')).href
+        )) as typeof ssr
+        const rendered = await productionServer.render()
+        await Fs.writeFile(
+          Path.join(root, 'index.html'),
+          `<!doctype html><html><head>${rendered.script}</head><body><div id="app">${rendered.html}</div><button id="dispose">Dispose</button><script type="module" src="/client.tsx"></script></body></html>`,
+        )
         await Vite.build(config)
         preview = await Vite.preview({
           ...config,
@@ -187,7 +204,10 @@ export async function verify(options: verify.Options) {
 
       await page.waitForFunction(
         'getComputedStyle(document.querySelector("#card")).width === "100px"',
-      )
+      ).catch(async (error) => {
+        const detail = await page.locator('#card').evaluate(element => ({ html: element.outerHTML, width: getComputedStyle(element).width, rules: [...document.styleSheets].flatMap(sheet => [...sheet.cssRules].map(rule => rule.cssText)).filter(rule => [...element.classList].some(name => rule.includes(name))) }))
+        throw new Error(`${String(error)}\n${JSON.stringify({ production, errors, detail })}`)
+      })
 
       expect(
         await page
@@ -274,7 +294,10 @@ export async function verify(options: verify.Options) {
       await page.locator('#toggle').click()
       await page.waitForFunction(
         'getComputedStyle(document.querySelector("#card")).width === "100px"',
-      )
+      ).catch(async (error) => {
+        const detail = await page.locator('#card').evaluate(element => ({ html: element.outerHTML, width: getComputedStyle(element).width, rules: [...document.styleSheets].flatMap(sheet => [...sheet.cssRules].map(rule => rule.cssText)).filter(rule => [...element.classList].some(name => rule.includes(name))) }))
+        throw new Error(`${String(error)}\n${JSON.stringify({ production, errors, detail })}`)
+      })
 
       expect(
         await page
@@ -305,7 +328,7 @@ export async function verify(options: verify.Options) {
           )
           Trace.eachMapping(map, (mapping) => {
             if (
-              mapping.source?.endsWith('/styles.ts') &&
+              mapping.source?.replaceAll('\\', '/').endsWith('/styles.ts') &&
               mapping.originalLine === prefix.length &&
               mapping.originalColumn === prefix.at(-1)!.length
             )

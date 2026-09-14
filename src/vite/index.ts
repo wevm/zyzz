@@ -568,6 +568,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     const result = entry.compiler.compile({
       compiler: options.compiler,
       contracts,
+      development: entry.environment.mode !== 'build',
       imports,
       modules,
     })

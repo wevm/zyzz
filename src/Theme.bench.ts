@@ -29,6 +29,7 @@ for (const count of [10, 100]) {
   )
 
   const output = Css.compile({
+    composition: 'independent',
     cssOutput: 'grouped',
     styles,
     themes: { alternate, base: theme },
@@ -47,6 +48,7 @@ for (const count of [10, 100]) {
   describe(`theme compilation / ${count} styles`, () => {
     bench('two scopes with scheme pairs', () => {
       Css.compile({
+        composition: 'independent',
         cssOutput: 'grouped',
         styles,
         themes: { alternate, base: theme },

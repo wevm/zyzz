@@ -5,6 +5,7 @@
 import * as Esbuild from 'esbuild'
 import { chromium } from 'playwright'
 import * as ChildProcess from 'node:child_process'
+import * as Crypto from 'node:crypto'
 import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Util from 'node:util'
@@ -49,6 +50,24 @@ describe('zyzz', () => {
           ],
           { timeout: 120000 },
         )
+        // Artifact appearance precedes the ownership manifest's transaction commit.
+        const settled = () =>
+          vi.waitFor(
+            async () => {
+              const manifest = JSON.parse(
+                await Fs.readFile(Path.join(root, 'dist/.zyzz.json'), 'utf8'),
+              ) as { files: Record<string, string> }
+              for (const [name, expected] of Object.entries(manifest.files)) {
+                const content = await Fs.readFile(Path.join(root, 'dist', name))
+                if (
+                  Crypto.createHash('sha256').update(content).digest('hex') !==
+                  expected
+                )
+                  throw new Error(`Waiting for committed output: ${name}`)
+              }
+            },
+            { timeout: 20000 },
+          )
         const bin = Path.join(root, 'node_modules/.bin/zyzz')
         const run = (args: string[]) =>
           exec(
@@ -262,8 +281,10 @@ describe('zyzz', () => {
               await Fs.readFile(Path.join(root, 'dist/button.ts.css'), 'utf8')
             ).includes('16px'),
           ).toMatchInlineSnapshot('true')
+          await settled()
           lines.length = 0
           await configure(cssOutput === 'atomic' ? 'grouped' : 'atomic')
+          // Final CSS processing can merge adjacent fixed-name atomic rules.
           if (cssOnly) await wait('built')
           else
             await vi.waitFor(
@@ -280,6 +301,8 @@ describe('zyzz', () => {
               },
               { timeout: 20000 },
             )
+          await settled()
+          lines.length = 0
           await configure(cssOutput)
           if (cssOnly) await wait('built')
           else
@@ -293,10 +316,13 @@ describe('zyzz', () => {
                   css.replace(/\s/g, '').includes('color:red;padding:16px;') !==
                   (cssOutput === 'grouped')
                 )
-                  throw new Error('Waiting for restored CSS output mode')
+                  throw new Error(
+                    `Waiting for restored CSS output mode: ${css}\n${lines.join('\n')}`,
+                  )
               },
               { timeout: 20000 },
             )
+          await settled()
           await Fs.rename(source, Path.join(root, 'src/renamed.ts'))
           await vi.waitFor(
             async () => {
@@ -309,6 +335,7 @@ describe('zyzz', () => {
             },
             { timeout: 20000 },
           )
+          await settled()
           await Fs.rm(Path.join(root, 'src/renamed.ts'))
           await vi.waitFor(
             async () => {
@@ -317,10 +344,13 @@ describe('zyzz', () => {
                   'renamed.ts.css',
                 )
               )
-                throw new Error('Waiting for removed output')
+                throw new Error(
+                  `Waiting for removed output: ${lines.join('\n')}`,
+                )
             },
             { timeout: 20000 },
           )
+          await settled()
           child.kill(signal)
           expect(await exited).toMatchInlineSnapshot('0')
           child = undefined

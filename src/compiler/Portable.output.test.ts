@@ -65,7 +65,9 @@ export const card = css({
       ).toMatchInlineSnapshot('true')
       expect(restored.css === atomic.css).toMatchInlineSnapshot('true')
       expect(restored.code === atomic.code).toMatchInlineSnapshot('true')
-      expect(() => compile('invalid')).toThrowErrorMatchingInlineSnapshot(`[Source.ExtractError: config.ts:54: cssOutput must be atomic or grouped.]`)
+      expect(() => compile('invalid')).toThrowErrorMatchingInlineSnapshot(
+        `[Source.ExtractError: config.ts:54: cssOutput must be atomic or grouped.]`,
+      )
     },
   )
 })

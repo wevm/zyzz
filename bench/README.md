@@ -2,6 +2,23 @@
 
 Zyzz literal and theme transfer comparisons explicitly use `cssOutput: 'grouped'`. Pure CSS emission benchmarks use the same mode. Runtime and React render fixtures bind their helpers through `Config.create({ cssOutput: 'grouped' })` once config support is present in the stack. Atomic output remains the application default and retains its browser correctness coverage. Existing size thresholds and competitor comparisons remain enforced.
 
+## Grouped emitter review measurements
+
+The `5697302` emitter change factors safe shared declaration blocks for independent applications and preserves complete conflicting domains. On the 1,000-style, 8,000-declaration unique workload, combined minified CSS and JavaScript fell from 128,154 to 45,258 raw bytes, 8,297 to 7,332 gzip bytes, and 3,673 to 2,912 Brotli bytes. Both runs used grouped output and identical fixtures, target settings, dependencies, and compression on this Linux x64 runner with Node 24.19.0.
+
+| Workload    | Styles | Declarations | Raw bytes | Gzip bytes | Brotli bytes |
+| ----------- | -----: | -----------: | --------: | ---------: | -----------: |
+| small       |      3 |           24 |       629 |        432 |          352 |
+| repeated    |   1000 |         8000 |    10,599 |        478 |          354 |
+| unique      |   1000 |         8000 |    45,258 |      7,332 |        2,912 |
+| partial     |    100 |          800 |     8,927 |      1,726 |        1,192 |
+| palette     |    100 |          800 |     3,114 |        630 |          499 |
+| independent |    100 |          800 |    12,570 |      2,810 |        2,036 |
+| sparse      |    100 |          431 |     6,316 |      1,426 |        1,103 |
+| components  |     60 |          550 |     2,580 |        650 |          527 |
+
+All eight workloads pass the existing raw/gzip/Brotli comparisons against Panda, StyleX, Tailwind, and vanilla-extract. Reproduce with `pnpm exec vp test run bench/Compilation.test.ts --no-file-parallelism`; the harness writes each framework's sizes and matching emitted artifacts under `bench/results/<workload>/`. These are deterministic transfer measurements, not runtime or compilation speed claims. The local timing sample overlapped other validation work and is not a controlled performance comparison; CI supplies sequential base/candidate timing evidence.
+
 ## CI Scheduling
 
 Compiler and React render benchmarks run on separate runners in parallel. Each job measures its baseline and candidate sequentially on the same runner. Sample counts, warmups, workloads, and performance gates are unchanged. Both artifacts feed one updating PR comment.
@@ -12,7 +29,7 @@ TypeScript compatibility checks and JavaScript compiler instantiation benches ru
 
 ## React Render and Mount Benchmarks
 
-Run `pnpm bench:render` after installing Chromium with `pnpm exec playwright install chromium`. Run `node bench/RenderReport.ts bench/results` to report the raw samples in `bench/results/render-timings.json`. CI also measures the base source with the candidate harness on the same runner.
+Run `pnpm bench:render` after installing Chromium with `pnpm exec playwright install chromium`. Run `node bench/RenderReport.ts bench/results` to report the raw samples in `bench/results/render-timings.json`. CI also measures the base source with the candidate harness on the same runner. If that source predates grouped configuration support, the report explicitly marks the grouped render baseline unavailable; the complete candidate and competitor measurements still run and retain every correctness and completeness check.
 
 Vitest Browser Mode controls an isolated iframe containing an esbuild production React bundle. Framework applications use the official compiler adapters. React development mode, compilation, loading, test assertions, and protocol calls are outside timing. All frameworks render the same 100 or 1,000 cards with 10 or 100 distinct styles.
 

@@ -106,9 +106,9 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(
       `
-      ".z-style-31e6cc1lbrj8g-26-atomic-color-0{:where(.dark) &{color:red;}}
-      .z-style-31e6cc1lbrj8g-26-atomic-display-1{@media only screen{display:grid;}}
-      .z-style-31e6cc1lbrj8g-26-atomic-display-2{@media not print{display:block;}}"
+      ".z-text-T1sQhj-0{:where(.dark) &{color:red;}}
+      .z-display-T1sQhj-1{@media only screen{display:grid;}}
+      .z-display-T1sQhj-2{@media not print{display:block;}}"
     `,
     )
   })
@@ -153,8 +153,8 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(
       `
-      ".z-style-1xoh7zjj7hyhn-26-atomic-color-0{&:is(:hover,:focus){color:red;}}
-      .z-style-1xoh7zjj7hyhn-26-atomic-padding-1{@media (width > 1px)  and (hover: hover){padding:2px;}}"
+      ".z-text-cgeA-1-0{&:is(:hover,:focus){color:red;}}
+      .z-p-cgeA-1-1{@media (width > 1px)  and (hover: hover){padding:2px;}}"
     `,
     )
   })
@@ -177,10 +177,10 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-atomic-marginLeft-0{margin-left:2px;}
-      .z-b-atomic-marginLeft-0{margin-left:4px;}
-      .z-b-atomic-color-1{&:hover{color:red;}}
-      .z-c-atomic-marginLeft-0{margin-left:2px;}"
+      ".z-ml-2px-CgmKfH-0{margin-left:2px;}
+      .z-ml-4px-0kXiVX-0{margin-left:4px;}
+      .z-hover-text-red-0kXiVX-1{&:hover{color:red;}}
+      .z-ml-2px-HzYJKb-0{margin-left:2px;}"
     `)
 
     const browser = await chromium.launch()
@@ -208,23 +208,25 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(
       `
-      ".z-style-cqzv9l1th5n7r-26-atomic-color-0{color:red;}
-      .z-style-cqzv9l1th5n7r-26-atomic-padding-1{@media screen, print{padding:2px;}}"
+      ".z-text-red-Crrvwo-0{color:red;}
+      .z-p-Crrvwo-1{@media screen, print{padding:2px;}}"
     `,
     )
 
-    const column = output.css.indexOf('padding:')
+    const prefix = output.css.slice(0, output.css.indexOf('padding:'))
+    const lines = prefix.split('\n')
+    const column = lines.at(-1)!.length
 
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
-        line: 1,
+        line: lines.length,
         column,
       }),
     ).toMatchInlineSnapshot(`
       {
-        "column": 31,
+        "column": 67,
         "line": 1,
-        "name": "color",
+        "name": "padding",
         "source": "mapped.ts",
       }
     `)
@@ -260,13 +262,13 @@ describe('compile', () => {
     expect(Transform.compile({ moduleId: 'conditions.ts', source }).css)
       .toMatchInlineSnapshot(`
         ".z_theme-w47itm14d5v1i-theme{--z-tw47itm14d5v1i-theme-spacing_2e_small:4px;--z-tw47itm14d5v1i-theme-spacing_2e_large:16px;}
-        .z-style-w47itm14d5v1i-207-atomic-padding-0{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}
-        .z-style-w47itm14d5v1i-207-atomic-padding-1{&:hover{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_large,16px);}}
-        .z-style-w47itm14d5v1i-207-atomic-width-2{@media (48rem <= width < 64rem){width:100px;}}
-        .z-style-w47itm14d5v1i-207-atomic-height-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
-        .z-style-w47itm14d5v1i-207-atomic-display-4{@container sidebar (width >= 24rem){display:grid;}}
-        .z-style-w47itm14d5v1i-207-atomic-gap-5{@supports (display:grid){gap:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}}
-        .z-style-w47itm14d5v1i-207-atomic-opacity-6{@starting-style{opacity:0;}}"
+        .z-p-aqP23N-0{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}
+        .z-hover-p-aqP23N-1{&:hover{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_large,16px);}}
+        .z-w-aqP23N-2{@media (48rem <= width < 64rem){width:100px;}}
+        .z-h-aqP23N-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
+        .z-display-aqP23N-4{@container sidebar (width >= 24rem){display:grid;}}
+        .z-gap-aqP23N-5{@supports (display:grid){gap:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}}
+        .z-opacity-aqP23N-6{@starting-style{opacity:0;}}"
       `)
   })
   test('retains dynamic and theme variables inside nested contexts', () => {
@@ -278,8 +280,8 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(`
       ".z_theme-1h5dayl7tfv4v-theme{--z-t1h5dayl7tfv4v-theme-spacing_2e_gap:4px;}
-      .z-style-1h5dayl7tfv4v-94-atomic-opacity-0{&:hover{opacity:var(--z-d1h5dayl7tfv4v-94-61-6c-70-68-61);}}
-      .z-style-1h5dayl7tfv4v-94-atomic-marginLeft-1{&:hover{margin-left:calc(var(--z-t1h5dayl7tfv4v-theme-spacing_2e_gap,4px) + 2px);}}"
+      .z-hover-opacity-ETOAsi-0{&:hover{opacity:var(--z-d1h5dayl7tfv4v-94-61-6c-70-68-61);}}
+      .z-hover-ml-ETOAsi-1{&:hover{margin-left:calc(var(--z-t1h5dayl7tfv4v-theme-spacing_2e_gap,4px) + 2px);}}"
     `)
   })
   test('resolves imported thresholds through the packed contract', () => {
@@ -301,7 +303,7 @@ describe('compile', () => {
 
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1xn44ix111xh3v-theme{}
-      .z-style-1e8a67z1uaws1j-48-atomic-width-0{@media (width >= 48rem){width:100px;}}"
+      .z-w-0vXu7p-0{@media (width >= 48rem){width:100px;}}"
     `)
   })
   test.each([

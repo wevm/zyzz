@@ -85,7 +85,11 @@ export async function create(options: create.Options): Promise<Runtime> {
   let closed = false
   let closing: Promise<void> | undefined
   let tail: Promise<void> = Promise.resolve()
-  let watcher: NativeFs.FSWatcher | undefined
+  const watchers = new Map<
+    string,
+    { inode: number; watcher: NativeFs.FSWatcher }
+  >()
+  let watching = false
 
   async function perform(): Promise<Build> {
     const inputs: string[] = []
@@ -416,7 +420,8 @@ export async function create(options: create.Options): Promise<Runtime> {
     if (closing) return closing
 
     closed = true
-    watcher?.close()
+    for (const { watcher } of watchers.values()) watcher.close()
+    watchers.clear()
 
     closing = (async () => {
       await tail
@@ -429,7 +434,8 @@ export async function create(options: create.Options): Promise<Runtime> {
 
   function watch(watchOptions: watch.Options) {
     if (closed) throw new Error('Host is closed.')
-    if (watcher) throw new Error('Host is already watching.')
+    if (watching) throw new Error('Host is already watching.')
+    watching = true
 
     let dirty = false
     let running = false
@@ -443,10 +449,12 @@ export async function create(options: create.Options): Promise<Runtime> {
         while (dirty && !closed) {
           dirty = false
 
-          const event: Event = await build().then(
-            (result) => ({ result }),
-            (error: unknown) => ({ error }),
-          )
+          const event: Event = await directories(root)
+            .then(() => build())
+            .then(
+              (result) => ({ result }),
+              (error: unknown) => ({ error }),
+            )
 
           if (!closed) watchOptions.onResult(event)
         }
@@ -455,14 +463,44 @@ export async function create(options: create.Options): Promise<Runtime> {
       }
     }
 
-    watcher = NativeFs.watch(root, { recursive: true }, (_event, filename) => {
-      if (filename && inside(outDir, Path.resolve(root, filename))) return
+    async function directories(directory: string): Promise<void> {
+      if (closed || inside(outDir, directory)) return
+      // Watch directories rather than file inodes, which atomic editor saves replace.
+      const status = await Fs.stat(directory).catch(
+        (error: NodeJS.ErrnoException) => {
+          if (error.code !== 'ENOENT') throw error
+          return undefined
+        },
+      )
+      if (!status || watchers.get(directory)?.inode !== status.ino) {
+        watchers.get(directory)?.watcher.close()
+        watchers.delete(directory)
+      }
+      if (!status) return
+      if (!watchers.has(directory)) {
+        const watcher = NativeFs.watch(directory, () => {
+          dirty = true
+          void flush()
+        })
+        watcher.on('error', (error) => watchOptions.onResult({ error }))
+        watchers.set(directory, { inode: status.ino, watcher })
+      }
+      const entries = await Fs.readdir(directory, {
+        withFileTypes: true,
+      }).catch((error: NodeJS.ErrnoException) => {
+        if (error.code !== 'ENOENT') throw error
+        watchers.get(directory)?.watcher.close()
+        watchers.delete(directory)
+        return []
+      })
+      for (const entry of entries)
+        if (
+          entry.isDirectory() &&
+          !['.git', 'node_modules'].includes(entry.name)
+        )
+          await directories(Path.join(directory, entry.name))
+    }
 
-      dirty = true
-      void flush()
-    })
-
-    watcher.on('error', (error) => watchOptions.onResult({ error }))
     dirty = true
     void flush()
   }

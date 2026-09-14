@@ -101,9 +101,11 @@ export function commands() {
           node: process.version,
           platform: `${Os.platform()} ${Os.arch()}`,
           cpu: Os.cpus()[0]?.model,
-          revision: ChildProcess.execFileSync('git', ['rev-parse', 'HEAD'], {
-            encoding: 'utf8',
-          }).trim(),
+          revision:
+            process.env.BASE_SHA ??
+            ChildProcess.execFileSync('git', ['rev-parse', 'HEAD'], {
+              encoding: 'utf8',
+            }).trim(),
           warmupCycles: 3,
           sampleCycles: 20,
           scope:

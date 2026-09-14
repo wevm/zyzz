@@ -100,8 +100,8 @@ export function read(
     const item = object(value)
     if (
       item.cssOutput !== undefined &&
-      (version < 17 ||
-        (item.cssOutput !== 'atomic' && item.cssOutput !== 'grouped'))
+      item.cssOutput !== 'atomic' &&
+      item.cssOutput !== 'grouped'
     )
       throw new Error('Invalid packed style CSS output mode.')
     return {
@@ -175,17 +175,26 @@ export function read(
 /** Encodes references as data while preserving declaration and condition order. */
 export function write(definition: Definition): unknown {
   return JSON.parse(
-    JSON.stringify(definition, (_, value: unknown) => {
-      if (Token.is(value))
-        return {
-          identity: value.contract[Token.identity],
-          kind: 'token',
-          path: value.path,
-        }
-      if (Token.isExpression(value))
-        return { kind: 'expression', parts: value.parts }
-      return value
-    }),
+    JSON.stringify(
+      {
+        ...definition,
+        style: {
+          ...definition.style,
+          cssOutput: definition.style.cssOutput ?? 'atomic',
+        },
+      },
+      (_, value: unknown) => {
+        if (Token.is(value))
+          return {
+            identity: value.contract[Token.identity],
+            kind: 'token',
+            path: value.path,
+          }
+        if (Token.isExpression(value))
+          return { kind: 'expression', parts: value.parts }
+        return value
+      },
+    ),
   )
 }
 

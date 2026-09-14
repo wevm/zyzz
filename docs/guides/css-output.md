@@ -20,6 +20,8 @@ export const { css, variants } = Config.create({
 
 The setting applies to config-bound styles, variants, and theme helpers. Root helpers use the atomic default. Renderer `output: 'react' | 'html'` remains separate. There is no per-style override or automatic size-based mode selection.
 
+`cssOutput` and `composition` are orthogonal. Output chooses atomic declarations or grouped blocks; `composition: 'ordered'` preserves application order, while `'independent'` permits reuse of complete applications that are never combined. Existing composition options retain their meaning; neither selects nor overrides the output mode.
+
 ## Example
 
 Authoring and application stay the same in either mode:
@@ -42,10 +44,10 @@ function Card() {
 Illustrative atomic output shares the color declaration:
 
 ```css
-.color-red-a1 {
+.z-text-red-HASH {
   color: red;
 }
-.padding-8px-b2 {
+.z-p-8px-HASH {
   padding: 8px;
 }
 ```
@@ -63,6 +65,14 @@ The card receives both classes; the label receives the color class. Grouped outp
 ```
 
 These names illustrate the representation, not a class-name API. Applications consume returned props. Native CSS cascade and explicit `cx` composition must preserve equivalent rendered behavior in both modes; class-string order is not CSS precedence.
+
+## Class Names
+
+Common declarations use readable labels such as `z-display-flex`, `z-p-8px`, and `z-text-red`. Simple pseudo-classes add a prefix, such as `z-hover-text-blue`. Complex values and fallback sequences use a deterministic six-character hash instead of embedding CSS syntax. Hash characters are letters, digits, underscores, or hyphens.
+
+Source compilation appends an ownership hash so independently delivered modules preserve their cascade order. Conflicting declarations receive distinct hashes even when their values match. Theme and variable references participate in the hashed identity. Names remain compiler output; application code consumes returned props.
+
+Vite development uses compact, value-independent names and keeps each style’s declarations separate so CSS-only edits continue styling mounted elements. Production names include readable literal values. Low-level `Css.compile`, `Transform.compile`, and `Graph.compile` callers can select stable development naming with `development: true`.
 
 ## Semantics
 
@@ -85,3 +95,5 @@ Minification and browser-target processing remain separate. Final processing may
 Performance comparisons use grouped output across repeated and mostly unique styles, including CSS, JavaScript, class strings, combined transfer, compilation, and rendering. Atomic remains the application default and has correctness coverage; no atomic performance advantage is claimed.
 
 See [Config.create](../api/core/Config/create.md#optionscssoutput) for the option.
+
+With explicit `composition: 'independent'`, complete applications are never combined. The emitter may factor a shared block from independent grouped styles while retaining each conflicting declaration domain intact. The default composition keeps a style’s declarations together.

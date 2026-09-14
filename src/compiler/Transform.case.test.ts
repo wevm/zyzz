@@ -14,9 +14,9 @@ describe('compile', () => {
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
       `
-      ".z_base-color-11hsk3q1tuqfr0{color:ReD;}
-      .z_base-display-11rs5sp1tuqfr1{display:FlEx;}
-      .z_base-padding-10xtcps1tuqfr2{padding:2PX;}"
+      ".z-text-ReD{color:ReD;}
+      .z-display-FlEx{display:FlEx;}
+      .z-p-2PX{padding:2PX;}"
     `,
     )
   })
@@ -28,8 +28,8 @@ describe('compile', () => {
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
       `
-      ".z_base-color-11hsk3q1tuqfr0{color: ReD!important;}
-      .z_base-display-11rs5sp1tuqfr1{display:BlOcK	Flow;}"
+      ".z-text-qE5SPZ{color: ReD!important;}
+      .z-display-eWlMBL{display:BlOcK	Flow;}"
     `,
     )
   })
@@ -52,9 +52,9 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(
       `
-      ".z_base-color-11hsk3q1tuqfr0{color:\\72 ed/**/!important;}
-      .z_base-display-11rs5sp1tuqfr1{display:bl\\6f ck/**/flow;}
-      .z_base-padding-10xtcps1tuqfr2{padding:1\\70 x;}"
+      ".z-text-YkAuMI{color:\\72 ed/**/!important;}
+      .z-display-gFmu41{display:bl\\6f ck/**/flow;}
+      .z-p-m_OXFT{padding:1\\70 x;}"
     `,
     )
 

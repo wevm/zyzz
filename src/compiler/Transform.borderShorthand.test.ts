@@ -31,15 +31,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-atomic-border-0{border:2px solid red;}
-      .z-a-atomic-outline-1{outline:1px dotted black;}
-      .z-a-atomic-columnRule-2{column-rule:3px dashed blue;}
-      .z-b-atomic-borderTopColor-0{border-top-color:green;}
-      .z-b-atomic-outlineWidth-1{outline-width:5px;}
-      .z-b-atomic-columnRuleStyle-2{column-rule-style:solid;}
-      .z-c-atomic-border-0{border:2px solid red;}
-      .z-c-atomic-outline-1{outline:1px dotted black;}
-      .z-c-atomic-columnRule-2{column-rule:3px dashed blue;}"
+      ".z-border-CgmKfH-0{border:2px solid red;}
+      .z-outline-CgmKfH-1{outline:1px dotted black;}
+      .z-column-rule-CgmKfH-2{column-rule:3px dashed blue;}
+      .z-border-top-color-green-0kXiVX-0{border-top-color:green;}
+      .z-outline-width-5px-0kXiVX-1{outline-width:5px;}
+      .z-column-rule-style-solid-0kXiVX-2{column-rule-style:solid;}
+      .z-border-HzYJKb-0{border:2px solid red;}
+      .z-outline-HzYJKb-1{outline:1px dotted black;}
+      .z-column-rule-HzYJKb-2{column-rule:3px dashed blue;}"
     `)
   })
   test('combined borders match native declarations across writing modes', async () => {
@@ -79,7 +79,7 @@ describe('compile', () => {
       const page = await browser.newPage()
 
       await page.setContent(
-        `<style>.z-a{border-image-source:linear-gradient(red,blue)}${output.css}${cascade.css}</style><div id="parent"><div id="actual" class="${module.box.className}"></div><div id="control" style="${BorderShorthand.control}"></div></div><div id="cascade" class="z-a z-b z-c"></div>`,
+        `<style>.z-a{border-image-source:linear-gradient(red,blue)}${output.css}${cascade.css}</style><div id="parent"><div id="actual" class="${module.box.className}"></div><div id="control" style="${BorderShorthand.control}"></div></div><div id="cascade" class="${cascade.classes.a} ${cascade.classes.b} ${cascade.classes.c} z-a"></div>`,
       )
 
       for (const writingMode of ['horizontal-tb', 'vertical-rl', 'vertical-lr'])
@@ -128,24 +128,22 @@ describe('compile', () => {
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).borderImageSource),
-      ).toMatchInlineSnapshot(
-        `"linear-gradient(rgb(255, 0, 0), rgb(0, 0, 255))"`,
-      )
+      ).toMatchInlineSnapshot(`"none"`)
       expect(
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).borderTopColor),
-      ).toMatchInlineSnapshot(`"rgb(0, 0, 0)"`)
+      ).toMatchInlineSnapshot(`"rgb(255, 0, 0)"`)
       expect(
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).outlineWidth),
-      ).toMatchInlineSnapshot(`"3px"`)
+      ).toMatchInlineSnapshot(`"1px"`)
       expect(
         await page
           .locator('#cascade')
           .evaluate((element) => getComputedStyle(element).columnRuleStyle),
-      ).toMatchInlineSnapshot(`"none"`)
+      ).toMatchInlineSnapshot(`"dashed"`)
     } finally {
       await browser.close()
     }

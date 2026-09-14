@@ -3,7 +3,7 @@ import * as Esbuild from 'esbuild'
 import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
-import { Config, css, Theme, variable, variants } from '../index.js'
+import { Config, css, cx, Theme, variable, variants } from '../index.js'
 import { Graph, Transform } from './index.js'
 import { customMedia } from '../web/index.js'
 
@@ -283,5 +283,73 @@ describe('compile', () => {
       }
     },
     30000,
+  )
+})
+
+test('reports located invalid ids and allows identity text in declaration values', () => {
+  expect(() =>
+    Transform.compile({
+      moduleId: 'invalid.ts',
+      source: "import {css} from 'zyzz'; css({color:'red'},{id:''})",
+    }),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Source.ExtractError: invalid.ts:26: Definition options require one nonempty literal id.]`,
+  )
+  expect(
+    Transform.compile({
+      compiler: false,
+      moduleId: 'content.ts',
+      source: `import {css} from 'zyzz'; css({content:'"z-style-banner"'})`,
+    }).css,
+  ).toMatchInlineSnapshot(
+    `".z-content-1iip0sa1qla8lk{content:"z-style-banner";}"`,
+  )
+})
+
+test('composes html theme selections without source rewriting', () => {
+  const config = Config.create({
+    id: 'html',
+    output: 'html',
+    themes: {
+      light: { color: { primary: 'red' } },
+      dark: { color: { primary: 'blue' } },
+    },
+    defaultTheme: 'light',
+  })
+  expect(
+    cx(config.themes({ theme: 'dark' }), config.css({ color: 'primary' })()),
+  ).toMatchInlineSnapshot(`
+    {
+      "class": "z-compose-1wfpeq21v73xyw z_theme-id-68-74-6d-6c-dark",
+    }
+  `)
+})
+
+test('rejects conflicting explicit themes and named contributions across modules', () => {
+  expect(() =>
+    Graph.compile({
+      compiler: false,
+      modules: {
+        'a.ts':
+          "import {Theme} from 'zyzz'; const t=Theme.define({color:{primary:'red'}},{id:'same'}); export const card=t.css({color:'primary'})",
+        'b.ts':
+          "import {Theme} from 'zyzz'; const t=Theme.define({color:{primary:'blue'}},{id:'same'}); export const card=t.css({color:'primary'})",
+      },
+    }),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Source.ExtractError: b.ts:0: The same explicit identity is used for different definitions.]`,
+  )
+  expect(() =>
+    Graph.compile({
+      compiler: false,
+      modules: {
+        'a.ts':
+          "import {keyframes} from 'zyzz/web'; export const fade=keyframes({from:{opacity:0},to:{opacity:1}},{id:'same'})",
+        'b.ts':
+          "import {keyframes} from 'zyzz/web'; export const fade=keyframes({from:{opacity:1},to:{opacity:0}},{id:'same'})",
+      },
+    }),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Source.ExtractError: b.ts:0: Conflicting animation identity: z-kid-73-61-6d-65; compile libraries with package-qualified module IDs.]`,
   )
 })

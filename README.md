@@ -90,7 +90,7 @@ await using host = await Host.create({
 await host.build()
 ```
 
-The CLI writes CSS stylesheets and CSS source maps to `dist`. Original source stays executable; declarations that need independent identities require explicit IDs. See [CLI](docs/introduction/cli.md).
+The CLI compiles source modules and CSS to `dist` by default. Add `--css-only` to emit CSS and CSS maps for original source; declarations that need independent identities then require explicit IDs. See [CLI](docs/introduction/cli.md).
 
 For watching, keep the scope alive until shutdown:
 

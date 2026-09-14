@@ -12,6 +12,10 @@ const args = z.object({
   src: z.string().optional().describe('Source directory (default: src)'),
 })
 const options = z.object({
+  'css-only': z
+    .boolean()
+    .default(false)
+    .describe('Emit only CSS and CSS maps without source transformation'),
   minify: z.boolean().default(false).describe('Minify emitted CSS'),
   'out-dir': z.string().default('dist').describe('Output directory'),
   'package-id': z
@@ -24,7 +28,7 @@ const { version } = JSON.parse(
 ) as { version: string }
 
 await Cli.create('zyzz', {
-  description: 'Extract static CSS without writing source modules.',
+  description: 'Compile source modules and CSS, or extract CSS only.',
   version,
 })
   .command('build', {
@@ -143,9 +147,9 @@ async function open(context: open.Context) {
   const packageId = context.options['package-id'] ?? (await identity())
 
   return Host.create({
-    compiler: false,
+    compiler: !context.options['css-only'],
     css: { minify: context.options.minify },
-    modules: false,
+    modules: !context.options['css-only'],
     outDir: Path.resolve(context.options['out-dir']),
     packageId,
     root: Path.resolve(context.args.src ?? 'src'),

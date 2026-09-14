@@ -16,12 +16,13 @@ npx zyzz dev
 
 ## Defaults and Options
 
-| Argument / Flag | Default                                           | Contract                                   |
-| --------------- | ------------------------------------------------- | ------------------------------------------ |
-| `[src]`         | `src`                                             | Authored JavaScript/TypeScript module tree |
-| `--minify`      | Off                                               | Minify emitted CSS with Lightning CSS      |
-| `--out-dir`     | `dist`                                            | Owned output directory                     |
-| `--package-id`  | Working directory's package name, otherwise `app` | Stable identity for compiled modules       |
+| Argument / Flag | Default                                           | Contract                                                  |
+| --------------- | ------------------------------------------------- | --------------------------------------------------------- |
+| `[src]`         | `src`                                             | Authored JavaScript/TypeScript module tree                |
+| `--css-only`    | Off                                               | Disable source transformation; emit only CSS and CSS maps |
+| `--minify`      | Off                                               | Minify emitted CSS with Lightning CSS                     |
+| `--out-dir`     | `dist`                                            | Owned output directory                                    |
+| `--package-id`  | Working directory's package name, otherwise `app` | Stable identity for compiled modules                      |
 
 Paths resolve from the working directory. Both commands share these options. Browser syntax is preserved without compatibility targets. No configuration file is required; normal source imports provide configured authoring helpers.
 
@@ -35,6 +36,8 @@ Use `--help` for command help and `--json` for a build result containing `change
 ## Output and Watching
 
 For `src/button.ts`, the host emits `dist/button.ts`, `button.ts.css`, maps, and packed metadata. Shared stylesheet contributions use `zyzz.shared.css`. Load shared CSS before module CSS. Downstream tooling lowers TypeScript/JSX and emits declarations; this command does not bundle the application or generate declarations.
+
+`--css-only` retains the original source and omits transformed modules, JavaScript/TypeScript maps, and packed module metadata. Runtime authoring requires explicit IDs for identity-bearing declarations. CSS maps and output ownership metadata remain.
 
 Missing source directories and compilation failures produce a nonzero build exit. Watch compilation errors preserve the last successful output and allow subsequent edits to recover, including an invalid initial source tree. Ctrl-C and SIGTERM stop watching, drain pending publication, and release the output lock.
 

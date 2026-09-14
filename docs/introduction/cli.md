@@ -1,15 +1,26 @@
 # CLI Setup
 
-Extract styles while building the original application source normally:
+Compile source modules and stylesheets:
 
 ```sh
 npx zyzz build
 npx zyzz dev
 ```
 
-Both commands read `src` and write CSS and CSS source maps to `dist`. They do not write rewritten TypeScript, JavaScript, declarations, or module metadata. `build` runs once; `dev` builds immediately and watches the source tree.
+Both commands read `src` and write transformed source modules, CSS, source maps, and packed metadata to `dist`. The compiler supplies automatic identities. Downstream tooling lowers the emitted TypeScript/JSX and bundles the application. `build` runs once; `dev` builds immediately and watches the source tree.
 
-Load `zyzz.shared.css` when present, followed by the emitted module stylesheets. The application continues importing its original source modules.
+## CSS Only
+
+Disable source transformation and emit only CSS and CSS maps:
+
+```sh
+npx zyzz build --css-only
+npx zyzz dev --css-only
+```
+
+In this mode, build the original application source normally. Identity-bearing declarations require explicit IDs.
+
+Load `zyzz.shared.css` when present, followed by the emitted module stylesheets. With `--css-only`, the application continues importing its original source modules.
 
 ```ts
 import { css, variable } from 'zyzz'
@@ -51,7 +62,7 @@ Disable source optimization while retaining CSS delivery:
 export default { plugins: [zyzz({ compiler: false })] }
 ```
 
-This mode follows the same explicit-ID requirements as the standalone CLI. The plugin and CLI are alternative CSS delivery paths; running both for the same application is unnecessary.
+This mode follows the same explicit-ID requirements as `zyzz build --css-only`. The plugin and CLI are alternative CSS delivery paths; running both for the same application is unnecessary.
 
 ## Watching
 

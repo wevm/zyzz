@@ -3,7 +3,6 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Vite from 'vite'
 import { Host } from 'zyzz/node'
-import { targets } from 'zyzz/vite'
 
 const root = Path.resolve(import.meta.dirname, '..')
 const outDir = Path.join(root, '.zyzz')
@@ -24,7 +23,12 @@ try {
   await host.close()
 }
 
-await Vite.build({ configFile: false, plugins: [targets()], root })
+// Without the Zyzz Vite plugin, the CSS target must keep light-dark() intact for inherited scheme changes.
+await Vite.build({
+  build: { cssTarget: ['chrome123', 'firefox120', 'safari17.5'] },
+  configFile: false,
+  root,
+})
 
 /** Imports the shared stylesheet before module stylesheets, skipping modules without local styles. */
 async function stylesheet(files: readonly string[]) {

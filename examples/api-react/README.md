@@ -12,7 +12,6 @@ Neither the CLI nor a Vite plugin is involved. `scripts/build.ts` drives compila
 ```ts
 import * as Vite from 'vite'
 import { Host } from 'zyzz/node'
-import { targets } from 'zyzz/vite'
 
 const host = await Host.create({ outDir, packageId: 'api-react', root })
 try {
@@ -22,7 +21,7 @@ try {
   await host.close()
 }
 
-await Vite.build({ configFile: false, plugins: [targets()], root })
+await Vite.build({ configFile: false, root })
 ```
 
 `scripts/dev.ts` uses `host.watch` instead. Each successful build regenerates the stylesheet index, and the Vite dev server starts after the first one.
@@ -33,7 +32,7 @@ await Vite.build({ configFile: false, plugins: [targets()], root })
 
 Authored source stays unaware of compiled artifacts. Relative imports inside compiled modules resolve within `.zyzz`, so this example keeps assets out of `src`.
 
-Both scripts pass `plugins: [targets()]` from `zyzz/vite`, a configuration-only plugin that supplies the browser targets `zyzz()` would otherwise supply. Without it, Vite's default target lowers `light-dark()` and inherited scheme changes stop working.
+Both scripts pass `build.cssTarget` for Chrome 123, Firefox 120, and Safari 17.5. The Zyzz Vite plugin applies these targets itself; without it, Vite's default target lowers `light-dark()` and inherited scheme changes stop working.
 
 The root theme lives on `<html>`. `src/appearance.ts` applies the default selection, inserts the config's `script()` so a selection saved in localStorage wins before anything renders, and persists changes. A server-rendered document inlines the same script in `<head>` instead.
 

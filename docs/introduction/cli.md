@@ -64,14 +64,6 @@ export default { plugins: [zyzz({ compiler: false })] }
 
 This mode follows the same explicit-ID requirements as `zyzz build --css-only`. The plugin and CLI are alternative CSS delivery paths; running both for the same application is unnecessary.
 
-When Vite bundles CLI output instead, add `targets()` so theme colours keep native `light-dark()`. Vite's default CSS target lowers it into helpers that inline and inherited color-scheme changes cannot initialize.
-
-```ts
-import { targets } from 'zyzz/vite'
-
-export default { plugins: [targets()] }
-```
-
 ## Watching
 
 Compilation errors preserve the last successful stylesheets and recover after valid edits. Ctrl-C and SIGTERM stop watching and release the output lock. Cleanup removes only unchanged owned artifacts and preserves unrelated files.

@@ -4,16 +4,7 @@
  */
 import type { Plugin } from 'vite'
 import { describe, expectTypeOf, test } from 'vite-plus/test'
-import { targets, zyzz } from 'zyzz/vite'
-
-describe('targets', () => {
-  test('returns a Vite plugin without options', () => {
-    expectTypeOf(targets()).toEqualTypeOf<Plugin>()
-
-    // @ts-expect-error Browser targets come from the existing Vite configuration.
-    targets({ cssTarget: 'chrome123' })
-  })
-})
+import { zyzz } from 'zyzz/vite'
 
 describe('zyzz', () => {
   test('returns a Vite plugin and rejects unsupported options', () => {

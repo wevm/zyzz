@@ -8,12 +8,26 @@ The option is planned, not implemented. It is independent of renderer `output: '
 
 Preserve the accepted CLI direction: emit CSS only, with an optional compiler plugin and explicit IDs for identity-bearing declarations when that plugin is disabled. Whether the plugin is enabled by default remains provisional. CSS output mode must work through either path.
 
-### Implementation Order
+### Implementation PR Stack
 
-1. **Configuration and identity:** add the inferred option, default, invalid-option diagnostics, and immutable propagation through aliases, theme handles, extraction, and versioned packed contracts. Include mode in cache/output identity; independently compiled libraries retain their defining mode.
-2. **Emission:** implement atomic declarations and explicit grouped blocks through the shared emitter. Define deterministic naming, safe deduplication, reachability, and source tracing for both. Preserve stylesheet contributions and semantic declaration sequences.
-3. **Composition and delivery:** retain `cx` precedence, variants, selectors, dynamic slots, and packed bindings across both modes and mixed-mode libraries. Align CLI extraction, runtime naming without the plugin, and compiler output.
-4. **Acceptance and measurement:** verify browser equivalence, source/packed consumers, watch changes, framework delivery, and matched output/render benchmarks before promoting the option from planned documentation.
+Stack these PRs in order. The first targets #149's branch while that documentation PR is open, otherwise main. Each subsequent PR targets the preceding implementation branch. These are planned PR titles, not opened implementation PRs.
+
+| PR | Proposed title | Scope | Acceptance before merge |
+| --- | --- | --- | --- |
+| A1 | `feat: add atomic and grouped css emitters` | Add explicit modes at the shared compiler boundary, atomic as its default, declaration/block emission, deterministic identity, safe sharing, and CSS source maps. Preserve global rules, keyframes, descriptors, registrations, and theme scopes. | Public compiler integrations verify both representations, omitted-mode parity, repeated/unique declarations, fallback sequences, importance, and unchanged stylesheet contributions. Record emitter timing and delivery deltas. |
+| A2 | `fix: preserve cascade across css output modes` | Extend both emitters for shorthand resets, partial longhand overrides, logical/physical overlap, `all`, repeated A/B/A declarations, nested selectors, layers, and overlapping conditions. Keep reference-only identities separate from declaration sharing. | Independent browser CSS controls verify equivalent computed styles and selector specificity in both modes. Atomic mode uses contextual atoms or proven normalization without grouped fallback. |
+| A3 | `feat: configure css output on authoring helpers` | Add `Config.create({ cssOutput })`, inference, structural diagnostics, and propagation through bound styles, variants, theme handles, source extraction, aliases, and re-exports. Align root defaults, cache identities, and generated props/classes with the selected mode. | Consumer types reject invalid modes; source-to-CSS integrations prove atomic defaults, grouped opt-in, renderer independence, dynamic slots, finite variants, source tracing, and mode-switch invalidation. No accepted option is silently ignored. |
+| A4 | `feat: preserve css output across packed composition` | Version packed contracts to retain defining modes and matching identities. Preserve static/dynamic `cx`, defaults, compounds, conditional choices, payload bindings, and mixed-mode library composition. Define compatibility diagnostics for older contracts where needed. | Independent packed consumers exercise all four producer/consumer mode combinations, declaration inference, duplicate runtimes, stylesheet loading order, partial overrides, and removal of stale bindings. No runtime CSS generation or metadata leakage. |
+| A5 | `feat: align css output across cli and compiler paths` | Integrate both modes with the accepted CSS-only CLI and optional compiler plugin. Share extraction/runtime naming, explicit-ID requirements without the plugin, asset/maps delivery, and owned-output recovery. Reconcile #148 and any already-landed CLI redesign rather than duplicate that work. | Real standalone and plugin consumers produce matching classes and behavior in both modes. Exercise explicit IDs, missing-ID diagnostics, defaults, build/watch, configuration changes, add/edit/remove/rename, failure preservation, and cleanup. Keep plugin default provisional until resolved. |
+| A6 | `test: accept configurable css output across web frameworks` | Complete React, Solid, Svelte, HTML, and Next.js Webpack/Turbopack acceptance; run matched production rendering and full-delivery benchmarks for both modes. Reconcile the gate below and promote only verified docs. | Development/production, packed consumers, SSR/hydration or HTML serialization, source maps, navigation, and refresh/recovery pass. Report raw/gzip/Brotli CSS/JS/class/attribute bytes, total delivery, rule counts, compile/watch and render costs with every comparison lane and existing gate retained. |
+
+A1 → A2 → A3 → A4 → A5 → A6 is the review order. Keep dependent PRs draft while their required behavior or checks remain incomplete. Every PR includes focused integration evidence and a small usage/output example; A6 consolidates evidence rather than postponing correctness tests.
+
+A1 and A2 own the pure emitter boundary. A3 exposes the config option only after both representations preserve supported semantics. If an intermediate default change would break source or packed consumers, keep that slice stacked and unmerged until its dependent compatibility work passes.
+
+A5 depends on the CSS-only CLI design. Reuse #148's work if it has landed; otherwise include the required redesign in A5 or explicitly stack it on that prerequisite before opening. Do not make untransformed runtime support an implicit dependency with no owner.
+
+This stack brings 3.9's web emission work forward and owns the related CLI parity slice. Native PRs 3.7–3.8 and unrelated distribution work follow; this stack does not close their acceptance gates.
 
 ### Acceptance Gate
 

@@ -28,6 +28,31 @@ export function read(
   )
     throw new Error('Unsupported Zyzz contract version.')
 
+  const legacyModes = new Map<string, 'atomic' | 'grouped'>()
+  if ((data.version as number) < 17) {
+    function collect(value: unknown) {
+      const entry = record(value)
+      if (entry.options !== undefined && entry.theme !== undefined) {
+        const options = record(entry.options)
+        if (options.cssOutput !== undefined) {
+          if (options.cssOutput !== 'atomic' && options.cssOutput !== 'grouped')
+            throw new Error('Invalid packed CSS output mode.')
+          const theme = record(record(data.themes)[string(entry.theme)])
+          const identity = string(theme.identity)
+          const previous = legacyModes.get(identity)
+          if (previous !== undefined && previous !== options.cssOutput)
+            throw new Error(
+              'Conflicting packed CSS output modes for one theme identity.',
+            )
+          legacyModes.set(identity, options.cssOutput)
+        }
+      }
+      for (const member of Object.values(record(entry.members ?? {})))
+        collect(member)
+    }
+    for (const entry of Object.values(record(data.exports))) collect(entry)
+  }
+
   const themes: Record<string, Theme.Definition> = Object.create(null)
   const types: Record<string, string> = Object.create(null)
 
@@ -40,7 +65,10 @@ export function read(
       entry.cssOutput !== 'grouped'
     )
       throw new Error('Invalid packed CSS output mode.')
-    const cssOutput = entry.cssOutput as 'atomic' | 'grouped' | undefined
+    const cssOutput = (entry.cssOutput ?? legacyModes.get(identity)) as
+      | 'atomic'
+      | 'grouped'
+      | undefined
 
     const shorthands =
       entry.shorthands !== undefined

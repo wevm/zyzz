@@ -123,9 +123,22 @@ export const props=card();`,
     for (const cssOutput of ['atomic', 'grouped'] as const) {
       const source = `import {Config,cx} from 'zyzz';const {css}=Config.create({cssOutput:'${cssOutput}'});const a=css({color:'red',padding:'8px'});const b=css({paddingLeft:'2px'});export const props=cx(a(),b());`
       const extracted = Source.extract({ moduleId: 'config.ts', source })
-      expect(
-        extracted.styles.styles.every(Object.isFrozen),
-      ).toMatchInlineSnapshot(`false`)
+      function frozen(
+        style: (typeof extracted.styles.styles)[number],
+      ): boolean {
+        return (
+          Object.isFrozen(style) &&
+          Object.isFrozen(style.declarations) &&
+          (!style.rules ||
+            (Object.isFrozen(style.rules) &&
+              style.rules.every(
+                (rule) => Object.isFrozen(rule) && frozen(rule.style),
+              )))
+        )
+      }
+      expect(extracted.styles.styles.every(frozen)).toMatchInlineSnapshot(
+        `true`,
+      )
       if (cssOutput === 'atomic')
         expect(extracted.styles.styles.map((style) => style.cssOutput))
           .toMatchInlineSnapshot(`
@@ -197,21 +210,21 @@ export const props=card();`,
       `true`,
     )
   })
-})
 
-test('rejects invalid style output metadata through the public emitter', () => {
-  const extracted = Source.extract({
-    moduleId: 'invalid.ts',
-    source: "import {css} from 'zyzz'; css({color:'red'})",
+  test('rejects invalid style output metadata through the public emitter', () => {
+    const extracted = Source.extract({
+      moduleId: 'invalid.ts',
+      source: "import {css} from 'zyzz'; css({color:'red'})",
+    })
+    const styles = {
+      ...extracted.styles,
+      styles: extracted.styles.styles.map((style) => ({
+        ...style,
+        cssOutput: 'invalid' as 'atomic',
+      })),
+    }
+    expect(() => Css.compile({ styles })).toThrowErrorMatchingInlineSnapshot(
+      `[Css.CompileError: ["style-1snulh75pd83z-26","cssOutput"]: cssOutput must be atomic or grouped.]`,
+    )
   })
-  const styles = {
-    ...extracted.styles,
-    styles: extracted.styles.styles.map((style) => ({
-      ...style,
-      cssOutput: 'invalid' as 'atomic',
-    })),
-  }
-  expect(() => Css.compile({ styles })).toThrowErrorMatchingInlineSnapshot(
-    `[Css.CompileError: ["style-1snulh75pd83z-26","cssOutput"]: cssOutput must be atomic or grouped.]`,
-  )
 })

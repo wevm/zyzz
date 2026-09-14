@@ -8,7 +8,11 @@ describe('dynamic callbacks', () => {
   bench(
     'compile',
     () => {
-      Transform.compile({ moduleId: 'variables.ts', source })
+      Transform.compile({
+        cssOutput: 'grouped',
+        moduleId: 'variables.ts',
+        source,
+      })
     },
     { time: 200, warmupTime: 100 },
   )

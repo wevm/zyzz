@@ -198,4 +198,29 @@ describe('compile', () => {
       expect(output.contributionCss).toMatchInlineSnapshot(`"body{margin:0;}"`)
     }
   })
+  test('keeps factored slots distinct from suffix-like authored names', () => {
+    const styles = Style.define({
+      card: { color: 'red', padding: '1px' },
+      'card-1': { margin: '2px' },
+      card_s1: { display: 'block' },
+      x: { color: 'red' },
+    })
+    expect(
+      Css.compile({ composition: 'independent', cssOutput: 'grouped', styles }),
+    ).toMatchInlineSnapshot(`
+      {
+        "classes": {
+          "card": "g-card g-card_s1",
+          "card-1": "g-card-1",
+          "card_s1": "g-card_5f_s1",
+          "x": "g-card",
+        },
+        "css": ".g-card{color:red;}
+      .g-card_s1{padding:1px;}
+      .g-card-1{margin:2px;}
+      .g-card_5f_s1{display:block;}",
+        "themes": {},
+      }
+    `)
+  })
 })

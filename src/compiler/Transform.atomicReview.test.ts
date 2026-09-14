@@ -80,24 +80,24 @@ describe('compile', () => {
       await browser.close()
     }
   })
-})
 
-test('development class names survive offsets and declaration insertion', () => {
-  const source = (value: string, added = '') =>
-    `import {css} from 'zyzz'; const first=css({color:'${value}'}); const second=css({${added}color:'blue',padding:'8px'})`
-  const before = Transform.compile({
-    development: true,
-    moduleId: 'dev.ts',
-    source: source('red'),
+  test('development class names survive offsets and declaration insertion', () => {
+    const source = (value: string, added = '') =>
+      `import {css} from 'zyzz'; const first=css({color:'${value}'}); const second=css({${added}color:'blue',padding:'8px'})`
+    const before = Transform.compile({
+      development: true,
+      moduleId: 'dev.ts',
+      source: source('red'),
+    })
+    const after = Transform.compile({
+      development: true,
+      moduleId: 'dev.ts',
+      source: source('rebeccapurple', "display:'block',"),
+    })
+    const previous = Object.values(before.classes)[1]!.split(' ')
+    const current = Object.values(after.classes)[1]!.split(' ')
+    expect(
+      previous.every((name) => current.includes(name)),
+    ).toMatchInlineSnapshot('true')
   })
-  const after = Transform.compile({
-    development: true,
-    moduleId: 'dev.ts',
-    source: source('rebeccapurple', "display:'block',"),
-  })
-  const previous = Object.values(before.classes)[1]!.split(' ')
-  const current = Object.values(after.classes)[1]!.split(' ')
-  expect(
-    previous.every((name) => current.includes(name)),
-  ).toMatchInlineSnapshot('true')
 })

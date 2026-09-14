@@ -136,6 +136,24 @@ export async function verify(options: verify.Options) {
       if (production) {
         await server!.close()
         server = undefined
+        const directory = Path.join(root, 'server-dist')
+        await Vite.build({
+          ...config,
+          build: {
+            ...config.build,
+            outDir: directory,
+            ssr: Path.join(root, 'server.tsx'),
+          },
+          ssr: { noExternal: ['@acme/variants'] },
+        })
+        const productionServer = (await import(
+          Url.pathToFileURL(Path.join(directory, 'server.js')).href
+        )) as typeof ssr
+        const rendered = await productionServer.render()
+        await Fs.writeFile(
+          Path.join(root, 'index.html'),
+          `<!doctype html><html><head>${rendered.script}</head><body><div id="app">${rendered.html}</div><button id="dispose">Dispose</button><script type="module" src="/client.tsx"></script></body></html>`,
+        )
         await Vite.build(config)
         preview = await Vite.preview({
           ...config,

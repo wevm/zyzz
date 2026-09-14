@@ -212,16 +212,16 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
       .z-p-8px-WdHWIJ{padding:8px;}"
     `)
     expect(development.modules['card.ts']!.css).toMatchInlineSnapshot(`
-      ".z-text-79yxGv-0{color:red;}
-      .z-p-79yxGv-1{padding:8px;}"
+      ".z-text-td32HT-0{color:red;}
+      .z-p-td32HT-0{padding:8px;}"
     `)
     expect(edited.modules['card.ts']!.css).toMatchInlineSnapshot(`
-      ".z-text-79yxGv-0{color:tan;}
-      .z-p-79yxGv-1{padding:8px;}"
+      ".z-text-td32HT-0{color:tan;}
+      .z-p-td32HT-0{padding:8px;}"
     `)
     expect(edited.modules['card.ts']!.classes).toMatchInlineSnapshot(`
       {
-        "style-1slxe42dbli7u-43": "z-text-79yxGv-0 z-p-79yxGv-1 z-style-1slxe42dbli7u-43",
+        "style-1slxe42dbli7u-43": "z-text-td32HT-0 z-p-td32HT-0 z-style-1slxe42dbli7u-43",
       }
     `)
     expect(compiler.compile({ modules }).modules['card.ts']!.css)

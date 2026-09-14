@@ -31,7 +31,7 @@ describe('compile', () => {
         source: `import {customMedia} from 'zyzz/web';export const query=customMedia('(width>1px)',{within:['@layer queries']});`,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Source.ExtractError: query.ts:56: Stylesheet contributions require direct module-level calls and constant named stylesheet bindings.]`,
+      `[Source.ExtractError: query.ts:56: Custom media definitions do not accept a within context.]`,
     )
   })
   test('rejects conflicting packed customMedia identities', () => {

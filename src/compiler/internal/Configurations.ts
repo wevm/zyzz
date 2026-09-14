@@ -2,6 +2,7 @@
  * Normalizes literal configuration syntax into linked theme members.
  * @module
  */
+import * as Identity from '../../internal/Identity.js'
 import type * as Ast from '@oxc-project/types'
 import * as Config from '../../Config.js'
 import * as Shorthands from '../../internal/Shorthands.js'
@@ -96,8 +97,12 @@ export function collect(options: collect.Options): Themes.Link {
     return {}
   })()
 
+  const identity =
+    input.id === undefined
+      ? options.name
+      : Identity.requireId(input.id, 'Config.create')
   const contract = Object.freeze({
-    [Token.identity]: options.name,
+    [Token.identity]: identity,
     ...(input.shorthands
       ? { shorthands: Shorthands.read(input.shorthands) }
       : {}),
@@ -106,7 +111,7 @@ export function collect(options: collect.Options): Themes.Link {
   const members: Record<string, Themes.Link> = Object.create(null)
 
   for (const [key, original] of Object.entries(catalog)) {
-    const name = `${options.name}-${key}`
+    const name = `${identity}-${key}`
     const definition = Token.bind(original, contract)
     const tokenType = type({
       ...values(original.tokens),

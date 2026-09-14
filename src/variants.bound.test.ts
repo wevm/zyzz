@@ -112,7 +112,10 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
       `
       ".z_theme-u8smm21l81sow-variants-theme{--z-tu8smm21l81sow-variants-color_2e_brand:#06c;}
-      .z-style-1e8a67z1uaws1j-110{padding-left:8px;padding-right:8px;&:where([data-intent="primary"]){color:var(--z-tu8smm21l81sow-variants-color_2e_brand,#06c);}&:where([data-intent="quiet"]){color:black;}}"
+      .z-style-1e8a67z1uaws1j-110-paddingLeft-0-vd0zxi7jsl3o{padding-left:8px;}
+      .z-style-1e8a67z1uaws1j-110-paddingRight-1-tfiolz82kjxr{padding-right:8px;}
+      .z-style-1e8a67z1uaws1j-110-color-2-1kt9ocdyuenet{&:where([data-intent="primary"]){color:var(--z-tu8smm21l81sow-variants-color_2e_brand,#06c);}}
+      .z-style-1e8a67z1uaws1j-110-color-3-169eeuj99p389{&:where([data-intent="quiet"]){color:black;}}"
     `,
     )
     expect(
@@ -120,7 +123,7 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
     ).toMatchInlineSnapshot('true')
     expect(
       JSON.parse(publisher.contracts['config.ts']!).version,
-    ).toMatchInlineSnapshot('15')
+    ).toMatchInlineSnapshot(`17`)
     const bundled = await Esbuild.build({
       stdin: {
         contents: result.modules['app.ts']!.code,
@@ -199,12 +202,12 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
     )
     expect(module.exports.a()).toMatchInlineSnapshot(`
       {
-        "className": "z-1e8a67z1uaws1j-base0 z-style-1e8a67z1uaws1j-117",
+        "className": "z-1e8a67z1uaws1j-base-color-19yohqz1e5ch5r z-style-1e8a67z1uaws1j-117",
       }
     `)
     expect(module.exports.b()).toMatchInlineSnapshot(`
       {
-        "className": "z-1e8a67z1uaws1j-base0 z-style-1e8a67z1uaws1j-172",
+        "className": "z-1e8a67z1uaws1j-base-color-19yohqz1e5ch5r z-style-1e8a67z1uaws1j-172",
       }
     `)
   })

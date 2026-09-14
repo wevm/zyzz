@@ -7,10 +7,13 @@ import * as Util from 'node:util'
 import { Graph } from 'zyzz/compiler'
 
 /** Shared publisher sources, including bound factories and renamed namespace exports. */
-export function sources(output: 'html' | 'react' = 'react') {
+export function sources(
+  output: 'html' | 'react' = 'react',
+  cssOutput?: 'atomic' | 'grouped',
+) {
   return {
     '@acme/variants/config.ts': `import {Config} from 'zyzz';
-export const {css,variants,theme}=Config.create({${output === 'html' ? "output:'html'," : ''}theme:{color:{brand:{light:'#0066cc',dark:'#99ccff'}},breakpoints:{wide:'600px'}},shorthands:{px:['paddingLeft','paddingRight']}});`,
+export const {css,variants,theme}=Config.create({${cssOutput ? `cssOutput:'${cssOutput}',` : ''}${output === 'html' ? "output:'html'," : ''}theme:{color:{brand:{light:'#0066cc',dark:'#99ccff'}},breakpoints:{wide:'600px'}},shorthands:{px:['paddingLeft','paddingRight']}});`,
     '@acme/variants/styles.ts': `import {css,variants} from './config.js';
 export namespace styles {
   export const button=variants({
@@ -28,10 +31,14 @@ export {styles as controls} from './styles.js';`,
 }
 
 /** Packs all finite alternatives and compiler metadata into a source-free npm archive. */
-export async function create(root: string, output: 'html' | 'react' = 'react') {
+export async function create(
+  root: string,
+  output: 'html' | 'react' = 'react',
+  cssOutput?: 'atomic' | 'grouped',
+) {
   const directory = Path.join(root, 'publisher')
   await Fs.mkdir(directory, { recursive: true })
-  const inputs = sources(output)
+  const inputs = sources(output, cssOutput)
   const compiled = Graph.compile({ modules: inputs })
   await Fs.mkdir(Path.join(root, 'node_modules'), { recursive: true })
   const exec = Util.promisify(ChildProcess.execFile)

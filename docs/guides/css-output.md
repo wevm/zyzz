@@ -1,7 +1,7 @@
 # CSS Output
 
 > [!NOTE]
-> Configurable output is supported by the shared compiler and source config. Packed composition and the CSS-only CLI retain separate acceptance gates.
+> Configurable output is supported by the shared compiler, source config, and version 17 packed contracts. The CSS-only CLI and complete framework/benchmark acceptance remain planned.
 
 Choose the CSS representation on the authoring config:
 
@@ -76,7 +76,7 @@ Global rules, keyframes, property registrations, font descriptors, and theme sco
 
 The planned CSS-only CLI and optional compiler plugin use the same mode and naming contract. Disabling the plugin requires explicit IDs for identity-bearing declarations. The plugin's default remains provisional; its presence does not select the CSS representation.
 
-Packed libraries retain their defining mode and matching class/CSS metadata. Consumer configuration does not reinterpret published classes. Mixed-mode composition, independent loading, source maps, and watch-mode changes must pass acceptance before release.
+Version 17 packed libraries retain their defining mode and matching class/CSS metadata. Consumer configuration does not reinterpret published classes. Archive fixtures verify all producer/consumer mode pairs, dynamic composition, and both stylesheet orders. Complete framework lifecycle and watch acceptance remain open.
 
 Minification and browser-target processing remain separate. Final processing may shorten or merge equivalent syntax while preserving class identity and behavior; it does not change the selected authoring mode.
 

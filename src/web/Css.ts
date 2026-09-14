@@ -367,12 +367,14 @@ export function compile<
     const names: string[] = []
     let ordinal = 0
 
-    function emit(body: string, label: string, shared: boolean) {
+    function emit(body: string, label: string, shared: boolean, output = mode) {
       if (!body) return
 
       const independent =
-        mode === 'grouped' && options.composition === 'independent'
-      const key = `${mode}:${body}`
+        mode === 'grouped' &&
+        output === mode &&
+        options.composition === 'independent'
+      const key = `${output}:${body}`
       const previous = shared || independent ? identical.get(key) : undefined
       if (previous) {
         names.push(previous)
@@ -398,6 +400,14 @@ export function compile<
       style: Style.NamedStyle,
       conditions: readonly string[] = [],
     ) {
+      if (style.cssOutput === 'grouped') {
+        const body = conditions.reduceRight(
+          (body, condition) => `${condition}{${body}}`,
+          nested(style),
+        )
+        emit(body, 'style', false, 'grouped')
+        return
+      }
       if (style.rules) {
         for (const rule of style.rules)
           atoms(

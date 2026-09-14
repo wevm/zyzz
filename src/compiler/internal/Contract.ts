@@ -22,7 +22,7 @@ export function read(
 ) {
   const data = record(JSON.parse(source))
   if (
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].includes(
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].includes(
       data.version as number,
     )
   )
@@ -34,6 +34,14 @@ export function read(
   for (const [name, value] of Object.entries(record(data.themes))) {
     const entry = record(value)
     const identity = string(entry.identity)
+    if (
+      entry.cssOutput !== undefined &&
+      ((data.version as number) < 17 ||
+        (entry.cssOutput !== 'atomic' && entry.cssOutput !== 'grouped'))
+    )
+      throw new Error('Invalid packed CSS output mode.')
+    const cssOutput = entry.cssOutput as 'atomic' | 'grouped' | undefined
+
     const shorthands =
       entry.shorthands !== undefined
         ? Shorthands.read(entry.shorthands)
@@ -48,11 +56,17 @@ export function read(
         'Conflicting packed shorthand mappings for one theme identity.',
       )
 
+    if (contract && contract.cssOutput !== cssOutput)
+      throw new Error(
+        'Conflicting packed CSS output modes for one theme identity.',
+      )
+
     if (!contract) {
       contract = Object.freeze({
         ...(entry.shorthands !== undefined
           ? { shorthands: Shorthands.read(entry.shorthands) }
           : {}),
+        ...(cssOutput ? { cssOutput } : {}),
         [Token.complete]: true,
         [Token.identity]: identity,
       })
@@ -145,7 +159,7 @@ export function read(
       const name = string(entry.name)
       const reference = string(entry.reference)
       if (
-        ![9, 10, 11, 12, 13, 14, 15, 16].includes(data.version as number) ||
+        ![9, 10, 11, 12, 13, 14, 15, 16, 17].includes(data.version as number) ||
         ![
           'cssFunction',
           'customMedia',
@@ -192,8 +206,13 @@ export function read(
     }
 
     if (entry.kind === 'style-reference') {
-      if (entry.style !== undefined && data.version !== 16)
-        throw new Error('Packed callable styles require contract version 16.')
+      if (
+        entry.style !== undefined &&
+        ![16, 17].includes(data.version as number)
+      )
+        throw new Error(
+          'Packed callable styles require contract version 16 or 17.',
+        )
       const binding = string(entry.binding)
       if (!/^z-style-[a-z0-9_-]+$/.test(binding))
         throw new Error('Invalid style reference identity.')
@@ -220,7 +239,13 @@ export function read(
         kind: 'style-reference',
         ...(entry.style === undefined
           ? {}
-          : { style: PackedStyles.read(entry.style, themes) }),
+          : {
+              style: PackedStyles.read(
+                entry.style,
+                themes,
+                data.version as number,
+              ),
+            }),
         ...(members ? { members } : {}),
       }
     }
@@ -255,7 +280,19 @@ export function read(
       entry.options === undefined ? undefined : record(entry.options)
 
     if (options) {
+      if (options.cssOutput !== undefined && (data.version as number) < 17)
+        throw new Error(
+          'Packed CSS output options require contract version 17.',
+        )
       Config.create(options as Config.create.Options)
+      if (
+        (data.version as number) >= 17 &&
+        (options.cssOutput ?? 'atomic') !==
+          (definition[Token.definition].contract.cssOutput ?? 'atomic')
+      )
+        throw new Error(
+          'Configuration CSS output disagrees with linked theme metadata.',
+        )
 
       if (
         Shorthands.signature(options.shorthands) !==
@@ -469,6 +506,9 @@ export function write(
           ...(theme[Token.definition].contract.shorthands
             ? { shorthands: theme[Token.definition].contract.shorthands }
             : {}),
+          ...(theme[Token.definition].contract.cssOutput
+            ? { cssOutput: theme[Token.definition].contract.cssOutput }
+            : {}),
           identity: theme[Token.definition].contract[Token.identity],
           tokens: input(theme),
         },
@@ -478,7 +518,13 @@ export function write(
       function callable(link: Themes.Link): boolean {
         return !!link.style || Object.values(link.members ?? {}).some(callable)
       }
-      if (Object.values(links).some(callable)) return 16
+      if (
+        Object.values(links).some(callable) ||
+        Object.values(themes).some(
+          (theme) => theme[Token.definition].contract.cssOutput,
+        )
+      )
+        return 17
       if (Object.values(links).some((link) => link.call.recipe)) return 15
       if (Object.values(links).some((link) => link.kind === 'variables'))
         return 14

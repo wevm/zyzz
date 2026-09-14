@@ -230,7 +230,7 @@ variant({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version,
-        ).toMatchInlineSnapshot('16')
+        ).toMatchInlineSnapshot(`17`)
       } finally {
         await browser.close()
         if (server)

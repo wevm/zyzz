@@ -23,7 +23,7 @@ export const { css, theme } = Config.create({
 ### options.cssOutput
 
 > [!NOTE]
-> Supported by source compilation. Packed mode retention and CLI redesign retain their separate acceptance gates.
+> Supported by source compilation and version 17 packed contracts. The CSS-only CLI redesign and complete framework/benchmark acceptance remain planned.
 
 - Type: `'atomic' | 'grouped'`
 - Default: `'atomic'`

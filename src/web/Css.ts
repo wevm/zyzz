@@ -289,7 +289,17 @@ export function compile<
     return input as number | string
   }
 
+  const bodies = new Map<Style.NamedStyle, string>()
+
   function nested(style: Style.NamedStyle): string {
+    const previous = bodies.get(style)
+    if (previous !== undefined) return previous
+    const body = renderNested(style)
+    bodies.set(style, body)
+    return body
+  }
+
+  function renderNested(style: Style.NamedStyle): string {
     if (style.rules)
       return style.rules
         .map((rule) => {
@@ -309,13 +319,22 @@ export function compile<
       .join('')
   }
 
+  const domainsByProperty = new Map<string, string>()
+  function conflict(property: string): string {
+    const previous = domainsByProperty.get(property)
+    if (previous !== undefined) return previous
+    const value = root(domain(canonical(property)))
+    domainsByProperty.set(property, value)
+    return value
+  }
+
   // Sharing is safe only when every use of a conflict domain has the same
   // declaration sequence. Conditions conservatively retain contextual identities.
   for (const style of analyzed) {
     const domains = new Map<string, { body: string; properties: Set<string> }>()
 
     for (const { important, property, value } of style.declarations) {
-      const key = root(domain(canonical(property)))
+      const key = conflict(property)
       const declaration = `${Literal.name(property)}:${serialize(value)}${important ? '!important' : ''};`
       const entry = domains.get(key) ?? {
         body: '',
@@ -354,7 +373,7 @@ export function compile<
   const occurrences = new Map<string, number>()
   for (const style of options.styles.styles)
     for (const declaration of style.declarations) {
-      const key = root(domain(canonical(declaration.property)))
+      const key = conflict(declaration.property)
       occurrences.set(key, (occurrences.get(key) ?? 0) + 1)
     }
 
@@ -416,7 +435,7 @@ export function compile<
       const slot = ordinal++
       const identity = (() => {
         if (mode === 'grouped')
-          return `g-${encode(style.name)}${slot ? `-${slot}` : ''}`
+          return `g-${encode(style.name)}${slot ? `_s${slot}` : ''}`
         if (shared)
           return `z_base-${label}-${hash(`${mode}:${style.name}:${slot}`)}`
 
@@ -480,7 +499,7 @@ export function compile<
         const shared =
           !nestedComposition &&
           !conditions.length &&
-          groups.get(root(domain(canonical(property)))) !== false
+          groups.get(conflict(property)) !== false
         emit(body, encode(property), shared)
       }
     }
@@ -490,7 +509,7 @@ export function compile<
         const shared: Style.Declaration[] = []
         const local: Style.Declaration[] = []
         for (const declaration of style.declarations) {
-          const key = root(domain(canonical(declaration.property)))
+          const key = conflict(declaration.property)
           const reusable =
             !style.rules &&
             options.composition === 'independent' &&

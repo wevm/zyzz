@@ -22,7 +22,7 @@ for (const count of [10, 100]) {
     bench(
       'link + extract + emit + rewrite + maps',
       () => {
-        Graph.compile({ modules })
+        Graph.compile({ cssOutput: 'grouped', modules })
       },
       {
         iterations: 30,
@@ -30,7 +30,7 @@ for (const count of [10, 100]) {
         warmupIterations: 10,
         warmupTime: 500,
         setup: async () => {
-          const output = Graph.compile({ modules })
+          const output = Graph.compile({ cssOutput: 'grouped', modules })
           const directory = await Fs.mkdtemp(
             Path.resolve('.fixture-graph-bench-'),
           )
@@ -121,24 +121,31 @@ for (const count of [10, 100]) {
           () => {
             const modules = snapshots[++iteration % 2]!
 
-            if (mode === 'full') Graph.compile({ modules })
-            else compiler.compile({ modules })
+            if (mode === 'full')
+              Graph.compile({ cssOutput: 'grouped', modules })
+            else compiler.compile({ cssOutput: 'grouped', modules })
           },
           {
             iterations: 30,
             setup: () => {
               compiler = Graph.create()
-              compiler.compile({ modules: original })
+              compiler.compile({ cssOutput: 'grouped', modules: original })
 
               // Both lanes must deliver the same complete artifacts after an edit.
-              const expected = Graph.compile({ modules: changed })
-              const actual = compiler.compile({ modules: changed })
+              const expected = Graph.compile({
+                cssOutput: 'grouped',
+                modules: changed,
+              })
+              const actual = compiler.compile({
+                cssOutput: 'grouped',
+                modules: changed,
+              })
               if (JSON.stringify(actual) !== JSON.stringify(expected))
                 throw new Error(
                   'Incremental graph artifacts differ from full compilation.',
                 )
 
-              compiler.compile({ modules: original })
+              compiler.compile({ cssOutput: 'grouped', modules: original })
               iteration = 0
             },
             time: 1000,
@@ -152,7 +159,10 @@ for (const count of [10, 100]) {
 }
 
 for (const count of [10, 100]) {
-  const library = Graph.compile({ modules: Fixture.modules })
+  const library = Graph.compile({
+    cssOutput: 'grouped',
+    modules: Fixture.modules,
+  })
   const contracts = { 'library/index.js': library.contracts['pkg/index.ts']! }
   const modules = {
     'app/card.ts': `import { style } from '@acme/theme'; ${Array.from({ length: count }, (_, index) => `export const props${index} = style({color:'brand',padding:'${index}px'})();`).join('\n')}`,
@@ -163,6 +173,7 @@ for (const count of [10, 100]) {
       'read contracts + extract + emit + rewrite + maps',
       () => {
         Graph.compile({
+          cssOutput: 'grouped',
           contracts,
           imports: { 'app/card.ts': { '@acme/theme': 'library/index.js' } },
           modules,
@@ -183,7 +194,7 @@ for (const count of [10, 100]) {
     bench(
       'normalize + link + extract + emit + rewrite + maps',
       () => {
-        Graph.compile({ modules })
+        Graph.compile({ cssOutput: 'grouped', modules })
       },
       { iterations: 30, time: 1000, warmupIterations: 10, warmupTime: 500 },
     )

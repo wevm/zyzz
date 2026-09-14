@@ -28,7 +28,7 @@ for (const workload of Fixture.cases) {
           workload,
         })
         const options = { moduleId: `composition-${workload.name}.ts`, source }
-        const compiled = Transform.compile(options)
+        const compiled = Transform.compile({ ...options, cssOutput: 'grouped' })
         const bundled = await Esbuild.build({
           alias: { 'zyzz/runtime': `${process.cwd()}/src/runtime/index.ts` },
           bundle: true,
@@ -121,7 +121,7 @@ for (const workload of Fixture.cases) {
           bench(
             'compile',
             () => {
-              Transform.compile(options)
+              Transform.compile({ ...options, cssOutput: 'grouped' })
             },
             { time: 250, warmupTime: 100 },
           )

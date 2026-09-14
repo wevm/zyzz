@@ -10,12 +10,19 @@ for (const count of [10, 100]) {
     ]),
   )
   const source = `import {namespace,global} from 'zyzz/web';namespace({prefix:'s',uri:'urn:shapes'});global(${JSON.stringify(rules)});`
-  const library = Graph.compile({ modules: { 'shapes.ts': source } })
+  const library = Graph.compile({
+    cssOutput: 'grouped',
+    modules: { 'shapes.ts': source },
+  })
   describe(`namespace publication / ${count} selectors`, () => {
     bench(
       'source transform with maps',
       () => {
-        Transform.compile({ moduleId: 'shapes.ts', source })
+        Transform.compile({
+          cssOutput: 'grouped',
+          moduleId: 'shapes.ts',
+          source,
+        })
       },
       { iterations: 20, time: 1000 },
     )
@@ -23,6 +30,7 @@ for (const count of [10, 100]) {
       'packed stylesheet consumption',
       () => {
         Graph.compile({
+          cssOutput: 'grouped',
           contracts: { 'lib.js': library.contracts['shapes.ts']! },
           imports: { 'app.ts': { lib: 'lib.js' } },
           modules: { 'app.ts': `import 'lib';` },

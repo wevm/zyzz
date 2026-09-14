@@ -4,7 +4,10 @@ import { Graph } from 'zyzz/compiler'
 import * as Library from '../test/fixtures/VariantLibrary.js'
 
 for (const count of [10, 100]) {
-  const publisher = Graph.compile({ modules: Library.sources() })
+  const publisher = Graph.compile({
+    cssOutput: 'grouped',
+    modules: Library.sources(),
+  })
   const options = {
     contracts: publisher.contracts,
     imports: {
@@ -19,7 +22,7 @@ for (const count of [10, 100]) {
     bench(
       'compile',
       () => {
-        Graph.compile(options)
+        Graph.compile({ ...options, cssOutput: 'grouped' })
       },
       { time: 250, warmupTime: 100 },
     )

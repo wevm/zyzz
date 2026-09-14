@@ -21,7 +21,7 @@ The Examples workflow discovers every `examples/*/package.json` and builds each 
 }
 ```
 
-Folder names use lowercase letters, digits, and hyphens, start with a letter, and have at most 31 characters. Server-rendered examples must provide a static export.
+Server-rendered examples must provide a static export.
 
 | Event              | Deployment                                                         |
 | ------------------ | ------------------------------------------------------------------ |

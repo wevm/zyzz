@@ -727,7 +727,27 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
         "
       `)
 
-      await Fs.rm(Path.join(root, 'nested/button.ts'))
+      await Fs.rename(Path.join(root, 'nested'), Path.join(root, 'renamed'))
+      await next(
+        (event) =>
+          'result' in event && event.result.files.includes('renamed/button.ts'),
+      )
+      await Watch.write({
+        path: Path.join(root, 'renamed/button.ts'),
+        source: source.replace('8px', '3px'),
+      })
+      await next(
+        (event) =>
+          'result' in event &&
+          event.result.changed.includes('renamed/button.ts.css'),
+      )
+      expect(
+        (
+          await Fs.readFile(Path.join(outDir, 'renamed/button.ts.css'), 'utf8')
+        ).includes('padding: 3px;'),
+      ).toMatchInlineSnapshot('true')
+
+      await Fs.rm(Path.join(root, 'renamed/button.ts'))
       await next(
         (event) => 'result' in event && event.result.files.length === 0,
       )
@@ -882,6 +902,30 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
     } finally {
       await host.close()
       await Fs.rm(root, { force: true, recursive: true })
+    }
+  })
+  test('closes during initial directory discovery without leaving watcher handles', async () => {
+    const root = await Fs.mkdtemp(Path.join(project, '.fixture-host-close-'))
+    const resources = () =>
+      process.getActiveResourcesInfo().filter((name) => name === 'FSEventWrap')
+        .length
+    const before = resources()
+    try {
+      await Fs.mkdir(Path.join(root, 'nested'))
+      await Fs.writeFile(Path.join(root, 'nested/card.ts'), source)
+      const host = await Host.create({
+        root,
+        outDir: Path.join(root, 'output'),
+        packageId: 'close-test',
+      })
+      host.watch({ onResult() {} })
+      await host.close()
+      await expect.poll(resources).toBe(before)
+      await expect(host.build()).rejects.toThrowErrorMatchingInlineSnapshot(
+        `[Error: Host is closed.]`,
+      )
+    } finally {
+      await Fs.rm(root, { recursive: true, force: true })
     }
   })
 })

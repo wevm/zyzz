@@ -31,15 +31,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-border-CgmKfH-0{border:2px solid red;}
-      .z-outline-CgmKfH-1{outline:1px dotted black;}
-      .z-column-rule-CgmKfH-2{column-rule:3px dashed blue;}
+      ".z-border-h-QAHP-0{border:2px solid red;}
+      .z-outline-syBFIS-1{outline:1px dotted black;}
+      .z-column-rule-LVj8UH-2{column-rule:3px dashed blue;}
       .z-border-top-color-green-0kXiVX-0{border-top-color:green;}
       .z-outline-width-5px-0kXiVX-1{outline-width:5px;}
       .z-column-rule-style-solid-0kXiVX-2{column-rule-style:solid;}
-      .z-border-HzYJKb-0{border:2px solid red;}
-      .z-outline-HzYJKb-1{outline:1px dotted black;}
-      .z-column-rule-HzYJKb-2{column-rule:3px dashed blue;}"
+      .z-border-VAASQo-0{border:2px solid red;}
+      .z-outline-pRR3Bj-1{outline:1px dotted black;}
+      .z-column-rule-hV5uF6-2{column-rule:3px dashed blue;}"
     `)
   })
   test('combined borders match native declarations across writing modes', async () => {

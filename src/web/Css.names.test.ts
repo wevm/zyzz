@@ -40,13 +40,13 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-w-766AnZ-0{width:calc(100% - 8px);}
-      .z-display-766AnZ-1{display:block;display:grid!important;}
+      ".z-w-jsBWEs-0{width:calc(100% - 8px);}
+      .z-display-YqAHgU-1{display:block;display:grid!important;}
       .z-hover-text-blue-766AnZ-2{&:hover{color:blue;}}
       .z-focus-text-blue-766AnZ-3{&:focus{color:blue;}}"
     `)
     expect(output.classes.card).toMatchInlineSnapshot(
-      `"z-w-766AnZ-0 z-display-766AnZ-1 z-hover-text-blue-766AnZ-2 z-focus-text-blue-766AnZ-3"`,
+      `"z-w-jsBWEs-0 z-display-YqAHgU-1 z-hover-text-blue-766AnZ-2 z-focus-text-blue-766AnZ-3"`,
     )
   })
 
@@ -81,17 +81,17 @@ describe('compile', () => {
     expect(first.css).toMatchInlineSnapshot(`
       ".z_theme-1mlrxl41f5va70-css-theme{--z-t1mlrxl41f5va70-css-color_2e_brand:red;}
       .z-display-flex-QPs-Od{display:flex;}
-      .z-text-QPs-Od{color:var(--z-t1mlrxl41f5va70-css-color_2e_brand,red);}"
+      .z-text-tMJTE1{color:var(--z-t1mlrxl41f5va70-css-color_2e_brand,red);}"
     `)
     expect(second.css).toMatchInlineSnapshot(`
       ".z_theme-1d6eq581s6owy-css-theme{--z-t1d6eq581s6owy-css-color_2e_brand:red;}
       .z-display-flex-IjSBTf{display:flex;}
-      .z-text-IjSBTf{color:var(--z-t1d6eq581s6owy-css-color_2e_brand,red);}"
+      .z-text-KGSrFk{color:var(--z-t1d6eq581s6owy-css-color_2e_brand,red);}"
     `)
     expect(first.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      const {css}=({theme:{"className":"z_theme-1mlrxl41f5va70-css-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text-QPs-Od z-style-1mlrxl41f5va70-103"});"
+      const {css}=({theme:{"className":"z_theme-1mlrxl41f5va70-css-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text-tMJTE1 z-style-1mlrxl41f5va70-103"});"
     `)
   })
 
@@ -109,11 +109,11 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
 
     expect(flex.css).toMatchInlineSnapshot(`
       ".z-display-flex-sQK2Wn{display:flex;}
-      .z-flex-sQK2Wn{flex:1 1 auto;}"
+      .z-flex-rMlNfJ{flex:1 1 auto;}"
     `)
     expect(grid.css).toMatchInlineSnapshot(`
       ".z-display-grid-0Q-Ceb{display:grid;}
-      .z-grid-0Q-Ceb{grid:auto / 1fr;}"
+      .z-grid-zoCb3f{grid:auto / 1fr;}"
     `)
 
     const browser = await chromium.launch()
@@ -174,25 +174,47 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
     )
   })
 
-  test('rejects ownership collisions across fresh and cached modules', () => {
+  test('separates standalone and cached module identities for colliding scope hashes', async () => {
     const first = 'app/mn11i9-ftt50l.ts'
     const second = 'app/150xkc2-se2k3x.ts'
     const source = `import { css } from 'zyzz'; export const card = css({ color: '#000' });`
+    const a = Transform.compile({ moduleId: first, source })
+    const b = Transform.compile({
+      moduleId: second,
+      source: source.replace('#000', '#fff'),
+    })
     const compiler = Graph.create()
-    compiler.compile({ modules: { [first]: source, [second]: 'export {}' } })
-
-    for (const compile of [Graph.compile, compiler.compile])
-      for (const color of ['#fff', '#000'])
-        expect(() =>
-          compile({
-            modules: {
-              [first]: source,
-              [second]: source.replace('#000', color),
-            },
-          }),
-        ).toThrowErrorMatchingInlineSnapshot(
-          `[Css.CompileError: ["app/mn11i9-ftt50l.ts"]: Atomic class z-text-QDY4MN is also owned by module app/150xkc2-se2k3x.ts.]`,
-        )
+    compiler.compile({ modules: { [first]: source } })
+    for (const compile of [Graph.compile, compiler.compile]) {
+      const output = compile({
+        modules: { [first]: source, [second]: source.replace('#000', '#fff') },
+      })
+      expect(output.modules[first]!.css === a.css).toMatchInlineSnapshot('true')
+      expect(output.modules[second]!.css === b.css).toMatchInlineSnapshot(
+        'true',
+      )
+    }
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${a.css}${b.css}</style><div class="${Object.values(a.classes)[0]}"></div><div class="${Object.values(b.classes)[0]}"></div>`,
+      )
+      expect(
+        await page
+          .locator('div')
+          .evaluateAll((elements) =>
+            elements.map((element) => getComputedStyle(element).color),
+          ),
+      ).toMatchInlineSnapshot(`
+        [
+          "rgb(0, 0, 0)",
+          "rgb(255, 255, 255)",
+        ]
+      `)
+    } finally {
+      await browser.close()
+    }
   })
 
   test('invalidates graph output when development naming changes', () => {
@@ -229,5 +251,136 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
         ".z-text-red-WdHWIJ{color:red;}
         .z-p-8px-WdHWIJ{padding:8px;}"
       `)
+  })
+
+  test('keeps custom property and value boundaries distinct', async () => {
+    const output = Css.compile({
+      styles: Style.define({ a: { '--a': 'b-c' }, b: { '--a-b': 'c' } }),
+    })
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.setContent(
+        `<style>${output.css}</style><div class="${output.classes.a} ${output.classes.b}"></div>`,
+      )
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) =>
+            getComputedStyle(element).getPropertyValue('--a'),
+          ),
+      ).toMatchInlineSnapshot('"b-c"')
+      expect(
+        await page
+          .locator('div')
+          .evaluate((element) =>
+            getComputedStyle(element).getPropertyValue('--a-b'),
+          ),
+      ).toMatchInlineSnapshot('"c"')
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('keeps mounted later styles after development source offsets change', async () => {
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      for (const cssOutput of ['atomic', 'grouped'] as const)
+        for (const composition of ['ordered', 'independent'] as const)
+          for (const compiler of [false, true]) {
+            const source = `import {css} from 'zyzz'; export const a=css({color:'red',padding:'8px'},{id:'first'}); export const b=css({color:'blue',padding:'4px'},{id:'second'})`
+            const options = {
+              compiler,
+              composition,
+              cssOutput,
+              development: true,
+              moduleId: 'styles.ts',
+            }
+            const before = Transform.compile({ ...options, source })
+            const after = Transform.compile({
+              ...options,
+              source: source.replace("'red'", "'purple'"),
+            })
+            await page.setContent(
+              `<style>${before.css}</style><div class="${Object.values(before.classes)[1]}"></div>`,
+            )
+            await page.locator('style').evaluate((element, css) => {
+              element.textContent = css
+            }, after.css)
+            expect(
+              await page
+                .locator('div')
+                .evaluate((element) => getComputedStyle(element).color),
+            ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+            expect(
+              await page
+                .locator('div')
+                .evaluate((element) => getComputedStyle(element).paddingLeft),
+            ).toMatchInlineSnapshot('"4px"')
+          }
+    } finally {
+      await browser.close()
+    }
+  })
+
+  test('ignores inherited output metadata while emitting authored declarations', () => {
+    const original = Style.define({ card: { color: 'red', padding: '8px' } })
+      .styles[0]!
+    const inherited = Object.assign(
+      Object.create({ cssOutput: 'invalid' }),
+      original,
+    )
+    const output = Css.compile({ styles: { styles: [inherited] } })
+    expect(output.css.includes('color:red;padding:8px;')).toMatchInlineSnapshot(
+      'false',
+    )
+    expect(output.css.split('\n').length).toMatchInlineSnapshot('2')
+  })
+
+  test('retains empty selector identities in both output modes', async () => {
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      for (const cssOutput of ['atomic', 'grouped'] as const) {
+        const output = Transform.compile({
+          cssOutput,
+          moduleId: 'references.ts',
+          source:
+            "import {css} from 'zyzz';export const parent=css();export const child=css({selectors:{[`${parent} &`]:{color:'blue'}}})",
+        })
+        const [parent, child] = Object.values(output.classes)
+        await page.setContent(
+          `<style>${output.css}</style><section class="${parent}"><div class="${child}"></div></section><div class="${child}"></div>`,
+        )
+        expect(
+          await page
+            .locator('section div')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+        expect(
+          await page
+            .locator('body > div')
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(0, 0, 0)"')
+      }
+    } finally {
+      await browser.close()
+    }
+  })
+  test('checks packed atomic ownership before compiling colliding source scopes', () => {
+    const source =
+      "import {css} from 'zyzz';export const card=css({color:'red'})"
+    const library = Graph.compile({
+      modules: { 'app/mn11i9-ftt50l.ts': source },
+    })
+    expect(() =>
+      Graph.compile({
+        contracts: { 'library.js': library.contracts['app/mn11i9-ftt50l.ts']! },
+        modules: { 'app/150xkc2-se2k3x.ts': source },
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Css.CompileError: ["app/150xkc2-se2k3x.ts"]: Atomic class z-text-red-QDY4MN is also owned by module library.js.]`,
+    )
   })
 })

@@ -3054,4 +3054,16 @@ export function card(value = css({color:'brand'})()) { var css = 1; return value
       await Fs.rm(directory, { force: true, recursive: true })
     }
   }, 30000)
+
+  test('maps quoted braces in selector conditions to their authored keys', () => {
+    const source = `import {css} from 'zyzz'; export const card=css({selectors:{'&[data-state="{"]':{color:'red'}}})`
+    const output = Transform.compile({ moduleId: 'quoted.ts', source })
+    const offset = output.css.indexOf('&[data-state')
+    const prefix = output.css.slice(0, offset).split('\n')
+    const original = Trace.originalPositionFor(
+      new Trace.TraceMap(output.cssMap),
+      { column: prefix.at(-1)!.length, line: prefix.length },
+    )
+    expect(original.name).toMatchInlineSnapshot(`"'&[data-state="{"]'"`)
+  })
 })

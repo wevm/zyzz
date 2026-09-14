@@ -86,7 +86,13 @@ test('production React mount, update, and remount', async () => {
               )
             }
             const styleRules = [...iframe.contentDocument!.styleSheets].reduce(
-              (total, sheet) => total + count(sheet.cssRules),
+              (total, sheet) =>
+                total +
+                ((sheet.ownerNode as Element | null)?.hasAttribute(
+                  'data-benchmark-output',
+                )
+                  ? count(sheet.cssRules)
+                  : 0),
               0,
             )
             groups.push({ ...options, pass, samples, styleRules })

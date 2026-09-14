@@ -600,10 +600,43 @@ function build(options: compile.Options, cache?: Cache): Cache {
       [Themes.context]: { factories, links },
     })
 
+    function outputLink(link: Themes.Link): Themes.Link {
+      return {
+        ...link,
+        ...(link.style
+          ? {
+              style: {
+                ...link.style,
+                style: {
+                  ...link.style.style,
+                  cssOutput:
+                    link.style.style.cssOutput ?? options.cssOutput ?? 'atomic',
+                },
+              },
+            }
+          : {}),
+        ...(link.members
+          ? {
+              members: Object.fromEntries(
+                Object.entries(link.members).map(([name, member]) => [
+                  name,
+                  outputLink(member),
+                ]),
+              ),
+            }
+          : {}),
+      }
+    }
+
     const exports: Record<string, Themes.Link> = Object.assign(
       Object.create(null),
       forwarded,
-      result.themeExports,
+      Object.fromEntries(
+        Object.entries(result.themeExports ?? {}).map(([name, link]) => [
+          name,
+          outputLink(link),
+        ]),
+      ),
     )
 
     for (const name of Object.keys(result.themeExports ?? {}))
@@ -879,8 +912,47 @@ function build(options: compile.Options, cache?: Cache): Cache {
     for (const link of Object.values(library.links)) published(link)
 
   const atomicOwners = new Map<string, string>()
+  function packedOwners(link: Themes.Link, moduleId: string) {
+    for (const name of link.style?.className?.split(' ') ?? []) {
+      if (
+        !name.startsWith('z-') ||
+        name.startsWith('z-style-') ||
+        name.startsWith('z-content-')
+      )
+        continue
+      if (!atomicOwners.has(name)) atomicOwners.set(name, moduleId)
+    }
+    for (const member of Object.values(link.members ?? {}))
+      packedOwners(member, moduleId)
+  }
+  for (const [moduleId, library] of Object.entries(libraries))
+    for (const link of Object.values(library.links))
+      packedOwners(link, moduleId)
   if (options.compiler === false) {
     const identities = new Map<string, string>()
+    for (const [moduleId, library] of Object.entries(libraries)) {
+      function register(name: string, signature: string) {
+        const previous = identities.get(name)
+        if (previous !== undefined && previous !== signature)
+          fail(
+            moduleId,
+            'The same explicit identity is used for different definitions.',
+          )
+        identities.set(name, signature)
+      }
+      for (const [name, theme] of Object.entries(library.themes)) {
+        const data = theme[Token.definition]
+        if (data.contract[Token.identity]?.startsWith('id-'))
+          register(`theme:${name}`, JSON.stringify(data.values))
+      }
+      function styles(link: Themes.Link) {
+        for (const name of link.style?.className?.split(' ') ?? [])
+          if (name.startsWith('z-style-id-'))
+            register(name, Identity.style(link.style!.style))
+        for (const member of Object.values(link.members ?? {})) styles(member)
+      }
+      for (const link of Object.values(library.links)) styles(link)
+    }
     for (const [moduleId, module] of extracted) {
       function register(name: string, signature: string) {
         const previous = identities.get(name)
@@ -949,6 +1021,7 @@ function build(options: compile.Options, cache?: Cache): Cache {
     for (const value of Object.values(modules[moduleId]!.classes))
       for (const name of value.split(' ')) {
         if (
+          options.compiler === false ||
           !name.startsWith('z-') ||
           !modules[moduleId]!.css.includes(`.${name}{`)
         )

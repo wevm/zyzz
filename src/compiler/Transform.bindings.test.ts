@@ -69,8 +69,8 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(
       `
-      ".z-border-width-LOhLyJ{border-width:calc(var(--z-v1h19mkqtvuh7e-56));}
-      .z-w-LOhLyJ{width:var(--z-v1h19mkqtvuh7e-56);}"
+      ".z-border-width-iturna{border-width:calc(var(--z-v1h19mkqtvuh7e-56));}
+      .z-w-vT1mKV{width:var(--z-v1h19mkqtvuh7e-56);}"
     `,
     )
   })
@@ -90,8 +90,8 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(
       `
-      ".z-w-BUchRv{width:var(--z-v161esph179x895-58);}
-      .z-ml-BUchRv{margin-left:calc(var(--z-v161esph179x895-110) + 2px);}"
+      ".z-w-zlK4zG{width:var(--z-v161esph179x895-58);}
+      .z-ml-EEVgLL{margin-left:calc(var(--z-v161esph179x895-110) + 2px);}"
     `,
     )
 
@@ -188,8 +188,8 @@ describe('compile', () => {
         source: `import {variable, css} from 'zyzz'; const a = ({x:variable("number")}); const b = ({x:variable("number")}); css({opacity:a.x})(); css({opacity:b.x})()`,
       }).css,
     ).toMatchInlineSnapshot(`
-      ".z-opacity-Q5wOSh-0{opacity:var(--z-vb2d2s91jn7xin-50);}
-      .z-opacity-MhFHMx-0{opacity:var(--z-vb2d2s91jn7xin-86);}"
+      ".z-opacity-nGeW2o-0{opacity:var(--z-vb2d2s91jn7xin-50);}
+      .z-opacity-6TwmkZ-0{opacity:var(--z-vb2d2s91jn7xin-86);}"
     `)
   })
 

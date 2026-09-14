@@ -32,15 +32,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-scroll-snap-align-CgmKfH-0{scroll-snap-align:start end;}
+      ".z-scroll-snap-align-tLIgOF-0{scroll-snap-align:start end;}
       .z-scroll-snap-stop-normal-CgmKfH-1{scroll-snap-stop:normal;}
-      .z-scroll-snap-type-CgmKfH-2{scroll-snap-type:x proximity;}
-      .z-scroll-snap-align-0kXiVX-0{scroll-snap-align:center;scroll-snap-align:none start!important;}
+      .z-scroll-snap-type-auBAes-2{scroll-snap-type:x proximity;}
+      .z-scroll-snap-align-FiVQRX-0{scroll-snap-align:center;scroll-snap-align:none start!important;}
       .z-scroll-snap-stop-always-0kXiVX-1{scroll-snap-stop:always;}
-      .z-scroll-snap-type-0kXiVX-2{scroll-snap-type:both mandatory;}
-      .z-scroll-snap-align-HzYJKb-0{scroll-snap-align:start end;}
+      .z-scroll-snap-type-HmgExR-2{scroll-snap-type:both mandatory;}
+      .z-scroll-snap-align-QvOm56-0{scroll-snap-align:start end;}
       .z-scroll-snap-stop-normal-HzYJKb-1{scroll-snap-stop:normal;}
-      .z-scroll-snap-type-HzYJKb-2{scroll-snap-type:x proximity;}"
+      .z-scroll-snap-type-c0DqQW-2{scroll-snap-type:x proximity;}"
     `)
   })
 
@@ -291,15 +291,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-border-color-CgmKfH-0{border-color:#000;}
+      ".z-border-color-k5Ego4-0{border-color:#000;}
       .z-border-radius-4px-CgmKfH-1{border-radius:4px;}
       .z-border-style-solid-CgmKfH-2{border-style:solid;}
       .z-border-width-2px-CgmKfH-3{border-width:2px;}
-      .z-border-inline-start-color-0kXiVX-0{border-inline-start-color:#fff;}
+      .z-border-inline-start-color-h5qRWe-0{border-inline-start-color:#fff;}
       .z-border-start-start-radius-8px-0kXiVX-1{border-start-start-radius:8px;}
       .z-border-inline-start-style-dashed-0kXiVX-2{border-inline-start-style:dashed;}
       .z-border-inline-start-width-6px-0kXiVX-3{border-inline-start-width:6px;}
-      .z-border-color-HzYJKb-0{border-color:#000;}
+      .z-border-color-D4s-KE-0{border-color:#000;}
       .z-border-radius-4px-HzYJKb-1{border-radius:4px;}
       .z-border-style-solid-HzYJKb-2{border-style:solid;}
       .z-border-width-2px-HzYJKb-3{border-width:2px;}"
@@ -631,9 +631,9 @@ describe('compile', () => {
     })
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-text-iap1nQ-0{color:#fff!important;color:#000!important;}
-      .z-text-P-WMJx-0{color:#fff;}
-      .z-text-ulqx3t-0{color:#fff!important;}
+      ".z-text-6_CT9q-0{color:#fff!important;color:#000!important;}
+      .z-text-q0ysCh-0{color:#fff;}
+      .z-text-JAipOi-0{color:#fff!important;}
       .z-opacity-TEdFJP{opacity:0.5!important;}
       .z-p-aRP1j4{padding:0!important;}"
     `)
@@ -654,21 +654,21 @@ describe('compile', () => {
     expect(output).toMatchInlineSnapshot(`
       {
         "classes": {
-          "-1": "z-text-lzo_yY-0 z-block z-p-3px-lzo_yY-1",
-          "1": "z-text-14x8bH-0 z-block z-p-8px-14x8bH-2",
-          "_31_": "z-text-VwIMi--0 z-block z-p-4px-VwIMi--1",
-          "again": "z-text-14x8bH-0 z-block z-p-8px-14x8bH-2",
-          "base_0": "z-text-E61DqP-0 z-block z-p-5px-E61DqP-1",
+          "-1": "z-text-2DabmC-0 z-block z-p-3px-lzo_yY-1",
+          "1": "z-text-IpMNuv-0 z-block z-p-8px-14x8bH-2",
+          "_31_": "z-text-y0v9di-0 z-block z-p-4px-VwIMi--1",
+          "again": "z-text-IpMNuv-0 z-block z-p-8px-14x8bH-2",
+          "base_0": "z-text-Ojq1qR-0 z-block z-p-5px-E61DqP-1",
           "empty": "",
         },
-        "css": ".z-text-14x8bH-0{color:#000;}
+        "css": ".z-text-IpMNuv-0{color:#000;}
       .z-block{display:block;}
       .z-p-8px-14x8bH-2{padding:8px;}
-      .z-text-lzo_yY-0{color:#fff;}
+      .z-text-2DabmC-0{color:#fff;}
       .z-p-3px-lzo_yY-1{padding:3px;}
-      .z-text-VwIMi--0{color:#333;}
+      .z-text-y0v9di-0{color:#333;}
       .z-p-4px-VwIMi--1{padding:4px;}
-      .z-text-E61DqP-0{color:#555;}
+      .z-text-Ojq1qR-0{color:#555;}
       .z-p-5px-E61DqP-1{padding:5px;}",
         "themes": {},
       }

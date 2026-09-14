@@ -26,7 +26,7 @@ describe('compile', () => {
       .z-text-red-s93gMW-1{color:red;}
       .z-text-blue-sOX2qW-0{color:blue;}
       .z-text-red-QQ5N_W-0{color:red;}
-      .z-w-ku9s2V{width:var(--z-dmpx2ize76wo1-270-77-69-64-74-68);}"
+      .z-w-d3Wsl_{width:var(--z-dmpx2ize76wo1-270-77-69-64-74-68);}"
     `)
 
     const built = await Esbuild.build({
@@ -57,7 +57,7 @@ describe('compile', () => {
     `)
     expect(result.dynamic).toMatchInlineSnapshot(`
       {
-        "className": "z-p-8px-ku9s2V z-text-red-QQ5N_W-0 z-w-ku9s2V z-style-mpx2ize76wo1-270",
+        "className": "z-p-8px-ku9s2V z-text-red-QQ5N_W-0 z-w-d3Wsl_ z-style-mpx2ize76wo1-270",
         "style": {
           "--z-dmpx2ize76wo1-270-77-69-64-74-68": "20px",
         },

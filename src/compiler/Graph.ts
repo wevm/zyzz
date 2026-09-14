@@ -863,6 +863,8 @@ function build(options: compile.Options, cache?: Cache): Cache {
   for (const library of Object.values(libraries))
     for (const link of Object.values(library.links)) published(link)
 
+  const atomicOwners = new Map<string, string>()
+
   // Extraction visits dependencies first; their emitted classes must precede consumers.
   for (const moduleId of extracted.keys()) {
     modules[moduleId] =
@@ -884,6 +886,24 @@ function build(options: compile.Options, cache?: Cache): Cache {
               styleClasses,
             },
           })
+    // Module-local checks cannot detect truncated ownership hashes colliding across files.
+    for (const value of Object.values(modules[moduleId]!.classes))
+      for (const name of value.split(' ')) {
+        if (!name.startsWith('z-')) continue
+
+        const owner = atomicOwners.get(name)
+        if (owner !== undefined && owner !== moduleId)
+          throw new Css.CompileError([
+            {
+              code: 'invalid_name',
+              message: `Atomic class ${name} is also owned by module ${owner}.`,
+              path: [moduleId],
+            },
+          ])
+
+        atomicOwners.set(name, moduleId)
+      }
+
     for (const call of extracted.get(moduleId)!.calls)
       if (call.identity)
         styleClasses[call.identity] = modules[moduleId]!.classes[call.name]!

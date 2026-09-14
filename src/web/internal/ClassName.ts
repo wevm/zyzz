@@ -70,10 +70,9 @@ const aliases: Readonly<Record<string, string>> = {
   width: 'w',
 }
 
+// Flex and grid also name shorthand properties, so retain their display prefix.
 const displays = new Set([
   'block',
-  'flex',
-  'grid',
   'inline',
   'inline-block',
   'inline-flex',

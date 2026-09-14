@@ -195,7 +195,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       const css = await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8')
 
       expect(css).toMatchInlineSnapshot(
-        `".z-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-49Nz2U{color:red}"`,
+        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-49Nz2U{color:red}"`,
       )
 
       const map = new Trace.TraceMap(
@@ -213,7 +213,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       `)
       expect(map.sourcesContent).toMatchInlineSnapshot(`
         [
-          ".z-flex-49Nz2U{display:flex;}
+          ".z-display-flex-49Nz2U{display:flex;}
         .z-text-49Nz2U{color:#ff0000;}",
           "import { css } from 'zyzz';
         export const card = css({ display: 'flex', color: '#ff0000' });",
@@ -229,7 +229,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `".z-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-49Nz2U{color:red}"`,
+        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-49Nz2U{color:red}"`,
       )
 
       await Fs.writeFile(path, input.replace('#ff0000', '#0000ff'))
@@ -238,7 +238,7 @@ export const card = css({ display: 'flex', color: '#ff0000' });`
       expect(
         await Fs.readFile(Path.join(outDir, 'card.ts.css'), 'utf8'),
       ).toMatchInlineSnapshot(
-        `".z-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-49Nz2U{color:#00f}"`,
+        `".z-display-flex-49Nz2U{display:-webkit-flex;display:flex}.z-text-49Nz2U{color:#00f}"`,
       )
     } finally {
       await host.close()

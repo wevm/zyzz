@@ -879,7 +879,7 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-10s7rhx1h1kg6d-zyzz-theme{--z-t10s7rhx1h1kg6d-zyzz-spacing_2e_edge:10px;}
-      .z-flex-x98OZk{display:flex;}
+      .z-display-flex-x98OZk{display:flex;}
       .z-gap-40px-x98OZk{gap:40px;}
       .z-overflow-auto-x98OZk{overflow:auto;}
       .z-w-100px-eA5Q-c-3{width:100px;}
@@ -1348,7 +1348,7 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".z_theme-bjw6jw1i067e2-zyzz-theme{--z-tbjw6jw1i067e2-zyzz-spacing_2e_item:60px;}
-      .z-flex-aqbEb1{display:flex;}
+      .z-display-flex-aqbEb1{display:flex;}
       .z-flex-wrap-wrap-aqbEb1{flex-wrap:wrap;}
       .z-w-180px-YbTAIS-2{width:180px;}
       .z-h-100px-YbTAIS-3{height:100px;}

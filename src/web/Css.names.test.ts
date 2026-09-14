@@ -1,5 +1,6 @@
 /** Verifies readable atomic output through literal and source compilation. @module */
 import { describe, expect, test } from 'vite-plus/test'
+import { chromium } from 'playwright'
 import { Style } from 'zyzz'
 import { Graph, Transform } from 'zyzz/compiler'
 import { Css } from 'zyzz/web'
@@ -14,13 +15,13 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-flex{display:flex;}
+      ".z-display-flex{display:flex;}
       .z-p-8px{padding:8px;}
       .z-text-red{color:red;}"
     `)
     expect(output.classes).toMatchInlineSnapshot(`
       {
-        "card": "z-flex z-p-8px z-text-red",
+        "card": "z-display-flex z-p-8px z-text-red",
         "label": "z-text-red",
       }
     `)
@@ -79,19 +80,80 @@ describe('compile', () => {
 
     expect(first.css).toMatchInlineSnapshot(`
       ".z_theme-1mlrxl41f5va70-css-theme{--z-t1mlrxl41f5va70-css-color_2e_brand:red;}
-      .z-flex-QPs-Od{display:flex;}
+      .z-display-flex-QPs-Od{display:flex;}
       .z-text-QPs-Od{color:var(--z-t1mlrxl41f5va70-css-color_2e_brand,red);}"
     `)
     expect(second.css).toMatchInlineSnapshot(`
       ".z_theme-1d6eq581s6owy-css-theme{--z-t1d6eq581s6owy-css-color_2e_brand:red;}
-      .z-flex-IjSBTf{display:flex;}
+      .z-display-flex-IjSBTf{display:flex;}
       .z-text-IjSBTf{color:var(--z-t1d6eq581s6owy-css-color_2e_brand,red);}"
     `)
     expect(first.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      const {css}=({theme:{"className":"z_theme-1mlrxl41f5va70-css-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-flex-QPs-Od z-text-QPs-Od z-style-1mlrxl41f5va70-103"});"
+      const {css}=({theme:{"className":"z_theme-1mlrxl41f5va70-css-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text-QPs-Od z-style-1mlrxl41f5va70-103"});"
     `)
+  })
+
+  test('distinguishes display values from flex and grid shorthands in the browser', async () => {
+    const flex = Transform.compile({
+      moduleId: 'flex.ts',
+      source: `import { css } from 'zyzz';
+export const flex = css({ display: 'flex', flex: '1 1 auto' })();`,
+    })
+    const grid = Transform.compile({
+      moduleId: 'grid.ts',
+      source: `import { css } from 'zyzz';
+export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
+    })
+
+    expect(flex.css).toMatchInlineSnapshot(`
+      ".z-display-flex-sQK2Wn{display:flex;}
+      .z-flex-sQK2Wn{flex:1 1 auto;}"
+    `)
+    expect(grid.css).toMatchInlineSnapshot(`
+      ".z-display-grid-0Q-Ceb{display:grid;}
+      .z-grid-0Q-Ceb{grid:auto / 1fr;}"
+    `)
+
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      const classes = [
+        ...Object.values(flex.classes),
+        ...Object.values(grid.classes),
+      ]
+      await page.setContent(
+        `<style>${flex.css}${grid.css}</style><div class="${classes[0]}"></div><div class="${classes[1]}"></div>`,
+      )
+
+      expect(
+        await page
+          .locator('div')
+          .nth(0)
+          .evaluate((element) => getComputedStyle(element).display),
+      ).toMatchInlineSnapshot('"flex"')
+      expect(
+        await page
+          .locator('div')
+          .nth(0)
+          .evaluate((element) => getComputedStyle(element).flex),
+      ).toMatchInlineSnapshot('"1 1 auto"')
+      expect(
+        await page
+          .locator('div')
+          .nth(1)
+          .evaluate((element) => getComputedStyle(element).display),
+      ).toMatchInlineSnapshot('"grid"')
+      expect(
+        await page
+          .locator('div')
+          .nth(1)
+          .evaluate((element) => getComputedStyle(element).gridAutoFlow),
+      ).toMatchInlineSnapshot('"row"')
+    } finally {
+      await browser.close()
+    }
   })
 
   test('rejects colliding contextual hashes even when declarations match', () => {
@@ -110,6 +172,27 @@ describe('compile', () => {
     ).toThrowErrorMatchingInlineSnapshot(
       `[Css.CompileError: ["collision1gqwj5h1wwv"]: Distinct rules produced the same class identifier.]`,
     )
+  })
+
+  test('rejects ownership collisions across fresh and cached modules', () => {
+    const first = 'app/mn11i9-ftt50l.ts'
+    const second = 'app/150xkc2-se2k3x.ts'
+    const source = `import { css } from 'zyzz'; export const card = css({ color: '#000' });`
+    const compiler = Graph.create()
+    compiler.compile({ modules: { [first]: source, [second]: 'export {}' } })
+
+    for (const compile of [Graph.compile, compiler.compile])
+      for (const color of ['#fff', '#000'])
+        expect(() =>
+          compile({
+            modules: {
+              [first]: source,
+              [second]: source.replace('#000', color),
+            },
+          }),
+        ).toThrowErrorMatchingInlineSnapshot(
+          `[Css.CompileError: ["app/mn11i9-ftt50l.ts"]: Atomic class z-text-QDY4MN is also owned by module app/150xkc2-se2k3x.ts.]`,
+        )
   })
 
   test('invalidates graph output when development naming changes', () => {

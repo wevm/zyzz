@@ -377,7 +377,9 @@ export function compile<
         output === mode &&
         options.composition === 'independent'
       const key = `${output}:${body}`
-      const previous = shared || independent ? identical.get(key) : undefined
+      // Development slots belong to each style even when their initial values match.
+      const reusable = !options.development && (shared || independent)
+      const previous = reusable ? identical.get(key) : undefined
       if (previous) {
         names.push(previous)
         return
@@ -414,7 +416,7 @@ export function compile<
 
       if (owner !== undefined) identities.set(identity, owner)
       rules.set(identity, body)
-      if (shared || independent) identical.set(key, identity)
+      if (reusable) identical.set(key, identity)
       names.push(identity)
     }
 

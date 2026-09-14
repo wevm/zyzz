@@ -11,20 +11,33 @@ describe('compile', () => {
     try {
       const page = await browser.newPage()
 
-      for (const cssOutput of ['atomic', 'grouped'] as const) {
+      for (const [cssOutput, composition] of [
+        ['atomic', 'ordered'],
+        ['atomic', 'independent'],
+        ['grouped', 'ordered'],
+        ['grouped', 'independent'],
+      ] as const) {
         const before = Css.compile({
+          composition,
           cssOutput,
           development: true,
-          styles: Style.define({ card: { color: 'red', padding: '8px' } }),
+          styles: Style.define({
+            card: { color: 'red', padding: '8px' },
+            label: { color: 'red', padding: '8px' },
+          }),
         })
         const after = Css.compile({
+          composition,
           cssOutput,
           development: true,
-          styles: Style.define({ card: { color: 'blue', padding: '12px' } }),
+          styles: Style.define({
+            card: { color: 'blue', padding: '12px' },
+            label: { color: 'red', padding: '8px' },
+          }),
         })
 
         await page.setContent(
-          `<style>${before.css}</style><div class="${before.classes.card}">Card</div>`,
+          `<style>${before.css}</style><div class="${before.classes.card}">Card</div><div class="${before.classes.label}">Label</div>`,
         )
         await page.locator('style').evaluate((element, css) => {
           element.textContent = css
@@ -33,13 +46,27 @@ describe('compile', () => {
         expect(
           await page
             .locator('div')
+            .first()
             .evaluate((element) => getComputedStyle(element).color),
         ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
         expect(
           await page
             .locator('div')
+            .first()
             .evaluate((element) => getComputedStyle(element).paddingLeft),
         ).toMatchInlineSnapshot('"12px"')
+        expect(
+          await page
+            .locator('div')
+            .nth(1)
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+        expect(
+          await page
+            .locator('div')
+            .nth(1)
+            .evaluate((element) => getComputedStyle(element).paddingLeft),
+        ).toMatchInlineSnapshot('"8px"')
       }
     } finally {
       await browser.close()

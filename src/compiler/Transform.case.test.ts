@@ -28,8 +28,8 @@ describe('compile', () => {
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
       `
-      ".z-text-tjutan1lt0sb1{color: ReD!important;}
-      .z-display-gjsfiu1uqmnv0{display:BlOcK	Flow;}"
+      ".z-text-qE5SPZ{color: ReD!important;}
+      .z-display-eWlMBL{display:BlOcK	Flow;}"
     `,
     )
   })
@@ -52,9 +52,9 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(
       `
-      ".z-text-1uy4urm1kscbom{color:\\72 ed/**/!important;}
-      .z-display-ih3d3k87rwli{display:bl\\6f ck/**/flow;}
-      .z-p-pi7kx3x9lytj{padding:1\\70 x;}"
+      ".z-text-YkAuMI{color:\\72 ed/**/!important;}
+      .z-display-gFmu41{display:bl\\6f ck/**/flow;}
+      .z-p-m_OXFT{padding:1\\70 x;}"
     `,
     )
 

@@ -245,7 +245,7 @@ describe('compile', () => {
     })
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-animation-name-1e8a67zly006l{animation-name:z-k185tc9w526bf2-66-61-64-65;}"`,
+      `".z-animation-name-Jgxd-Q{animation-name:z-k185tc9w526bf2-66-61-64-65;}"`,
     )
     expect(app.sharedCss).toMatchInlineSnapshot(
       `"@keyframes z-k185tc9w526bf2-66-61-64-65{from{opacity:0;}to{opacity:1;}}"`,
@@ -353,7 +353,7 @@ describe('compile', () => {
     })
 
     expect(app.modules['app.ts']!.css).toMatchInlineSnapshot(
-      `".z-animation-name-1e8a67zly006l{animation-name:z-k1wfnqsmu0q6os-66-61-64-65;}"`,
+      `".z-animation-name-Jgxd-Q{animation-name:z-k1wfnqsmu0q6os-66-61-64-65;}"`,
     )
     expect(new Trace.TraceMap(app.sharedCssMap!).sourcesContent)
       .toMatchInlineSnapshot(`

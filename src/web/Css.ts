@@ -351,6 +351,7 @@ export function compile<
       },
     ])
 
+  const identities = new Map<string, string>()
   const rules = new Map<string, string>()
   const identical = new Map<string, string>()
 
@@ -398,13 +399,20 @@ export function compile<
           stable: options.development,
         })
       })()
-      if (rules.has(identity) && rules.get(identity) !== body)
+      const owner = mode === 'atomic' ? `${style.name}:${slot}` : undefined
+      if (
+        (rules.has(identity) && rules.get(identity) !== body) ||
+        (owner !== undefined &&
+          identities.has(identity) &&
+          identities.get(identity) !== owner)
+      )
         diagnostics.push({
           code: 'identity_collision',
           message: 'Distinct rules produced the same class identifier.',
           path: [style.name],
         })
 
+      if (owner !== undefined) identities.set(identity, owner)
       rules.set(identity, body)
       if (shared || independent) identical.set(key, identity)
       names.push(identity)

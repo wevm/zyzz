@@ -19,11 +19,11 @@ describe('compile', () => {
     })
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-background-image-1uqhlte1ehenji{background-image:url("image.png");background-image:linear-gradient(red, blue)!important;}
-      .z-marker-k5oaqnkf68sf-0{marker:url(#first);}
-      .z-marker-start-7g8g011fwopat-0{marker-start:url(#second);}
-      .z-marker-s9akdk1oqrjza-0{marker:url(#first);}
-      .z-opacity-1jngh5ibobng6{opacity:0.5;}"
+      ".z-background-image-Y8kGIH{background-image:url("image.png");background-image:linear-gradient(red, blue)!important;}
+      .z-marker-iap1nQ-0{marker:url(#first);}
+      .z-marker-start-6JGf0r-0{marker-start:url(#second);}
+      .z-marker-ptwuGd-0{marker:url(#first);}
+      .z-opacity-O99JRy{opacity:0.5;}"
     `)
 
     const lexer = Conformance.lexer()
@@ -45,8 +45,8 @@ describe('compile', () => {
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
       `
-      ".z-text-kah549xphy6x{color:#12;}
-      .z-order-z47mr91b5cjgh{order:0.5;}"
+      ".z-text-ii5ean{color:#12;}
+      .z-order-vF1uZq{order:0.5;}"
     `,
     )
 

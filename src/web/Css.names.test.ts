@@ -39,13 +39,13 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-w-7vhs9r1q1acs1-0{width:calc(100% - 8px);}
-      .z-display-7vhs9r1q1acs1-1{display:block;display:grid!important;}
-      .z-hover-text-blue-7vhs9r1q1acs1-2{&:hover{color:blue;}}
-      .z-focus-text-blue-7vhs9r1q1acs1-3{&:focus{color:blue;}}"
+      ".z-w-766AnZ-0{width:calc(100% - 8px);}
+      .z-display-766AnZ-1{display:block;display:grid!important;}
+      .z-hover-text-blue-766AnZ-2{&:hover{color:blue;}}
+      .z-focus-text-blue-766AnZ-3{&:focus{color:blue;}}"
     `)
     expect(output.classes.card).toMatchInlineSnapshot(
-      `"z-w-7vhs9r1q1acs1-0 z-display-7vhs9r1q1acs1-1 z-hover-text-blue-7vhs9r1q1acs1-2 z-focus-text-blue-7vhs9r1q1acs1-3"`,
+      `"z-w-766AnZ-0 z-display-766AnZ-1 z-hover-text-blue-766AnZ-2 z-focus-text-blue-766AnZ-3"`,
     )
   })
 
@@ -59,15 +59,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-p-8px-k5oaqnkf68sf-0{padding:8px;}
-      .z-pl-2px-1k726nwi16l60-0{padding-left:2px;}
-      .z-p-8px-xo0jyl1my8x7z-0{padding:8px;}"
+      ".z-p-8px-iap1nQ-0{padding:8px;}
+      .z-pl-2px-OEzlf4-0{padding-left:2px;}
+      .z-p-8px-ulqx3t-0{padding:8px;}"
     `)
     expect(output.classes).toMatchInlineSnapshot(`
       {
-        "first": "z-p-8px-k5oaqnkf68sf-0",
-        "last": "z-p-8px-xo0jyl1my8x7z-0",
-        "middle": "z-pl-2px-1k726nwi16l60-0",
+        "first": "z-p-8px-iap1nQ-0",
+        "last": "z-p-8px-ulqx3t-0",
+        "middle": "z-pl-2px-OEzlf4-0",
       }
     `)
   })
@@ -79,19 +79,37 @@ describe('compile', () => {
 
     expect(first.css).toMatchInlineSnapshot(`
       ".z_theme-1mlrxl41f5va70-css-theme{--z-t1mlrxl41f5va70-css-color_2e_brand:red;}
-      .z-flex-1mlrxl41po2lli{display:flex;}
-      .z-text-1mlrxl41po2lli{color:var(--z-t1mlrxl41f5va70-css-color_2e_brand,red);}"
+      .z-flex-QPs-Od{display:flex;}
+      .z-text-QPs-Od{color:var(--z-t1mlrxl41f5va70-css-color_2e_brand,red);}"
     `)
     expect(second.css).toMatchInlineSnapshot(`
       ".z_theme-1d6eq581s6owy-css-theme{--z-t1d6eq581s6owy-css-color_2e_brand:red;}
-      .z-flex-1d6eq581xglbmk{display:flex;}
-      .z-text-1d6eq581xglbmk{color:var(--z-t1d6eq581s6owy-css-color_2e_brand,red);}"
+      .z-flex-IjSBTf{display:flex;}
+      .z-text-IjSBTf{color:var(--z-t1d6eq581s6owy-css-color_2e_brand,red);}"
     `)
     expect(first.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      const {css}=({theme:{"className":"z_theme-1mlrxl41f5va70-css-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-flex-1mlrxl41po2lli z-text-1mlrxl41po2lli z-style-1mlrxl41f5va70-103"});"
+      const {css}=({theme:{"className":"z_theme-1mlrxl41f5va70-css-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-flex-QPs-Od z-text-QPs-Od z-style-1mlrxl41f5va70-103"});"
     `)
+  })
+
+  test('rejects colliding contextual hashes even when declarations match', () => {
+    // These distinct owners have the same six-character hash.
+    const styles = Style.define({
+      collisionpybsvm1mvm: { color: 'red' },
+      middle: { color: 'blue' },
+      collision1gqwj5h1wwv: { color: 'red' },
+    })
+
+    expect(() => Css.compile({ styles })).toThrowErrorMatchingInlineSnapshot(
+      `[Css.CompileError: ["collision1gqwj5h1wwv"]: Distinct rules produced the same class identifier.]`,
+    )
+    expect(() =>
+      Css.compile({ development: true, styles }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Css.CompileError: ["collision1gqwj5h1wwv"]: Distinct rules produced the same class identifier.]`,
+    )
   })
 
   test('invalidates graph output when development naming changes', () => {
@@ -107,26 +125,26 @@ describe('compile', () => {
     })
 
     expect(production.modules['card.ts']!.css).toMatchInlineSnapshot(`
-      ".z-text-red-1slxe421lywm48{color:red;}
-      .z-p-8px-1slxe421lywm48{padding:8px;}"
+      ".z-text-red-WdHWIJ{color:red;}
+      .z-p-8px-WdHWIJ{padding:8px;}"
     `)
     expect(development.modules['card.ts']!.css).toMatchInlineSnapshot(`
-      ".z-text-7xn0yx1uzcjev-0{color:red;}
-      .z-p-7xn0yx1uzcjev-1{padding:8px;}"
+      ".z-text-79yxGv-0{color:red;}
+      .z-p-79yxGv-1{padding:8px;}"
     `)
     expect(edited.modules['card.ts']!.css).toMatchInlineSnapshot(`
-      ".z-text-7xn0yx1uzcjev-0{color:tan;}
-      .z-p-7xn0yx1uzcjev-1{padding:8px;}"
+      ".z-text-79yxGv-0{color:tan;}
+      .z-p-79yxGv-1{padding:8px;}"
     `)
     expect(edited.modules['card.ts']!.classes).toMatchInlineSnapshot(`
       {
-        "style-1slxe42dbli7u-43": "z-text-7xn0yx1uzcjev-0 z-p-7xn0yx1uzcjev-1 z-style-1slxe42dbli7u-43",
+        "style-1slxe42dbli7u-43": "z-text-79yxGv-0 z-p-79yxGv-1 z-style-1slxe42dbli7u-43",
       }
     `)
     expect(compiler.compile({ modules }).modules['card.ts']!.css)
       .toMatchInlineSnapshot(`
-        ".z-text-red-1slxe421lywm48{color:red;}
-        .z-p-8px-1slxe421lywm48{padding:8px;}"
+        ".z-text-red-WdHWIJ{color:red;}
+        .z-p-8px-WdHWIJ{padding:8px;}"
       `)
   })
 })

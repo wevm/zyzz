@@ -88,7 +88,7 @@ function encode(value: string): string {
   )
 }
 
-// Two independent streams keep identities deterministic without host APIs.
+// Six CSS identifier characters retain 36 bits from two deterministic streams.
 function hash(value: string): string {
   let first = 2166136261
   let second = 5381
@@ -99,5 +99,15 @@ function hash(value: string): string {
     second = Math.imul(second, 33) ^ code
   }
 
-  return (first >>> 0).toString(36) + (second >>> 0).toString(36)
+  const alphabet =
+    '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-'
+  let bits = (first >>> 0) * 16 + (second >>> 28)
+  let result = ''
+
+  for (let index = 0; index < 6; index++) {
+    result = alphabet[bits % 64]! + result
+    bits = Math.floor(bits / 64)
+  }
+
+  return result
 }

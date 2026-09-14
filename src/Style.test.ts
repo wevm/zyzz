@@ -93,12 +93,12 @@ describe('define', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:2rem;--z5:#06c;}
       .t_1{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:1rem;--z5:#06c;}
-      .z-bg-2dzsmhjfmdi5{background-color:var(--z0,#fff);}
-      .z-border-color-wygwxgmi3jvs{border-color:var(--z1,#000);}
-      .z-border-radius-1w1lle31fymgv5{border-radius:var(--z2,4px);}
-      .z-text-7vhs9r1q1acs1-3{color:var(--z3,light-dark(#111,#fff));}
-      .z-p-1akcn5o11mc1js{padding:var(--z4,1rem);}
-      .z-text-1n9rbb11n44hj9-0{color:var(--z5,#06c);}"
+      .z-bg-29LMGk{background-color:var(--z0,#fff);}
+      .z-border-color-tIvIJ5{border-color:var(--z1,#000);}
+      .z-border-radius-ZjOgyX{border-radius:var(--z2,4px);}
+      .z-text-766AnZ-3{color:var(--z3,light-dark(#111,#fff));}
+      .z-p-FZccf8{padding:var(--z4,1rem);}
+      .z-text-RpTC-t-0{color:var(--z5,#06c);}"
     `)
     expect(
       output.css ===
@@ -157,10 +157,10 @@ describe('define', () => {
     )
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-text-131fjtobd20j-0{color:var(--z0,#000);}
-      .z-p-131fjtobd20j-1{padding:var(--z1,8px);}
-      .z-text-white-1dxa38y5dh3da-0{color:white;}
-      .z-p-0-1dxa38y5dh3da-1{padding:0;}
+      ".z-text-0_yb_l-0{color:var(--z0,#000);}
+      .z-p-0_yb_l-1{padding:var(--z1,8px);}
+      .z-text-white-I_VjYx-0{color:white;}
+      .z-p-0-I_VjYx-1{padding:0;}
       .z-w-1rem{width:1rem;}"
     `)
   })
@@ -735,9 +735,9 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
     expect(JSON.parse(server)).toMatchInlineSnapshot(`
       {
         "classes": {
-          "button": "z-text-rgm8mw1axx28s z-p-0",
+          "button": "z-text-oLANea z-p-0",
         },
-        "css": ".z-text-rgm8mw1axx28s{color:#f00;}
+        "css": ".z-text-oLANea{color:#f00;}
       .z-p-0{padding:0;}",
         "themes": {},
       }
@@ -757,9 +757,9 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(JSON.parse(result)).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z-text-rgm8mw1axx28s z-p-0",
+            "button": "z-text-oLANea z-p-0",
           },
-          "css": ".z-text-rgm8mw1axx28s{color:#f00;}
+          "css": ".z-text-oLANea{color:#f00;}
         .z-p-0{padding:0;}",
           "themes": {},
         }
@@ -780,9 +780,9 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
         expect(JSON.parse(context.getString(result))).toMatchInlineSnapshot(`
           {
             "classes": {
-              "button": "z-text-rgm8mw1axx28s z-p-0",
+              "button": "z-text-oLANea z-p-0",
             },
-            "css": ".z-text-rgm8mw1axx28s{color:#f00;}
+            "css": ".z-text-oLANea{color:#f00;}
           .z-p-0{padding:0;}",
             "themes": {},
           }
@@ -807,9 +807,9 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(await page.evaluate('fixture.result')).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z-text-rgm8mw1axx28s z-p-0",
+            "button": "z-text-oLANea z-p-0",
           },
-          "css": ".z-text-rgm8mw1axx28s{color:#f00;}
+          "css": ".z-text-oLANea{color:#f00;}
         .z-p-0{padding:0;}",
           "themes": {},
         }
@@ -838,9 +838,9 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       expect(result).toMatchInlineSnapshot(`
         {
           "classes": {
-            "button": "z-text-rgm8mw1axx28s z-p-0",
+            "button": "z-text-oLANea z-p-0",
           },
-          "css": ".z-text-rgm8mw1axx28s{color:#f00;}
+          "css": ".z-text-oLANea{color:#f00;}
         .z-p-0{padding:0;}",
           "themes": {},
         }

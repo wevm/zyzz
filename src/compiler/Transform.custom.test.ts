@@ -15,14 +15,14 @@ describe('compile', () => {
     const output = Transform.compile({ moduleId: 'custom.ts', source })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z---Accent-red-nhoi651cuk4nz{--Accent:red;}
-      .z---accent-blue-nhoi651cuk4nz{--accent:blue;}
-      .z---data-nhoi651cuk4nz{--data:"a;b:c";}
-      .z---count-2-nhoi651cuk4nz{--count:2;}
-      .z-all-initial-1ifbfxzdg2wl-0{all:initial;}
-      .z-text-1ifbfxzdg2wl-1{color:var(--Accent);}
-      .z-bg-1ifbfxzdg2wl-2{background-color:var(--accent);}
-      .z---choice-nhoi651cuk4nz{--choice:red;--choice:blue!important;}"
+      ".z---Accent-red-laDu-r{--Accent:red;}
+      .z---accent-blue-laDu-r{--accent:blue;}
+      .z---data-laDu-r{--data:"a;b:c";}
+      .z---count-2-laDu-r{--count:2;}
+      .z-all-initial-N2sItM-0{all:initial;}
+      .z-text-N2sItM-1{color:var(--Accent);}
+      .z-bg-N2sItM-2{background-color:var(--accent);}
+      .z---choice-laDu-r{--choice:red;--choice:blue!important;}"
     `)
   })
 
@@ -38,10 +38,10 @@ describe('compile', () => {
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
       `
-      ".z---escaped-x0sm1i1g9ppem{--escaped:hello\\!;}
-      .z---escapedWord-oezvvy1fqjkk6{--escapedWord:hello\\!important;}
-      .z---even-rrfl2n18vq2l5{--even:hello\\\\!important;}
-      .z---space-1q7efurxo2i3d{--space:hello\\ !important;}"
+      ".z---escaped-tMe2BH{--escaped:hello\\!;}
+      .z---escapedWord-l-_WbH{--escapedWord:hello\\!important;}
+      .z---even-p0VvrW{--even:hello\\\\!important;}
+      .z---space-U35CMT{--space:hello\\ !important;}"
     `,
     )
   })

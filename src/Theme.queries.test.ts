@@ -57,8 +57,8 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(
       `
-      ".z-font-size-spaxontqspvx{font-size:var(--z0,1.5rem);}
-      .z-border-radius-18kv7mn18gwtp1{border-radius:var(--z1,1rem);}"
+      ".z-font-size-pT9O1S{font-size:var(--z0,1.5rem);}
+      .z-border-radius-EaHYnW{border-radius:var(--z1,1rem);}"
     `,
     )
   })
@@ -98,9 +98,9 @@ describe('compile', () => {
 
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-26ntzho2pyyt-theme{--z-t26ntzho2pyyt-theme-fontFamily_2e_sans:Geist, ui-sans-serif, system-ui, sans-serif;--z-t26ntzho2pyyt-theme-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500:oklch(62.3% 0.214 259.815);}
-      .z-font-family-1e8a67zly006l{font-family:var(--z-t26ntzho2pyyt-theme-fontFamily_2e_sans,Geist, ui-sans-serif, system-ui, sans-serif);}
-      .z-font-size-1e8a67zly006l{font-size:var(--z-t26ntzho2pyyt-theme-fontSize_2e_base,1rem);}
-      .z-text-1e8a67zly006l{color:var(--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500,oklch(62.3% 0.214 259.815));}"
+      .z-font-family-Jgxd-Q{font-family:var(--z-t26ntzho2pyyt-theme-fontFamily_2e_sans,Geist, ui-sans-serif, system-ui, sans-serif);}
+      .z-font-size-Jgxd-Q{font-size:var(--z-t26ntzho2pyyt-theme-fontSize_2e_base,1rem);}
+      .z-text-Jgxd-Q{color:var(--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500,oklch(62.3% 0.214 259.815));}"
     `)
 
     const built = await Esbuild.build({
@@ -172,8 +172,8 @@ describe('compile', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:1rem;--z1:500;}
       .t_1{--z0:1.25rem;--z1:500;}
-      .z-font-size-mfi2e01haafcm{font-size:var(--z0,1rem);}
-      .z-font-weight-jps5k417zvdkc{font-weight:var(--z1,500);}"
+      .z-font-size-kdtzCc{font-size:var(--z0,1rem);}
+      .z-font-weight-hMXM99{font-weight:var(--z1,500);}"
     `)
     expect(Object.keys(theme.vars)).toMatchInlineSnapshot(`
       [
@@ -205,7 +205,7 @@ describe('compile', () => {
 
     expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-fontSize_2e_body:1rem;}
-      .z-font-size-1e8a67zly006l{font-size:var(--z-t1xn44ix111xh3v-theme-fontSize_2e_body,1rem);}"
+      .z-font-size-Jgxd-Q{font-size:var(--z-t1xn44ix111xh3v-theme-fontSize_2e_body,1rem);}"
     `)
   })
   test('Chromium applies bundled typography and scheme colors', async () => {
@@ -266,10 +266,10 @@ describe('compile', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:light-dark(#111,#fff);--z1:Geist, ui-sans-serif, system-ui, sans-serif;--z2:1rem;--z3:1rem;}
-      .z-text-4agpf61de4iwe{color:var(--z0,light-dark(#111,#fff));}
-      .z-font-family-1y87rfgfbaelm{font-family:var(--z1,Geist, ui-sans-serif, system-ui, sans-serif);}
-      .z-font-size-4uh2221pt2df8{font-size:var(--z2,1rem);}
-      .z-p-47cuxv1vyt2wv{padding:var(--z3,1rem);}"
+      .z-text-3Tq_IH{color:var(--z0,light-dark(#111,#fff));}
+      .z-font-family--hJCD3{font-family:var(--z1,Geist, ui-sans-serif, system-ui, sans-serif);}
+      .z-font-size-4nuiGJ{font-size:var(--z2,1rem);}
+      .z-p-3OsuE-{padding:var(--z3,1rem);}"
     `)
     expect(tokens.breakpoints.md).toMatchInlineSnapshot(`"48rem"`)
   })

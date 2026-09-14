@@ -42,7 +42,7 @@ describe('define', () => {
 
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#fff;}
-      .z-text-czr38ua0zfoe{color:var(--z0,#fff);}"
+      .z-text-bJfYby{color:var(--z0,#fff);}"
     `)
   })
 
@@ -66,18 +66,18 @@ describe('define', () => {
 
     expect(output.classes).toMatchInlineSnapshot(`
       {
-        "other": "z-text-16k8dsjuv5kht-0",
-        "t_0": "z-text-1rwf45i14cq8ji-0",
-        "z_theme-base": "z-text-1svh5lb1vqd1qh-0",
+        "other": "z-text-CmlPQS-0",
+        "t_0": "z-text-VAQ_NF-0",
+        "z_theme-base": "z-text-Ws_Rz--0",
       }
     `)
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#000;--z1:#fff;}
       .t_1{--z0:#f00;--z1:#06c;}
       .t_2{--z0:#000;--z1:#fff;}
-      .z-text-16k8dsjuv5kht-0{color:var(--z0,#000);}
-      .z-text-1rwf45i14cq8ji-0{color:#175;}
-      .z-text-1svh5lb1vqd1qh-0{color:var(--z1,#fff);}"
+      .z-text-CmlPQS-0{color:var(--z0,#000);}
+      .z-text-VAQ_NF-0{color:#175;}
+      .z-text-Ws_Rz--0{color:var(--z1,#fff);}"
     `)
     expect(output.themes).toMatchInlineSnapshot(`
       {
@@ -143,15 +143,15 @@ describe('define', () => {
     expect(result.css).toMatchInlineSnapshot(`
       ".t_0{--z0:light-dark(#fff,#111);--z1:#06c;--z2:8px;}
       .t_1{--z3:#06c;}
-      .z-bg-nwvqnd1dk3mnh{background-color:var(--z0,light-dark(#fff,#111));}
-      .z-text-qm1o7l1p145bn-1{color:var(--z1,#06c);}
-      .z-p-153ey9h90namd{padding:var(--z2,8px);}
-      .z-text-127d6cn216lgj-0{color:var(--z3,#06c);}"
+      .z-bg-lyZQGr{background-color:var(--z0,light-dark(#fff,#111));}
+      .z-text-n_CKQt-1{color:var(--z1,#06c);}
+      .z-p-B1LbZi{padding:var(--z2,8px);}
+      .z-text-yr4wpM-0{color:var(--z3,#06c);}"
     `)
     expect(result.classes).toMatchInlineSnapshot(`
       {
-        "button": "z-bg-nwvqnd1dk3mnh z-text-qm1o7l1p145bn-1 z-p-153ey9h90namd",
-        "independent": "z-text-127d6cn216lgj-0",
+        "button": "z-bg-lyZQGr z-text-n_CKQt-1 z-p-B1LbZi",
+        "independent": "z-text-yr4wpM-0",
       }
     `)
     expect(result.themes).toMatchInlineSnapshot(`
@@ -161,19 +161,19 @@ describe('define', () => {
       }
     `)
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-bg-nwvqnd1dk3mnh{background-color:var(--z0,light-dark(#fff,#111));}
-      .z-text-qm1o7l1p145bn-1{color:var(--z1,#06c);}
-      .z-p-153ey9h90namd{padding:var(--z2,8px);}
-      .z-text-127d6cn216lgj-0{color:var(--z3,#06c);}"
+      ".z-bg-lyZQGr{background-color:var(--z0,light-dark(#fff,#111));}
+      .z-text-n_CKQt-1{color:var(--z1,#06c);}
+      .z-p-B1LbZi{padding:var(--z2,8px);}
+      .z-text-yr4wpM-0{color:var(--z3,#06c);}"
     `)
     expect(Css.compile({ styles, themes: { independent, renamed: theme } }).css)
       .toMatchInlineSnapshot(`
         ".t_0{--z3:#06c;}
         .t_1{--z0:light-dark(#fff,#111);--z1:#06c;--z2:8px;}
-        .z-bg-nwvqnd1dk3mnh{background-color:var(--z0,light-dark(#fff,#111));}
-        .z-text-qm1o7l1p145bn-1{color:var(--z1,#06c);}
-        .z-p-153ey9h90namd{padding:var(--z2,8px);}
-        .z-text-127d6cn216lgj-0{color:var(--z3,#06c);}"
+        .z-bg-lyZQGr{background-color:var(--z0,light-dark(#fff,#111));}
+        .z-text-n_CKQt-1{color:var(--z1,#06c);}
+        .z-p-B1LbZi{padding:var(--z2,8px);}
+        .z-text-yr4wpM-0{color:var(--z3,#06c);}"
       `)
     expect(Object.isFrozen(theme.tokens.spacing.md)).toMatchInlineSnapshot(
       'true',
@@ -198,7 +198,7 @@ describe('define', () => {
     expect(Css.compile({ styles, themes: { base: theme } }).css)
       .toMatchInlineSnapshot(`
         ".t_0{--z0:#06c;}
-        .z-text-i94asj92smvx{color:var(--z0,#06c);}"
+        .z-text-gsB0EO{color:var(--z0,#06c);}"
       `)
   })
 
@@ -278,7 +278,7 @@ describe('extend', () => {
       .toMatchInlineSnapshot(`
         ".t_0{--z0:1lh;}
         .t_1{--z0:1lh;}
-        .z-p-1ox9s3c114mzsy{padding:var(--z0,1lh);}"
+        .z-p-SVcDu8{padding:var(--z0,1lh);}"
       `)
     expect(() =>
       Theme.extend(theme, { spacing: { md: undefined } } as never),
@@ -314,8 +314,8 @@ describe('extend', () => {
       ".t_0{--z0:#f00;--z1:8px;}
       .t_1{--z0:#06c;--z1:8px;}
       .t_2{--z0:#f00;--z1:12px;}
-      .z-text-i94asj92smvx{color:var(--z0,#06c);}
-      .z-p-19vypc419jkh52{padding:var(--z1,8px);}"
+      .z-text-gsB0EO{color:var(--z0,#06c);}
+      .z-p-Fm87Na{padding:var(--z1,8px);}"
     `)
     expect(
       Css.compile({
@@ -323,7 +323,7 @@ describe('extend', () => {
           button: { color: alternate.tokens.color.blue[500] },
         }),
       }).css,
-    ).toMatchInlineSnapshot(`".z-text-49cxlua2ro4e{color:var(--z0,#f00);}"`)
+    ).toMatchInlineSnapshot(`".z-text-3RFK8y{color:var(--z0,#f00);}"`)
     expect(input).toMatchInlineSnapshot(`
       {
         "color": {

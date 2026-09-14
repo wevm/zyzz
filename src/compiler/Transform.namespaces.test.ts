@@ -22,11 +22,11 @@ describe('compile', () => {
     const output = Transform.compile({ moduleId: 'namespace.ts', source })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-p-8px-mpx2iz169g6dr{padding:8px;}
-      .z-text-red-v8dxvn19kyjtn-1{color:red;}
-      .z-text-blue-vyizjf19lpftn-0{color:blue;}
-      .z-text-red-1mm696j19lkv1b-0{color:red;}
-      .z-w-mpx2iz169g6dr{width:var(--z-dmpx2ize76wo1-270-77-69-64-74-68);}"
+      ".z-p-8px-ku9s2V{padding:8px;}
+      .z-text-red-s93gMW-1{color:red;}
+      .z-text-blue-sOX2qW-0{color:blue;}
+      .z-text-red-QQ5N_W-0{color:red;}
+      .z-w-ku9s2V{width:var(--z-dmpx2ize76wo1-270-77-69-64-74-68);}"
     `)
 
     const built = await Esbuild.build({
@@ -47,17 +47,17 @@ describe('compile', () => {
 
     expect(result.card).toMatchInlineSnapshot(`
       {
-        "className": "z-p-8px-mpx2iz169g6dr z-text-red-v8dxvn19kyjtn-1 z-style-mpx2ize76wo1-177",
+        "className": "z-p-8px-ku9s2V z-text-red-s93gMW-1 z-style-mpx2ize76wo1-177",
       }
     `)
     expect(result.button).toMatchInlineSnapshot(`
       {
-        "className": "z-p-8px-mpx2iz169g6dr z-text-blue-vyizjf19lpftn-0 z-style-mpx2ize76wo1-212",
+        "className": "z-p-8px-ku9s2V z-text-blue-sOX2qW-0 z-style-mpx2ize76wo1-212",
       }
     `)
     expect(result.dynamic).toMatchInlineSnapshot(`
       {
-        "className": "z-p-8px-mpx2iz169g6dr z-text-red-1mm696j19lkv1b-0 z-w-mpx2iz169g6dr z-style-mpx2ize76wo1-270",
+        "className": "z-p-8px-ku9s2V z-text-red-QQ5N_W-0 z-w-ku9s2V z-style-mpx2ize76wo1-270",
         "style": {
           "--z-dmpx2ize76wo1-270-77-69-64-74-68": "20px",
         },
@@ -77,8 +77,8 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-text-red-1gmre3v1iwtmpr-0{color:red;}
-      .z-text-blue-1mf1dby1iw2uuw-0{color:blue;}"
+      ".z-text-red-Lr2CaY-0{color:red;}
+      .z-text-blue-QEGgLI-0{color:blue;}"
     `)
   })
 

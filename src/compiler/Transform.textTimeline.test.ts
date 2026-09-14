@@ -31,15 +31,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-flex-flow-16ghuta1f8mh44-0{flex-flow:row nowrap;}
-      .z-text-wrap-16ghuta1f8mh44-1{text-wrap:wrap balance;}
-      .z-page-break-before-avoid-16ghuta1f8mh44-2{page-break-before:avoid;}
-      .z-flex-direction-column-d2bc71f8mgbr-0{flex-direction:column;}
-      .z-text-wrap-style-pretty-d2bc71f8mgbr-1{text-wrap-style:pretty;}
-      .z-break-before-page-d2bc71f8mgbr-2{break-before:page;}
-      .z-flex-flow-1cci3eg1f8mfja-0{flex-flow:row nowrap;}
-      .z-text-wrap-1cci3eg1f8mfja-1{text-wrap:wrap balance;}
-      .z-page-break-before-avoid-1cci3eg1f8mfja-2{page-break-before:avoid;}"
+      ".z-flex-flow-CgmKfH-0{flex-flow:row nowrap;}
+      .z-text-wrap-CgmKfH-1{text-wrap:wrap balance;}
+      .z-page-break-before-avoid-CgmKfH-2{page-break-before:avoid;}
+      .z-flex-direction-column-0kXiVX-0{flex-direction:column;}
+      .z-text-wrap-style-pretty-0kXiVX-1{text-wrap-style:pretty;}
+      .z-break-before-page-0kXiVX-2{break-before:page;}
+      .z-flex-flow-HzYJKb-0{flex-flow:row nowrap;}
+      .z-text-wrap-HzYJKb-1{text-wrap:wrap balance;}
+      .z-page-break-before-avoid-HzYJKb-2{page-break-before:avoid;}"
     `)
   })
   test('text and flex values match native browser controls', async () => {

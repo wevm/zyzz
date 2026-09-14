@@ -38,8 +38,8 @@ describe('create', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#06c;--z1:8px;}
       .t_1{--z0:light-dark(#175,#afa);--z1:12px;}
-      .z-text-i94asj92smvx{color:var(--z0,#06c);}
-      .z-p-19vypc419jkh52{padding:var(--z1,8px);}"
+      .z-text-gsB0EO{color:var(--z0,#06c);}
+      .z-p-Fm87Na{padding:var(--z1,8px);}"
     `)
     expect(Object.isFrozen(zyzz.themes)).toMatchInlineSnapshot(`true`)
     expect(zyzz.themes.base === base).toMatchInlineSnapshot(`false`)
@@ -51,7 +51,7 @@ describe('create', () => {
         }),
         themes: { original: base },
       }).css,
-    ).toMatchInlineSnapshot(`".z-text-i94asj92smvx{color:var(--z0,#06c);}"`)
+    ).toMatchInlineSnapshot(`".z-text-gsB0EO{color:var(--z0,#06c);}"`)
 
     const other = Config.create({ theme: base })
 
@@ -62,7 +62,7 @@ describe('create', () => {
         }),
         themes: zyzz.themes,
       }).css,
-    ).toMatchInlineSnapshot(`".z-text-i94asj92smvx{color:var(--z0,#06c);}"`)
+    ).toMatchInlineSnapshot(`".z-text-gsB0EO{color:var(--z0,#06c);}"`)
   })
 
   test('normalized themes inherit and select schemes in Chromium', async () => {
@@ -150,7 +150,7 @@ describe('create', () => {
       }).css,
     ).toMatchInlineSnapshot(`
       ".t_0{--z0:12px;}
-      .z-p-1rw1m1qin6rwc{padding:var(--z0,12px);}"
+      .z-p-VAexTA{padding:var(--z0,12px);}"
     `)
 
     const inline = Config.create({ theme: { spacing: { md: '1rem' } } })
@@ -161,7 +161,7 @@ describe('create', () => {
           card: { padding: inline.theme.tokens.spacing.md },
         }),
       }).css,
-    ).toMatchInlineSnapshot(`".z-p-1v20l4whawnrw{padding:var(--z0,1rem);}"`)
+    ).toMatchInlineSnapshot(`".z-p-YqOp03{padding:var(--z0,1rem);}"`)
     expect(() =>
       zyzz.css({ padding: 'md' }),
     ).toThrowErrorMatchingInlineSnapshot(

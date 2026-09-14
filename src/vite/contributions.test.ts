@@ -81,7 +81,7 @@ describe('zyzz', () => {
       )
       expect(production.styles.card()).toMatchInlineSnapshot(`
         {
-          "className": "z-text-1hl3v0315t3mmb z-style-1hl3v031oo9bot-133",
+          "className": "z-text-Mi3EIV z-style-1hl3v031oo9bot-133",
         }
       `)
     } finally {
@@ -311,7 +311,7 @@ describe('zyzz', () => {
       expect(css).toMatchInlineSnapshot(`
         "@layer reset,app;
         body{margin:0;}@layer app { body { color: blue } }
-        .z-text-blue-hdbtya8kwoc{color:blue;}"
+        .z-text-blue-0rQK9y{color:blue;}"
       `)
     } finally {
       await Fs.rm(root, { recursive: true, force: true })

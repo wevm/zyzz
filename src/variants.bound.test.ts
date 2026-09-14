@@ -112,10 +112,10 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
     expect(result.modules['app.ts']!.css).toMatchInlineSnapshot(
       `
       ".z_theme-u8smm21l81sow-variants-theme{--z-tu8smm21l81sow-variants-color_2e_brand:#06c;}
-      .z-pl-8px-1i1s57j183c9bx-0{padding-left:8px;}
-      .z-pr-8px-1i1s57j183c9bx-1{padding-right:8px;}
-      .z-text-1i1s57j183c9bx-2{&:where([data-intent="primary"]){color:var(--z-tu8smm21l81sow-variants-color_2e_brand,#06c);}}
-      .z-text-1i1s57j183c9bx-3{&:where([data-intent="quiet"]){color:black;}}"
+      .z-pl-8px-MIN2nV-0{padding-left:8px;}
+      .z-pr-8px-MIN2nV-1{padding-right:8px;}
+      .z-text-MIN2nV-2{&:where([data-intent="primary"]){color:var(--z-tu8smm21l81sow-variants-color_2e_brand,#06c);}}
+      .z-text-MIN2nV-3{&:where([data-intent="quiet"]){color:black;}}"
     `,
     )
     expect(
@@ -202,12 +202,12 @@ export const button=variants({variants:{intent:{primary:{color:'brand'},quiet:{c
     )
     expect(module.exports.a()).toMatchInlineSnapshot(`
       {
-        "className": "z-text-1e8a67zly006l z-style-1e8a67z1uaws1j-117",
+        "className": "z-text-Jgxd-Q z-style-1e8a67z1uaws1j-117",
       }
     `)
     expect(module.exports.b()).toMatchInlineSnapshot(`
       {
-        "className": "z-text-1e8a67zly006l z-style-1e8a67z1uaws1j-172",
+        "className": "z-text-Jgxd-Q z-style-1e8a67z1uaws1j-172",
       }
     `)
   })

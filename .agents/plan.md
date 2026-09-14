@@ -875,19 +875,19 @@ All 670 property entries are reviewed as supported under the documented static a
 
 ### Readable Atomic Class Names
 
-Atomic output uses readable property/value labels, with hashes for complex values, source-module ownership, and cascade-sensitive slots. Stable development naming preserves CSS-only updates through Vite; graph caches distinguish the naming modes. Grouped output and benchmark mode selection remain unchanged. This work does not complete A5 or A6.
+Atomic output uses readable property/value labels, with six-character hashes for complex values, source-module ownership, and cascade-sensitive slots. Hash collisions between distinct ordered rules fail compilation, including matching declarations that cannot share an ordering position. Stable development naming preserves CSS-only updates through Vite; graph caches distinguish the naming modes. Grouped output and benchmark mode selection remain unchanged. This work does not complete A5 or A6.
 
 Static artifact comparison against A4 (`f0d844b`), using the existing literal corpus without minification or runtime/markup delivery. Class-map bytes are reported separately and are not added to CSS transfer. No atomic timing benchmark was run; benchmark mode selection remains grouped.
 
 | Workload    | CSS raw before → after | CSS gzip before → after | Class-map raw before → after |
 | ----------- | ---------------------: | ----------------------: | ---------------------------: |
-| small       |              411 → 310 |               226 → 189 |                    787 → 484 |
-| repeated    |              411 → 310 |               226 → 189 |            263,891 → 162,891 |
-| unique      |        44,146 → 42,562 |          5,333 → 15,072 |            261,781 → 179,278 |
-| partial     |        15,611 → 14,562 |           1,818 → 2,915 |              25,361 → 19,461 |
-| palette     |         10,620 → 9,033 |           1,206 → 1,868 |              25,671 → 17,847 |
-| independent |        34,474 → 33,946 |           4,022 → 5,892 |              24,121 → 22,900 |
-| sparse      |        12,889 → 12,142 |           1,655 → 2,661 |              13,091 → 11,160 |
-| components  |        13,727 → 14,006 |           1,499 → 2,026 |              16,720 → 14,486 |
+| small       |              411 → 288 |               226 → 179 |                    787 → 418 |
+| repeated    |              411 → 288 |               226 → 179 |            263,891 → 140,891 |
+| unique      |        44,146 → 36,043 |          5,333 → 10,390 |            261,781 → 150,781 |
+| partial     |        15,611 → 12,567 |           1,818 → 2,462 |              25,361 → 15,981 |
+| palette     |         10,620 → 7,698 |           1,206 → 1,454 |              25,671 → 15,027 |
+| independent |        34,474 → 29,326 |           4,022 → 5,386 |              24,121 → 18,280 |
+| sparse      |        12,889 → 10,164 |           1,655 → 2,258 |               13,091 → 8,958 |
+| components  |        13,727 → 11,911 |           1,499 → 1,712 |              16,720 → 11,642 |
 
 Readable names reduce class-map bytes in all eight cases, but hashed ownership increases gzip CSS in mostly unique workloads. This is not an atomic delivery win. Grouped compiler results, including CSS and class maps, remain byte-identical across all eight corpus cases.

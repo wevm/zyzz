@@ -3,7 +3,9 @@
  * @module
  */
 import * as Namespaces from '../compiler/internal/Namespaces.js'
+import * as Appearance from '../runtime/Appearance.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
+import type { ScriptOptions } from '../Config.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
@@ -12,7 +14,7 @@ import * as Path from 'node:path'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Scope from '../compiler/internal/Scope.js'
-import type { Environment, Plugin } from 'vite'
+import type { Environment, Plugin, ViteDevServer } from 'vite'
 import * as Graph from '../compiler/Graph.js'
 import * as Source from '../compiler/Source.js'
 
@@ -26,6 +28,8 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   const discoveries = new WeakMap<Environment, Promise<Map<string, string>>>()
   const contributionFiles = new WeakMap<Environment, Set<string>>()
   const assets = new Map<string, string>()
+  const catalogs = new Map<string, readonly (readonly [string, string])[]>()
+  const initializers = new WeakMap<Environment, Entry>()
   const sourceEntrypoints = new Set<string>()
   let root: string
 
@@ -572,6 +576,14 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       imports,
       modules,
     })
+
+    for (const [id, contract] of Object.entries(result.contracts)) {
+      const entries = catalog(contract)
+
+      if (entries) catalogs.set(id, entries)
+      else catalogs.delete(id)
+    }
+
     const map = new Mapping.GenMapping()
     const styles: string[] = []
     let line = 0
@@ -762,6 +774,35 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         ),
       },
     }
+  }
+
+  /** Compiles every discovered source once so index.html can inline each configuration's script before modules load. */
+  async function initializations(server: ViteDevServer) {
+    const environment = server.environments.client
+    const host: Host = {
+      asset: async (file) => file,
+      resolve: (source, importer) =>
+        environment.pluginContainer.resolveId(source, importer),
+      watch: (file) => server.watcher.add(file),
+    }
+    let entry = initializers.get(environment)
+
+    if (!entry) {
+      const file = (await discover(environment, host)).keys().next().value
+      if (file === undefined) return []
+
+      entry = {
+        compiler: Graph.create(),
+        environment,
+        file,
+        files: new Set([file]),
+      }
+      initializers.set(environment, entry)
+    }
+
+    await compile(entry, host, undefined, true)
+
+    return [...catalogs.values()]
   }
 
   return {
@@ -1086,7 +1127,71 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         map: JSON.stringify(Mapping.toEncodedMap(shifted)),
       }
     },
+    transformIndexHtml: {
+      order: 'post',
+      async handler(_, context) {
+        if (options.script === false) return
+
+        // Build catalogs were collected while bundling; development compiles on request.
+        const entries = context.server
+          ? await initializations(context.server)
+          : [...catalogs.values()]
+        const scripts = new Set(
+          entries.map((entries) =>
+            Appearance.create(entries)(
+              typeof options.script === 'object' ? options.script : {},
+            ),
+          ),
+        )
+
+        // Saved preferences apply before any other script or visible content.
+        return [...scripts].map((children) => ({
+          children,
+          injectTo: 'head-prepend' as const,
+          tag: 'script',
+        }))
+      },
+    },
   }
+}
+
+/** Reads a compiled configuration's theme catalog from its contract; undefined without a configuration export. */
+function catalog(
+  contract: string,
+): readonly (readonly [string, string])[] | undefined {
+  const parsed = JSON.parse(contract) as {
+    exports?: Record<
+      string,
+      {
+        kind?: string
+        members?: Record<string, { theme?: string }>
+        selection?: boolean
+      }
+    >
+  }
+  const entries = new Map<string, string>()
+  let configured = false
+
+  for (const binding of Object.values(parsed.exports ?? {})) {
+    if (binding.kind !== 'config') continue
+
+    configured = true
+
+    for (const [path, member] of Object.entries(binding.members ?? {})) {
+      const names = JSON.parse(path) as readonly string[]
+      const name = (() => {
+        if (binding.selection) return names.length === 1 ? names[0] : undefined
+        return names.length === 2 && names[0] === 'themes'
+          ? names[1]
+          : undefined
+      })()
+
+      if (name !== undefined && member.theme)
+        entries.set(name, `z_theme-${member.theme}`)
+    }
+  }
+
+  return configured ? [...entries] : undefined
 }
 
 type Entry = {
@@ -1117,9 +1222,14 @@ function cssId(file: string) {
 
 /** Vite integration configuration. */
 export declare namespace zyzz {
-  /** Source optimization remains enabled by default. */
+  /** Source optimization and initialization injection remain enabled by default. */
   type Options = {
     /** False retains authored calls and requires explicit identities where needed. */
     readonly compiler?: boolean | undefined
+    /**
+     * Inline each configuration's `script()` at the start of index.html's head.
+     * False skips injection; an object forwards script options such as `storageKey`.
+     */
+    readonly script?: boolean | ScriptOptions | undefined
   }
 }

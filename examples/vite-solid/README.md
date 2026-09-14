@@ -22,14 +22,14 @@ export function Button() {
 
 Spreads read signals inside the JSX, so `styles.bar({ width: `${amount()}%` })` updates its bound variable without re-rendering the element. Each module opens with `/** @jsxImportSource solid-js */` because the repository's shared tsconfig targets React's JSX runtime.
 
-The root theme lives on `<html>`. `src/appearance.ts` applies the default selection, inserts the config's `script()` so a selection saved in localStorage wins before anything renders, and persists changes. A server-rendered document inlines the same script in `<head>` instead.
+The root theme lives on `<html>`. The Vite plugin inlines the config's `script()` at the start of `index.html`'s head, so a saved selection applies before any module runs. `src/appearance.ts` creates `Appearance` from `zyzz/web`; the entry calls `restore()` for the defaults, and controls read `current()` and persist with `select()`.
 
 ## Feature Map
 
 | Source                          | Capabilities                                                                                     |
 | ------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `src/zyzz.config.ts`            | Named themes, light/dark pairs, extensions, tokens, aliases, property-specific scales, layers    |
-| `src/appearance.ts`             | Root theme and scheme on `<html>`, saved preferences, `script()` initialization                  |
+| `src/appearance.ts`             | `Appearance` from `zyzz/web`: root theme and scheme on `<html>`, saved preferences               |
 | `src/App.tsx`                   | Theme controls, nested scopes, global CSS in a named layer                                       |
 | `src/Styling.tsx`               | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides |
 | `src/Dynamic.tsx`               | Typed runtime inputs, `variable()`, registration, static and inline `variables`                  |

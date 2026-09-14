@@ -34,7 +34,7 @@ Authored source stays unaware of compiled artifacts. Relative imports inside com
 
 Vite runs with its default configuration. Its default CSS target lowers `light-dark()` into Lightning CSS helpers; the compiled scheme classes that `themes()` applies carry `color-scheme` in the stylesheet, so those helpers initialize and theme switching keeps working.
 
-The root theme lives on `<html>`. `src/appearance.ts` applies the default selection, inserts the config's `script()` so a selection saved in localStorage wins before anything renders, and persists changes. A server-rendered document inlines the same script in `<head>` instead.
+The root theme lives on `<html>`. Both scripts inline the compiled config's `script()` at the start of `index.html`'s head, so a saved selection applies before any module runs. `src/appearance.ts` creates `Appearance` from `zyzz/web`; the entry calls `restore()` for the defaults, and controls read `current()` and persist with `select()`.
 
 ## Feature Map
 
@@ -43,7 +43,7 @@ The root theme lives on `<html>`. `src/appearance.ts` applies the default select
 | `scripts/build.ts`      | `Host.create`, `host.build`, artifact list, Vite `build`                                         |
 | `scripts/dev.ts`        | `host.watch`, error events preserving the last output, Vite `createServer`                       |
 | `src/zyzz.config.ts`    | Named themes, light/dark pairs, extensions, tokens, aliases, property-specific scales, layers    |
-| `src/appearance.ts`     | Root theme and scheme on `<html>`, saved preferences, `script()` initialization                  |
+| `src/appearance.ts`     | `Appearance` from `zyzz/web`: root theme and scheme on `<html>`, saved preferences               |
 | `src/App.tsx`           | Theme controls, nested scopes, global CSS in a named layer                                       |
 | `src/Styling.tsx`       | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides |
 | `src/Dynamic.tsx`       | Typed runtime inputs, `variable()`, registration, static and inline `variables`                  |

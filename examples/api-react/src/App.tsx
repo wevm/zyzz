@@ -1,7 +1,7 @@
 /** Presents small, independent examples under a selectable theme scope. @module */
 import { useState } from 'react'
 import { global } from 'zyzz/web'
-import * as Appearance from './appearance.js'
+import { appearance, type Selection } from './appearance.js'
 import { Dynamic } from './Dynamic.js'
 import { Motion } from './Motion.js'
 import { Relationships } from './Relationships.js'
@@ -76,13 +76,13 @@ namespace styles {
 
 /** The root selection lives on <html>; nested scopes inherit without a provider or listener. */
 export function App() {
-  const [appearance, setAppearance] = useState(Appearance.current)
+  const [selection, setSelection] = useState(appearance.current)
 
-  function select(next: Partial<Appearance.Appearance>) {
-    const value = { ...appearance, ...next }
+  function select(next: Partial<Selection>) {
+    const value = { ...selection, ...next }
 
-    Appearance.select(value)
-    setAppearance(value)
+    appearance.select(value)
+    setSelection(value)
   }
 
   return (
@@ -100,14 +100,14 @@ export function App() {
           <div {...styles.row()}>
             <button
               {...styles.button()}
-              aria-pressed={appearance.theme === 'indigo'}
+              aria-pressed={selection.theme === 'indigo'}
               onClick={() => select({ theme: 'indigo' })}
             >
               Indigo
             </button>
             <button
               {...styles.button()}
-              aria-pressed={appearance.theme === 'mint'}
+              aria-pressed={selection.theme === 'mint'}
               onClick={() => select({ theme: 'mint' })}
             >
               Mint
@@ -116,7 +116,7 @@ export function App() {
               Color scheme{' '}
               <select
                 aria-label="Color scheme"
-                value={appearance.colorScheme}
+                value={selection.colorScheme}
                 onChange={(event) => {
                   const value = event.target.value
                   if (
@@ -149,11 +149,11 @@ export function App() {
                 {...styles.sample()}
                 onClick={() =>
                   select({
-                    theme: appearance.theme === 'indigo' ? 'mint' : 'indigo',
+                    theme: selection.theme === 'indigo' ? 'mint' : 'indigo',
                   })
                 }
               >
-                Parent: {appearance.theme}
+                Parent: {selection.theme}
               </button>
               <div {...themes({ theme: 'mint', colorScheme: 'dark' })}>
                 <div {...styles.nested()} data-testid="nested-theme">

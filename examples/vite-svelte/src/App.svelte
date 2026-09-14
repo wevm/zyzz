@@ -1,6 +1,6 @@
 <!-- Presents small, independent examples under the root theme carried by <html>. -->
 <script lang="ts">
-  import * as Appearance from './appearance.js'
+  import { appearance, type Selection } from './appearance.js'
   import { styles } from './App.styles.js'
   import Dynamic from './Dynamic.svelte'
   import Motion from './Motion.svelte'
@@ -9,11 +9,11 @@
   import Styling from './Styling.svelte'
   import { themes } from './zyzz.config.js'
 
-  let appearance = $state(Appearance.current())
+  let selection = $state(appearance.current())
 
-  function select(next: Partial<Appearance.Appearance>) {
-    appearance = { ...appearance, ...next }
-    Appearance.select(appearance)
+  function select(next: Partial<Selection>) {
+    selection = { ...selection, ...next }
+    appearance.select(selection)
   }
 </script>
 
@@ -26,14 +26,14 @@
       <div {...styles.row()}>
         <button
           {...styles.button()}
-          aria-pressed={appearance.theme === 'indigo'}
+          aria-pressed={selection.theme === 'indigo'}
           onclick={() => select({ theme: 'indigo' })}
         >
           Indigo
         </button>
         <button
           {...styles.button()}
-          aria-pressed={appearance.theme === 'mint'}
+          aria-pressed={selection.theme === 'mint'}
           onclick={() => select({ theme: 'mint' })}
         >
           Mint
@@ -42,7 +42,7 @@
           Color scheme
           <select
             aria-label="Color scheme"
-            value={appearance.colorScheme}
+            value={selection.colorScheme}
             onchange={(event) => {
               const value = event.currentTarget.value
               if (value === 'light' || value === 'dark' || value === 'light dark')
@@ -72,10 +72,10 @@
             {...styles.sample()}
             onclick={() =>
               select({
-                theme: appearance.theme === 'indigo' ? 'mint' : 'indigo',
+                theme: selection.theme === 'indigo' ? 'mint' : 'indigo',
               })}
           >
-            Parent: {appearance.theme}
+            Parent: {selection.theme}
           </button>
           <div {...themes({ theme: 'mint', colorScheme: 'dark' })}>
             <div {...styles.nested()} data-testid="nested-theme">

@@ -730,4 +730,103 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
       await Fs.rm(root, { recursive: true, force: true })
     }
   }, 30000)
+  test('inlines configuration initialization before other head scripts in development and production', async () => {
+    const files = {
+      'config.ts': `import { Config } from 'zyzz'; export const { css, themes } = Config.create({ defaultTheme: 'base', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } });`,
+      'index.html': `<!doctype html><html><head><title>Fixture</title></head><body><script type="module" src="/main.ts"></script></body></html>`,
+      'main.ts': `import { themes } from './config'; const root = document.documentElement; root.dataset.initial = root.className; root.dataset.mint = themes.mint.className; root.dataset.ready = 'true';`,
+    }
+    const { config, root } = await create(files)
+    const browser = await chromium.launch({ headless: true })
+    let server: Vite.ViteDevServer | undefined
+    let preview: Vite.PreviewServer | undefined
+
+    try {
+      server = await Vite.createServer(config)
+      await server.listen()
+
+      const development = await server.transformIndexHtml(
+        '/index.html',
+        files['index.html'],
+      )
+      const restore = development.indexOf('localStorage.getItem("zyzz")')
+
+      expect(restore > -1).toMatchInlineSnapshot('true')
+      expect(
+        restore < development.indexOf('/@vite/client'),
+      ).toMatchInlineSnapshot('true')
+
+      await server.close()
+      server = undefined
+
+      const outDir = Path.join(root, 'dist')
+
+      await Vite.build({ ...config, build: { outDir } })
+
+      const production = await Fs.readFile(
+        Path.join(outDir, 'index.html'),
+        'utf8',
+      )
+
+      expect(
+        /<head>\s*<script>\(\(\)=>\{try\{const value=JSON\.parse\(localStorage\.getItem\("zyzz"\)/.test(
+          production,
+        ),
+      ).toMatchInlineSnapshot('true')
+
+      preview = await Vite.preview({
+        ...config,
+        build: { outDir },
+        preview: { host: '127.0.0.1', port: 0 },
+      })
+
+      const page = await browser.newPage()
+
+      await page.goto(preview.resolvedUrls!.local[0]!)
+      await page.waitForFunction(
+        'document.documentElement.dataset.ready === "true"',
+      )
+      await page.evaluate(
+        `localStorage.setItem('zyzz', JSON.stringify({ theme: 'mint', colorScheme: 'dark' }))`,
+      )
+      await page.reload()
+      await page.waitForFunction(
+        'document.documentElement.dataset.ready === "true"',
+      )
+
+      // The entry module observed the restored classes when it evaluated.
+      expect(
+        await page.evaluate(
+          'document.documentElement.dataset.initial === `${document.documentElement.dataset.mint} z_scheme-dark`',
+        ),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        await page.evaluate('document.documentElement.style.colorScheme'),
+      ).toMatchInlineSnapshot('"dark"')
+
+      await Vite.build({
+        ...config,
+        build: { outDir: Path.join(root, 'plain') },
+        plugins: [zyzz({ script: false })],
+      })
+
+      expect(
+        (
+          await Fs.readFile(Path.join(root, 'plain/index.html'), 'utf8')
+        ).includes('localStorage'),
+      ).toMatchInlineSnapshot('false')
+    } finally {
+      await browser.close()
+      await server?.close()
+
+      if (preview)
+        await new Promise<void>((resolve, reject) =>
+          preview!.httpServer.close((error) =>
+            error ? reject(error) : resolve(),
+          ),
+        )
+
+      await Fs.rm(root, { recursive: true, force: true })
+    }
+  }, 60000)
 })

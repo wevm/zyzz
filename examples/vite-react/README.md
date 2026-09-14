@@ -25,7 +25,7 @@ export function Button() {
 | Source                         | Capabilities                                                                                                                                             |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/zyzz.config.ts`           | Named themes, light/dark pairs, extensions, tokens, aliases, property-specific scales, cascade layers                                                    |
-| `src/appearance.ts`            | Root theme and scheme on `<html>`, saved preferences, `script()` initialization                                                                          |
+| `src/appearance.ts`            | `Appearance` from `zyzz/web`: root theme and scheme on `<html>`, saved preferences                                                                       |
 | `src/App.tsx`                  | Theme controls, nested scopes, responsive layout                                                                                                         |
 | `src/Styling.tsx`              | Literal reuse, object spread, fallbacks, importance, token/variable references, state, overrides                                                         |
 | `src/Dynamic.tsx`              | Typed runtime inputs, `variable()`, registration, static and inline `variables`, inherited assignments                                                   |
@@ -38,7 +38,7 @@ export function Button() {
 
 Each example keeps styles beside its component and spreads normal props onto native elements. Advanced stylesheet descriptors follow browser support; print rules are visible in print preview.
 
-The root theme lives on `<html>`. `src/appearance.ts` applies the default selection, inserts the config's `script()` so a selection saved in localStorage wins before anything renders, and persists changes. A server-rendered document inlines the same script in `<head>` instead.
+The root theme lives on `<html>`. The Vite plugin inlines the config's `script()` at the start of `index.html`'s head, so a saved selection applies before any module runs. `src/appearance.ts` creates `Appearance` from `zyzz/web`; the entry calls `restore()` for the defaults, and controls read `current()` and persist with `select()`.
 
 `variants`, `cx`, default-theme imports, and native output remain separate implementation work. This client-rendered example does not demonstrate SSR hydration. The [cli-react](../cli-react) and [api-react](../api-react) examples cover CLI and compiler-API workflows; packed-library workflows remain in the [compilation guide](../../docs/guides/compilation.md).
 

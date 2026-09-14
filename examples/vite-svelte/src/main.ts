@@ -2,10 +2,10 @@
 import { mount } from 'svelte'
 import 'zyzz/reset.css'
 import App from './App.svelte'
-import * as Appearance from './appearance.js'
+import { appearance } from './appearance.js'
 
 const target = document.getElementById('root')
 if (!target) throw new Error('Missing playground root.')
 
-Appearance.initialize()
+appearance.restore()
 mount(App, { target })

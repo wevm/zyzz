@@ -2,10 +2,10 @@
 import { createRoot } from 'react-dom/client'
 import 'zyzz/reset.css'
 import { App } from './App.js'
-import * as Appearance from './appearance.js'
+import { appearance } from './appearance.js'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Missing playground root.')
 
-Appearance.initialize()
+appearance.restore()
 createRoot(root).render(<App />)

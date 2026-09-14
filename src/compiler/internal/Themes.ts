@@ -1275,6 +1275,10 @@ export function collect(program: Ast.Program, options: collect.Options) {
           )
       }
 
+      // A compiled selector is an ordinary runtime function, so passing or storing it is safe.
+      if (config.call.selection && !config.call.catalogOnly && !path.length)
+        return true
+
       fail(
         'Use direct configuration css calls or static theme members; configurations cannot escape or be mutated.',
         node,

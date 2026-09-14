@@ -290,6 +290,21 @@ export const scope = mint.className;`,
     `)
   })
 
+  test('destructured selectors pass to runtime helpers as values', () => {
+    const output = Graph.compile({
+      modules: {
+        'pkg/config.ts': `import { Config } from 'zyzz'; export const { themes } = Config.create({ defaultTheme: 'base', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } }); export const names = Object.keys(themes); export const catalog = [themes];`,
+      },
+    })
+    const code = output.modules['pkg/config.ts']!.code
+
+    expect(code.includes('__zyzzSelection.create(')).toMatchInlineSnapshot(
+      'true',
+    )
+    expect(code.includes('Object.keys(themes)')).toMatchInlineSnapshot('true')
+    expect(code.includes('[themes]')).toMatchInlineSnapshot('true')
+  })
+
   test('configuration dynamic access and escaping fail before emission', () => {
     expect(() =>
       Graph.compile({

@@ -21,6 +21,8 @@ export default defineConfig({
 
 No generated component imports or manual stylesheet import is required. Theme source is analyzed without executing application code. Vite owns alias resolution, TypeScript/JSX lowering, final CSS processing, and asset delivery.
 
+Named theme configurations also get their preference [initialization script](../api/vite/zyzz.md#initialization-script) inlined at the start of `index.html`'s `<head>`, so saved themes and schemes apply before first paint. Pass `zyzz({ script: false })` to opt out.
+
 Theme edits update generated CSS through Vite HMR. Missing source files report errors; restoring or creating the dependency recovers without restarting the server. Files outside the Vite root, dependency authoring, and virtual source modules remain separate integration gates.
 
 See [Vite's plugin setup](https://vite.dev/guide/using-plugins) for the host configuration format.

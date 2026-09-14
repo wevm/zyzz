@@ -18,6 +18,17 @@ const output = Transform.compile({
 
 ## Parameters
 
+### options.development
+
+- Type: `boolean`
+- Default: `false`
+
+Use stable atomic declaration names for CSS-only development updates. Production output uses readable literal values with module ownership hashes. Vite selects development naming automatically.
+
+```ts
+Transform.compile({ development: true, moduleId: 'app/card.ts', source })
+```
+
 ### options.moduleId
 
 - Type: `string`

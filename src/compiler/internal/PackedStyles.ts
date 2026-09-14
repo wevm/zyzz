@@ -38,7 +38,7 @@ export function create(call: Source.Call, style: Style.NamedStyle): Definition {
         payload.slots.flatMap((slots) => Object.values(slots)),
       ),
     ],
-    style,
+    style: { ...style, cssOutput: style.cssOutput ?? 'atomic' },
   }
 }
 
@@ -46,6 +46,7 @@ export function create(call: Source.Call, style: Style.NamedStyle): Definition {
 export function read(
   value: unknown,
   themes: Readonly<Record<string, Theme.Definition>>,
+  version = 17,
 ): Definition {
   const tokens = new Map<string, Token.Reference>()
   function collect(value: unknown) {
@@ -97,7 +98,16 @@ export function read(
   function style(value: unknown, depth = 0): Style.NamedStyle {
     if (depth > 64) throw new Error('Packed style nesting exceeds 64 levels.')
     const item = object(value)
+    if (
+      item.cssOutput !== undefined &&
+      item.cssOutput !== 'atomic' &&
+      item.cssOutput !== 'grouped'
+    )
+      throw new Error('Invalid packed style CSS output mode.')
     return {
+      ...(item.cssOutput
+        ? { cssOutput: item.cssOutput as 'atomic' | 'grouped' }
+        : {}),
       declarations: array(item.declarations).map((value) => {
         const declaration = object(value)
         const property = string(declaration.property)
@@ -143,6 +153,8 @@ export function read(
   }
 
   const item = object(value)
+  if (version >= 17 && object(item.style).cssOutput === undefined)
+    throw new Error('Missing packed style CSS output mode.')
   const attributes = array(item.attributes).map(string)
   const slots = array(item.slots).map(string)
   if (
@@ -163,17 +175,26 @@ export function read(
 /** Encodes references as data while preserving declaration and condition order. */
 export function write(definition: Definition): unknown {
   return JSON.parse(
-    JSON.stringify(definition, (_, value: unknown) => {
-      if (Token.is(value))
-        return {
-          identity: value.contract[Token.identity],
-          kind: 'token',
-          path: value.path,
-        }
-      if (Token.isExpression(value))
-        return { kind: 'expression', parts: value.parts }
-      return value
-    }),
+    JSON.stringify(
+      {
+        ...definition,
+        style: {
+          ...definition.style,
+          cssOutput: definition.style.cssOutput ?? 'atomic',
+        },
+      },
+      (_, value: unknown) => {
+        if (Token.is(value))
+          return {
+            identity: value.contract[Token.identity],
+            kind: 'token',
+            path: value.path,
+          }
+        if (Token.isExpression(value))
+          return { kind: 'expression', parts: value.parts }
+        return value
+      },
+    ),
   )
 }
 

@@ -41,7 +41,7 @@ function afterType(style = css({ color: '#f00' })) { var css; }
           "css({ color: '#f00' })",
           "css({ color: '#f00' })",
         ],
-        "css": ".z_base-color-1l83h6e5uk22g{color:#f00;}",
+        "css": ".z-text-oLANea{color:#f00;}",
       }
     `)
   })
@@ -216,10 +216,10 @@ type Definition = ReturnType<typeof define>;
           "themeReferences": [],
           "themes": {},
         },
-        "rules": ".z-style-16i62vd1bo8k8l-116-atomic-padding-0{padding:8px;}
-      .z-style-16i62vd1bo8k8l-116-atomic-paddingLeft-1{padding-left:0;}
-      .z_base-color-6xavfhsxeofd{color:#fff;}
-      .z_base-opacity-6nb9qisxeofc{opacity:0.5;}",
+        "rules": ".z-p-8px-U1ik2p-0{padding:8px;}
+      .z-pl-0-U1ik2p-1{padding-left:0;}
+      .z-text-kJGhCa{color:#fff;}
+      .z-opacity-O99JRy{opacity:0.5;}",
       }
     `)
   })

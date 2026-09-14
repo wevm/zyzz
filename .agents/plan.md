@@ -31,6 +31,29 @@ This stack brings 3.9's web emission work forward and owns the related CLI parit
 
 CI literal/theme transfer comparisons and pure-emitter benchmarks select grouped output. Runtime/render comparisons use config-bound grouped helpers from A3 onward. This benchmark choice does not change the atomic application default. Existing competitor and regression thresholds remain enforced; atomic performance acceptance remains in A6.
 
+### A1–A4 Implementation Status
+
+A1 [#150](https://github.com/wevm/zyzz/pull/150), A2 [#151](https://github.com/wevm/zyzz/pull/151), and A3 [#152](https://github.com/wevm/zyzz/pull/152) are open as dependent drafts. A4 [#153](https://github.com/wevm/zyzz/pull/153) adds version 17 contracts and preserves producer modes within mixed-mode compositions. None of these drafts closes A5 or A6.
+
+Focused evidence includes 19 emitter integrations, independent Chromium reset/condition controls in both modes, 13 config/source integrations, declaration-map tracing, and four producer/consumer mode combinations from source-free npm archives. Archive browser checks cover dynamic binding removal, defaults, compounds, explicit overrides, and both stylesheet orders.
+
+The package build and focused TypeScript checks pass. The final focused run passed 35 tests, and seven variant/composition suites passed another 39 tests. The first broad compiler run passed 113 tests; its shared class-name snapshots and missing prebuilt-runtime failure were corrected with focused reruns. Full CI, broad snapshot reconciliation, lifecycle matrices, and performance acceptance remain open. Keep the stack draft until those gates pass.
+
+Initial same-process measurements use 100 styles with color, padding, and display, 100 warmups and 1,000 timed compilations per lane. The baseline is the pre-stack hybrid emitter; current modes use identical inputs. These diagnostic means have no variance estimate and are not a framework or rendering comparison.
+
+| Workload | Emitter         | Mean ms | CSS raw / gzip / Brotli bytes | Class-map JSON bytes |
+| -------- | --------------- | ------- | ----------------------------- | -------------------- |
+| Repeated | Baseline hybrid | 0.219   | 45 / 65 / 49                  | 1,891                |
+| Repeated | Atomic          | 0.562   | 127 / 116 / 91                | 9,491                |
+| Repeated | Grouped         | 0.504   | 6,889 / 351 / 198             | 4,181                |
+| Unique   | Baseline hybrid | 0.780   | 4,293 / 718 / 354             | 2,781                |
+| Unique   | Atomic          | 1.911   | 10,048 / 3,072 / 2,386        | 10,315               |
+| Unique   | Grouped         | 1.659   | 7,772 / 1,839 / 1,402         | 4,184                |
+
+Both new modes regress against the baseline in this diagnostic. Class maps are not complete delivered JavaScript or markup and must not be added to transfer totals without accounting for their actual use. A6 retains matched framework lanes, complete delivery, browser timings, and existing thresholds; no performance advantage is established.
+
+CI literal/theme transfer comparisons and pure-emitter benchmarks select grouped output. Runtime/render comparisons use config-bound grouped helpers from A3 onward. This benchmark choice does not change the atomic application default. Existing competitor and regression thresholds remain enforced; atomic performance acceptance remains in A6.
+
 ### Acceptance Gate
 
 - [ ] Omitted mode equals explicit `'atomic'`; `'grouped'` emits scoped declaration blocks. Unsupported mode values fail static/config structural checks without adding runtime CSS-value validation.
@@ -857,3 +880,23 @@ All 670 property entries are reviewed as supported under the documented static a
 The standalone CLI moves ahead of output optimization and native PRs. `zyzz build` compiles once; `zyzz dev` builds immediately and watches using the existing file host. Incur owns command parsing and structured output. Native PRs 3.8–3.9 remain last; full Phase 3 acceptance still requires both mobile platforms.
 
 The CLI compiles source modules and CSS by default. `--css-only` disables source transformation and emits only per-module CSS and CSS maps, preserving output ownership and watch recovery. The Vite compiler is optional and enabled by default; disabling it retains executable authoring calls and requires explicit IDs for identity-bearing declarations. Lower-level Host module output remains available for library publishing. TypeScript/JSX lowering, declaration generation, application bundling, and watching installed dependencies remain outside this command boundary.
+[Measurements](../bench/Web-variants.md) retain all comparison lanes, artifact boundaries, uncertainty, and observed losses. The complete 72-group production React matrix passes locally and in CI. Inline Svelte authoring, application frameworks beyond Next.js, and native rendering remain outside this acceptance slice. Neither PR is merged.
+
+### Readable Atomic Class Names
+
+Atomic output uses readable property/value labels, with six-character hashes for complex values, source-module ownership, and cascade-sensitive slots. Hash collisions between distinct ordered rules fail compilation, including matching declarations that cannot share an ordering position. Graph assembly rejects atomic identities shared by distinct modules, including cached modules. Development output retains separate declaration slots for every style, and display flex/grid labels retain their property prefix to avoid shorthand collisions. Stable development naming preserves CSS-only updates through Vite; graph caches distinguish the naming modes. Grouped output and benchmark mode selection remain unchanged. This work does not complete A5 or A6.
+
+Static artifact comparison against A4 (`f0d844b`), using the existing literal corpus without minification or runtime/markup delivery. Class-map bytes are reported separately and are not added to CSS transfer. No atomic timing benchmark was run; benchmark mode selection remains grouped.
+
+| Workload    | CSS raw before → after | CSS gzip before → after | Class-map raw before → after |
+| ----------- | ---------------------: | ----------------------: | ---------------------------: |
+| small       |              411 → 288 |               226 → 179 |                    787 → 418 |
+| repeated    |              411 → 288 |               226 → 179 |            263,891 → 140,891 |
+| unique      |        44,146 → 36,043 |          5,333 → 10,390 |            261,781 → 150,781 |
+| partial     |        15,611 → 12,567 |           1,818 → 2,462 |              25,361 → 15,981 |
+| palette     |         10,620 → 7,698 |           1,206 → 1,454 |              25,671 → 15,027 |
+| independent |        34,474 → 29,726 |           4,022 → 5,394 |              24,121 → 18,680 |
+| sparse      |        12,889 → 10,428 |           1,655 → 2,275 |               13,091 → 9,222 |
+| components  |        13,727 → 12,071 |           1,499 → 1,714 |              16,720 → 11,802 |
+
+Readable names reduce class-map bytes in all eight cases, but hashed ownership increases gzip CSS in mostly unique workloads. This is not an atomic delivery win. Grouped compiler results, including CSS and class maps, remain byte-identical across all eight corpus cases.

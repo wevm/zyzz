@@ -73,16 +73,16 @@ describe('compile', () => {
 
     expect(output.classes).toMatchInlineSnapshot(`
       {
-        "a": "z-a-atomic-padding-0 z-a-atomic-paddingLeft-1",
-        "again": "z-a-atomic-padding-0 z-a-atomic-paddingLeft-1",
-        "b": "z-b-atomic-paddingLeft-0 z-b-atomic-padding-1",
+        "a": "z-p-10px-CgmKfH-0 z-pl-1px-CgmKfH-1",
+        "again": "z-p-10px-CgmKfH-0 z-pl-1px-CgmKfH-1",
+        "b": "z-pl-1px-0kXiVX-0 z-p-10px-0kXiVX-1",
       }
     `)
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a-atomic-padding-0{padding:10px;}
-      .z-a-atomic-paddingLeft-1{padding-left:1px;}
-      .z-b-atomic-paddingLeft-0{padding-left:1px;}
-      .z-b-atomic-padding-1{padding:10px;}"
+      ".z-p-10px-CgmKfH-0{padding:10px;}
+      .z-pl-1px-CgmKfH-1{padding-left:1px;}
+      .z-pl-1px-0kXiVX-0{padding-left:1px;}
+      .z-p-10px-0kXiVX-1{padding:10px;}"
     `)
 
     const browser = await chromium.launch()
@@ -109,5 +109,25 @@ describe('compile', () => {
     } finally {
       await browser.close()
     }
+  })
+
+  test('development class names survive offsets and declaration insertion', () => {
+    const source = (value: string, added = '') =>
+      `import {css} from 'zyzz'; const first=css({color:'${value}'}); const second=css({${added}color:'blue',padding:'8px'})`
+    const before = Transform.compile({
+      development: true,
+      moduleId: 'dev.ts',
+      source: source('red'),
+    })
+    const after = Transform.compile({
+      development: true,
+      moduleId: 'dev.ts',
+      source: source('rebeccapurple', "display:'block',"),
+    })
+    const previous = Object.values(before.classes)[1]!.split(' ')
+    const current = Object.values(after.classes)[1]!.split(' ')
+    expect(
+      previous.every((name) => current.includes(name)),
+    ).toMatchInlineSnapshot('true')
   })
 })

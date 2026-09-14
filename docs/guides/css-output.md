@@ -1,7 +1,7 @@
 # CSS Output
 
 > [!NOTE]
-> Configurable output is supported by the shared compiler and source config. Packed composition and the CSS-only CLI retain separate acceptance gates.
+> Configurable output is supported by the shared compiler, source config, and version 17 packed contracts. The CSS-only CLI and complete framework/benchmark acceptance remain planned.
 
 Choose the CSS representation on the authoring config:
 
@@ -44,10 +44,10 @@ function Card() {
 Illustrative atomic output shares the color declaration:
 
 ```css
-.color-red-a1 {
+.z-text-red-HASH {
   color: red;
 }
-.padding-8px-b2 {
+.z-p-8px-HASH {
   padding: 8px;
 }
 ```
@@ -66,9 +66,17 @@ The card receives both classes; the label receives the color class. Grouped outp
 
 These names illustrate the representation, not a class-name API. Applications consume returned props. Native CSS cascade and explicit `cx` composition must preserve equivalent rendered behavior in both modes; class-string order is not CSS precedence.
 
+## Class Names
+
+Common declarations use readable labels such as `z-display-flex`, `z-p-8px`, and `z-text-red`. Simple pseudo-classes add a prefix, such as `z-hover-text-blue`. Complex values and fallback sequences use a deterministic six-character hash instead of embedding CSS syntax. Hash characters are letters, digits, underscores, or hyphens.
+
+Source compilation appends an ownership hash so independently delivered modules preserve their cascade order. Conflicting declarations receive distinct hashes even when their values match. Theme and variable references participate in the hashed identity. Names remain compiler output; application code consumes returned props.
+
+Vite development uses compact, value-independent names and keeps each style’s declarations separate so CSS-only edits continue styling mounted elements. Production names include readable literal values. Low-level `Css.compile`, `Transform.compile`, and `Graph.compile` callers can select stable development naming with `development: true`.
+
 ## Semantics
 
-Atomic identity includes the property/value, importance, selector, conditions, cascade layer, theme/variable references, and ordering context. Identical declarations share only when doing so preserves precedence. Ordered same-property fallback sequences may remain together.
+Atomic sharing compares the property/value, importance, selector, conditions, cascade layer, theme/variable references, and ordering context. Identical declarations share only when doing so preserves precedence. Ordered same-property fallback sequences may remain together.
 
 Shorthand resets, logical/physical overlap, and repeated overrides require contextual atoms or proven normalization. Atomic output must not silently fall back to grouped style blocks. Identity-only styles and interpolated selector references retain stable identities even when declaration classes are shared.
 
@@ -78,7 +86,7 @@ Global rules, keyframes, property registrations, font descriptors, and theme sco
 
 The CLI compiles source by default. `--css-only` disables rewriting and requires explicit IDs for identity-bearing declarations. Propagating configurable CSS output through both paths is planned; compilation does not select the CSS representation.
 
-Packed libraries retain their defining mode and matching class/CSS metadata. Consumer configuration does not reinterpret published classes. Mixed-mode composition, independent loading, source maps, and watch-mode changes must pass acceptance before release.
+Version 17 packed libraries retain their defining mode and matching class/CSS metadata. Consumer configuration does not reinterpret published classes. Archive fixtures verify all producer/consumer mode pairs, dynamic composition, and both stylesheet orders. Complete framework lifecycle and watch acceptance remain open.
 
 Minification and browser-target processing remain separate. Final processing may shorten or merge equivalent syntax while preserving class identity and behavior; it does not change the selected authoring mode.
 

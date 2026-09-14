@@ -197,7 +197,7 @@ describe('create', () => {
 
     expect(
       JSON.parse(graph.contracts['config.js']!).version,
-    ).toMatchInlineSnapshot('4')
+    ).toMatchInlineSnapshot('17')
 
     const bundle = await Esbuild.build({
       stdin: {
@@ -227,6 +227,10 @@ describe('create', () => {
     const legacy = JSON.parse(library.contracts['config.ts']!)
 
     legacy.version = 2
+    for (const theme of Object.values(legacy.themes) as {
+      cssOutput?: string
+    }[])
+      delete theme.cssOutput
 
     const contracts = { 'lib.js': JSON.stringify(legacy) },
       imports = { 'app.ts': { lib: 'lib.js' } }

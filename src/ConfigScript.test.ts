@@ -82,6 +82,8 @@ describe('create', () => {
 
     data.version = 2
     delete data.exports.config.script
+    for (const theme of Object.values(data.themes) as { cssOutput?: string }[])
+      delete theme.cssOutput
 
     const app = Graph.compile({
       contracts: { 'lib.js': JSON.stringify(data) },
@@ -95,7 +97,7 @@ describe('create', () => {
       app.modules['app.ts']!.code.includes("key extends 'script'"),
     ).toMatchInlineSnapshot('true')
   })
-  test('keeps css-only packed exports compatible with earlier contract readers', () => {
+  test('versions css-only packed exports with their output metadata', () => {
     const graph = Graph.compile({
       modules: {
         'config.ts': `import {Config} from 'zyzz';export const {css}=Config.create({});`,
@@ -104,7 +106,7 @@ describe('create', () => {
 
     const contract = JSON.parse(graph.contracts['config.ts']!)
 
-    expect(contract.version).toMatchInlineSnapshot('2')
+    expect(contract.version).toMatchInlineSnapshot('17')
     expect(Object.hasOwn(contract.exports.css, 'script')).toMatchInlineSnapshot(
       'false',
     )
@@ -140,6 +142,8 @@ describe('create', () => {
 
     old.version = 3
     delete old.exports.config.script
+    for (const theme of Object.values(old.themes) as { cssOutput?: string }[])
+      delete theme.cssOutput
 
     expect(() =>
       Graph.compile({

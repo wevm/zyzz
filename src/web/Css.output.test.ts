@@ -5,24 +5,39 @@ import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
-  test('keeps mounted classes valid across declaration value edits', async () => {
+  test('keeps mounted classes valid across development value edits', async () => {
     const browser = await chromium.launch({ headless: true })
 
     try {
       const page = await browser.newPage()
 
-      for (const cssOutput of ['atomic', 'grouped'] as const) {
+      for (const [cssOutput, composition] of [
+        ['atomic', 'ordered'],
+        ['atomic', 'independent'],
+        ['grouped', 'ordered'],
+        ['grouped', 'independent'],
+      ] as const) {
         const before = Css.compile({
+          composition,
           cssOutput,
-          styles: Style.define({ card: { color: 'red', padding: '8px' } }),
+          development: true,
+          styles: Style.define({
+            card: { color: 'red', padding: '8px' },
+            label: { color: 'red', padding: '8px' },
+          }),
         })
         const after = Css.compile({
+          composition,
           cssOutput,
-          styles: Style.define({ card: { color: 'blue', padding: '12px' } }),
+          development: true,
+          styles: Style.define({
+            card: { color: 'blue', padding: '12px' },
+            label: { color: 'red', padding: '8px' },
+          }),
         })
 
         await page.setContent(
-          `<style>${before.css}</style><div class="${before.classes.card}">Card</div>`,
+          `<style>${before.css}</style><div class="${before.classes.card}">Card</div><div class="${before.classes.label}">Label</div>`,
         )
         await page.locator('style').evaluate((element, css) => {
           element.textContent = css
@@ -31,13 +46,27 @@ describe('compile', () => {
         expect(
           await page
             .locator('div')
+            .first()
             .evaluate((element) => getComputedStyle(element).color),
         ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
         expect(
           await page
             .locator('div')
+            .first()
             .evaluate((element) => getComputedStyle(element).paddingLeft),
         ).toMatchInlineSnapshot('"12px"')
+        expect(
+          await page
+            .locator('div')
+            .nth(1)
+            .evaluate((element) => getComputedStyle(element).color),
+        ).toMatchInlineSnapshot('"rgb(255, 0, 0)"')
+        expect(
+          await page
+            .locator('div')
+            .nth(1)
+            .evaluate((element) => getComputedStyle(element).paddingLeft),
+        ).toMatchInlineSnapshot('"8px"')
       }
     } finally {
       await browser.close()
@@ -51,7 +80,7 @@ describe('compile', () => {
       }),
     })
     expect(output.css).toMatchInlineSnapshot(
-      `".z-card-atomic-layer-0{@layer{&.special{color:blue;}color:red;}}"`,
+      `".z-layer-766AnZ-0{@layer{&.special{color:blue;}color:red;}}"`,
     )
     const browser = await chromium.launch()
     try {
@@ -82,22 +111,22 @@ describe('compile', () => {
     expect(output).toMatchInlineSnapshot(`
       {
         "classes": {
-          "card": "z_base-color-11hsk3q1tuqfr0 z_base-padding-11rs5sp1tuqfr1",
-          "label": "z_base-color-11hsk3q1tuqfr0",
+          "card": "z-text-red z-p-8px",
+          "label": "z-text-red",
         },
-        "css": ".z_base-color-11hsk3q1tuqfr0{color:red;}
-      .z_base-padding-11rs5sp1tuqfr1{padding:8px;}",
+        "css": ".z-text-red{color:red;}
+      .z-p-8px{padding:8px;}",
         "themes": {},
       }
     `)
     expect(atomic).toMatchInlineSnapshot(`
       {
         "classes": {
-          "card": "z_base-color-11hsk3q1tuqfr0 z_base-padding-11rs5sp1tuqfr1",
-          "label": "z_base-color-11hsk3q1tuqfr0",
+          "card": "z-text-red z-p-8px",
+          "label": "z-text-red",
         },
-        "css": ".z_base-color-11hsk3q1tuqfr0{color:red;}
-      .z_base-padding-11rs5sp1tuqfr1{padding:8px;}",
+        "css": ".z-text-red{color:red;}
+      .z-p-8px{padding:8px;}",
         "themes": {},
       }
     `)
@@ -115,11 +144,11 @@ describe('compile', () => {
     expect(Css.compile({ styles })).toMatchInlineSnapshot(`
       {
         "classes": {
-          "card": "z_base-color-11hsk3q1tuqfr0 z_base-padding-11rs5sp1tuqfr1",
-          "label": "z_base-color-11hsk3q1tuqfr0",
+          "card": "z-text-red z-p-8px",
+          "label": "z-text-red",
         },
-        "css": ".z_base-color-11hsk3q1tuqfr0{color:red;}
-      .z_base-padding-11rs5sp1tuqfr1{padding:8px;}",
+        "css": ".z-text-red{color:red;}
+      .z-p-8px{padding:8px;}",
         "themes": {},
       }
     `)
@@ -142,10 +171,10 @@ describe('compile', () => {
 
       if (cssOutput === 'atomic')
         expect(output.css).toMatchInlineSnapshot(`
-        "body{margin:0;}
-        .z_base-display-11hsk3q1tuqfr0{display:block;display:grid!important;}
-        .z_base-color-11rs5sp1tuqfr1{color:red;}"
-      `)
+          "body{margin:0;}
+          .z-display-TvfMMo{display:block;display:grid!important;}
+          .z-text-red{color:red;}"
+        `)
       else
         expect(output.css).toMatchInlineSnapshot(`
         "body{margin:0;}

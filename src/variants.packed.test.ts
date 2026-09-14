@@ -19,7 +19,7 @@ describe('variants', () => {
       const browser = await chromium.launch()
       let server: Vite.PreviewServer | undefined
       try {
-        const library = await Library.create(root, output)
+        const library = await Library.create(root, { output })
         // Model independent dependency runtime copies, as dev optimization can produce.
         await Fs.cp(
           Path.join(root, 'node_modules/zyzz'),
@@ -230,7 +230,7 @@ variant({base:{color:'missing'}});`,
               'utf8',
             ),
           ).version,
-        ).toMatchInlineSnapshot('16')
+        ).toMatchInlineSnapshot(`17`)
       } finally {
         await browser.close()
         if (server)
@@ -280,7 +280,9 @@ export const second=()=>cx(controls.override(),controls.button({size:'lg'}));`,
   })
 
   test('rejects malformed packed ownership and mixed renderer composition', () => {
-    const publisher = Graph.compile({ modules: Library.sources('html') })
+    const publisher = Graph.compile({
+      modules: Library.sources({ output: 'html' }),
+    })
     const contracts = { ...publisher.contracts }
     const data = JSON.parse(contracts['@acme/variants/index.ts']!)
     data.exports.controls.members.button.style.slots = ['onclick']

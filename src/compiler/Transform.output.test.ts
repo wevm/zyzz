@@ -27,20 +27,20 @@ export const props=card();`,
           "
           import { CompositionHtml as __zyzzCompositionHtml, Props as __zyzzProps, Recipe as __zyzzRecipe } from 'zyzz/runtime';
           import { styled, variants, theme } from './pkg/index.js';
-          export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-1e8a67z1uaws1j-76-atomic-color-0 z-style-1e8a67z1uaws1j-76-atomic-padding-1 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').css.ReturnType<'html'>);
-          export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-style-1e8a67z1uaws1j-134-atomic-color-0 z-style-1e8a67z1uaws1j-134-atomic-padding-1 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').css.ReturnType<'html'>);
-          export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-style-1e8a67z1uaws1j-196-atomic-color-0 z-style-1e8a67z1uaws1j-196-atomic-padding-1 z-style-1e8a67z1uaws1j-196-atomic-padding-2 z-style-1e8a67z1uaws1j-196"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
+          export const card=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-NXxdb9-0 z-p-8px-NXxdb9-1 z-style-1e8a67z1uaws1j-76"})) as import('zyzz').css.ReturnType<'html'>);
+          export const other=(__zyzzCompositionHtml.bind(__zyzzProps.create({className:"z-text-36L1vp-0 z-p-8px-36L1vp-1 z-style-1e8a67z1uaws1j-134"})) as import('zyzz').css.ReturnType<'html'>);
+          export const button=(__zyzzCompositionHtml.bind(__zyzzRecipe.create({"axes":{"size":["large"]},"defaults":{},"className":"z-text-ho7psp-0 z-p-8px-ho7psp-1 z-p-ho7psp-2 z-style-1e8a67z1uaws1j-196"})) as import('zyzz').variants.ReturnType<{variants:{"size":{"large":{}}}},"html">);
           export const props=card();"
         `)
         expect(app.css).toMatchInlineSnapshot(`
           ".z_theme-1g1qfxjzbnv3-css-theme{--z-t1g1qfxjzbnv3-css-color_2e_brand:red;}
-          .z-style-1e8a67z1uaws1j-76-atomic-color-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
-          .z-style-1e8a67z1uaws1j-76-atomic-padding-1{padding:8px;}
-          .z-style-1e8a67z1uaws1j-134-atomic-color-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
-          .z-style-1e8a67z1uaws1j-134-atomic-padding-1{padding:8px;}
-          .z-style-1e8a67z1uaws1j-196-atomic-color-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
-          .z-style-1e8a67z1uaws1j-196-atomic-padding-1{padding:8px;}
-          .z-style-1e8a67z1uaws1j-196-atomic-padding-2{&:where([data-size="large"]){padding:12px;}}"
+          .z-text-NXxdb9-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+          .z-p-8px-NXxdb9-1{padding:8px;}
+          .z-text-36L1vp-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+          .z-p-8px-36L1vp-1{padding:8px;}
+          .z-text-ho7psp-0{color:var(--z-t1g1qfxjzbnv3-css-color_2e_brand,red);}
+          .z-p-8px-ho7psp-1{padding:8px;}
+          .z-p-ho7psp-2{&:where([data-size="large"]){padding:12px;}}"
         `)
       } else {
         expect(app.code).toMatchInlineSnapshot(`
@@ -76,7 +76,7 @@ export const props=card();`,
 
     expect(atomic.classes).toMatchInlineSnapshot(`
       {
-        "style-1e8a67z1uaws1j-94": "z-1e8a67z1uaws1j-base-color-k0egly1lxzqym z-1e8a67z1uaws1j-base-padding-kae2ax1lxzqyn z-style-1e8a67z1uaws1j-94",
+        "style-1e8a67z1uaws1j-94": "z-text-red-Jgxd-Q z-p-8px-Jgxd-Q z-style-1e8a67z1uaws1j-94",
       }
     `)
     expect(grouped.classes).toMatchInlineSnapshot(`
@@ -164,33 +164,33 @@ export const props=card();`,
       })
       if (cssOutput === 'atomic') {
         expect(output.css).toMatchInlineSnapshot(`
-          ".z-style-u8smm21l81sow-87-atomic-color-0{color:red;}
-          .z-style-u8smm21l81sow-87-atomic-padding-1{padding:8px;}
-          .z-style-u8smm21l81sow-128-atomic-paddingLeft-0{padding-left:2px;}
-          .z-composition-u8smm21l81sow-172-atomic-color-0{color:red;}
-          .z-composition-u8smm21l81sow-172-atomic-padding-1{padding:8px;}
-          .z-composition-u8smm21l81sow-172-atomic-paddingLeft-2{padding-left:2px;}"
+          ".z-text-red-pHVTxb-0{color:red;}
+          .z-p-8px-pHVTxb-1{padding:8px;}
+          .z-pl-2px-Q94x48-0{padding-left:2px;}
+          .z-text-red-vb56La-0{color:red;}
+          .z-p-8px-vb56La-1{padding:8px;}
+          .z-pl-2px-vb56La-2{padding-left:2px;}"
         `)
         expect(emitted.css).toMatchInlineSnapshot(`
-          ".z-style-u8smm21l81sow-87-atomic-color-0{color:red;}
-          .z-style-u8smm21l81sow-87-atomic-padding-1{padding:8px;}
-          .z-style-u8smm21l81sow-128-atomic-paddingLeft-0{padding-left:2px;}
-          .z-composition-u8smm21l81sow-172-atomic-color-0{color:red;}
-          .z-composition-u8smm21l81sow-172-atomic-padding-1{padding:8px;}
-          .z-composition-u8smm21l81sow-172-atomic-paddingLeft-2{padding-left:2px;}"
+          ".z-text-red-Xy5JQE-0{color:red;}
+          .z-p-8px-Xy5JQE-1{padding:8px;}
+          .z-pl-2px-B2WTsH-0{padding-left:2px;}
+          .z-text-red-kbyxdF-0{color:red;}
+          .z-p-8px-kbyxdF-1{padding:8px;}
+          .z-pl-2px-kbyxdF-2{padding-left:2px;}"
         `)
       } else {
         expect(output.css).toMatchInlineSnapshot(`
           ".g-style-u8smm21l81sow-88{color:red;padding:8px;}
           .g-style-u8smm21l81sow-129{padding-left:2px;}
-          .z-composition-u8smm21l81sow-173-atomic-style-0{color:red;padding:8px;}
-          .z-composition-u8smm21l81sow-173-atomic-style-1{padding-left:2px;}"
+          .z-style-3O7IWW-0{color:red;padding:8px;}
+          .z-style-3O7IWW-1{padding-left:2px;}"
         `)
         expect(emitted.css).toMatchInlineSnapshot(`
           ".g-style-u8smm21l81sow-88{color:red;padding:8px;}
           .g-style-u8smm21l81sow-129{padding-left:2px;}
-          .z-composition-u8smm21l81sow-173-atomic-style-0{color:red;padding:8px;}
-          .z-composition-u8smm21l81sow-173-atomic-style-1{padding-left:2px;}"
+          .z-style-EZLe7p-0{color:red;padding:8px;}
+          .z-style-EZLe7p-1{padding-left:2px;}"
         `)
       }
     }

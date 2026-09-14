@@ -64,6 +64,8 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   const emitted = Css.compile({
+    development: options.development,
+    scope: options.moduleId,
     composition: options.composition,
     cssOutput: options.cssOutput,
     names: portable ? portableNames : undefined,
@@ -275,10 +277,7 @@ export function compile(options: compile.Options): compile.ReturnType {
         name,
         [
           ...new Set([
-            ...value
-              .split(' ')
-              .filter(Boolean)
-              .map((part) => names.get(part)!),
+            ...value.split(' ').filter(Boolean).map((part) => names.get(part)!),
             ...(identities.has(name) &&
             (!portable || portableNames[name]?.startsWith('z-compose-'))
               ? [
@@ -1025,6 +1024,8 @@ export declare namespace compile {
   type ErrorType = Css.CompileError | Source.ExtractError
   /** Supplied module identity and source; no file loading occurs. */
   type Options = Source.extract.Options & {
+    /** Stable declaration names for CSS-only development updates. */
+    readonly development?: boolean | undefined
     /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
     readonly compiler?: boolean | undefined
     /** Whether compiled applications can be combined with one another. */

@@ -36,10 +36,15 @@ for (const count of [10, 100]) {
 
   describe(`theme resolution and compilation / ${count} styles`, () => {
     bench('explicit references', () => {
-      Css.compile({ styles: Style.define(explicit), themes: { base: theme } })
+      Css.compile({
+        cssOutput: 'grouped',
+        styles: Style.define(explicit),
+        themes: { base: theme },
+      })
     })
     bench('inferred token names', () => {
       Css.compile({
+        cssOutput: 'grouped',
         styles: Style.define(named, { theme }),
         themes: { base: theme },
       })

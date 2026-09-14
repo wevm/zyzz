@@ -381,9 +381,13 @@ export function compile<
 
       // Declaration slots keep mounted elements styled across CSS-only edits.
       const slot = ordinal++
-      const identity = shared
-        ? `z_base-${label}-${hash(`${mode}:${style.name}:${slot}`)}`
-        : `z-${encode(style.name)}-${mode}-${label}-${slot}`
+      const identity = (() => {
+        if (mode === 'grouped') return `g-${encode(style.name)}`
+        if (shared)
+          return `z_base-${label}-${hash(`${mode}:${style.name}:${slot}`)}`
+
+        return `z-${encode(style.name)}-${mode}-${label}-${slot}`
+      })()
       if (rules.has(identity) && rules.get(identity) !== body)
         diagnostics.push({
           code: 'identity_collision',

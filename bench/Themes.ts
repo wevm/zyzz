@@ -345,6 +345,7 @@ export async function vanillaExtract(
 /** Emits a complete independent Zyzz graph and bundles actual class/scope exports. */
 export async function zyzz(fixture: Fixture): Promise<Compilation.Bundle> {
   const output = Css.compile({
+    cssOutput: 'grouped',
     composition: 'independent',
     styles: fixture.zyzz,
     themes: fixture.themes,

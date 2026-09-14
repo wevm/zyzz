@@ -7,6 +7,16 @@ import { Style } from 'zyzz'
 import { Css } from 'zyzz/web'
 
 describe('compile', () => {
+  test('accepts explicit CSS representations', () => {
+    const styles = Style.define({ card: { color: 'red' } })
+    for (const cssOutput of ['atomic', 'grouped'] as const) {
+      const output = Css.compile({ cssOutput, styles })
+      expectTypeOf(output.classes.card).toEqualTypeOf<string>()
+    }
+    // @ts-expect-error Output mode is a closed union.
+    Css.compile({ cssOutput: 'automatic', styles })
+  })
+
   test('preserves class names and validates composition options', () => {
     const result = Css.compile({
       styles: Style.define({ card: { padding: 0 } }),

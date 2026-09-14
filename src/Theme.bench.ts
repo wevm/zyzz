@@ -28,7 +28,12 @@ for (const count of [10, 100]) {
     ),
   )
 
-  const output = Css.compile({ styles, themes: { alternate, base: theme } })
+  const output = Css.compile({
+    composition: 'independent',
+    cssOutput: 'grouped',
+    styles,
+    themes: { alternate, base: theme },
+  })
 
   await Fs.mkdir('bench/results/themes', { recursive: true })
   await Fs.writeFile(
@@ -42,7 +47,12 @@ for (const count of [10, 100]) {
   )
   describe(`theme compilation / ${count} styles`, () => {
     bench('two scopes with scheme pairs', () => {
-      Css.compile({ styles, themes: { alternate, base: theme } })
+      Css.compile({
+        composition: 'independent',
+        cssOutput: 'grouped',
+        styles,
+        themes: { alternate, base: theme },
+      })
     })
   })
 }

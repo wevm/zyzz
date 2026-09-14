@@ -262,6 +262,7 @@ export async function vanillaExtract(fixture: Fixture): Promise<Bundle> {
 /** Compiles independent component applications and bundles their static class exports. */
 export async function zyzz(fixture: Fixture): Promise<Bundle> {
   const output = Css.compile({
+    cssOutput: 'grouped',
     composition: 'independent',
     styles: fixture.zyzz,
   })

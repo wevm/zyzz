@@ -31,9 +31,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a{border:2px solid red;outline:1px dotted black;column-rule:3px dashed blue;}
-      .z-b{border-top-color:green;outline-width:5px;column-rule-style:solid;}
-      .z-c{border:2px solid red;outline:1px dotted black;column-rule:3px dashed blue;}"
+      ".z-a-atomic-border-0{border:2px solid red;}
+      .z-a-atomic-outline-1{outline:1px dotted black;}
+      .z-a-atomic-columnRule-2{column-rule:3px dashed blue;}
+      .z-b-atomic-borderTopColor-0{border-top-color:green;}
+      .z-b-atomic-outlineWidth-1{outline-width:5px;}
+      .z-b-atomic-columnRuleStyle-2{column-rule-style:solid;}
+      .z-c-atomic-border-0{border:2px solid red;}
+      .z-c-atomic-outline-1{outline:1px dotted black;}
+      .z-c-atomic-columnRule-2{column-rule:3px dashed blue;}"
     `)
   })
   test('combined borders match native declarations across writing modes', async () => {
@@ -73,7 +79,7 @@ describe('compile', () => {
       const page = await browser.newPage()
 
       await page.setContent(
-        `<style>.z-a{border-image-source:linear-gradient(red,blue)}${output.css}${cascade.css}</style><div id="parent"><div id="actual" class="${module.box.className}"></div><div id="control" style="${BorderShorthand.control}"></div></div><div id="cascade" class="z-a z-b z-c"></div>`,
+        `<style>.z-a{border-image-source:linear-gradient(red,blue)}${output.css}${cascade.css}</style><div id="parent"><div id="actual" class="${module.box.className}"></div><div id="control" style="${BorderShorthand.control}"></div></div><div id="cascade" class="${cascade.classes.a} ${cascade.classes.b} ${cascade.classes.c} z-a"></div>`,
       )
 
       for (const writingMode of ['horizontal-tb', 'vertical-rl', 'vertical-lr'])

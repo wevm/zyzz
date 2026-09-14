@@ -281,14 +281,12 @@ export async function verify(options: verify.Options) {
           Path.join(root, 'styles.ts'),
           options.files['styles.ts'].replace("'#0066cc'", 'unknownColor()'),
         )
-        await page.locator('vite-error-overlay').waitFor()
-        expect(
-          await page
-            .locator('vite-error-overlay')
-            .evaluate((element) =>
-              element.shadowRoot?.textContent?.includes('styles.ts'),
-            ),
-        ).toMatchInlineSnapshot('true')
+        const overlay = await page.waitForFunction(() =>
+          document
+            .querySelector('vite-error-overlay')
+            ?.shadowRoot?.textContent?.includes('styles.ts'),
+        )
+        expect(await overlay.jsonValue()).toMatchInlineSnapshot('true')
         await Fs.writeFile(
           Path.join(root, 'styles.ts'),
           options.files['styles.ts'].replace('#0066cc', '#117755'),

@@ -19,11 +19,11 @@ describe('compile', () => {
     })
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z_base0{background-image:url("image.png");background-image:linear-gradient(red, blue)!important;}
-      .z-first{marker:url(#first);}
-      .z-second{marker-start:url(#second);}
-      .z_base1{opacity:0.5;}
-      .z-third{marker:url(#first);}"
+      ".z_base-backgroundImage-1e8l6y91fl3k33{background-image:url("image.png");background-image:linear-gradient(red, blue)!important;}
+      .z-first-atomic-marker-0{marker:url(#first);}
+      .z-second-atomic-markerStart-0{marker-start:url(#second);}
+      .z-third-atomic-marker-0{marker:url(#first);}
+      .z_base-opacity-9cd7zmr8hgru{opacity:0.5;}"
     `)
 
     const lexer = Conformance.lexer()
@@ -44,7 +44,10 @@ describe('compile', () => {
     ]) as Style.Definition
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(
-      `".z_base0{color:#12;order:0.5;}"`,
+      `
+      ".z_base-color-11hsk3q1tuqfr0{color:#12;}
+      .z_base-order-11rs5sp1tuqfr1{order:0.5;}"
+    `,
     )
 
     const output = Transform.compile({
@@ -53,7 +56,7 @@ describe('compile', () => {
     })
 
     expect(output.css.includes('color:#12;order:0.5;')).toMatchInlineSnapshot(
-      `true`,
+      `false`,
     )
   })
 

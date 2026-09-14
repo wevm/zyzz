@@ -11,7 +11,11 @@ describe('stylesheet contributions', () => {
   bench(
     'compile shared graph',
     () => {
-      Graph.compile({ modules })
+      Graph.compile({
+        composition: 'independent',
+        cssOutput: 'grouped',
+        modules,
+      })
     },
     { time: 200, warmupTime: 100 },
   )

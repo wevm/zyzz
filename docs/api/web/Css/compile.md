@@ -16,6 +16,17 @@ const output = Css.compile({ styles })
 
 ## Parameters
 
+### options.cssOutput
+
+- Type: `'atomic' | 'grouped'`
+- Default: `'atomic'`
+
+Atomic output assigns classes to individual properties, retaining ordered same-property fallbacks. Grouped output retains each style's declarations in one scoped block. Both preserve selectors and stylesheet contributions; consume the returned class map with its matching CSS.
+
+```ts
+Css.compile({ cssOutput: 'grouped', styles })
+```
+
 ### options.composition
 
 - Type: `'independent' | 'ordered'`
@@ -121,3 +132,5 @@ CSS property/value validity relies on static authoring; emission preserves value
 Independent class lists must not be composed with each other. Distribute class maps and matching CSS together. Types live under `Css.compile.Options`, `ReturnType`, and `ErrorType`.
 
 See [Css](README.md) for related methods and types.
+
+With explicit `composition: 'independent'`, complete applications are never combined. The emitter may factor a shared block from independent grouped styles while retaining each conflicting declaration domain intact. The default composition keeps a style’s declarations together.

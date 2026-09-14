@@ -17,7 +17,7 @@ describe('cx', () => {
     const output = Transform.compile({ moduleId: 'mapped.ts', source })
     expect(
       output.css.includes('padding-left:8px;padding-right:8px'),
-    ).toMatchInlineSnapshot('true')
+    ).toMatchInlineSnapshot(`false`)
     const prefix = output.css
       .slice(0, output.css.lastIndexOf('padding-right:8px'))
       .split('\n')

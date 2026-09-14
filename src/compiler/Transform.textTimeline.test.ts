@@ -31,9 +31,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a{flex-flow:row nowrap;text-wrap:wrap balance;page-break-before:avoid;}
-      .z-b{flex-direction:column;text-wrap-style:pretty;break-before:page;}
-      .z-c{flex-flow:row nowrap;text-wrap:wrap balance;page-break-before:avoid;}"
+      ".z-a-atomic-flexFlow-0{flex-flow:row nowrap;}
+      .z-a-atomic-textWrap-1{text-wrap:wrap balance;}
+      .z-a-atomic-pageBreakBefore-2{page-break-before:avoid;}
+      .z-b-atomic-flexDirection-0{flex-direction:column;}
+      .z-b-atomic-textWrapStyle-1{text-wrap-style:pretty;}
+      .z-b-atomic-breakBefore-2{break-before:page;}
+      .z-c-atomic-flexFlow-0{flex-flow:row nowrap;}
+      .z-c-atomic-textWrap-1{text-wrap:wrap balance;}
+      .z-c-atomic-pageBreakBefore-2{page-break-before:avoid;}"
     `)
   })
   test('text and flex values match native browser controls', async () => {
@@ -72,7 +78,7 @@ describe('compile', () => {
       })
 
       await page.setContent(
-        `<style>${output.css}${cascade.css}</style><div id="cascade" class="z-a z-b z-c"></div><div id="flow" class="${module.flow.className}"><span>one</span><span>two</span></div><div id="flow-control" style="${TextTimeline.controls.flow}"><span>one</span><span>two</span></div><span id="text" class="${module.text.className}">text</span><span id="text-control" style="${TextTimeline.controls.text}">text</span>`,
+        `<style>${output.css}${cascade.css}</style><div id="cascade" class="${cascade.classes.a} ${cascade.classes.b} ${cascade.classes.c} z-a"></div><div id="flow" class="${module.flow.className}"><span>one</span><span>two</span></div><div id="flow-control" style="${TextTimeline.controls.flow}"><span>one</span><span>two</span></div><span id="text" class="${module.text.className}">text</span><span id="text-control" style="${TextTimeline.controls.text}">text</span>`,
       )
 
       expect(

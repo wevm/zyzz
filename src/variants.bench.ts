@@ -11,7 +11,11 @@ compoundVariants:[{when:{size:'lg',loading:true},style:{color:'red'}}]
 })`
 const options = { moduleId: 'recipe.ts', source }
 const extracted = Source.extract(options)
-const output = Transform.compile(options)
+const output = Transform.compile({
+  ...options,
+  composition: 'independent',
+  cssOutput: 'grouped',
+})
 const call = extracted.calls[0]!
 const button = Recipe.create({
   ...call.recipe!,
@@ -20,7 +24,11 @@ const button = Recipe.create({
 
 describe('variants', () => {
   bench('compile / defaults and compounds', () => {
-    Transform.compile(options)
+    Transform.compile({
+      ...options,
+      composition: 'independent',
+      cssOutput: 'grouped',
+    })
   })
   bench('select / defaults', () => {
     button()

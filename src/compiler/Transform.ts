@@ -64,6 +64,8 @@ export function compile(options: compile.Options): compile.ReturnType {
   }
 
   const emitted = Css.compile({
+    composition: options.composition,
+    cssOutput: options.cssOutput,
     names: portable ? portableNames : undefined,
     styles: extracted.styles,
     contributions: extracted.contributions,
@@ -232,20 +234,40 @@ export function compile(options: compile.Options): compile.ReturnType {
 
   const first = extracted.calls[0]
   const scope = first ? first.name.slice(6, first.name.lastIndexOf('-')) : ''
+  const identities = new Map(
+    extracted.calls
+      .filter((call) => call.identity)
+      .map((call) => [call.name, call.identity!]),
+  )
+
+  const ownersByClass = new Map<string, string | false>()
+  for (const [style, value] of Object.entries(emitted.classes))
+    for (const name of value.split(' ').filter(Boolean))
+      ownersByClass.set(name, ownersByClass.has(name) ? false : style)
+
   const names = new Map<string, string>()
 
   for (const classes of Object.values(emitted.classes))
     for (const name of classes.split(' ').filter(Boolean))
       names.set(
         name,
-        name.startsWith('z_base') ? `z-${scope}-${name.slice(2)}` : name,
+        (() => {
+          const owner = ownersByClass.get(name)
+          const identity = owner && identities.get(owner)
+          if (
+            options.cssOutput === 'grouped' &&
+            options.composition === 'independent' &&
+            name.startsWith('g_') &&
+            identity &&
+            !identity.includes(' ')
+          )
+            return identity
+          if (name.startsWith('g_')) return `g_${scope}_${name.slice(2)}`
+          return name.startsWith('z_base')
+            ? `z-${scope}-${name.slice(2)}`
+            : name
+        })(),
       )
-
-  const identities = new Map(
-    extracted.calls
-      .filter((call) => call.identity)
-      .map((call) => [call.name, call.identity!]),
-  )
 
   const classes = Object.freeze(
     Object.fromEntries(
@@ -790,6 +812,7 @@ export function compile(options: compile.Options): compile.ReturnType {
       contributionLine++
     }
   }
+  const declarationOwners = new Map<string, Set<number>>()
   const scoped = emitted.scopedCss ?? emitted.css
 
   const css = [
@@ -899,11 +922,26 @@ export function compile(options: compile.Options): compile.ReturnType {
         const ordered = declarations(style)
         const authored = locations(call.body ?? definitions.get(call.start)!)
         const conditionStarts = declarationStarts(body, true)
+        const conditions: string[] = []
 
-        for (const [index, start] of conditionStarts.entries()) {
+        function collectConditions(style: Style.NamedStyle) {
+          for (const rule of style.rules ?? []) {
+            if (rule.condition !== undefined) conditions.push(rule.condition)
+
+            collectConditions(rule.style)
+          }
+        }
+
+        collectConditions(style)
+        let conditionCursor = 0
+
+        for (const start of conditionStarts) {
+          const condition = body.slice(start, body.indexOf('{', start))
+          const index = conditions.indexOf(condition, conditionCursor)
           const node = conditionNodes[index]
           if (!node) continue
 
+          conditionCursor = index + 1
           Mapping.addMapping(cssMap, {
             generated: { column: selector.length + start, line },
             name: options.source.slice(node.key.start, node.key.end),
@@ -913,6 +951,8 @@ export function compile(options: compile.Options): compile.ReturnType {
         }
 
         const starts = declarationStarts(body)
+        const used = declarationOwners.get(call.name) ?? new Set<number>()
+        declarationOwners.set(call.name, used)
         let cursor = 1
 
         for (
@@ -920,6 +960,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           propertyIndex < ordered.length;
           propertyIndex++
         ) {
+          if (used.has(propertyIndex)) continue
           const declaration = ordered[propertyIndex]!
           const text = `${declaration.property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}:`
           const start =
@@ -929,6 +970,7 @@ export function compile(options: compile.Options): compile.ReturnType {
           if (start < 0) continue
 
           const location = authored[propertyIndex]!
+          used.add(propertyIndex)
 
           Mapping.addMapping(cssMap, {
             generated: { column: selector.length + start, line },
@@ -985,6 +1027,10 @@ export declare namespace compile {
   type Options = Source.extract.Options & {
     /** Disable source rewriting while emitting CSS for runtime authoring. Defaults to true. */
     readonly compiler?: boolean | undefined
+    /** Whether compiled applications can be combined with one another. */
+    readonly composition?: Css.compile.Options['composition']
+    /** Default CSS representation for definitions without an explicit mode. */
+    readonly cssOutput?: Css.compile.Options['cssOutput']
   }
 
   /** Executable module and stylesheet artifacts; TypeScript/JSX lowering belongs to the host. */

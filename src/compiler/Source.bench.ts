@@ -16,7 +16,7 @@ for (const count of [10, 100, 1000]) {
       () => {
         const result = Source.extract({ moduleId: 'example/cards.ts', source })
 
-        Css.compile({ styles: result.styles })
+        Css.compile({ cssOutput: 'grouped', styles: result.styles })
       },
       { iterations: 3, time: 100, warmupIterations: 1, warmupTime: 50 },
     )
@@ -32,7 +32,7 @@ describe('static template extraction', () => {
         source: Templates.source,
       })
 
-      Css.compile({ styles: result.styles })
+      Css.compile({ cssOutput: 'grouped', styles: result.styles })
     },
     { iterations: 3, time: 100, warmupIterations: 1, warmupTime: 50 },
   )

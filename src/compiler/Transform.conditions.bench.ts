@@ -17,7 +17,12 @@ for (const workload of Corpus.cases) {
     bench(
       'shared corpus',
       () => {
-        Transform.compile({ moduleId: 'conditions.ts', source })
+        Transform.compile({
+          composition: 'independent',
+          cssOutput: 'grouped',
+          moduleId: 'conditions.ts',
+          source,
+        })
       },
       { time: 1000, warmupTime: 500 },
     )

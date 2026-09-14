@@ -30,7 +30,12 @@ for (const count of [10, 100, 1000]) {
     bench(
       'source',
       () => {
-        Transform.compile({ moduleId: 'theme.ts', source })
+        Transform.compile({
+          composition: 'independent',
+          cssOutput: 'grouped',
+          moduleId: 'theme.ts',
+          source,
+        })
       },
       { time: 1000, warmupTime: 500 },
     )
@@ -38,6 +43,8 @@ for (const count of [10, 100, 1000]) {
       'bundled source graph',
       () => {
         Graph.compile({
+          composition: 'independent',
+          cssOutput: 'grouped',
           modules: {
             'default.ts': bundled,
             'app.ts':
@@ -61,6 +68,8 @@ describe('compile / integration corpus with query metadata', () => {
       for (const fixture of corpus)
         if (fixture.source)
           Transform.compile({
+            composition: 'independent',
+            cssOutput: 'grouped',
             moduleId: fixture.name,
             source:
               fixture.source +

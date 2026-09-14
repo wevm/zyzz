@@ -27,6 +27,7 @@ for (const count of [10, 100]) {
         })
 
         Css.compile({
+          cssOutput: 'grouped',
           styles: Style.define(styles, { theme: zyzz.themes.base }),
           themes: zyzz.themes,
         })

@@ -93,9 +93,12 @@ describe('define', () => {
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:2rem;--z5:#06c;}
       .t_1{--z0:#fff;--z1:#000;--z2:4px;--z3:light-dark(#111,#fff);--z4:1rem;--z5:#06c;}
-      .z_base0{background-color:var(--z0,#fff);border-color:var(--z1,#000);border-radius:var(--z2,4px);padding:var(--z4,1rem);}
-      .z-card{color:var(--z3,light-dark(#111,#fff));}
-      .z-link{color:var(--z5,#06c);}"
+      .z_base-backgroundColor-11hsk3q1tuqfr0{background-color:var(--z0,#fff);}
+      .z_base-borderColor-11rs5sp1tuqfr1{border-color:var(--z1,#000);}
+      .z_base-borderRadius-10xtcps1tuqfr2{border-radius:var(--z2,4px);}
+      .z-card-atomic-color-3{color:var(--z3,light-dark(#111,#fff));}
+      .z_base-padding-12lqyvm1tuqfqw{padding:var(--z4,1rem);}
+      .z-link-atomic-color-0{color:var(--z5,#06c);}"
     `)
     expect(
       output.css ===
@@ -154,9 +157,11 @@ describe('define', () => {
     )
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-explicit{color:var(--z0,#000);padding:var(--z1,8px);}
-      .z_base0{width:1rem;}
-      .z-literal{color:white;padding:0;}"
+      ".z-explicit-atomic-color-0{color:var(--z0,#000);}
+      .z-explicit-atomic-padding-1{padding:var(--z1,8px);}
+      .z-literal-atomic-color-0{color:white;}
+      .z-literal-atomic-padding-1{padding:0;}
+      .z_base-width-2ka7gt1vc3yyp{width:1rem;}"
     `)
   })
 
@@ -728,14 +733,15 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
     const server = Vm.runInNewContext(`${code}; JSON.stringify(fixture.result)`)
 
     expect(JSON.parse(server)).toMatchInlineSnapshot(`
-    {
-      "classes": {
-        "button": "z_base0",
-      },
-      "css": ".z_base0{color:#f00;padding:0;}",
-      "themes": {},
-    }
-  `)
+      {
+        "classes": {
+          "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+        },
+        "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
+      .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+        "themes": {},
+      }
+    `)
 
     const worker = new Worker.Worker(
       `${code}; require('node:worker_threads').parentPort.postMessage(JSON.stringify(fixture.result));`,
@@ -749,14 +755,15 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       })
 
       expect(JSON.parse(result)).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "button": "z_base0",
-        },
-        "css": ".z_base0{color:#f00;padding:0;}",
-        "themes": {},
-      }
-    `)
+        {
+          "classes": {
+            "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+          },
+          "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
+        .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+          "themes": {},
+        }
+      `)
     } finally {
       await worker.terminate()
     }
@@ -771,14 +778,15 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
 
       try {
         expect(JSON.parse(context.getString(result))).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "button": "z_base0",
-        },
-        "css": ".z_base0{color:#f00;padding:0;}",
-        "themes": {},
-      }
-    `)
+          {
+            "classes": {
+              "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+            },
+            "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
+          .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+            "themes": {},
+          }
+        `)
       } finally {
         result.dispose()
       }
@@ -797,14 +805,15 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       await page.addScriptTag({ content: code })
 
       expect(await page.evaluate('fixture.result')).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "button": "z_base0",
-        },
-        "css": ".z_base0{color:#f00;padding:0;}",
-        "themes": {},
-      }
-    `)
+        {
+          "classes": {
+            "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+          },
+          "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
+        .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+          "themes": {},
+        }
+      `)
 
       const result = await page.evaluate(async (code) => {
         const url = URL.createObjectURL(
@@ -827,14 +836,15 @@ export const result = Css.compile({ styles: Style.define({ button: { color: '#f0
       }, code)
 
       expect(result).toMatchInlineSnapshot(`
-      {
-        "classes": {
-          "button": "z_base0",
-        },
-        "css": ".z_base0{color:#f00;padding:0;}",
-        "themes": {},
-      }
-    `)
+        {
+          "classes": {
+            "button": "z_base-color-1vmn9pg2nmc1q z_base-padding-1vwmvef2nmc1r",
+          },
+          "css": ".z_base-color-1vmn9pg2nmc1q{color:#f00;}
+        .z_base-padding-1vwmvef2nmc1r{padding:0;}",
+          "themes": {},
+        }
+      `)
     } finally {
       await browser.close()
     }

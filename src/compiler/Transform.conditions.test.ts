@@ -53,9 +53,10 @@ describe('compile', () => {
     const map = new Trace.TraceMap(output.cssMap)
 
     for (const key of ['&:hover, &:focus', '@media screen']) {
+      const lines = output.css.slice(0, output.css.indexOf(key)).split('\n')
       const location = Trace.originalPositionFor(map, {
-        line: 1,
-        column: output.css.indexOf(key),
+        line: lines.length,
+        column: lines.at(-1)!.length,
       })
 
       expect(location.column).toBe(source.indexOf(`'${key}'`))
@@ -104,7 +105,11 @@ describe('compile', () => {
           'import {css} from "zyzz"; css({":where(.dark) &":{color:"red"},"@media only screen":{display:"grid"},"@media not print":{display:"block"}})',
       }).css,
     ).toMatchInlineSnapshot(
-      `".z-style-31e6cc1lbrj8g-26{:where(.dark) &{color:red;}@media only screen{display:grid;}@media not print{display:block;}}"`,
+      `
+      ".z-style-31e6cc1lbrj8g-26-atomic-color-0{:where(.dark) &{color:red;}}
+      .z-style-31e6cc1lbrj8g-26-atomic-display-1{@media only screen{display:grid;}}
+      .z-style-31e6cc1lbrj8g-26-atomic-display-2{@media not print{display:block;}}"
+    `,
     )
   })
   test('maps declarations after matching text in feature conditions', () => {
@@ -147,7 +152,10 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(
-      `".z-style-1xoh7zjj7hyhn-26{&:is(:hover,:focus){color:red;}@media (width > 1px)  and (hover: hover){padding:2px;}}"`,
+      `
+      ".z-style-1xoh7zjj7hyhn-26-atomic-color-0{&:is(:hover,:focus){color:red;}}
+      .z-style-1xoh7zjj7hyhn-26-atomic-padding-1{@media (width > 1px)  and (hover: hover){padding:2px;}}"
+    `,
     )
   })
   test('rejects malformed conditions in the direct compiler pipeline', () => {
@@ -169,9 +177,10 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-a{margin-left:2px;}
-      .z-b{margin-left:4px;&:hover{color:red;}}
-      .z-c{margin-left:2px;}"
+      ".z-a-atomic-marginLeft-0{margin-left:2px;}
+      .z-b-atomic-marginLeft-0{margin-left:4px;}
+      .z-b-atomic-color-1{&:hover{color:red;}}
+      .z-c-atomic-marginLeft-0{margin-left:2px;}"
     `)
 
     const browser = await chromium.launch()
@@ -198,14 +207,19 @@ describe('compile', () => {
     const output = Transform.compile({ moduleId: 'mapped.ts', source })
 
     expect(output.css).toMatchInlineSnapshot(
-      `".z-style-cqzv9l1th5n7r-26{color:red;@media screen, print{padding:2px;}}"`,
+      `
+      ".z-style-cqzv9l1th5n7r-26-atomic-color-0{color:red;}
+      .z-style-cqzv9l1th5n7r-26-atomic-padding-1{@media screen, print{padding:2px;}}"
+    `,
     )
 
-    const column = output.css.indexOf('padding:')
+    const prefix = output.css.slice(0, output.css.indexOf('padding:'))
+    const lines = prefix.split('\n')
+    const column = lines.at(-1)!.length
 
     expect(
       Trace.originalPositionFor(new Trace.TraceMap(output.cssMap), {
-        line: 1,
+        line: lines.length,
         column,
       }),
     ).toMatchInlineSnapshot(`
@@ -247,9 +261,15 @@ describe('compile', () => {
   test('preserves authored nesting and resolves distinct threshold domains', () => {
     expect(Transform.compile({ moduleId: 'conditions.ts', source }).css)
       .toMatchInlineSnapshot(`
-      ".z_theme-w47itm14d5v1i-theme{--z-tw47itm14d5v1i-theme-spacing_2e_small:4px;--z-tw47itm14d5v1i-theme-spacing_2e_large:16px;}
-      .z-style-w47itm14d5v1i-207{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);&:hover{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_large,16px);}@media (48rem <= width < 64rem){width:100px;&[data-active]{height:20px;}}@container sidebar (width >= 24rem){display:grid;}@supports (display:grid){gap:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}@starting-style{opacity:0;}}"
-    `)
+        ".z_theme-w47itm14d5v1i-theme{--z-tw47itm14d5v1i-theme-spacing_2e_small:4px;--z-tw47itm14d5v1i-theme-spacing_2e_large:16px;}
+        .z-style-w47itm14d5v1i-207-atomic-padding-0{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}
+        .z-style-w47itm14d5v1i-207-atomic-padding-1{&:hover{padding:var(--z-tw47itm14d5v1i-theme-spacing_2e_large,16px);}}
+        .z-style-w47itm14d5v1i-207-atomic-width-2{@media (48rem <= width < 64rem){width:100px;}}
+        .z-style-w47itm14d5v1i-207-atomic-height-3{@media (48rem <= width < 64rem){&[data-active]{height:20px;}}}
+        .z-style-w47itm14d5v1i-207-atomic-display-4{@container sidebar (width >= 24rem){display:grid;}}
+        .z-style-w47itm14d5v1i-207-atomic-gap-5{@supports (display:grid){gap:var(--z-tw47itm14d5v1i-theme-spacing_2e_small,4px);}}
+        .z-style-w47itm14d5v1i-207-atomic-opacity-6{@starting-style{opacity:0;}}"
+      `)
   })
   test('retains dynamic and theme variables inside nested contexts', () => {
     expect(
@@ -260,7 +280,8 @@ describe('compile', () => {
       }).css,
     ).toMatchInlineSnapshot(`
       ".z_theme-1h5dayl7tfv4v-theme{--z-t1h5dayl7tfv4v-theme-spacing_2e_gap:4px;}
-      .z-style-1h5dayl7tfv4v-94{&:hover{opacity:var(--z-d1h5dayl7tfv4v-94-61-6c-70-68-61);margin-left:calc(var(--z-t1h5dayl7tfv4v-theme-spacing_2e_gap,4px) + 2px);}}"
+      .z-style-1h5dayl7tfv4v-94-atomic-opacity-0{&:hover{opacity:var(--z-d1h5dayl7tfv4v-94-61-6c-70-68-61);}}
+      .z-style-1h5dayl7tfv4v-94-atomic-marginLeft-1{&:hover{margin-left:calc(var(--z-t1h5dayl7tfv4v-theme-spacing_2e_gap,4px) + 2px);}}"
     `)
   })
   test('resolves imported thresholds through the packed contract', () => {
@@ -282,7 +303,7 @@ describe('compile', () => {
 
     expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1xn44ix111xh3v-theme{}
-      .z-style-1e8a67z1uaws1j-48{@media (width >= 48rem){width:100px;}}"
+      .z-style-1e8a67z1uaws1j-48-atomic-width-0{@media (width >= 48rem){width:100px;}}"
     `)
   })
   test.each([

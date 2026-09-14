@@ -1009,9 +1009,7 @@
       ]
     },
     "@starting-style": {
-      "evidence": [
-        "src/compiler/Transform.test.ts"
-      ],
+      "evidence": ["src/compiler/Transform.test.ts"],
       "grammar": "84cfab49cedbd5591e889206988100c2fd6e73a24473949b7122a40309db5eab",
       "status": "partial",
       "gaps": [
@@ -1026,9 +1024,7 @@
       ],
       "grammar": "dfa8c2aae2ccb2707e48096978e79cad532b7584b61f969264b1fce809c4ff28",
       "status": "partial",
-      "gaps": [
-        "Complete condition grammar and allowed-context review."
-      ]
+      "gaps": ["Complete condition grammar and allowed-context review."]
     },
     "@view-transition": {
       "evidence": [
@@ -1072,3 +1068,4 @@
   },
   "version": "2.35.0"
 }
+

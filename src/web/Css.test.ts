@@ -33,15 +33,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-scroll-snap-align-CgmKfH-0{scroll-snap-align:start end;}
+      ".z-scroll-snap-align-tLIgOF-0{scroll-snap-align:start end;}
       .z-scroll-snap-stop-normal-CgmKfH-1{scroll-snap-stop:normal;}
-      .z-scroll-snap-type-CgmKfH-2{scroll-snap-type:x proximity;}
-      .z-scroll-snap-align-0kXiVX-0{scroll-snap-align:center;scroll-snap-align:none start!important;}
+      .z-scroll-snap-type-auBAes-2{scroll-snap-type:x proximity;}
+      .z-scroll-snap-align-FiVQRX-0{scroll-snap-align:center;scroll-snap-align:none start!important;}
       .z-scroll-snap-stop-always-0kXiVX-1{scroll-snap-stop:always;}
-      .z-scroll-snap-type-0kXiVX-2{scroll-snap-type:both mandatory;}
-      .z-scroll-snap-align-HzYJKb-0{scroll-snap-align:start end;}
+      .z-scroll-snap-type-HmgExR-2{scroll-snap-type:both mandatory;}
+      .z-scroll-snap-align-QvOm56-0{scroll-snap-align:start end;}
       .z-scroll-snap-stop-normal-HzYJKb-1{scroll-snap-stop:normal;}
-      .z-scroll-snap-type-HzYJKb-2{scroll-snap-type:x proximity;}"
+      .z-scroll-snap-type-c0DqQW-2{scroll-snap-type:x proximity;}"
     `)
   })
 
@@ -292,15 +292,15 @@ describe('compile', () => {
     })
 
     expect(output.css).toMatchInlineSnapshot(`
-      ".z-border-color-CgmKfH-0{border-color:#000;}
+      ".z-border-color-k5Ego4-0{border-color:#000;}
       .z-border-radius-4px-CgmKfH-1{border-radius:4px;}
       .z-border-style-solid-CgmKfH-2{border-style:solid;}
       .z-border-width-2px-CgmKfH-3{border-width:2px;}
-      .z-border-inline-start-color-0kXiVX-0{border-inline-start-color:#fff;}
+      .z-border-inline-start-color-h5qRWe-0{border-inline-start-color:#fff;}
       .z-border-start-start-radius-8px-0kXiVX-1{border-start-start-radius:8px;}
       .z-border-inline-start-style-dashed-0kXiVX-2{border-inline-start-style:dashed;}
       .z-border-inline-start-width-6px-0kXiVX-3{border-inline-start-width:6px;}
-      .z-border-color-HzYJKb-0{border-color:#000;}
+      .z-border-color-D4s-KE-0{border-color:#000;}
       .z-border-radius-4px-HzYJKb-1{border-radius:4px;}
       .z-border-style-solid-HzYJKb-2{border-style:solid;}
       .z-border-width-2px-HzYJKb-3{border-width:2px;}"
@@ -632,9 +632,9 @@ describe('compile', () => {
     })
 
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
-      ".z-text-iap1nQ-0{color:#fff!important;color:#000!important;}
-      .z-text-P-WMJx-0{color:#fff;}
-      .z-text-ulqx3t-0{color:#fff!important;}
+      ".z-text-6_CT9q-0{color:#fff!important;color:#000!important;}
+      .z-text-q0ysCh-0{color:#fff;}
+      .z-text-JAipOi-0{color:#fff!important;}
       .z-opacity-TEdFJP{opacity:0.5!important;}
       .z-p-aRP1j4{padding:0!important;}"
     `)
@@ -655,21 +655,21 @@ describe('compile', () => {
     expect(output).toMatchInlineSnapshot(`
       {
         "classes": {
-          "-1": "z-text-lzo_yY-0 z-block z-p-3px-lzo_yY-1",
-          "1": "z-text-14x8bH-0 z-block z-p-8px-14x8bH-2",
-          "_31_": "z-text-VwIMi--0 z-block z-p-4px-VwIMi--1",
-          "again": "z-text-14x8bH-0 z-block z-p-8px-14x8bH-2",
-          "base_0": "z-text-E61DqP-0 z-block z-p-5px-E61DqP-1",
+          "-1": "z-text-2DabmC-0 z-block z-p-3px-lzo_yY-1",
+          "1": "z-text-IpMNuv-0 z-block z-p-8px-14x8bH-2",
+          "_31_": "z-text-y0v9di-0 z-block z-p-4px-VwIMi--1",
+          "again": "z-text-IpMNuv-0 z-block z-p-8px-14x8bH-2",
+          "base_0": "z-text-Ojq1qR-0 z-block z-p-5px-E61DqP-1",
           "empty": "",
         },
-        "css": ".z-text-14x8bH-0{color:#000;}
+        "css": ".z-text-IpMNuv-0{color:#000;}
       .z-block{display:block;}
       .z-p-8px-14x8bH-2{padding:8px;}
-      .z-text-lzo_yY-0{color:#fff;}
+      .z-text-2DabmC-0{color:#fff;}
       .z-p-3px-lzo_yY-1{padding:3px;}
-      .z-text-VwIMi--0{color:#333;}
+      .z-text-y0v9di-0{color:#333;}
       .z-p-4px-VwIMi--1{padding:4px;}
-      .z-text-E61DqP-0{color:#555;}
+      .z-text-Ojq1qR-0{color:#555;}
       .z-p-5px-E61DqP-1{padding:5px;}",
         "themes": {},
       }
@@ -993,12 +993,12 @@ describe('cascade', () => {
     test('retains sharing, resets, logical overlap, and active or inactive conditions', async () => {
       const first = Style.define({ card: { color: 'red', display: 'block' } })
         .styles[0]!
-      const middle = Style.define({ card: { color: 'blue', opacity: 1 } })
+      const middle = Style.define({ card: { color: 'blue', opacity: 0.4 } })
         .styles[0]!
       const cases = [
         {
           control:
-            '.card{color:red;display:block;color:blue;opacity:1;color:red;display:block}',
+            '.card{color:red;display:block;color:blue;opacity:0.4;color:red;display:block}',
           styles: {
             styles: [
               {
@@ -1061,6 +1061,25 @@ describe('cascade', () => {
             b: { color: 'red', margin: '2px' },
           }),
         },
+        {
+          control: '.card{@layer base{color:red}@layer override{color:blue}}',
+          styles: Style.define({
+            card: {
+              '@layer base': { color: 'red' },
+              '@layer override': { color: 'blue' },
+            },
+          }),
+        },
+        {
+          control:
+            '.card{color:red!important;color:blue;display:grid;display:block}',
+          styles: Style.define({
+            card: {
+              color: ['red!', 'blue'],
+              display: ['grid', 'block'],
+            },
+          } as never),
+        },
       ]
       const browser = await chromium.launch()
       try {
@@ -1078,52 +1097,66 @@ describe('cascade', () => {
                 await page.setContent(
                   `<style>${fixture.control}\n${output.css}</style>`,
                 )
-                for (const direction of ['ltr', 'rtl']) {
-                  const differences = await page.evaluate(
-                    ({ classes, composition, direction }) => {
-                      document.body.style.direction = direction
-                      const names = Object.keys(classes)
-                      const groups = names.map((name) => [name])
-                      if (composition === 'ordered' && names.length > 1)
-                        groups.push(names)
-                      return groups.flatMap((names) => {
-                        const values = [
-                          names.join(' '),
-                          names
-                            .map((name) => classes[name])
-                            .reverse()
-                            .join(' '),
-                        ].map((className) => {
-                          const element = document.createElement('div')
-                          element.className = className
-                          document.body.append(element)
-                          const style = getComputedStyle(element)
-                          const result = [
-                            style.color,
-                            style.paddingLeft,
-                            style.paddingRight,
-                            style.marginLeft,
-                            style.display,
-                          ]
-                          element.remove()
-                          return result
+                for (const direction of ['ltr', 'rtl'])
+                  for (const writingMode of [
+                    'horizontal-tb',
+                    'vertical-rl',
+                    'vertical-lr',
+                  ]) {
+                    const differences = await page.evaluate(
+                      ({ classes, composition, direction, writingMode }) => {
+                        document.body.style.direction = direction
+                        document.body.style.writingMode = writingMode
+                        const names = Object.keys(classes)
+                        const groups = names.map((name) => [name])
+                        if (composition === 'ordered' && names.length > 1)
+                          groups.push(names)
+                        return groups.flatMap((names) => {
+                          const values = [
+                            names.join(' '),
+                            names
+                              .flatMap((name) => classes[name]!.split(' '))
+                              .reverse()
+                              .join(' '),
+                          ].map((className) => {
+                            const element = document.createElement('div')
+                            element.className = className
+                            document.body.append(element)
+                            const style = getComputedStyle(element)
+                            const result = [
+                              style.color,
+                              style.paddingLeft,
+                              style.paddingRight,
+                              style.paddingTop,
+                              style.paddingBottom,
+                              style.opacity,
+                              style.marginLeft,
+                              style.display,
+                            ]
+                            element.remove()
+                            return result
+                          })
+                          return JSON.stringify(values[0]) ===
+                            JSON.stringify(values[1])
+                            ? []
+                            : [{ names, values }]
                         })
-                        return JSON.stringify(values[0]) ===
-                          JSON.stringify(values[1])
-                          ? []
-                          : [{ names, values }]
-                      })
-                    },
-                    { classes: output.classes, composition, direction },
-                  )
-                  expect(differences).toMatchInlineSnapshot(`[]`)
-                }
+                      },
+                      {
+                        classes: output.classes,
+                        composition,
+                        direction,
+                        writingMode,
+                      },
+                    )
+                    expect(differences).toMatchInlineSnapshot(`[]`)
+                  }
               }
             }
       } finally {
         await browser.close()
       }
-    })
+    }, 30000)
 
     test('retains selector specificity against a later matching competitor', async () => {
       const browser = await chromium.launch()
@@ -1134,17 +1167,19 @@ describe('cascade', () => {
             cssOutput,
             styles: Style.define({ card: { '&:hover': { color: 'purple' } } }),
           })
-          await page.setContent(
-            `<style>.native:hover{color:purple}${output.css}.competitor:hover{color:orange}</style><div class="native competitor">native</div><div class="${output.classes.card} competitor">compiled</div>`,
-          )
-          for (const index of [0, 1]) {
-            const element = page.locator('div').nth(index)
-            await element.hover()
-            expect(
-              await element.evaluate(
-                (element) => getComputedStyle(element).color,
-              ),
-            ).toMatchInlineSnapshot('"rgb(255, 165, 0)"')
+          for (const competing of [false, true]) {
+            await page.setContent(
+              `<style>.native:hover{color:purple}${output.css}${competing ? '.competitor:hover{color:orange}' : ''}</style><div class="native competitor">native</div><div class="${output.classes.card} competitor">compiled</div>`,
+            )
+            for (const index of [0, 1]) {
+              const element = page.locator('div').nth(index)
+              await element.hover()
+              expect(
+                (await element.evaluate(
+                  (element) => getComputedStyle(element).color,
+                )) === (competing ? 'rgb(255, 165, 0)' : 'rgb(128, 0, 128)'),
+              ).toMatchInlineSnapshot('true')
+            }
           }
         }
       } finally {
@@ -1190,13 +1225,13 @@ describe('names', () => {
       })
 
       expect(output.css).toMatchInlineSnapshot(`
-      ".z-w-766AnZ-0{width:calc(100% - 8px);}
-      .z-display-766AnZ-1{display:block;display:grid!important;}
+      ".z-w-jsBWEs-0{width:calc(100% - 8px);}
+      .z-display-YqAHgU-1{display:block;display:grid!important;}
       .z-hover-text-blue-766AnZ-2{&:hover{color:blue;}}
       .z-focus-text-blue-766AnZ-3{&:focus{color:blue;}}"
     `)
       expect(output.classes.card).toMatchInlineSnapshot(
-        `"z-w-766AnZ-0 z-display-766AnZ-1 z-hover-text-blue-766AnZ-2 z-focus-text-blue-766AnZ-3"`,
+        `"z-w-jsBWEs-0 z-display-YqAHgU-1 z-hover-text-blue-766AnZ-2 z-focus-text-blue-766AnZ-3"`,
       )
     })
 
@@ -1231,17 +1266,17 @@ describe('names', () => {
       expect(first.css).toMatchInlineSnapshot(`
       ".z_theme-1mlrxl41f5va70-css-theme{--z-t1mlrxl41f5va70-css-color_2e_brand:red;}
       .z-display-flex-QPs-Od{display:flex;}
-      .z-text-QPs-Od{color:var(--z-t1mlrxl41f5va70-css-color_2e_brand,red);}"
+      .z-text-tMJTE1{color:var(--z-t1mlrxl41f5va70-css-color_2e_brand,red);}"
     `)
       expect(second.css).toMatchInlineSnapshot(`
       ".z_theme-1d6eq581s6owy-css-theme{--z-t1d6eq581s6owy-css-color_2e_brand:red;}
       .z-display-flex-IjSBTf{display:flex;}
-      .z-text-IjSBTf{color:var(--z-t1d6eq581s6owy-css-color_2e_brand,red);}"
+      .z-text-KGSrFk{color:var(--z-t1d6eq581s6owy-css-color_2e_brand,red);}"
     `)
       expect(first.code).toMatchInlineSnapshot(`
       "
       import { Props as __zyzzProps } from 'zyzz/runtime';
-      const {css}=({theme:{"className":"z_theme-1mlrxl41f5va70-css-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text-QPs-Od z-style-1mlrxl41f5va70-103"});"
+      const {css}=({theme:{"className":"z_theme-1mlrxl41f5va70-css-theme"}} as import('zyzz').Config.create.ReturnType<{readonly "theme":{readonly "color":{readonly "brand":"red"}}}>);export const card=__zyzzProps.create({className:"z-display-flex-QPs-Od z-text-tMJTE1 z-style-1mlrxl41f5va70-103"});"
     `)
     })
 
@@ -1259,11 +1294,11 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
 
       expect(flex.css).toMatchInlineSnapshot(`
       ".z-display-flex-sQK2Wn{display:flex;}
-      .z-flex-sQK2Wn{flex:1 1 auto;}"
+      .z-flex-rMlNfJ{flex:1 1 auto;}"
     `)
       expect(grid.css).toMatchInlineSnapshot(`
       ".z-display-grid-0Q-Ceb{display:grid;}
-      .z-grid-0Q-Ceb{grid:auto / 1fr;}"
+      .z-grid-zoCb3f{grid:auto / 1fr;}"
     `)
 
       const browser = await chromium.launch()
@@ -1324,25 +1359,52 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
       )
     })
 
-    test('rejects ownership collisions across fresh and cached modules', () => {
+    test('separates standalone and cached module identities for colliding scope hashes', async () => {
       const first = 'app/mn11i9-ftt50l.ts'
       const second = 'app/150xkc2-se2k3x.ts'
       const source = `import { css } from 'zyzz'; export const card = css({ color: '#000' });`
+      const a = Transform.compile({ moduleId: first, source })
+      const b = Transform.compile({
+        moduleId: second,
+        source: source.replace('#000', '#fff'),
+      })
       const compiler = Graph.create()
-      compiler.compile({ modules: { [first]: source, [second]: 'export {}' } })
-
-      for (const compile of [Graph.compile, compiler.compile])
-        for (const color of ['#fff', '#000'])
-          expect(() =>
-            compile({
-              modules: {
-                [first]: source,
-                [second]: source.replace('#000', color),
-              },
-            }),
-          ).toThrowErrorMatchingInlineSnapshot(
-            `[Css.CompileError: ["app/mn11i9-ftt50l.ts"]: Atomic class z-text-QDY4MN is also owned by module app/150xkc2-se2k3x.ts.]`,
-          )
+      compiler.compile({ modules: { [first]: source } })
+      for (const compile of [Graph.compile, compiler.compile]) {
+        const output = compile({
+          modules: {
+            [first]: source,
+            [second]: source.replace('#000', '#fff'),
+          },
+        })
+        expect(output.modules[first]!.css === a.css).toMatchInlineSnapshot(
+          'true',
+        )
+        expect(output.modules[second]!.css === b.css).toMatchInlineSnapshot(
+          'true',
+        )
+      }
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${a.css}${b.css}</style><div class="${Object.values(a.classes)[0]}"></div><div class="${Object.values(b.classes)[0]}"></div>`,
+        )
+        expect(
+          await page
+            .locator('div')
+            .evaluateAll((elements) =>
+              elements.map((element) => getComputedStyle(element).color),
+            ),
+        ).toMatchInlineSnapshot(`
+        [
+          "rgb(0, 0, 0)",
+          "rgb(255, 255, 255)",
+        ]
+      `)
+      } finally {
+        await browser.close()
+      }
     })
 
     test('invalidates graph output when development naming changes', () => {
@@ -1379,6 +1441,139 @@ export const grid = css({ display: 'grid', grid: 'auto / 1fr' })();`,
         ".z-text-red-WdHWIJ{color:red;}
         .z-p-8px-WdHWIJ{padding:8px;}"
       `)
+    })
+
+    test('keeps custom property and value boundaries distinct', async () => {
+      const output = Css.compile({
+        styles: Style.define({ a: { '--a': 'b-c' }, b: { '--a-b': 'c' } }),
+      })
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        await page.setContent(
+          `<style>${output.css}</style><div class="${output.classes.a} ${output.classes.b}"></div>`,
+        )
+        expect(
+          await page
+            .locator('div')
+            .evaluate((element) =>
+              getComputedStyle(element).getPropertyValue('--a'),
+            ),
+        ).toMatchInlineSnapshot('"b-c"')
+        expect(
+          await page
+            .locator('div')
+            .evaluate((element) =>
+              getComputedStyle(element).getPropertyValue('--a-b'),
+            ),
+        ).toMatchInlineSnapshot('"c"')
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('keeps mounted later styles after development source offsets change', async () => {
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        for (const cssOutput of ['atomic', 'grouped'] as const)
+          for (const composition of ['ordered', 'independent'] as const)
+            for (const compiler of [false, true]) {
+              const source = `import {css} from 'zyzz'; export const a=css({color:'red',padding:'8px'},{id:'first'}); export const b=css({color:'blue',padding:'4px'},{id:'second'})`
+              const options = {
+                compiler,
+                composition,
+                cssOutput,
+                development: true,
+                moduleId: 'styles.ts',
+              }
+              const before = Transform.compile({ ...options, source })
+              const after = Transform.compile({
+                ...options,
+                source: source.replace("'red'", "'purple'"),
+              })
+              await page.setContent(
+                `<style>${before.css}</style><div class="${Object.values(before.classes)[1]}"></div>`,
+              )
+              await page.locator('style').evaluate((element, css) => {
+                element.textContent = css
+              }, after.css)
+              expect(
+                await page
+                  .locator('div')
+                  .evaluate((element) => getComputedStyle(element).color),
+              ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+              expect(
+                await page
+                  .locator('div')
+                  .evaluate((element) => getComputedStyle(element).paddingLeft),
+              ).toMatchInlineSnapshot('"4px"')
+            }
+      } finally {
+        await browser.close()
+      }
+    })
+
+    test('ignores inherited output metadata while emitting authored declarations', () => {
+      const original = Style.define({ card: { color: 'red', padding: '8px' } })
+        .styles[0]!
+      const inherited = Object.assign(
+        Object.create({ cssOutput: 'invalid' }),
+        original,
+      )
+      const output = Css.compile({ styles: { styles: [inherited] } })
+      expect(
+        output.css.includes('color:red;padding:8px;'),
+      ).toMatchInlineSnapshot('false')
+      expect(output.css.split('\n').length).toMatchInlineSnapshot('2')
+    })
+
+    test('retains empty selector identities in both output modes', async () => {
+      const browser = await chromium.launch()
+      try {
+        const page = await browser.newPage()
+        for (const cssOutput of ['atomic', 'grouped'] as const) {
+          const output = Transform.compile({
+            cssOutput,
+            moduleId: 'references.ts',
+            source:
+              "import {css} from 'zyzz';export const parent=css();export const child=css({selectors:{[`${parent} &`]:{color:'blue'}}})",
+          })
+          const [parent, child] = Object.values(output.classes)
+          await page.setContent(
+            `<style>${output.css}</style><section class="${parent}"><div class="${child}"></div></section><div class="${child}"></div>`,
+          )
+          expect(
+            await page
+              .locator('section div')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot('"rgb(0, 0, 255)"')
+          expect(
+            await page
+              .locator('body > div')
+              .evaluate((element) => getComputedStyle(element).color),
+          ).toMatchInlineSnapshot('"rgb(0, 0, 0)"')
+        }
+      } finally {
+        await browser.close()
+      }
+    })
+    test('checks packed atomic ownership before compiling colliding source scopes', () => {
+      const source =
+        "import {css} from 'zyzz';export const card=css({color:'red'})"
+      const library = Graph.compile({
+        modules: { 'app/mn11i9-ftt50l.ts': source },
+      })
+      expect(() =>
+        Graph.compile({
+          contracts: {
+            'library.js': library.contracts['app/mn11i9-ftt50l.ts']!,
+          },
+          modules: { 'app/150xkc2-se2k3x.ts': source },
+        }),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[Css.CompileError: ["app/150xkc2-se2k3x.ts"]: Atomic class z-text-red-QDY4MN is also owned by module library.js.]`,
+      )
     })
   })
 })
@@ -1477,7 +1672,7 @@ describe('output', () => {
         }),
       })
       expect(output.css).toMatchInlineSnapshot(
-        `".z-layer-766AnZ-0{@layer{&.special{color:blue;}color:red;}}"`,
+        `".z-layer-eJVSH1-0{@layer{&.special{color:blue;}color:red;}}"`,
       )
       const browser = await chromium.launch()
       try {

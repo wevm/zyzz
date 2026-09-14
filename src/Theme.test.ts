@@ -2,7 +2,7 @@
  * Exercises the public Theme workflow through real collaborating modules.
  * @module
  */
-import { theme as bundled, tokens } from './themes/default.js'
+import { theme as bundled, tokens as contextTokens } from './themes/default.js'
 import * as Esbuild from 'esbuild'
 import * as Fs from 'node:fs/promises'
 import { chromium } from 'playwright'
@@ -70,18 +70,18 @@ describe('define', () => {
 
     expect(output.classes).toMatchInlineSnapshot(`
       {
-        "other": "z-text-CmlPQS-0",
-        "t_0": "z-text-VAQ_NF-0",
-        "z_theme-base": "z-text-Ws_Rz--0",
+        "other": "z-text-JqClw3-0",
+        "t_0": "z-text-4iVqd5-0",
+        "z_theme-base": "z-text-SnBR4v-0",
       }
     `)
     expect(output.css).toMatchInlineSnapshot(`
       ".t_0{--z0:#000;--z1:#fff;}
       .t_1{--z0:#f00;--z1:#06c;}
       .t_2{--z0:#000;--z1:#fff;}
-      .z-text-CmlPQS-0{color:var(--z0,#000);}
-      .z-text-VAQ_NF-0{color:#175;}
-      .z-text-Ws_Rz--0{color:var(--z1,#fff);}"
+      .z-text-JqClw3-0{color:var(--z0,#000);}
+      .z-text-4iVqd5-0{color:#175;}
+      .z-text-SnBR4v-0{color:var(--z1,#fff);}"
     `)
     expect(output.themes).toMatchInlineSnapshot(`
       {
@@ -148,14 +148,14 @@ describe('define', () => {
       ".t_0{--z0:light-dark(#fff,#111);--z1:#06c;--z2:8px;}
       .t_1{--z3:#06c;}
       .z-bg-lyZQGr{background-color:var(--z0,light-dark(#fff,#111));}
-      .z-text-n_CKQt-1{color:var(--z1,#06c);}
+      .z-text-hGV2TL-1{color:var(--z1,#06c);}
       .z-p-B1LbZi{padding:var(--z2,8px);}
-      .z-text-yr4wpM-0{color:var(--z3,#06c);}"
+      .z-text-AbT2X3-0{color:var(--z3,#06c);}"
     `)
     expect(result.classes).toMatchInlineSnapshot(`
       {
-        "button": "z-bg-lyZQGr z-text-n_CKQt-1 z-p-B1LbZi",
-        "independent": "z-text-yr4wpM-0",
+        "button": "z-bg-lyZQGr z-text-hGV2TL-1 z-p-B1LbZi",
+        "independent": "z-text-AbT2X3-0",
       }
     `)
     expect(result.themes).toMatchInlineSnapshot(`
@@ -166,18 +166,18 @@ describe('define', () => {
     `)
     expect(Css.compile({ styles }).css).toMatchInlineSnapshot(`
       ".z-bg-lyZQGr{background-color:var(--z0,light-dark(#fff,#111));}
-      .z-text-n_CKQt-1{color:var(--z1,#06c);}
+      .z-text-hGV2TL-1{color:var(--z1,#06c);}
       .z-p-B1LbZi{padding:var(--z2,8px);}
-      .z-text-yr4wpM-0{color:var(--z3,#06c);}"
+      .z-text-AbT2X3-0{color:var(--z3,#06c);}"
     `)
     expect(Css.compile({ styles, themes: { independent, renamed: theme } }).css)
       .toMatchInlineSnapshot(`
         ".t_0{--z3:#06c;}
         .t_1{--z0:light-dark(#fff,#111);--z1:#06c;--z2:8px;}
         .z-bg-lyZQGr{background-color:var(--z0,light-dark(#fff,#111));}
-        .z-text-n_CKQt-1{color:var(--z1,#06c);}
+        .z-text-hGV2TL-1{color:var(--z1,#06c);}
         .z-p-B1LbZi{padding:var(--z2,8px);}
-        .z-text-yr4wpM-0{color:var(--z3,#06c);}"
+        .z-text-AbT2X3-0{color:var(--z3,#06c);}"
       `)
     expect(Object.isFrozen(theme.tokens.spacing.md)).toMatchInlineSnapshot(
       'true',
@@ -545,9 +545,9 @@ describe('queries', () => {
 
       expect(output.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-26ntzho2pyyt-theme{--z-t26ntzho2pyyt-theme-fontFamily_2e_sans:Geist, ui-sans-serif, system-ui, sans-serif;--z-t26ntzho2pyyt-theme-fontSize_2e_base:1rem;--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500:oklch(62.3% 0.214 259.815);}
-      .z-font-family-Jgxd-Q{font-family:var(--z-t26ntzho2pyyt-theme-fontFamily_2e_sans,Geist, ui-sans-serif, system-ui, sans-serif);}
-      .z-font-size-Jgxd-Q{font-size:var(--z-t26ntzho2pyyt-theme-fontSize_2e_base,1rem);}
-      .z-text-Jgxd-Q{color:var(--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500,oklch(62.3% 0.214 259.815));}"
+      .z-font-family-p8Bi9V{font-family:var(--z-t26ntzho2pyyt-theme-fontFamily_2e_sans,Geist, ui-sans-serif, system-ui, sans-serif);}
+      .z-font-size-1ft8_Q{font-size:var(--z-t26ntzho2pyyt-theme-fontSize_2e_base,1rem);}
+      .z-text-aBVyXQ{color:var(--z-t26ntzho2pyyt-theme-color_2e_blue_2e_500,oklch(62.3% 0.214 259.815));}"
     `)
 
       const built = await Esbuild.build({
@@ -652,7 +652,7 @@ describe('queries', () => {
 
       expect(consumer.modules['app.ts']!.css).toMatchInlineSnapshot(`
       ".z_theme-1xn44ix111xh3v-theme{--z-t1xn44ix111xh3v-theme-fontSize_2e_body:1rem;}
-      .z-font-size-Jgxd-Q{font-size:var(--z-t1xn44ix111xh3v-theme-fontSize_2e_body,1rem);}"
+      .z-font-size-6_nacQ{font-size:var(--z-t1xn44ix111xh3v-theme-fontSize_2e_body,1rem);}"
     `)
     })
     test('Chromium applies bundled typography and scheme colors', async () => {
@@ -718,7 +718,7 @@ describe('queries', () => {
       .z-font-size-4nuiGJ{font-size:var(--z2,1rem);}
       .z-p-3OsuE-{padding:var(--z3,1rem);}"
     `)
-      expect(tokens.breakpoints.md).toMatchInlineSnapshot(`"48rem"`)
+      expect(contextTokens.breakpoints.md).toMatchInlineSnapshot(`"48rem"`)
     })
     test.each([
       '"-1px"',

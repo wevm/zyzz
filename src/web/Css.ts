@@ -383,11 +383,25 @@ export function compile<
       },
     ])
 
+  function outputMode(style: Style.NamedStyle) {
+    return Object.getOwnPropertyDescriptor(style, 'cssOutput')?.value as
+      | 'atomic'
+      | 'grouped'
+      | undefined
+  }
+
+  function representation(style: Style.NamedStyle): unknown {
+    return [
+      outputMode(style),
+      style.rules?.map((rule) => representation(rule.style)),
+    ]
+  }
+
   function validate(style: Style.NamedStyle) {
     if (
-      style.cssOutput !== undefined &&
-      style.cssOutput !== 'atomic' &&
-      style.cssOutput !== 'grouped'
+      outputMode(style) !== undefined &&
+      outputMode(style) !== 'atomic' &&
+      outputMode(style) !== 'grouped'
     )
       throw new CompileError([
         {
@@ -415,7 +429,7 @@ export function compile<
     }
 
   for (const [styleIndex, style] of options.styles.styles.entries()) {
-    const mode = style.cssOutput ?? defaultMode
+    const mode = outputMode(style) ?? defaultMode
     if (!style.name || Object.hasOwn(classes, style.name)) {
       diagnostics.push({
         code: 'invalid_name',
@@ -446,7 +460,7 @@ export function compile<
       explicit === undefined &&
       options.composition === 'independent' &&
       !options.development
-        ? `${mode}:${nested(canonicalStyles[styleIndex]!)}`
+        ? `${mode}:${JSON.stringify(representation(style))}:${nested(canonicalStyles[styleIndex]!)}`
         : undefined
     if (application !== undefined && applications.has(application)) {
       classes[style.name] = applications.get(application)!
@@ -457,7 +471,7 @@ export function compile<
     let ordinal = 0
     const slots = new Map<string, number>()
     const developmentName = options.scope
-      ? `definition-${options.styles.styles.indexOf(style)}`
+      ? `definition-${styleIndex}`
       : style.name
 
     function emit(body: string, label: string, shared: boolean, output = mode) {
@@ -465,6 +479,7 @@ export function compile<
 
       const independent =
         mode === 'grouped' &&
+        !options.development &&
         output === mode &&
         options.composition === 'independent'
       const key = `${output}:${body}`
@@ -486,15 +501,17 @@ export function compile<
       const slot = options.development ? (slots.get(label) ?? 0) : ordinalSlot
       slots.set(label, slot + 1)
       const identity = (() => {
-        if (explicit !== undefined) return `${explicit}-${mode}-${slot}`
+        if (explicit !== undefined)
+          return `${explicit}-${mode}-${encode(label)}-${slot}`
         if (
           output === 'grouped' &&
           mode === 'grouped' &&
+          !options.development &&
           options.composition === 'independent'
         )
           return `g_${rules.size.toString(36)}`
         if (output === 'grouped' && mode === 'grouped')
-          return `g-${encode(style.name)}${slot ? `_s${slot}` : ''}`
+          return `g-${encode(options.development ? developmentName : style.name)}${slot ? `_s${slot}` : ''}`
         return ClassName.create({
           body,
           context:
@@ -536,7 +553,7 @@ export function compile<
       style: Style.NamedStyle,
       conditions: readonly string[] = [],
     ) {
-      if (style.cssOutput === 'grouped') {
+      if (outputMode(style) === 'grouped') {
         const body = conditions.reduceRight(
           (body, condition) => `${condition}{${body}}`,
           nested(style),

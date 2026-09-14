@@ -29,7 +29,7 @@ For `src/App.tsx`, the CLI emits `.zyzz/App.tsx` with rewritten style calls, `.z
 
 Authored source stays unaware of compiled artifacts. Relative imports inside compiled modules resolve within `.zyzz`, so this example keeps assets out of `src`; the Vite plugin examples show relative asset imports.
 
-`vite.config.ts` sets `build.cssTarget` to Chrome 123, Firefox 120, and Safari 17.5. The Zyzz Vite plugin applies these targets itself; without it, Vite's default target lowers `light-dark()` and inherited scheme changes stop working.
+`vite.config.ts` adds `targets()` from `zyzz/vite`, a configuration-only plugin that supplies the browser targets `zyzz()` would otherwise supply. Without it, Vite's default target lowers `light-dark()` and inherited scheme changes stop working.
 
 ## Feature Map
 

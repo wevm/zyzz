@@ -12,9 +12,23 @@ import * as Path from 'node:path'
 import * as Parser from 'oxc-parser'
 import * as Walker from 'oxc-walker'
 import * as Scope from '../compiler/internal/Scope.js'
-import type { Environment, Plugin } from 'vite'
+import type { Environment, Plugin, ResolvedConfig, UserConfig } from 'vite'
 import * as Graph from '../compiler/Graph.js'
 import * as Source from '../compiler/Source.js'
+
+/**
+ * Keeps theme colours native in a Vite build that consumes precompiled Zyzz output.
+ * Without an explicit target, Vite lowers `light-dark()` into helpers that inline and
+ * inherited color-scheme changes cannot initialize. `zyzz()` includes the same behavior.
+ * @returns A Vite plugin with configuration hooks only.
+ */
+export function targets(): Plugin {
+  return {
+    config: { order: 'post', handler: defaultTargets },
+    configResolved: verifyTargets,
+    name: 'zyzz:targets',
+  }
+}
 
 /**
  * Compiles physical project source without executing authoring code.
@@ -765,36 +779,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   }
 
   return {
-    config: {
-      order: 'post',
-      handler(config) {
-        // Inline color-scheme changes cannot initialize Lightning's lowered helpers.
-        return {
-          build: {
-            cssTarget: config.build?.cssTarget ??
-              config.build?.target ?? [
-                'chrome123',
-                'edge123',
-                'firefox120',
-                'safari17.5',
-              ],
-          },
-          css: {
-            lightningcss: {
-              targets: config.css?.lightningcss?.targets ?? {
-                chrome: 123 << 16,
-                edge: 123 << 16,
-                firefox: 120 << 16,
-                safari: (17 << 16) | (5 << 8),
-              },
-              exclude:
-                (config.css?.lightningcss?.exclude ?? 0) |
-                Lightning.Features.LightDark,
-            },
-          },
-        }
-      },
-    },
+    config: { order: 'post', handler: defaultTargets },
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
         const path = new URL(request.url ?? '/', 'http://localhost').pathname
@@ -815,45 +800,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     },
     configResolved(config) {
       root = config.root
-      const lightning = (config.css.lightningcss ??= {})
-      lightning.include =
-        (lightning.include ?? 0) & ~Lightning.Features.LightDark
-      lightning.exclude =
-        (lightning.exclude ?? 0) | Lightning.Features.LightDark
-
-      // The exclusion also affects imported application CSS.
-      const target = config.build.cssTarget
-      const browsers = (Array.isArray(target) ? target : [target]).flatMap(
-        (value) => {
-          if (!value)
-            throw new Error('Zyzz requires an explicit browser CSS target.')
-          const match =
-            /^(chrome|edge|firefox|safari|ios|opera|ie)([0-9.]+)$/.exec(value)
-          if (!match)
-            throw new Error(
-              `Zyzz cannot verify light-dark() support for CSS target: ${value}`,
-            )
-
-          return [`${match[1] === 'ios' ? 'ios_saf' : match[1]} ${match[2]}`]
-        },
-      )
-
-      for (const targets of [
-        Lightning.browserslistToTargets(browsers),
-        lightning.targets ?? {},
-      ]) {
-        const result = Lightning.transform({
-          code: new TextEncoder().encode(
-            '.theme{color:light-dark(white,black)}',
-          ),
-          filename: 'zyzz-theme-target.css',
-          targets,
-        })
-        if (!new TextDecoder().decode(result.code).includes('light-dark('))
-          throw new Error(
-            'Zyzz theme colours require native light-dark() support. Set CSS targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+.',
-          )
-      }
+      verifyTargets(config)
     },
     enforce: 'pre',
     generateBundle: {
@@ -1121,5 +1068,74 @@ export declare namespace zyzz {
   type Options = {
     /** False retains authored calls and requires explicit identities where needed. */
     readonly compiler?: boolean | undefined
+  }
+}
+
+/** Supplies browser targets with native light-dark() when Vite has none. */
+function defaultTargets(config: UserConfig): UserConfig {
+  // Inline color-scheme changes cannot initialize Lightning's lowered helpers.
+  return {
+    build: {
+      cssTarget: config.build?.cssTarget ??
+        config.build?.target ?? [
+          'chrome123',
+          'edge123',
+          'firefox120',
+          'safari17.5',
+        ],
+    },
+    css: {
+      lightningcss: {
+        targets: config.css?.lightningcss?.targets ?? {
+          chrome: 123 << 16,
+          edge: 123 << 16,
+          firefox: 120 << 16,
+          safari: (17 << 16) | (5 << 8),
+        },
+        exclude:
+          (config.css?.lightningcss?.exclude ?? 0) |
+          Lightning.Features.LightDark,
+      },
+    },
+  }
+}
+
+/** Rejects resolved targets that would lower light-dark(), including explicit Lightning targets. */
+function verifyTargets(config: ResolvedConfig) {
+  const lightning = (config.css.lightningcss ??= {})
+  lightning.include = (lightning.include ?? 0) & ~Lightning.Features.LightDark
+  lightning.exclude = (lightning.exclude ?? 0) | Lightning.Features.LightDark
+
+  // The exclusion also affects imported application CSS.
+  const target = config.build.cssTarget
+  const browsers = (Array.isArray(target) ? target : [target]).flatMap(
+    (value) => {
+      if (!value)
+        throw new Error('Zyzz requires an explicit browser CSS target.')
+      const match = /^(chrome|edge|firefox|safari|ios|opera|ie)([0-9.]+)$/.exec(
+        value,
+      )
+      if (!match)
+        throw new Error(
+          `Zyzz cannot verify light-dark() support for CSS target: ${value}`,
+        )
+
+      return [`${match[1] === 'ios' ? 'ios_saf' : match[1]} ${match[2]}`]
+    },
+  )
+
+  for (const targets of [
+    Lightning.browserslistToTargets(browsers),
+    lightning.targets ?? {},
+  ]) {
+    const result = Lightning.transform({
+      code: new TextEncoder().encode('.theme{color:light-dark(white,black)}'),
+      filename: 'zyzz-theme-target.css',
+      targets,
+    })
+    if (!new TextDecoder().decode(result.code).includes('light-dark('))
+      throw new Error(
+        'Zyzz theme colours require native light-dark() support. Set CSS targets to Chrome/Edge 123+, Firefox 120+, or Safari/iOS 17.5+.',
+      )
   }
 }

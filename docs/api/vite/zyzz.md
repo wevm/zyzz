@@ -22,7 +22,7 @@ No parameters. Root, aliases, resolution conditions, browser targets, and CSS pr
 
 ## Browser Targets
 
-Theme colours require native `light-dark()` support. With no explicit build target, CSS defaults to Chrome/Edge 123, Firefox 120, and Safari 17.5. Target validation also covers application stylesheets. Explicit incompatible or unverifiable targets produce an error during configuration. An ECMAScript build target requires a separate browser `build.cssTarget`. Vendor prefixing and other Lightning CSS transforms remain enabled.
+Theme colours require native `light-dark()` support. With no explicit build target, CSS defaults to Chrome/Edge 123, Firefox 120, and Safari 17.5. Target validation also covers application stylesheets. Explicit incompatible or unverifiable targets produce an error during configuration. An ECMAScript build target requires a separate browser `build.cssTarget`. Vendor prefixing and other Lightning CSS transforms remain enabled. Builds that bundle precompiled output without this plugin apply the same defaults through [`targets()`](targets.md).
 
 ## Returns
 

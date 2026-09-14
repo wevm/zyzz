@@ -5,6 +5,7 @@
 
 Connect source transformation and CSS delivery to Vite.
 
-| API             | Description                                                        |
-| --------------- | ------------------------------------------------------------------ |
-| [zyzz](zyzz.md) | Create the Vite plugin for source transformation and CSS delivery. |
+| API                   | Description                                                        |
+| --------------------- | ------------------------------------------------------------------ |
+| [targets](targets.md) | Keep native `light-dark()` in a Vite build of precompiled output.  |
+| [zyzz](zyzz.md)       | Create the Vite plugin for source transformation and CSS delivery. |

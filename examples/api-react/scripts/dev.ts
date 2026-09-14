@@ -3,6 +3,7 @@ import * as Fs from 'node:fs/promises'
 import * as Path from 'node:path'
 import * as Vite from 'vite'
 import { Host } from 'zyzz/node'
+import { targets } from 'zyzz/vite'
 
 const root = Path.resolve(import.meta.dirname, '..')
 const outDir = Path.join(root, '.zyzz')
@@ -42,10 +43,9 @@ async function publish(event: Host.Event) {
 }
 
 async function serve() {
-  // Without the Zyzz Vite plugin, the CSS target must keep light-dark() intact for inherited scheme changes.
   const server = await Vite.createServer({
-    build: { cssTarget: ['chrome123', 'firefox120', 'safari17.5'] },
     configFile: false,
+    plugins: [targets()],
     root,
   })
 

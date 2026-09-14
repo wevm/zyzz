@@ -1,7 +1,7 @@
-/** Bundles the compiled tree without a Zyzz plugin. @module */
+/** Bundles the compiled tree with Zyzz's browser target defaults. @module */
 import { defineConfig } from 'vite'
+import { targets } from 'zyzz/vite'
 
 export default defineConfig({
-  // The Zyzz Vite plugin supplies these targets itself; here they keep light-dark() intact for inherited scheme changes.
-  build: { cssTarget: ['chrome123', 'firefox120', 'safari17.5'] },
+  plugins: [targets()],
 })

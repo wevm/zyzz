@@ -12,7 +12,7 @@ import * as Parser from 'oxc-parser'
 import * as Syntax from './internal/Syntax.js'
 import * as Walker from 'oxc-walker'
 import type * as Theme from '../Theme.js'
-import type * as Token from '../internal/Token.js'
+import * as Token from '../internal/Token.js'
 import * as Contract from './internal/Contract.js'
 import * as Relative from './internal/Relative.js'
 import * as Themes from './internal/Themes.js'
@@ -882,6 +882,29 @@ function build(options: compile.Options, cache?: Cache): Cache {
   if (options.compiler === false) {
     const identities = new Map<string, string>()
     for (const [moduleId, module] of extracted) {
+      function register(name: string, signature: string) {
+        const previous = identities.get(name)
+        if (previous !== undefined && previous !== signature)
+          return fail(
+            moduleId,
+            'The same explicit identity is used for different definitions.',
+          )
+        identities.set(name, signature)
+      }
+      for (const [name, theme] of Object.entries(module.themes)) {
+        const data = theme[Token.definition]
+        if (data.contract[Token.identity]?.startsWith('id-'))
+          register(`theme:${name}`, JSON.stringify(data.values))
+      }
+      for (const contribution of module.contributions ?? [])
+        if ('name' in contribution)
+          register(
+            `${contribution.kind}:${contribution.name}`,
+            Css.compile({
+              styles: { styles: [] },
+              contributions: [contribution],
+            }).css,
+          )
       for (const call of module.calls) {
         if (!call.portable?.startsWith('z-style-id-')) continue
         const signature = Identity.style(

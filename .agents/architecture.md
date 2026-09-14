@@ -985,20 +985,18 @@ zyzz watch
 zyzz build --minify
 ```
 
-`--out-dir` contains rewritten modules and declarations; `--css` defaults to `<out-dir>/styles.css`. Modules contain generated props-binding functions in place of definitions, with fully static applications eligible for constant folding. Both reference precompiled classes; authoring callbacks do not remain in delivered code.
+`--out-dir` defaults to `dist` and contains transformed source, per-module CSS, maps, and packed metadata. Downstream tooling lowers TypeScript/JSX and emits declarations. Shared contributions use `zyzz.shared.css`. Modules contain generated props-binding functions in place of definitions, with fully static applications eligible for constant folding. Both reference precompiled classes; authoring callbacks do not remain in delivered code. Applications import the stylesheet or load it through a standard stylesheet link. Libraries publish these artifacts directly.
 
-Applications import the stylesheet or load it through a standard stylesheet link. Libraries publish these artifacts directly.
-
-CSS emission alone cannot make untouched `css()` calls executable. The standalone path must rewrite authoring modules; an application bundler can consume the rewritten tree without a styling plugin. A CSS-only mode is deferred until a concrete consumer can already provide matching compiled class references.
+The CLI compiles source and CSS by default. `--css-only` emits CSS and CSS maps for original source, whose helpers derive stable identities and bind props without emitting rules. Identity-bearing declarations require explicit IDs. Vite provides the same opt-out through `compiler: false`.
 
 Watch mode handles additions, edits, deletions, renames, and imported theme changes, excluding output directories. Errors include source locations. One-shot errors exit nonzero; watch remains active and preserves the last complete successful output. Interrupts release watchers and the exclusive lock; the ownership manifest and artifacts retain their recorded package identity. Owned-output manifests prevent overwriting unrelated files.
 
 The default target is web. A later `--target native` emits static tables through the same native emitter; CSS-specific flags are invalid for that target. CLI and build adapters must produce equivalent style identities and CSS for equivalent input graphs.
 
-## Bundler Setup Preview
+## Bundler Setup
 
 > [!NOTE]
-> The guide proposes `zyzz()` from `zyzz/vite`; this adapter is not implemented. Keep its public setup aligned with [Getting Started](../docs/introduction/getting-started.md).
+> The named `zyzz()` adapter from `zyzz/vite` implements compilation and CSS delivery. Keep its public setup aligned with [Getting Started](../docs/introduction/getting-started.md).
 
 The optional adapter connects the shared compiler to Vite's module graph. It rewrites authoring modules, delivers development CSS updates, and emits linked production CSS assets. Consumers retain their framework plugin and import source components normally.
 

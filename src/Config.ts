@@ -4,7 +4,7 @@
  */
 import * as Appearance from './runtime/Appearance.js'
 import * as Authoring from './internal/Authoring.js'
-import * as Html from './runtime/Html.js'
+import * as Html from './runtime/CompositionHtml.js'
 import * as Identity from './internal/Identity.js'
 import type * as Binding from './internal/Binding.js'
 import type * as Condition from './internal/Condition.js'
@@ -20,7 +20,7 @@ export function create(): create.ReturnType<{}>
 /**
  * Binds inline or reusable themes to an isolated configuration contract.
  * Named themes require an explicit default and identical token paths/domains.
- * Authoring functions still require a source transform; this factory emits no CSS.
+ * Bound helpers reference extracted CSS; this factory emits no CSS rules.
  * @throws {InvalidError} If options, themes, defaults, or layer names are invalid.
  */
 export function create<const options extends create.Options>(

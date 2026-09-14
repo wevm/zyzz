@@ -40,7 +40,10 @@ export function compile(options: compile.Options): compile.ReturnType {
       portableNames[call.name] = call.portable
     }
     for (const theme of Object.values(extracted.themes))
-      if (!theme[Token.definition].contract[Token.identity]?.startsWith('id-'))
+      if (
+        Object.keys(theme[Token.definition].values).length &&
+        !theme[Token.definition].contract[Token.identity]?.startsWith('id-')
+      )
         throw new Error(
           'CSS-only themes require an explicit id on Config.create or Theme.define.',
         )
@@ -74,10 +77,22 @@ export function compile(options: compile.Options): compile.ReturnType {
     themes: Object.keys(extracted.themes).length ? extracted.themes : undefined,
   })
 
-  if (portable && /z-style-(?!id-)[a-zA-Z0-9-]+/.test(emitted.css))
-    throw new Error(
-      'CSS-only selector references require an explicit style id.',
-    )
+  if (portable) {
+    function selectors(style: Style.NamedStyle) {
+      for (const rule of style.rules ?? []) {
+        if (
+          rule.condition &&
+          !rule.condition.startsWith('@') &&
+          /\.z-style-(?!id-)/.test(rule.condition)
+        )
+          throw new Error(
+            'CSS-only selector references require an explicit style id.',
+          )
+        selectors(rule.style)
+      }
+    }
+    for (const style of extracted.styles.styles) selectors(style)
+  }
 
   const module = new MagicString(options.source)
   const program = Syntax.parse(options).program
@@ -277,7 +292,10 @@ export function compile(options: compile.Options): compile.ReturnType {
         name,
         [
           ...new Set([
-            ...value.split(' ').filter(Boolean).map((part) => names.get(part)!),
+            ...value
+              .split(' ')
+              .filter(Boolean)
+              .map((part) => names.get(part)!),
             ...(identities.has(name) &&
             (!portable || portableNames[name]?.startsWith('z-compose-'))
               ? [

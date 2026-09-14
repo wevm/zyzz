@@ -403,6 +403,9 @@ export function compile<
   const identities = new Map<string, string>()
   const rules = new Map<string, string>()
   const identical = new Map<string, string>()
+  const explicitBodies = new Map<string, string>()
+  const selectors = new Map<string, string>()
+  const explicitModes = new Set<string>()
   const applications = new Map<string, string>()
   const occurrences = new Map<string, number>()
   for (const style of options.styles.styles)
@@ -424,24 +427,25 @@ export function compile<
 
     const explicit = options.names?.[style.name]
     if (explicit !== undefined) {
-      const original = options.styles.styles.find(
-        (entry) => entry.name === style.name,
-      )!
-      const body = nested(original)
-      const previous = rules.get(explicit)
+      const body = nested(style)
+      const previous = explicitBodies.get(explicit)
       if (previous !== undefined && previous !== body)
         diagnostics.push({
           code: 'identity_collision',
           message: 'An explicit id is used for different styles.',
           path: [style.name],
         })
-      rules.set(explicit, body)
+      explicitBodies.set(explicit, body)
       classes[style.name] = explicit
-      continue
+      const key = `${explicit}:${mode}`
+      if (explicitModes.has(key)) continue
+      explicitModes.add(key)
     }
 
     const application =
-      options.composition === 'independent' && !options.development
+      explicit === undefined &&
+      options.composition === 'independent' &&
+      !options.development
         ? `${mode}:${nested(canonicalStyles[styleIndex]!)}`
         : undefined
     if (application !== undefined && applications.has(application)) {
@@ -449,7 +453,7 @@ export function compile<
       continue
     }
 
-    const names: string[] = []
+    const names: string[] = explicit === undefined ? [] : [explicit]
     let ordinal = 0
     const slots = new Map<string, number>()
     const developmentName = options.scope
@@ -465,7 +469,10 @@ export function compile<
         options.composition === 'independent'
       const key = `${output}:${body}`
       // Development slots belong to each style even when their initial values match.
-      const reusable = !options.development && (shared || independent)
+      const reusable =
+        explicit === undefined &&
+        !options.development &&
+        (shared || independent)
       const previous = reusable ? identical.get(key) : undefined
       if (previous && !names.includes(previous)) {
         names.push(previous)
@@ -479,7 +486,12 @@ export function compile<
       const slot = options.development ? (slots.get(label) ?? 0) : ordinalSlot
       slots.set(label, slot + 1)
       const identity = (() => {
-        if (output === 'grouped' && mode === 'grouped' && options.composition === 'independent')
+        if (explicit !== undefined) return `${explicit}-${mode}-${slot}`
+        if (
+          output === 'grouped' &&
+          mode === 'grouped' &&
+          options.composition === 'independent'
+        )
           return `g_${rules.size.toString(36)}`
         if (output === 'grouped' && mode === 'grouped')
           return `g-${encode(style.name)}${slot ? `_s${slot}` : ''}`
@@ -513,8 +525,11 @@ export function compile<
 
       if (owner !== undefined) identities.set(identity, owner)
       rules.set(identity, body)
-      if (reusable) identical.set(key, identity)
-      names.push(identity)
+      if (explicit !== undefined) selectors.set(identity, explicit)
+      else {
+        if (reusable) identical.set(key, identity)
+        names.push(identity)
+      }
     }
 
     function atoms(
@@ -643,7 +658,9 @@ export function compile<
 
   const scopedCss = [
     scopes.css,
-    ...[...rules].map(([name, body]) => `.${name}{${body}}`),
+    ...[...rules].map(
+      ([name, body]) => `.${selectors.get(name) ?? name}{${body}}`,
+    ),
   ]
     .filter(Boolean)
     .join('\n')

@@ -1,7 +1,7 @@
 # CSS Output
 
 > [!NOTE]
-> Configurable output is supported by the shared compiler, source config, and version 17 packed contracts. The CSS-only CLI and complete framework/benchmark acceptance remain planned.
+> Configurable output is supported by the shared compiler, source config, and version 17 packed contracts. CLI and Vite support both compiler settings. Complete framework/benchmark acceptance remains in progress.
 
 Choose the CSS representation on the authoring config:
 
@@ -84,7 +84,9 @@ Global rules, keyframes, property registrations, font descriptors, and theme sco
 
 ## Delivery
 
-The CLI compiles source by default. `--css-only` disables rewriting and requires explicit IDs for identity-bearing declarations. Propagating configurable CSS output through both paths is planned; compilation does not select the CSS representation.
+The CLI and Vite enable source compilation by default. `zyzz build --css-only`, `zyzz dev --css-only`, and `zyzz({ compiler: false })` retain original source. `Config.create({ cssOutput: 'grouped' })` selects grouped CSS through every path.
+
+Without compilation, dynamic styles, variants, variables, named themes, and selector identities require explicit IDs. Static token-free styles derive their identities from authored data. Atomic rules can share a fixed runtime selector while retaining separate declarations. No CSS rules are emitted or inserted at runtime.
 
 Version 17 packed libraries retain their defining mode and matching class/CSS metadata. Consumer configuration does not reinterpret published classes. Archive fixtures verify all producer/consumer mode pairs, dynamic composition, and both stylesheet orders. Complete framework lifecycle and watch acceptance remain open.
 

@@ -5,6 +5,11 @@ import * as Url from 'node:url'
 import * as Vite from 'vite'
 import { Host } from 'zyzz/node'
 
+// Node runs this script directly, so the sibling module loads through its runtime URL.
+const { stylesheet } = (await import(
+  new URL('./stylesheet.ts', import.meta.url).href
+)) as typeof import('./stylesheet.js')
+
 const root = Path.resolve(import.meta.dirname, '..')
 const outDir = Path.join(root, '.zyzz')
 const host = await Host.create({
@@ -14,12 +19,8 @@ const host = await Host.create({
 })
 
 try {
-  const result = await host.build()
-
-  await Fs.writeFile(
-    Path.join(outDir, 'styles.css'),
-    await stylesheet(result.files),
-  )
+  await host.build()
+  await Fs.writeFile(Path.join(outDir, 'styles.css'), await stylesheet(outDir))
 } finally {
   await host.close()
 }
@@ -46,19 +47,3 @@ await Vite.build({
   ],
   root,
 })
-
-/** Imports the shared stylesheet before module stylesheets, skipping modules without local styles. */
-async function stylesheet(files: readonly string[]) {
-  const shared = files.filter((file) => file === 'zyzz.shared.css')
-  const modules = files.filter(
-    (file) => file.endsWith('.css') && file !== 'zyzz.shared.css',
-  )
-  const imports: string[] = []
-
-  for (const file of [...shared, ...modules]) {
-    const content = await Fs.readFile(Path.join(outDir, file), 'utf8')
-    if (content.trim()) imports.push(`@import "./${file}";`)
-  }
-
-  return imports.join('\n')
-}

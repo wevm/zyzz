@@ -52,12 +52,12 @@ Each exported configuration's [`script()`](../core/Config/script.md) is inlined 
 
 ```ts
 defineConfig({
-  plugins: [zyzz({ script: { storageKey: 'my-app-appearance' } })],
+  plugins: [zyzz({ script: false })],
 })
 ```
 
-A `storageKey` passed here overrides the configuration's own `storageKey`. `script: false` skips injection for documents that inline the script themselves. Applications without `index.html`, such as server-rendered frameworks, keep inlining `script()` in their document.
+Each script reads the localStorage entry named by its configuration's `storageKey`, the same record `appearance.set()` writes. `script: false` skips injection for documents that inline the script themselves. Applications without `index.html`, such as server-rendered frameworks, keep inlining `script()` in their document.
 
 ## Options
 
-`zyzz({ compiler?: boolean, script?: boolean | ScriptOptions })` enables source optimization and script injection by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Variables, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.
+`zyzz({ compiler?: boolean, script?: boolean })` enables source optimization and script injection by default. With `compiler: false`, the plugin still extracts and delivers CSS but retains authoring calls. Variables, dynamic definitions, variants, theme configurations, and named stylesheet declarations require explicit IDs. See [CLI](../../introduction/cli.md) for authoring examples.

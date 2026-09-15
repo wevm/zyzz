@@ -5,7 +5,6 @@
 import * as Namespaces from '../compiler/internal/Namespaces.js'
 import * as Appearance from '../runtime/Appearance.js'
 import * as AtRules from '../compiler/internal/AtRules.js'
-import type { ScriptOptions } from '../Config.js'
 import * as Mapping from '@jridgewell/gen-mapping'
 import * as Lightning from 'lightningcss'
 import * as Crypto from 'node:crypto'
@@ -17,6 +16,7 @@ import * as Scope from '../compiler/internal/Scope.js'
 import type { Environment, Plugin, ViteDevServer } from 'vite'
 import * as Graph from '../compiler/Graph.js'
 import * as Source from '../compiler/Source.js'
+import * as ThemeValues from '../web/internal/Themes.js'
 
 /**
  * Compiles physical project source without executing authoring code.
@@ -276,6 +276,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
     host: Host,
     code?: string,
     allSources = false,
+    everything = false,
   ) {
     async function resolve(source: string, importer: string) {
       const resolved = await host.resolve(source, importer)
@@ -513,7 +514,9 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         }
       }
 
-      if (selected) await visit(file, source)
+      // A whole-project compile reads disk so the document never trails the watcher.
+      if (everything) await visit(file)
+      else if (selected) await visit(file, source)
     }
 
     const loaded = new Set<string>()
@@ -577,12 +580,17 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
       modules,
     })
 
-    for (const [id, contract] of Object.entries(result.contracts)) {
-      const configuration = catalog(contract)
+    // Packed dependencies contribute catalogs beside the modules compiled here.
+    const compiled = { ...contracts, ...result.contracts }
 
-      if (configuration) catalogs.set(id, configuration)
-      else catalogs.delete(id)
-    }
+    // A contract owns its catalog keys; recompiling it replaces every configuration it had.
+    for (const id of Object.keys(compiled))
+      for (const key of catalogs.keys())
+        if (key.startsWith(`${id}\0`)) catalogs.delete(key)
+
+    for (const [id, contract] of Object.entries(compiled))
+      for (const configuration of catalog(contract))
+        catalogs.set(`${id}\0${configuration.identity}`, configuration)
 
     const map = new Mapping.GenMapping()
     const styles: string[] = []
@@ -763,6 +771,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
     return {
       code: output.code,
+      contractIds: Object.keys(compiled),
       css: styles.join('\n'),
       sharedCss: new TextDecoder().decode(shared.code),
       sharedCssMap: sharedMap,
@@ -785,10 +794,12 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
         environment.pluginContainer.resolveId(source, importer),
       watch: (file) => server.watcher.add(file),
     }
+    const sources = await discover(environment, host)
     let entry = initializers.get(environment)
 
-    if (!entry) {
-      const file = (await discover(environment, host)).keys().next().value
+    // The seed only anchors the compile, which visits every discovered source.
+    if (!entry || !sources.has(entry.file)) {
+      const file = sources.keys().next().value
       if (file === undefined) return []
 
       entry = {
@@ -802,7 +813,15 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
 
     // A source error surfaces through that module's own transform and overlay.
     // The document keeps loading with the catalogs collected before the edit.
-    await compile(entry, host, undefined, true).catch(() => undefined)
+    const output = await compile(entry, host, undefined, true, true).catch(
+      () => undefined,
+    )
+
+    // This compile saw the whole project, so contracts it no longer produces are gone.
+    if (output)
+      for (const key of catalogs.keys())
+        if (!output.contractIds.some((id) => key.startsWith(`${id}\0`)))
+          catalogs.delete(key)
 
     return [...catalogs.values()]
   }
@@ -1140,9 +1159,7 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
           : [...catalogs.values()]
         const scripts = new Set(
           configurations.map(({ entries, storageKey }) =>
-            Appearance.create(entries, { storageKey })(
-              typeof options.script === 'object' ? options.script : {},
-            ),
+            Appearance.create(entries, { storageKey })(),
           ),
         )
 
@@ -1157,28 +1174,42 @@ export function zyzz(options: zyzz.Options = {}): Plugin {
   }
 }
 
-/** Reads a compiled configuration's theme catalog and storage key from its contract; undefined without a configuration export. */
-function catalog(contract: string): Catalog | undefined {
+/** Reads each configuration's theme catalog and storage key from a contract, one per configuration identity. */
+function catalog(contract: string): readonly Catalog[] {
   const parsed = JSON.parse(contract) as {
     exports?: Record<
       string,
       {
         kind?: string
         members?: Record<string, { theme?: string }>
-        options?: { storageKey?: string }
+        options?: { storageKey?: string; themes?: Record<string, unknown> }
         selection?: boolean
+        theme?: string
       }
     >
   }
-  const entries = new Map<string, string>()
-  let configured = false
-  let storageKey: string | undefined
+  const configurations = new Map<
+    string,
+    { entries: Map<string, string>; storageKey: string | undefined }
+  >()
 
   for (const binding of Object.values(parsed.exports ?? {})) {
-    if (binding.kind !== 'config') continue
+    if (binding.kind !== 'config' || binding.theme === undefined) continue
 
-    configured = true
-    storageKey ??= binding.options?.storageKey
+    const identity = binding.theme
+    let configuration = configurations.get(identity)
+
+    if (!configuration) {
+      configuration = {
+        entries: new Map(),
+        storageKey: binding.options?.storageKey,
+      }
+      configurations.set(identity, configuration)
+    }
+
+    // Script and root bindings carry no members, so the catalog derives their scope keys.
+    for (const name of Object.keys(binding.options?.themes ?? {}))
+      configuration.entries.set(name, `${identity}-${name}`)
 
     for (const [path, member] of Object.entries(binding.members ?? {})) {
       const names = JSON.parse(path) as readonly string[]
@@ -1190,16 +1221,25 @@ function catalog(contract: string): Catalog | undefined {
       })()
 
       if (name !== undefined && member.theme)
-        entries.set(name, `z_theme-${member.theme}`)
+        configuration.entries.set(name, member.theme)
     }
   }
 
-  return configured ? { entries: [...entries], storageKey } : undefined
+  // Scope keys become classes through the same escaping the emitted stylesheet used.
+  return [...configurations].map(([identity, { entries, storageKey }]) => ({
+    entries: [...entries].map(
+      ([name, scope]) =>
+        [name, `z_theme-${ThemeValues.encode(scope)}`] as const,
+    ),
+    identity,
+    storageKey,
+  }))
 }
 
-/** Initialization inputs read from one compiled configuration module. */
+/** Initialization inputs read from one compiled configuration. */
 type Catalog = {
   entries: readonly (readonly [string, string])[]
+  identity: string
   storageKey: string | undefined
 }
 
@@ -1237,8 +1277,8 @@ export declare namespace zyzz {
     readonly compiler?: boolean | undefined
     /**
      * Inline each configuration's `script()` at the start of index.html's head.
-     * False skips injection; an object forwards script options such as `storageKey`.
+     * False skips injection for documents that inline the script themselves.
      */
-    readonly script?: boolean | ScriptOptions | undefined
+    readonly script?: boolean | undefined
   }
 }

@@ -19,7 +19,7 @@ bench('create / token-free authoring', () => {
   const { css, script } = Config.create()
 
   css({ color: '#fff', padding: '8px' })
-  script({ storageKey: 'appearance' })
+  script()
 }).types([16386, 'instantiations'])
 
 bench('create / inline theme with layers and shorthands', () => {

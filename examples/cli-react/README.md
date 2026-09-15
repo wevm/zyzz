@@ -2,10 +2,11 @@
 
 ```sh
 pnpm build
+pnpm --filter ./examples/cli-react rebuild
 pnpm --dir examples/cli-react dev
 ```
 
-Run from the repository root after `pnpm install`. The library build provides the `zyzz` binary; `pnpm examples` runs the same steps for every example.
+Run from the repository root after `pnpm install`. The library build provides the `zyzz` binary, and the rebuild step links it into this package: pnpm creates the shim only when its target exists, and a fresh install runs before the first build. `pnpm examples` runs the same steps for every example.
 
 Vite has no Zyzz plugin here. The CLI compiles `src` into `.zyzz`, and Vite bundles that compiled tree:
 

@@ -5,6 +5,11 @@ import * as Url from 'node:url'
 import * as Vite from 'vite'
 import { Host } from 'zyzz/node'
 
+// Node runs this script directly, so the sibling module loads through its runtime URL.
+const { stylesheet } = (await import(
+  new URL('./stylesheet.ts', import.meta.url).href
+)) as typeof import('./stylesheet.js')
+
 const root = Path.resolve(import.meta.dirname, '..')
 const outDir = Path.join(root, '.zyzz')
 const host = await Host.create({
@@ -13,11 +18,15 @@ const host = await Host.create({
   root: Path.join(root, 'src'),
 })
 let initialization = ''
+let pending = Promise.resolve()
 let server: Promise<Vite.ViteDevServer> | undefined
 
+// Builds can outpace publication, so each result publishes after the previous one settles.
 host.watch({
   onResult(event) {
-    void publish(event).catch((error: unknown) => console.error(error))
+    pending = pending
+      .then(() => publish(event))
+      .catch((error: unknown) => console.error(error))
   },
 })
 
@@ -33,10 +42,7 @@ async function publish(event: Host.Event) {
     return
   }
 
-  await Fs.writeFile(
-    Path.join(outDir, 'styles.css'),
-    await stylesheet(event.result.files),
-  )
+  await Fs.writeFile(Path.join(outDir, 'styles.css'), await stylesheet(outDir))
   console.log(`zyzz: ${event.result.changed.length} artifacts changed`)
 
   // Each build republishes the configuration, so a fresh module URL picks up catalog changes.
@@ -71,22 +77,7 @@ async function serve() {
 }
 
 async function stop() {
+  await pending
   await (await server)?.close()
   await host.close()
-}
-
-/** Imports the shared stylesheet before module stylesheets, skipping modules without local styles. */
-async function stylesheet(files: readonly string[]) {
-  const shared = files.filter((file) => file === 'zyzz.shared.css')
-  const modules = files.filter(
-    (file) => file.endsWith('.css') && file !== 'zyzz.shared.css',
-  )
-  const imports: string[] = []
-
-  for (const file of [...shared, ...modules]) {
-    const content = await Fs.readFile(Path.join(outDir, file), 'utf8')
-    if (content.trim()) imports.push(`@import "./${file}";`)
-  }
-
-  return imports.join('\n')
 }

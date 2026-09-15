@@ -114,7 +114,8 @@ export function create() {
   return { emit, serialize }
 }
 
-function encode(value: string): string {
+/** Escapes a scope key into the identifier segment of its compiled class. */
+export function encode(value: string): string {
   return value.replace(
     /[^a-zA-Z0-9-]/g,
     (character) => `_${character.charCodeAt(0).toString(16)}_`,

@@ -260,8 +260,7 @@ export function create(options: create.Options = {}): unknown {
       appearance,
       css: boundCss(bound[input.defaultTheme] as unknown as Theme.Definition),
       variants: boundVariants,
-      script: (options?: ScriptOptions) =>
-        Appearance.create(entries(), { storageKey })(options),
+      script: () => Appearance.create(entries(), { storageKey })(),
       theme: bound[input.defaultTheme],
       themes: Object.freeze(select),
     })
@@ -355,7 +354,7 @@ export declare namespace create {
       options extends { themes: infer catalog } ? keyof catalog & string : never
     >
     /** Generates synchronous HTML-safe root preference restoration. */
-    readonly script: (options?: ScriptOptions) => string
+    readonly script: () => string
   } & (options extends { theme: infer input }
     ? {
         /** Isolated single-theme contract. */ readonly theme: Handle<
@@ -639,9 +638,3 @@ type Validated<options> = Record<
           }
         }
       : {})
-
-/** Options for a compiled root appearance initialization script. */
-export type ScriptOptions = {
-  /** localStorage key containing theme and colorScheme fields; defaults to zyzz. */
-  readonly storageKey?: string | undefined
-}

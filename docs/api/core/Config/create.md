@@ -177,13 +177,12 @@ const props = themes({ theme: 'base', colorScheme: 'light dark' })
 
 ### script
 
-- Type: `(options?: { storageKey?: string }) => string`
+- Type: `() => string`
 
-Generate an optional inline initialization script using this config's theme catalog. It restores localStorage preferences on `<html>` before first paint. No cookies, provider, or extra import is required.
+Generate an optional inline initialization script using this config's theme catalog. It restores localStorage preferences on `<html>` before first paint from the entry named by [`options.storageKey`](#optionsstoragekey). No cookies, provider, or extra import is required.
 
 ```ts
 const initialization = script()
-const custom = script({ storageKey: 'my-app-appearance' })
 ```
 
 See [Config Script](script.md) for storage, CSP, and hydration behavior.

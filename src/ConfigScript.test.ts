@@ -178,7 +178,7 @@ describe('create', () => {
     test(`exports a server-safe packed script for ${config}`, async () => {
       const library = Graph.compile({
         modules: {
-          'config.ts': `import {Config} from 'zyzz'; export const {script}=Config.create(${config});`,
+          'config.ts': `import {Config} from 'zyzz'; export const {script}=Config.create(${config.replace('{', "{storageKey:'</script><script>bad()</script>\\u2028',")});`,
           'index.ts': `export {script as restore} from './config.js';`,
         },
       })
@@ -187,7 +187,7 @@ describe('create', () => {
         contracts: { 'library/index.js': library.contracts['index.ts']! },
         imports: { 'app.ts': { library: 'library/index.js' } },
         modules: {
-          'app.ts': `import {restore} from 'library';export const source=restore({storageKey:'</script><script>bad()</script>\\u2028'});`,
+          'app.ts': `import {restore} from 'library';export const source=restore();`,
         },
       })
 

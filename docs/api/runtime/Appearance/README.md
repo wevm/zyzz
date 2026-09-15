@@ -9,7 +9,7 @@ Compiler-generated initialization uses `Appearance` from `zyzz/runtime`. Applica
 
 ## create
 
-`Appearance.create(entries)` returns `(options?: Config.ScriptOptions) => string`. Calling the factory has no DOM or storage side effects.
+`Appearance.create(entries, options?)` returns `() => string`. Calling the factory has no DOM or storage side effects.
 
 ### entries
 
@@ -21,10 +21,12 @@ const script = Appearance.create([['mint', 'z_theme-mint']])
 
 ### options.storageKey
 
-Type: `string`, default `'zyzz'`. Selects the localStorage entry read by the returned script.
+Type: `string`, default `'zyzz'`. Selects the localStorage entry read by the returned script; the compiler passes the configuration's key so `root` controls write the same record.
 
 ```ts
-script({ storageKey: 'appearance' })
+const script = Appearance.create([['mint', 'z_theme-mint']], {
+  storageKey: 'appearance',
+})
 ```
 
 ## Returns
@@ -37,7 +39,7 @@ Serialization errors propagate to the caller. The returned script catches storag
 
 ## root
 
-`Appearance.root(entries, options?)` returns `{ get, set }`. The compiler supplies it as the configuration's `appearance` member; `options.defaultTheme` is the catalog default reported without a root class and `options.storageKey` matches the script's key.
+`Appearance.root(entries, options?)` returns `{ get, set }`. The compiler supplies it as the configuration's `appearance` member; `options.defaultTheme` is the catalog default reported without a root class and `options.storageKey` matches the script's key. The catalog name type is inferred from `entries`, and a named catalog requires a `defaultTheme` among them or creation throws `TypeError`.
 
 ```ts
 const appearance = Appearance.root([['mint', 'z_theme-mint']], {

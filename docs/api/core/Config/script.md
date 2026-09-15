@@ -10,21 +10,20 @@ const initialization = script()
 
 ## Signature
 
-`script(options = {}) => string`
+`script() => string`
 
 The bound function derives the theme catalog, compiled scope classes, and default selection from its config. Named catalogs restore allowlisted theme names; single-theme and token-free configs restore only the color scheme. Server-rendered root props remain the fallback.
 
-## Parameters
+## Storage
 
-### options.storageKey
-
-- Type: `string`
-- Default: the configuration's `storageKey`, otherwise `'zyzz'`
-
-localStorage key containing a JSON object. [`appearance.set()`](create.md#appearance) writes the same record. Supported fields are `theme` (a catalog key) and `colorScheme` (`'light'`, `'dark'`, or `'light dark'`). Either field may be omitted.
+The script reads the localStorage entry named by the configuration's [`storageKey`](create.md#optionsstoragekey), `'zyzz'` by default. [`appearance.set()`](create.md#appearance) writes the same record, so both helpers always agree on the key. The record is a JSON object whose supported fields are `theme` (a catalog key) and `colorScheme` (`'light'`, `'dark'`, or `'light dark'`). Either field may be omitted.
 
 ```ts
-script({ storageKey: 'my-app-appearance' })
+export const { appearance, script } = Config.create({
+  defaultTheme: 'base',
+  storageKey: 'my-app-appearance',
+  themes,
+})
 ```
 
 ## Returns

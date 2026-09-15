@@ -5,6 +5,7 @@ import * as Path from 'node:path'
 import { chromium } from 'playwright'
 import { describe, expect, test } from 'vite-plus/test'
 import { Graph } from 'zyzz/compiler'
+import { Appearance } from 'zyzz/runtime'
 
 describe('root', () => {
   test('applies fields over the current root selection and persists them for the script', async () => {
@@ -109,11 +110,38 @@ describe('root', () => {
           "(() => { try { Fixture.appearance.set({ theme: 'ocean' }); return 'applied' } catch (error) { return String(error) } })()",
         ),
       ).toMatchInlineSnapshot(`"TypeError: Invalid theme selection."`)
+
+      // Rejected input leaves the root classes and the saved record untouched.
+      expect(
+        await page.evaluate(
+          "(() => { try { Fixture.appearance.set({ colorScheme: 'sepia' }); return 'applied' } catch (error) { return String(error) } })()",
+        ),
+      ).toMatchInlineSnapshot(`"TypeError: Invalid theme selection."`)
+      expect(
+        await page.evaluate(
+          'document.documentElement.className === `external ${Fixture.mint}`',
+        ),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        await page.evaluate("localStorage.getItem('fixture')"),
+      ).toMatchInlineSnapshot(`"{"theme":"mint"}"`)
     } finally {
       await browser?.close()
       await new Promise<void>((resolve, reject) =>
         server.close((error) => (error ? reject(error) : resolve())),
       )
     }
+  })
+
+  test('requires a named catalog default among its entries', () => {
+    expect(() =>
+      Appearance.root([['mint', 'z_theme-mint']]),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: defaultTheme must name a catalog theme.]`,
+    )
+    expect(() =>
+      Appearance.root([['mint', 'z_theme-mint']], { defaultTheme: 'mint' }),
+    ).not.toThrow()
+    expect(() => Appearance.root([])).not.toThrow()
   })
 })

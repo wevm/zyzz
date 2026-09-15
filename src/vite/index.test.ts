@@ -725,8 +725,10 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
     }
   }, 30000)
   test('inlines configuration initialization before other head scripts in development and production', async () => {
+    // An unrelated earlier module and layer-free configurations exercise whole-project discovery.
     const files = {
-      'config.ts': `import { Config } from 'zyzz'; export const { css, themes } = Config.create({ defaultTheme: 'base', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } });`,
+      'a.ts': 'export const unrelated = 1',
+      'config.ts': `import { Config } from 'zyzz'; export const { css, themes } = Config.create({ defaultTheme: 'base', themes: { base: { color: { ink: '#123456' } }, mint: { color: { ink: '#008844' } } } }); export const other = Config.create({ defaultTheme: 'night', themes: { night: { color: { ink: '#000000' } }, 'brand.dark': { color: { ink: '#ffffff' } } } }); export const { script: onlyScript } = Config.create({ defaultTheme: 'solo', themes: { solo: { color: { ink: '#aabbcc' } } } });`,
       'index.html': `<!doctype html><html><head><title>Fixture</title></head><body><script type="module" src="/main.ts"></script></body></html>`,
       'main.ts': `import { themes } from './config'; const root = document.documentElement; root.dataset.initial = root.className; root.dataset.mint = themes.mint.className; root.dataset.ready = 'true';`,
     }
@@ -750,6 +752,19 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
         restore < development.indexOf('/@vite/client'),
       ).toMatchInlineSnapshot('true')
 
+      const scripts = (html: string) =>
+        html.split('localStorage.getItem("zyzz")').length - 1
+
+      // Each configuration keeps its own catalog, dotted keys use the compiled
+      // escaping, and a script-only export derives its catalog from the options.
+      expect(scripts(development)).toMatchInlineSnapshot('3')
+      expect(
+        /z_theme-[a-z0-9]+-other-brand_2e_dark/.test(development),
+      ).toMatchInlineSnapshot('true')
+      expect(
+        /z_theme-[a-z0-9]+-onlyScript-solo/.test(development),
+      ).toMatchInlineSnapshot('true')
+
       // A source error stays with its module; the document still initializes
       // from the catalogs collected before the edit.
       await Fs.writeFile(
@@ -762,9 +777,23 @@ document.body.innerHTML = '<main class="' + mint.className + '"><div id="library
         files['index.html'],
       )
 
-      expect(
-        broken.indexOf('localStorage.getItem("zyzz")') > -1,
-      ).toMatchInlineSnapshot('true')
+      expect(scripts(broken)).toMatchInlineSnapshot('3')
+
+      // Removed configurations leave the document on the next request.
+      await Fs.writeFile(
+        Path.join(root, 'config.ts'),
+        files['config.ts'].slice(
+          0,
+          files['config.ts'].indexOf(' export const other'),
+        ),
+      )
+
+      const reduced = await server.transformIndexHtml(
+        '/index.html',
+        files['index.html'],
+      )
+
+      expect(scripts(reduced)).toMatchInlineSnapshot('1')
 
       await Fs.writeFile(Path.join(root, 'config.ts'), files['config.ts'])
       await server.close()

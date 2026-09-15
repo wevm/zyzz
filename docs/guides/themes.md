@@ -160,7 +160,7 @@ export function Document({ nonce }: { nonce?: string }) {
 }
 ```
 
-The script derives the theme catalog and compiled classes from the config. An optional argument sets `storageKey`; its default is `'zyzz'`.
+The script derives the theme catalog and compiled classes from the config and reads the entry named by the config's `storageKey`, `'zyzz'` by default.
 
 The application saves preferences under `zyzz`:
 
